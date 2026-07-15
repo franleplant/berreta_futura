@@ -1,0 +1,18 @@
+schema_version: 1
+source_id: src-narayanan-icml-2026-keynote
+content_mode: faithful_edit
+status: blocked
+blockers:
+  - rights_status_unknown
+  - private_source_handling_not_approved
+metrics:
+  substantive_source_words: null
+  retained_source_words: null
+  boilerplate_words_removed: null
+  substantive_words_cut: null
+  modified_sentences: null
+  reordered_paragraphs: null
+  unlabeled_additions: 0
+  labeled_editor_notes: 0
+note: The rights-safe tracer edition contains original editorial and reading apparatus only.
+

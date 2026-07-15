@@ -1,0 +1,31 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "magazine-compiler"
+version = "0.1.0"
+description = "A deterministic, private-first compiler for faithful source anthologies."
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Private project"}
+dependencies = [
+  "PyYAML>=6.0",
+  "reportlab>=4.2",
+  "pypdf>=5.0",
+]
+
+[project.scripts]
+mag = "magazine.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/magazine"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+pythonpath = ["src"]
+

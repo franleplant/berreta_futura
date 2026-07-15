@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fidelity.schema.json",
+  "title": "Paragraph fidelity ledger",
+  "type": "object",
+  "required": ["schema_version", "source_ids", "paragraphs"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "source_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "paragraphs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": {"enum": ["retained", "boilerplate_removed", "substantive_cut", "modified", "editorial_addition"]},
+          "source": {"type": "string"},
+          "edited": {"type": "string"},
+          "label": {"type": "string"},
+          "reason": {"type": "string"}
+        }
+      }
+    }
+  }
+}
+

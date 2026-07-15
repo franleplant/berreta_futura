@@ -1,0 +1,40 @@
+schema_version: 1
+id: src-narayanan-icml-2026-keynote
+title: What will be left for us to work on?
+author: Arvind Narayanan
+canonical_url: https://www.cs.princeton.edu/~arvindn/talks/icml-2026-annotated-slides/
+submitted_url: https://www.cs.princeton.edu/~arvindn/talks/icml-2026-annotated-slides/
+captured_at: 2026-07-15T17:16:00-03:00
+publication_date: 2026-07-09
+kind: annotated_slides_transcript
+status: captured
+content_hash: 2cabadbdf2ac581ecae24de31f361f9c3950e440fefbdde193feef620cfc019d
+provenance:
+  - relation: discovered_via
+    target: src-arvind-tweet-2076994014692229601
+  - relation: alternate_rendering
+    target_url: https://www.normaltech.ai/p/what-will-be-left-for-us-to-work
+  - relation: official_event_record
+    target_url: https://icml.cc/virtual/2026/invited-talk/67274
+rights:
+  status: unknown
+  copyright_notice: Copyright 2026 Sayash Kapoor and Arvind Narayanan on the alternate rendering.
+  intended_use: private_reference
+  attribution_required: true
+  public_reprint_allowed: false
+  third_party_assets_require_separate_review: true
+metadata:
+  event: ICML 2026 invited keynote
+  venue: Seoul
+  delivered_at: 2026-07-09
+  format: slides plus edited transcript
+  slide_count: 57
+  narrated_slide_count: 54
+  narration_segment_count: 101
+  approximate_transcript_words: 7384
+  local_raster_asset_count: 43
+  outbound_url_count: 46
+  extraction_method: Inline NARR and FRAGS JSON; OCR not required.
+  vault_path: vault/src-narayanan-icml-2026-keynote/2cabadbdf2ac581ecae24de31f361f9c3950e440fefbdde193feef620cfc019d/
+notes: Primary source. No explicit reuse license was found. The rights-safe prototype uses original editorial and reading apparatus instead of a faithful reprint.
+

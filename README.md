@@ -1,0 +1,133 @@
+# Magazine Compiler
+
+Magazine Compiler turns captured internet sources into a private, print-ready
+anthology. It is deliberately a **faithful-edit** system, not a summarizer: source
+language remains intact unless a paragraph-level edit record says otherwise.
+
+The external interface is intentionally small:
+
+```python
+from pathlib import Path
+from magazine import Magazine
+
+mag = Magazine(Path.cwd())
+record = mag.capture("https://example.com/article", title="An article")
+mag.write_sources()
+result = mag.build("issue-001")
+```
+
+The equivalent command line is:
+
+```sh
+mag capture https://example.com/article --title "An article"
+mag sources
+mag validate issue-001
+mag build issue-001
+```
+
+`capture` only records metadata and local snapshots supplied by the caller. It
+never downloads a URL. This makes acquisition explicit, repeatable, and safe.
+
+## Repository model
+
+```text
+library/sources/<source-id>/record.yaml    structured source record
+library/sources/<source-id>/extracted.md  local, faithful extraction
+editions/<edition-id>/edition.yaml        edition manifest
+editions/<edition-id>/editorial.md        original opening editorial
+editions/<edition-id>/articles/*.md       edited source manuscripts
+editions/<edition-id>/fidelity/*.yaml     paragraph-level edit ledger
+output/<edition-id>/                      generated release package
+```
+
+`sources.md` is always generated from the source records. Never edit it by hand.
+
+## Source records
+
+The capture command creates a record like:
+
+```yaml
+id: an-article-a1b2c3d4
+url: https://example.com/article
+canonical_url: https://example.com/article
+title: An article
+author: Example Author
+captured_at: 2026-07-15T12:00:00Z
+content_mode: faithful_edit
+tags: []
+primary_material: []
+rights:
+  status: unknown
+  intended_use: private_reference
+  public_reprint_allowed: false
+```
+
+Tracking parameters and URL fragments are removed during canonicalization. A
+stable suffix derived from the canonical URL prevents slug collisions.
+
+## Edition manifests
+
+See `templates/edition.yaml`. An article points at both a manuscript and a
+fidelity ledger. Paths are repository-relative and cannot escape the project.
+The compiler validates required fields, source references, duplicate IDs, and
+file existence before layout.
+
+The fidelity ledger records every substantive source paragraph as one of:
+
+- `retained`
+- `boilerplate_removed`
+- `substantive_cut`
+- `modified`
+- `editorial_addition`
+
+`modified` entries preserve both source and edited text. Editorial additions
+must be visually labelled in the manuscript. The generated fidelity report
+provides word counts and retention percentages; it is evidence for review, not
+an automatic claim that an edit is acceptable.
+
+## PDF outputs
+
+The A5 reader PDF is produced deterministically with ReportLab. The home booklet
+is imposed onto landscape A4 with `pypdf` and padded to a multiple of four pages.
+The package contains:
+
+```text
+reader.pdf
+home/booklet-a4.pdf
+home/printing-instructions.md
+fidelity.md
+preflight.json
+edition-manifest.json
+SHA256SUMS
+```
+
+`preflight.json` validates page geometry, signature length, booklet sheet size,
+cover resolution, rights clearance, and studio blockers. The renderer embeds
+the standard PDF fonts by default. A professional print profile is included as
+a specification, but PDF/X conversion, trim bleed, and the printer ICC output
+intent remain explicit studio preflight steps.
+
+## Tracer edition
+
+Issue 001 lives at `editions/001-the-work-left-to-us/`. It captures an X post as
+the discovery lead and Arvind Narayanan's annotated ICML 2026 keynote as the
+primary source. The release is a 16-page, rights-safe A5 prototype with original
+editorial and reading apparatus. Its faithful source block remains visibly
+blocked until private-source handling or reproduction rights are approved.
+
+```sh
+mag sources
+mag validate 001-the-work-left-to-us
+mag build 001-the-work-left-to-us
+```
+
+## Development
+
+```sh
+python -m pytest
+python -m magazine --help
+```
+
+The metadata, validation, fidelity, catalog, and packaging modules use only the
+standard library plus PyYAML. ReportLab and pypdf are imported only by their PDF
+paths, making non-rendering operations easy to test in constrained environments.

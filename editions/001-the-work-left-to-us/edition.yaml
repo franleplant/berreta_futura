@@ -1,0 +1,56 @@
+schema_version: 1
+id: 001-the-work-left-to-us
+issue_number: 1
+publication_date: 2026-07-15
+title: The Work Left to Us
+subtitle: AI, agency, and the long middle between capability and consequence
+language: en
+distribution: private
+status: draft
+format:
+  trim: A5
+  home_sheet: A4
+  binding: saddle_stitch
+  target_pages: 16
+cover:
+  art_path: art/cover-art.png
+  masthead: Commonplace
+  headline: The Work Left to Us
+  deck: AI, agency, and the long middle between capability and consequence
+  back_text: The future of work is not a vacancy notice. It is a design problem.
+sources:
+  - src-arvind-tweet-2076994014692229601
+  - src-narayanan-icml-2026-keynote
+sections:
+  - kind: original_editorial
+    title: The Last Mile Is the Whole World
+    path: manuscript/editorial.md
+  - kind: source_introduction
+    title: The Source
+    path: manuscript/source-introduction.md
+  - kind: original_synthesis
+    title: Capability Is the Beginning
+    path: manuscript/reading-map.md
+  - kind: original_editorial
+    title: Four Questions
+    path: manuscript/reading-prompts.md
+  - kind: source_record
+    title: Source Record
+    path: manuscript/source-record.md
+  - kind: production_note
+    title: This Is Not a Summary Machine
+    path: manuscript/fidelity-policy.md
+  - kind: original_synthesis
+    title: Three Movements
+    path: manuscript/three-movements.md
+  - kind: production_note
+    title: Fidelity Ledger
+    path: manuscript/fidelity-ledger.md
+  - kind: original_editorial
+    title: After Reading
+    path: manuscript/after-reading.md
+  - kind: colophon
+    title: Colophon
+    path: manuscript/colophon.md
+rights:
+  faithful_source_reprint: blocked_pending_permission_or_private_handling

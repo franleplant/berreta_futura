@@ -1,0 +1,24 @@
+[publication]
+name = "Commonplace"
+language = "en"
+distribution = "private"
+default_profile = "a5"
+
+[paths]
+sources = "library/sources"
+editions = "editions"
+output = "output"
+
+[editorial]
+default_content_mode = "faithful_edit"
+substantive_edits_require_approval = true
+editorial_additions_must_be_labeled = true
+
+[render]
+trim = "A5"
+home_sheet = "A4"
+body_font = "Times-Roman"
+heading_font = "Helvetica-Bold"
+body_size = 10.25
+leading = 13.4
+

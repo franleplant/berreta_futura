@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "source-record.schema.json",
+  "title": "Magazine source record",
+  "type": "object",
+  "required": ["schema_version", "id", "title", "canonical_url", "submitted_url", "captured_at", "kind", "status", "rights"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "title": {"type": "string", "minLength": 1},
+    "author": {"type": ["string", "null"]},
+    "canonical_url": {"type": "string", "format": "uri"},
+    "submitted_url": {"type": "string", "format": "uri"},
+    "captured_at": {"type": "string", "format": "date-time"},
+    "publication_date": {"type": ["string", "null"]},
+    "kind": {"enum": ["article", "post", "thread", "slides", "pdf", "video", "web", "other"]},
+    "status": {"enum": ["captured", "extracted", "reviewed", "failed"]},
+    "content_hash": {"type": ["string", "null"]},
+    "provenance": {"type": "array", "items": {"type": "object"}},
+    "rights": {"type": "object"},
+    "metadata": {"type": "object"},
+    "notes": {"type": "string"}
+  },
+  "additionalProperties": true
+}
+

@@ -1,0 +1,10 @@
+id = "studio-a5"
+trim_width_mm = 148
+trim_height_mm = 210
+bleed_mm = 3
+pdf_standard = "PDF/X-4"
+minimum_effective_image_ppi = 300
+pages = "single-reading-order"
+icc_profile = "REQUIRED_FROM_PRINTER"
+status = "blocked_until_printer_profile_and_preflight"
+

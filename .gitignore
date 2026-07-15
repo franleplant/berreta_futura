@@ -1,0 +1,14 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.test-deps/
+.venv/
+
+# Private source captures and generated agent traces.
+vault/
+runs/
+
+# Reproducible build output; release manifests remain in editions/.
+output/
+tmp/

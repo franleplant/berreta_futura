@@ -1,0 +1,14 @@
+id = "a5"
+trim_width_mm = 148
+trim_height_mm = 210
+color_space = "RGB"
+bleed_mm = 0
+reader_pages = "single"
+
+[home]
+sheet = "A4"
+orientation = "landscape"
+imposition = "booklet"
+duplex_flip = "short-edge"
+scaling = "100%"
+

@@ -1,0 +1,18 @@
+schema_version: 1
+source_ids:
+  - example-source-id
+paragraphs:
+  - status: retained
+    source: A paragraph retained verbatim.
+    edited: A paragraph retained verbatim.
+  - status: boilerplate_removed
+    source: Subscribe to our newsletter.
+    reason: Web subscription prompt.
+  - status: modified
+    source: A paragraph containing an obvious extractionerror.
+    edited: A paragraph containing an obvious extraction error.
+    reason: Repaired extraction artifact.
+  - status: editorial_addition
+    edited: Context supplied by the editors.
+    label: "Editor’s note"
+
