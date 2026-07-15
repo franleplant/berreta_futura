@@ -1,0 +1,67 @@
+schema_version: 1
+id: src-nadella-reverse-information-paradox-2026
+title: The Reverse Information Paradox
+author: Satya Nadella
+canonical_url: https://x.com/satyanadella/article/2076323181154230284
+submitted_url: https://x.com/satyanadella/status/2076323181154230284
+captured_at: 2026-07-15T18:37:03-03:00
+publication_date: 2026-07-12
+kind: article
+status: extracted
+content_hash: b7e1968a99d9a874b0b60847f246b16f4be955672748a760641402d7ea2dee17
+provenance:
+  - relation: discovered_via
+    target_url: https://x.com/satyanadella/status/2076323181154230284
+  - relation: canonical_primary
+    target_url: https://x.com/satyanadella/article/2076323181154230284
+  - relation: cites_foundational_work
+    target_url: https://www.nber.org/system/files/chapters/c2144/c2144.pdf
+  - relation: references_supporting_quote
+    target_url: https://x.com/PalantirTech/status/2072326189079757277
+  - relation: continues_authors_prior_argument
+    target_url: https://x.com/satyanadella/status/2066182223213293753
+rights:
+  status: unknown
+  license: none_found
+  intended_use: private_reference
+  attribution_required: true
+  public_reprint_allowed: false
+  permission_required_for_public_reprint: true
+metadata:
+  language: en
+  handle: satyanadella
+  rendered_word_count: 846
+  rendered_character_count: 5262
+  rendered_article_sha256: b7e1968a99d9a874b0b60847f246b16f4be955672748a760641402d7ea2dee17
+  framework:
+    - control
+    - capability
+    - choice
+    - cost
+    - compound
+  resolved_references:
+    - title: Economic Welfare and the Allocation of Resources for Invention
+      author: Kenneth J. Arrow
+      url: https://www.nber.org/system/files/chapters/c2144/c2144.pdf
+      format: pdf
+    - title: Palantir CEO Alex Karp on customer control and open models
+      author: Palantir
+      publication_date: 2026-07-01
+      url: https://x.com/PalantirTech/status/2072326189079757277
+      format: post_with_video
+    - title: A frontier without an ecosystem is not stable
+      author: Satya Nadella
+      publication_date: 2026-06-14
+      url: https://x.com/satyanadella/article/2066182223213293753
+      format: x_article
+  topics:
+    - enterprise-ai
+    - proprietary-learning
+    - model-vendor-dependency
+    - organizational-capability
+    - data-governance
+    - trust-boundaries
+  extraction_method: Authenticated Chrome rendered X Article.
+  snapshot_hash_basis: Visible text of the article element, including the rendered byline and article controls.
+  capture_durability: Rendered text inspected and fingerprinted; durable private snapshot pending.
+notes: Preserve the Arrow citation and both linked X references in any faithful edit. The opening editorial may critically frame the argument, but that framing must remain visibly separate from Nadella's text.

@@ -1,0 +1,44 @@
+schema_version: 1
+id: src-hassabis-frontier-ai-2026
+title: A Framework for Frontier AI and the Dawning of a New Age
+author: Demis Hassabis
+canonical_url: https://x.com/demishassabis/article/2076957440109625718
+submitted_url: https://x.com/demishassabis/status/2076957440109625718
+captured_at: 2026-07-15T18:37:03-03:00
+publication_date: 2026-07-14
+kind: article
+status: extracted
+content_hash: e4dd96fdc8e11c97643346a9edca966365a7e47a04cef4f85b44afe68f0af530
+provenance:
+  - relation: discovered_via
+    target_url: https://x.com/demishassabis/status/2076957440109625718
+  - relation: canonical_primary
+    target_url: https://x.com/demishassabis/article/2076957440109625718
+rights:
+  status: unknown
+  license: none_found
+  intended_use: private_reference
+  attribution_required: true
+  public_reprint_allowed: false
+  permission_required_for_public_reprint: true
+metadata:
+  language: en
+  handle: demishassabis
+  rendered_word_count: 1395
+  rendered_character_count: 8830
+  rendered_article_sha256: e4dd96fdc8e11c97643346a9edca966365a7e47a04cef4f85b44afe68f0af530
+  section_headings:
+    - The Challenges of the Frontier
+    - A Framework for a Frontier AI Standards Body
+    - The Future Is Not Yet Written
+  topics:
+    - agi
+    - frontier-ai-governance
+    - standards
+    - dynamic-benchmarks
+    - pre-release-testing
+    - international-coordination
+  extraction_method: Authenticated Chrome rendered X Article.
+  snapshot_hash_basis: Visible text of the article element, including the rendered byline and article controls.
+  capture_durability: Rendered text inspected and fingerprinted; durable private snapshot pending.
+notes: The status URL renders the complete long-form X Article and links to the canonical focus-mode article. No explicit reuse license was visible.

@@ -13,6 +13,13 @@ This repository builds private-first, source-faithful magazine editions.
 - Never claim an edition is press-ready without a named printer profile and a passing preflight.
 - Cover art contains no baked-in masthead or cover lines. Layout code owns all typography.
 
+## Git checkpoints
+
+- Commit each verified source-intake batch, edition checkpoint, or compiler change as a coherent unit.
+- Inspect the staged diff and run the proportionate validation before committing.
+- Keep `vault/`, `output/`, temporary files, credentials, and browser-session data out of Git.
+- Commit structured records, edition briefs, fidelity ledgers, templates, tests, and deterministic source code.
+
 ## Verification
 
 Use the bundled workspace Python runtime when available:
@@ -22,4 +29,3 @@ Use the bundled workspace Python runtime when available:
 ```
 
 Render generated PDFs to PNG and inspect every page before delivery.
-

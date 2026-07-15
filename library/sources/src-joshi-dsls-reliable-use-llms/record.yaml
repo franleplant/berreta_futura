@@ -1,0 +1,41 @@
+schema_version: 1
+id: src-joshi-dsls-reliable-use-llms
+title: DSLs Enable Reliable Use of LLMs
+author: Unmesh Joshi
+canonical_url: https://martinfowler.com/articles/llm-and-dsls.html
+submitted_url: https://x.com/martinfowler/status/2077023024155422927
+captured_at: 2026-07-15T18:37:03-03:00
+publication_date: 2026-07-14
+kind: article
+status: extracted
+content_hash: 13f53d5d93054a8c58bd1739a16a10bb7fea0e0f6884a6770043c79fe93fd9ae
+provenance:
+  - relation: discovered_via
+    target_url: https://x.com/martinfowler/status/2077023024155422927
+  - relation: canonical_primary
+    target_url: https://martinfowler.com/articles/llm-and-dsls.html
+rights:
+  status: unknown
+  copyright_notice: Copyright Martin Fowler; no explicit reuse license was found.
+  intended_use: private_reference
+  attribution_required: true
+  public_reprint_allowed: false
+  permission_required_for_public_reprint: true
+metadata:
+  language: en
+  handle: unmeshjoshi
+  rendered_word_count: 3760
+  rendered_character_count: 27352
+  rendered_main_sha256: 13f53d5d93054a8c58bd1739a16a10bb7fea0e0f6884a6770043c79fe93fd9ae
+  outbound_url_count: 31
+  section_count: 11
+  topics:
+    - llms
+    - domain-specific-languages
+    - abstractions
+    - deterministic-validation
+    - software-design
+  extraction_method: Authenticated Chrome for the discovery post; rendered public HTML for the canonical article.
+  snapshot_hash_basis: Visible text of the canonical page main element.
+  capture_durability: Rendered text inspected and fingerprinted; durable private snapshot pending.
+notes: The tweet is the discovery lead; the Unmesh Joshi article is the substantive primary source. Treat a faithful reprint as private-only until permission or another applicable rights basis is recorded.
