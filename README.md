@@ -12,6 +12,8 @@ including its title and byline.
 The publication compiled by this repository is **BERRETA FUTURA**. Its name is
 configured once under `[publication]` in `magazine.toml`; edition manifests own
 issue titles and cover copy, but do not duplicate or override the masthead.
+Every configured language is built together. English is the source edition and
+keeps its existing package paths; the Spanish package is emitted beneath `es/`.
 
 The external interface is intentionally small:
 
@@ -74,10 +76,31 @@ editions/<edition-id>/edition.yaml        edition manifest
 editions/<edition-id>/editorial.md        original opening editorial
 editions/<edition-id>/articles/*.md       edited source manuscripts
 editions/<edition-id>/fidelity/*.yaml     paragraph-level edit ledger
+editions/<edition-id>/translations/es/    hash-pinned Spanish edition overlay and manuscripts
 output/<edition-id>/                      generated release package
+output/<edition-id>/es/                   Spanish reader, booklet, preflight, and package metadata
 ```
 
 `sources.md` is always generated from the source records. Never edit it by hand.
+
+## Language editions
+
+`publication.language` selects the source edition and `publication.languages`
+declares every required output. A build fails if any configured translation is
+missing, stale, or structurally incomplete. The source English `reader.pdf` and
+`home/booklet-a4.pdf` remain at the package root. Spanish generates the same
+permutations under `output/<edition-id>/es/`.
+
+Each translation overlay records the exact SHA-256 of its English editorial,
+articles, and backmatter. It must preserve the ordered Markdown block structure
+of the English manuscript, including headings, paragraphs, lists, quotations,
+and code. Changing an English input therefore makes the translation stale and
+blocks validation until it is reviewed and updated.
+
+The Spanish house register is educated castellano with a restrained Argentine
+inclination where it reads naturally, without slang or lunfardo. Where no clear
+Argentine preference applies, use Spain Spanish; do not fall back to generic
+Latin American, Mexican, Caribbean, or other regional variants.
 
 ## The open edition
 

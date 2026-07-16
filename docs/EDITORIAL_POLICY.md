@@ -56,6 +56,21 @@ Each faithful article reports:
 
 The review artifact includes a paragraph-level source/manuscript diff and a reason for every substantive deletion or modification.
 
+## Translation editions
+
+English is the source edition. A Spanish edition is a faithful translation of
+the already edited English magazine, not a second opportunity to summarize,
+expand, strengthen, or soften the source. It preserves paragraph order,
+headings, examples, qualifications, links, code, and attribution. The compiler
+pins every translated manuscript to the SHA-256 of its English counterpart and
+rejects translations whose ordered Markdown block structure diverges.
+
+Spanish uses educated castellano with restrained Argentine preferences and no
+slang. Spain Spanish is the default fallback. Generic Latin American, Mexican,
+Caribbean, and other unrelated regional variants are excluded from the house
+style. Both languages obey the same two-page editorial and seven-page article
+budgets and generate equivalent reader, home-booklet, and preflight packages.
+
 ## Rights and distribution
 
 The workspace defaults to `private`. Complete third-party captures are committed in source-local, content-addressed raw bundles so link loss cannot erase the editorial evidence. The repository must remain private while those captures lack a public redistribution basis; credentials and browser-session data are never part of a bundle.

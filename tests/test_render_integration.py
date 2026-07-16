@@ -19,7 +19,7 @@ from magazine.render import (
     SERIF_ITALIC,
     _reportlab,
 )
-from test_manifest import make_project
+from test_manifest import add_spanish_translation, make_project
 
 
 @unittest.skipUnless(importlib.util.find_spec("reportlab") is not None, "ReportLab not installed in this runtime")
@@ -52,6 +52,36 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertIn("FEATURE 01", reader_text)
             self.assertIn("FAITHFUL EDIT", reader_text)
             self.assertIn("TEST REVIEW", reader_text)
+
+    def test_build_generates_configured_spanish_reader_and_booklet_alongside_english(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            make_project(root)
+            add_spanish_translation(root)
+
+            result = Magazine(root).build("issue-001")
+
+            self.assertEqual([item.language for item in result.languages], ["en", "es"])
+            spanish = result.output_dir / "es"
+            self.assertTrue((spanish / "reader.pdf").is_file())
+            self.assertTrue((spanish / "home" / "booklet-a4.pdf").is_file())
+            self.assertTrue((spanish / "preflight.json").is_file())
+            self.assertTrue((spanish / "edition-manifest.json").is_file())
+            self.assertTrue((spanish / "SHA256SUMS").is_file())
+            text = "\n".join(
+                page.extract_text() or ""
+                for page in PdfReader(str(spanish / "reader.pdf")).pages
+            )
+            self.assertIn("Índice", text)
+            self.assertIn("EDITORIAL ORIGINAL", text)
+            self.assertIn("ARTÍCULO 01", text)
+            self.assertIn("EDICIÓN FIEL", text)
+            self.assertIn("El artículo original.", text)
+            spanish_preflight = json.loads((spanish / "preflight.json").read_text())
+            self.assertIn(
+                "No están configurados",
+                spanish_preflight["studio"]["blockers"][0],
+            )
 
     def test_bundled_publication_fonts_are_registered(self):
         _, metrics, _ = _reportlab()

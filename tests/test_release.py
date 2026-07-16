@@ -10,7 +10,12 @@ from unittest.mock import patch
 import yaml
 
 from magazine import Magazine, ValidationError
-from magazine.release import finalize_release, load_release_state, sync_release_state
+from magazine.release import (
+    _released_package_updates,
+    finalize_release,
+    load_release_state,
+    sync_release_state,
+)
 from test_manifest import make_project
 
 
@@ -249,3 +254,27 @@ class ReleaseStateTests(unittest.TestCase):
 
         self.assertEqual(state.queued_source_ids, ("source-two",))
         self.assertEqual(state.assignments()["source-one"], "released:issue-001")
+
+    def test_release_updates_each_language_manifest_and_keeps_checksums_separate(self):
+        package = self.root / "output" / "issue-001"
+        spanish = package / "es"
+        for language_root, language in ((package, "en"), (spanish, "es")):
+            language_root.mkdir(parents=True, exist_ok=True)
+            (language_root / "edition-manifest.json").write_text(
+                json.dumps({
+                    "publication": {"language": language},
+                    "edition": {"id": "issue-001", "status": "assembling"},
+                }),
+                encoding="utf-8",
+            )
+            (language_root / "reader.pdf").write_bytes(language.encode("ascii"))
+            (language_root / "SHA256SUMS").write_text("stale\n", encoding="utf-8")
+
+        updates = dict(_released_package_updates(package))
+
+        english_manifest = json.loads(updates[package / "edition-manifest.json"])
+        spanish_manifest = json.loads(updates[spanish / "edition-manifest.json"])
+        self.assertEqual(english_manifest["edition"]["status"], "released")
+        self.assertEqual(spanish_manifest["edition"]["status"], "released")
+        self.assertNotIn("es/", updates[package / "SHA256SUMS"].decode("utf-8"))
+        self.assertIn("reader.pdf", updates[spanish / "SHA256SUMS"].decode("utf-8"))

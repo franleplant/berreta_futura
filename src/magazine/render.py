@@ -32,6 +32,47 @@ SERIF_ITALIC = "SourceSerif4-SmText-Italic"
 SERIF_BOLD = "SourceSerif4-SmText-Bold"
 SERIF_DISPLAY = "SourceSerif4-Display-Semibold"
 
+UI_COPY = {
+    "en": {
+        "private_edition": "Private edition - Not for sale",
+        "edition": "Edition",
+        "issue": "Issue",
+        "contents": "Contents",
+        "editorial": "Editorial",
+        "feature": "Feature",
+        "by": "By",
+        "original_argument": "An original argument",
+        "faithful_synthesis": "Faithful synthesis",
+        "faithful_edit": "Faithful edit",
+        "original_editorial": "ORIGINAL EDITORIAL",
+        "source_introduction": "THE SOURCE",
+        "original_synthesis": "READING MAP",
+        "source_record": "SOURCE RECORD",
+        "production_note": "PRODUCTION NOTE",
+        "colophon": "COLOPHON",
+        "back_text_default": "A private anthology of writing worth keeping.",
+    },
+    "es": {
+        "private_edition": "Edición privada - Prohibida su venta",
+        "edition": "Edición",
+        "issue": "Número",
+        "contents": "Índice",
+        "editorial": "Editorial",
+        "feature": "Artículo",
+        "by": "Por",
+        "original_argument": "Un argumento original",
+        "faithful_synthesis": "Síntesis fiel",
+        "faithful_edit": "Edición fiel",
+        "original_editorial": "EDITORIAL ORIGINAL",
+        "source_introduction": "LA FUENTE",
+        "original_synthesis": "MAPA DE LECTURA",
+        "source_record": "REGISTRO DE FUENTE",
+        "production_note": "NOTA DE PRODUCCIÓN",
+        "colophon": "COLOFÓN",
+        "back_text_default": "Una antología privada de textos que vale la pena conservar.",
+    },
+}
+
 
 @dataclass(frozen=True)
 class RenderLayout:
@@ -82,8 +123,26 @@ def _edition_label(edition: Edition) -> str:
     if configured:
         return configured
     if edition.raw.get("distribution") == "private":
-        return "Private edition - Not for sale"
-    return "Edition"
+        return _ui(edition, "private_edition")
+    return _ui(edition, "edition")
+
+
+def _ui(edition: Edition, key: str) -> str:
+    language = str(getattr(edition, "language", "en")).split("-", 1)[0]
+    return UI_COPY.get(language, UI_COPY["en"])[key]
+
+
+def _section_label(edition: Edition, kind: str) -> str:
+    if kind in {
+        "original_editorial",
+        "source_introduction",
+        "original_synthesis",
+        "source_record",
+        "production_note",
+        "colophon",
+    }:
+        return _ui(edition, kind)
+    return kind.replace("_", " ").upper()
 
 
 def _markdown_blocks(text: str) -> Iterable[tuple[str, str]]:
@@ -378,7 +437,11 @@ class _Typesetter:
     def _credit(self, author: str, note: str = ""):
         self.pdf.setFillColorRGB(*INK)
         self.pdf.setFont(SANS_SEMIBOLD, 7.6)
-        self.pdf.drawString(self.left, self.y, "BY " + _plain(author.upper()))
+        self.pdf.drawString(
+            self.left,
+            self.y,
+            _plain(_ui(self.edition, "by").upper()) + " " + _plain(author.upper()),
+        )
         if note:
             self.pdf.setFillColorRGB(*SLATE)
             self.pdf.setFont(SANS, 6.5)
@@ -427,10 +490,16 @@ class _Typesetter:
         self.pdf.setFillColorRGB(*INK)
         self.pdf.setFont(SANS_SEMIBOLD, 6.7)
         label = _plain(_edition_label(self.edition)).upper()
-        self.pdf.drawString(36, 27, f"ISSUE {self.edition.issue_number}  /  {self.edition.publication_date}  /  {label}")
+        self.pdf.drawString(
+            36,
+            27,
+            f"{_plain(_ui(self.edition, 'issue').upper())} {self.edition.issue_number}"
+            f"  /  {self.edition.publication_date}  /  {label}",
+        )
 
     def contents(self, toc_pages: dict[str, int]):
-        self.new_page("Contents", blank_header=True)
+        contents_label = _ui(self.edition, "contents")
+        self.new_page(contents_label, blank_header=True)
         self.pdf.setFillColorRGB(*INK)
         self.pdf.rect(0, self.height - 116, self.width, 116, fill=1, stroke=0)
         self.pdf.setFillColorRGB(*PAPER)
@@ -439,22 +508,24 @@ class _Typesetter:
             self.left,
             self.height - 32,
             _plain(self.edition.publication_name.upper())
-            + "  /  ISSUE "
+            + "  /  "
+            + _plain(_ui(self.edition, "issue").upper())
+            + " "
             + str(self.edition.issue_number),
         )
         self.pdf.setFont(SERIF_DISPLAY, 28)
-        self.pdf.drawString(self.left, self.height - 73, "Contents")
+        self.pdf.drawString(self.left, self.height - 73, _plain(contents_label))
         self.pdf.setFont(SANS, 6.6)
         self.pdf.drawString(self.left, self.height - 96, _plain(str(self.edition.publication_date)).upper())
         self.y = self.height - 145
         entries = []
         if self.edition.articles:
             if self.edition.editorial:
-                entries.append(("Editorial", self.edition.editorial.title, self.edition.editorial.byline, toc_pages.get("editorial", 0)))
-            entries.extend((f"Feature {index:02d}", article.title, article.author, toc_pages.get(article.id, 0)) for index, article in enumerate(self.edition.articles, 1))
-            entries.extend((section.kind.replace("_", " "), section.title, "", toc_pages.get(f"section-{index}", 0)) for index, section in enumerate(self.edition.sections))
+                entries.append((_ui(self.edition, "editorial"), self.edition.editorial.title, self.edition.editorial.byline, toc_pages.get("editorial", 0)))
+            entries.extend((f"{_ui(self.edition, 'feature')} {index:02d}", article.title, article.author, toc_pages.get(article.id, 0)) for index, article in enumerate(self.edition.articles, 1))
+            entries.extend((_section_label(self.edition, section.kind), section.title, "", toc_pages.get(f"section-{index}", 0)) for index, section in enumerate(self.edition.sections))
         elif self.edition.sections:
-            entries.extend((section.kind.replace("_", " "), section.title, "", toc_pages.get(f"section-{index}", 0)) for index, section in enumerate(self.edition.sections))
+            entries.extend((_section_label(self.edition, section.kind), section.title, "", toc_pages.get(f"section-{index}", 0)) for index, section in enumerate(self.edition.sections))
         for label, title, author, page in entries:
             if self.y < self.bottom + 34:
                 self.new_page("Contents")
@@ -481,12 +552,15 @@ class _Typesetter:
     def body(self):
         if self.edition.articles:
             if self.edition.editorial:
-                self.new_page("Editorial", opener=True)
+                self.new_page(_ui(self.edition, "editorial"), opener=True)
                 start_page = self.page
                 self.toc["editorial"] = self.page
-                self._label(self.edition.editorial.label, right="Issue " + str(self.edition.issue_number))
+                self._label(
+                    self.edition.editorial.label,
+                    right=_ui(self.edition, "issue") + " " + str(self.edition.issue_number),
+                )
                 self._display_title(self.edition.editorial.title, maximum_lines=3)
-                self._credit(self.edition.editorial.byline, "An original argument")
+                self._credit(self.edition.editorial.byline, _ui(self.edition, "original_argument"))
                 self.markdown(self.edition.editorial.path, lead=True)
                 self.editorial_pages = self.page - start_page + 1
                 if self.editorial_pages > MAX_EDITORIAL_PAGES:
@@ -499,8 +573,8 @@ class _Typesetter:
                 self.new_page(article.title, opener=True)
                 start_page = self.page
                 self.toc[article.id] = self.page
-                mode = "Faithful synthesis" if article.content_mode == "faithful_synthesis" else "Faithful edit"
-                self._label(f"Feature {article_index:02d}", right=f"{article_index} / {article_total}")
+                mode = _ui(self.edition, "faithful_synthesis") if article.content_mode == "faithful_synthesis" else _ui(self.edition, "faithful_edit")
+                self._label(f"{_ui(self.edition, 'feature')} {article_index:02d}", right=f"{article_index} / {article_total}")
                 self._display_title(article.title)
                 self._credit(article.author, mode)
                 self.markdown(article.manuscript, lead=True)
@@ -522,15 +596,8 @@ class _Typesetter:
     def _section(self, index, section):
         self.new_page(section.title, opener=True)
         self.toc[f"section-{index}"] = self.page
-        label = {
-            "original_editorial": "ORIGINAL EDITORIAL",
-            "source_introduction": "THE SOURCE",
-            "original_synthesis": "READING MAP",
-            "source_record": "SOURCE RECORD",
-            "production_note": "PRODUCTION NOTE",
-            "colophon": "COLOPHON",
-        }.get(section.kind, section.kind.replace("_", " ").upper())
-        self._label(label, right="Issue " + str(self.edition.issue_number))
+        label = _section_label(self.edition, section.kind)
+        self._label(label, right=_ui(self.edition, "issue") + " " + str(self.edition.issue_number))
         self._display_title(section.title, maximum_lines=3)
         self.markdown(section.path, lead=True)
 
@@ -548,7 +615,7 @@ class _Typesetter:
         self.pdf.setFillColorRGB(*OXBLOOD)
         self.pdf.rect(0, self.height - 14, self.width, 14, fill=1, stroke=0)
         self.pdf.setFillColorRGB(*INK)
-        text = str(self.edition.cover.get("back_text", "A private anthology of writing worth keeping."))
+        text = str(self.edition.cover.get("back_text", _ui(self.edition, "back_text_default")))
         y = self.height * .58
         self.pdf.setFont(SERIF_DISPLAY, 17)
         for line in self.lines(text, SERIF_DISPLAY, 17, self.width - 90):

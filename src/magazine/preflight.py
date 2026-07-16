@@ -34,6 +34,7 @@ def inspect_package(
     *,
     cover_art: Path | None,
     source_rights: list[dict[str, Any]],
+    language: str = "en",
 ) -> dict[str, Any]:
     reader = PdfReader(str(reader_pdf))
     booklet = PdfReader(str(booklet_pdf))
@@ -54,14 +55,12 @@ def inspect_package(
         for row in source_rights
         if row.get("rights", {}).get("public_reprint_allowed") is not True
     ]
-    studio_blockers = [
-        "PDF/X-4 conversion and printer output intent are not configured.",
-        "Trim bleed is not configured for the selected printer.",
-    ]
+    messages = _MESSAGES.get(language.split("-", 1)[0], _MESSAGES["en"])
+    studio_blockers = [messages["pdfx"], messages["bleed"]]
     if cover_info.get("studio_300ppi_target_met") is False:
-        studio_blockers.append("Cover artwork is below the 300 ppi studio target at A5 trim.")
+        studio_blockers.append(messages["cover_resolution"])
     if rights_blockers:
-        studio_blockers.append("One or more declared sources are not cleared for public reprint.")
+        studio_blockers.append(messages["rights"])
 
     return {
         "schema_version": 1,
@@ -84,3 +83,18 @@ def inspect_package(
         "studio": {"ready": not studio_blockers, "blockers": studio_blockers},
     }
 
+
+_MESSAGES = {
+    "en": {
+        "pdfx": "PDF/X-4 conversion and printer output intent are not configured.",
+        "bleed": "Trim bleed is not configured for the selected printer.",
+        "cover_resolution": "Cover artwork is below the 300 ppi studio target at A5 trim.",
+        "rights": "One or more declared sources are not cleared for public reprint.",
+    },
+    "es": {
+        "pdfx": "No están configurados la conversión a PDF/X-4 ni el propósito de salida de la imprenta.",
+        "bleed": "No está configurado el sangrado de corte para la imprenta seleccionada.",
+        "cover_resolution": "La ilustración de cubierta no alcanza el objetivo de 300 ppp al tamaño final A5.",
+        "rights": "Una o más fuentes declaradas no están autorizadas para su reedición pública.",
+    },
+}

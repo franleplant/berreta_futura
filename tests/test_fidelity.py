@@ -129,3 +129,13 @@ class FidelityTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValidationError, "requires source-to-edited mappings"):
             fidelity_report(path)
+
+    def test_report_labels_can_be_rendered_in_spanish(self):
+        path = self.root / "ledger.yaml"
+        write_ledger(path, [{"status": "retained", "source": "texto fuente"}])
+
+        markdown = fidelity_report(path).as_markdown("Artículo", language="es")
+
+        self.assertIn("| Medida | Valor |", markdown)
+        self.assertIn("Palabras sustantivas originales", markdown)
+        self.assertNotIn("| Measure | Value |", markdown)

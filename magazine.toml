@@ -1,6 +1,7 @@
 [publication]
 name = "Berreta Futura"
 language = "en"
+languages = ["en", "es"]
 distribution = "private"
 default_profile = "a5"
 

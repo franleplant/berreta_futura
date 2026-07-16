@@ -233,6 +233,20 @@ def finalize_release(
 
 
 def _released_package_updates(package_dir: Path) -> tuple[tuple[Path, bytes], ...]:
+    package_roots = [package_dir]
+    package_roots.extend(
+        sorted(
+            (path.parent for path in package_dir.glob("*/edition-manifest.json")),
+            key=lambda path: path.name,
+        )
+    )
+    updates: list[tuple[Path, bytes]] = []
+    for package_root in package_roots:
+        updates.extend(_released_single_package_updates(package_root))
+    return tuple(updates)
+
+
+def _released_single_package_updates(package_dir: Path) -> tuple[tuple[Path, bytes], ...]:
     manifest_path = package_dir / "edition-manifest.json"
     checksums_path = package_dir / "SHA256SUMS"
     manifest = load_structured(manifest_path)
@@ -248,9 +262,15 @@ def _released_package_updates(package_dir: Path) -> tuple[tuple[Path, bytes], ..
         + "\n"
     ).encode("utf-8")
 
+    nested_package_roots = {
+        path.parent for path in package_dir.glob("*/edition-manifest.json")
+    }
     files = sorted(
-        path for path in package_dir.rglob("*")
-        if path.is_file() and path.name != "SHA256SUMS"
+        path
+        for path in package_dir.rglob("*")
+        if path.is_file()
+        and path.name != "SHA256SUMS"
+        and not any(path.is_relative_to(nested) for nested in nested_package_roots)
     )
     if manifest_path not in files:
         raise ValidationError(f"Release package manifest not found: {manifest_path}")

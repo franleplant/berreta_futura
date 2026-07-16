@@ -1,0 +1,47 @@
+schema_version: 1
+language: es
+source_language: en
+locale: es-AR
+fallback_locale: es-ES
+base_copy_sha256: 18c5ffc228a576228bbe24d4ec2f040ec785111cf41f57b62611d4301df6aea4
+policy:
+  register: educated_castellano
+  regional_preference: restrained_argentinian
+  fallback: spain
+  prohibited_fallbacks:
+  - generic_latin_american
+  - mexican
+  - caribbean
+title: El trabajo que nos queda
+subtitle: Trabajo, capacidad de acción, propiedad y gobernanza en la era de las máquinas capaces
+cover:
+  headline: El trabajo que nos queda
+  deck: Trabajo, capacidad de acción, propiedad y gobernanza en la era de las máquinas capaces
+  edition_label: Edición privada - Prohibida su venta
+  back_text: La inteligencia no se gobierna sola. Los límites que construyamos a su alrededor decidirán quién aprende,
+    quién posee y quién responde.
+editorial:
+  path: manuscript/editorial.md
+  source_sha256: 8508dd21790ceea04de4911fb7071674c1e4a618cf59aa25d913a927d489f492
+articles:
+- id: narayanan-what-will-be-left
+  title: ¿Qué trabajo nos quedará por hacer?
+  manuscript: articles/narayanan-what-will-be-left.md
+  source_sha256: 3891198b24c5d2b6bc21bbba26cb547f398941b43f0b4f4218e68cd7f70e0bfb
+- id: joshi-dsls-reliable-use-llms
+  title: Los DSL permiten un uso confiable de los LLM
+  manuscript: articles/joshi-dsls-reliable-use-llms.md
+  source_sha256: e235aaac4fd99864f35f14a153a437e441cff6493f050714445d78effe75c039
+- id: nadella-reverse-information-paradox
+  title: La paradoja inversa de la información
+  manuscript: articles/nadella-reverse-information-paradox.md
+  source_sha256: 7777a53531ba65d20c4427cf996226b91e612509198b330f2f269d049f011f1c
+- id: hassabis-frontier-ai
+  title: Un marco para la IA de frontera y el amanecer de una nueva era
+  manuscript: articles/hassabis-frontier-ai.md
+  source_sha256: 9f415e615a9a9b91f50262c862cdf6fe3dadf044175986105a09d7a5742fe257
+sections:
+- kind: colophon
+  title: Colofón
+  path: manuscript/colophon.md
+  source_sha256: fe8604a79869bd0a32cbc6e35455eb7aa18aea9d158eda7a32c32a02cde2e544

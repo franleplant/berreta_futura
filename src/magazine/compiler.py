@@ -12,7 +12,7 @@ from .catalog import render_sources
 from .errors import ValidationError
 from .fidelity import fidelity_report
 from .io import load_structured
-from .manifest import Edition, load_edition
+from .manifest import Edition, load_edition, load_translation
 from .package import package_release
 from .records import SourceRecord, load_records
 from .release import (
@@ -26,12 +26,22 @@ from .render import render_a5
 
 
 @dataclass(frozen=True)
+class LanguageBuildResult:
+    language: str
+    output_dir: Path
+    reader_pdf: Path
+    booklet_pdf: Path
+    files: tuple[Path, ...]
+
+
+@dataclass(frozen=True)
 class BuildResult:
     edition_id: str
     output_dir: Path
     reader_pdf: Path
     booklet_pdf: Path
     files: tuple[Path, ...]
+    languages: tuple[LanguageBuildResult, ...]
 
 
 class Magazine:
@@ -44,6 +54,13 @@ class Magazine:
         paths = self.config.get("paths", {})
         publication = self.config.get("publication", {})
         self.publication_name = str(publication.get("name") or "Magazine").strip()
+        self.primary_language = str(publication.get("language") or "en").strip()
+        configured_languages = publication.get("languages", [self.primary_language])
+        if not isinstance(configured_languages, list) or not configured_languages:
+            raise ValidationError("publication.languages must be a non-empty list")
+        self.languages = tuple(dict.fromkeys(str(item).strip() for item in configured_languages))
+        if self.primary_language not in self.languages:
+            raise ValidationError("publication.languages must include publication.language")
         self.sources_dir = self.root / paths.get("sources", "library/sources")
         self.editions_dir = self.root / paths.get("editions", "editions")
         self.output_dir = self.root / paths.get("output", "output")
@@ -93,6 +110,9 @@ class Magazine:
         )
 
     def validate(self, edition_id: str) -> Edition:
+        return self._validate_languages(edition_id)[self.primary_language]
+
+    def _validate_languages(self, edition_id: str) -> dict[str, Edition]:
         records = load_records(self.sources_dir)
         for record in records:
             verify_snapshots(record, self.sources_dir)
@@ -102,6 +122,11 @@ class Magazine:
             {record.id for record in records},
             publication_name=self.publication_name,
         )
+        if edition.language != self.primary_language:
+            raise ValidationError(
+                f"Edition language {edition.language!r} does not match publication.language "
+                f"{self.primary_language!r}"
+            )
         for article in edition.articles:
             ledger_mode = str(load_structured(article.fidelity).get("content_mode", "faithful_edit"))
             if ledger_mode != article.content_mode:
@@ -110,80 +135,131 @@ class Magazine:
                     f"its fidelity ledger {ledger_mode!r}"
                 )
             fidelity_report(article.fidelity)
-        return edition
+        editions = {edition.language: edition}
+        for language in self.languages:
+            if language == edition.language:
+                continue
+            editions[language] = load_translation(self.root, edition, language)
+        return editions
 
     def build(self, edition_id: str) -> BuildResult:
-        edition = self.validate(edition_id)
+        editions = self._validate_languages(edition_id)
+        edition = editions[self.primary_language]
         destination = self.output_dir / edition.id
-        working_pdf = self.output_dir / ".build" / f"{edition.id}-reader.pdf"
-        layout = render_a5(edition, working_pdf)
-        reports = [(article, fidelity_report(article.fidelity)) for article in edition.articles]
-        if reports:
-            fidelity_md = "# Fidelity report\n\n" + "\n\n".join(
-                report.as_markdown(article.title) for article, report in reports
-            ) + "\n"
-        else:
-            fidelity_md = _section_fidelity_report(self.root, edition)
+        reports = [fidelity_report(article.fidelity) for article in edition.articles]
         source_records = {record.id: record for record in load_records(self.sources_dir)}
         declared_source_ids = edition.raw.get("sources", [])
         used_source_ids = sorted(
             set(declared_source_ids)
             | {source_id for article in edition.articles for source_id in article.source_ids}
         )
-        build_manifest = {
-            "schema_version": 1,
-            "compiler": "magazine-compiler/0.1.0",
-            "publication": {"name": edition.publication_name},
-            "edition": edition.raw,
-            "inputs": {
-                "editorial": _file_entry(edition.editorial.path, self.root) if edition.editorial else None,
-                "cover_art": _file_entry(edition.cover_art, self.root) if edition.cover_art else None,
-                "fidelity_status": _optional_file_entry(
-                    self.editions_dir / edition.id / "fidelity" / "source-edition-status.yaml",
-                    self.root,
+        language_results: list[LanguageBuildResult] = []
+        all_files: list[Path] = []
+        for language in self.languages:
+            variant = editions[language]
+            language_destination = destination if language == self.primary_language else destination / language
+            working_pdf = self.output_dir / ".build" / f"{edition.id}-{language}-reader.pdf"
+            layout = render_a5(variant, working_pdf)
+            if reports:
+                heading = "# Informe de fidelidad" if language == "es" else "# Fidelity report"
+                intro = (
+                    "\n\nLa traducción se deriva de la edición inglesa validada; el informe conserva "
+                    "la trazabilidad de esa edición respecto de las fuentes."
+                    if language == "es"
+                    else ""
+                )
+                fidelity_md = heading + intro + "\n\n" + "\n\n".join(
+                    report.as_markdown(article.title, language=language)
+                    for article, report in zip(variant.articles, reports, strict=True)
+                ) + "\n"
+            else:
+                fidelity_md = _section_fidelity_report(self.root, variant)
+            build_manifest = {
+                "schema_version": 1,
+                "compiler": "magazine-compiler/0.1.0",
+                "publication": {
+                    "name": variant.publication_name,
+                    "language": variant.language,
+                    "locale": variant.locale,
+                    "available_languages": list(self.languages),
+                },
+                "edition": variant.raw,
+                "inputs": {
+                    "editorial": _file_entry(variant.editorial.path, self.root) if variant.editorial else None,
+                    "cover_art": _file_entry(variant.cover_art, self.root) if variant.cover_art else None,
+                    "translation_manifest": _optional_file_entry(
+                        self.editions_dir / edition.id / "translations" / language / "edition.yaml",
+                        self.root,
+                    ) if language != self.primary_language else None,
+                    "fidelity_status": _optional_file_entry(
+                        self.editions_dir / edition.id / "fidelity" / "source-edition-status.yaml",
+                        self.root,
+                    ),
+                    "sections": [
+                        {"kind": section.kind, **_file_entry(section.path, self.root)}
+                        for section in variant.sections
+                    ],
+                    "articles": [
+                        {
+                            "id": article.id,
+                            "manuscript": _file_entry(article.manuscript, self.root),
+                            "fidelity": _file_entry(article.fidelity, self.root),
+                        }
+                        for article in variant.articles
+                    ],
+                    "sources": [
+                        {
+                            "id": source_id,
+                            "canonical_url": source_records[source_id].canonical_url,
+                            "content_hash": source_records[source_id].content_hash,
+                            "raw_captures": source_records[source_id].raw_captures,
+                            "record": _file_entry(self.sources_dir / source_id / "record.yaml", self.root),
+                            "rights": source_records[source_id].rights,
+                        }
+                        for source_id in used_source_ids
+                    ],
+                },
+                "layout": {
+                    "maximum_article_pages": 7,
+                    "article_pages": layout.article_pages,
+                    "maximum_editorial_pages": 2,
+                    "editorial_pages": layout.editorial_pages,
+                },
+                "studio_release_ready": False,
+                "studio_blocker": (
+                    "La conversión a PDF/X-4 requiere el perfil ICC de la imprenta seleccionada "
+                    "y una verificación de preimpresión."
+                    if language == "es"
+                    else "PDF/X-4 conversion requires the selected printer ICC profile and preflight."
                 ),
-                "sections": [
-                    {"kind": section.kind, **_file_entry(section.path, self.root)}
-                    for section in edition.sections
-                ],
-                "articles": [
-                    {
-                        "id": article.id,
-                        "manuscript": _file_entry(article.manuscript, self.root),
-                        "fidelity": _file_entry(article.fidelity, self.root),
-                    }
-                    for article in edition.articles
-                ],
-                "sources": [
-                    {
-                        "id": source_id,
-                        "canonical_url": source_records[source_id].canonical_url,
-                        "content_hash": source_records[source_id].content_hash,
-                        "raw_captures": source_records[source_id].raw_captures,
-                        "record": _file_entry(self.sources_dir / source_id / "record.yaml", self.root),
-                        "rights": source_records[source_id].rights,
-                    }
-                    for source_id in used_source_ids
-                ],
-            },
-            "layout": {
-                "maximum_article_pages": 7,
-                "article_pages": layout.article_pages,
-                "maximum_editorial_pages": 2,
-                "editorial_pages": layout.editorial_pages,
-            },
-            "studio_release_ready": False,
-            "studio_blocker": "PDF/X-4 conversion requires the selected printer ICC profile and preflight.",
-        }
-        files = package_release(
-            working_pdf,
+            }
+            files = package_release(
+                working_pdf,
+                language_destination,
+                build_manifest,
+                fidelity_md,
+                cover_art=variant.cover_art,
+                source_rights=[source_records[source_id].to_dict() for source_id in used_source_ids],
+                language=language,
+            )
+            language_result = LanguageBuildResult(
+                language,
+                language_destination,
+                language_destination / "reader.pdf",
+                language_destination / "home" / "booklet-a4.pdf",
+                tuple(files),
+            )
+            language_results.append(language_result)
+            all_files.extend(files)
+        primary = language_results[self.languages.index(self.primary_language)]
+        return BuildResult(
+            edition.id,
             destination,
-            build_manifest,
-            fidelity_md,
-            cover_art=edition.cover_art,
-            source_rights=[source_records[source_id].to_dict() for source_id in used_source_ids],
+            primary.reader_pdf,
+            primary.booklet_pdf,
+            tuple(all_files),
+            tuple(language_results),
         )
-        return BuildResult(edition.id, destination, destination / "reader.pdf", destination / "home" / "booklet-a4.pdf", tuple(files))
 
     def release(
         self, edition_id: str, *, next_edition_id: str | None = None

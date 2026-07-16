@@ -1,11 +1,13 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import hashlib
 import unittest
 
 import yaml
 
 from magazine import Magazine, ValidationError
 from magazine.capture import archive_snapshot
+from magazine.manifest import _edition_copy_sha256
 from magazine.records import SourceRecord
 
 
@@ -44,6 +46,49 @@ def make_project(root: Path, *, source_id: str = "source-one") -> None:
                       "manuscript": "editions/issue-001/articles/article.md", "fidelity": "editions/issue-001/fidelity/article.yaml"}],
     }
     (edition_dir / "edition.yaml").write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+
+
+def add_spanish_translation(root: Path) -> None:
+    base = Magazine(root).validate("issue-001")
+    (root / "magazine.toml").write_text(
+        '[publication]\nname = "Test Review"\nlanguage = "en"\nlanguages = ["en", "es"]\n',
+        encoding="utf-8",
+    )
+    translation_dir = root / "editions" / "issue-001" / "translations" / "es"
+    (translation_dir / "articles").mkdir(parents=True)
+    source_editorial = root / "editions" / "issue-001" / "editorial.md"
+    source_article = root / "editions" / "issue-001" / "articles" / "article.md"
+    translated_editorial = translation_dir / "editorial.md"
+    translated_article = translation_dir / "articles" / "article.md"
+    translated_editorial.write_text(
+        "---\ntitle: Un editorial de prueba\nbyline: La redacción\nlabel: EDITORIAL ORIGINAL\n---\n\nUn argumento.",
+        encoding="utf-8",
+    )
+    translated_article.write_text("El artículo original.", encoding="utf-8")
+    manifest = {
+        "schema_version": 1,
+        "language": "es",
+        "source_language": "en",
+        "locale": "es-AR",
+        "fallback_locale": "es-ES",
+        "base_copy_sha256": _edition_copy_sha256(base),
+        "title": "Número",
+        "cover": {"headline": "Número"},
+        "editorial": {
+            "path": "editorial.md",
+            "source_sha256": hashlib.sha256(source_editorial.read_bytes()).hexdigest(),
+        },
+        "articles": [{
+            "id": "article",
+            "title": "Artículo",
+            "manuscript": "articles/article.md",
+            "source_sha256": hashlib.sha256(source_article.read_bytes()).hexdigest(),
+        }],
+        "sections": [],
+    }
+    (translation_dir / "edition.yaml").write_text(
+        yaml.safe_dump(manifest, sort_keys=False, allow_unicode=True), encoding="utf-8"
+    )
 
 
 class ManifestTests(unittest.TestCase):
@@ -93,4 +138,34 @@ class ManifestTests(unittest.TestCase):
         editorial.write_text("---\nbyline: The editors\n---\n\nAn argument.", encoding="utf-8")
 
         with self.assertRaisesRegex(ValidationError, "requires a non-empty title"):
+            Magazine(self.root).validate("issue-001")
+
+    def test_validate_requires_every_configured_language(self):
+        make_project(self.root)
+        (self.root / "magazine.toml").write_text(
+            '[publication]\nname = "Test Review"\nlanguage = "en"\nlanguages = ["en", "es"]\n',
+            encoding="utf-8",
+        )
+
+        with self.assertRaisesRegex(ValidationError, "translation manifest not found"):
+            Magazine(self.root).validate("issue-001")
+
+    def test_validate_accepts_hash_pinned_structure_preserving_translation(self):
+        make_project(self.root)
+        add_spanish_translation(self.root)
+
+        edition = Magazine(self.root).validate("issue-001")
+
+        self.assertEqual(edition.language, "en")
+
+    def test_validate_rejects_translation_after_english_source_changes(self):
+        make_project(self.root)
+        add_spanish_translation(self.root)
+        editorial = self.root / "editions" / "issue-001" / "editorial.md"
+        editorial.write_text(
+            "---\ntitle: A Test Editorial\nbyline: The editors\nlabel: ORIGINAL EDITORIAL\n---\n\nA revised argument.",
+            encoding="utf-8",
+        )
+
+        with self.assertRaisesRegex(ValidationError, "is stale"):
             Magazine(self.root).validate("issue-001")

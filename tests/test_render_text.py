@@ -1,6 +1,12 @@
 from types import SimpleNamespace
 
-from magazine.render import _Typesetter, _edition_label, _markdown_blocks, _plain
+from magazine.render import (
+    _Typesetter,
+    _edition_label,
+    _markdown_blocks,
+    _plain,
+    _section_label,
+)
 
 
 class FixedWidthMetrics:
@@ -61,3 +67,9 @@ def test_private_edition_label_fallback_is_finished_not_prototype():
     edition = SimpleNamespace(cover={}, raw={"distribution": "private"})
 
     assert _edition_label(edition) == "Private edition - Not for sale"
+
+
+def test_spanish_colophon_label_is_localized_in_contents_and_opener():
+    edition = SimpleNamespace(language="es")
+
+    assert _section_label(edition, "colophon") == "COLOFÓN"

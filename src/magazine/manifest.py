@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
+import json
 from pathlib import Path
+import re
 from typing import Any
 
 import yaml
@@ -43,6 +46,8 @@ class Edition:
     issue_number: str
     title: str
     publication_date: str
+    language: str
+    locale: str
     editorial: Editorial | None
     articles: tuple[Article, ...]
     sections: tuple[Section, ...]
@@ -146,6 +151,8 @@ def load_edition(
         str(data["issue_number"]),
         str(data["title"]),
         str(data["publication_date"]),
+        str(data.get("language") or "en"),
+        str(data.get("locale") or data.get("language") or "en"),
         editorial,
         tuple(articles),
         tuple(sections),
@@ -153,6 +160,316 @@ def load_edition(
         cover_art,
         data,
     )
+
+
+def load_translation(
+    root: Path,
+    base: Edition,
+    language: str,
+) -> Edition:
+    """Load a complete, hash-pinned language overlay for an edition."""
+    translation_dir = root / "editions" / base.id / "translations" / language
+    manifest_path = translation_dir / "edition.yaml"
+    if not manifest_path.is_file():
+        raise ValidationError(
+            f"Required {language!r} translation manifest not found: "
+            f"{manifest_path.relative_to(root)}"
+        )
+    data = load_structured(manifest_path)
+    errors: list[str] = []
+    if str(data.get("language") or "") != language:
+        errors.append(
+            f"Translation language {data.get('language')!r} does not match directory {language!r}"
+        )
+    if str(data.get("source_language") or "") != base.language:
+        errors.append(
+            f"Translation source_language must be {base.language!r}"
+        )
+    expected_copy_hash = _edition_copy_sha256(base)
+    if data.get("base_copy_sha256") != expected_copy_hash:
+        errors.append(
+            f"Translation {language!r} is stale: base edition copy hash does not match"
+        )
+
+    translated_cover = data.get("cover")
+    if not isinstance(translated_cover, dict):
+        errors.append(f"Translation {language!r} requires translated cover copy")
+        translated_cover = {}
+    for key in ("headline", "deck", "edition_label", "back_text"):
+        if base.cover.get(key) and not translated_cover.get(key):
+            errors.append(f"Translation {language!r} cover is missing {key}")
+
+    translated_editorial: Editorial | None = None
+    editorial_row = data.get("editorial")
+    if base.editorial:
+        if not isinstance(editorial_row, dict) or not editorial_row.get("path"):
+            errors.append(f"Translation {language!r} requires an editorial path")
+        else:
+            try:
+                translated_path = _edition_path(root, translation_dir, editorial_row["path"])
+                _validate_translation_file(
+                    base.editorial.path,
+                    translated_path,
+                    editorial_row.get("source_sha256"),
+                    f"Translation {language!r} editorial",
+                    errors,
+                )
+                translated_editorial = _load_editorial(translated_path)
+            except ValidationError as exc:
+                errors.extend(exc.errors)
+
+    article_rows = data.get("articles")
+    if not isinstance(article_rows, list):
+        errors.append(f"Translation {language!r} articles must be a list")
+        article_rows = []
+    translated_by_id = {
+        str(row.get("id")): row
+        for row in article_rows
+        if isinstance(row, dict) and row.get("id")
+    }
+    base_ids = {article.id for article in base.articles}
+    missing_ids = sorted(base_ids - set(translated_by_id))
+    extra_ids = sorted(set(translated_by_id) - base_ids)
+    if missing_ids:
+        errors.append(
+            f"Translation {language!r} is missing articles: {', '.join(missing_ids)}"
+        )
+    if extra_ids:
+        errors.append(
+            f"Translation {language!r} has unknown articles: {', '.join(extra_ids)}"
+        )
+    translated_articles: list[Article] = []
+    for article in base.articles:
+        row = translated_by_id.get(article.id)
+        if not row:
+            continue
+        if not row.get("title") or not row.get("manuscript"):
+            errors.append(
+                f"Translation {language!r} article {article.id} requires title and manuscript"
+            )
+            continue
+        try:
+            manuscript = _edition_path(root, translation_dir, row["manuscript"])
+            _validate_translation_file(
+                article.manuscript,
+                manuscript,
+                row.get("source_sha256"),
+                f"Translation {language!r} article {article.id}",
+                errors,
+            )
+        except ValidationError as exc:
+            errors.extend(exc.errors)
+            continue
+        translated_articles.append(
+            Article(
+                article.id,
+                str(row["title"]),
+                article.author,
+                article.source_ids,
+                manuscript,
+                article.fidelity,
+                article.content_mode,
+            )
+        )
+
+    section_rows = data.get("sections")
+    if not isinstance(section_rows, list):
+        errors.append(f"Translation {language!r} sections must be a list")
+        section_rows = []
+    if len(section_rows) != len(base.sections):
+        errors.append(
+            f"Translation {language!r} must contain exactly {len(base.sections)} sections"
+        )
+    translated_sections: list[Section] = []
+    for index, section in enumerate(base.sections):
+        if index >= len(section_rows) or not isinstance(section_rows[index], dict):
+            continue
+        row = section_rows[index]
+        if row.get("kind") != section.kind or not row.get("title") or not row.get("path"):
+            errors.append(
+                f"Translation {language!r} section {index + 1} must preserve kind "
+                f"{section.kind!r} and provide title and path"
+            )
+            continue
+        try:
+            path = _edition_path(root, translation_dir, row["path"])
+            _validate_translation_file(
+                section.path,
+                path,
+                row.get("source_sha256"),
+                f"Translation {language!r} section {index + 1}",
+                errors,
+            )
+        except ValidationError as exc:
+            errors.extend(exc.errors)
+            continue
+        translated_sections.append(Section(section.kind, str(row["title"]), path))
+
+    if errors:
+        raise ValidationError(errors)
+    raw = dict(base.raw)
+    raw.update(
+        {
+            "title": str(data.get("title") or base.title),
+            "subtitle": str(data.get("subtitle") or ""),
+            "language": language,
+            "locale": str(data.get("locale") or language),
+            "translation": {
+                "source_language": base.language,
+                "fallback_locale": data.get("fallback_locale"),
+                "policy": data.get("policy"),
+            },
+            "cover": dict(translated_cover),
+            "editorial": translated_editorial.path.relative_to(root).as_posix()
+            if translated_editorial
+            else None,
+            "articles": [
+                {
+                    "id": article.id,
+                    "title": article.title,
+                    "author": article.author,
+                    "content_mode": article.content_mode,
+                    "source_ids": list(article.source_ids),
+                    "manuscript": article.manuscript.relative_to(root).as_posix(),
+                    "fidelity": article.fidelity.relative_to(root).as_posix(),
+                }
+                for article in translated_articles
+            ],
+            "sections": [
+                {
+                    "kind": section.kind,
+                    "title": section.title,
+                    "path": section.path.relative_to(root).as_posix(),
+                }
+                for section in translated_sections
+            ],
+        }
+    )
+    return Edition(
+        base.id,
+        base.publication_name,
+        base.issue_number,
+        str(data.get("title") or base.title),
+        base.publication_date,
+        language,
+        str(data.get("locale") or language),
+        translated_editorial,
+        tuple(translated_articles),
+        tuple(translated_sections),
+        dict(translated_cover),
+        base.cover_art,
+        raw,
+    )
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _edition_copy_sha256(edition: Edition) -> str:
+    copy = {
+        "title": edition.title,
+        "subtitle": edition.raw.get("subtitle", ""),
+        "cover": {
+            key: edition.cover.get(key, "")
+            for key in ("headline", "deck", "edition_label", "back_text")
+        },
+    }
+    encoded = json.dumps(copy, ensure_ascii=False, sort_keys=True).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _markdown_signature(path: Path) -> list[str]:
+    """Return reader-visible block kinds without coupling the manifest to rendering."""
+    text = path.read_text(encoding="utf-8")
+    if text.startswith("---\n") and "\n---\n" in text:
+        _, _, text = text[4:].partition("\n---\n")
+    signature: list[str] = []
+    paragraph = False
+    in_code = False
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            if paragraph:
+                signature.append("body")
+                paragraph = False
+            if in_code:
+                signature.append("code")
+            in_code = not in_code
+            continue
+        if in_code:
+            continue
+        if not stripped:
+            if paragraph:
+                signature.append("body")
+                paragraph = False
+        elif stripped.startswith("### "):
+            if paragraph:
+                signature.append("body")
+                paragraph = False
+            signature.append("h3")
+        elif stripped.startswith("## "):
+            if paragraph:
+                signature.append("body")
+                paragraph = False
+            signature.append("h2")
+        elif stripped.startswith("# "):
+            if paragraph:
+                signature.append("body")
+                paragraph = False
+            signature.append("h1")
+        elif re.match(r"^[-*] ", stripped):
+            if paragraph:
+                signature.append("body")
+                paragraph = False
+            signature.append("bullet")
+        elif stripped.startswith("> "):
+            if paragraph:
+                signature.append("body")
+                paragraph = False
+            signature.append("quote")
+        else:
+            paragraph = True
+    if paragraph:
+        signature.append("body")
+    return signature
+
+
+def _validate_translation_file(
+    source: Path,
+    translation: Path,
+    pinned_source_sha256: Any,
+    label: str,
+    errors: list[str],
+) -> None:
+    if pinned_source_sha256 != _sha256(source):
+        errors.append(f"{label} is stale: source_sha256 does not match {source.name}")
+    source_signature = _markdown_signature(source)
+    translation_signature = _markdown_signature(translation)
+    if source_signature != translation_signature:
+        errors.append(
+            f"{label} does not preserve the source Markdown block structure "
+            f"({len(source_signature)} source blocks, {len(translation_signature)} translated blocks)"
+        )
+    source_links, source_inline_code, source_fenced_code = _markdown_invariants(source)
+    translated_links, translated_inline_code, translated_fenced_code = _markdown_invariants(
+        translation
+    )
+    if source_links != translated_links:
+        errors.append(f"{label} does not preserve link targets and order")
+    if source_inline_code != translated_inline_code:
+        errors.append(f"{label} does not preserve inline code identifiers and order")
+    if source_fenced_code != translated_fenced_code:
+        errors.append(f"{label} does not preserve fenced code exactly")
+
+
+def _markdown_invariants(path: Path) -> tuple[list[str], list[str], list[str]]:
+    text = path.read_text(encoding="utf-8")
+    links = re.findall(r"\[[^\]]+\]\(([^)]+)\)", text)
+    fenced = re.findall(r"```[^\n]*\n(.*?)\n```", text, flags=re.DOTALL)
+    without_fences = re.sub(r"```[^\n]*\n.*?\n```", "", text, flags=re.DOTALL)
+    inline = re.findall(r"(?<!`)`([^`\n]+)`(?!`)", without_fences)
+    return links, inline, fenced
 
 
 def _edition_path(root: Path, edition_dir: Path, value: str) -> Path:

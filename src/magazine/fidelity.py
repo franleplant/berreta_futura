@@ -35,30 +35,80 @@ class FidelityReport:
             return 100.0
         return round(100 * self.retained_words / self.source_words, 1)
 
-    def as_markdown(self, title: str) -> str:
+    def as_markdown(self, title: str, *, language: str = "en") -> str:
+        labels = _REPORT_LABELS.get(language.split("-", 1)[0], _REPORT_LABELS["en"])
         rows = [
-            ("Content mode", f"`{self.content_mode}`"),
-            ("Original substantive words", self.source_words),
-            ("Retained verbatim", self.retained_words),
-            ("Removed as boilerplate", self.removed_boilerplate_words),
-            ("Substantive cuts", self.substantive_cut_words),
-            ("Modified source words", self.modified_source_words),
-            ("Modified edited words", self.modified_edited_words),
-            ("Editorial additions", self.editorial_addition_words),
-            ("Verbatim retention", f"{self.retention_percent}%"),
+            (labels["content_mode"], f"`{self.content_mode}`"),
+            (labels["source_words"], self.source_words),
+            (labels["retained_words"], self.retained_words),
+            (labels["boilerplate_words"], self.removed_boilerplate_words),
+            (labels["substantive_cuts"], self.substantive_cut_words),
+            (labels["modified_source_words"], self.modified_source_words),
+            (labels["modified_edited_words"], self.modified_edited_words),
+            (labels["editorial_additions"], self.editorial_addition_words),
+            (labels["retention"], f"{self.retention_percent}%"),
         ]
         if self.content_mode == "faithful_synthesis":
             output_words = self.retained_words + self.modified_edited_words + self.editorial_addition_words
             compression = round(100 * output_words / self.source_words, 1) if self.source_words else 0.0
             rows.extend([
-                ("Synthesis output words", output_words),
-                ("Output / source", f"{compression}%"),
+                (labels["synthesis_words"], output_words),
+                (labels["output_source"], f"{compression}%"),
             ])
         if self.manuscript_blocks is not None:
-            rows.append(("Manuscript integrity", f"PASS ({self.ledger_blocks} ledger entries / {self.manuscript_blocks} manuscript blocks)"))
-        text = [f"## {title}", "", "| Measure | Value |", "|---|---:|"]
+            rows.append((
+                labels["integrity"],
+                labels["integrity_value"].format(
+                    ledger=self.ledger_blocks,
+                    manuscript=self.manuscript_blocks,
+                ),
+            ))
+        text = [
+            f"## {title}",
+            "",
+            f"| {labels['measure']} | {labels['value']} |",
+            "|---|---:|",
+        ]
         text.extend(f"| {name} | {value} |" for name, value in rows)
         return "\n".join(text)
+
+
+_REPORT_LABELS = {
+    "en": {
+        "measure": "Measure",
+        "value": "Value",
+        "content_mode": "Content mode",
+        "source_words": "Original substantive words",
+        "retained_words": "Retained verbatim",
+        "boilerplate_words": "Removed as boilerplate",
+        "substantive_cuts": "Substantive cuts",
+        "modified_source_words": "Modified source words",
+        "modified_edited_words": "Modified edited words",
+        "editorial_additions": "Editorial additions",
+        "retention": "Verbatim retention",
+        "synthesis_words": "Synthesis output words",
+        "output_source": "Output / source",
+        "integrity": "Manuscript integrity",
+        "integrity_value": "PASS ({ledger} ledger entries / {manuscript} manuscript blocks)",
+    },
+    "es": {
+        "measure": "Medida",
+        "value": "Valor",
+        "content_mode": "Modo de contenido",
+        "source_words": "Palabras sustantivas originales",
+        "retained_words": "Conservadas literalmente",
+        "boilerplate_words": "Eliminadas como texto accesorio",
+        "substantive_cuts": "Recortes sustantivos",
+        "modified_source_words": "Palabras modificadas de la fuente",
+        "modified_edited_words": "Palabras modificadas de la edición",
+        "editorial_additions": "Añadidos editoriales",
+        "retention": "Conservación literal",
+        "synthesis_words": "Palabras de la síntesis",
+        "output_source": "Resultado / fuente",
+        "integrity": "Integridad del manuscrito",
+        "integrity_value": "APROBADA ({ledger} entradas del registro / {manuscript} bloques del manuscrito)",
+    },
+}
 
 
 def _strip_frontmatter(text: str) -> str:
