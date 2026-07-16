@@ -10,6 +10,9 @@ from magazine.records import SourceRecord
 
 
 def make_project(root: Path, *, source_id: str = "source-one") -> None:
+    (root / "magazine.toml").write_text(
+        '[publication]\nname = "Test Review"\n', encoding="utf-8"
+    )
     source_dir = root / "library" / "sources" / source_id
     source_dir.mkdir(parents=True)
     source = {
@@ -52,6 +55,7 @@ class ManifestTests(unittest.TestCase):
     def test_validate_edition_through_public_interface(self):
         make_project(self.root)
         edition = Magazine(self.root).validate("issue-001")
+        self.assertEqual(edition.publication_name, "Test Review")
         self.assertEqual(edition.title, "Issue")
         self.assertEqual(edition.articles[0].source_ids, ("source-one",))
 

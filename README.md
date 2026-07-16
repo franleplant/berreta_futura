@@ -9,6 +9,10 @@ truncated reprints.
 The opening editorial requires a title and is capped at two rendered A5 pages,
 including its title and byline.
 
+The publication compiled by this repository is **BERRETA FUTURA**. Its name is
+configured once under `[publication]` in `magazine.toml`; edition manifests own
+issue titles and cover copy, but do not duplicate or override the masthead.
+
 The external interface is intentionally small:
 
 ```python

@@ -39,6 +39,7 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertTrue(preflight["home_booklet"]["all_pages_a4_landscape"])
             self.assertEqual(preflight["result"], "home_ready_studio_blocked")
             manifest = json.loads((result.output_dir / "edition-manifest.json").read_text())
+            self.assertEqual(manifest["publication"]["name"], "Test Review")
             self.assertEqual(manifest["inputs"]["sources"][0]["id"], "source-one")
             self.assertEqual(len(manifest["inputs"]["sources"][0]["raw_captures"]), 1)
             self.assertEqual(manifest["layout"]["maximum_article_pages"], 7)
@@ -50,6 +51,7 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertIn("AN ORIGINAL ARGUMENT", reader_text)
             self.assertIn("FEATURE 01", reader_text)
             self.assertIn("FAITHFUL EDIT", reader_text)
+            self.assertIn("TEST REVIEW", reader_text)
 
     def test_bundled_publication_fonts_are_registered(self):
         _, metrics, _ = _reportlab()

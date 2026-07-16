@@ -14,7 +14,7 @@ from .errors import ValidationError
 MAX_ARTICLE_PAGES = 7
 MAX_EDITORIAL_PAGES = 2
 
-# COMMONPLACE's print palette. The interior stays mostly uninked for economical
+# BERRETA FUTURA's print palette. The interior stays mostly uninked for economical
 # home printing; color is reserved for navigation and hierarchy.
 INK = (.075, .105, .125)
 OXBLOOD = (.47, .13, .12)
@@ -187,11 +187,20 @@ class _Typesetter:
                 self.pdf.rect(self.left, self.height - 29, 5, 5, fill=1, stroke=0)
                 self.pdf.setFillColorRGB(*SLATE)
                 self.pdf.setFont(SANS_MEDIUM, 6.4)
-                self.pdf.drawString(self.left + 12, self.height - 28, "COMMONPLACE  /  ISSUE " + str(self.edition.issue_number))
+                publication_label = (
+                    self.edition.publication_name.upper()
+                    + "  /  "
+                    + str(self.edition.issue_number)
+                )
+                self.pdf.drawString(self.left + 12, self.height - 28, _plain(publication_label))
+                publication_width = self.metrics.stringWidth(
+                    _plain(publication_label), SANS_MEDIUM, 6.4
+                )
+                section_width = max(48, self.column_width - publication_width - 24)
                 self.pdf.drawRightString(
                     self.width - self.right,
                     self.height - 28,
-                    _plain(self.section.upper())[:43],
+                    self.fit_text(self.section.upper(), SANS_MEDIUM, 6.4, section_width),
                 )
                 self.pdf.setStrokeColorRGB(*SAND)
                 self.pdf.setLineWidth(.45)
@@ -225,6 +234,15 @@ class _Typesetter:
         if current:
             result.append(current)
         return result or [""]
+
+    def fit_text(self, text: str, font: str, size: float, width: float) -> str:
+        value = _plain(text)
+        if self.metrics.stringWidth(value, font, size) <= width:
+            return value
+        suffix = "..."
+        while value and self.metrics.stringWidth(value + suffix, font, size) > width:
+            value = value[:-1]
+        return value.rstrip() + suffix
 
     def block(self, kind: str, text: str):
         styles = {
@@ -389,7 +407,7 @@ class _Typesetter:
         ink = INK if self.edition.cover_art else PAPER
         self.pdf.setFillColorRGB(*ink)
         self.pdf.setFont(SANS_BOLD, 9.5)
-        self.pdf.drawString(36, self.height - 31, _plain(str(self.edition.cover.get("masthead", "COMMONPLACE"))).upper())
+        self.pdf.drawString(36, self.height - 31, _plain(self.edition.publication_name.upper()))
         self.pdf.setFillColorRGB(*OXBLOOD)
         self.pdf.rect(self.width - 57, self.height - 34, 21, 5, fill=1, stroke=0)
         self.pdf.setFillColorRGB(*ink)
@@ -417,7 +435,13 @@ class _Typesetter:
         self.pdf.rect(0, self.height - 116, self.width, 116, fill=1, stroke=0)
         self.pdf.setFillColorRGB(*PAPER)
         self.pdf.setFont(SANS_SEMIBOLD, 7)
-        self.pdf.drawString(self.left, self.height - 32, "COMMONPLACE  /  ISSUE " + str(self.edition.issue_number))
+        self.pdf.drawString(
+            self.left,
+            self.height - 32,
+            _plain(self.edition.publication_name.upper())
+            + "  /  ISSUE "
+            + str(self.edition.issue_number),
+        )
         self.pdf.setFont(SERIF_DISPLAY, 28)
         self.pdf.drawString(self.left, self.height - 73, "Contents")
         self.pdf.setFont(SANS, 6.6)
@@ -542,7 +566,7 @@ def _render_pass(target, edition: Edition, toc: dict[str, int] | None = None) ->
     A5, metrics, canvas = _reportlab()
     pdf = canvas.Canvas(target, pagesize=A5, pageCompression=1, invariant=1)
     pdf.setTitle(_plain(edition.title))
-    pdf.setAuthor("Magazine Compiler")
+    pdf.setAuthor(_plain(edition.publication_name))
     pdf.setCreator("magazine-compiler")
     typesetter = _Typesetter(pdf, edition, A5, metrics)
     typesetter.cover()

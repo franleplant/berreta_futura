@@ -39,6 +39,7 @@ class Editorial:
 @dataclass(frozen=True)
 class Edition:
     id: str
+    publication_name: str
     issue_number: str
     title: str
     publication_date: str
@@ -50,7 +51,13 @@ class Edition:
     raw: dict[str, Any]
 
 
-def load_edition(root: Path, edition_id: str, known_sources: set[str]) -> Edition:
+def load_edition(
+    root: Path,
+    edition_id: str,
+    known_sources: set[str],
+    *,
+    publication_name: str = "Magazine",
+) -> Edition:
     manifest_path = root / "editions" / edition_id / "edition.yaml"
     if not manifest_path.is_file():
         raise ValidationError(f"Edition manifest not found: {manifest_path}")
@@ -133,7 +140,19 @@ def load_edition(root: Path, edition_id: str, known_sources: set[str]) -> Editio
             errors.extend(exc.errors)
     if errors:
         raise ValidationError(errors)
-    return Edition(str(data["id"]), str(data["issue_number"]), str(data["title"]), str(data["publication_date"]), editorial, tuple(articles), tuple(sections), cover, cover_art, data)
+    return Edition(
+        str(data["id"]),
+        publication_name,
+        str(data["issue_number"]),
+        str(data["title"]),
+        str(data["publication_date"]),
+        editorial,
+        tuple(articles),
+        tuple(sections),
+        cover,
+        cover_art,
+        data,
+    )
 
 
 def _edition_path(root: Path, edition_dir: Path, value: str) -> Path:

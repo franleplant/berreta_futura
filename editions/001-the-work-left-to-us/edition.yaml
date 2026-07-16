@@ -15,7 +15,6 @@ format:
   max_editorial_pages: 2
 cover:
   art_path: art/cover-art.png
-  masthead: Commonplace
   headline: The Work Left to Us
   deck: Work, agency, ownership, and governance in the age of capable machines
   edition_label: Private edition - Not for sale

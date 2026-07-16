@@ -4,7 +4,6 @@ title: A title for the collection
 publication_date: 2026-07-15
 editorial: editions/issue-001/editorial.md
 cover:
-  masthead: Commonplace
   headline: A title for the collection
   back_text: A private anthology of writing worth keeping.
 articles:
@@ -15,4 +14,3 @@ articles:
       - example-source-id
     manuscript: editions/issue-001/articles/example-article.md
     fidelity: editions/issue-001/fidelity/example-article.yaml
-

@@ -14,7 +14,6 @@
       "type": "object",
       "required": ["headline"],
       "properties": {
-        "masthead": {"type": "string"},
         "headline": {"type": "string"},
         "back_text": {"type": "string"}
       }
@@ -37,4 +36,3 @@
     }
   }
 }
-

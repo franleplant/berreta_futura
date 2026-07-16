@@ -42,6 +42,8 @@ class Magazine:
         config_path = self.root / "magazine.toml"
         self.config = tomllib.loads(config_path.read_text(encoding="utf-8")) if config_path.is_file() else {}
         paths = self.config.get("paths", {})
+        publication = self.config.get("publication", {})
+        self.publication_name = str(publication.get("name") or "Magazine").strip()
         self.sources_dir = self.root / paths.get("sources", "library/sources")
         self.editions_dir = self.root / paths.get("editions", "editions")
         self.output_dir = self.root / paths.get("output", "output")
@@ -94,7 +96,12 @@ class Magazine:
         records = load_records(self.sources_dir)
         for record in records:
             verify_snapshots(record, self.sources_dir)
-        edition = load_edition(self.root, edition_id, {record.id for record in records})
+        edition = load_edition(
+            self.root,
+            edition_id,
+            {record.id for record in records},
+            publication_name=self.publication_name,
+        )
         for article in edition.articles:
             ledger_mode = str(load_structured(article.fidelity).get("content_mode", "faithful_edit"))
             if ledger_mode != article.content_mode:
@@ -126,6 +133,7 @@ class Magazine:
         build_manifest = {
             "schema_version": 1,
             "compiler": "magazine-compiler/0.1.0",
+            "publication": {"name": edition.publication_name},
             "edition": edition.raw,
             "inputs": {
                 "editorial": _file_entry(edition.editorial.path, self.root) if edition.editorial else None,

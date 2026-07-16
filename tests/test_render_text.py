@@ -20,6 +20,13 @@ def test_lines_breaks_a_token_wider_than_the_text_column():
     assert typesetter.lines("abcdefghij", "Font", 10, 4) == ["abcd", "efgh", "ij"]
 
 
+def test_running_text_is_truncated_to_its_measured_width():
+    typesetter = object.__new__(_Typesetter)
+    typesetter.metrics = FixedWidthMetrics()
+
+    assert typesetter.fit_text("abcdefghij", "Font", 10, 7) == "abcd..."
+
+
 def test_markdown_parser_preserves_fenced_code_lines_and_indentation():
     blocks = list(_markdown_blocks("Before.\n\n```java\nfirst();\n    indented();\n\nlast();\n```\n\nAfter."))
 

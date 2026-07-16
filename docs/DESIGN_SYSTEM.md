@@ -1,6 +1,6 @@
-# COMMONPLACE design system
+# BERRETA FUTURA design system
 
-COMMONPLACE is a small-format reading magazine, not a stack of web pages printed to PDF. Its visual system should make long-form text calm to read, make provenance immediately legible, and remain economical on an ordinary home printer.
+BERRETA FUTURA is a small-format reading magazine, not a stack of web pages printed to PDF. Its visual system should make long-form text calm to read, make provenance immediately legible, and remain economical on an ordinary home printer.
 
 ## Design position
 
@@ -9,7 +9,7 @@ The system borrows principles, not layouts, from two editorial traditions:
 - Monocle's disciplined reduction: fewer type styles, a more open grid, and the confidence to show less.
 - Veronica Ditting's work for *The Gentlewoman*: editorially driven form, pared-back typography, and exact cropping, sizing, and alignment.
 
-The resulting identity is original to COMMONPLACE: literary serif display type, robust small-text typography, compact sans-serif navigation, oxblood signals, and generous unprinted space.
+The resulting identity is original to BERRETA FUTURA: literary serif display type, robust small-text typography, compact sans-serif navigation, oxblood signals, and generous unprinted space.
 
 ## Typography
 
@@ -86,4 +86,3 @@ The back cover is typographic: one issue-defining sentence, a large quiet field,
 - Do not let a running head cross an opener title.
 - Preserve the hard limits of two editorial pages and seven pages per source article.
 - Render and inspect every reader page and every imposed booklet side after layout changes.
-
