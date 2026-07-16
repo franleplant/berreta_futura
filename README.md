@@ -3,6 +3,9 @@
 Magazine Compiler turns captured internet sources into a private, print-ready
 anthology. It is deliberately a **faithful-edit** system, not a summarizer: source
 language remains intact unless a paragraph-level edit record says otherwise.
+Articles are capped at seven rendered A5 pages. Over-budget sources become
+explicitly credited, source-mapped faithful syntheses rather than silently
+truncated reprints.
 
 The external interface is intentionally small:
 
@@ -148,6 +151,11 @@ The fidelity ledger records every substantive source paragraph as one of:
 - `substantive_cut`
 - `modified`
 - `editorial_addition`
+
+The renderer enforces a hard seven-page budget per article. A long source uses
+`faithful_synthesis`, which maps the complete source to a materially shorter
+manuscript while preserving its argument, evidence, qualifications, and
+conclusion. Short pieces remain `faithful_edit`.
 
 `modified` entries preserve both source and edited text. Editorial additions
 must be visually labelled in the manuscript. The generated fidelity report

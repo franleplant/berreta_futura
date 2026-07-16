@@ -98,3 +98,34 @@ class FidelityTests(unittest.TestCase):
             r"code block 1 diverges.*code-1.*line 2.*indentation are substantive",
         ):
             fidelity_report(path, manuscript)
+
+    def test_faithful_synthesis_requires_mapped_material_condensation(self):
+        path = self.root / "ledger.yaml"
+        path.write_text(yaml.safe_dump({
+            "schema_version": 1,
+            "source_ids": ["s"],
+            "content_mode": "faithful_synthesis",
+            "paragraphs": [{
+                "id": "synthesis",
+                "kind": "p",
+                "status": "modified",
+                "source": "A long source argument with evidence context qualifications and conclusions.",
+                "edited": "A condensed argument.",
+            }],
+        }), encoding="utf-8")
+
+        report = fidelity_report(path)
+
+        self.assertGreater(report.modified_source_words, report.modified_edited_words)
+
+    def test_faithful_synthesis_rejects_unmapped_or_uncondensed_copy(self):
+        path = self.root / "ledger.yaml"
+        path.write_text(yaml.safe_dump({
+            "schema_version": 1,
+            "source_ids": ["s"],
+            "content_mode": "faithful_synthesis",
+            "paragraphs": [{"status": "retained", "source": "No actual synthesis."}],
+        }), encoding="utf-8")
+
+        with self.assertRaisesRegex(ValidationError, "requires source-to-edited mappings"):
+            fidelity_report(path)

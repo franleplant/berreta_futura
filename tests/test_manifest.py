@@ -69,3 +69,13 @@ class ManifestTests(unittest.TestCase):
         manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
         with self.assertRaisesRegex(ValidationError, "Edition references unknown sources"):
             Magazine(self.root).validate("issue-001")
+
+    def test_validate_rejects_article_and_ledger_content_mode_mismatch(self):
+        make_project(self.root)
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text())
+        manifest["articles"][0]["content_mode"] = "faithful_synthesis"
+        manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+
+        with self.assertRaisesRegex(ValidationError, "does not match its fidelity ledger"):
+            Magazine(self.root).validate("issue-001")

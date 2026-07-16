@@ -9,6 +9,7 @@ from typing import Any
 
 from .capture import archive_snapshot, verify_snapshots
 from .catalog import render_sources
+from .errors import ValidationError
 from .fidelity import fidelity_report
 from .io import load_structured
 from .manifest import Edition, load_edition
@@ -95,6 +96,12 @@ class Magazine:
             verify_snapshots(record, self.sources_dir)
         edition = load_edition(self.root, edition_id, {record.id for record in records})
         for article in edition.articles:
+            ledger_mode = str(load_structured(article.fidelity).get("content_mode", "faithful_edit"))
+            if ledger_mode != article.content_mode:
+                raise ValidationError(
+                    f"Article {article.id} content_mode {article.content_mode!r} does not match "
+                    f"its fidelity ledger {ledger_mode!r}"
+                )
             fidelity_report(article.fidelity)
         return edition
 
@@ -102,7 +109,7 @@ class Magazine:
         edition = self.validate(edition_id)
         destination = self.output_dir / edition.id
         working_pdf = self.output_dir / ".build" / f"{edition.id}-reader.pdf"
-        render_a5(edition, working_pdf)
+        layout = render_a5(edition, working_pdf)
         reports = [(article, fidelity_report(article.fidelity)) for article in edition.articles]
         if reports:
             fidelity_md = "# Fidelity report\n\n" + "\n\n".join(
@@ -150,6 +157,10 @@ class Magazine:
                     }
                     for source_id in used_source_ids
                 ],
+            },
+            "layout": {
+                "maximum_article_pages": 7,
+                "article_pages": layout.article_pages,
             },
             "studio_release_ready": False,
             "studio_blocker": "PDF/X-4 conversion requires the selected printer ICC profile and preflight.",

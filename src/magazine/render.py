@@ -2,11 +2,22 @@ from __future__ import annotations
 
 import io
 import re
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
 from .errors import DependencyError
 from .manifest import Edition
+from .errors import ValidationError
+
+
+MAX_ARTICLE_PAGES = 7
+
+
+@dataclass(frozen=True)
+class RenderLayout:
+    toc: dict[str, int]
+    article_pages: dict[str, int]
 
 
 def _reportlab():
@@ -108,6 +119,7 @@ class _Typesetter:
         self.y = self.height - self.top
         self.section = ""
         self.toc: dict[str, int] = {}
+        self.article_pages: dict[str, int] = {}
 
     def new_page(self, section: str = "", *, blank_header: bool = False):
         if self.page:
@@ -306,10 +318,23 @@ class _Typesetter:
                 self.markdown(self.edition.editorial)
             for article in self.edition.articles:
                 self.new_page(article.title)
+                start_page = self.page
                 self.toc[article.id] = self.page
                 self.block("h1", article.title)
-                self.block("body", f"By {article.author}")
+                credit = (
+                    f"A faithful synthesis of work by {article.author}"
+                    if article.content_mode == "faithful_synthesis"
+                    else f"By {article.author}"
+                )
+                self.block("body", credit)
                 self.markdown(article.manuscript)
+                page_count = self.page - start_page + 1
+                self.article_pages[article.id] = page_count
+                if page_count > MAX_ARTICLE_PAGES:
+                    raise ValidationError(
+                        f"Article {article.id} spans {page_count} reader pages; the hard cap is "
+                        f"{MAX_ARTICLE_PAGES}. Condense it as a faithful_synthesis before building."
+                    )
             for index, section in enumerate(self.edition.sections):
                 self._section(index, section)
             return
@@ -360,7 +385,7 @@ class _Typesetter:
         self.pdf.drawString(45, 25, _plain(self.edition.title))
 
 
-def _render_pass(target, edition: Edition, toc: dict[str, int] | None = None) -> dict[str, int]:
+def _render_pass(target, edition: Edition, toc: dict[str, int] | None = None) -> RenderLayout:
     A5, metrics, canvas = _reportlab()
     pdf = canvas.Canvas(target, pagesize=A5, pageCompression=1, invariant=1)
     pdf.setTitle(_plain(edition.title))
@@ -372,12 +397,23 @@ def _render_pass(target, edition: Edition, toc: dict[str, int] | None = None) ->
     typesetter.body()
     typesetter.back_cover()
     pdf.save()
-    return typesetter.toc
+    return RenderLayout(dict(typesetter.toc), dict(typesetter.article_pages))
 
 
-def render_a5(edition: Edition, output: Path) -> Path:
+def render_a5(edition: Edition, output: Path) -> RenderLayout:
     """Render an edition twice so the deterministic contents page has folios."""
+    configured_cap = edition.raw.get("format", {}).get("max_article_pages", MAX_ARTICLE_PAGES)
+    try:
+        configured_cap = int(configured_cap)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError("format.max_article_pages must be the integer 7") from exc
+    if configured_cap != MAX_ARTICLE_PAGES:
+        raise ValidationError(
+            f"format.max_article_pages is a hard publication rule and must remain {MAX_ARTICLE_PAGES}"
+        )
     output.parent.mkdir(parents=True, exist_ok=True)
-    toc = _render_pass(io.BytesIO(), edition)
-    _render_pass(str(output), edition, toc)
-    return output
+    draft = _render_pass(io.BytesIO(), edition)
+    final = _render_pass(str(output), edition, draft.toc)
+    if draft.article_pages != final.article_pages:
+        raise ValidationError("Article pagination changed between deterministic render passes")
+    return final

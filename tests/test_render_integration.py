@@ -7,7 +7,7 @@ import unittest
 from pypdf import PdfReader
 import yaml
 
-from magazine import Magazine
+from magazine import Magazine, ValidationError
 from test_manifest import make_project
 
 
@@ -30,6 +30,45 @@ class RenderIntegrationTests(unittest.TestCase):
             manifest = json.loads((result.output_dir / "edition-manifest.json").read_text())
             self.assertEqual(manifest["inputs"]["sources"][0]["id"], "source-one")
             self.assertEqual(len(manifest["inputs"]["sources"][0]["raw_captures"]), 1)
+            self.assertEqual(manifest["layout"]["maximum_article_pages"], 7)
+            self.assertLessEqual(manifest["layout"]["article_pages"]["article"], 7)
+
+    def test_build_rejects_article_over_seven_reader_pages(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            make_project(root)
+            edition_dir = root / "editions" / "issue-001"
+            paragraphs = [f"Substantive source paragraph {index} with enough words to occupy space." for index in range(420)]
+            (edition_dir / "articles" / "article.md").write_text(
+                "\n\n".join(paragraphs) + "\n", encoding="utf-8"
+            )
+            ledger = {
+                "schema_version": 1,
+                "source_ids": ["source-one"],
+                "content_mode": "faithful_edit",
+                "paragraphs": [
+                    {"id": f"p{index}", "kind": "p", "status": "retained", "source": text}
+                    for index, text in enumerate(paragraphs)
+                ],
+            }
+            (edition_dir / "fidelity" / "article.yaml").write_text(
+                yaml.safe_dump(ledger), encoding="utf-8"
+            )
+
+            with self.assertRaisesRegex(ValidationError, "hard cap is 7"):
+                Magazine(root).build("issue-001")
+
+    def test_edition_cannot_raise_the_hard_article_page_cap(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            make_project(root)
+            manifest_path = root / "editions" / "issue-001" / "edition.yaml"
+            manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+            manifest["format"] = {"max_article_pages": 8}
+            manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+
+            with self.assertRaisesRegex(ValidationError, "hard publication rule"):
+                Magazine(root).build("issue-001")
 
     def test_sections_edition_packages_explicit_blocked_fidelity_status(self):
         with TemporaryDirectory() as temporary:

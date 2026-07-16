@@ -8,6 +8,7 @@ from .errors import ValidationError
 from .io import load_structured
 
 STATUSES = {"retained", "boilerplate_removed", "substantive_cut", "modified", "editorial_addition"}
+CONTENT_MODES = {"faithful_edit", "faithful_synthesis", "selected_extracts", "original_synthesis"}
 
 
 def word_count(text: str) -> int:
@@ -24,6 +25,7 @@ class FidelityReport:
     modified_edited_words: int
     editorial_addition_words: int
     paragraph_counts: dict[str, int]
+    content_mode: str
     manuscript_blocks: int | None = None
     ledger_blocks: int | None = None
 
@@ -35,6 +37,7 @@ class FidelityReport:
 
     def as_markdown(self, title: str) -> str:
         rows = [
+            ("Content mode", f"`{self.content_mode}`"),
             ("Original substantive words", self.source_words),
             ("Retained verbatim", self.retained_words),
             ("Removed as boilerplate", self.removed_boilerplate_words),
@@ -44,6 +47,13 @@ class FidelityReport:
             ("Editorial additions", self.editorial_addition_words),
             ("Verbatim retention", f"{self.retention_percent}%"),
         ]
+        if self.content_mode == "faithful_synthesis":
+            output_words = self.retained_words + self.modified_edited_words + self.editorial_addition_words
+            compression = round(100 * output_words / self.source_words, 1) if self.source_words else 0.0
+            rows.extend([
+                ("Synthesis output words", output_words),
+                ("Output / source", f"{compression}%"),
+            ])
         if self.manuscript_blocks is not None:
             rows.append(("Manuscript integrity", f"PASS ({self.ledger_blocks} ledger entries / {self.manuscript_blocks} manuscript blocks)"))
         text = [f"## {title}", "", "| Measure | Value |", "|---|---:|"]
@@ -202,6 +212,9 @@ def _validate_manuscript(path: Path, manuscript: Path, paragraphs: list[dict]) -
 
 def fidelity_report(path: Path, manuscript: Path | None = None) -> FidelityReport:
     data = load_structured(path)
+    content_mode = str(data.get("content_mode", "faithful_edit"))
+    if content_mode not in CONTENT_MODES:
+        raise ValidationError(f"{path}: invalid content_mode: {content_mode}")
     paragraphs = data.get("paragraphs")
     if not isinstance(paragraphs, list):
         raise ValidationError(f"{path}: paragraphs must be a list")
@@ -235,4 +248,10 @@ def fidelity_report(path: Path, manuscript: Path | None = None) -> FidelityRepor
             raise ValidationError(f"{path}: corresponding manuscript does not exist: {manuscript}")
         manuscript_blocks, ledger_blocks = _validate_manuscript(path, manuscript, paragraphs)
     source_words = totals["retained"] + totals["boilerplate_removed"] + totals["substantive_cut"] + totals["modified"]
-    return FidelityReport(source_words, totals["retained"], totals["boilerplate_removed"], totals["substantive_cut"], totals["modified"], modified_edited, totals["editorial_addition"], counts, manuscript_blocks, ledger_blocks)
+    if content_mode == "faithful_synthesis":
+        synthesized_words = totals["retained"] + modified_edited + totals["editorial_addition"]
+        if not counts["modified"]:
+            raise ValidationError(f"{path}: faithful_synthesis requires source-to-edited mappings")
+        if source_words and synthesized_words >= source_words:
+            raise ValidationError(f"{path}: faithful_synthesis must materially condense its source")
+    return FidelityReport(source_words, totals["retained"], totals["boilerplate_removed"], totals["substantive_cut"], totals["modified"], modified_edited, totals["editorial_addition"], counts, content_mode, manuscript_blocks, ledger_blocks)

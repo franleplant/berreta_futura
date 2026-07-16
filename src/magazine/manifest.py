@@ -16,6 +16,7 @@ class Article:
     source_ids: tuple[str, ...]
     manuscript: Path
     fidelity: Path
+    content_mode: str
 
 
 @dataclass(frozen=True)
@@ -87,7 +88,10 @@ def load_edition(root: Path, edition_id: str, known_sources: set[str]) -> Editio
         except ValidationError as exc:
             errors.extend(exc.errors)
             continue
-        articles.append(Article(row["id"], row["title"], row["author"], source_ids, manuscript, fidelity))
+        content_mode = str(row.get("content_mode", "faithful_edit"))
+        if content_mode not in {"faithful_edit", "faithful_synthesis", "selected_extracts", "original_synthesis"}:
+            errors.append(f"{label} has invalid content_mode: {content_mode}")
+        articles.append(Article(row["id"], row["title"], row["author"], source_ids, manuscript, fidelity, content_mode))
     edition_dir = manifest_path.parent
     try:
         editorial = _edition_path(root, edition_dir, data["editorial"]) if data.get("editorial") else None

@@ -5,11 +5,20 @@
 Every piece is explicitly one of:
 
 - `faithful_edit`: the source author's work, minimally adapted for print;
+- `faithful_synthesis`: a compact, attributed restatement that preserves the source's argument, evidence, qualifications, and conclusions;
 - `selected_extracts`: attributed passages with editorial framing;
 - `original_synthesis`: a new source-grounded article;
 - `original_editorial`: the magazine's own voice.
 
 The default for source articles is `faithful_edit`. The opening editorial is `original_editorial` and may be opinionated, interpretive, and stylistically distinct.
+
+## Print-length budget
+
+Every rendered source article, including its title and credit, has a hard maximum of seven A5 reader pages. The deterministic renderer measures the real pagination and refuses an over-budget build.
+
+An over-budget `faithful_edit` is converted to `faithful_synthesis`. The synthesis must retain the source's central argument, important evidence and examples, uncertainty, counterarguments, and conclusion. It must not introduce a new thesis or flatten disagreement into generic summary language. The credit must identify it as a synthesis rather than presenting edited prose as the source author's verbatim writing.
+
+Every synthesis maps the complete substantive source into edited ledger entries, reports source and output word counts, and passes manuscript-integrity validation. Short articles remain `faithful_edit`; synthesis is a length remedy, not the default editorial voice.
 
 ## Automatically permitted faithful edits
 

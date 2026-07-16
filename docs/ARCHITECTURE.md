@@ -25,6 +25,7 @@ lead URL
   -> provenance-linked source bundle
   -> edition selection
   -> faithful manuscript + editorial patches
+  -> seven-page article-budget check (faithful synthesis when over budget)
   -> approved content digest
   -> deterministic layout
   -> proof digest
