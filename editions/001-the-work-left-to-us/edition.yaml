@@ -31,6 +31,7 @@ articles:
 - id: narayanan-what-will-be-left
   title: What will be left for us to work on?
   author: Arvind Narayanan
+  author_note: Arvind Narayanan is a professor of computer science at Princeton University.
   content_mode: faithful_synthesis
   source_ids:
   - src-arvind-tweet-2076994014692229601
@@ -40,6 +41,7 @@ articles:
 - id: joshi-dsls-reliable-use-llms
   title: DSLs Enable Reliable Use of LLMs
   author: Unmesh Joshi
+  author_note: Unmesh Joshi is a Distinguished Engineer at Thoughtworks and a contributor to martinfowler.com.
   content_mode: faithful_synthesis
   source_ids:
   - src-joshi-dsls-reliable-use-llms
@@ -48,6 +50,7 @@ articles:
 - id: nadella-reverse-information-paradox
   title: The Reverse Information Paradox
   author: Satya Nadella
+  author_note: Satya Nadella is chairman and CEO of Microsoft.
   content_mode: faithful_edit
   source_ids:
   - src-nadella-reverse-information-paradox-2026
@@ -56,6 +59,7 @@ articles:
 - id: hassabis-frontier-ai
   title: A Framework for Frontier AI and the Dawning of a New Age
   author: Demis Hassabis
+  author_note: Demis Hassabis is co-founder and CEO of Google DeepMind.
   content_mode: faithful_edit
   source_ids:
   - src-hassabis-frontier-ai-2026

@@ -18,6 +18,7 @@ class Article:
     id: str
     title: str
     author: str
+    author_note: str
     source_ids: tuple[str, ...]
     manuscript: Path
     fidelity: Path
@@ -93,10 +94,27 @@ def load_edition(
             errors.append(f"Article {index + 1} must be a mapping")
             continue
         label = f"Article {row.get('id', index + 1)}"
-        missing = [key for key in ("id", "title", "author", "source_ids", "manuscript", "fidelity") if not row.get(key)]
+        missing = [
+            key
+            for key in (
+                "id",
+                "title",
+                "author",
+                "author_note",
+                "source_ids",
+                "manuscript",
+                "fidelity",
+            )
+            if not row.get(key)
+        ]
         if missing:
             errors.append(f"{label} missing: {', '.join(missing)}")
             continue
+        author_note = str(row["author_note"]).strip()
+        if "\n" in author_note or len(author_note) > 160:
+            errors.append(
+                f"{label} author_note must be a single line of at most 160 characters"
+            )
         if row["id"] in ids:
             errors.append(f"Duplicate article id: {row['id']}")
         ids.add(row["id"])
@@ -113,7 +131,18 @@ def load_edition(
         content_mode = str(row.get("content_mode", "faithful_edit"))
         if content_mode not in {"faithful_edit", "faithful_synthesis", "selected_extracts", "original_synthesis"}:
             errors.append(f"{label} has invalid content_mode: {content_mode}")
-        articles.append(Article(row["id"], row["title"], row["author"], source_ids, manuscript, fidelity, content_mode))
+        articles.append(
+            Article(
+                row["id"],
+                row["title"],
+                row["author"],
+                author_note,
+                source_ids,
+                manuscript,
+                fidelity,
+                content_mode,
+            )
+        )
     edition_dir = manifest_path.parent
     try:
         editorial_path = _edition_path(root, edition_dir, data["editorial"]) if data.get("editorial") else None
@@ -243,11 +272,18 @@ def load_translation(
         row = translated_by_id.get(article.id)
         if not row:
             continue
-        if not row.get("title") or not row.get("manuscript"):
+        if not row.get("title") or not row.get("author_note") or not row.get("manuscript"):
             errors.append(
-                f"Translation {language!r} article {article.id} requires title and manuscript"
+                f"Translation {language!r} article {article.id} requires title, author_note, "
+                "and manuscript"
             )
             continue
+        author_note = str(row["author_note"]).strip()
+        if "\n" in author_note or len(author_note) > 160:
+            errors.append(
+                f"Translation {language!r} article {article.id} author_note must be a "
+                "single line of at most 160 characters"
+            )
         try:
             manuscript = _edition_path(root, translation_dir, row["manuscript"])
             _validate_translation_file(
@@ -265,6 +301,7 @@ def load_translation(
                 article.id,
                 str(row["title"]),
                 article.author,
+                author_note,
                 article.source_ids,
                 manuscript,
                 article.fidelity,
@@ -328,6 +365,7 @@ def load_translation(
                     "id": article.id,
                     "title": article.title,
                     "author": article.author,
+                    "author_note": article.author_note,
                     "content_mode": article.content_mode,
                     "source_ids": list(article.source_ids),
                     "manuscript": article.manuscript.relative_to(root).as_posix(),
@@ -374,6 +412,15 @@ def _edition_copy_sha256(edition: Edition) -> str:
             key: edition.cover.get(key, "")
             for key in ("headline", "deck", "edition_label", "back_text")
         },
+        "articles": [
+            {
+                "id": article.id,
+                "title": article.title,
+                "author": article.author,
+                "author_note": article.author_note,
+            }
+            for article in edition.articles
+        ],
     }
     encoded = json.dumps(copy, ensure_ascii=False, sort_keys=True).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()

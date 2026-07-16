@@ -10,6 +10,7 @@ articles:
   - id: example-article
     title: An Example Article
     author: Original Author
+    author_note: A one-line description of the author and why readers may know them.
     source_ids:
       - example-source-id
     manuscript: editions/issue-001/articles/example-article.md

@@ -434,7 +434,7 @@ class _Typesetter:
             self.y -= leading
         self.y -= 11
 
-    def _credit(self, author: str, note: str = ""):
+    def _credit(self, author: str, note: str = "", *, author_note: str = ""):
         self.pdf.setFillColorRGB(*INK)
         self.pdf.setFont(SANS_SEMIBOLD, 7.6)
         self.pdf.drawString(
@@ -446,7 +446,19 @@ class _Typesetter:
             self.pdf.setFillColorRGB(*SLATE)
             self.pdf.setFont(SANS, 6.5)
             self.pdf.drawRightString(self.width - self.right, self.y, _plain(note.upper()))
-        self.y -= 12
+        self.y -= 11
+        if author_note:
+            self.pdf.setFillColorRGB(*SLATE)
+            self.pdf.setFont(SANS, 6.5)
+            note_lines = self.lines(author_note, SANS, 6.5, self.column_width)
+            if len(note_lines) > 2:
+                raise ValidationError(
+                    f"Author note for {author} is too long for the article opener"
+                )
+            for line in note_lines:
+                self.pdf.drawString(self.left, self.y, _plain(line))
+                self.y -= 8
+            self.y -= 2
         self.pdf.setStrokeColorRGB(*SAND)
         self.pdf.setLineWidth(.65)
         self.pdf.line(self.left, self.y, self.width - self.right, self.y)
@@ -576,7 +588,7 @@ class _Typesetter:
                 mode = _ui(self.edition, "faithful_synthesis") if article.content_mode == "faithful_synthesis" else _ui(self.edition, "faithful_edit")
                 self._label(f"{_ui(self.edition, 'feature')} {article_index:02d}", right=f"{article_index} / {article_total}")
                 self._display_title(article.title)
-                self._credit(article.author, mode)
+                self._credit(article.author, mode, author_note=article.author_note)
                 self.markdown(article.manuscript, lead=True)
                 page_count = self.page - start_page + 1
                 self.article_pages[article.id] = page_count

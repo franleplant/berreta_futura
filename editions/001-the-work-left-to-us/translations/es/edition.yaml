@@ -3,7 +3,7 @@ language: es
 source_language: en
 locale: es-AR
 fallback_locale: es-ES
-base_copy_sha256: 18c5ffc228a576228bbe24d4ec2f040ec785111cf41f57b62611d4301df6aea4
+base_copy_sha256: 90575591b76062084f4e03593c5773f035578ed78aa07d9ae10c109fc4e743e7
 policy:
   register: educated_castellano
   regional_preference: restrained_argentinian
@@ -26,18 +26,22 @@ editorial:
 articles:
 - id: narayanan-what-will-be-left
   title: ¿Qué trabajo nos quedará por hacer?
+  author_note: Arvind Narayanan es profesor de informática en la Universidad de Princeton.
   manuscript: articles/narayanan-what-will-be-left.md
   source_sha256: 3891198b24c5d2b6bc21bbba26cb547f398941b43f0b4f4218e68cd7f70e0bfb
 - id: joshi-dsls-reliable-use-llms
   title: Los DSL permiten un uso confiable de los LLM
+  author_note: Unmesh Joshi es Distinguished Engineer en Thoughtworks y colabora en martinfowler.com.
   manuscript: articles/joshi-dsls-reliable-use-llms.md
   source_sha256: e235aaac4fd99864f35f14a153a437e441cff6493f050714445d78effe75c039
 - id: nadella-reverse-information-paradox
   title: La paradoja inversa de la información
+  author_note: Satya Nadella es presidente y consejero delegado de Microsoft.
   manuscript: articles/nadella-reverse-information-paradox.md
   source_sha256: 7777a53531ba65d20c4427cf996226b91e612509198b330f2f269d049f011f1c
 - id: hassabis-frontier-ai
   title: Un marco para la IA de frontera y el amanecer de una nueva era
+  author_note: Demis Hassabis es cofundador y consejero delegado de Google DeepMind.
   manuscript: articles/hassabis-frontier-ai.md
   source_sha256: 9f415e615a9a9b91f50262c862cdf6fe3dadf044175986105a09d7a5742fe257
 sections:

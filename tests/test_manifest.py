@@ -42,7 +42,8 @@ def make_project(root: Path, *, source_id: str = "source-one") -> None:
     manifest = {
         "id": "issue-001", "issue_number": "001", "title": "Issue", "publication_date": "2026-07-15",
         "editorial": "editions/issue-001/editorial.md", "cover": {"headline": "Issue"},
-        "articles": [{"id": "article", "title": "Article", "author": "Author", "source_ids": [source_id],
+        "articles": [{"id": "article", "title": "Article", "author": "Author",
+                      "author_note": "Author writes about this subject for Example.", "source_ids": [source_id],
                       "manuscript": "editions/issue-001/articles/article.md", "fidelity": "editions/issue-001/fidelity/article.yaml"}],
     }
     (edition_dir / "edition.yaml").write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
@@ -81,6 +82,7 @@ def add_spanish_translation(root: Path) -> None:
         "articles": [{
             "id": "article",
             "title": "Artículo",
+            "author_note": "Author escribe sobre este tema para Example.",
             "manuscript": "articles/article.md",
             "source_sha256": hashlib.sha256(source_article.read_bytes()).hexdigest(),
         }],
@@ -102,6 +104,10 @@ class ManifestTests(unittest.TestCase):
         edition = Magazine(self.root).validate("issue-001")
         self.assertEqual(edition.publication_name, "Test Review")
         self.assertEqual(edition.title, "Issue")
+        self.assertEqual(
+            edition.articles[0].author_note,
+            "Author writes about this subject for Example.",
+        )
         self.assertEqual(edition.articles[0].source_ids, ("source-one",))
 
     def test_validate_rejects_unknown_source(self):
@@ -111,6 +117,16 @@ class ManifestTests(unittest.TestCase):
         manifest["articles"][0]["source_ids"] = ["missing-source"]
         manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
         with self.assertRaisesRegex(ValidationError, "unknown sources"):
+            Magazine(self.root).validate("issue-001")
+
+    def test_validate_requires_a_concise_article_author_note(self):
+        make_project(self.root)
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text())
+        manifest["articles"][0].pop("author_note")
+        manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+
+        with self.assertRaisesRegex(ValidationError, "missing: author_note"):
             Magazine(self.root).validate("issue-001")
 
     def test_validate_rejects_unknown_declared_edition_source(self):

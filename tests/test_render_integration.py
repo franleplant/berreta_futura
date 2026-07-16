@@ -51,6 +51,7 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertIn("AN ORIGINAL ARGUMENT", reader_text)
             self.assertIn("FEATURE 01", reader_text)
             self.assertIn("FAITHFUL EDIT", reader_text)
+            self.assertIn("Author writes about this subject for Example.", reader_text)
             self.assertIn("TEST REVIEW", reader_text)
 
     def test_build_generates_configured_spanish_reader_and_booklet_alongside_english(self):
@@ -76,6 +77,7 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertIn("EDITORIAL ORIGINAL", text)
             self.assertIn("ARTÍCULO 01", text)
             self.assertIn("EDICIÓN FIEL", text)
+            self.assertIn("Author escribe sobre este tema para Example.", text)
             self.assertIn("El artículo original.", text)
             spanish_preflight = json.loads((spanish / "preflight.json").read_text())
             self.assertIn(
