@@ -19,14 +19,28 @@ result = mag.build("issue-001")
 The equivalent command line is:
 
 ```sh
-mag capture https://example.com/article --title "An article"
-mag sources
-mag validate issue-001
-mag build issue-001
+uv run --locked mag capture https://example.com/article --title "An article"
+uv run --locked mag sources
+uv run --locked mag validate issue-001
+uv run --locked mag build issue-001
 ```
 
 `capture` only records metadata and local snapshots supplied by the caller. It
 never downloads a URL. This makes acquisition explicit, repeatable, and safe.
+
+## Python toolchain
+
+UV owns the complete Python lifecycle for this repository. After cloning, run:
+
+```sh
+uv sync --locked
+```
+
+Run every project command through `uv run --locked`. Add, remove, and update
+dependencies with `uv add`, `uv remove`, and `uv lock`; commit both
+`pyproject.toml` and `uv.lock`. Do not use `pip`, invoke `python -m venv`,
+activate an environment, or create ad-hoc dependency directories. UV's internal
+project environment is an implementation detail and is never managed by hand.
 
 ## Repository model
 
@@ -130,16 +144,16 @@ editorial, and a generated A5/A4 print package. Public faithful republication
 remains blocked while source rights are unknown.
 
 ```sh
-mag sources
-mag validate 001-the-work-left-to-us
-mag build 001-the-work-left-to-us
+uv run --locked mag sources
+uv run --locked mag validate 001-the-work-left-to-us
+uv run --locked mag build 001-the-work-left-to-us
 ```
 
 ## Development
 
 ```sh
-python -m pytest
-python -m magazine --help
+uv run --locked pytest
+uv run --locked mag --help
 ```
 
 The metadata, validation, fidelity, catalog, and packaging modules use only the

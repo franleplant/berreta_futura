@@ -1,6 +1,6 @@
 [build-system]
-requires = ["hatchling>=1.25"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.8.0,<0.9.0"]
+build-backend = "uv_build"
 
 [project]
 name = "magazine-compiler"
@@ -18,8 +18,15 @@ dependencies = [
 [project.scripts]
 mag = "magazine.cli:main"
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = ["pytest>=8.0"]
+
+[tool.uv]
+package = true
+required-version = ">=0.8.0"
+
+[tool.uv.build-backend]
+module-name = "magazine"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/magazine"]
@@ -28,4 +35,3 @@ packages = ["src/magazine"]
 addopts = "-q"
 testpaths = ["tests"]
 pythonpath = ["src"]
-

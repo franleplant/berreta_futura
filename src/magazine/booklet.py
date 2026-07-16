@@ -10,7 +10,7 @@ def impose_a5_on_a4(reader_pdf: Path, output: Path) -> Path:
         from pypdf import PdfReader, PdfWriter, Transformation
         from pypdf._page import PageObject
     except ImportError as exc:
-        raise DependencyError("Booklet imposition requires pypdf (`pip install pypdf`).") from exc
+        raise DependencyError("Booklet imposition requires pypdf; run `uv sync --locked`.") from exc
     reader = PdfReader(str(reader_pdf))
     pages = list(reader.pages)
     while len(pages) % 4:
@@ -39,4 +39,3 @@ def impose_a5_on_a4(reader_pdf: Path, output: Path) -> Path:
     with output.open("wb") as handle:
         writer.write(handle)
     return output
-

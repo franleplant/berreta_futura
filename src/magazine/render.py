@@ -15,7 +15,7 @@ def _reportlab():
         from reportlab.pdfbase import pdfmetrics
         from reportlab.pdfgen import canvas
     except ImportError as exc:
-        raise DependencyError("PDF rendering requires ReportLab (`pip install reportlab`).") from exc
+        raise DependencyError("PDF rendering requires ReportLab; run `uv sync --locked`.") from exc
     return A5, pdfmetrics, canvas
 
 

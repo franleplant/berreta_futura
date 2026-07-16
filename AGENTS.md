@@ -14,6 +14,9 @@ This repository builds private-first, source-faithful magazine editions.
 - Cover art contains no baked-in masthead or cover lines. Layout code owns all typography.
 - Treat intake batches as transport only. Every unreleased source belongs to the single open edition until that edition is explicitly released.
 - Never create a new edition merely because the user sends another group of links. Releasing the open edition is the transition that creates the next collection.
+- Use UV for every Python operation. Never use `pip`, bare `python`, `python -m venv`, an activated virtualenv, or an ad-hoc dependency directory.
+- Run project tools as `uv run --locked <command>`, synchronize with `uv sync --locked`, and change dependencies with `uv add`, `uv remove`, or `uv lock`.
+- Commit `pyproject.toml`, `.python-version`, and `uv.lock` whenever their state changes. UV's internal environment must never be managed manually.
 
 ## Git checkpoints
 
@@ -24,10 +27,11 @@ This repository builds private-first, source-faithful magazine editions.
 
 ## Verification
 
-Use the bundled workspace Python runtime when available:
+Synchronize the locked dependencies and run verification through UV:
 
 ```sh
-/Users/franguijarro/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 -m pytest
+uv sync --locked
+uv run --locked pytest
 ```
 
 Render generated PDFs to PNG and inspect every page before delivery.
