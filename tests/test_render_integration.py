@@ -60,3 +60,20 @@ class RenderIntegrationTests(unittest.TestCase):
             report = (result.output_dir / "fidelity.md").read_text()
             self.assertIn("Status: **blocked**", report)
             self.assertIn("rights_status_unknown", report)
+
+    def test_articles_edition_can_append_backmatter_sections(self):
+        with TemporaryDirectory() as temporary:
+            tmp_path = Path(temporary)
+            make_project(tmp_path)
+            edition_dir = tmp_path / "editions" / "issue-001"
+            (edition_dir / "colophon.md").write_text("# Colophon\n\nMade with care.", encoding="utf-8")
+            manifest_path = edition_dir / "edition.yaml"
+            manifest = yaml.safe_load(manifest_path.read_text())
+            manifest["sections"] = [{"kind": "colophon", "title": "Colophon", "path": "colophon.md"}]
+            manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+
+            result = Magazine(tmp_path).build("issue-001")
+
+            text = "\n".join(page.extract_text() or "" for page in PdfReader(str(result.reader_pdf)).pages)
+            self.assertIn("The original article.", text)
+            self.assertIn("Made with care.", text)

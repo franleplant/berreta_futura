@@ -27,6 +27,7 @@ metadata:
   rendered_word_count: 1395
   rendered_character_count: 8830
   rendered_article_sha256: e4dd96fdc8e11c97643346a9edca966365a7e47a04cef4f85b44afe68f0af530
+  normalized_body_sha256: b585b330faa6c961eb4e6eada869b782fb01396cbebe877842e7f1973da3c486
   section_headings:
     - The Challenges of the Frontier
     - A Framework for a Frontier AI Standards Body
@@ -40,5 +41,6 @@ metadata:
     - international-coordination
   extraction_method: Authenticated Chrome rendered X Article.
   snapshot_hash_basis: Visible text of the article element, including the rendered byline and article controls.
-  capture_durability: Rendered text inspected and fingerprinted; durable private snapshot pending.
+  capture_durability: Durable authenticated rendered capture stored in the private vault.
+  vault_path: vault/src-hassabis-frontier-ai-2026/f8ed1bea4ee1612b03a87254d6cb244d8d7514bb5dc464ff8875af68b4d1745f/
 notes: The status URL renders the complete long-form X Article and links to the canonical focus-mode article. No explicit reuse license was visible.

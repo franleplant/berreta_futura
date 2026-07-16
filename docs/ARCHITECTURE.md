@@ -21,6 +21,7 @@ The CLI and conversational interface are adapters over this interface. Individua
 lead URL
   -> immutable source snapshot
   -> normalized source record
+  -> assignment to the single open edition
   -> provenance-linked source bundle
   -> edition selection
   -> faithful manuscript + editorial patches
@@ -33,6 +34,8 @@ lead URL
 ## Invariants
 
 - Raw snapshots and approved artifacts are immutable and content-addressed.
+- Every captured source is assigned exactly once: either to the open edition or to one released edition.
+- Intake batches never imply edition boundaries; only an explicit release closes the open edition.
 - Refetching changed content creates a revision rather than mutating history.
 - Every factual claim, quotation, figure, and caption resolves to captured evidence.
 - AI output is draft material and cannot approve itself.
@@ -77,4 +80,3 @@ Recommended roles are source researcher, article production editor, evidence che
 - Reader: A5 pages, RGB, links, compact images.
 - Home: A5 pages imposed two-up on A4, duplex instructions, no required bleed, page count padded to a multiple of four.
 - Studio: printer-specific trim, bleed, output intent, PDF/X target, image limits, font rules, and binding geometry. This profile remains blocked until a printer contract exists.
-

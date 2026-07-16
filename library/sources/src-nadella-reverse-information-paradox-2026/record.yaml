@@ -33,6 +33,7 @@ metadata:
   rendered_word_count: 846
   rendered_character_count: 5262
   rendered_article_sha256: b7e1968a99d9a874b0b60847f246b16f4be955672748a760641402d7ea2dee17
+  normalized_body_sha256: f42c21a78541b7665b885d1efc88e2bf53197cf0d019da2cd482ca375c8d2e4c
   framework:
     - control
     - capability
@@ -63,5 +64,6 @@ metadata:
     - trust-boundaries
   extraction_method: Authenticated Chrome rendered X Article.
   snapshot_hash_basis: Visible text of the article element, including the rendered byline and article controls.
-  capture_durability: Rendered text inspected and fingerprinted; durable private snapshot pending.
+  capture_durability: Durable authenticated rendered capture stored in the private vault.
+  vault_path: vault/src-nadella-reverse-information-paradox-2026/b5c001b6b61f7d224918083a6ef29fd4986a8d69e7ca8e0292c4a84fe7f6a96f/
 notes: Preserve the Arrow citation and both linked X references in any faithful edit. The opening editorial may critically frame the argument, but that framing must remain visibly separate from Nadella's text.

@@ -27,6 +27,7 @@ metadata:
   rendered_word_count: 3760
   rendered_character_count: 27352
   rendered_main_sha256: 13f53d5d93054a8c58bd1739a16a10bb7fea0e0f6884a6770043c79fe93fd9ae
+  normalized_body_sha256: 1effc901980761de45a8ff4b1a359558003ab561e8f6fba92b48bfbfbc61de27
   outbound_url_count: 31
   section_count: 11
   topics:
@@ -37,5 +38,6 @@ metadata:
     - software-design
   extraction_method: Authenticated Chrome for the discovery post; rendered public HTML for the canonical article.
   snapshot_hash_basis: Visible text of the canonical page main element.
-  capture_durability: Rendered text inspected and fingerprinted; durable private snapshot pending.
+  capture_durability: Durable rendered capture stored in the private vault.
+  vault_path: vault/src-joshi-dsls-reliable-use-llms/13f53d5d93054a8c58bd1739a16a10bb7fea0e0f6884a6770043c79fe93fd9ae/
 notes: The tweet is the discovery lead; the Unmesh Joshi article is the substantive primary source. Treat a faithful reprint as private-only until permission or another applicable rights basis is recorded.

@@ -13,6 +13,7 @@ from .io import load_structured
 from .manifest import Edition, load_edition
 from .package import package_release
 from .records import SourceRecord, load_records
+from .release import ReleaseState, sync_release_state
 from .render import render_a5
 
 
@@ -36,20 +37,33 @@ class Magazine:
         self.sources_dir = self.root / paths.get("sources", "library/sources")
         self.editions_dir = self.root / paths.get("editions", "editions")
         self.output_dir = self.root / paths.get("output", "output")
+        self.release_state_path = self.root / paths.get("release_state", "library/release-state.yaml")
 
     def capture(self, url: str, **metadata: Any) -> SourceRecord:
         """Normalize and store source metadata without performing network access."""
         candidate = SourceRecord.create(url, **metadata)
         for existing in load_records(self.sources_dir):
             if existing.canonical_url == candidate.canonical_url:
+                self.sync_release_queue()
                 return existing
         candidate.write(self.sources_dir)
+        self.sync_release_queue()
         return candidate
 
     def write_sources(self, destination: Path | None = None) -> Path:
         path = destination or self.root / "sources.md"
-        path.write_text(render_sources(load_records(self.sources_dir)), encoding="utf-8")
+        records = load_records(self.sources_dir)
+        release_state = self.sync_release_queue(records)
+        path.write_text(render_sources(records, release_state), encoding="utf-8")
         return path
+
+    def sync_release_queue(self, records: list[SourceRecord] | None = None) -> ReleaseState:
+        current = records if records is not None else load_records(self.sources_dir)
+        return sync_release_state(
+            self.release_state_path,
+            {record.id for record in current},
+            default_open_id="001-the-work-left-to-us",
+        )
 
     def validate(self, edition_id: str) -> Edition:
         records = load_records(self.sources_dir)

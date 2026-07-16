@@ -20,6 +20,7 @@ def _reportlab():
 
 
 def _plain(text: str) -> str:
+    text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
     replacements = {"\u2018": "'", "\u2019": "'", "\u201c": '"', "\u201d": '"', "\u2013": "-", "\u2014": "--", "\u2026": "...", "\u00a0": " "}
     for old, new in replacements.items():
         text = text.replace(old, new)
@@ -99,7 +100,21 @@ class _Typesetter:
             self.pdf.line(self.left, self.height - 34, self.width - self.right, self.height - 34)
 
     def lines(self, text: str, font: str, size: float, width: float) -> list[str]:
-        words = _plain(re.sub(r"[*_`]", "", text)).split()
+        words: list[str] = []
+        for word in _plain(re.sub(r"[*_`]", "", text)).split():
+            if self.metrics.stringWidth(word, font, size) <= width:
+                words.append(word)
+                continue
+            chunk = ""
+            for character in word:
+                proposed = chunk + character
+                if chunk and self.metrics.stringWidth(proposed, font, size) > width:
+                    words.append(chunk)
+                    chunk = character
+                else:
+                    chunk = proposed
+            if chunk:
+                words.append(chunk)
         result: list[str] = []
         current = ""
         for word in words:
@@ -177,11 +192,13 @@ class _Typesetter:
         self.new_page("Contents", blank_header=True)
         self.block("h1", "Contents")
         entries = []
-        if self.edition.sections:
-            entries.extend((section.title, toc_pages.get(f"section-{index}", 0)) for index, section in enumerate(self.edition.sections))
-        else:
-            entries.append(("Editorial", toc_pages.get("editorial", 0)))
+        if self.edition.articles:
+            if self.edition.editorial:
+                entries.append(("Editorial", toc_pages.get("editorial", 0)))
             entries.extend((article.title, toc_pages.get(article.id, 0)) for article in self.edition.articles)
+            entries.extend((section.title, toc_pages.get(f"section-{index}", 0)) for index, section in enumerate(self.edition.sections))
+        elif self.edition.sections:
+            entries.extend((section.title, toc_pages.get(f"section-{index}", 0)) for index, section in enumerate(self.edition.sections))
         self.pdf.setFont("Times-Roman", 10.5)
         for title, page in entries:
             if self.y < self.bottom + 18:
@@ -191,35 +208,42 @@ class _Typesetter:
             self.y -= 18
 
     def body(self):
+        if self.edition.articles:
+            if self.edition.editorial:
+                self.new_page("Editorial")
+                self.toc["editorial"] = self.page
+                self.markdown(self.edition.editorial)
+            for article in self.edition.articles:
+                self.new_page(article.title)
+                self.toc[article.id] = self.page
+                self.block("h1", article.title)
+                self.block("body", f"By {article.author}")
+                self.markdown(article.manuscript)
+            for index, section in enumerate(self.edition.sections):
+                self._section(index, section)
+            return
         if self.edition.sections:
             for index, section in enumerate(self.edition.sections):
-                self.new_page(section.title)
-                self.toc[f"section-{index}"] = self.page
-                label = {
-                    "original_editorial": "ORIGINAL EDITORIAL",
-                    "source_introduction": "THE SOURCE",
-                    "original_synthesis": "READING MAP",
-                    "source_record": "SOURCE RECORD",
-                    "production_note": "PRODUCTION NOTE",
-                    "colophon": "COLOPHON",
-                }.get(section.kind, section.kind.replace("_", " ").upper())
-                self.pdf.setFillColorRGB(.52, .11, .11)
-                self.pdf.setFont("Helvetica-Bold", 7.5)
-                self.pdf.drawString(self.left, self.y, _plain(label))
-                self.y -= 17
-                self.block("h1", section.title)
-                self.markdown(section.path)
+                self._section(index, section)
             return
-        self.new_page("Editorial")
-        self.toc["editorial"] = self.page
-        assert self.edition.editorial is not None
-        self.markdown(self.edition.editorial)
-        for article in self.edition.articles:
-            self.new_page(article.title)
-            self.toc[article.id] = self.page
-            self.block("h1", article.title)
-            self.block("body", f"By {article.author}")
-            self.markdown(article.manuscript)
+
+    def _section(self, index, section):
+        self.new_page(section.title)
+        self.toc[f"section-{index}"] = self.page
+        label = {
+            "original_editorial": "ORIGINAL EDITORIAL",
+            "source_introduction": "THE SOURCE",
+            "original_synthesis": "READING MAP",
+            "source_record": "SOURCE RECORD",
+            "production_note": "PRODUCTION NOTE",
+            "colophon": "COLOPHON",
+        }.get(section.kind, section.kind.replace("_", " ").upper())
+        self.pdf.setFillColorRGB(.52, .11, .11)
+        self.pdf.setFont("Helvetica-Bold", 7.5)
+        self.pdf.drawString(self.left, self.y, _plain(label))
+        self.y -= 17
+        self.block("h1", section.title)
+        self.markdown(section.path)
 
     def back_cover(self):
         configured = self.edition.raw.get("format", {}).get("target_pages")

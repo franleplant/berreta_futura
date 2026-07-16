@@ -3,12 +3,11 @@ kind: cover
 position: back
 ---
 
-The future of work is not a vacancy notice.  
-It is a design problem.
+Intelligence does not govern itself.
+The boundaries we build around it will decide who learns, who owns, and who answers.
 
-A model can produce an answer. It cannot decide what deserves to be asked, who must answer for the result, or how the gains should be shared.
+A model can produce an answer. A domain language can constrain it. A firm can preserve or surrender what it learns. A public institution can test the frontier—or discover that the frontier has already moved into the world.
 
-Issue 001 considers the work between invention and consequence - and why that work may be the most important work left to us.
+Issue 001 brings together four arguments about the work between capability and consequence, from executable software boundaries to the governance of advanced AI.
 
 Private prototype - Not for sale
-

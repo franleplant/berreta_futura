@@ -1,10 +1,17 @@
 from __future__ import annotations
 
 from .records import SourceRecord
+from .release import ReleaseState
 
 
-def render_sources(records: list[SourceRecord]) -> str:
+def render_sources(records: list[SourceRecord], release_state: ReleaseState | None = None) -> str:
     lines = ["# Sources", "", "_Generated from structured source records. Do not edit by hand._", ""]
+    assignments = release_state.assignments() if release_state else {}
+    if release_state:
+        lines.extend([
+            f"_Open edition: `{release_state.open_edition_id}`; {len(release_state.queued_source_ids)} queued sources._",
+            "",
+        ])
     if not records:
         return "\n".join(lines + ["No sources captured yet.", ""])
     for record in records:
@@ -17,6 +24,9 @@ def render_sources(records: list[SourceRecord]) -> str:
             f"- Captured: {record.captured_at}",
             f"- Content hash: `{record.content_hash or 'not captured'}`",
         ])
+        if record.id in assignments:
+            state, edition_id = assignments[record.id].split(":", 1)
+            lines.append(f"- Release: {state} for `{edition_id}`")
         if record.published_at:
             lines.append(f"- Published: {record.published_at}")
         if record.tags:

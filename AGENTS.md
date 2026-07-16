@@ -12,6 +12,8 @@ This repository builds private-first, source-faithful magazine editions.
 - Store third-party raw captures in the ignored `vault/` content store. Commit hashes and metadata, not private captures.
 - Never claim an edition is press-ready without a named printer profile and a passing preflight.
 - Cover art contains no baked-in masthead or cover lines. Layout code owns all typography.
+- Treat intake batches as transport only. Every unreleased source belongs to the single open edition until that edition is explicitly released.
+- Never create a new edition merely because the user sends another group of links. Releasing the open edition is the transition that creates the next collection.
 
 ## Git checkpoints
 

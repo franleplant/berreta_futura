@@ -33,6 +33,7 @@ never downloads a URL. This makes acquisition explicit, repeatable, and safe.
 ```text
 library/sources/<source-id>/record.yaml    structured source record
 library/sources/<source-id>/extracted.md  local, faithful extraction
+library/release-state.yaml                open-edition and released-edition assignments
 editions/<edition-id>/edition.yaml        edition manifest
 editions/<edition-id>/editorial.md        original opening editorial
 editions/<edition-id>/articles/*.md       edited source manuscripts
@@ -41,6 +42,18 @@ output/<edition-id>/                      generated release package
 ```
 
 `sources.md` is always generated from the source records. Never edit it by hand.
+
+## The open edition
+
+The repository has exactly one open edition. Every newly captured source is
+assigned to it automatically; a batch of submitted links is never treated as an
+edition boundary. `mag capture` queues its source immediately, while `mag
+sources` and `mag queue` reconcile manually created records into the same open
+edition.
+
+`library/release-state.yaml` is the authoritative ledger. A source appears
+either in the open edition or in one released edition, never both. Only an
+explicit release closes the collection and permits the next edition to open.
 
 ## Source records
 
@@ -107,13 +120,14 @@ the standard PDF fonts by default. A professional print profile is included as
 a specification, but PDF/X conversion, trim bleed, and the printer ICC output
 intent remain explicit studio preflight steps.
 
-## Tracer edition
+## First edition
 
 Issue 001 lives at `editions/001-the-work-left-to-us/`. It captures an X post as
-the discovery lead and Arvind Narayanan's annotated ICML 2026 keynote as the
-primary source. The release is a 16-page, rights-safe A5 prototype with original
-editorial and reading apparatus. Its faithful source block remains visibly
-blocked until private-source handling or reproduction rights are approved.
+the original discovery lead and combines four substantive works by Arvind
+Narayanan, Unmesh Joshi, Satya Nadella, and Demis Hassabis. It is a private
+faithful-edit edition with paragraph-level fidelity ledgers, an original opening
+editorial, and a generated A5/A4 print package. Public faithful republication
+remains blocked while source rights are unknown.
 
 ```sh
 mag sources

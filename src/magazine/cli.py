@@ -24,6 +24,7 @@ def parser() -> argparse.ArgumentParser:
     capture.add_argument("--synopsis", default="")
     capture.add_argument("--notes", default="")
     actions.add_parser("sources", help="Regenerate sources.md")
+    actions.add_parser("queue", help="Assign every unassigned source to the open edition")
     validate = actions.add_parser("validate", help="Validate an edition and its fidelity ledgers")
     validate.add_argument("edition_id")
     build = actions.add_parser("build", help="Render, impose, and package an edition")
@@ -44,6 +45,9 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(record.to_dict(), ensure_ascii=False, indent=2))
         elif args.command == "sources":
             print(magazine.write_sources())
+        elif args.command == "queue":
+            state = magazine.sync_release_queue()
+            print(json.dumps(state.to_dict(), ensure_ascii=False, indent=2))
         elif args.command == "validate":
             magazine.validate(args.edition_id)
             print(f"valid: {args.edition_id}")
@@ -58,4 +62,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
