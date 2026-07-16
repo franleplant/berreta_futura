@@ -6,7 +6,7 @@ title: The Work Left to Us
 subtitle: Work, agency, ownership, and governance in the age of capable machines
 language: en
 distribution: private
-status: assembling
+status: released
 format:
   trim: A5
   home_sheet: A4
@@ -16,48 +16,50 @@ cover:
   masthead: Commonplace
   headline: The Work Left to Us
   deck: Work, agency, ownership, and governance in the age of capable machines
-  back_text: Intelligence does not govern itself. The boundaries we build around it will decide who learns, who owns, and who answers.
+  edition_label: Private edition - Not for sale
+  back_text: Intelligence does not govern itself. The boundaries we build around it will decide who learns,
+    who owns, and who answers.
 sources:
-  - src-arvind-tweet-2076994014692229601
-  - src-narayanan-icml-2026-keynote
-  - src-joshi-dsls-reliable-use-llms
-  - src-nadella-reverse-information-paradox-2026
-  - src-hassabis-frontier-ai-2026
+- src-arvind-tweet-2076994014692229601
+- src-narayanan-icml-2026-keynote
+- src-joshi-dsls-reliable-use-llms
+- src-nadella-reverse-information-paradox-2026
+- src-hassabis-frontier-ai-2026
 editorial: manuscript/editorial.md
 articles:
-  - id: narayanan-what-will-be-left
-    title: What will be left for us to work on?
-    author: Arvind Narayanan
-    source_ids:
-      - src-arvind-tweet-2076994014692229601
-      - src-narayanan-icml-2026-keynote
-    manuscript: editions/001-the-work-left-to-us/articles/narayanan-what-will-be-left.md
-    fidelity: editions/001-the-work-left-to-us/fidelity/narayanan-what-will-be-left.yaml
-  - id: joshi-dsls-reliable-use-llms
-    title: DSLs Enable Reliable Use of LLMs
-    author: Unmesh Joshi
-    source_ids:
-      - src-joshi-dsls-reliable-use-llms
-    manuscript: editions/001-the-work-left-to-us/articles/joshi-dsls-reliable-use-llms.md
-    fidelity: editions/001-the-work-left-to-us/fidelity/joshi-dsls-reliable-use-llms.yaml
-  - id: nadella-reverse-information-paradox
-    title: The Reverse Information Paradox
-    author: Satya Nadella
-    source_ids:
-      - src-nadella-reverse-information-paradox-2026
-    manuscript: editions/001-the-work-left-to-us/articles/nadella-reverse-information-paradox.md
-    fidelity: editions/001-the-work-left-to-us/fidelity/nadella-reverse-information-paradox.yaml
-  - id: hassabis-frontier-ai
-    title: A Framework for Frontier AI and the Dawning of a New Age
-    author: Demis Hassabis
-    source_ids:
-      - src-hassabis-frontier-ai-2026
-    manuscript: editions/001-the-work-left-to-us/articles/hassabis-frontier-ai.md
-    fidelity: editions/001-the-work-left-to-us/fidelity/hassabis-frontier-ai.yaml
+- id: narayanan-what-will-be-left
+  title: What will be left for us to work on?
+  author: Arvind Narayanan
+  source_ids:
+  - src-arvind-tweet-2076994014692229601
+  - src-narayanan-icml-2026-keynote
+  manuscript: editions/001-the-work-left-to-us/articles/narayanan-what-will-be-left.md
+  fidelity: editions/001-the-work-left-to-us/fidelity/narayanan-what-will-be-left.yaml
+- id: joshi-dsls-reliable-use-llms
+  title: DSLs Enable Reliable Use of LLMs
+  author: Unmesh Joshi
+  source_ids:
+  - src-joshi-dsls-reliable-use-llms
+  manuscript: editions/001-the-work-left-to-us/articles/joshi-dsls-reliable-use-llms.md
+  fidelity: editions/001-the-work-left-to-us/fidelity/joshi-dsls-reliable-use-llms.yaml
+- id: nadella-reverse-information-paradox
+  title: The Reverse Information Paradox
+  author: Satya Nadella
+  source_ids:
+  - src-nadella-reverse-information-paradox-2026
+  manuscript: editions/001-the-work-left-to-us/articles/nadella-reverse-information-paradox.md
+  fidelity: editions/001-the-work-left-to-us/fidelity/nadella-reverse-information-paradox.yaml
+- id: hassabis-frontier-ai
+  title: A Framework for Frontier AI and the Dawning of a New Age
+  author: Demis Hassabis
+  source_ids:
+  - src-hassabis-frontier-ai-2026
+  manuscript: editions/001-the-work-left-to-us/articles/hassabis-frontier-ai.md
+  fidelity: editions/001-the-work-left-to-us/fidelity/hassabis-frontier-ai.yaml
 sections:
-  - kind: colophon
-    title: Colophon
-    path: manuscript/colophon.md
+- kind: colophon
+  title: Colophon
+  path: manuscript/colophon.md
 rights:
   faithful_source_reprint: private_only_while_rights_unknown
   public_release: blocked_pending_permission_or_applicable_exception

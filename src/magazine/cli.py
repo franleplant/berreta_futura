@@ -29,6 +29,9 @@ def parser() -> argparse.ArgumentParser:
     validate.add_argument("edition_id")
     build = actions.add_parser("build", help="Render, impose, and package an edition")
     build.add_argument("edition_id")
+    release = actions.add_parser("release", help="Build and freeze the complete open edition")
+    release.add_argument("edition_id")
+    release.add_argument("--next-edition-id", help="Override the next empty edition id")
     return command
 
 
@@ -54,6 +57,15 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "build":
             result = magazine.build(args.edition_id)
             print(result.output_dir)
+        elif args.command == "release":
+            result, transition = magazine.release(
+                args.edition_id, next_edition_id=args.next_edition_id
+            )
+            print(
+                f"released: {transition.released_edition_id}\n"
+                f"output: {result.output_dir}\n"
+                f"open: {transition.next_edition_id}"
+            )
         return 0
     except MagazineError as exc:
         print(f"error: {exc}", file=sys.stderr)

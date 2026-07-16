@@ -27,6 +27,15 @@ def _plain(text: str) -> str:
     return text.encode("cp1252", errors="replace").decode("cp1252")
 
 
+def _edition_label(edition: Edition) -> str:
+    configured = str(edition.cover.get("edition_label", "")).strip()
+    if configured:
+        return configured
+    if edition.raw.get("distribution") == "private":
+        return "Private edition - Not for sale"
+    return "Edition"
+
+
 def _markdown_blocks(text: str) -> Iterable[tuple[str, str]]:
     if text.startswith("---\n"):
         _, _, text = text.partition("\n---\n")
@@ -38,9 +47,22 @@ def _markdown_blocks(text: str) -> Iterable[tuple[str, str]]:
             if value:
                 return ("body", value)
         return None
+    code: list[str] | None = None
     for line in text.splitlines():
+        if code is not None:
+            if line.strip().startswith("```"):
+                yield "code", "\n".join(code)
+                code = None
+            else:
+                code.append(line)
+            continue
         stripped = line.strip()
-        if not stripped:
+        if stripped.startswith("```"):
+            block = flush()
+            if block:
+                yield block
+            code = []
+        elif not stripped:
             block = flush()
             if block:
                 yield block
@@ -71,6 +93,8 @@ def _markdown_blocks(text: str) -> Iterable[tuple[str, str]]:
             yield "quote", stripped[2:]
         else:
             buffer.append(stripped)
+    if code is not None:
+        yield "code", "\n".join(code)
     block = flush()
     if block:
         yield block
@@ -148,9 +172,75 @@ class _Typesetter:
             self.y -= leading
         self.y -= after
 
+    def code_lines(self, text: str, font: str, size: float, width: float) -> list[str]:
+        """Preserve source lines and indentation, wrapping only to avoid clipping."""
+        result: list[str] = []
+        for source_line in text.expandtabs(4).split("\n"):
+            if not source_line:
+                result.append("")
+                continue
+            source_line = _plain(source_line)
+            leading = source_line[: len(source_line) - len(source_line.lstrip())]
+            continuation = leading + "  "
+            if self.metrics.stringWidth(continuation + "mmmmmmmmmmmm", font, size) > width:
+                continuation = ""
+            remaining = source_line
+            while remaining:
+                end = len(remaining)
+                while end > 1 and self.metrics.stringWidth(remaining[:end], font, size) > width:
+                    end -= 1
+                if end == len(remaining):
+                    result.append(remaining)
+                    break
+                # Prefer a syntactic or whitespace boundary near the right edge;
+                # hard character splitting is a last resort for unbroken tokens.
+                minimum = max(1, end // 2)
+                candidates = [
+                    index + 1
+                    for index, character in enumerate(remaining[:end])
+                    if index + 1 >= minimum and (character.isspace() or character in ",.;(){}[]")
+                ]
+                split = candidates[-1] if candidates else end
+                result.append(remaining[:split].rstrip())
+                remaining = continuation + remaining[split:].lstrip()
+        return result or [""]
+
+    def code_block(self, text: str):
+        font, size, leading = "Courier", 5.8, 7.6
+        padding_x, padding_y, after = 7, 6, 8
+        column_width = self.width - self.left - self.right
+        lines = self.code_lines(text, font, size, column_width - 2 * padding_x)
+        remaining = lines
+        while remaining:
+            available = self.y - self.bottom
+            capacity = int((available - 2 * padding_y) // leading)
+            if capacity < 1:
+                self.new_page()
+                continue
+            chunk, remaining = remaining[:capacity], remaining[capacity:]
+            height = 2 * padding_y + len(chunk) * leading
+            bottom = self.y - height
+            self.pdf.setFillColorRGB(.955, .95, .935)
+            self.pdf.rect(self.left, bottom, column_width, height, fill=1, stroke=0)
+            self.pdf.setStrokeColorRGB(.55, .18, .16)
+            self.pdf.setLineWidth(.8)
+            self.pdf.line(self.left, bottom, self.left, self.y)
+            self.pdf.setFillColorRGB(.10, .10, .10)
+            self.pdf.setFont(font, size)
+            baseline = self.y - padding_y - size
+            for line in chunk:
+                self.pdf.drawString(self.left + padding_x, baseline, line)
+                baseline -= leading
+            self.y = bottom - after
+            if remaining:
+                self.new_page()
+
     def markdown(self, path: Path):
         for kind, value in _markdown_blocks(path.read_text(encoding="utf-8")):
-            self.block(kind, value)
+            if kind == "code":
+                self.code_block(value)
+            else:
+                self.block(kind, value)
 
     def cover(self):
         self.new_page(blank_header=True)
@@ -186,7 +276,8 @@ class _Typesetter:
                 y -= 12
         self.pdf.setFillColorRGB(.08, .13, .17)
         self.pdf.setFont("Helvetica-Bold", 7.5)
-        self.pdf.drawString(36, 27, f"ISSUE {self.edition.issue_number}  /  {self.edition.publication_date}  /  PRIVATE PROTOTYPE")
+        label = _plain(_edition_label(self.edition)).upper()
+        self.pdf.drawString(36, 27, f"ISSUE {self.edition.issue_number}  /  {self.edition.publication_date}  /  {label}")
 
     def contents(self, toc_pages: dict[str, int]):
         self.new_page("Contents", blank_header=True)
@@ -263,8 +354,10 @@ class _Typesetter:
         for line in self.lines(text, "Helvetica-Bold", 16, self.width - 90):
             self.pdf.drawString(45, y, line)
             y -= 21
+        self.pdf.setFont("Helvetica-Bold", 7.5)
+        self.pdf.drawString(45, 40, _plain(_edition_label(self.edition)).upper())
         self.pdf.setFont("Helvetica", 8)
-        self.pdf.drawString(45, 40, _plain(self.edition.title))
+        self.pdf.drawString(45, 25, _plain(self.edition.title))
 
 
 def _render_pass(target, edition: Edition, toc: dict[str, int] | None = None) -> dict[str, int]:

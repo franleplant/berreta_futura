@@ -36,6 +36,10 @@ lead URL
 - Raw snapshots and approved artifacts are immutable and content-addressed.
 - Every captured source is assigned exactly once: either to the open edition or to one released edition.
 - Intake batches never imply edition boundaries; only an explicit release closes the open edition.
+- Release first reconciles all source records, then requires exact equality between the open queue and rendered articles' `source_ids`; a bare inventory declaration cannot silently postpone a source.
+- Release state advances only after validation and a complete deterministic build succeed.
+- The edition manifest is replaced before the authoritative ledger, and both are restored if either replacement fails.
+- Release preserves private distribution and rights restrictions; it records production completion, not public reprint permission.
 - Refetching changed content creates a revision rather than mutating history.
 - Every factual claim, quotation, figure, and caption resolves to captured evidence.
 - AI output is draft material and cannot approve itself.

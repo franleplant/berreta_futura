@@ -13,7 +13,13 @@ from .io import load_structured
 from .manifest import Edition, load_edition
 from .package import package_release
 from .records import SourceRecord, load_records
-from .release import ReleaseState, sync_release_state
+from .release import (
+    ReleaseState,
+    ReleaseTransition,
+    finalize_release,
+    plan_release,
+    sync_release_state,
+)
 from .render import render_a5
 
 
@@ -137,11 +143,52 @@ class Magazine:
         )
         return BuildResult(edition.id, destination, destination / "reader.pdf", destination / "home" / "booklet-a4.pdf", tuple(files))
 
+    def release(
+        self, edition_id: str, *, next_edition_id: str | None = None
+    ) -> tuple[BuildResult, ReleaseTransition]:
+        """Build and then freeze the complete open edition as one transaction."""
+
+        edition = self.validate(edition_id)
+        source_ids = _edition_source_ids(edition)
+        # Reconcile records before planning so a stale/manual source record can
+        # never be omitted merely because the release ledger was not refreshed.
+        state = self.sync_release_queue()
+        # Fail cheap before rendering, then repeat the check against current
+        # on-disk state during finalization after the build has succeeded.
+        plan_release(
+            state,
+            edition_id=edition.id,
+            issue_number=edition.issue_number,
+            source_ids=source_ids,
+            publication_date=edition.publication_date,
+            next_edition_id=next_edition_id,
+        )
+        result = self.build(edition_id)
+        transition = finalize_release(
+            self.release_state_path,
+            self.editions_dir / edition.id / "edition.yaml",
+            edition_id=edition.id,
+            issue_number=edition.issue_number,
+            source_ids=source_ids,
+            publication_date=edition.publication_date,
+            next_edition_id=next_edition_id,
+            package_dir=result.output_dir,
+        )
+        return result, transition
+
 
 def _file_entry(path: Path, root: Path) -> dict[str, str]:
     return {
         "path": path.relative_to(root).as_posix(),
         "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+    }
+
+
+def _edition_source_ids(edition: Edition) -> set[str]:
+    # Only provenance attached to rendered articles satisfies the all-sources
+    # release gate. A bare manifest declaration is inventory, not publication.
+    return {
+        source_id for article in edition.articles for source_id in article.source_ids
     }
 
 

@@ -39,3 +39,62 @@ class FidelityTests(unittest.TestCase):
         write_ledger(path, [{"status": "editorial_addition", "edited": "unlabelled context"}])
         with self.assertRaisesRegex(ValidationError, "requires a visible label"):
             fidelity_report(path)
+
+    def test_report_compares_reader_visible_manuscript_with_ledger(self):
+        path = self.root / "ledger.yaml"
+        manuscript = self.root / "article.md"
+        write_ledger(path, [
+            {"id": "p1", "kind": "p", "status": "retained", "source": "Read the source."},
+            {"id": "web", "kind": "boilerplate", "status": "boilerplate_removed", "source": "Subscribe now"},
+        ])
+        manuscript.write_text(
+            "---\ntitle: A manifest-supplied title\nauthor: An Author\n---\n\n"
+            "Read [the source](https://example.com/a/very/long/path).\n",
+            encoding="utf-8",
+        )
+
+        report = fidelity_report(path, manuscript)
+
+        self.assertEqual(report.manuscript_blocks, 1)
+        self.assertEqual(report.ledger_blocks, 1)
+        self.assertIn("Manuscript integrity | PASS", report.as_markdown("Article"))
+
+    def test_untracked_manuscript_expansion_is_actionable(self):
+        path = self.root / "ledger.yaml"
+        manuscript = self.root / "article.md"
+        write_ledger(path, [{"id": "source-link", "kind": "p", "status": "retained", "source": "source"}])
+        manuscript.write_text("Source: https://example.com/private/code\n", encoding="utf-8")
+
+        with self.assertRaisesRegex(ValidationError, r"diverges.*word 1.*ledger derives 1 visible words.*contains 2"):
+            fidelity_report(path, manuscript)
+
+    def test_modified_and_editorial_text_must_be_present(self):
+        path = self.root / "ledger.yaml"
+        manuscript = self.root / "article.md"
+        write_ledger(path, [
+            {"id": "m1", "kind": "p", "status": "modified", "source": "teh source", "edited": "the source"},
+            {"id": "e1", "kind": "p", "status": "editorial_addition", "edited": "Editor's context", "label": "Editor's note"},
+        ])
+        manuscript.write_text("the source\n\n**Editor's note:** Editor's context\n", encoding="utf-8")
+
+        report = fidelity_report(path, manuscript)
+
+        self.assertEqual(report.modified_edited_words, 2)
+        self.assertEqual(report.editorial_addition_words, 2)
+
+    def test_code_indentation_and_line_structure_are_substantive(self):
+        path = self.root / "ledger.yaml"
+        manuscript = self.root / "article.md"
+        write_ledger(path, [{
+            "id": "code-1",
+            "kind": "code",
+            "status": "retained",
+            "source": "if ready:\n    publish()",
+        }])
+        manuscript.write_text("```python\nif ready:\npublish()\n```\n", encoding="utf-8")
+
+        with self.assertRaisesRegex(
+            ValidationError,
+            r"code block 1 diverges.*code-1.*line 2.*indentation are substantive",
+        ):
+            fidelity_report(path, manuscript)

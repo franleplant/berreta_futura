@@ -1,12 +1,17 @@
 schema_version: 1
 open_edition:
-  id: 001-the-work-left-to-us
+  id: 002-unreleased
+  issue_number: 2
+  status: collecting
+  source_ids: []
+released_editions:
+- id: 001-the-work-left-to-us
   issue_number: 1
-  status: assembling
+  status: released
+  publication_date: '2026-07-16'
   source_ids:
   - src-arvind-tweet-2076994014692229601
   - src-hassabis-frontier-ai-2026
   - src-joshi-dsls-reliable-use-llms
   - src-nadella-reverse-information-paradox-2026
   - src-narayanan-icml-2026-keynote
-released_editions: []

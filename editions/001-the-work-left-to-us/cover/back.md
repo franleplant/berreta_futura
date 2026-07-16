@@ -10,4 +10,4 @@ A model can produce an answer. A domain language can constrain it. A firm can pr
 
 Issue 001 brings together four arguments about the work between capability and consequence, from executable software boundaries to the governance of advanced AI.
 
-Private prototype - Not for sale
+Private edition - Not for sale

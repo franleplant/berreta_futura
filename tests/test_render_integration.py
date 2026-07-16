@@ -77,3 +77,33 @@ class RenderIntegrationTests(unittest.TestCase):
             text = "\n".join(page.extract_text() or "" for page in PdfReader(str(result.reader_pdf)).pages)
             self.assertIn("The original article.", text)
             self.assertIn("Made with care.", text)
+
+    def test_fenced_code_is_monospaced_line_preserving_and_safely_paginated(self):
+        with TemporaryDirectory() as temporary:
+            tmp_path = Path(temporary)
+            make_project(tmp_path)
+            edition_dir = tmp_path / "editions" / "issue-001"
+            code = "\n".join(f"    call_{index:03d}();" for index in range(120))
+            (edition_dir / "articles" / "article.md").write_text(
+                f"Before code.\n\n```java\n{code}\n```\n\nAfter code.\n",
+                encoding="utf-8",
+            )
+            ledger = {
+                "schema_version": 1,
+                "source_ids": ["source-one"],
+                "paragraphs": [
+                    {"id": "before", "kind": "p", "status": "retained", "source": "Before code."},
+                    {"id": "sample", "kind": "code", "status": "retained", "source": code},
+                    {"id": "after", "kind": "p", "status": "retained", "source": "After code."},
+                ],
+            }
+            (edition_dir / "fidelity" / "article.yaml").write_text(yaml.safe_dump(ledger), encoding="utf-8")
+
+            result = Magazine(tmp_path).build("issue-001")
+
+            reader = PdfReader(str(result.reader_pdf))
+            text = "\n".join(page.extract_text() or "" for page in reader.pages)
+            self.assertGreaterEqual(len(reader.pages), 8)
+            self.assertIn("call_000();", text)
+            self.assertIn("call_119();", text)
+            self.assertIn("After code.", text)

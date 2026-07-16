@@ -69,6 +69,27 @@ edition.
 either in the open edition or in one released edition, never both. Only an
 explicit release closes the collection and permits the next edition to open.
 
+Release the complete open edition with:
+
+```sh
+uv run --locked mag release <edition-id>
+```
+
+Release is deliberately all-or-nothing. The command first reconciles every
+source record into the open queue and verifies that every queued source appears
+in a rendered article's `source_ids` provenance. A bare entry under the
+manifest's top-level `sources` inventory is not enough. It then validates the fidelity
+ledgers, and successfully builds the reader and home-print packages. Only then
+does it mark the edition manifest `released`, move its sources into
+`released_editions`, and open an empty incremented edition such as
+`002-unreleased`. Manifest and ledger updates use atomic replacements with
+rollback on failure. Rights and distribution fields are preserved unchanged;
+release does not turn a private reprint into a publicly cleared one.
+
+Use `--next-edition-id 002-a-working-title` only when the next collection
+already has an intentional identifier. New captures after release are queued
+there; sources assigned to the released edition are never requeued.
+
 ## Source records
 
 The capture command creates a record like:

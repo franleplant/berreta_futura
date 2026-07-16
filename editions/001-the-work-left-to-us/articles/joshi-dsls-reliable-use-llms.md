@@ -310,7 +310,7 @@ private void handleClientGetRequest(Message message) {
 }
 ```
 
-Source: https://github.com/unmeshjoshi/tickloom/blob/3829bd158b2ea848affc65c0ea8a6ab1bea4fb2c/src/main/java/com/tickloom/algorithms/replication/quorum/QuorumReplica.java
+[source](https://github.com/unmeshjoshi/tickloom/blob/3829bd158b2ea848affc65c0ea8a6ab1bea4fb2c/src/main/java/com/tickloom/algorithms/replication/quorum/QuorumReplica.java)
 
 The semantic model itself acts as a context. The prompt names
 concepts that exist as concrete types in the codebase, so the LLM is not inventing a
@@ -375,7 +375,7 @@ try {
 }
 ```
 
-Source: https://github.com/unmeshjoshi/tickloom/blob/3829bd158b2ea848affc65c0ea8a6ab1bea4fb2c/src/test/java/com/tickloom/testkit/dsl/quorum/LWWLostUpdateWithoutDslTest.java
+[source](https://github.com/unmeshjoshi/tickloom/blob/3829bd158b2ea848affc65c0ea8a6ab1bea4fb2c/src/test/java/com/tickloom/testkit/dsl/quorum/LWWLostUpdateWithoutDslTest.java)
 
 The intent — “Bob writes through Byzantium, Alice writes through Athens, a reader sees Bob's
 value because Byzantium's clock was ahead” — is buried under mechanics.
@@ -405,7 +405,7 @@ Scenario<QuorumReplicaClient> scenario =
                         });
 ```
 
-Source: https://github.com/unmeshjoshi/tickloom/blob/3829bd158b2ea848affc65c0ea8a6ab1bea4fb2c/src/test/java/com/tickloom/testkit/dsl/quorum/LWWLostUpdateScenarioTest.java
+[source](https://github.com/unmeshjoshi/tickloom/blob/3829bd158b2ea848affc65c0ea8a6ab1bea4fb2c/src/test/java/com/tickloom/testkit/dsl/quorum/LWWLostUpdateScenarioTest.java)
 
 The DSL is a thin, declarative surface that compiles down to a pure intermediate
 representation — a `Scenario` made of `Step`s, where each step carries
@@ -464,7 +464,7 @@ Scenario<QuorumReplicaClient> scenario =
 ScenarioResult result = scenario.run();
 ```
 
-Source: https://github.com/unmeshjoshi/tickloom/blob/3829bd158b2ea848affc65c0ea8a6ab1bea4fb2c/src/test/java/com/tickloom/testkit/dsl/quorum/DDIA_LinearizabilityScenarioTest.java
+[source](https://github.com/unmeshjoshi/tickloom/blob/3829bd158b2ea848affc65c0ea8a6ab1bea4fb2c/src/test/java/com/tickloom/testkit/dsl/quorum/DDIA_LinearizabilityScenarioTest.java)
 
 Because the surface is so small — and the space of valid code it can generate is so much
 smaller than the space of valid Java programs — the LLM has very little room to hallucinate,

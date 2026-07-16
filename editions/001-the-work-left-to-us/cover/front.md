@@ -10,4 +10,4 @@ Work, agency, ownership, and governance in the age of capable machines
 Arvind Narayanan · Unmesh Joshi
 Satya Nadella · Demis Hassabis
 
-Issue 001 - Private prototype
+Issue 001 - Private edition - Not for sale
