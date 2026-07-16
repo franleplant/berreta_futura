@@ -9,6 +9,16 @@ from .io import load_structured
 
 STATUSES = {"retained", "boilerplate_removed", "substantive_cut", "modified", "editorial_addition"}
 CONTENT_MODES = {"faithful_edit", "faithful_synthesis", "selected_extracts", "original_synthesis"}
+DISTANCING_VERBS = (
+    r"argues?|says?|writes?|explains?|describes?|observes?|contends?|notes?|"
+    r"frames?|treats?|uses?|calls?|divides?|considers?|distinguishes?|proposes?|"
+    r"suggests?|predicts?|believes?|rejects?"
+)
+DISTANCING_NARRATION = re.compile(
+    rf"\b(?:the\s+)?(?:author|speaker|writer|presenter|article|essay|talk|keynote|presentation)"
+    rf"\b[^.!?]{{0,40}}\b(?:{DISTANCING_VERBS})\b",
+    re.IGNORECASE,
+)
 
 
 def word_count(text: str) -> int:
@@ -210,6 +220,68 @@ def _short(text: str, limit: int = 100) -> str:
     return one_line if len(one_line) <= limit else one_line[: limit - 3] + "..."
 
 
+def _sentences(text: str) -> list[str]:
+    """Split prose coarsely enough to compare author mentions with source wording."""
+    return [
+        sentence.strip()
+        for sentence in re.split(r"(?<=[.!?])(?:\s+|$)|\n+", text)
+        if sentence.strip()
+    ]
+
+
+def validate_faithful_synthesis_voice(
+    path: Path,
+    paragraphs: list[dict],
+    source_author: str,
+) -> None:
+    """Reject magazine-narrator framing added to a source-author synthesis.
+
+    A faithful synthesis is already attributed by its byline and mode label. Its
+    adapted prose therefore stays in the source's voice instead of repeatedly
+    telling the reader what the bylined author says. Exact source sentences are
+    exempt so this check never forces a rewrite of source wording.
+    """
+    author = source_author.strip()
+    if not author:
+        return
+    name_parts = author.casefold().split()
+    surname = name_parts[-1]
+    first_name = name_parts[0]
+    errors: list[str] = []
+    for index, paragraph in enumerate(paragraphs):
+        if paragraph.get("status") != "modified":
+            continue
+        source = " ".join(str(paragraph.get("source", "")).split()).casefold()
+        for sentence in _sentences(str(paragraph.get("edited", ""))):
+            sentence_words: set[str] = set()
+            for word in re.findall(r"[\w'-]+", sentence):
+                folded = word.casefold()
+                sentence_words.add(folded[:-2] if folded.endswith("'s") else folded)
+            normalized = " ".join(sentence.split()).casefold()
+            names_author = (
+                surname in sentence_words
+                or author.casefold() in normalized
+                or (
+                    first_name in sentence_words
+                    and re.search(rf"\b(?:{DISTANCING_VERBS})\b", sentence, re.IGNORECASE)
+                )
+            )
+            if (
+                not names_author
+                and not DISTANCING_NARRATION.search(sentence)
+            ) or normalized in source:
+                continue
+            ledger_id = paragraph.get("id", index + 1)
+            errors.append(
+                f"{path}: modified entry {ledger_id} adds detached narration about "
+                f"the bylined author: {_short(sentence)!r}. Preserve the source's "
+                "grammatical person (including first person), or retain the exact "
+                "source sentence."
+            )
+    if errors:
+        raise ValidationError(errors)
+
+
 def _validate_manuscript(path: Path, manuscript: Path, paragraphs: list[dict]) -> tuple[int, int]:
     expected = _ledger_blocks(paragraphs)
     actual = _manuscript_blocks(manuscript)
@@ -260,7 +332,12 @@ def _validate_manuscript(path: Path, manuscript: Path, paragraphs: list[dict]) -
     return len(actual), len(expected)
 
 
-def fidelity_report(path: Path, manuscript: Path | None = None) -> FidelityReport:
+def fidelity_report(
+    path: Path,
+    manuscript: Path | None = None,
+    *,
+    source_author: str | None = None,
+) -> FidelityReport:
     data = load_structured(path)
     content_mode = str(data.get("content_mode", "faithful_edit"))
     if content_mode not in CONTENT_MODES:
@@ -304,4 +381,6 @@ def fidelity_report(path: Path, manuscript: Path | None = None) -> FidelityRepor
             raise ValidationError(f"{path}: faithful_synthesis requires source-to-edited mappings")
         if source_words and synthesized_words >= source_words:
             raise ValidationError(f"{path}: faithful_synthesis must materially condense its source")
+        if source_author:
+            validate_faithful_synthesis_voice(path, paragraphs, source_author)
     return FidelityReport(source_words, totals["retained"], totals["boilerplate_removed"], totals["substantive_cut"], totals["modified"], modified_edited, totals["editorial_addition"], counts, content_mode, manuscript_blocks, ledger_blocks)

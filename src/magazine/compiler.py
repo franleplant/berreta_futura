@@ -134,7 +134,7 @@ class Magazine:
                     f"Article {article.id} content_mode {article.content_mode!r} does not match "
                     f"its fidelity ledger {ledger_mode!r}"
                 )
-            fidelity_report(article.fidelity)
+            fidelity_report(article.fidelity, source_author=article.author)
         editions = {edition.language: edition}
         for language in self.languages:
             if language == edition.language:

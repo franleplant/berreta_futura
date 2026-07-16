@@ -28,12 +28,12 @@ articles:
   title: ¿Qué trabajo nos quedará por hacer?
   author_note: Arvind Narayanan es profesor de informática en la Universidad de Princeton.
   manuscript: articles/narayanan-what-will-be-left.md
-  source_sha256: 3891198b24c5d2b6bc21bbba26cb547f398941b43f0b4f4218e68cd7f70e0bfb
+  source_sha256: 49fc3fd5f93ab9c8211387bd229184e3475e4a10c79eb4d7c5438fe25ba8724f
 - id: joshi-dsls-reliable-use-llms
   title: Los DSL permiten un uso confiable de los LLM
   author_note: Unmesh Joshi es Distinguished Engineer en Thoughtworks y colabora en martinfowler.com.
   manuscript: articles/joshi-dsls-reliable-use-llms.md
-  source_sha256: e235aaac4fd99864f35f14a153a437e441cff6493f050714445d78effe75c039
+  source_sha256: ca116c68323207b16243c158f6d50d59fa1ed5de17a975144aa84ed9f3c45192
 - id: nadella-reverse-information-paradox
   title: La paradoja inversa de la información
   author_note: Satya Nadella es presidente y consejero delegado de Microsoft.

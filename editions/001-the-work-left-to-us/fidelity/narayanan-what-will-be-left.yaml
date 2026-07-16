@@ -412,15 +412,16 @@ paragraphs:
   edited: 'Amplification or replacement
 
 
-    AI inspires both excitement and anxiety because its systems can do more of the work people do today.
-    Arvind Narayanan argues that our response depends on which of two narratives we accept. If AI will
+    AI inspires both excitement and anxiety because its systems can do more of the work we do today. I
+    want to address that anxiety head on. How should we prepare for a future where AI becomes capable of
+    doing more and more of our work? Our response depends on which of two narratives we accept. If AI will
     soon replace nearly everything humans do, the rational move may be to accumulate wealth before existing
     skills lose their value. If AI will instead amplify human potential, this is an unusually valuable
     time to build the skills, agency, taste, and judgment that complement it. Choosing the replacement
     story too early risks wasting the best period in which to learn how to use a powerful new tool.
 
 
-    Narayanan''s framework is AI as Normal Technology. "Normal" does not mean mundane or unimportant:
+    AI as Normal Technology is the intellectual framework for this argument. "Normal" does not mean mundane or unimportant:
     AI may be as transformative as the industrial revolution. It means that, absent a genuine discontinuity,
     its economic effects still arrive through recognizable social processes rather than directly from
     a capability benchmark.
@@ -443,8 +444,8 @@ paragraphs:
     Capability is not deployment
 
 
-    The gap between a model''s benchmark performance and its practical usefulness is central. Narayanan''s
-    research group studies reliability through consistency, robustness, calibration, and operational safety.
+    The gap between a model''s benchmark performance and its practical usefulness is central. My research
+    group studies reliability through consistency, robustness, calibration, and operational safety.
     A system advertised as 70 percent accurate may reliably solve a known 70 percent of tasks, or it may
     unpredictably fail 30 percent of the time on every task. Those are radically different deployment
     prospects, yet ordinary accuracy scores blur them.
@@ -457,7 +458,7 @@ paragraphs:
     of the same agent as an automation system ignores that distinction.
 
 
-    For now, Narayanan argues, general purpose, high stakes, and fully automated form an unstable triangle:
+    For now, general purpose, high stakes, and fully automated form an unstable triangle:
     systems can usually offer only two. Collaboration is therefore advancing faster than dependable automation.
     Model capability alone does not remove integration costs, legal liability, recovery procedures, or
     the need for human control.
@@ -467,7 +468,7 @@ paragraphs:
 
 
     Software engineering is an early test. Even if agents greatly accelerate coding, writing code was
-    never the whole job. Narayanan divides the work into a decide-execute-deliver sandwich. Understanding
+    never the whole job. I divide the work into a decide-execute-deliver sandwich. Understanding
     requirements, choosing a specification, and planning occupy the decide layer. Coding and debugging
     form the execute layer. Integration, testing, maintenance, and accountability form the deliver layer.
     AI compresses the middle, but the outer layers remain and may expand as more code becomes possible.
@@ -798,8 +799,8 @@ paragraphs:
   edited: 'Four different claims about advanced AI
 
 
-    Narayanan takes recursive self-improvement seriously but rejects the tendency to collapse several
-    distinct ideas into one inevitable sequence. He separates four dimensions: recursive self-improvement,
+    I take recursive self-improvement seriously but reject the tendency to collapse several distinct ideas
+    into one inevitable sequence. I separate four dimensions: recursive self-improvement,
     humanlike general intelligence, economically transformative AI, and superintelligence. Progress on
     one does not automatically establish the others.
 
@@ -813,7 +814,7 @@ paragraphs:
 
     This motivates open-world evaluation: give agents budgets, research problems, and realistic freedom,
     then evaluate the quality and novelty of their work rather than only their ability to reach a preselected
-    answer. Narayanan treats creativity as one of several barriers to humanlike AI, not as a mystical
+    answer. I treat creativity as one of several barriers to humanlike AI, not as a mystical
     human monopoly. LLMs possess unusual strengths, but human creativity also relies on representations,
     learning from sparse experience, and searching for the right problem formulation.
 
@@ -1069,8 +1070,8 @@ paragraphs:
     what should be built, evaluating what was produced, and taking responsibility for its consequences.
 
 
-    AI evaluation is already becoming a discipline of its own. Narayanan uses a sailing metaphor: if AI
-    performs more of the rowing, people must spend more effort steering the ship. In research, that means
+    AI evaluation is already becoming a discipline of its own. If AI performs more of the rowing, we must
+    spend more effort steering the ship. In research, that means
     deciding which questions matter, whether evidence supports a claim, and whether a system behaves safely
     outside a benchmark. Automating peer review is a trap if it accelerates scoring while eroding the
     human understanding needed to judge significance and originality. The mundane parts can be automated
@@ -1083,7 +1084,7 @@ paragraphs:
     it.
 
 
-    Narayanan''s personal rule is to distinguish AI''s floor from its ceiling. The floor is what it can
+    My personal rule is to distinguish AI''s floor from its ceiling. The floor is what it can
     do alone; the ceiling is what a person can do with it. Competing against the floor encourages black-box
     use and eventual displacement. Raising the ceiling requires learning, experimentation, verification,
     and enough understanding to remain accountable. The aim is not a passive hope that machines align

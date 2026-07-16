@@ -5,7 +5,7 @@ source_body_sha256: 1effc901980761de45a8ff4b1a359558003ab561e8f6fba92b48bfbfbc61
 rights_status: private_reference
 ---
 
-Los modelos de lenguaje (LLM) pueden generar código a una velocidad extraordinaria, pero la velocidad no garantiza que el resultado exprese el diseño buscado. Unmesh Joshi sostiene que las abstracciones y los lenguajes específicos de dominio (DSL) proporcionan una estructura con límites claros: ayudan a las personas a descubrir un diseño junto con un LLM y luego ofrecen al modelo un vocabulario acotado y verificable con el cual aplicar ese diseño de manera confiable.
+Los modelos de lenguaje (LLM) pueden generar código a una velocidad extraordinaria, pero la velocidad no garantiza que el resultado exprese el diseño buscado. Sostengo que las abstracciones y los lenguajes específicos de dominio (DSL) proporcionan una estructura con límites claros: ayudan a las personas a descubrir un diseño junto con un LLM y luego ofrecen al modelo un vocabulario acotado y verificable con el cual aplicar ese diseño de manera confiable.
 
 ## Una especificación es una hipótesis inicial
 
@@ -13,7 +13,7 @@ Los sistemas grandes contienen muchas decisiones pequeñas que no pueden quedar 
 
 Revisar código generado no equivale a escribirlo. La revisión puede confirmar que un fragmento se parece a la intención declarada y, aun así, eludir las decisiones que ponen de manifiesto un diseño: dónde corresponde una responsabilidad, qué límite debería ser público o cómo debería encajar una extensión. Los lenguajes y paradigmas de programación también determinan qué advierten quienes diseñan. Las implementaciones funcionales y las orientadas a objetos hacen visibles conceptos y tensiones diferentes.
 
-Joshi asigna dos funciones al LLM. Durante el diseño, es un interlocutor para explorar ideas, vocabulario y posibles abstracciones. Una vez establecido ese vocabulario, se convierte en una interfaz de lenguaje natural para un sistema acotado.
+Le asigno dos funciones al LLM. Durante el diseño, es un interlocutor para explorar ideas, vocabulario y posibles abstracciones. Una vez establecido ese vocabulario, se convierte en una interfaz de lenguaje natural para un sistema acotado.
 
 ## Por qué ayudan los lenguajes acotados
 
@@ -25,13 +25,13 @@ La afirmación tiene límites. El lenguaje debe seguir siendo lo bastante peque�
 
 ## De los diagramas a un modelo semántico
 
-Joshi describe primero una herramienta de presentaciones para enseñar sistemas distribuidos. Necesitaba convertir diagramas de secuencia de PlantUML en diapositivas de PowerPoint que avanzaran paso a paso. Un formato YAML compacto indica el nombre de un diagrama, un título y los pasos que deben revelarse. Con la herramienta y unos pocos ejemplos en contexto, un LLM puede traducir una petición en inglés al YAML exacto que acepta el generador.
+Primero construí una herramienta de presentaciones para enseñar sistemas distribuidos. Necesitaba convertir diagramas de secuencia de PlantUML en diapositivas de PowerPoint que avanzaran paso a paso. Un formato YAML compacto indica el nombre de un diagrama, un título y los pasos que deben revelarse. Con la herramienta y unos pocos ejemplos en contexto, un LLM puede traducir una petición en inglés al YAML exacto que acepta el generador.
 
 Este ejemplo ya contiene las dos funciones. El LLM ayuda a diseñar los marcadores de pasos y el vocabulario de las diapositivas; una vez que existe el formato, convierte el lenguaje natural en una especificación válida. El YAML no es útil porque los modelos sean buenos, en términos generales, para producir sangrías. Es útil porque un programa define con exactitud qué significan los campos y rechaza todo lo que queda fuera de ese contrato.
 
 Los dominios más complejos requieren un modelo semántico distinto de su sintaxis superficial. Los sistemas distribuidos son un ejemplo exigente porque los hilos, los relojes, las demoras de red, el almacenamiento, los reintentos y las distintas intercalaciones de fallos crean un espacio enorme de diseño y verificación. Pedirle a un modelo que genere un sistema entero deja abiertas todas esas decisiones en cada instrucción.
 
-El entorno de trabajo [Tickloom](https://github.com/unmeshjoshi/tickloom) de Joshi cierra gran parte de ese espacio. Los nodos ejecutan un ciclo de tick de un solo hilo. Cada tick hace avanzar un reloj lógico y procesa el trabajo en un orden fijo. Los mensajes son registros. Una abstracción `Replica` ya comprende pares, difusiones y cuórums. `Process`, `Network`, `Storage` y `Clock` definen las principales separaciones. Al fijar los hilos, el tiempo y la entrega, una instrucción puede concentrarse en la lógica del protocolo en lugar de inventar la infraestructura.
+Mi entorno de trabajo [Tickloom](https://github.com/unmeshjoshi/tickloom) cierra gran parte de ese espacio. Los nodos ejecutan un ciclo de tick de un solo hilo. Cada tick hace avanzar un reloj lógico y procesa el trabajo en un orden fijo. Los mensajes son registros. Una abstracción `Replica` ya comprende pares, difusiones y cuórums. `Process`, `Network`, `Storage` y `Clock` definen las principales separaciones. Al fijar los hilos, el tiempo y la entrega, una instrucción puede concentrarse en la lógica del protocolo en lugar de inventar la infraestructura.
 
 Por ejemplo, una petición de un almacén con cuórum en el que prevalezca la última escritura puede nombrar conceptos de Tickloom como `Replica`, `quorumRequest`, `countResponseIf`, `MessageType` y `Handler`. Esos nombres remiten a tipos y comportamientos concretos del código base. El modelo semántico se convierte en contexto ejecutable: el LLM completa un protocolo acotado sobre un sustrato que el equipo ya comprende.
 

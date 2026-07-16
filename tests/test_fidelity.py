@@ -130,6 +130,65 @@ class FidelityTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "requires source-to-edited mappings"):
             fidelity_report(path)
 
+    def test_faithful_synthesis_rejects_added_narration_about_bylined_author(self):
+        path = self.root / "ledger.yaml"
+        path.write_text(yaml.safe_dump({
+            "schema_version": 1,
+            "source_ids": ["s"],
+            "content_mode": "faithful_synthesis",
+            "paragraphs": [{
+                "id": "synthesis",
+                "status": "modified",
+                "source": "I distinguish a model's floor from its ceiling, then explain the consequences in detail.",
+                "edited": "Narayanan argues that a model's floor differs from its ceiling.",
+            }],
+        }), encoding="utf-8")
+
+        with self.assertRaisesRegex(
+            ValidationError,
+            r"adds detached narration.*Preserve the source's grammatical person",
+        ):
+            fidelity_report(path, source_author="Arvind Narayanan")
+
+    def test_faithful_synthesis_rejects_generic_author_narration(self):
+        path = self.root / "ledger.yaml"
+        path.write_text(yaml.safe_dump({
+            "schema_version": 1,
+            "source_ids": ["s"],
+            "content_mode": "faithful_synthesis",
+            "paragraphs": [{
+                "id": "synthesis",
+                "status": "modified",
+                "source": "I explain the distinction, its evidence, and its consequences at length.",
+                "edited": "The author explains the distinction and its consequences.",
+            }],
+        }), encoding="utf-8")
+
+        with self.assertRaisesRegex(ValidationError, "adds detached narration"):
+            fidelity_report(path, source_author="James Hassabis")
+
+    def test_faithful_synthesis_allows_exact_source_sentence_naming_author(self):
+        path = self.root / "ledger.yaml"
+        source = (
+            "The introduction names Arvind Narayanan as the keynote speaker. "
+            "It then presents a much longer argument with evidence and qualifications."
+        )
+        path.write_text(yaml.safe_dump({
+            "schema_version": 1,
+            "source_ids": ["s"],
+            "content_mode": "faithful_synthesis",
+            "paragraphs": [{
+                "id": "synthesis",
+                "status": "modified",
+                "source": source,
+                "edited": "The introduction names Arvind Narayanan as the keynote speaker.",
+            }],
+        }), encoding="utf-8")
+
+        report = fidelity_report(path, source_author="Arvind Narayanan")
+
+        self.assertGreater(report.modified_source_words, report.modified_edited_words)
+
     def test_report_labels_can_be_rendered_in_spanish(self):
         path = self.root / "ledger.yaml"
         write_ledger(path, [{"status": "retained", "source": "texto fuente"}])

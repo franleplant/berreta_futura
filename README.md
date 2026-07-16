@@ -185,8 +185,10 @@ The fidelity ledger records every substantive source paragraph as one of:
 
 The renderer enforces a hard seven-page budget per article. A long source uses
 `faithful_synthesis`, which maps the complete source to a materially shorter
-manuscript while preserving its argument, evidence, qualifications, and
-conclusion. Short pieces remain `faithful_edit`.
+manuscript while preserving its argument, evidence, qualifications, conclusion,
+and grammatical point of view. The byline and mode label carry attribution;
+synthesized prose remains in the source author's voice instead of narrating what
+the author “argues” or “explains.” Short pieces remain `faithful_edit`.
 
 `modified` entries preserve both source and edited text. Editorial additions
 must be visually labelled in the manuscript. The generated fidelity report

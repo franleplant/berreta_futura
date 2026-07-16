@@ -5,7 +5,7 @@
 Every piece is explicitly one of:
 
 - `faithful_edit`: the source author's work, minimally adapted for print;
-- `faithful_synthesis`: a compact, attributed restatement that preserves the source's argument, evidence, qualifications, and conclusions;
+- `faithful_synthesis`: a compact adaptation in the source author's voice that preserves the source's argument, evidence, qualifications, and conclusions;
 - `selected_extracts`: attributed passages with editorial framing;
 - `original_synthesis`: a new source-grounded article;
 - `original_editorial`: the magazine's own voice.
@@ -18,7 +18,9 @@ Every rendered source article, including its title and credit, has a hard maximu
 
 The opening editorial must declare a non-empty title in its frontmatter. Its label, title, and byline are rendered on the opener and its title appears in the contents. The complete editorial has a hard maximum of two A5 reader pages. The renderer measures the real span and refuses an over-budget or untitled build.
 
-An over-budget `faithful_edit` is converted to `faithful_synthesis`. The synthesis must retain the source's central argument, important evidence and examples, uncertainty, counterarguments, and conclusion. It must not introduce a new thesis or flatten disagreement into generic summary language. The credit must identify it as a synthesis rather than presenting edited prose as the source author's verbatim writing.
+An over-budget `faithful_edit` is converted to `faithful_synthesis`. The synthesis must retain the source's central argument, important evidence and examples, uncertainty, counterarguments, and conclusion. It must not introduce a new thesis or flatten disagreement into generic summary language. The byline and mode label provide attribution and disclose that the text is condensed rather than verbatim.
+
+Synthesis prose stays in the source's grammatical person and point of view. If the source author speaks in the first person, the synthesis does too; if the source is impersonal or already uses third person, preserve that choice. Do not wrap adapted prose in magazine-narrator scaffolding such as “Narayanan argues” or “Joshi explains.” Exact source wording may remain unchanged. Prefer retained passages and light edits, and summarize only where length requires it.
 
 Every synthesis maps the complete substantive source into edited ledger entries, reports source and output word counts, and passes manuscript-integrity validation. Short articles remain `faithful_edit`; synthesis is a length remedy, not the default editorial voice.
 
