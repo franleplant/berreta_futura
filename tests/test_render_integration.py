@@ -29,6 +29,7 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertEqual(preflight["result"], "home_ready_studio_blocked")
             manifest = json.loads((result.output_dir / "edition-manifest.json").read_text())
             self.assertEqual(manifest["inputs"]["sources"][0]["id"], "source-one")
+            self.assertEqual(len(manifest["inputs"]["sources"][0]["raw_captures"]), 1)
 
     def test_sections_edition_packages_explicit_blocked_fidelity_status(self):
         with TemporaryDirectory() as temporary:

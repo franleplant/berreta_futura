@@ -13,8 +13,10 @@ def parser() -> argparse.ArgumentParser:
     command = argparse.ArgumentParser(prog="mag", description="Compile a private faithful-edit magazine.")
     command.add_argument("--root", type=Path, default=Path.cwd(), help="Project root (default: current directory)")
     actions = command.add_subparsers(dest="command", required=True)
-    capture = actions.add_parser("capture", help="Record source metadata; does not download content")
+    capture = actions.add_parser("capture", help="Archive a raw snapshot, record it, and queue the source")
     capture.add_argument("url")
+    capture.add_argument("--snapshot", type=Path, required=True, help="Raw file or directory to copy into the source archive")
+    capture.add_argument("--capture-method", default="caller_supplied", help="How the supplied snapshot was acquired")
     capture.add_argument("--title")
     capture.add_argument("--author")
     capture.add_argument("--published-at")
@@ -41,7 +43,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "capture":
             record = magazine.capture(
-                args.url, title=args.title, author=args.author, published_at=args.published_at,
+                args.url, snapshot=args.snapshot, capture_method=args.capture_method,
+                title=args.title, author=args.author, published_at=args.published_at,
                 captured_at=args.captured_at, tags=args.tag, primary_material=args.primary_material,
                 synopsis=args.synopsis, notes=args.notes,
             )

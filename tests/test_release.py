@@ -22,7 +22,9 @@ class ReleaseStateTests(unittest.TestCase):
 
     def test_capture_queues_new_source_in_open_edition(self):
         magazine = Magazine(self.root)
-        record = magazine.capture("https://example.com/article", title="Article")
+        snapshot = self.root / "article.html"
+        snapshot.write_text("article", encoding="utf-8")
+        record = magazine.capture("https://example.com/article", snapshot=snapshot, title="Article")
 
         state = load_release_state(self.root / "library" / "release-state.yaml")
 
@@ -45,7 +47,9 @@ class ReleaseStateTests(unittest.TestCase):
 
     def test_sources_catalog_exposes_open_edition_assignment(self):
         magazine = Magazine(self.root)
-        record = magazine.capture("https://example.com/article", title="Article")
+        snapshot = self.root / "article.html"
+        snapshot.write_text("article", encoding="utf-8")
+        record = magazine.capture("https://example.com/article", snapshot=snapshot, title="Article")
 
         catalog = magazine.write_sources().read_text(encoding="utf-8")
 
@@ -91,9 +95,19 @@ class ReleaseStateTests(unittest.TestCase):
         })
         source_dir = self.root / "library" / "sources" / source_id
         source_dir.mkdir()
+        source.pop("raw_captures", None)
         (source_dir / "record.yaml").write_text(
             yaml.safe_dump(source, sort_keys=False), encoding="utf-8"
         )
+        fixture = self.root / f"{source_id}.txt"
+        fixture.write_text(source_id, encoding="utf-8")
+        from magazine.capture import archive_snapshot
+        from magazine.records import SourceRecord
+        archived = archive_snapshot(
+            SourceRecord.from_dict(source), self.root / "library" / "sources", fixture,
+            method="test_fixture",
+        )
+        archived.write(self.root / "library" / "sources")
 
     def test_release_builds_before_freezing_and_opens_empty_next_edition(self):
         magazine, manifest_path, state_path = self.prepare_releasable_project()

@@ -4,16 +4,23 @@ title: A Framework for Frontier AI and the Dawning of a New Age
 author: Demis Hassabis
 canonical_url: https://x.com/demishassabis/article/2076957440109625718
 submitted_url: https://x.com/demishassabis/status/2076957440109625718
-captured_at: 2026-07-15T18:37:03-03:00
-publication_date: 2026-07-14
+captured_at: '2026-07-15T18:37:03-03:00'
+publication_date: '2026-07-14'
 kind: article
 status: extracted
 content_hash: e4dd96fdc8e11c97643346a9edca966365a7e47a04cef4f85b44afe68f0af530
+raw_captures:
+- id: 0dfd0aa27428cde66e6d153c9114cf91952e072005998eb0748f655e33a8c580
+  path: raw/0dfd0aa27428cde66e6d153c9114cf91952e072005998eb0748f655e33a8c580/manifest.json
+  method: Authenticated Chrome rendered X Article.
+  captured_at: '2026-07-15T18:37:03-03:00'
+  artifact_count: 1
+  byte_count: 28072
 provenance:
-  - relation: discovered_via
-    target_url: https://x.com/demishassabis/status/2076957440109625718
-  - relation: canonical_primary
-    target_url: https://x.com/demishassabis/article/2076957440109625718
+- relation: discovered_via
+  target_url: https://x.com/demishassabis/status/2076957440109625718
+- relation: canonical_primary
+  target_url: https://x.com/demishassabis/article/2076957440109625718
 rights:
   status: unknown
   license: none_found
@@ -29,18 +36,22 @@ metadata:
   rendered_article_sha256: e4dd96fdc8e11c97643346a9edca966365a7e47a04cef4f85b44afe68f0af530
   normalized_body_sha256: b585b330faa6c961eb4e6eada869b782fb01396cbebe877842e7f1973da3c486
   section_headings:
-    - The Challenges of the Frontier
-    - A Framework for a Frontier AI Standards Body
-    - The Future Is Not Yet Written
+  - The Challenges of the Frontier
+  - A Framework for a Frontier AI Standards Body
+  - The Future Is Not Yet Written
   topics:
-    - agi
-    - frontier-ai-governance
-    - standards
-    - dynamic-benchmarks
-    - pre-release-testing
-    - international-coordination
+  - agi
+  - frontier-ai-governance
+  - standards
+  - dynamic-benchmarks
+  - pre-release-testing
+  - international-coordination
   extraction_method: Authenticated Chrome rendered X Article.
-  snapshot_hash_basis: Visible text of the article element, including the rendered byline and article controls.
-  capture_durability: Durable authenticated rendered capture stored in the private vault.
-  vault_path: vault/src-hassabis-frontier-ai-2026/f8ed1bea4ee1612b03a87254d6cb244d8d7514bb5dc464ff8875af68b4d1745f/
-notes: The status URL renders the complete long-form X Article and links to the canonical focus-mode article. No explicit reuse license was visible.
+  snapshot_hash_basis: Visible text of the article element, including the rendered byline and article
+    controls.
+  capture_durability: Durable authenticated rendered capture stored in a committed source-local raw bundle.
+  raw_capture_policy: committed_source_local
+  tags: []
+  synopsis: ''
+notes: The status URL renders the complete long-form X Article and links to the canonical focus-mode article.
+  No explicit reuse license was visible.

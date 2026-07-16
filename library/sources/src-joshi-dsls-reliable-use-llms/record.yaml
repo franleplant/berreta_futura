@@ -4,16 +4,23 @@ title: DSLs Enable Reliable Use of LLMs
 author: Unmesh Joshi
 canonical_url: https://martinfowler.com/articles/llm-and-dsls.html
 submitted_url: https://x.com/martinfowler/status/2077023024155422927
-captured_at: 2026-07-15T18:37:03-03:00
-publication_date: 2026-07-14
+captured_at: '2026-07-15T18:37:03-03:00'
+publication_date: '2026-07-14'
 kind: article
 status: extracted
 content_hash: 13f53d5d93054a8c58bd1739a16a10bb7fea0e0f6884a6770043c79fe93fd9ae
+raw_captures:
+- id: afece142d4eb217beceae5ff0720cfd2772c3df00141ed80149d9681fa90ea5e
+  path: raw/afece142d4eb217beceae5ff0720cfd2772c3df00141ed80149d9681fa90ea5e/manifest.json
+  method: Authenticated Chrome for the discovery post; rendered public HTML for the canonical article.
+  captured_at: '2026-07-15T18:37:03-03:00'
+  artifact_count: 1
+  byte_count: 86858
 provenance:
-  - relation: discovered_via
-    target_url: https://x.com/martinfowler/status/2077023024155422927
-  - relation: canonical_primary
-    target_url: https://martinfowler.com/articles/llm-and-dsls.html
+- relation: discovered_via
+  target_url: https://x.com/martinfowler/status/2077023024155422927
+- relation: canonical_primary
+  target_url: https://martinfowler.com/articles/llm-and-dsls.html
 rights:
   status: unknown
   copyright_notice: Copyright Martin Fowler; no explicit reuse license was found.
@@ -31,13 +38,17 @@ metadata:
   outbound_url_count: 31
   section_count: 11
   topics:
-    - llms
-    - domain-specific-languages
-    - abstractions
-    - deterministic-validation
-    - software-design
-  extraction_method: Authenticated Chrome for the discovery post; rendered public HTML for the canonical article.
+  - llms
+  - domain-specific-languages
+  - abstractions
+  - deterministic-validation
+  - software-design
+  extraction_method: Authenticated Chrome for the discovery post; rendered public HTML for the canonical
+    article.
   snapshot_hash_basis: Visible text of the canonical page main element.
-  capture_durability: Durable rendered capture stored in the private vault.
-  vault_path: vault/src-joshi-dsls-reliable-use-llms/13f53d5d93054a8c58bd1739a16a10bb7fea0e0f6884a6770043c79fe93fd9ae/
-notes: The tweet is the discovery lead; the Unmesh Joshi article is the substantive primary source. Treat a faithful reprint as private-only until permission or another applicable rights basis is recorded.
+  capture_durability: Durable rendered capture stored in a committed source-local raw bundle.
+  raw_capture_policy: committed_source_local
+  tags: []
+  synopsis: ''
+notes: The tweet is the discovery lead; the Unmesh Joshi article is the substantive primary source. Treat
+  a faithful reprint as private-only until permission or another applicable rights basis is recorded.

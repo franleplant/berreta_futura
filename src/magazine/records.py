@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
@@ -60,6 +60,7 @@ class SourceRecord:
     kind: str = "web"
     status: str = "captured"
     content_hash: str | None = None
+    raw_captures: list[dict[str, Any]] = field(default_factory=list)
     provenance: list[dict[str, Any]] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
     rights: dict[str, Any] = field(default_factory=lambda: {
@@ -95,6 +96,18 @@ class SourceRecord:
         # shorter names remain internal compatibility aliases.
         data["url"] = data.get("submitted_url", data.get("url", data.get("canonical_url")))
         data["published_at"] = data.get("publication_date", data.get("published_at"))
+        for key in ("captured_at", "published_at"):
+            if isinstance(data.get(key), (date, datetime)):
+                data[key] = data[key].isoformat()
+        raw_captures = data.get("raw_captures")
+        if isinstance(raw_captures, list):
+            normalized_captures = []
+            for capture in raw_captures:
+                capture = dict(capture)
+                if isinstance(capture.get("captured_at"), (date, datetime)):
+                    capture["captured_at"] = capture["captured_at"].isoformat()
+                normalized_captures.append(capture)
+            data["raw_captures"] = normalized_captures
         metadata = data.get("metadata") if isinstance(data.get("metadata"), dict) else {}
         data.setdefault("tags", metadata.get("tags", []))
         data.setdefault("synopsis", metadata.get("synopsis", ""))
@@ -123,6 +136,7 @@ class SourceRecord:
             "kind": self.kind,
             "status": self.status,
             "content_hash": self.content_hash,
+            "raw_captures": self.raw_captures,
             "provenance": self.provenance,
             "rights": self.rights,
             "metadata": {**self.metadata, "tags": self.tags, "synopsis": self.synopsis},

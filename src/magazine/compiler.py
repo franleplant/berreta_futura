@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .capture import archive_snapshot, verify_snapshots
 from .catalog import render_sources
 from .fidelity import fidelity_report
 from .io import load_structured
@@ -45,13 +46,28 @@ class Magazine:
         self.output_dir = self.root / paths.get("output", "output")
         self.release_state_path = self.root / paths.get("release_state", "library/release-state.yaml")
 
-    def capture(self, url: str, **metadata: Any) -> SourceRecord:
-        """Normalize and store source metadata without performing network access."""
+    def capture(
+        self,
+        url: str,
+        *,
+        snapshot: Path,
+        capture_method: str = "caller_supplied",
+        **metadata: Any,
+    ) -> SourceRecord:
+        """Archive raw evidence, then store and queue its normalized source record."""
         candidate = SourceRecord.create(url, **metadata)
         for existing in load_records(self.sources_dir):
             if existing.canonical_url == candidate.canonical_url:
+                existing = archive_snapshot(
+                    existing, self.sources_dir, snapshot, method=capture_method,
+                    captured_at=candidate.captured_at,
+                )
+                existing.write(self.sources_dir)
                 self.sync_release_queue()
                 return existing
+        candidate = archive_snapshot(
+            candidate, self.sources_dir, snapshot, method=capture_method
+        )
         candidate.write(self.sources_dir)
         self.sync_release_queue()
         return candidate
@@ -65,6 +81,8 @@ class Magazine:
 
     def sync_release_queue(self, records: list[SourceRecord] | None = None) -> ReleaseState:
         current = records if records is not None else load_records(self.sources_dir)
+        for record in current:
+            verify_snapshots(record, self.sources_dir)
         return sync_release_state(
             self.release_state_path,
             {record.id for record in current},
@@ -73,6 +91,8 @@ class Magazine:
 
     def validate(self, edition_id: str) -> Edition:
         records = load_records(self.sources_dir)
+        for record in records:
+            verify_snapshots(record, self.sources_dir)
         edition = load_edition(self.root, edition_id, {record.id for record in records})
         for article in edition.articles:
             fidelity_report(article.fidelity)
@@ -124,6 +144,7 @@ class Magazine:
                         "id": source_id,
                         "canonical_url": source_records[source_id].canonical_url,
                         "content_hash": source_records[source_id].content_hash,
+                        "raw_captures": source_records[source_id].raw_captures,
                         "record": _file_entry(self.sources_dir / source_id / "record.yaml", self.root),
                         "rights": source_records[source_id].rights,
                     }

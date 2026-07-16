@@ -47,7 +47,6 @@ The review artifact includes a paragraph-level source/manuscript diff and a reas
 
 ## Rights and distribution
 
-The workspace defaults to `private`. Complete third-party captures remain in the private vault and are not committed to a public repository.
+The workspace defaults to `private`. Complete third-party captures are committed in source-local, content-addressed raw bundles so link loss cannot erase the editorial evidence. The repository must remain private while those captures lack a public redistribution basis; credentials and browser-session data are never part of a bundle.
 
 Rights status is explicit: `unknown`, `private_reference`, `licensed`, `permission`, `public_domain`, or `author_owned`. Public packaging of a faithful reprint is blocked unless its status permits republication. The workflow records and surfaces rights decisions; it does not invent them.
-

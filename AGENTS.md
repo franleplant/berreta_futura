@@ -9,7 +9,8 @@ This repository builds private-first, source-faithful magazine editions.
 - Never replace a faithful source article with an AI summary unless an edition explicitly selects `original_synthesis` mode.
 - AI proposes editorial patches; deterministic validation and human decisions advance workflow state.
 - Label original editor text so it cannot be mistaken for a source author's words.
-- Store third-party raw captures in the ignored `vault/` content store. Commit hashes and metadata, not private captures.
+- A source is not captured until its raw evidence bundle is committed under `library/sources/<source-id>/raw/<bundle-sha256>/`. Archive before queueing; never rely on a live URL as the durable copy.
+- Raw bundles may contain page responses, rendered text, images, or sanitized browser exports. Never commit cookies, credentials, authorization headers, browser profiles, or session data.
 - Never claim an edition is press-ready without a named printer profile and a passing preflight.
 - Cover art contains no baked-in masthead or cover lines. Layout code owns all typography.
 - Treat intake batches as transport only. Every unreleased source belongs to the single open edition until that edition is explicitly released.
@@ -23,7 +24,7 @@ This repository builds private-first, source-faithful magazine editions.
 
 - Commit each verified source-intake batch, edition checkpoint, or compiler change as a coherent unit.
 - Inspect the staged diff and run the proportionate validation before committing.
-- Keep `vault/`, `output/`, temporary files, credentials, and browser-session data out of Git.
+- Keep legacy `vault/`, `output/`, temporary files, credentials, and browser-session data out of Git. Source-local `library/sources/*/raw/` bundles are canonical and must be committed.
 - Commit structured records, edition briefs, fidelity ledgers, templates, tests, and deterministic source code.
 
 ## Verification

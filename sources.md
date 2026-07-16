@@ -9,8 +9,9 @@ _Open edition: `002-unreleased`; 0 queued sources._
 - ID: `src-nadella-reverse-information-paradox-2026`
 - Source: https://x.com/satyanadella/article/2076323181154230284
 - Kind / status: article / extracted
-- Captured: 2026-07-15 18:37:03-03:00
+- Captured: 2026-07-15T18:37:03-03:00
 - Content hash: `b7e1968a99d9a874b0b60847f246b16f4be955672748a760641402d7ea2dee17`
+- Raw captures: 1 committed bundle(s)
 - Release: released for `001-the-work-left-to-us`
 - Published: 2026-07-12
 - Rights status: unknown
@@ -30,8 +31,9 @@ _Open edition: `002-unreleased`; 0 queued sources._
 - ID: `src-joshi-dsls-reliable-use-llms`
 - Source: https://martinfowler.com/articles/llm-and-dsls.html
 - Kind / status: article / extracted
-- Captured: 2026-07-15 18:37:03-03:00
+- Captured: 2026-07-15T18:37:03-03:00
 - Content hash: `13f53d5d93054a8c58bd1739a16a10bb7fea0e0f6884a6770043c79fe93fd9ae`
+- Raw captures: 1 committed bundle(s)
 - Release: released for `001-the-work-left-to-us`
 - Published: 2026-07-14
 - Rights status: unknown
@@ -48,8 +50,9 @@ _Open edition: `002-unreleased`; 0 queued sources._
 - ID: `src-hassabis-frontier-ai-2026`
 - Source: https://x.com/demishassabis/article/2076957440109625718
 - Kind / status: article / extracted
-- Captured: 2026-07-15 18:37:03-03:00
+- Captured: 2026-07-15T18:37:03-03:00
 - Content hash: `e4dd96fdc8e11c97643346a9edca966365a7e47a04cef4f85b44afe68f0af530`
+- Raw captures: 1 committed bundle(s)
 - Release: released for `001-the-work-left-to-us`
 - Published: 2026-07-14
 - Rights status: unknown
@@ -66,8 +69,9 @@ _Open edition: `002-unreleased`; 0 queued sources._
 - ID: `src-arvind-tweet-2076994014692229601`
 - Source: https://x.com/random_walker/status/2076994014692229601
 - Kind / status: social_post / captured_partial
-- Captured: 2026-07-15 17:17:00-03:00
+- Captured: 2026-07-15T17:17:00-03:00
 - Content hash: `65ab2940c36116739646ed2ece711e4554fa19e84318a1efd99f913a29c69780`
+- Raw captures: 1 committed bundle(s)
 - Release: released for `001-the-work-left-to-us`
 - Published: 2026-07-14
 - Rights status: unknown
@@ -84,8 +88,9 @@ _Open edition: `002-unreleased`; 0 queued sources._
 - ID: `src-narayanan-icml-2026-keynote`
 - Source: https://www.cs.princeton.edu/~arvindn/talks/icml-2026-annotated-slides/
 - Kind / status: annotated_slides_transcript / captured
-- Captured: 2026-07-15 17:16:00-03:00
+- Captured: 2026-07-15T17:16:00-03:00
 - Content hash: `2cabadbdf2ac581ecae24de31f361f9c3950e440fefbdde193feef620cfc019d`
+- Raw captures: 1 committed bundle(s)
 - Release: released for `001-the-work-left-to-us`
 - Published: 2026-07-09
 - Rights status: unknown

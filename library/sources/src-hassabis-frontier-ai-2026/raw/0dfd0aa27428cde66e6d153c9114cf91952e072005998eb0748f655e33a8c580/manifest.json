@@ -1,0 +1,18 @@
+{
+  "artifact_count": 1,
+  "artifacts": [
+    {
+      "bytes": 28072,
+      "path": "capture.json",
+      "sha256": "42d0c39ca1f74e94e304c75790272f0889c7ad08cb16c8fbbdde6247935f0c25"
+    }
+  ],
+  "bundle_sha256": "0dfd0aa27428cde66e6d153c9114cf91952e072005998eb0748f655e33a8c580",
+  "byte_count": 28072,
+  "canonical_url": "https://x.com/demishassabis/article/2076957440109625718",
+  "captured_at": "2026-07-15T18:37:03-03:00",
+  "method": "Authenticated Chrome rendered X Article.",
+  "schema_version": 1,
+  "source_id": "src-hassabis-frontier-ai-2026",
+  "submitted_url": "https://x.com/demishassabis/status/2076957440109625718"
+}

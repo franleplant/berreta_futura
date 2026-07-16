@@ -5,6 +5,8 @@ import unittest
 import yaml
 
 from magazine import Magazine, ValidationError
+from magazine.capture import archive_snapshot
+from magazine.records import SourceRecord
 
 
 def make_project(root: Path, *, source_id: str = "source-one") -> None:
@@ -16,7 +18,12 @@ def make_project(root: Path, *, source_id: str = "source-one") -> None:
         "captured_at": "2026-07-15T12:00:00Z", "publication_date": None, "kind": "article",
         "status": "extracted", "content_hash": None, "provenance": [], "rights": {}, "metadata": {}, "notes": "",
     }
-    (source_dir / "record.yaml").write_text(yaml.safe_dump(source), encoding="utf-8")
+    fixture = root / "raw-source.txt"
+    fixture.write_text("The original article.\n", encoding="utf-8")
+    archived = archive_snapshot(
+        SourceRecord.from_dict(source), root / "library" / "sources", fixture, method="test_fixture"
+    )
+    archived.write(root / "library" / "sources")
     edition_dir = root / "editions" / "issue-001"
     (edition_dir / "articles").mkdir(parents=True)
     (edition_dir / "fidelity").mkdir()

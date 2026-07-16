@@ -11,7 +11,12 @@ from pathlib import Path
 from magazine import Magazine
 
 mag = Magazine(Path.cwd())
-record = mag.capture("https://example.com/article", title="An article")
+record = mag.capture(
+    "https://example.com/article",
+    snapshot=Path("/tmp/article-browser-export"),
+    capture_method="authenticated_browser",
+    title="An article",
+)
 mag.write_sources()
 result = mag.build("issue-001")
 ```
@@ -19,14 +24,21 @@ result = mag.build("issue-001")
 The equivalent command line is:
 
 ```sh
-uv run --locked mag capture https://example.com/article --title "An article"
+uv run --locked mag capture https://example.com/article \
+  --snapshot /tmp/article-browser-export \
+  --capture-method authenticated_browser \
+  --title "An article"
 uv run --locked mag sources
 uv run --locked mag validate issue-001
 uv run --locked mag build issue-001
 ```
 
-`capture` only records metadata and local snapshots supplied by the caller. It
-never downloads a URL. This makes acquisition explicit, repeatable, and safe.
+`capture` requires a raw file or directory supplied by the caller. It copies the
+bundle into content-addressed, source-local storage before it writes the source
+record or queues the source. The compiler never treats a live URL as the durable
+copy. Web or authenticated-browser acquisition remains an explicit adapter, so
+cookies, credentials, authorization headers, and browser profiles stay outside
+the repository.
 
 ## Python toolchain
 
@@ -46,6 +58,7 @@ project environment is an implementation detail and is never managed by hand.
 
 ```text
 library/sources/<source-id>/record.yaml    structured source record
+library/sources/<source-id>/raw/<sha>/     immutable committed raw capture
 library/sources/<source-id>/extracted.md  local, faithful extraction
 library/release-state.yaml                open-edition and released-edition assignments
 editions/<edition-id>/edition.yaml        edition manifest
@@ -104,6 +117,11 @@ captured_at: 2026-07-15T12:00:00Z
 content_mode: faithful_edit
 tags: []
 primary_material: []
+raw_captures:
+  - id: 0f4c...c93a
+    path: raw/0f4c...c93a/manifest.json
+    method: authenticated_browser
+    artifact_count: 3
 rights:
   status: unknown
   intended_use: private_reference
@@ -111,7 +129,10 @@ rights:
 ```
 
 Tracking parameters and URL fragments are removed during canonicalization. A
-stable suffix derived from the canonical URL prevents slug collisions.
+stable suffix derived from the canonical URL prevents slug collisions. Every
+raw manifest records each artifact's repository-relative path, byte count, and
+SHA-256. The bundle directory name hashes that ordered inventory. Validation,
+build, and release fail if an artifact is missing or has changed.
 
 ## Edition manifests
 

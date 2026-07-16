@@ -33,7 +33,7 @@ lead URL
 
 ## Invariants
 
-- Raw snapshots and approved artifacts are immutable and content-addressed.
+- Raw snapshots are committed beside their source record and approved artifacts are immutable and content-addressed.
 - Every captured source is assigned exactly once: either to the open edition or to one released edition.
 - Intake batches never imply edition boundaries; only an explicit release closes the open edition.
 - Release first reconciles all source records, then requires exact equality between the open queue and rendered articles' `source_ids`; a bare inventory declaration cannot silently postpone a source.
@@ -52,6 +52,7 @@ lead URL
 
 Canonical authored material:
 
+- immutable raw source bundles and their SHA-256 manifests;
 - structured source records and human notes;
 - edition manifests and briefs;
 - approved manuscripts and clearly labeled editor text;

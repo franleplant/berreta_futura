@@ -23,6 +23,7 @@ def render_sources(records: list[SourceRecord], release_state: ReleaseState | No
             f"- Kind / status: {record.kind} / {record.status}",
             f"- Captured: {record.captured_at}",
             f"- Content hash: `{record.content_hash or 'not captured'}`",
+            f"- Raw captures: {len(record.raw_captures)} committed bundle(s)",
         ])
         if record.id in assignments:
             state, edition_id = assignments[record.id].split(":", 1)

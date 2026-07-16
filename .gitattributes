@@ -1,0 +1,2 @@
+# Raw source evidence is byte-for-byte canonical. Never normalize line endings.
+library/sources/*/raw/** binary

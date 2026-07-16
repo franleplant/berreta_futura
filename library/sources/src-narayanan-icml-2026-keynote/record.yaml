@@ -4,18 +4,25 @@ title: What will be left for us to work on?
 author: Arvind Narayanan
 canonical_url: https://www.cs.princeton.edu/~arvindn/talks/icml-2026-annotated-slides/
 submitted_url: https://www.cs.princeton.edu/~arvindn/talks/icml-2026-annotated-slides/
-captured_at: 2026-07-15T17:16:00-03:00
-publication_date: 2026-07-09
+captured_at: '2026-07-15T17:16:00-03:00'
+publication_date: '2026-07-09'
 kind: annotated_slides_transcript
 status: captured
 content_hash: 2cabadbdf2ac581ecae24de31f361f9c3950e440fefbdde193feef620cfc019d
+raw_captures:
+- id: ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57
+  path: raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/manifest.json
+  method: Inline NARR and FRAGS JSON; OCR not required.
+  captured_at: '2026-07-15T17:16:00-03:00'
+  artifact_count: 47
+  byte_count: 39461865
 provenance:
-  - relation: discovered_via
-    target: src-arvind-tweet-2076994014692229601
-  - relation: alternate_rendering
-    target_url: https://www.normaltech.ai/p/what-will-be-left-for-us-to-work
-  - relation: official_event_record
-    target_url: https://icml.cc/virtual/2026/invited-talk/67274
+- relation: discovered_via
+  target: src-arvind-tweet-2076994014692229601
+- relation: alternate_rendering
+  target_url: https://www.normaltech.ai/p/what-will-be-left-for-us-to-work
+- relation: official_event_record
+  target_url: https://icml.cc/virtual/2026/invited-talk/67274
 rights:
   status: unknown
   copyright_notice: Copyright 2026 Sayash Kapoor and Arvind Narayanan on the alternate rendering.
@@ -36,5 +43,8 @@ metadata:
   local_raster_asset_count: 43
   outbound_url_count: 46
   extraction_method: Inline NARR and FRAGS JSON; OCR not required.
-  vault_path: vault/src-narayanan-icml-2026-keynote/2cabadbdf2ac581ecae24de31f361f9c3950e440fefbdde193feef620cfc019d/
-notes: Primary source. No explicit reuse license was found. The rights-safe prototype uses original editorial and reading apparatus instead of a faithful reprint.
+  raw_capture_policy: committed_source_local
+  tags: []
+  synopsis: ''
+notes: Primary source. No explicit reuse license was found. The rights-safe prototype uses original editorial
+  and reading apparatus instead of a faithful reprint.
