@@ -32,6 +32,10 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertEqual(len(manifest["inputs"]["sources"][0]["raw_captures"]), 1)
             self.assertEqual(manifest["layout"]["maximum_article_pages"], 7)
             self.assertLessEqual(manifest["layout"]["article_pages"]["article"], 7)
+            self.assertEqual(manifest["layout"]["maximum_editorial_pages"], 2)
+            self.assertEqual(manifest["layout"]["editorial_pages"], 1)
+            reader_text = "\n".join(page.extract_text() or "" for page in PdfReader(str(result.reader_pdf)).pages)
+            self.assertIn("A Test Editorial", reader_text)
 
     def test_build_rejects_article_over_seven_reader_pages(self):
         with TemporaryDirectory() as temporary:
@@ -65,6 +69,36 @@ class RenderIntegrationTests(unittest.TestCase):
             manifest_path = root / "editions" / "issue-001" / "edition.yaml"
             manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
             manifest["format"] = {"max_article_pages": 8}
+            manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+
+            with self.assertRaisesRegex(ValidationError, "hard publication rule"):
+                Magazine(root).build("issue-001")
+
+    def test_build_rejects_editorial_over_two_reader_pages(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            make_project(root)
+            editorial = root / "editions" / "issue-001" / "editorial.md"
+            paragraphs = [
+                f"Editorial paragraph {index} makes an original argument with sufficient detail."
+                for index in range(160)
+            ]
+            editorial.write_text(
+                "---\ntitle: A Long Editorial\nbyline: The editors\n---\n\n"
+                + "\n\n".join(paragraphs),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValidationError, "Editorial spans.*hard cap is 2"):
+                Magazine(root).build("issue-001")
+
+    def test_edition_cannot_raise_the_hard_editorial_page_cap(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            make_project(root)
+            manifest_path = root / "editions" / "issue-001" / "edition.yaml"
+            manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+            manifest["format"] = {"max_editorial_pages": 3}
             manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
 
             with self.assertRaisesRegex(ValidationError, "hard publication rule"):

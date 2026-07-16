@@ -128,7 +128,7 @@ class Magazine:
             "compiler": "magazine-compiler/0.1.0",
             "edition": edition.raw,
             "inputs": {
-                "editorial": _file_entry(edition.editorial, self.root) if edition.editorial else None,
+                "editorial": _file_entry(edition.editorial.path, self.root) if edition.editorial else None,
                 "cover_art": _file_entry(edition.cover_art, self.root) if edition.cover_art else None,
                 "fidelity_status": _optional_file_entry(
                     self.editions_dir / edition.id / "fidelity" / "source-edition-status.yaml",
@@ -161,6 +161,8 @@ class Magazine:
             "layout": {
                 "maximum_article_pages": 7,
                 "article_pages": layout.article_pages,
+                "maximum_editorial_pages": 2,
+                "editorial_pages": layout.editorial_pages,
             },
             "studio_release_ready": False,
             "studio_blocker": "PDF/X-4 conversion requires the selected printer ICC profile and preflight.",

@@ -16,6 +16,8 @@ The default for source articles is `faithful_edit`. The opening editorial is `or
 
 Every rendered source article, including its title and credit, has a hard maximum of seven A5 reader pages. The deterministic renderer measures the real pagination and refuses an over-budget build.
 
+The opening editorial must declare a non-empty title in its frontmatter. Its label, title, and byline are rendered on the opener and its title appears in the contents. The complete editorial has a hard maximum of two A5 reader pages. The renderer measures the real span and refuses an over-budget or untitled build.
+
 An over-budget `faithful_edit` is converted to `faithful_synthesis`. The synthesis must retain the source's central argument, important evidence and examples, uncertainty, counterarguments, and conclusion. It must not introduce a new thesis or flatten disagreement into generic summary language. The credit must identify it as a synthesis rather than presenting edited prose as the source author's verbatim writing.
 
 Every synthesis maps the complete substantive source into edited ledger entries, reports source and output word counts, and passes manuscript-integrity validation. Short articles remain `faithful_edit`; synthesis is a length remedy, not the default editorial voice.

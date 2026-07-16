@@ -12,6 +12,7 @@ format:
   home_sheet: A4
   binding: saddle_stitch
   max_article_pages: 7
+  max_editorial_pages: 2
 cover:
   art_path: art/cover-art.png
   masthead: Commonplace

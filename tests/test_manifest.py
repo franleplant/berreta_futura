@@ -27,7 +27,10 @@ def make_project(root: Path, *, source_id: str = "source-one") -> None:
     edition_dir = root / "editions" / "issue-001"
     (edition_dir / "articles").mkdir(parents=True)
     (edition_dir / "fidelity").mkdir()
-    (edition_dir / "editorial.md").write_text("# Editorial\n\nAn argument.", encoding="utf-8")
+    (edition_dir / "editorial.md").write_text(
+        "---\ntitle: A Test Editorial\nbyline: The editors\nlabel: ORIGINAL EDITORIAL\n---\n\nAn argument.",
+        encoding="utf-8",
+    )
     (edition_dir / "articles" / "article.md").write_text("The original article.", encoding="utf-8")
     ledger = {"schema_version": 1, "source_ids": [source_id], "paragraphs": [{"status": "retained", "source": "The original article.", "edited": "The original article."}]}
     (edition_dir / "fidelity" / "article.yaml").write_text(yaml.safe_dump(ledger), encoding="utf-8")
@@ -78,4 +81,12 @@ class ManifestTests(unittest.TestCase):
         manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
 
         with self.assertRaisesRegex(ValidationError, "does not match its fidelity ledger"):
+            Magazine(self.root).validate("issue-001")
+
+    def test_validate_requires_editorial_title_metadata(self):
+        make_project(self.root)
+        editorial = self.root / "editions" / "issue-001" / "editorial.md"
+        editorial.write_text("---\nbyline: The editors\n---\n\nAn argument.", encoding="utf-8")
+
+        with self.assertRaisesRegex(ValidationError, "requires a non-empty title"):
             Magazine(self.root).validate("issue-001")

@@ -12,12 +12,14 @@ from .errors import ValidationError
 
 
 MAX_ARTICLE_PAGES = 7
+MAX_EDITORIAL_PAGES = 2
 
 
 @dataclass(frozen=True)
 class RenderLayout:
     toc: dict[str, int]
     article_pages: dict[str, int]
+    editorial_pages: int | None
 
 
 def _reportlab():
@@ -120,6 +122,7 @@ class _Typesetter:
         self.section = ""
         self.toc: dict[str, int] = {}
         self.article_pages: dict[str, int] = {}
+        self.editorial_pages: int | None = None
 
     def new_page(self, section: str = "", *, blank_header: bool = False):
         if self.page:
@@ -297,7 +300,7 @@ class _Typesetter:
         entries = []
         if self.edition.articles:
             if self.edition.editorial:
-                entries.append(("Editorial", toc_pages.get("editorial", 0)))
+                entries.append((self.edition.editorial.title, toc_pages.get("editorial", 0)))
             entries.extend((article.title, toc_pages.get(article.id, 0)) for article in self.edition.articles)
             entries.extend((section.title, toc_pages.get(f"section-{index}", 0)) for index, section in enumerate(self.edition.sections))
         elif self.edition.sections:
@@ -314,8 +317,21 @@ class _Typesetter:
         if self.edition.articles:
             if self.edition.editorial:
                 self.new_page("Editorial")
+                start_page = self.page
                 self.toc["editorial"] = self.page
-                self.markdown(self.edition.editorial)
+                self.pdf.setFillColorRGB(.52, .11, .11)
+                self.pdf.setFont("Helvetica-Bold", 7.5)
+                self.pdf.drawString(self.left, self.y, _plain(self.edition.editorial.label.upper()))
+                self.y -= 17
+                self.block("h1", self.edition.editorial.title)
+                self.block("body", self.edition.editorial.byline)
+                self.markdown(self.edition.editorial.path)
+                self.editorial_pages = self.page - start_page + 1
+                if self.editorial_pages > MAX_EDITORIAL_PAGES:
+                    raise ValidationError(
+                        f"Editorial spans {self.editorial_pages} reader pages; the hard cap is "
+                        f"{MAX_EDITORIAL_PAGES}. Condense it before building."
+                    )
             for article in self.edition.articles:
                 self.new_page(article.title)
                 start_page = self.page
@@ -397,7 +413,9 @@ def _render_pass(target, edition: Edition, toc: dict[str, int] | None = None) ->
     typesetter.body()
     typesetter.back_cover()
     pdf.save()
-    return RenderLayout(dict(typesetter.toc), dict(typesetter.article_pages))
+    return RenderLayout(
+        dict(typesetter.toc), dict(typesetter.article_pages), typesetter.editorial_pages
+    )
 
 
 def render_a5(edition: Edition, output: Path) -> RenderLayout:
@@ -411,9 +429,24 @@ def render_a5(edition: Edition, output: Path) -> RenderLayout:
         raise ValidationError(
             f"format.max_article_pages is a hard publication rule and must remain {MAX_ARTICLE_PAGES}"
         )
+    configured_editorial_cap = edition.raw.get("format", {}).get(
+        "max_editorial_pages", MAX_EDITORIAL_PAGES
+    )
+    try:
+        configured_editorial_cap = int(configured_editorial_cap)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError("format.max_editorial_pages must be the integer 2") from exc
+    if configured_editorial_cap != MAX_EDITORIAL_PAGES:
+        raise ValidationError(
+            f"format.max_editorial_pages is a hard publication rule and must remain "
+            f"{MAX_EDITORIAL_PAGES}"
+        )
     output.parent.mkdir(parents=True, exist_ok=True)
     draft = _render_pass(io.BytesIO(), edition)
     final = _render_pass(str(output), edition, draft.toc)
-    if draft.article_pages != final.article_pages:
-        raise ValidationError("Article pagination changed between deterministic render passes")
+    if (
+        draft.article_pages != final.article_pages
+        or draft.editorial_pages != final.editorial_pages
+    ):
+        raise ValidationError("Content pagination changed between deterministic render passes")
     return final

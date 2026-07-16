@@ -26,6 +26,7 @@ lead URL
   -> edition selection
   -> faithful manuscript + editorial patches
   -> seven-page article-budget check (faithful synthesis when over budget)
+  -> titled two-page editorial-budget check
   -> approved content digest
   -> deterministic layout
   -> proof digest

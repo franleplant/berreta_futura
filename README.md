@@ -6,6 +6,8 @@ language remains intact unless a paragraph-level edit record says otherwise.
 Articles are capped at seven rendered A5 pages. Over-budget sources become
 explicitly credited, source-mapped faithful syntheses rather than silently
 truncated reprints.
+The opening editorial requires a title and is capped at two rendered A5 pages,
+including its title and byline.
 
 The external interface is intentionally small:
 

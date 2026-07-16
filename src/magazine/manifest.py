@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 from .errors import ValidationError
 from .io import load_structured, safe_project_path
 
@@ -27,12 +29,20 @@ class Section:
 
 
 @dataclass(frozen=True)
+class Editorial:
+    path: Path
+    title: str
+    byline: str
+    label: str
+
+
+@dataclass(frozen=True)
 class Edition:
     id: str
     issue_number: str
     title: str
     publication_date: str
-    editorial: Path | None
+    editorial: Editorial | None
     articles: tuple[Article, ...]
     sections: tuple[Section, ...]
     cover: dict[str, Any]
@@ -94,7 +104,8 @@ def load_edition(root: Path, edition_id: str, known_sources: set[str]) -> Editio
         articles.append(Article(row["id"], row["title"], row["author"], source_ids, manuscript, fidelity, content_mode))
     edition_dir = manifest_path.parent
     try:
-        editorial = _edition_path(root, edition_dir, data["editorial"]) if data.get("editorial") else None
+        editorial_path = _edition_path(root, edition_dir, data["editorial"]) if data.get("editorial") else None
+        editorial = _load_editorial(editorial_path) if editorial_path else None
     except ValidationError as exc:
         errors.extend(exc.errors)
         editorial = None
@@ -148,3 +159,22 @@ def _section_title(kind: str) -> str:
         "production_note": "Production Note",
         "colophon": "Colophon",
     }.get(str(kind), str(kind).replace("_", " ").title())
+
+
+def _load_editorial(path: Path) -> Editorial:
+    text = path.read_text(encoding="utf-8")
+    if not text.startswith("---\n") or "\n---\n" not in text:
+        raise ValidationError(f"Editorial requires YAML frontmatter with a title: {path}")
+    header, _, _ = text[4:].partition("\n---\n")
+    try:
+        metadata = yaml.safe_load(header)
+    except yaml.YAMLError as exc:
+        raise ValidationError(f"Cannot parse editorial frontmatter {path}: {exc}") from exc
+    if not isinstance(metadata, dict) or not str(metadata.get("title", "")).strip():
+        raise ValidationError(f"Editorial requires a non-empty title: {path}")
+    return Editorial(
+        path=path,
+        title=str(metadata["title"]).strip(),
+        byline=str(metadata.get("byline") or "The editors").strip(),
+        label=str(metadata.get("label") or "ORIGINAL EDITORIAL").strip(),
+    )
