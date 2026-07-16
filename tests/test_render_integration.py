@@ -8,6 +8,17 @@ from pypdf import PdfReader
 import yaml
 
 from magazine import Magazine, ValidationError
+from magazine.render import (
+    SANS,
+    SANS_BOLD,
+    SANS_MEDIUM,
+    SANS_SEMIBOLD,
+    SERIF,
+    SERIF_BOLD,
+    SERIF_DISPLAY,
+    SERIF_ITALIC,
+    _reportlab,
+)
 from test_manifest import make_project
 
 
@@ -36,6 +47,24 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertEqual(manifest["layout"]["editorial_pages"], 1)
             reader_text = "\n".join(page.extract_text() or "" for page in PdfReader(str(result.reader_pdf)).pages)
             self.assertIn("A Test Editorial", reader_text)
+            self.assertIn("AN ORIGINAL ARGUMENT", reader_text)
+            self.assertIn("FEATURE 01", reader_text)
+            self.assertIn("FAITHFUL EDIT", reader_text)
+
+    def test_bundled_publication_fonts_are_registered(self):
+        _, metrics, _ = _reportlab()
+
+        expected = {
+            SANS,
+            SANS_MEDIUM,
+            SANS_SEMIBOLD,
+            SANS_BOLD,
+            SERIF,
+            SERIF_ITALIC,
+            SERIF_BOLD,
+            SERIF_DISPLAY,
+        }
+        self.assertTrue(expected.issubset(set(metrics.getRegisteredFontNames())))
 
     def test_build_rejects_article_over_seven_reader_pages(self):
         with TemporaryDirectory() as temporary:

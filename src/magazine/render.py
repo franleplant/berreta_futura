@@ -14,6 +14,24 @@ from .errors import ValidationError
 MAX_ARTICLE_PAGES = 7
 MAX_EDITORIAL_PAGES = 2
 
+# COMMONPLACE's print palette. The interior stays mostly uninked for economical
+# home printing; color is reserved for navigation and hierarchy.
+INK = (.075, .105, .125)
+OXBLOOD = (.47, .13, .12)
+SLATE = (.34, .38, .40)
+SAND = (.86, .81, .71)
+PALE_SAND = (.955, .935, .89)
+PAPER = (.985, .975, .945)
+
+SANS = "Inter"
+SANS_MEDIUM = "Inter-Medium"
+SANS_SEMIBOLD = "Inter-Semibold"
+SANS_BOLD = "Inter-Bold"
+SERIF = "SourceSerif4-SmText"
+SERIF_ITALIC = "SourceSerif4-SmText-Italic"
+SERIF_BOLD = "SourceSerif4-SmText-Bold"
+SERIF_DISPLAY = "SourceSerif4-Display-Semibold"
+
 
 @dataclass(frozen=True)
 class RenderLayout:
@@ -26,9 +44,28 @@ def _reportlab():
     try:
         from reportlab.lib.pagesizes import A5
         from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
         from reportlab.pdfgen import canvas
     except ImportError as exc:
         raise DependencyError("PDF rendering requires ReportLab; run `uv sync --locked`.") from exc
+    font_root = Path(__file__).with_name("assets") / "fonts"
+    fonts = {
+        SANS: font_root / "inter" / "Inter-Regular.ttf",
+        SANS_MEDIUM: font_root / "inter" / "Inter-Medium.ttf",
+        SANS_SEMIBOLD: font_root / "inter" / "Inter-SemiBold.ttf",
+        SANS_BOLD: font_root / "inter" / "Inter-Bold.ttf",
+        SERIF: font_root / "source-serif-4" / "SourceSerif4SmText-Regular.ttf",
+        SERIF_ITALIC: font_root / "source-serif-4" / "SourceSerif4SmText-It.ttf",
+        SERIF_BOLD: font_root / "source-serif-4" / "SourceSerif4SmText-Bold.ttf",
+        SERIF_DISPLAY: font_root / "source-serif-4" / "SourceSerif4Display-Semibold.ttf",
+    }
+    registered = set(pdfmetrics.getRegisteredFontNames())
+    for name, path in fonts.items():
+        if name in registered:
+            continue
+        if not path.is_file():
+            raise DependencyError(f"Bundled publication font is missing: {path}")
+        pdfmetrics.registerFont(TTFont(name, str(path)))
     return A5, pdfmetrics, canvas
 
 
@@ -116,7 +153,7 @@ def _markdown_blocks(text: str) -> Iterable[tuple[str, str]]:
 class _Typesetter:
     def __init__(self, pdf, edition: Edition, pagesize, metrics):
         self.pdf, self.edition, self.width, self.height, self.metrics = pdf, edition, *pagesize, metrics
-        self.left, self.right, self.top, self.bottom = 43, 39, 49, 43
+        self.left, self.right, self.top, self.bottom = 41, 37, 52, 45
         self.page = 0
         self.y = self.height - self.top
         self.section = ""
@@ -124,19 +161,41 @@ class _Typesetter:
         self.article_pages: dict[str, int] = {}
         self.editorial_pages: int | None = None
 
-    def new_page(self, section: str = "", *, blank_header: bool = False):
+    @property
+    def column_width(self) -> float:
+        return self.width - self.left - self.right
+
+    def _folio(self):
+        self.pdf.setFillColorRGB(*SLATE)
+        self.pdf.setFont(SANS_MEDIUM, 6.8)
+        label = f"{self.page:02d}"
+        if self.page % 2:
+            self.pdf.drawRightString(self.width - self.right, 24, label)
+        else:
+            self.pdf.drawString(self.left, 24, label)
+
+    def new_page(self, section: str = "", *, blank_header: bool = False, opener: bool = False):
         if self.page:
             self.pdf.showPage()
         self.page += 1
         self.section = section or self.section
         self.y = self.height - self.top
         if self.page > 2 and not blank_header:
-            self.pdf.setFillColorRGB(.25, .25, .25)
-            self.pdf.setFont("Helvetica", 7)
-            self.pdf.drawString(self.left, self.height - 27, _plain(self.section.upper())[:64])
-            self.pdf.drawRightString(self.width - self.right, 25, str(self.page))
-            self.pdf.setStrokeColorRGB(.75, .75, .75)
-            self.pdf.line(self.left, self.height - 34, self.width - self.right, self.height - 34)
+            self._folio()
+            if not opener:
+                self.pdf.setFillColorRGB(*OXBLOOD)
+                self.pdf.rect(self.left, self.height - 29, 5, 5, fill=1, stroke=0)
+                self.pdf.setFillColorRGB(*SLATE)
+                self.pdf.setFont(SANS_MEDIUM, 6.4)
+                self.pdf.drawString(self.left + 12, self.height - 28, "COMMONPLACE  /  ISSUE " + str(self.edition.issue_number))
+                self.pdf.drawRightString(
+                    self.width - self.right,
+                    self.height - 28,
+                    _plain(self.section.upper())[:43],
+                )
+                self.pdf.setStrokeColorRGB(*SAND)
+                self.pdf.setLineWidth(.45)
+                self.pdf.line(self.left, self.height - 36, self.width - self.right, self.height - 36)
 
     def lines(self, text: str, font: str, size: float, width: float) -> list[str]:
         words: list[str] = []
@@ -169,20 +228,34 @@ class _Typesetter:
 
     def block(self, kind: str, text: str):
         styles = {
-            "h1": ("Helvetica-Bold", 20, 24, 13), "h2": ("Helvetica-Bold", 14, 18, 9),
-            "h3": ("Helvetica-Bold", 11, 15, 7), "body": ("Times-Roman", 10.25, 13.4, 7),
-            "bullet": ("Times-Roman", 10.25, 13.4, 5), "quote": ("Times-Italic", 9.75, 13, 8),
+            "h1": (SERIF_DISPLAY, 22, 25, 13),
+            "h2": (SERIF_DISPLAY, 14.5, 18, 8),
+            "h3": (SANS_SEMIBOLD, 8.7, 12, 7),
+            "lead": (SERIF, 11.6, 15.2, 11),
+            "body": (SERIF, 9.55, 12.55, 5.4),
+            "bullet": (SERIF, 9.45, 12.45, 5),
+            "quote": (SERIF_ITALIC, 10.1, 13.7, 9),
         }
         font, size, leading, after = styles[kind]
-        prefix = "- " if kind == "bullet" else ""
-        indent = 13 if kind in {"bullet", "quote"} else 0
-        lines = self.lines(prefix + text, font, size, self.width - self.left - self.right - indent)
+        if kind == "h3":
+            text = text.upper()
+        indent = 14 if kind in {"bullet", "quote"} else 0
+        lines = self.lines(text, font, size, self.column_width - indent)
         needed = len(lines) * leading + after
-        if self.y - needed < self.bottom:
+        keep_with_next = 25 if kind in {"h1", "h2", "h3"} else 0
+        if self.y - needed - keep_with_next < self.bottom:
             self.new_page()
-        self.pdf.setFillColorRGB(.08, .08, .08)
+        if kind == "quote":
+            self.pdf.setStrokeColorRGB(*OXBLOOD)
+            self.pdf.setLineWidth(1.5)
+            self.pdf.line(self.left + 1, self.y + 3, self.left + 1, self.y - len(lines) * leading + 5)
+        self.pdf.setFillColorRGB(*(OXBLOOD if kind == "h3" else INK))
         self.pdf.setFont(font, size)
-        for line in lines:
+        for index, line in enumerate(lines):
+            if kind == "bullet" and index == 0:
+                self.pdf.setFillColorRGB(*OXBLOOD)
+                self.pdf.rect(self.left + 1, self.y + 2.5, 3, 3, fill=1, stroke=0)
+                self.pdf.setFillColorRGB(*INK)
             self.pdf.drawString(self.left + indent, self.y, line)
             self.y -= leading
         self.y -= after
@@ -223,7 +296,7 @@ class _Typesetter:
     def code_block(self, text: str):
         font, size, leading = "Courier", 5.8, 7.6
         padding_x, padding_y, after = 7, 6, 8
-        column_width = self.width - self.left - self.right
+        column_width = self.column_width
         lines = self.code_lines(text, font, size, column_width - 2 * padding_x)
         remaining = lines
         while remaining:
@@ -235,9 +308,9 @@ class _Typesetter:
             chunk, remaining = remaining[:capacity], remaining[capacity:]
             height = 2 * padding_y + len(chunk) * leading
             bottom = self.y - height
-            self.pdf.setFillColorRGB(.955, .95, .935)
+            self.pdf.setFillColorRGB(*PALE_SAND)
             self.pdf.rect(self.left, bottom, column_width, height, fill=1, stroke=0)
-            self.pdf.setStrokeColorRGB(.55, .18, .16)
+            self.pdf.setStrokeColorRGB(*OXBLOOD)
             self.pdf.setLineWidth(.8)
             self.pdf.line(self.left, bottom, self.left, self.y)
             self.pdf.setFillColorRGB(.10, .10, .10)
@@ -250,12 +323,53 @@ class _Typesetter:
             if remaining:
                 self.new_page()
 
-    def markdown(self, path: Path):
-        for kind, value in _markdown_blocks(path.read_text(encoding="utf-8")):
+    def markdown(self, path: Path, *, lead: bool = False):
+        blocks = list(_markdown_blocks(path.read_text(encoding="utf-8")))
+        for index, (kind, value) in enumerate(blocks):
             if kind == "code":
                 self.code_block(value)
             else:
+                if lead and index == 0 and kind == "body":
+                    kind = "lead"
                 self.block(kind, value)
+
+    def _label(self, text: str, *, right: str = ""):
+        self.pdf.setFillColorRGB(*OXBLOOD)
+        self.pdf.rect(self.left, self.y + 2, 22, 3, fill=1, stroke=0)
+        self.pdf.setFont(SANS_SEMIBOLD, 6.6)
+        self.pdf.drawString(self.left + 29, self.y, _plain(text.upper()))
+        if right:
+            self.pdf.setFillColorRGB(*SLATE)
+            self.pdf.drawRightString(self.width - self.right, self.y, _plain(right.upper()))
+        self.y -= 21
+
+    def _display_title(self, title: str, *, maximum_lines: int = 5):
+        size = 27.5
+        lines = self.lines(title, SERIF_DISPLAY, size, self.column_width)
+        while len(lines) > maximum_lines and size > 21:
+            size -= .75
+            lines = self.lines(title, SERIF_DISPLAY, size, self.column_width)
+        leading = size * 1.04
+        self.pdf.setFillColorRGB(*INK)
+        self.pdf.setFont(SERIF_DISPLAY, size)
+        for line in lines:
+            self.pdf.drawString(self.left, self.y, line)
+            self.y -= leading
+        self.y -= 11
+
+    def _credit(self, author: str, note: str = ""):
+        self.pdf.setFillColorRGB(*INK)
+        self.pdf.setFont(SANS_SEMIBOLD, 7.6)
+        self.pdf.drawString(self.left, self.y, "BY " + _plain(author.upper()))
+        if note:
+            self.pdf.setFillColorRGB(*SLATE)
+            self.pdf.setFont(SANS, 6.5)
+            self.pdf.drawRightString(self.width - self.right, self.y, _plain(note.upper()))
+        self.y -= 12
+        self.pdf.setStrokeColorRGB(*SAND)
+        self.pdf.setLineWidth(.65)
+        self.pdf.line(self.left, self.y, self.width - self.right, self.y)
+        self.y -= 18
 
     def cover(self):
         self.new_page(blank_header=True)
@@ -267,83 +381,105 @@ class _Typesetter:
             draw_width, draw_height = image_width * scale, image_height * scale
             self.pdf.drawImage(image, (self.width - draw_width) / 2, (self.height - draw_height) / 2,
                                draw_width, draw_height, preserveAspectRatio=True, mask="auto")
-            self.pdf.setFillColorRGB(.98, .95, .86, alpha=.91)
-            self.pdf.rect(0, self.height - 188, self.width, 188, fill=1, stroke=0)
+            self.pdf.setFillColorRGB(*PAPER, alpha=.94)
+            self.pdf.rect(0, self.height - 203, self.width, 203, fill=1, stroke=0)
         else:
             self.pdf.setFillColorRGB(.07, .08, .09)
             self.pdf.rect(0, 0, self.width, self.height, fill=1, stroke=0)
-        ink = (.08, .13, .17) if self.edition.cover_art else (.94, .89, .76)
+        ink = INK if self.edition.cover_art else PAPER
         self.pdf.setFillColorRGB(*ink)
-        self.pdf.setFont("Helvetica-Bold", 10)
-        self.pdf.drawString(36, self.height - 35, _plain(str(self.edition.cover.get("masthead", "COMMONPLACE"))).upper())
-        self.pdf.setFont("Helvetica-Bold", 29)
-        title_lines = self.lines(str(self.edition.cover.get("headline", self.edition.title)), "Helvetica-Bold", 29, self.width - 72)
-        y = self.height - 78
+        self.pdf.setFont(SANS_BOLD, 9.5)
+        self.pdf.drawString(36, self.height - 31, _plain(str(self.edition.cover.get("masthead", "COMMONPLACE"))).upper())
+        self.pdf.setFillColorRGB(*OXBLOOD)
+        self.pdf.rect(self.width - 57, self.height - 34, 21, 5, fill=1, stroke=0)
+        self.pdf.setFillColorRGB(*ink)
+        self.pdf.setFont(SERIF_DISPLAY, 30)
+        title_lines = self.lines(str(self.edition.cover.get("headline", self.edition.title)), SERIF_DISPLAY, 30, self.width - 72)
+        y = self.height - 72
         for line in title_lines:
             self.pdf.drawString(36, y, line)
-            y -= 33
+            y -= 31
         deck = str(self.edition.cover.get("deck", "")).strip()
         if deck:
-            y -= 2
-            self.pdf.setFont("Helvetica", 9.25)
-            for line in self.lines(deck, "Helvetica", 9.25, self.width - 72):
+            y -= 5
+            self.pdf.setFont(SANS, 8.2)
+            for line in self.lines(deck, SANS, 8.2, self.width - 72):
                 self.pdf.drawString(36, y, line)
-                y -= 12
-        self.pdf.setFillColorRGB(.08, .13, .17)
-        self.pdf.setFont("Helvetica-Bold", 7.5)
+                y -= 10.5
+        self.pdf.setFillColorRGB(*INK)
+        self.pdf.setFont(SANS_SEMIBOLD, 6.7)
         label = _plain(_edition_label(self.edition)).upper()
         self.pdf.drawString(36, 27, f"ISSUE {self.edition.issue_number}  /  {self.edition.publication_date}  /  {label}")
 
     def contents(self, toc_pages: dict[str, int]):
         self.new_page("Contents", blank_header=True)
-        self.block("h1", "Contents")
+        self.pdf.setFillColorRGB(*INK)
+        self.pdf.rect(0, self.height - 116, self.width, 116, fill=1, stroke=0)
+        self.pdf.setFillColorRGB(*PAPER)
+        self.pdf.setFont(SANS_SEMIBOLD, 7)
+        self.pdf.drawString(self.left, self.height - 32, "COMMONPLACE  /  ISSUE " + str(self.edition.issue_number))
+        self.pdf.setFont(SERIF_DISPLAY, 28)
+        self.pdf.drawString(self.left, self.height - 73, "Contents")
+        self.pdf.setFont(SANS, 6.6)
+        self.pdf.drawString(self.left, self.height - 96, _plain(str(self.edition.publication_date)).upper())
+        self.y = self.height - 145
         entries = []
         if self.edition.articles:
             if self.edition.editorial:
-                entries.append((self.edition.editorial.title, toc_pages.get("editorial", 0)))
-            entries.extend((article.title, toc_pages.get(article.id, 0)) for article in self.edition.articles)
-            entries.extend((section.title, toc_pages.get(f"section-{index}", 0)) for index, section in enumerate(self.edition.sections))
+                entries.append(("Editorial", self.edition.editorial.title, self.edition.editorial.byline, toc_pages.get("editorial", 0)))
+            entries.extend((f"Feature {index:02d}", article.title, article.author, toc_pages.get(article.id, 0)) for index, article in enumerate(self.edition.articles, 1))
+            entries.extend((section.kind.replace("_", " "), section.title, "", toc_pages.get(f"section-{index}", 0)) for index, section in enumerate(self.edition.sections))
         elif self.edition.sections:
-            entries.extend((section.title, toc_pages.get(f"section-{index}", 0)) for index, section in enumerate(self.edition.sections))
-        self.pdf.setFont("Times-Roman", 10.5)
-        for title, page in entries:
-            if self.y < self.bottom + 18:
+            entries.extend((section.kind.replace("_", " "), section.title, "", toc_pages.get(f"section-{index}", 0)) for index, section in enumerate(self.edition.sections))
+        for label, title, author, page in entries:
+            if self.y < self.bottom + 34:
                 self.new_page("Contents")
-            self.pdf.drawString(self.left, self.y, _plain(title)[:56])
-            self.pdf.drawRightString(self.width - self.right, self.y, str(page) if page else "")
-            self.y -= 18
+            self.pdf.setFillColorRGB(*OXBLOOD)
+            self.pdf.setFont(SANS_SEMIBOLD, 6.1)
+            self.pdf.drawString(self.left, self.y, _plain(label.upper()))
+            self.pdf.setFillColorRGB(*INK)
+            self.pdf.setFont(SERIF_DISPLAY, 10.8)
+            title_lines = self.lines(title, SERIF_DISPLAY, 10.8, self.column_width - 31)
+            title_lines = title_lines[:2]
+            title_y = self.y - 12
+            for line in title_lines:
+                self.pdf.drawString(self.left, title_y, line)
+                title_y -= 12
+            self.pdf.setFont(SANS_SEMIBOLD, 8)
+            self.pdf.drawRightString(self.width - self.right, self.y - 10, str(page) if page else "")
+            if author:
+                self.pdf.setFillColorRGB(*SLATE)
+                self.pdf.setFont(SANS, 6.3)
+                self.pdf.drawString(self.left, title_y - 1, _plain(author.upper()))
+            row_height = max(43, 29 + 12 * (len(title_lines) - 1))
+            self.y -= row_height
 
     def body(self):
         if self.edition.articles:
             if self.edition.editorial:
-                self.new_page("Editorial")
+                self.new_page("Editorial", opener=True)
                 start_page = self.page
                 self.toc["editorial"] = self.page
-                self.pdf.setFillColorRGB(.52, .11, .11)
-                self.pdf.setFont("Helvetica-Bold", 7.5)
-                self.pdf.drawString(self.left, self.y, _plain(self.edition.editorial.label.upper()))
-                self.y -= 17
-                self.block("h1", self.edition.editorial.title)
-                self.block("body", self.edition.editorial.byline)
-                self.markdown(self.edition.editorial.path)
+                self._label(self.edition.editorial.label, right="Issue " + str(self.edition.issue_number))
+                self._display_title(self.edition.editorial.title, maximum_lines=3)
+                self._credit(self.edition.editorial.byline, "An original argument")
+                self.markdown(self.edition.editorial.path, lead=True)
                 self.editorial_pages = self.page - start_page + 1
                 if self.editorial_pages > MAX_EDITORIAL_PAGES:
                     raise ValidationError(
                         f"Editorial spans {self.editorial_pages} reader pages; the hard cap is "
                         f"{MAX_EDITORIAL_PAGES}. Condense it before building."
                     )
-            for article in self.edition.articles:
-                self.new_page(article.title)
+            article_total = len(self.edition.articles)
+            for article_index, article in enumerate(self.edition.articles, 1):
+                self.new_page(article.title, opener=True)
                 start_page = self.page
                 self.toc[article.id] = self.page
-                self.block("h1", article.title)
-                credit = (
-                    f"A faithful synthesis of work by {article.author}"
-                    if article.content_mode == "faithful_synthesis"
-                    else f"By {article.author}"
-                )
-                self.block("body", credit)
-                self.markdown(article.manuscript)
+                mode = "Faithful synthesis" if article.content_mode == "faithful_synthesis" else "Faithful edit"
+                self._label(f"Feature {article_index:02d}", right=f"{article_index} / {article_total}")
+                self._display_title(article.title)
+                self._credit(article.author, mode)
+                self.markdown(article.manuscript, lead=True)
                 page_count = self.page - start_page + 1
                 self.article_pages[article.id] = page_count
                 if page_count > MAX_ARTICLE_PAGES:
@@ -360,7 +496,7 @@ class _Typesetter:
             return
 
     def _section(self, index, section):
-        self.new_page(section.title)
+        self.new_page(section.title, opener=True)
         self.toc[f"section-{index}"] = self.page
         label = {
             "original_editorial": "ORIGINAL EDITORIAL",
@@ -370,12 +506,9 @@ class _Typesetter:
             "production_note": "PRODUCTION NOTE",
             "colophon": "COLOPHON",
         }.get(section.kind, section.kind.replace("_", " ").upper())
-        self.pdf.setFillColorRGB(.52, .11, .11)
-        self.pdf.setFont("Helvetica-Bold", 7.5)
-        self.pdf.drawString(self.left, self.y, _plain(label))
-        self.y -= 17
-        self.block("h1", section.title)
-        self.markdown(section.path)
+        self._label(label, right="Issue " + str(self.edition.issue_number))
+        self._display_title(section.title, maximum_lines=3)
+        self.markdown(section.path, lead=True)
 
     def back_cover(self):
         configured = self.edition.raw.get("format", {}).get("target_pages")
@@ -386,18 +519,22 @@ class _Typesetter:
         while self.page < target - 1:
             self.new_page(blank_header=True)
         self.new_page(blank_header=True)
-        self.pdf.setFillColorRGB(.94, .89, .76)
+        self.pdf.setFillColorRGB(*PAPER)
         self.pdf.rect(0, 0, self.width, self.height, fill=1, stroke=0)
-        self.pdf.setFillColorRGB(.07, .08, .09)
+        self.pdf.setFillColorRGB(*OXBLOOD)
+        self.pdf.rect(0, self.height - 14, self.width, 14, fill=1, stroke=0)
+        self.pdf.setFillColorRGB(*INK)
         text = str(self.edition.cover.get("back_text", "A private anthology of writing worth keeping."))
         y = self.height * .58
-        self.pdf.setFont("Helvetica-Bold", 16)
-        for line in self.lines(text, "Helvetica-Bold", 16, self.width - 90):
+        self.pdf.setFont(SERIF_DISPLAY, 17)
+        for line in self.lines(text, SERIF_DISPLAY, 17, self.width - 90):
             self.pdf.drawString(45, y, line)
-            y -= 21
-        self.pdf.setFont("Helvetica-Bold", 7.5)
+            y -= 21.5
+        self.pdf.setStrokeColorRGB(*SAND)
+        self.pdf.line(45, 57, self.width - 45, 57)
+        self.pdf.setFont(SANS_SEMIBOLD, 6.7)
         self.pdf.drawString(45, 40, _plain(_edition_label(self.edition)).upper())
-        self.pdf.setFont("Helvetica", 8)
+        self.pdf.setFont(SANS, 7)
         self.pdf.drawString(45, 25, _plain(self.edition.title))
 
 
