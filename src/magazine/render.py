@@ -1010,9 +1010,9 @@ class _Typesetter:
         article_id: str,
     ) -> tuple[list, dict[str, object]]:
         rows = list(figures or ())
-        if len(rows) > 2:
+        if len(rows) > 3:
             raise ValidationError(
-                f"Article {article_id} has {len(rows)} curated figures; the maximum is 2"
+                f"Article {article_id} has {len(rows)} curated figures; the maximum is 3"
             )
         identifiers = [str(self._figure_value(row, "id")) for row in rows]
         if len(set(identifiers)) != len(identifiers):

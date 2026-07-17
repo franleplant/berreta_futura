@@ -90,7 +90,7 @@ def load_media_reviews(
     source_id: str,
     raw_capture_ids: set[str],
 ) -> tuple[MediaCaptureReview, ...]:
-    """Load human media triage; generated exhaustive inventories stay derived."""
+    """Load hash-pinned media curation; exhaustive inventories stay derived."""
 
     if value in (None, []):
         return ()
@@ -144,9 +144,8 @@ def load_media_reviews(
             )
         )
     if seen_captures != raw_capture_ids:
-        # A newly captured image bundle remains intentionally absent until a
-        # human chooses curated, rejected, or blocked. Edition validation owns
-        # the completeness gate so capture can persist that pending state.
+        # Edition validation owns completeness for legacy or externally written
+        # records; normal capture runs automatic curation before persisting.
         extra = sorted(seen_captures - raw_capture_ids)
         if extra:
             errors.append(
@@ -172,8 +171,8 @@ def resolve_figures(
         return ()
     if not isinstance(rows, list):
         raise ValidationError(f"Article {article_id} figures must be a list")
-    if len(rows) > 2:
-        raise ValidationError(f"Article {article_id} selects {len(rows)} figures; maximum is 2")
+    if len(rows) > 3:
+        raise ValidationError(f"Article {article_id} selects {len(rows)} figures; maximum is 3")
     errors: list[str] = []
     figures: list[Figure] = []
     seen: set[str] = set()
@@ -416,10 +415,33 @@ def _resolve_asset(
         if isinstance(item, dict)
     }
     archived = artifact_rows.get(asset.artifact_path)
-    if not archived or archived.get("sha256") != asset.artifact_sha256:
-        errors.append(f"{label} asset does not match its archived bundle manifest")
+    if archived and archived.get("sha256") == asset.artifact_sha256:
+        path = manifest_path.parent / "artifacts" / Path(*PurePosixPath(asset.artifact_path).parts)
+    elif asset.artifact_path.startswith(f"media/derived/{review.capture_id}/"):
+        source_dir = manifest_path.parents[2]
+        path = source_dir / Path(*PurePosixPath(asset.artifact_path).parts)
+        plan_path = source_dir / "media" / f"{review.capture_id}.curation.json"
+        try:
+            plan = json.loads(plan_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            errors.append(f"{label} cannot read automatic media curation audit: {exc}")
+            return None
+        selected = set(plan.get("selected", []))
+        matches = [
+            row for row in plan.get("candidates", [])
+            if isinstance(row, dict) and row.get("id") == asset.id
+        ]
+        if (
+            asset.id not in selected
+            or len(matches) != 1
+            or matches[0].get("artifact_path") != asset.artifact_path
+            or matches[0].get("artifact_sha256") != asset.artifact_sha256
+        ):
+            errors.append(f"{label} derived asset does not match its automatic curation audit")
+            return None
+    else:
+        errors.append(f"{label} asset does not match its archived bundle or curation audit")
         return None
-    path = manifest_path.parent / "artifacts" / Path(*PurePosixPath(asset.artifact_path).parts)
     if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != asset.artifact_sha256:
         errors.append(f"{label} asset file is missing or changed after capture")
         return None

@@ -55,7 +55,8 @@ def test_capture_indexes_image_hash_mime_and_dimensions() -> None:
             }
         ]
         assert inventory["duplicate_groups"] == []
-        assert record.media_reviews == ()
+        assert record.media_reviews[0].status == "media_rejected"
+        assert record.media_reviews[0].assets == ()
         verify_snapshots(record, magazine.sources_dir)
 
 

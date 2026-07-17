@@ -121,15 +121,15 @@ def test_curated_figures_resolve_exact_semantic_headings_and_allow_none():
     assert anchored == {"capability is not deployment": figure}
 
 
-def test_curated_figures_enforce_two_asset_cap_and_unique_anchors():
+def test_curated_figures_enforce_three_asset_cap_and_unique_anchors():
     typesetter = object.__new__(_Typesetter)
     blocks = [("h2", "Section"), ("body", "Text.")]
     rows = [
         SimpleNamespace(id=f"figure-{index}", anchor="Section", layout="column_plate")
-        for index in range(3)
+        for index in range(4)
     ]
 
-    with pytest.raises(ValidationError, match="maximum is 2"):
+    with pytest.raises(ValidationError, match="maximum is 3"):
         typesetter._validated_figures(blocks, rows, "article")
 
     with pytest.raises(ValidationError, match="multiple figures at one semantic anchor"):

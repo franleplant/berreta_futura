@@ -13,6 +13,7 @@ from .errors import ValidationError
 from .fidelity import fidelity_report
 from .io import load_structured
 from .manifest import Edition, load_edition, load_translation
+from .media_curator import curate_source, verify_source_curation
 from .package import package_release
 from .records import SourceRecord, load_records
 from .release import (
@@ -80,15 +81,29 @@ class Magazine:
         candidate = SourceRecord.create(url, **metadata)
         for existing in load_records(self.sources_dir):
             if existing.canonical_url == candidate.canonical_url:
+                previous_captures = {
+                    str(row.get("id")) for row in existing.raw_captures if row.get("id")
+                }
                 existing = archive_snapshot(
                     existing, self.sources_dir, snapshot, method=capture_method,
                     captured_at=candidate.captured_at,
+                )
+                added = {
+                    str(row.get("id")) for row in existing.raw_captures if row.get("id")
+                } - previous_captures
+                existing, _ = curate_source(
+                    existing, self.sources_dir, refresh_capture_ids=added
                 )
                 existing.write(self.sources_dir)
                 self.sync_release_queue()
                 return existing
         candidate = archive_snapshot(
             candidate, self.sources_dir, snapshot, method=capture_method
+        )
+        candidate, _ = curate_source(
+            candidate,
+            self.sources_dir,
+            refresh_capture_ids={str(row["id"]) for row in candidate.raw_captures},
         )
         candidate.write(self.sources_dir)
         self.sync_release_queue()
@@ -102,10 +117,16 @@ class Magazine:
         return path
 
     def index_media(self) -> tuple[Path, ...]:
-        """Regenerate deterministic media inventories for every committed capture."""
+        """Regenerate inventories and automatic curation for committed captures."""
 
         records = load_records(self.sources_dir)
-        return index_existing_captures(records, self.sources_dir)
+        paths = list(index_existing_captures(records, self.sources_dir))
+        for record in records:
+            curated, plans = curate_source(record, self.sources_dir)
+            if curated != record:
+                curated.write(self.sources_dir)
+            paths.extend(plans)
+        return tuple(paths)
 
     def sync_release_queue(self, records: list[SourceRecord] | None = None) -> ReleaseState:
         current = records if records is not None else load_records(self.sources_dir)
@@ -124,6 +145,7 @@ class Magazine:
         records = load_records(self.sources_dir)
         for record in records:
             verify_snapshots(record, self.sources_dir)
+            verify_source_curation(record, self.sources_dir)
         _require_media_triage(records)
         edition = load_edition(
             self.root,

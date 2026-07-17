@@ -1,0 +1,274 @@
+{
+  "bundle_sha256": "19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169",
+  "candidate_count": 10,
+  "candidates": [
+    {
+      "artifact_path": "article-full.png",
+      "artifact_sha256": "cb32342ad9467c5a3e943ae34392add7a7560dcd0cd4d763564f66e7c4c6cf28",
+      "aspect_ratio": 0.074237,
+      "criteria": [],
+      "decision": "reject",
+      "description": "",
+      "heading": "",
+      "id": "raster-001-cb32342a",
+      "mime_type": "image/png",
+      "origin": "raw_raster",
+      "pixel_height": 17323,
+      "pixel_width": 1286,
+      "rationale": "",
+      "rejection_reasons": [
+        "extreme_aspect_ratio_or_full_page_capture"
+      ],
+      "score": 0,
+      "source_artifact": "article-full.png",
+      "source_artifact_sha256": "cb32342ad9467c5a3e943ae34392add7a7560dcd0cd4d763564f66e7c4c6cf28",
+      "source_position": 1,
+      "title": "article full"
+    },
+    {
+      "artifact_path": "media/derived/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/svg-001-2157c84f5ec3.png",
+      "artifact_sha256": "5bd29f88de4853edafa298b30c8fc7398f35aa61346eb8f2bade161d45e3c718",
+      "aspect_ratio": 1.184211,
+      "criteria": [
+        "important",
+        "useful",
+        "beautiful",
+        "cool"
+      ],
+      "decision": "include",
+      "description": "Sources feed distillation, embeddings, retrieval, fusion, and synthesis layers.",
+      "heading": "How We Built Our Knowledge Base",
+      "id": "svg-001-2157c84f",
+      "mime_type": "image/png",
+      "origin": "inline_svg",
+      "pixel_height": 1520,
+      "pixel_width": 1800,
+      "rationale": "Exploded vertical stack of the internal knowledge base is a important, useful, beautiful, cool visual explanation that earns its space in print.",
+      "rejection_reasons": [],
+      "score": 96,
+      "source_artifact": "capture.json",
+      "source_artifact_sha256": "a38de6a416b0c7b21ce2ad32cdcf80608f19d0124fe6f91e48125438d945282b",
+      "source_fragment_sha256": "2157c84f5ec3d32ab53b344b346540dda443746569cff0943ff51ffc68f8bc51",
+      "source_position": 1,
+      "title": "Exploded vertical stack of the internal knowledge base"
+    },
+    {
+      "artifact_path": "media/derived/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/svg-002-1b6309f9d2bc.png",
+      "artifact_sha256": "894f580a29809a5a9252ab23a946bc46b6aa245006ac0be6689063facbfb82a2",
+      "aspect_ratio": 1.8,
+      "criteria": [
+        "useful",
+        "beautiful"
+      ],
+      "decision": "reject",
+      "description": "",
+      "heading": "Anatomy of a knowledge base",
+      "id": "svg-002-1b6309f9",
+      "mime_type": "image/png",
+      "origin": "inline_svg",
+      "pixel_height": 1000,
+      "pixel_width": 1800,
+      "rationale": "Many data sources feeding one queryable embeddings table is a useful, beautiful visual explanation that earns its space in print.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 64,
+      "source_artifact": "capture.json",
+      "source_artifact_sha256": "a38de6a416b0c7b21ce2ad32cdcf80608f19d0124fe6f91e48125438d945282b",
+      "source_fragment_sha256": "1b6309f9d2bcc34a9746c9fd845694cc28cf617276e1a0ff124401a585d5174b",
+      "source_position": 2,
+      "title": "Many data sources feeding one queryable embeddings table"
+    },
+    {
+      "artifact_path": "media/derived/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/svg-003-6cddc4e1003e.png",
+      "artifact_sha256": "6f9ea9a5b377491b170406d199a9fdc1e721912a7122fec012c265d86c582c7a",
+      "aspect_ratio": 2.093023,
+      "criteria": [
+        "useful",
+        "beautiful"
+      ],
+      "decision": "reject",
+      "description": "",
+      "heading": "Slack",
+      "id": "svg-003-6cddc4e1",
+      "mime_type": "image/png",
+      "origin": "inline_svg",
+      "pixel_height": 860,
+      "pixel_width": 1800,
+      "rationale": "Slack event flow from Socket Mode through distillation and embedding is a useful, beautiful visual explanation that earns its space in print.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 66,
+      "source_artifact": "capture.json",
+      "source_artifact_sha256": "a38de6a416b0c7b21ce2ad32cdcf80608f19d0124fe6f91e48125438d945282b",
+      "source_fragment_sha256": "6cddc4e1003ef07f80b0737b8adf1fec896bb1fb06a77ea2ff010ad61224b6d2",
+      "source_position": 3,
+      "title": "Slack event flow from Socket Mode through distillation and embedding"
+    },
+    {
+      "artifact_path": "media/derived/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/svg-004-dc51846ec133.png",
+      "artifact_sha256": "",
+      "aspect_ratio": 24.615385,
+      "criteria": [],
+      "decision": "reject",
+      "description": "",
+      "heading": "Threads and messages",
+      "id": "svg-004-dc51846e",
+      "mime_type": "image/png",
+      "origin": "inline_svg",
+      "pixel_height": 0,
+      "pixel_width": 0,
+      "rationale": "",
+      "rejection_reasons": [
+        "decorative_or_aria_hidden",
+        "not_a_print_figure",
+        "insufficient_visual_information"
+      ],
+      "score": 0,
+      "source_artifact": "capture.json",
+      "source_artifact_sha256": "a38de6a416b0c7b21ce2ad32cdcf80608f19d0124fe6f91e48125438d945282b",
+      "source_fragment_sha256": "dc51846ec133bd2a6516281890a6700ecabb679e1f692d45c9136c726bb754b9",
+      "source_position": 4,
+      "title": ""
+    },
+    {
+      "artifact_path": "media/derived/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/svg-005-14c1ac7f01df.png",
+      "artifact_sha256": "",
+      "aspect_ratio": 6.0,
+      "criteria": [],
+      "decision": "reject",
+      "description": "",
+      "heading": "Threads and messages",
+      "id": "svg-005-14c1ac7f",
+      "mime_type": "image/png",
+      "origin": "inline_svg",
+      "pixel_height": 0,
+      "pixel_width": 0,
+      "rationale": "",
+      "rejection_reasons": [
+        "not_a_print_figure",
+        "insufficient_visual_information"
+      ],
+      "score": 0,
+      "source_artifact": "capture.json",
+      "source_artifact_sha256": "a38de6a416b0c7b21ce2ad32cdcf80608f19d0124fe6f91e48125438d945282b",
+      "source_fragment_sha256": "14c1ac7f01dfd7cbe23b842a144ae34974f67e4ad9e04e395e0090058bb40361",
+      "source_position": 5,
+      "title": ""
+    },
+    {
+      "artifact_path": "media/derived/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/svg-006-b317a3e5a421.png",
+      "artifact_sha256": "17c72fcf5d6f17748fcd21899f15d7d44454d333955e9d923419f6cef505e0b9",
+      "aspect_ratio": 1.948718,
+      "criteria": [
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "",
+      "heading": "Bursting",
+      "id": "svg-006-b317a3e5",
+      "mime_type": "image/png",
+      "origin": "inline_svg",
+      "pixel_height": 924,
+      "pixel_width": 1800,
+      "rationale": "A Slack thread split into same-author bursts and filtered by signal is a useful visual explanation that earns its space in print.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 51,
+      "source_artifact": "capture.json",
+      "source_artifact_sha256": "a38de6a416b0c7b21ce2ad32cdcf80608f19d0124fe6f91e48125438d945282b",
+      "source_fragment_sha256": "b317a3e5a421dd178c27aea318aa076079b59a4dd30eaa69c77087ce1d96d712",
+      "source_position": 6,
+      "title": "A Slack thread split into same-author bursts and filtered by signal"
+    },
+    {
+      "artifact_path": "media/derived/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/svg-007-a8dd975668e8.png",
+      "artifact_sha256": "29d14d218b7273c11c6efa9ef8d755c158a13074a4d0e83ba044bb40773af535",
+      "aspect_ratio": 1.956522,
+      "criteria": [
+        "useful",
+        "beautiful"
+      ],
+      "decision": "include",
+      "description": "",
+      "heading": "Planning and tool fan-out",
+      "id": "svg-007-a8dd9756",
+      "mime_type": "image/png",
+      "origin": "inline_svg",
+      "pixel_height": 920,
+      "pixel_width": 1800,
+      "rationale": "Planner, parallel tool execution, evidence normalization, and synthesis is a useful, beautiful visual explanation that earns its space in print.",
+      "rejection_reasons": [],
+      "score": 70,
+      "source_artifact": "capture.json",
+      "source_artifact_sha256": "a38de6a416b0c7b21ce2ad32cdcf80608f19d0124fe6f91e48125438d945282b",
+      "source_fragment_sha256": "a8dd975668e86e2e8ab44c3724aca767ab1efdb7810b49aeb12968ea2f620029",
+      "source_position": 7,
+      "title": "Planner, parallel tool execution, evidence normalization, and synthesis"
+    },
+    {
+      "artifact_path": "media/derived/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/svg-008-b42cddcda2b0.png",
+      "artifact_sha256": "65c9341d84c9fa2d77299174b9a0c72e335848c95bac5c0b602e358e16a7bd5f",
+      "aspect_ratio": 1.948718,
+      "criteria": [
+        "useful"
+      ],
+      "decision": "include",
+      "description": "",
+      "heading": "Web UI",
+      "id": "svg-008-b42cddcd",
+      "mime_type": "image/png",
+      "origin": "inline_svg",
+      "pixel_height": 924,
+      "pixel_width": 1800,
+      "rationale": "MCP exposes retrieval primitives while the web UI runs the complete agent pipeline is a useful visual explanation that earns its space in print.",
+      "rejection_reasons": [],
+      "score": 69,
+      "source_artifact": "capture.json",
+      "source_artifact_sha256": "a38de6a416b0c7b21ce2ad32cdcf80608f19d0124fe6f91e48125438d945282b",
+      "source_fragment_sha256": "b42cddcda2b0aebc5d20e54d90deb86e979956a42c46c662218d885937a6c8f3",
+      "source_position": 8,
+      "title": "MCP exposes retrieval primitives while the web UI runs the complete agent pipeline"
+    },
+    {
+      "artifact_path": "media/derived/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/svg-009-88f6c074cd82.png",
+      "artifact_sha256": "2528212ed7e9ebeaa501c95ee7e81f6d66cc5126a41efe4fb1f50eb6024d7cd5",
+      "aspect_ratio": 1.809524,
+      "criteria": [
+        "useful",
+        "beautiful"
+      ],
+      "decision": "reject",
+      "description": "",
+      "heading": "Projects and scoped search",
+      "id": "svg-009-88f6c074",
+      "mime_type": "image/png",
+      "origin": "inline_svg",
+      "pixel_height": 995,
+      "pixel_width": 1800,
+      "rationale": "Projects reference shared data sources without duplicating them is a useful, beautiful visual explanation that earns its space in print.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 61,
+      "source_artifact": "capture.json",
+      "source_artifact_sha256": "a38de6a416b0c7b21ce2ad32cdcf80608f19d0124fe6f91e48125438d945282b",
+      "source_fragment_sha256": "88f6c074cd821ccabf441ede5a328a147e7f9a60b0257a4570a33ba26acefff4",
+      "source_position": 9,
+      "title": "Projects reference shared data sources without duplicating them"
+    }
+  ],
+  "curator": "magazine-compiler/automatic-media-curator",
+  "input_sha256": "2b9df3fb5098e95fcf793490bc18e94a87376482059447d1afe835b2ecd3ed47",
+  "policy_version": "editorial-impact-v2",
+  "schema_version": 1,
+  "selected": [
+    "svg-001-2157c84f",
+    "svg-007-a8dd9756",
+    "svg-008-b42cddcd"
+  ],
+  "selection_limit": 3,
+  "source_id": "how-we-built-our-knowledge-base-e986baa0"
+}

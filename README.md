@@ -176,11 +176,13 @@ missing local images or stale inventories fail validation. `mag media-index`
 rebuilds these derived inventories for existing immutable captures without
 changing anything under `raw/`.
 
-Human media decisions live in `record.yaml`, never in generated inventory
-files. Each capture receives one triage state: `no_media`, `media_rejected`,
-`media_curated`, or `media_blocked`. Curated asset annotations pin the raw path
-and SHA-256, creator, credit, and rights basis. A build fails if any capture has
-not been triaged.
+Automatic media decisions live in a bundle-keyed curation audit and are pinned
+in `record.yaml`; exhaustive inventories remain generated output. The curator
+extracts substantive inline SVG diagrams into generated PNG derivatives without
+changing immutable raw evidence, rejects screenshots, decorative vectors,
+low-resolution assets, and context-free images, then selects only the strongest
+zero to three candidates. Every decision records its score, rationale, and
+rejection reasons. A build fails if any capture has not been curated.
 
 ## Edition manifests
 
@@ -191,7 +193,7 @@ repository-relative and cannot escape the project. The compiler validates
 required fields, source references, duplicate IDs, and file existence before
 layout.
 
-An article may select at most two curated figures. Each selection records why
+An article may select at most three curated figures. Each selection records why
 it is important, useful, beautiful, or cool; resolves to a hash-verified source
 asset; and uses either a full-width `evidence_band` or a single-column
 `column_plate`. Placement is semantic: `__opener__` or an exact `##` heading,

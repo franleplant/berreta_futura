@@ -37,7 +37,7 @@
           "fidelity": {"type": "string"},
           "figures": {
             "type": "array",
-            "maxItems": 2,
+            "maxItems": 3,
             "items": {
               "type": "object",
               "required": ["id", "decision", "source_id", "asset_id", "caption", "alt_text", "anchor", "layout", "criteria", "rationale"],

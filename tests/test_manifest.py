@@ -300,7 +300,7 @@ class ManifestTests(unittest.TestCase):
         self.assertTrue(figure.path.is_file())
         self.assertEqual(figure.rights_status, "unknown")
 
-    def test_load_edition_rejects_more_than_two_figures(self):
+    def test_load_edition_rejects_more_than_three_figures(self):
         make_project(self.root)
         add_curated_figure(self.root)
         manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
@@ -310,10 +310,11 @@ class ManifestTests(unittest.TestCase):
             {**figure, "id": "one"},
             {**figure, "id": "two"},
             {**figure, "id": "three"},
+            {**figure, "id": "four"},
         ]
         manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
 
-        with self.assertRaisesRegex(ValidationError, "maximum is 2"):
+        with self.assertRaisesRegex(ValidationError, "maximum is 3"):
             load_edition_with_records(self.root)
 
     def test_load_edition_rejects_figure_without_semantic_anchor(self):
