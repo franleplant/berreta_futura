@@ -18,3 +18,6 @@ articles:
       - example-source-id
     manuscript: editions/issue-001/articles/example-article.md
     fidelity: editions/issue-001/fidelity/example-article.yaml
+    # Curate zero to two source-verified figures. The anchor must be __opener__
+    # or exactly match a ## heading in the manuscript.
+    figures: []

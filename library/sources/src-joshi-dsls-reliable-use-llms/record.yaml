@@ -16,6 +16,11 @@ raw_captures:
   captured_at: '2026-07-15T18:37:03-03:00'
   artifact_count: 1
   byte_count: 86858
+media_reviews:
+- capture_id: afece142d4eb217beceae5ff0720cfd2772c3df00141ed80149d9681fa90ea5e
+  status: no_media
+  assets: []
+  note: The deterministic capture inventory contains no raster assets.
 provenance:
 - relation: discovered_via
   target_url: https://x.com/martinfowler/status/2077023024155422927

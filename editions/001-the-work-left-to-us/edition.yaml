@@ -40,6 +40,19 @@ articles:
   - src-narayanan-icml-2026-keynote
   manuscript: editions/001-the-work-left-to-us/articles/narayanan-what-will-be-left.md
   fidelity: editions/001-the-work-left-to-us/fidelity/narayanan-what-will-be-left.yaml
+  figures:
+  - id: capability-reliability-gap
+    decision: include
+    source_id: src-narayanan-icml-2026-keynote
+    asset_id: capability-reliability-gap
+    caption: Across model releases, accuracy rises sharply while reliability improves only gradually - the gap between capability and dependable deployment.
+    alt_text: Two scatter plots compare AI model accuracy and reliability over release dates; the accuracy trend rises much more steeply.
+    anchor: __opener__
+    layout: column_plate
+    criteria:
+    - important
+    - useful
+    rationale: This chart makes the article's capability-versus-deployment distinction instantly legible.
 - id: joshi-dsls-reliable-use-llms
   title: DSLs Enable Reliable Use of LLMs
   short_title: Reliable Use of LLMs

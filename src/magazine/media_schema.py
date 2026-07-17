@@ -1,0 +1,434 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+import hashlib
+import json
+from pathlib import Path, PurePosixPath
+import re
+from typing import TYPE_CHECKING, Any, Mapping
+
+from .errors import ValidationError
+
+if TYPE_CHECKING:
+    from .records import SourceRecord
+
+
+MEDIA_TRIAGE_STATES = {
+    "no_media",
+    "media_rejected",
+    "media_curated",
+    "media_blocked",
+}
+FIGURE_LAYOUTS = {"evidence_band", "column_plate"}
+CURATION_CRITERIA = {"important", "useful", "beautiful", "cool"}
+SUPPORTED_IMAGE_TYPES = {"image/jpeg", "image/png"}
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
+
+
+@dataclass(frozen=True)
+class SourceMediaAsset:
+    id: str
+    artifact_path: str
+    artifact_sha256: str
+    mime_type: str
+    creator: str
+    credit: str
+    rights: dict[str, Any]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "artifact_path": self.artifact_path,
+            "artifact_sha256": self.artifact_sha256,
+            "mime_type": self.mime_type,
+            "creator": self.creator,
+            "credit": self.credit,
+            "rights": self.rights,
+        }
+
+
+@dataclass(frozen=True)
+class MediaCaptureReview:
+    capture_id: str
+    status: str
+    assets: tuple[SourceMediaAsset, ...]
+    note: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        result: dict[str, Any] = {
+            "capture_id": self.capture_id,
+            "status": self.status,
+            "assets": [asset.to_dict() for asset in self.assets],
+        }
+        if self.note:
+            result["note"] = self.note
+        return result
+
+
+@dataclass(frozen=True)
+class Figure:
+    id: str
+    source_id: str
+    asset_id: str
+    path: Path
+    caption: str
+    credit: str
+    alt_text: str
+    anchor: str
+    layout: str
+    rights_status: str
+    bundle_sha256: str
+    artifact_sha256: str
+    criteria: tuple[str, ...]
+    rationale: str
+    source_caption_sha256: str | None = None
+
+
+def load_media_reviews(
+    value: Any,
+    *,
+    source_id: str,
+    raw_capture_ids: set[str],
+) -> tuple[MediaCaptureReview, ...]:
+    """Load human media triage; generated exhaustive inventories stay derived."""
+
+    if value in (None, []):
+        return ()
+    if not isinstance(value, list):
+        raise ValidationError(f"Source {source_id} media_reviews must be a list")
+    errors: list[str] = []
+    reviews: list[MediaCaptureReview] = []
+    seen_captures: set[str] = set()
+    seen_assets: set[str] = set()
+    for index, row in enumerate(value):
+        label = f"Source {source_id} media review {index + 1}"
+        if not isinstance(row, dict):
+            errors.append(f"{label} must be a mapping")
+            continue
+        capture_id = str(row.get("capture_id") or "").strip()
+        status = str(row.get("status") or "").strip()
+        if not capture_id:
+            errors.append(f"{label} requires capture_id")
+        elif capture_id in seen_captures:
+            errors.append(f"Source {source_id} has duplicate media review for {capture_id}")
+        seen_captures.add(capture_id)
+        if status not in MEDIA_TRIAGE_STATES:
+            errors.append(f"{label} has invalid status: {status or '<missing>'}")
+        assets_value = row.get("assets")
+        if not isinstance(assets_value, list):
+            errors.append(f"{label} assets must be a list")
+            assets_value = []
+        assets: list[SourceMediaAsset] = []
+        for asset_index, asset_row in enumerate(assets_value):
+            asset_label = f"{label} asset {asset_index + 1}"
+            asset = _load_source_asset(asset_row, asset_label, errors)
+            if not asset:
+                continue
+            if asset.id in seen_assets:
+                errors.append(f"Source {source_id} has duplicate media asset id: {asset.id}")
+            seen_assets.add(asset.id)
+            assets.append(asset)
+        note = str(row.get("note") or "").strip()
+        if status in {"no_media", "media_rejected"} and assets:
+            errors.append(f"{label} with status {status} must have no selected assets")
+        if status in {"media_curated", "media_blocked"} and not assets:
+            errors.append(f"{label} with status {status} requires selected assets")
+        if status == "media_rejected" and not note:
+            errors.append(f"{label} with status media_rejected requires a note")
+        reviews.append(
+            MediaCaptureReview(
+                capture_id,
+                status,
+                tuple(assets),
+                note,
+            )
+        )
+    if seen_captures != raw_capture_ids:
+        # A newly captured image bundle remains intentionally absent until a
+        # human chooses curated, rejected, or blocked. Edition validation owns
+        # the completeness gate so capture can persist that pending state.
+        extra = sorted(seen_captures - raw_capture_ids)
+        if extra:
+            errors.append(
+                f"Source {source_id} media_reviews reference unknown captures: {', '.join(extra)}"
+            )
+    if errors:
+        raise ValidationError(errors)
+    return tuple(reviews)
+
+
+def resolve_figures(
+    root: Path,
+    *,
+    article_id: str,
+    article_source_ids: tuple[str, ...],
+    manuscript: Path,
+    rows: Any,
+    records: Mapping[str, "SourceRecord"] | None,
+) -> tuple[Figure, ...]:
+    """Resolve explicit edition selections against committed source inventories."""
+
+    if rows in (None, []):
+        return ()
+    if not isinstance(rows, list):
+        raise ValidationError(f"Article {article_id} figures must be a list")
+    if len(rows) > 2:
+        raise ValidationError(f"Article {article_id} selects {len(rows)} figures; maximum is 2")
+    errors: list[str] = []
+    figures: list[Figure] = []
+    seen: set[str] = set()
+    headings = _semantic_headings(manuscript)
+    for index, row in enumerate(rows):
+        label = f"Article {article_id} figure {index + 1}"
+        if not isinstance(row, dict):
+            errors.append(f"{label} must be a mapping")
+            continue
+        figure_id = str(row.get("id") or "").strip()
+        source_id = str(row.get("source_id") or "").strip()
+        asset_id = str(row.get("asset_id") or "").strip()
+        decision = str(row.get("decision") or "").strip()
+        caption = str(row.get("caption") or "").strip()
+        alt_text = str(row.get("alt_text") or "").strip()
+        anchor = str(row.get("anchor") or "").strip()
+        layout = str(row.get("layout") or "").strip()
+        rationale = str(row.get("rationale") or "").strip()
+        criteria_value = row.get("criteria")
+        criteria = tuple(str(item).strip() for item in criteria_value) if isinstance(criteria_value, list) else ()
+        missing = [
+            name
+            for name, value in (
+                ("id", figure_id),
+                ("source_id", source_id),
+                ("asset_id", asset_id),
+                ("caption", caption),
+                ("alt_text", alt_text),
+                ("anchor", anchor),
+                ("layout", layout),
+                ("rationale", rationale),
+            )
+            if not value
+        ]
+        if missing:
+            errors.append(f"{label} missing: {', '.join(missing)}")
+        if figure_id in seen:
+            errors.append(f"Article {article_id} has duplicate figure id: {figure_id}")
+        seen.add(figure_id)
+        if decision != "include":
+            errors.append(f"{label} decision must be include; omit rejected assets")
+        if source_id not in article_source_ids:
+            errors.append(f"{label} source_id must be one of the article source_ids")
+        if not criteria or any(item not in CURATION_CRITERIA for item in criteria):
+            errors.append(
+                f"{label} criteria must be a non-empty list drawn from "
+                f"{', '.join(sorted(CURATION_CRITERIA))}"
+            )
+        if layout not in FIGURE_LAYOUTS:
+            errors.append(f"{label} has invalid layout: {layout or '<missing>'}")
+        if anchor != "__opener__" and anchor not in headings:
+            errors.append(f"{label} anchor does not match an article heading: {anchor!r}")
+        resolved = _resolve_asset(root, source_id, asset_id, records, label, errors)
+        if not resolved:
+            continue
+        review, asset, path = resolved
+        if review.status != "media_curated":
+            errors.append(
+                f"{label} selects asset {asset_id} from capture status {review.status}"
+            )
+        figures.append(
+            Figure(
+                figure_id,
+                source_id,
+                asset_id,
+                path,
+                caption,
+                asset.credit,
+                alt_text,
+                anchor,
+                layout,
+                str(asset.rights.get("status") or "unknown"),
+                review.capture_id,
+                asset.artifact_sha256,
+                criteria,
+                rationale,
+            )
+        )
+    if errors:
+        raise ValidationError(errors)
+    return tuple(figures)
+
+
+def localize_figures(
+    base: tuple[Figure, ...],
+    rows: Any,
+    *,
+    article_id: str,
+    manuscript: Path,
+    language: str,
+) -> tuple[Figure, ...]:
+    if not base:
+        if rows not in (None, []):
+            raise ValidationError(
+                f"Translation {language!r} article {article_id} has figures absent from English"
+            )
+        return ()
+    if not isinstance(rows, list):
+        raise ValidationError(
+            f"Translation {language!r} article {article_id} figures must be a list"
+        )
+    errors: list[str] = []
+    by_id = {
+        str(row.get("id")): row
+        for row in rows
+        if isinstance(row, dict) and row.get("id")
+    }
+    expected_ids = {figure.id for figure in base}
+    if set(by_id) != expected_ids:
+        missing = sorted(expected_ids - set(by_id))
+        extra = sorted(set(by_id) - expected_ids)
+        if missing:
+            errors.append(
+                f"Translation {language!r} article {article_id} is missing figures: {', '.join(missing)}"
+            )
+        if extra:
+            errors.append(
+                f"Translation {language!r} article {article_id} has unknown figures: {', '.join(extra)}"
+            )
+    headings = _semantic_headings(manuscript)
+    localized: list[Figure] = []
+    for figure in base:
+        row = by_id.get(figure.id)
+        if not row:
+            continue
+        caption = str(row.get("caption") or "").strip()
+        alt_text = str(row.get("alt_text") or "").strip()
+        anchor = str(row.get("anchor") or "").strip()
+        if not caption or not alt_text or not anchor:
+            errors.append(
+                f"Translation {language!r} figure {figure.id} requires caption, alt_text, and anchor"
+            )
+        expected_hash = caption_sha256(figure.id, figure.caption)
+        if row.get("source_caption_sha256") != expected_hash:
+            errors.append(f"Translation {language!r} figure {figure.id} caption pin is stale")
+        if anchor != "__opener__" and anchor not in headings:
+            errors.append(
+                f"Translation {language!r} figure {figure.id} anchor does not match a translated heading"
+            )
+        localized.append(
+            Figure(
+                **{
+                    **figure.__dict__,
+                    "caption": caption,
+                    "alt_text": alt_text,
+                    "anchor": anchor,
+                    "source_caption_sha256": expected_hash,
+                }
+            )
+        )
+    if errors:
+        raise ValidationError(errors)
+    return tuple(localized)
+
+
+def caption_sha256(figure_id: str, caption: str) -> str:
+    encoded = json.dumps(
+        {"id": figure_id, "caption": caption},
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _load_source_asset(
+    row: Any,
+    label: str,
+    errors: list[str],
+) -> SourceMediaAsset | None:
+    if not isinstance(row, dict):
+        errors.append(f"{label} must be a mapping")
+        return None
+    values = {
+        key: str(row.get(key) or "").strip()
+        for key in ("id", "artifact_path", "artifact_sha256", "mime_type", "creator", "credit")
+    }
+    missing = [key for key, value in values.items() if not value]
+    rights = row.get("rights")
+    if not isinstance(rights, dict):
+        missing.append("rights")
+        rights = {}
+    if missing:
+        errors.append(f"{label} missing: {', '.join(missing)}")
+    relative = PurePosixPath(values["artifact_path"])
+    if not relative.parts or relative.is_absolute() or ".." in relative.parts:
+        errors.append(f"{label} has unsafe artifact_path: {values['artifact_path']!r}")
+    if not _SHA256.fullmatch(values["artifact_sha256"]):
+        errors.append(f"{label} artifact_sha256 must be a lowercase SHA-256 digest")
+    if values["mime_type"] not in SUPPORTED_IMAGE_TYPES:
+        errors.append(f"{label} has unsupported mime_type: {values['mime_type']!r}")
+    required_rights = {"status", "intended_use", "attribution_required", "public_reprint_allowed"}
+    missing_rights = sorted(required_rights - set(rights))
+    if missing_rights:
+        errors.append(f"{label} rights missing: {', '.join(missing_rights)}")
+    return SourceMediaAsset(
+        values["id"],
+        values["artifact_path"],
+        values["artifact_sha256"],
+        values["mime_type"],
+        values["creator"],
+        values["credit"],
+        dict(rights),
+    )
+
+
+def _resolve_asset(
+    root: Path,
+    source_id: str,
+    asset_id: str,
+    records: Mapping[str, "SourceRecord"] | None,
+    label: str,
+    errors: list[str],
+) -> tuple[MediaCaptureReview, SourceMediaAsset, Path] | None:
+    if records is None:
+        errors.append(f"{label} cannot resolve source media without source records")
+        return None
+    record = records.get(source_id)
+    if not record:
+        return None
+    matches = [
+        (review, asset)
+        for review in record.media_reviews
+        for asset in review.assets
+        if asset.id == asset_id
+    ]
+    if len(matches) != 1:
+        errors.append(f"{label} references unknown media asset: {asset_id}")
+        return None
+    review, asset = matches[0]
+    manifest_path = root / "library" / "sources" / source_id / "raw" / review.capture_id / "manifest.json"
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        errors.append(f"{label} cannot read raw capture manifest: {exc}")
+        return None
+    artifact_rows = {
+        str(item.get("path")): item
+        for item in manifest.get("artifacts", [])
+        if isinstance(item, dict)
+    }
+    archived = artifact_rows.get(asset.artifact_path)
+    if not archived or archived.get("sha256") != asset.artifact_sha256:
+        errors.append(f"{label} asset does not match its archived bundle manifest")
+        return None
+    path = manifest_path.parent / "artifacts" / Path(*PurePosixPath(asset.artifact_path).parts)
+    if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != asset.artifact_sha256:
+        errors.append(f"{label} asset file is missing or changed after capture")
+        return None
+    return review, asset, path
+
+
+def _semantic_headings(path: Path) -> set[str]:
+    return {
+        line[3:].strip()
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.startswith("## ") and line[3:].strip()
+    }

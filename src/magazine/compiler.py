@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .capture import archive_snapshot, verify_snapshots
+from .capture import archive_snapshot, index_existing_captures, verify_snapshots
 from .catalog import render_sources
 from .errors import ValidationError
 from .fidelity import fidelity_report
@@ -101,6 +101,12 @@ class Magazine:
         path.write_text(render_sources(records, release_state), encoding="utf-8")
         return path
 
+    def index_media(self) -> tuple[Path, ...]:
+        """Regenerate deterministic media inventories for every committed capture."""
+
+        records = load_records(self.sources_dir)
+        return index_existing_captures(records, self.sources_dir)
+
     def sync_release_queue(self, records: list[SourceRecord] | None = None) -> ReleaseState:
         current = records if records is not None else load_records(self.sources_dir)
         for record in current:
@@ -118,11 +124,13 @@ class Magazine:
         records = load_records(self.sources_dir)
         for record in records:
             verify_snapshots(record, self.sources_dir)
+        _require_media_triage(records)
         edition = load_edition(
             self.root,
             edition_id,
             {record.id for record in records},
             publication_name=self.publication_name,
+            source_records={record.id: record for record in records},
         )
         if edition.language != self.primary_language:
             raise ValidationError(
@@ -229,6 +237,21 @@ class Magazine:
                     "article_pages": layout.article_pages,
                     "maximum_editorial_pages": 2,
                     "editorial_pages": layout.editorial_pages,
+                    "figures": [
+                        {
+                            "id": placement.figure_id,
+                            "article_id": placement.article_id,
+                            "page": placement.page,
+                            "path": placement.path.relative_to(self.root).as_posix(),
+                            "pixel_dimensions": list(placement.pixel_dimensions),
+                            "box_points": list(placement.box_points),
+                            "effective_ppi": placement.effective_ppi,
+                            "caption": placement.caption,
+                            "credit": placement.credit,
+                            "rights_status": placement.rights_status,
+                        }
+                        for placement in layout.figure_placements
+                    ],
                 },
                 "studio_release_ready": False,
                 "studio_blocker": (
@@ -246,6 +269,7 @@ class Magazine:
                 cover_art=variant.cover_art,
                 cover_art_size_points=layout.cover_art_size_points,
                 source_rights=[source_records[source_id].to_dict() for source_id in used_source_ids],
+                figure_placements=layout.figure_placements,
                 language=language,
             )
             language_result = LanguageBuildResult(
@@ -306,6 +330,24 @@ def _file_entry(path: Path, root: Path) -> dict[str, str]:
         "path": path.relative_to(root).as_posix(),
         "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
     }
+
+
+def _require_media_triage(records: list[SourceRecord]) -> None:
+    errors: list[str] = []
+    for record in records:
+        captures = {
+            str(item.get("id"))
+            for item in record.raw_captures
+            if isinstance(item, dict) and item.get("id")
+        }
+        reviewed = {review.capture_id for review in record.media_reviews}
+        for capture_id in sorted(captures - reviewed):
+            errors.append(
+                f"Source {record.id} capture {capture_id} has no media triage decision; "
+                "review its generated inventory before building"
+            )
+    if errors:
+        raise ValidationError(errors)
 
 
 def _edition_source_ids(edition: Edition) -> set[str]:

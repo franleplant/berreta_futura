@@ -27,6 +27,7 @@ def package_release(
     cover_art: Path | None = None,
     cover_art_size_points: tuple[float, float] | None = None,
     source_rights: list[dict[str, Any]] | None = None,
+    figure_placements: list[Any] | tuple[Any, ...] | None = None,
     language: str = "en",
 ) -> list[Path]:
     destination.mkdir(parents=True, exist_ok=True)
@@ -49,6 +50,7 @@ def package_release(
                 cover_art=cover_art,
                 cover_art_size_points=cover_art_size_points,
                 source_rights=source_rights or [],
+                figure_placements=figure_placements or (),
                 language=language,
             ),
             ensure_ascii=False,

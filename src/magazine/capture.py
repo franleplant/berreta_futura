@@ -10,6 +10,13 @@ from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING, Any
 
 from .errors import ValidationError
+from .media_inventory import (
+    build_media_inventory,
+    media_inventory_path,
+    verify_media_inventory,
+    write_media_inventory,
+)
+from .media_schema import MediaCaptureReview
 
 if TYPE_CHECKING:
     from .records import SourceRecord
@@ -57,7 +64,13 @@ def archive_snapshot(
     }
 
     if capture_dir.exists():
-        manifest = _verify_manifest(record, source_dir, relative_manifest, bundle_sha256)
+        manifest = _verify_manifest(
+            record,
+            source_dir,
+            relative_manifest,
+            bundle_sha256,
+            require_media_inventory=False,
+        )
     else:
         raw_dir = source_dir / "raw"
         raw_dir.mkdir(parents=True, exist_ok=True)
@@ -74,6 +87,19 @@ def archive_snapshot(
             )
             os.replace(staging, capture_dir)
 
+    inventory_path = _index_verified_manifest(source_dir, manifest, bundle_sha256)
+
+    reviews = {review.capture_id: review for review in record.media_reviews}
+    if bundle_sha256 not in reviews:
+        inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+        if inventory.get("image_count") == 0:
+            reviews[bundle_sha256] = MediaCaptureReview(
+                bundle_sha256,
+                "no_media",
+                (),
+                "The deterministic capture inventory contains no raster assets.",
+            )
+
     descriptor = {
         "id": bundle_sha256,
         "path": relative_manifest,
@@ -87,6 +113,7 @@ def archive_snapshot(
     return replace(
         record,
         raw_captures=sorted(captures.values(), key=lambda item: (str(item.get("captured_at", "")), str(item["id"]))),
+        media_reviews=tuple(reviews[key] for key in sorted(reviews)),
     )
 
 
@@ -107,6 +134,32 @@ def verify_snapshots(record: SourceRecord, sources_dir: Path) -> None:
         if path != expected:
             raise ValidationError(f"Source {record.id} raw capture path must be {expected}")
         _verify_manifest(record, source_dir, path, bundle_sha256)
+
+
+def index_existing_captures(
+    records: list[SourceRecord],
+    sources_dir: Path,
+) -> tuple[Path, ...]:
+    """Regenerate capture media inventories without changing immutable raw bundles."""
+
+    indexed: list[Path] = []
+    for record in sorted(records, key=lambda item: item.id):
+        source_dir = sources_dir / record.id
+        for descriptor in sorted(record.raw_captures, key=lambda item: str(item.get("id", ""))):
+            bundle_sha256 = str(descriptor.get("id", ""))
+            relative_manifest = str(descriptor.get("path", ""))
+            expected = f"raw/{bundle_sha256}/manifest.json"
+            if not bundle_sha256 or relative_manifest != expected:
+                raise ValidationError(f"Source {record.id} has an invalid raw capture descriptor")
+            manifest = _verify_manifest(
+                record,
+                source_dir,
+                relative_manifest,
+                bundle_sha256,
+                require_media_inventory=False,
+            )
+            indexed.append(_index_verified_manifest(source_dir, manifest, bundle_sha256))
+    return tuple(indexed)
 
 
 def _snapshot_files(snapshot: Path) -> list[Path]:
@@ -157,6 +210,8 @@ def _verify_manifest(
     source_dir: Path,
     relative_manifest: str,
     expected_bundle_sha256: str,
+    *,
+    require_media_inventory: bool = True,
 ) -> dict[str, Any]:
     manifest_path = source_dir / relative_manifest
     if not manifest_path.is_file():
@@ -189,4 +244,32 @@ def _verify_manifest(
         raise ValidationError(f"Raw capture artifact count mismatch: {manifest_path}")
     if manifest.get("byte_count") != sum(int(item["bytes"]) for item in verified):
         raise ValidationError(f"Raw capture byte count mismatch: {manifest_path}")
+    inventory = build_media_inventory(
+        source_id=record.id,
+        bundle_sha256=expected_bundle_sha256,
+        artifact_root=manifest_path.parent / "artifacts",
+        artifacts=verified,
+    )
+    if require_media_inventory:
+        verify_media_inventory(
+            media_inventory_path(source_dir, expected_bundle_sha256),
+            inventory,
+        )
     return manifest
+
+
+def _index_verified_manifest(
+    source_dir: Path,
+    manifest: dict[str, Any],
+    bundle_sha256: str,
+) -> Path:
+    inventory = build_media_inventory(
+        source_id=str(manifest["source_id"]),
+        bundle_sha256=bundle_sha256,
+        artifact_root=source_dir / "raw" / bundle_sha256 / "artifacts",
+        artifacts=list(manifest["artifacts"]),
+    )
+    return write_media_inventory(
+        media_inventory_path(source_dir, bundle_sha256),
+        inventory,
+    )

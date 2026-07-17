@@ -101,6 +101,7 @@ class ReleaseStateTests(unittest.TestCase):
         source_dir = self.root / "library" / "sources" / source_id
         source_dir.mkdir()
         source.pop("raw_captures", None)
+        source.pop("media_reviews", None)
         (source_dir / "record.yaml").write_text(
             yaml.safe_dump(source, sort_keys=False), encoding="utf-8"
         )

@@ -1,5 +1,9 @@
 from types import SimpleNamespace
 
+import pytest
+import magazine.render as render_module
+
+from magazine import ValidationError
 from magazine.render import (
     BODY_LEADING,
     HEADING_SPACE_BEFORE,
@@ -15,6 +19,7 @@ from magazine.render import (
     _plain,
     _section_label,
     _terminal_balance_plans,
+    ArticleBalancePlan,
 )
 
 
@@ -99,6 +104,46 @@ def test_headings_have_deliberate_space_before_them():
     assert HEADING_SPACE_BEFORE["h3"] >= 10.0
 
 
+def test_curated_figures_resolve_exact_semantic_headings_and_allow_none():
+    typesetter = object.__new__(_Typesetter)
+    blocks = [("h2", "Capability is not deployment"), ("body", "Text.")]
+
+    assert typesetter._validated_figures(blocks, (), "article") == ([], {})
+
+    figure = SimpleNamespace(
+        id="capability-reliability",
+        anchor="Capability is not deployment",
+        layout="evidence_band",
+    )
+    opener, anchored = typesetter._validated_figures(blocks, (figure,), "article")
+
+    assert opener == []
+    assert anchored == {"capability is not deployment": figure}
+
+
+def test_curated_figures_enforce_two_asset_cap_and_unique_anchors():
+    typesetter = object.__new__(_Typesetter)
+    blocks = [("h2", "Section"), ("body", "Text.")]
+    rows = [
+        SimpleNamespace(id=f"figure-{index}", anchor="Section", layout="column_plate")
+        for index in range(3)
+    ]
+
+    with pytest.raises(ValidationError, match="maximum is 2"):
+        typesetter._validated_figures(blocks, rows, "article")
+
+    with pytest.raises(ValidationError, match="multiple figures at one semantic anchor"):
+        typesetter._validated_figures(blocks, rows[:2], "article")
+
+
+def test_curated_figure_anchor_must_match_one_heading_exactly():
+    typesetter = object.__new__(_Typesetter)
+    figure = SimpleNamespace(id="figure", anchor="Missing", layout="column_plate")
+
+    with pytest.raises(ValidationError, match="matched 0 article headings"):
+        typesetter._validated_figures([("h2", "Section")], (figure,), "article")
+
+
 def test_terminal_balance_quantizes_a_stranded_tail_without_changing_page_count():
     height = 511.2756
     layout = SimpleNamespace(
@@ -135,3 +180,40 @@ def test_terminal_balance_leaves_an_already_used_second_column_alone():
     )
 
     assert _terminal_balance_plans(layout) == {}
+
+
+def test_terminal_balance_can_relax_a_transient_over_cap_draft(monkeypatch):
+    height = 511.2756
+    probe = SimpleNamespace(
+        toc={"article": 5},
+        article_pages={"article": 7},
+        article_frame_usage={
+            "article": (
+                FrameUsage(6, 0, height, height),
+                FrameUsage(6, 1, height, height),
+                FrameUsage(7, 0, 2 * BODY_LEADING, height),
+                FrameUsage(7, 1, 0, height),
+            )
+        },
+    )
+    monkeypatch.setattr(
+        render_module,
+        "_terminal_balance_plans",
+        lambda layout: {"article": ArticleBalancePlan(7, 8 * BODY_LEADING)},
+    )
+    calls = []
+
+    def fake_render_pass(target, edition, toc, **kwargs):
+        calls.append(kwargs["enforce_page_caps"])
+        page_count = 8 if len(calls) == 1 else 7
+        return SimpleNamespace(article_pages={"article": page_count})
+
+    monkeypatch.setattr(render_module, "_render_pass", fake_render_pass)
+
+    plans, draft = render_module._balanced_draft(
+        SimpleNamespace(), probe, design="monument"
+    )
+
+    assert calls == [False, False]
+    assert draft.article_pages == {"article": 7}
+    assert plans["article"].frame_height == 9 * BODY_LEADING

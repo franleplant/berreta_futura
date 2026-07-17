@@ -1,0 +1,29 @@
+{
+  "artifact_count": 2,
+  "bundle_sha256": "8abb643b4efc47757f69d9bb738fc3637c5070320acc7476f85a5c9a8257d8a9",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 1,
+  "images": [
+    {
+      "animated": false,
+      "aspect_ratio": 1.5,
+      "bytes": 69588,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/jpeg",
+      "path": "tweet-image.jpg",
+      "pixel_height": 800,
+      "pixel_width": 1200,
+      "sha256": "04f19145cbc2c02d3e9b9e0749e853dc9ac93193e559f38e9313ca07054064d7"
+    }
+  ],
+  "local_references": [],
+  "missing_references": [],
+  "referenced_image_count": 0,
+  "schema_version": 1,
+  "source_id": "src-arvind-tweet-2076994014692229601",
+  "unresolved_acquisition_references": []
+}

@@ -65,6 +65,61 @@ class RecordTests(unittest.TestCase):
         self.assertEqual(record.captured_at, "2026-07-15T12:00:00+00:00")
         self.assertEqual(record.raw_captures[0]["captured_at"], "2026-07-15T13:00:00+00:00")
 
+    def test_loader_preserves_legacy_records_without_media_triage(self):
+        record = SourceRecord.from_dict({
+            "id": "source", "title": "Source", "canonical_url": "https://example.com/",
+            "submitted_url": "https://example.com/", "captured_at": "2026-07-15T12:00:00Z",
+            "raw_captures": [{"id": "a" * 64, "path": f"raw/{'a' * 64}/manifest.json"}],
+        })
+
+        self.assertEqual(record.media_reviews, ())
+
+    def test_loader_validates_and_round_trips_capture_media_triage(self):
+        capture_id = "a" * 64
+        asset_sha = "b" * 64
+        record = SourceRecord.from_dict({
+            "id": "source", "title": "Source", "canonical_url": "https://example.com/",
+            "submitted_url": "https://example.com/", "captured_at": "2026-07-15T12:00:00Z",
+            "raw_captures": [{"id": capture_id, "path": f"raw/{capture_id}/manifest.json"}],
+            "media_reviews": [{
+                "capture_id": capture_id,
+                "status": "media_curated",
+                "assets": [{
+                    "id": "diagram",
+                    "artifact_path": "media/diagram.png",
+                    "artifact_sha256": asset_sha,
+                    "mime_type": "image/png",
+                    "creator": "A. Writer",
+                    "credit": "Diagram by A. Writer",
+                    "rights": {
+                        "status": "unknown",
+                        "intended_use": "private_reference",
+                        "attribution_required": True,
+                        "public_reprint_allowed": False,
+                    },
+                }],
+            }],
+        })
+
+        serialized = record.to_dict()
+        self.assertEqual(record.media_reviews[0].assets[0].id, "diagram")
+        self.assertEqual(serialized["media_reviews"][0]["status"], "media_curated")
+        self.assertEqual(serialized["media_reviews"][0]["assets"][0]["artifact_sha256"], asset_sha)
+
+    def test_media_rejected_requires_a_human_note_and_no_selected_assets(self):
+        capture_id = "a" * 64
+        with self.assertRaisesRegex(ValidationError, "media_rejected requires a note"):
+            SourceRecord.from_dict({
+                "id": "source", "title": "Source", "canonical_url": "https://example.com/",
+                "submitted_url": "https://example.com/", "captured_at": "2026-07-15T12:00:00Z",
+                "raw_captures": [{"id": capture_id, "path": f"raw/{capture_id}/manifest.json"}],
+                "media_reviews": [{
+                    "capture_id": capture_id,
+                    "status": "media_rejected",
+                    "assets": [],
+                }],
+            })
+
     def test_capture_is_idempotent_and_generates_catalog(self):
         temporary = TemporaryDirectory()
         self.addCleanup(temporary.cleanup)

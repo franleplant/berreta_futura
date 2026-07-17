@@ -3,7 +3,7 @@ language: es
 source_language: en
 locale: es-AR
 fallback_locale: es-ES
-base_copy_sha256: 31b53cd97f684c9e2fd3337237b020bea90dbd2f087ee03421bf8ed8121b49cb
+base_copy_sha256: eb8417ddd17e526c52d6666ded4d02cfbd2a4f5753c42954f46c879ab3380bea
 policy:
   register: educated_castellano
   regional_preference: restrained_argentinian
@@ -30,6 +30,12 @@ articles:
   author_note: Arvind Narayanan es profesor de informática en la Universidad de Princeton.
   manuscript: articles/narayanan-what-will-be-left.md
   source_sha256: 49fc3fd5f93ab9c8211387bd229184e3475e4a10c79eb4d7c5438fe25ba8724f
+  figures:
+  - id: capability-reliability-gap
+    caption: A lo largo de las versiones de los modelos, la precisión aumenta con rapidez mientras que la confiabilidad mejora solo gradualmente; es la brecha entre capacidad y despliegue confiable.
+    alt_text: Dos gráficos de dispersión comparan la precisión y la confiabilidad de modelos de IA según su fecha de lanzamiento; la tendencia de precisión sube mucho más rápido.
+    anchor: __opener__
+    source_caption_sha256: baeceeb051bc7796ff3fa143960d75e4091a491f000c713a28335ce661d51e2c
 - id: joshi-dsls-reliable-use-llms
   title: Los DSL permiten un uso confiable de los LLM
   short_title: uso confiable de los LLM

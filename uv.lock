@@ -99,6 +99,7 @@ name = "magazine-compiler"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "pillow" },
     { name = "pypdf" },
     { name = "pyyaml" },
     { name = "reportlab" },
@@ -111,6 +112,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "pillow", specifier = ">=12.0" },
     { name = "pypdf", specifier = ">=5.0" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "reportlab", specifier = ">=4.2" },

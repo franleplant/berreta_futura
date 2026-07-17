@@ -7,8 +7,9 @@ import yaml
 
 from magazine import Magazine, ValidationError
 from magazine.capture import archive_snapshot
-from magazine.manifest import _edition_copy_sha256
-from magazine.records import SourceRecord
+from magazine.manifest import _edition_copy_sha256, load_edition, load_translation
+from magazine.media_schema import caption_sha256
+from magazine.records import SourceRecord, load_records
 
 
 def make_project(root: Path, *, source_id: str = "source-one") -> None:
@@ -51,7 +52,11 @@ def make_project(root: Path, *, source_id: str = "source-one") -> None:
 
 
 def add_spanish_translation(root: Path) -> None:
-    base = Magazine(root).validate("issue-001")
+    edition_data = yaml.safe_load(
+        (root / "editions" / "issue-001" / "edition.yaml").read_text(encoding="utf-8")
+    )
+    has_figures = any(article.get("figures") for article in edition_data.get("articles", []))
+    base = load_edition_with_records(root) if has_figures else Magazine(root).validate("issue-001")
     (root / "magazine.toml").write_text(
         '[publication]\nname = "Test Review"\nlanguage = "en"\nlanguages = ["en", "es"]\n',
         encoding="utf-8",
@@ -95,6 +100,60 @@ def add_spanish_translation(root: Path) -> None:
     )
 
 
+def add_curated_figure(root: Path, *, source_id: str = "source-one") -> None:
+    record_path = root / "library" / "sources" / source_id / "record.yaml"
+    record = yaml.safe_load(record_path.read_text(encoding="utf-8"))
+    capture_id = record["raw_captures"][0]["id"]
+    manifest_path = root / "library" / "sources" / source_id / record["raw_captures"][0]["path"]
+    raw_manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    artifact = raw_manifest["artifacts"][0]
+    record["media_reviews"] = [{
+        "capture_id": capture_id,
+        "status": "media_curated",
+        "assets": [{
+            "id": "source-diagram",
+            "artifact_path": artifact["path"],
+            "artifact_sha256": artifact["sha256"],
+            "mime_type": "image/png",
+            "creator": "Author",
+            "credit": "Diagram by Author",
+            "rights": {
+                "status": "unknown",
+                "intended_use": "private_reference",
+                "attribution_required": True,
+                "public_reprint_allowed": False,
+            },
+        }],
+    }]
+    record_path.write_text(yaml.safe_dump(record, sort_keys=False), encoding="utf-8")
+    edition_path = root / "editions" / "issue-001" / "edition.yaml"
+    edition = yaml.safe_load(edition_path.read_text(encoding="utf-8"))
+    edition["articles"][0]["figures"] = [{
+        "id": "diagram",
+        "source_id": source_id,
+        "asset_id": "source-diagram",
+        "decision": "include",
+        "criteria": ["important", "useful"],
+        "rationale": "This diagram makes the article's central distinction immediately legible.",
+        "caption": "The source diagram.",
+        "alt_text": "A diagram from the source article.",
+        "anchor": "__opener__",
+        "layout": "evidence_band",
+    }]
+    edition_path.write_text(yaml.safe_dump(edition, sort_keys=False), encoding="utf-8")
+
+
+def load_edition_with_records(root: Path):
+    records = {record.id: record for record in load_records(root / "library" / "sources")}
+    return load_edition(
+        root,
+        "issue-001",
+        set(records),
+        publication_name="Test Review",
+        source_records=records,
+    )
+
+
 class ManifestTests(unittest.TestCase):
     def setUp(self):
         self.temporary = TemporaryDirectory()
@@ -111,6 +170,16 @@ class ManifestTests(unittest.TestCase):
             "Author writes about this subject for Example.",
         )
         self.assertEqual(edition.articles[0].source_ids, ("source-one",))
+
+    def test_validate_requires_a_media_triage_decision_for_every_capture(self):
+        make_project(self.root)
+        record_path = self.root / "library" / "sources" / "source-one" / "record.yaml"
+        record = yaml.safe_load(record_path.read_text(encoding="utf-8"))
+        record.pop("media_reviews")
+        record_path.write_text(yaml.safe_dump(record, sort_keys=False), encoding="utf-8")
+
+        with self.assertRaisesRegex(ValidationError, "has no media triage decision"):
+            Magazine(self.root).validate("issue-001")
 
     def test_validate_rejects_unknown_source(self):
         make_project(self.root, source_id="recorded-source")
@@ -217,3 +286,90 @@ class ManifestTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValidationError, "is stale"):
             Magazine(self.root).validate("issue-001")
+
+    def test_load_edition_resolves_explicit_curated_figure_from_archived_source(self):
+        make_project(self.root)
+        add_curated_figure(self.root)
+
+        edition = load_edition_with_records(self.root)
+
+        figure = edition.articles[0].figures[0]
+        self.assertEqual(figure.id, "diagram")
+        self.assertEqual(figure.layout, "evidence_band")
+        self.assertEqual(figure.credit, "Diagram by Author")
+        self.assertTrue(figure.path.is_file())
+        self.assertEqual(figure.rights_status, "unknown")
+
+    def test_load_edition_rejects_more_than_two_figures(self):
+        make_project(self.root)
+        add_curated_figure(self.root)
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        figure = manifest["articles"][0]["figures"][0]
+        manifest["articles"][0]["figures"] = [
+            {**figure, "id": "one"},
+            {**figure, "id": "two"},
+            {**figure, "id": "three"},
+        ]
+        manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+
+        with self.assertRaisesRegex(ValidationError, "maximum is 2"):
+            load_edition_with_records(self.root)
+
+    def test_load_edition_rejects_figure_without_semantic_anchor(self):
+        make_project(self.root)
+        add_curated_figure(self.root)
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        manifest["articles"][0]["figures"][0]["anchor"] = "A missing section"
+        manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+
+        with self.assertRaisesRegex(ValidationError, "anchor does not match"):
+            load_edition_with_records(self.root)
+
+    def test_translation_requires_hash_pinned_localized_figure_copy(self):
+        make_project(self.root)
+        add_curated_figure(self.root)
+        base = load_edition_with_records(self.root)
+        add_spanish_translation(self.root)
+        translation_path = self.root / "editions" / "issue-001" / "translations" / "es" / "edition.yaml"
+        translation = yaml.safe_load(translation_path.read_text(encoding="utf-8"))
+        translation["base_copy_sha256"] = _edition_copy_sha256(base)
+        translation["articles"][0]["figures"] = [{
+            "id": "diagram",
+            "caption": "El diagrama de la fuente.",
+            "alt_text": "Un diagrama del artículo fuente.",
+            "anchor": "__opener__",
+            "source_caption_sha256": caption_sha256("diagram", "The source diagram."),
+        }]
+        translation_path.write_text(
+            yaml.safe_dump(translation, sort_keys=False, allow_unicode=True), encoding="utf-8"
+        )
+
+        localized = load_translation(self.root.resolve(), base, "es")
+
+        figure = localized.articles[0].figures[0]
+        self.assertEqual(figure.caption, "El diagrama de la fuente.")
+        self.assertEqual(figure.path, base.articles[0].figures[0].path)
+
+    def test_translation_rejects_stale_figure_caption_pin(self):
+        make_project(self.root)
+        add_curated_figure(self.root)
+        base = load_edition_with_records(self.root)
+        add_spanish_translation(self.root)
+        translation_path = self.root / "editions" / "issue-001" / "translations" / "es" / "edition.yaml"
+        translation = yaml.safe_load(translation_path.read_text(encoding="utf-8"))
+        translation["base_copy_sha256"] = _edition_copy_sha256(base)
+        translation["articles"][0]["figures"] = [{
+            "id": "diagram",
+            "caption": "El diagrama.",
+            "alt_text": "Un diagrama.",
+            "anchor": "__opener__",
+            "source_caption_sha256": "0" * 64,
+        }]
+        translation_path.write_text(
+            yaml.safe_dump(translation, sort_keys=False, allow_unicode=True), encoding="utf-8"
+        )
+
+        with self.assertRaisesRegex(ValidationError, "caption pin is stale"):
+            load_translation(self.root.resolve(), base, "es")

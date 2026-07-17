@@ -1,0 +1,14 @@
+{
+  "artifact_count": 1,
+  "bundle_sha256": "afece142d4eb217beceae5ff0720cfd2772c3df00141ed80149d9681fa90ea5e",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 0,
+  "images": [],
+  "local_references": [],
+  "missing_references": [],
+  "referenced_image_count": 0,
+  "schema_version": 1,
+  "source_id": "src-joshi-dsls-reliable-use-llms",
+  "unresolved_acquisition_references": []
+}

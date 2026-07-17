@@ -22,6 +22,11 @@ BODY_SIZE = 9.55
 BODY_LEADING = BASE * 4
 CAPTION_SIZE = 7.0
 COVER_ART_SIZE_POINTS = (250.0, 250.0)
+MIN_FIGURE_PPI = 300.0
+FIGURE_BAND_MAX_IMAGE_HEIGHT = 132.0
+FIGURE_COLUMN_MAX_IMAGE_HEIGHT = 220.0
+FIGURE_TEXT_LEADING = 8.6
+FIGURE_GAP = BASE * 3
 INNER_MARGIN = 44.0
 OUTER_MARGIN = 15 * 72 / 25.4
 TEXT_TOP_INSET = 52.0
@@ -78,6 +83,7 @@ UI_COPY = {
         "continued": "Continued",
         "end": "End",
         "closing_plate": "Closing plate",
+        "figure": "Figure",
     },
     "es": {
         "edition": "Edición",
@@ -103,6 +109,7 @@ UI_COPY = {
         "continued": "Continuación",
         "end": "Fin",
         "closing_plate": "Lámina final",
+        "figure": "Figura",
     },
 }
 
@@ -116,6 +123,21 @@ class RenderLayout:
     cover_art_size_points: tuple[float, float] | None
     article_frame_usage: dict[str, tuple["FrameUsage", ...]]
     article_terminal_balance: dict[str, float]
+    figure_placements: tuple["FigurePlacement", ...] = ()
+
+
+@dataclass(frozen=True)
+class FigurePlacement:
+    figure_id: str
+    article_id: str
+    page: int
+    path: Path
+    pixel_dimensions: tuple[int, int]
+    box_points: tuple[float, float, float, float]
+    effective_ppi: float
+    caption: str
+    credit: str
+    rights_status: str
 
 
 @dataclass(frozen=True)
@@ -281,10 +303,12 @@ class _Typesetter:
         *,
         design: str,
         balance_plans: dict[str, ArticleBalancePlan] | None = None,
+        enforce_page_caps: bool = True,
     ):
         self.pdf, self.edition, self.width, self.height, self.metrics = pdf, edition, *pagesize, metrics
         self.design = design
         self.balance_plans = balance_plans or {}
+        self.enforce_page_caps = enforce_page_caps
         self.inner, self.outer, self.top, self.bottom = INNER_MARGIN, OUTER_MARGIN, TEXT_TOP_INSET, 45.0
         self.left, self.right = self.inner, self.outer
         self.page = 0
@@ -292,6 +316,7 @@ class _Typesetter:
         self.toc: dict[str, int] = {}
         self.article_pages: dict[str, int] = {}
         self.article_frame_usage: dict[str, tuple[FrameUsage, ...]] = {}
+        self.figure_placements: list[FigurePlacement] = []
         self.editorial_pages: int | None = None
         self.cover_art_size_points: tuple[float, float] | None = None
         self.reading_size = BODY_SIZE
@@ -569,6 +594,262 @@ class _Typesetter:
             value = value[:-1]
         return value.rstrip() + suffix
 
+    @staticmethod
+    def _figure_value(figure, name: str, default=""):
+        if isinstance(figure, dict):
+            return figure.get(name, default)
+        return getattr(figure, name, default)
+
+    def _figure_dimensions(self, figure) -> tuple[int, int]:
+        from reportlab.lib.utils import ImageReader
+
+        path = Path(self._figure_value(figure, "path"))
+        if not path.is_file():
+            raise ValidationError(f"Curated figure file does not exist: {path}")
+        try:
+            width, height = ImageReader(str(path)).getSize()
+        except Exception as exc:
+            raise ValidationError(f"Cannot decode curated figure {path}: {exc}") from exc
+        if width <= 0 or height <= 0:
+            raise ValidationError(f"Curated figure has invalid dimensions: {path}")
+        return int(width), int(height)
+
+    def _figure_geometry(
+        self,
+        figure,
+        width: float,
+        max_image_height: float,
+    ) -> tuple[float, float, list[str], list[str], float]:
+        pixel_width, pixel_height = self._figure_dimensions(figure)
+        scale = min(width / pixel_width, max_image_height / pixel_height)
+        image_width = pixel_width * scale
+        image_height = pixel_height * scale
+        caption = str(self._figure_value(figure, "caption")).strip()
+        credit = str(self._figure_value(figure, "credit")).strip()
+        if not caption:
+            raise ValidationError(
+                f"Curated figure {self._figure_value(figure, 'id', '<unknown>')} requires a caption"
+            )
+        if not credit:
+            raise ValidationError(
+                f"Curated figure {self._figure_value(figure, 'id', '<unknown>')} requires a credit"
+            )
+        caption_lines = self.lines(caption, SERIF, CAPTION_SIZE, width)
+        credit_lines = self.lines(credit, SANS_MEDIUM, CAPTION_SIZE, width)
+        text_height = (len(caption_lines) + len(credit_lines)) * FIGURE_TEXT_LEADING
+        total_height = CAPTION_SIZE + BASE * 2 + image_height + BASE * 2 + text_height + FIGURE_GAP
+        return image_width, image_height, caption_lines, credit_lines, total_height
+
+    def _draw_contained_image(
+        self,
+        path: Path,
+        x: float,
+        top: float,
+        box_width: float,
+        image_width: float,
+        image_height: float,
+    ) -> tuple[float, float]:
+        from reportlab.lib.utils import ImageReader
+
+        draw_x = x + (box_width - image_width) / 2
+        draw_y = top - image_height
+        self.pdf.drawImage(
+            ImageReader(str(path)),
+            draw_x,
+            draw_y,
+            image_width,
+            image_height,
+            preserveAspectRatio=True,
+            mask="auto",
+        )
+        self.pdf.setStrokeColorRGB(*INK)
+        self.pdf.setLineWidth(.55)
+        self.pdf.rect(draw_x, draw_y, image_width, image_height, fill=0, stroke=1)
+        return draw_x, draw_y
+
+    def _draw_figure(
+        self,
+        figure,
+        *,
+        article_id: str,
+        figure_index: int,
+        x: float,
+        top: float,
+        width: float,
+        max_image_height: float,
+    ) -> float:
+        path = Path(self._figure_value(figure, "path"))
+        pixel_dimensions = self._figure_dimensions(figure)
+        image_width, image_height, caption_lines, credit_lines, total_height = self._figure_geometry(
+            figure, width, max_image_height
+        )
+        label = f"{_ui(self.edition, 'figure').upper()} {figure_index:02d}"
+        self._tracked_label(label, x, top - CAPTION_SIZE, width, color=VIOLET, tracking=.25)
+        image_top = top - CAPTION_SIZE - BASE * 2
+        image_x, image_y = self._draw_contained_image(
+            path, x, image_top, width, image_width, image_height
+        )
+        baseline = image_top - image_height - BASE * 2 - CAPTION_SIZE
+        self.pdf.setFillColorRGB(*INK)
+        self.pdf.setFont(SERIF, CAPTION_SIZE)
+        for line in caption_lines:
+            self.pdf.drawString(x, baseline, line)
+            baseline -= FIGURE_TEXT_LEADING
+        self.pdf.setFillColorRGB(*SLATE)
+        self.pdf.setFont(SANS_MEDIUM, CAPTION_SIZE)
+        for line in credit_lines:
+            self.pdf.drawString(x, baseline, line)
+            baseline -= FIGURE_TEXT_LEADING
+
+        ppi = min(
+            pixel_dimensions[0] / (image_width / 72),
+            pixel_dimensions[1] / (image_height / 72),
+        )
+        figure_id = str(self._figure_value(figure, "id", f"figure-{figure_index}"))
+        if ppi < MIN_FIGURE_PPI:
+            raise ValidationError(
+                f"Curated figure {figure_id} resolves to {ppi:.1f} ppi at its Monument "
+                f"placement; the minimum is {MIN_FIGURE_PPI:.0f} ppi"
+            )
+        self.figure_placements.append(
+            FigurePlacement(
+                figure_id=figure_id,
+                article_id=article_id,
+                page=self.page,
+                path=path,
+                pixel_dimensions=pixel_dimensions,
+                box_points=(
+                    round(image_x, 3),
+                    round(image_y, 3),
+                    round(image_width, 3),
+                    round(image_height, 3),
+                ),
+                effective_ppi=round(ppi, 1),
+                caption=str(self._figure_value(figure, "caption")).strip(),
+                credit=str(self._figure_value(figure, "credit")).strip(),
+                rights_status=str(self._figure_value(figure, "rights_status", "unknown")),
+            )
+        )
+        return top - total_height
+
+    def _column_figure_height(self, figure) -> float:
+        return self._figure_geometry(
+            figure,
+            self.column_width,
+            FIGURE_COLUMN_MAX_IMAGE_HEIGHT,
+        )[-1]
+
+    def _column_figure(self, figure, *, article_id: str, figure_index: int) -> None:
+        required = self._column_figure_height(figure)
+        if self.y - required < self.frame_bottom:
+            self._advance_frame()
+            required = self._column_figure_height(figure)
+        if self.y - required < self.frame_bottom:
+            raise ValidationError(
+                f"Curated figure {self._figure_value(figure, 'id', '<unknown>')} is too tall "
+                "for a Monument column plate"
+            )
+        self.y = self._draw_figure(
+            figure,
+            article_id=article_id,
+            figure_index=figure_index,
+            x=self.frame_left,
+            top=self.y,
+            width=self.column_width,
+            max_image_height=FIGURE_COLUMN_MAX_IMAGE_HEIGHT,
+        )
+
+    def _evidence_band(
+        self,
+        kind: str,
+        heading: str,
+        figure,
+        *,
+        article_id: str,
+        figure_index: int,
+    ) -> None:
+        heading_style = {
+            "h2": (SERIF_DISPLAY, 17.5, 20.5, 10),
+            "h3": (SANS_SEMIBOLD, 8.7, 12, 7),
+        }[kind]
+        heading_font, heading_size, heading_leading, heading_after = heading_style
+        heading_text = heading.upper() if kind == "h3" else heading
+        heading_height = (
+            len(self.lines(heading_text, heading_font, heading_size, self.live_width))
+            * heading_leading
+            + heading_after
+        )
+        figure_height = self._figure_geometry(
+            figure,
+            self.live_width,
+            FIGURE_BAND_MAX_IMAGE_HEIGHT,
+        )[-1]
+        bridge_top = min(self.y, self.height - self.top)
+        can_bridge_current_page = (
+            (self.frame_count == 1 or self.frame_index == 0)
+            and bridge_top - heading_height - figure_height - 6 * self.reading_leading
+            >= self.bottom
+        )
+        if can_bridge_current_page:
+            self._record_active_frame()
+        else:
+            self.new_page(columns=2)
+            bridge_top = self.height - self.top
+        self._set_custom_frame(
+            self.left,
+            self.live_width,
+            top=bridge_top,
+            bottom=self.bottom,
+        )
+        self.frame_role = "continuation"
+        self.block(kind, heading)
+        band_bottom = self._draw_figure(
+            figure,
+            article_id=article_id,
+            figure_index=figure_index,
+            x=self.left,
+            top=self.y,
+            width=self.live_width,
+            max_image_height=FIGURE_BAND_MAX_IMAGE_HEIGHT,
+        )
+        if band_bottom - 6 * self.reading_leading < self.bottom:
+            raise ValidationError(
+                f"Curated figure {self._figure_value(figure, 'id', '<unknown>')} leaves too "
+                "little reading space below its Monument evidence band"
+            )
+        self._configure_frames(2, top=band_bottom, role="continuation")
+
+    def _opener_evidence_band(
+        self,
+        figure,
+        *,
+        article_id: str,
+        figure_index: int,
+    ) -> None:
+        self.new_page(columns=2)
+        self._set_custom_frame(
+            self.left,
+            self.live_width,
+            top=self.height - self.top,
+            bottom=self.bottom,
+        )
+        self.frame_role = "continuation"
+        band_bottom = self._draw_figure(
+            figure,
+            article_id=article_id,
+            figure_index=figure_index,
+            x=self.left,
+            top=self.y,
+            width=self.live_width,
+            max_image_height=FIGURE_BAND_MAX_IMAGE_HEIGHT,
+        )
+        if band_bottom - 6 * self.reading_leading < self.bottom:
+            raise ValidationError(
+                f"Curated figure {self._figure_value(figure, 'id', '<unknown>')} leaves too "
+                "little reading space below its Monument opener evidence band"
+            )
+        self._configure_frames(2, top=band_bottom, role="continuation")
+
     def block(self, kind: str, text: str):
         styles = {
             "h1": (SERIF_DISPLAY, 22, 25, HEADING_SPACE_BEFORE["h1"], 13),
@@ -714,17 +995,123 @@ class _Typesetter:
             if remaining:
                 self.new_page(columns=1)
 
-    def markdown(self, path: Path, *, lead: bool = False):
-        self._render_blocks(list(_markdown_blocks(path.read_text(encoding="utf-8"))), lead=lead)
+    def markdown(self, path: Path, *, lead: bool = False, figures=(), article_id: str = ""):
+        self._render_blocks(
+            list(_markdown_blocks(path.read_text(encoding="utf-8"))),
+            lead=lead,
+            figures=figures,
+            article_id=article_id,
+        )
 
-    def _render_blocks(self, blocks: list[tuple[str, str]], *, lead: bool = False) -> None:
+    def _validated_figures(
+        self,
+        blocks: list[tuple[str, str]],
+        figures,
+        article_id: str,
+    ) -> tuple[list, dict[str, object]]:
+        rows = list(figures or ())
+        if len(rows) > 2:
+            raise ValidationError(
+                f"Article {article_id} has {len(rows)} curated figures; the maximum is 2"
+            )
+        identifiers = [str(self._figure_value(row, "id")) for row in rows]
+        if len(set(identifiers)) != len(identifiers):
+            raise ValidationError(f"Article {article_id} has duplicate curated figure ids")
+        anchors = [str(self._figure_value(row, "anchor")).strip() for row in rows]
+        if len(set(anchor.casefold() for anchor in anchors)) != len(anchors):
+            raise ValidationError(f"Article {article_id} has multiple figures at one semantic anchor")
+        headings: dict[str, int] = {}
+        for kind, value in blocks:
+            if kind in {"h2", "h3"}:
+                key = value.strip().casefold()
+                headings[key] = headings.get(key, 0) + 1
+        by_anchor: dict[str, object] = {}
+        opener: list = []
+        for row, anchor in zip(rows, anchors, strict=True):
+            layout = str(self._figure_value(row, "layout", "column_plate"))
+            if layout not in {"evidence_band", "column_plate"}:
+                raise ValidationError(
+                    f"Curated figure {self._figure_value(row, 'id', '<unknown>')} has invalid "
+                    f"Monument layout {layout!r}"
+                )
+            if anchor == "__opener__":
+                opener.append(row)
+                continue
+            matches = headings.get(anchor.casefold(), 0)
+            if matches != 1:
+                raise ValidationError(
+                    f"Curated figure {self._figure_value(row, 'id', '<unknown>')} semantic "
+                    f"anchor {anchor!r} matched {matches} article headings; expected exactly 1"
+                )
+            by_anchor[anchor.casefold()] = row
+        return opener, by_anchor
+
+    def _keep_heading_with_column_figure(self, kind: str, value: str, figure) -> None:
+        style = {
+            "h2": (SERIF_DISPLAY, 17.5, 20.5, HEADING_SPACE_BEFORE["h2"], 10),
+            "h3": (SANS_SEMIBOLD, 8.7, 12, HEADING_SPACE_BEFORE["h3"], 7),
+        }[kind]
+        font, size, leading, before, after = style
+        lines = self.lines(value.upper() if kind == "h3" else value, font, size, self.column_width)
+        if math.isclose(self.y, self.frame_top):
+            before = 0
+        required = before + len(lines) * leading + after + self._column_figure_height(figure)
+        if self.y - required < self.frame_bottom:
+            self._advance_frame()
+
+    def _render_blocks(
+        self,
+        blocks: list[tuple[str, str]],
+        *,
+        lead: bool = False,
+        figures=(),
+        article_id: str = "",
+    ) -> None:
+        opener_figures, anchored = self._validated_figures(blocks, figures, article_id)
+        figure_number = 0
+        for figure in opener_figures:
+            figure_number += 1
+            layout = str(self._figure_value(figure, "layout", "column_plate"))
+            if layout == "evidence_band":
+                self._opener_evidence_band(
+                    figure,
+                    article_id=article_id,
+                    figure_index=figure_number,
+                )
+            else:
+                self._column_figure(
+                    figure,
+                    article_id=article_id,
+                    figure_index=figure_number,
+                )
+
         for index, (kind, value) in enumerate(blocks):
+            figure = anchored.get(value.strip().casefold()) if kind in {"h2", "h3"} else None
+            if figure is not None and str(self._figure_value(figure, "layout")) == "evidence_band":
+                figure_number += 1
+                self._evidence_band(
+                    kind,
+                    value,
+                    figure,
+                    article_id=article_id,
+                    figure_index=figure_number,
+                )
+                continue
+            if figure is not None:
+                self._keep_heading_with_column_figure(kind, value, figure)
             if kind == "code":
                 self.code_block(value)
             else:
                 if lead and index == 0 and kind == "body":
                     kind = "lead"
                 self.block(kind, value)
+            if figure is not None:
+                figure_number += 1
+                self._column_figure(
+                    figure,
+                    article_id=article_id,
+                    figure_index=figure_number,
+                )
 
     def _tracked_label(
         self,
@@ -1311,7 +1698,7 @@ class _Typesetter:
                 self.reading_leading = BODY_LEADING
                 self.paragraph_after = 5.4
                 self.editorial_pages = self.page - start_page + 1
-                if self.editorial_pages > MAX_EDITORIAL_PAGES:
+                if self.enforce_page_caps and self.editorial_pages > MAX_EDITORIAL_PAGES:
                     raise ValidationError(
                         f"Editorial spans {self.editorial_pages} reader pages; the hard cap is "
                         f"{MAX_EDITORIAL_PAGES}. Condense it before building."
@@ -1327,12 +1714,17 @@ class _Typesetter:
                 start_page = self.page
                 self.toc[article.id] = self.page
                 self._render_article_opener(article, article_index, article_total)
-                self.markdown(article.manuscript, lead=True)
+                self.markdown(
+                    article.manuscript,
+                    lead=True,
+                    figures=getattr(article, "figures", ()),
+                    article_id=article.id,
+                )
                 self._article_endmark(article_index)
                 page_count = self.page - start_page + 1
                 self._finish_article()
                 self.article_pages[article.id] = page_count
-                if page_count > MAX_ARTICLE_PAGES:
+                if self.enforce_page_caps and page_count > MAX_ARTICLE_PAGES:
                     raise ValidationError(
                         f"Article {article.id} spans {page_count} reader pages; the hard cap is "
                         f"{MAX_ARTICLE_PAGES}. Condense it as a faithful_synthesis before building."
@@ -1485,6 +1877,7 @@ def _render_pass(
     *,
     design: str,
     balance_plans: dict[str, ArticleBalancePlan] | None = None,
+    enforce_page_caps: bool = True,
 ) -> RenderLayout:
     A5, metrics, canvas = _reportlab()
     pdf = canvas.Canvas(
@@ -1506,6 +1899,7 @@ def _render_pass(
         metrics,
         design=design,
         balance_plans=balance_plans,
+        enforce_page_caps=enforce_page_caps,
     )
     typesetter.cover()
     typesetter.contents(toc or {})
@@ -1523,6 +1917,7 @@ def _render_pass(
             article_id: round(plan.frame_height, 3)
             for article_id, plan in (balance_plans or {}).items()
         },
+        tuple(typesetter.figure_placements),
     )
 
 
@@ -1581,6 +1976,7 @@ def _balanced_draft(
             probe.toc,
             design=design,
             balance_plans=plans,
+            enforce_page_caps=False,
         )
         mismatched = [
             article_id

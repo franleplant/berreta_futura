@@ -26,6 +26,10 @@ def parser() -> argparse.ArgumentParser:
     capture.add_argument("--synopsis", default="")
     capture.add_argument("--notes", default="")
     actions.add_parser("sources", help="Regenerate sources.md")
+    actions.add_parser(
+        "media-index",
+        help="Regenerate deterministic media inventories for all raw captures",
+    )
     actions.add_parser("queue", help="Assign every unassigned source to the open edition")
     validate = actions.add_parser("validate", help="Validate an edition and its fidelity ledgers")
     validate.add_argument("edition_id")
@@ -51,6 +55,9 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(record.to_dict(), ensure_ascii=False, indent=2))
         elif args.command == "sources":
             print(magazine.write_sources())
+        elif args.command == "media-index":
+            for path in magazine.index_media():
+                print(path)
         elif args.command == "queue":
             state = magazine.sync_release_queue()
             print(json.dumps(state.to_dict(), ensure_ascii=False, indent=2))

@@ -1,14 +1,19 @@
 import importlib.util
 import json
+from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
 from pypdf import PdfReader
 from pypdf.generic import ContentStream
+from PIL import Image
 import yaml
 
 from magazine import Magazine, ValidationError
+from magazine.capture import archive_snapshot
+from magazine.media_schema import MediaCaptureReview, SourceMediaAsset
+from magazine.records import load_records
 from magazine.render import (
     SANS,
     SANS_BOLD,
@@ -79,6 +84,87 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertNotIn(" ".join(("NOT", "FOR", "SALE")), reader_text)
             self.assertNotIn(" ".join(("PRIVATE", "EDITION")), reader_text)
             self.assert_tracked_labels_do_not_leak_character_spacing(result.reader_pdf)
+
+    def test_build_places_a_curated_opener_figure_and_audits_its_print_geometry(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            make_project(root)
+            image_path = root / "source-diagram.png"
+            Image.new("RGB", (1800, 900), "white").save(image_path)
+
+            sources_dir = root / "library" / "sources"
+            record = load_records(sources_dir)[0]
+            archived = archive_snapshot(
+                record,
+                sources_dir,
+                image_path,
+                method="test_figure",
+            )
+            capture = archived.raw_captures[-1]
+            raw_manifest = json.loads(
+                (sources_dir / archived.id / capture["path"]).read_text(encoding="utf-8")
+            )
+            artifact = raw_manifest["artifacts"][0]
+            media = SourceMediaAsset(
+                id="source-diagram",
+                artifact_path=artifact["path"],
+                artifact_sha256=artifact["sha256"],
+                mime_type="image/png",
+                creator="Author",
+                credit="Diagram by Author",
+                rights={
+                    "status": "author_owned",
+                    "intended_use": "publication",
+                    "attribution_required": True,
+                    "public_reprint_allowed": True,
+                },
+            )
+            replace(
+                archived,
+                media_reviews=(
+                    MediaCaptureReview(
+                        next(item["id"] for item in archived.raw_captures if item["id"] != capture["id"]),
+                        "no_media",
+                        (),
+                    ),
+                    MediaCaptureReview(capture["id"], "media_curated", (media,)),
+                ),
+            ).write(sources_dir)
+
+            manifest_path = root / "editions" / "issue-001" / "edition.yaml"
+            manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+            manifest["articles"][0]["figures"] = [{
+                "id": "diagram",
+                "source_id": "source-one",
+                "asset_id": "source-diagram",
+                "decision": "include",
+                "criteria": ["important", "useful"],
+                "rationale": "The diagram makes the central distinction legible.",
+                "caption": "The source diagram.",
+                "alt_text": "A diagram from the source article.",
+                "anchor": "__opener__",
+                "layout": "evidence_band",
+            }]
+            manifest_path.write_text(
+                yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+            )
+
+            result = Magazine(root).build("issue-001")
+
+            build_manifest = json.loads(
+                (result.output_dir / "edition-manifest.json").read_text(encoding="utf-8")
+            )
+            placement = build_manifest["layout"]["figures"][0]
+            self.assertEqual(placement["id"], "diagram")
+            self.assertGreaterEqual(placement["effective_ppi"], 300)
+            self.assertEqual(len(placement["box_points"]), 4)
+            preflight = json.loads(
+                (result.output_dir / "preflight.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(preflight["low_resolution_figures"], [])
+            self.assertEqual(preflight["invalid_figure_boxes"], [])
+            self.assertEqual(preflight["figure_collisions"], [])
+            self.assertEqual(preflight["figures"][0]["caption"], "The source diagram.")
 
     def test_build_generates_configured_spanish_reader_and_booklet_alongside_english(self):
         with TemporaryDirectory() as temporary:

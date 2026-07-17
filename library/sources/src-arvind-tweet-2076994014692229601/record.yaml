@@ -16,6 +16,11 @@ raw_captures:
   captured_at: '2026-07-15T17:17:00-03:00'
   artifact_count: 2
   byte_count: 70820
+media_reviews:
+- capture_id: 8abb643b4efc47757f69d9bb738fc3637c5070320acc7476f85a5c9a8257d8a9
+  status: media_rejected
+  assets: []
+  note: The screenshot repeats source text and includes browser interface chrome; it is not strong enough for print.
 provenance:
 - relation: links_to_primary
   target: src-narayanan-icml-2026-keynote

@@ -40,6 +40,7 @@ uv run --locked mag capture https://example.com/article \
   --capture-method authenticated_browser \
   --title "An article"
 uv run --locked mag sources
+uv run --locked mag media-index
 uv run --locked mag validate issue-001
 uv run --locked mag build issue-001
 ```
@@ -70,6 +71,7 @@ project environment is an implementation detail and is never managed by hand.
 ```text
 library/sources/<source-id>/record.yaml    structured source record
 library/sources/<source-id>/raw/<sha>/     immutable committed raw capture
+library/sources/<source-id>/media/<sha>.json deterministic generated media inventory
 library/sources/<source-id>/extracted.md  local, faithful extraction
 library/release-state.yaml                open-edition and released-edition assignments
 editions/<edition-id>/edition.yaml        edition manifest
@@ -166,6 +168,20 @@ raw manifest records each artifact's repository-relative path, byte count, and
 SHA-256. The bundle directory name hashes that ordered inventory. Validation,
 build, and release fail if an artifact is missing or has changed.
 
+Every capture also produces a bundle-keyed media inventory, including explicit
+zero-image results. Raster candidates record their hash, MIME type, dimensions,
+aspect ratio, color mode, ICC-profile presence, alpha, and animation state.
+Duplicate hashes and local HTML or captured-manifest references are audited;
+missing local images or stale inventories fail validation. `mag media-index`
+rebuilds these derived inventories for existing immutable captures without
+changing anything under `raw/`.
+
+Human media decisions live in `record.yaml`, never in generated inventory
+files. Each capture receives one triage state: `no_media`, `media_rejected`,
+`media_curated`, or `media_blocked`. Curated asset annotations pin the raw path
+and SHA-256, creator, credit, and rights basis. A build fails if any capture has
+not been triaged.
+
 ## Edition manifests
 
 See `templates/edition.yaml`. An article points at both a manuscript and a
@@ -174,6 +190,13 @@ the byline. Each language overlay provides its own localized note. Paths are
 repository-relative and cannot escape the project. The compiler validates
 required fields, source references, duplicate IDs, and file existence before
 layout.
+
+An article may select at most two curated figures. Each selection records why
+it is important, useful, beautiful, or cool; resolves to a hash-verified source
+asset; and uses either a full-width `evidence_band` or a single-column
+`column_plate`. Placement is semantic: `__opener__` or an exact `##` heading,
+never a fragile page number. Spanish preserves figure identity and layout while
+providing a hash-pinned localized caption, alt text, and heading anchor.
 
 The fidelity ledger records every substantive source paragraph as one of:
 
@@ -212,7 +235,9 @@ SHA256SUMS
 ```
 
 `preflight.json` validates page geometry, signature length, booklet sheet size,
-cover resolution, rights clearance, and studio blockers. The renderer embeds
+cover and figure resolution, figure geometry, rights clearance, and studio
+blockers. Curated figures require captions, credits, non-colliding placement,
+and at least 300 effective PPI. The renderer embeds
 the standard PDF fonts by default. A professional print profile is included as
 a specification, but PDF/X conversion, trim bleed, and the printer ICC output
 intent remain explicit studio preflight steps.

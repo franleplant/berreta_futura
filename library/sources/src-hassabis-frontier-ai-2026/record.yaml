@@ -16,6 +16,11 @@ raw_captures:
   captured_at: '2026-07-15T18:37:03-03:00'
   artifact_count: 1
   byte_count: 28072
+media_reviews:
+- capture_id: 0dfd0aa27428cde66e6d153c9114cf91952e072005998eb0748f655e33a8c580
+  status: no_media
+  assets: []
+  note: The deterministic capture inventory contains no raster assets.
 provenance:
 - relation: discovered_via
   target_url: https://x.com/demishassabis/status/2076957440109625718

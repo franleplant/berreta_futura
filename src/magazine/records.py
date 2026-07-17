@@ -10,6 +10,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from .errors import ValidationError
 from .io import dump_yaml, load_structured
+from .media_schema import MediaCaptureReview, load_media_reviews
 
 _TRACKING = {"fbclid", "gclid", "mc_cid", "mc_eid", "ref", "source"}
 
@@ -63,6 +64,7 @@ class SourceRecord:
     raw_captures: list[dict[str, Any]] = field(default_factory=list)
     provenance: list[dict[str, Any]] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
+    media_reviews: tuple[MediaCaptureReview, ...] = ()
     rights: dict[str, Any] = field(default_factory=lambda: {
         "status": "unknown",
         "intended_use": "private_reference",
@@ -120,6 +122,15 @@ class SourceRecord:
         missing = [key for key in required if not data.get(key)]
         if missing:
             raise ValidationError(f"Source record missing: {', '.join(missing)}")
+        data["media_reviews"] = load_media_reviews(
+            data.get("media_reviews"),
+            source_id=str(data["id"]),
+            raw_capture_ids={
+                str(item.get("id"))
+                for item in data.get("raw_captures", [])
+                if isinstance(item, dict) and item.get("id")
+            },
+        )
         known = {field.name for field in cls.__dataclass_fields__.values()}
         return cls(**{key: value for key, value in data.items() if key in known})
 
@@ -139,6 +150,7 @@ class SourceRecord:
             "raw_captures": self.raw_captures,
             "provenance": self.provenance,
             "rights": self.rights,
+            "media_reviews": [review.to_dict() for review in self.media_reviews],
             "metadata": {**self.metadata, "tags": self.tags, "synopsis": self.synopsis},
             "notes": self.notes,
         }

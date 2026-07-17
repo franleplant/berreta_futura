@@ -5,12 +5,16 @@ import hashlib
 import json
 from pathlib import Path
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any, Mapping
 
 import yaml
 
 from .errors import ValidationError
 from .io import load_structured, safe_project_path
+from .media_schema import Figure, localize_figures, resolve_figures
+
+if TYPE_CHECKING:
+    from .records import SourceRecord
 
 
 @dataclass(frozen=True)
@@ -26,6 +30,7 @@ class Article:
     manuscript: Path
     fidelity: Path
     content_mode: str
+    figures: tuple[Figure, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -66,6 +71,7 @@ def load_edition(
     known_sources: set[str],
     *,
     publication_name: str = "Magazine",
+    source_records: Mapping[str, "SourceRecord"] | None = None,
 ) -> Edition:
     manifest_path = root / "editions" / edition_id / "edition.yaml"
     if not manifest_path.is_file():
@@ -149,6 +155,18 @@ def load_edition(
         opener_variant = str(row.get("opener_variant") or "").strip()
         if opener_variant not in {"edge_medallion", "split_axis", "stepped_title"}:
             errors.append(f"{label} has invalid opener_variant: {opener_variant}")
+        try:
+            figures = resolve_figures(
+                root,
+                article_id=str(row["id"]),
+                article_source_ids=source_ids,
+                manuscript=manuscript,
+                rows=row.get("figures"),
+                records=source_records,
+            )
+        except ValidationError as exc:
+            errors.extend(exc.errors)
+            figures = ()
         articles.append(
             Article(
                 row["id"],
@@ -162,6 +180,7 @@ def load_edition(
                 manuscript,
                 fidelity,
                 content_mode,
+                figures,
             )
         )
     edition_dir = manifest_path.parent
@@ -339,6 +358,17 @@ def load_translation(
         except ValidationError as exc:
             errors.extend(exc.errors)
             continue
+        try:
+            figures = localize_figures(
+                article.figures,
+                row.get("figures"),
+                article_id=article.id,
+                manuscript=manuscript,
+                language=language,
+            )
+        except ValidationError as exc:
+            errors.extend(exc.errors)
+            figures = ()
         translated_articles.append(
             Article(
                 article.id,
@@ -352,6 +382,7 @@ def load_translation(
                 manuscript,
                 article.fidelity,
                 article.content_mode,
+                figures,
             )
         )
 
@@ -419,6 +450,19 @@ def load_translation(
                     "source_ids": list(article.source_ids),
                     "manuscript": article.manuscript.relative_to(root).as_posix(),
                     "fidelity": article.fidelity.relative_to(root).as_posix(),
+                    "figures": [
+                        {
+                            "id": figure.id,
+                            "source_id": figure.source_id,
+                            "asset_id": figure.asset_id,
+                            "caption": figure.caption,
+                            "alt_text": figure.alt_text,
+                            "anchor": figure.anchor,
+                            "layout": figure.layout,
+                            "source_caption_sha256": figure.source_caption_sha256,
+                        }
+                        for figure in article.figures
+                    ],
                 }
                 for article in translated_articles
             ],
@@ -470,6 +514,16 @@ def _edition_copy_sha256(edition: Edition) -> str:
                 "opener_variant": article.opener_variant,
                 "author": article.author,
                 "author_note": article.author_note,
+                "figures": [
+                    {
+                        "id": figure.id,
+                        "caption": figure.caption,
+                        "alt_text": figure.alt_text,
+                        "anchor": figure.anchor,
+                        "layout": figure.layout,
+                    }
+                    for figure in article.figures
+                ],
             }
             for article in edition.articles
         ],
