@@ -11,3 +11,7 @@ runs/
 # Reproducible build output; release manifests remain in editions/.
 output/
 tmp/
+
+# Generated design-study previews stay available locally and are reproducible
+# from the versioned prototype source and gallery.
+prototypes/design-directions/previews/

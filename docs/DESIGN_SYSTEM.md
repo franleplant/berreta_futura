@@ -1,88 +1,87 @@
 # BERRETA FUTURA design system
 
-BERRETA FUTURA is a small-format reading magazine, not a stack of web pages printed to PDF. Its visual system should make long-form text calm to read, make provenance immediately legible, and remain economical on an ordinary home printer.
+BERRETA FUTURA is a small-format reading magazine, not a stack of web pages printed to PDF. Its production direction is **O / Monument**, selected from the archived studies in `prototypes/design-directions/`. Monument makes exact language the interior artwork: scale, pacing, circles, and white space provide delight without recycling the cover image.
 
 ## Design position
 
-The system borrows principles, not layouts, from two editorial traditions:
+The system combines literary reading typography with the visual confidence of an art and graphic-design journal. It is deliberately sparse rather than minimal for its own sake: hierarchy is emphatic, provenance remains unmistakable, and long-form pages stay calm.
 
-- Monocle's disciplined reduction: fewer type styles, a more open grid, and the confidence to show less.
-- Veronica Ditting's work for *The Gentlewoman*: editorially driven form, pared-back typography, and exact cropping, sizing, and alignment.
-
-The resulting identity is original to BERRETA FUTURA: literary serif display type, robust small-text typography, compact sans-serif navigation, oxblood signals, and generous unprinted space.
+The issue artwork appears exactly once, on the front cover. It is not repeated, cropped into interior pages, used as a watermark, or treated as a source for the issue palette. Every issue may supply unrelated artwork; layout typography remains deterministic and independent.
 
 ## Typography
 
 | Role | Typeface | Default use |
 | --- | --- | --- |
-| Display | Source Serif 4 Display Semibold | Covers, article titles, section titles |
+| Monument | Inter Semibold | One curated word on each feature opener, issue medallions |
+| Display | Source Serif 4 Display Semibold | Covers, surrounding title language, editorial sentences, section bridges |
 | Reading | Source Serif 4 Small Text Regular | Body and standfirsts |
 | Emphasis | Source Serif 4 Small Text Italic/Bold | Quotations and emphasis |
-| Navigation | Inter Regular/Medium/Semibold/Bold | Running heads, credits, labels, folios |
-| Code | Courier | Source code only |
+| Navigation | Inter Regular/Medium/Semibold/Bold | Running matter, credits, mode labels, folios |
+| Code | Courier | Source code only, always in a full-width frame |
 
-Source Serif's optical cuts let the display and reading voices feel related without forcing one drawing to do both jobs. Inter is deliberately quieter: it carries facts and navigation without competing with the prose.
+Body copy is 9.55/12.6 pt by default. The opening editorial may tighten to 9.55/12 pt to respect its hard two-page cap. Captions and navigation never fall below 7 pt. Feature manifests may provide a localized `display_emphasis`; the compiler validates that it occurs in the localized title. This keeps the monumental word an editorial decision rather than an accidental longest-word heuristic.
 
-The font files and their SIL Open Font License texts are committed under `src/magazine/assets/fonts`. Do not replace them with system-font lookups; deterministic builds must use the bundled versions.
+The bundled font files and SIL Open Font License texts live under `src/magazine/assets/fonts`. Deterministic builds must not use system font lookups.
 
 ## Color
 
 | Token | RGB intent | Use |
 | --- | --- | --- |
-| Ink | blue-black | Primary text and large fields |
-| Oxblood | dark red | Section labels, bullets, rules, signals |
-| Slate | neutral blue-gray | Secondary metadata and folios |
-| Sand | warm gray | Hairlines and quiet separation |
-| Pale sand | warm tint | Code panels |
-| Paper | soft cream | Covers and reversed text |
+| Ink | near-black blue | Reading text and principal display type |
+| Violet | deep process violet | Monument words, medallions, labels, rules, navigation |
+| Slate | neutral gray | Secondary metadata |
+| Cool gray | light neutral | Contents separators and quiet structure |
+| Pale violet | very light tint | Code panels only |
+| White | unprinted sheet | Every page background |
 
-Interior pages remain white except for small signals. This preserves contrast, avoids muddy home-printer backgrounds, and limits ink coverage.
+The cover artwork does not determine these colors. Violet is a publication-level navigation color and stays a minority of each interior page. The renderer never prints a fake cream paper field.
 
 ## A5 page architecture
 
 - Trim: A5 portrait, imposed two-up on A4 landscape for home printing.
-- Live area: 41 pt left, 37 pt right, 52 pt top, 45 pt bottom.
-- Body: Source Serif 4 Small Text at 9.55/12.55 pt.
-- Standfirst: 11.6/15.2 pt.
-- Article display title: 27.5 pt, reduced only when needed to stay within five lines.
-- Running matter appears only on continuation pages. Opener pages reserve the full top field for the title.
-- Folios sit at the outer bottom corner: left on versos, right on rectos.
-- Headlines keep at least two body lines with them when pagination allows.
+- Mirrored margins: 44 pt inner, 34 pt outer.
+- Grid: six columns with 9.45 pt gutters.
+- Live vertical range: 45 pt bottom to 543 pt top.
+- Continuations: two balanced text frames on the six-column grid.
+- Opener copy: a narrower centered frame beneath the display composition.
+- Running matter: 7 pt at the head; folios at the outer foot with a 0.8 pt violet register rule.
+- Headlines keep following copy with them when pagination allows.
+- Fenced code moves to a full-width frame rather than becoming unreadably narrow.
 
 ## Page types
 
 ### Front cover
 
-The cover uses the issue artwork as the dominant gesture. A translucent paper field carries the masthead, display title, deck, and a small oxblood mark. Issue metadata stays at the foot.
+The cover uses a single 250 × 250 pt framed artwork placement, a display title, a circular issue medallion, a rotated subject rail, the complete deck, and private-edition metadata. The current 1054 × 1492 px artwork resolves at about 303.6 ppi in this placement. Layout code owns every letter; the raster asset contains no masthead or cover lines.
 
 ### Contents
 
-A dark header field establishes the issue. Entries use a repeated label-title-author-folio hierarchy, with no dot leaders or decorative furniture.
+Contents use staggered rows, oversized violet folios, restrained rules, and a circular issue mark. Six entries fit on one page; additional entries paginate into further Monument contents pages. Folios come from the renderer's deterministic two-pass layout.
 
-### Editorial and feature openers
+### Opening editorial
 
-Each opener has four stable layers:
+The opening sentence is split from the first source block and rendered once at monumental scale. The remainder flows immediately into the reading frames without duplication or omission. The editorial title, byline, `ORIGINAL EDITORIAL` label, and `AN ORIGINAL ARGUMENT` treatment remain visible, and the complete editorial may occupy at most two reader pages.
 
-1. section or feature label;
-2. display title;
-3. author and editorial treatment;
-4. a fine sand rule leading into the text.
+### Feature openers
 
-`FAITHFUL EDIT`, `FAITHFUL SYNTHESIS`, and `AN ORIGINAL ARGUMENT` are publication facts, not decoration. They must remain visible.
+Each opener combines the exact localized title around one curated Monument word. A numbered medallion, author, author note, and exact content-mode label remain explicit. `FAITHFUL EDIT`, `FAITHFUL SYNTHESIS`, `SELECTED EXTRACTS`, and `ORIGINAL SYNTHESIS` are provenance facts, never interchangeable decorations.
 
 ### Continuation pages
 
-The running head identifies the magazine, issue, and current article. It is separated from the text by a sand hairline and cannot appear on an opener.
+Copy flows left frame, right frame, then the next page. Violet section bridges, circular outer-margin signals, running matter, and generous white space carry the O identity without interior imagery. Quotations, bullets, headings, and code retain distinct deterministic treatments.
 
-### Back cover
+### Backmatter and back cover
 
-The back cover is typographic: one issue-defining sentence, a large quiet field, and private-edition metadata at the foot.
+Backmatter uses the same opener and continuation system. The back cover renders the configured issue statement, visibly labels it as editor-owned text, and closes with a localized END/FIN medallion. It never substitutes an unattributed source quotation.
 
 ## Guardrails
 
-- Do not add more typefaces without an explicit redesign decision.
-- Do not introduce full-page interior tints solely for atmosphere.
-- Do not shrink body type to solve article-length problems; edit or synthesize the article.
-- Do not let a running head cross an opener title.
-- Preserve the hard limits of two editorial pages and seven pages per source article.
+- Do not draw the cover artwork anywhere after page 1.
+- Do not infer palette colors from an edition's artwork.
+- Do not choose a production Monument word with an unreviewed heuristic when localized metadata is available.
+- Do not shrink body copy to solve page budgets; edit or synthesize faithfully.
+- Do not let a running head cross an opener composition.
+- Preserve the two-page editorial and seven-page source-article limits.
+- Generate every configured language on validation and build.
 - Render and inspect every reader page and every imposed booklet side after layout changes.
+- Do not call an edition press-ready without a named printer profile and a passing studio preflight.

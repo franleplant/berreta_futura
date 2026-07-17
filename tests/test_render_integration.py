@@ -43,6 +43,7 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertEqual(manifest["inputs"]["sources"][0]["id"], "source-one")
             self.assertEqual(len(manifest["inputs"]["sources"][0]["raw_captures"]), 1)
             self.assertEqual(manifest["layout"]["maximum_article_pages"], 7)
+            self.assertEqual(manifest["layout"]["design_direction"], "O / Monument")
             self.assertLessEqual(manifest["layout"]["article_pages"]["article"], 7)
             self.assertEqual(manifest["layout"]["maximum_editorial_pages"], 2)
             self.assertEqual(manifest["layout"]["editorial_pages"], 1)

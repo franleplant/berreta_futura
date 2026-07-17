@@ -2,8 +2,10 @@ from types import SimpleNamespace
 
 from magazine.render import (
     _Typesetter,
+    _content_mode_label,
     _edition_label,
     _markdown_blocks,
+    _opening_sentence,
     _plain,
     _section_label,
 )
@@ -73,3 +75,17 @@ def test_spanish_colophon_label_is_localized_in_contents_and_opener():
     edition = SimpleNamespace(language="es")
 
     assert _section_label(edition, "colophon") == "COLOFÓN"
+
+
+def test_opening_sentence_is_split_once_without_losing_the_remainder():
+    assert _opening_sentence("Every technology arrives twice. Then the work begins.") == (
+        "Every technology arrives twice.",
+        "Then the work begins.",
+    )
+
+
+def test_every_supported_content_mode_has_an_explicit_label():
+    edition = SimpleNamespace(language="en")
+
+    assert _content_mode_label(edition, "selected_extracts") == "Selected extracts"
+    assert _content_mode_label(edition, "original_synthesis") == "Original synthesis"

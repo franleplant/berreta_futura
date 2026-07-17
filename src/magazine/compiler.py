@@ -55,6 +55,8 @@ class Magazine:
         publication = self.config.get("publication", {})
         self.publication_name = str(publication.get("name") or "Magazine").strip()
         self.primary_language = str(publication.get("language") or "en").strip()
+        render = self.config.get("render", {})
+        self.render_design = str(render.get("design") or "monument").strip()
         configured_languages = publication.get("languages", [self.primary_language])
         if not isinstance(configured_languages, list) or not configured_languages:
             raise ValidationError("publication.languages must be a non-empty list")
@@ -159,7 +161,7 @@ class Magazine:
             variant = editions[language]
             language_destination = destination if language == self.primary_language else destination / language
             working_pdf = self.output_dir / ".build" / f"{edition.id}-{language}-reader.pdf"
-            layout = render_a5(variant, working_pdf)
+            layout = render_a5(variant, working_pdf, design=self.render_design)
             if reports:
                 heading = "# Informe de fidelidad" if language == "es" else "# Fidelity report"
                 intro = (
@@ -220,6 +222,8 @@ class Magazine:
                     ],
                 },
                 "layout": {
+                    "design_direction": layout.design,
+                    "cover_art_size_points": layout.cover_art_size_points,
                     "maximum_article_pages": 7,
                     "article_pages": layout.article_pages,
                     "maximum_editorial_pages": 2,
@@ -239,6 +243,7 @@ class Magazine:
                 build_manifest,
                 fidelity_md,
                 cover_art=variant.cover_art,
+                cover_art_size_points=layout.cover_art_size_points,
                 source_rights=[source_records[source_id].to_dict() for source_id in used_source_ids],
                 language=language,
             )

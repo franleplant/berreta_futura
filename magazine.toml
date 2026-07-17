@@ -17,6 +17,7 @@ substantive_edits_require_approval = true
 editorial_additions_must_be_labeled = true
 
 [render]
+design = "monument"
 trim = "A5"
 home_sheet = "A4"
 body_font = "SourceSerif4-SmText"

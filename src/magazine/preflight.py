@@ -28,11 +28,22 @@ def _png_dimensions(path: Path | None) -> tuple[int, int] | None:
     return struct.unpack(">II", data[16:24])
 
 
+def _effective_image_ppi(
+    pixel_dimensions: tuple[int, int],
+    placement_points: tuple[float, float],
+) -> float:
+    return min(
+        pixel_dimensions[0] / (placement_points[0] / 72),
+        pixel_dimensions[1] / (placement_points[1] / 72),
+    )
+
+
 def inspect_package(
     reader_pdf: Path,
     booklet_pdf: Path,
     *,
     cover_art: Path | None,
+    cover_art_size_points: tuple[float, float] | None = None,
     source_rights: list[dict[str, Any]],
     language: str = "en",
 ) -> dict[str, Any]:
@@ -43,12 +54,13 @@ def inspect_package(
     cover_dimensions = _png_dimensions(cover_art)
     cover_info: dict[str, Any] = {"path": str(cover_art) if cover_art else None, "pixel_dimensions": cover_dimensions}
     if cover_dimensions:
-        effective_ppi = min(
-            cover_dimensions[0] / (A5_POINTS[0] / 72),
-            cover_dimensions[1] / (A5_POINTS[1] / 72),
-        )
-        cover_info["effective_ppi_at_a5"] = round(effective_ppi, 1)
-        cover_info["studio_300ppi_target_met"] = effective_ppi >= 300
+        effective_at_a5 = _effective_image_ppi(cover_dimensions, A5_POINTS)
+        placement = cover_art_size_points or A5_POINTS
+        effective_at_placement = _effective_image_ppi(cover_dimensions, placement)
+        cover_info["effective_ppi_at_a5"] = round(effective_at_a5, 1)
+        cover_info["placement_points"] = [round(value, 3) for value in placement]
+        cover_info["effective_ppi_at_placement"] = round(effective_at_placement, 1)
+        cover_info["studio_300ppi_target_met"] = effective_at_placement >= 300
 
     rights_blockers = [
         {"source_id": row["id"], "status": row.get("rights", {}).get("status", "unknown")}
@@ -88,13 +100,13 @@ _MESSAGES = {
     "en": {
         "pdfx": "PDF/X-4 conversion and printer output intent are not configured.",
         "bleed": "Trim bleed is not configured for the selected printer.",
-        "cover_resolution": "Cover artwork is below the 300 ppi studio target at A5 trim.",
+        "cover_resolution": "Cover artwork is below the 300 ppi studio target at its rendered placement.",
         "rights": "One or more declared sources are not cleared for public reprint.",
     },
     "es": {
         "pdfx": "No están configurados la conversión a PDF/X-4 ni el propósito de salida de la imprenta.",
         "bleed": "No está configurado el sangrado de corte para la imprenta seleccionada.",
-        "cover_resolution": "La ilustración de cubierta no alcanza el objetivo de 300 ppp al tamaño final A5.",
+        "cover_resolution": "La ilustración de cubierta no alcanza el objetivo de 300 ppp en su tamaño de reproducción.",
         "rights": "Una o más fuentes declaradas no están autorizadas para su reedición pública.",
     },
 }

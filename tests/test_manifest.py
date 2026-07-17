@@ -129,6 +129,16 @@ class ManifestTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "missing: author_note"):
             Magazine(self.root).validate("issue-001")
 
+    def test_validate_rejects_display_emphasis_outside_the_article_title(self):
+        make_project(self.root)
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text())
+        manifest["articles"][0]["display_emphasis"] = "Missing"
+        manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+
+        with self.assertRaisesRegex(ValidationError, "display_emphasis must occur"):
+            Magazine(self.root).validate("issue-001")
+
     def test_validate_rejects_unknown_declared_edition_source(self):
         make_project(self.root)
         manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"

@@ -17,6 +17,7 @@ from .io import load_structured, safe_project_path
 class Article:
     id: str
     title: str
+    display_emphasis: str
     author: str
     author_note: str
     source_ids: tuple[str, ...]
@@ -131,10 +132,16 @@ def load_edition(
         content_mode = str(row.get("content_mode", "faithful_edit"))
         if content_mode not in {"faithful_edit", "faithful_synthesis", "selected_extracts", "original_synthesis"}:
             errors.append(f"{label} has invalid content_mode: {content_mode}")
+        display_emphasis = str(row.get("display_emphasis") or "").strip()
+        if display_emphasis and display_emphasis.casefold() not in str(row["title"]).casefold():
+            errors.append(
+                f"{label} display_emphasis must occur in its localized title"
+            )
         articles.append(
             Article(
                 row["id"],
                 row["title"],
+                display_emphasis,
                 row["author"],
                 author_note,
                 source_ids,
@@ -284,6 +291,12 @@ def load_translation(
                 f"Translation {language!r} article {article.id} author_note must be a "
                 "single line of at most 160 characters"
             )
+        display_emphasis = str(row.get("display_emphasis") or "").strip()
+        if display_emphasis and display_emphasis.casefold() not in str(row["title"]).casefold():
+            errors.append(
+                f"Translation {language!r} article {article.id} display_emphasis must "
+                "occur in its localized title"
+            )
         try:
             manuscript = _edition_path(root, translation_dir, row["manuscript"])
             _validate_translation_file(
@@ -300,6 +313,7 @@ def load_translation(
             Article(
                 article.id,
                 str(row["title"]),
+                display_emphasis,
                 article.author,
                 author_note,
                 article.source_ids,
@@ -364,6 +378,7 @@ def load_translation(
                 {
                     "id": article.id,
                     "title": article.title,
+                    "display_emphasis": article.display_emphasis,
                     "author": article.author,
                     "author_note": article.author_note,
                     "content_mode": article.content_mode,
@@ -416,6 +431,7 @@ def _edition_copy_sha256(edition: Edition) -> str:
             {
                 "id": article.id,
                 "title": article.title,
+                "display_emphasis": article.display_emphasis,
                 "author": article.author,
                 "author_note": article.author_note,
             }

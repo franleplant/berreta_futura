@@ -25,6 +25,7 @@ def package_release(
     fidelity_markdown: str,
     *,
     cover_art: Path | None = None,
+    cover_art_size_points: tuple[float, float] | None = None,
     source_rights: list[dict[str, Any]] | None = None,
     language: str = "en",
 ) -> list[Path]:
@@ -46,6 +47,7 @@ def package_release(
                 reader,
                 booklet,
                 cover_art=cover_art,
+                cover_art_size_points=cover_art_size_points,
                 source_rights=source_rights or [],
                 language=language,
             ),
