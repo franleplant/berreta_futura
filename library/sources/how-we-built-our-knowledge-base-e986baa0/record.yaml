@@ -1,0 +1,53 @@
+schema_version: 1
+id: how-we-built-our-knowledge-base-e986baa0
+title: How We Built Our Knowledge Base
+author: Isaac Tai, Daniel Kim, and Mike Gao
+canonical_url: https://www.cerebras.ai/blog/how-we-built-our-knowledge-base
+submitted_url: https://www.cerebras.ai/blog/how-we-built-our-knowledge-base
+captured_at: '2026-07-17T19:45:07Z'
+publication_date: '2026-07-15'
+kind: article
+status: extracted
+content_hash: ee07d26dc95a01cde7cf1145adbe49f1cf4e9fef10aeed8815efd47c0edb7967
+raw_captures:
+- id: 19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169
+  path: raw/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/manifest.json
+  method: Rendered public HTML via headless Chromium; structured text/HTML, PDF, and full-page screenshot.
+  captured_at: '2026-07-17T19:45:07Z'
+  artifact_count: 3
+  byte_count: 3578212
+provenance: []
+rights:
+  status: unknown
+  license: none_found
+  intended_use: private_reference
+  attribution_required: true
+  public_reprint_allowed: false
+  permission_required_for_public_reprint: true
+media_reviews:
+- capture_id: 19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169
+  status: media_rejected
+  assets: []
+  note: The full-page screenshot is durable capture context rather than a standalone editorial asset. The
+    article's nine inline SVG diagrams remain preserved in the HTML and PDF and require separate extraction
+    and rights review before editorial use.
+metadata:
+  language: en
+  rendered_word_count: 3371
+  rendered_character_count: 21813
+  semantic_block_count: 131
+  inline_svg_count: 9
+  extraction_method: Rendered public HTML captured with headless Chromium.
+  snapshot_hash_basis: Visible text of the main element.
+  capture_durability: Structured text and rendered HTML, plus PDF and full-page screenshot, stored in a committed
+    source-local raw bundle.
+  raw_capture_policy: committed_source_local
+  tags:
+  - enterprise-search
+  - hybrid-retrieval
+  - knowledge-management
+  - llm-agents
+  synopsis: How Cerebras built an internal knowledge system over Slack, code, documentation, and custom
+    sources using distillation, hybrid retrieval, reranking, and scoped agent interfaces.
+notes: Primary Cerebras engineering article. The committed capture preserves rendered text, semantic blocks,
+  inline SVG markup, a PDF, and a full-page screenshot; no explicit reuse license was visible.

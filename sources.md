@@ -2,7 +2,26 @@
 
 _Generated from structured source records. Do not edit by hand._
 
-_Open edition: `002-unreleased`; 0 queued sources._
+_Open edition: `002-unreleased`; 1 queued sources._
+
+## How We Built Our Knowledge Base — Isaac Tai, Daniel Kim, and Mike Gao
+
+- ID: `how-we-built-our-knowledge-base-e986baa0`
+- Source: https://www.cerebras.ai/blog/how-we-built-our-knowledge-base
+- Kind / status: article / extracted
+- Captured: 2026-07-17T19:45:07Z
+- Content hash: `ee07d26dc95a01cde7cf1145adbe49f1cf4e9fef10aeed8815efd47c0edb7967`
+- Raw captures: 1 committed bundle(s)
+- Release: queued for `002-unreleased`
+- Published: 2026-07-15
+- Tags: enterprise-search, hybrid-retrieval, knowledge-management, llm-agents
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+
+How Cerebras built an internal knowledge system over Slack, code, documentation, and custom sources using distillation, hybrid retrieval, reranking, and scoped agent interfaces.
+
+**Editorial note:** Primary Cerebras engineering article. The committed capture preserves rendered text, semantic blocks, inline SVG markup, a PDF, and a full-page screenshot; no explicit reuse license was visible.
 
 ## The Reverse Information Paradox — Satya Nadella
 

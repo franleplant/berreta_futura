@@ -3,7 +3,8 @@ open_edition:
   id: 002-unreleased
   issue_number: 2
   status: collecting
-  source_ids: []
+  source_ids:
+  - how-we-built-our-knowledge-base-e986baa0
 released_editions:
 - id: 001-the-work-left-to-us
   issue_number: 1
