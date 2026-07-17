@@ -55,7 +55,6 @@ SERIF_DISPLAY = "SourceSerif4-Display-Semibold"
 
 UI_COPY = {
     "en": {
-        "private_edition": "Private edition - Not for sale",
         "edition": "Edition",
         "issue": "Issue",
         "contents": "Contents",
@@ -78,10 +77,9 @@ UI_COPY = {
         "issue_statement": "Issue statement / The editors",
         "continued": "Continued",
         "end": "End",
-        "closing_plate": "Closing plate / Private edition",
+        "closing_plate": "Closing plate",
     },
     "es": {
-        "private_edition": "Edición privada - Prohibida su venta",
         "edition": "Edición",
         "issue": "Número",
         "contents": "Índice",
@@ -104,7 +102,7 @@ UI_COPY = {
         "issue_statement": "Declaración del número / La redacción",
         "continued": "Continuación",
         "end": "Fin",
-        "closing_plate": "Lámina final / Edición privada",
+        "closing_plate": "Lámina final",
     },
 }
 
@@ -169,15 +167,6 @@ def _plain(text: str) -> str:
     for old, new in replacements.items():
         text = text.replace(old, new)
     return text.encode("cp1252", errors="replace").decode("cp1252")
-
-
-def _edition_label(edition: Edition) -> str:
-    configured = str(edition.cover.get("edition_label", "")).strip()
-    if configured:
-        return configured
-    if edition.raw.get("distribution") == "private":
-        return _ui(edition, "private_edition")
-    return _ui(edition, "edition")
 
 
 def _ui(edition: Edition, key: str) -> str:
@@ -1086,17 +1075,11 @@ class _Typesetter:
 
         self.pdf.setFillColorRGB(*INK)
         self.pdf.setFont(SANS_MEDIUM, CAPTION_SIZE)
-        label = _plain(_edition_label(self.edition)).upper()
         self.pdf.drawString(
             self.left,
             17,
             f"{_plain(_ui(self.edition, 'issue').upper())} {self.edition.issue_number}"
             f" / {self.edition.publication_date}",
-        )
-        self.pdf.drawRightString(
-            self.width - self.right,
-            17,
-            self.fit_text(label, SANS_MEDIUM, CAPTION_SIZE, self.live_width * .55),
         )
 
     def contents(self, toc_pages: dict[str, int]):
@@ -1488,7 +1471,6 @@ class _Typesetter:
         )
         self.pdf.setFillColorRGB(*INK)
         self.pdf.setFont(SANS_MEDIUM, CAPTION_SIZE)
-        self.pdf.drawString(self.left, 17, _plain(_edition_label(self.edition)).upper())
         self.pdf.drawRightString(
             self.width - self.right,
             17,

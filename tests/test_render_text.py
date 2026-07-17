@@ -10,7 +10,6 @@ from magazine.render import (
     FrameUsage,
     _Typesetter,
     _content_mode_label,
-    _edition_label,
     _markdown_blocks,
     _opening_sentence,
     _plain,
@@ -62,21 +61,6 @@ def test_code_lines_preserve_source_breaks_and_indent_while_wrapping():
         "    stuvwxyz",
         "    xy",
     ]
-
-
-def test_edition_label_comes_from_cover_configuration():
-    edition = SimpleNamespace(
-        cover={"edition_label": "Private library copy"},
-        raw={"distribution": "private"},
-    )
-
-    assert _edition_label(edition) == "Private library copy"
-
-
-def test_private_edition_label_fallback_is_finished_not_prototype():
-    edition = SimpleNamespace(cover={}, raw={"distribution": "private"})
-
-    assert _edition_label(edition) == "Private edition - Not for sale"
 
 
 def test_spanish_colophon_label_is_localized_in_contents_and_opener():

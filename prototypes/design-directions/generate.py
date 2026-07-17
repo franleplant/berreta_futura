@@ -425,7 +425,7 @@ def cover(c: canvas.Canvas, direction: Direction) -> None:
         c.drawString(x, title_y, line); title_y -= title_size * .98
     title_y -= 8
     title_y = text_lines(c, "Work, agency, ownership, and governance in the age of capable machines", x, title_y, title_width, SANS, 8.2, 10.4, ink)
-    color(c, ink); c.setFont(SANS_SEMIBOLD, 6.5); c.drawString(x, 26, "ISSUE 001  /  16 JULY 2026  /  PRIVATE EDITION")
+    color(c, ink); c.setFont(SANS_SEMIBOLD, 6.5); c.drawString(x, 26, "ISSUE 001  /  16 JULY 2026")
 
 
 def contents(c: canvas.Canvas, direction: Direction) -> None:
@@ -516,7 +516,7 @@ def back(c: canvas.Canvas, direction: Direction) -> None:
     y = H * .62
     y = text_lines(c, "Intelligence does not govern itself. The boundaries we build around it will decide who learns, who owns, and who answers.", x, y, width, DISPLAY if direction.key == "A" else SANS_BOLD, 17 if direction.key != "C" else 20, 21, INK)
     color(c, accent if direction.key != "C" else INK); c.rect(x, 57, width, 1, fill=1, stroke=0)
-    color(c, INK); c.setFont(SANS_BOLD, 6.4); c.drawString(x, 39, "PRIVATE EDITION — NOT FOR SALE")
+    color(c, INK); c.setFont(SANS_BOLD, 6.4); c.drawString(x, 39, "BERRETA FUTURA  /  ISSUE 001")
     c.setFont(SANS, 6.4); c.drawString(x, 25, "BERRETA FUTURA / ISSUE 001 / THE WORK LEFT TO US")
 
 
@@ -617,7 +617,7 @@ def cover_new(c: canvas.Canvas, direction: Direction) -> None:
         color(c, INK); c.setFont(SANS_BOLD, 9); c.drawString(39, H - 60, "BERRETA FUTURA")
         color(c, COBALT); c.rect(W - 78, H - 64, 39, 5, fill=1, stroke=0)
         fitted_title(c, "The Work Left to Us", 39, H - 88, W - 78, 116, font=SANS_BOLD, maximum=32, minimum=27)
-    color(c, INK); c.setFont(SANS_SEMIBOLD, 6.2); c.drawString(30 if key != "E" else 106, 25, "16 JULY 2026  /  PRIVATE EDITION — NOT FOR SALE")
+    color(c, INK); c.setFont(SANS_SEMIBOLD, 6.2); c.drawString(30 if key != "E" else 106, 25, "16 JULY 2026  /  ISSUE 001")
 
 
 def contents_new(c: canvas.Canvas, direction: Direction) -> None:
@@ -780,7 +780,7 @@ def back_new(c: canvas.Canvas, direction: Direction) -> None:
     else:
         color(c, SKY); c.rect(0, H - 120, W, 120, fill=1, stroke=0); color(c, YELLOW); c.rect(0, 0, W, 91, fill=1, stroke=0); color(c, BLUSH); c.rect(0, 91, 56, H - 211, fill=1, stroke=0)
         text_lines(c, quote, 91, H - 186, W - 130, SANS_BOLD, 17, 20, INK, 8)
-    color(c, INK); c.setFont(SANS_BOLD, 6.2); c.drawString(30 if key != "G" else 105, 31, "PRIVATE EDITION — NOT FOR SALE / BERRETA FUTURA / ISSUE 001")
+    color(c, INK); c.setFont(SANS_BOLD, 6.2); c.drawString(30 if key != "G" else 105, 31, "BERRETA FUTURA / ISSUE 001")
 
 
 ROUND3_ACCENTS = {
@@ -810,7 +810,7 @@ def round3_footer(page: Round3Page) -> None:
     box = page.reserve("cover metadata", Box(page.left, 17, page.live_width, 18), gap=0)
     color(page.c, INK); page.c.setFont(SANS_MEDIUM, CAPTION_SIZE)
     page.c.drawString(box.x, box.y, "ISSUE 001 / 16 JULY 2026")
-    page.c.drawRightString(box.right, box.y, "PRIVATE EDITION — NOT FOR SALE")
+    page.c.drawRightString(box.right, box.y, "THE WORK LEFT TO US")
 
 
 def round3_running(page: Round3Page, text: str) -> None:
@@ -1094,7 +1094,7 @@ def round4_footer(page: Round3Page) -> None:
     box = page.reserve("cover metadata", Box(page.left, 17, page.live_width, 18), gap=0)
     color(page.c, INK); page.c.setFont(SANS_MEDIUM, CAPTION_SIZE)
     page.c.drawString(box.x, box.y, "ISSUE 001 / 16 JULY 2026")
-    page.c.drawRightString(box.right, box.y, "PRIVATE EDITION — NOT FOR SALE")
+    page.c.drawRightString(box.right, box.y, "THE WORK LEFT TO US")
 
 
 def round4_folio(page: Round3Page) -> None:
@@ -1190,7 +1190,7 @@ def cover_round4(c: canvas.Canvas, direction: Direction) -> None:
         rail = Box(367, 92, 18, 341)
         color(c, accent)
         for y in range(int(rail.y), int(rail.top), 26): c.rect(rail.x + 7, y, 8, 3, fill=1, stroke=0)
-        draw_rotated_label(page, "issue rail label", "Private edition / Number one", Box(370, 121, 12, 180), rgb=INK)
+        draw_rotated_label(page, "issue rail label", "Issue / Number one", Box(370, 121, 12, 180), rgb=INK)
     elif key == "O":
         draw_manual_title(page, "cover title", ["The Work", "Left to Us"], page.columns(0, 4, 461, 77), font=DISPLAY, size=35, leading=34)
         medallion = page.reserve("issue medallion", page.columns(4, 2, 484, 54))

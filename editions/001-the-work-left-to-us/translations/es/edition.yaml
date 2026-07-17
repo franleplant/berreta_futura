@@ -3,7 +3,7 @@ language: es
 source_language: en
 locale: es-AR
 fallback_locale: es-ES
-base_copy_sha256: 336f8338acb2e8ba903cb491f0125a0180d3331b97262fe1a001336b39ae84d3
+base_copy_sha256: 31b53cd97f684c9e2fd3337237b020bea90dbd2f087ee03421bf8ed8121b49cb
 policy:
   register: educated_castellano
   regional_preference: restrained_argentinian
@@ -17,7 +17,6 @@ subtitle: Trabajo, capacidad de acción, propiedad y gobernanza en la era de las
 cover:
   headline: El trabajo que nos queda
   deck: Trabajo, capacidad de acción, propiedad y gobernanza en la era de las máquinas capaces
-  edition_label: Edición privada - Prohibida su venta
   back_text: La inteligencia no se gobierna sola. Los límites que construyamos a su alrededor decidirán quién aprende,
     quién posee y quién responde.
 editorial:
@@ -56,4 +55,4 @@ sections:
 - kind: colophon
   title: Colofón
   path: manuscript/colophon.md
-  source_sha256: fe8604a79869bd0a32cbc6e35455eb7aa18aea9d158eda7a32c32a02cde2e544
+  source_sha256: c71b8bde4ce49e75784938413e21640cfa34648bb03a0206b134ff5fc88a9d4a

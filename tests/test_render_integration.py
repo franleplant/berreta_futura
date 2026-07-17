@@ -76,6 +76,8 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertIn("FAITHFUL EDIT", reader_text)
             self.assertIn("Author writes about this subject for Example.", reader_text)
             self.assertIn("TEST REVIEW", reader_text)
+            self.assertNotIn(" ".join(("NOT", "FOR", "SALE")), reader_text)
+            self.assertNotIn(" ".join(("PRIVATE", "EDITION")), reader_text)
             self.assert_tracked_labels_do_not_leak_character_spacing(result.reader_pdf)
 
     def test_build_generates_configured_spanish_reader_and_booklet_alongside_english(self):
@@ -103,6 +105,8 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertIn("EDICIÓN FIEL", text)
             self.assertIn("Author escribe sobre este tema para Example.", text)
             self.assertIn("El artículo original.", text)
+            self.assertNotIn(" ".join(("PROHIBIDA", "SU", "VENTA")), text)
+            self.assertNotIn(" ".join(("EDICIÓN", "PRIVADA")), text)
             spanish_preflight = json.loads((spanish / "preflight.json").read_text())
             self.assertIn(
                 "No están configurados",
