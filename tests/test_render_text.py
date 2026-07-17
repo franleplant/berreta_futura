@@ -2,7 +2,11 @@ from types import SimpleNamespace
 
 from magazine.render import (
     BODY_LEADING,
+    HEADING_SPACE_BEFORE,
     OUTER_MARGIN,
+    RUNNING_HEADER_BASELINE_INSET,
+    RUNNING_HEADER_SECONDARY_OFFSET,
+    TEXT_TOP_INSET,
     FrameUsage,
     _Typesetter,
     _content_mode_label,
@@ -97,6 +101,18 @@ def test_every_supported_content_mode_has_an_explicit_label():
 
 def test_monument_uses_a_fifteen_millimetre_exterior_margin():
     assert round(OUTER_MARGIN * 25.4 / 72, 2) == 15.0
+
+
+def test_continuation_label_has_clearance_before_the_text_frame():
+    label_baseline_inset = RUNNING_HEADER_BASELINE_INSET + RUNNING_HEADER_SECONDARY_OFFSET
+
+    assert TEXT_TOP_INSET - label_baseline_inset >= 18.0
+
+
+def test_headings_have_deliberate_space_before_them():
+    assert HEADING_SPACE_BEFORE["h1"] > HEADING_SPACE_BEFORE["h2"]
+    assert HEADING_SPACE_BEFORE["h2"] >= BODY_LEADING
+    assert HEADING_SPACE_BEFORE["h3"] >= 10.0
 
 
 def test_terminal_balance_quantizes_a_stranded_tail_without_changing_page_count():

@@ -24,8 +24,16 @@ CAPTION_SIZE = 7.0
 COVER_ART_SIZE_POINTS = (250.0, 250.0)
 INNER_MARGIN = 44.0
 OUTER_MARGIN = 15 * 72 / 25.4
+TEXT_TOP_INSET = 52.0
 TERMINAL_BALANCE_FRAMES = 4
 TERMINAL_BALANCE_THRESHOLD = .35
+RUNNING_HEADER_BASELINE_INSET = 20.0
+RUNNING_HEADER_SECONDARY_OFFSET = 11.0
+HEADING_SPACE_BEFORE = {
+    "h1": 16.0,
+    "h2": 13.0,
+    "h3": 10.0,
+}
 
 # Monument uses the sheet itself as the paper color. Violet is reserved for
 # hierarchy and typographic furniture so interiors remain economical to print.
@@ -288,7 +296,7 @@ class _Typesetter:
         self.pdf, self.edition, self.width, self.height, self.metrics = pdf, edition, *pagesize, metrics
         self.design = design
         self.balance_plans = balance_plans or {}
-        self.inner, self.outer, self.top, self.bottom = INNER_MARGIN, OUTER_MARGIN, 52.0, 45.0
+        self.inner, self.outer, self.top, self.bottom = INNER_MARGIN, OUTER_MARGIN, TEXT_TOP_INSET, 45.0
         self.left, self.right = self.inner, self.outer
         self.page = 0
         self.section = ""
@@ -348,7 +356,7 @@ class _Typesetter:
         self.frame_count = columns
         self.frame_index = 0
         self.frame_role = role
-        default_top = self.height - (44 if columns == 2 else self.top)
+        default_top = self.height - self.top
         default_bottom = 40 if columns == 2 else self.bottom
         self.frame_top = default_top if top is None else top
         self.frame_bottom = default_bottom if bottom is None else bottom
@@ -454,7 +462,7 @@ class _Typesetter:
             )
 
     def _running_header(self) -> None:
-        y = self.height - 25
+        y = self.height - RUNNING_HEADER_BASELINE_INSET
         publication = _plain(
             f"{self.edition.publication_name.upper()} / {_ui(self.edition, 'issue').upper()} "
             f"{self.edition.issue_number}"
@@ -481,7 +489,7 @@ class _Typesetter:
         self._tracked_label(
             continued,
             self.width - self.right - right_width,
-            y - 11,
+            y - RUNNING_HEADER_SECONDARY_OFFSET,
             right_width,
             color=VIOLET,
             tracking=.25,
@@ -523,7 +531,7 @@ class _Typesetter:
             plan = self.balance_plans.get(self.active_article_id)
             relative_page = self.page - self.active_article_start_page + 1
             if plan and relative_page >= plan.page_count - 1:
-                balance_bottom = self.height - 44 - plan.frame_height
+                balance_bottom = self.height - self.top - plan.frame_height
         self._configure_frames(
             selected_columns,
             bottom=balance_bottom,
@@ -574,30 +582,34 @@ class _Typesetter:
 
     def block(self, kind: str, text: str):
         styles = {
-            "h1": (SERIF_DISPLAY, 22, 25, 13),
-            "h2": (SERIF_DISPLAY, 17.5, 20.5, 10),
-            "h3": (SANS_SEMIBOLD, 8.7, 12, 7),
-            "lead": (SERIF, 11.6, 15.2, 11),
-            "body": (SERIF, self.reading_size, self.reading_leading, self.paragraph_after),
-            "bullet": (SERIF, 9.45, self.reading_leading, 5),
-            "quote": (SERIF_ITALIC, 10.1, 13.7, 9),
+            "h1": (SERIF_DISPLAY, 22, 25, HEADING_SPACE_BEFORE["h1"], 13),
+            "h2": (SERIF_DISPLAY, 17.5, 20.5, HEADING_SPACE_BEFORE["h2"], 10),
+            "h3": (SANS_SEMIBOLD, 8.7, 12, HEADING_SPACE_BEFORE["h3"], 7),
+            "lead": (SERIF, 11.6, 15.2, 0, 11),
+            "body": (SERIF, self.reading_size, self.reading_leading, 0, self.paragraph_after),
+            "bullet": (SERIF, 9.45, self.reading_leading, 0, 5),
+            "quote": (SERIF_ITALIC, 10.1, 13.7, 0, 9),
         }
-        font, size, leading, after = styles[kind]
+        font, size, leading, before, after = styles[kind]
         if kind == "h3":
             text = text.upper()
         indent = 14 if kind in {"bullet", "quote"} else 0
         lines = self.lines(text, font, size, self.column_width - indent)
         if kind in {"h1", "h2", "h3"}:
             self.y = min(self.y, self.height - self.top)
-            needed = len(lines) * leading + after
+            if math.isclose(self.y, self.frame_top):
+                before = 0
+            needed = before + len(lines) * leading + after
             if self.y - needed - 25 < self.frame_bottom:
                 self._advance_frame()
+                before = 0
                 lines = self.lines(text, font, size, self.column_width - indent)
                 needed = len(lines) * leading + after
             if self.y - needed < self.frame_bottom:
                 raise ValidationError(
                     f"A {kind} block is too tall for the Monument text frame"
                 )
+            self.y -= before
             self.pdf.setFillColorRGB(*(VIOLET if kind in {"h2", "h3"} else INK))
             self.pdf.setFont(font, size)
             for line in lines:

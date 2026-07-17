@@ -68,7 +68,7 @@ Each opener combines the exact localized title around one curated Monument word.
 
 ### Continuation pages
 
-Copy flows left frame, right frame, then the next page. When greedy flow would strand a lightly occupied terminal page, a probe redistributes the unchanged final four continuation frames to a shared, leading-quantized depth while preserving text order, page count, and page caps. Exact short running titles and separate continuation markers replace mechanical ellipses. Violet section bridges, circular outer-margin signals, running matter, and generous white space carry the O identity without interior imagery. Quotations, bullets, headings, and code retain distinct deterministic treatments.
+Copy flows left frame, right frame, then the next page. When greedy flow would strand a lightly occupied terminal page, a probe redistributes the unchanged final four continuation frames to a shared, leading-quantized depth while preserving text order, page count, and page caps. Exact short running titles and separate continuation markers replace mechanical ellipses; the secondary marker keeps a 21 pt baseline clearance above continuation copy. Violet section bridges, circular outer-margin signals, running matter, and generous white space carry the O identity without interior imagery. Quotations, bullets, headings, and code retain distinct deterministic treatments. Display headings add 10–16 pt of space before (except at a fresh frame) so a new section never appears attached to the preceding paragraph.
 
 ### Backmatter and back cover
 
