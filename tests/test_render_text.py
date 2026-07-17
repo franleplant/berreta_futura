@@ -1,6 +1,9 @@
 from types import SimpleNamespace
 
 from magazine.render import (
+    BODY_LEADING,
+    OUTER_MARGIN,
+    FrameUsage,
     _Typesetter,
     _content_mode_label,
     _edition_label,
@@ -8,6 +11,7 @@ from magazine.render import (
     _opening_sentence,
     _plain,
     _section_label,
+    _terminal_balance_plans,
 )
 
 
@@ -89,3 +93,45 @@ def test_every_supported_content_mode_has_an_explicit_label():
 
     assert _content_mode_label(edition, "selected_extracts") == "Selected extracts"
     assert _content_mode_label(edition, "original_synthesis") == "Original synthesis"
+
+
+def test_monument_uses_a_fifteen_millimetre_exterior_margin():
+    assert round(OUTER_MARGIN * 25.4 / 72, 2) == 15.0
+
+
+def test_terminal_balance_quantizes_a_stranded_tail_without_changing_page_count():
+    height = 511.2756
+    layout = SimpleNamespace(
+        article_pages={"article": 5},
+        article_frame_usage={
+            "article": (
+                FrameUsage(4, 0, height, height),
+                FrameUsage(4, 1, height, height),
+                FrameUsage(5, 0, 2 * BODY_LEADING, height),
+                FrameUsage(5, 1, 0, height),
+            )
+        },
+    )
+
+    plan = _terminal_balance_plans(layout)["article"]
+
+    assert plan.page_count == 5
+    assert plan.frame_height < height
+    assert abs(plan.frame_height / BODY_LEADING - round(plan.frame_height / BODY_LEADING)) < 1e-9
+
+
+def test_terminal_balance_leaves_an_already_used_second_column_alone():
+    height = 511.2756
+    layout = SimpleNamespace(
+        article_pages={"article": 5},
+        article_frame_usage={
+            "article": (
+                FrameUsage(4, 0, height, height),
+                FrameUsage(4, 1, height, height),
+                FrameUsage(5, 0, height, height),
+                FrameUsage(5, 1, 4 * BODY_LEADING, height),
+            )
+        },
+    )
+
+    assert _terminal_balance_plans(layout) == {}

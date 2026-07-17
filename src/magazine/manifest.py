@@ -17,7 +17,9 @@ from .io import load_structured, safe_project_path
 class Article:
     id: str
     title: str
+    short_title: str
     display_emphasis: str
+    opener_variant: str
     author: str
     author_note: str
     source_ids: tuple[str, ...]
@@ -100,6 +102,8 @@ def load_edition(
             for key in (
                 "id",
                 "title",
+                "short_title",
+                "opener_variant",
                 "author",
                 "author_note",
                 "source_ids",
@@ -137,11 +141,21 @@ def load_edition(
             errors.append(
                 f"{label} display_emphasis must occur in its localized title"
             )
+        short_title = str(row.get("short_title") or "").strip()
+        if "\n" in short_title or len(short_title) > 40:
+            errors.append(f"{label} short_title must be a single line of at most 40 characters")
+        elif short_title.casefold() not in str(row["title"]).casefold():
+            errors.append(f"{label} short_title must occur in its localized title")
+        opener_variant = str(row.get("opener_variant") or "").strip()
+        if opener_variant not in {"edge_medallion", "split_axis", "stepped_title"}:
+            errors.append(f"{label} has invalid opener_variant: {opener_variant}")
         articles.append(
             Article(
                 row["id"],
                 row["title"],
+                short_title,
                 display_emphasis,
+                opener_variant,
                 row["author"],
                 author_note,
                 source_ids,
@@ -279,10 +293,15 @@ def load_translation(
         row = translated_by_id.get(article.id)
         if not row:
             continue
-        if not row.get("title") or not row.get("author_note") or not row.get("manuscript"):
+        if (
+            not row.get("title")
+            or not row.get("short_title")
+            or not row.get("author_note")
+            or not row.get("manuscript")
+        ):
             errors.append(
-                f"Translation {language!r} article {article.id} requires title, author_note, "
-                "and manuscript"
+                f"Translation {language!r} article {article.id} requires title, short_title, "
+                "author_note, and manuscript"
             )
             continue
         author_note = str(row["author_note"]).strip()
@@ -296,6 +315,17 @@ def load_translation(
             errors.append(
                 f"Translation {language!r} article {article.id} display_emphasis must "
                 "occur in its localized title"
+            )
+        short_title = str(row.get("short_title") or "").strip()
+        if "\n" in short_title or len(short_title) > 40:
+            errors.append(
+                f"Translation {language!r} article {article.id} short_title must be a "
+                "single line of at most 40 characters"
+            )
+        elif short_title.casefold() not in str(row["title"]).casefold():
+            errors.append(
+                f"Translation {language!r} article {article.id} short_title must occur "
+                "in its localized title"
             )
         try:
             manuscript = _edition_path(root, translation_dir, row["manuscript"])
@@ -313,7 +343,9 @@ def load_translation(
             Article(
                 article.id,
                 str(row["title"]),
+                short_title,
                 display_emphasis,
+                article.opener_variant,
                 article.author,
                 author_note,
                 article.source_ids,
@@ -378,7 +410,9 @@ def load_translation(
                 {
                     "id": article.id,
                     "title": article.title,
+                    "short_title": article.short_title,
                     "display_emphasis": article.display_emphasis,
+                    "opener_variant": article.opener_variant,
                     "author": article.author,
                     "author_note": article.author_note,
                     "content_mode": article.content_mode,
@@ -431,7 +465,9 @@ def _edition_copy_sha256(edition: Edition) -> str:
             {
                 "id": article.id,
                 "title": article.title,
+                "short_title": article.short_title,
                 "display_emphasis": article.display_emphasis,
+                "opener_variant": article.opener_variant,
                 "author": article.author,
                 "author_note": article.author_note,
             }

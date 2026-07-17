@@ -42,7 +42,8 @@ def make_project(root: Path, *, source_id: str = "source-one") -> None:
     manifest = {
         "id": "issue-001", "issue_number": "001", "title": "Issue", "publication_date": "2026-07-15",
         "editorial": "editions/issue-001/editorial.md", "cover": {"headline": "Issue"},
-        "articles": [{"id": "article", "title": "Article", "author": "Author",
+        "articles": [{"id": "article", "title": "Article", "short_title": "Article",
+                      "opener_variant": "edge_medallion", "author": "Author",
                       "author_note": "Author writes about this subject for Example.", "source_ids": [source_id],
                       "manuscript": "editions/issue-001/articles/article.md", "fidelity": "editions/issue-001/fidelity/article.yaml"}],
     }
@@ -82,6 +83,7 @@ def add_spanish_translation(root: Path) -> None:
         "articles": [{
             "id": "article",
             "title": "Artículo",
+            "short_title": "Artículo",
             "author_note": "Author escribe sobre este tema para Example.",
             "manuscript": "articles/article.md",
             "source_sha256": hashlib.sha256(source_article.read_bytes()).hexdigest(),
@@ -137,6 +139,26 @@ class ManifestTests(unittest.TestCase):
         manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
 
         with self.assertRaisesRegex(ValidationError, "display_emphasis must occur"):
+            Magazine(self.root).validate("issue-001")
+
+    def test_validate_rejects_non_source_faithful_short_title(self):
+        make_project(self.root)
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text())
+        manifest["articles"][0]["short_title"] = "Invented navigation"
+        manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+
+        with self.assertRaisesRegex(ValidationError, "short_title must occur"):
+            Magazine(self.root).validate("issue-001")
+
+    def test_validate_rejects_unknown_opener_variant(self):
+        make_project(self.root)
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text())
+        manifest["articles"][0]["opener_variant"] = "surprise_me"
+        manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+
+        with self.assertRaisesRegex(ValidationError, "invalid opener_variant"):
             Magazine(self.root).validate("issue-001")
 
     def test_validate_rejects_unknown_declared_edition_source(self):

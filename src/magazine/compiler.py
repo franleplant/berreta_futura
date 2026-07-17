@@ -224,6 +224,7 @@ class Magazine:
                 "layout": {
                     "design_direction": layout.design,
                     "cover_art_size_points": layout.cover_art_size_points,
+                    "article_terminal_balance": layout.article_terminal_balance,
                     "maximum_article_pages": 7,
                     "article_pages": layout.article_pages,
                     "maximum_editorial_pages": 2,

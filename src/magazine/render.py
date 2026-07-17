@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import math
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -21,6 +22,10 @@ BODY_SIZE = 9.55
 BODY_LEADING = BASE * 4
 CAPTION_SIZE = 7.0
 COVER_ART_SIZE_POINTS = (250.0, 250.0)
+INNER_MARGIN = 44.0
+OUTER_MARGIN = 15 * 72 / 25.4
+TERMINAL_BALANCE_FRAMES = 4
+TERMINAL_BALANCE_THRESHOLD = .35
 
 # Monument uses the sheet itself as the paper color. Violet is reserved for
 # hierarchy and typographic furniture so interiors remain economical to print.
@@ -103,6 +108,22 @@ class RenderLayout:
     editorial_pages: int | None
     design: str
     cover_art_size_points: tuple[float, float] | None
+    article_frame_usage: dict[str, tuple["FrameUsage", ...]]
+    article_terminal_balance: dict[str, float]
+
+
+@dataclass(frozen=True)
+class FrameUsage:
+    relative_page: int
+    frame_index: int
+    used: float
+    capacity: float
+
+
+@dataclass(frozen=True)
+class ArticleBalancePlan:
+    page_count: int
+    frame_height: float
 
 
 def _reportlab():
@@ -254,15 +275,26 @@ def _markdown_blocks(text: str) -> Iterable[tuple[str, str]]:
 
 
 class _Typesetter:
-    def __init__(self, pdf, edition: Edition, pagesize, metrics, *, design: str):
+    def __init__(
+        self,
+        pdf,
+        edition: Edition,
+        pagesize,
+        metrics,
+        *,
+        design: str,
+        balance_plans: dict[str, ArticleBalancePlan] | None = None,
+    ):
         self.pdf, self.edition, self.width, self.height, self.metrics = pdf, edition, *pagesize, metrics
         self.design = design
-        self.inner, self.outer, self.top, self.bottom = 44.0, 34.0, 52.0, 45.0
+        self.balance_plans = balance_plans or {}
+        self.inner, self.outer, self.top, self.bottom = INNER_MARGIN, OUTER_MARGIN, 52.0, 45.0
         self.left, self.right = self.inner, self.outer
         self.page = 0
         self.section = ""
         self.toc: dict[str, int] = {}
         self.article_pages: dict[str, int] = {}
+        self.article_frame_usage: dict[str, tuple[FrameUsage, ...]] = {}
         self.editorial_pages: int | None = None
         self.cover_art_size_points: tuple[float, float] | None = None
         self.reading_size = BODY_SIZE
@@ -275,7 +307,12 @@ class _Typesetter:
         self.frame_width = self.live_width
         self.frame_top = self.height - self.top
         self.frame_bottom = self.bottom
+        self.frame_role = "standard"
+        self.frame_recorded = False
         self.y = self.frame_top
+        self.active_article_id: str | None = None
+        self.active_article_start_page: int | None = None
+        self.active_article_frames: list[FrameUsage] = []
 
     @property
     def live_width(self) -> float:
@@ -306,9 +343,11 @@ class _Typesetter:
         *,
         top: float | None = None,
         bottom: float | None = None,
+        role: str = "standard",
     ) -> None:
         self.frame_count = columns
         self.frame_index = 0
+        self.frame_role = role
         default_top = self.height - (44 if columns == 2 else self.top)
         default_bottom = 40 if columns == 2 else self.bottom
         self.frame_top = default_top if top is None else top
@@ -324,6 +363,7 @@ class _Typesetter:
             self.frame_width = (self.live_width - GRID_GUTTER) / 2
             self.frame_left = self.left + index * (self.frame_width + GRID_GUTTER)
         self.y = self.frame_top
+        self.frame_recorded = False
 
     def _set_custom_frame(self, x: float, width: float, *, top: float, bottom: float | None = None) -> None:
         self.frame_count = 1
@@ -333,8 +373,58 @@ class _Typesetter:
         self.frame_top = top
         self.frame_bottom = self.bottom if bottom is None else bottom
         self.y = top
+        self.frame_recorded = False
+
+    def _begin_article(self, article_id: str) -> None:
+        self.active_article_id = article_id
+        self.active_article_start_page = self.page + 1
+        self.active_article_frames = []
+
+    def _record_active_frame(self) -> None:
+        if (
+            not self.active_article_id
+            or self.active_article_start_page is None
+            or self.frame_role != "continuation"
+            or self.frame_recorded
+        ):
+            return
+        self.active_article_frames.append(
+            FrameUsage(
+                self.page - self.active_article_start_page + 1,
+                self.frame_index,
+                max(0.0, self.frame_top - self.y),
+                self.frame_top - self.frame_bottom,
+            )
+        )
+        self.frame_recorded = True
+
+    def _finish_article(self) -> tuple[FrameUsage, ...]:
+        self._record_active_frame()
+        if (
+            self.active_article_id
+            and self.active_article_start_page is not None
+            and self.frame_role == "continuation"
+            and self.frame_count == 2
+            and self.frame_index == 0
+        ):
+            self.active_article_frames.append(
+                FrameUsage(
+                    self.page - self.active_article_start_page + 1,
+                    1,
+                    0.0,
+                    self.frame_top - self.frame_bottom,
+                )
+            )
+        frames = tuple(self.active_article_frames)
+        if self.active_article_id:
+            self.article_frame_usage[self.active_article_id] = frames
+        self.active_article_id = None
+        self.active_article_start_page = None
+        self.active_article_frames = []
+        return frames
 
     def _advance_frame(self) -> None:
+        self._record_active_frame()
         if self.frame_index + 1 < self.frame_count:
             self._select_frame(self.frame_index + 1)
             return
@@ -364,12 +454,18 @@ class _Typesetter:
             )
 
     def _running_header(self) -> None:
-        y = self.height - 31
+        y = self.height - 25
         publication = _plain(
             f"{self.edition.publication_name.upper()} / {_ui(self.edition, 'issue').upper()} "
             f"{self.edition.issue_number}"
         )
-        section = _plain(f"{self.section.upper()} / {_ui(self.edition, 'continued').upper()}")
+        section = _plain(self.section.upper())
+        continued = _plain(_ui(self.edition, "continued").upper())
+        right_width = self.live_width * .49
+        if self.metrics.stringWidth(section, SANS_MEDIUM, CAPTION_SIZE) > right_width:
+            raise ValidationError(
+                f"Curated running title does not fit the Monument header: {self.section}"
+            )
         self.pdf.setFillColorRGB(*INK)
         self.pdf.setFont(SANS_MEDIUM, CAPTION_SIZE)
         self.pdf.drawString(
@@ -380,7 +476,16 @@ class _Typesetter:
         self.pdf.drawRightString(
             self.width - self.right,
             y,
-            self.fit_text(section, SANS_MEDIUM, CAPTION_SIZE, self.live_width * .49),
+            section,
+        )
+        self._tracked_label(
+            continued,
+            self.width - self.right - right_width,
+            y - 11,
+            right_width,
+            color=VIOLET,
+            tracking=.25,
+            align="right",
         )
         outer_x = self.outer / 2 if self.page % 2 == 0 else self.width - self.outer / 2
         self.pdf.setFillColorRGB(*VIOLET)
@@ -395,11 +500,35 @@ class _Typesetter:
         columns: int | None = None,
     ):
         if self.page:
+            self._record_active_frame()
             self.pdf.showPage()
         self.page += 1
         self._set_page_margins()
         self.section = section or self.section
-        self._configure_frames(1 if opener else (columns or self.continuation_columns))
+        selected_columns = 1 if opener else (columns or self.continuation_columns)
+        if opener:
+            role = "opener"
+        elif self.active_article_id and selected_columns == 2:
+            role = "continuation"
+        elif self.active_article_id:
+            role = "fullwidth"
+        else:
+            role = "standard"
+        balance_bottom = None
+        if (
+            role == "continuation"
+            and self.active_article_id
+            and self.active_article_start_page is not None
+        ):
+            plan = self.balance_plans.get(self.active_article_id)
+            relative_page = self.page - self.active_article_start_page + 1
+            if plan and relative_page >= plan.page_count - 1:
+                balance_bottom = self.height - 44 - plan.frame_height
+        self._configure_frames(
+            selected_columns,
+            bottom=balance_bottom,
+            role=role,
+        )
         if self.page > 2 and not blank_header:
             self._folio()
             if not opener:
@@ -622,13 +751,17 @@ class _Typesetter:
             value = value.rstrip() + suffix
         total = measured(value)
         cursor = x + width - total if align == "right" else x
-        self.pdf.setFillColorRGB(*color)
-        label = self.pdf.beginText()
-        label.setTextOrigin(cursor, y)
-        label.setFont(SANS_MEDIUM, CAPTION_SIZE)
-        label.setCharSpace(tracking)
-        label.textLine(value)
-        self.pdf.drawText(label)
+        self.pdf.saveState()
+        try:
+            self.pdf.setFillColorRGB(*color)
+            label = self.pdf.beginText()
+            label.setTextOrigin(cursor, y)
+            label.setFont(SANS_MEDIUM, CAPTION_SIZE)
+            label.setCharSpace(tracking)
+            label.textLine(value)
+            self.pdf.drawText(label)
+        finally:
+            self.pdf.restoreState()
 
     def _rotated_label(self, text: str, x: float, y: float, height: float, *, color=VIOLET) -> None:
         self.pdf.saveState()
@@ -701,6 +834,22 @@ class _Typesetter:
             self.y -= BASE
         self.y -= 13
 
+    def _draw_aligned_string(
+        self,
+        text: str,
+        x: float,
+        y: float,
+        width: float,
+        *,
+        align: str,
+    ) -> None:
+        if align == "right":
+            self.pdf.drawRightString(x + width, y, text)
+        elif align == "center":
+            self.pdf.drawCentredString(x + width / 2, y, text)
+        else:
+            self.pdf.drawString(x, y, text)
+
     def _fitted_title_box(
         self,
         text: str,
@@ -714,6 +863,7 @@ class _Typesetter:
         maximum_lines: int,
         color=INK,
         leading_ratio: float = 1.0,
+        align: str = "left",
     ) -> float:
         size = maximum
         while size >= minimum:
@@ -728,7 +878,7 @@ class _Typesetter:
         self.pdf.setFont(SERIF_DISPLAY, size)
         baseline = top - size
         for line in lines:
-            self.pdf.drawString(x, baseline, line)
+            self._draw_aligned_string(line, x, baseline, width, align=align)
             baseline -= leading
         return baseline
 
@@ -758,10 +908,28 @@ class _Typesetter:
         top: float,
         width: float,
         height: float,
+        *,
+        variant: str = "edge_medallion",
     ) -> float:
         prefix, focus, suffix = self._monument_parts(_plain(title), _plain(emphasis))
         bottom = top - height
         cursor = top
+        if variant == "split_axis":
+            prefix_align = focus_align = suffix_align = "right"
+            axis_x = x - GRID_GUTTER / 2 if self.page % 2 == 0 else x + width + GRID_GUTTER / 2
+            self.pdf.setStrokeColorRGB(*VIOLET)
+            self.pdf.setLineWidth(.8)
+            self.pdf.line(axis_x, bottom + 8, axis_x, top - 5)
+        elif variant == "stepped_title":
+            prefix_align, focus_align, suffix_align = "left", "center", "right"
+            self.pdf.setStrokeColorRGB(*VIOLET)
+            self.pdf.setLineWidth(1.2)
+            rule_width = min(width, self.grid_column_width * 1.4)
+            rule_x = x + width - rule_width if self.page % 2 else x
+            self.pdf.line(rule_x, top - 2, rule_x + rule_width, top - 2)
+            cursor -= 9
+        else:
+            prefix_align = focus_align = suffix_align = "left"
         if prefix:
             prefix_lines = self.lines(prefix.upper(), SANS_MEDIUM, 13, width)
             if len(prefix_lines) > 2:
@@ -772,15 +940,27 @@ class _Typesetter:
             self.pdf.setFillColorRGB(*INK)
             self.pdf.setFont(SANS_MEDIUM, prefix_size)
             for line in prefix_lines:
-                self.pdf.drawString(x, cursor - prefix_size, line)
+                self._draw_aligned_string(
+                    line,
+                    x,
+                    cursor - prefix_size,
+                    width,
+                    align=prefix_align,
+                )
                 cursor -= prefix_leading
             cursor -= 5
-        focus_size = 54.0
+        focus_size = 50.0 if variant == "stepped_title" else 54.0
         while focus_size > 28 and self.metrics.stringWidth(focus.upper(), SANS_SEMIBOLD, focus_size) > width:
             focus_size -= .5
         self.pdf.setFillColorRGB(*VIOLET)
         self.pdf.setFont(SANS_SEMIBOLD, focus_size)
-        self.pdf.drawString(x, cursor - focus_size, focus.upper())
+        self._draw_aligned_string(
+            focus.upper(),
+            x,
+            cursor - focus_size,
+            width,
+            align=focus_align,
+        )
         cursor -= focus_size + 8
         if suffix:
             remaining = cursor - bottom
@@ -796,6 +976,7 @@ class _Typesetter:
                 minimum=14,
                 maximum_lines=4,
                 leading_ratio=1.04,
+                align=suffix_align,
             )
         return cursor
 
@@ -986,6 +1167,81 @@ class _Typesetter:
                     self.pdf.setLineWidth(.7)
                     self.pdf.line(x, top - row_height, self.width - self.right, top - row_height)
 
+    def _render_article_opener(self, article, article_index: int, article_total: int) -> None:
+        mode = _content_mode_label(self.edition, article.content_mode)
+        self._label(
+            f"{_ui(self.edition, 'feature')} {article_index:02d}",
+            right=mode,
+        )
+        outer_column = 0 if self.page % 2 == 0 else 5
+        title_start = 1 if self.page % 2 == 0 else 0
+        title_x, title_width = self.grid_box(title_start, 5)
+        medallion_x, medallion_width = self.grid_box(outer_column, 1)
+        center_x = medallion_x + medallion_width / 2
+        center_y = self.y - 28
+        variant = article.opener_variant
+
+        self.pdf.setStrokeColorRGB(*VIOLET)
+        self.pdf.setFillColorRGB(*VIOLET)
+        if variant == "split_axis":
+            self.pdf.setLineWidth(1.4)
+            self.pdf.circle(center_x, center_y, 21, fill=0, stroke=1)
+            number_color = VIOLET
+            number_size = 10
+        elif variant == "stepped_title":
+            self.pdf.setLineWidth(.8)
+            self.pdf.circle(center_x, center_y, 22, fill=0, stroke=1)
+            self.pdf.circle(center_x, center_y, 15, fill=1, stroke=0)
+            number_color = WHITE
+            number_size = 8.5
+        else:
+            self.pdf.circle(center_x, center_y, 21, fill=1, stroke=0)
+            number_color = WHITE
+            number_size = 11
+        self.pdf.setFillColorRGB(*number_color)
+        self.pdf.setFont(SANS_SEMIBOLD, number_size)
+        self.pdf.drawCentredString(
+            center_x,
+            center_y - number_size * .34,
+            f"{article_index:02d}",
+        )
+
+        self._monument_title(
+            article.title,
+            article.display_emphasis,
+            title_x,
+            self.y + 5,
+            title_width,
+            210,
+            variant=variant,
+        )
+        if variant == "split_axis":
+            credit_start = 2 if self.page % 2 == 0 else 0
+        else:
+            credit_start = 1
+        credit_x, credit_width = self.grid_box(credit_start, 4)
+        self._set_custom_frame(credit_x, credit_width, top=302)
+        self._credit(
+            article.author,
+            f"{article_index} / {article_total}",
+            author_note=article.author_note,
+        )
+        self._set_custom_frame(credit_x, credit_width, top=238)
+
+    def _article_endmark(self, article_index: int) -> None:
+        baseline = max(self.frame_bottom + 5, self.y - 1)
+        self.pdf.setStrokeColorRGB(*VIOLET)
+        self.pdf.setLineWidth(1.1)
+        self.pdf.line(self.frame_left, baseline + 2, self.frame_left + 17, baseline + 2)
+        self._tracked_label(
+            f"{_ui(self.edition, 'end')} / {article_index:02d}",
+            self.frame_left + 24,
+            baseline,
+            max(1, self.frame_width - 24),
+            color=VIOLET,
+            tracking=.25,
+        )
+
     def body(self):
         if self.edition.articles:
             if self.edition.editorial:
@@ -1032,7 +1288,7 @@ class _Typesetter:
                 else:
                     blocks.pop(first_body)
                 hero_x, hero_width = self.grid_box(1, 5)
-                hero_top = self.y - 10
+                hero_top = self.y - 4
                 hero_bottom = self._fitted_title_box(
                     sentence,
                     hero_x,
@@ -1054,7 +1310,7 @@ class _Typesetter:
                 self._set_custom_frame(
                     self.left,
                     self.live_width,
-                    top=hero_bottom - 25,
+                    top=hero_bottom - 14,
                 )
                 self._render_blocks(blocks)
                 self.reading_leading = BODY_LEADING
@@ -1071,56 +1327,15 @@ class _Typesetter:
                 self.reading_size = BODY_SIZE
                 self.reading_leading = BODY_LEADING
                 self.paragraph_after = 5.4
-                self.new_page(article.title, opener=True)
+                self._begin_article(article.id)
+                self.new_page(article.short_title, opener=True)
                 start_page = self.page
                 self.toc[article.id] = self.page
-                mode = _content_mode_label(self.edition, article.content_mode)
-                self._label(
-                    f"{_ui(self.edition, 'feature')} {article_index:02d}",
-                    right=mode,
-                )
-                outer_column = 0 if self.page % 2 == 0 else 5
-                title_start = 1 if self.page % 2 == 0 else 0
-                title_x, title_width = self.grid_box(title_start, 5)
-                medallion_x, medallion_width = self.grid_box(outer_column, 1)
-                medallion_y = self.y - 28
-                self.pdf.setFillColorRGB(*VIOLET)
-                self.pdf.circle(
-                    medallion_x + medallion_width / 2,
-                    medallion_y,
-                    21,
-                    fill=1,
-                    stroke=0,
-                )
-                self.pdf.setFillColorRGB(*WHITE)
-                self.pdf.setFont(SANS_SEMIBOLD, 11)
-                self.pdf.drawCentredString(
-                    medallion_x + medallion_width / 2,
-                    medallion_y - 4,
-                    f"{article_index:02d}",
-                )
-                self._monument_title(
-                    article.title,
-                    article.display_emphasis,
-                    title_x,
-                    self.y + 5,
-                    title_width,
-                    210,
-                )
-                credit_x, credit_width = self.grid_box(1, 4)
-                self._set_custom_frame(credit_x, credit_width, top=self.y - 205)
-                self._credit(
-                    article.author,
-                    f"{article_index} / {article_total}",
-                    author_note=article.author_note,
-                )
-                self._set_custom_frame(
-                    credit_x,
-                    credit_width,
-                    top=min(self.y, 238),
-                )
+                self._render_article_opener(article, article_index, article_total)
                 self.markdown(article.manuscript, lead=True)
+                self._article_endmark(article_index)
                 page_count = self.page - start_page + 1
+                self._finish_article()
                 self.article_pages[article.id] = page_count
                 if page_count > MAX_ARTICLE_PAGES:
                     raise ValidationError(
@@ -1275,6 +1490,7 @@ def _render_pass(
     toc: dict[str, int] | None = None,
     *,
     design: str,
+    balance_plans: dict[str, ArticleBalancePlan] | None = None,
 ) -> RenderLayout:
     A5, metrics, canvas = _reportlab()
     pdf = canvas.Canvas(
@@ -1289,7 +1505,14 @@ def _render_pass(
     pdf.setTitle(_plain(edition.title))
     pdf.setAuthor(_plain(edition.publication_name))
     pdf.setCreator("magazine-compiler")
-    typesetter = _Typesetter(pdf, edition, A5, metrics, design=design)
+    typesetter = _Typesetter(
+        pdf,
+        edition,
+        A5,
+        metrics,
+        design=design,
+        balance_plans=balance_plans,
+    )
     typesetter.cover()
     typesetter.contents(toc or {})
     typesetter.body()
@@ -1301,7 +1524,93 @@ def _render_pass(
         typesetter.editorial_pages,
         DESIGN_LABEL,
         typesetter.cover_art_size_points,
+        dict(typesetter.article_frame_usage),
+        {
+            article_id: round(plan.frame_height, 3)
+            for article_id, plan in (balance_plans or {}).items()
+        },
     )
+
+
+def _terminal_balance_plans(layout: RenderLayout) -> dict[str, ArticleBalancePlan]:
+    plans: dict[str, ArticleBalancePlan] = {}
+    for article_id, page_count in layout.article_pages.items():
+        if page_count < 3:
+            continue
+        tail_pages = {page_count - 1, page_count}
+        frames = [
+            frame
+            for frame in layout.article_frame_usage.get(article_id, ())
+            if frame.relative_page in tail_pages
+        ]
+        if len(frames) != TERMINAL_BALANCE_FRAMES:
+            continue
+        frames.sort(key=lambda frame: (frame.relative_page, frame.frame_index))
+        if [(frame.relative_page, frame.frame_index) for frame in frames] != [
+            (page_count - 1, 0),
+            (page_count - 1, 1),
+            (page_count, 0),
+            (page_count, 1),
+        ]:
+            continue
+        full_height = max(frame.capacity for frame in frames)
+        final_page_use = frames[2].used + frames[3].used
+        if (
+            frames[3].used > .01
+            or final_page_use / (2 * full_height) >= TERMINAL_BALANCE_THRESHOLD
+        ):
+            continue
+        average = sum(frame.used for frame in frames) / TERMINAL_BALANCE_FRAMES
+        frame_height = math.ceil(average / BODY_LEADING) * BODY_LEADING
+        frame_height = max(frame_height, 8 * BODY_LEADING)
+        if frame_height >= full_height - BODY_LEADING:
+            continue
+        plans[article_id] = ArticleBalancePlan(page_count, frame_height)
+    return plans
+
+
+def _balanced_draft(
+    edition: Edition,
+    probe: RenderLayout,
+    *,
+    design: str,
+) -> tuple[dict[str, ArticleBalancePlan], RenderLayout]:
+    plans = _terminal_balance_plans(probe)
+    maximum_capacity = {
+        article_id: max((frame.capacity for frame in frames), default=0.0)
+        for article_id, frames in probe.article_frame_usage.items()
+    }
+    for _ in range(64):
+        draft = _render_pass(
+            io.BytesIO(),
+            edition,
+            probe.toc,
+            design=design,
+            balance_plans=plans,
+        )
+        mismatched = [
+            article_id
+            for article_id, page_count in probe.article_pages.items()
+            if draft.article_pages.get(article_id) != page_count
+        ]
+        if not mismatched:
+            return plans, draft
+        changed = False
+        for article_id in mismatched:
+            plan = plans.get(article_id)
+            if not plan:
+                raise ValidationError(
+                    f"Article {article_id} pagination changed during terminal balancing"
+                )
+            enlarged = plan.frame_height + BODY_LEADING
+            if enlarged >= maximum_capacity.get(article_id, 0.0):
+                del plans[article_id]
+            else:
+                plans[article_id] = ArticleBalancePlan(plan.page_count, enlarged)
+            changed = True
+        if not changed:
+            break
+    raise ValidationError("Terminal-page balancing did not converge deterministically")
 
 
 def render_a5(
@@ -1337,8 +1646,15 @@ def render_a5(
             f"{MAX_EDITORIAL_PAGES}"
         )
     output.parent.mkdir(parents=True, exist_ok=True)
-    draft = _render_pass(io.BytesIO(), edition, design=design)
-    final = _render_pass(str(output), edition, draft.toc, design=design)
+    probe = _render_pass(io.BytesIO(), edition, design=design)
+    balance_plans, draft = _balanced_draft(edition, probe, design=design)
+    final = _render_pass(
+        str(output),
+        edition,
+        draft.toc,
+        design=design,
+        balance_plans=balance_plans,
+    )
     if (
         draft.article_pages != final.article_pages
         or draft.editorial_pages != final.editorial_pages

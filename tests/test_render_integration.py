@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from pypdf import PdfReader
+from pypdf.generic import ContentStream
 import yaml
 
 from magazine import Magazine, ValidationError
@@ -24,6 +25,27 @@ from test_manifest import add_spanish_translation, make_project
 
 @unittest.skipUnless(importlib.util.find_spec("reportlab") is not None, "ReportLab not installed in this runtime")
 class RenderIntegrationTests(unittest.TestCase):
+    def assert_tracked_labels_do_not_leak_character_spacing(self, path: Path) -> None:
+        reader = PdfReader(str(path))
+        saw_tracking = False
+        for page in reader.pages:
+            stream = ContentStream(page.get_contents(), reader)
+            stack: list[float] = []
+            character_spacing = 0.0
+            for operands, operator in stream.operations:
+                if operator == b"q":
+                    stack.append(character_spacing)
+                elif operator == b"Q":
+                    character_spacing = stack.pop()
+                elif operator == b"Tc":
+                    character_spacing = float(operands[0])
+                    if character_spacing:
+                        saw_tracking = True
+                        self.assertTrue(stack, "non-zero character spacing must be scoped by q/Q")
+            self.assertEqual(character_spacing, 0.0)
+            self.assertEqual(stack, [])
+        self.assertTrue(saw_tracking)
+
     def test_build_produces_reader_booklet_and_checksums(self):
         with TemporaryDirectory() as temporary:
             tmp_path = Path(temporary)
@@ -54,6 +76,7 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertIn("FAITHFUL EDIT", reader_text)
             self.assertIn("Author writes about this subject for Example.", reader_text)
             self.assertIn("TEST REVIEW", reader_text)
+            self.assert_tracked_labels_do_not_leak_character_spacing(result.reader_pdf)
 
     def test_build_generates_configured_spanish_reader_and_booklet_alongside_english(self):
         with TemporaryDirectory() as temporary:

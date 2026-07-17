@@ -30,7 +30,9 @@ editorial: manuscript/editorial.md
 articles:
 - id: narayanan-what-will-be-left
   title: What will be left for us to work on?
+  short_title: What will be left
   display_emphasis: left
+  opener_variant: edge_medallion
   author: Arvind Narayanan
   author_note: Arvind Narayanan is a professor of computer science at Princeton University.
   content_mode: faithful_synthesis
@@ -41,7 +43,9 @@ articles:
   fidelity: editions/001-the-work-left-to-us/fidelity/narayanan-what-will-be-left.yaml
 - id: joshi-dsls-reliable-use-llms
   title: DSLs Enable Reliable Use of LLMs
+  short_title: Reliable Use of LLMs
   display_emphasis: Reliable
+  opener_variant: split_axis
   author: Unmesh Joshi
   author_note: Unmesh Joshi is a Distinguished Engineer at Thoughtworks and a contributor to martinfowler.com.
   content_mode: faithful_synthesis
@@ -51,7 +55,9 @@ articles:
   fidelity: editions/001-the-work-left-to-us/fidelity/joshi-dsls-reliable-use-llms.yaml
 - id: nadella-reverse-information-paradox
   title: The Reverse Information Paradox
+  short_title: Reverse Information Paradox
   display_emphasis: Reverse
+  opener_variant: stepped_title
   author: Satya Nadella
   author_note: Satya Nadella is chairman and CEO of Microsoft.
   content_mode: faithful_edit
@@ -61,7 +67,9 @@ articles:
   fidelity: editions/001-the-work-left-to-us/fidelity/nadella-reverse-information-paradox.yaml
 - id: hassabis-frontier-ai
   title: A Framework for Frontier AI and the Dawning of a New Age
+  short_title: Framework for Frontier AI
   display_emphasis: Frontier
+  opener_variant: edge_medallion
   author: Demis Hassabis
   author_note: Demis Hassabis is co-founder and CEO of Google DeepMind.
   content_mode: faithful_edit

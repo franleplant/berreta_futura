@@ -19,7 +19,7 @@ The issue artwork appears exactly once, on the front cover. It is not repeated, 
 | Navigation | Inter Regular/Medium/Semibold/Bold | Running matter, credits, mode labels, folios |
 | Code | Courier | Source code only, always in a full-width frame |
 
-Body copy is 9.55/12.6 pt by default. The opening editorial may tighten to 9.55/12 pt to respect its hard two-page cap. Captions and navigation never fall below 7 pt. Feature manifests may provide a localized `display_emphasis`; the compiler validates that it occurs in the localized title. This keeps the monumental word an editorial decision rather than an accidental longest-word heuristic.
+Body copy is 9.55/12.6 pt by default. The opening editorial uses 9.55/12 pt within its hard two-page cap. Captions and navigation never fall below 7 pt. Feature manifests provide a localized `display_emphasis`, a source-faithful `short_title`, and one of three controlled `opener_variant` values. The compiler validates all three rather than choosing display or navigation language heuristically.
 
 The bundled font files and SIL Open Font License texts live under `src/magazine/assets/fonts`. Deterministic builds must not use system font lookups.
 
@@ -39,12 +39,12 @@ The cover artwork does not determine these colors. Violet is a publication-level
 ## A5 page architecture
 
 - Trim: A5 portrait, imposed two-up on A4 landscape for home printing.
-- Mirrored margins: 44 pt inner, 34 pt outer.
+- Mirrored margins: 44 pt inner and 15 mm (42.52 pt) outer.
 - Grid: six columns with 9.45 pt gutters.
-- Live vertical range: 45 pt bottom to 543 pt top.
+- Live vertical range: 45–543 pt for single-column pages and 40–551 pt for continuation frames.
 - Continuations: two balanced text frames on the six-column grid.
 - Opener copy: a narrower centered frame beneath the display composition.
-- Running matter: 7 pt at the head; folios at the outer foot with a 0.8 pt violet register rule.
+- Running matter: curated short titles at 7 pt with a separate localized continuation marker; folios at the outer foot with a 0.8 pt violet register rule.
 - Headlines keep following copy with them when pagination allows.
 - Fenced code moves to a full-width frame rather than becoming unreadably narrow.
 
@@ -56,7 +56,7 @@ The cover uses a single 250 × 250 pt framed artwork placement, a display title,
 
 ### Contents
 
-Contents use staggered rows, oversized violet folios, restrained rules, and a circular issue mark. Six entries fit on one page; additional entries paginate into further Monument contents pages. Folios come from the renderer's deterministic two-pass layout.
+Contents use staggered rows, oversized violet folios, restrained rules, and a circular issue mark. Six entries fit on one page; additional entries paginate into further Monument contents pages. Folios come from the renderer's deterministic probe, planned draft, and final layout passes.
 
 ### Opening editorial
 
@@ -64,11 +64,11 @@ The opening sentence is split from the first source block and rendered once at m
 
 ### Feature openers
 
-Each opener combines the exact localized title around one curated Monument word. A numbered medallion, author, author note, and exact content-mode label remain explicit. `FAITHFUL EDIT`, `FAITHFUL SYNTHESIS`, `SELECTED EXTRACTS`, and `ORIGINAL SYNTHESIS` are provenance facts, never interchangeable decorations.
+Each opener combines the exact localized title around one curated Monument word. Three controlled arrangements—`edge_medallion`, `split_axis`, and `stepped_title`—vary alignment, rule structure, and medallion treatment while sharing one collision-safe title, credit, and body architecture. A numbered medallion, author, author note, and exact content-mode label remain explicit. `FAITHFUL EDIT`, `FAITHFUL SYNTHESIS`, `SELECTED EXTRACTS`, and `ORIGINAL SYNTHESIS` are provenance facts, never interchangeable decorations.
 
 ### Continuation pages
 
-Copy flows left frame, right frame, then the next page. Violet section bridges, circular outer-margin signals, running matter, and generous white space carry the O identity without interior imagery. Quotations, bullets, headings, and code retain distinct deterministic treatments.
+Copy flows left frame, right frame, then the next page. When greedy flow would strand a lightly occupied terminal page, a probe redistributes the unchanged final four continuation frames to a shared, leading-quantized depth while preserving text order, page count, and page caps. Exact short running titles and separate continuation markers replace mechanical ellipses. Violet section bridges, circular outer-margin signals, running matter, and generous white space carry the O identity without interior imagery. Quotations, bullets, headings, and code retain distinct deterministic treatments.
 
 ### Backmatter and back cover
 
@@ -79,6 +79,8 @@ Backmatter uses the same opener and continuation system. The back cover renders 
 - Do not draw the cover artwork anywhere after page 1.
 - Do not infer palette colors from an edition's artwork.
 - Do not choose a production Monument word with an unreviewed heuristic when localized metadata is available.
+- Do not truncate a running title; require a localized short title that fits its measured header zone.
+- Scope tracked-letter labels so character spacing cannot leak into reading text.
 - Do not shrink body copy to solve page budgets; edit or synthesize faithfully.
 - Do not let a running head cross an opener composition.
 - Preserve the two-page editorial and seven-page source-article limits.
