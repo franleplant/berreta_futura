@@ -1838,13 +1838,16 @@ class _Typesetter:
     def back_cover(self):
         self.continuation_columns = 1
         configured = self.edition.raw.get("format", {}).get("target_pages")
-        minimum_total = self.page + 1
+        # Reserve the inside back cover as a completely blank page, then keep
+        # the designed back cover as the final page of the signature.
+        minimum_total = self.page + 2
         target = int(configured) if configured else ((minimum_total + 3) // 4) * 4
         target = max(target, minimum_total)
         target = ((target + 3) // 4) * 4
-        closing_pages = target - 1 - self.page
+        closing_pages = target - 2 - self.page
         for index in range(closing_pages):
             self._closing_plate(index, closing_pages)
+        self.new_page(blank_header=True)
         self.new_page(blank_header=True)
         self.pdf.setFillColorRGB(*WHITE)
         self.pdf.rect(0, 0, self.width, self.height, fill=1, stroke=0)
@@ -1925,6 +1928,8 @@ def _render_pass(
         enforce_page_caps=enforce_page_caps,
     )
     typesetter.cover()
+    # Page 2 is the inside front cover and must remain completely blank.
+    typesetter.new_page(blank_header=True)
     typesetter.contents(toc or {})
     typesetter.body()
     typesetter.back_cover()

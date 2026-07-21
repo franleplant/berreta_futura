@@ -111,9 +111,17 @@ def inspect_render(
             f"Reader page count {page_count} is not a multiple of four.",
         )
 
+    intentional_blank_pages = {2, page_count - 1}
     for row in page_rows:
         page = int(row["page"])
-        if row["blank"]:
+        if page in intentional_blank_pages and not row["blank"]:
+            issue(
+                "inside-cover-not-blank",
+                "error",
+                "Inside front and inside back covers must be completely blank.",
+                page=page,
+            )
+        elif row["blank"] and page not in intentional_blank_pages:
             issue("blank-page", "error", "Rendered page is completely blank.", page=page)
         elif row["sparse"]:
             issue(
@@ -122,21 +130,34 @@ def inspect_render(
                 f"Ink coverage is only {row['ink_ratio']:.4f}; confirm that the whitespace is intentional.",
                 page=page,
             )
-
-    for row in booklet_rows:
-        if row["blank"]:
-            issue(
-                "blank-booklet-side",
-                "error",
-                "Rendered home-booklet side is completely blank.",
-                page=int(row["page"]),
-            )
         if row["standalone_punctuation_lines"]:
             issue(
                 "orphan-punctuation",
                 "error",
                 "A line contains only punctuation, which usually indicates a broken display title.",
                 page=page,
+            )
+
+    intentional_blank_sides = {
+        int(row["side"])
+        for row in spread_checks
+        if {row["left_reader_page"], row["right_reader_page"]} == intentional_blank_pages
+    }
+    for row in booklet_rows:
+        side = int(row["page"])
+        if side in intentional_blank_sides and not row["blank"]:
+            issue(
+                "inside-cover-booklet-side-not-blank",
+                "error",
+                "The imposed inside-cover side must be completely blank.",
+                page=side,
+            )
+        elif row["blank"] and side not in intentional_blank_sides:
+            issue(
+                "blank-booklet-side",
+                "error",
+                "Rendered home-booklet side is completely blank.",
+                page=side,
             )
 
     cover_text = reader.pages[0].extract_text() if reader.pages else ""
@@ -149,15 +170,15 @@ def inspect_render(
         )
 
     expected_contents_pages = max(1, math.ceil(len(toc) / 8))
-    first_body_page = min(toc.values(), default=2 + expected_contents_pages)
-    actual_contents_pages = first_body_page - 2
+    first_body_page = min(toc.values(), default=3 + expected_contents_pages)
+    actual_contents_pages = first_body_page - 3
     if actual_contents_pages != expected_contents_pages:
         issue(
             "contents-pagination",
             "error",
             f"Contents uses {actual_contents_pages} pages; {expected_contents_pages} are expected for {len(toc)} entries.",
         )
-    if any(page < 3 or page > page_count for page in toc.values()):
+    if any(page < 4 or page > page_count for page in toc.values()):
         issue("contents-folio-range", "error", "A contents folio points outside the body page range.")
     if any(count > 7 for count in article_pages.values()):
         issue("article-page-cap", "error", "A source article exceeds the seven-page reader cap.")
@@ -178,6 +199,7 @@ def inspect_render(
             "page_count_multiple_of_four": page_count % 4 == 0,
             "contents_pages": actual_contents_pages,
             "expected_contents_pages": expected_contents_pages,
+            "intentional_blank_pages": sorted(intentional_blank_pages),
             "article_page_cap": 7,
             "editorial_page_cap": 2,
         },

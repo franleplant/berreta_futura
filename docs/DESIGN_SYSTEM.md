@@ -93,6 +93,7 @@ Backmatter uses the same opener and continuation system. The back cover renders 
 ## Guardrails
 
 - Do not draw the cover artwork anywhere after page 1.
+- Keep reader page 2 and the penultimate reader page completely blank as the inside covers.
 - Do not infer palette colors from an edition's artwork.
 - Do not choose a production Monument word with an unreviewed heuristic when localized metadata is available.
 - Do not truncate a running title; require a localized short title that fits its measured header zone.

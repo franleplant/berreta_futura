@@ -8,9 +8,9 @@ from pypdf import PdfWriter
 from magazine.render_critic import _COVER_PLACEHOLDER, _inspect_page, inspect_render
 
 
-def _four_page_pdf(path: Path) -> None:
+def _eight_page_pdf(path: Path) -> None:
     writer = PdfWriter()
-    for _ in range(4):
+    for _ in range(8):
         writer.add_blank_page(width=419.5276, height=595.2756)
     with path.open("wb") as handle:
         writer.write(handle)
@@ -19,10 +19,16 @@ def _four_page_pdf(path: Path) -> None:
 def _inked_rasters(_reader: Path, output: Path) -> list[Path]:
     output.mkdir(parents=True, exist_ok=True)
     pages = []
-    for page_number in range(1, 5):
+    for page_number in range(1, 9):
         path = output / f"page-{page_number}.png"
         image = Image.new("RGB", (560, 794), "white")
-        ImageDraw.Draw(image).rectangle((70, 70, 490, 720), fill="#36333a")
+        should_be_blank = (
+            output.name == "reader-pages" and page_number in {2, 7}
+        ) or (
+            output.name == "booklet-sides" and page_number == 2
+        )
+        if not should_be_blank:
+            ImageDraw.Draw(image).rectangle((70, 70, 490, 720), fill="#36333a")
         image.save(path)
         pages.append(path)
     return pages
@@ -30,9 +36,9 @@ def _inked_rasters(_reader: Path, output: Path) -> list[Path]:
 
 def test_render_critic_emits_contact_sheet_and_passes_structural_checks(tmp_path: Path):
     reader = tmp_path / "reader.pdf"
-    _four_page_pdf(reader)
+    _eight_page_pdf(reader)
     booklet = tmp_path / "booklet.pdf"
-    _four_page_pdf(booklet)
+    _eight_page_pdf(booklet)
 
     with patch("magazine.render_critic._render_pages", side_effect=_inked_rasters):
         report, artifacts = inspect_render(
@@ -40,7 +46,7 @@ def test_render_critic_emits_contact_sheet_and_passes_structural_checks(tmp_path
             booklet,
             tmp_path,
             language="en",
-            toc={"article": 3},
+            toc={"article": 4},
             article_pages={"article": 1},
             editorial_pages=None,
             edition_id="issue-001",
@@ -54,20 +60,20 @@ def test_render_critic_emits_contact_sheet_and_passes_structural_checks(tmp_path
     assert "render-review/booklet-sides/page-1.png" in relative_artifacts
     assert "render-review/reader-contact-sheet-01.png" in relative_artifacts
     assert "render-review/booklet-contact-sheet-01.png" in relative_artifacts
-    assert len(artifacts) == 10
+    assert len(artifacts) == 18
     assert all(path.is_file() for path in artifacts)
 
 
 def test_render_critic_blocks_blank_pages_and_layout_contract_violations(tmp_path: Path):
     reader = tmp_path / "reader.pdf"
-    _four_page_pdf(reader)
+    _eight_page_pdf(reader)
     booklet = tmp_path / "booklet.pdf"
-    _four_page_pdf(booklet)
+    _eight_page_pdf(booklet)
 
     def blank_rasters(_reader: Path, output: Path) -> list[Path]:
         output.mkdir(parents=True, exist_ok=True)
         paths = []
-        for page_number in range(1, 5):
+        for page_number in range(1, 9):
             path = output / f"page-{page_number}.png"
             Image.new("RGB", (560, 794), "white").save(path)
             paths.append(path)
@@ -79,7 +85,7 @@ def test_render_critic_blocks_blank_pages_and_layout_contract_violations(tmp_pat
             booklet,
             tmp_path,
             language="en",
-            toc={"article": 4},
+            toc={"article": 5},
             article_pages={"article": 8},
             editorial_pages=3,
             edition_id="issue-001",

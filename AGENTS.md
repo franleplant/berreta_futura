@@ -16,6 +16,7 @@ This repository builds private-first, source-faithful magazine editions.
 - Raw bundles may contain page responses, rendered text, images, or sanitized browser exports. Never commit cookies, credentials, authorization headers, browser profiles, or session data.
 - Never claim an edition is press-ready without a named printer profile and a passing preflight.
 - Cover art contains no baked-in masthead or cover lines. Layout code owns all typography.
+- Keep the inside front cover (reader page 2) and inside back cover (the penultimate reader page) completely blank; the imposed inside-cover sheet side must therefore also be blank.
 - Treat intake batches as transport only. Every unreleased source belongs to the single open edition until that edition is explicitly released.
 - Never create a new edition merely because the user sends another group of links. Releasing the open edition is the transition that creates the next collection.
 - Release only with `uv run --locked mag release <edition-id>`. Every source record must be queued and represented in a rendered article's `source_ids`; a top-level manifest declaration alone cannot silently postpone material.
