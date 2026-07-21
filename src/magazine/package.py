@@ -7,7 +7,9 @@ from pathlib import Path
 from typing import Any
 
 from .booklet import impose_a5_on_a4
+from .errors import ValidationError
 from .preflight import inspect_package
+from .render_critic import inspect_render
 
 
 def sha256(path: Path) -> str:
@@ -29,11 +31,33 @@ def package_release(
     source_rights: list[dict[str, Any]] | None = None,
     figure_placements: list[Any] | tuple[Any, ...] | None = None,
     language: str = "en",
+    toc: dict[str, int] | None = None,
+    article_pages: dict[str, int] | None = None,
+    editorial_pages: int | None = None,
 ) -> list[Path]:
     destination.mkdir(parents=True, exist_ok=True)
     reader = destination / "reader.pdf"
     shutil.copyfile(reader_pdf, reader)
     booklet = impose_a5_on_a4(reader, destination / "home" / "booklet-a4.pdf")
+    render_report, contact_sheets = inspect_render(
+        reader,
+        booklet,
+        destination,
+        language=language,
+        toc=toc or {},
+        article_pages=article_pages or {},
+        editorial_pages=editorial_pages,
+    )
+    render_report_path = destination / "render-critic.json"
+    render_report_path.write_text(
+        json.dumps(render_report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    if render_report["result"] == "fail":
+        codes = ", ".join(
+            row["code"] for row in render_report["issues"] if row["severity"] == "error"
+        )
+        raise ValidationError(f"Render critic rejected {language} reader: {codes}")
     instructions = destination / "home" / "printing-instructions.md"
     instructions.write_text(_printing_instructions(language), encoding="utf-8")
     fidelity = destination / "fidelity.md"
@@ -65,7 +89,17 @@ def package_release(
     # have translated sibling directories beneath it, which must not leak into
     # its checksum inventory.
     files = sorted(
-        [reader, booklet, instructions, fidelity, studio, preflight, edition_manifest],
+        [
+            reader,
+            booklet,
+            instructions,
+            fidelity,
+            studio,
+            preflight,
+            edition_manifest,
+            render_report_path,
+            *contact_sheets,
+        ],
         key=lambda path: path.relative_to(destination).as_posix(),
     )
     checksums = destination / "SHA256SUMS"

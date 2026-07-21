@@ -59,6 +59,16 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertTrue(result.reader_pdf.is_file())
             self.assertTrue(result.booklet_pdf.is_file())
             self.assertTrue((result.output_dir / "SHA256SUMS").is_file())
+            critic = json.loads((result.output_dir / "render-critic.json").read_text())
+            self.assertEqual(critic["result"], "pass")
+            self.assertEqual(critic["visual_review"]["status"], "required_before_delivery")
+            self.assertTrue(
+                (result.output_dir / "render-review" / "reader-contact-sheet-01.png").is_file()
+            )
+            self.assertTrue(
+                (result.output_dir / "render-review" / "booklet-contact-sheet-01.png").is_file()
+            )
+            self.assertIn("render-critic.json", (result.output_dir / "SHA256SUMS").read_text())
             self.assertGreaterEqual(len(PdfReader(str(result.reader_pdf)).pages), 5)
             preflight = json.loads((result.output_dir / "preflight.json").read_text())
             self.assertTrue(preflight["reader"]["page_count_multiple_of_four"])

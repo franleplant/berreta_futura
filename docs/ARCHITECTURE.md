@@ -66,6 +66,7 @@ Generated material:
 - `sources.md`;
 - fidelity reports and source/manuscript diffs;
 - review PDFs and page images;
+- render-critic reports and numbered visual-review contact sheets;
 - build locks, preflight reports, checksums, and packages.
 
 ## Dependency strategy

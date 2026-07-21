@@ -3,11 +3,12 @@ language: es
 source_language: en
 locale: es-AR
 fallback_locale: es-ES
-base_copy_sha256: 13749fa6049cf3ef136b8f1f80871d324cc024b12b42ec690d51e259539eed54
+base_copy_sha256: f959b4ad6322835fc133000a5dc90a76106ed2730947958ff9bf83df6d05bb19
 policy:
   register: educated_castellano
   regional_preference: restrained_argentinian
   fallback: spain
+  figure_art_labels: preserve_source_language_with_localized_caption_alt_text_and_credit
   prohibited_fallbacks:
   - generic_latin_american
   - mexican
@@ -73,24 +74,30 @@ articles:
   - id: knowledge-pipeline
     caption: Cerebras Knowledge conduce el material de las fuentes a través de destilación, embeddings, recuperación,
       fusión y reordenamiento, hasta sintetizar una respuesta con citas.
+    credit: 'Diagrama: Isaac Tai, Daniel Kim y Mike Gao; fuente: Cerebras.'
     alt_text: Un diagrama vertical de arquitectura recorre el material desde la destilación y los embeddings hasta
       varias rutas de recuperación, la fusión, el reordenamiento y una respuesta citada.
     anchor: __opener__
     source_caption_sha256: 8ebab94391f43347ade52ef959648493ad53a436df17675f4b563f5006d61a47
+    source_credit_sha256: b05207dca95791664779cc9f2ac7036e8925b515aa89c26872789fe6205f4c88
   - id: planner-tool-fanout
     caption: Una etapa de planificación abre cada pregunta en abanico hacia herramientas de búsqueda especializadas
       antes de normalizar la evidencia y sintetizar la respuesta.
+    credit: 'Diagrama: Isaac Tai, Daniel Kim y Mike Gao; fuente: Cerebras.'
     alt_text: Un diagrama horizontal muestra una consulta que entra en un planificador, se ramifica hacia varias
       herramientas y converge en evidencia normalizada y síntesis.
     anchor: Planificación y abanico de herramientas
     source_caption_sha256: 06ad1eda3471000897910d49dd2a7ad9e62f6562469e2e5f7be09908cf9a8182
+    source_credit_sha256: bed12758a5b1ba6d0a7506b8cdfb49631826616087d84a4f60d1f97298f76878
   - id: mcp-web-ui-comparison
     caption: MCP expone primitivas de recuperación en bruto a clientes externos; la interfaz web se ocupa del ciclo
       completo de planificación, ejecución y síntesis.
+    credit: 'Diagrama: Isaac Tai, Daniel Kim y Mike Gao; fuente: Cerebras.'
     alt_text: Una comparación arquitectónica contrapone las herramientas directas de recuperación MCP con el canal
       integrado de planificación, ejecución y síntesis de la interfaz web.
     anchor: Interfaz web
     source_caption_sha256: 6b99e2ef9a885ed24598b4aa6d8f263b055a43315a95afcff921aa6c9c872218
+    source_credit_sha256: ed5bd54c35c437b7e72a61bdc01afa6b44eacd5efac00af19e26d6fcd85855d9
 sections:
 - kind: colophon
   title: Colofón

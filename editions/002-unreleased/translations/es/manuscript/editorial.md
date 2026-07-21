@@ -1,5 +1,5 @@
 ---
-label: EDITORIAL — TEXTO ORIGINAL DE LA REDACCIÓN
+label: EDITORIAL — TEXTO DE LA REDACCIÓN
 title: La casilla costosa
 byline: La redacción
 ---

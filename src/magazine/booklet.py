@@ -5,6 +5,16 @@ from pathlib import Path
 from .errors import DependencyError
 
 
+def booklet_spreads(page_count: int) -> tuple[tuple[int, int], ...]:
+    """Return left/right reader folios in short-edge duplex print order."""
+    total = ((page_count + 3) // 4) * 4
+    spreads: list[tuple[int, int]] = []
+    for sheet_index in range(total // 4):
+        spreads.append((total - 2 * sheet_index, 1 + 2 * sheet_index))
+        spreads.append((2 + 2 * sheet_index, total - 1 - 2 * sheet_index))
+    return tuple(spreads)
+
+
 def impose_a5_on_a4(reader_pdf: Path, output: Path) -> Path:
     try:
         from pypdf import PdfReader, PdfWriter, Transformation
@@ -31,9 +41,8 @@ def impose_a5_on_a4(reader_pdf: Path, output: Path) -> Path:
             sheet.merge_transformed_page(source, Transformation().scale(scale).translate(x, 0))
         writer.add_page(sheet)
 
-    for sheet_index in range(total // 4):
-        add_spread(total - 2 * sheet_index, 1 + 2 * sheet_index)
-        add_spread(2 + 2 * sheet_index, total - 1 - 2 * sheet_index)
+    for left_number, right_number in booklet_spreads(total):
+        add_spread(left_number, right_number)
     writer.add_metadata({"/Title": "Home booklet", "/Creator": "magazine-compiler"})
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("wb") as handle:

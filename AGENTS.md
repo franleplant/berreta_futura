@@ -40,4 +40,14 @@ uv sync --locked
 uv run --locked pytest
 ```
 
-Render generated PDFs to PNG and inspect every page before delivery.
+Every build must pass the built-in render critic for every configured language.
+It rasterizes the reader and imposed booklet, writes `render-critic.json`, and
+generates numbered contact sheets and 144-DPI individual rasters under
+`render-review/`; its structural errors block packaging and release.
+
+After each meaningful layout change and before delivery, spawn an independent
+render-critic subagent. Give it every reader and booklet contact sheet plus any
+explicitly locked design decisions. It must inspect every sheet, identify
+page-specific visual defects, and avoid changing locked elements. Fix confirmed
+defects, rebuild all languages, and repeat until the machine report passes and
+the independent critic has no remaining actionable findings.

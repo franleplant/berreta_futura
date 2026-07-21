@@ -82,6 +82,7 @@ class Figure:
     criteria: tuple[str, ...]
     rationale: str
     source_caption_sha256: str | None = None
+    source_credit_sha256: str | None = None
 
 
 def load_media_reviews(
@@ -299,15 +300,19 @@ def localize_figures(
         if not row:
             continue
         caption = str(row.get("caption") or "").strip()
+        credit = str(row.get("credit") or "").strip()
         alt_text = str(row.get("alt_text") or "").strip()
         anchor = str(row.get("anchor") or "").strip()
-        if not caption or not alt_text or not anchor:
+        if not caption or not credit or not alt_text or not anchor:
             errors.append(
-                f"Translation {language!r} figure {figure.id} requires caption, alt_text, and anchor"
+                f"Translation {language!r} figure {figure.id} requires caption, credit, alt_text, and anchor"
             )
-        expected_hash = caption_sha256(figure.id, figure.caption)
-        if row.get("source_caption_sha256") != expected_hash:
+        expected_caption_hash = caption_sha256(figure.id, figure.caption)
+        expected_credit_hash = credit_sha256(figure.id, figure.credit)
+        if row.get("source_caption_sha256") != expected_caption_hash:
             errors.append(f"Translation {language!r} figure {figure.id} caption pin is stale")
+        if row.get("source_credit_sha256") != expected_credit_hash:
+            errors.append(f"Translation {language!r} figure {figure.id} credit pin is stale")
         if anchor != "__opener__" and anchor not in headings:
             errors.append(
                 f"Translation {language!r} figure {figure.id} anchor does not match a translated heading"
@@ -317,9 +322,11 @@ def localize_figures(
                 **{
                     **figure.__dict__,
                     "caption": caption,
+                    "credit": credit,
                     "alt_text": alt_text,
                     "anchor": anchor,
-                    "source_caption_sha256": expected_hash,
+                    "source_caption_sha256": expected_caption_hash,
+                    "source_credit_sha256": expected_credit_hash,
                 }
             )
         )
@@ -331,6 +338,16 @@ def localize_figures(
 def caption_sha256(figure_id: str, caption: str) -> str:
     encoded = json.dumps(
         {"id": figure_id, "caption": caption},
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def credit_sha256(figure_id: str, credit: str) -> str:
+    encoded = json.dumps(
+        {"id": figure_id, "credit": credit},
         ensure_ascii=False,
         sort_keys=True,
         separators=(",", ":"),

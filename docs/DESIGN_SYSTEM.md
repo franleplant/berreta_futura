@@ -101,5 +101,6 @@ Backmatter uses the same opener and continuation system. The back cover renders 
 - Do not let a running head cross an opener composition.
 - Preserve the two-page editorial and seven-page source-article limits.
 - Generate every configured language on validation and build.
-- Render and inspect every reader page and every imposed booklet side after layout changes.
+- Run the render critic for every configured language; structural errors block the build.
+- Inspect every numbered render-review contact sheet after layout changes and before delivery.
 - Do not call an edition press-ready without a named printer profile and a passing studio preflight.

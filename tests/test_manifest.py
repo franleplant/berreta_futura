@@ -8,7 +8,7 @@ import yaml
 from magazine import Magazine, ValidationError
 from magazine.capture import archive_snapshot
 from magazine.manifest import _edition_copy_sha256, load_edition, load_translation
-from magazine.media_schema import caption_sha256
+from magazine.media_schema import caption_sha256, credit_sha256
 from magazine.records import SourceRecord, load_records
 
 
@@ -339,9 +339,11 @@ class ManifestTests(unittest.TestCase):
         translation["articles"][0]["figures"] = [{
             "id": "diagram",
             "caption": "El diagrama de la fuente.",
+            "credit": "Diagrama de la autora.",
             "alt_text": "Un diagrama del artículo fuente.",
             "anchor": "__opener__",
             "source_caption_sha256": caption_sha256("diagram", "The source diagram."),
+            "source_credit_sha256": credit_sha256("diagram", "Diagram by Author"),
         }]
         translation_path.write_text(
             yaml.safe_dump(translation, sort_keys=False, allow_unicode=True), encoding="utf-8"
@@ -351,6 +353,7 @@ class ManifestTests(unittest.TestCase):
 
         figure = localized.articles[0].figures[0]
         self.assertEqual(figure.caption, "El diagrama de la fuente.")
+        self.assertEqual(figure.credit, "Diagrama de la autora.")
         self.assertEqual(figure.path, base.articles[0].figures[0].path)
 
     def test_translation_rejects_stale_figure_caption_pin(self):
@@ -364,9 +367,11 @@ class ManifestTests(unittest.TestCase):
         translation["articles"][0]["figures"] = [{
             "id": "diagram",
             "caption": "El diagrama.",
+            "credit": "Diagrama de la autora.",
             "alt_text": "Un diagrama.",
             "anchor": "__opener__",
             "source_caption_sha256": "0" * 64,
+            "source_credit_sha256": credit_sha256("diagram", "Diagram by Author"),
         }]
         translation_path.write_text(
             yaml.safe_dump(translation, sort_keys=False, allow_unicode=True), encoding="utf-8"

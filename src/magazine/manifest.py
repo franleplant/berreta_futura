@@ -456,10 +456,12 @@ def load_translation(
                             "source_id": figure.source_id,
                             "asset_id": figure.asset_id,
                             "caption": figure.caption,
+                            "credit": figure.credit,
                             "alt_text": figure.alt_text,
                             "anchor": figure.anchor,
                             "layout": figure.layout,
                             "source_caption_sha256": figure.source_caption_sha256,
+                            "source_credit_sha256": figure.source_credit_sha256,
                         }
                         for figure in article.figures
                     ],
@@ -518,6 +520,7 @@ def _edition_copy_sha256(edition: Edition) -> str:
                     {
                         "id": figure.id,
                         "caption": figure.caption,
+                        "credit": figure.credit,
                         "alt_text": figure.alt_text,
                         "anchor": figure.anchor,
                         "layout": figure.layout,

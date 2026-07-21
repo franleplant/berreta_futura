@@ -232,6 +232,9 @@ home/booklet-a4.pdf
 home/printing-instructions.md
 fidelity.md
 preflight.json
+render-critic.json
+render-review/reader-contact-sheet-01.png
+render-review/booklet-contact-sheet-01.png
 edition-manifest.json
 SHA256SUMS
 ```
@@ -243,6 +246,18 @@ and at least 300 effective PPI. The renderer embeds
 the standard PDF fonts by default. A professional print profile is included as
 a specification, but PDF/X conversion, trim bleed, and the printer ICC output
 intent remain explicit studio preflight steps.
+
+Every language also passes through the render critic before packaging. It
+rasterizes every reader page with Poppler, blocks blank pages, orphan display
+punctuation, inefficient contents pagination, placeholder cover copy, invalid
+signature length, and breached editorial or article page caps. It records
+per-page ink geometry in `render-critic.json` and produces numbered contact
+sheets plus 144-DPI individual page and booklet-side rasters for the required
+final visual review. The critic also verifies each imposed left/right page pair
+against the declared saddle-stitch, short-edge-duplex plan. Sparse pages are
+review prompts, not automatic failures, because deliberate openers and closing
+plates may use whitespace. The report and review images are included in
+`SHA256SUMS`.
 
 ## First edition
 
