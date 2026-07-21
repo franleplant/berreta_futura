@@ -61,7 +61,7 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertTrue((result.output_dir / "SHA256SUMS").is_file())
             critic = json.loads((result.output_dir / "render-critic.json").read_text())
             self.assertEqual(critic["result"], "pass")
-            self.assertEqual(critic["visual_review"]["status"], "required_before_delivery")
+            self.assertEqual(critic["visual_review"]["status"], "required_before_release")
             self.assertTrue(
                 (result.output_dir / "render-review" / "reader-contact-sheet-01.png").is_file()
             )

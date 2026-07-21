@@ -259,6 +259,25 @@ review prompts, not automatic failures, because deliberate openers and closing
 plates may use whitespace. The report and review images are included in
 `SHA256SUMS`.
 
+Independent visual judgment is recorded by the compiler rather than inferred
+from agent instructions. After inspecting every generated language package:
+
+```sh
+uv run --locked mag review status <edition-id>
+uv run --locked mag review record <edition-id> \
+  --reviewer "Independent critic" \
+  --result approved \
+  --notes "All reader pages and booklet sides inspected."
+uv run --locked mag release <edition-id>
+```
+
+`mag review record` writes the canonical decision to
+`editions/<edition-id>/reviews/render.yaml`, binding it to the SHA-256 hashes of
+every configured reader and booklet, then rebuilds the packages so their
+reports expose the decision. Any subsequent PDF change makes the review
+`stale`. A `changes_required` decision must include at least one `--finding`.
+`mag release` refuses missing, stale, or changes-required review state.
+
 ## First edition
 
 Issue 001 lives at `editions/001-the-work-left-to-us/`. It captures an X post as

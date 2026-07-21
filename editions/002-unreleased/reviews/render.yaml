@@ -1,0 +1,20 @@
+schema_version: 1
+edition_id: 002-unreleased
+reviewer: Heisenberg (render_critic subagent)
+reviewed_at: '2026-07-21T16:16:15+00:00'
+result: approved
+findings: []
+notes: Inspected all English and Spanish reader and booklet contact sheets, representative 144-DPI pages
+  at useful zoom, corrected the identified Spanish kicker and credits, and found no remaining actionable
+  defects.
+languages:
+  en:
+    reader_sha256: ae7e4d239fcfff2d77edb9e8362d56b09a5c4f5c3f83ce0d92a7a330e139e33d
+    booklet_sha256: 2c049cc21a91fae6447c0349b1bc584ab066e195abd14338fc0b94a862049988
+    page_count: 24
+    machine_result: pass
+  es:
+    reader_sha256: 91706fe7c698d3557a31830cc0da15d07e4720ab36ffe662e88c1fcfa5c2917e
+    booklet_sha256: 9575e9c8144413be5ffec0012f0e3fcf4258ee84f3907a2113037be539ad4794
+    page_count: 28
+    machine_result: pass

@@ -24,6 +24,13 @@ from .release import (
     sync_release_state,
 )
 from .render import render_a5
+from .render_review import (
+    create_render_review,
+    load_render_review,
+    require_approved_reports,
+    visual_review_status,
+    write_render_review,
+)
 
 
 @dataclass(frozen=True)
@@ -178,6 +185,8 @@ class Magazine:
         editions = self._validate_languages(edition_id)
         edition = editions[self.primary_language]
         destination = self.output_dir / edition.id
+        review_path = self.editions_dir / edition.id / "reviews" / "render.yaml"
+        recorded_review = load_render_review(review_path, edition_id=edition.id)
         reports = [fidelity_report(article.fidelity) for article in edition.articles]
         source_records = {record.id: record for record in load_records(self.sources_dir)}
         declared_source_ids = edition.raw.get("sources", [])
@@ -296,6 +305,8 @@ class Magazine:
                 toc=layout.toc,
                 article_pages=layout.article_pages,
                 editorial_pages=layout.editorial_pages,
+                edition_id=edition.id,
+                recorded_review=recorded_review,
             )
             language_result = LanguageBuildResult(
                 language,
@@ -315,6 +326,75 @@ class Magazine:
             tuple(all_files),
             tuple(language_results),
         )
+
+    def record_render_review(
+        self,
+        edition_id: str,
+        *,
+        reviewer: str,
+        result: str,
+        findings: list[str] | tuple[str, ...] = (),
+        notes: str = "",
+        reviewed_at: str | None = None,
+    ) -> tuple[Path, BuildResult]:
+        """Bind an independent visual decision to the current language PDFs."""
+
+        self.validate(edition_id)
+        destination = self.output_dir / edition_id
+        language_packages = {
+            language: destination if language == self.primary_language else destination / language
+            for language in self.languages
+        }
+        record = create_render_review(
+            edition_id=edition_id,
+            reviewer=reviewer,
+            result=result,
+            language_packages=language_packages,
+            findings=findings,
+            notes=notes,
+            reviewed_at=reviewed_at,
+        )
+        path = write_render_review(
+            self.editions_dir / edition_id / "reviews" / "render.yaml",
+            record,
+        )
+        # Rebuild so package reports and checksums carry the recorded decision.
+        return path, self.build(edition_id)
+
+    def render_review_status(self, edition_id: str) -> dict[str, Any]:
+        destination = self.output_dir / edition_id
+        record = load_render_review(
+            self.editions_dir / edition_id / "reviews" / "render.yaml",
+            edition_id=edition_id,
+        )
+        statuses: dict[str, Any] = {}
+        for language in self.languages:
+            package = destination if language == self.primary_language else destination / language
+            report_path = package / "render-critic.json"
+            reader = package / "reader.pdf"
+            booklet = package / "home" / "booklet-a4.pdf"
+            if not report_path.is_file() or not reader.is_file() or not booklet.is_file():
+                statuses[language] = {"status": "not_built"}
+                continue
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            visual = visual_review_status(
+                record,
+                edition_id=edition_id,
+                language=language,
+                reader_pdf=reader,
+                booklet_pdf=booklet,
+            )
+            statuses[language] = {
+                "machine_result": report.get("result"),
+                "status": visual.get("status"),
+                "reviewer": visual.get("reviewer"),
+                "reviewed_at": visual.get("reviewed_at"),
+                "result": visual.get("result"),
+                "findings": list(visual.get("findings", [])),
+                "reader_sha256": visual.get("reader_sha256"),
+                "booklet_sha256": visual.get("booklet_sha256"),
+            }
+        return {"edition_id": edition_id, "languages": statuses}
 
     def release(
         self, edition_id: str, *, next_edition_id: str | None = None
@@ -337,6 +417,12 @@ class Magazine:
             next_edition_id=next_edition_id,
         )
         result = self.build(edition_id)
+        require_approved_reports(
+            {
+                item.language: item.output_dir
+                for item in result.languages
+            }
+        )
         transition = finalize_release(
             self.release_state_path,
             self.editions_dir / edition.id / "edition.yaml",

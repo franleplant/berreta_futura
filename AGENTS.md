@@ -50,4 +50,7 @@ render-critic subagent. Give it every reader and booklet contact sheet plus any
 explicitly locked design decisions. It must inspect every sheet, identify
 page-specific visual defects, and avoid changing locked elements. Fix confirmed
 defects, rebuild all languages, and repeat until the machine report passes and
-the independent critic has no remaining actionable findings.
+the independent critic has no remaining actionable findings. Then record the
+decision only through `uv run --locked mag review record <edition-id>` with the
+reviewer and result flags; do not hand-edit the canonical review record. `mag
+release` must reject a missing, stale, or changes-required review.

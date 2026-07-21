@@ -34,6 +34,8 @@ def package_release(
     toc: dict[str, int] | None = None,
     article_pages: dict[str, int] | None = None,
     editorial_pages: int | None = None,
+    edition_id: str,
+    recorded_review: dict[str, Any] | None = None,
 ) -> list[Path]:
     destination.mkdir(parents=True, exist_ok=True)
     reader = destination / "reader.pdf"
@@ -47,6 +49,8 @@ def package_release(
         toc=toc or {},
         article_pages=article_pages or {},
         editorial_pages=editorial_pages,
+        edition_id=edition_id,
+        recorded_review=recorded_review,
     )
     render_report_path = destination / "render-critic.json"
     render_report_path.write_text(

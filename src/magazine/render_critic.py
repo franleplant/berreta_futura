@@ -12,6 +12,7 @@ from pypdf import PdfReader
 
 from .booklet import booklet_spreads
 from .errors import DependencyError
+from .render_review import visual_review_status
 
 
 RASTER_DPI = 144
@@ -35,6 +36,8 @@ def inspect_render(
     toc: dict[str, int],
     article_pages: dict[str, int],
     editorial_pages: int | None,
+    edition_id: str,
+    recorded_review: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], list[Path]]:
     """Rasterize and audit a reader PDF, returning a stable review bundle.
 
@@ -195,7 +198,13 @@ def inspect_render(
             "pages": booklet_rows,
         },
         "visual_review": {
-            "status": "required_before_delivery",
+            **visual_review_status(
+                recorded_review,
+                edition_id=edition_id,
+                language=language,
+                reader_pdf=reader_pdf,
+                booklet_pdf=booklet_pdf,
+            ),
             "reader_contact_sheets": [
                 path.relative_to(destination).as_posix() for path in reader_contact_sheets
             ],

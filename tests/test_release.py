@@ -127,7 +127,13 @@ class ReleaseStateTests(unittest.TestCase):
             },
         }), encoding="utf-8")
         (package_dir / "SHA256SUMS").write_text("stale\n", encoding="utf-8")
-        build_result = SimpleNamespace(output_dir=package_dir)
+        (package_dir / "render-critic.json").write_text(
+            json.dumps({"visual_review": {"status": "approved"}}), encoding="utf-8"
+        )
+        build_result = SimpleNamespace(
+            output_dir=package_dir,
+            languages=(SimpleNamespace(language="en", output_dir=package_dir),),
+        )
 
         with patch.object(magazine, "build", return_value=build_result) as build:
             result, transition = magazine.release("issue-001")
@@ -142,14 +148,44 @@ class ReleaseStateTests(unittest.TestCase):
         packaged = json.loads(package_manifest.read_text(encoding="utf-8"))
         self.assertEqual(packaged["edition"]["status"], "released")
         self.assertEqual(packaged["edition"]["distribution"], "private")
-        checksum, relative = (package_dir / "SHA256SUMS").read_text().strip().split("  ")
-        self.assertEqual(relative, "edition-manifest.json")
-        self.assertEqual(checksum, hashlib.sha256(package_manifest.read_bytes()).hexdigest())
+        checksums = {
+            relative: checksum
+            for checksum, relative in (
+                line.split("  ", 1)
+                for line in (package_dir / "SHA256SUMS").read_text().splitlines()
+            )
+        }
+        self.assertEqual(
+            checksums["edition-manifest.json"],
+            hashlib.sha256(package_manifest.read_bytes()).hexdigest(),
+        )
         state = load_release_state(state_path)
         self.assertEqual(state.open_edition, {
             "id": "002-unreleased", "issue_number": 2, "status": "collecting", "source_ids": [],
         })
         self.assertEqual(state.assignments()["source-one"], "released:issue-001")
+
+    def test_release_refuses_missing_visual_approval_after_build(self):
+        magazine, manifest_path, state_path = self.prepare_releasable_project()
+        package_dir = self.root / "output" / "issue-001"
+        package_dir.mkdir(parents=True)
+        (package_dir / "render-critic.json").write_text(
+            json.dumps({"visual_review": {"status": "required_before_release"}}),
+            encoding="utf-8",
+        )
+        build_result = SimpleNamespace(
+            output_dir=package_dir,
+            languages=(SimpleNamespace(language="en", output_dir=package_dir),),
+        )
+        manifest_before = manifest_path.read_bytes()
+        state_before = state_path.read_bytes()
+
+        with patch.object(magazine, "build", return_value=build_result):
+            with self.assertRaisesRegex(ValidationError, "current approved render review"):
+                magazine.release("issue-001")
+
+        self.assertEqual(manifest_path.read_bytes(), manifest_before)
+        self.assertEqual(state_path.read_bytes(), state_before)
 
     def test_release_refuses_to_postpone_any_open_source_without_building(self):
         magazine, manifest_path, state_path = self.prepare_releasable_project()

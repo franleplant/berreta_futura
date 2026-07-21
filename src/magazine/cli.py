@@ -35,6 +35,20 @@ def parser() -> argparse.ArgumentParser:
     validate.add_argument("edition_id")
     build = actions.add_parser("build", help="Render, impose, and package an edition")
     build.add_argument("edition_id")
+    review = actions.add_parser("review", help="Inspect or record independent render review state")
+    review_actions = review.add_subparsers(dest="review_command", required=True)
+    review_status = review_actions.add_parser("status", help="Show current hash-bound review status")
+    review_status.add_argument("edition_id")
+    review_record = review_actions.add_parser(
+        "record", help="Bind an independent visual decision to the current PDFs"
+    )
+    review_record.add_argument("edition_id")
+    review_record.add_argument("--reviewer", required=True)
+    review_record.add_argument(
+        "--result", required=True, choices=("approved", "changes_required")
+    )
+    review_record.add_argument("--finding", action="append", default=[])
+    review_record.add_argument("--notes", default="")
     release = actions.add_parser("release", help="Build and freeze the complete open edition")
     release.add_argument("edition_id")
     release.add_argument("--next-edition-id", help="Override the next empty edition id")
@@ -67,6 +81,23 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "build":
             result = magazine.build(args.edition_id)
             print(result.output_dir)
+        elif args.command == "review" and args.review_command == "status":
+            print(
+                json.dumps(
+                    magazine.render_review_status(args.edition_id),
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
+        elif args.command == "review" and args.review_command == "record":
+            path, result = magazine.record_render_review(
+                args.edition_id,
+                reviewer=args.reviewer,
+                result=args.result,
+                findings=args.finding,
+                notes=args.notes,
+            )
+            print(f"recorded: {path}\noutput: {result.output_dir}")
         elif args.command == "release":
             result, transition = magazine.release(
                 args.edition_id, next_edition_id=args.next_edition_id

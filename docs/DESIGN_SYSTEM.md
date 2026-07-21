@@ -103,4 +103,5 @@ Backmatter uses the same opener and continuation system. The back cover renders 
 - Generate every configured language on validation and build.
 - Run the render critic for every configured language; structural errors block the build.
 - Inspect every numbered render-review contact sheet after layout changes and before delivery.
+- Record independent approval with `mag review record`; release requires hashes matching every current language PDF.
 - Do not call an edition press-ready without a named printer profile and a passing studio preflight.

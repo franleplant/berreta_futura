@@ -59,6 +59,7 @@ Canonical authored material:
 - edition manifests and briefs;
 - approved manuscripts and clearly labeled editor text;
 - cover direction and selected artwork;
+- hash-bound independent render-review decisions;
 - decisions tied to revisions.
 
 Generated material:

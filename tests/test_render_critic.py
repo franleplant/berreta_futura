@@ -43,11 +43,12 @@ def test_render_critic_emits_contact_sheet_and_passes_structural_checks(tmp_path
             toc={"article": 3},
             article_pages={"article": 1},
             editorial_pages=None,
+            edition_id="issue-001",
         )
 
     assert report["result"] == "pass"
     assert report["checks"]["contents_pages"] == 1
-    assert report["visual_review"]["status"] == "required_before_delivery"
+    assert report["visual_review"]["status"] == "required_before_release"
     relative_artifacts = {path.relative_to(tmp_path).as_posix() for path in artifacts}
     assert "render-review/reader-pages/page-1.png" in relative_artifacts
     assert "render-review/booklet-sides/page-1.png" in relative_artifacts
@@ -81,6 +82,7 @@ def test_render_critic_blocks_blank_pages_and_layout_contract_violations(tmp_pat
             toc={"article": 4},
             article_pages={"article": 8},
             editorial_pages=3,
+            edition_id="issue-001",
         )
 
     codes = {issue["code"] for issue in report["issues"] if issue["severity"] == "error"}
