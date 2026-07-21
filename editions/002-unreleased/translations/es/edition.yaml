@@ -23,7 +23,7 @@ cover:
     la evidencia y la comprensión humana.'
 editorial:
   path: manuscript/editorial.md
-  source_sha256: d2bff9fe8678e04ab48b5a3645e58d711d99cb95fbd044d9bfb440341eb28536
+  source_sha256: de7f4ab25f008829615542ba1d90aba00d8c01de9e6e3f1df6d19d4eb1351f76
 articles:
 - id: software-factories-light-and-dark
   title: Fábricas de software, con luz y a oscuras

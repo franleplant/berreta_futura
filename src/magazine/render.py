@@ -44,6 +44,7 @@ HEADING_SPACE_BEFORE = {
 # hierarchy and typographic furniture so interiors remain economical to print.
 INK = (.055, .075, .085)
 VIOLET = (.25, .10, .43)
+SIGNAL_ORANGE = (1.0, .27, .04)
 SLATE = (.31, .35, .37)
 COOL_GRAY = (.88, .89, .90)
 PALE_VIOLET = (.955, .945, .975)
@@ -1286,7 +1287,14 @@ class _Typesetter:
             match = max(candidates, key=lambda item: (len(item.group(0)), -item.start()), default=None)
         if not match:
             return "", title, ""
-        return title[: match.start()].strip(), match.group(0), title[match.end() :].strip()
+        prefix = title[: match.start()].strip()
+        suffix = title[match.end() :].strip()
+        # Monument openers treat the emphasized word as a standalone display
+        # object. Leading punctuation therefore becomes an orphaned glyph on
+        # the subtitle line; omit that separator in the composed title while
+        # keeping the complete title intact in metadata and contents.
+        suffix = re.sub(r"^[,;:]\s*", "", suffix)
+        return prefix, match.group(0), suffix
 
     def _monument_title(
         self,
@@ -1475,7 +1483,7 @@ class _Typesetter:
             entries.extend((_section_label(self.edition, section.kind), section.title, "", toc_pages.get(f"section-{index}", 0)) for index, section in enumerate(self.edition.sections))
         elif self.edition.sections:
             entries.extend((_section_label(self.edition, section.kind), section.title, "", toc_pages.get(f"section-{index}", 0)) for index, section in enumerate(self.edition.sections))
-        chunks = [entries[index : index + 6] for index in range(0, len(entries), 6)] or [[]]
+        chunks = [entries[index : index + 8] for index in range(0, len(entries), 8)] or [[]]
         for sheet_index, chunk in enumerate(chunks):
             self.new_page(contents_label, blank_header=True)
             self._folio()
@@ -1509,7 +1517,7 @@ class _Typesetter:
             )
 
             row_top = 479.0
-            row_height = 393.0 / 6
+            row_height = 393.0 / max(6, len(chunk))
             for row_index, (label, title, author, page_number) in enumerate(chunk):
                 indent = 0 if row_index % 2 == 0 else self.grid_column_width + GRID_GUTTER
                 x = self.left + indent
@@ -1517,27 +1525,27 @@ class _Typesetter:
                 top = row_top - row_index * row_height
                 folio = f"{page_number:02d}" if page_number else "--"
                 self.pdf.setFillColorRGB(*VIOLET)
-                self.pdf.setFont(SANS_SEMIBOLD, 28)
-                self.pdf.drawString(x, top - 28, folio)
-                text_x = x + 55
-                text_width = available - 55
+                self.pdf.setFont(SANS_SEMIBOLD, 23)
+                self.pdf.drawString(x, top - 23, folio)
+                text_x = x + 47
+                text_width = available - 47
                 self.pdf.setFillColorRGB(*INK)
                 self.pdf.setFont(SANS_MEDIUM, CAPTION_SIZE)
-                self.pdf.drawString(text_x, top - 12, _plain(label.upper()))
-                title_lines = self.lines(title, SERIF_DISPLAY, 10.8, text_width)
+                self.pdf.drawString(text_x, top - 8, _plain(label.upper()))
+                title_lines = self.lines(title, SERIF_DISPLAY, 9.8, text_width)
                 if len(title_lines) > 2:
                     raise ValidationError(f"Contents title is too long for Monument: {title}")
-                self.pdf.setFont(SERIF_DISPLAY, 10.8)
-                baseline = top - 32
+                self.pdf.setFont(SERIF_DISPLAY, 9.8)
+                baseline = top - 23
                 for line in title_lines:
                     self.pdf.drawString(text_x, baseline, line)
-                    baseline -= BODY_LEADING
+                    baseline -= 10.2
                 if author:
                     self.pdf.setFillColorRGB(*SLATE)
                     self.pdf.setFont(SANS_MEDIUM, CAPTION_SIZE)
                     self.pdf.drawString(
                         text_x,
-                        top - 57,
+                        top - 43,
                         self.fit_text(_plain(author.upper()), SANS_MEDIUM, CAPTION_SIZE, text_width),
                     )
                 if row_index < len(chunk) - 1:
@@ -1765,44 +1773,55 @@ class _Typesetter:
             self.height - 29,
             self.live_width,
         )
-        words = _plain(self.edition.title).split()
-        chunk_count = min(total, len(words)) or 1
-        chunks: list[str] = []
-        cursor = 0
-        for chunk_index in range(chunk_count):
-            remaining_words = len(words) - cursor
-            remaining_chunks = chunk_count - chunk_index
-            take = (remaining_words + remaining_chunks - 1) // remaining_chunks
-            chunks.append(" ".join(words[cursor : cursor + take]))
-            cursor += take
-        phrase = chunks[min(index, len(chunks) - 1)] if chunks else self.edition.title
+        # Signature padding should look intentional, not like a title broken
+        # into arbitrary word fragments. A compact systems diagram echoes the
+        # edition's visual grammar while leaving the approved cover untouched.
+        art_x, art_width = self.grid_box(0, 6)
+        art_y = 260.0
+        art_height = 126.0
+        progress = (index + 1) / (total + 1)
+        gate_x = art_x + art_width * (.28 + .44 * progress)
+        signal_y = art_y + 34
+        self.pdf.setFillColorRGB(*PALE_VIOLET)
+        self.pdf.rect(art_x, art_y, art_width, art_height, fill=1, stroke=0)
+        self.pdf.setFillColorRGB(*INK)
+        self.pdf.rect(art_x, signal_y, gate_x - art_x, 58, fill=1, stroke=0)
+        self.pdf.setFillColorRGB(*SIGNAL_ORANGE)
+        self.pdf.rect(gate_x - 5, art_y + 17, 10, art_height - 34, fill=1, stroke=0)
+        output_x = gate_x + 18
+        output_width = max(8.0, (art_x + art_width - output_x - 18) / 4)
+        self.pdf.setFillColorRGB(*VIOLET)
+        for output_index in range(4):
+            x = output_x + output_index * output_width
+            self.pdf.rect(x, signal_y, max(4.0, output_width - 5), 58, fill=1, stroke=0)
+
         title_x, title_width = self.grid_box(1, 4)
         self._fitted_title_box(
-            phrase,
+            self.edition.title,
             title_x,
-            390,
+            218,
             title_width,
-            170,
-            maximum=42,
-            minimum=24,
-            maximum_lines=4,
+            88,
+            maximum=30,
+            minimum=20,
+            maximum_lines=3,
             color=VIOLET,
             leading_ratio=1.0,
         )
         medallion_x, medallion_width = self.grid_box(0, 1)
         self.pdf.setFillColorRGB(*VIOLET)
-        self.pdf.circle(medallion_x + medallion_width / 2, 364, 18, fill=1, stroke=0)
+        self.pdf.circle(medallion_x + medallion_width / 2, 193, 18, fill=1, stroke=0)
         self.pdf.setFillColorRGB(*WHITE)
         self.pdf.setFont(SANS_SEMIBOLD, 8)
         self.pdf.drawCentredString(
             medallion_x + medallion_width / 2,
-            361,
+            190,
             f"{index + 1}/{total}",
         )
         self._tracked_label(
             _ui(self.edition, "closing_plate"),
             title_x,
-            176,
+            104,
             title_width,
             color=VIOLET,
         )

@@ -457,15 +457,15 @@ title: The Expensive Box
 byline: The Editors
 ---
 
-The loop is small: context, action, check, repeat. The factory is what happens when that loop gains walls, memory, a queue, and neighbors. Edition 2 follows this movement upward—from a reusable library to a swarm, from one verified automation to an organization redesigning whole workflows.
+The loop is small: context, action, check, repeat. A factory begins when it gains walls, memory, a queue, and neighbors. Edition 2 moves from reusable libraries to swarms, and from verified automation to redesigned workflows.
 
-Across these six accounts, generation becomes abundant before judgment does. Addy Osmani draws the factory as a closed circuit and points to its expensive box: the review gate. Cursor's experiments make the same constraint measurable. A thousand commits a second are not useful when coordination collapses. Topology, memory, and verification turn activity into progress.
+Across these accounts, generation becomes abundant before judgment. Addy Osmani identifies the expensive box: review. Cursor measures it—a thousand commits a second are useless without coordination. Topology, memory, and verification turn activity into progress.
 
-The same pattern appears outside code. Mitchell Hashimoto sees agents multiplying clean building blocks. Praveen Neppalli pairs system experts with domain experts because workflow knowledge cannot be recovered from a process diagram. Codez insists that a schedule is not a loop's product; its verifier is. Cerebras leaves knowledge where work happens, then builds a visible path from question to evidence.
+Beyond code, Mitchell Hashimoto sees agents multiplying clean building blocks. Praveen Neppalli pairs system and domain experts because workflows exceed their diagrams. Codez makes verification the loop's product. Cerebras builds a visible path from question to evidence.
 
-These are not arguments for putting a person into every inner loop. They are arguments for designing the outer loop deliberately. Human attention belongs where consequences are expensive, signals are ambiguous, and the cost of misunderstanding compounds. Everything else should earn autonomy through narrow scope and evidence that is cheap to inspect.
+The point is to design the outer loop deliberately. Human attention belongs where consequences are expensive, signals ambiguous, and misunderstanding compounds. Everything else earns autonomy through narrow scope and cheap evidence.
 
-A good factory therefore does more than produce software. It preserves intent as work crosses boundaries. It keeps evidence attached to decisions. It makes failure legible. And it leaves enough light on that the people responsible for the system can still understand what they have built.
+A good factory preserves intent, attaches evidence to decisions, makes failure legible, and leaves enough light for its owners to understand what they built.
 """
     editorial_es = """---
 label: EDITORIAL — TEXTO ORIGINAL DE LA REDACCIÓN
@@ -473,15 +473,15 @@ title: La casilla costosa
 byline: La redacción
 ---
 
-El ciclo es pequeño: contexto, acción, comprobación, repetición. La fábrica aparece cuando ese ciclo adquiere paredes, memoria, una cola y vecinos. La edición 2 sigue este ascenso: de una biblioteca reutilizable a un enjambre, de una automatización verificada a una organización que rediseña flujos completos.
+El ciclo es pequeño: contexto, acción, comprobación, repetición. Una fábrica comienza cuando adquiere paredes, memoria, una cola y vecinos. La edición 2 pasa de bibliotecas reutilizables a enjambres, y de la automatización verificada al rediseño de flujos.
 
-En estos seis relatos, la generación se vuelve abundante antes que el criterio. Addy Osmani dibuja la fábrica como un circuito cerrado y señala su casilla costosa: la puerta de revisión. Los experimentos de Cursor vuelven medible la misma restricción. Mil commits por segundo no sirven cuando la coordinación colapsa. Topología, memoria y verificación convierten actividad en progreso.
+En estos relatos, la generación se vuelve abundante antes que el criterio. Addy Osmani identifica la casilla costosa: la revisión. Cursor mide la restricción: mil commits por segundo son inútiles sin coordinación. Topología, memoria y verificación convierten actividad en progreso.
 
-El mismo patrón aparece fuera del código. Mitchell Hashimoto ve agentes que multiplican bloques limpios. Praveen Neppalli empareja expertos de sistemas con expertos de dominio porque el conocimiento de un flujo no puede recuperarse de un diagrama. Codez insiste en que una cadencia no es el producto de un ciclo; lo es su verificador. Cerebras deja el conocimiento donde ocurre el trabajo y construye un camino visible desde la pregunta hasta la evidencia.
+Fuera del código, Mitchell Hashimoto ve agentes que multiplican bloques limpios. Praveen Neppalli une expertos de sistemas y de dominio porque los flujos exceden sus diagramas. Codez convierte la verificación en el producto del ciclo. Cerebras traza un camino visible desde la pregunta hasta la evidencia.
 
-No son argumentos para poner a una persona en cada ciclo interior. Son argumentos para diseñar deliberadamente el ciclo exterior. La atención humana pertenece donde las consecuencias son caras, las señales ambiguas y el coste de no comprender crece con el tiempo. Todo lo demás debe ganarse la autonomía mediante un alcance estrecho y evidencia barata de inspeccionar.
+La cuestión es diseñar deliberadamente el ciclo exterior. La atención humana pertenece donde las consecuencias son caras, las señales ambiguas y la incomprensión se acumula. Todo lo demás gana autonomía mediante un alcance estrecho y evidencia barata.
 
-Una buena fábrica, por tanto, hace más que producir software. Preserva la intención al cruzar fronteras, mantiene la evidencia unida a las decisiones, vuelve legible el fallo y deja suficiente luz encendida para que las personas responsables todavía comprendan lo que han construido.
+Una buena fábrica preserva la intención, une la evidencia a las decisiones, vuelve legible el fallo y deja luz para comprender lo construido.
 """
     colophon_en = """Edition 2 is a private, provisional evaluation proof assembled from six submitted sources. Source articles are presented as labeled faithful syntheses or selected extracts, with source-mapped fidelity ledgers and durable raw evidence bundles in the project library.
 
