@@ -3,7 +3,7 @@ language: es
 source_language: en
 locale: es-AR
 fallback_locale: es-ES
-base_copy_sha256: 1c034ae43844be2736464fe1e522b8da80fa9aefea3ebbbe9305595b23ff4314
+base_copy_sha256: c3c0a87421393873292dd96574b052e8d795d52aab080b79c9c14af246cc2209
 policy:
   register: educated_castellano
   regional_preference: restrained_argentinian
@@ -22,6 +22,10 @@ cover:
     en sistemas de ciclos
   back_text: 'El ciclo es pequeño. La fábrica es inmensa. Entre ambos queda el trabajo difícil: preservar la intención,
     la evidencia y la comprensión humana.'
+closing_plate_titles:
+- Sistemas en movimiento
+- Intención preservada
+- Las señales regresan
 editorial:
   path: manuscript/editorial.md
   source_sha256: de7f4ab25f008829615542ba1d90aba00d8c01de9e6e3f1df6d19d4eb1351f76

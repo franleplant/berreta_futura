@@ -1406,7 +1406,16 @@ class _Typesetter:
             )
         return cursor
 
-    def _draw_image_fill(self, path: Path, x: float, y: float, width: float, height: float) -> None:
+    def _draw_image_fill(
+        self,
+        path: Path,
+        x: float,
+        y: float,
+        width: float,
+        height: float,
+        *,
+        record_cover_size: bool = False,
+    ) -> None:
         from reportlab.lib.utils import ImageReader
 
         image = ImageReader(str(path))
@@ -1427,7 +1436,8 @@ class _Typesetter:
             mask="auto",
         )
         self.pdf.restoreState()
-        self.cover_art_size_points = (width, height)
+        if record_cover_size:
+            self.cover_art_size_points = (width, height)
 
     def cover(self):
         self.new_page(blank_header=True)
@@ -1463,7 +1473,14 @@ class _Typesetter:
         art_width, art_height = COVER_ART_SIZE_POINTS
         art_x, art_y = (self.width - art_width) / 2, 177.0
         if self.edition.cover_art:
-            self._draw_image_fill(self.edition.cover_art, art_x, art_y, art_width, art_height)
+            self._draw_image_fill(
+                self.edition.cover_art,
+                art_x,
+                art_y,
+                art_width,
+                art_height,
+                record_cover_size=True,
+            )
         else:
             self.pdf.setFillColorRGB(*VIOLET)
             self.pdf.rect(art_x, art_y, art_width, art_height, fill=1, stroke=0)
@@ -1799,68 +1816,32 @@ class _Typesetter:
         self.markdown(section.path, lead=True)
 
     def _closing_plate(self, index: int, total: int) -> None:
+        if index >= len(self.edition.closing_plates):
+            raise ValidationError(
+                f"Edition requires {total} unique closing plates for signature padding, but only "
+                f"{len(self.edition.closing_plates)} are configured"
+            )
+        plate = self.edition.closing_plates[index]
         self.new_page(blank_header=True)
         self.pdf.setFillColorRGB(*WHITE)
         self.pdf.rect(0, 0, self.width, self.height, fill=1, stroke=0)
-        self._tracked_label(
-            f"{self.edition.publication_name} / {_ui(self.edition, 'issue')} {self.edition.issue_number}",
-            self.left,
-            self.height - 29,
-            self.live_width,
-        )
-        # Signature padding should look intentional, not like a title broken
-        # into arbitrary word fragments. A compact systems diagram echoes the
-        # edition's visual grammar while leaving the approved cover untouched.
         art_x, art_width = self.grid_box(0, 6)
-        art_y = 260.0
-        art_height = 126.0
-        progress = (index + 1) / (total + 1)
-        gate_x = art_x + art_width * (.28 + .44 * progress)
-        signal_y = art_y + 34
-        self.pdf.setFillColorRGB(*PALE_VIOLET)
-        self.pdf.rect(art_x, art_y, art_width, art_height, fill=1, stroke=0)
-        self.pdf.setFillColorRGB(*INK)
-        self.pdf.rect(art_x, signal_y, gate_x - art_x, 58, fill=1, stroke=0)
-        self.pdf.setFillColorRGB(*SIGNAL_ORANGE)
-        self.pdf.rect(gate_x - 5, art_y + 17, 10, art_height - 34, fill=1, stroke=0)
-        output_x = gate_x + 18
-        output_width = max(8.0, (art_x + art_width - output_x - 18) / 4)
-        self.pdf.setFillColorRGB(*VIOLET)
-        for output_index in range(4):
-            x = output_x + output_index * output_width
-            self.pdf.rect(x, signal_y, max(4.0, output_width - 5), 58, fill=1, stroke=0)
-
-        title_x, title_width = self.grid_box(1, 4)
+        art_y = 205.0
+        art_height = self.height - art_y
+        self._draw_image_fill(plate.art_path, art_x, art_y, art_width, art_height)
+        title_x, title_width = self.grid_box(0, 5)
         self._fitted_title_box(
-            self.edition.title,
+            plate.title,
             title_x,
-            218,
+            168,
             title_width,
-            88,
-            maximum=30,
-            minimum=20,
-            maximum_lines=3,
+            92,
+            maximum=32,
+            minimum=22,
+            maximum_lines=2,
             color=VIOLET,
             leading_ratio=1.0,
         )
-        medallion_x, medallion_width = self.grid_box(0, 1)
-        self.pdf.setFillColorRGB(*VIOLET)
-        self.pdf.circle(medallion_x + medallion_width / 2, 193, 18, fill=1, stroke=0)
-        self.pdf.setFillColorRGB(*WHITE)
-        self.pdf.setFont(SANS_SEMIBOLD, 8)
-        self.pdf.drawCentredString(
-            medallion_x + medallion_width / 2,
-            190,
-            f"{index + 1}/{total}",
-        )
-        self._tracked_label(
-            _ui(self.edition, "closing_plate"),
-            title_x,
-            104,
-            title_width,
-            color=VIOLET,
-        )
-        self._folio()
 
     def back_cover(self):
         self.continuation_columns = 1

@@ -98,6 +98,49 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertNotIn(" ".join(("PRIVATE", "EDITION")), reader_text)
             self.assert_tracked_labels_do_not_leak_character_spacing(result.reader_pdf)
 
+    def test_signature_padding_uses_distinct_configured_codas_once_each(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            make_project(root)
+            edition_dir = root / "editions" / "issue-001"
+            paragraphs = [
+                f"Substantive source paragraph {index} with enough words to occupy space."
+                for index in range(50)
+            ]
+            (edition_dir / "articles" / "article.md").write_text(
+                "\n\n".join(paragraphs) + "\n", encoding="utf-8"
+            )
+            ledger = {
+                "schema_version": 1,
+                "source_ids": ["source-one"],
+                "content_mode": "faithful_edit",
+                "paragraphs": [
+                    {"id": f"p{index}", "kind": "p", "status": "retained", "source": text}
+                    for index, text in enumerate(paragraphs)
+                ],
+            }
+            (edition_dir / "fidelity" / "article.yaml").write_text(
+                yaml.safe_dump(ledger), encoding="utf-8"
+            )
+            manifest_path = edition_dir / "edition.yaml"
+            manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+            manifest["format"] = {"target_pages": 12}
+            manifest_path.write_text(
+                yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+            )
+
+            result = Magazine(root).build("issue-001")
+
+            reader = PdfReader(str(result.reader_pdf))
+            page_text = [page.extract_text() or "" for page in reader.pages]
+            full_text = "\n".join(page_text)
+            self.assertEqual(len(reader.pages), 12)
+            self.assertEqual(full_text.count("Coda 1"), 1)
+            self.assertEqual(full_text.count("Coda 2"), 1)
+            self.assertEqual(full_text.count("Coda 3"), 1)
+            self.assertNotIn("Closing plate", full_text)
+            self.assertEqual(page_text[-2].strip(), "")
+
     def test_build_places_a_curated_opener_figure_and_audits_its_print_geometry(self):
         with TemporaryDirectory() as temporary:
             root = Path(temporary)

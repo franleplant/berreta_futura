@@ -50,6 +50,12 @@ class Editorial:
 
 
 @dataclass(frozen=True)
+class ClosingPlate:
+    title: str
+    art_path: Path
+
+
+@dataclass(frozen=True)
 class Edition:
     id: str
     publication_name: str
@@ -63,6 +69,7 @@ class Edition:
     sections: tuple[Section, ...]
     cover: dict[str, Any]
     cover_art: Path | None
+    closing_plates: tuple[ClosingPlate, ...]
     raw: dict[str, Any]
 
 
@@ -220,6 +227,32 @@ def load_edition(
             cover_art = _edition_path(root, edition_dir, cover["art_path"])
         except ValidationError as exc:
             errors.extend(exc.errors)
+    closing_rows = data.get("closing_plates") or []
+    if not isinstance(closing_rows, list):
+        errors.append("Edition closing_plates must be a list")
+        closing_rows = []
+    closing_plates: list[ClosingPlate] = []
+    closing_titles: set[str] = set()
+    closing_paths: set[Path] = set()
+    for index, row in enumerate(closing_rows, start=1):
+        if not isinstance(row, dict) or not row.get("title") or not row.get("art_path"):
+            errors.append(f"Closing plate {index} requires title and art_path")
+            continue
+        title = str(row["title"]).strip()
+        try:
+            art_path = safe_project_path(root, row["art_path"])
+        except ValidationError as exc:
+            errors.extend(exc.errors)
+            continue
+        if title.casefold() in closing_titles:
+            errors.append(f"Closing plate title must be unique: {title}")
+        if art_path in closing_paths:
+            errors.append(f"Closing plate art_path must be unique: {row['art_path']}")
+        closing_titles.add(title.casefold())
+        closing_paths.add(art_path)
+        closing_plates.append(ClosingPlate(title, art_path))
+    if closing_rows and len(closing_rows) != 3:
+        errors.append("Edition closing_plates must define exactly three unique padding plates")
     if errors:
         raise ValidationError(errors)
     return Edition(
@@ -235,6 +268,7 @@ def load_edition(
         tuple(sections),
         cover,
         cover_art,
+        tuple(closing_plates),
         data,
     )
 
@@ -395,6 +429,26 @@ def load_translation(
             )
         )
 
+    translated_closing_plates: list[ClosingPlate] = []
+    closing_titles = data.get("closing_plate_titles")
+    if base.closing_plates:
+        if not isinstance(closing_titles, list) or len(closing_titles) != len(base.closing_plates):
+            errors.append(
+                f"Translation {language!r} requires exactly {len(base.closing_plates)} "
+                "closing_plate_titles"
+            )
+        else:
+            normalized_titles = [str(title).strip() for title in closing_titles]
+            if any(not title for title in normalized_titles):
+                errors.append(f"Translation {language!r} closing_plate_titles cannot be blank")
+            elif len({title.casefold() for title in normalized_titles}) != len(normalized_titles):
+                errors.append(f"Translation {language!r} closing_plate_titles must be unique")
+            else:
+                translated_closing_plates = [
+                    ClosingPlate(title, plate.art_path)
+                    for title, plate in zip(normalized_titles, base.closing_plates)
+                ]
+
     section_rows = data.get("sections")
     if not isinstance(section_rows, list):
         errors.append(f"Translation {language!r} sections must be a list")
@@ -443,6 +497,10 @@ def load_translation(
                 "policy": data.get("policy"),
             },
             "cover": dict(translated_cover),
+            "closing_plates": [
+                {"title": plate.title, "art_path": plate.art_path.relative_to(root).as_posix()}
+                for plate in translated_closing_plates
+            ],
             "editorial": translated_editorial.path.relative_to(root).as_posix()
             if translated_editorial
             else None,
@@ -500,6 +558,7 @@ def load_translation(
         tuple(translated_sections),
         dict(translated_cover),
         base.cover_art,
+        tuple(translated_closing_plates),
         raw,
     )
 
@@ -516,6 +575,13 @@ def _edition_copy_sha256(edition: Edition) -> str:
             key: edition.cover.get(key, "")
             for key in ("headline", "deck", "edition_label", "back_text")
         },
+        "closing_plates": [
+            {
+                "title": plate.title,
+                "art_sha256": _sha256(plate.art_path),
+            }
+            for plate in edition.closing_plates
+        ],
         "articles": [
             {
                 "id": article.id,

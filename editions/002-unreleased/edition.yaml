@@ -228,3 +228,10 @@ sections:
 rights:
   faithful_source_reprint: private_only_while_rights_unknown
   public_release: blocked_pending_permission_or_applicable_exception
+closing_plates:
+- title: Systems in Motion
+  art_path: editions/002-unreleased/art/coda-convergence-v1.png
+- title: Intent, Preserved
+  art_path: editions/002-unreleased/art/coda-branches-v2.png
+- title: Signals Return
+  art_path: editions/002-unreleased/art/coda-return-v1.png

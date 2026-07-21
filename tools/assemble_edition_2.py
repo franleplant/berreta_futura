@@ -648,6 +648,20 @@ Esta prueba no está publicada ni lista para imprenta. La distribución pública
             "back_text": "The loop is small. The factory is vast. Between them sits the difficult work: preserving intent, evidence, and human understanding.",
             "art_path": "art/cover-art-v3.png",
         },
+        "closing_plates": [
+            {
+                "title": "Systems in Motion",
+                "art_path": "editions/002-unreleased/art/coda-convergence-v1.png",
+            },
+            {
+                "title": "Intent, Preserved",
+                "art_path": "editions/002-unreleased/art/coda-branches-v2.png",
+            },
+            {
+                "title": "Signals Return",
+                "art_path": "editions/002-unreleased/art/coda-return-v1.png",
+            },
+        ],
         "sources": [a["source_id"] for a in ARTICLES] + ["how-we-built-our-knowledge-base-e986baa0"],
         "articles": article_rows + [cerebras],
     })
@@ -711,6 +725,11 @@ Esta prueba no está publicada ni lista para imprenta. La distribución pública
             "deck": "Seis informes de campo sobre lo que ocurre cuando el código, el conocimiento y el trabajo se convierten en sistemas de ciclos",
             "back_text": "El ciclo es pequeño. La fábrica es inmensa. Entre ambos queda el trabajo difícil: preservar la intención, la evidencia y la comprensión humana.",
         },
+        "closing_plate_titles": [
+            "Sistemas en movimiento",
+            "Intención preservada",
+            "Las señales regresan",
+        ],
         "editorial": {"path": "manuscript/editorial.md", "source_sha256": sha(EDITION / "manuscript" / "editorial.md")},
         "articles": translated_rows + [cerebras_es],
         "sections": [{

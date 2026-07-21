@@ -1,20 +1,20 @@
 schema_version: 1
 edition_id: 002-unreleased
 reviewer: render_critic-subagent
-reviewed_at: '2026-07-21T19:08:34+00:00'
+reviewed_at: '2026-07-21T19:33:58+00:00'
 result: approved
 findings: []
-notes: All EN/ES reader and booklet contact sheets inspected after Cursor reflow and light-theme figure
-  replacement; sparse pages resolved, figures legible, intentional blanks and imposition correct; cover
-  locked and untouched.
+notes: 'Independent inspection of all English and Spanish reader/booklet contact sheets passed: unique
+  minimal coda art, no repeated filler, correct blank pages before back covers, clean imposition, and
+  locked cover unchanged.'
 languages:
   en:
-    reader_sha256: 3fc21cc84a41185a47c81d9c097f2967918191a2273e658ae6c82c635a42a139
-    booklet_sha256: 411ae4743040d45235ce371830b65f09fd00d1d7c1154485221be136f1856038
+    reader_sha256: e9e6099851d4e40098c73cb011f93785b7e50c022ee58550d8486c7fc45a0630
+    booklet_sha256: 78e0bfc4f6d80f8d78e1b1eeff64ab3ae4b18af087f4c30899894e3eba462ae6
     page_count: 32
     machine_result: pass
   es:
-    reader_sha256: ed38aa34255e256cc5b1e548cb20ff83a847c7ee8c734194260c91d8f024747a
-    booklet_sha256: e576ab0ee0a7e44ba4e0c9a71f623ab50e2fb2decb2974dafde17da42d4cdfdd
+    reader_sha256: b39557e31bd37407f201968be719d0094201509252a6338eec764509be009df1
+    booklet_sha256: fe6f97b117f6f098949524654db67316362fb189c8fc4b4ac35b352686d7457d
     page_count: 36
     machine_result: pass

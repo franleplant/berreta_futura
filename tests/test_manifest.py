@@ -4,6 +4,7 @@ import hashlib
 import unittest
 
 import yaml
+from PIL import Image
 
 from magazine import Magazine, ValidationError
 from magazine.capture import archive_snapshot
@@ -38,11 +39,21 @@ def make_project(root: Path, *, source_id: str = "source-one") -> None:
         encoding="utf-8",
     )
     (edition_dir / "articles" / "article.md").write_text("The original article.", encoding="utf-8")
+    (edition_dir / "art").mkdir()
+    closing_plates = []
+    for index, color in enumerate(("#2d145e", "#ff5a00", "#111111"), start=1):
+        art_path = edition_dir / "art" / f"coda-{index}.png"
+        Image.new("RGB", (900, 1125), color).save(art_path)
+        closing_plates.append({
+            "title": f"Coda {index}",
+            "art_path": art_path.relative_to(root).as_posix(),
+        })
     ledger = {"schema_version": 1, "source_ids": [source_id], "paragraphs": [{"status": "retained", "source": "The original article.", "edited": "The original article."}]}
     (edition_dir / "fidelity" / "article.yaml").write_text(yaml.safe_dump(ledger), encoding="utf-8")
     manifest = {
         "id": "issue-001", "issue_number": "001", "title": "Issue", "publication_date": "2026-07-15",
         "editorial": "editions/issue-001/editorial.md", "cover": {"headline": "Issue"},
+        "closing_plates": closing_plates,
         "articles": [{"id": "article", "title": "Article", "short_title": "Article",
                       "opener_variant": "edge_medallion", "author": "Author",
                       "author_note": "Author writes about this subject for Example.", "source_ids": [source_id],
@@ -81,6 +92,7 @@ def add_spanish_translation(root: Path) -> None:
         "base_copy_sha256": _edition_copy_sha256(base),
         "title": "Número",
         "cover": {"headline": "Número"},
+        "closing_plate_titles": ["Coda uno", "Coda dos", "Coda tres"],
         "editorial": {
             "path": "editorial.md",
             "source_sha256": hashlib.sha256(source_editorial.read_bytes()).hexdigest(),
@@ -274,6 +286,31 @@ class ManifestTests(unittest.TestCase):
         edition = Magazine(self.root).validate("issue-001")
 
         self.assertEqual(edition.language, "en")
+
+    def test_validate_rejects_duplicate_closing_plate_art(self):
+        make_project(self.root)
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        manifest["closing_plates"][1]["art_path"] = manifest["closing_plates"][0]["art_path"]
+        manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+
+        with self.assertRaisesRegex(ValidationError, "art_path must be unique"):
+            Magazine(self.root).validate("issue-001")
+
+    def test_translation_requires_all_localized_closing_plate_titles(self):
+        make_project(self.root)
+        add_spanish_translation(self.root)
+        translation_path = (
+            self.root / "editions" / "issue-001" / "translations" / "es" / "edition.yaml"
+        )
+        translation = yaml.safe_load(translation_path.read_text(encoding="utf-8"))
+        translation["closing_plate_titles"] = ["Solo una"]
+        translation_path.write_text(
+            yaml.safe_dump(translation, allow_unicode=True), encoding="utf-8"
+        )
+
+        with self.assertRaisesRegex(ValidationError, "requires exactly 3 closing_plate_titles"):
+            Magazine(self.root).validate("issue-001")
 
     def test_validate_rejects_translation_after_english_source_changes(self):
         make_project(self.root)
