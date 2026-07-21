@@ -1423,7 +1423,7 @@ class _Typesetter:
         self.pdf.drawCentredString(center_x, center_y - 5, issue_mark)
 
         art_width, art_height = COVER_ART_SIZE_POINTS
-        art_x, art_y = self.width - self.right - art_width, 177.0
+        art_x, art_y = (self.width - art_width) / 2, 177.0
         if self.edition.cover_art:
             self._draw_image_fill(self.edition.cover_art, art_x, art_y, art_width, art_height)
         else:
@@ -1436,10 +1436,6 @@ class _Typesetter:
         self.pdf.setLineWidth(.7)
         self.pdf.rect(art_x, art_y, art_width, art_height, fill=0, stroke=1)
 
-        subject = str(self.edition.raw.get("subtitle") or self.edition.cover.get("deck") or self.edition.title)
-        subject = re.split(r"\s+(?:in the age|en la era)\s+", subject, maxsplit=1, flags=re.IGNORECASE)[0]
-        subject = re.sub(r",?\s+(?:and|y)\s+", " / ", subject, flags=re.IGNORECASE).replace(",", " / ")
-        self._rotated_label(subject, self.left, art_y, art_height, color=VIOLET)
         self._tracked_label(
             f"Cover / {self.edition.publication_date}",
             art_x,

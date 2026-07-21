@@ -527,7 +527,7 @@ Esta prueba no está publicada ni lista para imprenta. La distribución pública
             "headline": "The Systems That Build",
             "deck": "Six field reports on what happens when code, knowledge, and work become systems of loops",
             "back_text": "The loop is small. The factory is vast. Between them sits the difficult work: preserving intent, evidence, and human understanding.",
-            "art_path": "art/cover-art-v2.png",
+            "art_path": "art/cover-art-v3.png",
         },
         "sources": [a["source_id"] for a in ARTICLES] + ["how-we-built-our-knowledge-base-e986baa0"],
         "articles": article_rows + [cerebras],

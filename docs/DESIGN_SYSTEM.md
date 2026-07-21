@@ -15,14 +15,14 @@ Cover art is a compact graphic proposition, not a miniature narrative scene. Eac
 - Use one central proposition with a thumbnail-readable silhouette.
 - Use three to seven geometric components, including any line or signal point.
 - Preserve at least one large, uninterrupted field of negative space.
-- Use flat, opaque color only: no gradients, lighting, depth, shadows, glow, texture, grain, or faux print distress.
+- Build from large, hard-edged color fields. Restrained tonal movement inside a field is acceptable; texture, grain, glow, pictorial lighting, and fussy surface rendering are not.
 - Avoid people, hands, robots, rooms, machinery, circuit boards, scattered cubes, and literal diagrams.
 - Use the cover ink set: warm paper `#F1EADB`, near-black `#11131A`, ultraviolet `#5332C8`, and a small signal-orange accent `#FF5A1F`.
 - Keep signal orange below five percent of the artwork area.
 - Keep every letter in layout code. Artwork contains no masthead, title, issue number, caption, logo, or watermark.
-- Prefer deterministic vector or code-native construction. Generative imagery may be used for rough composition studies, but production art must reduce to editable, intentional geometry.
+- Whether generated or code-native, production art must reduce to a few intentional shapes and survive at thumbnail size without relying on incidental detail.
 
-Edition 2 establishes the first motif: three large planes meet at one signal point. It represents many automated systems depending on a small, expensive point of judgment. `tools/render_cover_art.py` renders the production PNG from this grammar.
+Edition 2 establishes the first motif: one oversized input crosses a severe gate and becomes a disciplined sequence of outputs. The diagonal, full-bleed composition carries pressure and multiplicity without drawing a literal factory.
 
 ## Typography
 
@@ -68,7 +68,7 @@ The cover artwork does not determine these colors. Violet is a publication-level
 
 ### Front cover
 
-The cover uses a single 250 × 250 pt framed artwork placement, a display title, a circular issue medallion, a rotated subject rail, the complete deck, and private-edition metadata. Edition 2's 1800 × 1800 px production artwork resolves at 518.4 ppi in this placement. Layout code owns every letter; the raster asset contains no masthead or cover lines.
+The cover uses a single centered 250 × 250 pt framed artwork placement, a display title, a circular issue medallion, the complete deck, and private-edition metadata. It does not repeat the subtitle or turn topics into a decorative rail. Edition 2's 1254 × 1254 px production artwork resolves at 361.2 ppi in this placement. Layout code owns every letter; the raster asset contains no masthead or cover lines.
 
 ### Contents
 
