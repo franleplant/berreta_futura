@@ -2,7 +2,30 @@
 
 _Generated from structured source records. Do not edit by hand._
 
-_Open edition: `002-unreleased`; 5 queued sources._
+_Open edition: `002-unreleased`; 6 queued sources._
+
+## Software Factories, Light and Dark — Addy Osmani
+
+- ID: `software-factories-light-and-dark-ef463732`
+- Source: https://x.com/addyosmani/status/2079442194449232227
+- Kind / status: web / captured
+- Captured: 2026-07-21T14:51:59Z
+- Content hash: `not captured`
+- Raw captures: 1 committed bundle(s)
+- Release: queued for `002-unreleased`
+- Published: 2026-07-21
+- Tags: agent-loops, comprehension-debt, software-engineering, software-factories
+- Primary material:
+  - https://x.com/addyosmani/article/2079442194449232227
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+- Provenance:
+  - primary_material -> https://x.com/addyosmani/article/2079442194449232227
+
+A framework for software factories built from harnessed agent loops, contrasting human-supervised light factories with dark factories where code ships unread, and arguing that review judgment, comprehension, and carefully designed checks remain the real constraints.
+
+**Editorial note:** Submitted as an X status URL resolving to a full X Article. The complete article was captured from the user-authenticated X session in focus mode; raw exports exclude cookies, credentials, browser profiles, account navigation, and session UI.
 
 ## Loop Engineering: The 14-Step Roadmap from Prompter to Loop Designer — Codez
 
