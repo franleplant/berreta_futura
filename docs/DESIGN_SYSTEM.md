@@ -6,7 +6,23 @@ BERRETA FUTURA is a small-format reading magazine, not a stack of web pages prin
 
 The system combines literary reading typography with the visual confidence of an art and graphic-design journal. It is deliberately sparse rather than minimal for its own sake: hierarchy is emphatic, provenance remains unmistakable, and long-form pages stay calm.
 
-The issue artwork appears exactly once, on the front cover. It is not repeated, cropped into interior pages, used as a watermark, or treated as a source for the issue palette. Every issue may supply unrelated artwork; layout typography remains deterministic and independent.
+The issue artwork appears exactly once, on the front cover. It is not repeated, cropped into interior pages, used as a watermark, or treated as a source for the interior palette. Each issue interprets its theme through a shared synthetic cover grammar; layout typography remains deterministic and independent.
+
+## Cover artwork
+
+Cover art is a compact graphic proposition, not a miniature narrative scene. Each issue gets one dominant abstract construction made from a few exact shapes. The composition changes with the editorial theme, while its restraint makes the series recognizable.
+
+- Use one central proposition with a thumbnail-readable silhouette.
+- Use three to seven geometric components, including any line or signal point.
+- Preserve at least one large, uninterrupted field of negative space.
+- Use flat, opaque color only: no gradients, lighting, depth, shadows, glow, texture, grain, or faux print distress.
+- Avoid people, hands, robots, rooms, machinery, circuit boards, scattered cubes, and literal diagrams.
+- Use the cover ink set: warm paper `#F1EADB`, near-black `#11131A`, ultraviolet `#5332C8`, and a small signal-orange accent `#FF5A1F`.
+- Keep signal orange below five percent of the artwork area.
+- Keep every letter in layout code. Artwork contains no masthead, title, issue number, caption, logo, or watermark.
+- Prefer deterministic vector or code-native construction. Generative imagery may be used for rough composition studies, but production art must reduce to editable, intentional geometry.
+
+Edition 2 establishes the first motif: three large planes meet at one signal point. It represents many automated systems depending on a small, expensive point of judgment. `tools/render_cover_art.py` renders the production PNG from this grammar.
 
 ## Typography
 
@@ -52,7 +68,7 @@ The cover artwork does not determine these colors. Violet is a publication-level
 
 ### Front cover
 
-The cover uses a single 250 × 250 pt framed artwork placement, a display title, a circular issue medallion, a rotated subject rail, the complete deck, and private-edition metadata. The current 1054 × 1492 px artwork resolves at about 303.6 ppi in this placement. Layout code owns every letter; the raster asset contains no masthead or cover lines.
+The cover uses a single 250 × 250 pt framed artwork placement, a display title, a circular issue medallion, a rotated subject rail, the complete deck, and private-edition metadata. Edition 2's 1800 × 1800 px production artwork resolves at 518.4 ppi in this placement. Layout code owns every letter; the raster asset contains no masthead or cover lines.
 
 ### Contents
 
