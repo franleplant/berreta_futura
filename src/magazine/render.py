@@ -23,10 +23,10 @@ BODY_LEADING = BASE * 4
 CAPTION_SIZE = 7.0
 COVER_ART_SIZE_POINTS = (250.0, 250.0)
 MIN_FIGURE_PPI = 300.0
-FIGURE_BAND_MAX_IMAGE_HEIGHT = 132.0
+FIGURE_BAND_MAX_IMAGE_HEIGHT = 150.0
 FIGURE_COLUMN_MAX_IMAGE_HEIGHT = 220.0
 FIGURE_TEXT_LEADING = 8.6
-FIGURE_GAP = BASE * 3
+FIGURE_GAP = BASE * 5
 INNER_MARGIN = 44.0
 OUTER_MARGIN = 15 * 72 / 25.4
 TEXT_TOP_INSET = 52.0
@@ -186,7 +186,15 @@ def _reportlab():
 
 def _plain(text: str) -> str:
     text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
-    replacements = {"\u2018": "'", "\u2019": "'", "\u201c": '"', "\u201d": '"', "\u2013": "-", "\u2014": "--", "\u2026": "...", "\u00a0": " "}
+    replacements = {
+        "\u2018": "'",
+        "\u2019": "'",
+        "\u201c": '"',
+        "\u201d": '"',
+        "\u2192": "->",
+        "\u2026": "...",
+        "\u00a0": " ",
+    }
     for old, new in replacements.items():
         text = text.replace(old, new)
     return text.encode("cp1252", errors="replace").decode("cp1252")
@@ -559,7 +567,7 @@ class _Typesetter:
 
     def lines(self, text: str, font: str, size: float, width: float) -> list[str]:
         words: list[str] = []
-        for word in _plain(re.sub(r"[*_`]", "", text)).split():
+        for word in _plain(re.sub(r"[*`]", "", text)).split():
             if self.metrics.stringWidth(word, font, size) <= width:
                 words.append(word)
                 continue
@@ -1197,7 +1205,7 @@ class _Typesetter:
                 _plain(_ui(self.edition, "by").upper()) + " " + _plain(author.upper()),
                 SANS_SEMIBOLD,
                 7.4,
-                self.column_width * .57,
+                self.column_width * .76,
             ),
         )
         if note:
@@ -1206,7 +1214,7 @@ class _Typesetter:
             self.pdf.drawRightString(
                 self.frame_left + self.column_width,
                 self.y,
-                self.fit_text(_plain(note.upper()), SANS_MEDIUM, CAPTION_SIZE, self.column_width * .4),
+                self.fit_text(_plain(note.upper()), SANS_MEDIUM, CAPTION_SIZE, self.column_width * .2),
             )
         self.y -= 12
         if author_note:
