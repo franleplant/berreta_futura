@@ -1,0 +1,29 @@
+{
+  "artifact_count": 2,
+  "bundle_sha256": "2f1f70dbf66b2a0ea473e8df7cf64aa36734899fe61d97bd0cfacb84d8c2ffe0",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 1,
+  "images": [
+    {
+      "animated": false,
+      "aspect_ratio": 0.08366,
+      "bytes": 2020239,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/png",
+      "path": "primary-article.png",
+      "pixel_height": 15300,
+      "pixel_width": 1280,
+      "sha256": "a2200824d7f53ae1ec2b053146c48a1fed16906b158a8cd4dcf104a951160335"
+    }
+  ],
+  "local_references": [],
+  "missing_references": [],
+  "referenced_image_count": 0,
+  "schema_version": 1,
+  "source_id": "agent-swarms-and-the-new-model-economics-8b346f57",
+  "unresolved_acquisition_references": []
+}

@@ -4,7 +4,11 @@ open_edition:
   issue_number: 2
   status: collecting
   source_ids:
+  - agent-swarms-and-the-new-model-economics-8b346f57
+  - agentic-pods-taking-ai-beyond-engineering-at-ube-5b9382d4
   - how-we-built-our-knowledge-base-e986baa0
+  - loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f
+  - the-building-block-economy-af6644bd
 released_editions:
 - id: 001-the-work-left-to-us
   issue_number: 1

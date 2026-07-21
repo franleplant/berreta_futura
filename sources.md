@@ -2,7 +2,95 @@
 
 _Generated from structured source records. Do not edit by hand._
 
-_Open edition: `002-unreleased`; 1 queued sources._
+_Open edition: `002-unreleased`; 5 queued sources._
+
+## Loop Engineering: The 14-Step Roadmap from Prompter to Loop Designer — Codez
+
+- ID: `loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f`
+- Source: https://x.com/0xCodez/status/2064374643729773029
+- Kind / status: web / captured
+- Captured: 2026-07-21T14:47:53Z
+- Content hash: `not captured`
+- Raw captures: 1 committed bundle(s)
+- Release: queued for `002-unreleased`
+- Published: 2026-06-09
+- Tags: ai-agents, automation, loop-engineering, software-engineering
+- Primary material:
+  - https://x.com/i/article/2064357550225510400
+  - https://x.com/0xCodez/article/2064374643729773029
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+- Provenance:
+  - primary_material -> https://x.com/i/article/2064357550225510400
+  - primary_material -> https://x.com/0xCodez/article/2064374643729773029
+
+A practical roadmap for deciding when coding-agent loops are worthwhile and designing them with automation, isolated worktrees, reusable skills, state, verification, human gates, and security limits.
+
+**Editorial note:** Submitted as an X post linking an X Article. The complete article was captured from the user-authenticated X session; raw exports exclude cookies, credentials, profiles, and session UI.
+
+## Agent Swarms and the New Model Economics — Wilson Lin
+
+- ID: `agent-swarms-and-the-new-model-economics-8b346f57`
+- Source: https://cursor.com/blog/agent-swarm-model-economics
+- Kind / status: web / captured
+- Captured: 2026-07-21T14:47:44Z
+- Content hash: `not captured`
+- Raw captures: 1 committed bundle(s)
+- Release: queued for `002-unreleased`
+- Published: 2026-07-20
+- Tags: agent-swarms, model-economics, multi-agent-systems, software-engineering
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+
+Cursor compares old and new agent-swarm harnesses on rebuilding SQLite, detailing tree decomposition, coordination mechanisms, model mixes, and the cost advantage of frontier planners with cheaper workers.
+
+**Editorial note:** Primary Cursor research article. The capture preserves the fully rendered article, figures, footnotes, and page metadata; no explicit reuse license was visible.
+
+## Agentic Pods: Taking AI Beyond Engineering at Uber — Praveen Neppalli
+
+- ID: `agentic-pods-taking-ai-beyond-engineering-at-ube-5b9382d4`
+- Source: https://x.com/praveenTweets/status/2074605343439810922
+- Kind / status: web / captured
+- Captured: 2026-07-21T14:47:35Z
+- Content hash: `not captured`
+- Raw captures: 1 committed bundle(s)
+- Release: queued for `002-unreleased`
+- Published: 2026-07-07
+- Tags: agentic-ai, organizational-design, uber, workflow-automation
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+
+Uber pairs AI-proficient engineers with business-domain experts in two-week Agentic Pods to redesign whole workflows across finance, operations, marketing, support, and other functions.
+
+**Editorial note:** Self-contained primary X post. Authenticated extraction was restricted to the target post; navigation, replies, account state, and browser-session data were excluded.
+
+## The Building Block Economy — Mitchell Hashimoto
+
+- ID: `the-building-block-economy-af6644bd`
+- Source: https://x.com/mitchellh/status/2041566958681014418
+- Kind / status: web / captured
+- Captured: 2026-07-21T14:47:11Z
+- Content hash: `not captured`
+- Raw captures: 1 committed bundle(s)
+- Release: queued for `002-unreleased`
+- Published: 2026-04-07
+- Tags: ai-agents, open-source, software-economics
+- Primary material:
+  - https://x.com/i/article/2041548775328829440
+  - https://mitchellh.com/writing/building-block-economy
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+- Provenance:
+  - primary_material -> https://x.com/i/article/2041548775328829440
+  - primary_material -> https://mitchellh.com/writing/building-block-economy
+
+How agentic software factories increase the value of high-quality building blocks, accelerate derivative software, outsource R&D, and disadvantage closed commercial components.
+
+**Editorial note:** Submitted as an X post linking an X Article. The author also published the same primary essay on mitchellh.com; both authenticated X text and the public canonical blog rendering are archived.
 
 ## How We Built Our Knowledge Base — Isaac Tai, Daniel Kim, and Mike Gao
 

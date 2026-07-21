@@ -1,0 +1,39 @@
+schema_version: 1
+id: agent-swarms-and-the-new-model-economics-8b346f57
+title: Agent Swarms and the New Model Economics
+author: Wilson Lin
+canonical_url: https://cursor.com/blog/agent-swarm-model-economics
+submitted_url: https://cursor.com/blog/agent-swarm-model-economics
+captured_at: '2026-07-21T14:47:44Z'
+publication_date: '2026-07-20'
+kind: web
+status: captured
+content_hash: null
+raw_captures:
+- id: 2f1f70dbf66b2a0ea473e8df7cf64aa36734899fe61d97bd0cfacb84d8c2ffe0
+  path: raw/2f1f70dbf66b2a0ea473e8df7cf64aa36734899fe61d97bd0cfacb84d8c2ffe0/manifest.json
+  method: Rendered public primary article captured as full-page screenshot and PDF.
+  captured_at: '2026-07-21T14:47:44Z'
+  artifact_count: 2
+  byte_count: 2653497
+provenance: []
+rights:
+  status: unknown
+  intended_use: private_reference
+  attribution_required: true
+  public_reprint_allowed: false
+media_reviews:
+- capture_id: 2f1f70dbf66b2a0ea473e8df7cf64aa36734899fe61d97bd0cfacb84d8c2ffe0
+  status: media_rejected
+  assets: []
+  note: 'Automatic curation rejected all candidates: extreme_aspect_ratio_or_full_page_capture (1).'
+metadata:
+  tags:
+  - agent-swarms
+  - model-economics
+  - multi-agent-systems
+  - software-engineering
+  synopsis: Cursor compares old and new agent-swarm harnesses on rebuilding SQLite, detailing tree decomposition,
+    coordination mechanisms, model mixes, and the cost advantage of frontier planners with cheaper workers.
+notes: Primary Cursor research article. The capture preserves the fully rendered article, figures, footnotes,
+  and page metadata; no explicit reuse license was visible.

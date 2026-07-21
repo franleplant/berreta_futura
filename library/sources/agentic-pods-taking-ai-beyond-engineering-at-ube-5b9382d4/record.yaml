@@ -1,0 +1,40 @@
+schema_version: 1
+id: agentic-pods-taking-ai-beyond-engineering-at-ube-5b9382d4
+title: 'Agentic Pods: Taking AI Beyond Engineering at Uber'
+author: Praveen Neppalli
+canonical_url: https://x.com/praveenTweets/status/2074605343439810922
+submitted_url: https://x.com/praveenTweets/status/2074605343439810922
+captured_at: '2026-07-21T14:47:35Z'
+publication_date: '2026-07-07'
+kind: web
+status: captured
+content_hash: null
+raw_captures:
+- id: 4b17bfcd8501be249f8188989877e8b46b738645f3b83be62a9cce62526510ec
+  path: raw/4b17bfcd8501be249f8188989877e8b46b738645f3b83be62a9cce62526510ec/manifest.json
+  method: Authenticated Chrome source-text extraction plus rendered submitted-post PDF and screenshot;
+    target post only, session UI removed.
+  captured_at: '2026-07-21T14:47:35Z'
+  artifact_count: 3
+  byte_count: 779564
+provenance: []
+rights:
+  status: unknown
+  intended_use: private_reference
+  attribution_required: true
+  public_reprint_allowed: false
+media_reviews:
+- capture_id: 4b17bfcd8501be249f8188989877e8b46b738645f3b83be62a9cce62526510ec
+  status: media_rejected
+  assets: []
+  note: 'Automatic curation rejected all candidates: lower_editorial_impact_than_selected_candidates (1).'
+metadata:
+  tags:
+  - agentic-ai
+  - organizational-design
+  - uber
+  - workflow-automation
+  synopsis: Uber pairs AI-proficient engineers with business-domain experts in two-week Agentic Pods to
+    redesign whole workflows across finance, operations, marketing, support, and other functions.
+notes: Self-contained primary X post. Authenticated extraction was restricted to the target post; navigation,
+  replies, account state, and browser-session data were excluded.
