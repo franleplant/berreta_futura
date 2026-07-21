@@ -178,3 +178,39 @@ def test_srcset_and_remote_data_references_are_inventoried_deterministically() -
             "data",
         ]
         assert inventory["complete"] is False
+
+
+def test_media_manifest_preserves_validated_browser_source_context() -> None:
+    with TemporaryDirectory() as temporary:
+        root = Path(temporary)
+        snapshot = root / "snapshot"
+        snapshot.mkdir()
+        Image.new("RGB", (1200, 700), "white").save(snapshot / "factory.jpg")
+        (snapshot / "media-manifest.json").write_text(json.dumps({
+            "schema_version": 2,
+            "assets": [{
+                "relative_url": "factory.jpg",
+                "source_url": "https://cdn.example/factory.jpg",
+                "source_position": 3,
+                "role": "diagram",
+                "heading": "The factory",
+                "title": "Closed loop",
+                "description": "Intent returns as production signals.",
+                "alt_text": "A closed software factory loop.",
+            }],
+        }), encoding="utf-8")
+
+        magazine = Magazine(root)
+        record = magazine.capture(
+            "https://example.com/factory", snapshot=snapshot, title="Factory"
+        )
+        inventory = json.loads(_inventory(root, record).read_text(encoding="utf-8"))
+
+        reference = inventory["local_references"][0]
+        assert reference["resolved_path"] == "factory.jpg"
+        assert reference["source_url"] == "https://cdn.example/factory.jpg"
+        assert reference["source_position"] == 3
+        assert reference["role"] == "diagram"
+        assert reference["heading"] == "The factory"
+        assert reference["title"] == "Closed loop"
+        assert inventory["complete"] is True

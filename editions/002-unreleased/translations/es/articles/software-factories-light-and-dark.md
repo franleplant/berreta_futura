@@ -4,7 +4,7 @@ content_mode: faithful_synthesis
 label: SÍNTESIS FIEL
 ---
 
-Una fábrica de software consiste en ciclos con arnés ejecutados a escala. Si el ciclo incluye personas —una fábrica con luz—, se intercambian criterio y concentración por velocidad y riesgo de rotura. Si se ignora a las personas —una fábrica a oscuras—, los agentes pueden delimitar, construir y desplegar código sin que nadie lea los detalles. Pero si las personas dejan de leer, dejan de comprender el software. El trabajo más difícil pasa a ser decidir qué controles construir y cuánta autonomía delegar.
+Una fábrica de software consiste en ciclos con arnés a escala. Con personas dentro —una fábrica con luz— intercambia criterio y concentración por velocidad y riesgo. Sin ellas —una fábrica a oscuras— los agentes pueden delimitar, construir y desplegar código sin que nadie lea los detalles. Si las personas dejan de leer, dejan de comprender el software. Lo más difícil es decidir qué controles construir y cuánta autonomía delegar.
 
 ## Ciclo, arnés, fábrica
 

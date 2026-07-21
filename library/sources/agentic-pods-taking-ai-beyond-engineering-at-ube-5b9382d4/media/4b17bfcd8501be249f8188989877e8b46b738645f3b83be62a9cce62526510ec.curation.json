@@ -6,9 +6,7 @@
       "artifact_path": "submitted-post.png",
       "artifact_sha256": "5b7d4c8827efd1e2f2a5960c8f7713ee9232569dd222de14a3d3fce300faf775",
       "aspect_ratio": 0.634921,
-      "criteria": [
-        "beautiful"
-      ],
+      "criteria": [],
       "decision": "reject",
       "description": "",
       "heading": "",
@@ -17,11 +15,11 @@
       "origin": "raw_raster",
       "pixel_height": 2016,
       "pixel_width": 1280,
-      "rationale": "A source-referenced, print-resolvable raster illustration.",
+      "rationale": "",
       "rejection_reasons": [
-        "lower_editorial_impact_than_selected_candidates"
+        "no_semantic_source_context"
       ],
-      "score": 53,
+      "score": 0,
       "source_artifact": "submitted-post.png",
       "source_artifact_sha256": "5b7d4c8827efd1e2f2a5960c8f7713ee9232569dd222de14a3d3fce300faf775",
       "source_position": 1,
@@ -30,7 +28,7 @@
   ],
   "curator": "magazine-compiler/automatic-media-curator",
   "input_sha256": "ee5820a9eab0099514de27fc025f42f813b14612f3f2a69e62a7a37cda3f5496",
-  "policy_version": "editorial-impact-v2",
+  "policy_version": "editorial-impact-v3",
   "schema_version": 1,
   "selected": [],
   "selection_limit": 3,

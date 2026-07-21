@@ -74,7 +74,7 @@
   ],
   "curator": "magazine-compiler/automatic-media-curator",
   "input_sha256": "0dff6dcc039fec7ca71a995ede49dad45313896e16d5f2c74201f9fa7ee51f0b",
-  "policy_version": "editorial-impact-v2",
+  "policy_version": "editorial-impact-v3",
   "schema_version": 1,
   "selected": [],
   "selection_limit": 3,

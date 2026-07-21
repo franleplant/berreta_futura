@@ -27,7 +27,7 @@ media_reviews:
 - capture_id: 4b17bfcd8501be249f8188989877e8b46b738645f3b83be62a9cce62526510ec
   status: media_rejected
   assets: []
-  note: 'Automatic curation rejected all candidates: lower_editorial_impact_than_selected_candidates (1).'
+  note: 'Automatic curation rejected all candidates: no_semantic_source_context (1).'
 metadata:
   tags:
   - agentic-ai

@@ -121,6 +121,15 @@ def test_curated_figures_resolve_exact_semantic_headings_and_allow_none():
     assert opener == []
     assert anchored == {"capability is not deployment": figure}
 
+    prose_figure = SimpleNamespace(
+        id="capability-prose",
+        anchor="Capability is not deployment",
+        layout="evidence_band_prose",
+    )
+    opener, anchored = typesetter._validated_figures(blocks, (prose_figure,), "article")
+    assert opener == []
+    assert anchored == {"capability is not deployment": prose_figure}
+
 
 def test_curated_figures_enforce_three_asset_cap_and_unique_anchors():
     typesetter = object.__new__(_Typesetter)

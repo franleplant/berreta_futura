@@ -9,7 +9,7 @@ import subprocess
 import yaml
 
 from magazine.manifest import _edition_copy_sha256, load_edition
-from magazine.media_schema import caption_sha256
+from magazine.media_schema import caption_sha256, credit_sha256
 from magazine.records import load_records
 
 
@@ -87,6 +87,67 @@ ARTICLES = [
         "es_short": "con luz y a oscuras",
         "es_emphasis": "Fábricas",
         "es_note": "Addy Osmani escribe sobre sistemas de ingeniería, experiencia de desarrollo y software asistido por IA.",
+        "figures": [
+            {
+                "id": "loop-harness-factory",
+                "decision": "include",
+                "source_id": "software-factories-light-and-dark-ef463732",
+                "asset_id": "raster-003-c84acad9",
+                "caption": "A loop becomes a harness when it gains sandbox, tools, memory, and gates; many harnesses become a factory when they converge on a human-owned review gate.",
+                "alt_text": "Three panels show one agent loop becoming a harness and then a software factory with multiple harnesses, review, merge, and production.",
+                "anchor": "Loop, harness, factory",
+                "layout": "evidence_band_prose",
+                "criteria": ["important", "useful"],
+                "rationale": "The diagram compresses the article's core hierarchy into one legible progression.",
+            },
+            {
+                "id": "factory-closed-loop",
+                "decision": "include",
+                "source_id": "software-factories-light-and-dark-ef463732",
+                "asset_id": "raster-004-99565ac9",
+                "caption": "The factory closes the circuit from intent to queue, harness, automated checks, review and deployment, then returns production signals to the work queue.",
+                "alt_text": "A closed loop connects intent, queue, harness, automated checks, human review, deployment, monitoring, and operational signals.",
+                "anchor": "The narrow neck",
+                "layout": "evidence_band_prose",
+                "criteria": ["important", "useful"],
+                "rationale": "The review gate makes the article's central throughput constraint visible.",
+            },
+            {
+                "id": "lights-on-factory",
+                "decision": "include",
+                "source_id": "software-factories-light-and-dark-ef463732",
+                "asset_id": "raster-002-d955f82f",
+                "caption": "A lights-on factory keeps humans at the review boundary while agents build and automated checks, deployment, monitoring, incidents, and user feedback complete the loop.",
+                "alt_text": "A software factory flow from leadership and user signals through an agent, automated checks, human review, production, and monitoring.",
+                "anchor": "Turning the lights on where judgment lives",
+                "layout": "evidence_band",
+                "criteria": ["important", "useful"],
+                "rationale": "The source sketch shows how human judgment and automated feedback coexist in a lit factory.",
+            },
+        ],
+        "es_figures": [
+            {
+                "id": "loop-harness-factory",
+                "caption": "Un ciclo se convierte en arnés cuando incorpora entorno aislado, herramientas, memoria y puertas; varios arneses forman una fábrica al converger en una puerta de revisión bajo responsabilidad humana.",
+                "credit": "Diagrama de Addy Osmani; fuente: Software Factories, Light and Dark.",
+                "alt_text": "Tres paneles muestran cómo un ciclo de un agente se convierte en arnés y luego en una fábrica con varios arneses, revisión, integración y producción.",
+                "anchor": "Ciclo, arnés, fábrica",
+            },
+            {
+                "id": "factory-closed-loop",
+                "caption": "La fábrica cierra el circuito desde la intención hasta la cola, el arnés, los controles automáticos, la revisión y el despliegue; después devuelve las señales de producción a la cola de trabajo.",
+                "credit": "Diagrama de Addy Osmani; fuente: Software Factories, Light and Dark.",
+                "alt_text": "Un circuito cerrado conecta intención, cola, arnés, controles automáticos, revisión humana, despliegue, observabilidad y señales operativas.",
+                "anchor": "El cuello estrecho",
+            },
+            {
+                "id": "lights-on-factory",
+                "caption": "Una fábrica con luz mantiene a las personas en la frontera de revisión mientras los agentes construyen y los controles automáticos, el despliegue, la observabilidad, los incidentes y la respuesta de usuarios completan el ciclo.",
+                "credit": "Diagrama de Addy Osmani; fuente: Software Factories, Light and Dark.",
+                "alt_text": "Un flujo de fábrica de software va desde la dirección y las señales de usuarios hasta un agente, controles automáticos, revisión humana, producción y observabilidad.",
+                "anchor": "Encender la luz donde vive el criterio",
+            },
+        ],
         "body": """A software factory is harnessed loops at scale. Run the loop with humans in it—a light factory—and you trade judgment and concentration against speed and breakage. Ignore the humans—a dark factory—and agents can scope, build, and ship code without anyone reading the details. If people stop reading, however, they stop understanding the software. The hardest job becomes deciding which checks to build and how much autonomy to delegate.
 
 ## Loop, harness, factory
@@ -108,7 +169,7 @@ A lit factory keeps agents doing most of the building but moves human judgment u
 Some small loops can earn the dark: the check is cheap, frequent, immediate, stable, and difficult to game. A nightly job that fixes one lint violation and opens one small pull request may qualify. Authentication, billing, public contracts, and long-lived architectural decisions do not. All dark produces a system no one can repair; all lit produces a review bottleneck. The skilled work is placing each switch.
 
 The person never left the factory; the person moved to the outer loop. Agents can investigate, implement, test, and report. Engineers still decide whether the approach is right, inspect the evidence at the boundary, approve the change, and carry the consequences of being wrong. Robots can operate in the dark. Humans need to see what they are responsible for.""",
-        "es_body": """Una fábrica de software consiste en ciclos con arnés ejecutados a escala. Si el ciclo incluye personas —una fábrica con luz—, se intercambian criterio y concentración por velocidad y riesgo de rotura. Si se ignora a las personas —una fábrica a oscuras—, los agentes pueden delimitar, construir y desplegar código sin que nadie lea los detalles. Pero si las personas dejan de leer, dejan de comprender el software. El trabajo más difícil pasa a ser decidir qué controles construir y cuánta autonomía delegar.
+        "es_body": """Una fábrica de software consiste en ciclos con arnés a escala. Con personas dentro —una fábrica con luz— intercambia criterio y concentración por velocidad y riesgo. Sin ellas —una fábrica a oscuras— los agentes pueden delimitar, construir y desplegar código sin que nadie lea los detalles. Si las personas dejan de leer, dejan de comprender el software. Lo más difícil es decidir qué controles construir y cuánta autonomía delegar.
 
 ## Ciclo, arnés, fábrica
 
@@ -468,7 +529,7 @@ The point is to design the outer loop deliberately. Human attention belongs wher
 A good factory preserves intent, attaches evidence to decisions, makes failure legible, and leaves enough light for its owners to understand what they built.
 """
     editorial_es = """---
-label: EDITORIAL — TEXTO ORIGINAL DE LA REDACCIÓN
+label: EDITORIAL — TEXTO DE LA REDACCIÓN
 title: La casilla costosa
 byline: La redacción
 ---
@@ -505,7 +566,7 @@ Esta prueba no está publicada ni lista para imprenta. La distribución pública
     article_rows = []
     variants = ["split_axis", "edge_medallion", "stepped_title", "split_axis", "edge_medallion"]
     for article, variant in zip(ARTICLES, variants):
-        article_rows.append({
+        row = {
             "id": article["id"],
             "title": article["title"],
             "short_title": article["short_title"],
@@ -517,7 +578,10 @@ Esta prueba no está publicada ni lista para imprenta. La distribución pública
             "source_ids": [article["source_id"]],
             "manuscript": f"editions/002-unreleased/articles/{article['id']}.md",
             "fidelity": f"editions/002-unreleased/fidelity/{article['id']}.yaml",
-        })
+        }
+        if article.get("figures"):
+            row["figures"] = article["figures"]
+        article_rows.append(row)
     cerebras["opener_variant"] = "stepped_title"
     base.update({
         "publication_date": "2026-07-21",
@@ -546,9 +610,10 @@ Esta prueba no está publicada ni lista para imprenta. La distribución pública
         row for row in old_translation["articles"] if row["id"] == "how-we-built-our-knowledge-base"
     )
     translated_rows = []
+    loaded_articles = {article.id: article for article in loaded.articles}
     for article in ARTICLES:
         source_path = EDITION / "articles" / f"{article['id']}.md"
-        translated_rows.append({
+        row = {
             "id": article["id"],
             "title": article["es_title"],
             "short_title": article["es_short"],
@@ -556,7 +621,22 @@ Esta prueba no está publicada ni lista para imprenta. La distribución pública
             "author_note": article["es_note"],
             "manuscript": f"articles/{article['id']}.md",
             "source_sha256": sha(source_path),
-        })
+        }
+        if article.get("es_figures"):
+            base_figures = {figure.id: figure for figure in loaded_articles[article["id"]].figures}
+            row["figures"] = [
+                {
+                    **figure,
+                    "source_caption_sha256": caption_sha256(
+                        figure["id"], base_figures[figure["id"]].caption
+                    ),
+                    "source_credit_sha256": credit_sha256(
+                        figure["id"], base_figures[figure["id"]].credit
+                    ),
+                }
+                for figure in article["es_figures"]
+            ]
+        translated_rows.append(row)
     cerebras_source = EDITION / "articles" / "how-we-built-our-knowledge-base.md"
     cerebras_es["source_sha256"] = sha(cerebras_source)
     for figure, base_figure in zip(cerebras_es.get("figures", []), cerebras.get("figures", [])):

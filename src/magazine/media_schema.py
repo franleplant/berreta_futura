@@ -19,7 +19,7 @@ MEDIA_TRIAGE_STATES = {
     "media_curated",
     "media_blocked",
 }
-FIGURE_LAYOUTS = {"evidence_band", "column_plate"}
+FIGURE_LAYOUTS = {"evidence_band", "evidence_band_prose", "column_plate"}
 CURATION_CRITERIA = {"important", "useful", "beautiful", "cool"}
 SUPPORTED_IMAGE_TYPES = {"image/jpeg", "image/png"}
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")

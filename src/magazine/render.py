@@ -826,7 +826,17 @@ class _Typesetter:
                 f"Curated figure {self._figure_value(figure, 'id', '<unknown>')} leaves too "
                 "little reading space below its Monument evidence band"
             )
-        self._configure_frames(2, top=band_bottom, role="continuation")
+        if str(self._figure_value(figure, "layout")) == "evidence_band_prose":
+            prose_x, prose_width = self.grid_box(1, 4)
+            self._set_custom_frame(
+                prose_x,
+                prose_width,
+                top=band_bottom,
+                bottom=self.bottom,
+            )
+            self.frame_role = "continuation"
+        else:
+            self._configure_frames(2, top=band_bottom, role="continuation")
 
     def _opener_evidence_band(
         self,
@@ -857,7 +867,17 @@ class _Typesetter:
                 f"Curated figure {self._figure_value(figure, 'id', '<unknown>')} leaves too "
                 "little reading space below its Monument opener evidence band"
             )
-        self._configure_frames(2, top=band_bottom, role="continuation")
+        if str(self._figure_value(figure, "layout")) == "evidence_band_prose":
+            prose_x, prose_width = self.grid_box(1, 4)
+            self._set_custom_frame(
+                prose_x,
+                prose_width,
+                top=band_bottom,
+                bottom=self.bottom,
+            )
+            self.frame_role = "continuation"
+        else:
+            self._configure_frames(2, top=band_bottom, role="continuation")
 
     def block(self, kind: str, text: str):
         styles = {
@@ -1038,7 +1058,7 @@ class _Typesetter:
         opener: list = []
         for row, anchor in zip(rows, anchors, strict=True):
             layout = str(self._figure_value(row, "layout", "column_plate"))
-            if layout not in {"evidence_band", "column_plate"}:
+            if layout not in {"evidence_band", "evidence_band_prose", "column_plate"}:
                 raise ValidationError(
                     f"Curated figure {self._figure_value(row, 'id', '<unknown>')} has invalid "
                     f"Monument layout {layout!r}"
@@ -1081,7 +1101,7 @@ class _Typesetter:
         for figure in opener_figures:
             figure_number += 1
             layout = str(self._figure_value(figure, "layout", "column_plate"))
-            if layout == "evidence_band":
+            if layout in {"evidence_band", "evidence_band_prose"}:
                 self._opener_evidence_band(
                     figure,
                     article_id=article_id,
@@ -1096,7 +1116,9 @@ class _Typesetter:
 
         for index, (kind, value) in enumerate(blocks):
             figure = anchored.get(value.strip().casefold()) if kind in {"h2", "h3"} else None
-            if figure is not None and str(self._figure_value(figure, "layout")) == "evidence_band":
+            if figure is not None and str(self._figure_value(figure, "layout")) in {
+                "evidence_band", "evidence_band_prose"
+            }:
                 figure_number += 1
                 self._evidence_band(
                     kind,

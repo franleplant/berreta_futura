@@ -176,6 +176,16 @@ missing local images or stale inventories fail validation. `mag media-index`
 rebuilds these derived inventories for existing immutable captures without
 changing anything under `raw/`.
 
+Authenticated browser captures that expose embedded media must archive each
+observed asset separately and include a `media-manifest.json` beside the capture.
+Each manifest entry uses a safe `relative_url` and may preserve its original
+HTTP(S) `source_url`, positive `source_position`, semantic `role` (`diagram`,
+`figure`, `photo`, `title_card`, `decorative`, or `duplicate`), heading, title,
+description, and alt text. The inventory validates and carries this context into
+automatic curation. Title cards, decorative assets, and duplicate bytes are
+rejected deterministically; source-referenced print-resolution diagrams remain
+eligible even when the browser export itself is a full-page screenshot.
+
 Automatic media decisions live in a bundle-keyed curation audit and are pinned
 in `record.yaml`; exhaustive inventories remain generated output. The curator
 extracts substantive inline SVG diagrams into generated PNG derivatives without
@@ -195,8 +205,9 @@ layout.
 
 An article may select at most three curated figures. Each selection records why
 it is important, useful, beautiful, or cool; resolves to a hash-verified source
-asset; and uses either a full-width `evidence_band` or a single-column
-`column_plate`. Placement is semantic: `__opener__` or an exact `##` heading,
+asset; and uses a full-width `evidence_band`, an `evidence_band_prose` with a
+centered readable measure below the image, or a single-column `column_plate`.
+Placement is semantic: `__opener__` or an exact `##` heading,
 never a fragile page number. Spanish preserves figure identity and layout while
 providing a hash-pinned localized caption, alt text, and heading anchor.
 

@@ -26,7 +26,8 @@ media_reviews:
 - capture_id: 2f1f70dbf66b2a0ea473e8df7cf64aa36734899fe61d97bd0cfacb84d8c2ffe0
   status: media_rejected
   assets: []
-  note: 'Automatic curation rejected all candidates: extreme_aspect_ratio_or_full_page_capture (1).'
+  note: 'Automatic curation rejected all candidates: extreme_aspect_ratio_or_full_page_capture (1), no_semantic_source_context
+    (1).'
 metadata:
   tags:
   - agent-swarms

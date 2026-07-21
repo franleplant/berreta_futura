@@ -1,20 +1,19 @@
 schema_version: 1
 edition_id: 002-unreleased
 reviewer: Heisenberg (render_critic subagent)
-reviewed_at: '2026-07-21T16:50:51+00:00'
+reviewed_at: '2026-07-21T18:42:44+00:00'
 result: approved
 findings: []
-notes: Approved after blank inside-cover change. Inspected all EN/ES reader and booklet contact sheets
-  plus full-resolution inside front/back pages and blank imposed side; all are pixel-exact white and no
-  actionable defects remain.
+notes: Final independent review inspected every EN/ES reader and booklet contact sheet after Addy media
+  recapture and evidence-band balancing; no actionable findings remain. Cover art stayed locked.
 languages:
   en:
-    reader_sha256: 8e1a178e3bb9e0b75ba42d8cba9440fd84e62bb2e6dfce0744546d94b535c3ec
-    booklet_sha256: 6bb31d84989d9b7889961540c0f43655770c4f5a7b7032b9d31c42812d8f8883
+    reader_sha256: cf006d442fafcb4029668e3f6554af9c29a353d387768871b230d7662d8d8253
+    booklet_sha256: f9a6ac6646463a257317234b23660ebd88f05e505b15f6298e77b018363f53ab
     page_count: 28
     machine_result: pass
   es:
-    reader_sha256: be9c80f1f6f8fe135680e6a49ae2c87e7f1443c79aa3ae350213421d1e6ef015
-    booklet_sha256: c375148b0b66ae34e20e0592e9b14e703774524c7de514dd10f73c34bf3f809d
+    reader_sha256: 22fc1bc11910edadcca877cc2c899b4117c27ad59bd79ed6e6a08420f811998d
+    booklet_sha256: 3c844e8ea1960c122ae70ca37b089e5e7b300cbdf880506375dc6363b25aa7b6
     page_count: 32
     machine_result: pass

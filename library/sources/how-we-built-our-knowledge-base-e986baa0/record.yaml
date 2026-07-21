@@ -67,7 +67,7 @@ media_reviews:
       attribution_required: true
       public_reprint_allowed: false
       permission_required_for_public_reprint: true
-  note: Automatic curation selected 3 of 10 candidates under editorial-impact-v2; decisions are hash-pinned
+  note: Automatic curation selected 3 of 10 candidates under editorial-impact-v3; decisions are hash-pinned
     in 19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169.curation.json.
 metadata:
   language: en

@@ -17,6 +17,13 @@ raw_captures:
   captured_at: '2026-07-21T14:51:59Z'
   artifact_count: 2
   byte_count: 1716412
+- id: 5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8
+  path: raw/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8/manifest.json
+  method: Authenticated Chrome X Article capture with structured text, full-page evidence, and separately
+    archived embedded media; sanitized, no session data.
+  captured_at: '2026-07-21T18:29:14Z'
+  artifact_count: 8
+  byte_count: 2300239
 provenance:
 - relation: primary_material
   url: https://x.com/addyosmani/article/2079442194449232227
@@ -26,10 +33,49 @@ rights:
   attribution_required: true
   public_reprint_allowed: false
 media_reviews:
+- capture_id: 5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8
+  status: media_curated
+  assets:
+  - id: raster-002-d955f82f
+    artifact_path: 02-harness-engineering-talk.jpg
+    artifact_sha256: d955f82f24828ab6ccdbf122cf2fb391d5d2c905c5aebd97b3b40f76dec7ac99
+    mime_type: image/jpeg
+    creator: Addy Osmani
+    credit: 'Diagram by Addy Osmani; source: Software Factories, Light and Dark.'
+    rights:
+      status: unknown
+      intended_use: private_reference
+      attribution_required: true
+      public_reprint_allowed: false
+  - id: raster-004-99565ac9
+    artifact_path: 04-factory-closed-loop.jpg
+    artifact_sha256: 99565ac98471c409bd3fdff25cdf6e6f875199ba04c960d46f28a648453ada1a
+    mime_type: image/jpeg
+    creator: Addy Osmani
+    credit: 'Diagram by Addy Osmani; source: Software Factories, Light and Dark.'
+    rights:
+      status: unknown
+      intended_use: private_reference
+      attribution_required: true
+      public_reprint_allowed: false
+  - id: raster-003-c84acad9
+    artifact_path: 03-loop-harness-factory.jpg
+    artifact_sha256: c84acad91eb1765a599dcfe7eff573df5fecd1fa9d5e3986ab468aba8be6edb9
+    mime_type: image/jpeg
+    creator: Addy Osmani
+    credit: 'Diagram by Addy Osmani; source: Software Factories, Light and Dark.'
+    rights:
+      status: unknown
+      intended_use: private_reference
+      attribution_required: true
+      public_reprint_allowed: false
+  note: Automatic curation selected 3 of 6 candidates under editorial-impact-v3; decisions are hash-pinned
+    in 5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8.curation.json.
 - capture_id: 60b2ecf8fcb0a39bb63fde6e1a40965d5a1d228f9348178a4cc56d5a5956753c
   status: media_rejected
   assets: []
-  note: 'Automatic curation rejected all candidates: extreme_aspect_ratio_or_full_page_capture (1).'
+  note: 'Automatic curation rejected all candidates: extreme_aspect_ratio_or_full_page_capture (1), no_semantic_source_context
+    (1).'
 metadata:
   tags:
   - agent-loops

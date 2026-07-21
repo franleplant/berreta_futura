@@ -83,3 +83,60 @@ def test_media_index_preserves_a_legacy_decision_without_an_automatic_audit() ->
         from magazine.io import load_structured
 
         assert SourceRecord.from_dict(load_structured(reloaded)).to_dict()["media_reviews"] == before
+
+
+def test_browser_media_manifest_curates_diagrams_and_rejects_title_cards_and_duplicates() -> None:
+    with TemporaryDirectory() as temporary:
+        root = Path(temporary)
+        snapshot = root / "snapshot"
+        snapshot.mkdir()
+        Image.new("RGB", (2048, 819), "black").save(snapshot / "01-title.jpg")
+        Image.new("RGB", (2048, 1146), "white").save(snapshot / "02-flow.jpg")
+        Image.new("RGB", (2048, 677), "white").save(snapshot / "03-loop.jpg")
+        Image.new("RGB", (2048, 1030), "white").save(snapshot / "04-gate.jpg")
+        (snapshot / "05-duplicate.jpg").write_bytes((snapshot / "04-gate.jpg").read_bytes())
+        assets = [
+            {"relative_url": "01-title.jpg", "source_position": 1, "role": "title_card", "title": "Article title"},
+            {"relative_url": "02-flow.jpg", "source_position": 2, "role": "diagram", "heading": "Flow", "title": "Factory flow"},
+            {"relative_url": "03-loop.jpg", "source_position": 3, "role": "diagram", "heading": "Loop", "title": "Loop and harness"},
+            {"relative_url": "04-gate.jpg", "source_position": 4, "role": "diagram", "heading": "Loop", "title": "Review gate"},
+            {"relative_url": "05-duplicate.jpg", "source_position": 5, "role": "duplicate", "title": "Repeated review gate"},
+        ]
+        (snapshot / "media-manifest.json").write_text(
+            json.dumps({"schema_version": 2, "assets": assets}), encoding="utf-8"
+        )
+
+        magazine = Magazine(root)
+        record = magazine.capture(
+            "https://example.com/software-factory", snapshot=snapshot,
+            title="Software factory", author="Example Author",
+        )
+
+        review = record.media_reviews[0]
+        assert review.status == "media_curated"
+        assert [asset.artifact_path for asset in review.assets] == [
+            "02-flow.jpg", "04-gate.jpg", "03-loop.jpg"
+        ]
+        plan_path = magazine.sources_dir / record.id / "media" / f"{review.capture_id}.curation.json"
+        plan = json.loads(plan_path.read_text(encoding="utf-8"))
+        rejected = {row["artifact_path"]: row["rejection_reasons"] for row in plan["candidates"] if row["decision"] == "reject"}
+        assert "article_title_card" in rejected["01-title.jpg"]
+        assert "duplicate_media_asset" in rejected["05-duplicate.jpg"]
+
+
+def test_unreferenced_full_post_screenshot_is_not_promoted_to_figure() -> None:
+    with TemporaryDirectory() as temporary:
+        root = Path(temporary)
+        snapshot = root / "snapshot"
+        snapshot.mkdir()
+        Image.new("RGB", (1280, 2016), "white").save(snapshot / "submitted-post.png")
+
+        magazine = Magazine(root)
+        record = magazine.capture(
+            "https://example.com/post", snapshot=snapshot, title="Submitted post"
+        )
+
+        review = record.media_reviews[0]
+        assert review.status == "media_rejected"
+        assert review.assets == ()
+        assert "no_semantic_source_context" in review.note

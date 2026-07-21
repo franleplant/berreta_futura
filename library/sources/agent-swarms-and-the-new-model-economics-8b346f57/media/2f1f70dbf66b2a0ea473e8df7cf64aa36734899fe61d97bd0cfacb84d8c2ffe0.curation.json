@@ -17,7 +17,8 @@
       "pixel_width": 1280,
       "rationale": "",
       "rejection_reasons": [
-        "extreme_aspect_ratio_or_full_page_capture"
+        "extreme_aspect_ratio_or_full_page_capture",
+        "no_semantic_source_context"
       ],
       "score": 0,
       "source_artifact": "primary-article.png",
@@ -28,7 +29,7 @@
   ],
   "curator": "magazine-compiler/automatic-media-curator",
   "input_sha256": "343b41af136ee9b00f74e8171b50401d4decf10cba1d75b0160ecbda4537058f",
-  "policy_version": "editorial-impact-v2",
+  "policy_version": "editorial-impact-v3",
   "schema_version": 1,
   "selected": [],
   "selection_limit": 3,

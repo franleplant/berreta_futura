@@ -40,6 +40,49 @@ articles:
   - software-factories-light-and-dark-ef463732
   manuscript: editions/002-unreleased/articles/software-factories-light-and-dark.md
   fidelity: editions/002-unreleased/fidelity/software-factories-light-and-dark.yaml
+  figures:
+  - id: loop-harness-factory
+    decision: include
+    source_id: software-factories-light-and-dark-ef463732
+    asset_id: raster-003-c84acad9
+    caption: A loop becomes a harness when it gains sandbox, tools, memory, and gates; many harnesses become a factory
+      when they converge on a human-owned review gate.
+    alt_text: Three panels show one agent loop becoming a harness and then a software factory with multiple harnesses,
+      review, merge, and production.
+    anchor: Loop, harness, factory
+    layout: evidence_band_prose
+    criteria:
+    - important
+    - useful
+    rationale: The diagram compresses the article's core hierarchy into one legible progression.
+  - id: factory-closed-loop
+    decision: include
+    source_id: software-factories-light-and-dark-ef463732
+    asset_id: raster-004-99565ac9
+    caption: The factory closes the circuit from intent to queue, harness, automated checks, review and deployment,
+      then returns production signals to the work queue.
+    alt_text: A closed loop connects intent, queue, harness, automated checks, human review, deployment, monitoring,
+      and operational signals.
+    anchor: The narrow neck
+    layout: evidence_band_prose
+    criteria:
+    - important
+    - useful
+    rationale: The review gate makes the article's central throughput constraint visible.
+  - id: lights-on-factory
+    decision: include
+    source_id: software-factories-light-and-dark-ef463732
+    asset_id: raster-002-d955f82f
+    caption: A lights-on factory keeps humans at the review boundary while agents build and automated checks, deployment,
+      monitoring, incidents, and user feedback complete the loop.
+    alt_text: A software factory flow from leadership and user signals through an agent, automated checks, human
+      review, production, and monitoring.
+    anchor: Turning the lights on where judgment lives
+    layout: evidence_band
+    criteria:
+    - important
+    - useful
+    rationale: The source sketch shows how human judgment and automated feedback coexist in a lit factory.
 - id: the-building-block-economy
   title: The Building Block Economy
   short_title: Building Block

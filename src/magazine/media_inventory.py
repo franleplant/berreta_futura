@@ -17,6 +17,9 @@ from .errors import ValidationError
 
 MEDIA_INVENTORY_SCHEMA_VERSION = 1
 
+_DECLARED_MEDIA_ROLES = {"decorative", "diagram", "duplicate", "figure", "photo", "title_card"}
+_DECLARED_MEDIA_TEXT_FIELDS = ("alt_text", "description", "heading", "title")
+
 _MIME_BY_FORMAT = {
     "AVIF": "image/avif",
     "BMP": "image/bmp",
@@ -270,6 +273,7 @@ def _add_declared_media_references(
                 f"Captured media manifest asset must be a safe local reference: {reference}"
             )
         resolved = classification[1]
+        metadata = _declared_media_metadata(asset, document_path=document_path)
         key = (document_path, "manifest", reference)
         local[key] = {
             "document_path": document_path,
@@ -277,7 +281,57 @@ def _add_declared_media_references(
             "reference": reference,
             "resolved_path": resolved,
             "present": resolved in artifact_paths,
+            **metadata,
         }
+
+
+def _declared_media_metadata(asset: dict[str, Any], *, document_path: str) -> dict[str, Any]:
+    """Validate optional source context carried by a browser media manifest."""
+
+    result: dict[str, Any] = {}
+    source_url = asset.get("source_url")
+    if source_url is not None:
+        if not isinstance(source_url, str) or urlsplit(source_url).scheme.casefold() not in {"http", "https"}:
+            raise ValidationError(
+                f"Captured media manifest asset source_url must be HTTP(S): {document_path}"
+            )
+        result["source_url"] = source_url
+    source_position = asset.get("source_position")
+    if source_position is not None:
+        if isinstance(source_position, bool) or not isinstance(source_position, int) or source_position < 1:
+            raise ValidationError(
+                f"Captured media manifest asset source_position must be a positive integer: {document_path}"
+            )
+        result["source_position"] = source_position
+    role = asset.get("role")
+    if role is not None:
+        if not isinstance(role, str) or role not in _DECLARED_MEDIA_ROLES:
+            raise ValidationError(
+                f"Captured media manifest asset has invalid role {role!r}: {document_path}"
+            )
+        result["role"] = role
+    for field in _DECLARED_MEDIA_TEXT_FIELDS:
+        value = asset.get(field)
+        if value is None:
+            continue
+        if not isinstance(value, str):
+            raise ValidationError(
+                f"Captured media manifest asset {field} must be text: {document_path}"
+            )
+        result[field] = value.strip()
+    duplicate_of = asset.get("duplicate_of")
+    if duplicate_of is not None:
+        if not isinstance(duplicate_of, str) or not duplicate_of.strip():
+            raise ValidationError(
+                f"Captured media manifest asset duplicate_of must be a local path: {document_path}"
+            )
+        classification = _classify_reference(document_path, duplicate_of)
+        if classification[0] != "local":
+            raise ValidationError(
+                f"Captured media manifest asset duplicate_of must be a local path: {duplicate_of}"
+            )
+        result["duplicate_of"] = classification[1]
+    return result
 
 
 def _srcset_urls(value: str) -> list[str]:

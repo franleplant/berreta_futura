@@ -18,7 +18,7 @@ from .media_schema import MediaCaptureReview, SourceMediaAsset
 
 
 CURATION_SCHEMA_VERSION = 1
-CURATOR_POLICY_VERSION = "editorial-impact-v2"
+CURATOR_POLICY_VERSION = "editorial-impact-v3"
 MAX_IMAGES_PER_ARTICLE = 3
 _SVG = re.compile(r"<svg\b.*?</svg>", re.IGNORECASE | re.DOTALL)
 _STYLE = re.compile(r"<style\b[^>]*>(.*?)</style>", re.IGNORECASE | re.DOTALL)
@@ -243,9 +243,18 @@ def _raster_candidates(inventory: dict[str, Any]) -> list[dict[str, Any]]:
         for row in inventory.get("local_references", [])
         if isinstance(row, dict) and row.get("present")
     }
+    declared = {
+        str(row.get("resolved_path")): row
+        for row in inventory.get("local_references", [])
+        if isinstance(row, dict) and row.get("attribute") == "manifest" and row.get("present")
+    }
+    seen_hashes: set[str] = set()
     result: list[dict[str, Any]] = []
     for index, image in enumerate(inventory.get("images", []), start=1):
         path = str(image["path"])
+        artifact_sha256 = str(image["sha256"])
+        context = declared.get(path, {})
+        role = str(context.get("role") or "")
         width = int(image["pixel_width"])
         height = int(image["pixel_height"])
         aspect = width / height
@@ -256,19 +265,41 @@ def _raster_candidates(inventory: dict[str, Any]) -> list[dict[str, Any]]:
             rejection.append("insufficient_print_resolution")
         if referenced and path not in referenced:
             rejection.append("not_referenced_by_source_content")
-        if not referenced and len(inventory.get("images", [])) > 1:
+        if not referenced:
             rejection.append("no_semantic_source_context")
-        score = 0 if rejection else 48 + min(12, (width * height) // 500_000)
+        if artifact_sha256 in seen_hashes:
+            rejection.append("duplicate_media_asset")
+        seen_hashes.add(artifact_sha256)
+        if role == "title_card":
+            rejection.append("article_title_card")
+        if role in {"decorative", "duplicate"}:
+            rejection.append("non_editorial_media_role")
+        score = 0
+        if not rejection:
+            score = 50 + min(10, (width * height) // 250_000)
+            score += 6 if context else 0
+            score += 6 if role in {"diagram", "figure"} else 0
+        criteria = []
+        if score:
+            criteria = ["useful"]
+            if role in {"diagram", "figure"}:
+                criteria.insert(0, "important")
+        title = str(context.get("title") or PurePosixPath(path).stem.replace("-", " ").replace("_", " "))
+        description = str(context.get("description") or "")
         result.append({
             "id": f"raster-{index:03d}-{str(image['sha256'])[:8]}",
             "origin": "raw_raster", "source_artifact": path,
             "source_artifact_sha256": str(image["sha256"]), "artifact_path": path,
-            "artifact_sha256": str(image["sha256"]), "mime_type": str(image["mime_type"]),
+            "artifact_sha256": artifact_sha256, "mime_type": str(image["mime_type"]),
             "pixel_width": width, "pixel_height": height, "aspect_ratio": round(aspect, 6),
-            "heading": "", "title": PurePosixPath(path).stem.replace("-", " ").replace("_", " "),
-            "description": "", "source_position": index, "score": score,
-            "criteria": ["beautiful"] if score else [],
-            "rationale": "A source-referenced, print-resolvable raster illustration." if score else "",
+            "heading": str(context.get("heading") or ""), "title": title,
+            "description": description,
+            "source_position": int(context.get("source_position") or index), "score": score,
+            "criteria": criteria,
+            "rationale": (
+                f"{title} is a source-referenced, print-resolvable visual explanation."
+                if score else ""
+            ),
             "rejection_reasons": rejection,
         })
     return result
@@ -372,13 +403,21 @@ def _svg_score(
 def _select_diverse(ranked: list[dict[str, Any]]) -> list[dict[str, Any]]:
     eligible = [row for row in ranked if not row["rejection_reasons"] and int(row["score"]) >= 58]
     selected: list[dict[str, Any]] = []
-    headings: set[str] = set()
+    contexts: set[tuple[str, str]] = set()
+    hashes: set[str] = set()
     for row in eligible:
         heading = str(row.get("heading") or "").casefold()
-        if heading and heading in headings:
+        title = str(row.get("title") or "").casefold()
+        context = (heading, title)
+        artifact_sha256 = str(row.get("artifact_sha256") or "")
+        if context != ("", "") and context in contexts:
+            continue
+        if artifact_sha256 and artifact_sha256 in hashes:
             continue
         selected.append(row)
-        headings.add(heading)
+        contexts.add(context)
+        if artifact_sha256:
+            hashes.add(artifact_sha256)
         if len(selected) == MAX_IMAGES_PER_ARTICLE:
             break
     return selected
