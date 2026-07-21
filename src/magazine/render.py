@@ -1763,6 +1763,11 @@ class _Typesetter:
                         f"Article {article.id} spans {page_count} reader pages; the hard cap is "
                         f"{MAX_ARTICLE_PAGES}. Condense it as a faithful_synthesis before building."
                     )
+                if self.enforce_page_caps and page_count < article.minimum_reader_pages:
+                    raise ValidationError(
+                        f"Article {article.id} spans {page_count} reader pages; its editorial minimum is "
+                        f"{article.minimum_reader_pages}. Restore substantive source detail before building."
+                    )
             for index, section in enumerate(self.edition.sections):
                 self._section(index, section)
             return

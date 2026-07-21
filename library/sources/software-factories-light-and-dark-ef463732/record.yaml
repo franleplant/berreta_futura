@@ -69,7 +69,7 @@ media_reviews:
       intended_use: private_reference
       attribution_required: true
       public_reprint_allowed: false
-  note: Automatic curation selected 3 of 6 candidates under editorial-impact-v3; decisions are hash-pinned
+  note: Automatic curation selected 3 of 6 candidates under editorial-impact-v4; decisions are hash-pinned
     in 5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8.curation.json.
 - capture_id: 60b2ecf8fcb0a39bb63fde6e1a40965d5a1d228f9348178a4cc56d5a5956753c
   status: media_rejected

@@ -18,7 +18,7 @@ from .media_schema import MediaCaptureReview, SourceMediaAsset
 
 
 CURATION_SCHEMA_VERSION = 1
-CURATOR_POLICY_VERSION = "editorial-impact-v3"
+CURATOR_POLICY_VERSION = "editorial-impact-v4"
 MAX_IMAGES_PER_ARTICLE = 3
 _SVG = re.compile(r"<svg\b.*?</svg>", re.IGNORECASE | re.DOTALL)
 _STYLE = re.compile(r"<style\b[^>]*>(.*?)</style>", re.IGNORECASE | re.DOTALL)
@@ -278,7 +278,10 @@ def _raster_candidates(inventory: dict[str, Any]) -> list[dict[str, Any]]:
         if not rejection:
             score = 50 + min(10, (width * height) // 250_000)
             score += 6 if context else 0
-            score += 6 if role in {"diagram", "figure"} else 0
+            # Explanatory diagrams usually carry a distinct conceptual layer,
+            # while charts within one results section often repeat the same
+            # comparison. Give diagrams a slight lead before section diversity.
+            score += 8 if role == "diagram" else 6 if role == "figure" else 0
         criteria = []
         if score:
             criteria = ["useful"]
@@ -404,22 +407,40 @@ def _select_diverse(ranked: list[dict[str, Any]]) -> list[dict[str, Any]]:
     eligible = [row for row in ranked if not row["rejection_reasons"] and int(row["score"]) >= 58]
     selected: list[dict[str, Any]] = []
     contexts: set[tuple[str, str]] = set()
+    headings: set[str] = set()
     hashes: set[str] = set()
-    for row in eligible:
+
+    def add(row: dict[str, Any]) -> bool:
         heading = str(row.get("heading") or "").casefold()
         title = str(row.get("title") or "").casefold()
         context = (heading, title)
         artifact_sha256 = str(row.get("artifact_sha256") or "")
         if context != ("", "") and context in contexts:
-            continue
+            return False
         if artifact_sha256 and artifact_sha256 in hashes:
-            continue
+            return False
         selected.append(row)
         contexts.add(context)
+        if heading:
+            headings.add(heading)
         if artifact_sha256:
             hashes.add(artifact_sha256)
+        return True
+
+    # First spread the scarce print slots across semantic sections. A second
+    # pass may use another figure from a strong section when fewer than three
+    # distinct headings exist.
+    for row in eligible:
+        heading = str(row.get("heading") or "").casefold()
+        if heading and heading in headings:
+            continue
+        add(row)
         if len(selected) == MAX_IMAGES_PER_ARTICLE:
-            break
+            return selected
+    for row in eligible:
+        add(row)
+        if len(selected) == MAX_IMAGES_PER_ARTICLE:
+            return selected
     return selected
 
 

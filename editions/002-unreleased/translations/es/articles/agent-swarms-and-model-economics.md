@@ -4,26 +4,48 @@ content_mode: faithful_synthesis
 label: SÍNTESIS FIEL
 ---
 
-Hemos estado experimentando hasta dónde pueden escalar los enjambres de agentes de programación. Un arnés nuevo, construido a partir de la documentación de SQLite, superó nuestro enfoque anterior con todas las configuraciones de modelos. El resultado llamativo no fue solo que ayudaran más agentes. La topología, la memoria, el control de versiones y la separación entre planificación y ejecución cambiaron tanto la calidad como el coste.
+A comienzos de este año, un enjambre construyó un navegador desde cero: una prueba útil, pero lejos de ser software pulido. Después quisimos diseñar el sistema con intención. Volvimos a una tarea que al enjambre anterior le había costado —implementar SQLite en Rust desde su documentación— y el arnés nuevo lo superó con todas las combinaciones de modelos. Más agentes no fueron la variable decisiva: la topología, la memoria, la coordinación y la división entre planificación y ejecución cambiaron la calidad y el coste.
 
-## Los árboles preservan el contexto
+## Árboles y memoria
 
-Nuestro enjambre forma un árbol. Un planificador capaz divide el trabajo y lo delega; trabajadores más baratos ejecutan tareas acotadas. El planificador nunca implementa y el trabajador nunca planifica. Esta separación importa menos por la velocidad paralela que por la eficiencia de contexto: cada agente ve la memoria necesaria para su función, en vez de arrastrar todo el proyecto hasta perder el rumbo.
+Las tareas grandes forman árboles de manera natural: una meta en la raíz se divide recursivamente hasta que las hojas son unidades concretas de trabajo. Nuestro enjambre organiza dos funciones alrededor de esa estructura. Los agentes planificadores, impulsados por los modelos más capaces, descomponen metas y delegan. Los agentes trabajadores, por lo general más rápidos y baratos, ejecutan las hojas. En vez de imponer un grafo fijo de orquestación, el enjambre crece según los contornos del problema, de modo que el cómputo y el contexto escalan con la complejidad.
 
-La coordinación exigió infraestructura. El experimento anterior con un navegador producía alrededor de mil commits por hora; el de SQLite podía acercarse a mil por segundo, así que construimos una capa propia de control de versiones. Documentos de diseño compartidos, referencias de compilación, reconciliadores neutrales, límites a archivos gigantes y roturas controladas redujeron los diseños divergentes y los conflictos. Varias revisiones independientes costaron poco y ofrecieron un rendimiento inusual.
+El diseño se ha generalizado a problemas matemáticos, kernels de GPU, vulnerabilidades, cobertura de pruebas y datos sintéticos. Creemos que su ventaja procede más de la eficiencia de contexto que del paralelismo. Un solo agente debe recorrer todo el árbol mientras recuerda su posición y la meta general; o se concentra en lo local y pierde el conjunto, o conserva el conjunto y debilita su trabajo local. Un planificador nunca implementa, así que el detalle no consume su contexto; un trabajador nunca planifica y se concentra en una hoja. Como los niveles acotados de la empresa en la explicación de Ronald Coase, el árbol contiene costes de coordinación que crecerían más deprisa que el trabajo.
 
-## Un manual como mundo
+## Fallos a la velocidad del enjambre
 
-Para SQLite, los agentes recibieron un manual de 835 páginas, pero no el código fuente, las pruebas, el binario ni acceso a internet. Los evaluamos contra millones de casos de sqllogictest y reservamos un conjunto para proteger el resultado final. Cuatro configuraciones de planificador y trabajadores alcanzaron entre el 73 y el 85 por ciento tras cuatro horas con el arnés nuevo y más tarde llegaron al 100 por ciento; el arnés anterior osciló entre el 11 y el 77 por ciento en el mismo punto.
+El enjambre del navegador alcanzaba unos 1.000 commits por hora en Git; el sistema nuevo puede acercarse a 1.000 por segundo. Las herramientas con bloqueos gruesos no funcionan a ese ritmo, así que construimos un sistema de control de versiones desde cero. Como cada cambio pasa por esa capa, también se convirtió en el lugar natural para detectar colisiones y coordinar.
 
-Las trazas explican la diferencia. El sistema anterior hizo decenas de miles de commits tempranos, pero atravesó unos setenta mil conflictos, creó implementaciones SQL solapadas y acumuló mucho más código. El nuevo hizo menos cambios y más coherentes. Una ejecución correcta llegó al cien por cien con 4.645 líneas, mientras otra anterior necesitó 19.013 para alcanzar el 97 por ciento.
+Dos planificadores que no se conocían podían crear diseños divergentes e implementar un concepto de formas incompatibles. Cambiamos los prompts para que los planificadores posean las decisiones de diseño y los subárboles delegados no resuelvan la misma cuestión. Cuando aun así luchaban por archivos, ninguna herramienta de merge podía reconciliar sus imágenes distintas de la realidad. Ahora registran decisiones en documentos compartidos; el código mantiene referencias comprobadas por el compilador; y un reconciliador fusiona contradicciones para propagar la resolución.
 
-## Los modelos son funciones, no una única factura
+Los trabajadores tampoco absorbían bien el contexto ajeno durante un merge, por lo que un tercero neutral resuelve las colisiones. Pueden marcar megaarchivos, bloquear commits nuevos y encargar su descomposición a un agente externo. Para contrarrestar la resistencia aprendida a tocar el núcleo, una rotura intencional permite un cambio acotado, deja su razonamiento y usa los fallos del compilador para llevar el diseño nuevo al trabajo dependiente.
 
-Los costes fueron desde unos 1.339 dólares para un híbrido con Opus como planificador hasta 10.565 para una configuración íntegra con GPT-5.5. Los trabajadores consumieron al menos el 69 por ciento de los tokens y más del 90 por ciento en la mayoría de las ejecuciones. El razonamiento de frontera importó en algunos momentos de planificación; el grueso de la ejecución pudo usar modelos más baratos. En una comparación, los trabajadores GPT-5.5 costaron 9.373 dólares y los Composer, 411.
+La revisión pasó a ser otro sistema, no una única etapa. Probamos revisores con la transcripción completa del trabajador, solo con su salida o únicamente con el código; también variamos modelo y personalidad. Ninguna lente detecta todo, pero las lentes no correlacionadas se acumulan. Como revisar cuesta menos que producir el trabajo auditado, ese cómputo rindió especialmente bien y parece haber sostenido la calidad durante ejecuciones largas.
 
-La consecuencia es arquitectónica y económica: hay que elegir modelos por función. El criterio adicional de un planificador puede justificar su precio porque da forma a miles de acciones más baratas. Un planificador nominalmente económico todavía puede elevar la factura total si su descomposición obliga a los trabajadores a consumir muchos más tokens.
+## Dejar que los agentes moldeen el entorno
+
+Reglas como «tomar notas» y «documentar decisiones» son una forma de estigmergia: los agentes cambian el entorno y este guía al siguiente. Lo ampliamos con una Guía de campo propiedad del enjambre e inyectada en cada trayectoria nueva. Bajo un límite de líneas, conserva encuentros sorprendentes para acortar el camino de los sucesores. Los pesos permanecen congelados, pero el entorno puede aprender.
+
+## Reconstruir SQLite desde un manual
+
+Entregamos al enjambre mejorado el manual de SQLite de 835 páginas y ocultamos el código fuente, las pruebas, el binario y el acceso a internet. Evaluamos el resultado contra millones de consultas de sqllogictest con respuestas conocidas. El enjambre nunca supo que existía esa prueba; tras cada ejecución comprobamos manualmente que no hubiera atajos y que el sistema se hubiese construido de forma amplia, no solo donde parecían mirar los tests.
+
+Probamos cuatro combinaciones: GPT-5.5 para todo; Grok 4.5 para todo; Opus 4.8 planificando y Composer 2.5 trabajando; y Fable 5 planificando con Composer 2.5. Las estrategias variaron —algunas construyeron bases amplias antes de un salto tardío, otras puntuaron pronto y luego se estancaron—, pero el efecto del arnés no. A las cuatro horas, las ejecuciones nuevas estaban entre el 73 y el 85 por ciento y las anteriores entre el 11 y el 77. Todas las configuraciones nuevas terminaron aprobando la prueba completa.
+
+## Una mirada profunda a las ejecuciones
+
+La actividad por sí sola engañaba. La ejecución antigua de Grok hizo 68.000 commits en menos de dos horas, unas setenta veces el ritmo de la nueva, pero acumuló más de 70.000 conflictos de merge y aceleró en vez de estabilizarse. La nueva registró menos de 1.000 conflictos en sus cuatro horas. Un megaarchivo antiguo atrajo 7.771 conflictos de 1.173 agentes; el archivo más disputado del código nuevo tuvo 47.
+
+La divergencia también apareció en la estructura de paquetes. El enjambre antiguo se extendió a 54 crates de Rust, incluidos tres paquetes SQL rivales. El nuevo se asentó pronto en nueve y no añadió otro. Esa coherencia llegó al código final: con Fable, ambos arneses terminaron aprobando, pero el antiguo necesitó 64.305 líneas de motor y el nuevo 9.908. Con Opus, el viejo usó 19.013 líneas para llegar al 97 por ciento; el nuevo alcanzó el 100 por ciento con 4.645.
+
+## Economía de modelos
+
+Una calidad similar ocultaba diferencias enormes de coste: 1.339 dólares para el híbrido Opus-Composer y 10.565 para GPT-5.5 solo. Los trabajadores consumieron al menos el 69 por ciento de los tokens en todas las ejecuciones y más del 90 por ciento en la mayoría. Los tokens del planificador cuestan más, pero solo unos pocos momentos requieren inteligencia de frontera: la descomposición inicial, las decisiones de diseño y los intercambios difíciles. Cuando la ambigüedad se convierte en instrucciones explícitas, modelos económicos pueden realizar casi toda la ejecución.
+
+En la ejecución íntegra con GPT-5.5, solo los trabajadores costaron 9.373 dólares. Con Opus como planificador y Composer como trabajador, toda la flota de ejecución costó 411. Pero una planificación barata no abarata automáticamente el total. Fable usó menos tokens de planificación que Opus pese a su mayor precio unitario, pero sus trabajadores consumieron varias veces más tokens y encarecieron mucho la ejecución completa. Hay que elegir los modelos por función y por su efecto sobre el trabajo posterior, no por un único precio de tokens.
 
 ## Las especificaciones se vuelven prompts
 
-A medida que mejoran los agentes, la unidad entregada al modelo asciende de línea a bloque, archivo, función y finalmente especificación. Un enjambre empieza a parecerse a un compilador probabilístico: la intención se convierte en tareas, las tareas en trabajo coordinado y la verificación cierra la distancia semántica. El insumo escaso no es la generación de código. Es una intención precisa sostenida por un entorno que permita conservarla entre muchos agentes.
+Cada salto de capacidad eleva la abstracción de trabajo: autocompletado sobre una línea, primeros modelos sobre un bloque y agentes sobre un archivo o una funcionalidad. Con enjambres, la unidad es la especificación. Entregamos al sistema 835 páginas de prosa y devolvió una base de datos; el recurso escaso era la descripción correcta de la intención.
+
+Por eso un enjambre se parece a un compilador. Los planificadores analizan una meta en árboles de tareas y la reducen paso a paso a trabajo ejecutable. La diferencia es que un compilador preserva el significado de forma determinista, mientras que el enjambre es probabilístico en cada etapa. El árbol, la memoria compartida, la coordinación, las lentes de revisión y el entorno de verificación existen para cerrar esa brecha semántica.

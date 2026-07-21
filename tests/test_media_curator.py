@@ -124,6 +124,39 @@ def test_browser_media_manifest_curates_diagrams_and_rejects_title_cards_and_dup
         assert "duplicate_media_asset" in rejected["05-duplicate.jpg"]
 
 
+def test_browser_media_manifest_spreads_selection_across_source_sections() -> None:
+    with TemporaryDirectory() as temporary:
+        root = Path(temporary)
+        snapshot = root / "snapshot"
+        snapshot.mkdir()
+        assets = []
+        for index, heading in enumerate(("Results", "Results", "Results", "Economics"), start=1):
+            name = f"{index:02d}.png"
+            Image.new("RGB", (1920, 1400), (index * 30, index * 20, index * 10)).save(
+                snapshot / name
+            )
+            assets.append({
+                "relative_url": name,
+                "source_position": index,
+                "role": "figure",
+                "heading": heading,
+                "title": f"Figure {index}",
+                "description": f"Evidence for {heading}.",
+            })
+        (snapshot / "media-manifest.json").write_text(
+            json.dumps({"schema_version": 2, "assets": assets}), encoding="utf-8"
+        )
+
+        record = Magazine(root).capture(
+            "https://example.com/many-charts", snapshot=snapshot,
+            title="Many charts", author="Example Author",
+        )
+
+        selected = {asset.artifact_path for asset in record.media_reviews[0].assets}
+        assert "04.png" in selected
+        assert len(selected) == 3
+
+
 def test_unreferenced_full_post_screenshot_is_not_promoted_to_figure() -> None:
     with TemporaryDirectory() as temporary:
         root = Path(temporary)

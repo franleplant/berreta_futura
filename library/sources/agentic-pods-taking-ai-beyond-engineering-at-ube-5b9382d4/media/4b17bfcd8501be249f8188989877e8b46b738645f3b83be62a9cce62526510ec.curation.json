@@ -28,7 +28,7 @@
   ],
   "curator": "magazine-compiler/automatic-media-curator",
   "input_sha256": "ee5820a9eab0099514de27fc025f42f813b14612f3f2a69e62a7a37cda3f5496",
-  "policy_version": "editorial-impact-v3",
+  "policy_version": "editorial-impact-v4",
   "schema_version": 1,
   "selected": [],
   "selection_limit": 3,

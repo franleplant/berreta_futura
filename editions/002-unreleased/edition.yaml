@@ -107,6 +107,35 @@ articles:
   - agent-swarms-and-the-new-model-economics-8b346f57
   manuscript: editions/002-unreleased/articles/agent-swarms-and-model-economics.md
   fidelity: editions/002-unreleased/fidelity/agent-swarms-and-model-economics.yaml
+  figures:
+  - id: swarm-task-tree
+    decision: include
+    source_id: agent-swarms-and-the-new-model-economics-8b346f57
+    asset_id: raster-002-c12295d4
+    caption: Planner agents recursively decompose the goal; worker agents spend their context on bounded leaves
+      of the task tree.
+    alt_text: A goal branches through planner agents into narrow tasks handled by worker agents.
+    anchor: Trees and memory
+    layout: evidence_band_prose
+    criteria:
+    - important
+    - useful
+    rationale: The light print export makes the topology and its internal labels legible at A5 size.
+  - id: swarm-model-cost
+    decision: include
+    source_id: agent-swarms-and-the-new-model-economics-8b346f57
+    asset_id: raster-001-a065638c
+    caption: Comparable SQLite outcomes carried radically different costs depending on which models planned and
+      which performed the worker load.
+    alt_text: A cost comparison across four planner and worker model configurations under old and new swarm harnesses.
+    anchor: Model economics
+    layout: evidence_band_prose
+    criteria:
+    - important
+    - useful
+    rationale: The light print export keeps model labels and values legible while showing model roles as an economic
+      choice.
+  minimum_reader_pages: 5
 - id: loop-engineering-roadmap
   title: 'Loop Engineering: A Roadmap Beyond the Prompt'
   short_title: Loop Engineering

@@ -264,6 +264,18 @@ class RenderIntegrationTests(unittest.TestCase):
             with self.assertRaisesRegex(ValidationError, "hard publication rule"):
                 Magazine(root).build("issue-001")
 
+    def test_build_rejects_article_below_its_editorial_page_minimum(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            make_project(root)
+            manifest_path = root / "editions" / "issue-001" / "edition.yaml"
+            manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+            manifest["articles"][0]["minimum_reader_pages"] = 2
+            manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+
+            with self.assertRaisesRegex(ValidationError, "editorial minimum is 2"):
+                Magazine(root).build("issue-001")
+
     def test_build_rejects_editorial_over_two_reader_pages(self):
         with TemporaryDirectory() as temporary:
             root = Path(temporary)

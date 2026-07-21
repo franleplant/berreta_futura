@@ -31,6 +31,7 @@ class Article:
     fidelity: Path
     content_mode: str
     figures: tuple[Figure, ...] = ()
+    minimum_reader_pages: int = 1
 
 
 @dataclass(frozen=True)
@@ -142,6 +143,12 @@ def load_edition(
         content_mode = str(row.get("content_mode", "faithful_edit"))
         if content_mode not in {"faithful_edit", "faithful_synthesis", "selected_extracts", "original_synthesis"}:
             errors.append(f"{label} has invalid content_mode: {content_mode}")
+        try:
+            minimum_reader_pages = int(row.get("minimum_reader_pages", 1))
+        except (TypeError, ValueError):
+            minimum_reader_pages = 0
+        if not 1 <= minimum_reader_pages <= 7:
+            errors.append(f"{label} minimum_reader_pages must be an integer from 1 to 7")
         display_emphasis = str(row.get("display_emphasis") or "").strip()
         if display_emphasis and display_emphasis.casefold() not in str(row["title"]).casefold():
             errors.append(
@@ -181,6 +188,7 @@ def load_edition(
                 fidelity,
                 content_mode,
                 figures,
+                minimum_reader_pages,
             )
         )
     edition_dir = manifest_path.parent
@@ -383,6 +391,7 @@ def load_translation(
                 article.fidelity,
                 article.content_mode,
                 figures,
+                article.minimum_reader_pages,
             )
         )
 

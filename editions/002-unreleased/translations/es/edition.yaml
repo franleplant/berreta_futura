@@ -3,7 +3,7 @@ language: es
 source_language: en
 locale: es-AR
 fallback_locale: es-ES
-base_copy_sha256: 04b33e94364484e125fed3cfdcc32428b41a453d609c0a2e663699c5d6cdcd8b
+base_copy_sha256: 1c034ae43844be2736464fe1e522b8da80fa9aefea3ebbbe9305595b23ff4314
 policy:
   register: educated_castellano
   regional_preference: restrained_argentinian
@@ -76,7 +76,25 @@ articles:
   display_emphasis: Enjambres
   author_note: Cursor presenta experimentos para escalar enjambres de agentes de programación y su economía.
   manuscript: articles/agent-swarms-and-model-economics.md
-  source_sha256: ba013a12c831ac00bd4988f4a7f063f58e9dde17edae700f9699d9929e821334
+  source_sha256: 8a7a5413ad96b2299522a9f49bf953cfb80652bf9be6cdd9c38792cca9637f02
+  figures:
+  - id: swarm-task-tree
+    caption: Los agentes planificadores descomponen la meta de forma recursiva; los trabajadores dedican su contexto
+      a hojas acotadas del árbol de tareas.
+    credit: 'Diagrama de Wilson Lin; fuente: Agent Swarms and the New Model Economics.'
+    alt_text: Una meta se ramifica mediante agentes planificadores en tareas acotadas para agentes trabajadores.
+    anchor: Árboles y memoria
+    source_caption_sha256: 8f434e5be17efb53c9c8442b7db352b8951a727267ffd08a0189baafaab721d2
+    source_credit_sha256: 08ecb5dec019d7ac8e914048c4dfaa016ef92db476bd497fe81483f184e33483
+  - id: swarm-model-cost
+    caption: Resultados comparables de SQLite tuvieron costes radicalmente distintos según qué modelos planificaron
+      y cuáles absorbieron la carga de ejecución.
+    credit: 'Diagrama de Wilson Lin; fuente: Agent Swarms and the New Model Economics.'
+    alt_text: Comparación de costes entre cuatro configuraciones de modelos planificadores y trabajadores con los
+      arneses antiguo y nuevo.
+    anchor: Economía de modelos
+    source_caption_sha256: 2a2f36505aa4afb620a90cf3b6752250224e31e8bd5e25c7962599c0a323baca
+    source_credit_sha256: 2872533f1b8938807254feda6f7d14f9e1ee19f30ee39b5affa44c40fb250560
 - id: loop-engineering-roadmap
   title: 'Ingeniería de ciclos: una hoja de ruta más allá del prompt'
   short_title: Ingeniería de ciclos

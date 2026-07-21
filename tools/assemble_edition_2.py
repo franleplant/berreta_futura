@@ -247,6 +247,7 @@ El cambio ya ocurrió. Los bloques y las fábricas de software se refuerzan mutu
         "source_id": "agent-swarms-and-the-new-model-economics-8b346f57",
         "title": "Agent Swarms and the New Model Economics",
         "short_title": "Agent Swarms",
+        "minimum_reader_pages": 5,
         "emphasis": "Swarms",
         "author": "Cursor",
         "note": "Cursor reports experiments in scaling coding-agent swarms and their economics.",
@@ -254,52 +255,104 @@ El cambio ya ocurrió. Los bloques y las fábricas de software se refuerzan mutu
         "es_short": "Enjambres de agentes",
         "es_emphasis": "Enjambres",
         "es_note": "Cursor presenta experimentos para escalar enjambres de agentes de programación y su economía.",
-        "body": """We have been experimenting with how far coding-agent swarms can scale. A new harness, built from the SQLite documentation, outperformed our earlier approach in every model configuration. The striking result was not simply that more agents helped. It was that topology, memory, version control, and the division between planning and execution changed both quality and cost.
+        "body": """Earlier this year, a long-running swarm built a web browser from scratch: a useful proof of concept, but far from polished software. After that deliberately empirical hill-climb, we wanted to engineer the system with intent. We returned to a task the old swarm had struggled with—implementing SQLite in Rust from its documentation alone—and the new harness beat it with every model mix. Grok 4.5 reached 80 percent in four hours while the old run spiraled before hour two. More agents were not the decisive variable; topology, memory, coordination, and the planning-execution split changed quality and cost.
 
-## Trees preserve context
+## Trees and memory
 
-Our swarm forms a tree. A capable planner splits work and delegates it; cheaper workers execute focused tasks. The planner never implements and the worker never plans. This separation is valuable less for parallel speed than for context efficiency: each agent sees the memory required for its role instead of carrying the entire project until it drifts.
+Large tasks naturally form trees: a goal at the root divides recursively until the leaves are concrete units of work. Our swarm uses two roles around that structure. Planner agents, powered by the strongest models, decompose goals and delegate them. Worker agents, generally faster and cheaper, execute the leaves. Rather than impose a fixed orchestration graph, the swarm grows to match the contours of the problem, so compute and context scale with complexity.
 
-Coordination required infrastructure. The old browser experiment produced around a thousand commits an hour; the SQLite experiment could approach a thousand a second, so we built a custom version-control layer. Shared design documents, compile references, neutral reconcilers, megafile limits, and controlled breakage reduced split-brain designs and merge thrash. Multiple decorrelated review lenses were cheap and delivered unusually high returns.
+This design has generalized to math problems, GPU kernels, vulnerability fixes, test coverage, and synthetic data. We think its scaling advantage comes more from context efficiency than parallelism. A single agent must traverse the whole tree while remembering its position and wider goal; it either focuses locally and loses the whole, or preserves the whole and weakens its local work. A planner never implements, so detail does not consume its context; a worker never plans and can focus on one leaf. Like the bounded tiers in Ronald Coase's account of firms, the tree contains coordination costs that otherwise grow faster than the work.
 
-## A manual as the world
+## Failure modes at swarm speed
 
-For SQLite, agents received an 835-page manual but no source code, tests, binary, or internet access. We evaluated them against millions of sqllogictest cases, with a held-out set protecting the final result. Four planner/worker configurations reached between 73 and 85 percent after four hours in the new harness and later reached 100 percent; the old harness ranged from 11 to 77 percent at the same checkpoint.
+The browser swarm peaked around 1,000 Git commits per hour; the new system can approach 1,000 per second. Coarse-locking tools cannot operate at that tempo, so we built a version-control system from scratch. Because every change passes through it, that layer also became the natural place to detect collisions and coordinate.
 
-The traces explain the difference. The old system made tens of thousands of early commits yet thrashed through roughly seventy thousand conflicts, spawned overlapping SQL implementations, and grew far more code. The new system made fewer, more coherent changes. One successful run reached full correctness in 4,645 lines where an older run used 19,013 lines for 97 percent.
+Two unaware planners could create split-brain designs, implementing one concept incompatibly. We changed the prompts so planners own design decisions and delegated subtrees cannot decide the same question. When planners still fought over files, merge tooling could not reconcile their different pictures of reality. Agents now record decisions in shared documents; code carries compile-checked references to them; and a reconciler merges contradictions so resolutions propagate downstream.
 
-## Models are roles, not a single bill
+Workers were poor at absorbing another agent's context during a merge, so a neutral third party now resolves collisions. Workers can flag megafiles, block further commits, and hand decomposition to an outside agent. To counter learned reluctance to touch core code, intentional breakage lets an agent make a focused change, leave its reasoning, and use compiler failures to carry the new design through dependent work.
 
-Costs ranged from roughly $1,339 for an Opus-planner hybrid to $10,565 for an all-GPT-5.5 configuration. Workers consumed at least 69 percent of tokens and more than 90 percent in most runs. Frontier reasoning mattered at a few planning moments, while the bulk of execution could use cheaper models. In one comparison, GPT-5.5 workers cost $9,373 and Composer workers $411.
+Review became another system, not a single pass. We tried reviewers with the worker's full transcript, only its output, or only the codebase; we also varied model and personality. No lens catches everything, but decorrelated lenses stack. Because review is cheaper than the work it audits, that compute had unusually high returns and appears to have helped quality survive long runs.
 
-The implication is architectural and economic: select models by role. A planner's extra judgment can be worth its price because it shapes thousands of cheaper actions. A nominally inexpensive planner can still raise the total bill if its decomposition causes workers to consume far more tokens.
+## Letting agents shape the environment
+
+Rules such as “keep notes” and “document decisions” are a form of stigmergy: agents change the environment, which guides the next agent. We extended this with a Field Guide owned by the swarm and injected into every new trajectory. Under a line budget, agents preserve surprising encounters so successors take shorter paths. Model weights stay frozen, but the working environment can learn.
+
+## Rebuilding SQLite from a manual
+
+We gave the improved swarm the 835-page SQLite manual and withheld the source, tests, binary, and internet access. We graded the result against millions of sqllogictest queries with known answers. The swarm was never told that suite existed; after each run we manually checked for shortcuts and verified that the system had been built broadly rather than only where tests happened to look.
+
+We tested four model mixes: GPT-5.5 everywhere; Grok 4.5 everywhere; Opus 4.8 planning with Composer 2.5 working; and Fable 5 planning with Composer 2.5 working. Strategies differed—some built broad foundations before a late score spike, others scored early and then plateaued—but the harness result did not. At four hours the new runs were between 73 and 85 percent while the old runs ranged from 11 to 77 percent. Every new configuration later passed the full suite.
+
+## A deep dive into the runs
+
+Activity alone was misleading. The old Grok run made 68,000 commits in under two hours, about seventy times the new run's pace, but accumulated more than 70,000 merge conflicts and accelerated rather than stabilizing. The new run logged fewer than 1,000 conflicts across its full four hours. One old megafile attracted 7,771 conflicts from 1,173 agents; the most contested file in the new codebase saw 47.
+
+Split-brain showed up in the package structure too. The old swarm sprawled to 54 Rust crates, including three competing SQL packages. The new swarm settled on nine crates early and never added another. That coherence reached the final code: in the Fable mix, both harnesses eventually passed the suite, but the old one needed 64,305 lines of engine code and the new one 9,908. With the Opus mix, the old harness used 19,013 lines to reach 97 percent; the new one reached 100 percent in 4,645.
+
+## Model economics
+
+Similar quality concealed enormous cost differences: $1,339 for the Opus-and-Composer hybrid versus $10,565 for GPT-5.5 alone. Workers carried at least 69 percent of tokens in every run and more than 90 percent in most. Planner tokens cost more, but there are only a few moments when frontier intelligence is indispensable—the initial decomposition, major design decisions, and difficult trade-offs. Once ambiguity has been collapsed into explicit instructions, inexpensive models can perform most of the execution.
+
+In the all-GPT-5.5 run, workers alone cost $9,373. In the Opus-planner, Composer-worker run, the whole worker fleet cost $411. Yet cheap planning is not automatically cheap overall. Fable used fewer planning tokens than Opus despite its higher per-token price, but its workers consumed several times as many tokens, making the complete run substantially more expensive. Models have to be selected by role and by their effect on downstream work, not by one headline token price.
 
 ## Specs become prompts
 
-As agents improve, the unit given to a model rises from line, to block, to file, feature, and eventually specification. A swarm begins to resemble a probabilistic compiler: intent becomes tasks, tasks become coordinated work, and verification closes the semantic gap. The scarce input is not code generation. It is precise intent, supported by an environment that lets many agents preserve it.""",
-        "es_body": """Hemos estado experimentando hasta dónde pueden escalar los enjambres de agentes de programación. Un arnés nuevo, construido a partir de la documentación de SQLite, superó nuestro enfoque anterior con todas las configuraciones de modelos. El resultado llamativo no fue solo que ayudaran más agentes. La topología, la memoria, el control de versiones y la separación entre planificación y ejecución cambiaron tanto la calidad como el coste.
+Each capability jump raises the working abstraction: autocomplete operated on a line, early models on a block, agents on a file or feature. With swarms, the unit becomes the specification. We handed the system 835 pages of prose and it returned a database; the scarce resource was the right description of intent.
 
-## Los árboles preservan el contexto
+A swarm therefore resembles a compiler. Planners parse a goal into task trees and lower it step by step into executable work. The difference is that a compiler preserves meaning deterministically while a swarm is probabilistic at every stage. The task tree, shared memory, coordination machinery, review lenses, and verification environment all exist to close that semantic gap.""",
+        "figures": [
+            {"id":"swarm-task-tree","decision":"include","source_id":"agent-swarms-and-the-new-model-economics-8b346f57","asset_id":"raster-002-c12295d4","caption":"Planner agents recursively decompose the goal; worker agents spend their context on bounded leaves of the task tree.","alt_text":"A goal branches through planner agents into narrow tasks handled by worker agents.","anchor":"Trees and memory","layout":"evidence_band_prose","criteria":["important","useful"],"rationale":"The light print export makes the topology and its internal labels legible at A5 size."},
+            {"id":"swarm-model-cost","decision":"include","source_id":"agent-swarms-and-the-new-model-economics-8b346f57","asset_id":"raster-001-a065638c","caption":"Comparable SQLite outcomes carried radically different costs depending on which models planned and which performed the worker load.","alt_text":"A cost comparison across four planner and worker model configurations under old and new swarm harnesses.","anchor":"Model economics","layout":"evidence_band_prose","criteria":["important","useful"],"rationale":"The light print export keeps model labels and values legible while showing model roles as an economic choice."}
+        ],
+        "es_body": """A comienzos de este año, un enjambre construyó un navegador desde cero: una prueba útil, pero lejos de ser software pulido. Después quisimos diseñar el sistema con intención. Volvimos a una tarea que al enjambre anterior le había costado —implementar SQLite en Rust desde su documentación— y el arnés nuevo lo superó con todas las combinaciones de modelos. Más agentes no fueron la variable decisiva: la topología, la memoria, la coordinación y la división entre planificación y ejecución cambiaron la calidad y el coste.
 
-Nuestro enjambre forma un árbol. Un planificador capaz divide el trabajo y lo delega; trabajadores más baratos ejecutan tareas acotadas. El planificador nunca implementa y el trabajador nunca planifica. Esta separación importa menos por la velocidad paralela que por la eficiencia de contexto: cada agente ve la memoria necesaria para su función, en vez de arrastrar todo el proyecto hasta perder el rumbo.
+## Árboles y memoria
 
-La coordinación exigió infraestructura. El experimento anterior con un navegador producía alrededor de mil commits por hora; el de SQLite podía acercarse a mil por segundo, así que construimos una capa propia de control de versiones. Documentos de diseño compartidos, referencias de compilación, reconciliadores neutrales, límites a archivos gigantes y roturas controladas redujeron los diseños divergentes y los conflictos. Varias revisiones independientes costaron poco y ofrecieron un rendimiento inusual.
+Las tareas grandes forman árboles de manera natural: una meta en la raíz se divide recursivamente hasta que las hojas son unidades concretas de trabajo. Nuestro enjambre organiza dos funciones alrededor de esa estructura. Los agentes planificadores, impulsados por los modelos más capaces, descomponen metas y delegan. Los agentes trabajadores, por lo general más rápidos y baratos, ejecutan las hojas. En vez de imponer un grafo fijo de orquestación, el enjambre crece según los contornos del problema, de modo que el cómputo y el contexto escalan con la complejidad.
 
-## Un manual como mundo
+El diseño se ha generalizado a problemas matemáticos, kernels de GPU, vulnerabilidades, cobertura de pruebas y datos sintéticos. Creemos que su ventaja procede más de la eficiencia de contexto que del paralelismo. Un solo agente debe recorrer todo el árbol mientras recuerda su posición y la meta general; o se concentra en lo local y pierde el conjunto, o conserva el conjunto y debilita su trabajo local. Un planificador nunca implementa, así que el detalle no consume su contexto; un trabajador nunca planifica y se concentra en una hoja. Como los niveles acotados de la empresa en la explicación de Ronald Coase, el árbol contiene costes de coordinación que crecerían más deprisa que el trabajo.
 
-Para SQLite, los agentes recibieron un manual de 835 páginas, pero no el código fuente, las pruebas, el binario ni acceso a internet. Los evaluamos contra millones de casos de sqllogictest y reservamos un conjunto para proteger el resultado final. Cuatro configuraciones de planificador y trabajadores alcanzaron entre el 73 y el 85 por ciento tras cuatro horas con el arnés nuevo y más tarde llegaron al 100 por ciento; el arnés anterior osciló entre el 11 y el 77 por ciento en el mismo punto.
+## Fallos a la velocidad del enjambre
 
-Las trazas explican la diferencia. El sistema anterior hizo decenas de miles de commits tempranos, pero atravesó unos setenta mil conflictos, creó implementaciones SQL solapadas y acumuló mucho más código. El nuevo hizo menos cambios y más coherentes. Una ejecución correcta llegó al cien por cien con 4.645 líneas, mientras otra anterior necesitó 19.013 para alcanzar el 97 por ciento.
+El enjambre del navegador alcanzaba unos 1.000 commits por hora en Git; el sistema nuevo puede acercarse a 1.000 por segundo. Las herramientas con bloqueos gruesos no funcionan a ese ritmo, así que construimos un sistema de control de versiones desde cero. Como cada cambio pasa por esa capa, también se convirtió en el lugar natural para detectar colisiones y coordinar.
 
-## Los modelos son funciones, no una única factura
+Dos planificadores que no se conocían podían crear diseños divergentes e implementar un concepto de formas incompatibles. Cambiamos los prompts para que los planificadores posean las decisiones de diseño y los subárboles delegados no resuelvan la misma cuestión. Cuando aun así luchaban por archivos, ninguna herramienta de merge podía reconciliar sus imágenes distintas de la realidad. Ahora registran decisiones en documentos compartidos; el código mantiene referencias comprobadas por el compilador; y un reconciliador fusiona contradicciones para propagar la resolución.
 
-Los costes fueron desde unos 1.339 dólares para un híbrido con Opus como planificador hasta 10.565 para una configuración íntegra con GPT-5.5. Los trabajadores consumieron al menos el 69 por ciento de los tokens y más del 90 por ciento en la mayoría de las ejecuciones. El razonamiento de frontera importó en algunos momentos de planificación; el grueso de la ejecución pudo usar modelos más baratos. En una comparación, los trabajadores GPT-5.5 costaron 9.373 dólares y los Composer, 411.
+Los trabajadores tampoco absorbían bien el contexto ajeno durante un merge, por lo que un tercero neutral resuelve las colisiones. Pueden marcar megaarchivos, bloquear commits nuevos y encargar su descomposición a un agente externo. Para contrarrestar la resistencia aprendida a tocar el núcleo, una rotura intencional permite un cambio acotado, deja su razonamiento y usa los fallos del compilador para llevar el diseño nuevo al trabajo dependiente.
 
-La consecuencia es arquitectónica y económica: hay que elegir modelos por función. El criterio adicional de un planificador puede justificar su precio porque da forma a miles de acciones más baratas. Un planificador nominalmente económico todavía puede elevar la factura total si su descomposición obliga a los trabajadores a consumir muchos más tokens.
+La revisión pasó a ser otro sistema, no una única etapa. Probamos revisores con la transcripción completa del trabajador, solo con su salida o únicamente con el código; también variamos modelo y personalidad. Ninguna lente detecta todo, pero las lentes no correlacionadas se acumulan. Como revisar cuesta menos que producir el trabajo auditado, ese cómputo rindió especialmente bien y parece haber sostenido la calidad durante ejecuciones largas.
+
+## Dejar que los agentes moldeen el entorno
+
+Reglas como «tomar notas» y «documentar decisiones» son una forma de estigmergia: los agentes cambian el entorno y este guía al siguiente. Lo ampliamos con una Guía de campo propiedad del enjambre e inyectada en cada trayectoria nueva. Bajo un límite de líneas, conserva encuentros sorprendentes para acortar el camino de los sucesores. Los pesos permanecen congelados, pero el entorno puede aprender.
+
+## Reconstruir SQLite desde un manual
+
+Entregamos al enjambre mejorado el manual de SQLite de 835 páginas y ocultamos el código fuente, las pruebas, el binario y el acceso a internet. Evaluamos el resultado contra millones de consultas de sqllogictest con respuestas conocidas. El enjambre nunca supo que existía esa prueba; tras cada ejecución comprobamos manualmente que no hubiera atajos y que el sistema se hubiese construido de forma amplia, no solo donde parecían mirar los tests.
+
+Probamos cuatro combinaciones: GPT-5.5 para todo; Grok 4.5 para todo; Opus 4.8 planificando y Composer 2.5 trabajando; y Fable 5 planificando con Composer 2.5. Las estrategias variaron —algunas construyeron bases amplias antes de un salto tardío, otras puntuaron pronto y luego se estancaron—, pero el efecto del arnés no. A las cuatro horas, las ejecuciones nuevas estaban entre el 73 y el 85 por ciento y las anteriores entre el 11 y el 77. Todas las configuraciones nuevas terminaron aprobando la prueba completa.
+
+## Una mirada profunda a las ejecuciones
+
+La actividad por sí sola engañaba. La ejecución antigua de Grok hizo 68.000 commits en menos de dos horas, unas setenta veces el ritmo de la nueva, pero acumuló más de 70.000 conflictos de merge y aceleró en vez de estabilizarse. La nueva registró menos de 1.000 conflictos en sus cuatro horas. Un megaarchivo antiguo atrajo 7.771 conflictos de 1.173 agentes; el archivo más disputado del código nuevo tuvo 47.
+
+La divergencia también apareció en la estructura de paquetes. El enjambre antiguo se extendió a 54 crates de Rust, incluidos tres paquetes SQL rivales. El nuevo se asentó pronto en nueve y no añadió otro. Esa coherencia llegó al código final: con Fable, ambos arneses terminaron aprobando, pero el antiguo necesitó 64.305 líneas de motor y el nuevo 9.908. Con Opus, el viejo usó 19.013 líneas para llegar al 97 por ciento; el nuevo alcanzó el 100 por ciento con 4.645.
+
+## Economía de modelos
+
+Una calidad similar ocultaba diferencias enormes de coste: 1.339 dólares para el híbrido Opus-Composer y 10.565 para GPT-5.5 solo. Los trabajadores consumieron al menos el 69 por ciento de los tokens en todas las ejecuciones y más del 90 por ciento en la mayoría. Los tokens del planificador cuestan más, pero solo unos pocos momentos requieren inteligencia de frontera: la descomposición inicial, las decisiones de diseño y los intercambios difíciles. Cuando la ambigüedad se convierte en instrucciones explícitas, modelos económicos pueden realizar casi toda la ejecución.
+
+En la ejecución íntegra con GPT-5.5, solo los trabajadores costaron 9.373 dólares. Con Opus como planificador y Composer como trabajador, toda la flota de ejecución costó 411. Pero una planificación barata no abarata automáticamente el total. Fable usó menos tokens de planificación que Opus pese a su mayor precio unitario, pero sus trabajadores consumieron varias veces más tokens y encarecieron mucho la ejecución completa. Hay que elegir los modelos por función y por su efecto sobre el trabajo posterior, no por un único precio de tokens.
 
 ## Las especificaciones se vuelven prompts
 
-A medida que mejoran los agentes, la unidad entregada al modelo asciende de línea a bloque, archivo, función y finalmente especificación. Un enjambre empieza a parecerse a un compilador probabilístico: la intención se convierte en tareas, las tareas en trabajo coordinado y la verificación cierra la distancia semántica. El insumo escaso no es la generación de código. Es una intención precisa sostenida por un entorno que permita conservarla entre muchos agentes.""",
+Cada salto de capacidad eleva la abstracción de trabajo: autocompletado sobre una línea, primeros modelos sobre un bloque y agentes sobre un archivo o una funcionalidad. Con enjambres, la unidad es la especificación. Entregamos al sistema 835 páginas de prosa y devolvió una base de datos; el recurso escaso era la descripción correcta de la intención.
+
+Por eso un enjambre se parece a un compilador. Los planificadores analizan una meta en árboles de tareas y la reducen paso a paso a trabajo ejecutable. La diferencia es que un compilador preserva el significado de forma determinista, mientras que el enjambre es probabilístico en cada etapa. El árbol, la memoria compartida, la coordinación, las lentes de revisión y el entorno de verificación existen para cerrar esa brecha semántica.""",
+        "es_figures": [
+            {"id":"swarm-task-tree","caption":"Los agentes planificadores descomponen la meta de forma recursiva; los trabajadores dedican su contexto a hojas acotadas del árbol de tareas.","credit":"Diagrama de Wilson Lin; fuente: Agent Swarms and the New Model Economics.","alt_text":"Una meta se ramifica mediante agentes planificadores en tareas acotadas para agentes trabajadores.","anchor":"Árboles y memoria"},
+            {"id":"swarm-model-cost","caption":"Resultados comparables de SQLite tuvieron costes radicalmente distintos según qué modelos planificaron y cuáles absorbieron la carga de ejecución.","credit":"Diagrama de Wilson Lin; fuente: Agent Swarms and the New Model Economics.","alt_text":"Comparación de costes entre cuatro configuraciones de modelos planificadores y trabajadores con los arneses antiguo y nuevo.","anchor":"Economía de modelos"}
+        ],
     },
     {
         "id": "loop-engineering-roadmap",
@@ -581,6 +634,8 @@ Esta prueba no está publicada ni lista para imprenta. La distribución pública
         }
         if article.get("figures"):
             row["figures"] = article["figures"]
+        if article.get("minimum_reader_pages"):
+            row["minimum_reader_pages"] = article["minimum_reader_pages"]
         article_rows.append(row)
     cerebras["opener_variant"] = "stepped_title"
     base.update({
