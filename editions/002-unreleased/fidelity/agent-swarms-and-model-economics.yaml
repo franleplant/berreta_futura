@@ -1,0 +1,155 @@
+schema_version: 1
+source_ids:
+- agent-swarms-and-the-new-model-economics-8b346f57
+source_author: Cursor
+content_mode: faithful_synthesis
+source_body_sha256: edcf558282c8398fbcaec47dbcc35846779ce3ae5081d93cc4dc764bbec3db2a
+paragraphs:
+- id: synthesis-001
+  kind: p
+  status: modified
+  source: 'The new harness outperformed the old in every mix.
+
+
+    The old Grok 4.5 run was paused before its two-hour mark (more below). Every new configuration went on to pass
+    100% of the suite.
+
+
+    Table of Contents ↑ Trees and leaves The SQLite experiment What the tree does for memory Results across model
+    mixes A version control system for agents A deep dive into the runs Failure modes at 1,000 commits per second
+    Model economics Review lenses Specs as prompts Letting agents shape the environment'
+  edited: We have been experimenting with how far coding-agent swarms can scale. A new harness, built from the SQLite
+    documentation, outperformed our earlier approach in every model configuration. The striking result was not simply
+    that more agents helped. It was that topology, memory, version control, and the division between planning and
+    execution changed both quality and cost.
+- id: synthesis-002
+  kind: h2
+  status: modified
+  source: In a swarm, a planner never implements, so its context never fills with low-level detail, and a worker
+    never plans, so it can spend all its context on one narrow piece of work. Sign in Download
+  edited: Trees preserve context
+- id: synthesis-003
+  kind: p
+  status: modified
+  source: 'In a swarm, a planner never implements, so its context never fills with low-level detail, and a worker
+    never plans, so it can spend all its context on one narrow piece of work. Sign in Download
+
+
+    We suspect the ability to scale the agent swarm comes from this context efficiency, more than from parallelism
+    itself. That efficiency is present in the swarm at every scale, which is why this decomposition helps agent
+    performance even on moderately sized tasks.'
+  edited: 'Our swarm forms a tree. A capable planner splits work and delegates it; cheaper workers execute focused
+    tasks. The planner never implements and the worker never plans. This separation is valuable less for parallel
+    speed than for context efficiency: each agent sees the memory required for its role instead of carrying the
+    entire project until it drifts.'
+- id: synthesis-004
+  kind: p
+  status: modified
+  source: 'The browser swarm from earlier this year peaked at roughly 1,000 commits per hour on Git. The new system
+    peaks at around 1,000 commits per second.
+
+
+    Table of Contents ↑ Trees and leaves The SQLite experiment What the tree does for memory Results across model
+    mixes A version control system for agents A deep dive into the runs Failure modes at 1,000 commits per second
+    Model economics Review lenses Specs as prompts Letting agents shape the environment'
+  edited: Coordination required infrastructure. The old browser experiment produced around a thousand commits an
+    hour; the SQLite experiment could approach a thousand a second, so we built a custom version-control layer.
+    Shared design documents, compile references, neutral reconcilers, megafile limits, and controlled breakage reduced
+    split-brain designs and merge thrash. Multiple decorrelated review lenses were cheap and delivered unusually
+    high returns.
+- id: synthesis-005
+  kind: h2
+  status: modified
+  source: The SQLite experiment We instructed the new version of the swarm, equipped with all the improvements described
+    above, to implement the whole of the 835-page SQLite manual in Rust. We withheld the sourceSign in code, Download
+    test suites, SQLite binary, and internet access.
+  edited: A manual as the world
+- id: synthesis-006
+  kind: p
+  status: modified
+  source: 'The SQLite experiment We instructed the new version of the swarm, equipped with all the improvements
+    described above, to implement the whole of the 835-page SQLite manual in Rust. We withheld the sourceSign in
+    code, Download test suites, SQLite binary, and internet access.
+
+
+    All of this shows up in the final codebase. In the Fable 5 mix, both the old and new swarms ultimately passed
+    the full suite, but the old one needed 64,305 lines of engine code and the new one did it in 9,908. The Opus
+    mix shows the same shape with 19,013 lines at a 97% grade under the old harness, and 4,645 lines at 100% under
+    the new harness.'
+  edited: For SQLite, agents received an 835-page manual but no source code, tests, binary, or internet access.
+    We evaluated them against millions of sqllogictest cases, with a held-out set protecting the final result. Four
+    planner/worker configurations reached between 73 and 85 percent after four hours in the new harness and later
+    reached 100 percent; the old harness ranged from 11 to 77 percent at the same checkpoint.
+- id: synthesis-007
+  kind: p
+  status: modified
+  source: 'The merge conflict data points to the latter interpretation. The old run accumulated more than 70,000
+    conflicts before we paused it, accelerating rather than stabilizing, while the new run logged fewer than a thousand
+    over its full four hours.
+
+
+    All of this shows up in the final codebase. In the Fable 5 mix, both the old and new swarms ultimately passed
+    the full suite, but the old one needed 64,305 lines of engine code and the new one did it in 9,908. The Opus
+    mix shows the same shape with 19,013 lines at a 97% grade under the old harness, and 4,645 lines at 100% under
+    the new harness.'
+  edited: The traces explain the difference. The old system made tens of thousands of early commits yet thrashed
+    through roughly seventy thousand conflicts, spawned overlapping SQL implementations, and grew far more code.
+    The new system made fewer, more coherent changes. One successful run reached full correctness in 4,645 lines
+    where an older run used 19,013 lines for 97 percent.
+- id: synthesis-008
+  kind: h2
+  status: modified
+  source: 'We also varied which models did which jobs. In some runs, one model handled everything while in others,
+    a frontier model planned while a fast, inexpensive model carried out the work. Every mix produced similar quality,
+    but the costs varied enormously.1 Trees and leaves Sign in Download Descriptions of large tasks naturally take
+    the shape of trees, with a goal at the root that subdivides recursively into basic units of work. Our swarm
+    has two roles, both organized around that same tree-like decomposition:'
+  edited: Models are roles, not a single bill
+- id: synthesis-009
+  kind: p
+  status: modified
+  source: Few moments in a large task genuinely require frontier intelligence, such as the original decomposition,
+    the design decisions, and certain trade-offs. Once a frontier planner has collapsed the ambiguity into a detailed,
+    explicit instruction, less expensive models simply have to follow it. This is a huge potential source of cost
+    savings. In the run that used GPT-5.5 for both planners and workers, the workers alone cost $9,373. In the run
+    where Opus 4.8 did the planning and Composer 2.5 did the work, the entire worker fleet cost $411.
+  edited: Costs ranged from roughly $1,339 for an Opus-planner hybrid to $10,565 for an all-GPT-5.5 configuration.
+    Workers consumed at least 69 percent of tokens and more than 90 percent in most runs. Frontier reasoning mattered
+    at a few planning moments, while the bulk of execution could use cheaper models. In one comparison, GPT-5.5
+    workers cost $9,373 and Composer workers $411.
+- id: synthesis-010
+  kind: p
+  status: modified
+  source: One detail worth noting comes from comparing the two hybrid runs. The Fable 5 planner ran up a slightly
+    smaller bill than the Opus 4.8 planner, despite roughly twice the per-token price, because it used far fewer
+    planning tokens. But the Fable run's workers went through several times as many tokens, and the run as a whole
+    came out substantially more expensive.
+  edited: 'The implication is architectural and economic: select models by role. A planner''s extra judgment can
+    be worth its price because it shapes thousands of cheaper actions. A nominally inexpensive planner can still
+    raise the total bill if its decomposition causes workers to consume far more tokens.'
+- id: synthesis-011
+  kind: h2
+  status: modified
+  source: Specs as prompts Each jump in AI capability has raised the level of abstraction at which an engineer can
+    work. Sign in Download
+  edited: Specs become prompts
+- id: synthesis-012
+  kind: p
+  status: modified
+  source: 'Autocomplete let engineers work one line of code at a time. Early models raised that to a block of code,
+    and agents raised it to a file or a feature.
+
+
+    With swarms, the unit of work becomes the spec. Related posts For that to work, the swarm has to actually follow
+    the spec, which is what much of this post is about. We Julgave the ·swarm 8, 2026 835 pages of prose and it
+    came back with a database. What was scarce in this Research experiment, Introducing and Grok what we expect
+    to be scarce in software engineering going forward, is the right 4.5 description of intent. Cursor Team · 3
+    min read Seen this way, the swarm starts to resemble a compiler. A compiler translates source code down to machine
+    code through a series of intermediate steps. The swarm does something similar with intent. Apr 6, 2026 · Research
+    Planners parse a goal into task trees, then lower it step by step into executable work. The difference is Better
+    MoE model inference with warp decode that a compiler preserves meaning at every step while the swarm is probabilistic
+    at every one. Everything Less,described Federico in this post· exists & Zhiyuan 10 minto close that gap. read'
+  edited: 'As agents improve, the unit given to a model rises from line, to block, to file, feature, and eventually
+    specification. A swarm begins to resemble a probabilistic compiler: intent becomes tasks, tasks become coordinated
+    work, and verification closes the semantic gap. The scarce input is not code generation. It is precise intent,
+    supported by an environment that lets many agents preserve it.'

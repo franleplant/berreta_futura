@@ -1,0 +1,98 @@
+schema_version: 1
+language: es
+source_language: en
+locale: es-AR
+fallback_locale: es-ES
+base_copy_sha256: 13749fa6049cf3ef136b8f1f80871d324cc024b12b42ec690d51e259539eed54
+policy:
+  register: educated_castellano
+  regional_preference: restrained_argentinian
+  fallback: spain
+  prohibited_fallbacks:
+  - generic_latin_american
+  - mexican
+  - caribbean
+title: Los sistemas que construyen
+subtitle: Fábricas de software, enjambres de agentes, bloques reutilizables y el criterio humano que los mantiene
+  coherentes
+cover:
+  headline: Los sistemas que construyen
+  deck: Seis informes de campo sobre lo que ocurre cuando el código, el conocimiento y el trabajo se convierten
+    en sistemas de ciclos
+  back_text: 'El ciclo es pequeño. La fábrica es inmensa. Entre ambos queda el trabajo difícil: preservar la intención,
+    la evidencia y la comprensión humana.'
+editorial:
+  path: manuscript/editorial.md
+  source_sha256: d2bff9fe8678e04ab48b5a3645e58d711d99cb95fbd044d9bfb440341eb28536
+articles:
+- id: software-factories-light-and-dark
+  title: Fábricas de software, con luz y a oscuras
+  short_title: con luz y a oscuras
+  display_emphasis: Fábricas
+  author_note: Addy Osmani escribe sobre sistemas de ingeniería, experiencia de desarrollo y software asistido por
+    IA.
+  manuscript: articles/software-factories-light-and-dark.md
+  source_sha256: 7e4ad5250715a0fc38f75ce81f8f65e1f751979bdf0d03380eea3f231b484960
+- id: the-building-block-economy
+  title: La economía de los bloques de construcción
+  short_title: Bloques de construcción
+  display_emphasis: Bloques
+  author_note: Mitchell Hashimoto es creador de Ghostty y cofundador de HashiCorp.
+  manuscript: articles/the-building-block-economy.md
+  source_sha256: 856bf484b6335ecaa7e78391226cdbeb2a1520d751b272a216163629e723b726
+- id: agent-swarms-and-model-economics
+  title: Enjambres de agentes y la nueva economía de los modelos
+  short_title: Enjambres de agentes
+  display_emphasis: Enjambres
+  author_note: Cursor presenta experimentos para escalar enjambres de agentes de programación y su economía.
+  manuscript: articles/agent-swarms-and-model-economics.md
+  source_sha256: ba013a12c831ac00bd4988f4a7f063f58e9dde17edae700f9699d9929e821334
+- id: loop-engineering-roadmap
+  title: 'Ingeniería de ciclos: una hoja de ruta más allá del prompt'
+  short_title: Ingeniería de ciclos
+  display_emphasis: Ciclos
+  author_note: Codez traza una progresión práctica desde los prompts manuales hasta ciclos de agentes verificados
+    y programados.
+  manuscript: articles/loop-engineering-roadmap.md
+  source_sha256: f3267e632f4217d6769daf07f731c24df7ce163e77a174cc778a7f7c08cb06da
+- id: agentic-pods
+  title: 'Pods de agentes: llevar la IA más allá de ingeniería'
+  short_title: Pods de agentes
+  display_emphasis: Pods
+  author_note: Praveen Neppalli describe el método de dos semanas de Uber para rediseñar flujos de negocio con IA.
+  manuscript: articles/agentic-pods.md
+  source_sha256: b6e32f00e7c2991e6316130cb2f135a597419fe6f704abda4ffdb6030c8c4dc6
+- id: how-we-built-our-knowledge-base
+  title: Cómo construimos nuestra base de conocimiento
+  short_title: base de conocimiento
+  display_emphasis: conocimiento
+  author_note: Isaac Tai, Daniel Kim y Mike Gao construyeron Cerebras Knowledge para la búsqueda interna.
+  manuscript: articles/how-we-built-our-knowledge-base.md
+  source_sha256: 8613d36c1c37d60de5ae101010f25b930c7db111bd6726b46cd18c1722a5f9bb
+  figures:
+  - id: knowledge-pipeline
+    caption: Cerebras Knowledge conduce el material de las fuentes a través de destilación, embeddings, recuperación,
+      fusión y reordenamiento, hasta sintetizar una respuesta con citas.
+    alt_text: Un diagrama vertical de arquitectura recorre el material desde la destilación y los embeddings hasta
+      varias rutas de recuperación, la fusión, el reordenamiento y una respuesta citada.
+    anchor: __opener__
+    source_caption_sha256: 8ebab94391f43347ade52ef959648493ad53a436df17675f4b563f5006d61a47
+  - id: planner-tool-fanout
+    caption: Una etapa de planificación abre cada pregunta en abanico hacia herramientas de búsqueda especializadas
+      antes de normalizar la evidencia y sintetizar la respuesta.
+    alt_text: Un diagrama horizontal muestra una consulta que entra en un planificador, se ramifica hacia varias
+      herramientas y converge en evidencia normalizada y síntesis.
+    anchor: Planificación y abanico de herramientas
+    source_caption_sha256: 06ad1eda3471000897910d49dd2a7ad9e62f6562469e2e5f7be09908cf9a8182
+  - id: mcp-web-ui-comparison
+    caption: MCP expone primitivas de recuperación en bruto a clientes externos; la interfaz web se ocupa del ciclo
+      completo de planificación, ejecución y síntesis.
+    alt_text: Una comparación arquitectónica contrapone las herramientas directas de recuperación MCP con el canal
+      integrado de planificación, ejecución y síntesis de la interfaz web.
+    anchor: Interfaz web
+    source_caption_sha256: 6b99e2ef9a885ed24598b4aa6d8f263b055a43315a95afcff921aa6c9c872218
+sections:
+- kind: colophon
+  title: Colofón
+  path: manuscript/colophon.md
+  source_sha256: 5090c377e7dc66b9f939dc5dddc1f369b012fdbedac5b810f8ae7631525bad65

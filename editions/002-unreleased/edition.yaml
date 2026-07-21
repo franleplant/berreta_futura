@@ -1,0 +1,158 @@
+schema_version: 1
+id: 002-unreleased
+issue_number: 2
+publication_date: '2026-07-21'
+title: The Systems That Build
+subtitle: Software factories, agent swarms, reusable blocks, and the human judgment that keeps them coherent
+language: en
+distribution: private
+status: provisional
+format:
+  trim: A5
+  home_sheet: A4
+  binding: saddle_stitch
+  max_article_pages: 7
+  max_editorial_pages: 2
+cover:
+  headline: The Systems That Build
+  deck: Six field reports on what happens when code, knowledge, and work become systems of loops
+  back_text: 'The loop is small. The factory is vast. Between them sits the difficult work: preserving intent, evidence,
+    and human understanding.'
+  art_path: art/cover-art.png
+sources:
+- software-factories-light-and-dark-ef463732
+- the-building-block-economy-af6644bd
+- agent-swarms-and-the-new-model-economics-8b346f57
+- loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f
+- agentic-pods-taking-ai-beyond-engineering-at-ube-5b9382d4
+- how-we-built-our-knowledge-base-e986baa0
+editorial: manuscript/editorial.md
+articles:
+- id: software-factories-light-and-dark
+  title: Software Factories, Light and Dark
+  short_title: Light and Dark
+  display_emphasis: Factories
+  opener_variant: split_axis
+  author: Addy Osmani
+  author_note: Addy Osmani writes about engineering systems, developer experience, and AI-assisted software.
+  content_mode: faithful_synthesis
+  source_ids:
+  - software-factories-light-and-dark-ef463732
+  manuscript: editions/002-unreleased/articles/software-factories-light-and-dark.md
+  fidelity: editions/002-unreleased/fidelity/software-factories-light-and-dark.yaml
+- id: the-building-block-economy
+  title: The Building Block Economy
+  short_title: Building Block
+  display_emphasis: Building
+  opener_variant: edge_medallion
+  author: Mitchell Hashimoto
+  author_note: Mitchell Hashimoto is the creator of Ghostty and co-founder of HashiCorp.
+  content_mode: faithful_synthesis
+  source_ids:
+  - the-building-block-economy-af6644bd
+  manuscript: editions/002-unreleased/articles/the-building-block-economy.md
+  fidelity: editions/002-unreleased/fidelity/the-building-block-economy.yaml
+- id: agent-swarms-and-model-economics
+  title: Agent Swarms and the New Model Economics
+  short_title: Agent Swarms
+  display_emphasis: Swarms
+  opener_variant: stepped_title
+  author: Cursor
+  author_note: Cursor reports experiments in scaling coding-agent swarms and their economics.
+  content_mode: faithful_synthesis
+  source_ids:
+  - agent-swarms-and-the-new-model-economics-8b346f57
+  manuscript: editions/002-unreleased/articles/agent-swarms-and-model-economics.md
+  fidelity: editions/002-unreleased/fidelity/agent-swarms-and-model-economics.yaml
+- id: loop-engineering-roadmap
+  title: 'Loop Engineering: A Roadmap Beyond the Prompt'
+  short_title: Loop Engineering
+  display_emphasis: Loop
+  opener_variant: split_axis
+  author: Codez
+  author_note: Codez maps a practical progression from manual prompting to verified, scheduled agent loops.
+  content_mode: faithful_synthesis
+  source_ids:
+  - loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f
+  manuscript: editions/002-unreleased/articles/loop-engineering-roadmap.md
+  fidelity: editions/002-unreleased/fidelity/loop-engineering-roadmap.yaml
+- id: agentic-pods
+  title: 'Agentic Pods: Taking AI Beyond Engineering'
+  short_title: Agentic Pods
+  display_emphasis: Pods
+  opener_variant: edge_medallion
+  author: Praveen Neppalli
+  author_note: Praveen Neppalli describes Uber's two-week method for redesigning business workflows with AI.
+  content_mode: faithful_synthesis
+  source_ids:
+  - agentic-pods-taking-ai-beyond-engineering-at-ube-5b9382d4
+  manuscript: editions/002-unreleased/articles/agentic-pods.md
+  fidelity: editions/002-unreleased/fidelity/agentic-pods.yaml
+- id: how-we-built-our-knowledge-base
+  title: How We Built Our Knowledge Base
+  short_title: Our Knowledge Base
+  display_emphasis: Knowledge
+  opener_variant: stepped_title
+  author: Isaac Tai, Daniel Kim & Mike Gao
+  author_note: Isaac Tai, Daniel Kim, and Mike Gao built Cerebras Knowledge for internal search.
+  content_mode: selected_extracts
+  source_ids:
+  - how-we-built-our-knowledge-base-e986baa0
+  manuscript: editions/002-unreleased/articles/how-we-built-our-knowledge-base.md
+  fidelity: editions/002-unreleased/fidelity/how-we-built-our-knowledge-base.yaml
+  figures:
+  - id: knowledge-pipeline
+    decision: include
+    source_id: how-we-built-our-knowledge-base-e986baa0
+    asset_id: svg-001-2157c84f
+    caption: Cerebras Knowledge moves source material through distillation, embeddings, retrieval, fusion and reranking,
+      then answer synthesis with citations.
+    alt_text: A vertical architecture diagram traces source material through distillation, embeddings, multiple
+      retrieval paths, fusion, reranking and a cited answer.
+    anchor: __opener__
+    layout: evidence_band
+    criteria:
+    - important
+    - useful
+    - beautiful
+    rationale: The overview makes the article's complete information path legible before the reader encounters its
+      individual components.
+  - id: planner-tool-fanout
+    decision: include
+    source_id: how-we-built-our-knowledge-base-e986baa0
+    asset_id: svg-007-a8dd9756
+    caption: A planning pass fans one question out across specialized search tools before evidence normalization
+      and answer synthesis.
+    alt_text: A horizontal diagram shows a user query entering a planner, branching to several search tools, then
+      converging into normalized evidence and synthesis.
+    anchor: Planning and tool fan-out
+    layout: evidence_band
+    criteria:
+    - important
+    - useful
+    - cool
+    rationale: The diagram converts an abstract orchestration sequence into a memorable visual flow at the exact
+      point where the article introduces planning.
+  - id: mcp-web-ui-comparison
+    decision: include
+    source_id: how-we-built-our-knowledge-base-e986baa0
+    asset_id: svg-008-b42cddcd
+    caption: MCP exposes raw retrieval primitives to external clients; the web UI owns the complete planner–executor–synthesis
+      loop.
+    alt_text: A side-by-side architecture comparison contrasts direct MCP retrieval tools with the web interface's
+      integrated planning, execution and synthesis pipeline.
+    anchor: Web UI
+    layout: evidence_band
+    criteria:
+    - important
+    - useful
+    - beautiful
+    rationale: The comparison clarifies the most consequential interface distinction more efficiently than another
+      paragraph of prose.
+sections:
+- kind: colophon
+  title: Colophon
+  path: manuscript/colophon.md
+rights:
+  faithful_source_reprint: private_only_while_rights_unknown
+  public_release: blocked_pending_permission_or_applicable_exception

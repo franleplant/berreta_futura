@@ -1,0 +1,149 @@
+schema_version: 1
+source_ids:
+- software-factories-light-and-dark-ef463732
+source_author: Addy Osmani
+content_mode: faithful_synthesis
+source_body_sha256: eab817ab801b22342bb4c967044173c7b0b0d8790c89762c5cffed5cdde29e5a
+paragraphs:
+- id: synthesis-001
+  kind: p
+  status: modified
+  source: 'A software factory is harnessed loops at scale. You can run the loop with humans in it (light factory):
+    trading judgment and concentration against speed and breakage. Or you can ignore the humans (dark factory) and
+    let those agents scope, build and ship code, without anyone really reading the details. But if people stop reading,
+    they''ll stop understanding your software. Your hardest job now is knowing which checks to build and how much
+    autonomy to delegate.
+
+
+    The fundamental constraint in a software factory isn''t how much code we can churn out: it''s how quickly we
+    can verify it.'
+  edited: A software factory is harnessed loops at scale. Run the loop with humans in it—a light factory—and you
+    trade judgment and concentration against speed and breakage. Ignore the humans—a dark factory—and agents can
+    scope, build, and ship code without anyone reading the details. If people stop reading, however, they stop understanding
+    the software. The hardest job becomes deciding which checks to build and how much autonomy to delegate.
+- id: synthesis-002
+  kind: h2
+  status: modified
+  source: The loop is the atom. The factory is the loop at scale.
+  edited: Loop, harness, factory
+- id: synthesis-003
+  kind: p
+  status: modified
+  source: 'A software factory is many harnessed loops running at once, fed by a queue of work and drained through
+    a review gate into production, with humans owning the whole thing from above. It is not a bigger agent; it is
+    an org chart made of loops.
+
+
+    A loop is one agent doing a single job on repeat: gather context, take an action, check the result, and go again
+    until some condition is met. It is the smallest unit of agentic work, and everything above it is just loops
+    stacked on loops.'
+  edited: 'A loop is one agent doing one job repeatedly: gather context, act, check the result, and continue until
+    a condition is met. A harness supplies the walls around it—the sandbox, tools, durable memory, and gates that
+    define done. A factory is many harnessed loops drawing from a queue and flowing through a review gate into production.
+    It is not a bigger agent; it is an org chart made of loops.'
+- id: synthesis-004
+  kind: p
+  status: modified
+  source: 'The factory is a closed loop: intent and production signals feed a queue, the harness builds, automated
+    checks and review gate it, deploy ships it, monitoring turns prod back into signals. Intent flows from the vision
+    of engineering leadership, and directly from engineers, into a queue of things to be done. Signals driven by
+    incidents and user requests drive the same queue.'
+  edited: 'The factory closes its own circuit. Intent and production signals feed the queue; the harness builds;
+    tests, static analysis, and scanning check the work; approval permits deployment; monitoring turns production
+    back into signals. Almost every box can run cheaply at scale. The stubbornly expensive box is the review gate:
+    judgment.'
+- id: synthesis-005
+  kind: h2
+  status: modified
+  source: Generation is a wide mouth; verification is the narrow neck. Speeding up the mouth just deepens the pile
+    at the neck.
+  edited: The narrow neck
+- id: synthesis-006
+  kind: p
+  status: modified
+  source: 'Comprehension debt is the widening gap between how much code exists and how much any human still understands.
+    A dark factory doesn''t pay it down; it takes it on as fast as it can, with the tests green the whole way.
+
+
+    Where the dark factory truly shines is in its ability to burn through pristine code while the tests stay green.
+    The ultimate reckoning, when it comes, will not be a dramatic "it all goes sideways" moment. It will be quiet
+    and late.'
+  edited: 'A dark factory removes that gate. Its apparent throughput rises dramatically because code ships after
+    machine verification alone. Yet it also accumulates comprehension debt: the gap between how much code exists
+    and how much any person understands. In a mature system, the reckoning is likely to be quiet and late, after
+    months of green tests and unread changes.'
+- id: synthesis-007
+  kind: p
+  status: modified
+  source: 'Back pressure is the rule that you can only hand a loop as much autonomy as you can cheaply and reliably
+    verify, and not one inch more. Verification, not generation, is the real constraint on a factory.
+
+
+    Generation is a wide mouth; verification is the narrow neck. Speeding up the mouth just deepens the pile at
+    the neck.
+
+
+    Because unbounded generation capacity is in perpetual tension with the finite, non-scaling resource of human
+    attention, the core problem is the gap between cheap generation and bounded review. Look at the funnel: as long
+    as the neck representing verification doesn''t widen, it''s going to back up. As Dex points out, volume alone
+    isn''t the problem: what we''re really suffering from is a surplus of bad PRs. When you''ve got high volume
+    without trustworthy gates, manufactured defects are unavoidable. This is just back pressure again: autonomy
+    can''t expand beyond what can be cheaply and reliably verified.'
+  edited: Generation is a wide mouth; verification is the narrow neck. Back pressure means giving a loop only as
+    much autonomy as can be cheaply and reliably verified. A better model does not automatically solve the problem,
+    because architectural quality reveals itself over months and years rather than in the crisp seconds of a test
+    result.
+- id: synthesis-008
+  kind: h2
+  status: modified
+  source: 'Turning the lights back on
+
+
+    A lit factory is the same pipeline with the lights left on where judgment lives. The agents still do most of
+    the building, but a human reads what comes out before it ships, and the lights stay on wherever a wrong call
+    is expensive.'
+  edited: Turning the lights on where judgment lives
+- id: synthesis-009
+  kind: p
+  status: modified
+  source: 'You might be thinking that all sounds unglamorous. You''re right. The safety net is made up of perfectly
+    ordinary architectural practices we''ve always known about and mostly ignored: good types and method signatures
+    so that mistakes are caught by the compiler instead of in production; test seams where we can pin behavior and
+    make change observable; laying out the code so the next reader, human or model, knows where to find the thing
+    they care about; keeping call stacks short and legible; keeping component boundaries well defined so a change
+    doesn''t have a huge blast radius; and dependency injection so we can swap out one piece for another. None of
+    it is new. We''ve always said we care about good architecture. But now that we''re using automated coding agents,
+    that architecture is finally doing a second job as a cheap and hard-to-fake safety net against the mistakes
+    the agent will make.'
+  edited: A lit factory keeps agents doing most of the building but moves human judgment upstream into product,
+    design, and architecture as well as review. An hour spent reviewing a two-hundred-line plan can prevent a painful
+    review of two thousand generated lines. Types, test seams, legible boundaries, short call stacks, and dependency
+    injection become a hard-to-fake safety net outside the model.
+- id: synthesis-010
+  kind: p
+  status: modified
+  source: 'Put that together with safe infrastructure, and there are some tight, low-risk loops you can run unattended.
+    Horthy described one in a recent post: a nightly GitHub Actions cron that fixes exactly one anti-pattern, a
+    lint violation or a needlessly optional prop, commits, and opens one small pull request, all on its own, so
+    the team wakes up to a slightly better codebase and a diff short enough to read. But for loops with high enough
+    stakes, you don''t want to risk waking up to a broken auth system, billing engine, or public API contract. Keep
+    the lights on there, and trust that a person with judgment and a real working knowledge of the system will catch
+    the mistake.'
+  edited: 'Some small loops can earn the dark: the check is cheap, frequent, immediate, stable, and difficult to
+    game. A nightly job that fixes one lint violation and opens one small pull request may qualify. Authentication,
+    billing, public contracts, and long-lived architectural decisions do not. All dark produces a system no one
+    can repair; all lit produces a review bottleneck. The skilled work is placing each switch.'
+- id: synthesis-011
+  kind: p
+  status: modified
+  source: 'The agents can investigate a bug, write up the diagnosis, implement a fix, run the tests, and write up
+    a report. That''s the execution of the inner loop, and they can do it as efficiently as anyone. But that was
+    never the job. The bits you own are what I''d call the outer loop: decide whether it''s the right way to address
+    the problem, verify that the diagnosis and implementation are sound, approve the change, and carry the consequences
+    of being wrong. The boundary between the two loops is evidence, the diffs, the tests, the logs, and a brief
+    explanation that connects them. Types, seams, and rubrics make it possible to oversee all this without doing
+    a lot of work for every change.'
+  edited: The person never left the factory; the person moved to the outer loop. Agents can investigate, implement,
+    test, and report. Engineers still decide whether the approach is right, inspect the evidence at the boundary,
+    approve the change, and carry the consequences of being wrong. Robots can operate in the dark. Humans need to
+    see what they are responsible for.
