@@ -9,7 +9,7 @@ from typing import Any, Iterable
 
 from .capture import archive_snapshot, index_existing_captures, verify_snapshots
 from .catalog import render_sources
-from .cover import CoverArtifact, CoverCompiler, replace_first_page
+from .cover import CoverArtifact, CoverCompiler, replace_outer_pages
 from .errors import ValidationError
 from .fidelity import fidelity_report
 from .io import load_structured
@@ -257,6 +257,38 @@ class Magazine:
             )
         return tuple(artifacts)
 
+    def back_cover_proof(
+        self,
+        edition_id: str,
+        *,
+        languages: Iterable[str] | None = None,
+        reference: Path | None = None,
+        check: bool = False,
+    ) -> tuple[CoverArtifact, ...]:
+        """Compile fast localized Signal fold back-cover proofs."""
+
+        editions = self._load_cover_languages(edition_id, languages)
+        compiler = CoverCompiler(self.root)
+        artifacts: list[CoverArtifact] = []
+        for language, edition in editions.items():
+            approved_reference = reference or (
+                self.root
+                / "design"
+                / "covers"
+                / "canto-vivo"
+                / "back-references"
+                / f"{language}.png"
+            )
+            artifacts.append(
+                compiler.compile_back(
+                    edition,
+                    self.output_dir / edition_id / "back-cover-proof" / language,
+                    reference=approved_reference,
+                    check=check,
+                )
+            )
+        return tuple(artifacts)
+
     def build(self, edition_id: str) -> BuildResult:
         editions = self._validate_languages(edition_id)
         edition = editions[self.primary_language]
@@ -282,8 +314,12 @@ class Magazine:
                 variant,
                 self.output_dir / ".build" / "covers" / edition.id / language,
             )
+            back_cover = cover_compiler.compile_back(
+                variant,
+                self.output_dir / ".build" / "back-covers" / edition.id / language,
+            )
             layout = render_a5(variant, interior_pdf, design=self.render_design)
-            replace_first_page(interior_pdf, cover.pdf, working_pdf)
+            replace_outer_pages(interior_pdf, cover.pdf, back_cover.pdf, working_pdf)
             if cover.cover_art_size_points is not None:
                 layout = replace(
                     layout,
@@ -314,6 +350,18 @@ class Magazine:
                 },
                 "edition": variant.raw,
                 "inputs": {
+                    "cover_faces": {
+                        "front": {
+                            "input_sha256": cover.input_sha256,
+                            "pdf_sha256": cover.pdf_sha256,
+                            "png_sha256": cover.png_sha256,
+                        },
+                        "back": {
+                            "input_sha256": back_cover.input_sha256,
+                            "pdf_sha256": back_cover.pdf_sha256,
+                            "png_sha256": back_cover.png_sha256,
+                        },
+                    },
                     "editorial": _file_entry(variant.editorial.path, self.root) if variant.editorial else None,
                     "cover_art": _file_entry(variant.cover_art, self.root) if variant.cover_art else None,
                     "translation_manifest": _optional_file_entry(

@@ -2129,53 +2129,15 @@ class _Typesetter:
         closing_pages = target - 2 - self.page
         for index in range(closing_pages):
             self._closing_plate(index, closing_pages)
+        # Page -2 is the blank inside back cover. The final page is a blank
+        # placeholder replaced by the canonical back-cover PDF after layout.
         self.new_page(blank_header=True)
         self.new_page(blank_header=True)
+        # ReportLab drops a final page that has no drawing operations at all.
+        # Materialize this replace-only placeholder without reimplementing the
+        # back design; replace_outer_pages removes it before packaging.
         self.pdf.setFillColorRGB(*WHITE)
         self.pdf.rect(0, 0, self.width, self.height, fill=1, stroke=0)
-        self._tracked_label(
-            f"{self.edition.publication_name} / {_ui(self.edition, 'issue')} {self.edition.issue_number}",
-            self.left,
-            self.height - 29,
-            self.live_width,
-        )
-        text = str(self.edition.cover.get("back_text", _ui(self.edition, "back_text_default")))
-        quote_x, quote_width = self.grid_box(1, 4)
-        self._fitted_title_box(
-            text,
-            quote_x,
-            415,
-            quote_width,
-            210,
-            maximum=20,
-            minimum=14,
-            maximum_lines=8,
-            leading_ratio=1.24,
-        )
-        medallion_x, medallion_width = self.grid_box(0, 1)
-        self.pdf.setFillColorRGB(*VIOLET)
-        self.pdf.circle(medallion_x + medallion_width / 2, 389, 18, fill=1, stroke=0)
-        self.pdf.setFillColorRGB(*WHITE)
-        self.pdf.setFont(SANS_SEMIBOLD, 9)
-        self.pdf.drawCentredString(
-            medallion_x + medallion_width / 2,
-            386,
-            _plain(_ui(self.edition, "end").upper()),
-        )
-        self._tracked_label(
-            _ui(self.edition, "issue_statement"),
-            quote_x,
-            176,
-            quote_width,
-            color=VIOLET,
-        )
-        self.pdf.setFillColorRGB(*INK)
-        self.pdf.setFont(SANS_MEDIUM, CAPTION_SIZE)
-        self.pdf.drawRightString(
-            self.width - self.right,
-            17,
-            self.fit_text(_plain(self.edition.title.upper()), SANS_MEDIUM, CAPTION_SIZE, self.live_width * .55),
-        )
 
 
 def _render_pass(

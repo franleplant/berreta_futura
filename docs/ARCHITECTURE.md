@@ -28,9 +28,9 @@ lead URL
   -> seven-page article-budget check (faithful synthesis when over budget)
   -> titled two-page editorial-budget check
   -> approved content digest
-  -> canonical cover SVG -> one-page cover PDF -> proof PNG
+  -> canonical front/back SVGs -> one-page cover PDFs -> proof PNGs
   -> deterministic interior layout
-  -> exact cover-PDF splice into reader page 1
+  -> exact outer-cover PDF splice into reader pages 1 and N
   -> proof digest
   -> reader/home/studio packages
 ```
@@ -50,11 +50,12 @@ lead URL
 - An approval names the exact revision and digest it approves.
 - Any manuscript, art, template, font, profile, or tool change invalidates downstream approvals.
 - Packaging never invokes AI. It consumes sealed artifacts only.
-- The browser proof is rasterized from the same one-page cover PDF inserted into
-  the reader; the proof and production cover cannot be separate implementations.
+- Each browser proof is rasterized from the same one-page outer-cover PDF
+  inserted into the reader; proof and production faces cannot be separate
+  implementations.
 - ReportLab owns interior pages only. Cover geometry, outlined typography,
-  artwork placement, trim behavior, and comparison evidence are local to the
-  cover compiler and its authored design contract.
+  artwork placement, trim behavior, and comparison evidence for both outer
+  faces are local to the cover compiler and its authored design contract.
 - Release output is promoted atomically after validation.
 
 ## Canonical and generated material

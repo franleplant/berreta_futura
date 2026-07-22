@@ -29,7 +29,7 @@ PAGE_WIDTH = 419.527559
 PAGE_HEIGHT = 595.275591
 PROOF_DPI = 144
 PRINT_DPI = 300
-COVER_COMPILER_VERSION = "5"
+COVER_COMPILER_VERSION = "7"
 ART_SIZE_POINTS = (249.35, 248.65)
 
 INK = "#0a0b0d"
@@ -49,7 +49,8 @@ class CoverArtifact:
     pdf_sha256: str
     png_sha256: str
     status: str
-    cover_art_size_points: tuple[float, float] = ART_SIZE_POINTS
+    cover_art_size_points: tuple[float, float] | None = ART_SIZE_POINTS
+    face: str = "front"
 
 
 @dataclass(frozen=True)
@@ -176,6 +177,17 @@ class CoverCompiler:
                 "art": {"x": 85.25, "top": 221.85, "width": 249.35, "height": 248.65},
                 "deck": {"top": 493.0, "size": 5.5, "wrap_size": 6.7, "leading": 8.4, "horizontal_scale": 108.0, "tracking": .35},
                 "footer": {"x": 44.0, "bottom": 20.0, "size": 7.0, "tracking": 1.85},
+                "back": {
+                    "overdraw": 1.5, "rail_width": 42.0, "rail_top": 32.0,
+                    "rail_size": 8.0, "rail_tracking": 1.6, "mass_x": 6.0,
+                    "mass_top": 38.0, "mass_size": 116.0, "mass_leading": 84.68,
+                    "mass_tracking": -12.18, "panel_x": 38.0, "panel_top": 242.0,
+                    "panel_right": 62.0, "panel_bottom": 52.0, "panel_padding": 30.0,
+                    "panel_owner_bottom": 24.0, "statement_max_size": 24.0,
+                    "statement_min_size": 18.0, "statement_leading_ratio": 1.05,
+                    "slug_x": 38.0, "slug_bottom": 26.0, "slug_size": 7.0,
+                    "slug_tracking": 1.6,
+                },
             }
         self.colors = self.design["color"]
         self.proof_dpi = int(self.design.get("proof_dpi", PROOF_DPI))
@@ -185,6 +197,8 @@ class CoverCompiler:
         fonts = Path(__file__).with_name("assets") / "fonts" / "inter"
         self.regular = _FontOutliner(fonts / "Inter-Regular.ttf")
         self.bold = _FontOutliner(fonts / "Inter-Bold.ttf")
+        serif = Path(__file__).with_name("assets") / "fonts" / "source-serif-4"
+        self.serif = _FontOutliner(serif / "SourceSerif4SmText-Regular.ttf")
 
     def compile(
         self,
@@ -195,6 +209,40 @@ class CoverCompiler:
         check: bool = False,
     ) -> CoverArtifact:
         """Compile one localized edition cover and retain all proof evidence."""
+        return self._compile_face(
+            edition,
+            destination,
+            face="front",
+            reference=reference,
+            check=check,
+        )
+
+    def compile_back(
+        self,
+        edition: Edition,
+        destination: Path,
+        *,
+        reference: Path | None = None,
+        check: bool = False,
+    ) -> CoverArtifact:
+        """Compile the localized back cover through the same proof pipeline."""
+        return self._compile_face(
+            edition,
+            destination,
+            face="back",
+            reference=reference,
+            check=check,
+        )
+
+    def _compile_face(
+        self,
+        edition: Edition,
+        destination: Path,
+        *,
+        face: str,
+        reference: Path | None,
+        check: bool,
+    ) -> CoverArtifact:
         destination = destination.resolve()
         destination.mkdir(parents=True, exist_ok=True)
         svg_path = destination / "cover.svg"
@@ -202,8 +250,12 @@ class CoverCompiler:
         png_path = destination / "cover.png"
         proof_path = destination / "proof.json"
 
-        svg = self._materialize_svg(edition)
-        digest = self._input_digest(edition, svg)
+        svg = (
+            self._materialize_svg(edition)
+            if face == "front"
+            else self._materialize_back_svg(edition)
+        )
+        digest = self._input_digest(edition, svg, face=face)
         if svg_path.is_file() and pdf_path.is_file() and png_path.is_file() and proof_path.is_file():
             try:
                 previous = json.loads(proof_path.read_text(encoding="utf-8"))
@@ -234,10 +286,11 @@ class CoverCompiler:
                     _sha256(pdf_path),
                     _sha256(png_path),
                     status,
-                    self.art_size,
+                    self.art_size if face == "front" else None,
+                    face,
                 )
         svg_path.write_text(svg, encoding="utf-8")
-        self._svg_to_pdf(svg.encode("utf-8"), pdf_path, edition)
+        self._svg_to_pdf(svg.encode("utf-8"), pdf_path, edition, face=face)
         self._validate_pdf(pdf_path)
         self._rasterize_pdf(pdf_path, png_path)
 
@@ -247,6 +300,7 @@ class CoverCompiler:
             "schema_version": 1,
             "edition_id": edition.id,
             "language": edition.language,
+            "face": face,
             "design": str(self.design["id"]),
             "input_sha256": digest,
             "pdf_sha256": _sha256(pdf_path),
@@ -256,7 +310,7 @@ class CoverCompiler:
             "production_raster_dpi": self.print_dpi,
             "proof_source": "cover.pdf",
             "production_source": "cover.pdf",
-            "cover_art_size_points": list(self.art_size),
+            "cover_art_size_points": list(self.art_size) if face == "front" else None,
             "comparison": comparison,
         }
         proof_path.write_text(
@@ -277,7 +331,8 @@ class CoverCompiler:
             manifest["pdf_sha256"],
             manifest["png_sha256"],
             status,
-            self.art_size,
+            self.art_size if face == "front" else None,
+            face,
         )
 
     def _materialize_svg(self, edition: Edition) -> str:
@@ -346,6 +401,160 @@ class CoverCompiler:
             f'  <g id="cover" data-design="{escape(str(self.design["id"]))}">\n    {body}\n  </g>\n'
             '</svg>\n'
         )
+
+    def _materialize_back_svg(self, edition: Edition) -> str:
+        """Materialize the selected Signal fold back cover as outlined SVG."""
+        back = self.design["back"]
+        orange = str(self.colors["orange"])
+        ink = str(self.colors["ink"])
+        violet = str(self.colors["violet"])
+        paper = str(self.colors["paper"])
+        overdraw = float(back["overdraw"])
+        rail_width = float(back["rail_width"])
+        mass_x = float(back["mass_x"])
+        mass_size = float(back["mass_size"])
+        mass_tracking = float(back["mass_tracking"])
+        mass_words = _back_cover_copy(edition, "mass")
+        mass_max_width = PAGE_WIDTH - rail_width - mass_x + 4.0
+        while mass_size >= 72.0 and any(
+            self.bold.measure(word, size=mass_size, tracking=mass_tracking) > mass_max_width
+            for word in mass_words
+        ):
+            mass_size -= .5
+        if mass_size < 72.0:
+            raise CoverOverflowError(
+                f"Back-cover display words cannot fit: {' / '.join(mass_words)}"
+            )
+        mass_top = float(back["mass_top"])
+        mass_leading = float(back["mass_leading"]) * mass_size / float(back["mass_size"])
+        mass_paths = []
+        for index, word in enumerate(mass_words):
+            mass_paths.append(
+                self.bold.outline(
+                    word,
+                    x=mass_x,
+                    baseline=mass_top + mass_size + index * mass_leading,
+                    size=mass_size,
+                    fill=violet if index == 0 else ink,
+                    tracking=mass_tracking,
+                ).markup
+            )
+
+        panel_x = float(back["panel_x"])
+        panel_top = float(back["panel_top"])
+        panel_width = PAGE_WIDTH - panel_x - float(back["panel_right"])
+        panel_height = PAGE_HEIGHT - panel_top - float(back["panel_bottom"])
+        panel_padding = float(back["panel_padding"])
+        statement = str(
+            edition.cover.get("back_text", _back_cover_copy(edition, "back_text_default"))
+        ).strip()
+        statement_size, statement_lines = self._fit_back_statement(
+            statement,
+            panel_width - panel_padding * 2,
+            panel_height - panel_padding - float(back["panel_owner_bottom"]) - 30.0,
+        )
+        statement_leading = statement_size * float(back["statement_leading_ratio"])
+        statement_paths = [
+            self.serif.outline(
+                line,
+                x=panel_x + panel_padding,
+                baseline=panel_top + panel_padding + statement_size + index * statement_leading,
+                size=statement_size,
+                fill=ink,
+                tracking=-.12,
+            ).markup
+            for index, line in enumerate(statement_lines)
+        ]
+
+        owner = _back_cover_copy(edition, "owner")
+        owner_baseline = panel_top + panel_height - float(back["panel_owner_bottom"])
+        owner_path = self.bold.outline(
+            owner,
+            x=panel_x + panel_padding,
+            baseline=owner_baseline,
+            size=6.4,
+            fill=violet,
+            tracking=1.0,
+            horizontal_scale=96.0,
+        ).markup
+        slug = f'{_back_cover_copy(edition, "end")} / {_cover_date(edition.publication_date)}'
+        slug_path = self.bold.outline(
+            slug,
+            x=float(back["slug_x"]),
+            baseline=PAGE_HEIGHT - float(back["slug_bottom"]),
+            size=float(back["slug_size"]),
+            fill=paper,
+            tracking=float(back["slug_tracking"]),
+        ).markup
+
+        label = _back_cover_copy(edition, "issue")
+        identity = (
+            f"{edition.publication_name.upper()} / {label} "
+            f"{str(edition.issue_number).zfill(3)} / BUENOS AIRES"
+        )
+        rail_size = float(back["rail_size"])
+        rail_tracking = float(back["rail_tracking"])
+        rail = self.bold.outline(
+            identity,
+            x=0,
+            baseline=0,
+            size=rail_size,
+            fill=ink,
+            tracking=rail_tracking,
+        )
+        rail_x = (
+            PAGE_WIDTH
+            - rail_width / 2
+            - (rail.ascent - rail.descent) / 2
+        )
+        rail_path = (
+            f'<g transform="translate({rail_x:.5f} {float(back["rail_top"]):.5f}) rotate(90)">'
+            f'{rail.markup}</g>'
+        )
+
+        parts = [
+            f'<rect data-slot="field" x="{-overdraw}" y="{-overdraw}" '
+            f'width="{PAGE_WIDTH + overdraw * 2}" height="{PAGE_HEIGHT + overdraw * 2}" '
+            f'fill="{orange}"/>',
+            f'<g data-slot="mass">{"".join(mass_paths)}</g>',
+            f'<rect data-slot="statement-panel" x="{panel_x}" y="{panel_top}" '
+            f'width="{panel_width}" height="{panel_height}" fill="{paper}"/>',
+            f'<g data-slot="statement">{"".join(statement_paths)}</g>',
+            f'<g data-slot="owner">{owner_path}</g>',
+            f'<g data-slot="slug">{slug_path}</g>',
+            # Paint a quiet orange corridor over the display mass, then its label.
+            f'<rect x="{PAGE_WIDTH - rail_width}" y="0" width="{rail_width}" '
+            f'height="{PAGE_HEIGHT}" fill="{orange}"/>',
+            f'<g data-slot="identity-label">{rail_path}</g>',
+        ]
+        body = "\n    ".join(parts)
+        return (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{PAGE_WIDTH}pt" '
+            f'height="{PAGE_HEIGHT}pt" viewBox="0 0 {PAGE_WIDTH} {PAGE_HEIGHT}" '
+            'overflow="hidden">\n'
+            '  <title>Berreta Futura back cover</title>\n'
+            f'  <g id="back-cover" data-design="{escape(str(self.design["id"]))}">\n'
+            f'    {body}\n  </g>\n'
+            '</svg>\n'
+        )
+
+    def _fit_back_statement(
+        self,
+        text: str,
+        width: float,
+        height: float,
+    ) -> tuple[float, list[str]]:
+        back = self.design["back"]
+        size = float(back["statement_max_size"])
+        minimum = float(back["statement_min_size"])
+        leading_ratio = float(back["statement_leading_ratio"])
+        while size >= minimum:
+            lines = self._wrap(text, self.serif, size, width)
+            if lines and len(lines) * size * leading_ratio <= height:
+                return size, lines
+            size -= .5
+        raise CoverOverflowError(f"Back-cover issue statement cannot fit: {text}")
 
     def _wordmark(self, publication_name: str) -> list[str]:
         value = publication_name.upper().strip()
@@ -567,7 +776,14 @@ class CoverCompiler:
         image.save(output, format="PNG", optimize=False)
         return output.getvalue()
 
-    def _svg_to_pdf(self, svg: bytes, output: Path, edition: Edition) -> None:
+    def _svg_to_pdf(
+        self,
+        svg: bytes,
+        output: Path,
+        edition: Edition,
+        *,
+        face: str = "front",
+    ) -> None:
         try:
             import resvg
             from reportlab.lib.colors import HexColor
@@ -602,6 +818,12 @@ class CoverCompiler:
                 raster_svg,
                 count=1,
             )
+            raster_svg = re.sub(
+                rb'(<rect data-slot="field"[^>]*?) fill="[^"]+"',
+                rb'\1 fill="none"',
+                raster_svg,
+                count=1,
+            )
             options = resvg.usvg.Options.default()
             tree = resvg.usvg.Tree.from_str(raster_svg.decode("utf-8"), options)
             # resvg follows affine.Affine's (a, b, c, d, e, f) ordering;
@@ -613,22 +835,34 @@ class CoverCompiler:
                 pageCompression=1,
                 invariant=1,
             )
-            pdf.setTitle("Berreta Futura cover")
+            pdf.setTitle(f"Berreta Futura {face} cover")
             pdf.setCreator("magazine-compiler cover pipeline")
-            pdf.setFillColorRGB(1, 1, 1)
-            pdf.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
-            tab = self.design["tab"]
-            tab_width = float(tab["width"])
-            tab_overdraw = float(tab["overdraw"])
-            pdf.setFillColor(HexColor(str(self.colors["orange"])))
-            pdf.rect(
-                PAGE_WIDTH - tab_width,
-                -tab_overdraw,
-                tab_width + tab_overdraw * 2,
-                PAGE_HEIGHT + tab_overdraw * 2,
-                fill=1,
-                stroke=0,
-            )
+            if face == "front":
+                pdf.setFillColorRGB(1, 1, 1)
+                pdf.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
+                tab = self.design["tab"]
+                tab_width = float(tab["width"])
+                tab_overdraw = float(tab["overdraw"])
+                pdf.setFillColor(HexColor(str(self.colors["orange"])))
+                pdf.rect(
+                    PAGE_WIDTH - tab_width,
+                    -tab_overdraw,
+                    tab_width + tab_overdraw * 2,
+                    PAGE_HEIGHT + tab_overdraw * 2,
+                    fill=1,
+                    stroke=0,
+                )
+            else:
+                overdraw = float(self.design["back"]["overdraw"])
+                pdf.setFillColor(HexColor(str(self.colors["orange"])))
+                pdf.rect(
+                    -overdraw,
+                    -overdraw,
+                    PAGE_WIDTH + overdraw * 2,
+                    PAGE_HEIGHT + overdraw * 2,
+                    fill=1,
+                    stroke=0,
+                )
             pdf.drawImage(
                 ImageReader(io.BytesIO(png)),
                 0,
@@ -640,7 +874,10 @@ class CoverCompiler:
             )
             pdf.saveState()
             try:
-                self._add_selectable_text_layer(pdf, edition)
+                if face == "front":
+                    self._add_selectable_text_layer(pdf, edition)
+                else:
+                    self._add_selectable_back_text_layer(pdf, edition)
             finally:
                 pdf.restoreState()
             pdf.showPage()
@@ -716,6 +953,60 @@ class CoverCompiler:
             tracking=float(footer["tracking"]),
         )
 
+    def _add_selectable_back_text_layer(self, pdf, edition: Edition) -> None:
+        """Mirror the outlined Signal fold copy with invisible embedded text."""
+        try:
+            from reportlab.pdfbase import pdfmetrics
+            from reportlab.pdfbase.ttfonts import TTFont
+        except ImportError as exc:
+            raise DependencyError(
+                "Selectable back-cover text requires ReportLab; run `uv sync --locked`."
+            ) from exc
+        font_path = Path(__file__).with_name("assets") / "fonts" / "inter" / "Inter-Regular.ttf"
+        font_name = "BackCoverSelectableInter"
+        if font_name not in pdfmetrics.getRegisteredFontNames():
+            pdfmetrics.registerFont(TTFont(font_name, str(font_path)))
+
+        def invisible_line(
+            value: str,
+            x: float,
+            y: float,
+            size: float,
+            *,
+            horizontal_scale: float = 100.0,
+        ) -> None:
+            text = pdf.beginText()
+            text.setTextRenderMode(3)
+            text.setTextOrigin(x, y)
+            text.setFont(font_name, size)
+            text.setHorizScale(horizontal_scale)
+            text.textLine(value)
+            pdf.drawText(text)
+
+        first, second = _back_cover_copy(edition, "mass")
+        invisible_line(first, 6.0, PAGE_HEIGHT - 90.0, 20.0)
+        invisible_line(second, 6.0, PAGE_HEIGHT - 170.0, 20.0)
+        statement = str(
+            edition.cover.get("back_text", _back_cover_copy(edition, "back_text_default"))
+        ).strip()
+        for index, line in enumerate(self._wrap(statement, self.regular, 10.0, 260.0)):
+            invisible_line(line, 68.0, PAGE_HEIGHT - 300.0 - index * 12.0, 10.0)
+        invisible_line(_back_cover_copy(edition, "owner"), 68.0, 78.0, 7.0)
+        invisible_line(
+            f'{_back_cover_copy(edition, "end")} / {_cover_date(edition.publication_date)}',
+            38.0,
+            26.0,
+            7.0,
+        )
+        invisible_line(
+            f'{edition.publication_name.upper()} / {_back_cover_copy(edition, "issue")} '
+            f'{str(edition.issue_number).zfill(3)} / BUENOS AIRES',
+            38.0,
+            10.0,
+            5.5,
+            horizontal_scale=88.0,
+        )
+
     @staticmethod
     def _validate_pdf(path: Path) -> None:
         try:
@@ -781,10 +1072,11 @@ class CoverCompiler:
             "bounds": list(bbox) if bbox else None,
         }
 
-    def _input_digest(self, edition: Edition, svg: str) -> str:
+    def _input_digest(self, edition: Edition, svg: str, *, face: str = "front") -> str:
         payload = {
             "edition": edition.id,
             "compiler": COVER_COMPILER_VERSION,
+            "face": face,
             "design": self.design,
             "language": edition.language,
             "issue": edition.issue_number,
@@ -797,8 +1089,44 @@ class CoverCompiler:
         ).hexdigest()
 
 
+def replace_outer_pages(
+    reader_pdf: Path,
+    front_cover_pdf: Path,
+    back_cover_pdf: Path,
+    output: Path | None = None,
+) -> Path:
+    """Replace both reader outer pages with the exact compiled cover PDFs."""
+    try:
+        from pypdf import PdfReader, PdfWriter
+    except ImportError as exc:
+        raise DependencyError("Cover integration requires pypdf; run `uv sync --locked`.") from exc
+    target = output or reader_pdf
+    source = PdfReader(reader_pdf)
+    front = PdfReader(front_cover_pdf)
+    back = PdfReader(back_cover_pdf)
+    if len(source.pages) < 4 or len(front.pages) != 1 or len(back.pages) != 1:
+        raise CoverPdfError(
+            "Reader must have at least four pages and each cover PDF exactly one page"
+        )
+    for name, cover in (("front", front), ("back", back)):
+        box = cover.pages[0].mediabox
+        if abs(float(box.width) - PAGE_WIDTH) > .02 or abs(float(box.height) - PAGE_HEIGHT) > .02:
+            raise CoverPdfError(f"{name.title()} cover PDF must be A5")
+    writer = PdfWriter()
+    writer.add_page(front.pages[0])
+    for page in source.pages[1:-1]:
+        writer.add_page(page)
+    writer.add_page(back.pages[0])
+    writer.add_metadata({"/Creator": "magazine-compiler", "/Producer": "magazine-compiler"})
+    temporary = target.with_suffix(target.suffix + ".cover-tmp")
+    with temporary.open("wb") as stream:
+        writer.write(stream)
+    temporary.replace(target)
+    return target
+
+
 def replace_first_page(reader_pdf: Path, cover_pdf: Path, output: Path | None = None) -> Path:
-    """Replace reader page 1 with the exact compiled cover PDF page."""
+    """Compatibility helper for callers that only replace reader page 1."""
     try:
         from pypdf import PdfReader, PdfWriter
     except ImportError as exc:
@@ -831,6 +1159,27 @@ def _cover_contributors(edition: Edition) -> str:
     if authors:
         return " / ".join(authors).upper()
     return str(edition.cover.get("deck", "")).strip()
+
+
+def _back_cover_copy(edition: Edition, key: str):
+    language = edition.language.split("-", 1)[0]
+    copy = {
+        "en": {
+            "mass": ("LOOP", "CLOSED"),
+            "issue": "ISSUE",
+            "owner": "ISSUE STATEMENT / THE EDITORS",
+            "end": "END",
+            "back_text_default": "An independent anthology of writing worth keeping.",
+        },
+        "es": {
+            "mass": ("CICLO", "CERRADO"),
+            "issue": "NÚMERO",
+            "owner": "DECLARACIÓN DEL NÚMERO / LA REDACCIÓN",
+            "end": "FIN",
+            "back_text_default": "Una antología independiente de textos que vale la pena conservar.",
+        },
+    }
+    return copy.get(language, copy["en"])[key]
 
 
 def _sha256(path: Path) -> str:

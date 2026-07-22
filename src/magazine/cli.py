@@ -57,6 +57,28 @@ def parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Fail when cover parity or the supplied reference comparison fails",
     )
+    back_cover_proof = actions.add_parser(
+        "back-cover-proof",
+        help="Compile a fast back-cover SVG, PDF, PNG, and comparison report",
+    )
+    back_cover_proof.add_argument("edition_id")
+    back_cover_languages = back_cover_proof.add_mutually_exclusive_group()
+    back_cover_languages.add_argument("--language", help="Compile one configured language")
+    back_cover_languages.add_argument(
+        "--all-languages",
+        action="store_true",
+        help="Compile every configured publication language",
+    )
+    back_cover_proof.add_argument(
+        "--reference",
+        type=Path,
+        help="Approved reference image used by the visual comparison",
+    )
+    back_cover_proof.add_argument(
+        "--check",
+        action="store_true",
+        help="Fail when back-cover parity or the supplied reference comparison fails",
+    )
     review = actions.add_parser("review", help="Inspect or record independent render review state")
     review_actions = review.add_subparsers(dest="review_command", required=True)
     review_status = review_actions.add_parser("status", help="Show current hash-bound review status")
@@ -110,6 +132,19 @@ def main(argv: list[str] | None = None) -> int:
                 else (args.language or magazine.primary_language,)
             )
             for artifact in magazine.cover_proof(
+                args.edition_id,
+                languages=languages,
+                reference=args.reference,
+                check=args.check,
+            ):
+                print(artifact.proof_json)
+        elif args.command == "back-cover-proof":
+            languages = (
+                None
+                if args.all_languages
+                else (args.language or magazine.primary_language,)
+            )
+            for artifact in magazine.back_cover_proof(
                 args.edition_id,
                 languages=languages,
                 reference=args.reference,

@@ -47,6 +47,35 @@ bottom = 20.0
 size = 7.0
 tracking = 1.85
 
+[back]
+overdraw = 1.5
+rail_width = 42.0
+rail_top = 32.0
+rail_size = 8.0
+rail_tracking = 1.6
+mass_x = 6.0
+mass_top = 38.0
+mass_size = 116.0
+mass_leading = 84.68
+mass_tracking = -12.18
+panel_x = 38.0
+panel_top = 242.0
+panel_right = 62.0
+panel_bottom = 52.0
+panel_padding = 30.0
+panel_owner_bottom = 24.0
+statement_max_size = 24.0
+statement_min_size = 18.0
+statement_leading_ratio = 1.05
+slug_x = 38.0
+slug_bottom = 26.0
+slug_size = 7.0
+slug_tracking = 1.6
+
 [reference]
 en = "references/en.png"
 es = "references/es.png"
+
+[back_reference]
+en = "back-references/en.png"
+es = "back-references/es.png"
