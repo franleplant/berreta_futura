@@ -37,6 +37,8 @@ Edition 2 establishes the first motif: one oversized input crosses a severe gate
 
 Body copy is 9.55/12.6 pt by default. The opening editorial uses 9.55/12 pt within its hard two-page cap. Captions and navigation never fall below 7 pt. Feature manifests provide a localized `display_emphasis`, a source-faithful `short_title`, and one of three controlled `opener_variant` values. The compiler validates all three rather than choosing display or navigation language heuristically.
 
+The permanent publication wordmark is a compact, uppercase Inter Bold lockup: `BERRETA` in near-black followed immediately by `FUTURA` reversed from a violet block, with a short signal-orange register rule beneath the left edge. Tight spacing makes the two words read as one name; the block supplies the deliberate rupture between improvised present and designed future. The wordmark is always rendered by layout code from `publication.name`, never embedded in issue art, translated, or combined with issue metadata.
+
 The bundled font files and SIL Open Font License texts live under `src/magazine/assets/fonts`. Deterministic builds must not use system font lookups.
 
 ## Color
@@ -68,7 +70,7 @@ The cover artwork does not determine these colors. Violet is a publication-level
 
 ### Front cover
 
-The cover uses a single centered 250 × 250 pt framed artwork placement, a display title, a circular issue medallion, the complete deck, and private-edition metadata. It does not repeat the subtitle or turn topics into a decorative rail. Edition 2's 1254 × 1254 px production artwork resolves at 361.2 ppi in this placement. Layout code owns every letter; the raster asset contains no masthead or cover lines.
+The cover opens with the permanent BERRETA FUTURA wordmark at full live width, followed by a display title, circular issue medallion, single centered 250 × 250 pt framed artwork placement, complete deck, and private-edition metadata. It does not repeat the subtitle or turn topics into a decorative rail. Edition 2's 1254 × 1254 px production artwork resolves at 361.2 ppi in this placement. Layout code owns every letter; the raster asset contains no masthead or cover lines.
 
 ### Contents
 

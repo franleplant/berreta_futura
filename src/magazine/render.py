@@ -1182,6 +1182,58 @@ class _Typesetter:
         finally:
             self.pdf.restoreState()
 
+    def _publication_wordmark(self, name: str, x: float, y: float, width: float) -> None:
+        """Draw the permanent cover wordmark as type, never as part of the artwork."""
+        value = _plain(name.upper()).strip()
+        head, separator, tail = value.rpartition(" ")
+        if not separator:
+            head, tail = value, ""
+
+        size = 30.0
+        tracking = -.65
+
+        def measured(text: str, font_size: float) -> float:
+            return sum(
+                self.metrics.stringWidth(character, SANS_BOLD, font_size)
+                for character in text
+            ) + tracking * max(0, len(text) - 1)
+
+        while size >= 22:
+            head_width = measured(head, size)
+            tail_width = measured(tail, size) if tail else 0
+            box_width = tail_width + (15 if tail else 0)
+            if head_width + (4 if tail else 0) + box_width <= width:
+                break
+            size -= .5
+        else:
+            raise ValidationError(f"Publication name cannot fit the cover wordmark: {name}")
+
+        def draw_word(text: str, origin_x: float, origin_y: float, color) -> None:
+            self.pdf.setFillColorRGB(*color)
+            word = self.pdf.beginText()
+            word.setTextOrigin(origin_x, origin_y)
+            word.setFont(SANS_BOLD, size)
+            word.setCharSpace(tracking)
+            word.textLine(text)
+            self.pdf.drawText(word)
+
+        self.pdf.saveState()
+        try:
+            draw_word(head, x, y, INK)
+            if tail:
+                box_x = x + head_width + 4
+                box_y = y - 6
+                box_height = size + 7
+                self.pdf.setFillColorRGB(*VIOLET)
+                self.pdf.rect(box_x, box_y, box_width, box_height, fill=1, stroke=0)
+                draw_word(tail, box_x + 7.5, y, WHITE)
+
+            # A short register rule gives the lockup an exact left edge at any scale.
+            self.pdf.setFillColorRGB(*SIGNAL_ORANGE)
+            self.pdf.rect(x, y - 10, min(28, width), 3, fill=1, stroke=0)
+        finally:
+            self.pdf.restoreState()
+
     def _rotated_label(self, text: str, x: float, y: float, height: float, *, color=VIOLET) -> None:
         self.pdf.saveState()
         self.pdf.translate(x + CAPTION_SIZE, y)
@@ -1443,26 +1495,27 @@ class _Typesetter:
         self.new_page(blank_header=True)
         self.pdf.setFillColorRGB(*WHITE)
         self.pdf.rect(0, 0, self.width, self.height, fill=1, stroke=0)
-        masthead = (
-            f"{self.edition.publication_name} / {_ui(self.edition, 'issue')} "
-            f"{self.edition.issue_number}"
+        self._publication_wordmark(
+            self.edition.publication_name,
+            self.left,
+            self.height - 43,
+            self.live_width,
         )
-        self._tracked_label(masthead, self.left, self.height - 29, self.live_width)
 
         title_x, title_width = self.grid_box(0, 4)
         self._fitted_title_box(
             str(self.edition.cover.get("headline", self.edition.title)),
             title_x,
-            self.height - 57,
+            self.height - 84,
             title_width,
-            84,
-            maximum=35,
+            68,
+            maximum=32,
             minimum=23,
             maximum_lines=3,
             leading_ratio=.98,
         )
         medallion_x, medallion_width = self.grid_box(4, 2)
-        center_x, center_y = medallion_x + medallion_width / 2, self.height - 84
+        center_x, center_y = medallion_x + medallion_width / 2, self.height - 108
         self.pdf.setFillColorRGB(*VIOLET)
         self.pdf.circle(center_x, center_y, 24, fill=1, stroke=0)
         issue_mark = str(self.edition.issue_number).zfill(2)[-2:]

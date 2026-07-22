@@ -1,20 +1,20 @@
 schema_version: 1
 edition_id: 002-unreleased
-reviewer: render_critic-subagent
-reviewed_at: '2026-07-21T19:33:58+00:00'
+reviewer: Independent render critic
+reviewed_at: '2026-07-22T15:24:29+00:00'
 result: approved
 findings: []
-notes: 'Independent inspection of all English and Spanish reader/booklet contact sheets passed: unique
-  minimal coda art, no repeated filler, correct blank pages before back covers, clean imposition, and
-  locked cover unchanged.'
+notes: All 8 EN/ES reader and booklet contact sheets inspected; wordmark is legible at thumbnail scale,
+  cover hierarchy and clearances pass, blank inside covers and imposition remain correct, and no actionable
+  defects remain.
 languages:
   en:
-    reader_sha256: e9e6099851d4e40098c73cb011f93785b7e50c022ee58550d8486c7fc45a0630
-    booklet_sha256: 78e0bfc4f6d80f8d78e1b1eeff64ab3ae4b18af087f4c30899894e3eba462ae6
+    reader_sha256: 53ab94a9a12a4629011db43f85f6fd2e88a758d62a3dc4f98fe6701bf474420a
+    booklet_sha256: ae077e8bb7d5bc8af6b26efc0671a7ed67f57f215076d5e212977166f6af2a96
     page_count: 32
     machine_result: pass
   es:
-    reader_sha256: b39557e31bd37407f201968be719d0094201509252a6338eec764509be009df1
-    booklet_sha256: fe6f97b117f6f098949524654db67316362fb189c8fc4b4ac35b352686d7457d
+    reader_sha256: 39596d88b95be98908b3f83c3d5f058b291f2eb2cb23ad88cdcf97c373aa8326
+    booklet_sha256: 056fdcf16c47bdfda36f6e62f237bb3b28cd0b25510fb96c41a3109f0a7249b3
     page_count: 36
     machine_result: pass
