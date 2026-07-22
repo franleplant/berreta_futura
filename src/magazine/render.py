@@ -1221,9 +1221,9 @@ class _Typesetter:
             head, tail = value, ""
 
         size = 42.0
-        tracking = -1.65
+        tracking = -3.6
         head_scale = 92.0
-        tail_scale = 105.0
+        tail_scale = 104.0
 
         def measured(text: str, font_size: float, horizontal_scale: float) -> float:
             unscaled = self.metrics.stringWidth(text, SANS_BOLD, font_size)
@@ -1233,7 +1233,7 @@ class _Typesetter:
         while size >= 25:
             head_width = measured(head, size, head_scale)
             tail_width = measured(tail, size, tail_scale) if tail else 0
-            tail_offset = head_width * .52
+            tail_offset = size * (93 / 42)
             box_width = tail_width + (18 if tail else 0)
             if max(head_width, tail_offset + box_width) <= width:
                 break
@@ -1254,39 +1254,50 @@ class _Typesetter:
             return
 
         tail_x = x + tail_offset
-        tail_y = y - size * .84
-        box_x = tail_x - 6
-        box_y = tail_y - 7
-        box_height = size * .86
+        tail_y = y - size * .91
+        box_x = -6.0
+        box_y = -7.0
+        box_height = size * 1.04
         slant = 6.0
-        slug = self.pdf.beginPath()
-        slug.moveTo(box_x + slant, box_y)
-        slug.lineTo(box_x + box_width + slant, box_y)
-        slug.lineTo(box_x + box_width, box_y + box_height)
-        slug.lineTo(box_x, box_y + box_height)
-        slug.close()
-        self.pdf.setFillColorRGB(*INK)
-        self.pdf.drawPath(slug, fill=1, stroke=0)
+        center_x = box_x + box_width / 2
+        center_y = box_y + box_height / 2
+        self.pdf.saveState()
+        try:
+            self.pdf.translate(tail_x, tail_y)
+            self.pdf.translate(center_x, center_y)
+            # PDF's Y axis points up, opposite to CSS: +10 reproduces skewX(-10deg).
+            self.pdf.skew(0, 10)
+            self.pdf.translate(-center_x, -center_y)
+            slug = self.pdf.beginPath()
+            slug.moveTo(box_x + slant, box_y)
+            slug.lineTo(box_x + box_width + slant, box_y)
+            slug.lineTo(box_x + box_width, box_y + box_height)
+            slug.lineTo(box_x, box_y + box_height)
+            slug.close()
+            self.pdf.setFillColorRGB(*INK)
+            self.pdf.drawPath(slug, fill=1, stroke=0)
 
-        # A deliberately misregistered orange impression sits beneath the white type.
-        self._scaled_word(
-            tail,
-            tail_x - 3,
-            tail_y - 1,
-            size=size,
-            color=SIGNAL_ORANGE,
-            horizontal_scale=tail_scale,
-            tracking=tracking,
-        )
-        self._scaled_word(
-            tail,
-            tail_x,
-            tail_y,
-            size=size,
-            color=WHITE,
-            horizontal_scale=tail_scale,
-            tracking=tracking,
-        )
+            # A deliberately misregistered orange impression sits beneath the white type.
+            self._scaled_word(
+                tail,
+                -3,
+                -1,
+                size=size,
+                color=SIGNAL_ORANGE,
+                horizontal_scale=tail_scale,
+                tracking=tracking,
+            )
+            self._scaled_word(
+                tail,
+                0,
+                0,
+                size=size,
+                color=WHITE,
+                horizontal_scale=tail_scale,
+                tracking=tracking,
+            )
+        finally:
+            self.pdf.restoreState()
 
     def _cover_title(self, text: str, x: float, top: float, width: float) -> None:
         size = 29.0
@@ -1618,8 +1629,8 @@ class _Typesetter:
         self._cover_edge_tab()
         self._publication_wordmark(
             self.edition.publication_name,
-            39,
-            self.height - 56,
+            38,
+            self.height - 53,
             self.width - COVER_EDGE_TAB_WIDTH - 78,
         )
 

@@ -1,20 +1,20 @@
 schema_version: 1
 edition_id: 002-unreleased
-reviewer: Independent Canto vivo critic
-reviewed_at: '2026-07-22T15:50:47+00:00'
+reviewer: Independent prototype-parity critic
+reviewed_at: '2026-07-22T16:09:19+00:00'
 result: approved
 findings: []
-notes: All 8 EN/ES reader and booklet contact sheets inspected. Corte bruto wordmark, Canto vivo tab,
-  balanced localized titles, date-only footer, blank inside covers, and imposition pass with no actionable
-  defects.
+notes: All 8 EN/ES reader and booklet contact sheets inspected after parity fix. FUTURA forward shear,
+  fixed overlap, deep slug, orange misregistration, edge tab, localized titles, date footer, blanks, and
+  imposition pass with no actionable defects.
 languages:
   en:
-    reader_sha256: 313f09214b35718e9fc602002a9958ba4c2f296fb6d7473bf5937c7eabf903d9
-    booklet_sha256: 183fa2418c09d96a5c81ecf445551be329c60a856f5a9fcb40c440ad5133951f
+    reader_sha256: 2ba5314eaaf98a3cc23a0beeb5ab900a6004c5a3eec574820b3db9b983e8e5c3
+    booklet_sha256: 9384b9ee0e70da69b5c5945ed3786c7350afb764d9019a820efa662467adcda7
     page_count: 32
     machine_result: pass
   es:
-    reader_sha256: f88d5cf88b952b2e0dc9fbe5702c48f2f1b3b0f18c143209f2f1aa7349d25a7b
-    booklet_sha256: aee4e033e5c6bbe256d3811433530769223de5d09a557e3cccf7b27df61c6402
+    reader_sha256: acf42fbfcaa2b44fe5e9af6b5839791f0b66470e1d0989a9ff4f941f4754d7e9
+    booklet_sha256: a2fc6a1794042d3a97e102a4fc19ec359b901575e763a2ba848ef82d7927507d
     page_count: 36
     machine_result: pass

@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import math
 from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -30,6 +31,31 @@ from test_manifest import add_spanish_translation, make_project
 
 @unittest.skipUnless(importlib.util.find_spec("reportlab") is not None, "ReportLab not installed in this runtime")
 class RenderIntegrationTests(unittest.TestCase):
+    def assert_cover_uses_corte_bruto_geometry(self, path: Path) -> None:
+        reader = PdfReader(str(path))
+        stream = ContentStream(reader.pages[0].get_contents(), reader)
+        character_spacing = []
+        horizontal_scales = []
+        transforms = []
+        for operands, operator in stream.operations:
+            if operator == b"Tc":
+                character_spacing.append(float(operands[0]))
+            elif operator == b"Tz":
+                horizontal_scales.append(float(operands[0]))
+            elif operator == b"cm":
+                transforms.append(tuple(float(value) for value in operands))
+
+        self.assertIn(-3.6, character_spacing)
+        self.assertIn(92.0, horizontal_scales)
+        self.assertIn(104.0, horizontal_scales)
+        self.assertTrue(
+            any(
+                abs(matrix[2] - math.tan(math.radians(10))) < 0.00001
+                for matrix in transforms
+            ),
+            "FUTURA must retain the selected prototype's forward 10-degree shear",
+        )
+
     def assert_tracked_labels_do_not_leak_character_spacing(self, path: Path) -> None:
         reader = PdfReader(str(path))
         saw_tracking = False
@@ -100,6 +126,7 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertNotIn("PRIVATE READER", cover_text)
             self.assertNotIn(" ".join(("NOT", "FOR", "SALE")), reader_text)
             self.assertNotIn(" ".join(("PRIVATE", "EDITION")), reader_text)
+            self.assert_cover_uses_corte_bruto_geometry(result.reader_pdf)
             self.assert_tracked_labels_do_not_leak_character_spacing(result.reader_pdf)
 
     def test_signature_padding_uses_distinct_configured_codas_once_each(self):
