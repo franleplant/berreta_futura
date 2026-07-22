@@ -1,19 +1,19 @@
 schema_version: 1
 edition_id: 002-unreleased
-reviewer: signal_fold_final_render_critic
-reviewed_at: '2026-07-22T18:41:46+00:00'
+reviewer: captionless_back_final_critic
+reviewed_at: '2026-07-22T19:03:02+00:00'
 result: approved
 findings: []
-notes: Selected Signal fold back cover approved in EN/ES; exact front/back proof parity, selectable outer-cover
-  text, correct A4 imposition, and blank inside covers verified across all contact sheets.
+notes: 'Removed redundant back-cover ownership caption; unified back field and rail to exact front-cover
+  #f05738; final EN/ES reader and A4 booklet sheets approved with exact proof parity.'
 languages:
   en:
-    reader_sha256: 03418d56909debd92941684130a71bc16ea2a4de24e421fd7fabc625cc7372c1
-    booklet_sha256: e39e4016ff816039d8726dd8fd560b1c052c562f2e96c44a37e26ae4ebefcb55
+    reader_sha256: d0b77f234388f1b64221d6ecf11b1feded38450ff6fa4da1ea581f4f0bf642bd
+    booklet_sha256: c468944923a9d9a15a0f73a303bcc0afe5dd62810b8a498278093f5aa9d6d9c7
     page_count: 32
     machine_result: pass
   es:
-    reader_sha256: 0e00a58bbad6ee2e49f4e094b2ddef75748284d99eaa314f4d499d81c8e3569e
-    booklet_sha256: 806f28cd6aee3e301ed9a0732a7af61c12a91d166cb2db7d08a413a2dad38308
+    reader_sha256: aa1ece09d0b4dbd26d78deef55326f8c8e2f8b2a56fe85992b572043767c0912
+    booklet_sha256: d333fde83a2cbebaa5e7285a94ff84d48d9cc962f77cef5400c7d6a25a34b97f
     page_count: 36
     machine_result: pass

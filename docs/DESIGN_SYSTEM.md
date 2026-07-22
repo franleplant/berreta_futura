@@ -95,7 +95,7 @@ Copy flows left frame, right frame, then the next page. When greedy flow would s
 
 ### Backmatter and back cover
 
-Backmatter uses the same opener and continuation system. The selected Signal fold back cover is a full-bleed orange closing poster with giant localized LOOP CLOSED / CICLO CERRADO display type, a protected vertical identity corridor, and a white statement insert. The insert renders the configured issue statement and visibly labels it as editor-owned text; the lower slug closes with localized END/FIN and the numeric date. It never substitutes an unattributed source quotation.
+Backmatter uses the same opener and continuation system. The selected Signal fold back cover is a full-bleed orange closing poster with giant localized LOOP CLOSED / CICLO CERRADO display type, a protected vertical identity corridor, and a white statement insert. The insert renders the configured editor-written closing statement without a redundant ownership caption; the lower slug closes with localized END/FIN and the numeric date. It never substitutes an unattributed source quotation.
 
 The back face is compiled through `uv run --locked mag back-cover-proof <edition-id>` using the same outlined SVG -> one-page PDF -> PDF-derived PNG contract as the front. The generated PDF includes an invisible bundled-font text layer so every word remains searchable and selectable. A full build replaces both outer reader pages in one splice, and A4 imposition consumes that exact reader.
 

@@ -63,7 +63,6 @@ panel_top = 242.0
 panel_right = 62.0
 panel_bottom = 52.0
 panel_padding = 30.0
-panel_owner_bottom = 24.0
 statement_max_size = 24.0
 statement_min_size = 18.0
 statement_leading_ratio = 1.05

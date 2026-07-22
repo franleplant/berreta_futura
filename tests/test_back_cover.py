@@ -89,7 +89,6 @@ def test_signal_fold_back_proof_is_outlined_a5_svg_with_orange_on_every_trim_edg
         "mass",
         "statement-panel",
         "statement",
-        "owner",
         "slug",
         "identity-label",
     } <= slots
@@ -117,7 +116,7 @@ def test_signal_fold_back_proof_is_outlined_a5_svg_with_orange_on_every_trim_edg
     ), "the orange field must paint all four outermost trim edges"
 
 
-def test_back_proof_has_selectable_localized_statement_owner_and_end_labels(
+def test_back_proof_has_selectable_localized_statement_and_end_labels_without_owner_copy(
     tmp_path: Path,
 ) -> None:
     magazine = _make_back_cover_project(tmp_path, spanish=True)
@@ -128,10 +127,12 @@ def test_back_proof_has_selectable_localized_statement_owner_and_end_labels(
     english = _normalized_text(by_language["en"].pdf)
     spanish = _normalized_text(by_language["es"].pdf)
     assert BACK_TEXT in english
-    assert "ISSUE STATEMENT / THE EDITORS" in english
+    assert "ISSUE STATEMENT" not in english
+    assert "THE EDITORS" not in english
     assert "END" in english
     assert SPANISH_BACK_TEXT in spanish
-    assert "DECLARACIÓN DEL NÚMERO / LA REDACCIÓN" in spanish
+    assert "DECLARACIÓN DEL NÚMERO" not in spanish
+    assert "LA REDACCIÓN" not in spanish
     assert "FIN" in spanish
     assert BACK_TEXT not in spanish
 

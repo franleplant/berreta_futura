@@ -29,7 +29,7 @@ PAGE_WIDTH = 419.527559
 PAGE_HEIGHT = 595.275591
 PROOF_DPI = 144
 PRINT_DPI = 300
-COVER_COMPILER_VERSION = "7"
+COVER_COMPILER_VERSION = "8"
 ART_SIZE_POINTS = (249.35, 248.65)
 
 INK = "#0a0b0d"
@@ -183,7 +183,7 @@ class CoverCompiler:
                     "mass_top": 38.0, "mass_size": 116.0, "mass_leading": 84.68,
                     "mass_tracking": -12.18, "panel_x": 38.0, "panel_top": 242.0,
                     "panel_right": 62.0, "panel_bottom": 52.0, "panel_padding": 30.0,
-                    "panel_owner_bottom": 24.0, "statement_max_size": 24.0,
+                    "statement_max_size": 24.0,
                     "statement_min_size": 18.0, "statement_leading_ratio": 1.05,
                     "slug_x": 38.0, "slug_bottom": 26.0, "slug_size": 7.0,
                     "slug_tracking": 1.6,
@@ -451,7 +451,7 @@ class CoverCompiler:
         statement_size, statement_lines = self._fit_back_statement(
             statement,
             panel_width - panel_padding * 2,
-            panel_height - panel_padding - float(back["panel_owner_bottom"]) - 30.0,
+            panel_height - panel_padding * 2,
         )
         statement_leading = statement_size * float(back["statement_leading_ratio"])
         statement_paths = [
@@ -466,17 +466,6 @@ class CoverCompiler:
             for index, line in enumerate(statement_lines)
         ]
 
-        owner = _back_cover_copy(edition, "owner")
-        owner_baseline = panel_top + panel_height - float(back["panel_owner_bottom"])
-        owner_path = self.bold.outline(
-            owner,
-            x=panel_x + panel_padding,
-            baseline=owner_baseline,
-            size=6.4,
-            fill=violet,
-            tracking=1.0,
-            horizontal_scale=96.0,
-        ).markup
         slug = f'{_back_cover_copy(edition, "end")} / {_cover_date(edition.publication_date)}'
         slug_path = self.bold.outline(
             slug,
@@ -494,6 +483,20 @@ class CoverCompiler:
         )
         rail_size = float(back["rail_size"])
         rail_tracking = float(back["rail_tracking"])
+        rail_scale = 100.0
+        rail_max_length = PAGE_HEIGHT - float(back["rail_top"]) - 28.0
+        while (
+            rail_scale >= 70.0
+            and self.bold.measure(
+                identity,
+                size=rail_size,
+                tracking=rail_tracking,
+                horizontal_scale=rail_scale,
+            ) > rail_max_length
+        ):
+            rail_scale -= 1.0
+        if rail_scale < 70.0:
+            raise CoverOverflowError(f"Back-cover identity rail cannot fit: {identity}")
         rail = self.bold.outline(
             identity,
             x=0,
@@ -501,6 +504,7 @@ class CoverCompiler:
             size=rail_size,
             fill=ink,
             tracking=rail_tracking,
+            horizontal_scale=rail_scale,
         )
         rail_x = (
             PAGE_WIDTH
@@ -516,15 +520,14 @@ class CoverCompiler:
             f'<rect data-slot="field" x="{-overdraw}" y="{-overdraw}" '
             f'width="{PAGE_WIDTH + overdraw * 2}" height="{PAGE_HEIGHT + overdraw * 2}" '
             f'fill="{orange}"/>',
-            f'<g data-slot="mass">{"".join(mass_paths)}</g>',
+            f'<defs><clipPath id="mass-safe" clipPathUnits="userSpaceOnUse">'
+            f'<rect x="0" y="0" width="{PAGE_WIDTH - rail_width}" height="{PAGE_HEIGHT}"/>'
+            f'</clipPath></defs>',
+            f'<g data-slot="mass" clip-path="url(#mass-safe)">{"".join(mass_paths)}</g>',
             f'<rect data-slot="statement-panel" x="{panel_x}" y="{panel_top}" '
             f'width="{panel_width}" height="{panel_height}" fill="{paper}"/>',
             f'<g data-slot="statement">{"".join(statement_paths)}</g>',
-            f'<g data-slot="owner">{owner_path}</g>',
             f'<g data-slot="slug">{slug_path}</g>',
-            # Paint a quiet orange corridor over the display mass, then its label.
-            f'<rect x="{PAGE_WIDTH - rail_width}" y="0" width="{rail_width}" '
-            f'height="{PAGE_HEIGHT}" fill="{orange}"/>',
             f'<g data-slot="identity-label">{rail_path}</g>',
         ]
         body = "\n    ".join(parts)
@@ -991,7 +994,6 @@ class CoverCompiler:
         ).strip()
         for index, line in enumerate(self._wrap(statement, self.regular, 10.0, 260.0)):
             invisible_line(line, 68.0, PAGE_HEIGHT - 300.0 - index * 12.0, 10.0)
-        invisible_line(_back_cover_copy(edition, "owner"), 68.0, 78.0, 7.0)
         invisible_line(
             f'{_back_cover_copy(edition, "end")} / {_cover_date(edition.publication_date)}',
             38.0,
@@ -1167,14 +1169,12 @@ def _back_cover_copy(edition: Edition, key: str):
         "en": {
             "mass": ("LOOP", "CLOSED"),
             "issue": "ISSUE",
-            "owner": "ISSUE STATEMENT / THE EDITORS",
             "end": "END",
             "back_text_default": "An independent anthology of writing worth keeping.",
         },
         "es": {
             "mass": ("CICLO", "CERRADO"),
             "issue": "NÚMERO",
-            "owner": "DECLARACIÓN DEL NÚMERO / LA REDACCIÓN",
             "end": "FIN",
             "back_text_default": "Una antología independiente de textos que vale la pena conservar.",
         },
