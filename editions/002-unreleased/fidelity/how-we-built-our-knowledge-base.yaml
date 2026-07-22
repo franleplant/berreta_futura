@@ -661,9 +661,10 @@ paragraphs:
     quickly. The result is a search experience that stays flexible enough for real company data, but structured
     enough to remain useful as Cerebras keeps growing.
 - id: source-121
-  kind: p
-  status: substantive_cut
+  kind: h3
+  status: modified
   source: REFERENCES
+  edited: References
 - id: source-122
   kind: bullet
   status: substantive_cut
@@ -680,16 +681,19 @@ paragraphs:
     Methods, SIGIR 2009.
 - id: source-125
   kind: bullet
-  status: substantive_cut
+  status: modified
   source: 'Li et al., Search-o1: Agentic Search-Enhanced Large Reasoning Models, arXiv:2501.05366, 2025.'
+  edited: '4 — Li et al., Search-o1: Agentic Search-Enhanced Large Reasoning Models, arXiv:2501.05366, 2025.'
 - id: source-126
   kind: bullet
-  status: substantive_cut
+  status: modified
   source: Anthropic, Code Execution with MCP, 2025.
+  edited: 5 — Anthropic, Code Execution with MCP, 2025.
 - id: source-127
   kind: bullet
-  status: substantive_cut
+  status: modified
   source: 'Liu et al., Lost in the Middle: How Language Models Use Long Contexts, arXiv:2307.03172, 2023.'
+  edited: '6 — Liu et al., Lost in the Middle: How Language Models Use Long Contexts, arXiv:2307.03172, 2023.'
 - id: source-128
   kind: bullet
   status: substantive_cut

@@ -1,6 +1,6 @@
 # BERRETA FUTURA design system
 
-BERRETA FUTURA is a small-format reading magazine, not a stack of web pages printed to PDF. Its production direction is **O / Monument**, selected from the archived studies in `prototypes/design-directions/`. Monument makes exact language the interior artwork: scale, pacing, circles, and white space provide delight without recycling the cover image.
+BERRETA FUTURA is a small-format reading magazine, not a stack of web pages printed to PDF. Its production interior is **A / Quiet Standard**, selected on 2026-07-22 from the retained A/B study in `prototypes/interior-reading-prototype/`. Quiet Standard uses book typography, a single calm reading measure, useful images, and white space without turning navigation into ornament. **B / Signal Manual** remains in that study as a future technical alternative.
 
 ## Design position
 
@@ -28,14 +28,13 @@ Edition 2 establishes the first motif: one oversized input crosses a severe gate
 
 | Role | Typeface | Default use |
 | --- | --- | --- |
-| Monument | Inter Semibold | One curated word on each feature opener, issue medallions |
-| Display | Source Serif 4 Display Semibold | Covers, surrounding title language, editorial sentences, section bridges |
+| Display | Source Serif 4 Display Semibold | Article and section titles, editorial title, section headings |
 | Reading | Source Serif 4 Small Text Regular | Body and standfirsts |
 | Emphasis | Source Serif 4 Small Text Italic/Bold | Quotations and emphasis |
 | Navigation | Inter Regular/Medium/Semibold/Bold | Running matter, credits, mode labels, folios |
 | Code | Courier | Source code only, always in a full-width frame |
 
-Body copy is 9.55/12.6 pt by default. The opening editorial uses 9.55/12 pt within its hard two-page cap. Captions and navigation never fall below 7 pt. Feature manifests provide a localized `display_emphasis`, a source-faithful `short_title`, and one of three controlled `opener_variant` values. The compiler validates all three rather than choosing display or navigation language heuristically.
+Body copy is 10/13 pt by default in Source Serif 4 Small Text. A visually dense feature with dedicated landscape plates may use 10/12.2 pt and 4 pt paragraph spacing so its prose remains continuous around the plates without shrinking the type. Standfirsts use 12/16.4 pt. Captions and navigation use 6.8 pt Inter at A5, while the image itself must remain legible at print size. Feature manifests retain localized short titles and legacy opener metadata for compatibility, but Quiet Standard deliberately renders one consistent opener rather than decorative per-article variants.
 
 The permanent publication wordmark is the **Corte bruto** lockup: `BERRETA` in tightly compressed near-black Inter Bold, with `FUTURA` dropped across it in a skewed black printer's slug. A deliberately misregistered orange impression remains visible beneath the reversed white letters. The mark behaves like an exact paste-up rather than a polite masthead. The cover compiler outlines it from the bundled font into the canonical SVG; it is never embedded in issue art or translated.
 
@@ -48,7 +47,7 @@ The bundled font files and SIL Open Font License texts live under `src/magazine/
 | Token | RGB intent | Use |
 | --- | --- | --- |
 | Ink | near-black blue | Reading text and principal display type |
-| Violet | deep process violet | Monument words, medallions, labels, rules, navigation |
+| Violet | deep process violet | Provenance labels, figure numbers, end marks, restrained navigation |
 | Slate | neutral gray | Secondary metadata |
 | Cool gray | light neutral | Contents separators and quiet structure |
 | Pale violet | very light tint | Code panels only |
@@ -63,9 +62,11 @@ The cover artwork does not determine the interior colors. Violet is a publicatio
 - Mirrored margins: 44 pt inner and 15 mm (42.52 pt) outer.
 - Grid: six columns with 9.45 pt gutters.
 - Live vertical range: 45–543 pt for single-column pages and 40–551 pt for continuation frames.
-- Continuations: two balanced text frames on the six-column grid.
-- Opener copy: a narrower centered frame beneath the display composition.
-- Running matter: curated short titles at 7 pt with a separate localized continuation marker; folios at the outer foot with a 0.8 pt violet register rule.
+- Continuations: one centered 325 pt reading measure; double-column text is prohibited.
+- Opener copy: the same reading measure beneath a full-width title and byline.
+- Figures: full live measure when their aspect ratio remains useful at A5, otherwise contained without cropping. Label-dense panoramic diagrams use a dedicated sideways landscape plate so their internal type survives A5 printing; a plate may open or close its anchored section. Adaptive bands may reduce an uncomplicated chart only to a declared minimum, while compact bands reserve room for the conclusion on the same page. Figures stay at their semantic anchor and may appear at the top, middle, or on an opener.
+- Running matter: publication at left and curated short title at right above one quiet gray rule.
+- Folios: publication at the lower left and the page number at one invariant lower-right baseline on every ordinary interior page.
 - Headlines keep following copy with them when pagination allows.
 - Fenced code moves to a full-width frame rather than becoming unreadably narrow.
 
@@ -79,19 +80,19 @@ Use `uv run --locked mag cover-proof <edition-id>` for the fast primary-language
 
 ### Contents
 
-Contents use staggered rows, oversized violet folios, restrained rules, and a circular issue mark. Six entries fit on one page; additional entries paginate into further Monument contents pages. Folios come from the renderer's deterministic probe, planned draft, and final layout passes.
+Contents use a simple serif title, oversized violet folios, restrained rules, and one compact issue mark. Folios come from the renderer's deterministic probe, planned draft, and final layout passes.
 
 ### Opening editorial
 
-The opening sentence is split from the first source block and rendered once at monumental scale. The remainder flows immediately into the reading frames without duplication or omission. The editorial title, byline, `ORIGINAL EDITORIAL` label, and `AN ORIGINAL ARGUMENT` treatment remain visible, and the complete editorial may occupy at most two reader pages.
+The editorial uses the same title, byline, standfirst, and single-column reading grammar as the features. `ORIGINAL EDITORIAL` and `AN ORIGINAL ARGUMENT` remain explicit, and the complete editorial may occupy at most two reader pages. Its first-page frame is intentionally shallower so the second page receives a meaningful continuation rather than a stranded final line.
 
 ### Feature openers
 
-Each opener combines the exact localized title around one curated Monument word. Three controlled arrangements—`edge_medallion`, `split_axis`, and `stepped_title`—vary alignment, rule structure, and medallion treatment while sharing one collision-safe title, credit, and body architecture. A numbered medallion, author, author note, and exact content-mode label remain explicit. `FAITHFUL EDIT`, `FAITHFUL SYNTHESIS`, `SELECTED EXTRACTS`, and `ORIGINAL SYNTHESIS` are provenance facts, never interchangeable decorations.
+Each opener uses one consistent structure: provenance kicker, large serif title, author and author note, then a standfirst in the reading measure. An opener-anchored figure may use the available lower field; prose begins on the next page when the figure consumes that depth. `FAITHFUL EDIT`, `FAITHFUL SYNTHESIS`, `SELECTED EXTRACTS`, and `ORIGINAL SYNTHESIS` are provenance facts, never interchangeable decorations.
 
 ### Continuation pages
 
-Copy flows left frame, right frame, then the next page. When greedy flow would strand a lightly occupied terminal page, a probe redistributes the unchanged final four continuation frames to a shared, leading-quantized depth while preserving text order, page count, and page caps. Exact short running titles and separate continuation markers replace mechanical ellipses; the secondary marker keeps a 21 pt baseline clearance above continuation copy. Violet section bridges, circular outer-margin signals, running matter, and generous white space carry the O identity without interior imagery. Quotations, bullets, headings, and code retain distinct deterministic treatments. Display headings add 10–16 pt of space before (except at a fresh frame) so a new section never appears attached to the preceding paragraph.
+Copy flows down one reading measure and then to the next page. Exact short running titles, a quiet header rule, consistent folios, and generous white space carry the identity. Quotations, bullets, headings, and code retain distinct deterministic treatments. Display headings add deliberate space before them except at a fresh frame. The final prose paragraph stays together when it fits on one page, making article endings read as intentional conclusions rather than split scraps.
 
 ### Backmatter and back cover
 
@@ -104,11 +105,13 @@ The back face is compiled through `uv run --locked mag back-cover-proof <edition
 - Do not draw the cover artwork anywhere after page 1.
 - Keep reader page 2 and the penultimate reader page completely blank as the inside covers.
 - Do not infer palette colors from an edition's artwork.
-- Do not choose a production Monument word with an unreviewed heuristic when localized metadata is available.
 - Do not truncate a running title; require a localized short title that fits its measured header zone.
 - Scope tracked-letter labels so character spacing cannot leak into reading text.
 - Do not shrink body copy to solve page budgets; edit or synthesize faithfully.
 - Do not let a running head cross an opener composition.
+- Do not reintroduce double-column prose.
+- Do not pin every figure to a page edge; keep it in semantic flow and preserve a useful printed size.
+- Keep every ordinary folio on the shared lower-right baseline.
 - Preserve the two-page editorial and seven-page source-article limits.
 - Generate every configured language on validation and build.
 - Run the render critic for every configured language; structural errors block the build.

@@ -83,3 +83,11 @@ Desde la perspectiva del usuario, la interfaz web es simplemente «hacer una pre
 ## Reflexiones finales
 
 En definitiva, la base de conocimiento funciona porque encuentra a las personas allí donde ya vive la información, en lugar de obligar a meterlo todo en un sistema rígido. Al combinar distintas técnicas de búsqueda, podemos hacer aflorar evidencia con rapidez. El resultado es una experiencia de búsqueda lo bastante flexible para los datos reales de una empresa, pero lo bastante estructurada para seguir siendo útil mientras Cerebras crece.
+
+### Referencias
+
+- 4 — Li et al., Search-o1: Agentic Search-Enhanced Large Reasoning Models, arXiv:2501.05366, 2025.
+
+- 5 — Anthropic, Code Execution with MCP, 2025.
+
+- 6 — Liu et al., Lost in the Middle: How Language Models Use Long Contexts, arXiv:2307.03172, 2023.

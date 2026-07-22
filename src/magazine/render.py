@@ -15,44 +15,48 @@ from .manifest import Edition
 MAX_ARTICLE_PAGES = 7
 MAX_EDITORIAL_PAGES = 2
 DESIGN_MONUMENT = "monument"
-DESIGN_LABEL = "O / Monument"
+DESIGN_LABEL = "A / Quiet Standard"
 
 BASE = 3.15
 GRID_GUTTER = BASE * 3
-BODY_SIZE = 9.55
-BODY_LEADING = BASE * 4
-CAPTION_SIZE = 7.0
+BODY_SIZE = 10.0
+BODY_LEADING = 13.0
+CAPTION_SIZE = 6.8
 COVER_ART_SIZE_POINTS = (249.35, 248.65)
 MIN_FIGURE_PPI = 300.0
-FIGURE_BAND_MAX_IMAGE_HEIGHT = 150.0
-FIGURE_COLUMN_MAX_IMAGE_HEIGHT = 220.0
+FIGURE_BAND_MAX_IMAGE_HEIGHT = 205.0
+OPENER_FIGURE_MAX_IMAGE_HEIGHT = 270.0
+ADAPTIVE_FIGURE_MIN_IMAGE_HEIGHT = 155.0
+COMPACT_FIGURE_WIDTH = 260.0
+COMPACT_FIGURE_MAX_IMAGE_HEIGHT = 170.0
+FIGURE_COLUMN_MAX_IMAGE_HEIGHT = 190.0
 FIGURE_TEXT_LEADING = 8.6
 FIGURE_GAP = BASE * 5
 INNER_MARGIN = 44.0
 OUTER_MARGIN = 15 * 72 / 25.4
 TEXT_TOP_INSET = 52.0
-TERMINAL_BALANCE_FRAMES = 4
+READING_MEASURE = 325.0
+FOLIO_BASELINE = 19.5
+TERMINAL_BALANCE_FRAMES = 2
 TERMINAL_BALANCE_THRESHOLD = .35
 RUNNING_HEADER_BASELINE_INSET = 20.0
-RUNNING_HEADER_SECONDARY_OFFSET = 11.0
 HEADING_SPACE_BEFORE = {
-    "h1": 16.0,
-    "h2": 13.0,
+    "h1": 18.0,
+    "h2": 15.0,
     "h3": 10.0,
 }
 
-# Monument uses the sheet itself as the paper color. Violet is reserved for
+# Quiet Standard uses the sheet itself as the paper color. Violet is reserved for
 # hierarchy and typographic furniture so interiors remain economical to print.
 INK = (.055, .075, .085)
 VIOLET = (.25, .10, .43)
-SIGNAL_ORANGE = (1.0, .27, .04)
 SLATE = (.31, .35, .37)
 COOL_GRAY = (.88, .89, .90)
 PALE_VIOLET = (.955, .945, .975)
 WHITE = (1, 1, 1)
 
 # The Canto vivo cover is calibrated to the selected browser proof. These are
-# cover inks, not substitutions for the cooler Monument interior palette.
+# cover inks, not substitutions for the cooler Quiet Standard interior palette.
 COVER_PAPER = WHITE
 COVER_INK = tuple(value / 255 for value in (10, 11, 13))
 COVER_VIOLET = tuple(value / 255 for value in (75, 33, 192))
@@ -290,7 +294,7 @@ def _content_mode_label(edition: Edition, mode: str) -> str:
 
 
 def _opening_sentence(text: str) -> tuple[str, str]:
-    """Split the exact first sentence for Monument's editorial display."""
+    """Split an exact first sentence for deterministic editorial treatments."""
     match = re.search(r"(?<=[.!?])(?:[\"'»”)]*)\s+", text)
     if not match:
         return text.strip(), ""
@@ -413,6 +417,14 @@ class _Typesetter:
         return self.frame_width
 
     @property
+    def reading_width(self) -> float:
+        return min(READING_MEASURE, self.live_width)
+
+    @property
+    def reading_left(self) -> float:
+        return self.left + (self.live_width - self.reading_width) / 2
+
+    @property
     def grid_column_width(self) -> float:
         return (self.live_width - 5 * GRID_GUTTER) / 6
 
@@ -443,6 +455,9 @@ class _Typesetter:
         self.frame_top = default_top if top is None else top
         self.frame_bottom = default_bottom if bottom is None else bottom
         self._select_frame(0)
+        if columns == 1 and role == "continuation":
+            self.frame_left = self.reading_left
+            self.frame_width = self.reading_width
 
     def _select_frame(self, index: int) -> None:
         self.frame_index = index
@@ -464,6 +479,15 @@ class _Typesetter:
         self.frame_bottom = self.bottom if bottom is None else bottom
         self.y = top
         self.frame_recorded = False
+
+    def _set_reading_frame(self, *, top: float, bottom: float | None = None) -> None:
+        self._set_custom_frame(
+            self.reading_left,
+            self.reading_width,
+            top=top,
+            bottom=bottom,
+        )
+        self.frame_role = "continuation"
 
     def _begin_article(self, article_id: str) -> None:
         self.active_article_id = article_id
@@ -521,40 +545,27 @@ class _Typesetter:
         self.new_page(columns=self.continuation_columns)
 
     def _folio(self):
-        outer_x = self.left if self.page % 2 == 0 else self.width - self.right
-        direction = 17 if self.page % 2 == 0 else -17
-        self.pdf.setStrokeColorRGB(*VIOLET)
-        self.pdf.setLineWidth(.8)
-        self.pdf.line(outer_x, 35, outer_x + direction, 35)
         self.pdf.setFillColorRGB(*INK)
         self.pdf.setFont(SANS_MEDIUM, CAPTION_SIZE)
         label = f"{self.page:02d}"
         running = _plain(
-            f"{self.edition.publication_name.upper()} / {self.edition.title.upper()}"
+            self.edition.publication_name.upper()
         )
-        if self.page % 2:
-            self.pdf.drawString(self.left, 17, self.fit_text(running, SANS_MEDIUM, CAPTION_SIZE, self.live_width - 35))
-            self.pdf.drawRightString(self.width - self.right, 17, label)
-        else:
-            self.pdf.drawString(self.left, 17, label)
-            self.pdf.drawRightString(
-                self.width - self.right,
-                17,
-                self.fit_text(running, SANS_MEDIUM, CAPTION_SIZE, self.live_width - 35),
-            )
+        self.pdf.drawString(
+            OUTER_MARGIN,
+            FOLIO_BASELINE,
+            self.fit_text(running, SANS_MEDIUM, CAPTION_SIZE, self.live_width - 35),
+        )
+        self.pdf.drawRightString(self.width - OUTER_MARGIN, FOLIO_BASELINE, label)
 
     def _running_header(self) -> None:
         y = self.height - RUNNING_HEADER_BASELINE_INSET
-        publication = _plain(
-            f"{self.edition.publication_name.upper()} / {_ui(self.edition, 'issue').upper()} "
-            f"{self.edition.issue_number}"
-        )
+        publication = _plain(self.edition.publication_name.upper())
         section = _plain(self.section.upper())
-        continued = _plain(_ui(self.edition, "continued").upper())
         right_width = self.live_width * .49
         if self.metrics.stringWidth(section, SANS_MEDIUM, CAPTION_SIZE) > right_width:
             raise ValidationError(
-                f"Curated running title does not fit the Monument header: {self.section}"
+                f"Curated running title does not fit the Quiet Standard header: {self.section}"
             )
         self.pdf.setFillColorRGB(*INK)
         self.pdf.setFont(SANS_MEDIUM, CAPTION_SIZE)
@@ -568,18 +579,9 @@ class _Typesetter:
             y,
             section,
         )
-        self._tracked_label(
-            continued,
-            self.width - self.right - right_width,
-            y - RUNNING_HEADER_SECONDARY_OFFSET,
-            right_width,
-            color=VIOLET,
-            tracking=.25,
-            align="right",
-        )
-        outer_x = self.outer / 2 if self.page % 2 == 0 else self.width - self.outer / 2
-        self.pdf.setFillColorRGB(*VIOLET)
-        self.pdf.circle(outer_x, y + 2, 3.2, fill=1, stroke=0)
+        self.pdf.setStrokeColorRGB(*COOL_GRAY)
+        self.pdf.setLineWidth(.55)
+        self.pdf.line(self.left, y - 8, self.width - self.right, y - 8)
 
     def new_page(
         self,
@@ -595,13 +597,14 @@ class _Typesetter:
         self.page += 1
         self._set_page_margins()
         self.section = section or self.section
-        selected_columns = 1 if opener else (columns or self.continuation_columns)
+        # Quiet Standard has one reading column everywhere. Keep the argument
+        # for call-site compatibility, but never allow a layout path to revive
+        # the old double-column interior.
+        selected_columns = 1
         if opener:
             role = "opener"
-        elif self.active_article_id and selected_columns == 2:
-            role = "continuation"
         elif self.active_article_id:
-            role = "fullwidth"
+            role = "continuation"
         else:
             role = "standard"
         balance_bottom = None
@@ -776,7 +779,7 @@ class _Typesetter:
         figure_id = str(self._figure_value(figure, "id", f"figure-{figure_index}"))
         if ppi < MIN_FIGURE_PPI:
             raise ValidationError(
-                f"Curated figure {figure_id} resolves to {ppi:.1f} ppi at its Monument "
+                f"Curated figure {figure_id} resolves to {ppi:.1f} ppi at its Quiet Standard "
                 f"placement; the minimum is {MIN_FIGURE_PPI:.0f} ppi"
             )
         self.figure_placements.append(
@@ -815,7 +818,7 @@ class _Typesetter:
         if self.y - required < self.frame_bottom:
             raise ValidationError(
                 f"Curated figure {self._figure_value(figure, 'id', '<unknown>')} is too tall "
-                "for a Monument column plate"
+                "for a Quiet Standard column plate"
             )
         self.y = self._draw_figure(
             figure,
@@ -847,21 +850,51 @@ class _Typesetter:
             * heading_leading
             + heading_after
         )
-        figure_height = self._figure_geometry(
+        layout = str(self._figure_value(figure, "layout"))
+        band_width = COMPACT_FIGURE_WIDTH if layout == "compact_band" else self.live_width
+        band_x = self.left + (self.live_width - band_width) / 2
+        draw_max_image_height = (
+            COMPACT_FIGURE_MAX_IMAGE_HEIGHT
+            if layout == "compact_band"
+            else FIGURE_BAND_MAX_IMAGE_HEIGHT
+        )
+        figure_geometry = self._figure_geometry(
             figure,
-            self.live_width,
-            FIGURE_BAND_MAX_IMAGE_HEIGHT,
-        )[-1]
+            band_width,
+            draw_max_image_height,
+        )
+        figure_height = figure_geometry[-1]
         bridge_top = min(self.y, self.height - self.top)
         can_bridge_current_page = (
-            (self.frame_count == 1 or self.frame_index == 0)
-            and bridge_top - heading_height - figure_height - 6 * self.reading_leading
-            >= self.bottom
+            self.frame_count == 1
+            and bridge_top - heading_height - figure_height >= self.bottom
         )
+        if (
+            not can_bridge_current_page
+            and layout == "adaptive_band"
+            and self.frame_count == 1
+        ):
+            fixed_height = figure_height - figure_geometry[1]
+            available_image_height = (
+                bridge_top - heading_height - self.bottom - fixed_height
+            )
+            if available_image_height >= ADAPTIVE_FIGURE_MIN_IMAGE_HEIGHT:
+                draw_max_image_height = min(
+                    FIGURE_BAND_MAX_IMAGE_HEIGHT,
+                    available_image_height,
+                )
+                figure_height = self._figure_geometry(
+                    figure,
+                    band_width,
+                    draw_max_image_height,
+                )[-1]
+                can_bridge_current_page = (
+                    bridge_top - heading_height - figure_height >= self.bottom
+                )
         if can_bridge_current_page:
             self._record_active_frame()
         else:
-            self.new_page(columns=2)
+            self.new_page(columns=1)
             bridge_top = self.height - self.top
         self._set_custom_frame(
             self.left,
@@ -875,27 +908,17 @@ class _Typesetter:
             figure,
             article_id=article_id,
             figure_index=figure_index,
-            x=self.left,
+            x=band_x,
             top=self.y,
-            width=self.live_width,
-            max_image_height=FIGURE_BAND_MAX_IMAGE_HEIGHT,
+            width=band_width,
+            max_image_height=draw_max_image_height,
         )
-        if band_bottom - 6 * self.reading_leading < self.bottom:
-            raise ValidationError(
-                f"Curated figure {self._figure_value(figure, 'id', '<unknown>')} leaves too "
-                "little reading space below its Monument evidence band"
-            )
-        if str(self._figure_value(figure, "layout")) == "evidence_band_prose":
-            prose_x, prose_width = self.grid_box(1, 4)
-            self._set_custom_frame(
-                prose_x,
-                prose_width,
-                top=band_bottom,
-                bottom=self.bottom,
-            )
-            self.frame_role = "continuation"
+        if layout == "compact_band":
+            band_bottom += max(0.0, FIGURE_GAP - 12.0)
+        if band_bottom - 4 * self.reading_leading < self.bottom:
+            self.new_page(columns=1)
         else:
-            self._configure_frames(2, top=band_bottom, role="continuation")
+            self._set_reading_frame(top=band_bottom, bottom=self.bottom)
 
     def _opener_evidence_band(
         self,
@@ -904,11 +927,19 @@ class _Typesetter:
         article_id: str,
         figure_index: int,
     ) -> None:
-        self.new_page(columns=2)
+        required = self._figure_geometry(
+            figure,
+            self.live_width,
+            OPENER_FIGURE_MAX_IMAGE_HEIGHT,
+        )[-1] - FIGURE_GAP
+        bridge_top = self.y
+        if bridge_top - required < self.bottom:
+            self.new_page(columns=1)
+            bridge_top = self.height - self.top
         self._set_custom_frame(
             self.left,
             self.live_width,
-            top=self.height - self.top,
+            top=bridge_top,
             bottom=self.bottom,
         )
         self.frame_role = "continuation"
@@ -919,34 +950,150 @@ class _Typesetter:
             x=self.left,
             top=self.y,
             width=self.live_width,
-            max_image_height=FIGURE_BAND_MAX_IMAGE_HEIGHT,
-        )
-        if band_bottom - 6 * self.reading_leading < self.bottom:
-            raise ValidationError(
-                f"Curated figure {self._figure_value(figure, 'id', '<unknown>')} leaves too "
-                "little reading space below its Monument opener evidence band"
-            )
-        if str(self._figure_value(figure, "layout")) == "evidence_band_prose":
-            prose_x, prose_width = self.grid_box(1, 4)
-            self._set_custom_frame(
-                prose_x,
-                prose_width,
-                top=band_bottom,
-                bottom=self.bottom,
-            )
-            self.frame_role = "continuation"
+            max_image_height=OPENER_FIGURE_MAX_IMAGE_HEIGHT,
+        ) + FIGURE_GAP
+        if band_bottom - 4 * self.reading_leading < self.bottom:
+            self.new_page(columns=1)
         else:
-            self._configure_frames(2, top=band_bottom, role="continuation")
+            self._set_reading_frame(top=band_bottom, bottom=self.bottom)
 
-    def block(self, kind: str, text: str):
+    def _landscape_plate(
+        self,
+        kind: str,
+        heading: str,
+        figure,
+        *,
+        article_id: str,
+        figure_index: int,
+    ) -> None:
+        """Give a wide, label-dense source diagram a dedicated sideways plate."""
+        from reportlab.lib.utils import ImageReader
+
+        self.new_page(columns=1)
+        path = Path(self._figure_value(figure, "path"))
+        pixel_width, pixel_height = self._figure_dimensions(figure)
+        local_width = self.height - self.top - self.bottom
+        local_height = self.live_width
+        heading_text = heading.upper() if kind == "h3" else heading
+        heading_font = SANS_SEMIBOLD if kind == "h3" else SERIF_DISPLAY
+        heading_size = 9.0 if kind == "h3" else 17.5
+        heading_leading = 12.0 if kind == "h3" else 20.5
+        heading_lines = self.lines(
+            heading_text,
+            heading_font,
+            heading_size,
+            local_width,
+        )
+        label_y = local_height - len(heading_lines) * heading_leading - 10
+        image_top = label_y - CAPTION_SIZE - BASE * 2
+
+        caption = str(self._figure_value(figure, "caption")).strip()
+        credit = str(self._figure_value(figure, "credit")).strip()
+        if not caption or not credit:
+            raise ValidationError(
+                f"Curated figure {self._figure_value(figure, 'id', '<unknown>')} requires "
+                "a caption and credit"
+            )
+        caption_lines = self.lines(caption, SERIF, CAPTION_SIZE, local_width)
+        credit_lines = self.lines(credit, SANS_MEDIUM, CAPTION_SIZE, local_width)
+        notes_height = (len(caption_lines) + len(credit_lines)) * FIGURE_TEXT_LEADING
+        image_bottom = notes_height + BASE * 3
+        available_image_height = image_top - image_bottom
+        scale = min(
+            (local_width - 10) / pixel_width,
+            available_image_height / pixel_height,
+            72 / MIN_FIGURE_PPI,
+        )
+        image_width = pixel_width * scale
+        image_height = pixel_height * scale
+        image_x = (local_width - image_width) / 2
+        image_y = image_top - image_height
+
+        self.pdf.saveState()
+        try:
+            self.pdf.translate(self.left, self.height - self.top)
+            self.pdf.rotate(-90)
+            self.pdf.setFillColorRGB(*INK)
+            self.pdf.setFont(heading_font, heading_size)
+            baseline = local_height - heading_size
+            for line in heading_lines:
+                self.pdf.drawString(0, baseline, line)
+                baseline -= heading_leading
+            self._tracked_label(
+                f"{_ui(self.edition, 'figure').upper()} {figure_index:02d}",
+                0,
+                label_y,
+                local_width,
+                color=VIOLET,
+                tracking=.25,
+            )
+            self.pdf.drawImage(
+                ImageReader(str(path)),
+                image_x,
+                image_y,
+                image_width,
+                image_height,
+                preserveAspectRatio=True,
+                mask="auto",
+            )
+            self.pdf.setStrokeColorRGB(*INK)
+            self.pdf.setLineWidth(.55)
+            self.pdf.rect(image_x, image_y, image_width, image_height, fill=0, stroke=1)
+            baseline = image_y - BASE * 2 - CAPTION_SIZE
+            self.pdf.setFillColorRGB(*INK)
+            self.pdf.setFont(SERIF, CAPTION_SIZE)
+            for line in caption_lines:
+                self.pdf.drawString(0, baseline, line)
+                baseline -= FIGURE_TEXT_LEADING
+            self.pdf.setFillColorRGB(*SLATE)
+            self.pdf.setFont(SANS_MEDIUM, CAPTION_SIZE)
+            for line in credit_lines:
+                self.pdf.drawString(0, baseline, line)
+                baseline -= FIGURE_TEXT_LEADING
+        finally:
+            self.pdf.restoreState()
+
+        ppi = min(
+            pixel_width / (image_width / 72),
+            pixel_height / (image_height / 72),
+        )
+        figure_id = str(self._figure_value(figure, "id", f"figure-{figure_index}"))
+        if ppi < MIN_FIGURE_PPI:
+            raise ValidationError(
+                f"Curated figure {figure_id} resolves to {ppi:.1f} ppi at its Quiet "
+                f"Standard placement; the minimum is {MIN_FIGURE_PPI:.0f} ppi"
+            )
+        self.figure_placements.append(
+            FigurePlacement(
+                figure_id=figure_id,
+                article_id=article_id,
+                page=self.page,
+                path=path,
+                pixel_dimensions=(pixel_width, pixel_height),
+                box_points=(
+                    round(self.left + image_y, 3),
+                    round(self.height - self.top - image_x - image_width, 3),
+                    round(image_height, 3),
+                    round(image_width, 3),
+                ),
+                effective_ppi=round(ppi, 1),
+                caption=caption,
+                credit=credit,
+                rights_status=str(self._figure_value(figure, "rights_status", "unknown")),
+            )
+        )
+        self.y = self.frame_bottom
+
+    def block(self, kind: str, text: str, *, keep_together: bool = False):
         styles = {
             "h1": (SERIF_DISPLAY, 22, 25, HEADING_SPACE_BEFORE["h1"], 13),
-            "h2": (SERIF_DISPLAY, 17.5, 20.5, HEADING_SPACE_BEFORE["h2"], 10),
-            "h3": (SANS_SEMIBOLD, 8.7, 12, HEADING_SPACE_BEFORE["h3"], 7),
-            "lead": (SERIF, 11.6, 15.2, 0, 11),
+            "h2": (SERIF_DISPLAY, 18.5, 21.5, HEADING_SPACE_BEFORE["h2"], 11),
+            "h3": (SANS_SEMIBOLD, 8.5, 12, HEADING_SPACE_BEFORE["h3"], 8),
+            "lead": (SERIF, 12.0, 16.4, 0, 13),
             "body": (SERIF, self.reading_size, self.reading_leading, 0, self.paragraph_after),
-            "bullet": (SERIF, 9.45, self.reading_leading, 0, 5),
-            "quote": (SERIF_ITALIC, 10.1, 13.7, 0, 9),
+            "bullet": (SERIF, 10.0, self.reading_leading, 0, 6),
+            "source_note": (SERIF, 7.2, 9.4, 0, 3),
+            "quote": (SERIF_ITALIC, 11.0, 15.2, 0, 11),
         }
         font, size, leading, before, after = styles[kind]
         if kind == "h3":
@@ -965,10 +1112,10 @@ class _Typesetter:
                 needed = len(lines) * leading + after
             if self.y - needed < self.frame_bottom:
                 raise ValidationError(
-                    f"A {kind} block is too tall for the Monument text frame"
+                    f"A {kind} block is too tall for the Quiet Standard text frame"
                 )
             self.y -= before
-            self.pdf.setFillColorRGB(*(VIOLET if kind in {"h2", "h3"} else INK))
+            self.pdf.setFillColorRGB(*(VIOLET if kind == "h3" else INK))
             self.pdf.setFont(font, size)
             for line in lines:
                 self.pdf.drawString(self.frame_left, self.y, line)
@@ -978,6 +1125,12 @@ class _Typesetter:
 
         remaining_text = text
         first_line = True
+        if keep_together:
+            complete_lines = self.lines(text, font, size, self.column_width - indent)
+            full_capacity = int((self.frame_top - self.frame_bottom) // leading)
+            current_capacity = int((self.y - self.frame_bottom) // leading)
+            if len(complete_lines) <= full_capacity and current_capacity < len(complete_lines):
+                self._advance_frame()
         while remaining_text:
             current_lines = self.lines(
                 remaining_text,
@@ -1054,9 +1207,7 @@ class _Typesetter:
     def code_block(self, text: str):
         font, size, leading = "Courier", 5.8, 7.6
         padding_x, padding_y, after = 7, 6, 8
-        if self.frame_count != 1 or self.frame_width != self.live_width:
-            self.new_page(columns=1)
-        column_width = self.live_width
+        column_width = self.column_width
         lines = self.code_lines(text, font, size, column_width - 2 * padding_x)
         remaining = lines
         while remaining:
@@ -1117,10 +1268,18 @@ class _Typesetter:
         opener: list = []
         for row, anchor in zip(rows, anchors, strict=True):
             layout = str(self._figure_value(row, "layout", "column_plate"))
-            if layout not in {"evidence_band", "evidence_band_prose", "column_plate"}:
+            if layout not in {
+                "evidence_band",
+                "evidence_band_prose",
+                "adaptive_band",
+                "compact_band",
+                "column_plate",
+                "landscape_plate",
+                "landscape_plate_after",
+            }:
                 raise ValidationError(
                     f"Curated figure {self._figure_value(row, 'id', '<unknown>')} has invalid "
-                    f"Monument layout {layout!r}"
+                    f"Quiet Standard layout {layout!r}"
                 )
             if anchor == "__opener__":
                 opener.append(row)
@@ -1160,7 +1319,7 @@ class _Typesetter:
         for figure in opener_figures:
             figure_number += 1
             layout = str(self._figure_value(figure, "layout", "column_plate"))
-            if layout in {"evidence_band", "evidence_band_prose"}:
+            if layout in {"evidence_band", "evidence_band_prose", "adaptive_band"}:
                 self._opener_evidence_band(
                     figure,
                     article_id=article_id,
@@ -1173,10 +1332,40 @@ class _Typesetter:
                     figure_index=figure_number,
                 )
 
+        reference_notes = False
+        deferred_landscape = None
         for index, (kind, value) in enumerate(blocks):
+            if kind in {"h1", "h2", "h3"} and deferred_landscape is not None:
+                deferred_kind, deferred_heading, deferred_figure, deferred_number = (
+                    deferred_landscape
+                )
+                self._landscape_plate(
+                    deferred_kind,
+                    deferred_heading,
+                    deferred_figure,
+                    article_id=article_id,
+                    figure_index=deferred_number,
+                )
+                deferred_landscape = None
+            if kind in {"h1", "h2", "h3"}:
+                reference_notes = value.strip().casefold() in {"references", "referencias"}
             figure = anchored.get(value.strip().casefold()) if kind in {"h2", "h3"} else None
-            if figure is not None and str(self._figure_value(figure, "layout")) in {
-                "evidence_band", "evidence_band_prose"
+            layout = str(self._figure_value(figure, "layout")) if figure is not None else ""
+            if figure is not None and layout == "landscape_plate":
+                figure_number += 1
+                self._landscape_plate(
+                    kind,
+                    value,
+                    figure,
+                    article_id=article_id,
+                    figure_index=figure_number,
+                )
+                continue
+            if figure is not None and layout in {
+                "evidence_band",
+                "evidence_band_prose",
+                "adaptive_band",
+                "compact_band",
             }:
                 figure_number += 1
                 self._evidence_band(
@@ -1187,21 +1376,37 @@ class _Typesetter:
                     figure_index=figure_number,
                 )
                 continue
-            if figure is not None:
+            if figure is not None and layout != "landscape_plate_after":
                 self._keep_heading_with_column_figure(kind, value, figure)
             if kind == "code":
                 self.code_block(value)
             else:
                 if lead and index == 0 and kind == "body":
                     kind = "lead"
+                elif reference_notes and kind == "bullet":
+                    kind = "source_note"
                 self.block(kind, value)
-            if figure is not None:
+            if figure is not None and layout == "landscape_plate_after":
+                figure_number += 1
+                deferred_landscape = (kind, value, figure, figure_number)
+            elif figure is not None:
                 figure_number += 1
                 self._column_figure(
                     figure,
                     article_id=article_id,
                     figure_index=figure_number,
                 )
+        if deferred_landscape is not None:
+            deferred_kind, deferred_heading, deferred_figure, deferred_number = (
+                deferred_landscape
+            )
+            self._landscape_plate(
+                deferred_kind,
+                deferred_heading,
+                deferred_figure,
+                article_id=article_id,
+                figure_index=deferred_number,
+            )
 
     def _tracked_label(
         self,
@@ -1458,13 +1663,6 @@ class _Typesetter:
             horizontal_scale=103.0,
         )
 
-    def _rotated_label(self, text: str, x: float, y: float, height: float, *, color=VIOLET) -> None:
-        self.pdf.saveState()
-        self.pdf.translate(x + CAPTION_SIZE, y)
-        self.pdf.rotate(90)
-        self._tracked_label(text, 0, 0, height, color=color, tracking=.35)
-        self.pdf.restoreState()
-
     def _label(self, text: str, *, right: str = ""):
         half = (self.live_width - GRID_GUTTER) / 2
         self._tracked_label(text, self.left, self.y, half, color=VIOLET)
@@ -1478,20 +1676,6 @@ class _Typesetter:
                 align="right",
             )
         self.y -= 25
-
-    def _display_title(self, title: str, *, maximum_lines: int = 5):
-        size = 27.5
-        lines = self.lines(title, SERIF_DISPLAY, size, self.column_width)
-        while len(lines) > maximum_lines and size > 21:
-            size -= .75
-            lines = self.lines(title, SERIF_DISPLAY, size, self.column_width)
-        leading = size * 1.04
-        self.pdf.setFillColorRGB(*INK)
-        self.pdf.setFont(SERIF_DISPLAY, size)
-        for line in lines:
-            self.pdf.drawString(self.frame_left, self.y, line)
-            self.y -= leading
-        self.y -= 11
 
     def _credit(self, author: str, note: str = "", *, author_note: str = ""):
         self.pdf.setFillColorRGB(*INK)
@@ -1568,7 +1752,7 @@ class _Typesetter:
                 break
             size -= .5
         else:
-            raise ValidationError(f"Title cannot fit the Monument display box: {text}")
+            raise ValidationError(f"Title cannot fit the Quiet Standard display box: {text}")
         self.pdf.setFillColorRGB(*color)
         self.pdf.setFont(SERIF_DISPLAY, size)
         baseline = top - size
@@ -1576,111 +1760,6 @@ class _Typesetter:
             self._draw_aligned_string(line, x, baseline, width, align=align)
             baseline -= leading
         return baseline
-
-    def _monument_parts(self, title: str, emphasis: str) -> tuple[str, str, str]:
-        if emphasis:
-            match = re.search(re.escape(emphasis), title, flags=re.IGNORECASE)
-        else:
-            stopwords = {
-                "a", "an", "and", "for", "of", "on", "the", "to", "us", "use", "what", "will",
-                "de", "del", "el", "en", "la", "las", "los", "nos", "para", "por", "que", "un", "una", "uso", "y",
-            }
-            candidates = [
-                item
-                for item in re.finditer(r"[^\W\d_][\w'-]*", title, flags=re.UNICODE)
-                if item.group(0).casefold() not in stopwords
-            ]
-            match = max(candidates, key=lambda item: (len(item.group(0)), -item.start()), default=None)
-        if not match:
-            return "", title, ""
-        prefix = title[: match.start()].strip()
-        suffix = title[match.end() :].strip()
-        # Monument openers treat the emphasized word as a standalone display
-        # object. Leading punctuation therefore becomes an orphaned glyph on
-        # the subtitle line; omit that separator in the composed title while
-        # keeping the complete title intact in metadata and contents.
-        suffix = re.sub(r"^[,;:]\s*", "", suffix)
-        return prefix, match.group(0), suffix
-
-    def _monument_title(
-        self,
-        title: str,
-        emphasis: str,
-        x: float,
-        top: float,
-        width: float,
-        height: float,
-        *,
-        variant: str = "edge_medallion",
-    ) -> float:
-        prefix, focus, suffix = self._monument_parts(_plain(title), _plain(emphasis))
-        bottom = top - height
-        cursor = top
-        if variant == "split_axis":
-            prefix_align = focus_align = suffix_align = "right"
-            axis_x = x - GRID_GUTTER / 2 if self.page % 2 == 0 else x + width + GRID_GUTTER / 2
-            self.pdf.setStrokeColorRGB(*VIOLET)
-            self.pdf.setLineWidth(.8)
-            self.pdf.line(axis_x, bottom + 8, axis_x, top - 5)
-        elif variant == "stepped_title":
-            prefix_align, focus_align, suffix_align = "left", "center", "right"
-            self.pdf.setStrokeColorRGB(*VIOLET)
-            self.pdf.setLineWidth(1.2)
-            rule_width = min(width, self.grid_column_width * 1.4)
-            rule_x = x + width - rule_width if self.page % 2 else x
-            self.pdf.line(rule_x, top - 2, rule_x + rule_width, top - 2)
-            cursor -= 9
-        else:
-            prefix_align = focus_align = suffix_align = "left"
-        if prefix:
-            prefix_lines = self.lines(prefix.upper(), SANS_MEDIUM, 13, width)
-            if len(prefix_lines) > 2:
-                prefix_lines = self.lines(prefix.upper(), SANS_MEDIUM, 11.5, width)
-                prefix_size, prefix_leading = 11.5, 14
-            else:
-                prefix_size, prefix_leading = 13, 15.5
-            self.pdf.setFillColorRGB(*INK)
-            self.pdf.setFont(SANS_MEDIUM, prefix_size)
-            for line in prefix_lines:
-                self._draw_aligned_string(
-                    line,
-                    x,
-                    cursor - prefix_size,
-                    width,
-                    align=prefix_align,
-                )
-                cursor -= prefix_leading
-            cursor -= 5
-        focus_size = 50.0 if variant == "stepped_title" else 54.0
-        while focus_size > 28 and self.metrics.stringWidth(focus.upper(), SANS_SEMIBOLD, focus_size) > width:
-            focus_size -= .5
-        self.pdf.setFillColorRGB(*VIOLET)
-        self.pdf.setFont(SANS_SEMIBOLD, focus_size)
-        self._draw_aligned_string(
-            focus.upper(),
-            x,
-            cursor - focus_size,
-            width,
-            align=focus_align,
-        )
-        cursor -= focus_size + 8
-        if suffix:
-            remaining = cursor - bottom
-            if remaining < 28:
-                raise ValidationError(f"Monument title has no room for its suffix: {title}")
-            cursor = self._fitted_title_box(
-                suffix,
-                x,
-                cursor,
-                width,
-                remaining,
-                maximum=22,
-                minimum=14,
-                maximum_lines=4,
-                leading_ratio=1.04,
-                align=suffix_align,
-            )
-        return cursor
 
     def _draw_image_fill(
         self,
@@ -1769,7 +1848,7 @@ class _Typesetter:
             # optical size/width correction used for the drawn text.
             deck_lines = self.lines(deck, SANS, 7.8, deck_width)
             if len(deck_lines) > 5:
-                raise ValidationError("Cover deck is too long for the Monument cover")
+                raise ValidationError("Cover deck is too long for the Canto vivo cover")
             self.pdf.setFillColorRGB(*COVER_INK)
             baseline = self.height - 493 - deck_size
             for index, line in enumerate(deck_lines):
@@ -1840,9 +1919,8 @@ class _Typesetter:
             row_top = 479.0
             row_height = 393.0 / max(6, len(chunk))
             for row_index, (label, title, author, page_number) in enumerate(chunk):
-                indent = 0 if row_index % 2 == 0 else self.grid_column_width + GRID_GUTTER
-                x = self.left + indent
-                available = self.live_width - indent
+                x = self.left
+                available = self.live_width
                 top = row_top - row_index * row_height
                 folio = f"{page_number:02d}" if page_number else "--"
                 self.pdf.setFillColorRGB(*VIOLET)
@@ -1855,7 +1933,9 @@ class _Typesetter:
                 self.pdf.drawString(text_x, top - 8, _plain(label.upper()))
                 title_lines = self.lines(title, SERIF_DISPLAY, 9.8, text_width)
                 if len(title_lines) > 2:
-                    raise ValidationError(f"Contents title is too long for Monument: {title}")
+                    raise ValidationError(
+                        f"Contents title is too long for Quiet Standard: {title}"
+                    )
                 self.pdf.setFont(SERIF_DISPLAY, 9.8)
                 baseline = top - 23
                 for line in title_lines:
@@ -1876,64 +1956,36 @@ class _Typesetter:
 
     def _render_article_opener(self, article, article_index: int, article_total: int) -> None:
         mode = _content_mode_label(self.edition, article.content_mode)
+        opener_has_figure = any(
+            str(self._figure_value(figure, "anchor")).strip() == "__opener__"
+            for figure in getattr(article, "figures", ())
+        )
         self._label(
             f"{_ui(self.edition, 'feature')} {article_index:02d}",
             right=mode,
         )
-        outer_column = 0 if self.page % 2 == 0 else 5
-        title_start = 1 if self.page % 2 == 0 else 0
-        title_x, title_width = self.grid_box(title_start, 5)
-        medallion_x, medallion_width = self.grid_box(outer_column, 1)
-        center_x = medallion_x + medallion_width / 2
-        center_y = self.y - 28
-        variant = article.opener_variant
-
-        self.pdf.setStrokeColorRGB(*VIOLET)
-        self.pdf.setFillColorRGB(*VIOLET)
-        if variant == "split_axis":
-            self.pdf.setLineWidth(1.4)
-            self.pdf.circle(center_x, center_y, 21, fill=0, stroke=1)
-            number_color = VIOLET
-            number_size = 10
-        elif variant == "stepped_title":
-            self.pdf.setLineWidth(.8)
-            self.pdf.circle(center_x, center_y, 22, fill=0, stroke=1)
-            self.pdf.circle(center_x, center_y, 15, fill=1, stroke=0)
-            number_color = WHITE
-            number_size = 8.5
-        else:
-            self.pdf.circle(center_x, center_y, 21, fill=1, stroke=0)
-            number_color = WHITE
-            number_size = 11
-        self.pdf.setFillColorRGB(*number_color)
-        self.pdf.setFont(SANS_SEMIBOLD, number_size)
-        self.pdf.drawCentredString(
-            center_x,
-            center_y - number_size * .34,
-            f"{article_index:02d}",
-        )
-
-        self._monument_title(
+        title_bottom = self._fitted_title_box(
             article.title,
-            article.display_emphasis,
-            title_x,
-            self.y + 5,
-            title_width,
-            210,
-            variant=variant,
+            self.left,
+            self.y - 12,
+            self.live_width,
+            165,
+            maximum=30 if opener_has_figure else 35,
+            minimum=24,
+            maximum_lines=4,
+            leading_ratio=.96,
         )
-        if variant == "split_axis":
-            credit_start = 2 if self.page % 2 == 0 else 0
-        else:
-            credit_start = 1
-        credit_x, credit_width = self.grid_box(credit_start, 4)
-        self._set_custom_frame(credit_x, credit_width, top=302)
+        self._set_custom_frame(self.left, self.live_width, top=title_bottom - 10)
         self._credit(
             article.author,
-            f"{article_index} / {article_total}",
-            author_note=article.author_note,
+            author_note="" if opener_has_figure else article.author_note,
         )
-        self._set_custom_frame(credit_x, credit_width, top=238)
+        if opener_has_figure:
+            self.y += 13
+        # Without an opener figure, the opening paragraph acts as a standfirst
+        # on a shared baseline zone. With one, the figure uses the available
+        # space immediately after the credit instead of wasting a new page.
+        self._set_reading_frame(top=self.y if opener_has_figure else 238)
 
     def _article_endmark(self, article_index: int) -> None:
         baseline = max(self.frame_bottom + 5, self.y - 1)
@@ -1952,10 +2004,10 @@ class _Typesetter:
     def body(self):
         if self.edition.articles:
             if self.edition.editorial:
-                self.continuation_columns = 2
+                self.continuation_columns = 1
                 self.reading_size = BODY_SIZE
-                self.reading_leading = 12.0
-                self.paragraph_after = 4.4
+                self.reading_leading = BODY_LEADING
+                self.paragraph_after = 6.2
                 self.new_page(_ui(self.edition, "editorial"), opener=True)
                 start_page = self.page
                 self.toc["editorial"] = self.page
@@ -1963,19 +2015,18 @@ class _Typesetter:
                     self.edition.editorial.label,
                     right=_ui(self.edition, "original_argument"),
                 )
-                title_x, title_width = self.grid_box(0, 5)
                 title_bottom = self._fitted_title_box(
                     self.edition.editorial.title,
-                    title_x,
-                    self.y + 5,
-                    title_width,
-                    72,
-                    maximum=26,
-                    minimum=20,
-                    maximum_lines=3,
-                    leading_ratio=1.0,
+                    self.left,
+                    self.y - 12,
+                    self.live_width,
+                    135,
+                    maximum=35,
+                    minimum=25,
+                    maximum_lines=4,
+                    leading_ratio=.96,
                 )
-                self._set_custom_frame(title_x, title_width, top=title_bottom - 3)
+                self._set_custom_frame(self.left, self.live_width, top=title_bottom - 10)
                 self._credit(self.edition.editorial.byline)
 
                 blocks = list(
@@ -1983,43 +2034,12 @@ class _Typesetter:
                         self.edition.editorial.path.read_text(encoding="utf-8")
                     )
                 )
-                first_body = next(
-                    (index for index, (kind, _) in enumerate(blocks) if kind == "body"),
-                    None,
-                )
-                if first_body is None:
-                    raise ValidationError("Opening editorial requires prose for the Monument opener")
-                sentence, remainder = _opening_sentence(blocks[first_body][1])
-                if remainder:
-                    blocks[first_body] = ("body", remainder)
-                else:
-                    blocks.pop(first_body)
-                hero_x, hero_width = self.grid_box(1, 5)
-                hero_top = self.y - 4
-                hero_bottom = self._fitted_title_box(
-                    sentence,
-                    hero_x,
-                    hero_top,
-                    hero_width,
-                    112,
-                    maximum=28,
-                    minimum=18,
-                    maximum_lines=4,
-                    color=VIOLET,
-                    leading_ratio=1.04,
-                )
-                self._tracked_label(
-                    _ui(self.edition, "opening_sentence"),
-                    hero_x,
-                    hero_bottom - 2,
-                    hero_width,
-                )
-                self._set_custom_frame(
-                    self.left,
-                    self.live_width,
-                    top=hero_bottom - 14,
-                )
-                self._render_blocks(blocks)
+                if not any(kind == "body" for kind, _ in blocks):
+                    raise ValidationError(
+                        "Opening editorial requires prose for the Quiet Standard opener"
+                    )
+                self._set_reading_frame(top=min(self.y, 390), bottom=self.bottom)
+                self._render_blocks(blocks, lead=True)
                 self.reading_leading = BODY_LEADING
                 self.paragraph_after = 5.4
                 self.editorial_pages = self.page - start_page + 1
@@ -2030,10 +2050,20 @@ class _Typesetter:
                     )
             article_total = len(self.edition.articles)
             for article_index, article in enumerate(self.edition.articles, 1):
-                self.continuation_columns = 2
+                self.continuation_columns = 1
                 self.reading_size = BODY_SIZE
-                self.reading_leading = BODY_LEADING
-                self.paragraph_after = 5.4
+                has_landscape_plate = any(
+                    str(self._figure_value(figure, "layout")).startswith(
+                        "landscape_plate"
+                    )
+                    for figure in getattr(article, "figures", ())
+                )
+                self.reading_leading = 12.2 if has_landscape_plate else BODY_LEADING
+                self.paragraph_after = (
+                    4.0
+                    if has_landscape_plate
+                    else 5.4
+                )
                 self._begin_article(article.id)
                 self.new_page(article.short_title, opener=True)
                 start_page = self.page
@@ -2068,25 +2098,23 @@ class _Typesetter:
             return
 
     def _section(self, index, section):
-        self.continuation_columns = 2
+        self.continuation_columns = 1
         self.new_page(section.title, opener=True)
         self.toc[f"section-{index}"] = self.page
         label = _section_label(self.edition, section.kind)
         self._label(label, right=_ui(self.edition, "issue") + " " + str(self.edition.issue_number))
-        title_x, title_width = self.grid_box(1, 5)
-        title_bottom = self._monument_title(
+        title_bottom = self._fitted_title_box(
             section.title,
-            "",
-            title_x,
-            self.y + 5,
-            title_width,
-            190,
-        )
-        self._set_custom_frame(
             self.left,
+            self.y - 12,
             self.live_width,
-            top=title_bottom - 25,
+            150,
+            maximum=35,
+            minimum=25,
+            maximum_lines=4,
+            leading_ratio=.96,
         )
+        self._set_reading_frame(top=title_bottom - 25)
         self.markdown(section.path, lead=True)
 
     def _closing_plate(self, index: int, total: int) -> None:
@@ -2212,17 +2240,12 @@ def _terminal_balance_plans(layout: RenderLayout) -> dict[str, ArticleBalancePla
         frames.sort(key=lambda frame: (frame.relative_page, frame.frame_index))
         if [(frame.relative_page, frame.frame_index) for frame in frames] != [
             (page_count - 1, 0),
-            (page_count - 1, 1),
             (page_count, 0),
-            (page_count, 1),
         ]:
             continue
         full_height = max(frame.capacity for frame in frames)
-        final_page_use = frames[2].used + frames[3].used
-        if (
-            frames[3].used > .01
-            or final_page_use / (2 * full_height) >= TERMINAL_BALANCE_THRESHOLD
-        ):
+        final_page_use = frames[1].used
+        if final_page_use / full_height >= TERMINAL_BALANCE_THRESHOLD:
             continue
         average = sum(frame.used for frame in frames) / TERMINAL_BALANCE_FRAMES
         frame_height = math.ceil(average / BODY_LEADING) * BODY_LEADING

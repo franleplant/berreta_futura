@@ -114,7 +114,7 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertEqual(manifest["inputs"]["sources"][0]["id"], "source-one")
             self.assertEqual(len(manifest["inputs"]["sources"][0]["raw_captures"]), 1)
             self.assertEqual(manifest["layout"]["maximum_article_pages"], 7)
-            self.assertEqual(manifest["layout"]["design_direction"], "O / Monument")
+            self.assertEqual(manifest["layout"]["design_direction"], "A / Quiet Standard")
             self.assertLessEqual(manifest["layout"]["article_pages"]["article"], 7)
             self.assertEqual(manifest["layout"]["maximum_editorial_pages"], 2)
             self.assertEqual(manifest["layout"]["editorial_pages"], 1)
@@ -136,7 +136,7 @@ class RenderIntegrationTests(unittest.TestCase):
             edition_dir = root / "editions" / "issue-001"
             paragraphs = [
                 f"Substantive source paragraph {index} with enough words to occupy space."
-                for index in range(50)
+                for index in range(130)
             ]
             (edition_dir / "articles" / "article.md").write_text(
                 "\n\n".join(paragraphs) + "\n", encoding="utf-8"
@@ -155,7 +155,7 @@ class RenderIntegrationTests(unittest.TestCase):
             )
             manifest_path = edition_dir / "edition.yaml"
             manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
-            manifest["format"] = {"target_pages": 12}
+            manifest["format"] = {"target_pages": 16}
             manifest_path.write_text(
                 yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
             )
@@ -165,7 +165,7 @@ class RenderIntegrationTests(unittest.TestCase):
             reader = PdfReader(str(result.reader_pdf))
             page_text = [page.extract_text() or "" for page in reader.pages]
             full_text = "\n".join(page_text)
-            self.assertEqual(len(reader.pages), 12)
+            self.assertEqual(len(reader.pages), 16)
             self.assertEqual(full_text.count("Coda 1"), 1)
             self.assertEqual(full_text.count("Coda 2"), 1)
             self.assertEqual(full_text.count("Coda 3"), 1)

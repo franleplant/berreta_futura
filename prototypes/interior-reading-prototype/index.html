@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Berreta Futura — interior reading systems</title>
+  <style>
+    @font-face {
+      font-family: "Inter";
+      src: url("../../src/magazine/assets/fonts/inter/Inter-Regular.ttf") format("truetype");
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: "Inter";
+      src: url("../../src/magazine/assets/fonts/inter/Inter-SemiBold.ttf") format("truetype");
+      font-weight: 600;
+    }
+    @font-face {
+      font-family: "Inter";
+      src: url("../../src/magazine/assets/fonts/inter/Inter-Bold.ttf") format("truetype");
+      font-weight: 700;
+    }
+    @font-face {
+      font-family: "Source Serif 4";
+      src: url("../../src/magazine/assets/fonts/source-serif-4/SourceSerif4SmText-Regular.ttf") format("truetype");
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: "Source Serif 4";
+      src: url("../../src/magazine/assets/fonts/source-serif-4/SourceSerif4SmText-It.ttf") format("truetype");
+      font-style: italic;
+    }
+    @font-face {
+      font-family: "Source Serif Display";
+      src: url("../../src/magazine/assets/fonts/source-serif-4/SourceSerif4Display-Semibold.ttf") format("truetype");
+      font-weight: 600;
+    }
+
+    :root {
+      --ink: #101113;
+      --paper: #fff;
+      --violet: #4320a8;
+      --orange: #f05738;
+      --stage: #121212;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      background: var(--stage);
+      color: #f4f1eb;
+      font-family: Inter, sans-serif;
+    }
+
+    .shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 24px;
+      padding: 28px 28px 100px;
+    }
+
+    .brief {
+      width: min(940px, 100%);
+      margin: 0 auto;
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .eyebrow {
+      margin: 0 0 9px;
+      color: #aaa5a0;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(23px, 3vw, 38px);
+      letter-spacing: -.045em;
+      line-height: 1;
+    }
+    .direction-note {
+      max-width: 370px;
+      margin: 0;
+      color: #bcb7b1;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .spread-wrap {
+      display: grid;
+      place-items: center;
+      min-height: 0;
+    }
+    .spread {
+      width: min(940px, 100%);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      filter: drop-shadow(0 24px 50px rgba(0,0,0,.42));
+    }
+    .page {
+      position: relative;
+      aspect-ratio: 148 / 210;
+      overflow: hidden;
+      background: var(--paper);
+      color: var(--ink);
+    }
+
+    .variant { display: none; }
+    body[data-variant="A"] .variant-a,
+    body[data-variant="B"] .variant-b,
+    body[data-variant="C"] .variant-c { display: contents; }
+
+    .switcher {
+      position: fixed;
+      z-index: 20;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 999px;
+      background: rgba(18,18,18,.88);
+      box-shadow: 0 12px 35px rgba(0,0,0,.45);
+      backdrop-filter: blur(18px);
+    }
+    .switcher button {
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      color: #aaa5a0;
+      cursor: pointer;
+      font: 600 18px/1 Inter, sans-serif;
+    }
+    .switcher button:hover {
+      background: #fff;
+      color: #111;
+    }
+    .switcher-label {
+      padding: 0 10px;
+      min-width: 158px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: #eeeae4;
+    }
+
+    /* A — Quiet Standard. Classical reading rhythm, contemporary restraint. */
+    .a-page { padding: 8.8% 10.5% 8%; }
+    .a-opener { display: flex; flex-direction: column; }
+    .a-kicker,
+    .a-running {
+      color: var(--violet);
+      font: 600 7px/1.1 Inter, sans-serif;
+      letter-spacing: .17em;
+      text-transform: uppercase;
+    }
+    .a-opener h2 {
+      width: 93%;
+      margin: 17% 0 5%;
+      font: 600 clamp(28px, 4.4vw, 48px)/.93 "Source Serif Display", serif;
+      letter-spacing: -.045em;
+    }
+    .a-byline {
+      margin: 0;
+      font: 600 8px/1.3 Inter, sans-serif;
+    }
+    .a-standfirst {
+      width: 89%;
+      margin: auto 0 0;
+      padding-top: 8%;
+      border-top: 1px solid #c9c5bf;
+      font: 400 clamp(12px, 1.65vw, 17px)/1.36 "Source Serif 4", serif;
+    }
+    .a-folio {
+      position: absolute;
+      right: 10.5%;
+      bottom: 8%;
+      font: 600 7px/1 Inter, sans-serif;
+    }
+    .a-body { padding-top: 7.5%; }
+    .a-running {
+      display: flex;
+      justify-content: space-between;
+      color: #64605b;
+      padding-bottom: 5.8%;
+      border-bottom: 1px solid #d8d4ce;
+    }
+    .a-body h3 {
+      width: 78%;
+      margin: 8% 0 4.7%;
+      font: 600 clamp(17px, 2.4vw, 25px)/1.02 "Source Serif Display", serif;
+      letter-spacing: -.025em;
+    }
+    .a-copy {
+      width: 88%;
+      font: 400 clamp(9px, 1.17vw, 12px)/1.47 "Source Serif 4", serif;
+      hyphens: none;
+    }
+    .a-copy p { margin: 0 0 .8em; }
+    .a-copy p:first-child::first-letter {
+      float: left;
+      margin: .03em .1em 0 0;
+      color: var(--violet);
+      font: 600 3.25em/.78 "Source Serif Display", serif;
+    }
+    .a-figure {
+      position: absolute;
+      left: 6%;
+      bottom: 8.2%;
+      width: 88%;
+      margin: 0;
+    }
+    .a-figure img {
+      display: block;
+      width: 100%;
+      border: 1px solid #ddd7ce;
+    }
+    .a-figure figcaption {
+      width: 78%;
+      margin-top: 7px;
+      font: 400 6.4px/1.4 Inter, sans-serif;
+      color: #615e59;
+    }
+
+    /* B — Signal Manual. Entirely sans, modular and direct. */
+    .b-page { padding: 7.5% 8.3% 7.2%; font-family: Inter, sans-serif; }
+    .b-opener {
+      display: grid;
+      grid-template-columns: 18% 1fr;
+      grid-template-rows: auto 1fr auto;
+      column-gap: 7%;
+    }
+    .b-index {
+      grid-column: 1;
+      grid-row: 1 / 4;
+      padding-right: 24%;
+      border-right: 4px solid var(--orange);
+      color: var(--orange);
+      font: 700 clamp(32px, 5.2vw, 58px)/.8 Inter, sans-serif;
+      letter-spacing: -.075em;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      text-align: right;
+    }
+    .b-meta {
+      grid-column: 2;
+      color: #666;
+      font-size: 7px;
+      font-weight: 600;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+    .b-opener h2 {
+      grid-column: 2;
+      align-self: center;
+      margin: 0;
+      font: 700 clamp(28px, 4.6vw, 52px)/.9 Inter, sans-serif;
+      letter-spacing: -.075em;
+      text-transform: uppercase;
+    }
+    .b-credit {
+      grid-column: 2;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8%;
+      padding-top: 5%;
+      border-top: 1px solid #111;
+      font-size: 7px;
+      line-height: 1.4;
+    }
+    .b-credit strong { display: block; font-size: 8px; }
+    .b-body { display: grid; grid-template-rows: auto auto auto 1fr; }
+    .b-running {
+      display: flex;
+      justify-content: space-between;
+      font-size: 6.5px;
+      font-weight: 600;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+    .b-body h3 {
+      width: 82%;
+      margin: 10% 0 4%;
+      font: 700 clamp(18px, 2.8vw, 30px)/.94 Inter, sans-serif;
+      letter-spacing: -.05em;
+      text-transform: uppercase;
+    }
+    .b-copy {
+      width: 87%;
+      font: 400 clamp(8.3px, 1.08vw, 11px)/1.52 Inter, sans-serif;
+      letter-spacing: -.012em;
+    }
+    .b-copy p { margin: 0 0 .85em; }
+    .b-figure {
+      align-self: end;
+      width: 100%;
+      margin: 5% 0 1.5%;
+      padding-top: 3%;
+      border-top: 4px solid var(--orange);
+    }
+    .b-figure img {
+      display: block;
+      width: 100%;
+      border: 1px solid #d7d2ca;
+    }
+    .b-figure figcaption {
+      display: grid;
+      grid-template-columns: 27% 1fr;
+      gap: 5%;
+      margin-top: 5px;
+      font-size: 6px;
+      line-height: 1.35;
+    }
+    .b-figure strong {
+      color: var(--orange);
+      font-size: 6px;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+    .b-folio {
+      position: absolute;
+      right: 8.3%;
+      bottom: 7.2%;
+      font-size: 7px;
+      font-weight: 700;
+    }
+
+    /* C — Literary Index. Warm editorial voice with a formal image plate. */
+    .c-page { padding: 9% 10% 8%; }
+    .c-opener { text-align: center; }
+    .c-rule {
+      width: 18px;
+      height: 3px;
+      margin: 0 auto;
+      background: var(--orange);
+    }
+    .c-label {
+      margin-top: 13%;
+      color: #69635d;
+      font: 600 6.8px/1 Inter, sans-serif;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+    }
+    .c-opener h2 {
+      width: 94%;
+      margin: 6% auto 4%;
+      font: 600 clamp(29px, 4.6vw, 50px)/.98 "Source Serif Display", serif;
+      letter-spacing: -.035em;
+    }
+    .c-byline {
+      margin: 0;
+      color: var(--orange);
+      font: 600 7.5px/1.2 Inter, sans-serif;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .c-deck {
+      width: 79%;
+      margin: 15% auto 0;
+      font: italic clamp(12px, 1.65vw, 17px)/1.4 "Source Serif 4", serif;
+    }
+    .c-source {
+      position: absolute;
+      left: 10%;
+      right: 10%;
+      bottom: 8%;
+      padding-top: 4%;
+      border-top: 1px solid #bdb7b0;
+      color: #5e5953;
+      font: 400 6px/1.4 Inter, sans-serif;
+    }
+    .c-body { padding-top: 7.2%; }
+    .c-running {
+      text-align: center;
+      color: #6c6761;
+      font: 600 6.5px/1 Inter, sans-serif;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+    .c-body h3 {
+      margin: 9% auto 5%;
+      text-align: center;
+      font: 600 clamp(18px, 2.7vw, 28px)/1 "Source Serif Display", serif;
+      letter-spacing: -.03em;
+    }
+    .c-copy {
+      width: 82%;
+      margin: 0 auto;
+      font: 400 clamp(9px, 1.16vw, 12px)/1.5 "Source Serif 4", serif;
+    }
+    .c-copy p { margin: 0 0 .85em; }
+    .c-pull {
+      width: 82%;
+      margin: 7% auto 0;
+      padding: 5% 0;
+      border-top: 1px solid #c7c1bb;
+      border-bottom: 1px solid #c7c1bb;
+      color: var(--orange);
+      font: italic clamp(12px, 1.55vw, 16px)/1.3 "Source Serif 4", serif;
+      text-align: center;
+    }
+    .c-folio {
+      position: absolute;
+      left: 50%;
+      bottom: 3.6%;
+      transform: translateX(-50%);
+      font: 600 6.5px/1 Inter, sans-serif;
+    }
+
+    @media (max-width: 720px) {
+      .shell { padding: 20px 12px 88px; gap: 18px; }
+      .brief { display: block; }
+      .direction-note { margin-top: 10px; }
+      .spread { grid-template-columns: 1fr; width: min(440px, 100%); gap: 14px; }
+      .page { min-height: 0; }
+      .a-opener h2, .b-opener h2, .c-opener h2 { font-size: 44px; }
+      .a-body h3, .b-body h3, .c-body h3 { font-size: 23px; }
+      .a-copy, .b-copy, .c-copy { font-size: 11px; }
+      .a-standfirst, .c-deck { font-size: 16px; }
+    }
+  </style>
+</head>
+<body data-variant="A">
+  <main class="shell">
+    <header class="brief">
+      <div>
+        <p class="eyebrow">Edition 002 / interior system study</p>
+        <h1 id="direction-title">A — Quiet Standard</h1>
+      </div>
+      <p class="direction-note" id="direction-note">Book typography with contemporary restraint. The calmest, most durable system—and the strongest fit for the brief.</p>
+    </header>
+
+    <div class="spread-wrap">
+      <section class="spread" aria-label="A5 magazine spread prototype">
+        <div class="variant variant-a">
+          <article class="page a-page a-opener">
+            <div class="a-kicker">01 / Faithful synthesis</div>
+            <h2>Software Factories,<br>Light and Dark</h2>
+            <p class="a-byline">Addy Osmani</p>
+            <p class="a-standfirst">A software factory is harnessed loops at scale. The hard question is not how quickly agents can build, but where human judgment must remain.</p>
+            <span class="a-folio">06</span>
+          </article>
+          <article class="page a-page a-body">
+            <div class="a-running"><span>Berreta Futura</span><span>Light and Dark</span></div>
+            <h3>The narrow neck</h3>
+            <div class="a-copy">
+              <p>The factory closes its own circuit. Intent and production signals feed the queue; the harness builds; tests, static analysis, and scanning check the work. The stubbornly expensive box is the review gate: judgment.</p>
+            </div>
+            <figure class="a-figure">
+              <img src="../../library/sources/software-factories-light-and-dark-ef463732/raw/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8/artifacts/04-factory-closed-loop.jpg" alt="Closed-loop agentic software factory diagram">
+              <figcaption><strong>Figure 01.</strong> The factory closes its circuit from intent to deployment, then returns production signals to the queue.</figcaption>
+            </figure>
+            <span class="a-folio">07</span>
+          </article>
+        </div>
+
+        <div class="variant variant-b">
+          <article class="page b-page b-opener">
+            <div class="b-index">01</div>
+            <div class="b-meta">Field report / Systems of work</div>
+            <h2>Software<br>Factories,<br>Light + Dark</h2>
+            <div class="b-credit">
+              <div><strong>Addy Osmani</strong>Engineering systems and AI-assisted software.</div>
+              <div><strong>Reading time</strong>8 minutes / faithful synthesis</div>
+            </div>
+          </article>
+          <article class="page b-page b-body">
+            <div class="b-running"><span>01 / Light + Dark</span><span>Berreta Futura</span></div>
+            <h3>Loop, harness,<br>factory</h3>
+            <div class="b-copy">
+              <p>A loop is one agent doing one job repeatedly: gather context, act, check the result, and continue until a condition is met. A harness supplies the walls around it—the sandbox, tools, durable memory, and gates that define done.</p>
+              <p>A factory is many harnessed loops drawing from a queue and flowing through a review gate into production. It is not a bigger agent; it is an org chart made of loops.</p>
+            </div>
+            <figure class="b-figure">
+              <img src="../../library/sources/software-factories-light-and-dark-ef463732/raw/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8/artifacts/04-factory-closed-loop.jpg" alt="Closed-loop agentic software factory diagram">
+              <figcaption><strong>System map 01</strong><span>The factory closes its circuit from intent to deployment, then returns production signals to the queue.</span></figcaption>
+            </figure>
+            <span class="b-folio">07</span>
+          </article>
+        </div>
+
+        <div class="variant variant-c">
+          <article class="page c-page c-opener">
+            <div class="c-rule"></div>
+            <div class="c-label">Field report number one</div>
+            <h2>Software Factories,<br>Light and Dark</h2>
+            <p class="c-byline">By Addy Osmani</p>
+            <p class="c-deck">“The hardest job becomes deciding which checks to build and how much autonomy to delegate.”</p>
+            <p class="c-source">Faithful synthesis from the author’s original essay. Edited for length while preserving argument, evidence and conclusion.</p>
+          </article>
+          <article class="page c-page c-body">
+            <div class="c-running">Software factories, light and dark</div>
+            <h3>Loop, harness, factory</h3>
+            <div class="c-copy">
+              <p>A loop is one agent doing one job repeatedly: gather context, act, check the result, and continue until a condition is met. A harness supplies the walls around it—the sandbox, tools, durable memory, and gates that define done.</p>
+              <p>A factory is many harnessed loops drawing from a queue and flowing through a review gate into production. It is not a bigger agent; it is an org chart made of loops.</p>
+            </div>
+            <blockquote class="c-pull">Generation is a wide mouth; verification is the narrow neck.</blockquote>
+            <span class="c-folio">— 07 —</span>
+          </article>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <nav class="switcher" aria-label="Prototype direction switcher">
+    <button type="button" id="previous-variant" aria-label="Previous direction">←</button>
+    <span class="switcher-label" id="switcher-label">A — Quiet Standard</span>
+    <button type="button" id="next-variant" aria-label="Next direction">→</button>
+  </nav>
+
+  <script>
+    const directions = {
+      A: {
+        label: "Quiet Standard",
+        note: "Book typography with contemporary restraint. The calmest, most durable system—and the strongest fit for the brief."
+      },
+      B: {
+        label: "Signal Manual",
+        note: "A sharper all-sans system: modular, blunt and contemporary, with orange used as information rather than decoration."
+      },
+      C: {
+        label: "Literary Index",
+        note: "A more authored journal voice: formal composition, a warmer editorial cadence and almost no graphic machinery."
+      }
+    };
+
+    function selectVariant(value, writeHistory = true) {
+      const variant = directions[value] ? value : "A";
+      document.body.dataset.variant = variant;
+      document.getElementById("direction-title").textContent = `${variant} — ${directions[variant].label}`;
+      document.getElementById("direction-note").textContent = directions[variant].note;
+      document.getElementById("switcher-label").textContent = `${variant} — ${directions[variant].label}`;
+      if (writeHistory) {
+        const url = new URL(window.location.href);
+        url.searchParams.set("variant", variant);
+        history.replaceState({}, "", url);
+      }
+    }
+
+    const variantKeys = Object.keys(directions);
+    function cycleVariant(delta) {
+      const currentIndex = variantKeys.indexOf(document.body.dataset.variant);
+      selectVariant(variantKeys[(currentIndex + delta + variantKeys.length) % variantKeys.length]);
+    }
+    document.getElementById("previous-variant").addEventListener("click", () => cycleVariant(-1));
+    document.getElementById("next-variant").addEventListener("click", () => cycleVariant(1));
+    document.addEventListener("keydown", event => {
+      const target = event.target;
+      if (target.matches("input, textarea, [contenteditable]")) return;
+      if (event.key === "ArrowLeft") cycleVariant(-1);
+      if (event.key === "ArrowRight") cycleVariant(1);
+    });
+    selectVariant(new URLSearchParams(window.location.search).get("variant") || "A", false);
+  </script>
+</body>
+</html>

@@ -50,7 +50,7 @@ articles:
     alt_text: Three panels show one agent loop becoming a harness and then a software factory with multiple harnesses,
       review, merge, and production.
     anchor: Loop, harness, factory
-    layout: evidence_band_prose
+    layout: landscape_plate
     criteria:
     - important
     - useful
@@ -64,7 +64,7 @@ articles:
     alt_text: A closed loop connects intent, queue, harness, automated checks, human review, deployment, monitoring,
       and operational signals.
     anchor: The narrow neck
-    layout: evidence_band_prose
+    layout: landscape_plate_after
     criteria:
     - important
     - useful
@@ -78,7 +78,7 @@ articles:
     alt_text: A software factory flow from leadership and user signals through an agent, automated checks, human
       review, production, and monitoring.
     anchor: Turning the lights on where judgment lives
-    layout: evidence_band
+    layout: compact_band
     criteria:
     - important
     - useful
@@ -129,7 +129,7 @@ articles:
       which performed the worker load.
     alt_text: A cost comparison across four planner and worker model configurations under old and new swarm harnesses.
     anchor: Model economics
-    layout: evidence_band_prose
+    layout: adaptive_band
     criteria:
     - important
     - useful

@@ -7,10 +7,11 @@ from magazine import ValidationError
 from magazine.cover import _cover_date
 from magazine.render import (
     BODY_LEADING,
+    FOLIO_BASELINE,
     HEADING_SPACE_BEFORE,
     OUTER_MARGIN,
+    READING_MEASURE,
     RUNNING_HEADER_BASELINE_INSET,
-    RUNNING_HEADER_SECONDARY_OFFSET,
     TEXT_TOP_INSET,
     FrameUsage,
     _Typesetter,
@@ -98,16 +99,70 @@ def test_monument_uses_a_fifteen_millimetre_exterior_margin():
     assert round(OUTER_MARGIN * 25.4 / 72, 2) == 15.0
 
 
-def test_continuation_label_has_clearance_before_the_text_frame():
-    label_baseline_inset = RUNNING_HEADER_BASELINE_INSET + RUNNING_HEADER_SECONDARY_OFFSET
+def test_running_header_rule_has_clearance_before_the_text_frame():
+    rule_inset = RUNNING_HEADER_BASELINE_INSET + 8.0
 
-    assert TEXT_TOP_INSET - label_baseline_inset >= 18.0
+    assert TEXT_TOP_INSET - rule_inset >= 18.0
 
 
 def test_headings_have_deliberate_space_before_them():
     assert HEADING_SPACE_BEFORE["h1"] > HEADING_SPACE_BEFORE["h2"]
     assert HEADING_SPACE_BEFORE["h2"] >= BODY_LEADING
     assert HEADING_SPACE_BEFORE["h3"] >= 10.0
+
+
+def test_quiet_standard_continuations_use_one_centered_reading_measure():
+    typesetter = object.__new__(_Typesetter)
+    typesetter.width = 420.0
+    typesetter.height = 595.0
+    typesetter.left = 44.0
+    typesetter.right = OUTER_MARGIN
+    typesetter.top = TEXT_TOP_INSET
+    typesetter.bottom = 45.0
+
+    typesetter._configure_frames(1, role="continuation")
+
+    assert typesetter.frame_count == 1
+    assert typesetter.frame_width == min(READING_MEASURE, typesetter.live_width)
+    assert typesetter.frame_left == pytest.approx(
+        typesetter.left + (typesetter.live_width - typesetter.frame_width) / 2
+    )
+
+
+def test_folios_share_one_invariant_lower_right_position():
+    class RecordingPDF:
+        def __init__(self):
+            self.right_strings = []
+
+        def setFillColorRGB(self, *_args):
+            pass
+
+        def setFont(self, *_args):
+            pass
+
+        def drawString(self, *_args):
+            pass
+
+        def drawRightString(self, x, y, text):
+            self.right_strings.append((x, y, text))
+
+    typesetter = object.__new__(_Typesetter)
+    typesetter.pdf = RecordingPDF()
+    typesetter.metrics = FixedWidthMetrics()
+    typesetter.edition = SimpleNamespace(publication_name="Berreta Futura")
+    typesetter.width = 420.0
+    typesetter.left = 44.0
+    typesetter.right = OUTER_MARGIN
+    typesetter.page = 6
+    typesetter._folio()
+    typesetter.left, typesetter.right = OUTER_MARGIN, 44.0
+    typesetter.page = 7
+    typesetter._folio()
+
+    assert typesetter.pdf.right_strings == [
+        (420.0 - OUTER_MARGIN, FOLIO_BASELINE, "06"),
+        (420.0 - OUTER_MARGIN, FOLIO_BASELINE, "07"),
+    ]
 
 
 def test_curated_figures_resolve_exact_semantic_headings_and_allow_none():
@@ -134,6 +189,25 @@ def test_curated_figures_resolve_exact_semantic_headings_and_allow_none():
     opener, anchored = typesetter._validated_figures(blocks, (prose_figure,), "article")
     assert opener == []
     assert anchored == {"capability is not deployment": prose_figure}
+
+    for layout in (
+        "adaptive_band",
+        "compact_band",
+        "landscape_plate",
+        "landscape_plate_after",
+    ):
+        specialized_figure = SimpleNamespace(
+            id=f"capability-{layout}",
+            anchor="Capability is not deployment",
+            layout=layout,
+        )
+        opener, anchored = typesetter._validated_figures(
+            blocks,
+            (specialized_figure,),
+            "article",
+        )
+        assert opener == []
+        assert anchored == {"capability is not deployment": specialized_figure}
 
 
 def test_curated_figures_enforce_three_asset_cap_and_unique_anchors():
@@ -166,9 +240,7 @@ def test_terminal_balance_quantizes_a_stranded_tail_without_changing_page_count(
         article_frame_usage={
             "article": (
                 FrameUsage(4, 0, height, height),
-                FrameUsage(4, 1, height, height),
                 FrameUsage(5, 0, 2 * BODY_LEADING, height),
-                FrameUsage(5, 1, 0, height),
             )
         },
     )
@@ -180,16 +252,14 @@ def test_terminal_balance_quantizes_a_stranded_tail_without_changing_page_count(
     assert abs(plan.frame_height / BODY_LEADING - round(plan.frame_height / BODY_LEADING)) < 1e-9
 
 
-def test_terminal_balance_leaves_an_already_used_second_column_alone():
+def test_terminal_balance_leaves_an_already_substantial_final_page_alone():
     height = 511.2756
     layout = SimpleNamespace(
         article_pages={"article": 5},
         article_frame_usage={
             "article": (
                 FrameUsage(4, 0, height, height),
-                FrameUsage(4, 1, height, height),
                 FrameUsage(5, 0, height, height),
-                FrameUsage(5, 1, 4 * BODY_LEADING, height),
             )
         },
     )

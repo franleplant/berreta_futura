@@ -83,3 +83,11 @@ From the user’s perspective, the web UI is simply “ask a question and get an
 ## Final Thoughts
 
 In the end, the knowledge base works because it meets people where the information already lives, instead of forcing everything into one rigid system. By combining various search techniques, we can surface evidence quickly. The result is a search experience that stays flexible enough for real company data, but structured enough to remain useful as Cerebras keeps growing.
+
+### References
+
+- 4 — Li et al., Search-o1: Agentic Search-Enhanced Large Reasoning Models, arXiv:2501.05366, 2025.
+
+- 5 — Anthropic, Code Execution with MCP, 2025.
+
+- 6 — Liu et al., Lost in the Middle: How Language Models Use Long Contexts, arXiv:2307.03172, 2023.
