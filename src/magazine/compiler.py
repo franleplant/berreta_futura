@@ -3,12 +3,13 @@ from __future__ import annotations
 import hashlib
 import json
 import tomllib
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 from .capture import archive_snapshot, index_existing_captures, verify_snapshots
 from .catalog import render_sources
+from .cover import CoverArtifact, CoverCompiler, replace_first_page
 from .errors import ValidationError
 from .fidelity import fidelity_report
 from .io import load_structured
@@ -181,6 +182,81 @@ class Magazine:
             editions[language] = load_translation(self.root, edition, language)
         return editions
 
+    def _load_cover_languages(
+        self,
+        edition_id: str,
+        languages: Iterable[str] | None = None,
+    ) -> dict[str, Edition]:
+        """Load only the localized edition data needed by a cover proof."""
+
+        if isinstance(languages, str):
+            requested = (languages,)
+        else:
+            requested = tuple(dict.fromkeys(languages or self.languages))
+        if not requested:
+            raise ValidationError("Cover proof requires at least one language")
+        unsupported = sorted(set(requested) - set(self.languages))
+        if unsupported:
+            raise ValidationError(
+                f"Cover proof languages are not configured: {', '.join(unsupported)}"
+            )
+
+        records = load_records(self.sources_dir)
+        record_map = {record.id: record for record in records}
+        edition = load_edition(
+            self.root,
+            edition_id,
+            set(record_map),
+            publication_name=self.publication_name,
+            source_records=record_map,
+        )
+        if edition.language != self.primary_language:
+            raise ValidationError(
+                f"Edition language {edition.language!r} does not match publication.language "
+                f"{self.primary_language!r}"
+            )
+
+        editions: dict[str, Edition] = {}
+        for language in requested:
+            editions[language] = (
+                edition
+                if language == edition.language
+                else load_translation(self.root, edition, language)
+            )
+        return editions
+
+    def cover_proof(
+        self,
+        edition_id: str,
+        *,
+        languages: Iterable[str] | None = None,
+        reference: Path | None = None,
+        check: bool = False,
+    ) -> tuple[CoverArtifact, ...]:
+        """Compile fast browser/PDF cover proofs without typesetting interiors."""
+
+        editions = self._load_cover_languages(edition_id, languages)
+        compiler = CoverCompiler(self.root)
+        artifacts: list[CoverArtifact] = []
+        for language, edition in editions.items():
+            approved_reference = reference or (
+                self.root
+                / "design"
+                / "covers"
+                / "canto-vivo"
+                / "references"
+                / f"{language}.png"
+            )
+            artifacts.append(
+                compiler.compile(
+                    edition,
+                    self.output_dir / edition_id / "cover-proof" / language,
+                    reference=approved_reference,
+                    check=check,
+                )
+            )
+        return tuple(artifacts)
+
     def build(self, edition_id: str) -> BuildResult:
         editions = self._validate_languages(edition_id)
         edition = editions[self.primary_language]
@@ -196,11 +272,23 @@ class Magazine:
         )
         language_results: list[LanguageBuildResult] = []
         all_files: list[Path] = []
+        cover_compiler = CoverCompiler(self.root)
         for language in self.languages:
             variant = editions[language]
             language_destination = destination if language == self.primary_language else destination / language
             working_pdf = self.output_dir / ".build" / f"{edition.id}-{language}-reader.pdf"
-            layout = render_a5(variant, working_pdf, design=self.render_design)
+            interior_pdf = self.output_dir / ".build" / f"{edition.id}-{language}-interior.pdf"
+            cover = cover_compiler.compile(
+                variant,
+                self.output_dir / ".build" / "covers" / edition.id / language,
+            )
+            layout = render_a5(variant, interior_pdf, design=self.render_design)
+            replace_first_page(interior_pdf, cover.pdf, working_pdf)
+            if cover.cover_art_size_points is not None:
+                layout = replace(
+                    layout,
+                    cover_art_size_points=cover.cover_art_size_points,
+                )
             if reports:
                 heading = "# Informe de fidelidad" if language == "es" else "# Fidelity report"
                 intro = (

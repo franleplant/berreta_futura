@@ -1,6 +1,5 @@
 import importlib.util
 import json
-import math
 from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -31,51 +30,6 @@ from test_manifest import add_spanish_translation, make_project
 
 @unittest.skipUnless(importlib.util.find_spec("reportlab") is not None, "ReportLab not installed in this runtime")
 class RenderIntegrationTests(unittest.TestCase):
-    def assert_cover_uses_corte_bruto_geometry(self, path: Path) -> None:
-        reader = PdfReader(str(path))
-        stream = ContentStream(reader.pages[0].get_contents(), reader)
-        character_spacing = []
-        fill_colors = []
-        horizontal_scales = []
-        transforms = []
-        for operands, operator in stream.operations:
-            if operator == b"Tc":
-                character_spacing.append(float(operands[0]))
-            elif operator == b"rg":
-                fill_colors.append(tuple(float(value) for value in operands))
-            elif operator == b"Tz":
-                horizontal_scales.append(float(operands[0]))
-            elif operator == b"cm":
-                transforms.append(tuple(float(value) for value in operands))
-
-        self.assertIn(-3.6, character_spacing)
-        self.assertIn(89.9, horizontal_scales)
-        self.assertIn(105.1, horizontal_scales)
-        self.assertIn(106.6, horizontal_scales)
-        self.assertIn(79.83, horizontal_scales)
-        self.assertIn((1.0, 1.0, 1.0), fill_colors)
-        self.assertIn(tuple(round(value / 255, 6) for value in (240, 87, 56)), fill_colors)
-        same_direction_labels = sum(
-            1
-            for a, b, c, d, _, _ in transforms
-            if abs(a) < .00001
-            and abs(b + 1) < .00001
-            and abs(c - 1) < .00001
-            and abs(d) < .00001
-        )
-        self.assertGreaterEqual(
-            same_direction_labels,
-            2,
-            "both Canto vivo labels must read top-to-bottom in the same direction",
-        )
-        self.assertTrue(
-            any(
-                abs(matrix[2] - math.tan(math.radians(10))) < 0.00001
-                for matrix in transforms
-            ),
-            "FUTURA must retain the selected prototype's forward 10-degree shear",
-        )
-
     def assert_tracked_labels_do_not_leak_character_spacing(self, path: Path) -> None:
         reader = PdfReader(str(path))
         saw_tracking = False
@@ -171,13 +125,8 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertIn("FAITHFUL EDIT", reader_text)
             self.assertIn("Author writes about this subject for Example.", reader_text)
             self.assertIn("TEST REVIEW", reader_text)
-            cover_text = reader.pages[0].extract_text() or ""
-            self.assertIn("2026 07 15", cover_text)
-            self.assertNotIn("A5", cover_text)
-            self.assertNotIn("PRIVATE READER", cover_text)
             self.assertNotIn(" ".join(("NOT", "FOR", "SALE")), reader_text)
             self.assertNotIn(" ".join(("PRIVATE", "EDITION")), reader_text)
-            self.assert_cover_uses_corte_bruto_geometry(result.reader_pdf)
             self.assert_tracked_labels_do_not_leak_character_spacing(result.reader_pdf)
 
     def test_signature_padding_uses_distinct_configured_codas_once_each(self):

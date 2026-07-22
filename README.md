@@ -42,8 +42,14 @@ uv run --locked mag capture https://example.com/article \
 uv run --locked mag sources
 uv run --locked mag media-index
 uv run --locked mag validate issue-001
+uv run --locked mag cover-proof issue-001 --all-languages
 uv run --locked mag build issue-001
 ```
+
+`cover-proof` is the fast design loop. It compiles only the cover and writes a
+self-contained SVG, the exact one-page PDF later used by the full build, a
+PDF-derived PNG, and visual comparison evidence. Its warm cached path avoids
+article pagination and booklet imposition.
 
 `capture` requires a raw file or directory supplied by the caller. It copies the
 bundle into content-addressed, source-local storage before it writes the source
@@ -81,6 +87,8 @@ editions/<edition-id>/fidelity/*.yaml     paragraph-level edit ledger
 editions/<edition-id>/translations/es/    hash-pinned Spanish edition overlay and manuscripts
 output/<edition-id>/                      generated release package
 output/<edition-id>/es/                   Spanish reader, booklet, preflight, and package metadata
+output/<edition-id>/cover-proof/<lang>/   fast cover SVG/PDF/PNG and comparison evidence
+design/covers/canto-vivo/design.toml      canonical cover geometry and ink contract
 ```
 
 `sources.md` is always generated from the source records. Never edit it by hand.

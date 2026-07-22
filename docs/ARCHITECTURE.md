@@ -28,7 +28,9 @@ lead URL
   -> seven-page article-budget check (faithful synthesis when over budget)
   -> titled two-page editorial-budget check
   -> approved content digest
-  -> deterministic layout
+  -> canonical cover SVG -> one-page cover PDF -> proof PNG
+  -> deterministic interior layout
+  -> exact cover-PDF splice into reader page 1
   -> proof digest
   -> reader/home/studio packages
 ```
@@ -48,6 +50,11 @@ lead URL
 - An approval names the exact revision and digest it approves.
 - Any manuscript, art, template, font, profile, or tool change invalidates downstream approvals.
 - Packaging never invokes AI. It consumes sealed artifacts only.
+- The browser proof is rasterized from the same one-page cover PDF inserted into
+  the reader; the proof and production cover cannot be separate implementations.
+- ReportLab owns interior pages only. Cover geometry, outlined typography,
+  artwork placement, trim behavior, and comparison evidence are local to the
+  cover compiler and its authored design contract.
 - Release output is promoted atomically after validation.
 
 ## Canonical and generated material
@@ -59,6 +66,7 @@ Canonical authored material:
 - edition manifests and briefs;
 - approved manuscripts and clearly labeled editor text;
 - cover direction and selected artwork;
+- `design/covers/canto-vivo/design.toml` and approved cover references;
 - hash-bound independent render-review decisions;
 - decisions tied to revisions.
 
@@ -73,7 +81,8 @@ Generated material:
 ## Dependency strategy
 
 - In-process logic: hashing, manifests, workflow state, citation resolution, fidelity metrics, and packaging plans.
-- Local-substitutable dependencies: filesystem, ReportLab, pypdf, Poppler, clocks, and process execution.
+- Local-substitutable dependencies: filesystem, ReportLab, pypdf, FontTools,
+  resvg, Poppler, clocks, and process execution.
 - True external dependencies: websites, authenticated browsers, Codex/model execution, image generation, and printing studios.
 
 Production and recorded/fixture adapters justify seams for web retrieval and AI execution. The initial typesetter has one implementation and therefore remains an internal implementation rather than a speculative public seam.

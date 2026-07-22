@@ -1,0 +1,51 @@
+schema_version = 1
+id = "canto-vivo/1"
+trim = "A5"
+proof_dpi = 144
+production_dpi = 300
+
+[color]
+paper = "#ffffff"
+ink = "#0a0b0d"
+violet = "#4b21c0"
+orange = "#f05738"
+
+[tab]
+width = 21.0
+overdraw = 1.5
+issue_top = 26.5
+identity_top = 433.5
+
+[wordmark]
+x = 38.0
+top = 53.0
+right_reserve = 78.0
+
+[headline]
+x = 44.0
+top = 122.0
+width = 302.0
+
+[art]
+x = 85.25
+top = 221.85
+width = 249.35
+height = 248.65
+grade = "canto-vivo-two-ink-v1"
+
+[deck]
+top = 493.0
+size = 6.4
+wrap_size = 7.8
+leading = 10.6
+horizontal_scale = 121.5
+
+[footer]
+x = 44.0
+bottom = 20.0
+size = 7.0
+tracking = 1.85
+
+[reference]
+en = "references/en.png"
+es = "references/es.png"

@@ -2209,7 +2209,10 @@ def _render_pass(
         balance_plans=balance_plans,
         enforce_page_caps=enforce_page_caps,
     )
-    typesetter.cover()
+    # The cover is compiled once by CoverCompiler and spliced into this
+    # placeholder. ReportLab owns interiors only; it must not reimplement the
+    # cover design or create a second approval surface.
+    typesetter.new_page(blank_header=True)
     # Page 2 is the inside front cover and must remain completely blank.
     typesetter.new_page(blank_header=True)
     typesetter.contents(toc or {})

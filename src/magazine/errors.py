@@ -13,3 +13,22 @@ class ValidationError(MagazineError):
 class DependencyError(MagazineError):
     """Raised when an optional rendering dependency is unavailable."""
 
+
+class CoverError(MagazineError):
+    """Base error for failures isolated to the cover compilation seam."""
+
+
+class CoverAssetError(CoverError):
+    """Raised when a cover design asset is missing, unsafe, or changed."""
+
+
+class CoverOverflowError(CoverError):
+    """Raised when localized cover copy cannot fit its approved zone."""
+
+
+class CoverPdfError(CoverError):
+    """Raised when a compiled cover PDF violates the one-page A5 contract."""
+
+
+class CoverMismatchError(CoverError):
+    """Raised by checked proofs after diagnostic artifacts have been written."""

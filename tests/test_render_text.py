@@ -4,6 +4,7 @@ import pytest
 import magazine.render as render_module
 
 from magazine import ValidationError
+from magazine.cover import _cover_date
 from magazine.render import (
     BODY_LEADING,
     HEADING_SPACE_BEFORE,
@@ -20,7 +21,6 @@ from magazine.render import (
     _section_label,
     _terminal_balance_plans,
     ArticleBalancePlan,
-    _cover_date,
 )
 
 

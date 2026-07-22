@@ -35,6 +35,28 @@ def parser() -> argparse.ArgumentParser:
     validate.add_argument("edition_id")
     build = actions.add_parser("build", help="Render, impose, and package an edition")
     build.add_argument("edition_id")
+    cover_proof = actions.add_parser(
+        "cover-proof",
+        help="Compile a fast cover-only SVG, PDF, PNG, and comparison report",
+    )
+    cover_proof.add_argument("edition_id")
+    cover_languages = cover_proof.add_mutually_exclusive_group()
+    cover_languages.add_argument("--language", help="Compile one configured language")
+    cover_languages.add_argument(
+        "--all-languages",
+        action="store_true",
+        help="Compile every configured publication language",
+    )
+    cover_proof.add_argument(
+        "--reference",
+        type=Path,
+        help="Approved reference image used by the visual comparison",
+    )
+    cover_proof.add_argument(
+        "--check",
+        action="store_true",
+        help="Fail when cover parity or the supplied reference comparison fails",
+    )
     review = actions.add_parser("review", help="Inspect or record independent render review state")
     review_actions = review.add_subparsers(dest="review_command", required=True)
     review_status = review_actions.add_parser("status", help="Show current hash-bound review status")
@@ -81,6 +103,19 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "build":
             result = magazine.build(args.edition_id)
             print(result.output_dir)
+        elif args.command == "cover-proof":
+            languages = (
+                None
+                if args.all_languages
+                else (args.language or magazine.primary_language,)
+            )
+            for artifact in magazine.cover_proof(
+                args.edition_id,
+                languages=languages,
+                reference=args.reference,
+                check=args.check,
+            ):
+                print(artifact.proof_json)
         elif args.command == "review" and args.review_command == "status":
             print(
                 json.dumps(

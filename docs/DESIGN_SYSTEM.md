@@ -37,11 +37,11 @@ Edition 2 establishes the first motif: one oversized input crosses a severe gate
 
 Body copy is 9.55/12.6 pt by default. The opening editorial uses 9.55/12 pt within its hard two-page cap. Captions and navigation never fall below 7 pt. Feature manifests provide a localized `display_emphasis`, a source-faithful `short_title`, and one of three controlled `opener_variant` values. The compiler validates all three rather than choosing display or navigation language heuristically.
 
-The permanent publication wordmark is the **Corte bruto** lockup: `BERRETA` in tightly compressed near-black Inter Bold, with `FUTURA` dropped across it in a skewed black printer's slug. A deliberately misregistered orange impression remains visible beneath the reversed white letters. The mark behaves like an exact paste-up rather than a polite masthead. It is always rendered by layout code from `publication.name`, never embedded in issue art or translated.
+The permanent publication wordmark is the **Corte bruto** lockup: `BERRETA` in tightly compressed near-black Inter Bold, with `FUTURA` dropped across it in a skewed black printer's slug. A deliberately misregistered orange impression remains visible beneath the reversed white letters. The mark behaves like an exact paste-up rather than a polite masthead. The cover compiler outlines it from the bundled font into the canonical SVG; it is never embedded in issue art or translated.
 
 The cover's **Canto vivo** is a full-height signal-orange fore-edge tab. It carries the issue number at the head and `BERRETA FUTURA / BUENOS AIRES` at the foot, so orange functions as navigation when editions are stacked or shelved. The only footer metadata is the publication date in `YYYY MM DD` form. Do not add format, distribution, repeated issue/date, proof labels, or generic `COVER` metadata to the front cover.
 
-The bundled font files and SIL Open Font License texts live under `src/magazine/assets/fonts`. Deterministic builds must not use system font lookups.
+The bundled font files and SIL Open Font License texts live under `src/magazine/assets/fonts`. Deterministic builds must not use system font lookups. Cover geometry and inks live in `design/covers/canto-vivo/design.toml`; the materialized SVG contains named slots for the wordmark, headline, art, deck, footer, and both tab labels.
 
 ## Color
 
@@ -73,7 +73,9 @@ The cover artwork does not determine the interior colors. Violet is a publicatio
 
 ### Front cover
 
-The cover opens with the permanent Corte bruto wordmark and Canto vivo edge tab. The issue title is a tightly compressed sans construction with staggered violet lines; no generic display serif or circular badge remains. Beneath it sit the approximately 250 × 249 pt framed artwork, complete deck, and date-only footer. Edition 2's 1254 × 1254 px production artwork resolves above 361 ppi in this placement. Layout code owns every letter; the raster asset contains no masthead or cover lines.
+The cover opens with the permanent Corte bruto wordmark and Canto vivo edge tab. The issue title is a tightly compressed sans construction with staggered violet lines; no generic display serif or circular badge remains. Beneath it sit the approximately 250 × 249 pt framed artwork, complete deck, and date-only footer. Edition 2's 1254 × 1254 px production artwork resolves above 361 ppi in this placement. The canonical SVG owns every outlined letter; the raster asset contains no masthead or cover lines.
+
+Use `uv run --locked mag cover-proof <edition-id>` for the fast primary-language design loop and add `--all-languages` before final build. The command writes the canonical SVG, exact production cover PDF, PDF-derived proof PNG, comparison overlay/diff, and a hash manifest without typesetting the interior. A full build splices that exact PDF into page 1.
 
 ### Contents
 

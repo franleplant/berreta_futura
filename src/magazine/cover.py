@@ -1,0 +1,759 @@
+from __future__ import annotations
+
+import base64
+import hashlib
+import io
+import json
+import math
+import re
+import shutil
+import subprocess
+import tempfile
+import tomllib
+from dataclasses import dataclass
+from pathlib import Path
+from xml.sax.saxutils import escape
+
+from .errors import (
+    CoverAssetError,
+    CoverMismatchError,
+    CoverOverflowError,
+    CoverPdfError,
+    DependencyError,
+)
+from .manifest import Edition
+
+
+# A5 in PostScript points. The SVG viewBox and PDF MediaBox share this space.
+PAGE_WIDTH = 419.527559
+PAGE_HEIGHT = 595.275591
+PROOF_DPI = 144
+PRINT_DPI = 300
+COVER_COMPILER_VERSION = "3"
+ART_SIZE_POINTS = (249.35, 248.65)
+
+INK = "#0a0b0d"
+VIOLET = "#4b21c0"
+ORANGE = "#f05738"
+WHITE = "#ffffff"
+
+
+@dataclass(frozen=True)
+class CoverArtifact:
+    language: str
+    svg: Path
+    pdf: Path
+    png: Path
+    proof_json: Path
+    input_sha256: str
+    pdf_sha256: str
+    png_sha256: str
+    status: str
+    cover_art_size_points: tuple[float, float] = ART_SIZE_POINTS
+
+
+@dataclass(frozen=True)
+class _OutlinedText:
+    markup: str
+    width: float
+    ascent: float
+    descent: float
+
+
+class _FontOutliner:
+    """Convert bundled-font strings into self-contained SVG path geometry."""
+
+    def __init__(self, path: Path):
+        try:
+            from fontTools.pens.svgPathPen import SVGPathPen
+            from fontTools.ttLib import TTFont
+        except ImportError as exc:
+            raise DependencyError(
+                "Cover outlining requires FontTools; run `uv sync --locked`."
+            ) from exc
+        if not path.is_file():
+            raise CoverAssetError(f"Bundled cover font is missing: {path}")
+        self._svg_pen = SVGPathPen
+        self.font = TTFont(path, lazy=False)
+        self.glyph_set = self.font.getGlyphSet()
+        self.cmap = self.font.getBestCmap()
+        self.hmtx = self.font["hmtx"].metrics
+        self.units = float(self.font["head"].unitsPerEm)
+        self.ascent_units = float(self.font["hhea"].ascent)
+        self.descent_units = abs(float(self.font["hhea"].descent))
+
+    def outline(
+        self,
+        text: str,
+        *,
+        x: float,
+        baseline: float,
+        size: float,
+        fill: str,
+        tracking: float = 0.0,
+        horizontal_scale: float = 100.0,
+        stroke: str | None = None,
+        stroke_width: float = 0.0,
+        extra_transform: str = "",
+    ) -> _OutlinedText:
+        scale = size / self.units
+        scale_x = scale * horizontal_scale / 100.0
+        cursor = 0.0
+        paths: list[str] = []
+        for index, character in enumerate(text):
+            glyph_name = self.cmap.get(ord(character))
+            if glyph_name is None:
+                raise CoverAssetError(
+                    f"Bundled cover font has no glyph for U+{ord(character):04X} {character!r}"
+                )
+            advance = self.hmtx[glyph_name][0] * scale_x
+            if character != " ":
+                pen = self._svg_pen(self.glyph_set)
+                self.glyph_set[glyph_name].draw(pen)
+                commands = pen.getCommands()
+                if commands:
+                    paint = f'fill="{fill}"'
+                    if stroke and stroke_width:
+                        paint += (
+                            f' stroke="{stroke}" stroke-width="{stroke_width / scale:.4f}"'
+                            ' paint-order="stroke fill"'
+                        )
+                    paths.append(
+                        f'<path d="{commands}" {paint} '
+                        f'transform="translate({cursor / scale_x:.5f} 0)"/>'
+                    )
+            cursor += advance
+            if index < len(text) - 1:
+                cursor += tracking * horizontal_scale / 100.0
+        transform = (
+            f"translate({x:.5f} {baseline:.5f}) {extra_transform} "
+            f"scale({scale_x:.8f} {-scale:.8f})"
+        ).strip()
+        return _OutlinedText(
+            f'<g transform="{transform}">{"".join(paths)}</g>',
+            cursor,
+            self.ascent_units * scale,
+            self.descent_units * scale,
+        )
+
+    def measure(
+        self,
+        text: str,
+        *,
+        size: float,
+        tracking: float = 0.0,
+        horizontal_scale: float = 100.0,
+    ) -> float:
+        scale = size / self.units * horizontal_scale / 100.0
+        width = 0.0
+        for index, character in enumerate(text):
+            glyph_name = self.cmap.get(ord(character))
+            if glyph_name is None:
+                raise CoverAssetError(f"Bundled cover font has no glyph for {character!r}")
+            width += self.hmtx[glyph_name][0] * scale
+            if index < len(text) - 1:
+                width += tracking * horizontal_scale / 100.0
+        return width
+
+
+class CoverCompiler:
+    """Deep module for the canonical SVG -> PDF -> proof cover pipeline."""
+
+    def __init__(self, root: Path):
+        self.root = root.resolve()
+        self.design_path = self.root / "design" / "covers" / "canto-vivo" / "design.toml"
+        if self.design_path.is_file():
+            self.design = tomllib.loads(self.design_path.read_text(encoding="utf-8"))
+        else:
+            # Installed-package and minimal test projects keep the same stable
+            # defaults without requiring repository design files.
+            self.design = {
+                "id": "canto-vivo/1",
+                "color": {"paper": WHITE, "ink": INK, "violet": VIOLET, "orange": ORANGE},
+                "tab": {"width": 21.0, "overdraw": 1.5, "issue_top": 26.5, "identity_top": 433.5},
+                "wordmark": {"x": 38.0, "top": 53.0, "right_reserve": 78.0},
+                "headline": {"x": 44.0, "top": 122.0, "width": 302.0},
+                "art": {"x": 85.25, "top": 221.85, "width": 249.35, "height": 248.65},
+                "deck": {"top": 493.0, "size": 6.4, "wrap_size": 7.8, "leading": 10.6, "horizontal_scale": 121.5},
+                "footer": {"x": 44.0, "bottom": 20.0, "size": 7.0, "tracking": 1.85},
+            }
+        self.colors = self.design["color"]
+        self.proof_dpi = int(self.design.get("proof_dpi", PROOF_DPI))
+        self.print_dpi = int(self.design.get("production_dpi", PRINT_DPI))
+        art = self.design["art"]
+        self.art_size = (float(art["width"]), float(art["height"]))
+        fonts = Path(__file__).with_name("assets") / "fonts" / "inter"
+        self.regular = _FontOutliner(fonts / "Inter-Regular.ttf")
+        self.bold = _FontOutliner(fonts / "Inter-Bold.ttf")
+
+    def compile(
+        self,
+        edition: Edition,
+        destination: Path,
+        *,
+        reference: Path | None = None,
+        check: bool = False,
+    ) -> CoverArtifact:
+        """Compile one localized edition cover and retain all proof evidence."""
+        destination = destination.resolve()
+        destination.mkdir(parents=True, exist_ok=True)
+        svg_path = destination / "cover.svg"
+        pdf_path = destination / "cover.pdf"
+        png_path = destination / "cover.png"
+        proof_path = destination / "proof.json"
+
+        svg = self._materialize_svg(edition)
+        digest = self._input_digest(edition, svg)
+        if svg_path.is_file() and pdf_path.is_file() and png_path.is_file() and proof_path.is_file():
+            try:
+                previous = json.loads(proof_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                previous = {}
+            if (
+                previous.get("input_sha256") == digest
+                and svg_path.read_text(encoding="utf-8") == svg
+            ):
+                comparison = self._compare(png_path, reference, destination)
+                previous["comparison"] = comparison
+                proof_path.write_text(
+                    json.dumps(previous, ensure_ascii=False, indent=2) + "\n",
+                    encoding="utf-8",
+                )
+                status = str(comparison["status"])
+                if check and status != "matched":
+                    raise CoverMismatchError(
+                        f"Cover proof is {status}; inspect {destination / 'diff.png'} and {proof_path}"
+                    )
+                return CoverArtifact(
+                    edition.language,
+                    svg_path,
+                    pdf_path,
+                    png_path,
+                    proof_path,
+                    digest,
+                    _sha256(pdf_path),
+                    _sha256(png_path),
+                    status,
+                    self.art_size,
+                )
+        svg_path.write_text(svg, encoding="utf-8")
+        self._svg_to_pdf(svg.encode("utf-8"), pdf_path)
+        self._validate_pdf(pdf_path)
+        self._rasterize_pdf(pdf_path, png_path)
+
+        comparison = self._compare(png_path, reference, destination)
+        status = comparison["status"]
+        manifest = {
+            "schema_version": 1,
+            "edition_id": edition.id,
+            "language": edition.language,
+            "design": str(self.design["id"]),
+            "input_sha256": digest,
+            "pdf_sha256": _sha256(pdf_path),
+            "png_sha256": _sha256(png_path),
+            "page_points": [PAGE_WIDTH, PAGE_HEIGHT],
+            "raster_dpi": self.proof_dpi,
+            "production_raster_dpi": self.print_dpi,
+            "proof_source": "cover.pdf",
+            "production_source": "cover.pdf",
+            "cover_art_size_points": list(self.art_size),
+            "comparison": comparison,
+        }
+        proof_path.write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        if check and status != "matched":
+            raise CoverMismatchError(
+                f"Cover proof is {status}; inspect {destination / 'diff.png'} and {proof_path}"
+            )
+        return CoverArtifact(
+            edition.language,
+            svg_path,
+            pdf_path,
+            png_path,
+            proof_path,
+            digest,
+            manifest["pdf_sha256"],
+            manifest["png_sha256"],
+            status,
+            self.art_size,
+        )
+
+    def _materialize_svg(self, edition: Edition) -> str:
+        tab = self.design["tab"]
+        paper = str(self.colors["paper"])
+        orange = str(self.colors["orange"])
+        parts: list[str] = [
+            f'<rect data-slot="paper" x="0" y="0" width="{PAGE_WIDTH}" '
+            f'height="{PAGE_HEIGHT}" fill="{paper}"/>',
+            # Overdraw is clipped by the SVG viewport and later the PDF MediaBox.
+            f'<rect data-slot="edge-tab" x="{PAGE_WIDTH - float(tab["width"]):.5f}" '
+            f'y="{-float(tab["overdraw"]):.5f}" '
+            f'width="{float(tab["width"]) + float(tab["overdraw"]) * 2:.5f}" '
+            f'height="{PAGE_HEIGHT + float(tab["overdraw"]) * 2:.5f}" fill="{orange}"/>',
+        ]
+        parts.extend(self._wordmark(edition.publication_name))
+        parts.extend(self._headline(str(edition.cover.get("headline", edition.title))))
+
+        art_spec = self.design["art"]
+        art_x, art_y = float(art_spec["x"]), float(art_spec["top"])
+        art_w, art_h = self.art_size
+        if edition.cover_art:
+            if not edition.cover_art.is_file():
+                raise CoverAssetError(f"Cover art is missing: {edition.cover_art}")
+            art_bytes = self._graded_art(edition.cover_art)
+            art_data = base64.b64encode(art_bytes).decode("ascii")
+            parts.append(
+                f'<image data-slot="art" x="{art_x}" y="{art_y}" width="{art_w}" '
+                f'height="{art_h}" preserveAspectRatio="xMidYMid slice" '
+                f'href="data:image/png;base64,{art_data}"/>'
+            )
+        else:
+            # Deterministic fixture/provisional fallback; production editions
+            # should supply committed cover art before review.
+            parts.append(
+                f'<g data-slot="art"><rect x="{art_x}" y="{art_y}" width="{art_w}" '
+                f'height="{art_h}" fill="{self.colors["violet"]}"/><circle cx="{art_x + art_w / 2}" '
+                f'cy="{art_y + art_h / 2}" r="56" fill="none" stroke="{paper}"/></g>'
+            )
+        parts.append(
+            f'<rect data-slot="art-border" x="{art_x}" y="{art_y}" width="{art_w}" '
+            f'height="{art_h}" fill="none" stroke="{self.colors["ink"]}" stroke-width=".7"/>'
+        )
+        parts.extend(self._deck(str(edition.cover.get("deck", "")).strip(), art_x, art_w))
+        footer = self.design["footer"]
+        parts.append(
+            '<g data-slot="footer">'
+            + self.bold.outline(
+                _cover_date(edition.publication_date),
+                x=float(footer["x"]),
+                baseline=PAGE_HEIGHT - float(footer["bottom"]),
+                size=float(footer["size"]),
+                fill=str(self.colors["ink"]),
+                tracking=float(footer["tracking"]),
+            ).markup
+            + '</g>'
+        )
+        parts.extend(self._tab_labels(edition))
+        body = "\n    ".join(parts)
+        return (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{PAGE_WIDTH}pt" '
+            f'height="{PAGE_HEIGHT}pt" viewBox="0 0 {PAGE_WIDTH} {PAGE_HEIGHT}" '
+            'overflow="hidden">\n'
+            '  <title>Berreta Futura cover</title>\n'
+            f'  <g id="cover" data-design="{escape(str(self.design["id"]))}">\n    {body}\n  </g>\n'
+            '</svg>\n'
+        )
+
+    def _wordmark(self, publication_name: str) -> list[str]:
+        value = publication_name.upper().strip()
+        head, separator, tail = value.rpartition(" ")
+        if not separator:
+            head, tail = value, ""
+        wordmark = self.design["wordmark"]
+        x, top = float(wordmark["x"]), float(wordmark["top"])
+        pdf_baseline = PAGE_HEIGHT - top
+        baseline = PAGE_HEIGHT - (pdf_baseline - 1.65)
+        size = 42.0
+        tracking = -3.6
+        head_scale = 89.9
+        max_width = PAGE_WIDTH - float(self.design["tab"]["width"]) - float(wordmark["right_reserve"])
+        while size >= 25:
+            head_width = self.bold.measure(
+                head, size=size, tracking=tracking, horizontal_scale=head_scale
+            )
+            tail_width = self.bold.measure(
+                tail, size=size, tracking=tracking, horizontal_scale=105.1
+            ) if tail else 0
+            tail_offset = size * (97 / 42)
+            box_width = tail_width + (13 if tail else 0)
+            if max(head_width, tail_offset + box_width) <= max_width:
+                break
+            size -= .5
+        if size < 25:
+            raise CoverOverflowError(f"Publication wordmark cannot fit: {publication_name}")
+        head_path = self.bold.outline(
+            head,
+            x=x + .36,
+            baseline=baseline,
+            size=size,
+            fill=str(self.colors["ink"]),
+            tracking=tracking,
+            horizontal_scale=head_scale,
+            stroke=str(self.colors["ink"]),
+            stroke_width=.30,
+        ).markup
+        if not tail:
+            return [f'<g data-slot="wordmark">{head_path}</g>']
+
+        tail_x = x + tail_offset
+        # Convert the old PDF group origin to SVG top-axis coordinates.
+        tail_origin_y = PAGE_HEIGHT - (pdf_baseline - size * .91)
+        box_x, box_y = -7.0, -7.0
+        box_height = size * 1.04 - 1
+        box_width = tail_width + 13
+        slug_y = box_y - 1
+        center_x = box_x + box_width / 2
+        center_y = box_y + box_height / 2
+        skew = math.tan(math.radians(-10))
+        group = (
+            f'translate({tail_x:.5f} {tail_origin_y:.5f}) '
+            f'translate({center_x:.5f} {-center_y:.5f}) matrix(1 0 {skew:.8f} 1 0 0) '
+            f'translate({-center_x:.5f} {center_y:.5f})'
+        )
+        slug = (
+            f'<path d="M {box_x} {-slug_y} H {box_x + box_width} '
+            f'V {-slug_y - (box_height + .65)} H {box_x} Z" fill="{self.colors["ink"]}"/>'
+        )
+        orange = self.bold.outline(
+            tail,
+            x=-13,
+            baseline=-1.65,
+            size=size,
+            fill=str(self.colors["orange"]),
+            tracking=tracking,
+            horizontal_scale=106.6,
+            stroke=str(self.colors["orange"]),
+            stroke_width=.15,
+        ).markup
+        white = self.bold.outline(
+            tail,
+            x=0,
+            baseline=-1.65,
+            size=size,
+            fill=str(self.colors["paper"]),
+            tracking=tracking,
+            horizontal_scale=105.1,
+            stroke=str(self.colors["paper"]),
+            stroke_width=.30,
+        ).markup
+        return [
+            f'<g data-slot="wordmark">{head_path}<g transform="{group}">{slug}{orange}{white}</g></g>'
+        ]
+
+    def _headline(self, text: str) -> list[str]:
+        value = text.upper().strip()
+        size = 29.0
+        headline = self.design["headline"]
+        width = float(headline["width"])
+        words = value.split()
+        while size >= 20:
+            candidates: list[tuple[float, tuple[str, str]]] = []
+            if len(words) >= 3:
+                for split in range(1, len(words)):
+                    pair = (" ".join(words[:split]), " ".join(words[split:]))
+                    widths = tuple(self.bold.measure(line, size=size) for line in pair)
+                    if max(widths) <= width / .795:
+                        candidates.append((abs(widths[0] - widths[1]), pair))
+            if candidates:
+                lines = list(min(candidates, key=lambda item: item[0])[1])
+            else:
+                lines = self._wrap(value, self.bold, size, width / .795)
+            if len(lines) <= 3:
+                break
+            size -= .5
+        if size < 20:
+            raise CoverOverflowError(f"Cover headline cannot fit: {text}")
+        baseline = float(headline["top"]) + size
+        leading = size * .78
+        colors = (str(self.colors["ink"]), str(self.colors["violet"]), str(self.colors["ink"]))
+        paths = []
+        for index, line in enumerate(lines):
+            line_size = 28.0 if index % 2 else size
+            paths.append(
+                self.bold.outline(
+                    line,
+                    x=float(headline["x"]) + (23 if index % 2 else -.65),
+                    baseline=baseline + (1 if index % 2 else 0),
+                    size=line_size,
+                    fill=colors[index],
+                    horizontal_scale=80.9 if index % 2 else 79.83,
+                    tracking=-1.35,
+                    stroke=colors[index] if index % 2 == 0 else None,
+                    stroke_width=.09 if index % 2 == 0 else 0,
+                ).markup
+            )
+            baseline += leading
+        return [f'<g data-slot="headline">{"".join(paths)}</g>']
+
+    def _deck(self, text: str, x: float, width: float) -> list[str]:
+        if not text:
+            return ['<g data-slot="deck"/>']
+        deck = self.design["deck"]
+        lines = self._wrap(text, self.regular, float(deck["wrap_size"]), width)
+        if len(lines) > 5:
+            raise CoverOverflowError(f"Cover deck cannot fit: {text}")
+        baseline = float(deck["top"]) + float(deck["size"])
+        paths = [
+            self.regular.outline(
+                line,
+                x=x - (.65 if index == 0 else 0),
+                baseline=baseline + index * float(deck["leading"]),
+                size=float(deck["size"]),
+                fill=str(self.colors["ink"]),
+                horizontal_scale=float(deck["horizontal_scale"]),
+            ).markup
+            for index, line in enumerate(lines)
+        ]
+        return [f'<g data-slot="deck">{"".join(paths)}</g>']
+
+    def _tab_labels(self, edition: Edition) -> list[str]:
+        label = "ISSUE" if edition.language.split("-", 1)[0] == "en" else "NÚMERO"
+        issue = f"{label} {str(edition.issue_number).zfill(3)}"
+        identity = f"{edition.publication_name.upper()} / BUENOS AIRES"
+        tab = self.design["tab"]
+        tab_width = float(tab["width"])
+        tab_x = PAGE_WIDTH - tab_width
+
+        def vertical(text: str, top: float, size: float, tracking: float, scale: float = 100):
+            outlined = self.bold.outline(
+                text,
+                x=0,
+                baseline=0,
+                size=size,
+                fill=str(self.colors["ink"]),
+                tracking=tracking,
+                horizontal_scale=scale,
+            )
+            # Center the glyph body across the tab, then advance top-to-bottom.
+            cross = tab_x + tab_width / 2 - (outlined.ascent - outlined.descent) / 2
+            return (
+                f'<g transform="translate({cross:.5f} {top:.5f}) rotate(90)">'
+                f'{outlined.markup}</g>'
+            )
+
+        return [
+            f'<g data-slot="issue-label">{vertical(issue, float(tab["issue_top"]), 7.4, 1.6)}</g>',
+            f'<g data-slot="identity-label">{vertical(identity, float(tab["identity_top"]), 4.8, 1.6, 103)}</g>',
+        ]
+
+    @staticmethod
+    def _wrap(text: str, font: _FontOutliner, size: float, width: float) -> list[str]:
+        lines: list[str] = []
+        current = ""
+        for word in text.split():
+            candidate = f"{current} {word}".strip()
+            if current and font.measure(candidate, size=size) > width:
+                lines.append(current)
+                current = word
+            else:
+                current = candidate
+        if current:
+            lines.append(current)
+        return lines
+
+    @staticmethod
+    def _graded_art(path: Path) -> bytes:
+        """Apply the explicitly versioned Canto vivo two-ink grade."""
+        try:
+            from PIL import Image
+        except ImportError as exc:
+            raise DependencyError("Cover artwork requires Pillow; run `uv sync --locked`.") from exc
+        with Image.open(path) as source:
+            image = source.convert("RGB")
+        graded = []
+        for red, green, blue in image.get_flattened_data():
+            if blue > 120 and blue > red * 1.7 and blue > green * 1.7:
+                graded.append((round(red * .96), min(255, round(green * 1.12)), round(blue * .953)))
+            elif red > 170 and red > green * 1.8 and green > blue * 1.5:
+                graded.append((round(red * .916), min(255, round(green * 1.146)), min(255, blue + 45)))
+            else:
+                graded.append((red, green, blue))
+        image.putdata(graded)
+        output = io.BytesIO()
+        image.save(output, format="PNG", optimize=False)
+        return output.getvalue()
+
+    def _svg_to_pdf(self, svg: bytes, output: Path) -> None:
+        try:
+            import resvg
+            from reportlab.lib.colors import HexColor
+            from reportlab.lib.pagesizes import A5
+            from reportlab.lib.utils import ImageReader
+            from reportlab.pdfgen import canvas
+        except ImportError as exc:
+            raise DependencyError(
+                "Cover PDF conversion requires resvg and ReportLab; run `uv sync --locked`."
+            ) from exc
+        try:
+            pixel_width = round(PAGE_WIDTH / 72 * self.print_dpi)
+            pixel_height = round(PAGE_HEIGHT / 72 * self.print_dpi)
+            raster_svg = re.sub(
+                rb'width="[^"]+" height="[^"]+"',
+                f'width="{pixel_width}" height="{pixel_height}"'.encode("ascii"),
+                svg,
+                count=1,
+            )
+            # The PDF owns the paper as a vector rectangle. Rendering the
+            # paper into a scaled full-page bitmap can turn white into periodic
+            # 254-gray interpolation lines in Poppler.
+            raster_svg = re.sub(
+                rb'(<rect data-slot="paper"[^>]*?) fill="[^"]+"',
+                rb'\1 fill="none"',
+                raster_svg,
+                count=1,
+            )
+            raster_svg = re.sub(
+                rb'(<rect data-slot="edge-tab"[^>]*?) fill="[^"]+"',
+                rb'\1 fill="none"',
+                raster_svg,
+                count=1,
+            )
+            options = resvg.usvg.Options.default()
+            tree = resvg.usvg.Tree.from_str(raster_svg.decode("utf-8"), options)
+            # resvg follows affine.Affine's (a, b, c, d, e, f) ordering;
+            # identity is therefore (1, 0, 0, 0, 1, 0), not the PDF matrix order.
+            png = resvg.render(tree, (1, 0, 0, 0, 1, 0))
+            pdf = canvas.Canvas(
+                str(output),
+                pagesize=A5,
+                pageCompression=1,
+                invariant=1,
+            )
+            pdf.setTitle("Berreta Futura cover")
+            pdf.setCreator("magazine-compiler cover pipeline")
+            pdf.setFillColorRGB(1, 1, 1)
+            pdf.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
+            tab = self.design["tab"]
+            tab_width = float(tab["width"])
+            tab_overdraw = float(tab["overdraw"])
+            pdf.setFillColor(HexColor(str(self.colors["orange"])))
+            pdf.rect(
+                PAGE_WIDTH - tab_width,
+                -tab_overdraw,
+                tab_width + tab_overdraw * 2,
+                PAGE_HEIGHT + tab_overdraw * 2,
+                fill=1,
+                stroke=0,
+            )
+            pdf.drawImage(
+                ImageReader(io.BytesIO(png)),
+                0,
+                0,
+                PAGE_WIDTH,
+                PAGE_HEIGHT,
+                preserveAspectRatio=False,
+                mask="auto",
+            )
+            pdf.showPage()
+            pdf.save()
+        except Exception as exc:
+            raise CoverPdfError(f"Could not convert cover SVG to PDF: {exc}") from exc
+
+    @staticmethod
+    def _validate_pdf(path: Path) -> None:
+        try:
+            from pypdf import PdfReader
+        except ImportError as exc:
+            raise DependencyError("Cover validation requires pypdf; run `uv sync --locked`.") from exc
+        reader = PdfReader(path)
+        if len(reader.pages) != 1:
+            raise CoverPdfError(f"Cover PDF must contain exactly one page: {path}")
+        box = reader.pages[0].mediabox
+        width, height = float(box.width), float(box.height)
+        if abs(width - PAGE_WIDTH) > .02 or abs(height - PAGE_HEIGHT) > .02:
+            raise CoverPdfError(
+                f"Cover PDF is {width:.3f} x {height:.3f}pt; expected A5 "
+                f"{PAGE_WIDTH:.3f} x {PAGE_HEIGHT:.3f}pt"
+            )
+
+    def _rasterize_pdf(self, pdf: Path, png: Path) -> None:
+        executable = shutil.which("pdftoppm")
+        if not executable:
+            raise DependencyError("Cover proofing requires Poppler's pdftoppm executable.")
+        with tempfile.TemporaryDirectory(prefix="mag-cover-") as directory:
+            prefix = Path(directory) / "cover"
+            completed = subprocess.run(
+                [executable, "-f", "1", "-singlefile", "-png", "-r", str(self.proof_dpi), str(pdf), str(prefix)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if completed.returncode:
+                detail = completed.stderr.strip() or completed.stdout.strip()
+                raise CoverPdfError(f"Could not rasterize cover PDF: {detail}")
+            shutil.copyfile(prefix.with_suffix(".png"), png)
+
+    @staticmethod
+    def _compare(png: Path, reference: Path | None, destination: Path) -> dict[str, object]:
+        if reference is None:
+            return {"status": "uncompared", "reference": None}
+        if not reference.is_file():
+            return {"status": "missing_reference", "reference": str(reference)}
+        from PIL import Image, ImageChops, ImageEnhance
+
+        with Image.open(png) as opened:
+            actual = opened.convert("RGB")
+        with Image.open(reference) as opened:
+            expected = opened.convert("RGB")
+        if expected.size != actual.size:
+            expected = expected.resize(actual.size, Image.Resampling.LANCZOS)
+        diff = ImageChops.difference(actual, expected)
+        bbox = diff.getbbox()
+        histogram = diff.convert("L").histogram()
+        changed = sum(histogram[1:])
+        mean = sum(index * count for index, count in enumerate(histogram)) / max(1, actual.width * actual.height)
+        overlay = Image.blend(expected, actual, .5)
+        overlay.save(destination / "overlay.png")
+        ImageEnhance.Contrast(diff).enhance(4).save(destination / "diff.png")
+        return {
+            "status": "matched" if bbox is None else "changed",
+            "reference": str(reference.resolve()),
+            "reference_sha256": _sha256(reference),
+            "changed_pixels": changed,
+            "mean_absolute_difference": round(mean, 4),
+            "bounds": list(bbox) if bbox else None,
+        }
+
+    def _input_digest(self, edition: Edition, svg: str) -> str:
+        payload = {
+            "edition": edition.id,
+            "compiler": COVER_COMPILER_VERSION,
+            "design": self.design,
+            "language": edition.language,
+            "issue": edition.issue_number,
+            "date": edition.publication_date,
+            "cover": edition.cover,
+            "svg_sha256": hashlib.sha256(svg.encode("utf-8")).hexdigest(),
+        }
+        return hashlib.sha256(
+            json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
+        ).hexdigest()
+
+
+def replace_first_page(reader_pdf: Path, cover_pdf: Path, output: Path | None = None) -> Path:
+    """Replace reader page 1 with the exact compiled cover PDF page."""
+    try:
+        from pypdf import PdfReader, PdfWriter
+    except ImportError as exc:
+        raise DependencyError("Cover integration requires pypdf; run `uv sync --locked`.") from exc
+    target = output or reader_pdf
+    source = PdfReader(reader_pdf)
+    cover = PdfReader(cover_pdf)
+    if len(source.pages) < 2 or len(cover.pages) != 1:
+        raise CoverPdfError("Reader must have at least two pages and cover PDF exactly one")
+    writer = PdfWriter()
+    writer.add_page(cover.pages[0])
+    for page in source.pages[1:]:
+        writer.add_page(page)
+    writer.add_metadata({"/Creator": "magazine-compiler", "/Producer": "magazine-compiler"})
+    temporary = target.with_suffix(target.suffix + ".cover-tmp")
+    with temporary.open("wb") as stream:
+        writer.write(stream)
+    temporary.replace(target)
+    return target
+
+
+def _cover_date(value: str) -> str:
+    parts = str(value).split("-")
+    return " ".join(parts) if len(parts) == 3 and all(parts) else str(value)
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()

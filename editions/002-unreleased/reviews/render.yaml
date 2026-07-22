@@ -1,19 +1,19 @@
 schema_version: 1
 edition_id: 002-unreleased
-reviewer: exact_reference_analyst
-reviewed_at: '2026-07-22T16:58:43+00:00'
+reviewer: final_render_critic
+reviewed_at: '2026-07-22T17:50:33+00:00'
 result: approved
 findings: []
-notes: Accepted against the user-supplied Canto vivo reference; pure-white override, same-direction centered
-  tab labels, full orange trim coverage, and all English/Spanish reader and booklet sheets approved.
+notes: Canonical cover QA approved EN/ES proof parity; final render critic approved all eight reader/booklet
+  contact sheets after exact proof-to-reader hash verification.
 languages:
   en:
-    reader_sha256: 92a079f9a97c8360986101f05555f20a39594cfc8b43ecb51df4c3b61d013c59
-    booklet_sha256: 8d4ffaf61dd7cd8f067768ac3598abd5a6fbaec2b78fad07360c4755d3b96f06
+    reader_sha256: 9e0ba42e8e1ddc63f1d67698007dd5d8db05d27bc5bd84d97428520441dbbd0d
+    booklet_sha256: 34e39ad30a81e89adf8e86f09150b3b50b8b1ea34f61724ea00683f360f005a4
     page_count: 32
     machine_result: pass
   es:
-    reader_sha256: b8d42aede795ffd1c79e3d48b9a617a00db6d45fcb6a38b142e9fb56bb9ed3e8
-    booklet_sha256: f6625c0766419ee870c496d7a831917b40689972cb497a376180c7eeff4971fe
+    reader_sha256: e3c6c0bb9422aa6e023c944a3961fca2c94a727b8e7b84916529466505f8f70f
+    booklet_sha256: f263da2879042a39c9553ba6ca4e2f471b0f793d779f5af6d10e914e396184ea
     page_count: 36
     machine_result: pass
