@@ -22,12 +22,15 @@ def _inked_rasters(_reader: Path, output: Path) -> list[Path]:
     for page_number in range(1, 9):
         path = output / f"page-{page_number}.png"
         image = Image.new("RGB", (560, 794), "white")
-        should_be_blank = (
-            output.name == "reader-pages" and page_number in {2, 7}
-        ) or (
-            output.name == "booklet-sides" and page_number == 2
-        )
-        if not should_be_blank:
+        if output.name == "reader-pages" and page_number == 2:
+            ImageDraw.Draw(image).rectangle((70, 720, 76, 726), fill="#f05738")
+        elif output.name == "reader-pages" and page_number == 7:
+            ImageDraw.Draw(image).rectangle((484, 70, 490, 76), fill="#f05738")
+        elif output.name == "booklet-sides" and page_number == 2:
+            draw = ImageDraw.Draw(image)
+            draw.rectangle((70, 720, 76, 726), fill="#f05738")
+            draw.rectangle((484, 70, 490, 76), fill="#f05738")
+        else:
             ImageDraw.Draw(image).rectangle((70, 70, 490, 720), fill="#36333a")
         image.save(path)
         pages.append(path)
@@ -99,6 +102,8 @@ def test_render_critic_blocks_blank_pages_and_layout_contract_violations(tmp_pat
         "blank-booklet-side",
         "contents-pagination",
         "editorial-page-cap",
+        "inside-cover-booklet-ornament-missing",
+        "inside-cover-reader-ornament-missing",
     }
 
 

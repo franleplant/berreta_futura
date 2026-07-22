@@ -63,6 +63,9 @@ COVER_VIOLET = tuple(value / 255 for value in (75, 33, 192))
 SIGNAL_ORANGE = tuple(value / 255 for value in (240, 87, 56))
 COVER_ORANGE = SIGNAL_ORANGE
 RUNNING_HEADER_SIGNAL_LENGTH = 14.0
+INSIDE_COVER_ORNAMENT_INSET = 42.52
+INSIDE_COVER_ORNAMENT_SQUARE = 3.2
+INSIDE_COVER_ORNAMENT_DASH = 4.6
 
 
 @lru_cache(maxsize=16)
@@ -559,6 +562,24 @@ class _Typesetter:
             self.fit_text(running, SANS_MEDIUM, CAPTION_SIZE, self.live_width - 35),
         )
         self.pdf.drawRightString(self.width - OUTER_MARGIN, FOLIO_BASELINE, label)
+
+    def _inside_cover_ornament(self, corner: str) -> None:
+        """Draw one textless micro printer's kiss on an inside cover."""
+        inset = INSIDE_COVER_ORNAMENT_INSET
+        square = INSIDE_COVER_ORNAMENT_SQUARE
+        dash = INSIDE_COVER_ORNAMENT_DASH
+        self.pdf.setFillColorRGB(*SIGNAL_ORANGE)
+        if corner == "lower-left":
+            self.pdf.rect(inset, inset, square, square, fill=1, stroke=0)
+            self.pdf.rect(inset + square + 2, inset + 1.15, dash, .9, fill=1, stroke=0)
+            return
+        if corner == "upper-right":
+            x = self.width - inset - square
+            y = self.height - inset - square
+            self.pdf.rect(x, y, square, square, fill=1, stroke=0)
+            self.pdf.rect(x - dash - 2, y + 1.15, dash, .9, fill=1, stroke=0)
+            return
+        raise ValidationError(f"Unknown inside-cover ornament corner: {corner}")
 
     def _running_header(self) -> None:
         y = self.height - RUNNING_HEADER_BASELINE_INSET
@@ -2148,7 +2169,7 @@ class _Typesetter:
     def back_cover(self):
         self.continuation_columns = 1
         configured = self.edition.raw.get("format", {}).get("target_pages")
-        # Reserve the inside back cover as a completely blank page, then keep
+        # Reserve the inside back cover for its micro printer's kiss, then keep
         # the designed back cover as the final page of the signature.
         minimum_total = self.page + 2
         target = int(configured) if configured else ((minimum_total + 3) // 4) * 4
@@ -2157,9 +2178,10 @@ class _Typesetter:
         closing_pages = target - 2 - self.page
         for index in range(closing_pages):
             self._closing_plate(index, closing_pages)
-        # Page -2 is the blank inside back cover. The final page is a blank
+        # Page -2 is the inside back cover. The final page is a blank
         # placeholder replaced by the canonical back-cover PDF after layout.
         self.new_page(blank_header=True)
+        self._inside_cover_ornament("upper-right")
         self.new_page(blank_header=True)
         # ReportLab drops a final page that has no drawing operations at all.
         # Materialize this replace-only placeholder without reimplementing the
@@ -2203,8 +2225,9 @@ def _render_pass(
     # placeholder. ReportLab owns interiors only; it must not reimplement the
     # cover design or create a second approval surface.
     typesetter.new_page(blank_header=True)
-    # Page 2 is the inside front cover and must remain completely blank.
+    # Page 2 carries only the textless micro printer's kiss.
     typesetter.new_page(blank_header=True)
+    typesetter._inside_cover_ornament("lower-left")
     typesetter.contents(toc or {})
     typesetter.body()
     typesetter.back_cover()

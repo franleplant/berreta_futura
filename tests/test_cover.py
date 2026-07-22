@@ -88,7 +88,7 @@ def test_cover_proof_is_self_contained_outlined_svg_with_a5_pdf_and_full_bleed_t
     ), "the edge tab must paint the outermost trim pixel for the full page height"
 
 
-def test_built_reader_uses_the_exact_cover_proof_and_preserves_blank_inside_cover(
+def test_built_reader_uses_exact_cover_proof_and_marks_inside_front_cover(
     tmp_path: Path,
 ) -> None:
     magazine = _make_cover_project(tmp_path)
@@ -111,7 +111,10 @@ def test_built_reader_uses_the_exact_cover_proof_and_preserves_blank_inside_cove
         result.output_dir / "render-review" / "reader-pages" / "page-002.png"
     ) as opened:
         inside_cover = opened.convert("L")
-    assert inside_cover.getextrema() == (255, 255)
+    bbox = Image.eval(inside_cover, lambda value: 255 if value < 250 else 0).getbbox()
+    assert bbox is not None
+    assert bbox[0] < inside_cover.width * .25
+    assert bbox[1] > inside_cover.height * .75
 
 
 def test_cover_proof_cache_reuses_deterministic_svg_pdf_and_png(

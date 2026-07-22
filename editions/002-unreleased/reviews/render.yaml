@@ -1,20 +1,20 @@
 schema_version: 1
 edition_id: 002-unreleased
-reviewer: signal_ink_render_critic
-reviewed_at: '2026-07-22T20:39:27+00:00'
+reviewer: a5_a4_printer_kiss_critic
+reviewed_at: '2026-07-22T21:38:55+00:00'
 result: approved
 findings: []
-notes: Signal-orange continuation ticks and article end strokes approved across all EN/ES reader and A4
-  booklet sheets; contents medallion removed; pagination, blank inside covers, figures, folios, covers,
-  and imposition remain correct.
+notes: 'A5 and A4 printer''s kisses approved across every EN/ES reader and booklet sheet: one textless
+  micro-orange mark on each A5 inside cover, inherited exactly once by the imposed A4 side; all prior
+  layout, pagination, covers, and imposition remain correct.'
 languages:
   en:
-    reader_sha256: f85467f93d2eea7e71be80fc64f9a49f4b7880e9d2a6f62d000beefbebf8f8a6
-    booklet_sha256: d9985e9308aafc4f4af6ee74cc32af835142901c40861bb8ac13277ea7aa3fda
+    reader_sha256: cbc404d387785b395f455c772a29cbffaa2a267cacc2596b33ca97c3dda44a5e
+    booklet_sha256: 8179e6e574b5e99e74a188c39afcd4040dde944e30690e8e1c8a1ea613820dac
     page_count: 36
     machine_result: pass
   es:
-    reader_sha256: be1b18dde77e5dc051295b28b78abfec0f0a1dd147ef46bfbee6c1bdfdea43a5
-    booklet_sha256: 82f49f3df5de24fb9f828dd9c753259c59dbfbb68f9c87706191d97d2459bebb
+    reader_sha256: ec66edfdb102577aaa532d5abdc43bbae16e4cd66e207f9a0a6628b4fd7fbfef
+    booklet_sha256: 5869f844da577cf3f6c6f4b9e37c75aba1fae6a56ae5bf8e8e9c03c6256ab7a0
     page_count: 36
     machine_result: pass

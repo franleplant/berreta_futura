@@ -243,8 +243,11 @@ an automatic claim that an edit is acceptable.
 
 The A5 reader PDF is produced deterministically with ReportLab. The home booklet
 is imposed onto landscape A4 with `pypdf` and padded to a multiple of four pages.
-Reader page 2 is a blank inside front cover, the penultimate reader page is a
-blank inside back cover, and the designed back cover remains the final page.
+Reader page 2 is an otherwise empty inside front cover, the penultimate reader
+page is an otherwise empty inside back cover, and the designed back cover remains
+the final page. Each inside cover carries one textless micro-orange printer mark;
+ordinary imposition carries both marks onto their shared A4 booklet side so
+blank-page suppression cannot drop either format's pages.
 The package contains:
 
 ```text
@@ -275,7 +278,7 @@ signature length, and breached editorial or article page caps. It records
 per-page ink geometry in `render-critic.json` and produces numbered contact
 sheets plus 144-DPI individual page and booklet-side rasters for the required
 final visual review. The critic also verifies each imposed left/right page pair
-against the declared saddle-stitch, short-edge-duplex plan, including the blank
+against the declared saddle-stitch, short-edge-duplex plan, including the marked
 inside-cover side. Sparse pages are
 review prompts, not automatic failures, because deliberate openers and closing
 plates may use whitespace. The report and review images are included in
