@@ -1,19 +1,20 @@
 schema_version: 1
 edition_id: 002-unreleased
-reviewer: quiet_standard_release_critic
-reviewed_at: '2026-07-22T20:24:18+00:00'
+reviewer: signal_ink_render_critic
+reviewed_at: '2026-07-22T20:39:27+00:00'
 result: approved
 findings: []
-notes: A / Quiet Standard approved after full EN/ES reader and A4 booklet review; contents, folios, figure
-  flow, A5 legibility, references, blank inside covers, and imposition pass.
+notes: Signal-orange continuation ticks and article end strokes approved across all EN/ES reader and A4
+  booklet sheets; contents medallion removed; pagination, blank inside covers, figures, folios, covers,
+  and imposition remain correct.
 languages:
   en:
-    reader_sha256: 60eca2ed69e20f497fbdc3cc860034236289aa738b5991111cc5dca74c9007a9
-    booklet_sha256: 300222c310a81e7f238346a6e8040bc47f685a826355ec1950a339547e30b008
+    reader_sha256: f85467f93d2eea7e71be80fc64f9a49f4b7880e9d2a6f62d000beefbebf8f8a6
+    booklet_sha256: d9985e9308aafc4f4af6ee74cc32af835142901c40861bb8ac13277ea7aa3fda
     page_count: 36
     machine_result: pass
   es:
-    reader_sha256: 6c426d9520cbfc336a4822ad02f303dbb152508717030142c46414bce4943aec
-    booklet_sha256: 24267823b6c71b35fc1d403a3c65d55209b0e67542460a1a4b2ec2b94ad016d7
+    reader_sha256: be1b18dde77e5dc051295b28b78abfec0f0a1dd147ef46bfbee6c1bdfdea43a5
+    booklet_sha256: 82f49f3df5de24fb9f828dd9c753259c59dbfbb68f9c87706191d97d2459bebb
     page_count: 36
     machine_result: pass

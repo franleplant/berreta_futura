@@ -104,6 +104,8 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertGreaterEqual(len(reader.pages), 8)
             self.assertEqual((reader.pages[1].extract_text() or "").strip(), "")
             self.assertEqual((reader.pages[-2].extract_text() or "").strip(), "")
+            contents_lines = (reader.pages[2].extract_text() or "").splitlines()
+            self.assertNotIn("01", contents_lines, "contents must not repeat the issue in a medallion")
             preflight = json.loads((result.output_dir / "preflight.json").read_text())
             self.assertTrue(preflight["reader"]["page_count_multiple_of_four"])
             self.assertTrue(preflight["reader"]["all_pages_a5"])

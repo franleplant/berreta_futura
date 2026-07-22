@@ -12,6 +12,8 @@ from magazine.render import (
     OUTER_MARGIN,
     READING_MEASURE,
     RUNNING_HEADER_BASELINE_INSET,
+    RUNNING_HEADER_SIGNAL_LENGTH,
+    SIGNAL_ORANGE,
     TEXT_TOP_INSET,
     FrameUsage,
     _Typesetter,
@@ -103,6 +105,49 @@ def test_running_header_rule_has_clearance_before_the_text_frame():
     rule_inset = RUNNING_HEADER_BASELINE_INSET + 8.0
 
     assert TEXT_TOP_INSET - rule_inset >= 18.0
+
+
+def test_running_header_uses_cover_orange_as_a_short_signal_tick():
+    class RecordingPDF:
+        def __init__(self):
+            self.stroke_colors = []
+            self.lines = []
+
+        def setFillColorRGB(self, *_args):
+            pass
+
+        def setFont(self, *_args):
+            pass
+
+        def drawString(self, *_args):
+            pass
+
+        def drawRightString(self, *_args):
+            pass
+
+        def setStrokeColorRGB(self, *color):
+            self.stroke_colors.append(color)
+
+        def setLineWidth(self, *_args):
+            pass
+
+        def line(self, x1, y1, x2, y2):
+            self.lines.append((x1, y1, x2, y2))
+
+    typesetter = object.__new__(_Typesetter)
+    typesetter.pdf = RecordingPDF()
+    typesetter.metrics = FixedWidthMetrics()
+    typesetter.edition = SimpleNamespace(publication_name="Berreta Futura")
+    typesetter.section = "Light and Dark"
+    typesetter.width = 420.0
+    typesetter.height = 595.0
+    typesetter.left = 44.0
+    typesetter.right = OUTER_MARGIN
+
+    typesetter._running_header()
+
+    assert typesetter.pdf.stroke_colors[-1] == SIGNAL_ORANGE
+    assert typesetter.pdf.lines[-1][2] - typesetter.pdf.lines[-1][0] == RUNNING_HEADER_SIGNAL_LENGTH
 
 
 def test_headings_have_deliberate_space_before_them():

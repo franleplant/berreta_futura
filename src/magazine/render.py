@@ -60,7 +60,9 @@ WHITE = (1, 1, 1)
 COVER_PAPER = WHITE
 COVER_INK = tuple(value / 255 for value in (10, 11, 13))
 COVER_VIOLET = tuple(value / 255 for value in (75, 33, 192))
-COVER_ORANGE = tuple(value / 255 for value in (240, 87, 56))
+SIGNAL_ORANGE = tuple(value / 255 for value in (240, 87, 56))
+COVER_ORANGE = SIGNAL_ORANGE
+RUNNING_HEADER_SIGNAL_LENGTH = 14.0
 
 
 @lru_cache(maxsize=16)
@@ -582,6 +584,16 @@ class _Typesetter:
         self.pdf.setStrokeColorRGB(*COOL_GRAY)
         self.pdf.setLineWidth(.55)
         self.pdf.line(self.left, y - 8, self.width - self.right, y - 8)
+        # A tiny continuation signal carries the Canto vivo ink into the
+        # reading pages without turning orange into a decorative palette.
+        self.pdf.setStrokeColorRGB(*SIGNAL_ORANGE)
+        self.pdf.setLineWidth(1.15)
+        self.pdf.line(
+            self.left,
+            y - 8,
+            self.left + RUNNING_HEADER_SIGNAL_LENGTH,
+            y - 8,
+        )
 
     def new_page(
         self,
@@ -1904,18 +1916,6 @@ class _Typesetter:
                 minimum=22,
                 maximum_lines=2,
             )
-            medallion_x, medallion_width = self.grid_box(5, 1)
-            center_x, center_y = medallion_x + medallion_width / 2, self.height - 78
-            self.pdf.setFillColorRGB(*VIOLET)
-            self.pdf.circle(center_x, center_y, 18, fill=1, stroke=0)
-            self.pdf.setFillColorRGB(*WHITE)
-            self.pdf.setFont(SANS_SEMIBOLD, 10)
-            self.pdf.drawCentredString(
-                center_x,
-                center_y - 4,
-                str(self.edition.issue_number).zfill(2)[-2:],
-            )
-
             row_top = 479.0
             row_height = 393.0 / max(6, len(chunk))
             for row_index, (label, title, author, page_number) in enumerate(chunk):
@@ -1989,7 +1989,7 @@ class _Typesetter:
 
     def _article_endmark(self, article_index: int) -> None:
         baseline = max(self.frame_bottom + 5, self.y - 1)
-        self.pdf.setStrokeColorRGB(*VIOLET)
+        self.pdf.setStrokeColorRGB(*SIGNAL_ORANGE)
         self.pdf.setLineWidth(1.1)
         self.pdf.line(self.frame_left, baseline + 2, self.frame_left + 17, baseline + 2)
         self._tracked_label(

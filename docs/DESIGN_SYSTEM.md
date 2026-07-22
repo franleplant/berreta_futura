@@ -52,9 +52,9 @@ The bundled font files and SIL Open Font License texts live under `src/magazine/
 | Cool gray | light neutral | Contents separators and quiet structure |
 | Pale violet | very light tint | Code panels only |
 | White | unprinted sheet | Every page background, including the front cover |
-| Cover orange | muted vermilion | Canto vivo tab and wordmark underprint |
+| Signal orange | muted vermilion | Canto vivo tab and wordmark underprint; tiny continuation and end signals inside |
 
-The cover artwork does not determine the interior colors. Violet is a publication-level navigation color and stays a minority of each interior page. The Canto vivo cover retains the white sheet and calibrates only its artwork-matched violet, near-black, and muted vermilion inks to the approved cover proof.
+The cover artwork does not determine the interior colors. Violet is a publication-level navigation color and stays a minority of each interior page. Signal orange is the exact Canto vivo vermilion: inside the magazine it appears only as a short tick at the start of continuation rules and as the line in an article end mark. It never becomes a panel, heading color, or decorative wash. The Canto vivo cover retains the white sheet and calibrates only its artwork-matched violet, near-black, and muted vermilion inks to the approved cover proof.
 
 ## A5 page architecture
 
@@ -65,7 +65,7 @@ The cover artwork does not determine the interior colors. Violet is a publicatio
 - Continuations: one centered 325 pt reading measure; double-column text is prohibited.
 - Opener copy: the same reading measure beneath a full-width title and byline.
 - Figures: full live measure when their aspect ratio remains useful at A5, otherwise contained without cropping. Label-dense panoramic diagrams use a dedicated sideways landscape plate so their internal type survives A5 printing; a plate may open or close its anchored section. Adaptive bands may reduce an uncomplicated chart only to a declared minimum, while compact bands reserve room for the conclusion on the same page. Figures stay at their semantic anchor and may appear at the top, middle, or on an opener.
-- Running matter: publication at left and curated short title at right above one quiet gray rule.
+- Running matter: publication at left and curated short title at right above one quiet gray rule, begun by a 14 pt signal-orange tick.
 - Folios: publication at the lower left and the page number at one invariant lower-right baseline on every ordinary interior page.
 - Headlines keep following copy with them when pagination allows.
 - Fenced code moves to a full-width frame rather than becoming unreadably narrow.
@@ -80,7 +80,7 @@ Use `uv run --locked mag cover-proof <edition-id>` for the fast primary-language
 
 ### Contents
 
-Contents use a simple serif title, oversized violet folios, restrained rules, and one compact issue mark. Folios come from the renderer's deterministic probe, planned draft, and final layout passes.
+Contents use a simple serif title, oversized violet folios, restrained rules, and deliberate negative space. The redundant circular issue medallion is prohibited; the tracked kicker already identifies the issue. Folios come from the renderer's deterministic probe, planned draft, and final layout passes.
 
 ### Opening editorial
 
