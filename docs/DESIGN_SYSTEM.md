@@ -37,7 +37,9 @@ Edition 2 establishes the first motif: one oversized input crosses a severe gate
 
 Body copy is 9.55/12.6 pt by default. The opening editorial uses 9.55/12 pt within its hard two-page cap. Captions and navigation never fall below 7 pt. Feature manifests provide a localized `display_emphasis`, a source-faithful `short_title`, and one of three controlled `opener_variant` values. The compiler validates all three rather than choosing display or navigation language heuristically.
 
-The permanent publication wordmark is a compact, uppercase Inter Bold lockup: `BERRETA` in near-black followed immediately by `FUTURA` reversed from a violet block, with a short signal-orange register rule beneath the left edge. Tight spacing makes the two words read as one name; the block supplies the deliberate rupture between improvised present and designed future. The wordmark is always rendered by layout code from `publication.name`, never embedded in issue art, translated, or combined with issue metadata.
+The permanent publication wordmark is the **Corte bruto** lockup: `BERRETA` in tightly compressed near-black Inter Bold, with `FUTURA` dropped across it in a skewed black printer's slug. A deliberately misregistered orange impression remains visible beneath the reversed white letters. The mark behaves like an exact paste-up rather than a polite masthead. It is always rendered by layout code from `publication.name`, never embedded in issue art or translated.
+
+The cover's **Canto vivo** is a full-height signal-orange fore-edge tab. It carries the issue number at the head and `BERRETA FUTURA / BUENOS AIRES` at the foot, so orange functions as navigation when editions are stacked or shelved. The only footer metadata is the publication date in `YYYY MM DD` form. Do not add format, distribution, repeated issue/date, proof labels, or generic `COVER` metadata to the front cover.
 
 The bundled font files and SIL Open Font License texts live under `src/magazine/assets/fonts`. Deterministic builds must not use system font lookups.
 
@@ -70,7 +72,7 @@ The cover artwork does not determine these colors. Violet is a publication-level
 
 ### Front cover
 
-The cover opens with the permanent BERRETA FUTURA wordmark at full live width, followed by a display title, circular issue medallion, single centered 250 × 250 pt framed artwork placement, complete deck, and private-edition metadata. It does not repeat the subtitle or turn topics into a decorative rail. Edition 2's 1254 × 1254 px production artwork resolves at 361.2 ppi in this placement. Layout code owns every letter; the raster asset contains no masthead or cover lines.
+The cover opens with the permanent Corte bruto wordmark and Canto vivo edge tab. The issue title is a tightly compressed sans construction with staggered violet lines; no generic display serif or circular badge remains. Beneath it sit the single centered 250 × 250 pt framed artwork, complete deck, and date-only footer. Edition 2's 1254 × 1254 px production artwork resolves at 361.2 ppi in this placement. Layout code owns every letter; the raster asset contains no masthead or cover lines.
 
 ### Contents
 

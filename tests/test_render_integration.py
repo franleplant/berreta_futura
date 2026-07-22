@@ -94,6 +94,10 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertIn("FAITHFUL EDIT", reader_text)
             self.assertIn("Author writes about this subject for Example.", reader_text)
             self.assertIn("TEST REVIEW", reader_text)
+            cover_text = reader.pages[0].extract_text() or ""
+            self.assertIn("2026 07 15", cover_text)
+            self.assertNotIn("A5", cover_text)
+            self.assertNotIn("PRIVATE READER", cover_text)
             self.assertNotIn(" ".join(("NOT", "FOR", "SALE")), reader_text)
             self.assertNotIn(" ".join(("PRIVATE", "EDITION")), reader_text)
             self.assert_tracked_labels_do_not_leak_character_spacing(result.reader_pdf)

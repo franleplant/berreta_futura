@@ -20,6 +20,7 @@ from magazine.render import (
     _section_label,
     _terminal_balance_plans,
     ArticleBalancePlan,
+    _cover_date,
 )
 
 
@@ -32,6 +33,10 @@ class FixedWidthMetrics:
 def test_plain_renders_markdown_link_as_linked_words():
     assert _plain("Read [the source](https://example.com/a/very/long/path).") == "Read the source."
     assert _plain("planner → executor — synthesis") == "planner -> executor — synthesis"
+
+
+def test_cover_date_uses_numeric_register_without_separators():
+    assert _cover_date("2026-07-21") == "2026 07 21"
 
 
 def test_lines_breaks_a_token_wider_than_the_text_column():

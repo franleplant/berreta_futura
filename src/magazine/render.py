@@ -22,6 +22,7 @@ BODY_SIZE = 9.55
 BODY_LEADING = BASE * 4
 CAPTION_SIZE = 7.0
 COVER_ART_SIZE_POINTS = (250.0, 250.0)
+COVER_EDGE_TAB_WIDTH = 21.0
 MIN_FIGURE_PPI = 300.0
 FIGURE_BAND_MAX_IMAGE_HEIGHT = 150.0
 FIGURE_COLUMN_MAX_IMAGE_HEIGHT = 220.0
@@ -203,6 +204,12 @@ def _plain(text: str) -> str:
 def _ui(edition: Edition, key: str) -> str:
     language = str(getattr(edition, "language", "en")).split("-", 1)[0]
     return UI_COPY.get(language, UI_COPY["en"])[key]
+
+
+def _cover_date(value: str) -> str:
+    """Render ISO publication dates as the cover's compact numeric register."""
+    parts = str(value).split("-")
+    return " ".join(parts) if len(parts) == 3 and all(parts) else str(value)
 
 
 def _section_label(edition: Edition, kind: str) -> str:
@@ -1182,57 +1189,170 @@ class _Typesetter:
         finally:
             self.pdf.restoreState()
 
+    def _scaled_word(
+        self,
+        text: str,
+        x: float,
+        y: float,
+        *,
+        size: float,
+        color,
+        horizontal_scale: float = 100,
+        tracking: float = 0,
+    ) -> None:
+        self.pdf.saveState()
+        try:
+            self.pdf.setFillColorRGB(*color)
+            word = self.pdf.beginText()
+            word.setTextOrigin(x, y)
+            word.setFont(SANS_BOLD, size)
+            word.setHorizScale(horizontal_scale)
+            word.setCharSpace(tracking)
+            word.textLine(_plain(text))
+            self.pdf.drawText(word)
+        finally:
+            self.pdf.restoreState()
+
     def _publication_wordmark(self, name: str, x: float, y: float, width: float) -> None:
-        """Draw the permanent cover wordmark as type, never as part of the artwork."""
+        """Draw the selected Corte bruto wordmark as live cover typography."""
         value = _plain(name.upper()).strip()
         head, separator, tail = value.rpartition(" ")
         if not separator:
             head, tail = value, ""
 
-        size = 30.0
-        tracking = -.65
+        size = 42.0
+        tracking = -1.65
+        head_scale = 92.0
+        tail_scale = 105.0
 
-        def measured(text: str, font_size: float) -> float:
-            return sum(
-                self.metrics.stringWidth(character, SANS_BOLD, font_size)
-                for character in text
-            ) + tracking * max(0, len(text) - 1)
+        def measured(text: str, font_size: float, horizontal_scale: float) -> float:
+            unscaled = self.metrics.stringWidth(text, SANS_BOLD, font_size)
+            unscaled += tracking * max(0, len(text) - 1)
+            return unscaled * horizontal_scale / 100
 
-        while size >= 22:
-            head_width = measured(head, size)
-            tail_width = measured(tail, size) if tail else 0
-            box_width = tail_width + (15 if tail else 0)
-            if head_width + (4 if tail else 0) + box_width <= width:
+        while size >= 25:
+            head_width = measured(head, size, head_scale)
+            tail_width = measured(tail, size, tail_scale) if tail else 0
+            tail_offset = head_width * .52
+            box_width = tail_width + (18 if tail else 0)
+            if max(head_width, tail_offset + box_width) <= width:
                 break
             size -= .5
         else:
             raise ValidationError(f"Publication name cannot fit the cover wordmark: {name}")
 
-        def draw_word(text: str, origin_x: float, origin_y: float, color) -> None:
-            self.pdf.setFillColorRGB(*color)
-            word = self.pdf.beginText()
-            word.setTextOrigin(origin_x, origin_y)
-            word.setFont(SANS_BOLD, size)
-            word.setCharSpace(tracking)
-            word.textLine(text)
-            self.pdf.drawText(word)
+        self._scaled_word(
+            head,
+            x,
+            y,
+            size=size,
+            color=INK,
+            horizontal_scale=head_scale,
+            tracking=tracking,
+        )
+        if not tail:
+            return
 
+        tail_x = x + tail_offset
+        tail_y = y - size * .84
+        box_x = tail_x - 6
+        box_y = tail_y - 7
+        box_height = size * .86
+        slant = 6.0
+        slug = self.pdf.beginPath()
+        slug.moveTo(box_x + slant, box_y)
+        slug.lineTo(box_x + box_width + slant, box_y)
+        slug.lineTo(box_x + box_width, box_y + box_height)
+        slug.lineTo(box_x, box_y + box_height)
+        slug.close()
+        self.pdf.setFillColorRGB(*INK)
+        self.pdf.drawPath(slug, fill=1, stroke=0)
+
+        # A deliberately misregistered orange impression sits beneath the white type.
+        self._scaled_word(
+            tail,
+            tail_x - 3,
+            tail_y - 1,
+            size=size,
+            color=SIGNAL_ORANGE,
+            horizontal_scale=tail_scale,
+            tracking=tracking,
+        )
+        self._scaled_word(
+            tail,
+            tail_x,
+            tail_y,
+            size=size,
+            color=WHITE,
+            horizontal_scale=tail_scale,
+            tracking=tracking,
+        )
+
+    def _cover_title(self, text: str, x: float, top: float, width: float) -> None:
+        size = 29.0
+        horizontal_scale = 82.0
+        while size >= 20:
+            value = _plain(text.upper())
+            maximum_unscaled_width = width / (horizontal_scale / 100)
+            words = value.split()
+            candidates = []
+            if len(words) >= 3:
+                for split in range(1, len(words)):
+                    pair = (" ".join(words[:split]), " ".join(words[split:]))
+                    pair_widths = tuple(
+                        self.metrics.stringWidth(line, SANS_BOLD, size) for line in pair
+                    )
+                    if max(pair_widths) <= maximum_unscaled_width:
+                        candidates.append((abs(pair_widths[0] - pair_widths[1]), pair))
+            lines = list(min(candidates, key=lambda item: item[0])[1]) if candidates else self.lines(
+                value,
+                SANS_BOLD,
+                size,
+                maximum_unscaled_width,
+            )
+            if len(lines) <= 3:
+                break
+            size -= .5
+        else:
+            raise ValidationError(f"Cover title cannot fit the Canto vivo title zone: {text}")
+
+        baseline = top - size
+        leading = size * .78
+        colors = (INK, VIOLET, INK)
+        for index, line in enumerate(lines):
+            self._scaled_word(
+                line,
+                x + (28 if index % 2 else 0),
+                baseline,
+                size=size,
+                color=colors[index],
+                horizontal_scale=horizontal_scale,
+                tracking=-1.35,
+            )
+            baseline -= leading
+
+    def _cover_edge_tab(self) -> None:
+        tab_x = self.width - COVER_EDGE_TAB_WIDTH
+        self.pdf.setFillColorRGB(*SIGNAL_ORANGE)
+        self.pdf.rect(tab_x, 0, COVER_EDGE_TAB_WIDTH, self.height, fill=1, stroke=0)
+
+        issue = f"{_plain(_ui(self.edition, 'issue').upper())} {str(self.edition.issue_number).zfill(3)}"
         self.pdf.saveState()
-        try:
-            draw_word(head, x, y, INK)
-            if tail:
-                box_x = x + head_width + 4
-                box_y = y - 6
-                box_height = size + 7
-                self.pdf.setFillColorRGB(*VIOLET)
-                self.pdf.rect(box_x, box_y, box_width, box_height, fill=1, stroke=0)
-                draw_word(tail, box_x + 7.5, y, WHITE)
+        self.pdf.translate(self.width - 6.5, self.height - 27)
+        self.pdf.rotate(-90)
+        self.pdf.setFillColorRGB(*INK)
+        self.pdf.setFont(SANS_BOLD, 6.1)
+        self.pdf.drawString(0, 0, issue)
+        self.pdf.restoreState()
 
-            # A short register rule gives the lockup an exact left edge at any scale.
-            self.pdf.setFillColorRGB(*SIGNAL_ORANGE)
-            self.pdf.rect(x, y - 10, min(28, width), 3, fill=1, stroke=0)
-        finally:
-            self.pdf.restoreState()
+        identity = f"{_plain(self.edition.publication_name.upper())} / BUENOS AIRES"
+        self.pdf.saveState()
+        self.pdf.translate(self.width - 6.5, 22)
+        self.pdf.rotate(90)
+        self.pdf.setFillColorRGB(*INK)
+        self.pdf.setFont(SANS_BOLD, 5.4)
+        self.pdf.drawString(0, 0, identity)
+        self.pdf.restoreState()
 
     def _rotated_label(self, text: str, x: float, y: float, height: float, *, color=VIOLET) -> None:
         self.pdf.saveState()
@@ -1495,36 +1615,24 @@ class _Typesetter:
         self.new_page(blank_header=True)
         self.pdf.setFillColorRGB(*WHITE)
         self.pdf.rect(0, 0, self.width, self.height, fill=1, stroke=0)
+        self._cover_edge_tab()
         self._publication_wordmark(
             self.edition.publication_name,
-            self.left,
-            self.height - 43,
-            self.live_width,
+            39,
+            self.height - 56,
+            self.width - COVER_EDGE_TAB_WIDTH - 78,
         )
 
-        title_x, title_width = self.grid_box(0, 4)
-        self._fitted_title_box(
+        self._cover_title(
             str(self.edition.cover.get("headline", self.edition.title)),
-            title_x,
-            self.height - 84,
-            title_width,
-            68,
-            maximum=32,
-            minimum=23,
-            maximum_lines=3,
-            leading_ratio=.98,
+            44,
+            self.height - 130,
+            302,
         )
-        medallion_x, medallion_width = self.grid_box(4, 2)
-        center_x, center_y = medallion_x + medallion_width / 2, self.height - 108
-        self.pdf.setFillColorRGB(*VIOLET)
-        self.pdf.circle(center_x, center_y, 24, fill=1, stroke=0)
-        issue_mark = str(self.edition.issue_number).zfill(2)[-2:]
-        self.pdf.setFillColorRGB(*WHITE)
-        self.pdf.setFont(SANS_SEMIBOLD, 15)
-        self.pdf.drawCentredString(center_x, center_y - 5, issue_mark)
 
         art_width, art_height = COVER_ART_SIZE_POINTS
-        art_x, art_y = (self.width - art_width) / 2, 177.0
+        art_x = (self.width - art_width) / 2
+        art_y = self.height - 221 - art_height
         if self.edition.cover_art:
             self._draw_image_fill(
                 self.edition.cover_art,
@@ -1544,14 +1652,6 @@ class _Typesetter:
         self.pdf.setLineWidth(.7)
         self.pdf.rect(art_x, art_y, art_width, art_height, fill=0, stroke=1)
 
-        self._tracked_label(
-            f"Cover / {self.edition.publication_date}",
-            art_x,
-            art_y - 25,
-            art_width,
-            color=VIOLET,
-        )
-
         deck = str(self.edition.cover.get("deck", "")).strip()
         if deck:
             deck_lines = self.lines(deck, SANS, 7.8, art_width)
@@ -1559,19 +1659,23 @@ class _Typesetter:
                 raise ValidationError("Cover deck is too long for the Monument cover")
             self.pdf.setFillColorRGB(*INK)
             self.pdf.setFont(SANS, 7.8)
-            baseline = art_y - 48
+            baseline = self.height - 492 - 7.8
             for line in deck_lines:
                 self.pdf.drawString(art_x, baseline, line)
                 baseline -= BASE * 3
 
         self.pdf.setFillColorRGB(*INK)
-        self.pdf.setFont(SANS_MEDIUM, CAPTION_SIZE)
-        self.pdf.drawString(
-            self.left,
-            17,
-            f"{_plain(_ui(self.edition, 'issue').upper())} {self.edition.issue_number}"
-            f" / {self.edition.publication_date}",
-        )
+        self.pdf.setFont(SANS_BOLD, CAPTION_SIZE)
+        self.pdf.saveState()
+        try:
+            footer = self.pdf.beginText()
+            footer.setTextOrigin(44, 18)
+            footer.setFont(SANS_BOLD, CAPTION_SIZE)
+            footer.setCharSpace(.8)
+            footer.textLine(_cover_date(self.edition.publication_date))
+            self.pdf.drawText(footer)
+        finally:
+            self.pdf.restoreState()
 
     def contents(self, toc_pages: dict[str, int]):
         contents_label = _ui(self.edition, "contents")

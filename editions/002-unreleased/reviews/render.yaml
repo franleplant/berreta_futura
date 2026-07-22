@@ -1,20 +1,20 @@
 schema_version: 1
 edition_id: 002-unreleased
-reviewer: Independent render critic
-reviewed_at: '2026-07-22T15:24:29+00:00'
+reviewer: Independent Canto vivo critic
+reviewed_at: '2026-07-22T15:50:47+00:00'
 result: approved
 findings: []
-notes: All 8 EN/ES reader and booklet contact sheets inspected; wordmark is legible at thumbnail scale,
-  cover hierarchy and clearances pass, blank inside covers and imposition remain correct, and no actionable
-  defects remain.
+notes: All 8 EN/ES reader and booklet contact sheets inspected. Corte bruto wordmark, Canto vivo tab,
+  balanced localized titles, date-only footer, blank inside covers, and imposition pass with no actionable
+  defects.
 languages:
   en:
-    reader_sha256: 53ab94a9a12a4629011db43f85f6fd2e88a758d62a3dc4f98fe6701bf474420a
-    booklet_sha256: ae077e8bb7d5bc8af6b26efc0671a7ed67f57f215076d5e212977166f6af2a96
+    reader_sha256: 313f09214b35718e9fc602002a9958ba4c2f296fb6d7473bf5937c7eabf903d9
+    booklet_sha256: 183fa2418c09d96a5c81ecf445551be329c60a856f5a9fcb40c440ad5133951f
     page_count: 32
     machine_result: pass
   es:
-    reader_sha256: 39596d88b95be98908b3f83c3d5f058b291f2eb2cb23ad88cdcf97c373aa8326
-    booklet_sha256: 056fdcf16c47bdfda36f6e62f237bb3b28cd0b25510fb96c41a3109f0a7249b3
+    reader_sha256: f88d5cf88b952b2e0dc9fbe5702c48f2f1b3b0f18c143209f2f1aa7349d25a7b
+    booklet_sha256: aee4e033e5c6bbe256d3811433530769223de5d09a557e3cccf7b27df61c6402
     page_count: 36
     machine_result: pass
