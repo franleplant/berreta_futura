@@ -35,19 +35,39 @@ class RenderIntegrationTests(unittest.TestCase):
         reader = PdfReader(str(path))
         stream = ContentStream(reader.pages[0].get_contents(), reader)
         character_spacing = []
+        fill_colors = []
         horizontal_scales = []
         transforms = []
         for operands, operator in stream.operations:
             if operator == b"Tc":
                 character_spacing.append(float(operands[0]))
+            elif operator == b"rg":
+                fill_colors.append(tuple(float(value) for value in operands))
             elif operator == b"Tz":
                 horizontal_scales.append(float(operands[0]))
             elif operator == b"cm":
                 transforms.append(tuple(float(value) for value in operands))
 
         self.assertIn(-3.6, character_spacing)
-        self.assertIn(92.0, horizontal_scales)
-        self.assertIn(104.0, horizontal_scales)
+        self.assertIn(89.9, horizontal_scales)
+        self.assertIn(105.1, horizontal_scales)
+        self.assertIn(106.6, horizontal_scales)
+        self.assertIn(79.83, horizontal_scales)
+        self.assertIn((1.0, 1.0, 1.0), fill_colors)
+        self.assertIn(tuple(round(value / 255, 6) for value in (240, 87, 56)), fill_colors)
+        same_direction_labels = sum(
+            1
+            for a, b, c, d, _, _ in transforms
+            if abs(a) < .00001
+            and abs(b + 1) < .00001
+            and abs(c - 1) < .00001
+            and abs(d) < .00001
+        )
+        self.assertGreaterEqual(
+            same_direction_labels,
+            2,
+            "both Canto vivo labels must read top-to-bottom in the same direction",
+        )
         self.assertTrue(
             any(
                 abs(matrix[2] - math.tan(math.radians(10))) < 0.00001
@@ -94,6 +114,37 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertTrue(
                 (result.output_dir / "render-review" / "booklet-contact-sheet-01.png").is_file()
             )
+            cover_raster = Image.open(
+                result.output_dir / "render-review" / "reader-pages" / "page-001.png"
+            ).convert("RGB")
+            expected_orange = (240, 87, 56)
+            self.assertTrue(
+                all(
+                    max(abs(channel - expected) for channel, expected in zip(pixel, expected_orange)) <= 2
+                    for pixel in (cover_raster.getpixel((cover_raster.width - 1, y)) for y in range(cover_raster.height))
+                ),
+                "the orange tab must paint through the outermost trim pixel without a white hairline",
+            )
+            tab_pixels = round(21 * 2)
+            tab = cover_raster.crop((cover_raster.width - tab_pixels, 0, cover_raster.width, cover_raster.height))
+            for label, vertical_slice in (
+                ("issue", (0, cover_raster.height // 3)),
+                ("identity", (cover_raster.height * 2 // 3, cover_raster.height)),
+            ):
+                top, bottom = vertical_slice
+                ink = Image.eval(
+                    tab.crop((0, top, tab.width, bottom)).convert("L"),
+                    lambda value: 255 if value < 80 else 0,
+                )
+                bbox = ink.getbbox()
+                self.assertIsNotNone(bbox, f"missing {label} text in the orange tab")
+                assert bbox is not None
+                text_center = (bbox[0] + bbox[2]) / 2
+                self.assertLessEqual(
+                    abs(text_center - tab.width / 2),
+                    2,
+                    f"{label} text must be optically centered in the orange tab",
+                )
             self.assertIn("render-critic.json", (result.output_dir / "SHA256SUMS").read_text())
             reader = PdfReader(str(result.reader_pdf))
             self.assertGreaterEqual(len(reader.pages), 8)

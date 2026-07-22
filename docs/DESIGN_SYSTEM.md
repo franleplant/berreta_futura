@@ -52,9 +52,10 @@ The bundled font files and SIL Open Font License texts live under `src/magazine/
 | Slate | neutral gray | Secondary metadata |
 | Cool gray | light neutral | Contents separators and quiet structure |
 | Pale violet | very light tint | Code panels only |
-| White | unprinted sheet | Every page background |
+| White | unprinted sheet | Every page background, including the front cover |
+| Cover orange | muted vermilion | Canto vivo tab and wordmark underprint |
 
-The cover artwork does not determine these colors. Violet is a publication-level navigation color and stays a minority of each interior page. The renderer never prints a fake cream paper field.
+The cover artwork does not determine the interior colors. Violet is a publication-level navigation color and stays a minority of each interior page. The Canto vivo cover retains the white sheet and calibrates only its artwork-matched violet, near-black, and muted vermilion inks to the approved cover proof.
 
 ## A5 page architecture
 
@@ -72,7 +73,7 @@ The cover artwork does not determine these colors. Violet is a publication-level
 
 ### Front cover
 
-The cover opens with the permanent Corte bruto wordmark and Canto vivo edge tab. The issue title is a tightly compressed sans construction with staggered violet lines; no generic display serif or circular badge remains. Beneath it sit the single centered 250 × 250 pt framed artwork, complete deck, and date-only footer. Edition 2's 1254 × 1254 px production artwork resolves at 361.2 ppi in this placement. Layout code owns every letter; the raster asset contains no masthead or cover lines.
+The cover opens with the permanent Corte bruto wordmark and Canto vivo edge tab. The issue title is a tightly compressed sans construction with staggered violet lines; no generic display serif or circular badge remains. Beneath it sit the approximately 250 × 249 pt framed artwork, complete deck, and date-only footer. Edition 2's 1254 × 1254 px production artwork resolves above 361 ppi in this placement. Layout code owns every letter; the raster asset contains no masthead or cover lines.
 
 ### Contents
 

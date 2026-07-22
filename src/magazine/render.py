@@ -4,6 +4,7 @@ import io
 import math
 import re
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Iterable
 
@@ -21,8 +22,7 @@ GRID_GUTTER = BASE * 3
 BODY_SIZE = 9.55
 BODY_LEADING = BASE * 4
 CAPTION_SIZE = 7.0
-COVER_ART_SIZE_POINTS = (250.0, 250.0)
-COVER_EDGE_TAB_WIDTH = 21.0
+COVER_ART_SIZE_POINTS = (249.35, 248.65)
 MIN_FIGURE_PPI = 300.0
 FIGURE_BAND_MAX_IMAGE_HEIGHT = 150.0
 FIGURE_COLUMN_MAX_IMAGE_HEIGHT = 220.0
@@ -50,6 +50,58 @@ SLATE = (.31, .35, .37)
 COOL_GRAY = (.88, .89, .90)
 PALE_VIOLET = (.955, .945, .975)
 WHITE = (1, 1, 1)
+
+# The Canto vivo cover is calibrated to the selected browser proof. These are
+# cover inks, not substitutions for the cooler Monument interior palette.
+COVER_PAPER = WHITE
+COVER_INK = tuple(value / 255 for value in (10, 11, 13))
+COVER_VIOLET = tuple(value / 255 for value in (75, 33, 192))
+COVER_ORANGE = tuple(value / 255 for value in (240, 87, 56))
+
+
+@lru_cache(maxsize=16)
+def _cover_graded_art(path_value: str) -> bytes:
+    """Grade the two process inks without changing the source artwork file."""
+    from PIL import Image
+
+    image = Image.open(path_value).convert("RGB")
+    graded = []
+    for red, green, blue in image.get_flattened_data():
+        if blue > 120 and blue > red * 1.7 and blue > green * 1.7:
+            graded.append(
+                (round(red * .96), min(255, round(green * 1.12)), round(blue * .953))
+            )
+        elif red > 170 and red > green * 1.8 and green > blue * 1.5:
+            graded.append(
+                (round(red * .916), min(255, round(green * 1.146)), min(255, blue + 45))
+            )
+        else:
+            graded.append((red, green, blue))
+    image.putdata(graded)
+    output = io.BytesIO()
+    image.save(output, format="PNG", optimize=False)
+    return output.getvalue()
+
+
+@dataclass(frozen=True)
+class CoverLayout:
+    tab_width: float = 21.0
+    tab_overdraw: float = 1.5
+    issue_top: float = 26.5
+    identity_top: float = 433.5
+    wordmark_x: float = 38.0
+    wordmark_top: float = 53.0
+    title_x: float = 44.0
+    title_top: float = 122.0
+    title_width: float = 302.0
+    art_x: float = 85.25
+    art_top: float = 221.85
+    footer_x: float = 44.0
+    footer_y: float = 19.5
+
+
+CANTO_VIVO_COVER = CoverLayout()
+COVER_EDGE_TAB_WIDTH = CANTO_VIVO_COVER.tab_width
 
 SANS = "Inter"
 SANS_MEDIUM = "Inter-Medium"
@@ -1199,15 +1251,21 @@ class _Typesetter:
         color,
         horizontal_scale: float = 100,
         tracking: float = 0,
+        stroke_width: float = 0,
     ) -> None:
         self.pdf.saveState()
         try:
             self.pdf.setFillColorRGB(*color)
+            if stroke_width:
+                self.pdf.setStrokeColorRGB(*color)
+                self.pdf.setLineWidth(stroke_width)
             word = self.pdf.beginText()
             word.setTextOrigin(x, y)
             word.setFont(SANS_BOLD, size)
             word.setHorizScale(horizontal_scale)
             word.setCharSpace(tracking)
+            if stroke_width:
+                word.setTextRenderMode(2)
             word.textLine(_plain(text))
             self.pdf.drawText(word)
         finally:
@@ -1222,8 +1280,8 @@ class _Typesetter:
 
         size = 42.0
         tracking = -3.6
-        head_scale = 92.0
-        tail_scale = 104.0
+        head_scale = 89.9
+        tail_scale = 105.1
 
         def measured(text: str, font_size: float, horizontal_scale: float) -> float:
             unscaled = self.metrics.stringWidth(text, SANS_BOLD, font_size)
@@ -1233,8 +1291,8 @@ class _Typesetter:
         while size >= 25:
             head_width = measured(head, size, head_scale)
             tail_width = measured(tail, size, tail_scale) if tail else 0
-            tail_offset = size * (93 / 42)
-            box_width = tail_width + (18 if tail else 0)
+            tail_offset = size * (97 / 42)
+            box_width = tail_width + (13 if tail else 0)
             if max(head_width, tail_offset + box_width) <= width:
                 break
             size -= .5
@@ -1243,22 +1301,25 @@ class _Typesetter:
 
         self._scaled_word(
             head,
-            x,
-            y,
+            x + .36,
+            y - 1.65,
             size=size,
-            color=INK,
+            color=COVER_INK,
             horizontal_scale=head_scale,
             tracking=tracking,
+            stroke_width=.30,
         )
         if not tail:
             return
 
         tail_x = x + tail_offset
         tail_y = y - size * .91
-        box_x = -6.0
+        box_x = -7.0
         box_y = -7.0
-        box_height = size * 1.04
-        slant = 6.0
+        slug_y = box_y - 1
+        box_height = size * 1.04 - 1
+        slug_height = box_height + .65
+        slant = 0.0
         center_x = box_x + box_width / 2
         center_y = box_y + box_height / 2
         self.pdf.saveState()
@@ -1269,39 +1330,41 @@ class _Typesetter:
             self.pdf.skew(0, 10)
             self.pdf.translate(-center_x, -center_y)
             slug = self.pdf.beginPath()
-            slug.moveTo(box_x + slant, box_y)
-            slug.lineTo(box_x + box_width + slant, box_y)
-            slug.lineTo(box_x + box_width, box_y + box_height)
-            slug.lineTo(box_x, box_y + box_height)
+            slug.moveTo(box_x + slant, slug_y)
+            slug.lineTo(box_x + box_width + slant, slug_y)
+            slug.lineTo(box_x + box_width, slug_y + slug_height)
+            slug.lineTo(box_x, slug_y + slug_height)
             slug.close()
-            self.pdf.setFillColorRGB(*INK)
+            self.pdf.setFillColorRGB(*COVER_INK)
             self.pdf.drawPath(slug, fill=1, stroke=0)
 
             # A deliberately misregistered orange impression sits beneath the white type.
             self._scaled_word(
                 tail,
-                -3,
-                -1,
+                -13,
+                1.65,
                 size=size,
-                color=SIGNAL_ORANGE,
-                horizontal_scale=tail_scale,
+                color=COVER_ORANGE,
+                horizontal_scale=106.6,
                 tracking=tracking,
+                stroke_width=.15,
             )
             self._scaled_word(
                 tail,
                 0,
-                0,
+                1.65,
                 size=size,
-                color=WHITE,
+                color=COVER_PAPER,
                 horizontal_scale=tail_scale,
                 tracking=tracking,
+                stroke_width=.30,
             )
         finally:
             self.pdf.restoreState()
 
     def _cover_title(self, text: str, x: float, top: float, width: float) -> None:
         size = 29.0
-        horizontal_scale = 82.0
+        horizontal_scale = 79.5
         while size >= 20:
             value = _plain(text.upper())
             maximum_unscaled_width = width / (horizontal_scale / 100)
@@ -1329,41 +1392,71 @@ class _Typesetter:
 
         baseline = top - size
         leading = size * .78
-        colors = (INK, VIOLET, INK)
+        colors = (COVER_INK, COVER_VIOLET, COVER_INK)
         for index, line in enumerate(lines):
+            line_size = 28.0 if index % 2 else size
             self._scaled_word(
                 line,
-                x + (28 if index % 2 else 0),
-                baseline,
-                size=size,
+                x + (23 if index % 2 else -.65),
+                baseline - (1 if index % 2 else 0),
+                size=line_size,
                 color=colors[index],
-                horizontal_scale=horizontal_scale,
+                horizontal_scale=80.9 if index % 2 else 79.83,
                 tracking=-1.35,
+                stroke_width=.09 if index % 2 == 0 else 0,
             )
             baseline -= leading
 
     def _cover_edge_tab(self) -> None:
-        tab_x = self.width - COVER_EDGE_TAB_WIDTH
-        self.pdf.setFillColorRGB(*SIGNAL_ORANGE)
-        self.pdf.rect(tab_x, 0, COVER_EDGE_TAB_WIDTH, self.height, fill=1, stroke=0)
+        layout = CANTO_VIVO_COVER
+        tab_x = self.width - layout.tab_width
+        self.pdf.setFillColorRGB(*COVER_ORANGE)
+        # Paint beyond every trim edge. The page box clips the overdraw and the
+        # raster cannot expose a one-pixel paper hairline at the fore edge.
+        self.pdf.rect(
+            tab_x,
+            -layout.tab_overdraw,
+            layout.tab_width + layout.tab_overdraw * 2,
+            self.height + layout.tab_overdraw * 2,
+            fill=1,
+            stroke=0,
+        )
+
+        def vertical_label(
+            value: str,
+            *,
+            top: float,
+            font_size: float,
+            tracking: float,
+            horizontal_scale: float = 100,
+        ) -> None:
+            ascent = self.metrics.getAscent(SANS_BOLD, font_size)
+            descent = self.metrics.getDescent(SANS_BOLD, font_size)
+            baseline_x = tab_x + layout.tab_width / 2 - (ascent + descent) / 2
+            self.pdf.saveState()
+            self.pdf.translate(baseline_x, self.height - top)
+            self.pdf.rotate(-90)
+            self.pdf.setFillColorRGB(*COVER_INK)
+            label = self.pdf.beginText()
+            label.setTextOrigin(0, 0)
+            label.setFont(SANS_BOLD, font_size)
+            label.setHorizScale(horizontal_scale)
+            label.setCharSpace(tracking)
+            label.textLine(value)
+            self.pdf.drawText(label)
+            self.pdf.restoreState()
 
         issue = f"{_plain(_ui(self.edition, 'issue').upper())} {str(self.edition.issue_number).zfill(3)}"
-        self.pdf.saveState()
-        self.pdf.translate(self.width - 6.5, self.height - 27)
-        self.pdf.rotate(-90)
-        self.pdf.setFillColorRGB(*INK)
-        self.pdf.setFont(SANS_BOLD, 6.1)
-        self.pdf.drawString(0, 0, issue)
-        self.pdf.restoreState()
+        vertical_label(issue, top=layout.issue_top, font_size=7.4, tracking=1.6)
 
         identity = f"{_plain(self.edition.publication_name.upper())} / BUENOS AIRES"
-        self.pdf.saveState()
-        self.pdf.translate(self.width - 6.5, 22)
-        self.pdf.rotate(90)
-        self.pdf.setFillColorRGB(*INK)
-        self.pdf.setFont(SANS_BOLD, 5.4)
-        self.pdf.drawString(0, 0, identity)
-        self.pdf.restoreState()
+        vertical_label(
+            identity,
+            top=layout.identity_top,
+            font_size=4.8,
+            tracking=1.6,
+            horizontal_scale=103.0,
+        )
 
     def _rotated_label(self, text: str, x: float, y: float, height: float, *, color=VIOLET) -> None:
         self.pdf.saveState()
@@ -1601,7 +1694,9 @@ class _Typesetter:
     ) -> None:
         from reportlab.lib.utils import ImageReader
 
-        image = ImageReader(str(path))
+        image = ImageReader(
+            io.BytesIO(_cover_graded_art(str(path))) if record_cover_size else str(path)
+        )
         image_width, image_height = image.getSize()
         scale = max(width / image_width, height / image_height)
         draw_width, draw_height = image_width * scale, image_height * scale
@@ -1623,27 +1718,28 @@ class _Typesetter:
             self.cover_art_size_points = (width, height)
 
     def cover(self):
+        layout = CANTO_VIVO_COVER
         self.new_page(blank_header=True)
-        self.pdf.setFillColorRGB(*WHITE)
+        self.pdf.setFillColorRGB(*COVER_PAPER)
         self.pdf.rect(0, 0, self.width, self.height, fill=1, stroke=0)
         self._cover_edge_tab()
         self._publication_wordmark(
             self.edition.publication_name,
-            38,
-            self.height - 53,
+            layout.wordmark_x,
+            self.height - layout.wordmark_top,
             self.width - COVER_EDGE_TAB_WIDTH - 78,
         )
 
         self._cover_title(
             str(self.edition.cover.get("headline", self.edition.title)),
-            44,
-            self.height - 130,
-            302,
+            layout.title_x,
+            self.height - layout.title_top,
+            layout.title_width,
         )
 
         art_width, art_height = COVER_ART_SIZE_POINTS
-        art_x = (self.width - art_width) / 2
-        art_y = self.height - 221 - art_height
+        art_x = layout.art_x
+        art_y = self.height - layout.art_top - art_height
         if self.edition.cover_art:
             self._draw_image_fill(
                 self.edition.cover_art,
@@ -1659,28 +1755,38 @@ class _Typesetter:
             self.pdf.setStrokeColorRGB(*WHITE)
             self.pdf.setLineWidth(1)
             self.pdf.circle(art_x + art_width / 2, art_y + art_height / 2, 56, fill=0, stroke=1)
-        self.pdf.setStrokeColorRGB(*INK)
+        self.pdf.setStrokeColorRGB(*COVER_INK)
         self.pdf.setLineWidth(.7)
         self.pdf.rect(art_x, art_y, art_width, art_height, fill=0, stroke=1)
 
         deck = str(self.edition.cover.get("deck", "")).strip()
         if deck:
-            deck_lines = self.lines(deck, SANS, 7.8, art_width)
+            deck_x = art_x
+            deck_width = art_width
+            deck_size = 6.4
+            deck_scale = 121.5
+            # Preserve the approved two-line break independently of the small
+            # optical size/width correction used for the drawn text.
+            deck_lines = self.lines(deck, SANS, 7.8, deck_width)
             if len(deck_lines) > 5:
                 raise ValidationError("Cover deck is too long for the Monument cover")
-            self.pdf.setFillColorRGB(*INK)
-            self.pdf.setFont(SANS, 7.8)
-            baseline = self.height - 492 - 7.8
-            for line in deck_lines:
-                self.pdf.drawString(art_x, baseline, line)
-                baseline -= BASE * 3
+            self.pdf.setFillColorRGB(*COVER_INK)
+            baseline = self.height - 493 - deck_size
+            for index, line in enumerate(deck_lines):
+                line_text = self.pdf.beginText()
+                line_text.setTextOrigin(deck_x - (.65 if index == 0 else 0), baseline)
+                line_text.setFont(SANS, deck_size)
+                line_text.setHorizScale(deck_scale)
+                line_text.textLine(line)
+                self.pdf.drawText(line_text)
+                baseline -= 10.6
 
-        self.pdf.setFillColorRGB(*INK)
+        self.pdf.setFillColorRGB(*COVER_INK)
         self.pdf.setFont(SANS_BOLD, CAPTION_SIZE)
         self.pdf.saveState()
         try:
             footer = self.pdf.beginText()
-            footer.setTextOrigin(44, 18)
+            footer.setTextOrigin(layout.footer_x, layout.footer_y)
             footer.setFont(SANS_BOLD, CAPTION_SIZE)
             footer.setCharSpace(.8)
             footer.textLine(_cover_date(self.edition.publication_date))

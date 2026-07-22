@@ -1,20 +1,19 @@
 schema_version: 1
 edition_id: 002-unreleased
-reviewer: Independent prototype-parity critic
-reviewed_at: '2026-07-22T16:09:19+00:00'
+reviewer: exact_reference_analyst
+reviewed_at: '2026-07-22T16:58:43+00:00'
 result: approved
 findings: []
-notes: All 8 EN/ES reader and booklet contact sheets inspected after parity fix. FUTURA forward shear,
-  fixed overlap, deep slug, orange misregistration, edge tab, localized titles, date footer, blanks, and
-  imposition pass with no actionable defects.
+notes: Accepted against the user-supplied Canto vivo reference; pure-white override, same-direction centered
+  tab labels, full orange trim coverage, and all English/Spanish reader and booklet sheets approved.
 languages:
   en:
-    reader_sha256: 2ba5314eaaf98a3cc23a0beeb5ab900a6004c5a3eec574820b3db9b983e8e5c3
-    booklet_sha256: 9384b9ee0e70da69b5c5945ed3786c7350afb764d9019a820efa662467adcda7
+    reader_sha256: 92a079f9a97c8360986101f05555f20a39594cfc8b43ecb51df4c3b61d013c59
+    booklet_sha256: 8d4ffaf61dd7cd8f067768ac3598abd5a6fbaec2b78fad07360c4755d3b96f06
     page_count: 32
     machine_result: pass
   es:
-    reader_sha256: acf42fbfcaa2b44fe5e9af6b5839791f0b66470e1d0989a9ff4f941f4754d7e9
-    booklet_sha256: a2fc6a1794042d3a97e102a4fc19ec359b901575e763a2ba848ef82d7927507d
+    reader_sha256: b8d42aede795ffd1c79e3d48b9a617a00db6d45fcb6a38b142e9fb56bb9ed3e8
+    booklet_sha256: f6625c0766419ee870c496d7a831917b40689972cb497a376180c7eeff4971fe
     page_count: 36
     machine_result: pass
