@@ -1,19 +1,19 @@
 schema_version: 1
 edition_id: 002-unreleased
-reviewer: final_render_critic
-reviewed_at: '2026-07-22T17:50:33+00:00'
+reviewer: authors_final_render_critic
+reviewed_at: '2026-07-22T18:13:44+00:00'
 result: approved
 findings: []
-notes: Canonical cover QA approved EN/ES proof parity; final render critic approved all eight reader/booklet
-  contact sheets after exact proof-to-reader hash verification.
+notes: Front contributor QA approved exact proof parity and selectable text; final render critic approved
+  all EN/ES reader and booklet contact sheets.
 languages:
   en:
-    reader_sha256: 9e0ba42e8e1ddc63f1d67698007dd5d8db05d27bc5bd84d97428520441dbbd0d
-    booklet_sha256: 34e39ad30a81e89adf8e86f09150b3b50b8b1ea34f61724ea00683f360f005a4
+    reader_sha256: 732057f803b3123006595491a924cdd2d514e0641f36cfc0e293adb5b6c4998a
+    booklet_sha256: 6c54f489707e19a3a5e0da370d7ba930b6a4559bbab0049de375d3e009c6686c
     page_count: 32
     machine_result: pass
   es:
-    reader_sha256: e3c6c0bb9422aa6e023c944a3961fca2c94a727b8e7b84916529466505f8f70f
-    booklet_sha256: f263da2879042a39c9553ba6ca4e2f471b0f793d779f5af6d10e914e396184ea
+    reader_sha256: 8b23164a1c7c63304a785e4ec02e1cbd11dbe7c68187d7223393f3479cb7db9f
+    booklet_sha256: b5afa57bbcfe86d9b7d96a599e832e806589272c081f415337aefbaf04f2877d
     page_count: 36
     machine_result: pass

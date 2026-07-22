@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Berreta Futura — back-cover prototype</title>
+  <!-- PROTOTYPE: two back-cover directions, switchable with ?variant=A|B. -->
+  <style>
+    @font-face{font-family:Inter;src:url('../../src/magazine/assets/fonts/inter/Inter-Regular.ttf')}
+    @font-face{font-family:Inter;src:url('../../src/magazine/assets/fonts/inter/Inter-Bold.ttf');font-weight:800}
+    @font-face{font-family:Source;src:url('../../src/magazine/assets/fonts/source-serif-4/SourceSerif4SmText-Regular.ttf')}
+    :root{--paper:#fff;--ink:#0a0b0d;--violet:#4b21c0;--orange:#f05738;--cream:#f2ebdc}
+    *{box-sizing:border-box}
+    body{margin:0;background:#121212;color:#f7f4ed;font-family:Inter,Arial,sans-serif}
+    header{display:grid;grid-template-columns:1fr 1.2fr;gap:32px;padding:28px 36px 20px;border-bottom:1px solid #3b3b3b}
+    h1{font-size:18px;line-height:1;margin:0;text-transform:uppercase;letter-spacing:.1em}
+    header p{font-size:12px;line-height:1.45;color:#aaa;margin:0;max-width:640px}
+    main{min-height:calc(100vh - 95px);display:grid;grid-template-columns:minmax(260px,420px) minmax(460px,1fr);gap:48px;align-items:center;justify-content:center;padding:42px 7vw 110px}
+    .notes{align-self:start;padding-top:24px}
+    .eyebrow{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#f05738;font-weight:800}
+    .notes h2{font-size:42px;line-height:.95;letter-spacing:-.045em;margin:14px 0 20px;max-width:360px}
+    .notes .thesis{font-family:Source,Georgia,serif;font-size:21px;line-height:1.25;color:#ddd;max-width:390px}
+    .front-update{margin-top:46px;border-top:1px solid #555;padding-top:16px;max-width:390px}
+    .front-update strong{display:block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:12px;color:#aaa}
+    .front-update p{font-size:11px;line-height:1.55;letter-spacing:.08em;text-transform:uppercase;color:#fff;margin:0}
+    .stage{display:flex;align-items:center;justify-content:center}
+    .cover{display:none;position:relative;width:min(420px,52vw);aspect-ratio:148/210;overflow:hidden;box-shadow:0 26px 80px #0009}
+    .cover.active{display:block}
+    .micro{font-size:7px;line-height:1.35;letter-spacing:.17em;text-transform:uppercase;font-weight:800}
+
+    /* A — Signal fold: a loud field with one quiet paper interruption. */
+    .cover-a{background:var(--orange);color:var(--ink)}
+    .cover-a .vertical{position:absolute;z-index:3;right:0;top:0;bottom:0;width:42px;padding-top:32px;background:var(--orange);display:flex;align-items:center;writing-mode:vertical-rl;font-size:8px;letter-spacing:.2em;text-transform:uppercase;font-weight:800}
+    .cover-a .mass{position:absolute;left:6px;top:38px;font-size:116px;line-height:.73;font-weight:800;letter-spacing:-.105em;color:var(--violet)}
+    .cover-a .mass span{display:block;color:var(--ink)}
+    .cover-a .paper{position:absolute;left:38px;right:62px;top:242px;bottom:52px;background:#fff;padding:30px 30px 48px}
+    .cover-a blockquote{font-family:Source,Georgia,serif;font-size:24px;line-height:1.05;letter-spacing:-.02em;margin:0}
+    .cover-a .owner{position:absolute;left:30px;bottom:24px;color:var(--violet)}
+    .cover-a .slug{position:absolute;left:38px;bottom:26px;color:#fff}
+
+    /* B — Field index: six typographic cells make the content the composition. */
+    .cover-b{background:var(--paper);color:var(--ink);padding:32px 34px 28px 54px}
+    .cover-b:before{content:"";position:absolute;left:0;top:0;width:20px;height:100%;background:var(--violet)}
+    .cover-b:after{content:"";position:absolute;right:-52px;top:-52px;width:118px;height:118px;background:var(--orange);transform:rotate(45deg)}
+    .cover-b .index-kicker{color:var(--violet);margin-bottom:10px}
+    .cover-b h3{font-size:58px;line-height:.76;letter-spacing:-.075em;text-transform:uppercase;margin:0 0 24px;max-width:320px}
+    .cover-b ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:0 18px;border-top:3px solid var(--ink)}
+    .cover-b li{position:relative;min-height:78px;padding:36px 3px 9px;border-bottom:1px solid var(--ink);font-size:8.4px;line-height:1.18;text-transform:uppercase;letter-spacing:.035em;font-weight:800}
+    .cover-b li b{position:absolute;left:0;top:5px;color:var(--violet);font-size:27px;line-height:1;letter-spacing:-.08em}
+    .cover-b .statement{position:absolute;left:54px;right:72px;bottom:59px;border-top:3px solid var(--orange);padding-top:10px}
+    .cover-b blockquote{font-family:Source,Georgia,serif;font-size:14px;line-height:1.12;margin:0 0 8px;max-width:270px}
+    .cover-b .owner{color:var(--violet)}
+    .cover-b .folio{position:absolute;right:32px;bottom:25px;font-size:32px;font-weight:800;letter-spacing:-.08em}
+    .cover-b .mark{position:absolute;left:54px;bottom:28px;color:var(--ink)}
+
+    .switcher{position:fixed;z-index:20;bottom:18px;left:50%;transform:translateX(-50%);display:grid;grid-template-columns:46px minmax(230px,1fr) 46px;align-items:center;background:#f4f0e8;color:#111;border-radius:999px;box-shadow:0 10px 40px #0008;padding:7px}
+    .switcher button{border:0;border-radius:50%;height:38px;background:#111;color:#fff;font-size:20px;cursor:pointer}
+    #variant-label{text-align:center;font-size:12px;font-weight:800}
+    @media(max-width:850px){header{grid-template-columns:1fr}main{grid-template-columns:1fr;padding:28px 20px 110px}.notes{padding:0}.notes h2{font-size:34px}.cover{width:min(420px,90vw)}}
+    @media print{header,.notes,.switcher{display:none}body,main{background:white;padding:0;display:block}.cover.active{display:block;width:148mm;height:210mm;box-shadow:none}}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Back cover / Issue 002</h1>
+    <p>Two deliberately different directions using real issue content. The winning composition will be rebuilt in the canonical SVG → PDF → proof pipeline; this route is disposable.</p>
+  </header>
+  <main>
+    <section class="notes">
+      <div class="eyebrow">Back-cover study</div>
+      <h2 id="name"></h2>
+      <p class="thesis" id="thesis"></p>
+      <div class="front-update">
+        <strong>Front cover change — selectable contributor copy</strong>
+        <p>Addy Osmani / Mitchell Hashimoto / Cursor / Codez / Praveen Neppalli / Isaac Tai, Daniel Kim &amp; Mike Gao</p>
+      </div>
+    </section>
+    <section class="stage">
+      <article class="cover cover-a" data-variant="A">
+        <div class="mass">LOOP<span>CLOSED</span></div>
+        <div class="vertical">Berreta Futura / Issue 002 / Buenos Aires</div>
+        <div class="paper">
+          <blockquote>The loop is small. The factory is vast. Between them sits the difficult work: preserving intent, evidence, and human understanding.</blockquote>
+          <div class="owner micro">Issue statement / The editors</div>
+        </div>
+        <div class="slug micro">End / 2026 07 21</div>
+      </article>
+
+      <article class="cover cover-b" data-variant="B">
+        <div class="index-kicker micro">Issue 002 / Field index</div>
+        <h3>Six<br>systems</h3>
+        <ol>
+          <li><b>01</b><span>Software Factories, Light and Dark</span></li>
+          <li><b>02</b><span>The Building Block Economy</span></li>
+          <li><b>03</b><span>Agent Swarms and the New Model Economics</span></li>
+          <li><b>04</b><span>Loop Engineering Roadmap</span></li>
+          <li><b>05</b><span>Agentic Pods</span></li>
+          <li><b>06</b><span>How We Built Our Knowledge Base</span></li>
+        </ol>
+        <div class="statement">
+          <blockquote>The difficult work is preserving intent, evidence, and human understanding.</blockquote>
+          <div class="owner micro">Issue statement / The editors</div>
+        </div>
+        <div class="mark micro">Berreta Futura / Buenos Aires</div>
+        <div class="folio">02</div>
+      </article>
+    </section>
+  </main>
+  <nav class="switcher" aria-label="Prototype variants">
+    <button id="previous" aria-label="Previous variant">←</button>
+    <div id="variant-label"></div>
+    <button id="next" aria-label="Next variant">→</button>
+  </nav>
+  <script>
+    const variants = [
+      {key:'A', name:'Signal fold', thesis:'The loudest and most graphic option. Orange becomes the whole field; a white paper interruption gives the issue statement a precise place to land.'},
+      {key:'B', name:'Field index', thesis:'A quieter editorial alternative: the six actual article titles become a forceful typographic grid, with a clearly attributed closing statement.'}
+    ];
+    const requested = new URLSearchParams(location.search).get('variant') || 'A';
+    let index = Math.max(0, variants.findIndex(item => item.key === requested));
+    function show(next){
+      index=(next+variants.length)%variants.length;
+      const item=variants[index];
+      document.querySelectorAll('.cover').forEach(el=>el.classList.toggle('active',el.dataset.variant===item.key));
+      document.querySelector('#name').textContent=`${item.key} — ${item.name}`;
+      document.querySelector('#thesis').textContent=item.thesis;
+      document.querySelector('#variant-label').textContent=`${item.key} — ${item.name}`;
+      const url=new URL(location.href);url.searchParams.set('variant',item.key);history.replaceState({},'',url);
+    }
+    document.querySelector('#previous').onclick=()=>show(index-1);
+    document.querySelector('#next').onclick=()=>show(index+1);
+    addEventListener('keydown',event=>{
+      if(['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable)return;
+      if(event.key==='ArrowLeft')show(index-1);if(event.key==='ArrowRight')show(index+1);
+    });
+    show(index);
+  </script>
+</body>
+</html>

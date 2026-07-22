@@ -73,7 +73,7 @@ The cover artwork does not determine the interior colors. Violet is a publicatio
 
 ### Front cover
 
-The cover opens with the permanent Corte bruto wordmark and Canto vivo edge tab. The issue title is a tightly compressed sans construction with staggered violet lines; no generic display serif or circular badge remains. Beneath it sit the approximately 250 × 249 pt framed artwork, complete deck, and date-only footer. Edition 2's 1254 × 1254 px production artwork resolves above 361 ppi in this placement. The canonical SVG owns every outlined letter; the raster asset contains no masthead or cover lines.
+The cover opens with the permanent Corte bruto wordmark and Canto vivo edge tab. The issue title is a tightly compressed sans construction with staggered violet lines; no generic display serif or circular badge remains. Beneath it sit the approximately 250 × 249 pt framed artwork, a contributor register derived from the rendered articles' author records, and the date-only footer. Never substitute generic promotional deck copy for the actual contributors. Edition 2's 1254 × 1254 px production artwork resolves above 361 ppi in this placement. The canonical SVG owns every outlined visible letter; the generated PDF adds an invisible bundled-font text layer so the masthead, title, contributors, and date remain searchable and selectable. The raster asset contains no masthead or cover lines.
 
 Use `uv run --locked mag cover-proof <edition-id>` for the fast primary-language design loop and add `--all-languages` before final build. The command writes the canonical SVG, exact production cover PDF, PDF-derived proof PNG, comparison overlay/diff, and a hash manifest without typesetting the interior. A full build splices that exact PDF into page 1.
 

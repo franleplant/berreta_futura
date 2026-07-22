@@ -35,10 +35,11 @@ grade = "canto-vivo-two-ink-v1"
 
 [deck]
 top = 493.0
-size = 6.4
-wrap_size = 7.8
-leading = 10.6
-horizontal_scale = 121.5
+size = 5.5
+wrap_size = 6.7
+leading = 8.4
+horizontal_scale = 108.0
+tracking = 0.35
 
 [footer]
 x = 44.0

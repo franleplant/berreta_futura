@@ -29,7 +29,7 @@ PAGE_WIDTH = 419.527559
 PAGE_HEIGHT = 595.275591
 PROOF_DPI = 144
 PRINT_DPI = 300
-COVER_COMPILER_VERSION = "3"
+COVER_COMPILER_VERSION = "5"
 ART_SIZE_POINTS = (249.35, 248.65)
 
 INK = "#0a0b0d"
@@ -174,7 +174,7 @@ class CoverCompiler:
                 "wordmark": {"x": 38.0, "top": 53.0, "right_reserve": 78.0},
                 "headline": {"x": 44.0, "top": 122.0, "width": 302.0},
                 "art": {"x": 85.25, "top": 221.85, "width": 249.35, "height": 248.65},
-                "deck": {"top": 493.0, "size": 6.4, "wrap_size": 7.8, "leading": 10.6, "horizontal_scale": 121.5},
+                "deck": {"top": 493.0, "size": 5.5, "wrap_size": 6.7, "leading": 8.4, "horizontal_scale": 108.0, "tracking": .35},
                 "footer": {"x": 44.0, "bottom": 20.0, "size": 7.0, "tracking": 1.85},
             }
         self.colors = self.design["color"]
@@ -237,7 +237,7 @@ class CoverCompiler:
                     self.art_size,
                 )
         svg_path.write_text(svg, encoding="utf-8")
-        self._svg_to_pdf(svg.encode("utf-8"), pdf_path)
+        self._svg_to_pdf(svg.encode("utf-8"), pdf_path, edition)
         self._validate_pdf(pdf_path)
         self._rasterize_pdf(pdf_path, png_path)
 
@@ -321,7 +321,7 @@ class CoverCompiler:
             f'<rect data-slot="art-border" x="{art_x}" y="{art_y}" width="{art_w}" '
             f'height="{art_h}" fill="none" stroke="{self.colors["ink"]}" stroke-width=".7"/>'
         )
-        parts.extend(self._deck(str(edition.cover.get("deck", "")).strip(), art_x, art_w))
+        parts.extend(self._deck(_cover_contributors(edition), art_x, art_w))
         footer = self.design["footer"]
         parts.append(
             '<g data-slot="footer">'
@@ -494,6 +494,7 @@ class CoverCompiler:
                 size=float(deck["size"]),
                 fill=str(self.colors["ink"]),
                 horizontal_scale=float(deck["horizontal_scale"]),
+                tracking=float(deck.get("tracking", 0)),
             ).markup
             for index, line in enumerate(lines)
         ]
@@ -566,7 +567,7 @@ class CoverCompiler:
         image.save(output, format="PNG", optimize=False)
         return output.getvalue()
 
-    def _svg_to_pdf(self, svg: bytes, output: Path) -> None:
+    def _svg_to_pdf(self, svg: bytes, output: Path, edition: Edition) -> None:
         try:
             import resvg
             from reportlab.lib.colors import HexColor
@@ -637,10 +638,83 @@ class CoverCompiler:
                 preserveAspectRatio=False,
                 mask="auto",
             )
+            pdf.saveState()
+            try:
+                self._add_selectable_text_layer(pdf, edition)
+            finally:
+                pdf.restoreState()
             pdf.showPage()
             pdf.save()
         except Exception as exc:
             raise CoverPdfError(f"Could not convert cover SVG to PDF: {exc}") from exc
+
+    def _add_selectable_text_layer(self, pdf, edition: Edition) -> None:
+        """Add invisible bundled-font text so outlined cover copy stays selectable."""
+        try:
+            from reportlab.pdfbase import pdfmetrics
+            from reportlab.pdfbase.ttfonts import TTFont
+        except ImportError as exc:
+            raise DependencyError(
+                "Selectable cover text requires ReportLab; run `uv sync --locked`."
+            ) from exc
+        font_path = Path(__file__).with_name("assets") / "fonts" / "inter" / "Inter-Regular.ttf"
+        font_name = "CoverSelectableInter"
+        if font_name not in pdfmetrics.getRegisteredFontNames():
+            pdfmetrics.registerFont(TTFont(font_name, str(font_path)))
+
+        def invisible_line(
+            value: str,
+            x: float,
+            y: float,
+            size: float,
+            *,
+            horizontal_scale: float = 100.0,
+            tracking: float = 0.0,
+        ) -> None:
+            text = pdf.beginText()
+            text.setTextRenderMode(3)
+            text.setTextOrigin(x, y)
+            text.setFont(font_name, size)
+            text.setHorizScale(horizontal_scale)
+            text.setCharSpace(tracking)
+            text.textLine(value)
+            pdf.drawText(text)
+
+        # Reading order follows the cover's information hierarchy. Geometry is
+        # close to the outlined artwork so selection highlights the visible copy.
+        invisible_line(edition.publication_name.upper(), 38.0, PAGE_HEIGHT - 55.0, 22.0)
+        invisible_line(
+            str(edition.cover.get("headline", edition.title)).upper(),
+            44.0,
+            PAGE_HEIGHT - 151.0,
+            16.0,
+        )
+        deck = self.design["deck"]
+        contributors = _cover_contributors(edition)
+        lines = self._wrap(
+            contributors,
+            self.regular,
+            float(deck["wrap_size"]),
+            self.art_size[0],
+        )
+        baseline = float(deck["top"]) + float(deck["size"])
+        for index, line in enumerate(lines):
+            invisible_line(
+                line,
+                float(self.design["art"]["x"]),
+                PAGE_HEIGHT - (baseline + index * float(deck["leading"])),
+                float(deck["size"]),
+                horizontal_scale=float(deck["horizontal_scale"]),
+                tracking=float(deck.get("tracking", 0)),
+            )
+        footer = self.design["footer"]
+        invisible_line(
+            _cover_date(edition.publication_date),
+            float(footer["x"]),
+            float(footer["bottom"]),
+            float(footer["size"]),
+            tracking=float(footer["tracking"]),
+        )
 
     @staticmethod
     def _validate_pdf(path: Path) -> None:
@@ -749,6 +823,14 @@ def replace_first_page(reader_pdf: Path, cover_pdf: Path, output: Path | None = 
 def _cover_date(value: str) -> str:
     parts = str(value).split("-")
     return " ".join(parts) if len(parts) == 3 and all(parts) else str(value)
+
+
+def _cover_contributors(edition: Edition) -> str:
+    """Derive front-cover contributor copy from the rendered article records."""
+    authors = [article.author.strip() for article in edition.articles if article.author.strip()]
+    if authors:
+        return " / ".join(authors).upper()
+    return str(edition.cover.get("deck", "")).strip()
 
 
 def _sha256(path: Path) -> str:

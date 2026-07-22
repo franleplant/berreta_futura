@@ -69,6 +69,9 @@ def test_cover_proof_is_self_contained_outlined_svg_with_a5_pdf_and_full_bleed_t
     assert len(cover.pages) == 1
     assert float(cover.pages[0].mediabox.width) == pytest.approx(PAGE_WIDTH, abs=.02)
     assert float(cover.pages[0].mediabox.height) == pytest.approx(PAGE_HEIGHT, abs=.02)
+    selectable = cover.pages[0].extract_text() or ""
+    assert "AUTHOR" in selectable
+    assert "A DETERMINISTIC COVER PROOF" not in selectable
 
     expected_orange = tuple(int(ORANGE[index : index + 2], 16) for index in (1, 3, 5))
     with Image.open(artifact.png) as opened:
