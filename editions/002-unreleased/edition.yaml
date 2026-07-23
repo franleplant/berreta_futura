@@ -6,7 +6,7 @@ title: The Systems That Build
 subtitle: Software factories, agent swarms, reusable blocks, and the human judgment that keeps them coherent
 language: en
 distribution: private
-status: provisional
+status: released
 format:
   trim: A5
   home_sheet: A4
@@ -16,8 +16,8 @@ format:
 cover:
   headline: The Systems That Build
   deck: Six field reports on what happens when code, knowledge, and work become systems of loops
-  back_text: 'The loop is small. The factory is vast. Between them sits the difficult work: preserving intent, evidence,
-    and human understanding.'
+  back_text: 'The loop is small. The factory is vast. Between them sits the difficult work: preserving
+    intent, evidence, and human understanding.'
   art_path: art/cover-art-v3.png
 sources:
 - software-factories-light-and-dark-ef463732
@@ -45,10 +45,10 @@ articles:
     decision: include
     source_id: software-factories-light-and-dark-ef463732
     asset_id: raster-003-c84acad9
-    caption: A loop becomes a harness when it gains sandbox, tools, memory, and gates; many harnesses become a factory
-      when they converge on a human-owned review gate.
-    alt_text: Three panels show one agent loop becoming a harness and then a software factory with multiple harnesses,
-      review, merge, and production.
+    caption: A loop becomes a harness when it gains sandbox, tools, memory, and gates; many harnesses
+      become a factory when they converge on a human-owned review gate.
+    alt_text: Three panels show one agent loop becoming a harness and then a software factory with multiple
+      harnesses, review, merge, and production.
     anchor: Loop, harness, factory
     layout: landscape_plate
     criteria:
@@ -59,10 +59,10 @@ articles:
     decision: include
     source_id: software-factories-light-and-dark-ef463732
     asset_id: raster-004-99565ac9
-    caption: The factory closes the circuit from intent to queue, harness, automated checks, review and deployment,
-      then returns production signals to the work queue.
-    alt_text: A closed loop connects intent, queue, harness, automated checks, human review, deployment, monitoring,
-      and operational signals.
+    caption: The factory closes the circuit from intent to queue, harness, automated checks, review and
+      deployment, then returns production signals to the work queue.
+    alt_text: A closed loop connects intent, queue, harness, automated checks, human review, deployment,
+      monitoring, and operational signals.
     anchor: The narrow neck
     layout: landscape_plate_after
     criteria:
@@ -73,10 +73,10 @@ articles:
     decision: include
     source_id: software-factories-light-and-dark-ef463732
     asset_id: raster-002-d955f82f
-    caption: A lights-on factory keeps humans at the review boundary while agents build and automated checks, deployment,
-      monitoring, incidents, and user feedback complete the loop.
-    alt_text: A software factory flow from leadership and user signals through an agent, automated checks, human
-      review, production, and monitoring.
+    caption: A lights-on factory keeps humans at the review boundary while agents build and automated
+      checks, deployment, monitoring, incidents, and user feedback complete the loop.
+    alt_text: A software factory flow from leadership and user signals through an agent, automated checks,
+      human review, production, and monitoring.
     anchor: Turning the lights on where judgment lives
     layout: compact_band
     criteria:
@@ -112,8 +112,8 @@ articles:
     decision: include
     source_id: agent-swarms-and-the-new-model-economics-8b346f57
     asset_id: raster-002-c12295d4
-    caption: Planner agents recursively decompose the goal; worker agents spend their context on bounded leaves
-      of the task tree.
+    caption: Planner agents recursively decompose the goal; worker agents spend their context on bounded
+      leaves of the task tree.
     alt_text: A goal branches through planner agents into narrow tasks handled by worker agents.
     anchor: Trees and memory
     layout: evidence_band_prose
@@ -125,16 +125,17 @@ articles:
     decision: include
     source_id: agent-swarms-and-the-new-model-economics-8b346f57
     asset_id: raster-001-a065638c
-    caption: Comparable SQLite outcomes carried radically different costs depending on which models planned and
-      which performed the worker load.
-    alt_text: A cost comparison across four planner and worker model configurations under old and new swarm harnesses.
+    caption: Comparable SQLite outcomes carried radically different costs depending on which models planned
+      and which performed the worker load.
+    alt_text: A cost comparison across four planner and worker model configurations under old and new
+      swarm harnesses.
     anchor: Model economics
     layout: adaptive_band
     criteria:
     - important
     - useful
-    rationale: The light print export keeps model labels and values legible while showing model roles as an economic
-      choice.
+    rationale: The light print export keeps model labels and values legible while showing model roles
+      as an economic choice.
   minimum_reader_pages: 5
 - id: loop-engineering-roadmap
   title: 'Loop Engineering: A Roadmap Beyond the Prompt'
@@ -154,7 +155,8 @@ articles:
   display_emphasis: Pods
   opener_variant: edge_medallion
   author: Praveen Neppalli
-  author_note: Praveen Neppalli describes Uber's two-week method for redesigning business workflows with AI.
+  author_note: Praveen Neppalli describes Uber's two-week method for redesigning business workflows with
+    AI.
   content_mode: faithful_synthesis
   source_ids:
   - agentic-pods-taking-ai-beyond-engineering-at-ube-5b9382d4
@@ -177,50 +179,50 @@ articles:
     decision: include
     source_id: how-we-built-our-knowledge-base-e986baa0
     asset_id: svg-001-2157c84f
-    caption: Cerebras Knowledge moves source material through distillation, embeddings, retrieval, fusion and reranking,
-      then answer synthesis with citations.
-    alt_text: A vertical architecture diagram traces source material through distillation, embeddings, multiple
-      retrieval paths, fusion, reranking and a cited answer.
+    caption: Cerebras Knowledge moves source material through distillation, embeddings, retrieval, fusion
+      and reranking, then answer synthesis with citations.
+    alt_text: A vertical architecture diagram traces source material through distillation, embeddings,
+      multiple retrieval paths, fusion, reranking and a cited answer.
     anchor: __opener__
     layout: evidence_band
     criteria:
     - important
     - useful
     - beautiful
-    rationale: The overview makes the article's complete information path legible before the reader encounters its
-      individual components.
+    rationale: The overview makes the article's complete information path legible before the reader encounters
+      its individual components.
   - id: planner-tool-fanout
     decision: include
     source_id: how-we-built-our-knowledge-base-e986baa0
     asset_id: svg-007-a8dd9756
     caption: A planning pass fans one question out across specialized search tools before evidence normalization
       and answer synthesis.
-    alt_text: A horizontal diagram shows a user query entering a planner, branching to several search tools, then
-      converging into normalized evidence and synthesis.
+    alt_text: A horizontal diagram shows a user query entering a planner, branching to several search
+      tools, then converging into normalized evidence and synthesis.
     anchor: Planning and tool fan-out
     layout: evidence_band
     criteria:
     - important
     - useful
     - cool
-    rationale: The diagram converts an abstract orchestration sequence into a memorable visual flow at the exact
-      point where the article introduces planning.
+    rationale: The diagram converts an abstract orchestration sequence into a memorable visual flow at
+      the exact point where the article introduces planning.
   - id: mcp-web-ui-comparison
     decision: include
     source_id: how-we-built-our-knowledge-base-e986baa0
     asset_id: svg-008-b42cddcd
     caption: MCP exposes raw retrieval primitives to external clients; the web UI owns the complete planner–executor–synthesis
       loop.
-    alt_text: A side-by-side architecture comparison contrasts direct MCP retrieval tools with the web interface's
-      integrated planning, execution and synthesis pipeline.
+    alt_text: A side-by-side architecture comparison contrasts direct MCP retrieval tools with the web
+      interface's integrated planning, execution and synthesis pipeline.
     anchor: Web UI
     layout: evidence_band
     criteria:
     - important
     - useful
     - beautiful
-    rationale: The comparison clarifies the most consequential interface distinction more efficiently than another
-      paragraph of prose.
+    rationale: The comparison clarifies the most consequential interface distinction more efficiently
+      than another paragraph of prose.
 sections:
 - kind: colophon
   title: Colophon

@@ -2,7 +2,73 @@
 
 _Generated from structured source records. Do not edit by hand._
 
-_Open edition: `002-unreleased`; 6 queued sources._
+_Open edition: `003-unreleased`; 3 queued sources._
+
+## Why we're buzzing — Jack Dorsey
+
+- ID: `why-we-re-buzzing-1c82f338`
+- Source: https://x.com/jack/status/2080056638820450400
+- Kind / status: social_post / captured
+- Captured: 2026-07-23T12:32:52Z
+- Content hash: `not captured`
+- Raw captures: 1 committed bundle(s)
+- Release: queued for `003-unreleased`
+- Published: 2026-07-22
+- Tags: agents, buzz, collaboration, identity
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+- Provenance:
+  - links_to_primary -> buzz-your-people-your-agents-your-project-all-in-833eef43
+  - links_to_primary -> buzz-a-workspace-where-humans-and-agents-build-t-59122470
+
+Jack Dorsey introduces Buzz, an open-source workspace that places people, agents, conversations, and code behind one cryptographic identity system.
+
+**Editorial note:** Submitted lead for edition 003; the post links to Buzz’s official site and Block’s canonical repository.
+
+## Buzz — Your people, your agents, your project — all in one place — Block, Inc.
+
+- ID: `buzz-your-people-your-agents-your-project-all-in-833eef43`
+- Source: https://buzz.xyz/
+- Kind / status: web / captured
+- Captured: 2026-07-23T12:32:52Z
+- Content hash: `not captured`
+- Raw captures: 1 committed bundle(s)
+- Release: queued for `003-unreleased`
+- Published: 2026-07-22
+- Tags: agents, buzz, collaboration
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+- Provenance:
+  - discovered_via -> why-we-re-buzzing-1c82f338
+  - canonical_primary -> buzz-a-workspace-where-humans-and-agents-build-t-59122470
+
+Official product site for Buzz, a workspace where people and agents collaborate in shared project context.
+
+**Editorial note:** Primary material linked directly from Jack Dorsey’s submitted X post.
+
+## Buzz: A workspace where humans and agents build together — Block, Inc.
+
+- ID: `buzz-a-workspace-where-humans-and-agents-build-t-59122470`
+- Source: https://github.com/block/buzz
+- Kind / status: web / captured
+- Captured: 2026-07-23T12:32:52Z
+- Content hash: `not captured`
+- Raw captures: 1 committed bundle(s)
+- Release: queued for `003-unreleased`
+- Published: 2026-07-22
+- Tags: agents, buzz, nostr, open-source
+- Rights status: licensed
+- Intended use: private_reference
+- Public reprint: allowed
+- Provenance:
+  - discovered_via -> why-we-re-buzzing-1c82f338
+  - official_site -> buzz-your-people-your-agents-your-project-all-in-833eef43
+
+Canonical Apache-2.0 repository documenting Buzz’s vision, architecture, identity model, agent affordances, and current implementation.
+
+**Editorial note:** Canonical primary technical source linked from the submitted X post and official Buzz site; capture pins main commit acfbb1bb6af54cb29cb152496ff43b8285dcb8cf.
 
 ## Software Factories, Light and Dark — Addy Osmani
 
@@ -11,8 +77,8 @@ _Open edition: `002-unreleased`; 6 queued sources._
 - Kind / status: web / captured
 - Captured: 2026-07-21T14:51:59Z
 - Content hash: `not captured`
-- Raw captures: 1 committed bundle(s)
-- Release: queued for `002-unreleased`
+- Raw captures: 2 committed bundle(s)
+- Release: released for `002-unreleased`
 - Published: 2026-07-21
 - Tags: agent-loops, comprehension-debt, software-engineering, software-factories
 - Primary material:
@@ -35,7 +101,7 @@ A framework for software factories built from harnessed agent loops, contrasting
 - Captured: 2026-07-21T14:47:53Z
 - Content hash: `not captured`
 - Raw captures: 1 committed bundle(s)
-- Release: queued for `002-unreleased`
+- Release: released for `002-unreleased`
 - Published: 2026-06-09
 - Tags: ai-agents, automation, loop-engineering, software-engineering
 - Primary material:
@@ -59,8 +125,8 @@ A practical roadmap for deciding when coding-agent loops are worthwhile and desi
 - Kind / status: web / captured
 - Captured: 2026-07-21T14:47:44Z
 - Content hash: `not captured`
-- Raw captures: 1 committed bundle(s)
-- Release: queued for `002-unreleased`
+- Raw captures: 3 committed bundle(s)
+- Release: released for `002-unreleased`
 - Published: 2026-07-20
 - Tags: agent-swarms, model-economics, multi-agent-systems, software-engineering
 - Rights status: unknown
@@ -79,7 +145,7 @@ Cursor compares old and new agent-swarm harnesses on rebuilding SQLite, detailin
 - Captured: 2026-07-21T14:47:35Z
 - Content hash: `not captured`
 - Raw captures: 1 committed bundle(s)
-- Release: queued for `002-unreleased`
+- Release: released for `002-unreleased`
 - Published: 2026-07-07
 - Tags: agentic-ai, organizational-design, uber, workflow-automation
 - Rights status: unknown
@@ -98,7 +164,7 @@ Uber pairs AI-proficient engineers with business-domain experts in two-week Agen
 - Captured: 2026-07-21T14:47:11Z
 - Content hash: `not captured`
 - Raw captures: 1 committed bundle(s)
-- Release: queued for `002-unreleased`
+- Release: released for `002-unreleased`
 - Published: 2026-04-07
 - Tags: ai-agents, open-source, software-economics
 - Primary material:
@@ -123,7 +189,7 @@ How agentic software factories increase the value of high-quality building block
 - Captured: 2026-07-17T19:45:07Z
 - Content hash: `ee07d26dc95a01cde7cf1145adbe49f1cf4e9fef10aeed8815efd47c0edb7967`
 - Raw captures: 1 committed bundle(s)
-- Release: queued for `002-unreleased`
+- Release: released for `002-unreleased`
 - Published: 2026-07-15
 - Tags: enterprise-search, hybrid-retrieval, knowledge-management, llm-agents
 - Rights status: unknown

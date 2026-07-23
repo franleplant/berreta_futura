@@ -1,15 +1,12 @@
 schema_version: 1
 open_edition:
-  id: 002-unreleased
-  issue_number: 2
+  id: 003-unreleased
+  issue_number: 3
   status: collecting
   source_ids:
-  - agent-swarms-and-the-new-model-economics-8b346f57
-  - agentic-pods-taking-ai-beyond-engineering-at-ube-5b9382d4
-  - how-we-built-our-knowledge-base-e986baa0
-  - loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f
-  - software-factories-light-and-dark-ef463732
-  - the-building-block-economy-af6644bd
+  - buzz-a-workspace-where-humans-and-agents-build-t-59122470
+  - buzz-your-people-your-agents-your-project-all-in-833eef43
+  - why-we-re-buzzing-1c82f338
 released_editions:
 - id: 001-the-work-left-to-us
   issue_number: 1
@@ -21,3 +18,14 @@ released_editions:
   - src-joshi-dsls-reliable-use-llms
   - src-nadella-reverse-information-paradox-2026
   - src-narayanan-icml-2026-keynote
+- id: 002-unreleased
+  issue_number: 2
+  status: released
+  publication_date: '2026-07-21'
+  source_ids:
+  - agent-swarms-and-the-new-model-economics-8b346f57
+  - agentic-pods-taking-ai-beyond-engineering-at-ube-5b9382d4
+  - how-we-built-our-knowledge-base-e986baa0
+  - loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f
+  - software-factories-light-and-dark-ef463732
+  - the-building-block-economy-af6644bd

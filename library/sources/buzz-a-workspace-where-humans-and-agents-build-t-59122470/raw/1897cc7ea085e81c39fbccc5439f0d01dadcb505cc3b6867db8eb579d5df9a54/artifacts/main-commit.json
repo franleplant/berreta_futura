@@ -1,0 +1,149 @@
+{
+  "sha": "acfbb1bb6af54cb29cb152496ff43b8285dcb8cf",
+  "node_id": "C_kwDORgXb2toAKGFjZmJiMWJiNmFmNTRjYjI5Y2IxNTI0OTZmZjQzYjgyODVkY2I4Y2Y",
+  "commit": {
+    "author": {
+      "name": "Wes",
+      "email": "wesbillman@users.noreply.github.com",
+      "date": "2026-07-22T23:16:56Z"
+    },
+    "committer": {
+      "name": "GitHub",
+      "email": "noreply@github.com",
+      "date": "2026-07-22T23:16:56Z"
+    },
+    "message": "chore(release): release Buzz Desktop version 0.4.23 (#2429)",
+    "tree": {
+      "sha": "59df0580c8434366efde34c174b6f93253a2c064",
+      "url": "https://api.github.com/repos/block/buzz/git/trees/59df0580c8434366efde34c174b6f93253a2c064"
+    },
+    "url": "https://api.github.com/repos/block/buzz/git/commits/acfbb1bb6af54cb29cb152496ff43b8285dcb8cf",
+    "comment_count": 0,
+    "verification": {
+      "verified": true,
+      "reason": "valid",
+      "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJqYU9oCRC1aQ7uu5UhlAAAUG8QAH88wKCahk+eirXb9Uab3Yx7\nJtKiWde4Eqp2Kx7HRJ+oF6qHpFYoq9TzMoDv0OxHZDXv4LXUzwHVtIoUUlTMdgeM\niDChF1OedgJUn8rzgCEXek8oDlMsJF0evXSgQ9e644WOoC3wYbpZ34R7PAYjBUFL\nt3b9KGBYxKFr80a772hmoSxeyYQjS8SvPlTHGCwjm8je2nlPAywRY7s3srvBuBVS\nfeJ5BjLdzv3GQYoL165cI4yCOaAKIGV7JrcSxy4XN/bS3Mw7XWdDpYs0VAMdxfw6\nUELr5rR4q6lzdhDqN0PqO1PA8ePxYXUxJwHiFoeavgk+6N4fixNizue2/qE5jpjE\n1sbYAy1JrgL5MI9jOGd4cGXAIkKi1F4SBcD/GsQw7xwpYBWDfNgPA2e+DOhysW4t\nINRnya/0I0EKevJYNRnfGJT+z+24AIisOIIhA61xb48jLq3h45KI39DapRgmcrkP\nlUa7tDvDMdSh9zGcP5ey5EjdkAMdVzcpFyAQDYGirqg0rKJGQpwZbZKcYutnaorM\nNdrFVAnn0olJ0XHaueAhfYYFOZBc0l3q+lKHT9atamSkR394PaEB4elF3ixJXvfa\nl+gi/evVM8B69+B4rJl0EB9SLhx1u6tO6wicMfx+WSugIpCNhrgCiw6sFDRV06fj\nTp2ptiWlIgRWenUZSZQ/\n=s+6H\n-----END PGP SIGNATURE-----\n",
+      "payload": "tree 59df0580c8434366efde34c174b6f93253a2c064\nparent 87276320af06a1ff5d7ed04f550cbe6cc9a417f3\nauthor Wes <wesbillman@users.noreply.github.com> 1784762216 -0600\ncommitter GitHub <noreply@github.com> 1784762216 -0700\n\nchore(release): release Buzz Desktop version 0.4.23 (#2429)",
+      "verified_at": "2026-07-22T23:16:56Z"
+    }
+  },
+  "url": "https://api.github.com/repos/block/buzz/commits/acfbb1bb6af54cb29cb152496ff43b8285dcb8cf",
+  "html_url": "https://github.com/block/buzz/commit/acfbb1bb6af54cb29cb152496ff43b8285dcb8cf",
+  "comments_url": "https://api.github.com/repos/block/buzz/commits/acfbb1bb6af54cb29cb152496ff43b8285dcb8cf/comments",
+  "author": {
+    "login": "wesbillman",
+    "id": 51647,
+    "node_id": "MDQ6VXNlcjUxNjQ3",
+    "avatar_url": "https://avatars.githubusercontent.com/u/51647?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/wesbillman",
+    "html_url": "https://github.com/wesbillman",
+    "followers_url": "https://api.github.com/users/wesbillman/followers",
+    "following_url": "https://api.github.com/users/wesbillman/following{/other_user}",
+    "gists_url": "https://api.github.com/users/wesbillman/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/wesbillman/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/wesbillman/subscriptions",
+    "organizations_url": "https://api.github.com/users/wesbillman/orgs",
+    "repos_url": "https://api.github.com/users/wesbillman/repos",
+    "events_url": "https://api.github.com/users/wesbillman/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/wesbillman/received_events",
+    "type": "User",
+    "user_view_type": "public",
+    "site_admin": false
+  },
+  "committer": {
+    "login": "web-flow",
+    "id": 19864447,
+    "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+    "avatar_url": "https://avatars.githubusercontent.com/u/19864447?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/web-flow",
+    "html_url": "https://github.com/web-flow",
+    "followers_url": "https://api.github.com/users/web-flow/followers",
+    "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+    "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+    "organizations_url": "https://api.github.com/users/web-flow/orgs",
+    "repos_url": "https://api.github.com/users/web-flow/repos",
+    "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/web-flow/received_events",
+    "type": "User",
+    "user_view_type": "public",
+    "site_admin": false
+  },
+  "parents": [
+    {
+      "sha": "87276320af06a1ff5d7ed04f550cbe6cc9a417f3",
+      "url": "https://api.github.com/repos/block/buzz/commits/87276320af06a1ff5d7ed04f550cbe6cc9a417f3",
+      "html_url": "https://github.com/block/buzz/commit/87276320af06a1ff5d7ed04f550cbe6cc9a417f3"
+    }
+  ],
+  "stats": {
+    "total": 19,
+    "additions": 15,
+    "deletions": 4
+  },
+  "files": [
+    {
+      "sha": "c9e3597df346176b0bf7fe4e410b9961ecc5ba95",
+      "filename": "CHANGELOG.md",
+      "status": "modified",
+      "additions": 11,
+      "deletions": 0,
+      "changes": 11,
+      "blob_url": "https://github.com/block/buzz/blob/acfbb1bb6af54cb29cb152496ff43b8285dcb8cf/CHANGELOG.md",
+      "raw_url": "https://github.com/block/buzz/raw/acfbb1bb6af54cb29cb152496ff43b8285dcb8cf/CHANGELOG.md",
+      "contents_url": "https://api.github.com/repos/block/buzz/contents/CHANGELOG.md?ref=acfbb1bb6af54cb29cb152496ff43b8285dcb8cf",
+      "patch": "@@ -1,5 +1,16 @@\n # Changelog\n \n+## v0.4.23\n+\n+- fix(desktop): strip GIF metadata extensions before upload ([#2425](https://github.com/block/buzz/pull/2425)) ([`47d7eb698`](https://github.com/block/buzz/commit/47d7eb6982900920bcdbe7a2f5013baca37daeeb))\n+- feat(desktop): gate sign-out behind key backup + typed confirmation ([#2424](https://github.com/block/buzz/pull/2424)) ([`fd967c6ea`](https://github.com/block/buzz/commit/fd967c6ea46d7454fe1adf79aacd2fc6385c4585))\n+- feat(desktop+acp): spawn a harness per (agent, community) pair at GUI startup — warm sockets, lazy LLM pool ([#2122](https://github.com/block/buzz/pull/2122)) ([`61cc738ee`](https://github.com/block/buzz/commit/61cc738ee8991e92563136de4b77e54cb9756420))\n+- Show team count separately in channel template rows ([#2404](https://github.com/block/buzz/pull/2404)) ([`6d04d279a`](https://github.com/block/buzz/commit/6d04d279ae60eaa774276b9e28e94df855fd93b3))\n+- fix(onboarding): skip community profile setup for existing relay members ([#2300](https://github.com/block/buzz/pull/2300)) ([`25f631870`](https://github.com/block/buzz/commit/25f631870eb66ea696dfe325c6c5da2ca1cff4b1))\n+- Unify sidebar chrome across themes ([#2380](https://github.com/block/buzz/pull/2380)) ([`f8fd055b9`](https://github.com/block/buzz/commit/f8fd055b9fc259046ba5e3091982f79f3205af80))\n+- fix(desktop): refresh cached channel member names ([#2258](https://github.com/block/buzz/pull/2258)) ([`5a3b8176a`](https://github.com/block/buzz/commit/5a3b8176aac5f4bced452ac8920477c5e059b828))\n+\n+\n ## v0.4.22\n \n - Keep avatar preview visible during upload ([#2237](https://github.com/block/buzz/pull/2237)) ([`f609fcee0`](https://github.com/block/buzz/commit/f609fcee02cd3de9cde2aa4f94fc054d1865a58a))"
+    },
+    {
+      "sha": "6048b2a465c2ffcaaf5bef40bf7f78105a25745d",
+      "filename": "desktop/package.json",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/block/buzz/blob/acfbb1bb6af54cb29cb152496ff43b8285dcb8cf/desktop%2Fpackage.json",
+      "raw_url": "https://github.com/block/buzz/raw/acfbb1bb6af54cb29cb152496ff43b8285dcb8cf/desktop%2Fpackage.json",
+      "contents_url": "https://api.github.com/repos/block/buzz/contents/desktop%2Fpackage.json?ref=acfbb1bb6af54cb29cb152496ff43b8285dcb8cf",
+      "patch": "@@ -1,7 +1,7 @@\n {\n   \"name\": \"buzz\",\n   \"private\": true,\n-  \"version\": \"0.4.22\",\n+  \"version\": \"0.4.23\",\n   \"type\": \"module\",\n   \"scripts\": {\n     \"dev\": \"vite\","
+    },
+    {
+      "sha": "6af56ab4f650f7c06f594f1e8936ae72c0643b16",
+      "filename": "desktop/src-tauri/Cargo.lock",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/block/buzz/blob/acfbb1bb6af54cb29cb152496ff43b8285dcb8cf/desktop%2Fsrc-tauri%2FCargo.lock",
+      "raw_url": "https://github.com/block/buzz/raw/acfbb1bb6af54cb29cb152496ff43b8285dcb8cf/desktop%2Fsrc-tauri%2FCargo.lock",
+      "contents_url": "https://api.github.com/repos/block/buzz/contents/desktop%2Fsrc-tauri%2FCargo.lock?ref=acfbb1bb6af54cb29cb152496ff43b8285dcb8cf",
+      "patch": "@@ -972,7 +972,7 @@ dependencies = [\n \n [[package]]\n name = \"buzz-desktop\"\n-version = \"0.4.22\"\n+version = \"0.4.23\"\n dependencies = [\n  \"anyhow\",\n  \"arboard\","
+    },
+    {
+      "sha": "dcb432b73624fcc4f59135b02084ba2eddde26f4",
+      "filename": "desktop/src-tauri/Cargo.toml",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/block/buzz/blob/acfbb1bb6af54cb29cb152496ff43b8285dcb8cf/desktop%2Fsrc-tauri%2FCargo.toml",
+      "raw_url": "https://github.com/block/buzz/raw/acfbb1bb6af54cb29cb152496ff43b8285dcb8cf/desktop%2Fsrc-tauri%2FCargo.toml",
+      "contents_url": "https://api.github.com/repos/block/buzz/contents/desktop%2Fsrc-tauri%2FCargo.toml?ref=acfbb1bb6af54cb29cb152496ff43b8285dcb8cf",
+      "patch": "@@ -2,7 +2,7 @@\n \n [package]\n name = \"buzz-desktop\"\n-version = \"0.4.22\"\n+version = \"0.4.23\"\n description = \"Buzz desktop app\"\n authors = [\"you\"]\n edition = \"2021\""
+    },
+    {
+      "sha": "b75e0f520326b193af5c655bfd420dca02a91213",
+      "filename": "desktop/src-tauri/tauri.conf.json",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/block/buzz/blob/acfbb1bb6af54cb29cb152496ff43b8285dcb8cf/desktop%2Fsrc-tauri%2Ftauri.conf.json",
+      "raw_url": "https://github.com/block/buzz/raw/acfbb1bb6af54cb29cb152496ff43b8285dcb8cf/desktop%2Fsrc-tauri%2Ftauri.conf.json",
+      "contents_url": "https://api.github.com/repos/block/buzz/contents/desktop%2Fsrc-tauri%2Ftauri.conf.json?ref=acfbb1bb6af54cb29cb152496ff43b8285dcb8cf",
+      "patch": "@@ -1,7 +1,7 @@\n {\n   \"$schema\": \"https://schema.tauri.app/config/2\",\n   \"productName\": \"Buzz\",\n-  \"version\": \"0.4.22\",\n+  \"version\": \"0.4.23\",\n   \"identifier\": \"xyz.block.buzz.app\",\n   \"build\": {\n     \"beforeDevCommand\": {"
+    }
+  ]
+}
