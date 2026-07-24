@@ -1,8 +1,9 @@
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw
 from pypdf import PdfWriter
 
+from magazine.image_contrast import MIN_PRINT_CONTRAST_RATIO
 from magazine.preflight import (
     A4_LANDSCAPE_POINTS,
     A5_POINTS,
@@ -70,3 +71,48 @@ def test_preflight_audits_curated_figure_resolution_geometry_and_rights(tmp_path
     ]
     assert result["invalid_figure_boxes"] == []
     assert result["figure_collisions"] == []
+    assert result["contrast_adjusted_figures"] == []
+    assert result["unresolved_low_contrast_figures"] == []
+
+
+def test_preflight_records_automatic_print_contrast_treatment(tmp_path: Path):
+    reader = tmp_path / "reader.pdf"
+    booklet = tmp_path / "booklet.pdf"
+    figure = tmp_path / "faint-diagram.png"
+    _blank_pdf(reader, A5_POINTS)
+    _blank_pdf(booklet, A4_LANDSCAPE_POINTS)
+    image = Image.new("RGB", (1200, 800), "white")
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((100, 100, 1100, 700), outline="#efc9bc", width=5)
+    draw.line((180, 400, 1020, 400), fill="#e6b09d", width=6)
+    image.save(figure)
+
+    result = inspect_package(
+        reader,
+        booklet,
+        cover_art=None,
+        source_rights=[],
+        figure_placements=[
+            {
+                "figure_id": "faint-evidence",
+                "article_id": "article",
+                "page": 1,
+                "path": figure,
+                "pixel_dimensions": (1200, 800),
+                "box_points": (40, 250, 180, 120),
+                "caption": "Evidence.",
+                "credit": "Source credit.",
+                "rights_status": "author_owned",
+            }
+        ],
+    )
+
+    contrast = result["figures"][0]["print_contrast"]
+    assert contrast["treatment"] == "contrast_strengthened"
+    assert contrast["minimum_mark_contrast_ratio"] < MIN_PRINT_CONTRAST_RATIO
+    assert (
+        contrast["post_treatment_minimum_mark_contrast_ratio"]
+        >= MIN_PRINT_CONTRAST_RATIO
+    )
+    assert result["contrast_adjusted_figures"][0]["figure_id"] == "faint-evidence"
+    assert result["unresolved_low_contrast_figures"] == []

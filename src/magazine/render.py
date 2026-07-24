@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Iterable
 
 from .errors import DependencyError, ValidationError
+from .image_contrast import prepare_print_image
 from .manifest import Edition
 
 
@@ -757,8 +758,9 @@ class _Typesetter:
 
         draw_x = x + (box_width - image_width) / 2
         draw_y = top - image_height
+        prepared = prepare_print_image(path)
         self.pdf.drawImage(
-            ImageReader(str(path)),
+            ImageReader(prepared.image),
             draw_x,
             draw_y,
             image_width,
@@ -1041,6 +1043,7 @@ class _Typesetter:
         image_height = pixel_height * scale
         image_x = (local_width - image_width) / 2
         image_y = image_top - image_height
+        prepared = prepare_print_image(path)
 
         self.pdf.saveState()
         try:
@@ -1061,7 +1064,7 @@ class _Typesetter:
                 tracking=.25,
             )
             self.pdf.drawImage(
-                ImageReader(str(path)),
+                ImageReader(prepared.image),
                 image_x,
                 image_y,
                 image_width,

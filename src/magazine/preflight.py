@@ -5,6 +5,8 @@ from typing import Any
 
 from pypdf import PdfReader
 
+from .image_contrast import prepare_print_image
+
 
 A5_POINTS = (419.5276, 595.2756)
 A4_LANDSCAPE_POINTS = (841.8898, 595.2756)
@@ -78,6 +80,8 @@ def inspect_package(
     figure_rows: list[dict[str, Any]] = []
     figure_rights_blockers: list[dict[str, Any]] = []
     low_resolution_figures: list[dict[str, Any]] = []
+    contrast_adjusted_figures: list[dict[str, Any]] = []
+    unresolved_low_contrast_figures: list[dict[str, Any]] = []
     for placement in figure_placements or ():
         def value(name: str, default=None):
             if isinstance(placement, dict):
@@ -91,6 +95,16 @@ def inspect_package(
         ppi = value("effective_ppi")
         if ppi is None and dimensions and len(placement_size) == 2:
             ppi = _effective_image_ppi(tuple(dimensions), tuple(placement_size))
+        contrast = None
+        if dimensions:
+            prepared = prepare_print_image(path)
+            contrast = {
+                **prepared.before.to_dict(),
+                "treatment": "contrast_strengthened" if prepared.adjusted else "none",
+                "post_treatment_minimum_mark_contrast_ratio": (
+                    prepared.after.minimum_mark_contrast_ratio
+                ),
+            }
         row = {
             "figure_id": str(value("figure_id", "")),
             "article_id": str(value("article_id", "")),
@@ -102,6 +116,7 @@ def inspect_package(
             "caption": str(value("caption", "")),
             "credit": str(value("credit", "")),
             "rights_status": str(value("rights_status", "unknown")),
+            "print_contrast": contrast,
         }
         figure_rows.append(row)
         if row["effective_ppi"] is None or row["effective_ppi"] < 300:
@@ -112,6 +127,25 @@ def inspect_package(
             figure_rights_blockers.append(
                 {"figure_id": row["figure_id"], "status": row["rights_status"]}
             )
+        if contrast and contrast["treatment"] == "contrast_strengthened":
+            contrast_adjusted_figures.append(
+                {
+                    "figure_id": row["figure_id"],
+                    "minimum_mark_contrast_ratio": contrast["minimum_mark_contrast_ratio"],
+                    "post_treatment_minimum_mark_contrast_ratio": (
+                        contrast["post_treatment_minimum_mark_contrast_ratio"]
+                    ),
+                }
+            )
+            if prepared.after.needs_treatment:
+                unresolved_low_contrast_figures.append(
+                    {
+                        "figure_id": row["figure_id"],
+                        "post_treatment_minimum_mark_contrast_ratio": (
+                            contrast["post_treatment_minimum_mark_contrast_ratio"]
+                        ),
+                    }
+                )
     invalid_figure_boxes: list[dict[str, Any]] = []
     figure_collisions: list[dict[str, Any]] = []
     by_page: dict[int, list[dict[str, Any]]] = {}
@@ -151,6 +185,8 @@ def inspect_package(
         studio_blockers.append(messages["figure_resolution"])
     if invalid_figure_boxes or figure_collisions:
         studio_blockers.append(messages["figure_geometry"])
+    if unresolved_low_contrast_figures:
+        studio_blockers.append(messages["figure_contrast"])
     if rights_blockers:
         studio_blockers.append(messages["rights"])
     if figure_rights_blockers:
@@ -175,6 +211,8 @@ def inspect_package(
         "cover_art": cover_info,
         "figures": figure_rows,
         "low_resolution_figures": low_resolution_figures,
+        "contrast_adjusted_figures": contrast_adjusted_figures,
+        "unresolved_low_contrast_figures": unresolved_low_contrast_figures,
         "figure_rights_blockers": figure_rights_blockers,
         "invalid_figure_boxes": invalid_figure_boxes,
         "figure_collisions": figure_collisions,
@@ -190,6 +228,7 @@ _MESSAGES = {
         "cover_resolution": "Cover artwork is below the 300 ppi studio target at its rendered placement.",
         "figure_resolution": "One or more curated figures are below 300 ppi at their rendered placement.",
         "figure_geometry": "One or more curated figure placements are invalid or collide.",
+        "figure_contrast": "One or more curated figures remain too faint after print-contrast treatment.",
         "rights": "One or more declared sources are not cleared for public reprint.",
         "figure_rights": "One or more curated figures are not cleared for public reprint.",
     },
@@ -199,6 +238,7 @@ _MESSAGES = {
         "cover_resolution": "La ilustración de cubierta no alcanza el objetivo de 300 ppp en su tamaño de reproducción.",
         "figure_resolution": "Una o más figuras seleccionadas no alcanzan 300 ppp en su tamaño de reproducción.",
         "figure_geometry": "Una o más ubicaciones de figuras seleccionadas son inválidas o se superponen.",
+        "figure_contrast": "Una o más figuras seleccionadas siguen siendo demasiado tenues después del ajuste de contraste para impresión.",
         "rights": "Una o más fuentes declaradas no están autorizadas para su reedición pública.",
         "figure_rights": "Una o más figuras seleccionadas no están autorizadas para su reedición pública.",
     },
