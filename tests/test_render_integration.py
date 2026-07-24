@@ -55,6 +55,17 @@ class RenderIntegrationTests(unittest.TestCase):
         with TemporaryDirectory() as temporary:
             tmp_path = Path(temporary)
             make_project(tmp_path)
+            tail_art = tmp_path / "editions" / "issue-001" / "art" / "tail.png"
+            Image.new("RGB", (1536, 1024), "white").save(tail_art)
+            manifest_path = tmp_path / "editions" / "issue-001" / "edition.yaml"
+            manifest_data = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+            manifest_data["articles"][0]["tail_art_path"] = (
+                tail_art.relative_to(tmp_path).as_posix()
+            )
+            manifest_path.write_text(
+                yaml.safe_dump(manifest_data, sort_keys=False),
+                encoding="utf-8",
+            )
             result = Magazine(tmp_path).build("issue-001")
             self.assertTrue(result.reader_pdf.is_file())
             self.assertTrue(result.booklet_pdf.is_file())
@@ -115,6 +126,10 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertEqual(manifest["publication"]["name"], "Test Review")
             self.assertEqual(manifest["inputs"]["sources"][0]["id"], "source-one")
             self.assertEqual(len(manifest["inputs"]["sources"][0]["raw_captures"]), 1)
+            self.assertEqual(
+                manifest["inputs"]["articles"][0]["tail_art"]["path"],
+                "editions/issue-001/art/tail.png",
+            )
             self.assertEqual(manifest["layout"]["maximum_article_pages"], 7)
             self.assertEqual(manifest["layout"]["design_direction"], "A / Quiet Standard")
             self.assertLessEqual(manifest["layout"]["article_pages"]["article"], 7)
@@ -418,10 +433,19 @@ class RenderIntegrationTests(unittest.TestCase):
             tmp_path = Path(temporary)
             make_project(tmp_path)
             edition_dir = tmp_path / "editions" / "issue-001"
-            (edition_dir / "colophon.md").write_text("# Colophon\n\nMade with care.", encoding="utf-8")
+            (edition_dir / "production-note.md").write_text(
+                "# Production note\n\nMade with care.",
+                encoding="utf-8",
+            )
             manifest_path = edition_dir / "edition.yaml"
             manifest = yaml.safe_load(manifest_path.read_text())
-            manifest["sections"] = [{"kind": "colophon", "title": "Colophon", "path": "colophon.md"}]
+            manifest["sections"] = [
+                {
+                    "kind": "production_note",
+                    "title": "Production note",
+                    "path": "production-note.md",
+                }
+            ]
             manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
 
             result = Magazine(tmp_path).build("issue-001")
@@ -429,6 +453,22 @@ class RenderIntegrationTests(unittest.TestCase):
             text = "\n".join(page.extract_text() or "" for page in PdfReader(str(result.reader_pdf)).pages)
             self.assertIn("The original article.", text)
             self.assertIn("Made with care.", text)
+
+    def test_colophon_sections_are_rejected(self):
+        with TemporaryDirectory() as temporary:
+            tmp_path = Path(temporary)
+            make_project(tmp_path)
+            edition_dir = tmp_path / "editions" / "issue-001"
+            (edition_dir / "legacy.md").write_text("Legacy colophon.", encoding="utf-8")
+            manifest_path = edition_dir / "edition.yaml"
+            manifest = yaml.safe_load(manifest_path.read_text())
+            manifest["sections"] = [
+                {"kind": "COLOPHON", "title": "Colophon", "path": "legacy.md"}
+            ]
+            manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+
+            with self.assertRaisesRegex(ValidationError, "Colophon sections are no longer supported"):
+                Magazine(tmp_path).build("issue-001")
 
     def test_fenced_code_is_monospaced_line_preserving_and_safely_paginated(self):
         with TemporaryDirectory() as temporary:

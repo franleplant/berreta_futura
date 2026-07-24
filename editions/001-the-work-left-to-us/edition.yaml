@@ -89,10 +89,6 @@ articles:
   - src-hassabis-frontier-ai-2026
   manuscript: editions/001-the-work-left-to-us/articles/hassabis-frontier-ai.md
   fidelity: editions/001-the-work-left-to-us/fidelity/hassabis-frontier-ai.yaml
-sections:
-- kind: colophon
-  title: Colophon
-  path: manuscript/colophon.md
 rights:
   faithful_source_reprint: private_only_while_rights_unknown
   public_release: blocked_pending_permission_or_applicable_exception

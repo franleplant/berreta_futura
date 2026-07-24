@@ -3,7 +3,7 @@ language: es
 source_language: en
 locale: es-AR
 fallback_locale: es-ES
-base_copy_sha256: fb1c79846cc849c45315171bea9bddf6f76f8c04e92f46bf60fd5103ce849cd8
+base_copy_sha256: 8adb07d7e26c4cb5c7d82ba208e69e8a6b1ae5debb5158d0cf1bf134db37516e
 policy:
   register: educated_castellano
   regional_preference: restrained_argentinian
@@ -149,8 +149,4 @@ articles:
     anchor: Interfaz web
     source_caption_sha256: 6b99e2ef9a885ed24598b4aa6d8f263b055a43315a95afcff921aa6c9c872218
     source_credit_sha256: ed5bd54c35c437b7e72a61bdc01afa6b44eacd5efac00af19e26d6fcd85855d9
-sections:
-- kind: colophon
-  title: Colofón
-  path: manuscript/colophon.md
-  source_sha256: 5090c377e7dc66b9f939dc5dddc1f369b012fdbedac5b810f8ae7631525bad65
+sections: []

@@ -95,6 +95,7 @@ articles:
   - the-building-block-economy-af6644bd
   manuscript: editions/002-unreleased/articles/the-building-block-economy.md
   fidelity: editions/002-unreleased/fidelity/the-building-block-economy.yaml
+  tail_art_path: editions/002-unreleased/art/article-tails/modular-ascent-v1.png
 - id: agent-swarms-and-model-economics
   title: Agent Swarms and the New Model Economics
   short_title: Agent Swarms
@@ -149,6 +150,7 @@ articles:
   - loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f
   manuscript: editions/002-unreleased/articles/loop-engineering-roadmap.md
   fidelity: editions/002-unreleased/fidelity/loop-engineering-roadmap.yaml
+  tail_art_path: editions/002-unreleased/art/article-tails/verified-circuit-v1.png
 - id: agentic-pods
   title: 'Agentic Pods: Taking AI Beyond Engineering'
   short_title: Agentic Pods
@@ -162,6 +164,7 @@ articles:
   - agentic-pods-taking-ai-beyond-engineering-at-ube-5b9382d4
   manuscript: editions/002-unreleased/articles/agentic-pods.md
   fidelity: editions/002-unreleased/fidelity/agentic-pods.yaml
+  tail_art_path: editions/002-unreleased/art/article-tails/pod-exchange-v1.png
 - id: how-we-built-our-knowledge-base
   title: How We Built Our Knowledge Base
   short_title: Our Knowledge Base
@@ -174,6 +177,7 @@ articles:
   - how-we-built-our-knowledge-base-e986baa0
   manuscript: editions/002-unreleased/articles/how-we-built-our-knowledge-base.md
   fidelity: editions/002-unreleased/fidelity/how-we-built-our-knowledge-base.yaml
+  tail_art_path: editions/002-unreleased/art/article-tails/evidence-fold-v1.png
   figures:
   - id: knowledge-pipeline
     decision: include
@@ -223,10 +227,6 @@ articles:
     - beautiful
     rationale: The comparison clarifies the most consequential interface distinction more efficiently
       than another paragraph of prose.
-sections:
-- kind: colophon
-  title: Colophon
-  path: manuscript/colophon.md
 rights:
   faithful_source_reprint: private_only_while_rights_unknown
   public_release: blocked_pending_permission_or_applicable_exception

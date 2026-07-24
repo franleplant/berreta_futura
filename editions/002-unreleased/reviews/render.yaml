@@ -1,20 +1,20 @@
 schema_version: 1
 edition_id: 002-unreleased
-reviewer: a5_a4_printer_kiss_critic
-reviewed_at: '2026-07-22T21:38:55+00:00'
+reviewer: independent-render-critic
+reviewed_at: '2026-07-24T01:17:52+00:00'
 result: approved
 findings: []
-notes: 'A5 and A4 printer''s kisses approved across every EN/ES reader and booklet sheet: one textless
-  micro-orange mark on each A5 inside cover, inherited exactly once by the imposed A4 side; all prior
-  layout, pagination, covers, and imposition remain correct.'
+notes: 'Distinct article-tail art prototype: full-height continuation flow plus manifest-bound per-article
+  raster artwork on substantial terminal whitespace. All English and Spanish reader/booklet sheets inspected;
+  isolated and workspace PDF hashes match; no actionable findings.'
 languages:
   en:
-    reader_sha256: cbc404d387785b395f455c772a29cbffaa2a267cacc2596b33ca97c3dda44a5e
-    booklet_sha256: 8179e6e574b5e99e74a188c39afcd4040dde944e30690e8e1c8a1ea613820dac
+    reader_sha256: 19539cd4b2fa8401accfe2c5a1226e3c6d29de75f5959a03cf6271b348fdc8ad
+    booklet_sha256: 95aaf4d1e9cbfe48d1a913e33dd8ee457a191ce4dae95d61f25c30cc3c160f88
     page_count: 36
     machine_result: pass
   es:
-    reader_sha256: ec66edfdb102577aaa532d5abdc43bbae16e4cd66e207f9a0a6628b4fd7fbfef
-    booklet_sha256: 5869f844da577cf3f6c6f4b9e37c75aba1fae6a56ae5bf8e8e9c03c6256ab7a0
+    reader_sha256: 26aac5f395a206bc2d135415970bc9bc417e4229cc737a2ecc48cdaa6d371d2c
+    booklet_sha256: 01670f1a195c123928d76a585177125995b201d34e04f0f9eb174bff53a2217e
     page_count: 36
     machine_result: pass

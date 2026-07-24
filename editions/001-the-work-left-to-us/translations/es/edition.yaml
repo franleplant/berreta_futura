@@ -57,8 +57,4 @@ articles:
   author_note: Demis Hassabis es cofundador y consejero delegado de Google DeepMind.
   manuscript: articles/hassabis-frontier-ai.md
   source_sha256: 9f415e615a9a9b91f50262c862cdf6fe3dadf044175986105a09d7a5742fe257
-sections:
-- kind: colophon
-  title: Colofón
-  path: manuscript/colophon.md
-  source_sha256: c71b8bde4ce49e75784938413e21640cfa34648bb03a0206b134ff5fc88a9d4a
+sections: []

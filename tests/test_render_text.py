@@ -17,6 +17,7 @@ from magazine.render import (
     TEXT_TOP_INSET,
     FrameUsage,
     _Typesetter,
+    _article_tail_ornament_box,
     _content_mode_label,
     _markdown_blocks,
     _opening_sentence,
@@ -36,6 +37,14 @@ class FixedWidthMetrics:
 def test_plain_renders_markdown_link_as_linked_words():
     assert _plain("Read [the source](https://example.com/a/very/long/path).") == "Read the source."
     assert _plain("planner → executor — synthesis") == "planner -> executor — synthesis"
+
+
+def test_article_tail_ornament_requires_substantial_residual_space():
+    assert _article_tail_ornament_box(44, 325, 45, 180) is None
+
+    box = _article_tail_ornament_box(44, 325, 45, 400)
+
+    assert box == (44, 69.0, 325, 214.0)
 
 
 def test_cover_date_uses_numeric_register_without_separators():
@@ -75,12 +84,6 @@ def test_code_lines_preserve_source_breaks_and_indent_while_wrapping():
         "    stuvwxyz",
         "    xy",
     ]
-
-
-def test_spanish_colophon_label_is_localized_in_contents_and_opener():
-    edition = SimpleNamespace(language="es")
-
-    assert _section_label(edition, "colophon") == "COLOFÓN"
 
 
 def test_opening_sentence_is_split_once_without_losing_the_remainder():

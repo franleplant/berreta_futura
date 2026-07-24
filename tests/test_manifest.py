@@ -183,6 +183,37 @@ class ManifestTests(unittest.TestCase):
         )
         self.assertEqual(edition.articles[0].source_ids, ("source-one",))
 
+    def test_validate_resolves_optional_article_tail_art(self):
+        make_project(self.root)
+        art_path = self.root / "editions" / "issue-001" / "art" / "tail.png"
+        Image.new("RGB", (1536, 1024), "white").save(art_path)
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        manifest["articles"][0]["tail_art_path"] = art_path.relative_to(self.root).as_posix()
+        manifest_path.write_text(
+            yaml.safe_dump(manifest, sort_keys=False),
+            encoding="utf-8",
+        )
+
+        edition = Magazine(self.root).validate("issue-001")
+
+        self.assertEqual(edition.articles[0].tail_art, art_path.resolve())
+
+    def test_validate_rejects_missing_article_tail_art(self):
+        make_project(self.root)
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        manifest["articles"][0]["tail_art_path"] = (
+            "editions/issue-001/art/missing-tail.png"
+        )
+        manifest_path.write_text(
+            yaml.safe_dump(manifest, sort_keys=False),
+            encoding="utf-8",
+        )
+
+        with self.assertRaisesRegex(ValidationError, "does not exist"):
+            Magazine(self.root).validate("issue-001")
+
     def test_validate_requires_a_media_triage_decision_for_every_capture(self):
         make_project(self.root)
         record_path = self.root / "library" / "sources" / "source-one" / "record.yaml"

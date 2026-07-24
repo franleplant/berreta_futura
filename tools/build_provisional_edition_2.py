@@ -384,45 +384,6 @@ Esta es una edición de trabajo, no una afirmación definitiva. Su propósito es
         encoding="utf-8",
     )
 
-    english_colophon = EDITION_DIR / "manuscript" / "colophon.md"
-    spanish_colophon = TRANSLATION_DIR / "manuscript" / "colophon.md"
-    english_colophon.write_text(
-        """---
-kind: colophon
-label: COLOPHON
-title: About this provisional issue
----
-
-*Knowledge, Where It Lives* is the provisional Issue 002 of an independent reading magazine built from material discovered across the open web.
-
-This working edition presents selected extracts from “How We Built Our Knowledge Base” by Isaac Tai, Daniel Kim, and Mike Gao. Three source diagrams were selected automatically from the archived article because they passed the issue’s importance, usefulness, beauty, and editorial-impact criteria. Other captured images were omitted.
-
-The opening editorial, cover copy, captions, and publication design are original to this edition. Source authors and publishers retain all rights in their work. This private reference build is not cleared for public faithful republication.
-
-Set provisionally for A5 trim and home booklet printing on A4 paper.
-Issue 002 — July 2026.
-""",
-        encoding="utf-8",
-    )
-    spanish_colophon.write_text(
-        """---
-kind: colophon
-label: COLOFÓN
-title: Acerca de este número provisional
----
-
-*El conocimiento, donde vive* es el número provisional 002 de una revista de lectura independiente construida con material descubierto en la web abierta.
-
-Esta edición de trabajo presenta extractos seleccionados de «How We Built Our Knowledge Base», de Isaac Tai, Daniel Kim y Mike Gao. Tres diagramas de la fuente se eligieron automáticamente del artículo archivado porque superaron los criterios de importancia, utilidad, belleza e impacto editorial del número. Las demás imágenes capturadas se omitieron.
-
-El editorial de apertura, los textos de cubierta, los epígrafes y el diseño de la publicación son originales de esta edición. Los autores y editores de las fuentes conservan todos los derechos sobre su obra. Esta compilación privada de referencia no está autorizada para una reedición pública fiel.
-
-Compuesta provisionalmente para corte A5 e impresión doméstica en cuadernillo sobre papel A4.
-Número 002 — julio de 2026.
-""",
-        encoding="utf-8",
-    )
-
     figures = [
         {
             "id": "knowledge-pipeline",
@@ -528,11 +489,11 @@ Número 002 — julio de 2026.
                 "source_ids": [SOURCE_ID],
                 "manuscript": f"editions/{EDITION_ID}/articles/how-we-built-our-knowledge-base.md",
                 "fidelity": f"editions/{EDITION_ID}/fidelity/how-we-built-our-knowledge-base.yaml",
+                "tail_art_path": (
+                    f"editions/{EDITION_ID}/art/article-tails/evidence-fold-v1.png"
+                ),
                 "figures": figures,
             }
-        ],
-        "sections": [
-            {"kind": "colophon", "title": "Colophon", "path": "manuscript/colophon.md"}
         ],
         "rights": {
             "faithful_source_reprint": "private_only_while_rights_unknown",
@@ -638,14 +599,7 @@ Número 002 — julio de 2026.
                 "figures": localized_figures,
             }
         ],
-        "sections": [
-            {
-                "kind": "colophon",
-                "title": "Colofón",
-                "path": "manuscript/colophon.md",
-                "source_sha256": sha256(english_colophon),
-            }
-        ],
+        "sections": [],
     }
     dump_yaml(TRANSLATION_DIR / "edition.yaml", translation)
 

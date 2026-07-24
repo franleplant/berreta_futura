@@ -32,6 +32,7 @@ class Article:
     content_mode: str
     figures: tuple[Figure, ...] = ()
     minimum_reader_pages: int = 1
+    tail_art: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -144,6 +145,11 @@ def load_edition(
         try:
             manuscript = safe_project_path(root, row["manuscript"])
             fidelity = safe_project_path(root, row["fidelity"])
+            tail_art = (
+                safe_project_path(root, row["tail_art_path"])
+                if row.get("tail_art_path")
+                else None
+            )
         except ValidationError as exc:
             errors.extend(exc.errors)
             continue
@@ -196,6 +202,7 @@ def load_edition(
                 content_mode,
                 figures,
                 minimum_reader_pages,
+                tail_art,
             )
         )
     edition_dir = manifest_path.parent
@@ -213,6 +220,9 @@ def load_edition(
     for index, row in enumerate(section_rows):
         if not isinstance(row, dict) or not row.get("kind") or not row.get("path"):
             errors.append(f"Section {index + 1} requires kind and path")
+            continue
+        if str(row["kind"]).strip().casefold() == "colophon":
+            errors.append("Colophon sections are no longer supported")
             continue
         try:
             path = _edition_path(root, edition_dir, row["path"])
@@ -426,6 +436,7 @@ def load_translation(
                 article.content_mode,
                 figures,
                 article.minimum_reader_pages,
+                article.tail_art,
             )
         )
 
@@ -517,6 +528,11 @@ def load_translation(
                     "source_ids": list(article.source_ids),
                     "manuscript": article.manuscript.relative_to(root).as_posix(),
                     "fidelity": article.fidelity.relative_to(root).as_posix(),
+                    "tail_art_path": (
+                        article.tail_art.relative_to(root).as_posix()
+                        if article.tail_art
+                        else None
+                    ),
                     "figures": [
                         {
                             "id": figure.id,
@@ -591,6 +607,7 @@ def _edition_copy_sha256(edition: Edition) -> str:
                 "opener_variant": article.opener_variant,
                 "author": article.author,
                 "author_note": article.author_note,
+                "tail_art_sha256": _sha256(article.tail_art) if article.tail_art else None,
                 "figures": [
                     {
                         "id": figure.id,
@@ -724,7 +741,6 @@ def _section_title(kind: str) -> str:
         "original_synthesis": "Reading Map",
         "source_record": "Source Record",
         "production_note": "Production Note",
-        "colophon": "Colophon",
     }.get(str(kind), str(kind).replace("_", " ").title())
 
 

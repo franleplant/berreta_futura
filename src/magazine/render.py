@@ -40,6 +40,8 @@ READING_MEASURE = 325.0
 FOLIO_BASELINE = 19.5
 TERMINAL_BALANCE_FRAMES = 2
 TERMINAL_BALANCE_THRESHOLD = .35
+ARTICLE_TAIL_ORNAMENT_MIN_HEIGHT = 118.0
+ARTICLE_TAIL_ORNAMENT_MAX_HEIGHT = 214.0
 RUNNING_HEADER_BASELINE_INSET = 20.0
 HEADING_SPACE_BEFORE = {
     "h1": 18.0,
@@ -140,7 +142,6 @@ UI_COPY = {
         "original_synthesis": "READING MAP",
         "source_record": "SOURCE RECORD",
         "production_note": "PRODUCTION NOTE",
-        "colophon": "COLOPHON",
         "back_text_default": "An independent anthology of writing worth keeping.",
         "opening_sentence": "Opening sentence / Original editorial",
         "issue_statement": "Issue statement / The editors",
@@ -166,7 +167,6 @@ UI_COPY = {
         "original_synthesis": "MAPA DE LECTURA",
         "source_record": "REGISTRO DE FUENTE",
         "production_note": "NOTA DE PRODUCCIÓN",
-        "colophon": "COLOFÓN",
         "back_text_default": "Una antología independiente de textos que vale la pena conservar.",
         "opening_sentence": "Frase inicial / Editorial original",
         "issue_statement": "Declaración del número / La redacción",
@@ -216,6 +216,22 @@ class FrameUsage:
 class ArticleBalancePlan:
     page_count: int
     frame_height: float
+
+
+def _article_tail_ornament_box(
+    frame_left: float,
+    frame_width: float,
+    frame_bottom: float,
+    endmark_baseline: float,
+) -> tuple[float, float, float, float] | None:
+    """Reserve a restrained motif only when an article ends with real open space."""
+    bottom = frame_bottom + 24.0
+    available_top = endmark_baseline - 31.0
+    available_height = available_top - bottom
+    if available_height < ARTICLE_TAIL_ORNAMENT_MIN_HEIGHT:
+        return None
+    height = min(available_height, ARTICLE_TAIL_ORNAMENT_MAX_HEIGHT)
+    return frame_left, bottom, frame_width, height
 
 
 def _reportlab():
@@ -281,7 +297,6 @@ def _section_label(edition: Edition, kind: str) -> str:
         "original_synthesis",
         "source_record",
         "production_note",
-        "colophon",
     }:
         return _ui(edition, kind)
     return kind.replace("_", " ").upper()
@@ -2011,7 +2026,7 @@ class _Typesetter:
         # space immediately after the credit instead of wasting a new page.
         self._set_reading_frame(top=self.y if opener_has_figure else 238)
 
-    def _article_endmark(self, article_index: int) -> None:
+    def _article_endmark(self, article_index: int, tail_art: Path | None) -> None:
         baseline = max(self.frame_bottom + 5, self.y - 1)
         self.pdf.setStrokeColorRGB(*SIGNAL_ORANGE)
         self.pdf.setLineWidth(1.1)
@@ -2024,6 +2039,38 @@ class _Typesetter:
             color=VIOLET,
             tracking=.25,
         )
+        self._article_tail_ornament(baseline, tail_art)
+
+    def _article_tail_ornament(
+        self,
+        endmark_baseline: float,
+        tail_art: Path | None,
+    ) -> None:
+        if tail_art is None:
+            return
+        box = _article_tail_ornament_box(
+            self.frame_left,
+            self.frame_width,
+            self.frame_bottom,
+            endmark_baseline,
+        )
+        if box is None:
+            return
+        left, bottom, width, height = box
+        from reportlab.lib.utils import ImageReader
+
+        image = ImageReader(str(tail_art))
+        pixel_width, pixel_height = image.getSize()
+        effective_ppi = min(
+            pixel_width / (width / 72),
+            pixel_height / (height / 72),
+        )
+        if effective_ppi < MIN_FIGURE_PPI:
+            raise ValidationError(
+                f"Article tail art {tail_art} resolves to {effective_ppi:.1f} ppi; "
+                f"the minimum is {MIN_FIGURE_PPI:.0f} ppi"
+            )
+        self._draw_image_fill(tail_art, left, bottom, width, height)
 
     def body(self):
         if self.edition.articles:
@@ -2099,7 +2146,7 @@ class _Typesetter:
                     figures=getattr(article, "figures", ()),
                     article_id=article.id,
                 )
-                self._article_endmark(article_index)
+                self._article_endmark(article_index, article.tail_art)
                 page_count = self.page - start_page + 1
                 self._finish_article()
                 self.article_pages[article.id] = page_count
@@ -2361,7 +2408,19 @@ def render_a5(
         )
     output.parent.mkdir(parents=True, exist_ok=True)
     probe = _render_pass(io.BytesIO(), edition, design=design)
-    balance_plans, draft = _balanced_draft(edition, probe, design=design)
+    # Full-height continuation frames keep prose moving naturally. The former
+    # terminal balancer shortened the last two frames and manufactured large
+    # white fields in the middle of an article; genuine tail space is now
+    # handled by the small article-end ornament instead.
+    balance_plans: dict[str, ArticleBalancePlan] = {}
+    draft = _render_pass(
+        io.BytesIO(),
+        edition,
+        probe.toc,
+        design=design,
+        balance_plans=balance_plans,
+        enforce_page_caps=False,
+    )
     final = _render_pass(
         str(output),
         edition,

@@ -381,6 +381,7 @@ class Magazine:
                             "id": article.id,
                             "manuscript": _file_entry(article.manuscript, self.root),
                             "fidelity": _file_entry(article.fidelity, self.root),
+                            "tail_art": _optional_file_entry(article.tail_art, self.root),
                         }
                         for article in variant.articles
                     ],
@@ -605,8 +606,8 @@ def _edition_source_ids(edition: Edition) -> set[str]:
     }
 
 
-def _optional_file_entry(path: Path, root: Path) -> dict[str, str] | None:
-    return _file_entry(path, root) if path.is_file() else None
+def _optional_file_entry(path: Path | None, root: Path) -> dict[str, str] | None:
+    return _file_entry(path, root) if path is not None and path.is_file() else None
 
 
 def _section_fidelity_report(root: Path, edition: Edition) -> str:
