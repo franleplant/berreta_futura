@@ -2,7 +2,137 @@
 
 _Generated from structured source records. Do not edit by hand._
 
-_Open edition: `003-unreleased`; 3 queued sources._
+_Open edition: `003-unreleased`; 9 queued sources._
+
+## Why Software Factories Fail — Dex Horthy
+
+- ID: `why-software-factories-fail-f53679d7`
+- Source: https://x.com/dexhorthy/status/2080697380379427275
+- Kind / status: web / captured
+- Captured: 2026-07-26T22:12:54Z
+- Content hash: `not captured`
+- Raw captures: 2 committed bundle(s)
+- Release: queued for `003-unreleased`
+- Published: 2026-07-24
+- Tags: ai-agents, evaluation, harness-engineering, maintainability, software-factories
+- Primary material:
+  - https://x.com/dexhorthy/article/2080697380379427275
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+- Provenance:
+  - primary_material -> https://x.com/dexhorthy/article/2080697380379427275
+
+Dex Horthy argues that faster agent loops and automated review cannot solve a model-training gap around long-term codebase maintainability: today’s fast verifiers reward passing tests, while architectural damage appears over months or years.
+
+**Editorial note:** Submitted X Article captured through the user-authenticated session. Complete rendered text, 89 source links, 24 article images, and two embedded video thumbnails are archived in source order; raw artifacts exclude cookies, credentials, profiles, and browser-session storage.
+
+## The New Rules of Context Engineering for Claude 5 Models — Thariq
+
+- ID: `the-new-rules-of-context-engineering-for-claude--aa1b1ea8`
+- Source: https://x.com/trq212/status/2080710971228918066
+- Kind / status: web / captured
+- Captured: 2026-07-26T22:12:40Z
+- Content hash: `not captured`
+- Raw captures: 2 committed bundle(s)
+- Release: queued for `003-unreleased`
+- Published: 2026-07-24
+- Tags: ai-agents, claude, context-engineering, progressive-disclosure, skills
+- Primary material:
+  - https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
+  - https://claude.com/blog/a-harness-for-every-task-dynamic-workflows-in-claude-code
+  - https://claude.com/blog/a-field-guide-to-claude-fable-finding-your-unknowns
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+- Provenance:
+  - primary_material -> https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
+  - primary_material -> https://claude.com/blog/a-harness-for-every-task-dynamic-workflows-in-claude-code
+  - primary_material -> https://claude.com/blog/a-field-guide-to-claude-fable-finding-your-unknowns
+
+Thariq describes simplifying Claude Code context for newer models: replacing rigid rules with judgment, examples with better interfaces, upfront context with progressive disclosure, repeated instructions with clear tool descriptions, and monolithic memory with purpose-built mechanisms.
+
+**Editorial note:** Complete X Article captured through the user-authenticated session with source-ordered embedded media evidence. Linked Anthropic and Claude primary references are preserved as provenance; raw artifacts exclude browser-session data.
+
+## Why Harness Engineering Is So Hard — Winter
+
+- ID: `why-harness-engineering-is-so-hard-fe732038`
+- Source: https://x.com/WinterArc2125/status/2081042507471696318
+- Kind / status: web / captured
+- Captured: 2026-07-26T22:12:26Z
+- Content hash: `not captured`
+- Raw captures: 2 committed bundle(s)
+- Release: queued for `003-unreleased`
+- Published: 2026-07-25
+- Tags: ai-agents, evaluation, harness-engineering, prompt-engineering
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+
+A field account of why production LLM harnesses resist ordinary testing and debugging: failures are graded and silent, prose behaves like code, prompt rules interact unpredictably, examples dominate instructions, and model updates move the foundation.
+
+**Editorial note:** Complete X Article captured through the user-authenticated session with source-ordered embedded media evidence; raw artifacts exclude cookies, credentials, profiles, and browser-session storage.
+
+## Open-weight models are essential to a healthy AI ecosystem — Satya Nadella
+
+- ID: `open-weight-models-are-essential-to-a-healthy-ai-e7845a41`
+- Source: https://x.com/satyanadella/status/2080646162483417097
+- Kind / status: web / captured
+- Captured: 2026-07-26T22:12:08Z
+- Content hash: `not captured`
+- Raw captures: 2 committed bundle(s)
+- Release: queued for `003-unreleased`
+- Published: 2026-07-24
+- Tags: ai-policy, economic-opportunity, national-security, open-weight-models
+- Primary material:
+  - https://www.microsoft.com/en-us/corporate-responsibility/topics/open-weight
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+- Provenance:
+  - primary_material -> https://www.microsoft.com/en-us/corporate-responsibility/topics/open-weight
+
+Satya Nadella introduces a cross-industry case for open-weight AI as a foundation for American competitiveness and wider economic opportunity while acknowledging national-security concerns.
+
+**Editorial note:** Submitted lead captured through the user-authenticated X session. The target post, its three attached pages, and the linked Microsoft primary statement were archived without cookies, credentials, profiles, or browser-session storage.
+
+## Open Weights and American AI Leadership — Microsoft and industry signatories
+
+- ID: `open-weights-and-american-ai-leadership-7aa6038f`
+- Source: https://www.microsoft.com/en-us/corporate-responsibility/topics/open-weight
+- Kind / status: web / captured
+- Captured: 2026-07-26T22:11:54Z
+- Content hash: `not captured`
+- Raw captures: 1 committed bundle(s)
+- Release: queued for `003-unreleased`
+- Published: 2026-07-24
+- Tags: ai-policy, competition, national-security, open-weight-models
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+
+A multi-company statement arguing that open-weight models strengthen U.S. AI leadership through broader access, competition, customer control, defensive capability, and transparent safety work.
+
+**Editorial note:** Primary statement linked from Satya Nadella’s submitted X post; complete rendered statement text, signatory list, and viewport evidence are archived.
+
+## Loop Engineering — Addy Osmani
+
+- ID: `loop-engineering-f0ddfd76`
+- Source: https://addyosmani.com/blog/loop-engineering
+- Kind / status: web / captured
+- Captured: 2026-07-26T22:11:38Z
+- Content hash: `not captured`
+- Raw captures: 1 committed bundle(s)
+- Release: queued for `003-unreleased`
+- Published: 2026-06-07
+- Tags: ai-agents, automation, loop-engineering, software-engineering
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+
+A practical account of moving from direct prompting to designed agent loops built from automations, worktrees, skills, connectors, sub-agents, durable state, verification, and human review.
+
+**Editorial note:** Submitted public article; complete rendered article text, links, HTML, and viewport evidence are archived in the source-local raw bundle.
 
 ## Why we're buzzing — Jack Dorsey
 

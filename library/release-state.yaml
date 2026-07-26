@@ -6,6 +6,12 @@ open_edition:
   source_ids:
   - buzz-a-workspace-where-humans-and-agents-build-t-59122470
   - buzz-your-people-your-agents-your-project-all-in-833eef43
+  - loop-engineering-f0ddfd76
+  - open-weight-models-are-essential-to-a-healthy-ai-e7845a41
+  - open-weights-and-american-ai-leadership-7aa6038f
+  - the-new-rules-of-context-engineering-for-claude--aa1b1ea8
+  - why-harness-engineering-is-so-hard-fe732038
+  - why-software-factories-fail-f53679d7
   - why-we-re-buzzing-1c82f338
 released_editions:
 - id: 001-the-work-left-to-us
