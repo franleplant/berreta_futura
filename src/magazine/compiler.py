@@ -24,7 +24,7 @@ from .release import (
     plan_release,
     sync_release_state,
 )
-from .render import render_a5
+from .render_engine import engine_name, reader_renderer
 from .render_review import (
     create_render_review,
     load_render_review,
@@ -65,7 +65,11 @@ class Magazine:
         self.publication_name = str(publication.get("name") or "Magazine").strip()
         self.primary_language = str(publication.get("language") or "en").strip()
         render = self.config.get("render", {})
+        # ``design`` is the ReportLab engine's design direction; the WeasyPrint
+        # engine owns its own and never sees this value.  See render_engine.
         self.render_design = str(render.get("design") or "monument").strip()
+        # Validated here rather than at build time so a typo fails at load.
+        self.render_engine = engine_name(render.get("engine"))
         configured_languages = publication.get("languages", [self.primary_language])
         if not isinstance(configured_languages, list) or not configured_languages:
             raise ValidationError("publication.languages must be a non-empty list")
@@ -289,7 +293,17 @@ class Magazine:
             )
         return tuple(artifacts)
 
-    def build(self, edition_id: str) -> BuildResult:
+    def build(self, edition_id: str, *, engine: str | None = None) -> BuildResult:
+        """Render, impose, and package an edition in every configured language.
+
+        ``engine`` overrides ``[render] engine`` for this build only; nothing is
+        written back to configuration, so the next build reverts to the
+        configured renderer.
+        """
+        renderer = reader_renderer(
+            self.render_engine if engine is None else engine,
+            design=self.render_design,
+        )
         editions = self._validate_languages(edition_id)
         edition = editions[self.primary_language]
         destination = self.output_dir / edition.id
@@ -318,7 +332,7 @@ class Magazine:
                 variant,
                 self.output_dir / ".build" / "back-covers" / edition.id / language,
             )
-            layout = render_a5(variant, interior_pdf, design=self.render_design)
+            layout = renderer.render(variant, interior_pdf)
             replace_outer_pages(interior_pdf, cover.pdf, back_cover.pdf, working_pdf)
             if cover.cover_art_size_points is not None:
                 layout = replace(
@@ -429,6 +443,14 @@ class Magazine:
                     else "PDF/X-4 conversion requires the selected printer ICC profile and preflight."
                 ),
             }
+            # ``design_direction`` already identifies the renderer, because the
+            # two engines have disjoint design vocabularies.  What it cannot say
+            # is that this renderer is holding its own typography down to match
+            # the other one, so a scaffolded engine states that in the artifact.
+            if renderer.shaping_scaffolds:
+                build_manifest["layout"]["shaping_scaffolds"] = list(
+                    renderer.shaping_scaffolds
+                )
             files = package_release(
                 working_pdf,
                 language_destination,

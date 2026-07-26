@@ -241,13 +241,16 @@ an automatic claim that an edit is acceptable.
 
 ## PDF outputs
 
-The A5 reader PDF is produced deterministically with ReportLab. The home booklet
+The A5 reader PDF is produced deterministically by the renderer named in
+`[render] engine` — WeasyPrint by default, or `"reportlab"` for the legacy
+typesetter kept as the rollback. `mag build --engine <name>` overrides it for a
+single build without changing configuration; see `docs/RENDERER_MIGRATION.md`.
+The home booklet
 is imposed onto landscape A4 with `pypdf` and padded to a multiple of four pages.
 Reader page 2 is an otherwise empty inside front cover, the penultimate reader
 page is an otherwise empty inside back cover, and the designed back cover remains
-the final page. Each inside cover carries one textless micro-orange printer mark;
-ordinary imposition carries both marks onto their shared A4 booklet side so
-blank-page suppression cannot drop either format's pages.
+the final page. Both inside covers, and their shared A4 booklet side after
+ordinary imposition, remain completely blank.
 The package contains:
 
 ```text
@@ -278,8 +281,8 @@ signature length, and breached editorial or article page caps. It records
 per-page ink geometry in `render-critic.json` and produces numbered contact
 sheets plus 144-DPI individual page and booklet-side rasters for the required
 final visual review. The critic also verifies each imposed left/right page pair
-against the declared saddle-stitch, short-edge-duplex plan, including the marked
-inside-cover side. Sparse pages are
+against the declared saddle-stitch, short-edge-duplex plan, including the
+inside-cover side, which must be blank. Sparse pages are
 review prompts, not automatic failures, because deliberate openers and closing
 plates may use whitespace. The report and review images are included in
 `SHA256SUMS`.
@@ -326,5 +329,7 @@ uv run --locked mag --help
 ```
 
 The metadata, validation, fidelity, catalog, and packaging modules use only the
-standard library plus PyYAML. ReportLab and pypdf are imported only by their PDF
-paths, making non-rendering operations easy to test in constrained environments.
+standard library plus PyYAML. WeasyPrint, ReportLab and pypdf are imported only
+by their PDF paths — and the two reader engines only by the one that is
+selected — making non-rendering operations easy to test in constrained
+environments.

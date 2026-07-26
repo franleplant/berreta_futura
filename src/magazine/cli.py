@@ -7,6 +7,7 @@ from pathlib import Path
 
 from .compiler import Magazine
 from .errors import MagazineError
+from .render_engine import DEFAULT_ENGINE, ENGINES
 
 
 def parser() -> argparse.ArgumentParser:
@@ -35,6 +36,14 @@ def parser() -> argparse.ArgumentParser:
     validate.add_argument("edition_id")
     build = actions.add_parser("build", help="Render, impose, and package an edition")
     build.add_argument("edition_id")
+    build.add_argument(
+        "--engine",
+        choices=ENGINES,
+        help=(
+            "Reader renderer for this build only, overriding [render] engine "
+            f"(default {DEFAULT_ENGINE}). Nothing is written back to configuration."
+        ),
+    )
     cover_proof = actions.add_parser(
         "cover-proof",
         help="Compile a fast cover-only SVG, PDF, PNG, and comparison report",
@@ -101,8 +110,10 @@ def parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
-    magazine = Magazine(args.root)
     try:
+        # Inside the handler: configuration is validated during construction, so
+        # a bad magazine.toml is a reported error rather than a traceback.
+        magazine = Magazine(args.root)
         if args.command == "capture":
             record = magazine.capture(
                 args.url, snapshot=args.snapshot, capture_method=args.capture_method,
@@ -123,7 +134,7 @@ def main(argv: list[str] | None = None) -> int:
             magazine.validate(args.edition_id)
             print(f"valid: {args.edition_id}")
         elif args.command == "build":
-            result = magazine.build(args.edition_id)
+            result = magazine.build(args.edition_id, engine=args.engine)
             print(result.output_dir)
         elif args.command == "cover-proof":
             languages = (

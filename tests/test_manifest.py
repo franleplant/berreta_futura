@@ -13,9 +13,16 @@ from magazine.media_schema import caption_sha256, credit_sha256
 from magazine.records import SourceRecord, load_records
 
 
+# The publication's default reader engine is WeasyPrint.  These fixtures pin the
+# ReportLab engine because the suite built on them asserts that renderer's exact
+# pagination, geometry and error text; the engine switch itself is covered by
+# tests/test_render_engine.py.  See docs/RENDERER_MIGRATION.md.
+RENDER_ENGINE_PIN = '\n[render]\nengine = "reportlab"\n'
+
+
 def make_project(root: Path, *, source_id: str = "source-one") -> None:
     (root / "magazine.toml").write_text(
-        '[publication]\nname = "Test Review"\n', encoding="utf-8"
+        '[publication]\nname = "Test Review"\n' + RENDER_ENGINE_PIN, encoding="utf-8"
     )
     source_dir = root / "library" / "sources" / source_id
     source_dir.mkdir(parents=True)
@@ -69,7 +76,8 @@ def add_spanish_translation(root: Path) -> None:
     has_figures = any(article.get("figures") for article in edition_data.get("articles", []))
     base = load_edition_with_records(root) if has_figures else Magazine(root).validate("issue-001")
     (root / "magazine.toml").write_text(
-        '[publication]\nname = "Test Review"\nlanguage = "en"\nlanguages = ["en", "es"]\n',
+        '[publication]\nname = "Test Review"\nlanguage = "en"\nlanguages = ["en", "es"]\n'
+        + RENDER_ENGINE_PIN,
         encoding="utf-8",
     )
     translation_dir = root / "editions" / "issue-001" / "translations" / "es"
