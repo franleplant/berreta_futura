@@ -137,7 +137,7 @@ def test_back_proof_has_selectable_localized_statement_and_end_labels_without_ow
     assert BACK_TEXT not in spanish
 
 
-def test_built_reader_uses_exact_back_proof_and_marks_both_inside_covers(
+def test_built_reader_uses_exact_back_proof_and_leaves_both_inside_covers_blank(
     tmp_path: Path,
 ) -> None:
     magazine = _make_back_cover_project(tmp_path)
@@ -160,17 +160,11 @@ def test_built_reader_uses_exact_back_proof_and_marks_both_inside_covers(
     assert actual.size == expected.size
     assert ImageChops.difference(actual, expected).getbbox() is None
 
-    for page_number, corner in ((2, "lower-left"), (page_count - 1, "upper-right")):
+    for page_number in (2, page_count - 1):
         with Image.open(review / f"page-{page_number:03d}.png") as opened:
             inside_cover = opened.convert("L")
         bbox = Image.eval(inside_cover, lambda value: 255 if value < 250 else 0).getbbox()
-        assert bbox is not None
-        if corner == "lower-left":
-            assert bbox[0] < inside_cover.width * .25
-            assert bbox[1] > inside_cover.height * .75
-        else:
-            assert bbox[0] > inside_cover.width * .75
-            assert bbox[1] < inside_cover.height * .25
+        assert bbox is None
 
 
 def test_replace_outer_pages_preserves_interior_order_and_rejects_invalid_inputs(

@@ -115,45 +115,11 @@ def inspect_render(
     for row in page_rows:
         page = int(row["page"])
         if page in inside_cover_pages:
-            bbox = row["ink_bbox"]
-            width, height = row["pixel_dimensions"]
-            expected_corner = (
-                bbox
-                and (
-                    (page == 2 and bbox[0] < width * .25 and bbox[1] > height * .75)
-                    or (
-                        page == page_count - 1
-                        and bbox[0] > width * .75
-                        and bbox[1] < height * .25
-                    )
-                )
-            )
-            if row["blank"]:
+            if not row["blank"]:
                 issue(
-                    "inside-cover-reader-ornament-missing",
+                    "inside-cover-reader-not-blank",
                     "error",
-                    "Each A5 inside cover requires one micro printer mark.",
-                    page=page,
-                )
-            elif row["text_characters"]:
-                issue(
-                    "inside-cover-reader-text",
-                    "error",
-                    "Inside-cover printer marks must not introduce text.",
-                    page=page,
-                )
-            elif row["ink_ratio"] > 0.00025:
-                issue(
-                    "inside-cover-reader-ornament-oversized",
-                    "error",
-                    "The A5 inside-cover ornament exceeds the micro-mark ink budget.",
-                    page=page,
-                )
-            elif not expected_corner:
-                issue(
-                    "inside-cover-reader-ornament-position",
-                    "error",
-                    "The A5 inside-cover ornament is not in its assigned outer corner.",
+                    "Inside front and inside back covers must be completely blank.",
                     page=page,
                 )
         elif row["blank"]:
@@ -181,34 +147,11 @@ def inspect_render(
     for row in booklet_rows:
         side = int(row["page"])
         if side in inside_cover_sides:
-            bbox = row["ink_bbox"]
-            width = row["pixel_dimensions"][0]
-            if row["blank"]:
+            if not row["blank"]:
                 issue(
-                    "inside-cover-booklet-ornament-missing",
+                    "inside-cover-booklet-not-blank",
                     "error",
-                    "The imposed inside-cover side requires two micro printer marks.",
-                    page=side,
-                )
-            elif row["text_characters"]:
-                issue(
-                    "inside-cover-booklet-text",
-                    "error",
-                    "The imposed inside-cover ornaments must not introduce text.",
-                    page=side,
-                )
-            elif row["ink_ratio"] > 0.0005:
-                issue(
-                    "inside-cover-booklet-ornament-oversized",
-                    "error",
-                    "The imposed inside-cover ornaments exceed the micro-mark ink budget.",
-                    page=side,
-                )
-            elif not bbox or bbox[0] >= width * .25 or bbox[2] <= width * .75:
-                issue(
-                    "inside-cover-booklet-ornament-pair",
-                    "error",
-                    "The imposed inside-cover side requires one micro mark on each A5 half.",
+                    "The imposed side containing both inside covers must be completely blank.",
                     page=side,
                 )
         elif row["blank"] and side not in inside_cover_sides:

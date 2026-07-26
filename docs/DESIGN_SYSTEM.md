@@ -59,7 +59,7 @@ The cover artwork does not determine the interior colors. Violet is a publicatio
 ## A5 page architecture
 
 - Trim: A5 portrait, imposed two-up on A4 landscape for home printing.
-- Inside covers: reader pages 2 and penultimate each carry one sub-3.5 mm signal-orange printer's kiss, asymmetrically placed in diagonally opposite outer corners. They prevent blank-page suppression in the A5 reader and flow through ordinary imposition to mark both halves of the shared A4 side. They contain no text and stay below a 0.025% per-page ink budget.
+- Inside covers: reader page 2 and the penultimate reader page are completely blank. Ordinary imposition keeps their shared A4 booklet side completely blank.
 - Mirrored margins: 44 pt inner and 15 mm (42.52 pt) outer.
 - Grid: six columns with 9.45 pt gutters.
 - Live vertical range: 45–543 pt for single-column pages and 40–551 pt for continuation frames.
@@ -104,7 +104,7 @@ The back face is compiled through `uv run --locked mag back-cover-proof <edition
 ## Guardrails
 
 - Do not draw the cover artwork anywhere after page 1.
-- Keep inside covers empty except for their canonical textless printer's kisses; do not add a second imposition-only ornament layer.
+- Keep inside covers and their shared imposed booklet side completely blank; do not add an imposition-only ornament layer.
 - Do not infer palette colors from an edition's artwork.
 - Do not truncate a running title; require a localized short title that fits its measured header zone.
 - Scope tracked-letter labels so character spacing cannot leak into reading text.
