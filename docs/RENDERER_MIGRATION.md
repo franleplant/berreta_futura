@@ -16,8 +16,10 @@ rendered through both pipelines and rasterized by the same `pdftoppm`.
 
 **Equivalence is no longer checked, and the harness no longer passes.** The
 three shaping scaffolds that made the two renderers interchangeable were removed
-after cutover, so WeasyPrint now sets type ReportLab cannot reproduce — that was
-the point of migrating. Editions 001 and 002 are archived as printed, outside
+after cutover, on 2026-07-26, so WeasyPrint now sets type ReportLab cannot
+reproduce — that was the point of migrating. The equivalence program is
+concluded; everything below that describes it is history, not a live contract.
+Editions 001 and 002 are archived as printed, outside
 the repo; 003 onward is set by this renderer. `tools/compare_pipelines.py` is
 kept as a measuring instrument, not a gate: run it to see *how far* output moved
 and where, never to get it green. See
@@ -110,6 +112,18 @@ with `mag review record`. This is correct — nobody has looked at the new PDFs 
 but it is the first thing that bites on cutover. Verified on `002-unreleased`:
 the status flips to `stale` with `machine_result: "pass"`, and the refusal is a
 clean `error:` line, not a crash.
+
+Since 2026-07-26 the record also names the renderer it binds to. `mag review
+record` writes `engine` and `design_direction` from the same
+`reader_renderer(...)` resolution the build uses (with an `--engine` flag
+mirroring `mag build`'s), refuses to record when a package's built
+`edition-manifest.json` names a different design direction, and its rebuild
+reuses that same engine — so a recorded decision can neither describe nor be
+repackaged by a renderer other than the one that set the reviewed PDFs. Edition
+002's record predates the two keys and stays valid without them. `mag release`,
+by contrast, always rebuilds with the *configured* `[render] engine`, so an
+approval recorded under an off-config `--engine` is stale at release by
+construction — recording it is a way to document a look, not a way to ship it.
 
 Verified on `002-unreleased` at cutover: a full `mag build` completes on
 WeasyPrint in both languages, `render_critic` returns `pass`, `preflight`
@@ -255,9 +269,11 @@ The repertoire is now the **bundled faces'**, not cp1252's: a character is kept
 when every one of the eight shipped faces can set it, and replaced with a visible
 `?` when it cannot. Measured — all eight carry `U+2018/2019/201C/201D`, `U+2026`,
 `U+2192`, `U+00A0`, the dashes and the guillemets, so nothing on the old fold list
-needed folding at all. Reaching the built reader now: 4 `“`, 4 `”`, 4 `’` and 2
-`→` in English, 4 `«`, 4 `»` and 2 `→` in Spanish. Nothing structural moved:
-identical page counts, spans, start pages and figure placements in both languages.
+needed folding at all. Reaching the built reader when the fold changed: 4 `“`,
+4 `”`, 4 `’` and 2 `→` in English, 4 `«`, 4 `»` and 2 `→` in Spanish (quote
+education, below, has since added the seven educated apostrophes). Nothing
+structural moved: identical page counts, spans, start pages and figure
+placements in both languages.
 
 Two things are still folded, and both are deliberate:
 
@@ -277,12 +293,22 @@ still reproduces the archived publication byte for byte — verified after this
 change on all 162 packaged files across both languages. The test that used to pin
 the two implementations together now pins their *difference* in both directions.
 
-**What is left is editorial, not the renderer's.** Seven apostrophes in the
-English manuscripts are authored straight (`Coase's`, `Uber's`, `agent's`,
-`It's`, …), and the sources they are faithful to are straight too, so setting
-them curly would be a substantive edit under `editorial.substantive_edits_require_approval`.
+**What was left is now typeset, not edited.** Seven apostrophes in the English
+manuscripts are authored straight (`Coase's`, `Uber's`, `agent's`, `It's`, …),
+and after the fold stopped degrading the authored curly marks they printed
+*beside* them — straight and curly apostrophes on the same pages (en p16
+`the new run's pace`, en p26 `It's become`), which an independent review
+flagged. Which mark prints is typesetting: `reader_text.educate_reader_quotes`
+now sets a straight quote in prose as the real mark it stands for, positionally
+(`run's` → `run’s`, `"quoted"` → `“quoted”`), applied at the semantic-HTML seam
+to prose text only. Code spans, fenced code, URLs and attribute values keep
+their straight quotes — a quote there is content — and the manuscripts are not
+touched, so nothing crosses `editorial.substantive_edits_require_approval`.
+Nothing structural moved: identical page counts, spans and figure placements in
+both languages, and `render._plain` still folds everything to ASCII, so the
+ReportLab engine keeps reproducing the archived publication byte for byte.
 
-### Heading clearance at a band anchor — 2.65pt, attempted and REVERTED
+### Heading clearance at a band anchor — flow repair REVERTED, paint repair SHIPPED
 
 `_evidence_band` replaces the reading frame before it sets its anchor heading,
 and `block` drops space-before whenever `self.y` is the frame's own top
@@ -347,9 +373,24 @@ So the trade is a 15pt clearance gain on three Spanish headings against a
 half-empty page, a dropped ornament and a dropped plate — and the two English
 headings it would also fix come free only because English absorbs the space.
 `tests/test_weasyprint_adapter.py` pins **both** states, the defect as it ships
-and the repair as it would ship, so neither can rot while this waits. What
-unblocks it is editorial, not typographic: Spanish article 3 needs roughly a page
-less copy, or an editor has to accept the lost plate and re-break es p17.
+and the flow repair as it would ship, so neither can rot while this waits. What
+unblocks the flow repair is editorial, not typographic: Spanish article 3 needs
+roughly a page less copy, or an editor has to accept the lost plate and re-break
+es p17.
+
+**What ships instead moves the ink and not the box.** The adapter measures which
+band anchors landed mid-page under their bridge's last line
+(`_measured_midpage_anchors`, carried on the `ReaderPlan` like every other
+laid-out fact) and classes them `band-anchor-midpage`; the stylesheet paints a
+classed heading down by exactly the space-before `_set_custom_frame` dropped —
+15pt for an h2, 10pt for an h3, folded into the heading's standing paint
+correction. All five headings in the table then stand 17.65pt clear of their
+paragraph like their rank and 13.2pt above the band they anchor, taken from the
+28.2pt of slack below them. A transform is invisible to fragmentation, so
+neither language can repaginate — that is the design, not a lucky property —
+and an anchor that opens its page is never classed and keeps its bare frame
+top. Verified on the rebuilt edition: both languages 36 pages, spans unchanged,
+`render_critic` pass, two consecutive builds byte-identical.
 
 ## Deferred until after cutover
 
@@ -359,7 +400,8 @@ world where it had not happened.
 
 ### 1. Re-enable shaping and re-baseline — DONE
 
-All three scaffolds are out. The reader now kerns, applies ligatures, and takes
+All three scaffolds were retired on 2026-07-26, closing the rollback window.
+The reader now kerns, applies ligatures, and takes
 Pango's own intra-token break opportunities. What was removed:
 
 1. `font-kerning: none` in `assets/weasyprint-a5.css`.
@@ -431,6 +473,12 @@ changed is where the lines fall *within* an article: G3 reports four English
 entries and one Spanish entry redistributing body copy across their own pages
 (for example `agent-swarms-and-model-economics` p15 321 → 287 words, p14 161 →
 187). `render_critic` returns `pass` with zero issues on both languages.
+
+Determinism was re-baselined with the scaffolds out, verified 2026-07-26: two
+consecutive `mag build 002-unreleased` runs produce byte-identical `SHA256SUMS`
+in both languages (67 packaged files each), both critics `pass` with zero
+issues, and the article spans are still 5 / 3 / 6 / 3 / 3 / 7 plus the
+editorial's 1 in both languages, 36 reader pages each.
 
 The shortening the scaffolds' removal was expected to cause did not materialise
 on this edition. Kerning does make lines hold more, but not by enough to release
@@ -528,14 +576,20 @@ ever added it is a bonus on top of the guard, never a replacement for it. Any
 new caller of `_advance_widths` / `_wrap` that reserves space on a prediction
 needs its own clause in `_validate_fitted_display`.
 
-### 2. Blank-page check accepts near-white ink
+### 2. Blank-page check accepts near-white ink — DONE
 
-`render_critic._inspect_page` derives `blank` from `WHITE_THRESHOLD = 245`, so
-the production critic's own "inside front and inside back covers must be
-completely blank" error would pass a 246–254 grey tint or a hairline. This is in
-shipping code and independent of the migration. `tools/compare_pipelines.py`
-already requires a pure-white raster plus zero extracted characters; production
-should match.
+`render_critic._inspect_page` used to derive `blank` from `WHITE_THRESHOLD =
+245`, so the production critic's own "inside front and inside back covers must
+be completely blank" error would pass a 246–254 grey tint or a hairline. As of
+2026-07-26 production holds `blank` to the standard `tools/compare_pipelines.py`
+always used: a pure-white raster (no pixel below 255) and zero extracted
+characters. The two directions of the check deliberately differ in strictness:
+an inside cover (reader page or imposed side) must satisfy the strict standard,
+so near-white ink now fails it; an *unintended blank* body page or booklet side
+is still refused on the reading-threshold test (`ink_free`: nothing below 245
+and no text), so a page carrying only a tint the reader cannot see stays an
+error rather than becoming legal by being faintly inked. Sparse-page logic is
+unchanged.
 
 ### 3. Deduplicate the reader-text fold — WITHDRAWN
 

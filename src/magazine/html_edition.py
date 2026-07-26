@@ -33,7 +33,7 @@ from .publication_document import (
     Text,
     parse_publication_document,
 )
-from .reader_text import fold_reader_characters
+from .reader_text import educate_reader_quotes, fold_reader_characters
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,10 +84,12 @@ def render_html_edition(edition: Edition) -> HtmlEdition:
     Every text and attribute value is folded through
     :func:`magazine.reader_text.fold_reader_characters` — the publication's own
     character repertoire, not any renderer's — and then escaped, in that order,
-    so that whatever the fold produces is still escaped. The order mattered more
-    when the fold turned a curly double quote into an ASCII one; it now leaves
-    real quotation marks alone, and the escape is what keeps an authored
-    straight quote from terminating an attribute value.
+    so that whatever the fold produces is still escaped. Prose text is
+    additionally educated first through
+    :func:`magazine.reader_text.educate_reader_quotes`, so an authored
+    typewriter quote prints as the real mark; code spans, fenced code, URLs,
+    and attribute values are exempt — a straight quote there is content, and
+    the escape is what keeps it from terminating an attribute value.
     """
 
     assets: list[HtmlAsset] = []
@@ -350,7 +352,7 @@ def _render_source_link(edition: Edition, article: Article, article_index: int) 
         f'<a class="source-link" data-source-link="primary" '
         f'data-source-id="{_attr(article.source_ids[0] if article.source_ids else "")}" '
         f'data-source-label="{_attr(_ui(edition, "source"))} / {article_index:02d}" '
-        f'href="{_attr(article.source_url)}">{_text(article.source_url)}</a>',
+        f'href="{_attr(article.source_url)}">{_verbatim(article.source_url)}</a>',
     )
 
 
@@ -446,7 +448,7 @@ def _render_block(block: Block, *, standfirst: bool = False, references: bool = 
     if isinstance(block, FencedCode):
         language = block.info.split(maxsplit=1)[0] if block.info else ""
         class_attr = f' class="language-{_attr(language)}"' if language else ""
-        return f"<pre><code{class_attr}>{_text(block.code)}</code></pre>"
+        return f"<pre><code{class_attr}>{_verbatim(block.code)}</code></pre>"
     if isinstance(block, BlockQuote):
         return "<blockquote>" + "".join(_render_block(child) for child in block.children) + "</blockquote>"
     if isinstance(block, ListBlock):
@@ -473,7 +475,7 @@ def _render_inlines(inlines: tuple[Inline, ...]) -> str:
         elif isinstance(inline, Strong):
             rendered.append(f"<strong>{_render_inlines(inline.children)}</strong>")
         elif isinstance(inline, InlineCode):
-            rendered.append(f"<code>{_text(inline.value)}</code>")
+            rendered.append(f"<code>{_verbatim(inline.value)}</code>")
         elif isinstance(inline, Link):
             title = f' title="{_attr(inline.title)}"' if inline.title is not None else ""
             rendered.append(
@@ -601,6 +603,20 @@ def _ui(edition: Edition, key: str) -> str:
 
 
 def _text(value: object) -> str:
+    # Educate first, then fold, then escape: education is prose typography, so
+    # it sees the authored characters; the fold keeps whatever education set
+    # inside the faces' repertoire; the escape neutralises what remains.
+    return escape(fold_reader_characters(educate_reader_quotes(str(value))), quote=False)
+
+
+def _verbatim(value: object) -> str:
+    """Prose escaping without quote education, for values that are not prose.
+
+    Code spans, fenced code, and URLs carry straight quotes as *content*: a
+    shell command's quoting or a query string must reach the page (and a screen
+    reader's clipboard) exactly as authored.  They are still folded, because the
+    faces' repertoire binds every printed character, prose or not.
+    """
     return escape(fold_reader_characters(str(value)), quote=False)
 
 

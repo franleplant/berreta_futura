@@ -136,6 +136,58 @@ def test_render_critic_requires_blank_inside_covers_and_imposed_side(tmp_path: P
     assert codes == {"inside-cover-booklet-not-blank", "inside-cover-reader-not-blank"}
 
 
+def test_near_white_ink_fails_inside_covers_and_still_blanks_a_body_page(tmp_path: Path):
+    """246-254 ink is below WHITE_THRESHOLD's notice but is not blankness.
+
+    Both directions of the blank check must hold: a tint on an inside cover is
+    ink the contract forbids, and a body page carrying only that tint is still
+    an unintended blank page, not a printed one.
+    """
+    reader = tmp_path / "reader.pdf"
+    _eight_page_pdf(reader)
+    booklet = tmp_path / "booklet.pdf"
+    _eight_page_pdf(booklet)
+
+    def tint(path: Path) -> None:
+        image = Image.new("RGB", (560, 794), "white")
+        ImageDraw.Draw(image).rectangle((70, 70, 490, 720), fill=(250, 250, 250))
+        image.save(path)
+
+    def near_white_rasters(_reader: Path, output: Path) -> list[Path]:
+        paths = _inked_rasters(_reader, output)
+        if output.name == "reader-pages":
+            tint(paths[1])  # inside front cover
+            tint(paths[4])  # body page 5
+        else:
+            tint(paths[1])  # imposed inside-cover side
+        return paths
+
+    with patch("magazine.render_critic._render_pages", side_effect=near_white_rasters):
+        report, _ = inspect_render(
+            reader,
+            booklet,
+            tmp_path,
+            language="en",
+            toc={"article": 4},
+            article_pages={"article": 1},
+            editorial_pages=None,
+            edition_id="issue-001",
+        )
+
+    errors = [issue for issue in report["issues"] if issue["severity"] == "error"]
+    assert report["result"] == "fail"
+    assert {issue["code"] for issue in errors} == {
+        "inside-cover-reader-not-blank",
+        "inside-cover-booklet-not-blank",
+        "blank-page",
+    }
+    assert [issue["page"] for issue in errors if issue["code"] == "blank-page"] == [5]
+    tinted_row = next(row for row in report["pages"] if row["page"] == 2)
+    assert tinted_row["ink_ratio"] == 0.0
+    assert tinted_row["ink_free"] is True
+    assert tinted_row["blank"] is False
+
+
 def test_page_inspection_detects_orphan_display_punctuation(tmp_path: Path):
     raster = tmp_path / "page-1.png"
     Image.new("RGB", (100, 100), "#333333").save(raster)

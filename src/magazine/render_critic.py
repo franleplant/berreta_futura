@@ -111,6 +111,10 @@ def inspect_render(
             f"Reader page count {page_count} is not a multiple of four.",
         )
 
+    # Both directions of blankness are checked, at different strictness: an
+    # inside cover must be *completely* blank (pure-white raster, no text), so
+    # near-white ink fails it; an unintended blank body page is one with no
+    # ink a reader could see, so near-white ink fails that too.
     inside_cover_pages = {2, page_count - 1}
     for row in page_rows:
         page = int(row["page"])
@@ -119,10 +123,11 @@ def inspect_render(
                 issue(
                     "inside-cover-reader-not-blank",
                     "error",
-                    "Inside front and inside back covers must be completely blank.",
+                    "Inside front and inside back covers must be completely blank "
+                    "(a pure-white raster with no extractable text).",
                     page=page,
                 )
-        elif row["blank"]:
+        elif row["ink_free"]:
             issue("blank-page", "error", "Rendered page is completely blank.", page=page)
         elif row["sparse"]:
             issue(
@@ -151,10 +156,11 @@ def inspect_render(
                 issue(
                     "inside-cover-booklet-not-blank",
                     "error",
-                    "The imposed side containing both inside covers must be completely blank.",
+                    "The imposed side containing both inside covers must be completely blank "
+                    "(a pure-white raster with no extractable text).",
                     page=side,
                 )
-        elif row["blank"] and side not in inside_cover_sides:
+        elif row["ink_free"]:
             issue(
                 "blank-booklet-side",
                 "error",
@@ -321,6 +327,11 @@ def _inspect_page(path: Path, pdf_page: Any, page_number: int) -> dict[str, Any]
         ink_pixels = histogram[255]
         total_pixels = gray.width * gray.height
         bbox = ink_mask.getbbox()
+        # ``ink_ratio`` counts a pixel as ink below WHITE_THRESHOLD (245), so a
+        # 246-254 tint or hairline has a ratio of exactly 0.0.  "Blank" is
+        # therefore held to the stricter standard tools/compare_pipelines.py
+        # uses: a pure-white raster and zero extracted characters.
+        pure_white = gray.getextrema() == (255, 255)
         width, height = gray.size
     text = pdf_page.extract_text() or ""
     punctuation = [
@@ -335,7 +346,8 @@ def _inspect_page(path: Path, pdf_page: Any, page_number: int) -> dict[str, Any]
         "ink_ratio": round(ratio, 6),
         "ink_bbox": list(bbox) if bbox else None,
         "text_characters": len(text.strip()),
-        "blank": ink_pixels == 0 and not text.strip(),
+        "blank": pure_white and not text.strip(),
+        "ink_free": ink_pixels == 0 and not text.strip(),
         "sparse": 0 < ratio < SPARSE_INK_RATIO,
         "standalone_punctuation_lines": punctuation,
     }

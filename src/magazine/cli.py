@@ -102,6 +102,17 @@ def parser() -> argparse.ArgumentParser:
     )
     review_record.add_argument("--finding", action="append", default=[])
     review_record.add_argument("--notes", default="")
+    review_record.add_argument(
+        "--engine",
+        choices=ENGINES,
+        help=(
+            "Renderer that produced the reviewed PDFs, when they were built with "
+            "`mag build --engine` rather than the configured [render] engine. "
+            "The record names it and the rebuild reuses it. Note that `mag release` "
+            "always rebuilds with the CONFIGURED engine, so an approval recorded "
+            "under an off-config engine will be stale at release."
+        ),
+    )
     release = actions.add_parser("release", help="Build and freeze the complete open edition")
     release.add_argument("edition_id")
     release.add_argument("--next-edition-id", help="Override the next empty edition id")
@@ -177,6 +188,7 @@ def main(argv: list[str] | None = None) -> int:
                 result=args.result,
                 findings=args.finding,
                 notes=args.notes,
+                engine=args.engine,
             )
             print(f"recorded: {path}\noutput: {result.output_dir}")
         elif args.command == "release":

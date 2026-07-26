@@ -157,14 +157,16 @@ def test_html_edition_uses_edition_locale_for_spanish(tmp_path: Path):
     assert "café" in html
 
 
-def test_reader_keeps_real_quotation_marks_and_escapes_the_straight_ones(tmp_path: Path):
-    """Authored quotation marks reach the page as themselves.
+def test_reader_keeps_real_quotation_marks_and_educates_the_straight_ones(tmp_path: Path):
+    """Authored quotation marks reach the page as real marks, never mixed.
 
     The fold used to turn every curly quote into its ASCII form for cp1252
     parity with ``render.py``; all eight bundled faces carry the real marks, so
-    it no longer does.  A *straight* quote is still authorable, and folding
-    before escaping is still what keeps one from terminating an attribute
-    value -- which is why both kinds are exercised here.
+    it no longer does.  A *straight* quote in prose is now educated into the
+    mark it stands for -- edition 002 shipped straight apostrophes beside curly
+    ones on single pages, and an independent review flagged the mix.  Attribute
+    values are not prose: there the straight quote survives, and escaping is
+    still what keeps it from terminating the value.
     """
     edition = _edition(tmp_path)
     titled = replace(
@@ -174,7 +176,7 @@ def test_reader_keeps_real_quotation_marks_and_escapes_the_straight_ones(tmp_pat
     html = render_html_edition(replace(edition, articles=(titled,))).html
 
     assert (
-        "<h1>The “Dark” Factory’s ‘case’ study… and its \"plain\" one</h1>"
+        "<h1>The “Dark” Factory’s ‘case’ study… and its “plain” one</h1>"
         in html
     )
     assert (
@@ -183,6 +185,57 @@ def test_reader_keeps_real_quotation_marks_and_escapes_the_straight_ones(tmp_pat
     ) in html
     assert 'href="#article-article&lt;&amp;&gt;"' in html
     assert '<img src="' in html and 'alt="Alt &lt;&amp;&gt;"' in html
+
+
+def test_prose_apostrophes_are_educated_in_body_and_standfirst_alike(tmp_path: Path):
+    """The two straight marks edition 002 actually printed, pinned at the seam.
+
+    En p16 set "the new run's pace" -- a possessive on a word inside numeral-heavy
+    copy -- and p26's lede set "It's become" while the same page carried curly
+    marks two lines down.  Neither is a special code path: the lede/standfirst
+    renders through the same ``Text`` inline as a body paragraph, and both must
+    come out as U+2019.  Code spans and fenced code keep their straight quotes:
+    a quote there is content.
+    """
+    manuscript = (
+        "It's become one of the most widely adopted internal tools since launching 3 months ago.\n\n"
+        "The old run made 68,000 commits in under two hours, about seventy times "
+        "the new run's pace, but accumulated more than 70,000 merge conflicts.\n\n"
+        "Run `mag build 'edition'` to reproduce.\n\n"
+        "```shell\necho 'straight stays'\n```\n"
+    )
+    html = render_html_edition(_edition(tmp_path, manuscript=manuscript)).html
+
+    assert (
+        '<p class="standfirst">It’s become one of the most widely adopted '
+        "internal tools since launching 3 months ago.</p>" in html
+    )
+    assert "seventy times the new run’s pace, but accumulated" in html
+    assert "<code>mag build 'edition'</code>" in html
+    assert "echo 'straight stays'" in html
+
+
+def test_educate_reader_quotes_positional_rules():
+    from magazine.reader_text import educate_reader_quotes
+
+    for authored, educated in (
+        # Possessives and contractions, including after numeral-adjacent words.
+        ("the new run's pace", "the new run’s pace"),
+        ("It's become", "It’s become"),
+        ("the agents' consensus", "the agents’ consensus"),
+        ("GPT-5.5's tokens", "GPT-5.5’s tokens"),
+        # Paired quotes, single and double, with nesting.
+        ('"quoted words"', "“quoted words”"),
+        ("a 'case' study", "a ‘case’ study"),
+        ('("aside")', "(“aside”)"),
+        ('"\'nested\' words"', "“‘nested’ words”"),
+        # Elision before a digit is the raised comma, not an opener.
+        ("the '90s runs", "the ’90s runs"),
+        # Already-real marks and quote-free text pass through untouched.
+        ("It’s already “set” right", "It’s already “set” right"),
+        ("no quotes at all", "no quotes at all"),
+    ):
+        assert educate_reader_quotes(authored) == educated, authored
 
 
 def test_reader_folding_leaves_bracketed_prose_and_code_spans_alone(tmp_path: Path):

@@ -880,31 +880,44 @@ article > figure[data-anchor="__opener__"] > img { max-height: 270pt; }
  * a band always sets a frame it then starts at.  A band's anchor heading
  * therefore follows its paragraph on the paragraph's space-after alone.
  *
- * KNOWN DEFECT, MEASURED, AND DELIBERATELY STILL HERE.  On a band that bridges
- * its own page, the 5.4pt of space-after is all the heading gets, and its own
- * -7.22965pt paint correction eats most of that again: **2.65pt** between the
- * paragraph's descenders and the heading's cap height, against 17.65pt for
- * every other prose heading in the reader.  The heading stands 2.65pt above and
- * 28.2pt below, so it reads as belonging to the paragraph it is not part of.
- * It fires on en p17 and p30 and es p17, p28 and p30 of edition 002.
+ * KNOWN FLOW DEFECT, MEASURED, DELIBERATELY STILL IN THE FLOW -- AND REPAIRED
+ * IN PAINT.  On a band that bridges its own page, the 5.4pt of space-after is
+ * all the heading gets in the flow, and its own -7.22965pt paint correction
+ * eats most of that again: **2.65pt** between the paragraph's descenders and
+ * the heading's cap height, against 17.65pt for every other prose heading in
+ * the reader.  The heading stands 2.65pt above and 28.2pt below, so it reads as
+ * belonging to the paragraph it is not part of.  It fires on en p17 and p30 and
+ * es p17, p28 and p30 of edition 002.
  *
- * Removing `margin-top: 0` repairs it exactly -- every band anchor then clears
- * by 17.65pt like its rank, and a band that opens a page is unaffected because
- * WeasyPrint discards a margin at a fragmentation break.  **It was tried, and
- * reverted, because of what it costs the Spanish edition.** English does not
- * move at all; Spanish repaginates from article 3 onward and an independent
- * visual review found three defects worse than the one being fixed: es p17
- * becomes a mid-article page that is ~60% white, because the anchor heading
- * plus its atomic figure block no longer fits the remainder and moves whole;
- * article 6 loses its tail ornament, which English keeps; and the signature
- * arithmetic drops to two closing plates, so `Las señales regresan` stops being
- * printed and the two languages no longer end the same way.  Article 3 also
- * lands exactly on the seven-page cap with no headroom.
+ * Removing `margin-top: 0` repairs the flow exactly -- every band anchor then
+ * clears by 17.65pt like its rank, and a band that opens a page is unaffected
+ * because WeasyPrint discards a margin at a fragmentation break.  **It was
+ * tried, and reverted, because of what it costs the Spanish edition.** English
+ * does not move at all; Spanish repaginates from article 3 onward and an
+ * independent visual review found three defects worse than the one being fixed:
+ * es p17 becomes a mid-article page that is ~60% white, because the anchor
+ * heading plus its atomic figure block no longer fits the remainder and moves
+ * whole; article 6 loses its tail ornament, which English keeps; and the
+ * signature arithmetic drops to two closing plates, so `Las señales regresan`
+ * stops being printed and the two languages no longer end the same way.
+ * Article 3 also lands exactly on the seven-page cap with no headroom.
  *
- * So this is not "reproduced because ReportLab did it" -- it is a live defect
- * whose repair is one declaration away and is blocked on the Spanish edition
- * absorbing the page.  Do not re-remove it without rebuilding both languages,
- * looking at es p17, and having an editor accept the lost plate.
+ * So the shipped repair moves the *ink* and not the box.  The adapter measures
+ * which band anchors landed mid-page under their bridge's last line
+ * (`_measured_midpage_anchors`) and classes them `band-anchor-midpage`; the
+ * rules below then paint the heading down by the space-before that
+ * `_set_custom_frame` dropped -- 15pt for an h2 (its 20.4pt margin-top is the
+ * paragraph's 5.4 + 15 of space-before) and 10pt for an h3 (15.4 = 5.4 + 10) --
+ * folded into the heading's own paint correction, because transforms override
+ * rather than compose.  The heading then stands 17.65pt clear of the paragraph
+ * like its rank and 13.2pt above the band it anchors, taken from the 28.2pt of
+ * slack below it.  A transform is invisible to fragmentation, so neither
+ * language can repaginate: that is the whole design, not a lucky property.  An
+ * anchor that opens a page is never classed and keeps its bare frame top.
+ *
+ * The flow repair -- one declaration -- is still blocked on the Spanish edition
+ * absorbing the page.  Do not remove `margin-top: 0` without rebuilding both
+ * languages, looking at es p17, and having an editor accept the lost plate.
  */
 article h2:has(+ figure[data-layout="evidence_band"]),
 article h2:has(+ figure[data-layout="evidence_band_prose"]),
@@ -916,6 +929,10 @@ article h3:has(+ figure[data-layout="adaptive_band"]),
 article h3:has(+ figure[data-layout="compact_band"]) {
   margin-left: -4.004pt; margin-right: -4.004pt; margin-top: 0;
 }
+/* 15 - 7.22965: the h2's dropped space-before plus its standing paint correction. */
+article h2.band-anchor-midpage { transform: translateY(7.77035pt); }
+/* 10 + .91256: the h3's dropped space-before plus its standing paint correction. */
+article h3.band-anchor-midpage { transform: translateY(10.91256pt); }
 /*
  * `_draw_figure` (render.py:791-802) sets the caption in SERIF at CAPTION_SIZE
  * in INK and the credit in SANS_MEDIUM at CAPTION_SIZE in SLATE, both on

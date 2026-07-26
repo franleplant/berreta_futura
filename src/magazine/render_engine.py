@@ -57,6 +57,12 @@ class ReaderRenderer:
 
     engine: str
     design: str
+    design_direction: str
+    """The ``layout.design_direction`` label this engine writes into a build's
+    ``edition-manifest.json``.  For ReportLab it differs from ``design`` (the
+    ``[render] design`` key ``"monument"`` renders as ``"A / Quiet Standard"``);
+    the render review record uses it to prove which engine produced the PDFs
+    under review."""
     shaping_scaffolds: tuple[str, ...]
     write_reader: Callable[..., "RenderLayout"]
 
@@ -77,19 +83,21 @@ def _weasyprint(design: str | None) -> ReaderRenderer:
     return ReaderRenderer(
         engine="weasyprint",
         design=WEASYPRINT_DESIGN,
+        design_direction=WEASYPRINT_DESIGN,
         shaping_scaffolds=SHAPING_SCAFFOLDS,
         write_reader=render_a5_weasyprint,
     )
 
 
 def _reportlab(design: str | None) -> ReaderRenderer:
-    from .render import DESIGN_MONUMENT, render_a5
+    from .render import DESIGN_LABEL, DESIGN_MONUMENT, render_a5
 
     # An unsupported direction stays ``render_a5``'s error to raise, so the
     # switch does not become a second place that decides what a design may be.
     return ReaderRenderer(
         engine="reportlab",
         design=design or DESIGN_MONUMENT,
+        design_direction=DESIGN_LABEL,
         shaping_scaffolds=(),
         write_reader=render_a5,
     )

@@ -2794,7 +2794,7 @@ def test_the_runt_binds_are_carried_forward_rather_than_re_measured():
 def test_the_band_anchor_clearance_defect_and_the_declaration_that_repairs_it(
     tmp_path: Path,
 ):
-    """A live defect, pinned together with the one-line repair that is deferred.
+    """The flow defect, pinned together with the one-line flow repair that waits.
 
     `_evidence_band` replaces the reading frame before it sets its anchor
     heading, and `block` drops space-before whenever `self.y` is the frame's own
@@ -2804,11 +2804,13 @@ def test_the_band_anchor_clearance_defect_and_the_declaration_that_repairs_it(
     height, against 17.65pt everywhere else in the reader, and an independent
     review called it the largest visible defect in the edition.
 
-    Removing `margin-top: 0` repairs it exactly, and that is asserted here so
-    the repair cannot rot while it waits.  It is not shipped because of what it
-    costs the *Spanish* edition -- a mid-article page ~60% white, a lost tail
-    ornament, a lost closing plate; see the stylesheet's own note.  Both states
-    are pinned, so neither the defect nor its cure can change unnoticed.
+    Removing `margin-top: 0` repairs the flow exactly, and that is asserted here
+    so the repair cannot rot while it waits.  It is not shipped because of what
+    it costs the *Spanish* edition -- a mid-article page ~60% white, a lost tail
+    ornament, a lost closing plate; see the stylesheet's own note.  What ships
+    instead is a *paint-only* clearance on the measured mid-page anchors (the
+    next tests), which is exactly why this flow geometry must stay pinned at
+    zero: the paint repair is safe only while the boxes do not move.
     """
     path = tmp_path / "band.png"
     Image.new("RGB", (1920, 1266), "white").save(path)
@@ -2847,6 +2849,91 @@ def test_the_band_anchor_clearance_defect_and_the_declaration_that_repairs_it(
     assert space_before(body, None) == pytest.approx(0.0, abs=1e-3)
     # The repair, as it would ship.
     assert space_before(body, repaired) == pytest.approx(ordinary, abs=1e-3)
+
+
+def test_a_midpage_band_anchor_is_cleared_in_paint_and_never_in_flow(tmp_path: Path):
+    """The shipped repair: ink moves down by the dropped space-before, boxes do not.
+
+    A classed h2 paints 15pt lower (its dropped space-before) and a classed h3
+    10pt, each folded into the heading's own standing paint correction because
+    transforms override rather than compose.  The heading's *box* must not move
+    at all -- a transform is invisible to fragmentation, which is the entire
+    reason this repair can ship where removing `margin-top: 0` could not.
+    """
+    path = tmp_path / "band.png"
+    Image.new("RGB", (1920, 1266), "white").save(path)
+
+    def anchored(tag: str, classed: bool) -> str:
+        marker = ' class="band-anchor-midpage"' if classed else ""
+        return (
+            '<article id="a" data-article-id="a" data-figure-layouts="evidence_band">'
+            f"<p>The paragraph above the anchor.</p><{tag}{marker}>Anchor</{tag}>"
+            f"{_band_figure(path)}</article>"
+        )
+
+    for tag, standing, shipped in (("h2", -7.22965, 7.77035), ("h3", 0.91256, 10.91256)):
+        bare = _block_of(_typeset_document(anchored(tag, False)).pages[0], tag)
+        cleared = _block_of(_typeset_document(anchored(tag, True)).pages[0], tag)
+
+        assert _translated_down(bare) == pytest.approx(standing, abs=1e-4)
+        assert _translated_down(cleared) == pytest.approx(shipped, abs=1e-4)
+        # The paint delta is exactly the space-before `_set_custom_frame` drops.
+        assert _translated_down(cleared) - _translated_down(bare) == pytest.approx(
+            15.0 if tag == "h2" else 10.0, abs=1e-4
+        )
+        # Paint only: the classed heading's box geometry is the bare heading's.
+        assert (cleared.position_y, cleared.content_box_y(), cleared.margin_height()) == (
+            bare.position_y,
+            bare.content_box_y(),
+            bare.margin_height(),
+        )
+
+
+def test_midpage_band_anchors_are_measured_from_the_laid_out_pages(tmp_path: Path):
+    """An anchor is mid-page exactly when it starts on its bridge's last page.
+
+    The first document sets bridge, heading and band together on page one: the
+    heading follows prose mid-page, so the band is named.  The second pushes the
+    heading and its unbreakable band to page two while the bridge stays behind:
+    the heading opens a page, which is the case ReportLab's dropped space-before
+    was written for, so nothing is named and nothing gets the paint clearance.
+    """
+    path = tmp_path / "band.png"
+    Image.new("RGB", (1920, 1266), "white").save(path)
+    marked = (
+        '<article id="a" data-article-id="a" data-figure-layouts="evidence_band">'
+        '{spacer}<p data-band-bridge="fig">The bridge paragraph.</p>'
+        f'<h2 data-band-anchor="fig">Anchor</h2>{_band_figure(path)}</article>'
+    )
+
+    midpage = _typeset_document(marked.format(spacer=""))
+    assert adapter._measured_midpage_anchors(midpage) == ("fig",)
+
+    opening = _typeset_document(
+        marked.format(spacer='<div style="height: 430pt"></div>')
+    )
+    bridge_pages = {page for page, _top in adapter._band_bridges(opening).values()}
+    assert len(opening.pages) == 2 and bridge_pages == {1}
+    assert adapter._measured_midpage_anchors(opening) == ()
+
+
+def test_the_adapter_marks_band_anchors_and_classes_only_the_measured_ones(tmp_path: Path):
+    path = tmp_path / "band.png"
+    Image.new("RGB", (1920, 1266), "white").save(path)
+    tree = _parse_article_fragment(f"<p>lead in</p><h2>Anchor</h2>{_band_figure(path)}")
+
+    adapter._mark_band_bridges(tree)
+    heading = next(tree.iter("h2"))
+    paragraph = next(tree.iter("p"))
+    assert heading.get("data-band-anchor") == "fig"
+    assert paragraph.get("data-band-bridge") == "fig"
+
+    adapter._apply_anchor_clearances(tree, ())
+    assert "band-anchor-midpage" not in adapter._element_classes(heading)
+    adapter._apply_anchor_clearances(tree, ("other",))
+    assert "band-anchor-midpage" not in adapter._element_classes(heading)
+    adapter._apply_anchor_clearances(tree, ("fig",))
+    assert "band-anchor-midpage" in adapter._element_classes(heading)
 
 
 # ---------------------------------------------------------------------------

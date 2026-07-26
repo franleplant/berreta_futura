@@ -26,7 +26,7 @@ from xml.etree.ElementTree import Element, SubElement
 from .errors import DependencyError, ValidationError
 from .html_edition import HtmlAsset, render_html_edition
 from .manifest import Edition
-from .reader_text import fold_reader_characters
+from .reader_text import educate_reader_quotes, fold_reader_characters
 from .render import FigurePlacement, RenderLayout
 
 
@@ -902,8 +902,11 @@ class ReaderPlan:
     is painted back down by, which is a constant except where the reader's own
     clamp bites.  ``runt_binds`` names the prose blocks whose last two words are
     bound together because the block's last line came out as one short word; see
-    ``_RUNT_MEASURE_FRACTION``.  All six are *measured* facts, so a plan is the
-    output of one layout and the input to the next.
+    ``_RUNT_MEASURE_FRACTION``.  ``midpage_band_anchors`` names the bands whose
+    anchor heading was set mid-page under prose, which is what earns the heading
+    its paint-only clearance (see ``_measured_midpage_anchors``).  All seven are
+    *measured* facts, so a plan is the output of one layout and the input to the
+    next.
     """
 
     closing_plates: int
@@ -912,6 +915,7 @@ class ReaderPlan:
     band_offsets: tuple[tuple[str, float], ...] = ()
     end_marks: tuple[tuple[str, float], ...] = ()
     runt_binds: tuple[str, ...] = ()
+    midpage_band_anchors: tuple[str, ...] = ()
 
     @property
     def codes_by_article(self) -> dict[str, SourceCode]:
@@ -1151,6 +1155,7 @@ def _lay_out(
     _rewrite_landscape_plates(tree)
     _pin_opener_fields(tree, edition)
     _mark_band_bridges(tree)
+    _apply_anchor_clearances(tree, plan.midpage_band_anchors)
     _apply_adaptive_images(tree, plan.adaptive_image_heights)
     _apply_band_offsets(tree, plan.band_offset_points)
     _install_flow_clearances(tree)
@@ -1667,9 +1672,16 @@ def _mark_band_bridges(tree: Element) -> None:
     which margin parity ``band_x`` was computed against.  Both are laid-out facts
     and not properties of the content, so the block above the band's anchor
     heading is marked and the measuring pass reads them off the finished pages.
+
+    The anchor heading itself is marked as well, because a third laid-out fact
+    hangs off the pair: whether the heading was set mid-page under the bridge's
+    last line, which is what decides its paint clearance (see
+    ``_measured_midpage_anchors``).
     """
     for article in tree.iter("article"):
-        for figure, _heading, bridge in _evidence_bands(article):
+        for figure, heading, bridge in _evidence_bands(article):
+            if heading is not None:
+                heading.set("data-band-anchor", figure.get("data-figure-id") or "")
             if bridge is None:
                 continue
             bridge.set("data-band-bridge", figure.get("data-figure-id") or "")
@@ -1898,8 +1910,11 @@ def _measured_adaptive_images(document: Any, edition: Edition) -> tuple[tuple[st
         for article in edition.articles
         for figure in getattr(article, "figures", ())
     }
+    # Educated like the heading itself: the laid-out page carries the educated
+    # text, so an anchor authored with a straight quote must be compared -- and
+    # measured -- as the marks the page actually sets.
     anchors = {
-        figure.id: str(figure.anchor)
+        figure.id: educate_reader_quotes(str(figure.anchor))
         for article in edition.articles
         for figure in getattr(article, "figures", ())
     }
@@ -1977,6 +1992,54 @@ def _band_bridges(document: Any) -> dict[str, tuple[int, float]]:
 
 def _band_bridge_tops(document: Any) -> dict[str, float]:
     return {figure_id: top for figure_id, (_page, top) in _band_bridges(document).items()}
+
+
+def _measured_midpage_anchors(document: Any) -> tuple[str, ...]:
+    """Each band whose anchor heading was set mid-page, under its bridge's last line.
+
+    ``_set_custom_frame`` drops a band anchor's space-before because a band
+    always sets a frame it then starts at (render.py:1135), and the stylesheet
+    reproduces that with ``margin-top: 0``.  For an anchor that *opens* a page
+    the two rules agree with the rest of the reader -- no heading gets space at
+    a frame's own top.  For an anchor that lands mid-page they leave the heading
+    2.65pt off the paragraph above it, against 17.65pt for every other prose
+    heading; restoring the margin in flow was tried and repaginates the Spanish
+    edition (see the stylesheet's band-anchor note), so the repair is a
+    paint-only offset instead, and this is the measurement that gates it: an
+    anchor is mid-page exactly when its heading starts on the page where the
+    bridge block's last line ended.  The offset moves ink and never a box, so
+    the plan that carries it cannot change the pages it was measured from.
+    """
+    anchor_pages: dict[str, int] = {}
+    for page_number, page in enumerate(document.pages, start=1):
+        for box in _walk_boxes(page._page_box):
+            element = getattr(box, "element", None)
+            if element is None:
+                continue
+            figure_id = getattr(element, "attrib", {}).get("data-band-anchor")
+            if figure_id and getattr(box, "element_tag", None) in {"h2", "h3"}:
+                anchor_pages.setdefault(figure_id, page_number)
+    bridges = _band_bridges(document)
+    return tuple(
+        sorted(
+            figure_id
+            for figure_id, page in anchor_pages.items()
+            if figure_id in bridges and bridges[figure_id][0] == page
+        )
+    )
+
+
+def _apply_anchor_clearances(tree: Element, midpage: Iterable[str]) -> None:
+    """Class the measured mid-page band anchors so the stylesheet can clear them."""
+    wanted = set(midpage)
+    if not wanted:
+        return
+    for article in tree.iter("article"):
+        for figure, heading, _bridge in _evidence_bands(article):
+            if heading is None or (figure.get("data-figure-id") or "") not in wanted:
+                continue
+            classes = (heading.get("class") or "").split()
+            heading.set("class", " ".join([*classes, "band-anchor-midpage"]))
 
 
 def _live_area_left(page_number: int) -> float:
@@ -2494,6 +2557,7 @@ def _measured_plan(
         runt_binds=tuple(
             sorted({*runt_binds, *_measured_runt_binds(document)}, key=int)
         ),
+        midpage_band_anchors=_measured_midpage_anchors(document),
     )
 
 

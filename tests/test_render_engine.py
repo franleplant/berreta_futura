@@ -7,7 +7,7 @@ import unittest
 from magazine import Magazine, ValidationError
 from magazine.cli import parser
 from magazine import compiler as compiler_module
-from magazine.render import DESIGN_MONUMENT, render_a5
+from magazine.render import DESIGN_LABEL, DESIGN_MONUMENT, render_a5
 from magazine.render_engine import DEFAULT_ENGINE, ENGINES, reader_renderer
 from magazine.weasyprint_adapter import WEASYPRINT_DESIGN, render_a5_weasyprint
 
@@ -57,6 +57,14 @@ class RendererIdentityTests(unittest.TestCase):
     def test_each_renderer_carries_its_own_design(self):
         self.assertEqual(reader_renderer("reportlab").design, DESIGN_MONUMENT)
         self.assertEqual(reader_renderer("weasyprint").design, WEASYPRINT_DESIGN)
+
+    def test_each_renderer_names_the_direction_its_manifest_will_carry(self):
+        # ``design_direction`` is the layout label the build writes into
+        # ``edition-manifest.json``; the render review record checks it to
+        # prove which engine produced the PDFs under review.  For ReportLab it
+        # differs from ``design`` (config key versus rendered label).
+        self.assertEqual(reader_renderer("reportlab").design_direction, DESIGN_LABEL)
+        self.assertEqual(reader_renderer("weasyprint").design_direction, WEASYPRINT_DESIGN)
 
     def test_reportlab_design_config_never_reaches_weasyprint(self):
         # [render] design is the ReportLab engine's key.  Forwarding it would
@@ -157,6 +165,14 @@ class BuildCliTests(unittest.TestCase):
     def test_build_rejects_an_unknown_engine_flag(self):
         with self.assertRaises(SystemExit):
             parser().parse_args(["build", "issue-001", "--engine", "prince"])
+
+    def test_review_record_mirrors_the_engine_flag(self):
+        base = ["review", "record", "issue-001", "--reviewer", "critic", "--result", "approved"]
+
+        self.assertIsNone(parser().parse_args(base).engine)
+        for engine in ENGINES:
+            args = parser().parse_args([*base, "--engine", engine])
+            self.assertEqual(args.engine, engine)
 
 
 class _Stop(Exception):

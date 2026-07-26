@@ -29,6 +29,7 @@ from .render_review import (
     create_render_review,
     load_render_review,
     require_approved_reports,
+    sha256 as _artifact_sha256,
     visual_review_status,
     write_render_review,
 )
@@ -498,10 +499,22 @@ class Magazine:
         findings: list[str] | tuple[str, ...] = (),
         notes: str = "",
         reviewed_at: str | None = None,
+        engine: str | None = None,
     ) -> tuple[Path, BuildResult]:
-        """Bind an independent visual decision to the current language PDFs."""
+        """Bind an independent visual decision to the current language PDFs.
+
+        ``engine`` mirrors ``build``'s override for reviewing an off-config
+        build. One renderer resolution serves the whole operation: the record
+        names it (checked against every built package's manifest, so a review
+        cannot bind to another engine's pages), and the rebuild below reuses it,
+        so the repackaged PDFs are set by the engine the reviewer looked at.
+        """
 
         self.validate(edition_id)
+        renderer = reader_renderer(
+            self.render_engine if engine is None else engine,
+            design=self.render_design,
+        )
         destination = self.output_dir / edition_id
         language_packages = {
             language: destination if language == self.primary_language else destination / language
@@ -512,6 +525,8 @@ class Magazine:
             reviewer=reviewer,
             result=result,
             language_packages=language_packages,
+            engine=renderer.engine,
+            design_direction=renderer.design_direction,
             findings=findings,
             notes=notes,
             reviewed_at=reviewed_at,
@@ -520,8 +535,27 @@ class Magazine:
             self.editions_dir / edition_id / "reviews" / "render.yaml",
             record,
         )
-        # Rebuild so package reports and checksums carry the recorded decision.
-        return path, self.build(edition_id)
+        # Rebuild so package reports and checksums carry the recorded decision,
+        # then prove the rebuilt PDFs are the ones the record binds to.  The
+        # build is deterministic and the engine is the record's own, so any
+        # mismatch means the record is stale the moment it is written -- an
+        # error here, rather than a `status: "stale"` refusal at release time.
+        result = self.build(edition_id, engine=renderer.engine)
+        mismatched = []
+        for item in result.languages:
+            row = record["languages"].get(item.language, {})
+            if row.get("reader_sha256") != _artifact_sha256(item.reader_pdf) or row.get(
+                "booklet_sha256"
+            ) != _artifact_sha256(item.booklet_pdf):
+                mismatched.append(item.language)
+        if mismatched:
+            raise ValidationError(
+                f"Render review for {edition_id} was recorded against PDFs the rebuild "
+                f"did not reproduce ({', '.join(sorted(mismatched))}). The recorded "
+                "review is already stale; rebuild, re-review the current PDFs, and "
+                "record again."
+            )
+        return path, result
 
     def render_review_status(self, edition_id: str) -> dict[str, Any]:
         destination = self.output_dir / edition_id

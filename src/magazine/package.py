@@ -41,6 +41,14 @@ def package_release(
     reader = destination / "reader.pdf"
     shutil.copyfile(reader_pdf, reader)
     booklet = impose_a5_on_a4(reader, destination / "home" / "booklet-a4.pdf")
+    # The manifest is written as soon as the PDFs it describes exist, *before*
+    # the render critic runs: the critic reads nothing from it (every fact it
+    # judges arrives as an argument), and a crash or a critic failure anywhere
+    # below must not leave fresh PDFs beside the previous build's manifest --
+    # that pairing is what a release-time staleness check exists to catch, and
+    # it should never be manufacturable by an interrupted build.
+    edition_manifest = destination / "edition-manifest.json"
+    edition_manifest.write_text(json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8")
     render_report, contact_sheets = inspect_render(
         reader,
         booklet,
@@ -87,8 +95,6 @@ def package_release(
         ) + "\n",
         encoding="utf-8",
     )
-    edition_manifest = destination / "edition-manifest.json"
-    edition_manifest.write_text(json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8")
     # Keep each language package self-contained. The primary English package may
     # have translated sibling directories beneath it, which must not leak into
     # its checksum inventory.

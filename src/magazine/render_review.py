@@ -39,6 +39,11 @@ def load_render_review(path: Path, *, edition_id: str) -> dict[str, Any] | None:
     for key in ("reviewer", "reviewed_at"):
         if not str(data.get(key) or "").strip():
             errors.append(f"Render review requires {key}")
+    # ``engine`` / ``design_direction`` were added after edition 002's record
+    # was written, so their absence is legal; an empty value is not.
+    for key in ("engine", "design_direction"):
+        if key in data and not str(data.get(key) or "").strip():
+            errors.append(f"Render review {key} must be a non-empty string when present")
     languages = data.get("languages")
     if not isinstance(languages, dict) or not languages:
         errors.append("Render review requires a languages mapping")
@@ -109,6 +114,8 @@ def create_render_review(
     reviewer: str,
     result: str,
     language_packages: dict[str, Path],
+    engine: str,
+    design_direction: str,
     findings: list[str] | tuple[str, ...] = (),
     notes: str = "",
     reviewed_at: str | None = None,
@@ -122,18 +129,37 @@ def create_render_review(
         raise ValidationError("Render review result must be approved or changes_required")
     if result == "changes_required" and not clean_findings:
         raise ValidationError("A changes_required render review needs at least one finding")
+    if not engine.strip() or not design_direction.strip():
+        raise ValidationError("Render review requires the engine and design direction under review")
     languages: dict[str, dict[str, Any]] = {}
     for language, package in language_packages.items():
         reader = package / "reader.pdf"
         booklet = package / "home" / "booklet-a4.pdf"
         report_path = package / "render-critic.json"
-        if not reader.is_file() or not booklet.is_file() or not report_path.is_file():
+        manifest_path = package / "edition-manifest.json"
+        if (
+            not reader.is_file()
+            or not booklet.is_file()
+            or not report_path.is_file()
+            or not manifest_path.is_file()
+        ):
             raise ValidationError(
                 f"Render review requires a completed {language} build; run `mag build {edition_id}` first"
             )
         report = json.loads(report_path.read_text(encoding="utf-8"))
         if report.get("result") != "pass":
             raise ValidationError(f"Cannot record review: {language} render critic has not passed")
+        # The built manifest is the record of which renderer set the PDFs under
+        # review; a review recorded against another engine's output would bind
+        # the decision to pages the named engine never produced.
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        built_direction = manifest.get("layout", {}).get("design_direction")
+        if built_direction != design_direction:
+            raise ValidationError(
+                f"Cannot record review: the {language} package was rendered as "
+                f"{built_direction!r}, not {design_direction!r} ({engine}); rebuild with "
+                "the reviewed engine or record with the matching --engine"
+            )
         languages[language] = {
             "reader_sha256": sha256(reader),
             "booklet_sha256": sha256(booklet),
@@ -147,6 +173,8 @@ def create_render_review(
         "reviewer": reviewer,
         "reviewed_at": timestamp,
         "result": result,
+        "engine": engine.strip(),
+        "design_direction": design_direction.strip(),
         "findings": clean_findings,
         "notes": notes.strip(),
         "languages": languages,

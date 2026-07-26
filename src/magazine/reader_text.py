@@ -1,9 +1,12 @@
-"""The publication's reader character folding.
+"""The publication's reader character rules: folding and quote education.
 
 A printed reader can only set what its own faces carry.  This module holds that
-one rule: a character the bundled faces cannot set is folded into a sequence
+rule -- a character the bundled faces cannot set is folded into a sequence
 they can, or -- failing that -- replaced with a visible ``?`` rather than left
-as a silent hole for a host font to fill.
+as a silent hole for a host font to fill -- and its converse for quotation
+marks: an authored typewriter quote is educated into the real mark the faces
+do carry (:func:`educate_reader_quotes`), so straight and curly marks cannot
+mix on one printed page.
 
 The rule is a property of the publication, not of one typesetter, so it lives
 here on its own and deliberately contains no markup or markdown knowledge: it
@@ -57,6 +60,57 @@ _FOLDED_CHARACTERS = {
 }
 
 _REPLACEMENT = "?"
+
+_APOSTROPHE = "\u2019"
+_OPEN_SINGLE = "\u2018"
+_OPEN_DOUBLE = "\u201c"
+_CLOSE_DOUBLE = "\u201d"
+
+# What may stand before an *opening* mark: nothing, whitespace, an opening
+# bracket, a dash, or another opening quotation mark (nested quotes).
+_OPENING_CONTEXT = frozenset("([{\u2018\u201c\u00ab\u00a1\u00bf-\u2010\u2013\u2014/")
+
+
+def educate_reader_quotes(text: str) -> str:
+    """Set authored typewriter quotation marks as the real marks they stand for.
+
+    The publication's faces carry U+2018/2019/201C/201D and most manuscripts
+    author them directly; where one authors the ASCII stand-in instead, the two
+    kinds would otherwise mix on a single printed page -- edition 002 shipped
+    seven straight apostrophes beside curly ones, two of them flagged by an
+    independent review.  Which mark prints is typesetting, not authorship, so
+    the straight characters are educated here rather than edited in the
+    manuscripts.
+
+    The rules are positional and deliberately small.  A ``'`` after a letter or
+    digit is an apostrophe or a closing quote (``run's``, ``agents'``) and both
+    are U+2019; after an opening context and before a letter it opens, except
+    before a digit, where it is an elision (``'90s``).  A ``"`` after an
+    opening context opens; anything else closes.  This is applied to *prose*
+    values only -- code spans, fenced code, and URLs are quoted verbatim by the
+    caller, because a straight quote inside them is content, not typography.
+    """
+
+    if "'" not in text and '"' not in text:
+        return text
+    characters = list(text)
+    for index, character in enumerate(characters):
+        if character not in {"'", '"'}:
+            continue
+        previous = characters[index - 1] if index else ""
+        following = characters[index + 1] if index + 1 < len(characters) else ""
+        opens = not previous or previous.isspace() or previous in _OPENING_CONTEXT
+        if character == '"':
+            characters[index] = _OPEN_DOUBLE if opens else _CLOSE_DOUBLE
+        elif previous.isalnum():
+            characters[index] = _APOSTROPHE
+        elif opens and following.isalpha():
+            characters[index] = _OPEN_SINGLE
+        else:
+            # An elision ('90s), a mark after closing punctuation, or a lone
+            # quote: all read as the raised-comma form.
+            characters[index] = _APOSTROPHE
+    return "".join(characters)
 
 
 @lru_cache(maxsize=1)
