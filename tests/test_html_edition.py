@@ -156,21 +156,30 @@ def test_html_edition_uses_edition_locale_for_spanish(tmp_path: Path):
     assert "café" in html
 
 
-def test_reader_folding_cannot_terminate_an_attribute_value(tmp_path: Path):
-    """A folded curly double quote is an ASCII quote, so folding must precede escaping.
+def test_reader_keeps_real_quotation_marks_and_escapes_the_straight_ones(tmp_path: Path):
+    """Authored quotation marks reach the page as themselves.
 
-    Every interpolated attribute below carries authored prose, so folding the
-    assembled document instead would have produced malformed markup.
+    The fold used to turn every curly quote into its ASCII form for cp1252
+    parity with ``render.py``; all eight bundled faces carry the real marks, so
+    it no longer does.  A *straight* quote is still authorable, and folding
+    before escaping is still what keeps one from terminating an attribute
+    value -- which is why both kinds are exercised here.
     """
     edition = _edition(tmp_path)
-    titled = replace(edition.articles[0], title="The “Dark” Factory’s ‘case’ study…")
+    titled = replace(
+        edition.articles[0],
+        title='The “Dark” Factory’s ‘case’ study… and its "plain" one',
+    )
     html = render_html_edition(replace(edition, articles=(titled,))).html
 
-    assert "<h1>The \"Dark\" Factory's 'case' study...</h1>" in html
     assert (
-        'alt="Tail art for The &quot;Dark&quot; Factory&#x27;s &#x27;case&#x27; study..."'
+        "<h1>The “Dark” Factory’s ‘case’ study… and its \"plain\" one</h1>"
         in html
     )
+    assert (
+        'alt="Tail art for The “Dark” Factory’s ‘case’ study… '
+        'and its &quot;plain&quot; one"'
+    ) in html
     assert 'href="#article-article&lt;&amp;&gt;"' in html
     assert '<img src="' in html and 'alt="Alt &lt;&amp;&gt;"' in html
 
@@ -183,28 +192,53 @@ def test_reader_folding_leaves_bracketed_prose_and_code_spans_alone(tmp_path: Pa
     html = render_html_edition(_edition(tmp_path, manuscript=manuscript)).html
 
     assert "<code>[label](target)</code>" in html
-    assert 'see [1] (below) for the "full" list...' in html
+    assert "see [1] (below) for the “full” list…" in html
 
 
-def test_reader_folding_agrees_with_the_reportlab_renderer_on_link_free_text():
-    """One publication rule, two definitions until the migration lands.
+def test_reader_folding_deliberately_outsets_the_reportlab_renderer():
+    """One publication rule, two definitions -- and they no longer agree.
 
-    ``render._plain`` folds the same characters and then also strips markdown
-    links, which is why the reader path cannot reuse it.  Until ``render`` is
-    deduplicated against :mod:`magazine.reader_text` this pins the two together
-    on every input where the markdown clause is inert.
+    ``render._plain`` folds through cp1252 because ReportLab writes through
+    cp1252, and ``render.py`` has to keep producing the archived publication
+    byte for byte.  The reader path folds to what the *bundled faces* can set,
+    which is a different repertoire in both directions.  This pins the
+    difference, so neither definition can drift into the other unnoticed.
     """
-    samples = (
-        "“Curly” quotes and ‘single’ ones",
-        "An ellipsis… and an arrow → onwards",
-        "A non-breaking space",
+    # Still identical: nothing here is outside either repertoire.
+    for sample in (
         "see [1] (below) and [bracketed] prose",
-        "An em dash — and an accented café",
-        "Outside cp1252: 日本語",
+        "An em dash \u2014 and an accented caf\u00e9",
+        "A non-breaking\u00a0space",
+        "Beyond both: \u65e5\u672c\u8a9e",
         "",
-    )
-    for sample in samples:
+    ):
         assert fold_reader_characters(sample) == _plain(sample), sample
+
+    # Wider: every bundled face carries these, so the reader keeps them and
+    # only the cp1252 path degrades them.
+    for authored, degraded in (
+        ("\u201cCurly\u201d quotes and \u2018single\u2019 ones", "\"Curly\" quotes and 'single' ones"),
+        ("An ellipsis\u2026 and an arrow \u2192 onwards", "An ellipsis... and an arrow -> onwards"),
+    ):
+        assert fold_reader_characters(authored) == authored
+        assert _plain(authored) == degraded
+
+    # Narrower: cp1252 encodes a soft hyphen and Inter cannot set one, so the
+    # reader refuses it visibly rather than letting a host font supply it.
+    assert fold_reader_characters("soft\u00adhyphen") == "soft?hyphen"
+    assert _plain("soft\u00adhyphen") == "soft\u00adhyphen"
+    # U+25E6 is the nested-list marker the design refuses to set: Inter carries
+    # it, the serif that sets prose does not, and a value cannot know its face.
+    assert fold_reader_characters("nested \u25e6 marker") == "nested ? marker"
+
+
+def test_every_printable_ascii_character_is_settable_by_every_bundled_face():
+    """The premise of the fold's ASCII shortcut, asserted rather than assumed."""
+    from magazine.reader_text import _settable_codepoints
+
+    settable = _settable_codepoints()
+
+    assert [chr(point) for point in range(0x20, 0x7F) if point not in settable] == []
 
 
 def test_current_edition_languages_render_through_public_interface():

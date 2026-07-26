@@ -161,6 +161,155 @@ metric cannot be the thing that catches a hue error here. The raster clause is
 kept as the corroborator that also sees hue *inside* an embedded image, where no
 colour operator exists to compare.
 
+## What the first review after shaping found, and what it cost
+
+Shaping was reviewed on the printed proof and produced three findings. **Two are
+repaired and shipped; the third is repaired, measured, reverted, and still open**
+— its cure costs the Spanish edition more than the defect does. Nothing
+structural moved for the two that shipped: identical page counts, spans, start
+pages and figure placements in both languages.
+
+### Runt control — the reader now has some
+
+**A paragraph whose last line is one short word** was never controlled at all:
+before shaping English set 10 and Spanish 6, and shaping reshuffled which
+paragraphs landed in the class rather than creating it (13 and 8 after). CSS has
+no primitive for it — `orphans` and `widows` count lines across a *page* break
+and say nothing about a paragraph's own last line — so the fix is the
+typesetter's, older than CSS: bind the last two words with `U+00A0` so they wrap
+together. It is a print-path tree mutation in `weasyprint_adapter`
+(`_key_prose_blocks` / `_bind_paragraph_tails`), measured off one laid-out pass
+and applied on the next, and carried in `ReaderPlan.runt_binds` like every other
+measured placement fact. The semantic HTML is untouched, so the character is the
+typesetter's and never the manuscript's.
+
+**The threshold is measured, not chosen.** A single-word last line is only a
+defect when the word is short. Every one in edition 002, as a fraction of its own
+measure, sorts as `3.2 7.5 7.8 7.8 9.9 10.3 10.3 10.5 11.6 13.3 13.7 13.9 14.6 |
+16.4 16.8 17.6 18.0 18.2 18.9 21.0 21.4` percent, and the review's own line fell
+inside that gap: it refused `context.` at 11.6% and accepted `irreversible.` at
+17.6%. Nothing at all is observed between 14.6% and 16.4%, so `15%` can move by
+±0.7 points without reclassifying a single paragraph.
+
+Measured on edition 002, single-word last lines in the reading flow (prose
+paragraphs, list items, figure captions):
+
+| | before | after |
+|---|---|---|
+| en | 16 | **2** (18.9%, 18.0% — both above the review's own line) |
+| es | 10 | **6** (16.4% to 21.4%) |
+| line count of a bound paragraph | — | unchanged on all 18 |
+| reader pages | 36 / 36 | 36 / 36 |
+
+Binding can only ever *fit* the pair on the line its neighbour was on or move
+both down together, so under greedy line breaking it never adds a line and
+sometimes gives one back — verified: 0 of 18 bound blocks changed line count.
+What it does spend is rag: the worst case opens 95.7pt (29.5% of the measure) of
+white on one English penultimate line, in exchange for a runt the review named.
+There is deliberately no cap on that, because a cap tight enough to prevent it
+would leave `context.` unrepaired.
+
+The bound pair reaches the PDF as an ordinary space — `pdftotext` and `pypdf`
+both extract 0 instances of `U+00A0` and full phrase text — and every bundled
+face carries the glyph, so nothing falls back to a host font. The reader is set
+ragged right, so there is no justification for a bound space to distort. Markup
+was rejected as the mechanism for the reason recorded under
+[the text layer](#the-text-layer-has-its-spaces-back): a `white-space: nowrap`
+span is a second inline box, and WeasyPrint writes no space glyph between two of
+them.
+
+### Real quotation marks — the fold stopped degrading them
+
+`reader_text.fold_reader_characters` folded the curly quotation marks, the
+ellipsis and the arrow to ASCII, and then encoded through cp1252. **None of that
+was typography.** It existed so the reader path matched ReportLab, which writes
+through cp1252; with kerning and ligatures correct, straight quotes were the most
+conspicuous crudity left in the English edition, and unlike most of what this
+migration chased it is obvious at reading distance.
+
+The repertoire is now the **bundled faces'**, not cp1252's: a character is kept
+when every one of the eight shipped faces can set it, and replaced with a visible
+`?` when it cannot. Measured — all eight carry `U+2018/2019/201C/201D`, `U+2026`,
+`U+2192`, `U+00A0`, the dashes and the guillemets, so nothing on the old fold list
+needed folding at all. Reaching the built reader now: 4 `“`, 4 `”`, 4 `’` and 2
+`→` in English, 4 `«`, 4 `»` and 2 `→` in Spanish. Nothing structural moved:
+identical page counts, spans, start pages and figure placements in both languages.
+
+Two things are still folded, and both are deliberate:
+
+- **`U+00A0` to a space.** Not an encoding fold. It is the reader's own
+  line-breaking control character now, so a manuscript must not be able to place
+  one the typesetter did not choose.
+- **Anything no face can set**, to `?`. This is *narrower* than cp1252 in one
+  direction and wider in the other: it refuses `U+00AD` SOFT HYPHEN, which cp1252
+  encodes but Inter cannot set, and it closes the
+  [nested list marker](#5-latent-will-bite-on-a-future-edition) hole — `U+25E6` is
+  in Inter and not in Source Serif, and a value does not know which face it is
+  bound for. A `?` on a proof is an editor's problem; a Times glyph in the middle
+  of Source Serif is a printed one.
+
+`render._plain` keeps its own cp1252 copy untouched, so `engine = "reportlab"`
+still reproduces the archived publication byte for byte — verified after this
+change on all 162 packaged files across both languages. The test that used to pin
+the two implementations together now pins their *difference* in both directions.
+
+**What is left is editorial, not the renderer's.** Seven apostrophes in the
+English manuscripts are authored straight (`Coase's`, `Uber's`, `agent's`,
+`It's`, …), and the sources they are faithful to are straight too, so setting
+them curly would be a substantive edit under `editorial.substantive_edits_require_approval`.
+
+### Heading clearance at a band anchor — 2.65pt, attempted and REVERTED
+
+`_evidence_band` replaces the reading frame before it sets its anchor heading,
+and `block` drops space-before whenever `self.y` is the frame's own top
+(render.py:1135) — so ReportLab sets a band's anchor heading on the paragraph's
+5.4pt of space-after alone, and the heading's own −7.22965pt paint correction
+eats most of that again. On a band that bridges its own page that leaves
+**2.65pt** between the paragraph's descenders and the heading's cap height,
+against 17.65pt everywhere else in the reader: the heading stands 2.65pt above
+and 28.2pt below, the association inverted, and it reads as part of the paragraph
+it is not part of. It fires on en p17 and p30 and es p17, p28 and p30, and the
+review called it the largest visible defect in the edition.
+
+**The repair works and is one declaration.** Removing the band anchor's
+`margin-top: 0` from `assets/weasyprint-a5.css` puts every band anchor on its
+rank's own space-before; measured after the change, the tightest prose heading
+anywhere in either language clears by 15.85pt and every band anchor by 17.65pt.
+A band that *opens* a page is unaffected, because WeasyPrint discards a margin at
+a fragmentation break — the only case ReportLab's rule was ever right about.
+
+**It is not shipped, because of what it does to Spanish.** No refusal fires — no
+cap breached, no `minimum_reader_pages` floor unmet, the plate arithmetic not
+exhausted, `render_critic` pass with zero issues on both languages, both
+languages still 36 pages — and English does not move at all. Spanish does:
+
+| | shipped | with the repair |
+|---|---|---|
+| `agent-swarms-and-model-economics` | 6 pages | **7** — the hard cap exactly |
+| start pages, articles 4 / 5 / 6 | 19 / 22 / 25 | **20 / 23 / 26** |
+| figure pages (4 of 8) | 17 / 25 / 28 / 30 | **18 / 26 / 29 / 31** |
+| closing plates the signature asks for | 3 | **2** |
+
+An independent visual review of the repaired build found three consequences,
+each worse than the 2.65pt:
+
+- **es p17 becomes a mid-article page that is ~60% white.** The anchor heading
+  and its figure are one atomic block; 20.4pt more above the heading is enough
+  that the block no longer fits the remainder of the page and moves whole, and
+  the page it left is not an article ending.
+- **es article 6 loses its tail ornament**, which English keeps — the article now
+  ends on `FIN / 06` and nothing, while es articles 2, 4 and 5 all carry theirs.
+- **es loses its third closing plate.** `Las señales regresan` stops being
+  printed and the two languages no longer end the same way.
+
+So the trade is a 15pt clearance gain on three Spanish headings against a
+half-empty page, a dropped ornament and a dropped plate — and the two English
+headings it would also fix come free only because English absorbs the space.
+`tests/test_weasyprint_adapter.py` pins **both** states, the defect as it ships
+and the repair as it would ship, so neither can rot while this waits. What
+unblocks it is editorial, not typographic: Spanish article 3 needs roughly a page
+less copy, or an editor has to accept the lost plate and re-break es p17.
+
 ## Deferred until after cutover
 
 Ordered by what matters most. Item 1 is done and is kept here, rewritten as a
@@ -234,7 +383,9 @@ Nothing structural moved. Both languages still come out at **36 reader pages and
 18 booklet sides**; every article keeps its start page and its span
 (5 / 3 / 6 / 3 / 3 / 7 plus the editorial's 1, unchanged in both languages); no
 article reached its `minimum_reader_pages` floor; the closing-plate arithmetic
-still asks for three plates and the manifest still configures three. What
+still asks for three plates and the manifest still configures three. Still true
+after the three post-shaping repairs above, which is most of why the third of
+them was reverted. What
 changed is where the lines fall *within* an article: G3 reports four English
 entries and one Spanish entry redistributing body copy across their own pages
 (for example `agent-swarms-and-model-economics` p15 321 → 287 words, p14 161 →
@@ -345,16 +496,20 @@ shipping code and independent of the migration. `tools/compare_pipelines.py`
 already requires a pure-white raster plus zero extracted characters; production
 should match.
 
-### 3. Deduplicate the reader-text fold
+### 3. Deduplicate the reader-text fold — WITHDRAWN
 
-`reader_text.fold_reader_characters` was extracted so the HTML path could fold
-smart quotes at the escape boundary rather than over assembled markup (folding
-after escaping corrupts attribute values — an article titled `The "Dark"
-Factory` terminated its own `alt` attribute). `render._plain` still carries its
-own copy plus a markdown-link regex that has no business running over HTML. A
-test currently pins the two implementations together on link-free input.
-`render.py` was deliberately not edited during convergence because the frozen
-baseline came from it.
+The two are **supposed** to differ now, so there is nothing left to deduplicate.
+`reader_text.fold_reader_characters` folds to what the bundled faces can set;
+`render._plain` folds through cp1252 because ReportLab writes through cp1252 and
+that engine has to keep reproducing the archived publication. See
+[real quotation marks](#real-quotation-marks--the-fold-stopped-degrading-them).
+The test that pinned the two together now pins their difference in both
+directions, which is what stops either drifting into the other unnoticed.
+
+What is genuinely still duplicated is the *markdown-link* regex: `render._plain`
+strips links, and `weasyprint_adapter._plain` carries a copy of that clause
+because it reproduces `render.py`'s own fitted-title arithmetic. Neither has any
+business running over HTML, and neither does.
 
 ### 4. `render_critic` API friction
 
@@ -381,10 +536,13 @@ positionally instead.
   approaches the measure, a hyphenated token now breaks at its hyphen, and an
   unbreakable over-measure token is still refused by
   `_validate_reader_measures` rather than styled.
-- **Nested list markers.** U+25E6 WHITE BULLET exists in neither Source Serif 4
-  nor Inter and silently falls back to Times New Roman. Edition 002 has no
-  nested lists. Bullets are drawn as boxes rather than set as glyphs
-  specifically to avoid this; do not reintroduce a marker character.
+- **Nested list markers — no longer silent.** U+25E6 WHITE BULLET is carried by
+  all four Inter faces and by no Source Serif face, and prose is Source Serif, so
+  it used to fall back to Times New Roman without saying so. The reader's fold
+  now keeps only what *every* bundled face can set, so it comes out as a visible
+  `?` instead. The design's own answer is unchanged and still the right one:
+  bullets are drawn as boxes rather than set as glyphs, and no marker character
+  should be reintroduced. Edition 002 has no nested lists.
 
 ### 6. Off-grid type sizes cost 0.29%
 

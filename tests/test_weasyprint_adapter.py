@@ -2353,3 +2353,274 @@ def test_a_band_offset_is_stated_on_the_figure_without_losing_its_style():
     adapter._apply_band_offsets(tree, {"fig": -1.4803})
     figure = next(element for element in tree.iter("figure"))
     assert figure.get("style") == "max-height: 9pt; left: -1.4803pt"
+
+
+# --- Runt control -----------------------------------------------------------
+#
+# A paragraph whose last line is one short word strands that word over white
+# space.  CSS has no primitive for it -- `orphans` and `widows` count lines
+# across a *page* break -- so the adapter measures the laid-out page and binds
+# the last two words of the offending blocks with U+00A0 on the next pass.
+
+_RUNTING_PROSE = "The harness records every run and the reviewer reads it before each gate."
+_SETTLED_PROSE = (
+    "The harness records every single run and the reviewer reads it before the gate."
+)
+
+
+def _runt_document(body: str, binds: tuple[str, ...] = ()):
+    """``body`` laid out after exactly the two runt passes ``_lay_out`` runs."""
+    HTML, CSS, FontConfiguration = _weasyprint_types()
+    font_config = FontConfiguration()
+    stylesheet = CSS(
+        string=_read_print_css(),
+        base_url=resources.files("magazine").joinpath("assets").as_uri() + "/",
+        font_config=font_config,
+    )
+    source = HTML(
+        string=f'<main data-edition-id="runts">{body}</main>',
+        base_url=Path.cwd().as_uri() + "/",
+    )
+    tree = source.etree_element
+    adapter._key_prose_blocks(tree)
+    adapter._bind_paragraph_tails(tree, binds)
+    return source.render(stylesheets=[stylesheet], font_config=font_config)
+
+
+def _keyed_lines(document, key: str) -> list[str]:
+    return [
+        adapter._box_text(line)
+        for page in document.pages
+        for box in adapter._walk_boxes(page._page_box)
+        if type(box).__name__ == "BlockBox"
+        and getattr(box, "element", None) is not None
+        and box.element.get(adapter._RUNT_KEY) == key
+        for line in adapter._walk_boxes(box)
+        if type(line).__name__ == "LineBox"
+    ]
+
+
+def _article(prose: str) -> str:
+    return f'<article id="a" data-article-id="a"><p>{prose}</p></article>'
+
+
+def test_a_stranded_last_word_is_bound_to_the_one_before_it():
+    """The repair, end to end, on a paragraph engineered to strand its last word.
+
+    The bind costs the paragraph no line: under greedy line breaking the pair
+    either fits the line the stranded word's neighbour was on, or moves down
+    with it.  It also costs the manuscript no character -- one space becomes a
+    non-breaking space and nothing else about the text changes.
+    """
+    unbound = _runt_document(_article(_RUNTING_PROSE))
+    before = _keyed_lines(unbound, "0")
+
+    assert before[-1] == "gate.", "the fixture no longer strands its last word"
+
+    binds = adapter._measured_runt_binds(unbound)
+    after = _keyed_lines(_runt_document(_article(_RUNTING_PROSE), binds), "0")
+
+    assert binds == ("0",)
+    assert after[-1] == "each gate."
+    assert len(after) == len(before)
+    assert " ".join(after).replace(" ", " ") == _RUNTING_PROSE
+
+
+def test_a_last_line_that_already_holds_two_words_is_left_alone():
+    document = _runt_document(_article(_SETTLED_PROSE))
+
+    assert _keyed_lines(document, "0")[-1] == "the gate."
+    assert adapter._measured_runt_binds(document) == ()
+
+
+def test_a_final_word_wide_enough_to_read_as_a_short_line_is_not_a_runt():
+    """The threshold is the defect's own definition, and it is not zero.
+
+    A single-word last line is only a runt when the word is short.  The
+    independent review drew its line between 11.6% and 17.6% of the measure and
+    the observations leave 14.6%-16.4% empty, which is why 15% can move either
+    way without reclassifying anything.  Both fixtures below end on one word;
+    only the short one is repaired.
+    """
+    measure = 325.0
+    short = _runt_document(_article(_RUNTING_PROSE))
+    long_word = "The harness records every run and the reviewer reads it before recomposition."
+    wide = _runt_document(_article(long_word))
+
+    assert _keyed_lines(wide, "0")[-1] == "recomposition."
+    assert adapter._string_width("gate.", "serif", 10.0) < measure * adapter._RUNT_MEASURE_FRACTION
+    assert (
+        adapter._string_width("recomposition.", "serif", 10.0)
+        > measure * adapter._RUNT_MEASURE_FRACTION
+    )
+    assert adapter._measured_runt_binds(short) == ("0",)
+    assert adapter._measured_runt_binds(wide) == ()
+
+
+def test_a_pair_that_could_not_fit_the_measure_is_never_bound():
+    """The cure may not manufacture the disease it would be refused for.
+
+    Binding a pair wider than the measure leaves Pango no break to take, and
+    `_validate_reader_measures` would refuse the build over a repair this module
+    chose rather than over anything an editor wrote.
+    """
+    stranded = [(320.0, "supercalifragilistic" * 5), (20.0, "gate.")]
+
+    assert not adapter._is_runt(stranded, measure=433.0, size=13.3)
+    assert adapter._is_runt([(320.0, "before each"), (20.0, "gate.")], 433.0, 13.3)
+
+
+def test_only_reading_flow_prose_is_keyed_for_runt_control(tmp_path: Path):
+    """Chrome, contents furniture and fitted display type carry no key.
+
+    An opener title and a plate caption are auto-fitted, and
+    `_validate_fitted_display` checks the laid-out line count against the count
+    their size was chosen for -- a bind inside one would move that line count
+    out from under its own guard.  Opener chrome sits inside a field whose
+    height the adapter states, so a bind there would change a reserved field
+    rather than a rag.  A loose list item is keyed once, on its paragraph.
+    """
+    edition = _edition(tmp_path)
+    tree = _print_tree(edition)
+    adapter._key_prose_blocks(tree)
+
+    keyed = [element for element in tree.iter() if element.get(adapter._RUNT_KEY) is not None]
+    tags = {str(element.tag) for element in keyed}
+    classes = {name for element in keyed for name in adapter._element_classes(element)}
+
+    # `li` is in the bindable set defensively; this pipeline always wraps a
+    # list item's text in a paragraph, so no `li` carries a key of its own.
+    assert tags == {"p", "span"} and tags <= adapter._BINDABLE_TAGS
+    assert classes <= {"standfirst", "caption", "credit"}
+    assert not classes & adapter._UNBINDABLE_CLASSES
+    # One key per text block, and never one on a block that contains another.
+    assert len({element.get(adapter._RUNT_KEY) for element in keyed}) == len(keyed)
+    assert not [
+        element for element in keyed if any(child.get(adapter._RUNT_KEY) for child in element)
+    ]
+    # The contents sheet, the opener headers and the plate caption are outside.
+    assert not [
+        element
+        for parent in tree.iter()
+        if str(parent.tag) in {"header", "nav"}
+        for element in parent.iter()
+        if element.get(adapter._RUNT_KEY) is not None
+    ]
+
+
+def test_a_bind_reaches_the_final_word_through_its_own_markup():
+    """The last word may be inside an ``em``, and the space before it elsewhere."""
+    HTML, _CSS, _FontConfiguration = _weasyprint_types()
+    tree = HTML(
+        string=(
+            '<main data-edition-id="x"><article id="a" data-article-id="a">'
+            "<p>One two three <em>four</em></p>"
+            "<p>One two <em>three four</em></p>"
+            "</article></main>"
+        ),
+        base_url=Path.cwd().as_uri() + "/",
+    ).etree_element
+    adapter._key_prose_blocks(tree)
+    adapter._bind_paragraph_tails(tree, ("0", "1"))
+    paragraphs = list(next(tree.iter("article")).iter("p"))
+
+    # The separator lives in the paragraph's own text, before the `em`.
+    assert paragraphs[0].text == "One two three "
+    # ...and here inside the `em`, between its two words.
+    assert paragraphs[1].text == "One two "
+    assert next(paragraphs[1].iter("em")).text == "three four"
+
+
+def test_a_bound_pair_reaches_the_pdf_text_layer_as_an_ordinary_space():
+    """The bind is one character of layout and no characters of content.
+
+    A `white-space: nowrap` span around the pair would break the text layer the
+    way one box per token used to: WeasyPrint gives every inline box its own
+    text matrix and writes no space glyph between two of them.  Keeping the pair
+    in a single text run keeps the separator extractable, and every bundled face
+    carries U+00A0, so nothing falls back to a host font to set it.
+    """
+    import io
+
+    from pypdf import PdfReader
+
+    document = _runt_document(_article(_RUNTING_PROSE), ("0",))
+    text = PdfReader(io.BytesIO(document.write_pdf())).pages[0].extract_text()
+
+    assert " " not in text
+    assert _RUNTING_PROSE in " ".join(text.split())
+
+
+def test_the_runt_binds_are_carried_forward_rather_than_re_measured():
+    """A bound paragraph no longer has a runt, so the plan has to accumulate.
+
+    Re-measuring alone would unbind every repaired paragraph on the next pass
+    and oscillate; the settle check in `_render_to_signature` is an equality, so
+    the field it compares must be monotone.
+    """
+    document = _runt_document(_article(_RUNTING_PROSE), ("0",))
+
+    assert adapter._measured_runt_binds(document) == ()
+
+    edition = SimpleNamespace(articles=(), closing_plates=(), raw={})
+    plan = adapter._measured_plan(document, edition, ("0", "7"))
+
+    assert plan.runt_binds == ("0", "7")
+
+
+def test_the_band_anchor_clearance_defect_and_the_declaration_that_repairs_it(
+    tmp_path: Path,
+):
+    """A live defect, pinned together with the one-line repair that is deferred.
+
+    `_evidence_band` replaces the reading frame before it sets its anchor
+    heading, and `block` drops space-before whenever `self.y` is the frame's own
+    top (render.py:1135) -- so ReportLab sets a band's anchor heading on the
+    paragraph's 5.4pt of space-after alone.  On a band that bridges its own page
+    that is 2.65pt between the paragraph's descenders and the heading's cap
+    height, against 17.65pt everywhere else in the reader, and an independent
+    review called it the largest visible defect in the edition.
+
+    Removing `margin-top: 0` repairs it exactly, and that is asserted here so
+    the repair cannot rot while it waits.  It is not shipped because of what it
+    costs the *Spanish* edition -- a mid-article page ~60% white, a lost tail
+    ornament, a lost closing plate; see the stylesheet's own note.  Both states
+    are pinned, so neither the defect nor its cure can change unnoticed.
+    """
+    path = tmp_path / "band.png"
+    Image.new("RGB", (1920, 1266), "white").save(path)
+    body = (
+        '<article id="a" data-article-id="a" data-figure-layouts="evidence_band">'
+        "<p>The paragraph the anchor heading must not sit on top of.</p>"
+        f"<h2>Anchor</h2>{_band_figure(path)}</article>"
+    )
+    repaired = _read_print_css().replace(
+        "margin-left: -4.004pt; margin-right: -4.004pt; margin-top: 0;",
+        "margin-left: -4.004pt; margin-right: -4.004pt;",
+    )
+    assert repaired != _read_print_css(), "the band anchor rule was respelled"
+
+    def space_before(markup: str, css_text: str | None) -> float:
+        page = _typeset_document(markup, css_text=css_text).pages[0]
+        paragraph = _block_of(page, "p")
+        heading = _block_of(page, "h2")
+        return (
+            float(heading.content_box_y())
+            - float(paragraph.position_y)
+            - float(paragraph.margin_height())
+        ) * _POINTS_PER_CSS_PIXEL
+
+    plain = (
+        '<article id="a" data-article-id="a">'
+        "<p>The paragraph the anchor heading must not sit on top of.</p>"
+        "<h2>Anchor</h2><p>and the prose under it.</p></article>"
+    )
+    # What every other prose h2 gets: `paragraph_after + before` collapsed
+    # against the paragraph's own 5.4pt.
+    ordinary = space_before(plain, None)
+
+    assert ordinary == pytest.approx(20.4 - 5.4, abs=1e-3)
+    # The defect, as it ships.
+    assert space_before(body, None) == pytest.approx(0.0, abs=1e-3)
+    # The repair, as it would ship.
+    assert space_before(body, repaired) == pytest.approx(ordinary, abs=1e-3)

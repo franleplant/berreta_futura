@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import lru_cache
 import hashlib
 from html import unescape
@@ -281,6 +281,52 @@ _TOKEN_MEASURE_EPSILON = 0.01
 # overflow is a whole line of display type -- tens of points -- so a hundredth of
 # a point is not a threshold anything can be tuned against.
 _FIELD_OVERFLOW_EPSILON = 0.01
+
+# RUNT CONTROL.  A paragraph whose last line is one short word leaves a word
+# stranded over white space, and a reader notices it without knowing why.  CSS
+# has no primitive for it: `orphans` and `widows` count *lines across a page
+# break* and say nothing about the shape of a paragraph's own last line.  The
+# typesetter's fix is older than CSS -- bind the last two words with a
+# non-breaking space so they wrap together -- and it is applied here, on the
+# print tree, from a measurement of the laid-out page.
+#
+# THE THRESHOLD IS MEASURED, NOT CHOSEN.  A single-word last line is only a
+# defect when the word is *short*; a long final word filling a fifth of the
+# measure reads as an ordinary short line.  Every single-word last line in
+# edition 002, as a fraction of its own measure, sorts as
+#
+#   3.2 7.5 7.8 7.8 9.9 10.3 10.3 10.5 11.6 13.3 13.7 13.9 14.6 | 16.4 16.8
+#   17.6 18.0 18.2 18.9 21.0 21.4  (percent, both languages, 21 paragraphs)
+#
+# and the independent review put its own line inside that gap: it refused
+# `context.` at 11.6% and accepted `irreversible.` at 17.6%.  There is no
+# observation at all between 14.6% and 16.4%, so 15% is not a tuned number --
+# it can move by +/-0.7 points without reclassifying a single paragraph.
+_RUNT_MEASURE_FRACTION = .15
+
+# The tag names that can carry the reading flow's own prose.  A heading is
+# deliberately absent: an opener title and a plate title are auto-fitted, and
+# `_validate_fitted_display` checks the laid-out line count against the count
+# the fit reserved room for -- binding words inside one would move that line
+# count out from under its own guard.
+_BINDABLE_TAGS = frozenset({"p", "li", "span"})
+# Chrome is not prose.  Each of these is drawn with its own fixed metrics inside
+# a field whose height the adapter states, so a bind that changed its line count
+# would change a reserved field rather than a rag.
+_UNBINDABLE_CLASSES = frozenset(
+    {
+        "author-note", "byline", "content-label", "contents-kicker", "end-mark",
+        "entry-author", "entry-folio", "entry-label", "entry-title", "folio-name",
+        "issue-number", "label-primary", "label-secondary", "provenance",
+        "publication-name", "running-head", "subtitle",
+    }
+)
+# Subtrees the reading flow does not include at all: opener chrome, the contents
+# sheet, the hidden edition header, and preformatted text, whose whitespace is
+# authored content that no pass here may rewrite.
+_UNBINDABLE_SUBTREES = frozenset({"header", "nav", "pre", "code"})
+_RUNT_KEY = "data-runt-key"
+_NO_BREAK_SPACE = "\u00a0"
 
 
 @lru_cache(maxsize=None)
@@ -554,8 +600,10 @@ class ReaderPlan:
     the page it was dispatched from, and omits every band that stayed there.
     ``end_marks`` maps an article id to the distance its end mark is painted back
     down by, which is a constant except where the reader's own clamp bites.
-    All five are *measured* facts, so a plan is the output of one layout and the
-    input to the next.
+    ``runt_binds`` names the prose blocks whose last two words are bound together
+    because the block's last line came out as one short word; see
+    ``_RUNT_MEASURE_FRACTION``.  All six are *measured* facts, so a plan is the
+    output of one layout and the input to the next.
     """
 
     closing_plates: int
@@ -563,6 +611,7 @@ class ReaderPlan:
     adaptive_images: tuple[tuple[str, float], ...] = ()
     band_offsets: tuple[tuple[str, float], ...] = ()
     end_marks: tuple[tuple[str, float], ...] = ()
+    runt_binds: tuple[str, ...] = ()
 
     @property
     def tail_heights(self) -> dict[str, float]:
@@ -616,9 +665,17 @@ def _render_to_signature(
     has nothing left to change: closing plates land after the body and the tail
     ornament is out of flow, so neither decision can move the content that both
     were derived from -- which is asserted rather than assumed.
+
+    Runt control is measured the same way and one step earlier, because unlike
+    the other two it *does* move the content everything else is derived from: a
+    bound pair can cost a paragraph's penultimate line its last word, and can
+    give a paragraph back a whole line.  So the bare pass below carries no binds
+    at all, only to be read for which last lines came out as a single short
+    word; every pass after it -- and the painted pass in ``_painted_reader``,
+    which is handed the same plan -- carries the answer.
     """
     html = _with_print_slots(semantic_html)
-    probe = ReaderPlan(
+    bare = ReaderPlan(
         closing_plates=len(edition.closing_plates),
         tail_ornaments=tuple(
             (article.id, _TAIL_ORNAMENT_MAX_HEIGHT)
@@ -626,11 +683,14 @@ def _render_to_signature(
             if article.tail_art is not None
         ),
     )
-    document = _lay_out(HTML, html, stylesheet, edition, probe, font_config=font_config)
-    plan = _measured_plan(document, edition)
+    document = _lay_out(HTML, html, stylesheet, edition, bare, font_config=font_config)
+    probe = replace(bare, runt_binds=_measured_runt_binds(document))
+    if probe != bare:
+        document = _lay_out(HTML, html, stylesheet, edition, probe, font_config=font_config)
+    plan = _measured_plan(document, edition, probe.runt_binds)
     if plan != probe:
         document = _lay_out(HTML, html, stylesheet, edition, plan, font_config=font_config)
-        settled = _measured_plan(document, edition)
+        settled = _measured_plan(document, edition, plan.runt_binds)
         if settled != plan:
             raise ValidationError(
                 f"WeasyPrint pagination for edition {edition.id} did not settle: the "
@@ -783,9 +843,17 @@ def _lay_out(
 
     ``figure_rules`` paints the figure frames over image boxes an earlier pass
     measured; it is out of flow and never changes what this pass lays out.
+
+    ``plan.runt_binds`` is the one thing here that *does* change what is laid
+    out, and deliberately: it binds the last two words of the named prose blocks
+    so Pango cannot strand the final word on a line of its own.
     """
     source = HTML(string=html, base_url=Path.cwd().as_uri() + "/")
     tree = source.etree_element
+    # First, so that a block's key is the semantic edition's own document order
+    # and cannot be renumbered by a plate moving or a closing plate being cut.
+    _key_prose_blocks(tree)
+    _bind_paragraph_tails(tree, plan.runt_binds)
     _install_page_chrome(tree, edition)
     _rewrite_landscape_plates(tree)
     _pin_opener_fields(tree, edition)
@@ -810,6 +878,177 @@ def _lay_out(
 
 def _element_classes(element: Element) -> frozenset[str]:
     return frozenset((element.get("class") or "").split())
+
+
+def _key_prose_blocks(tree: Element) -> None:
+    """Name every block of reading-flow prose, in the edition's own order.
+
+    A runt is measured on one layout and repaired on the next, so the two passes
+    need a name for the same paragraph.  The name cannot be the paragraph's text
+    (two blocks may read the same) and cannot be a box identity (the tree is
+    reparsed for every pass), so it is the block's ordinal among the prose blocks
+    of the semantic edition.  That ordinal is assigned before any structural pass
+    runs, which is what keeps it stable across a plan that moves a deferred plate
+    or cuts a closing plate.
+    """
+    for index, block in enumerate(_prose_blocks(tree)):
+        block.set(_RUNT_KEY, str(index))
+
+
+def _prose_blocks(element: Element, *, inside_main: bool = False) -> Iterable[Element]:
+    """The innermost blocks of reading-flow prose, in document order.
+
+    "Innermost" is what keeps a loose list item from being counted twice: a
+    markdown ``li`` that holds a ``p`` is not itself the text block, the ``p``
+    is, and binding both would bind the same words twice.  A block is prose when
+    it is not opener chrome, contents furniture, an end mark or preformatted
+    text -- each of those is drawn to its own fixed metrics inside a field whose
+    height the adapter states, and a rag is not what they are judged on.
+    """
+    tag = str(element.tag).rsplit("}", 1)[-1].lower()
+    if tag in _UNBINDABLE_SUBTREES or _element_classes(element) & _UNBINDABLE_CLASSES:
+        return
+    if tag == "main":
+        inside_main = True
+    if tag == "figure" and "closing-plate" in _element_classes(element):
+        # A plate caption is auto-fitted display type; `_validate_fitted_display`
+        # checks the line count it was fitted to, so nothing may rewrap it.
+        return
+    nested = [block for child in element for block in _prose_blocks(child, inside_main=inside_main)]
+    if nested:
+        yield from nested
+        return
+    if inside_main and tag in _BINDABLE_TAGS and "".join(element.itertext()).strip():
+        yield element
+
+
+def _bind_paragraph_tails(tree: Element, keys: Iterable[str]) -> None:
+    """Bind the last two words of each named block with a non-breaking space.
+
+    This is the whole of the runt repair, and it is one character: replacing the
+    space before a paragraph's final word with ``U+00A0`` makes Pango carry the
+    two words to the next line together rather than strand the last one.  Under
+    greedy line breaking -- which is what Pango does here, and what ``lines``
+    did before it -- the bind can only ever *fit* into the line the pair now
+    shares or move both down one line, so it never adds a line to a paragraph
+    and sometimes gives one back.
+
+    ``U+00A0`` and not markup, deliberately.  A ``white-space: nowrap`` span
+    around the pair would do the same to the layout and break the *text layer*:
+    WeasyPrint gives each inline box its own text matrix and emits no space
+    glyph between two of them, which is how one box per token used to extract as
+    ``Theoriginalarticle.``  Keeping the pair inside a single text run keeps the
+    separator in the PDF's own text.  Every bundled face carries the glyph, so
+    nothing falls back to a host font, and the reader is set ragged right, so
+    there is no justification for a bound space to distort.
+    """
+    wanted = frozenset(keys)
+    if not wanted:
+        return
+    for element in tree.iter():
+        if element.get(_RUNT_KEY) in wanted:
+            _bind_last_two_words(element)
+
+
+def _bind_last_two_words(block: Element) -> None:
+    """Replace the whitespace before ``block``'s final word with ``U+00A0``.
+
+    The final word may sit inside an ``em`` or an ``a``, and the whitespace
+    before it may sit in a different text node again, so the block's text nodes
+    are addressed as one string and only the one that carries the separator is
+    rewritten.  A separator split across two nodes is left alone rather than
+    guessed at: no markup this edition contains produces one, and rewriting
+    across an element boundary would move authored text between elements.
+    """
+    slots = list(_text_slots(block))
+    joined = "".join(getattr(owner, attribute) or "" for owner, attribute in slots)
+    trimmed = joined.rstrip()
+    end = len(trimmed)
+    while end and not trimmed[end - 1].isspace():
+        end -= 1
+    if not end:  # One word, or no whitespace to bind on.
+        return
+    start = end
+    while start and trimmed[start - 1].isspace():
+        start -= 1
+    if not trimmed[:start].strip():  # Two words in total; nothing to strand.
+        return
+    offset = 0
+    for owner, attribute in slots:
+        value = getattr(owner, attribute) or ""
+        if offset <= start and end <= offset + len(value):
+            setattr(
+                owner,
+                attribute,
+                value[: start - offset] + _NO_BREAK_SPACE + value[end - offset :],
+            )
+            return
+        offset += len(value)
+
+
+def _text_slots(element: Element) -> Iterable[tuple[Element, str]]:
+    """Every text node of ``element``'s subtree, in document order, as a slot."""
+    yield element, "text"
+    for child in element:
+        yield from _text_slots(child)
+        yield child, "tail"
+
+
+def _measured_runt_binds(document: Any) -> tuple[str, ...]:
+    """The prose blocks whose last line came out as one short word.
+
+    Both halves of the test are read off the finished page rather than predicted:
+    the last line's text, so a single word is a single word after shaping and
+    after every intra-token break Pango took, and the line's width against *its
+    own* block's measure, which differs between the 325pt reading column, the
+    333pt a band escapes to, and the 311pt inside a list item's indent.  A block
+    of one line is not a paragraph with a runt -- it is a short paragraph.
+    """
+    lines: dict[str, list[tuple[float, str]]] = {}
+    boxes: dict[str, tuple[float, float]] = {}
+    for page in document.pages:
+        for box in _walk_boxes(page._page_box):
+            element = getattr(box, "element", None)
+            key = getattr(element, "attrib", {}).get(_RUNT_KEY) if element is not None else None
+            # The block box only: WeasyPrint hands a line box its originating
+            # element too, and counting both would count every line twice.
+            if key is None or type(box).__name__ != "BlockBox":
+                continue
+            boxes[key] = (float(box.width), float(box.style["font_size"]))
+            lines.setdefault(key, []).extend(
+                (float(line.width), _box_text(line))
+                for line in _walk_boxes(box)
+                if type(line).__name__ == "LineBox"
+            )
+    return tuple(
+        sorted(
+            (key for key, set_lines in lines.items() if _is_runt(set_lines, *boxes[key])),
+            key=int,
+        )
+    )
+
+
+def _is_runt(set_lines: list[tuple[float, str]], measure: float, size: float) -> bool:
+    """Whether this block's last line is a short word stranded on its own.
+
+    The last clause is the one that is not about the defect but about the cure:
+    the bound pair has to fit a line of its own, or Pango has no break left to
+    take and ``_validate_reader_measures`` refuses the build over a repair this
+    module chose.  It is summed unkerned in the reading face, as everything else
+    this module predicts is -- it needs to be right about a word nearly as wide
+    as the whole measure, not about a tenth of a point.
+    """
+    if len(set_lines) < 2:
+        return False
+    width, text = set_lines[-1]
+    words = text.split()
+    previous = set_lines[-2][1].split()
+    if len(words) != 1 or not previous:
+        return False
+    if width > measure * _RUNT_MEASURE_FRACTION:
+        return False
+    pair = f"{previous[-1]}{_NO_BREAK_SPACE}{words[0]}"
+    return _string_width(pair, "serif", size) <= measure
 
 
 def _install_page_chrome(tree: Element, edition: Edition) -> None:
@@ -1591,8 +1830,17 @@ def _apply_tail_ornaments(tree: Element, heights: Mapping[str, float]) -> None:
                 child.set("style", f"height: {height:.4f}pt")
 
 
-def _measured_plan(document: Any, edition: Edition) -> ReaderPlan:
-    """Read a laid-out reader back as the plan its own pages imply."""
+def _measured_plan(
+    document: Any, edition: Edition, runt_binds: Iterable[str] = ()
+) -> ReaderPlan:
+    """Read a laid-out reader back as the plan its own pages imply.
+
+    ``runt_binds`` is the one field that accumulates rather than being measured
+    afresh: a bound paragraph no longer *has* a runt, so re-measuring alone would
+    unbind it on the next pass and oscillate.  Carrying the binds forward and
+    adding whatever the document still shows makes the plan monotone, which is
+    what lets the settle check above be an equality.
+    """
     content_pages = _content_page_count(document)
     ornaments: list[tuple[str, float]] = []
     end_marks: list[tuple[str, float]] = []
@@ -1610,6 +1858,9 @@ def _measured_plan(document: Any, edition: Edition) -> ReaderPlan:
         adaptive_images=_measured_adaptive_images(document, edition),
         band_offsets=_measured_band_offsets(document),
         end_marks=tuple(end_marks),
+        runt_binds=tuple(
+            sorted({*runt_binds, *_measured_runt_binds(document)}, key=int)
+        ),
     )
 
 

@@ -84,7 +84,10 @@ def render_html_edition(edition: Edition) -> HtmlEdition:
     Every text and attribute value is folded through
     :func:`magazine.reader_text.fold_reader_characters` — the publication's own
     character repertoire, not any renderer's — and then escaped, in that order,
-    so a folded ASCII quotation mark can never terminate an attribute value.
+    so that whatever the fold produces is still escaped. The order mattered more
+    when the fold turned a curly double quote into an ASCII one; it now leaves
+    real quotation marks alone, and the escape is what keeps an authored
+    straight quote from terminating an attribute value.
     """
 
     assets: list[HtmlAsset] = []
@@ -561,8 +564,9 @@ def _text(value: object) -> str:
 
 
 def _attr(value: object) -> str:
-    # Folding before escaping is what keeps it safe: a folded curly double quote
-    # is an ASCII quote, and only escaping can stop that terminating a value.
+    # Fold first, escape second: the fold may still emit a character the escape
+    # has to neutralise, and only escaping can stop a quotation mark -- authored
+    # straight, or produced by a fold -- from terminating the value.
     return escape(fold_reader_characters(str(value)), quote=True)
 
 

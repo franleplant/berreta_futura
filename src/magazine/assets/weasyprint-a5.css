@@ -843,6 +843,32 @@ article > figure[data-anchor="__opener__"] > img { max-height: 270pt; }
  * `block` drops it whenever `self.y` is the frame's own top (render.py:1135) and
  * a band always sets a frame it then starts at.  A band's anchor heading
  * therefore follows its paragraph on the paragraph's space-after alone.
+ *
+ * KNOWN DEFECT, MEASURED, AND DELIBERATELY STILL HERE.  On a band that bridges
+ * its own page, the 5.4pt of space-after is all the heading gets, and its own
+ * -7.22965pt paint correction eats most of that again: **2.65pt** between the
+ * paragraph's descenders and the heading's cap height, against 17.65pt for
+ * every other prose heading in the reader.  The heading stands 2.65pt above and
+ * 28.2pt below, so it reads as belonging to the paragraph it is not part of.
+ * It fires on en p17 and p30 and es p17, p28 and p30 of edition 002.
+ *
+ * Removing `margin-top: 0` repairs it exactly -- every band anchor then clears
+ * by 17.65pt like its rank, and a band that opens a page is unaffected because
+ * WeasyPrint discards a margin at a fragmentation break.  **It was tried, and
+ * reverted, because of what it costs the Spanish edition.** English does not
+ * move at all; Spanish repaginates from article 3 onward and an independent
+ * visual review found three defects worse than the one being fixed: es p17
+ * becomes a mid-article page that is ~60% white, because the anchor heading
+ * plus its atomic figure block no longer fits the remainder and moves whole;
+ * article 6 loses its tail ornament, which English keeps; and the signature
+ * arithmetic drops to two closing plates, so `Las señales regresan` stops being
+ * printed and the two languages no longer end the same way.  Article 3 also
+ * lands exactly on the seven-page cap with no headroom.
+ *
+ * So this is not "reproduced because ReportLab did it" -- it is a live defect
+ * whose repair is one declaration away and is blocked on the Spanish edition
+ * absorbing the page.  Do not re-remove it without rebuilding both languages,
+ * looking at es p17, and having an editor accept the lost plate.
  */
 article h2:has(+ figure[data-layout="evidence_band"]),
 article h2:has(+ figure[data-layout="evidence_band_prose"]),

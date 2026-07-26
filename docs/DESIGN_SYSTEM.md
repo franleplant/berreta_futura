@@ -40,6 +40,8 @@ The permanent publication wordmark is the **Corte bruto** lockup: `BERRETA` in t
 
 The cover's **Canto vivo** is a full-height signal-orange fore-edge tab. It carries the issue number at the head and `BERRETA FUTURA / BUENOS AIRES` at the foot, so orange functions as navigation when editions are stacked or shelved. The only footer metadata is the publication date in `YYYY MM DD` form. Do not add format, distribution, repeated issue/date, proof labels, or generic `COVER` metadata to the front cover.
 
+The reader sets real punctuation, not ASCII substitutes: curly quotation marks in English, `« »` in Spanish, a true ellipsis, a true arrow, and en and em dashes. The rule is the bundled faces' own repertoire — a character every shipped face can set reaches the page unchanged, and one that no face can set becomes a visible `?` rather than a silent host-font glyph in the middle of Source Serif.
+
 The bundled font files and SIL Open Font License texts live under `src/magazine/assets/fonts`. Deterministic builds must not use system font lookups. Cover geometry and inks live in `design/covers/canto-vivo/design.toml`; the materialized SVG contains named slots for the wordmark, headline, art, deck, footer, and both tab labels.
 
 ## Color
@@ -93,7 +95,7 @@ Each opener uses one consistent structure: provenance kicker, large serif title,
 
 ### Continuation pages
 
-Copy flows down one reading measure and then to the next page. Exact short running titles, a quiet header rule, consistent folios, and generous white space carry the identity. Quotations, bullets, headings, and code retain distinct deterministic treatments. Display headings add deliberate space before them except at a fresh frame. The final prose paragraph stays together when it fits on one page, making article endings read as intentional conclusions rather than split scraps.
+Copy flows down one reading measure and then to the next page. Exact short running titles, a quiet header rule, consistent folios, and generous white space carry the identity. Quotations, bullets, headings, and code retain distinct deterministic treatments. Display headings add deliberate space before them except at a fresh frame; a heading that anchors a full-width evidence band is the one exception, and a known open defect — it currently follows its paragraph on 2.65pt of clearance where every other heading has 17.65pt (see `docs/RENDERER_MIGRATION.md`). The final prose paragraph stays together when it fits on one page, making article endings read as intentional conclusions rather than split scraps. A paragraph never ends on a single short word stranded on its own line: the last two words are bound so they wrap together whenever that final word would take less than a seventh of the measure.
 
 ### Backmatter and back cover
 
