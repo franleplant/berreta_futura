@@ -1,0 +1,1062 @@
+/*
+ * Deliberately small print stylesheet for the experimental WeasyPrint adapter.
+ * It owns only the proof layout; semantic HTML remains renderer-neutral.
+ */
+@font-face {
+  font-family: "Magazine Serif";
+  src: url("fonts/source-serif-4/SourceSerif4SmText-Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+}
+@font-face {
+  font-family: "Magazine Serif";
+  src: url("fonts/source-serif-4/SourceSerif4SmText-It.ttf") format("truetype");
+  font-style: italic;
+  font-weight: 400;
+}
+@font-face {
+  font-family: "Magazine Serif";
+  src: url("fonts/source-serif-4/SourceSerif4SmText-Bold.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 700;
+}
+@font-face {
+  font-family: "Magazine Serif Display";
+  src: url("fonts/source-serif-4/SourceSerif4Display-Semibold.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 600;
+}
+@font-face {
+  font-family: "Magazine Sans";
+  src: url("fonts/inter/Inter-Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+}
+@font-face {
+  font-family: "Magazine Sans";
+  src: url("fonts/inter/Inter-Medium.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 500;
+}
+@font-face {
+  font-family: "Magazine Sans";
+  src: url("fonts/inter/Inter-SemiBold.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 600;
+}
+@font-face {
+  font-family: "Magazine Sans";
+  src: url("fonts/inter/Inter-Bold.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 700;
+}
+
+/*
+ * Horizontal metrics are the ReportLab reader's, not invented: INNER_MARGIN 44 /
+ * OUTER_MARGIN 15mm, swapped by page parity.  The first reader page is a recto,
+ * so :right is the odd page.
+ *
+ * The vertical metrics are derived, because ReportLab places a *baseline* while
+ * CSS places a line-box *top*.  ReportLab's first body baseline is 543.2756 from
+ * the page foot; WeasyPrint puts the first baseline at
+ * `page height - margin-top - (half-leading + ascent)`, which for 10pt Source
+ * Serif SmText at 13pt leading is `595.2756 - margin-top - 10.005`.  Hence
+ * margin-top 41.9954pt -- and that step does not quite close, which is stated
+ * here rather than quietly rounded away: the datum measures 10.0050, so the
+ * margin it implies is 41.9950 and the 41.9954 below is 0.0004pt larger, which
+ * leaves the first body baseline that much low.  Measured on en p17 and p21, the
+ * first 10pt baseline is 543.270186 at the shipped margin-top of 42.0004, i.e.
+ * 543.275186 before the +0.005pt nudge described below, against the reader's
+ * 543.2756.  The 0.0004 is deliberately left alone: it is 0.0008 of a device
+ * pixel at 144 DPI, and closing it would move margin-bottom and every constant
+ * derived from the same datum -- the 10.0046 below, `article > header`'s
+ * 305.2756, the editorial's 153.2756, the figure's 10.0046pt paint offset -- in
+ * the very truncation regime the nudge exists to sit still inside.
+ *
+ * The half-leading also differs by 0.4pt between the 13pt body leading and
+ * article 1's 12.2pt plate leading, so one margin cannot satisfy both: the body
+ * path is the exact one and the plate path lands 0.4pt high.
+ *
+ * margin-bottom is the same datum from the other end.  A CSS box's top stands
+ * 10.0046pt above the `self.y` it means, so the content box's foot is the frame
+ * bottom of 45 exactly when margin-bottom is 55.0046 -- which leaves
+ * `543.2756 - 45` = 498.2756pt of frame, the reader's own.  It is also the line
+ * capacity: 38 lines at 13pt and 40 at 12.2pt, and no more.  54pt keeps that
+ * capacity but makes the frame 1.0046pt deeper than the reader's, which is
+ * enough to take a line the reader pushes to the next page.
+ *
+ * Both numbers then carry a +0.005pt nudge -- margin-top up by it, margin-bottom
+ * down by it -- which slides the whole content box down by 0.01 of a device pixel
+ * at 144 DPI and leaves its height, and therefore the line capacity, untouched.
+ * It is a *rasterizer* correction and nothing typographic: poppler truncates a
+ * glyph origin to a device pixel, and WeasyPrint writes coordinates as CSS
+ * pixels to six decimals, so `0.75 * 285.333333` is 213.99999975 and a baseline
+ * meant for an exact pixel row truncates one row early.  On this edition's grid
+ * that flips roughly one line in four.  Measured end to end: 0 -> en 1.39% / es
+ * 1.06% worst differing pixels, +0.002 to +0.01 -> 0.87% / 0.67%, +0.02 -> 2.02%
+ * / 1.88%, -0.005 -> 4.23% / 3.87%.  The value sits in the middle of the flat
+ * window, and the sign is the measurement's, not a guess.
+ */
+@page {
+  size: 148mm 210mm;
+  margin: 42.0004pt 42.5197pt 54.9996pt 44pt;
+  /*
+   * `_folio` (render.py:565-577) prints the publication name at the lower left
+   * and a zero-padded page number at the lower right, both Inter-Medium
+   * CAPTION_SIZE in INK, on FOLIO_BASELINE 19.5.
+   *
+   * The folio is anchored to the page's foot, never to the bottom margin.  An
+   * auto-height bottom margin box spans the whole bottom margin strip, whose
+   * lower edge is the page edge, so aligning its line box to that edge and
+   * padding it up by a fixed amount fixes the baseline wherever the margin
+   * moves.  6.8pt Magazine Sans leaves 1.6399pt between its baseline and its
+   * line box's foot, so 17.8601pt of padding puts the baseline on 19.5.
+   *
+   * ReportLab measures both ends from OUTER_MARGIN on *both* page parities
+   * (render.py:571, 577) while a margin box is bound to the *mirrored* content
+   * box, so on each page one end of the folio starts 1.4803pt inside the
+   * reader's -- the width of the margin mirror.  The two ends need different
+   * levers, because a margin box's inline start is not addressable the way its
+   * end is: measured, `margin-left` on `@bottom-left` is ignored outright while
+   * `text-indent` moves the text (50.0 -> 48.5197 for -1.4803pt), and
+   * `margin-right` on `@bottom-right` moves its right edge.  Both are stated
+   * per parity below, against the parity whose margin is the inner one.
+   */
+  @bottom-left {
+    color: rgb(5.5% 7.5% 8.5%);
+    content: string(publication);
+    font: 500 6.8pt/normal "Magazine Sans", sans-serif;
+    padding-bottom: 17.8601pt;
+    text-transform: uppercase;
+    vertical-align: bottom;
+  }
+  @bottom-right {
+    color: rgb(5.5% 7.5% 8.5%);
+    content: counter(page, decimal-leading-zero);
+    font: 500 6.8pt/normal "Magazine Sans", sans-serif;
+    padding-bottom: 17.8601pt;
+    text-align: right;
+    vertical-align: bottom;
+  }
+  /*
+   * `new_page` (render.py:653-656) draws the running header on every page that
+   * is neither an opener nor a `blank_header` page.  `element(..., first-except)`
+   * is exactly that rule: the running head is assigned by the piece's own first
+   * fragment, so the page that opens a piece resolves to no element at all,
+   * every later page of the piece resolves to the piece's head, and a page
+   * before the first piece has nothing to carry over.  A margin box is generated
+   * whatever its content resolves to, so the header rule and the signal tick
+   * belong to the running element and not to this box -- otherwise they would
+   * stripe every opener.
+   */
+  @top-center {
+    content: element(runhead, first-except);
+    padding: 0;
+    vertical-align: top;
+    width: 333.0079pt;
+  }
+}
+@page :right {
+  margin-left: 44pt; margin-right: 42.5197pt;
+  /* Recto: the inner margin is on the left, so the publication name is the end
+   * that has to come back out to OUTER_MARGIN. */
+  @bottom-left { text-indent: -1.4803pt; }
+}
+@page :left {
+  margin-left: 42.5197pt; margin-right: 44pt;
+  /* Verso: the mirror is on the right, so the page number is. */
+  @bottom-right { margin-right: -1.4803pt; }
+}
+/* The four cover slots are replace-only and must stay completely blank. */
+@page outer-cover {
+  size: 148mm 210mm; margin: 0;
+  @top-center { content: none; }
+  @bottom-left { content: none; }
+  @bottom-right { content: none; }
+}
+@page inside-cover {
+  size: 148mm 210mm; margin: 0;
+  @top-center { content: none; }
+  @bottom-left { content: none; }
+  @bottom-right { content: none; }
+}
+/*
+ * `_closing_plate` (render.py:2177) opens its page with `blank_header=True`, so
+ * a plate carries neither folio nor running header.  Naming a page does not
+ * displace `@page :left` / `@page :right`: a named page that declares no margin
+ * leaves the parity rule's own in force, verified by ablating a restatement of
+ * the mirror here and re-running the whole gate -- identical results, plate
+ * image x unchanged on every plate page.  So the name suppresses the chrome and
+ * nothing else.
+ */
+@page closing-plate {
+  @top-center { content: none; }
+  @bottom-left { content: none; }
+  @bottom-right { content: none; }
+}
+
+* { box-sizing: border-box; }
+/*
+ * Every colour below is one of `render.py:53-66`'s own tokens, written as the
+ * percentages those tuples are: INK (.055 .075 .085), VIOLET (.25 .10 .43),
+ * SLATE (.31 .35 .37), COOL_GRAY (.88 .89 .90), PALE_VIOLET (.955 .945 .975)
+ * and SIGNAL_ORANGE rgb(240 87 56).  A hex spelling cannot hold them -- VIOLET's
+ * green is 25.5/255 -- and a percentage reaches the PDF's own colour operator
+ * unrounded, so the two pipelines emit `0.25 0.1 0.43 rg` character for
+ * character.  Nothing here may invent a colour the reader does not have.
+ */
+/*
+ * The reader measures a line as the plain sum of its glyph advances: `lines`
+ * (render.py:658-685) adds up `stringWidth`, which applies neither kerning nor
+ * ligatures.  Pango applies both by default, which made a line about 0.6% narrow
+ * -- 2pt over the 325pt measure -- and let the occasional line take a word the
+ * reader pushes to the next.  Turning both off makes the two measures agree to
+ * 0.008pt on a full measure, which is what makes a page break land in the same
+ * place.
+ */
+/* `block` sets every prose kind but `h3` in INK (render.py:1148, 1190), so INK
+ * is the document's inherited colour and not a per-block declaration. */
+html {
+  color: rgb(5.5% 7.5% 8.5%); font: 10pt/13pt "Magazine Serif", serif;
+  font-kerning: none; font-variant-ligatures: none;
+}
+body { margin: 0; }
+main { margin: 0; }
+/*
+ * Equivalence scaffold, with the same standing as the two rules above: the
+ * reader does not kern, and the reader cannot break inside a token.  `lines`
+ * splits on whitespace with `str.split`, while Pango also breaks after a hyphen
+ * or a dash and takes those opportunities -- `compile- checked`, `Opus-
+ * planner`, `trade- offs`, `planner-executor-synthesis`.  Measured
+ * (PIXEL-FLOOR.md): `word-break: keep-all`, `line-break: strict`, `hyphens:
+ * none` and `overflow-wrap: normal` change nothing; one nowrap box per token
+ * takes English line-break agreement from 94.8% to 385/385 lines and 69/69
+ * paragraphs, and leaves Spanish at the 423/423 it already had.
+ *
+ * `_suppress_intra_token_breaks` is what puts the box there, so the semantic
+ * edition keeps whole text nodes.  Both rules come out together the day
+ * WeasyPrint becomes the production renderer.
+ */
+.reader-token { white-space: nowrap; }
+
+.outer-cover-slot, .inside-cover-slot, .inside-back-cover-slot, .back-cover-slot {
+  height: 210mm;
+  margin: 0;
+  padding: 0;
+}
+.outer-cover-slot, .back-cover-slot { page: outer-cover; break-after: page; }
+.inside-cover-slot, .inside-back-cover-slot { page: inside-cover; break-after: page; }
+.inside-back-cover-slot { break-before: page; }
+
+.closing-plate { max-width: 100mm; margin-left: auto; margin-right: auto; }
+/* READING_MEASURE 325pt, centred in the 333.008pt live width: the text column's
+ * left edge lands on 48.004pt (recto) and 46.524pt (verso), as in ReportLab. */
+.editorial, article, main > section { max-width: 325pt; margin-left: auto; margin-right: auto; }
+.edition-header { display: none; }
+/*
+ * The folio's left-hand text is the publication's name, on every page from the
+ * contents onward.  The print reader carries it as a named string set once from
+ * a hidden print-only element in the first cover slot, so the value reaches the
+ * margin box without the semantic edition growing a layout hook.
+ */
+.folio-name { height: 0; margin: 0; overflow: hidden; string-set: publication content(text); visibility: hidden; }
+/*
+ * `_running_header` (render.py:579-612): publication name at `self.left`,
+ * curated short title right-aligned at `width - self.right`, both Inter-Medium
+ * CAPTION_SIZE in INK on a baseline 20pt below the sheet's head; a 0.55pt
+ * COOL_GRAY rule 8pt under that baseline; and a 14pt RUNNING_HEADER_SIGNAL
+ * length of 1.15pt SIGNAL_ORANGE at the rule's left end.  The margin box is the
+ * mirrored content box, so `space-between` puts both ends exactly where
+ * ReportLab's mirrored `self.left` / `width - self.right` put them.
+ *
+ * `line-height: 0` makes the baseline arithmetic explicit rather than
+ * font-derived: the baseline of a zero-leading line sits `size * (ascent -
+ * descent) / 2` = 2.47375pt below the content box, so 17.52625pt of padding
+ * lands it on 20.  The rule then needs its own 27.725pt, which is the 0.55pt
+ * stroke centred on 28.
+ */
+.running-head { margin: 0; padding: 0; position: running(runhead); }
+.running-head-row {
+  color: rgb(5.5% 7.5% 8.5%);
+  display: flex;
+  font: 500 6.8pt/0 "Magazine Sans", sans-serif;
+  justify-content: space-between;
+  padding-top: 17.52625pt;
+  text-transform: uppercase;
+}
+/* 17.52625 + 10.19875 = 27.725, which is the 0.55pt rule centred on 28; the tick
+ * is 1.15pt centred on the same 28, so it stands 0.3pt proud of the rule. */
+.running-head-rule { background: rgb(88% 89% 90%); height: .55pt; margin-top: 10.19875pt; position: relative; }
+.running-head-rule i {
+  background: rgb(240 87 56); display: block; height: 1.15pt; left: 0;
+  position: absolute; top: -.3pt; width: 14pt;
+}
+.publication-name, .issue-number, .content-label, .byline, .author-note, .provenance,
+.end-mark, figcaption, [data-edition-navigation="contents"] { font-family: "Magazine Sans", sans-serif; }
+.publication-name { color: rgb(25% 10% 43%); font-size: 7.5pt; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.edition-header h1 { font-size: 24pt; line-height: 1.04; margin: 2mm 0; }
+.edition-header .subtitle { font-size: 12pt; line-height: 1.22; margin: 0 0 3mm; }
+.edition-header time, .issue-number { color: rgb(31% 35% 37%); font-size: 8pt; }
+
+/*
+ * The contents sheet is a pinned grid, not a flowed list (render.py:1916-1973).
+ * A kicker sits above the live area's head, a display title under it, and the
+ * entries divide a fixed 393pt band into `max(6, len(chunk))` equal rows -- so
+ * the band is a flex column of rows capped at the six-row height, which is the
+ * same arithmetic without the row count having to reach the stylesheet.  Every
+ * value inside a row is placed from the row's own head: the label 8pt down, the
+ * violet folio and the title 23pt down, the author 43pt down.
+ */
+[data-edition-navigation="contents"] {
+  break-after: page; color: rgb(5.5% 7.5% 8.5%); margin: 0; max-width: none; position: relative;
+}
+[data-edition-navigation="contents"] .contents-kicker {
+  font: 500 6.8pt/0 "Magazine Sans", sans-serif; left: 0; letter-spacing: .45pt;
+  margin: 0; position: absolute; text-transform: uppercase; top: -13.46915pt;
+}
+[data-edition-navigation="contents"] h2 {
+  font: 600 27pt/0 "Magazine Serif Display", serif; left: 0; margin: 0;
+  position: absolute; top: 32.54098pt; width: 218.855pt;
+}
+/* The band's head is padding, not a margin: a margin would collapse out through
+ * the nav and carry the kicker and the title down with it. */
+[data-edition-navigation="contents"] ol {
+  display: flex; flex-direction: column; height: 467.2802pt; list-style: none;
+  margin: 0; padding: 74.2802pt 0 0;
+}
+[data-edition-navigation="contents"] li {
+  flex: 1 1 0; margin: 0; max-height: 65.5pt; min-height: 0; padding: 0; position: relative;
+}
+[data-edition-navigation="contents"] li::before { content: none; }
+/* The row rule is drawn on the row's own edge rather than as a border, which
+ * would take its 0.7pt out of the 393pt the rows divide between them. */
+[data-edition-navigation="contents"] li:not(:last-child)::after {
+  background: rgb(88% 89% 90%); bottom: -.35pt; content: ""; height: .7pt; left: 0;
+  position: absolute; width: 333.0079pt;
+}
+[data-edition-navigation="contents"] a { color: inherit; text-decoration: none; }
+[data-edition-navigation="contents"] .entry-label,
+[data-edition-navigation="contents"] .entry-folio,
+[data-edition-navigation="contents"] .entry-title,
+[data-edition-navigation="contents"] .entry-author { display: block; position: absolute; }
+[data-edition-navigation="contents"] .entry-label {
+  font: 500 6.8pt/0 "Magazine Sans", sans-serif; left: 47pt; text-transform: uppercase; top: 5.52625pt;
+}
+[data-edition-navigation="contents"] .entry-folio {
+  color: rgb(25% 10% 43%); font: 600 23pt/0 "Magazine Sans", sans-serif; left: 0; top: 14.63354pt;
+}
+[data-edition-navigation="contents"] .entry-folio::after {
+  content: target-counter(attr(href), page, decimal-leading-zero);
+}
+[data-edition-navigation="contents"] .entry-title {
+  font: 600 9.8pt/10.2pt "Magazine Serif Display", serif; left: 47pt; top: 14.465pt; width: 286.0079pt;
+}
+[data-edition-navigation="contents"] .entry-author {
+  color: rgb(31% 35% 37%); font: 500 6.8pt/0 "Magazine Sans", sans-serif; left: 47pt;
+  text-transform: uppercase; top: 40.52625pt;
+}
+
+.editorial, article, main > section { break-before: page; }
+.editorial header, article header, main > section > header { break-after: avoid; margin-bottom: 6mm; }
+/*
+ * FLOW AND INK PART COMPANY, and every `translateY` below is that one fact.
+ *
+ * ReportLab pins a *baseline*: `block` (render.py:1128-1206) draws at `self.y`
+ * and then subtracts leading and space-after.  CSS pins a *line-box top*, and a
+ * line box carries its baseline `leading / 2 + 0.3505 * size` below that top for
+ * Magazine Serif and `leading / 2 + 0.36377 * size` for Magazine Sans -- a
+ * different distance for every size and leading in the design.
+ *
+ * The page's own datum reconciles the two for *body* copy: `@page`'s margin-top
+ * is derived so that a 10pt/13pt line box's baseline lands on ReportLab's frame
+ * top, which fixes the flow edge exactly `10.0046pt` above the `self.y` it
+ * means.  Every margin below is then the reader's own space-before/after, so
+ * that offset is *invariant* -- it survives every block, whatever its metrics.
+ *
+ * What does not survive is the *baseline* of a block whose own first-baseline
+ * offset is not the body's 10.0046: it lands `offset - 10.0046` away.  That is a
+ * paint error and nothing else, so it is corrected with a transform, which
+ * WeasyPrint applies when it draws and never during layout.  `position:
+ * relative` would do the same to the ink and *also* move `position_y`, which the
+ * adapter measures to decide a tail ornament, a band's shrink and the end mark's
+ * clamp; a transform cannot disturb any of them.  Each correction is
+ * `10.0046 - (leading / 2 + ratio * size)`, measured against the frozen baseline
+ * to the third decimal, and never a fitted number.
+ */
+/*
+ * The article opener reserves a white field: `_render_article_opener` ends with
+ * `_set_reading_frame(top=238)` whenever the opener carries no figure, so the
+ * opener's prose frame runs 238 -> 45 and holds fourteen 13pt lines, however
+ * short the label / title / byline / author-note stack above it turns out to be.
+ * The header is therefore a fixed-height field, not a flowed block: its box runs
+ * from the page's content top down to the flow edge of the first prose block,
+ * which is `595.2756 - 41.9954 - 238 - 10.0046` = 305.2756pt below the content
+ * top.  The standfirst's own 12pt/16.4pt baseline offset is *not* in that
+ * number: it is the standfirst's paint correction below, so that the field stays
+ * a flow height and the flow edge below it keeps the invariant.
+ */
+article > header { height: 305.2756pt; margin-bottom: 0; }
+/*
+ * The editorial's field is a *clamp*, not a constant: `body` (render.py:2091)
+ * ends its opener on `_set_reading_frame(top=min(self.y, 390))`, so the field is
+ * whatever the label / auto-fitted title / credit stack reached, and at least
+ * `543.2756 - 390` = 153.2756pt.  The adapter states the natural height it
+ * measured from the reader's own arithmetic; `min-height` is the `min()`.
+ */
+.editorial > header { margin-bottom: 0; min-height: 153.2756pt; }
+/* `_section` (render.py:2150-2168) has no credit and ends on
+ * `_set_reading_frame(top=title_bottom - 25)`, so its field is neither pinned
+ * nor clamped -- it is the stack's own depth, which the adapter states.  This
+ * edition carries no such section, so the rule is unexercised. */
+main > section:not(.editorial) > header { margin-bottom: 0; }
+/* The field is pinned to the page's content top, so nothing inside it may
+ * collapse a margin out through its head and carry the whole field down. */
+article > header > :first-child,
+.editorial > header > :first-child,
+main > section > header > :first-child { margin-top: 0; }
+/*
+ * An opener figure changes the rule rather than the number: ReportLab then ends
+ * the opener on `_set_reading_frame(top=self.y)` instead of a pinned 238, so the
+ * field runs to wherever the auto-fitted title and the credit reached.  That
+ * height is the adapter's to state, and the figure's head is the field's foot.
+ */
+article > header:has(+ figure[data-anchor="__opener__"]) { height: auto; margin-bottom: 0; }
+h1, h2, h3 { font-family: "Magazine Sans", sans-serif; break-after: avoid; line-height: 1.08; }
+/*
+ * An opener title is not a heading in the flow: `_fitted_title_box`
+ * (render.py:1762-1791) steps SERIF_DISPLAY down half a point at a time until
+ * the title fits its declared box and line count, then sets it on a
+ * `0.96 * size` leading with its first baseline one `size` below a pinned top.
+ * The chosen size is a measurement, so the adapter states it together with the
+ * two margins that depend on it; the family, the weight and the colour are
+ * constants and live here.  A prose h1 -- `block("h1")` -- is a different style
+ * altogether and is set below.
+ */
+.editorial > header > h1, article > header > h1, main > section > header > h1 {
+  font-family: "Magazine Serif Display", "Magazine Serif", serif;
+  font-weight: 600; text-transform: none;
+}
+/*
+ * Prose headings carry the ReportLab body styles: h1 SERIF_DISPLAY 22/25,
+ * h2 SERIF_DISPLAY 18.5/21.5 and h3 SANS_SEMIBOLD 8.5/12, force-uppercased.
+ * ReportLab adds space-before to the previous block's space-after, so each
+ * margin-top is `paragraph_after + before` and collapsing against the paragraph
+ * reproduces the same gap.  It also drops space-before at a fresh frame, which
+ * WeasyPrint does for a margin at a break.
+ */
+.editorial > h1, article > h1, main > section > h1 {
+  font-family: "Magazine Serif Display", "Magazine Serif", serif;
+  font-size: 22pt; font-weight: 600; line-height: 25pt; margin: 23.4pt 0 13pt;
+  /* 10.0046 - (25 / 2 + .3505 * 22) */
+  transform: translateY(-10.2064pt);
+}
+.editorial h2, article h2, main > section h2 {
+  font-family: "Magazine Serif Display", "Magazine Serif", serif;
+  font-size: 18.5pt; font-weight: 600; line-height: 21.5pt; margin: 20.4pt 0 11pt;
+  /* 10.0046 - (21.5 / 2 + .3505 * 18.5) */
+  transform: translateY(-7.22965pt);
+}
+/* `block` (render.py:1148) is the only place the reader colours a heading:
+ * `VIOLET if kind == "h3" else INK`.  A prose h3 is violet; nothing else is. */
+.editorial h3, article h3, main > section h3 {
+  color: rgb(25% 10% 43%);
+  font-size: 8.5pt; font-weight: 600; line-height: 12pt; margin: 15.4pt 0 8pt;
+  text-transform: uppercase;
+  /* 10.0046 - (12 / 2 + .36377 * 8.5) */
+  transform: translateY(.91256pt);
+}
+/*
+ * `block` keeps a heading with what follows by reserving room rather than by
+ * keeping a block: `self.y - (before + lines * leading + after) - 25 <
+ * frame_bottom` advances the frame (render.py:1133-1137), and the 25pt is a
+ * flat reservation that does not care how tall the next block is or whether
+ * there is one.  A `break-after: avoid` keeps the next block's own first
+ * fragment instead, which for a one-line paragraph is 13pt and not 25 -- the
+ * difference between a heading that opens the next page and one that closes
+ * this one.  The reservation is therefore the same shape as a band's clearance:
+ * a box of exactly that height, kept with the heading and then pulled straight
+ * back out of the flow.  The adapter inserts it; see `.band-clearance` below.
+ */
+.heading-clearance { break-before: avoid; break-inside: avoid; height: 25pt; margin-bottom: -25pt; }
+/*
+ * BODY_LEADING rhythm: paragraph_after is 5.4pt, 6.2pt in the editorial and 4.0pt
+ * (with a 12.2pt leading) in an article carrying a landscape plate.  A paragraph
+ * needs two lines to start a frame and never leaves a single-line widow, so
+ * orphans and widows are 2: three would break pages earlier than the reader does.
+ */
+/*
+ * reading_leading and paragraph_after are prose settings.  Opener chrome — the
+ * content label, byline, author note and provenance line — is drawn with fixed
+ * metrics that neither setting touches, so every rule below reaches prose only:
+ * a paragraph that is a child of the piece itself, or a descendant of one of its
+ * non-header children (a blockquote or list item).  A `p:not(.standfirst)`
+ * descendant selector would outrank .byline and .author-note and restyle them.
+ */
+/*
+ * The end mark is furniture, not prose: `_article_endmark` (render.py:2008) sets
+ * it with its own fixed metrics, so it is excluded from every prose rule here.
+ * Without the exclusion a plate article's 12.2pt reading leading reaches it and
+ * moves its baseline 6.1pt, which is exactly what it did.
+ */
+p { margin: 0 0 5.4pt; orphans: 2; widows: 2; }
+.editorial > p:not(.standfirst):not(.end-mark),
+.editorial > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark) { margin-bottom: 6.2pt; }
+.editorial h2 { margin-top: 21.2pt; }
+.editorial h3 { margin-top: 16.2pt; }
+/*
+ * A landscape-plate article reads on a 12.2pt leading (render.py:2112-2116), so
+ * its body line box carries its baseline 9.605pt below its own top rather than
+ * the 10.005 the page datum is cut for -- 0.3996pt of ink on every line of the
+ * article, and nothing at all in the flow.
+ */
+article[data-figure-layouts~="landscape_plate"] > p:not(.standfirst):not(.end-mark),
+article[data-figure-layouts~="landscape_plate"] > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark),
+article[data-figure-layouts~="landscape_plate_after"] > p:not(.standfirst):not(.end-mark),
+article[data-figure-layouts~="landscape_plate_after"] > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark) {
+  line-height: 12.2pt; margin-bottom: 4pt;
+  /* 10.0046 - (12.2 / 2 + .3505 * 10) */
+  transform: translateY(.3996pt);
+}
+article[data-figure-layouts~="landscape_plate"] h2,
+article[data-figure-layouts~="landscape_plate_after"] h2 { margin-top: 19pt; }
+article[data-figure-layouts~="landscape_plate"] h3,
+article[data-figure-layouts~="landscape_plate_after"] h3 { margin-top: 14pt; }
+/* The standfirst is the opening prose block of every article, editorial and
+ * section: `lead` is SERIF 12/16.4 (render.py:1122), whose baseline stands
+ * 12.406pt below its line box against the datum's 10.0046. */
+.standfirst {
+  font-size: 12pt; line-height: 16.4pt; margin-bottom: 13pt;
+  transform: translateY(-2.4014pt);
+}
+/*
+ * Each heading's margin-top above is `paragraph_after + before`, which collapses
+ * against a paragraph's own 5.4pt to the sum ReportLab adds.  A standfirst
+ * carries 13pt of space-after instead, and 13 is larger than 5.4, so the
+ * collapse keeps 20.4 where the reader advances 13 + 15.  Restating the sum
+ * against the standfirst is what makes the collapse reproduce it again.
+ */
+.standfirst + h1 { margin-top: 31pt; }
+.standfirst + h2 { margin-top: 28pt; }
+.standfirst + h3 { margin-top: 23pt; }
+/*
+ * `_label` (render.py:1696-1708) is a pair, not one label: the piece's own
+ * kicker in VIOLET at the live area's left and the mode -- or, for the
+ * editorial, `An original argument` -- right-aligned in INK.  `_credit`
+ * (render.py:1710-1731) then sets `BY <AUTHOR>` in Inter-SemiBold 7.4pt caps and
+ * the author note in Inter CAPTION_SIZE SLATE on a BASE*3 leading.
+ *
+ * The whole stack lives inside the opener's pinned white field, whose height is
+ * fixed above, so none of these metrics can move a line of prose.  It escapes
+ * the reading measure by the 4.004pt that measure is inset from the live width,
+ * because ReportLab draws the opener chrome across `self.left`/`self.live_width`
+ * and only narrows to the reading frame for the prose below it.
+ */
+.editorial > header, article > header, main > section > header { margin-left: -4.004pt; margin-right: -4.004pt; }
+.content-label {
+  color: rgb(5.5% 7.5% 8.5%); display: flex; font-size: 6.8pt; font-weight: 500;
+  justify-content: space-between; letter-spacing: .45pt; line-height: 0;
+  margin: 0; padding-top: 7.53085pt; text-transform: uppercase;
+}
+.content-label .label-primary { color: rgb(25% 10% 43%); }
+/*
+ * CSS emits a letter-space *after* the last character, so a tracked span's box
+ * is one `letter-spacing` wider than its ink; `space-between` then flushes that
+ * box -- trailing space included -- to the content edge, and the last glyph
+ * lands .45pt short of it.  `_tracked_label` (render.py:1441-1466) measures
+ * `... + tracking * max(0, len(candidate) - 1)`, i.e. no trailing space, and so
+ * puts the last glyph's advance on the edge itself.  Pulling the flushed item's
+ * margin box in by exactly the trailing space puts its *ink* where the reader
+ * puts it.  Visible on a printed sheet, because the header rule below the
+ * kicker does reach the edge.
+ *
+ * The error is exactly one `letter-spacing`, 0.45pt, and the control says so: a
+ * run with this rule removed puts the flushed item's *left* edge a constant
+ * -0.441 to -0.447pt off the baseline's on all 14 openers across both languages
+ * and both page parities.  With the rule in, that edge lands +0.0035 to
+ * +0.0087pt.  The right edge still differs by up to 0.042pt, and that residual
+ * tracks the length of the whole label rather than the character count of its
+ * last word -- so do not restate it as a per-character law; a fit is not a rule.
+ *
+ * The lever is `transform`, not `margin-right`, and not by taste.  A negative
+ * `margin-right` does put the *margin* box's right edge where it belongs --
+ * measured, 377.0079 on a recto -- but WeasyPrint then breaks the item's lines
+ * against the shortened box, and `AN ORIGINAL ARGUMENT` / `UN ARGUMENTO
+ * ORIGINAL` wrap their last word onto a second line, which at `line-height: 0`
+ * lands in the same extracted band and reorders the page's words.  A transform
+ * is a paint correction and touches no box, which is the same reason the
+ * ornament and end-mark corrections use one.
+ *
+ * A left-aligned label -- a section opener, which has no `.label-secondary` --
+ * is unaffected: `justify-content` never moves it off the start edge, so the
+ * transform would displace it.  Hence `.label-secondary`, the flushed item, and
+ * not `:last-child`, which is the primary span when a label has only one.
+ */
+.content-label .label-secondary { transform: translateX(.45pt); }
+.byline { font-size: 7.4pt; font-weight: 600; line-height: 0; margin: 0; padding-top: 12pt; text-transform: uppercase; }
+/* `_credit` advances `self.y -= 12` and then draws the note's first baseline
+ * there (render.py:1731-1735).  The byline's box ends 2.69189pt below its own
+ * 7.4pt baseline and a 6.8pt/9.45pt Magazine Sans line carries its baseline
+ * 7.19863pt below its top, so the gap between the two boxes is
+ * 2.69189 + 12 - 7.19863. */
+.author-note { color: rgb(31% 35% 37%); font-size: 6.8pt; font-weight: 400; line-height: 9.45pt; margin: 7.49326pt 0 0; }
+/*
+ * `render.py:1997-2000` passes `author_note=""` when the opener carries its own
+ * figure, and the reader never prints source ids at all: provenance travels in
+ * the edition manifest, so it stays in the semantic HTML for a screen adapter
+ * and is suppressed here rather than dropped from the document.
+ */
+.provenance { display: none; }
+article > header:has(+ figure[data-anchor="__opener__"]) .author-note { display: none; }
+/*
+ * A bullet is its own block in the reader (render.py:367-371): SERIF 10pt on the
+ * reading leading, indented 14pt, with a 2.5pt VIOLET disc drawn 4pt above the
+ * first baseline and 6pt of space after the item.  The disc is drawn, not set:
+ * the reader has no marker glyph, and inventing one would put a character in the
+ * page's text that the baseline never prints -- and, for U+25E6, one that
+ * neither bundled family contains.
+ *
+ * Under a references heading every bullet is demoted to `source_note`
+ * (render.py:1380-1381, 1416-1417): SERIF 7.2/9.4, no disc, no indent, 3pt after.
+ */
+ul, ol { margin: 0; padding: 0; }
+li { font-size: 10pt; list-style: none; margin: 0 0 6pt; padding-left: 14pt; position: relative; }
+li > p, li > ul, li > ol { margin: 0; }
+li::before {
+  background: rgb(25% 10% 43%); border-radius: 2.5pt; content: ""; height: 5pt;
+  left: 0; position: absolute; top: 3.505pt; width: 5pt;
+}
+ul[data-reference-list] li {
+  font-size: 7.2pt; line-height: 9.4pt; margin-bottom: 3pt; padding-left: 0;
+  /* 10.0046 - (9.4 / 2 + .3505 * 7.2) */
+  transform: translateY(2.781pt);
+}
+ul[data-reference-list] li > p { line-height: 9.4pt; }
+ul[data-reference-list] li::before { content: none; }
+/*
+ * `_article_endmark` (render.py:2008-2021) closes a piece with a 17pt 1.1pt
+ * SIGNAL_ORANGE rule at the frame's left and `END / nn` in tracked VIOLET caps
+ * 24pt in, on a baseline just under the last line -- and it consumes no flow, so
+ * the mark is a zero-height block that cannot displace the line above it.
+ *
+ * A zero-height block can still be *displaced*: an article whose last line fills
+ * its page leaves the following flow position below the page's content box, and
+ * the mark would open a page of its own for nothing.  So it is laid out 20pt
+ * above where it belongs -- always inside the page the article ends on, whatever
+ * space-after the last block carried -- and painted back down with `top`.
+ *
+ * How far back down is the whole of the mark's geometry, and it is *not* 20.
+ * The reader's baseline is `max(frame_bottom + 5, self.y - 1)`.  The flow edge
+ * the mark is hoisted from stands 10.0046 above `self.y`, its own zero-leading
+ * line carries its baseline 2.47375 below its box, and the hoist is 20 -- so the
+ * unclamped case is `20 + 10.0046 - 2.47375 + 1` = 28.53085, which is 8.53085pt
+ * further than the 20 that was here and was wrong on every article.
+ *
+ * The clamp has no CSS spelling at all: `max(frame_bottom + 5, ...)` reads a
+ * laid-out `self.y` that no selector can see, and it is not decorative -- it
+ * fires on es reader p9, where the unclamped mark paints 2.5pt *below* the frame
+ * bottom.  The adapter measures `self.y` for every article and restates `top`
+ * inline wherever the clamp bites; this value is the case where it does not.
+ */
+.end-mark {
+  color: rgb(25% 10% 43%); font-size: 6.8pt; font-weight: 500; height: 0;
+  letter-spacing: .25pt; line-height: 0; margin: -20pt 0 0; padding-left: 24pt;
+  position: relative; text-transform: uppercase;
+  transform: translateY(28.53085pt);
+}
+.end-mark::before {
+  background: rgb(240 87 56); content: ""; height: 1.1pt; left: 0;
+  position: absolute; top: -.07625pt; width: 17pt;
+}
+blockquote { border-left: 1.5pt solid rgb(25% 10% 43%); margin: 4mm 0; padding-left: 4mm; }
+pre { background: rgb(95.5% 94.5% 97.5%); font: 7.5pt/1.3 "Magazine Sans", monospace; padding: 3mm; white-space: pre-wrap; }
+code { font-family: "Magazine Sans", monospace; }
+/* The reader strips a markdown link to its text and sets it as ordinary prose
+ * (render.py:`_plain`), so a link carries no colour and no rule of its own. */
+a { color: inherit; text-decoration: none; }
+
+/*
+ * ReportLab's `drawImage` writes no `/Interpolate` entry at all, so every raster
+ * the baseline places carries the PDF default, `false`.  WeasyPrint's default is
+ * `image-rendering: auto`, which it maps to `/Interpolate true` on the image
+ * XObject and on its soft mask (weasyprint/images.py:95, 148, 192).  Measured on
+ * edition 002: the reader's own rasters are 16 image XObjects in en -- 15 placed
+ * images plus one soft mask -- and 15 in es (14 plus one).  Those are what the
+ * flag lands on, and they differ from the baseline's in that flag and in nothing
+ * else: the stream data, JPEG bytes included, hashes one-for-one against the
+ * baseline's.  The four further image XObjects in each reader come from the
+ * spliced cover PDFs, which carry no `/Interpolate` entry either way.
+ *
+ * The flag is *not* why p28 is the worst reader page.  That causal claim used to
+ * be recorded here and a control disproved it twice: rendering with
+ * `image-rendering: auto`, confirmed to emit `/Interpolate true`, gives G4, G5
+ * and G6 results identical on all 36 reader pages and all 18 booklet sides, and
+ * the p28 rasters come out bit-identical -- max delta 0 -- at 144, 300 and 400
+ * DPI.  Poppler ignores `/Interpolate` outright for these downscaled images.
+ *
+ * What p28's residual actually is, measured at 144 DPI: 5,979 of 1,000,440
+ * pixels differ (0.5976%).  4,343 of them, 72.6%, lie inside the
+ * `planner-tool-fanout` figure's placed box -- 1.91% of that region -- and that
+ * part is a pure downsampling artifact: the same region is bit-identical,
+ * 0.0000%, at both 300 and 400 DPI.  The remaining 27.4% is text and rule
+ * antialiasing, i.e. the off-grid type-size residual documented in
+ * docs/RENDERER_MIGRATION.md.  Neither share is `/Interpolate`.
+ *
+ * The rule stays, on the ground that does hold rather than the one that did not:
+ * it makes the reader's own rasters declare the same `/Interpolate false` that
+ * ReportLab's output and the spliced cover PDFs already carry, at zero measured
+ * cost.  Do not re-justify it from the diff.
+ */
+img { image-rendering: crisp-edges; }
+figure { break-inside: avoid; margin: 6mm 0; }
+figure img { display: block; height: auto; max-height: 86mm; max-width: 100%; width: auto; }
+/*
+ * `FIGURE nn` (render.py:786-787) heads every curated figure in tracked VIOLET
+ * caps, on a baseline CAPTION_SIZE below the figure's head.  The counter is per
+ * article and follows the reader's own numbering, which is document order once a
+ * deferred plate has been moved to the page it surfaces on.  A tail motif and a
+ * closing plate are furniture, not curated figures, and carry no
+ * `data-figure-id` and so no number.
+ *
+ * The label also *consumes* `CAPTION_SIZE + BASE * 2` = 13.1pt of the figure's
+ * own height (render.py:739), which is the first term of `_figure_geometry`'s
+ * `total_height`.  For a figure in the column that zone is the label's own box,
+ * laid out in flow; on a plate the 23.1pt under the heading already is the
+ * zone, so there the label stays out of flow (see the plate rules below).
+ */
+article { counter-reset: magazine-figure; }
+figure[data-figure-id] { counter-increment: magazine-figure; position: relative; }
+figure[data-figure-id]::before {
+  color: rgb(25% 10% 43%);
+  content: attr(data-figure-label) " " counter(magazine-figure, decimal-leading-zero);
+  display: block;
+  font: 500 6.8pt/0 "Magazine Sans", sans-serif;
+  left: 0;
+  letter-spacing: .25pt;
+  position: absolute;
+  text-transform: uppercase;
+  top: -15.57375pt;
+}
+/*
+ * `_figure_geometry` (render.py:716-739) is the whole block, and every term of
+ * its `total_height` is a box here:
+ *
+ *   CAPTION_SIZE + BASE*2   the label's zone       13.1pt   ::before
+ *   image_height            the fitted image                img
+ *   BASE*2                  clear under the image   6.3pt   figcaption margin
+ *   text_height             (caption + credit) * FIGURE_TEXT_LEADING
+ *   FIGURE_GAP              space below the block  15.75pt  figure margin
+ *
+ * `image_height` is not a stated number but `min(width/pixel_width,
+ * max_image_height/pixel_height)` applied to the source raster -- which is
+ * exactly what a replaced element with `max-width`, `max-height` and auto
+ * dimensions resolves to, so the fit stays the image's own business and only
+ * the two bounds are stated per layout.
+ *
+ * The figure has no space *above* it: ReportLab draws from `self.y`, which the
+ * preceding paragraph or heading has already advanced by its own space-after.
+ *
+ * Flow and ink part company here.  A CSS box's top stands 10.0046pt above the
+ * `self.y` it means, because the page's content box is derived from the first
+ * baseline and not from the frame top -- which is invisible in prose, where the
+ * baselines are what land, and visible the moment a box paints a rectangle.
+ * The block is therefore laid out on the flow position and painted on the ink
+ * one, and the offset reaches the label, the image and the caption together.
+ */
+article > figure[data-figure-id] {
+  margin: 0 0 15.75pt; max-width: none; top: 10.0046pt;
+}
+/* CAPTION_SIZE below the block's head is where the label's baseline belongs; a
+ * zero-leading 6.8pt Magazine Sans line puts its baseline 2.47375pt below its
+ * own box, so the zone's padding carries the remaining 4.32625pt. */
+article > figure[data-figure-id]::before {
+  box-sizing: border-box;
+  height: 13.1pt;
+  padding-top: 4.32625pt;
+  position: static;
+}
+/* `_draw_contained_image` (render.py:753) centres the image in the band, and
+ * strokes a 0.55pt INK rectangle exactly around it (render.py:765-767).  The
+ * frame is painted by `img.figure-rule`, not by this box: see the note on that
+ * rule for why no CSS property on the image itself can stroke it. */
+article > figure[data-figure-id] > img {
+  margin: 0 auto;
+  max-height: 205pt;
+}
+/*
+ * The frame itself.  ReportLab *strokes* it, and poppler snaps a thin stroke to
+ * whole pixels at full ink; the same 0.55pt of ink laid down as a *fill* is
+ * antialiased over twice as many pixels, which is a measurable ink-coverage
+ * difference on every figure page.  Nothing in CSS strokes -- `outline`,
+ * `border` and `border-image` are all filled by WeasyPrint's
+ * `draw_rect_border` -- so the frame is an SVG `rect` with `fill: none`, the one
+ * construct whose renderer emits `RG`/`S`.  It must be a replaced element and
+ * not a background image: WeasyPrint draws a background SVG inside a
+ * transparency group, and poppler does not snap a stroke drawn in one.
+ *
+ * The adapter measures each fitted image box and sizes the rule to it, because
+ * only a box that already stands on the image's own edges can carry the frame
+ * without a wrapper that would change the fit.  Absolute positioning keeps it
+ * out of flow, so -- exactly like the discarded `outline` -- it takes nothing
+ * out of the box the fit was computed for.
+ */
+figure[data-figure-id] > img.figure-rule {
+  display: block; height: auto; margin: 0; max-height: none; max-width: none;
+  object-fit: fill; position: absolute; width: auto;
+}
+/*
+ * An evidence band escapes the reading measure to the full live width, so its
+ * `band_width` is 333.008pt and the figure carries the same 4.004pt of escape
+ * the band's heading does.  A compact band is COMPACT_FIGURE_WIDTH 260pt
+ * centred in that live width (render.py:883-885), which from a 325pt reading
+ * measure is 32.5pt of inset on each side.
+ */
+article > figure[data-layout="evidence_band"],
+article > figure[data-layout="evidence_band_prose"],
+article > figure[data-layout="adaptive_band"] { margin-left: -4.004pt; margin-right: -4.004pt; }
+/* `band_bottom += max(0, FIGURE_GAP - 12)` (render.py:945-946) hands 3.75pt
+ * back to the frame, so a compact band's gap is 12pt and not FIGURE_GAP. */
+article > figure[data-layout="compact_band"] {
+  margin-bottom: 12pt; margin-left: 32.5pt; margin-right: 32.5pt;
+}
+article > figure[data-layout="compact_band"] > img { max-height: 170pt; }
+/*
+ * `_opener_evidence_band` (render.py:952-987) measures and advances by
+ * `total_height - FIGURE_GAP` at both ends, so an opener band is a full-width
+ * band with no gap at all below it; OPENER_FIGURE_MAX_IMAGE_HEIGHT is 270.
+ */
+article > figure[data-anchor="__opener__"] { margin-bottom: 0; }
+article > figure[data-anchor="__opener__"] > img { max-height: 270pt; }
+/*
+ * `band_bottom - 4 * reading_leading < self.bottom` (render.py:947-950, 984-987)
+ * opens a new page for whatever follows a band, without moving the band.  This
+ * is that rule as a box: unbreakable, as tall as the room the reader demands,
+ * and pulled straight back out of the flow again, so it costs nothing when it
+ * fits and carries the following content to the next page when it does not.
+ * The adapter states its height, which is the article's own reading leading.
+ */
+.band-clearance { break-inside: avoid; }
+/*
+ * An evidence band escapes the reading measure.  `_evidence_band`
+ * (render.py:928-934) replaces the centred 325pt frame with `self.left,
+ * self.live_width` before it sets the anchoring heading, and only restores the
+ * reading measure below the band (render.py:950) -- so the band's heading is
+ * measured across the full 333.008pt live width, which is 4.004pt of escape on
+ * each side.  On this edition it is the difference between a one-line and a
+ * two-line heading, and therefore between a five- and a six-page article.
+ * The band frame is not the figure's own width: `band_width` stays the figure's
+ * business (COMPACT_FIGURE_WIDTH for a compact band, the live width otherwise).
+ *
+ * The same `_set_custom_frame` also drops the heading's space-before, because
+ * `block` drops it whenever `self.y` is the frame's own top (render.py:1135) and
+ * a band always sets a frame it then starts at.  A band's anchor heading
+ * therefore follows its paragraph on the paragraph's space-after alone.
+ */
+article h2:has(+ figure[data-layout="evidence_band"]),
+article h2:has(+ figure[data-layout="evidence_band_prose"]),
+article h2:has(+ figure[data-layout="adaptive_band"]),
+article h2:has(+ figure[data-layout="compact_band"]),
+article h3:has(+ figure[data-layout="evidence_band"]),
+article h3:has(+ figure[data-layout="evidence_band_prose"]),
+article h3:has(+ figure[data-layout="adaptive_band"]),
+article h3:has(+ figure[data-layout="compact_band"]) {
+  margin-left: -4.004pt; margin-right: -4.004pt; margin-top: 0;
+}
+/*
+ * `_draw_figure` (render.py:791-802) sets the caption in SERIF at CAPTION_SIZE
+ * in INK and the credit in SANS_MEDIUM at CAPTION_SIZE in SLATE, both on
+ * FIGURE_TEXT_LEADING and the credit continuing the caption's own rhythm with
+ * nothing between them.  There is no rule above the caption: the block is
+ * BASE*2 clear of the image and nothing else.
+ *
+ * Magazine Serif is ascent 1.036 / descent -0.335, so a 6.8pt line on an 8.6pt
+ * leading puts its baseline (8.6 - 6.8 * 1.371) / 2 + 6.8 * 1.036 = 6.6834pt
+ * below its own box, while ReportLab puts the first caption baseline
+ * CAPTION_SIZE below the block's head.  The block is therefore painted the
+ * remaining 0.1166pt down, without that offset reaching the flow.
+ */
+figcaption {
+  border-top: 0;
+  color: rgb(5.5% 7.5% 8.5%);
+  font-family: "Magazine Serif", serif;
+  font-size: 6.8pt;
+  line-height: 8.6pt;
+  margin-top: 6.3pt;
+  padding-top: 0;
+  position: relative;
+  top: .1166pt;
+}
+figcaption .caption, figcaption .credit { display: block; margin: 0; }
+/*
+ * The credit continues the caption's rhythm in ReportLab, which does not care
+ * which face is on the line.  A CSS line box does: Magazine Sans stands
+ * 6.77363pt above its baseline on an 8.6pt leading where Magazine Serif stands
+ * 6.6834, so the credit's first baseline lands 0.09023pt lower than the caption
+ * rhythm it is meant to continue.
+ */
+figcaption .credit {
+  color: rgb(31% 35% 37%); font-family: "Magazine Sans", sans-serif; font-weight: 500;
+  transform: translateY(-.09023pt);
+}
+
+/*
+ * A landscape plate is a page, not a block.  `_landscape_plate`
+ * (render.py:989-1115) opens a page, translates the canvas to the live area's
+ * head -- (self.left, 543.2756), i.e. TEXT_TOP_INSET 52 below the sheet's head --
+ * rotates it -90 degrees, and lays the plate out in a 498.2756 x 333.008 local
+ * frame that is the page turned on its side.  The adapter assembles that frame's
+ * contents (the heading its figure consumes, then the figure); the geometry is
+ * here.
+ *
+ * The host block escapes the 325pt reading measure by the 4.004pt the measure is
+ * inset from the 333.008pt live width, and stands 498.2756pt tall so the plate
+ * owns the page without exceeding the page's own 499.2802pt content box.  The
+ * rotor is laid out unrotated at 498.2756 x 333.008 -- its inline direction is
+ * the page's long axis -- and then rotated about its own head: after the
+ * rotation its head is at the live area's *right* edge, so the translate puts it
+ * back at 333.008pt across, and 10.0046pt down, which is where ReportLab's frame
+ * top sits relative to a content box derived from the first baseline.
+ */
+.landscape-plate {
+  break-after: page;
+  break-before: page;
+  height: 498.2756pt;
+  margin-left: -4.004pt;
+  margin-right: -4.004pt;
+}
+.landscape-plate-rotor {
+  height: 333.008pt;
+  transform: translate(333.008pt, 10.0046pt) rotate(90deg);
+  transform-origin: 0 0;
+  width: 498.2756pt;
+}
+/*
+ * The plate heading is its own style, not the prose h2/h3: SERIF_DISPLAY 17.5/20.5
+ * (SANS_SEMIBOLD 9/12, uppercased, for an h3 anchor), drawn at a pinned position
+ * with no space before it.  ReportLab then leaves `10 + CAPTION_SIZE + BASE * 2`
+ * = 23.1pt between the heading block and the image's head, whatever the heading's
+ * own line count.  The two-class selector is deliberate: the per-article
+ * `article[data-figure-layouts~="landscape_plate"] h2` space-before rule above is
+ * a *prose* rule, and it outranks a single class.
+ */
+.landscape-plate > .landscape-plate-rotor > h1,
+.landscape-plate > .landscape-plate-rotor > h2,
+.landscape-plate > .landscape-plate-rotor > h3 {
+  break-after: auto;
+  font-family: "Magazine Serif Display", "Magazine Serif", serif;
+  font-size: 17.5pt; font-weight: 600; line-height: 20.5pt;
+  margin: 0 0 23.1pt; text-transform: none;
+}
+/*
+ * `baseline = local_height - heading_size` (render.py:1046): the first heading
+ * baseline is its own size below the frame's head.  Magazine Serif Display is
+ * ascent 1.036 / descent -0.335, so a 17.5pt line on a 20.5pt leading carries
+ * its baseline (20.5 - 17.5 * 1.371) / 2 + 17.5 * 1.036 = 16.38375pt down --
+ * 1.11625pt short.  Magazine Sans is 0.96875 / -0.2412, so a 9pt h3 line on a
+ * 12pt leading lands 9.27393pt down, which is 0.27393pt too far.  Both are
+ * painted, not flowed: the 23.1pt below the heading block is a fixed distance
+ * from the block, whatever its own baseline does inside it.
+ */
+.landscape-plate > .landscape-plate-rotor > h1,
+.landscape-plate > .landscape-plate-rotor > h2 { transform: translateY(1.11625pt); }
+/* A plate's own heading is INK whatever its tag (render.py:1046); only *prose*
+ * h3 is violet, so the plate rule has to say so or it inherits the prose one. */
+.landscape-plate > .landscape-plate-rotor > h3 {
+  color: rgb(5.5% 7.5% 8.5%);
+  font-family: "Magazine Sans", sans-serif;
+  font-size: 9pt; line-height: 12pt; text-transform: uppercase;
+  transform: translateY(-.27393pt);
+}
+/*
+ * A plate ends with `self.y = self.frame_bottom` (render.py:1115), so whatever
+ * follows it opens a fresh frame -- and ReportLab drops space-before at a fresh
+ * frame (render.py:1135-1136).  WeasyPrint discards a block's own margin at a
+ * break, but this margin has collapsed into the article fragment's top edge by
+ * then, so it survives the break and has to be dropped explicitly.
+ */
+article > .landscape-plate + h1,
+article > .landscape-plate + h2,
+article > .landscape-plate + h3,
+article > .landscape-plate + p { margin-top: 0; }
+/*
+ * On a plate the 23.1pt below the heading already *is* the label's zone
+ * (render.py:1000-1016: `label_y = local_height - heading - 10`, then
+ * `image_top = label_y - CAPTION_SIZE - BASE * 2`), so the label's out-of-flow
+ * placement is not a placeholder here but the plate's own geometry.
+ */
+.landscape-plate-rotor figure { margin: 0; max-width: none; }
+/*
+ * `local_width - 10` = 488.2756pt along the page's long axis, centred in the
+ * frame, which is the width bound of ReportLab's three-way `scale` and the one
+ * that binds on this edition (both plates land on 302 effective ppi).  The other
+ * two bounds -- the room the caption leaves, and the 72/MIN_FIGURE_PPI ceiling --
+ * are figure-fitting rules and are not reproduced here.
+ *
+ * `image_x` is `(local_width - image_width) / 2` = 5pt, stated rather than left to
+ * `margin: 0 auto`, which WeasyPrint does not resolve for a replaced block.
+ */
+.landscape-plate-rotor figure img {
+  display: block; height: auto; margin: 0 0 0 5pt; max-height: none;
+  max-width: none; width: 488.2756pt;
+}
+
+/*
+ * The article tail motif is furniture, not content.  `_article_tail_ornament`
+ * (render.py:2023-2052) crop-fills it across the full 325pt reading measure from
+ * ARTICLE_TAIL_ORNAMENT_MIN/MAX_HEIGHT above the frame's foot -- 24pt up from the
+ * 45pt frame bottom, i.e. 13.9954pt above this page's own content box, whose
+ * foot is on the frame bottom -- and it never moves a line.  Out of flow is what
+ * makes that true, so the ornament cannot manufacture the near-empty page an
+ * in-flow image did.  Its height is the slack the adapter measured; whether it
+ * appears at all is the same decision.
+ */
+.article-tail {
+  bottom: 13.9954pt;
+  height: 214pt;
+  left: 4.004pt;
+  margin: 0;
+  position: absolute;
+  width: 325pt;
+}
+.article-tail img {
+  height: 100%; max-height: none; max-width: none; object-fit: cover; width: 100%;
+}
+/*
+ * `_closing_plate` (render.py:2170-2196) is a page, not a block: a white sheet,
+ * one crop-filled artwork and one fitted display title, with no folio and no
+ * running head.  The art occupies `grid_box(0, 6)` -- the whole live width --
+ * from y 205 to the sheet's own head, so `205 + 390.2756` is the trim height
+ * exactly and the art *bleeds*: it escapes the top margin rather than starting
+ * inside it, so its own top offset is the page's margin-top negated and tracks
+ * it, rasterizer nudge included.  Both pieces are therefore positioned against
+ * the page's content box, and the plate itself is a full-height field that owns
+ * the page.
+ *
+ * `_draw_image_fill` (render.py:1794-1826) scales by `max(w/iw, h/ih)`, centres
+ * the overflow and clips to the box, which is `object-fit: cover` with the
+ * default centred position.  There is no frame rule on plate art, and
+ * `prepare_print_image` is never applied to it -- the contrast safeguard is a
+ * figure treatment (render.py:755, 1040) and a plate is not a figure.
+ */
+.closing-plate {
+  break-before: page; height: 498.2756pt; margin: 0; max-width: none;
+  page: closing-plate; position: relative;
+}
+.closing-plate img {
+  height: 390.2756pt; left: 0; margin: 0; max-height: none; max-width: none;
+  object-fit: cover; object-position: center; position: absolute;
+  top: -42.0004pt; width: 333.0079pt;
+}
+/*
+ * `_fitted_title_box(plate.title, grid_box(0, 5), top=168, height=92, 32 -> 22,
+ * <= 2 lines, VIOLET, leading_ratio 1.0)`.  The size and the wrap are the
+ * adapter's, because auto-fitting is a measurement; the box is here.  A first
+ * baseline `size` below `top = 168` sits `385.2802 + size` below the page's
+ * content box, and a `size`-leaded line of Magazine Serif Display carries its
+ * baseline `0.8505 * size` below its own box, so the box's head is
+ * `385.2802 + 0.1495 * size` -- which the adapter states with the size itself.
+ */
+.closing-plate figcaption {
+  border: 0; color: rgb(25% 10% 43%); font-family: "Magazine Serif Display", serif;
+  font-weight: 600; left: 0; margin: 0; padding: 0; position: absolute;
+  text-align: left; top: 385.2802pt; width: 275.9317pt;
+}

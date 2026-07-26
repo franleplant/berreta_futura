@@ -17,6 +17,8 @@ dependencies = [
   "resvg>=0.2.0",
   "affine>=2.4.0",
   "fonttools>=4.63.0",
+  "markdown-it-py>=4.2.0",
+  "weasyprint>=69.0",
 ]
 
 [project.scripts]
