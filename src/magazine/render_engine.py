@@ -2,8 +2,19 @@
 
 The publication has two independent reader renderers.  ``render.render_a5``
 is the original ReportLab typesetter; ``weasyprint_adapter.render_a5_weasyprint``
-is the HTML/CSS path.  They were proven equivalent on edition ``002-unreleased``
-before WeasyPrint became the default, and ReportLab is retained as the rollback.
+is the HTML/CSS path and the default.
+
+**Selecting ReportLab is no longer a rollback.**  The two were interchangeable
+only while three shaping scaffolds held WeasyPrint's line breaking down to
+ReportLab's, and those came out after cutover: the reader now kerns, applies
+ligatures and takes Pango's own intra-token break opportunities, and ReportLab
+does none of the three.  Choosing it therefore *changes the publication* --
+66% of English running words shift, worst case 1.87pt on a single word, and line
+breaks move -- rather than restoring it.  It remains a working, supported engine
+and reproduces the pre-cutover publication byte for byte, so it is still the
+escape hatch if the WeasyPrint path ever cannot build an edition at all; but
+flipping this key is an editorial decision, not an operational one.  See
+"The rollback window is closed" in ``docs/RENDERER_MIGRATION.md``.
 
 Two properties are load-bearing here.
 

@@ -896,15 +896,24 @@ def test_running_header_prints_on_continuation_pages_only():
         if getattr(child, "at_keyword", None) == "@top-center"
     )
     lines = [
-        (round(box.position_x * _POINTS_PER_CSS_PIXEL, 4),
-         round(box.width * _POINTS_PER_CSS_PIXEL, 4),
+        (box.position_x * _POINTS_PER_CSS_PIXEL,
+         box.width * _POINTS_PER_CSS_PIXEL,
          round((box.position_y + box.baseline) * _POINTS_PER_CSS_PIXEL, 4))
         for box in _line_boxes(header)
     ]
     assert round(header.width * _POINTS_PER_CSS_PIXEL, 4) == 333.0079
     assert [baseline for _, _, baseline in lines] == [20.0, 20.0]
     assert round(lines[0][0], 4) == 42.5197, "page 2 is a verso: the name is at self.left"
-    assert round(lines[1][0] + lines[1][1], 4) == 375.5276, "and the title at width - self.right"
+    # The flushed end is asserted as an edge, summing before rounding: the
+    # title's own width is shaped type and moves in the fourth decimal when the
+    # face kerns, while the edge `space-between` flushes it to does not.
+    # Rounding the two terms *separately* and adding them turned that
+    # ten-thousandth of a point into a failure and asserted nothing extra; the
+    # repair is where the rounding happens, not how much drift is tolerated.
+    # A 1e-3 window would accept a real 0.0009pt displacement of the edge.
+    assert round(lines[1][0] + lines[1][1], 4) == 375.5276, (
+        "and the title at width - self.right"
+    )
 
 
 def test_running_header_rule_and_signal_tick_are_absent_where_the_header_is():
@@ -1061,10 +1070,6 @@ def _flow_lines(document: object) -> list[str]:
     return lines
 
 
-def _token_markup(text: str) -> str:
-    return " ".join(f'<span class="reader-token">{word}</span>' for word in text.split())
-
-
 # Twelve words of filler put the interesting tokens across the measure's edge.
 _BREAK_PROSE = (
     "word word alpha bravo charlie delta echo foxtrot golf hotel india juliet "
@@ -1073,106 +1078,316 @@ _BREAK_PROSE = (
 )
 
 
-def test_a_token_that_pango_breaks_and_the_reader_cannot_is_kept_whole():
-    """The reader splits on whitespace only; Pango also breaks after a hyphen.
+def test_the_reader_kerns_and_therefore_holds_more_per_line_than_reportlab():
+    """The shaping scaffolds are gone, so Pango's measure is no longer ReportLab's.
 
-    The unwrapped control is the point of the test: without the nowrap box the
-    two typesetters really do disagree, and they agree line for line with it.
+    `_wrap` reproduces `lines` (render.py:658-685), which sums raw glyph
+    advances and kerns nothing.  Pango kerns, so the same copy measures narrower
+    and a line takes a word the ReportLab reader pushed to the next.  The
+    divergence is asserted deliberately: the day it stops holding, either
+    kerning has been turned back off or the two measures have been re-coupled,
+    and both are regressions now.
     """
-    reader = adapter._wrap(_BREAK_PROSE, "serif", 10, 325)
-    control = _flow_lines(
+    reportlab = adapter._wrap(_BREAK_PROSE, "serif", 10, 325)
+    shaped = _flow_lines(
         _typeset_document(f'<section id="prose"><p>{_BREAK_PROSE}</p></section>')
     )
-    tokenized = _flow_lines(
-        _typeset_document(
-            f'<section id="prose"><p>{_token_markup(_BREAK_PROSE)}</p></section>'
-        )
+
+    assert shaped != reportlab
+    assert len(shaped[0].split()) > len(reportlab[0].split()), (
+        "kerning pulls letters together, so the shaped first line holds more"
+    )
+    assert " ".join(" ".join(shaped).split()) == " ".join(_BREAK_PROSE.split()), (
+        "only the line breaks may move; not one word of copy"
     )
 
-    assert control != reader, "the control must diverge or the test proves nothing"
-    assert any(line.endswith("trade-") for line in control), (
-        "the control must break after a hyphen, which is the divergence at issue"
+
+def test_the_reader_now_breaks_inside_a_hyphenated_token():
+    """`lines` can only end a line on whitespace; Pango may end it on a hyphen.
+
+    Held down by `.reader-token { white-space: nowrap }` until the re-baseline,
+    which is what made the two renderers interchangeable.  It is the intended
+    behaviour now: a hyphenated compound that will not fit the measure breaks at
+    its hyphen instead of pushing the whole token to the next line.
+    """
+    prose = " ".join(["alpha"] * 8) + " planner-executor-synthesis remains"
+    shaped = _flow_lines(_typeset_document(f'<section id="prose"><p>{prose}</p></section>'))
+
+    assert any(line.endswith("-") for line in shaped), shaped
+    assert not any(
+        line.endswith("-") for line in adapter._wrap(prose, "serif", 10, 325)
+    ), "ReportLab has no such break opportunity, which is the whole difference"
+
+
+#: The `@font-face` family each `_advance_widths` face is installed under.
+_SHAPED_FAMILIES = {"serif": "Magazine Serif", "serif-display": "Magazine Serif Display"}
+
+
+def _shaped_inline_width(text: str, *, size: float, face: str = "serif") -> float:
+    """The width Pango gives one run of `text`, against `_string_width`'s face.
+
+    Measured off the inline box rather than the line box: a line box is as wide
+    as the text it holds, but only once nothing else -- indents, the measure's own
+    rounding -- is in it, and an inline box is the run and nothing else.  The
+    family is named explicitly so the run is set in the same face
+    `adapter._string_width` sums, which is the whole point of comparing them, and
+    the block is made far wider than the reader's measure so that the run stays
+    one fragment: a wrapped inline box reports its first line's width only.
+    """
+    weight = 600 if face == "serif-display" else 400
+    document = _typeset_document(
+        f'<section id="prose"><p style="font-size: {size}pt; line-height: {size}pt; '
+        f"width: 3000pt; font-family: '{_SHAPED_FAMILIES[face]}'; font-weight: {weight}\">"
+        f"<span>{text}</span></p></section>"
     )
-    assert tokenized == reader
+    inline = next(
+        box
+        for page in document.pages
+        for box in adapter._walk_boxes(page._page_box)
+        if type(box).__name__ == "InlineBox"
+    )
+    return float(inline.width) * _POINTS_PER_CSS_PIXEL
 
 
-def test_wrapping_tokens_moves_no_character_of_the_reader_s_text(tmp_path: Path):
+@pytest.mark.parametrize(
+    ("cluster", "shaped", "summed"),
+    (("fi", 63.7998, 68.3000), ("ffi", 95.4998, 104.7000)),
+)
+def test_the_reader_applies_ligatures_and_therefore_sets_narrower_than_reportlab(
+    cluster: str, shaped: float, summed: float
+):
+    """The second scaffold is gone, and this is the measurement that says so.
+
+    `font-variant-ligatures: none` came out at the re-baseline.  Its absence from
+    the stylesheet is asserted as a string above, but a string assertion is not a
+    pin: `font-feature-settings: "liga" 0, "clig" 0` suppresses exactly the same
+    thing under a different spelling and would pass it.  What cannot be spelled
+    around is the width -- an `fi` set as one glyph is 4.5pt narrower at 100pt
+    than the `f` and the `i` summed, an `ffi` 9.2pt narrower -- so the width is
+    what this asserts.  `_wrap` still sums, because it reproduces `lines`
+    (render.py:658-685), so the gap is also the divergence between the two
+    measures, and it is intended.
+    """
+    assert _shaped_inline_width(cluster, size=100) == pytest.approx(shaped, abs=1e-3)
+    assert adapter._string_width(cluster, "serif", 100) == pytest.approx(summed, abs=1e-3)
+    assert _shaped_inline_width(cluster, size=100) < adapter._string_width(cluster, "serif", 100)
+
+
+def test_no_per_token_markup_reaches_the_print_document(tmp_path: Path):
+    """The tree the adapter lays out carries the semantic edition's text nodes.
+
+    `_suppress_intra_token_breaks` used to rebuild every text node under `main`
+    as one inline box per whitespace token.  Nothing does that any more, and
+    nothing should: the per-token boxes are what cost the reader's text layer
+    its space characters, which the next test asserts it has back.
+    """
     edition = _raster_edition(tmp_path, manuscript=_FONT_SAFE_MANUSCRIPT)
     tree = _print_tree(edition)
-    before = "".join(tree.itertext())
 
-    adapter._suppress_intra_token_breaks(tree)
-
-    assert "".join(tree.itertext()) == before
-    tokens = [
-        element
-        for element in tree.iter("span")
-        if "reader-token" in adapter._element_classes(element)
-    ]
-    assert tokens, "the semantic edition carries prose to wrap"
-    # A token is exactly one whitespace-delimited run, which is the unit
-    # `lines` (render.py:658-685) wraps on.
-    assert all(element.text and not element.text.split()[1:] for element in tokens)
-    assert all(not list(element) for element in tokens)
-
-
-def test_authored_whitespace_and_preformatted_text_are_left_alone():
-    HTML, _CSS, _FontConfiguration = _weasyprint_types()
-    tree = HTML(
-        string=(
-            "<main><p>  one <em>two</em>three  four  </p>"
-            "<pre><code>keep  this   spacing</code></pre></main>"
-        ),
-        base_url=Path.cwd().as_uri() + "/",
-    ).etree_element
-    before = "".join(tree.itertext())
-
-    adapter._suppress_intra_token_breaks(tree)
-
-    assert "".join(tree.itertext()) == before
-    pre = next(tree.iter("pre"))
-    assert not [
-        element
-        for element in pre.iter("span")
-        if "reader-token" in adapter._element_classes(element)
-    ]
-    paragraph = next(tree.iter("p"))
-    assert paragraph.text == "  "
-    assert [element.text for element in paragraph if element.tag == "span"] == [
-        "one", "three", "four"
-    ]
+    assert not hasattr(adapter, "_suppress_intra_token_breaks")
+    # Comments stripped, then whitespace: the stylesheet still *names* the
+    # retired rule, in the note that explains why it is gone and must not come
+    # back, and a literal `"white-space: nowrap" not in ...` walks straight past
+    # the equally valid `white-space:nowrap`.  These are belt to the braces of
+    # the three tests that assert the shaped behaviour itself.
+    declarations = re.sub(r"\s+", "", re.sub(r"/\*.*?\*/", "", _read_print_css(), flags=re.S))
+    assert ".reader-token" not in declarations
+    assert "white-space:nowrap" not in declarations
+    assert "font-kerning" not in declarations
+    assert "font-variant-ligatures" not in declarations
+    prose = next(
+        paragraph
+        for paragraph in next(tree.iter("main")).iter("p")
+        if (paragraph.text or "").split()[1:]
+    )
+    # A whole sentence in one text node, not one span per word.
+    assert not list(prose)
+    assert " " in (prose.text or "")
 
 
-def test_a_token_wider_than_its_measure_is_refused_rather_than_overflowing():
-    """The reader would break it between characters; no stylesheet spelling can.
+def test_the_reader_s_text_layer_carries_real_space_characters():
+    """What dropping the per-token boxes gives back, asserted where it was lost.
 
-    Measured: `overflow-wrap: anywhere` is inert inside `white-space: nowrap`,
-    and on its own it reproduces `lines`'s per-character fallback only for a
-    token with no break opportunity of its own -- a hyphenated one or a URL
-    breaks somewhere else entirely.  So this is a refusal, not a repair.
+    WeasyPrint gives every inline box its own text matrix and writes no space
+    glyph between two of them, so one box per token reached the PDF as
+    `Theoriginalarticle.`  Poppler recovers the words from the glyph advances,
+    which is why `pdftotext` always read those pages correctly, but an extractor
+    that reads the written characters -- `pypdf` among them -- did not.
+    """
+    import io
+
+    from pypdf import PdfReader
+
+    document = _typeset_document(
+        '<section id="prose"><p>The original article ran here.</p></section>'
+    )
+    text = PdfReader(io.BytesIO(document.write_pdf())).pages[0].extract_text()
+
+    assert "The original article ran here." in " ".join(text.split())
+
+
+def test_a_line_wider_than_its_measure_is_refused_rather_than_overflowing():
+    """A token with no break opportunity still overflows, and is still refused.
+
+    The guard narrowed when the nowrap boxes came out -- a hyphenated token now
+    breaks at its hyphen and never reaches here -- but an unbroken run of
+    letters is still set past the column edge, and silently.  It is refused
+    rather than styled with `overflow-wrap`: a word that cannot fit the measure
+    is an editorial problem, not the typesetter's to hyphenate at random.
     """
     inside = _typeset_document(
-        '<section id="prose"><p><span class="reader-token">'
-        + "supercalifragilistic" * 3
-        + "</span></p></section>"
+        '<section id="prose"><p>' + "supercalifragilistic" * 3 + "</p></section>"
     )
     over = _typeset_document(
-        '<section id="prose"><p><span class="reader-token">'
-        + "supercalifragilistic" * 12
-        + "</span></p></section>"
+        '<section id="prose"><p>' + "supercalifragilistic" * 12 + "</p></section>"
+    )
+    hyphenated = _typeset_document(
+        '<section id="prose"><p>' + "alpha-beta-" * 24 + "omega</p></section>"
     )
 
     adapter._validate_reader_measures(inside)
+    adapter._validate_reader_measures(hyphenated)  # breaks at its own hyphens now
     with pytest.raises(ValidationError, match="wider than its own measure"):
         adapter._validate_reader_measures(over)
 
 
-def test_overflow_wrap_alone_is_the_reader_s_per_character_fallback_only_sometimes():
+# Four ordinary English words whose kern pairs -- `Lo` +21, `Cu` and `ou` and
+# `rr` among them -- make Pango set the line *wider* than `_wrap` sums it, which
+# is the direction `_advance_widths` used to be documented as unable to take.
+_LOOSENING_TITLE = "Current Court Locus Locus"
+_LOOSENING_PLATE_TITLE = "Corner Loom Course"
+
+
+def test_a_kerned_title_wider_than_summed_is_measured_wider_and_not_narrower():
+    """The premise the guard exists for, asserted before the guard is.
+
+    `_advance_widths` sums unkerned advances because `lines` (render.py:658-685)
+    does, and its docstring used to say the sum was an upper bound on the shaped
+    width -- that kerning and ligatures only pull glyphs together, so a fitted
+    size always still fits.  Ligatures do.  Kerning does not: 3,019 cp1252 pairs
+    of `kern` in the display face push glyphs apart.  If this assertion ever
+    inverts, the guard below has lost its subject and the sum has become the
+    bound it was claimed to be.
+    """
+    size, lines = adapter._fitted_display(
+        _LOOSENING_TITLE,
+        adapter._LIVE_WIDTH_POINTS,
+        165.0,
+        maximum=adapter._ARTICLE_TITLE_MAX_WITH_FIGURE,
+        minimum=24.0,
+        maximum_lines=adapter._OPENER_TITLE_MAX_LINES,
+        leading_ratio=adapter._OPENER_TITLE_LEADING_RATIO,
+    )
+    summed = adapter._string_width(_LOOSENING_TITLE, "serif-display", size)
+    shaped = _shaped_inline_width(_LOOSENING_TITLE, size=size, face="serif-display")
+
+    assert lines == [_LOOSENING_TITLE], "the unkerned sum fits the whole title on one line"
+    assert summed <= adapter._LIVE_WIDTH_POINTS
+    assert shaped > adapter._LIVE_WIDTH_POINTS, "and the kerned one does not"
+    assert shaped > summed
+
+
+def test_an_opener_title_that_outgrows_its_reserved_field_is_refused(tmp_path: Path):
+    """The defect: a fitted title takes a line the opener did not reserve room for.
+
+    An opener carrying a figure ends its white field wherever the auto-fitted
+    title and credit reached, and the figure's head is that field's foot.  When
+    Pango sets the title on more lines than `_fitted_display` predicted, the
+    title runs out of the field and into the figure -- silently, because
+    `_validate_reader_measures` refuses a line box wider than its measure and a
+    title that *wrapped* is not one.
+
+    The message has to be usable by whoever hits it while closing an edition, so
+    it is asserted for the four facts that make it actionable: which piece, which
+    title, how much room was reserved, how far past it the title actually
+    reached -- and what to do instead.
+    """
+    edition = _raster_edition(tmp_path, manuscript=_FONT_SAFE_MANUSCRIPT)
+    overlong = replace(
+        edition,
+        articles=tuple(
+            replace(article, title=_LOOSENING_TITLE) for article in edition.articles
+        ),
+    )
+
+    render_a5_weasyprint(edition, tmp_path / "reader.pdf")  # as authored, no refusal
+    with pytest.raises(ValidationError) as raised:
+        render_a5_weasyprint(overlong, tmp_path / "overlong.pdf")
+
+    message = str(raised.value)
+    assert "article<&>" in message, "name the piece an editor has to go and fix"
+    assert _LOOSENING_TITLE in message
+    assert "117.8000pt header field" in message, "the room that was reserved"
+    assert "overflowing the field by 12.1127pt" in message, "and how far past it"
+    assert "Shorten the title, or lower the fit range" in message
+    assert not (tmp_path / "overlong.pdf").exists(), "and nothing is written"
+
+
+def test_a_plate_title_set_on_more_lines_than_it_was_fitted_to_is_refused(tmp_path: Path):
+    """The same divergence on the other auto-fitted block.
+
+    A plate caption is positioned from its fitted size alone, so a line the fit
+    did not budget for hangs below the plate's title box rather than widening it.
+    """
+    edition = _raster_edition(tmp_path, manuscript=_FONT_SAFE_MANUSCRIPT)
+    plates = list(edition.closing_plates)
+    plates[1] = replace(plates[1], title=_LOOSENING_PLATE_TITLE)
+    overlong = replace(edition, closing_plates=tuple(plates))
+
+    with pytest.raises(ValidationError) as raised:
+        render_a5_weasyprint(overlong, tmp_path / "overlong.pdf")
+
+    message = str(raised.value)
+    assert f"closing plate 2 title {_LOOSENING_PLATE_TITLE!r}" in message
+    assert "fitted at 32pt over 1 line(s), but Pango set it on 2" in message
+
+
+def test_a_plate_caption_is_set_at_the_size_the_shared_fit_chose(tmp_path: Path):
+    """The pass that sets a plate and the guard that checks it read one fit range.
+
+    `_fit_closing_plate_titles` states the size on the element and
+    `_validate_fitted_display` checks the laid-out caption against it, so both go
+    through `_fitted_plate_title` and 32pt-down-to-22 is written once.  A guard
+    carrying its own copy of the range would stop guarding the first time the
+    range moved, so this asserts the setter against the shared fit across titles
+    the fit answers differently.
+    """
+    titles = ("Short", "Systems in Motion", "Systems in Perpetual Onward Motion")
+    edition = _raster_edition(tmp_path, manuscript=_FONT_SAFE_MANUSCRIPT)
+    edition = replace(
+        edition,
+        closing_plates=tuple(
+            replace(plate, title=title)
+            for plate, title in zip(edition.closing_plates, titles, strict=True)
+        ),
+    )
+    tree = _print_tree(edition)
+
+    adapter._fit_closing_plate_titles(tree, edition)
+
+    sizes = [
+        caption.get("style", "").split(";")[0]
+        for plate in tree.iter("figure")
+        if plate.get("data-closing-plate")
+        for caption in plate.iter("figcaption")
+    ]
+    assert sizes == [
+        f"font-size: {adapter._fitted_plate_title(title)[0]:.4f}pt" for title in titles
+    ]
+    assert len(set(sizes)) > 1, "titles the shared fit answers identically prove nothing"
+
+
+def test_overflow_wrap_is_not_the_reader_s_per_character_fallback():
     """Why the over-long case is refused rather than styled.
 
-    `lines` fills the *whole* measure one character at a time and never prefers
-    a hyphen, so Pango agrees with it exactly on a token with no break
-    opportunity and disagrees as soon as the token has one.
+    `lines` (render.py:664-673) fills the whole measure one character at a time
+    and never prefers a hyphen.  With the scaffolds in place, `overflow-wrap:
+    anywhere` reproduced that exactly for a token with no break opportunity of
+    its own, and diverged as soon as the token had one.  Shaping takes the
+    remaining case too: a kerned line holds one more character than a summed
+    line does, so the chunks no longer agree even for an unbreakable token.
+    There is now no stylesheet spelling of the fallback at all, which is why the
+    refusal above cannot be replaced by a style.
     """
     css = _read_print_css() + "\n#prose p { overflow-wrap: anywhere; }\n"
 
@@ -1184,7 +1399,7 @@ def test_overflow_wrap_alone_is_the_reader_s_per_character_fallback_only_sometim
     plain = "supercalifragilistic" * 12
     hyphenated = "alpha-beta-" * 24 + "omega"
 
-    assert laid_out(plain) == adapter._wrap(plain, "serif", 10, 325)
+    assert laid_out(plain) != adapter._wrap(plain, "serif", 10, 325)
     assert laid_out(hyphenated) != adapter._wrap(hyphenated, "serif", 10, 325)
 
 

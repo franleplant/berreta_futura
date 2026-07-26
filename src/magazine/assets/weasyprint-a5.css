@@ -206,38 +206,31 @@
  * character.  Nothing here may invent a colour the reader does not have.
  */
 /*
- * The reader measures a line as the plain sum of its glyph advances: `lines`
- * (render.py:658-685) adds up `stringWidth`, which applies neither kerning nor
- * ligatures.  Pango applies both by default, which made a line about 0.6% narrow
- * -- 2pt over the 325pt measure -- and let the occasional line take a word the
- * reader pushes to the next.  Turning both off makes the two measures agree to
- * 0.008pt on a full measure, which is what makes a page break land in the same
- * place.
+ * SHAPING IS ON, AND THAT IS THE POINT.
+ *
+ * Three declarations used to live here -- `font-kerning: none`,
+ * `font-variant-ligatures: none` and a `.reader-token { white-space: nowrap }`
+ * rule fed by a tree pass in the adapter -- and all three existed to hold
+ * Pango down to what the ReportLab reader could do.  `lines`
+ * (render.py:658-685) measures a line as the plain sum of `stringWidth`
+ * advances, which kerns nothing and ligates nothing, and it splits paragraphs
+ * with `str.split`, so it can only ever end a line on whitespace.  Suppressing
+ * all three made the two renderers break lines in the same places, which is
+ * what proved the migration.
+ *
+ * That proof is done and the scaffolds are gone: this stylesheet now asks
+ * Pango for kerned, ligated type that may also break after a hyphen or a dash.
+ * Editions 001 and 002 are archived as printed; 003 onward is set here.  Do not
+ * reinstate any of the three to make a diff against an old build go quiet --
+ * see "Re-enable shaping and re-baseline" in docs/RENDERER_MIGRATION.md.
  */
 /* `block` sets every prose kind but `h3` in INK (render.py:1148, 1190), so INK
  * is the document's inherited colour and not a per-block declaration. */
 html {
   color: rgb(5.5% 7.5% 8.5%); font: 10pt/13pt "Magazine Serif", serif;
-  font-kerning: none; font-variant-ligatures: none;
 }
 body { margin: 0; }
 main { margin: 0; }
-/*
- * Equivalence scaffold, with the same standing as the two rules above: the
- * reader does not kern, and the reader cannot break inside a token.  `lines`
- * splits on whitespace with `str.split`, while Pango also breaks after a hyphen
- * or a dash and takes those opportunities -- `compile- checked`, `Opus-
- * planner`, `trade- offs`, `planner-executor-synthesis`.  Measured
- * (PIXEL-FLOOR.md): `word-break: keep-all`, `line-break: strict`, `hyphens:
- * none` and `overflow-wrap: normal` change nothing; one nowrap box per token
- * takes English line-break agreement from 94.8% to 385/385 lines and 69/69
- * paragraphs, and leaves Spanish at the 423/423 it already had.
- *
- * `_suppress_intra_token_breaks` is what puts the box there, so the semantic
- * edition keeps whole text nodes.  Both rules come out together the day
- * WeasyPrint becomes the production renderer.
- */
-.reader-token { white-space: nowrap; }
 
 .outer-cover-slot, .inside-cover-slot, .inside-back-cover-slot, .back-cover-slot {
   height: 210mm;

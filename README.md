@@ -243,8 +243,11 @@ an automatic claim that an edit is acceptable.
 
 The A5 reader PDF is produced deterministically by the renderer named in
 `[render] engine` — WeasyPrint by default, or `"reportlab"` for the legacy
-typesetter kept as the rollback. `mag build --engine <name>` overrides it for a
-single build without changing configuration; see `docs/RENDERER_MIGRATION.md`.
+typesetter. The two are no longer interchangeable: WeasyPrint kerns, ligates and
+may break inside a hyphenated token, and ReportLab does none of those, so
+selecting it changes the publication rather than rolling it back.
+`mag build --engine <name>` overrides the key for a single build without
+changing configuration; see `docs/RENDERER_MIGRATION.md`.
 The home booklet
 is imposed onto landscape A4 with `pypdf` and padded to a multiple of four pages.
 Reader page 2 is an otherwise empty inside front cover, the penultimate reader

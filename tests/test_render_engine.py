@@ -73,11 +73,16 @@ class RendererIdentityTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "Unsupported render design"):
             renderer.render(object(), Path("unused.pdf"))
 
-    def test_only_the_scaffolded_renderer_declares_scaffolds(self):
+    def test_neither_renderer_holds_its_typography_down_to_the_other(self):
+        # WeasyPrint used to declare three shaping scaffolds -- no kerning, no
+        # ligatures, no intra-token breaking -- which held Pango down to what
+        # ReportLab could line-break.  They came out at the re-baseline, so both
+        # renderers now set the type they are each capable of and neither has
+        # anything to admit to.  The declaration itself stays because it is the
+        # artifact's contract: anything a future change holds down has to be
+        # named here and lands in the packaged manifest.
         self.assertEqual(reader_renderer("reportlab").shaping_scaffolds, ())
-        scaffolds = reader_renderer("weasyprint").shaping_scaffolds
-        self.assertEqual(len(scaffolds), 3)
-        self.assertIn("font-kerning: none", scaffolds)
+        self.assertEqual(reader_renderer("weasyprint").shaping_scaffolds, ())
 
     def test_rollback_engine_never_imports_the_weasyprint_path(self):
         # The rollback is only real if choosing ReportLab pulls in none of the

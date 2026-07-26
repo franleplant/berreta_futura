@@ -38,7 +38,17 @@ disjoint -- in both directions -- from the frozen baseline tree and from
 ``<root>/output``.  It also hashes the whole baseline tree before and after the
 run and fails loudly if a single byte moved.
 
-Nothing here is imported by ``magazine``; the production renderer stays ReportLab.
+Nothing here is imported by ``magazine``.
+
+**This harness is a measuring instrument, not a gate, and it no longer passes.**
+It exists to answer "how far did the output move, and where?".  The three
+shaping scaffolds that held WeasyPrint's line breaking down to ReportLab's were
+removed after cutover, so the candidate deliberately no longer reproduces the
+frozen baseline: G3 reports 11 of 36 differing reader pages in English and 2 of
+36 in Spanish, with every article's start page and span unchanged.  Editions 001
+and 002 are archived as printed; 003 onward is set by WeasyPrint.  Do not tune
+anything, and do not reinstate a scaffold, to make this exit zero again -- see
+``docs/RENDERER_MIGRATION.md``.
 """
 
 from __future__ import annotations

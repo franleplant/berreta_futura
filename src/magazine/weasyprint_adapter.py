@@ -32,21 +32,22 @@ from .render import FigurePlacement, RenderLayout
 
 WEASYPRINT_DESIGN = "WeasyPrint / A5 fold proof"
 
-SHAPING_SCAFFOLDS: tuple[str, ...] = (
-    "font-kerning: none",
-    "font-variant-ligatures: none",
-    ".reader-token { white-space: nowrap } with _suppress_intra_token_breaks",
-)
+SHAPING_SCAFFOLDS: tuple[str, ...] = ()
 """What this renderer gives up to line-break identically to ``render.render_a5``.
 
-Pango kerns and ligates by default and will break inside a hyphenated token;
-ReportLab does none of those things.  These three measures hold Pango down to
-that behaviour, which is what makes the two renderers interchangeable.  They are
-an equivalence scaffold, not a design decision, they come out together, and
-until they do this renderer is deliberately setting type worse than it can --
-see "Re-enable shaping and re-baseline" in ``docs/RENDERER_MIGRATION.md``.  A
-build records this tuple in its manifest so the state is visible in the artifact
-rather than only in a document.
+Nothing, as of the re-baseline.  Three measures used to live here -- ``font-
+kerning: none``, ``font-variant-ligatures: none`` and one ``white-space:
+nowrap`` box per whitespace token -- and they held Pango down to what ReportLab
+could do so that the two renderers were interchangeable.  They were an
+equivalence scaffold, not a design decision, and they came out together; this
+renderer now kerns, ligates and takes Pango's own intra-token break
+opportunities.  See "Re-enable shaping and re-baseline" in
+``docs/RENDERER_MIGRATION.md``.
+
+The tuple itself stays, empty, because it is the artifact's contract: a build
+records it in its manifest whenever it is non-empty, so anything a future change
+holds down to match another producer has to be declared here and becomes visible
+in the packaged edition rather than only in a document.
 """
 
 _CSS_PIXELS_PER_POINT = 96 / 72
@@ -188,6 +189,12 @@ _FIGURE_RULE_BLEED_POINTS = 1.0
 _PLATE_TITLE_WIDTH_POINTS = 275.9316
 _PLATE_TITLE_CONTENT_TOP_POINTS = 385.2802
 _DISPLAY_SOLID_BASELINE_HEAD = 1.0 - ((1.0 - 1.371) / 2 + 1.036)
+# ``_closing_plate``'s own fit: 32pt down to 22, at most two lines of
+# ``grid_box(0, 5)``, standing no taller than 92pt.
+_PLATE_TITLE_BOX_HEIGHT = 92.0
+_PLATE_TITLE_MAX = 32.0
+_PLATE_TITLE_MIN = 22.0
+_PLATE_TITLE_MAX_LINES = 2
 
 # ``_fitted_title_box`` (render.py:1762-1791) on an opener: the reader steps
 # SERIF_DISPLAY down half a point at a time, sets the first baseline one ``size``
@@ -266,39 +273,44 @@ _FONT_FILES = {
 _MARKDOWN_LINK = re.compile(r"\[([^\]]+)\]\([^)]+\)")
 _MARKDOWN_EMPHASIS = re.compile(r"[*`]")
 
-# ``lines`` (render.py:658-685) splits a paragraph with ``str.split``, so the
-# only place the reader can end a line is a run of whitespace.  Pango also
-# breaks *inside* a token -- after a hyphen, an en dash or an em dash -- and in
-# English it takes those opportunities on `with-- implementing`, `compile-
-# checked`, `Opus- planner`, `differed-- some`, `planner-executor-synthesis` and
-# `trade- offs`, which is the whole of the residual line-break disagreement.
-# Measured (PIXEL-FLOOR.md): `word-break: keep-all`, `line-break: strict`,
-# `hyphens: none` and `overflow-wrap: normal` are all no-ops against it, so the
-# only lever is markup -- one ``white-space: nowrap`` box per whitespace token.
-# It is print-only structure in the same sense a plate page is: the semantic
-# edition keeps whole text nodes, and a future web adapter never sees a span.
-_READER_TOKEN_CLASS = "reader-token"
-_TOKEN_SPLIT = re.compile(r"(\S+)")
-# ``white-space: pre-wrap`` content is laid out on its own authored line
-# structure, and a nowrap box inside it would suppress breaks the reader does
-# take.  The remaining tags simply hold no reader prose.
-_PRESERVED_TEXT_TAGS = frozenset({"pre", "textarea", "script", "style"})
 # A line box is over its measure only when it exceeds it by more than float
 # noise; 0.01 CSS px is four thousandths of a point.
 _TOKEN_MEASURE_EPSILON = 0.01
+
+# A fitted block has outgrown its reserved field only past float noise.  A real
+# overflow is a whole line of display type -- tens of points -- so a hundredth of
+# a point is not a threshold anything can be tuned against.
+_FIELD_OVERFLOW_EPSILON = 0.01
 
 
 @lru_cache(maxsize=None)
 def _advance_widths(face: str) -> dict[str, float]:
     """Each character's advance in ems, as ``pdfmetrics.stringWidth`` sums them.
 
-    The reader measures a line as the plain sum of glyph advances with neither
-    kerning nor ligatures (render.py:658-685), which is the same measure the
-    stylesheet asks Pango for.  Reading the advances straight out of the
-    bundled face is what lets this module answer "how many lines, at what
-    size?" for the two places the reader auto-fits display type -- an opener
-    that carries its own figure, and a closing plate -- without a second
-    typesetter having to lay the text out.
+    Reading the advances straight out of the bundled face is what lets this
+    module answer "how many lines, at what size?" for the places the reader
+    auto-fits display type -- an opener, a closing plate -- and for the block
+    heights ``_evidence_band`` decides on, without a second typesetter having to
+    lay the text out.
+
+    This is ``lines``'s measure (render.py:658-685): a plain sum of advances,
+    kerning and ligatures ignored.  Since the shaping scaffolds came out it is no
+    longer the measure Pango uses to set the same text, and **it is not an upper
+    bound on it**.  Ligatures do only ever narrow in these faces, but kerning
+    goes both ways: restricted to cp1252 pairs of the ``kern`` feature, 12,794
+    pairs tighten and 3,019 loosen in ``SourceSerif4Display-Semibold``, 10,252 /
+    1,164 in ``SourceSerif4SmText-Regular``, 5,254 / 911 in ``Inter-SemiBold``.
+    ``Lo`` +17, ``La`` +21, ``Có`` +11, ``tr`` +10, ``oo`` +9 units per 1000 are
+    ordinary pairs, and five edition-002 title lines already set wider shaped
+    than summed.  A fitted size can therefore be one Pango wraps.
+
+    It is still deliberately not corrected by shaping here: the fitted sizes and
+    the band arithmetic are reproductions of ``render.py``'s own decisions, and
+    those are made on unshaped advances -- shaping this would change the
+    publication rather than fix it.  What catches the divergence instead is
+    ``_validate_fitted_display``, which measures the laid-out boxes and refuses a
+    build whose display type outgrew the room fitted for it.  Any new caller of
+    this function that reserves space on a prediction needs a clause there too.
     """
     try:
         from fontTools.ttLib import TTFont
@@ -437,6 +449,7 @@ def render_a5_weasyprint(
     _validate_cover_slots(document)
     _validate_contents_page(document)
     _validate_reader_measures(document)
+    _validate_fitted_display(document, edition)
     document = _painted_reader(
         HTML, html, stylesheet, edition, plan, document, font_config=font_config
     )
@@ -773,7 +786,6 @@ def _lay_out(
     """
     source = HTML(string=html, base_url=Path.cwd().as_uri() + "/")
     tree = source.etree_element
-    _suppress_intra_token_breaks(tree)
     _install_page_chrome(tree, edition)
     _rewrite_landscape_plates(tree)
     _pin_opener_fields(tree, edition)
@@ -798,60 +810,6 @@ def _lay_out(
 
 def _element_classes(element: Element) -> frozenset[str]:
     return frozenset((element.get("class") or "").split())
-
-
-def _suppress_intra_token_breaks(tree: Element) -> None:
-    """Give the reader's own line-break opportunities to the print document.
-
-    The reader can only end a line where ``lines`` found whitespace, so every
-    whitespace token becomes one ``white-space: nowrap`` box and the whitespace
-    between tokens is left exactly as it was.  Nothing is inserted, removed or
-    reordered -- the concatenated text of the tree is unchanged, which is what
-    keeps G3's extracted text a comparison of *placement* and not of content.
-
-    Two things this deliberately does not do.  It never uses a zero-width joiner
-    or word joiner: those glyphs are absent from both bundled faces and fall
-    back to a host font without saying so.  And it does not pair the nowrap box
-    with ``overflow-wrap: anywhere`` for a token wider than the measure --
-    measured, ``overflow-wrap`` is inert inside ``white-space: nowrap``, so the
-    pairing buys nothing and the token would simply overflow.  A token that wide
-    is refused by ``_validate_reader_measures`` instead of being set wrong.
-    """
-    for main in tree.iter("main"):
-        _wrap_reader_tokens(main)
-
-
-def _wrap_reader_tokens(element: Element) -> None:
-    tag = str(element.tag).rsplit("}", 1)[-1].lower()
-    if tag in _PRESERVED_TEXT_TAGS:
-        return
-    children = list(element)
-    for child in children:
-        _wrap_reader_tokens(child)
-    element.text, rebuilt = _reader_token_spans(element.text)
-    for child in children:
-        child.tail, spans = _reader_token_spans(child.tail)
-        rebuilt.append(child)
-        rebuilt.extend(spans)
-    element[:] = rebuilt
-
-
-def _reader_token_spans(text: str | None) -> tuple[str | None, list[Element]]:
-    """``text`` split into the whitespace it opens with and one span per token.
-
-    Each span carries the whitespace that follows its token as its tail, so
-    joining the parts back together reproduces ``text`` character for character.
-    """
-    if not text or not text.strip():
-        return text, []
-    leading, *parts = _TOKEN_SPLIT.split(text)
-    spans: list[Element] = []
-    for token, following in zip(parts[0::2], parts[1::2]):
-        span = Element("span", {"class": _READER_TOKEN_CLASS})
-        span.text = token
-        span.tail = following or None
-        spans.append(span)
-    return leading or None, spans
 
 
 def _install_page_chrome(tree: Element, edition: Edition) -> None:
@@ -1594,21 +1552,32 @@ def _fit_closing_plate_titles(tree: Element, edition: Edition) -> None:
             raise ValidationError(
                 f"Closing plate {plate.get('data-closing-plate')!r} matches no configured plate"
             )
-        size, _lines = _fitted_display(
-            titles[index],
-            _PLATE_TITLE_WIDTH_POINTS,
-            92.0,
-            maximum=32.0,
-            minimum=22.0,
-            maximum_lines=2,
-            leading_ratio=1.0,
-        )
+        size, _lines = _fitted_plate_title(titles[index])
         top = _PLATE_TITLE_CONTENT_TOP_POINTS + _DISPLAY_SOLID_BASELINE_HEAD * size
         for caption in plate.iter("figcaption"):
             caption.set(
                 "style",
                 f"font-size: {size:.4f}pt; line-height: {size:.4f}pt; top: {top:.4f}pt",
             )
+
+
+def _fitted_plate_title(title: str) -> tuple[float, list[str]]:
+    """The size and lines ``_closing_plate`` fits a plate title to.
+
+    Stated once because two passes need the same answer: ``_fit_closing_plate_titles``
+    sets it, and ``_validate_fitted_display`` checks the laid-out caption against
+    it.  A guard that carried its own copy of the fit range would stop being a
+    guard the first time the range moved.
+    """
+    return _fitted_display(
+        title,
+        _PLATE_TITLE_WIDTH_POINTS,
+        _PLATE_TITLE_BOX_HEIGHT,
+        maximum=_PLATE_TITLE_MAX,
+        minimum=_PLATE_TITLE_MIN,
+        maximum_lines=_PLATE_TITLE_MAX_LINES,
+        leading_ratio=1.0,
+    )
 
 
 def _apply_tail_ornaments(tree: Element, heights: Mapping[str, float]) -> None:
@@ -2052,32 +2021,35 @@ def _validate_cover_slots(document: Any) -> None:
 
 
 def _validate_reader_measures(document: Any) -> None:
-    """Refuse a token the measure cannot hold rather than letting it overflow.
+    """Refuse a line the measure cannot hold rather than letting it overflow.
 
-    ``lines`` has a second, per-character pass for a token wider than the
-    measure (render.py:664-673): it fills the *whole* measure greedily, one
-    character at a time, and hands each chunk to the whitespace wrap as if it
-    were a word.  Two things follow.  The chunk always opens a line, because any
-    preceding copy plus a space already exceeds the measure; and the break falls
-    wherever the next character no longer fits, never at a hyphen or a solidus.
+    This guard predates the shaping re-baseline and narrowed when the nowrap
+    boxes came out, but it did not become redundant.  What it caught then was
+    *every* token wider than the measure, because a nowrap box forbade breaking
+    inside one.  What it catches now is the residue: a token with no break
+    opportunity Pango will take.  Hyphens, en dashes and em dashes are break
+    opportunities, so a hyphenated identifier or a hyphen-bearing URL now breaks
+    and never reaches here; an unbroken run of letters and digits still
+    overflows the column silently, and silently is the part this refuses.
 
-    Measured against exactly that: with ``overflow-wrap: anywhere`` and no
-    nowrap box, Pango reproduces the reader's chunks character for character on
-    a token with no internal break opportunity, and *diverges* as soon as the
-    token has one -- a 269-character hyphenated token breaks 68/67/67/66/1 in
-    the reader and 66/66/66/66/5 in Pango, and a 164-character URL 62/56/46
-    against 61/41/62.  So no stylesheet spelling reproduces the fallback for the
-    tokens that would actually need it, and the honest thing is to fail loudly:
-    this edition's widest set token is far inside its measure, and the day one
-    is not, the fix is to pre-split it here on the reader's own chunks.
+    It is deliberately not repaired with ``overflow-wrap: anywhere``.  A
+    magazine measure is a design decision, and a word that cannot fit it is an
+    editorial problem -- a mis-set identifier, a raw URL that should have been a
+    footnote -- not something to break arbitrarily mid-syllable on the reader's
+    behalf.  Failing loudly puts the decision back with the editor.  Measured on
+    edition 002: nothing in the reader's flow comes close.  The widest token set
+    anywhere in the document is 57 characters of source id inside the
+    ``display: none`` provenance line, no URL is set at all, and no line box on
+    any of the 36 pages exceeds its own measure by so much as float noise.
     """
     overlong: list[str] = []
     for page_number, page in enumerate(document.pages, start=1):
         _collect_overlong_lines(page._page_box, None, page_number, overlong)
     if overlong:
         raise ValidationError(
-            "WeasyPrint set a reader token wider than its own measure, which the "
-            "reader would have broken between characters: " + "; ".join(overlong[:5])
+            "WeasyPrint set a reader line wider than its own measure, which means a "
+            "token with no break opportunity is overflowing the column: "
+            + "; ".join(overlong[:5])
         )
 
 
@@ -2100,6 +2072,158 @@ def _collect_overlong_lines(
         measure = float(own)
     for child in getattr(box, "children", ()) or ():
         _collect_overlong_lines(child, measure, page_number, overlong)
+
+
+def _validate_fitted_display(document: Any, edition: Edition) -> None:
+    """Refuse a build whose display type outgrew the room that was fitted for it.
+
+    Every auto-fitted size in this module -- an opener title, a closing-plate
+    title -- is chosen from ``_advance_widths``, which sums *unkerned* advances
+    because that is the measure ``render.py`` makes its decisions on.  Pango
+    kerns, and kerning is not one-sided.  Measured over the cp1252 pairs of the
+    ``kern`` feature in ``SourceSerif4Display-Semibold``, the face every fitted
+    title is set in: 12,794 pairs pull glyphs together and **3,019 push them
+    apart**.  The loosening pairs are ordinary -- ``Lo`` +17, ``La`` +21,
+    ``Có`` +11, ``tr`` +10, ``ru`` +10, ``oo`` +9 units per 1000.  Five real
+    edition-002 title lines already set wider shaped than summed, the worst
+    ``'Cómo construimos'`` at 35pt by 1.2568pt.  Ligatures do only ever narrow in
+    these faces; kerning is what breaks the bound.
+
+    So a prediction can come out short, Pango can take a line the fit did not
+    budget for, and the title can run out of the white field the opener reserved
+    below it -- on an opener carrying a figure, straight into the figure.  Nothing
+    else catches that: ``_validate_reader_measures`` refuses a *line box* wider
+    than its own measure, and a title that merely wrapped is not one.
+
+    This reads both decisions back off the laid-out boxes instead of trying to
+    predict better.  A shape-accurate predictor would be right more often and
+    still silently wrong at the margin; a guard on the finished page is right
+    always, and refuses loudly.
+
+    * An opener's ``h1`` margin box must end inside the header field -- the field
+      ``_pin_opener_fields`` states, or the constant the stylesheet holds for an
+      opener without a figure.  Its foot is where the prose, or the opener
+      figure, begins.
+    * A closing plate's caption must be set on the same number of lines
+      ``_fitted_plate_title`` chose its size for.  The caption is positioned from
+      that size alone, so an extra line hangs below the plate's title box.
+
+    Measured on edition 002 as authored, both languages: every opener clears its
+    field, the tightest by 16.69pt, and every plate caption is set on its fitted
+    line count.
+    """
+    failures: list[str] = []
+    for page_number, page in enumerate(document.pages, start=1):
+        _collect_field_overflows(page._page_box, page_number, failures)
+        _collect_plate_title_overruns(page._page_box, page_number, edition, failures)
+    if failures:
+        raise ValidationError(
+            "WeasyPrint set display type past the room the adapter fitted it into. "
+            "Auto-fitting sums unkerned advances the way render.py does, and Pango's "
+            "kerning does not only tighten, so a title can take a line the fit did not "
+            "reserve. Shorten the title, or lower the fit range it is chosen from: "
+            + "; ".join(failures[:5])
+        )
+
+
+def _collect_field_overflows(box: Any, page_number: int, failures: list[str]) -> None:
+    for piece, header, title in _opener_title_boxes(box):
+        field = float(header.height) * _POINTS_PER_CSS_PIXEL
+        field_bottom = float(header.content_box_y()) * _POINTS_PER_CSS_PIXEL + field
+        title_bottom = (
+            float(title.position_y) + float(title.margin_height())
+        ) * _POINTS_PER_CSS_PIXEL
+        if title_bottom <= field_bottom + _FIELD_OVERFLOW_EPSILON:
+            continue
+        failures.append(
+            f"opener {piece!r} title {_box_text(title)!r} was fitted at "
+            f"{float(title.style['font_size']) * _POINTS_PER_CSS_PIXEL:.4g}pt into a "
+            f"{field:.4f}pt header field, whose foot is {field_bottom:.4f}pt down "
+            f"page {page_number}; Pango set it on {_line_box_count(title)} lines "
+            f"reaching {title_bottom:.4f}pt, overflowing the field by "
+            f"{title_bottom - field_bottom:.4f}pt"
+        )
+
+
+def _collect_plate_title_overruns(
+    box: Any, page_number: int, edition: Edition, failures: list[str]
+) -> None:
+    titles = [str(plate.title) for plate in edition.closing_plates]
+    for index, caption in _closing_plate_captions(box):
+        if not 0 <= index < len(titles):  # `_fit_closing_plate_titles` already refused this.
+            continue
+        size, fitted = _fitted_plate_title(titles[index])
+        set_lines = _line_box_count(caption)
+        if set_lines == len(fitted):
+            continue
+        failures.append(
+            f"closing plate {index + 1} title {titles[index]!r} was fitted at "
+            f"{size:.4g}pt over {len(fitted)} line(s), but Pango set it on "
+            f"{set_lines} on page {page_number}"
+        )
+
+
+def _opener_title_boxes(box: Any, piece: str | None = None) -> Iterable[tuple[str, Any, Any]]:
+    """Every laid-out opener header, paired with the ``h1`` it reserves room for.
+
+    ``piece`` is carried down because the failure has to name the article an
+    editor would go and shorten, and the header box itself does not know it.  A
+    ``header`` outside any article or section -- the edition header, which the
+    print stylesheet hides -- is not an opener and is not yielded.
+    """
+    element = getattr(box, "element", None)
+    attributes = getattr(element, "attrib", {}) if element is not None else {}
+    tag = getattr(box, "element_tag", None)
+    if tag in ("article", "section"):
+        piece = attributes.get("data-article-id") or attributes.get("id") or piece
+    if tag == "header" and type(box).__name__ == "BlockBox" and piece is not None:
+        for inner in _walk_boxes(box):
+            if getattr(inner, "element_tag", None) == "h1" and type(inner).__name__ == "BlockBox":
+                yield piece, box, inner
+        return
+    for child in getattr(box, "children", ()) or ():
+        yield from _opener_title_boxes(child, piece)
+
+
+def _closing_plate_captions(box: Any) -> Iterable[tuple[int, Any]]:
+    """Every laid-out closing-plate caption, with its zero-based plate index."""
+    element = getattr(box, "element", None)
+    attributes = getattr(element, "attrib", {}) if element is not None else {}
+    plate = attributes.get("data-closing-plate")
+    if plate is not None and getattr(box, "element_tag", None) == "figure":
+        try:
+            index = int(str(plate)) - 1
+        except ValueError:  # `_fit_closing_plate_titles` already refused this.
+            return
+        for inner in _walk_boxes(box):
+            if getattr(inner, "element_tag", None) == "figcaption" and hasattr(inner, "children"):
+                yield index, inner
+                return
+        return
+    for child in getattr(box, "children", ()) or ():
+        yield from _closing_plate_captions(child)
+
+
+def _line_box_count(box: Any) -> int:
+    return sum(1 for child in _walk_boxes(box) if type(child).__name__ == "LineBox")
+
+
+def _box_text(box: Any) -> str:
+    """The text of a laid-out block, reassembled line by line.
+
+    Pango trims the space a line broke on, so concatenating text boxes across
+    lines welds the words either side of every break together.  A failure message
+    naming ``'Current Court LocusLocus'`` sends an editor looking for a typo that
+    is not in the manuscript, so the breaks come back as spaces.
+    """
+    lines = (
+        "".join(
+            child.text for child in _walk_boxes(line) if type(child).__name__ == "TextBox"
+        ).strip()
+        for line in _walk_boxes(box)
+        if type(line).__name__ == "LineBox"
+    )
+    return " ".join(line for line in lines if line)
 
 
 def _validate_contents_page(document: Any) -> None:

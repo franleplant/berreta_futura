@@ -447,6 +447,9 @@ class Magazine:
             # two engines have disjoint design vocabularies.  What it cannot say
             # is that this renderer is holding its own typography down to match
             # the other one, so a scaffolded engine states that in the artifact.
+            # No engine is scaffolded today -- WeasyPrint's three came out at the
+            # re-baseline -- so no build writes the key.  The mechanism stays for
+            # the next time something has to be held down.
             if renderer.shaping_scaffolds:
                 build_manifest["layout"]["shaping_scaffolds"] = list(
                     renderer.shaping_scaffolds

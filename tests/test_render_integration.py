@@ -2,18 +2,20 @@
 
 WeasyPrint is the publication's default renderer, so :class:`DefaultEngineTests`
 writes no ``[render] engine`` key at all and exercises exactly what ``mag build``
-does out of the box.  ReportLab is the supported rollback, so
-:class:`ReportLabRollbackTests` pins it explicitly and re-runs
+does out of the box.  ReportLab is no longer a rollback -- selecting it changes
+the publication rather than restoring it -- but it is still a supported escape
+hatch, so :class:`ReportLabRollbackTests` pins it explicitly and re-runs
 :class:`ReaderEngineContract` -- the behaviour any reader engine has to keep --
 plus the assertions that are about that renderer specifically.
 
 Two things this file deliberately does *not* do.
 
-It does not read a built page's *text* with ``pypdf``.  ``pypdf`` reports the
-space characters a producer chose to write, and the two producers disagree about
-that (see :func:`page_texts`); a build test is asserting what is on the page, not
-how one producer encoded it.  ``pypdf`` is still used for what it reads
-faithfully: page count, font resources and content-stream operators.
+It does not read a built page's *text* with ``pypdf``.  Poppler recovers word
+boundaries from glyph geometry, which is what a PDF viewer, a text search and
+``tools/compare_pipelines.py``'s G3 gate all do; ``pypdf`` reports the space
+characters a producer chose to write, which is a fact about the encoding rather
+than about the page (see :func:`page_texts`).  ``pypdf`` is still used for what
+it reads faithfully: page count, font resources and content-stream operators.
 
 It does not pin either engine's error strings.  A page cap is a rule of the
 publication, so the refusals below are asserted as *the rule* -- the cap taken
@@ -26,6 +28,7 @@ import importlib.util
 import json
 import shutil
 import subprocess
+from contextlib import contextmanager
 from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -47,21 +50,23 @@ from test_manifest import add_spanish_translation, make_project
 def page_texts(pdf: Path) -> list[str]:
     """Each page's text, with word boundaries recovered from glyph geometry.
 
-    ``pypdf`` returns the space characters the producer wrote.  ReportLab writes
-    a whole line at a time, spaces included.  WeasyPrint gives every whitespace
-    token its own text matrix and emits no space glyph between them, so a
-    ``pypdf`` read of a WeasyPrint reader returns ``Theoriginalarticle.`` -- a
-    consequence of the ``.reader-token { white-space: nowrap }`` shaping
-    scaffold, which puts one inline box around every token (plain WeasyPrint
-    output does write the spaces).  It affects the reader's prose but not its
-    preformatted code, whose spaces are inside a token rather than between two.
+    Poppler derives a word boundary from the glyph advance rather than from a
+    written space, which is what a PDF viewer, a text search and
+    ``tools/compare_pipelines.py``'s G3 gate all do.  Reading the page that way
+    is what makes the same assertion mean the same thing under either engine,
+    whose producers encode inter-word space differently -- ReportLab writes a
+    whole line at a time, WeasyPrint one inline box at a time.  ``pdftoppm``
+    from the same package is already a hard requirement of every build here
+    (``render_critic``), so this adds no dependency.
 
-    Poppler recovers the boundary from the glyph advance, which is what a PDF
-    viewer, a text search and ``tools/compare_pipelines.py``'s G3 gate all do.
-    Reading the page that way is what makes the same assertion mean the same
-    thing under either engine.  ``pdftoppm`` from the same package is already a
-    hard requirement of every build here (``render_critic``), so this adds no
-    dependency.
+    This used to be a workaround as well as a principle: the retired
+    ``.reader-token { white-space: nowrap }`` shaping scaffold put one inline
+    box around every whitespace token, and WeasyPrint emits no space glyph
+    between two boxes, so ``pypdf`` read the prose back as
+    ``Theoriginalarticle.``  That is fixed -- a built reader's text layer now
+    carries real spaces, asserted in
+    ``tests/test_weasyprint_adapter.py`` -- and ``pdftotext`` is kept here on
+    the principle alone.
     """
     executable = shutil.which("pdftotext")
     if executable is None:  # pragma: no cover - poppler is a build requirement
@@ -717,6 +722,67 @@ class ReportLabRollbackTests(ReaderEngineContract, unittest.TestCase):
             SERIF_DISPLAY,
         }
         self.assertTrue(expected.issubset(set(metrics.getRegisteredFontNames())))
+
+
+@contextmanager
+def declared_scaffolds(scaffolds: tuple[str, ...]):
+    """Build against the selected renderer, altered only in what it declares.
+
+    The renderer is the real one -- same engine, same design, same
+    ``write_reader`` -- so the build under test is the shipped build and the one
+    thing that differs is the tuple whose plumbing is being exercised.
+    """
+    from magazine import compiler as compiler_module
+
+    original = compiler_module.reader_renderer
+
+    def declaring(configured=None, *, design=None):
+        return replace(original(configured, design=design), shaping_scaffolds=scaffolds)
+
+    compiler_module.reader_renderer = declaring
+    try:
+        yield
+    finally:
+        compiler_module.reader_renderer = original
+
+
+class ShapingScaffoldDeclarationTests(unittest.TestCase):
+    """That a declared scaffold reaches the packaged manifest, on a renderer that has one.
+
+    ``SHAPING_SCAFFOLDS`` is ``()`` on WeasyPrint and ``()`` on ReportLab, so
+    :class:`ReaderEngineContract`'s own clause -- ``manifest["layout"].get(
+    "shaping_scaffolds") == list(renderer.shaping_scaffolds) or None`` -- reduces
+    to ``assertEqual(None, None)`` under both engines and would keep passing if
+    the compiler stopped writing the key at all.  The empty tuple is still worth
+    asserting, because "this renderer holds nothing down" is the claim the
+    artifact makes; but the mechanism behind it is only exercised by a renderer
+    that declares something, which no engine currently does.  So one is
+    synthesised here, and the empty case is run through the same assertion so
+    that the two answers are distinguished by the input rather than by luck.
+    """
+
+    SCAFFOLDS = ("font-kerning: none", ".reader-token { white-space: nowrap }")
+
+    def test_only_a_declaring_renderer_writes_shaping_scaffolds(self):
+        for scaffolds in ((), self.SCAFFOLDS):
+            with self.subTest(scaffolds=scaffolds), TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                make_project(root)
+                with declared_scaffolds(scaffolds):
+                    result = Magazine(root).build("issue-001")
+                manifest = json.loads(
+                    (result.output_dir / "edition-manifest.json").read_text()
+                )
+
+                self.assertEqual(
+                    manifest["layout"].get("shaping_scaffolds"), list(scaffolds) or None
+                )
+
+    def test_no_shipped_engine_declares_a_scaffold(self):
+        """The empty tuples the contract clause above is asserted against."""
+        for engine in ("weasyprint", "reportlab"):
+            with self.subTest(engine=engine):
+                self.assertEqual(reader_renderer(engine).shaping_scaffolds, ())
 
 
 class PublicationPageRuleTests(unittest.TestCase):
