@@ -2,7 +2,82 @@
 
 _Generated from structured source records. Do not edit by hand._
 
-_Open edition: `003-unreleased`; 9 queued sources._
+_Open edition: `003-unreleased`; 12 queued sources._
+
+## Buzz agents are paying each other with Bitcoin — Documenting Bitcoin
+
+- ID: `buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e`
+- Source: https://x.com/DocumentingBTC/status/2081334299614224420
+- Kind / status: web / captured
+- Captured: 2026-07-26T22:23:15Z
+- Content hash: `not captured`
+- Raw captures: 2 committed bundle(s)
+- Release: queued for `003-unreleased`
+- Published: 2026-07-26T11:02:21Z
+- Tags: agents, bitcoin, buzz, payments
+- Primary material:
+  - https://buzz.xyz/
+  - https://github.com/block/buzz
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+- Provenance:
+  - primary_material -> https://buzz.xyz/
+  - primary_material -> https://github.com/block/buzz
+
+Documenting Bitcoin reports an early Buzz demonstration in which AI agents independently send Bitcoin payments to one another during collaborative work.
+
+**Editorial note:** Authenticated X capture supplied for edition 003. The attached video thumbnail is archived separately; the post reports an early user demonstration, not a mature or independently audited product capability.
+
+## Buzz is the first proper multiplayer agent harness — Justin Waldron
+
+- ID: `buzz-is-the-first-proper-multiplayer-agent-harne-49c061ac`
+- Source: https://x.com/jtwald/status/2081265718163919051
+- Kind / status: web / captured
+- Captured: 2026-07-26T22:23:04Z
+- Content hash: `not captured`
+- Raw captures: 1 committed bundle(s)
+- Release: queued for `003-unreleased`
+- Published: 2026-07-26T06:29:49Z
+- Tags: agents, buzz, collaboration, network-effects
+- Primary material:
+  - https://buzz.xyz/
+  - https://github.com/block/buzz
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+- Provenance:
+  - primary_material -> https://buzz.xyz/
+  - primary_material -> https://github.com/block/buzz
+
+Justin Waldron argues that Buzz should be understood as a multiplayer agent harness rather than a Slack clone, and that this coordination layer may capture value as models commoditize.
+
+**Editorial note:** Authenticated X capture supplied for edition 003. The network-effects claim is attributed analysis, not a verified product outcome.
+
+## The most interesting thing about Buzz is shared compute — Greg Isenberg
+
+- ID: `the-most-interesting-thing-about-buzz-is-shared--f0fc7406`
+- Source: https://x.com/gregisenberg/status/2081088155793465783
+- Kind / status: web / captured
+- Captured: 2026-07-26T22:22:57Z
+- Content hash: `not captured`
+- Raw captures: 1 committed bundle(s)
+- Release: queued for `003-unreleased`
+- Published: 2026-07-25T18:44:15Z
+- Tags: agents, buzz, community-owned-ai, shared-compute
+- Primary material:
+  - https://buzz.xyz/
+  - https://github.com/block/buzz
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+- Provenance:
+  - primary_material -> https://buzz.xyz/
+  - primary_material -> https://github.com/block/buzz
+
+Greg Isenberg interprets Buzz's shared-compute capability as a way for communities to jointly own hardware, models, private context, and possibly the economics of idle compute.
+
+**Editorial note:** Authenticated X capture supplied for edition 003. The post's product and market extrapolations are commentary; Buzz's official site and repository are linked as primary material.
 
 ## Why Software Factories Fail — Dex Horthy
 

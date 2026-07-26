@@ -1,0 +1,37 @@
+{
+  "bundle_sha256": "98b41281cc44fd93754c2df85cafd40cbc5ab798054dec01d9446a1feb1ed529",
+  "candidate_count": 1,
+  "candidates": [
+    {
+      "artifact_path": "embedded-video-thumbnail.png",
+      "artifact_sha256": "04b56bde316f6ce9699e77fbb1bd5c85430f7093c693ad07d43bd7c8977038fa",
+      "aspect_ratio": 1.958015,
+      "criteria": [],
+      "decision": "reject",
+      "description": "",
+      "heading": "",
+      "id": "raster-001-04b56bde",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 262,
+      "pixel_width": 513,
+      "rationale": "",
+      "rejection_reasons": [
+        "insufficient_print_resolution",
+        "no_semantic_source_context"
+      ],
+      "score": 0,
+      "source_artifact": "embedded-video-thumbnail.png",
+      "source_artifact_sha256": "04b56bde316f6ce9699e77fbb1bd5c85430f7093c693ad07d43bd7c8977038fa",
+      "source_position": 1,
+      "title": "embedded video thumbnail"
+    }
+  ],
+  "curator": "magazine-compiler/automatic-media-curator",
+  "input_sha256": "a1f79b409975c9c445bd0813fe95eca27b4124aa11890b9921d053e2e83e1475",
+  "policy_version": "editorial-impact-v4",
+  "schema_version": 1,
+  "selected": [],
+  "selection_limit": 3,
+  "source_id": "buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e"
+}

@@ -1,0 +1,75 @@
+GREG ISENBERG
+@gregisenberg
+Subscribe
+I think the most interesting thing about Jack Dorsey's "Slack killer" is the idea around shared compute.
+
+I haven't seen people talk about it so here are my thoughts FWIW:
+
+Open models got good, close enough to the paid frontier stuff to run for real. But the strongest ones need expensive hardware most people probably won't buy alone, and it's kinda a pain to set up if you aren't technical.
+
+Shared compute solves exactly that. In Buzz, one person runs the machine, loads up an open model like Google Gemma, and everyone in the community plugs into that same model.
+
+Basically, a whole group has real AI they own and control together, running on their own hardware, learning from their own data.
+
+Once you see it, a bunch of things click into place.
+
+1. A community can now run a top open model together, on a machine they own, instead of renting from a lab.
+
+2. It learns from the group's private data and gets sharper over time, and all of that stays inside the community.
+
+3. A narrow, private model can quietly get better than ChatGPT for the one world your group lives in.
+
+4. It's impossible to copy, because the edge is the private data on your machine, not the model itself.
+
+5. The moat stops being how smart your AI is and becomes whose data it learned from.
+
+6. Compute becomes something you share like a building shares a gym. 10 people split one machine instead of 10 people each renting forever.
+
+7. Idle compute becomes income!!! Your machine sits dead half the day, so it earns money renting that time to someone who needs it.
+
+8. Communities become the unit of intelligence instead of companies. The group with the smartest shared brain wins, and being a member means owning a piece of it.
+
+9. A shared brain becomes an asset you build equity in. You put in money and data, it appreciates, and your slice is worth something the day you leave.
+
+10. The whole thing runs on open protocols, so the group keeps full control and nobody outside can throttle it or shut it off.
+
+You know me, obviously, my head went to what startup ideas come to mind here. Adding them to 
+@ideabrowser
+ soon.
+
+Well…
+
+1. The vertical brain. Pick one profession, tax lawyers or real estate agents or indie game devs, and build the shared machine trained on everything that group knows between them. A year in it's the smartest AI in that field, impossible to copy, and you own the club it lives in.
+
+2. The rental marketplace for collective brains. Once these private models exist, outsiders will pay to use them. You build the layer where a group lists its brain, an outsider pays per task, and the money flows back to the members while you take a cut. A marketplace for expertise, not compute.
+
+3. The idle-compute exchange. Every shared machine sits unused half the day. You build the market that rents that dead time to whoever needs the power right then, so owners earn money off a machine that was just sitting there.
+
+Idk where Buzz goes, but it's cool to see Jack putting it out. Right now the way it works in AI is you rent your intelligence from a few giant labs that own the machine, set the price, and hold the off switch.
+
+Shared compute flips that, because a community can run the model together, feed it their own private data, and keep full control of the whole thing.
+
+It's one of those things that might look tiny today, but Jack does has a habit of being early.
+Quote
+Vinny
+@hot_town
+·
+Jul 24
+I tried @jack's Buzz. 
+
+It's like Slack + OpenClaw + Herdr + but with some really unique features that people are sleeping on.
+
+The video below shows how it works, and some of my thoughts on the process and platform, e.g.:
+
+- Create and interact with agents on top of any harness
+5:57
+3:44 PM · Jul 25, 2026
+·
+832.2K
+ Views
+158
+317
+2.8K
+4.3K
+Relevant
+View quotes
