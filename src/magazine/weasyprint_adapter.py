@@ -228,6 +228,30 @@ _CODE_FOOT_ROOM_POINTS = _CODE_CONTENT_FOOT_POINTS - _CODE_FOOT_CLEARANCE_POINTS
 # between them is not, and the ratio is what stops a page with barely enough room
 # from printing a code that is neither.
 _CODE_TAIL_MIN_ROOM_POINTS = 2.0 * _CODE_FOOT_ROOM_POINTS
+# AND THE TAIL SLOT HAS A CEILING AS WELL AS A FLOOR, because "is there room?" was
+# never the right question on its own.  ``_CODE_TAIL_MIN_ROOM`` asks whether the
+# page *can* carry the large code; this asks whether the page is the kind of page
+# that should.  A 41.6mm square reads as furniture under an article that ran to
+# the foot of its last page and as a poster on an article that ended after six
+# lines -- on en p24 the code carried 59.5% of the page's ink at 51.9% local
+# coverage, and the rest of the sheet was a black square and half a page of
+# nothing.  Residual white below the code box, on the nine large codes of edition
+# 002, sorts as
+#
+#   18.0 18.3 34.4 64.1 | 89.0 98.2 98.2 102.8 107.4  (mm)
+#
+# and the four on the left are the pages where the square closes the page.  60mm
+# is inside the 29.7mm gap that separates them from the rest, 25.6mm above the
+# largest of the four; it is not a tuned number and would classify this edition
+# identically anywhere between 35mm and 88mm.
+#
+# Where the ceiling bites the code takes the foot slot instead -- it joins the
+# folio's own line, where the publication's other foot chrome already lives,
+# instead of standing alone in the void.  The preference is a preference and not
+# a refusal: a URL whose symbol cannot be set in the foot band at
+# ``_CODE_MIN_MODULE_POINTS`` keeps the tail slot it had already earned, because
+# an unscannable small code is worse than an over-large legible one.
+_CODE_TAIL_MAX_FOOT_WHITE_POINTS = 60.0 * 72 / 25.4
 # The code's label, in the house's own tracked-caps idiom -- `FEATURE nn`,
 # `FIGURE nn`, `END / nn` -- set on the symbol's own bottom edge, one gap to its
 # right.  It is what makes the square furniture rather than a sticker applied
@@ -236,7 +260,8 @@ _CODE_TAIL_MIN_ROOM_POINTS = 2.0 * _CODE_FOOT_ROOM_POINTS
 # nowhere, in print or in the margin.
 _CODE_LABEL_SIZE_POINTS = 6.8
 _CODE_LABEL_TRACKING_POINTS = .25
-_CODE_LABEL_GAP_POINTS = 12.0
+# Its gap from the square is ``_CODE_LABEL_GAP_POINTS``, which is the end mark's
+# own and is therefore declared with the end mark, below.
 # The resolution the decode gate rasterises at.  300 ppi is the publication's own
 # print floor -- ``_MIN_FIGURE_PPI`` -- so the gate reads the code off the page at
 # the density the page is judged to be printable at, and not at a density chosen
@@ -386,14 +411,35 @@ _END_MARK_PAINT_POINTS = (
     - _ZERO_LEADING_SANS_BASELINE
     + 1.0
 )
-# ``baseline = max(self.frame_bottom + 5, self.y - 1)``.
+# ``baseline = max(self.frame_bottom + 5, self.y - 1)``.  The reader's own floor,
+# and it is the *frame's* number and not the mark's: it stops the mark running
+# into the bottom margin and says nothing at all about the type above it.  See
+# ``_end_mark_baseline`` for what happens on the one page where it bites.
 _END_MARK_FLOOR_POINTS = _FRAME_BOTTOM_POINTS + 5.0
 _END_MARK_DROP_POINTS = 1.0
 # How far `END / nn` stands in from the frame's left edge, past its own rule
-# (render.py:2008-2021, `.end-mark`'s `padding-left`).  Borrowed as the house's
-# own answer to "how far apart are two pieces of furniture on the same line",
-# which is what the foot slot's code needs to hold itself off a clamped mark.
+# (render.py:2008-2021, `.end-mark`'s `padding-left`), and how wide that rule is.
+# The inset is borrowed as the house's own answer to "how far apart are two
+# pieces of furniture on the same line", which is what the foot slot's code needs
+# to hold itself off a clamped mark.
 _END_MARK_TEXT_INSET_POINTS = 24.0
+_END_MARK_RULE_WIDTH_POINTS = 17.0
+# The lowest baseline the mark may take before the build is refused -- the folio's
+# own line plus one reading leading.  It is a floor against *collision*, which is
+# the only thing a floor down here can honestly be about: `END / nn` and the
+# folio are both 6.8pt tracked caps, and two of them closer than the distance the
+# reader sets two lines of prose at read as one line of chrome rather than as an
+# article ending above a page number.  See ``_end_mark_baseline``.
+_END_MARK_HARD_FLOOR_POINTS = _FOLIO_BASELINE_POINTS + _READING_LEADING
+# And the difference between them is the house's answer to the narrower question
+# "how far from a mark does the mark's own name set?" -- 7pt, ink to ink.  The
+# source label is the same kind of thing naming the same kind of thing, so it
+# takes the same gap, measured from the square's last dark module and not from
+# the element's edge: the quiet zone lives inside the element, so a gap stated on
+# the box is a gap plus four light modules on the page.  At 12pt from the box
+# that put `SOURCE / nn` 7.9mm from anything visible, three times what `END / nn`
+# gets, and the two stopped reading as one idiom.
+_CODE_LABEL_GAP_POINTS = _END_MARK_TEXT_INSET_POINTS - _END_MARK_RULE_WIDTH_POINTS
 
 _FONT_FILES = {
     "serif": "source-serif-4/SourceSerif4SmText-Regular.ttf",
@@ -438,29 +484,52 @@ _RUNT_MEASURE_FRACTION = .15
 #
 # AND THE CURE HAS ITS OWN THRESHOLD.  The bind moves the penultimate line's last
 # word down with the stranded one, so the line above pays for the repair with
-# whatever that word was wide.  Where the bound word is long the payment is worse
-# than the defect: en p29 set `...and only then expanded with` and then
-# `surrounding context.`, two short lines in a row and a 94.8pt hole where there
-# had been one stranded word.  A bind that would open more than a fifth of the
-# measure on the penultimate line is refused and the runt is left standing.
+# whatever that word was wide.  Where the bound word is long enough the payment
+# really is worse than the defect, and this is the refusal that says so.
 #
-# A fifth is measured and not chosen, exactly as ``_RUNT_MEASURE_FRACTION`` is.
-# Every bind edition 002 asks for, as the rag its penultimate line would be left
-# with, sorts as
+# IT WAS SET AT A FIFTH AND A FIFTH WAS TOO TIGHT.  The distribution argument for
+# 20% was sound -- 4.2 points is the widest gap in the observed rags -- and the
+# conclusion drawn from it was still wrong, because the two sides of that gap are
+# not the same *kind* of thing.  A penultimate line 22-30% short of the measure
+# is rag; this column is set unjustified and every page of it carries lines
+# shorter than that.  A last line of one seven-letter word is a runt whatever
+# stands above it.  Trading the second for the first is not a trade at all, and
+# an independent review measured what the trade actually shipped:
 #
-#   4.9 8.4 9.7 9.8 10.3 10.7 11.6 12.3 12.7 17.3 17.8 18.4
-#     | 22.6 22.9 22.9 23.6 23.6 29.5   (percent, both languages, 18 binds)
+#              penultimate rag        last line
+#   en p11     23.7% -> 7.3%     99.4pt -> 45.3pt   `packages.`
+#   en p29     30.5% -> 12.0%    98.6pt -> 37.8pt   `context.`
+#   p31 ref 4  24.5% -> 6.5%     76.5pt -> 17.1pt   `2025.`   (both languages)
+#   p31 ref 6  23.8% -> 5.8%     76.5pt -> 17.1pt   `2023.`   (both languages)
 #
-# and the 4.2-point gap between 18.4 and 22.6 is the widest in the distribution,
-# so 20% can move by -1.5 or +2.5 points without reclassifying a single
-# paragraph.  The independent review drew its own line by eye between the same
-# two observations.
+# `surrounding context.` at 98.6pt was a good last line and `context.` at 37.8pt
+# is a runt; on en p11 the refusal put three one-word last lines -- `packages.`,
+# `distribution.`, `and fixes.` -- inside twenty lines of one column.  Every
+# paragraph the refusal touched came out worse than if it had never fired.
 #
-# What it costs: four of the eighteen binds refused are the two reference-list
-# entries that end on a bare year, in each language.  Those are real runts left
-# standing -- `2023.` at 5.3% of the measure -- and they are the price of one
-# rule rather than a rule with a carve-out for bibliographies.
-_RUNT_MAX_RAG_FRACTION = .20
+# So it moves to a third, which is above every bind this edition asks for.  Every
+# bind, as the rag its penultimate line would be left with, sorts as
+#
+#   4.9 8.4 9.7 9.8 10.3 10.3 10.7 11.6 12.3 12.7 17.3 17.8 18.4
+#   22.6 23.8 23.8 24.6 24.6 29.5 | (percent, both languages, 18 binds)
+#
+# and 33% clears the largest of them by 3.5 points.  That is deliberate and is
+# the honest description of the rule now: on edition 002 it refuses nothing, and
+# what it still guards is the case the observations do not reach -- a final word
+# so long that carrying it down would halve the line above it.  The number can
+# move by -3.5 or by as much as one likes upward without reclassifying a single
+# paragraph in this edition, which is another way of saying this edition no
+# longer measures it.  A future edition that lands a bind in the twenties should
+# leave it alone; one that lands a bind past a third should re-read this note
+# before moving the number again.
+#
+# What the earlier value cost, and what going back to it would cost again: the
+# two reference-list entries ending on a bare year, in each language, were among
+# the binds it refused.  Those turn lines now hang under `ul[data-reference-list]`'s
+# own indent, so a reference ending on `2025.` is ordinary bibliography setting
+# and no longer depends on this rule at all -- but the bind is what keeps the
+# year on the line its citation ends on, and it is allowed again.
+_RUNT_MAX_RAG_FRACTION = .33
 
 # The tag names that can carry the reading flow's own prose.  A heading is
 # deliberately absent: an opener title and a plate title are auto-fitted, and
@@ -784,6 +853,11 @@ class SourceCode:
         return self.modules * self.module
 
     @property
+    def quiet(self) -> float:
+        """The quiet zone, in points: four light modules on every side."""
+        return _CODE_QUIET_MODULES * self.module
+
+    @property
     def symbol_bottom(self) -> float:
         """The first dark module's own lower edge, in the same coordinates.
 
@@ -791,7 +865,24 @@ class SourceCode:
         symbol, and every alignment the page is judged on -- the folio's
         baseline, the label's -- is an alignment to ink.
         """
-        return self.top - self.side + _CODE_QUIET_MODULES * self.module
+        return self.top - self.side + self.quiet
+
+    @property
+    def symbol_left(self) -> float:
+        """The first dark module's own left edge, in the same coordinates.
+
+        The same correction as ``symbol_bottom`` and for the same reason.  A
+        column is flush when its *ink* is flush: the tail slot's square is set
+        against the reading measure's own origin, which is where the END rule
+        and every line of the article above it start, and the element therefore
+        stands one quiet zone to the left of it.
+        """
+        return self.left + self.quiet
+
+    @property
+    def symbol_right(self) -> float:
+        """The last dark module's own right edge, in the same coordinates."""
+        return self.left + self.side - self.quiet
 
 
 @dataclass(frozen=True, slots=True)
@@ -2116,7 +2207,7 @@ def _label_source_code(article: Element, code: SourceCode) -> None:
             "semantic edition carries no data-source-label for it; an unlabelled "
             "square on the page is the defect the label exists to repair."
         )
-    left = code.left + code.side + _CODE_LABEL_GAP_POINTS
+    left = code.symbol_right + _CODE_LABEL_GAP_POINTS
     width = _string_width(text.upper(), "sans-medium", _CODE_LABEL_SIZE_POINTS) + (
         _CODE_LABEL_TRACKING_POINTS * len(text)
     )
@@ -2181,8 +2272,16 @@ def _fitted_source_code(
             continue
         if best is None or module > best.module + _MODULE_EPSILON:
             side = modules * module
+            # The tail square is flush left on the reading measure, and flush
+            # means its ink is: the element is pulled one quiet zone further left
+            # so the first dark module stands on the same origin as the END rule
+            # and every line of the article above it.  The four light modules
+            # that then sit outside the measure cost nothing -- white quiet zone
+            # in a page margin is exactly what a margin is for.  The foot square
+            # is centred instead, and the quiet zones are symmetric, so centring
+            # the element centres the ink.
             left = (
-                _CODE_MEASURE_LEFT_POINTS
+                _CODE_MEASURE_LEFT_POINTS - _CODE_QUIET_MODULES * module
                 if slot == "tail"
                 else _CODE_MEASURE_LEFT_POINTS + (_CODE_MEASURE_POINTS - side) / 2
             )
@@ -2409,15 +2508,27 @@ def _measured_source_code(
     no art at all still prints a large code wherever a page has the room, and an
     edition full of art prints no more of them than its pages earn.
 
+    AND ROOM IS NOT A REASON ON ITS OWN.  An article that ends very high leaves
+    the most room and is the page least able to absorb what the room buys: the
+    square drops in under the end mark and then a half-page of nothing follows
+    it, and a 41.6mm black rectangle is the loudest thing on a sheet holding six
+    lines of type.  So the large slot is also given up where the white left below
+    the square would run past ``_CODE_TAIL_MAX_FOOT_WHITE_POINTS``, and the code
+    joins the folio's line instead.  The give-up is conditional on the foot band
+    being able to hold the symbol at all: where the URL is too long to set there
+    at ``_CODE_MIN_MODULE_POINTS``, the tail slot the page already earned stands,
+    because a code that does not scan is not the smaller of two evils.
+
     ``end_mark_extent`` is how far the article's own end mark reaches across the
     measure, and it is what keeps the foot slot's code out of the mark's way.
-    The mark clamps to the reader's floor on a page the article fills, which is
-    exactly the page the foot slot is used on, so on any full last page the two
+    The mark rests on the reader's floor on a page the article fills, which is
+    one of the pages the foot slot is used on, so on a full last page the two
     share the foot band whether or not anyone intended it.  They cannot be
     separated vertically -- the square needs the whole band and the mark cannot
     rise into the type -- so the separation is horizontal and is *stated*: the
-    square never stands closer to the end mark's line than the 24pt the mark
-    already holds its own text off the frame's edge by.
+    square's first dark module never stands closer to the end mark's line than
+    the 24pt the mark already holds its own text off the frame's edge by.  Ink to
+    ink, like every other clearance the code is judged on.
 
     An article with no ``source_url`` prints no code and is not an error -- a
     source record need not carry a canonical URL, and the editorial has no
@@ -2440,8 +2551,19 @@ def _measured_source_code(
             f"{_CODE_MIN_MODULE_POINTS * 25.4 / 72:.2f}mm. Shorten the canonical URL, "
             "or let the article end higher on its last page."
         )
+    if code.slot == "tail" and _tail_code_foot_white(code) > _CODE_TAIL_MAX_FOOT_WHITE_POINTS:
+        smaller = _fitted_source_code(
+            str(article.id), "foot", url, _CODE_FOOT_ROOM_POINTS, top=0.0
+        )
+        if smaller is not None:
+            code = smaller
     if code.slot == "foot":
-        clear = _CODE_MEASURE_LEFT_POINTS + end_mark_extent + _END_MARK_TEXT_INSET_POINTS
+        clear = (
+            _CODE_MEASURE_LEFT_POINTS
+            + end_mark_extent
+            + _END_MARK_TEXT_INSET_POINTS
+            - code.quiet
+        )
         left = max(code.left, clear)
         if left + code.side > _CODE_MEASURE_LEFT_POINTS + _CODE_MEASURE_POINTS:
             raise ValidationError(
@@ -2481,16 +2603,51 @@ def _end_mark_extent(document: Any, article_id: str) -> float:
     return reach
 
 
-def _end_mark_offset(flow_bottom: float) -> float:
-    """How far ``_article_endmark``'s mark is painted below its own flow box.
+def _end_mark_baseline(flow_bottom: float) -> float:
+    """Where ``END / nn`` sets on its page, in points up from the sheet's foot.
 
-    ``baseline = max(self.frame_bottom + 5, self.y - 1)`` (render.py:2009) reads a
-    laid-out ``self.y``, which is exactly what ``_article_flow_bottom`` measures,
-    so the clamp is reproduced here rather than approximated by a fixed budget in
-    the stylesheet.  Below the clamp the offset is a constant; at it, the mark
-    stops on the reader's own floor instead of running into the bottom margin.
+    The mark closes a paragraph, so it stands under one, one point below the
+    ``self.y`` ``_article_flow_bottom`` measures (render.py:2009).  The space
+    that leaves above its rule is the house's own and is not a budget anyone
+    chose: it is whatever a line of prose and its space-after come to, 11.2-16.9pt
+    of clear paper on every article in edition 002.
+
+    ``max(self.frame_bottom + 5, ...)`` IS NOT A FLOOR FOR THE MARK'S SAKE, and
+    reproducing it was the defect.  It is the *frame's* number, and on an article
+    whose last page over-runs it does not lower anything -- it *raises* the mark
+    into the type it is meant to stand under.  On es p9 it raised it 7.5pt and
+    left 5.0pt between the descenders and the rule, against 11.2-16.9pt on the
+    other eleven article endings in the edition; the mark took whatever the page
+    had left instead of taking its own space.  The horizontal clearance
+    ``_measured_source_code`` states cannot see that, because the crowding was
+    never horizontal.
+
+    So the mark keeps its own space and the floor becomes a real one.  Below
+    ``_END_MARK_HARD_FLOOR_POINTS`` its rule and its label would reach the band
+    the folio and the small source code share and the two would read as one line
+    of chrome; that is refused rather than squeezed, because a page that cannot
+    hold its own ending is a pagination fault and not something to absorb
+    silently.  Nothing in edition 002 comes within 10pt of it -- es p9, the one
+    page the old clamp fired on, sets at 42.48 against a floor of 32.5.
+
+    The mark is out of flow in both engines, so moving it moves no line: what
+    changes on that one page is where a zero-height block is painted.
     """
-    baseline = max(_END_MARK_FLOOR_POINTS, flow_bottom - _END_MARK_DROP_POINTS)
+    baseline = flow_bottom - _END_MARK_DROP_POINTS
+    if baseline < _END_MARK_HARD_FLOOR_POINTS:
+        raise ValidationError(
+            f"An article's end mark would set {baseline:.2f}pt above the sheet's foot, "
+            f"under the {_END_MARK_HARD_FLOOR_POINTS:.2f}pt floor that keeps it clear of "
+            f"the folio's own line at {_FOLIO_BASELINE_POINTS:.1f}pt. Its last page "
+            "over-runs by more than the mark can stand under; re-break the page rather "
+            "than raising the mark into the type it closes."
+        )
+    return baseline
+
+
+def _end_mark_offset(flow_bottom: float) -> float:
+    """How far ``_article_endmark``'s mark is painted below its own flow box."""
+    baseline = _end_mark_baseline(flow_bottom)
     return flow_bottom + _END_MARK_PAINT_POINTS - _END_MARK_DROP_POINTS - baseline
 
 
@@ -2603,8 +2760,7 @@ def _tail_code_room(flow_bottom: float) -> float:
     Capped at the ornament's own maximum, which is not a constraint on any code
     this publication can produce but keeps the slot a slot.
     """
-    endmark_baseline = max(_END_MARK_FLOOR_POINTS, flow_bottom - _END_MARK_DROP_POINTS)
-    top = endmark_baseline - _TAIL_ORNAMENT_ENDMARK_CLEARANCE
+    top = _end_mark_baseline(flow_bottom) - _TAIL_ORNAMENT_ENDMARK_CLEARANCE
     return min(top - _END_MARK_FLOOR_POINTS, _TAIL_ORNAMENT_MAX_HEIGHT)
 
 
@@ -2623,12 +2779,24 @@ def _tail_code_slot(flow_bottom: float) -> float | None:
     """
     if _tail_code_room(flow_bottom) < _CODE_TAIL_MIN_ROOM_POINTS:
         return None
-    endmark_baseline = max(_END_MARK_FLOOR_POINTS, flow_bottom - _END_MARK_DROP_POINTS)
+    endmark_baseline = _end_mark_baseline(flow_bottom)
     return (
         endmark_baseline
         - _TAIL_ORNAMENT_ENDMARK_CLEARANCE
         - _CODE_CONTENT_FOOT_POINTS
     )
+
+
+def _tail_code_foot_white(code: SourceCode) -> float:
+    """The clear page left under a tail square, from its box to the sheet's foot.
+
+    Read from the *box* and not from the last dark module, because what is being
+    judged is emptiness and a quiet zone is empty too.  The square hangs from the
+    top of its slot, so this is everything the slot did not need plus the whole
+    foot margin -- which on the imposed booklet is the physical sheet edge, and
+    which is exactly the band the eye reads as "the page stopped here".
+    """
+    return _CODE_CONTENT_FOOT_POINTS + code.top - code.side
 
 
 def _validate_caps(edition: Edition) -> None:

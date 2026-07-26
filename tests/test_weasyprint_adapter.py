@@ -550,10 +550,13 @@ def test_measure_then_render_settles_the_plan_and_never_pads_the_signature(tmp_p
     # all -- which is not the one plate the probe pass offered, hence two passes.
     assert plan.closing_plates == 0
     assert len(laid_out) == 2 and laid_out[0] == laid_out[1]
-    # The stub article ends 435.271pt above the foot, so its source code earns
-    # the large slot -- which the bare probe pass could not know and did not offer.
+    # The stub article ends 435.271pt above the foot, so it earns the large slot
+    # on room and then gives it back on the ceiling: a square hung that high
+    # leaves 128mm of page under it, past `_CODE_TAIL_MAX_FOOT_WHITE`.  Either
+    # way the point stands -- the bare probe pass carried no code at all and the
+    # measured plan carries one, which is why there are two passes.
     assert [(code.article_id, code.slot) for code in plan.source_codes] == [
-        ("article<&>", "tail")
+        ("article<&>", "foot")
     ]
 
 
@@ -663,6 +666,13 @@ def test_the_tail_motif_never_prints_and_the_code_hangs_from_its_slot_s_head():
     one edge.  Anchored to the head the void above it is the slot's own 31pt
     clearance, whatever the slot's height, and the unused white falls at the
     page foot where an article ending high has always left it.
+
+    FLUSH IS FLUSH TO THE INK.  The quiet zone lives inside the element, so a box
+    set on the measure's origin puts its first dark module 3.4mm to the right of
+    the END rule and of every line of the article above it, and under a hard
+    flush column the eye reads an indented black block.  The element is pulled
+    one quiet zone left so the module lands on the origin; the light modules that
+    then stand outside the measure print nothing.
     """
     markup = '<figure class="article-tail"><img src="c"></figure>'
     code = adapter.SourceCode(
@@ -672,9 +682,12 @@ def test_the_tail_motif_never_prints_and_the_code_hangs_from_its_slot_s_head():
         49,
         adapter._CODE_HOUSE_MODULE_POINTS,
         "https://example.test/a",
-        adapter._CODE_MEASURE_LEFT_POINTS,
+        adapter._CODE_MEASURE_LEFT_POINTS - 4 * adapter._CODE_HOUSE_MODULE_POINTS,
         200.0,
     )
+    # ...which is the `left` a fitted tail code comes out with, for any symbol.
+    fitted = adapter._fitted_source_code("article", "tail", _CODE_URL_51, 214.0)
+    assert fitted.symbol_left == pytest.approx(adapter._CODE_MEASURE_LEFT_POINTS)
 
     with_motif = _parse_article_fragment(markup, source_label="Source / 04")
     _apply_source_codes(with_motif, {"article": code})
@@ -682,12 +695,21 @@ def test_the_tail_motif_never_prints_and_the_code_hangs_from_its_slot_s_head():
     image = next(
         element for element in with_motif.iter("img") if element.get("class") == "source-code"
     )
-    # Flush left on the 325pt measure, its upper edge on the slot's own top.
+    # The first dark module stands on the measure's own origin, so the element
+    # begins one quiet zone -- four modules, 3.4mm -- to the left of it.
+    assert code.symbol_left == pytest.approx(adapter._CODE_MEASURE_LEFT_POINTS)
+    assert code.left == pytest.approx(
+        adapter._CODE_MEASURE_LEFT_POINTS - 4 * adapter._CODE_HOUSE_MODULE_POINTS
+    )
+    # ...its upper edge on the slot's own top.
     assert image.get("style") == (
-        "left: 4.0040pt; bottom: 81.9370pt; width: 118.0630pt; height: 118.0630pt"
+        "left: -5.6338pt; bottom: 81.9370pt; width: 118.0630pt; height: 118.0630pt"
     )
     # And named, in the tracked caps `END / nn` is set in, on the symbol's own
-    # bottom edge -- four modules above the box's -- one gap to its right.
+    # bottom edge -- four modules above the box's -- and one gap to the right of
+    # its *last dark module*, at the same 7pt the end mark's rule gives its own
+    # label.  Stated on the box that gap was 12pt plus a quiet zone, 7.9mm from
+    # anything a reader can see against the end mark's 2.4mm.
     label = next(
         element for element in with_motif.iter("p") if element.get("class") == "source-label"
     )
@@ -695,8 +717,12 @@ def test_the_tail_motif_never_prints_and_the_code_hangs_from_its_slot_s_head():
     assert code.symbol_bottom == pytest.approx(
         200.0 - code.side + 4 * adapter._CODE_HOUSE_MODULE_POINTS
     )
+    assert code.symbol_right == pytest.approx(
+        code.left + code.side - 4 * adapter._CODE_HOUSE_MODULE_POINTS
+    )
+    assert adapter._CODE_LABEL_GAP_POINTS == pytest.approx(7.0)
     assert label.get("style") == (
-        f"left: {code.left + code.side + 12:.4f}pt; "
+        f"left: {code.symbol_right + 7:.4f}pt; "
         f"bottom: {code.symbol_bottom + 2.47375:.4f}pt"
     )
 
@@ -1515,11 +1541,22 @@ def test_overflow_wrap_is_not_the_reader_s_per_character_fallback():
 
 
 def test_bullets_are_drawn_discs_and_a_reference_list_drops_to_source_notes():
-    """X16/X17: a violet disc at 14pt of indent; references at SERIF 7.2/9.4."""
+    """X16/X17: a violet disc at 14pt of indent; references at SERIF 7.2/9.4.
+
+    And a reference *hangs*.  The baseline set every line of a bibliography
+    flush, which puts an entry's turn line on the same left edge as the entry
+    numbers -- three references with two turn lines printed as five items, and
+    at arm's length the two bare years read as entries of their own.  The
+    marker is inside the text here (`4 — `, authored, not a list marker), so
+    the indent is the marker's own width and the first line is pulled back out
+    of it.
+    """
     document = _typeset_document(
         '<article data-article-id="a"><ul><li><p>Bullet one</p></li></ul>'
         "<h3>References</h3>"
-        '<ul data-reference-list="true"><li><p>4 - Source note</p></li></ul>'
+        '<ul data-reference-list="true"><li><p>4 — Source note that runs long '
+        "enough to turn onto a second line of its own, which is the whole "
+        "point of the indent.</p></li></ul>"
         '<p class="provenance">Sources: hidden</p>'
         '<p class="end-mark">End / 01</p></article>'
     )
@@ -1545,8 +1582,26 @@ def test_bullets_are_drawn_discs_and_a_reference_list_drops_to_source_notes():
     assert round(items[0].style["font_size"] * _POINTS_PER_CSS_PIXEL, 2) == 10.0
     assert round(items[0].padding_left * _POINTS_PER_CSS_PIXEL, 3) == 14.0
     assert round(items[1].style["font_size"] * _POINTS_PER_CSS_PIXEL, 2) == 7.2
-    assert round(items[1].height * _POINTS_PER_CSS_PIXEL, 2) == 9.4, "one line at 9.4 leading"
-    assert round(items[1].padding_left * _POINTS_PER_CSS_PIXEL, 3) == 0.0
+    assert round(items[1].height * _POINTS_PER_CSS_PIXEL, 2) == 18.8, "two lines at 9.4"
+    # `4 — ` set in the reading face at 7.2pt, hung: the first line is pulled the
+    # same distance back out, so it starts where the body text starts and the
+    # turn line starts under the entry's own first letter.
+    hang = adapter._string_width("4 — ", "serif", 7.2)
+    assert round(hang, 4) == 12.9744
+    assert items[1].padding_left * _POINTS_PER_CSS_PIXEL == pytest.approx(hang)
+    assert items[1].style["text_indent"].value * _POINTS_PER_CSS_PIXEL == pytest.approx(-hang)
+    entry, turn = [
+        next(box for box in adapter._walk_boxes(line) if type(box).__name__ == "TextBox")
+        for line in list(_line_boxes(items[1]))[:2]
+    ]
+    # The number sits where the list's own left edge is, one hang outside the
+    # column the entry's text -- and its turn line -- is set in.
+    assert entry.position_x * _POINTS_PER_CSS_PIXEL == pytest.approx(
+        items[1].position_x * _POINTS_PER_CSS_PIXEL
+    )
+    assert (turn.position_x - entry.position_x) * _POINTS_PER_CSS_PIXEL == (
+        pytest.approx(hang)
+    )
     # The bullet's marker is a drawn disc, so no marker glyph reaches the text --
     # nor a host font, since neither bundled face carries U+25E6.
     # `render.py:1193-1196` centres a 2.5pt disc 4pt above the first baseline.
@@ -1719,27 +1774,44 @@ def _end_mark_case(spacer: float) -> tuple[float, float, float]:
     return flow_bottom, painted(body), planned
 
 
-def test_the_end_mark_lands_on_the_reader_s_baseline_and_stops_at_its_floor():
-    """`baseline = max(self.frame_bottom + 5, self.y - 1)` (render.py:2009).
+def test_the_end_mark_keeps_its_own_space_and_the_floor_is_a_refusal():
+    """`baseline = self.y - 1` (render.py:2009), and the clamp beside it is not.
 
     Nothing pinned this before, and both halves of it were wrong: the mark was
-    painted 8.53085pt high on every article, and the clamp did not exist at all.
-    A 20pt filler spacer leaves the article ending high on its page; 460pt runs it
-    down to the floor, where the reader stops and the unclamped mark would not.
+    painted 8.53085pt high on every article, and it did not follow `self.y` at
+    all.  A 20pt filler spacer leaves the article ending high on its page; 478pt
+    runs it down past where ReportLab's frame clamp used to stop it.
+
+    THE CLAMP IS GONE, AND THAT IS THE POINT.  `max(self.frame_bottom + 5, ...)`
+    is the frame's number and not the mark's: on a page that over-runs it does
+    not lower the mark, it *raises* it into the type the mark is meant to stand
+    under.  On es p9 it raised it 7.5pt and left 5.0pt between the descenders
+    and the rule against 11.2-16.9pt everywhere else, and no horizontal
+    clearance rule can see that, because the crowding was never horizontal.  So
+    the mark keeps its space; what stops it is a floor against collision with
+    the folio, and that floor refuses rather than squeezes.
     """
     # The spacer is the whole control: a one-line article 20pt down the page
-    # ends far clear of the floor, and one 478pt down ends under it.
+    # ends far clear of the old frame clamp, and one 478pt down ends under it.
     high_y, high_css, high_planned = _end_mark_case(20.0)
     low_y, low_css, low_planned = _end_mark_case(478.0)
 
-    assert high_y - 1 > 50.0, "the high case must clear the floor or it proves nothing"
-    assert low_y - 1 < 50.0, "the low case must reach the floor or it proves nothing"
-    # Clear of the floor, the stylesheet's own 28.53085pt is the whole answer.
+    assert high_y - 1 > 50.0, "the high case must clear the old clamp or it proves nothing"
+    assert low_y - 1 < 50.0, "the low case must reach past it or it proves nothing"
+    # Either way the mark sets one point under `self.y`, and the stylesheet's own
+    # 28.53085pt is the whole answer.
     assert high_css == pytest.approx(high_y - 1.0, abs=5e-4)
     assert high_planned == pytest.approx(high_y - 1.0, abs=5e-4)
-    # At the floor it is not: the mark would be painted below `frame_bottom`.
-    assert low_css < 50.0 - 1.0
-    assert low_planned == pytest.approx(50.0, abs=5e-4)
+    assert low_css == pytest.approx(low_y - 1.0, abs=5e-4)
+    assert low_planned == pytest.approx(low_y - 1.0, abs=5e-4)
+    assert low_planned < 50.0, "the mark went where the flow did, clamp or no clamp"
+    # And the floor that is left is the folio's own line plus one reading
+    # leading, below which `END / nn` and the page number read as one line of
+    # chrome.  It refuses the page rather than raising the mark into the type.
+    assert adapter._END_MARK_HARD_FLOOR_POINTS == pytest.approx(19.5 + 13.0)
+    assert adapter._end_mark_baseline(33.5) == pytest.approx(32.5)
+    with pytest.raises(ValidationError, match="over-runs by more than the mark"):
+        adapter._end_mark_baseline(33.4)
 
 
 def test_a_column_figure_labels_itself_one_caption_size_below_its_own_head(tmp_path: Path):
@@ -2583,14 +2655,19 @@ def test_a_pair_that_could_not_fit_the_measure_is_never_bound():
 
 
 def test_a_bind_that_would_open_a_second_short_line_is_refused():
-    """The cure may not be worse than the defect, and once it was.
+    """The cure may not be worse than the defect, and the line is at a third.
 
-    en p29 bound `surrounding` to `context.` and set two short lines in a row --
-    `...and only then expanded with` at 94.8pt, 29.3% of the measure, short --
-    which is a worse defect than the stranded word it repaired.  The word the
-    bind takes off the penultimate line is known without laying the paragraph
-    out again: greedy breaking moves nothing above it, so the line comes out
-    exactly as wide as it is now less its own last word.
+    The word the bind takes off the penultimate line is known without laying the
+    paragraph out again: greedy breaking moves nothing above it, so the line
+    comes out exactly as wide as it is now less its own last word.
+
+    THE THRESHOLD WAS A FIFTH AND A FIFTH WAS TOO TIGHT.  It refused en p11,
+    en p29 and two reference entries in each language, and every one of them was
+    worse for it -- `surrounding context.` at 98.6pt became `context.` at 37.8pt,
+    and en p11 came out with three one-word last lines inside twenty lines of a
+    column -- because a penultimate line 22-30% short of an *unjustified* measure
+    is rag and not a fault, while a last line of one short word is a runt
+    whatever stands above it.
     """
     measure, size = 433.0, 13.3
     # The bound word's own width is what the penultimate line pays.
@@ -2600,7 +2677,7 @@ def test_a_bind_that_would_open_a_second_short_line_is_refused():
 
     # A penultimate line that can afford the word it gives up.
     assert adapter._is_runt([(420.0, "before each"), (20.0, "gate.")], measure, size)
-    # ...and the same paragraph where it cannot: 20% of the measure is the line.
+    # ...and the same paragraph where it cannot: a third of the measure is the line.
     opened = measure * adapter._RUNT_MAX_RAG_FRACTION
     assert adapter._is_runt(
         [(measure - opened + short_word + 0.5, "before each"), (20.0, "gate.")], measure, size
@@ -2608,10 +2685,12 @@ def test_a_bind_that_would_open_a_second_short_line_is_refused():
     assert not adapter._is_runt(
         [(measure - opened + short_word - 0.5, "before each"), (20.0, "gate.")], measure, size
     )
-    # The threshold is where the population puts it: every bind edition 002 asks
-    # for opens between 4.9% and 18.4% of its measure, or between 22.6% and
-    # 29.5%, and nothing at all in between.
-    assert 0.184 < adapter._RUNT_MAX_RAG_FRACTION < 0.226
+    # A third, and it now stands above every bind edition 002 asks for: they open
+    # between 4.9% and 29.5% of their own measures, the largest being en p29's
+    # `surrounding context.`, which the old fifth refused and which is the
+    # paragraph this rule was written from.
+    assert adapter._RUNT_MAX_RAG_FRACTION == pytest.approx(0.33)
+    assert adapter._RUNT_MAX_RAG_FRACTION > 0.295
 
 
 def test_only_reading_flow_prose_is_keyed_for_runt_control(tmp_path: Path):
@@ -2868,18 +2947,44 @@ def test_which_slot_a_code_takes_is_the_page_s_decision_and_not_the_author_s():
     against `tail_art`: an edition that committed no art at all still earns the
     large slot wherever a page has the room, which is what makes the rule
     edition-agnostic.
+
+    THE RULE IS TWO-SIDED, because room alone was the wrong question.  Below the
+    floor the page cannot carry the large square; above the ceiling it should
+    not, and the two are different failures.  An article ending very high leaves
+    the *most* room and is the page least able to absorb what the room buys --
+    en p24 set six lines, an end mark, a 41.8mm black square and 107.7mm of
+    nothing, and the code carried 59.5% of the page's ink.
     """
     article = SimpleNamespace(id="article", source_url=_CODE_URL, tail_art=None)
 
-    ended_high = adapter._measured_source_code(article, 500.0)
     ended_low = adapter._measured_source_code(article, 40.0)
+    # Room for twice the foot square is the floor, and it is measured, not written.
+    boundary = 82.0 + 2.0 * adapter._CODE_FOOT_ROOM_POINTS
+    assert adapter._measured_source_code(article, boundary - 0.1).slot == "foot"
+    ended_high = adapter._measured_source_code(article, boundary + 0.1)
 
     assert (ended_high.slot, ended_low.slot) == ("tail", "foot")
     assert ended_high.side > 2 * ended_low.side
-    # The threshold is room for twice the foot square, and nothing else.
-    boundary = 82.0 + 2.0 * adapter._CODE_FOOT_ROOM_POINTS
-    assert adapter._measured_source_code(article, boundary - 0.1).slot == "foot"
-    assert adapter._measured_source_code(article, boundary + 0.1).slot == "tail"
+    # And residual white below the box is the ceiling.  The same article on a
+    # page it ended 500pt up takes the small code instead: the square would hang
+    # with 127mm of empty sheet under it.
+    assert adapter._tail_code_foot_white(ended_high) < adapter._CODE_TAIL_MAX_FOOT_WHITE_POINTS
+    poster = adapter._fitted_source_code(
+        "article", "tail", _CODE_URL, adapter._tail_code_room(500.0),
+        top=adapter._tail_code_slot(500.0),
+    )
+    assert adapter._tail_code_foot_white(poster) * 25.4 / 72 == pytest.approx(126.9, abs=0.1)
+    assert adapter._measured_source_code(article, 500.0).slot == "foot"
+    # The ceiling is a preference and never a refusal: a URL whose symbol cannot
+    # be set in the foot band keeps the tail slot its page already earned,
+    # because an unscannable small code is not the lesser of two evils.  This is
+    # en p24 and en p31 of edition 002, whose 54- and 60-character addresses need
+    # a 41-module symbol and a 0.338mm module where the floor is 0.35mm.
+    long_url = SimpleNamespace(id="article", source_url="https://example.test/" + "a" * 40)
+    assert adapter._fitted_source_code(
+        "article", "foot", long_url.source_url, adapter._CODE_FOOT_ROOM_POINTS
+    ) is None
+    assert adapter._measured_source_code(long_url, 500.0).slot == "tail"
     # No source, no code, no error -- the editorial's case, and a source record's
     # canonical url is not guaranteed.
     assert adapter._measured_source_code(SimpleNamespace(id="a", source_url=None), 500.0) is None
@@ -2971,15 +3076,17 @@ def test_the_foot_slot_sits_the_small_code_on_the_folio_s_own_baseline():
     assert f"bottom: {code.symbol_bottom + 2.47375:.4f}pt" in label.get("style")
 
 
-def test_the_small_code_holds_itself_clear_of_an_end_mark_clamped_into_its_band():
+def test_the_small_code_holds_itself_clear_of_an_end_mark_in_its_own_band():
     """A full last page puts both in the foot band, and that recurs by design.
 
-    The end mark clamps to the reader's floor exactly on the page the foot slot
-    is used on, so on any full last page the two share the band whether or not
-    anyone intended it.  They cannot be separated vertically -- the square needs
-    the whole band and the mark cannot rise into the type -- so the separation is
-    horizontal and stated, at the same 24pt the mark holds its own text off the
-    frame's edge by.
+    An article that fills its last page ends its flow in the same band the foot
+    slot uses, so the two share it whether or not anyone intended it.  They
+    cannot be separated vertically -- the square needs the whole band and the
+    mark stands where its own flow ended -- so the separation is horizontal and
+    stated, at the same 24pt the mark holds its own text off the frame's edge by.
+
+    Ink to ink: the clearance is stated on the square's first *dark* module, not
+    on the element, whose quiet zone is four light modules of nothing.
     """
     article = SimpleNamespace(id="article", source_url=_CODE_URL, tail_art=None)
 
@@ -2990,7 +3097,10 @@ def test_the_small_code_holds_itself_clear_of_an_end_mark_clamped_into_its_band(
         adapter._CODE_MEASURE_LEFT_POINTS
         + (adapter._CODE_MEASURE_POINTS - centred.side) / 2
     )
-    assert crowded.left == pytest.approx(adapter._CODE_MEASURE_LEFT_POINTS + 200.0 + 24.0)
+    assert crowded.symbol_left == pytest.approx(
+        adapter._CODE_MEASURE_LEFT_POINTS + 200.0 + 24.0
+    )
+    assert crowded.left == pytest.approx(crowded.symbol_left - crowded.quiet)
     # Measured on edition 002: `END / 01` reaches 50.36pt across the measure and
     # the centred square starts at 144.67, so the rule holds by 70pt and moves
     # nothing.  It is a guarantee and not a repair.

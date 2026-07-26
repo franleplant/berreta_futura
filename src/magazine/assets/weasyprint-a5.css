@@ -490,10 +490,21 @@ h1, h2, h3 { font-family: "Magazine Sans", sans-serif; break-after: avoid; line-
  * it with its own fixed metrics, so it is excluded from every prose rule here.
  * Without the exclusion a plate article's 12.2pt reading leading reaches it and
  * moves its baseline 6.1pt, which is exactly what it did.
+ *
+ * AND SO IS THE SOURCE LABEL, which is the same kind of thing and was missing
+ * the same exclusion.  `.source-label` states `line-height: 0` and `margin: 0`
+ * on a class selector; every rule below outranks it, so on a landscape-plate
+ * article -- reader p9, the only page in edition 002 where a plate article ends
+ * in the foot slot -- the label was laid out on a 12.2pt line box (baseline
+ * 6.100pt low), lifted 4pt by the plate's `margin-bottom`, and then pushed back
+ * down 0.3996pt by the plate's paint correction.  Net: `SOURCE / 01` sat 2.50pt
+ * below the folio baseline its own square lands on, while `FUENTE / 03` on es
+ * p18 -- an ordinary article -- sat exactly on it.  One component, two baselines
+ * in one edition, and the lowest ink on the sheet at 5.8mm from the A5 foot.
  */
 p { margin: 0 0 5.4pt; orphans: 2; widows: 2; }
-.editorial > p:not(.standfirst):not(.end-mark),
-.editorial > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark) { margin-bottom: 6.2pt; }
+.editorial > p:not(.standfirst):not(.end-mark):not(.source-label),
+.editorial > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark):not(.source-label) { margin-bottom: 6.2pt; }
 .editorial h2 { margin-top: 21.2pt; }
 .editorial h3 { margin-top: 16.2pt; }
 /*
@@ -502,10 +513,10 @@ p { margin: 0 0 5.4pt; orphans: 2; widows: 2; }
  * the 10.005 the page datum is cut for -- 0.3996pt of ink on every line of the
  * article, and nothing at all in the flow.
  */
-article[data-figure-layouts~="landscape_plate"] > p:not(.standfirst):not(.end-mark),
-article[data-figure-layouts~="landscape_plate"] > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark),
-article[data-figure-layouts~="landscape_plate_after"] > p:not(.standfirst):not(.end-mark),
-article[data-figure-layouts~="landscape_plate_after"] > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark) {
+article[data-figure-layouts~="landscape_plate"] > p:not(.standfirst):not(.end-mark):not(.source-label),
+article[data-figure-layouts~="landscape_plate"] > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark):not(.source-label),
+article[data-figure-layouts~="landscape_plate_after"] > p:not(.standfirst):not(.end-mark):not(.source-label),
+article[data-figure-layouts~="landscape_plate_after"] > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark):not(.source-label) {
   line-height: 12.2pt; margin-bottom: 4pt;
   /* 10.0046 - (12.2 / 2 + .3505 * 10) */
   transform: translateY(.3996pt);
@@ -610,6 +621,25 @@ article > header:has(+ figure[data-anchor="__opener__"]) .author-note { display:
  *
  * Under a references heading every bullet is demoted to `source_note`
  * (render.py:1380-1381, 1416-1417): SERIF 7.2/9.4, no disc, no indent, 3pt after.
+ *
+ * "NO INDENT" IS THE BASELINE'S BUG AND IS NOT REPRODUCED.  A reference is
+ * numbered -- `4 — Li et al., ...` -- and at 7.2pt in a 325pt measure the long
+ * ones turn onto a second line.  With every line flush left, that turn line
+ * starts at exactly the column the *entry numbers* start at, so an edition whose
+ * bibliography has three entries prints as five things in a list: `4 — …`,
+ * `2025.`, `5 — …`, `6 — …`, `2023.`, all on one left edge, and at arm's length
+ * the two bare years read as entries of their own.  It is the only list in the
+ * publication whose items carry their own marker inside the text, and the fix is
+ * the one every bibliography has used since long before CSS: hang the marker.
+ *
+ * 12.9744pt is `4 — ` set in the reading face at 7.2pt -- a digit (3.7368) plus a
+ * space (1.692) plus an em dash (5.8536) plus a space -- so a turn line starts
+ * under the first letter of the entry's own text and not under its number.  It
+ * is measured and not chosen: it is what the marker is, and it is stated here
+ * rather than derived because a stylesheet cannot sum advances.  A two-digit
+ * entry sets 3.7368pt past the hang and its turn lines still land inside the
+ * text column, which is the property that matters; nothing is aligned to a
+ * number that is not there.
  */
 ul, ol { margin: 0; padding: 0; }
 li { font-size: 10pt; list-style: none; margin: 0 0 6pt; padding-left: 14pt; position: relative; }
@@ -619,7 +649,8 @@ li::before {
   left: 0; position: absolute; top: 3.505pt; width: 5pt;
 }
 ul[data-reference-list] li {
-  font-size: 7.2pt; line-height: 9.4pt; margin-bottom: 3pt; padding-left: 0;
+  font-size: 7.2pt; line-height: 9.4pt; margin-bottom: 3pt;
+  padding-left: 12.9744pt; text-indent: -12.9744pt;
   /* 10.0046 - (9.4 / 2 + .3505 * 7.2) */
   transform: translateY(2.781pt);
 }
@@ -638,17 +669,22 @@ ul[data-reference-list] li::before { content: none; }
  * space-after the last block carried -- and painted back down with `top`.
  *
  * How far back down is the whole of the mark's geometry, and it is *not* 20.
- * The reader's baseline is `max(frame_bottom + 5, self.y - 1)`.  The flow edge
- * the mark is hoisted from stands 10.0046 above `self.y`, its own zero-leading
- * line carries its baseline 2.47375 below its box, and the hoist is 20 -- so the
- * unclamped case is `20 + 10.0046 - 2.47375 + 1` = 28.53085, which is 8.53085pt
- * further than the 20 that was here and was wrong on every article.
+ * The reader's baseline is `self.y - 1`.  The flow edge the mark is hoisted from
+ * stands 10.0046 above `self.y`, its own zero-leading line carries its baseline
+ * 2.47375 below its box, and the hoist is 20 -- so the answer is
+ * `20 + 10.0046 - 2.47375 + 1` = 28.53085, which is 8.53085pt further than the 20
+ * that was here and was wrong on every article.
  *
- * The clamp has no CSS spelling at all: `max(frame_bottom + 5, ...)` reads a
- * laid-out `self.y` that no selector can see, and it is not decorative -- it
- * fires on es reader p9, where the unclamped mark paints 2.5pt *below* the frame
- * bottom.  The adapter measures `self.y` for every article and restates `top`
- * inline wherever the clamp bites; this value is the case where it does not.
+ * THAT IS NOW THE ANSWER ON EVERY ARTICLE, and it used not to be.  ReportLab
+ * writes `max(frame_bottom + 5, self.y - 1)`, and reproducing the `max` was a
+ * mistake: it is the *frame's* floor, so on a last page that over-runs it does
+ * not lower the mark, it raises it into the paragraph the mark closes.  It fired
+ * on es reader p9 and left 5.0pt between the descenders and the rule where the
+ * other eleven article endings in the edition have 11.2-16.9pt.  The adapter now
+ * gives the mark its own space on every page and refuses a page that cannot
+ * offer it (`_end_mark_baseline`), so no article restates `top` for a clamp; it
+ * still measures `self.y` per article and restates `top` from it, because the
+ * value above is only right where the flow ends where this stylesheet assumes.
  */
 .end-mark {
   color: rgb(25% 10% 43%); font-size: 6.8pt; font-weight: 500; height: 0;

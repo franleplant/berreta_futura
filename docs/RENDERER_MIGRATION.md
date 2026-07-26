@@ -206,8 +206,32 @@ both down together, so under greedy line breaking it never adds a line and
 sometimes gives one back — verified: 0 of 18 bound blocks changed line count.
 What it does spend is rag: the worst case opens 95.7pt (29.5% of the measure) of
 white on one English penultimate line, in exchange for a runt the review named.
-There is deliberately no cap on that, because a cap tight enough to prevent it
-would leave `context.` unrepaired.
+
+**The cap on that rag was set at a fifth, and a fifth was wrong.** The refusal
+exists for the case where the bound word is long enough that carrying it down
+halves the line above; at 20% it instead refused six binds — en p11, en p29 and
+two reference entries in each language — and a second review measured every one
+of them as worse for it:
+
+| | penultimate rag | last line |
+|---|---|---|
+| en p11 | 23.7% → 7.3% | 99.4pt → **45.3pt** (`packages.`) |
+| en p29 | 30.5% → 12.0% | 98.6pt → **37.8pt** (`context.`) |
+| p31 ref 4 (both languages) | 24.5% → 6.5% | 76.5pt → **17.1pt** |
+| p31 ref 6 (both languages) | 23.8% → 5.8% | 76.5pt → **17.1pt** |
+
+The distribution argument for 20% was sound and the conclusion drawn from it was
+not: the column is set unjustified, so a penultimate line a quarter short of the
+measure is rag and every page carries lines shorter than that, while a last line
+of one short word is a runt whatever stands above it. On en p11 the refusal put
+three one-word last lines — `packages.`, `distribution.`, `and fixes.` — inside
+twenty lines of one column. `_RUNT_MAX_RAG_FRACTION` is now **a third**, which
+is 3.5 points above the largest rag any bind in this edition asks for, so on
+edition 002 it refuses nothing and the table above is again what ships. Verified
+by comparing every text box in both languages with the threshold at 20% and at
+33%: exactly the four paragraphs above differ, 0 of 684 English and 0 of 733
+Spanish boxes moved otherwise, and page counts, spans and start pages are
+unchanged.
 
 The bound pair reaches the PDF as an ordinary space — `pdftotext` and `pypdf`
 both extract 0 instances of `U+00A0` and full phrase text — and every bundled
@@ -268,8 +292,25 @@ eats most of that again. On a band that bridges its own page that leaves
 **2.65pt** between the paragraph's descenders and the heading's cap height,
 against 17.65pt everywhere else in the reader: the heading stands 2.65pt above
 and 28.2pt below, the association inverted, and it reads as part of the paragraph
-it is not part of. It fires on en p17 and p30 and es p17, p28 and p30, and the
-review called it the largest visible defect in the edition.
+it is not part of. The review called it the largest visible defect in the
+edition.
+
+**It fires five times, and the list is exhaustive.** Measured on the laid-out
+reader, every band anchor in edition 002 that follows a paragraph on its own page
+comes out with zero content-box gap where an ordinary prose heading has 15pt:
+
+| | heading | over |
+|---|---|---|
+| en p17 | `Model economics` | `…split-brain showed up in…` |
+| en p30 | `Web UI` | `…to serve requests.` |
+| es p17 | `Economía de modelos` | `…la divergencia también apareció…` |
+| es p28 | `Planificación y abanico de…` | `…necesitábamos un enfoque…` |
+| es p30 | `Interfaz web` | `…Claude Code, o cualquier agente…` |
+
+All five are the same instance of the same rule at the same measurement; a later
+review that names one of them as new is reading a list that was written as prose
+and never stated its own count. Every other band anchor in the edition opens its
+page, where WeasyPrint discards the margin and ReportLab's rule was right.
 
 **The repair works and is one declaration.** Removing the band anchor's
 `margin-top: 0` from `assets/weasyprint-a5.css` puts every band anchor on its
