@@ -69,6 +69,23 @@ rather than only in this document, and deliberately not a console warning: a
 build-time warning that fires on every single build and cannot be silenced is
 noise, and would be ignored by the second week.
 
+### The editorial page floor was missing on the new path
+
+`minimum_reader_pages` is a per-article floor declared in the edition manifest
+and carried through translation: an article that sets out shorter than its
+editor allowed has lost source detail. `render.py` has refused such a build
+since the field existed; `weasyprint_adapter._validate_layout_caps` checked only
+the two maxima, so **the floor stopped applying the moment WeasyPrint became the
+default.** Nothing caught it because the build suite was pinned to the rollback
+engine at the time. It is enforced on both paths now, and the integration suite
+asserts the refusal against whichever engine the project selects.
+
+The two engines still *word* the three page-count refusals differently
+(`Article X spans N reader pages; the hard cap is 7` versus `WeasyPrint article
+page cap exceeded (maximum 7): X (N pages)`). These are publication rules, not
+renderer opinions, and the wording should converge; until it does, no test pins
+either string.
+
 ### The reader hashes change, so the render review goes stale
 
 Two producers cannot emit identical bytes, so switching engines changes
@@ -167,6 +184,19 @@ The cost is real: kerning affects **66% of English running words**, worst case
 **1.87pt (~0.19 em)** on a single word — visible on a printed page. Disabling it
 is defensible only because it reproduces what the last two printed editions
 already look like. It is parity, not a regression.
+
+The third scaffold has a second cost that is easy to miss because no gate here
+looks for it: **the reader's text layer loses its space characters.** WeasyPrint
+positions each inline box with its own text matrix and emits no space glyph
+between two of them, so with one nowrap box per token the prose reaches the PDF
+as `Theoriginalarticle.` Poppler recovers the boundary from the glyph advance —
+which is why `pdftotext`, G3 and any PDF viewer read the page correctly — but an
+extractor that reads the written characters instead, `pypdf` among them, returns
+run-together words. Plain WeasyPrint output writes the spaces; preformatted code
+keeps its own, because those spaces are inside a token rather than between two.
+Removing the scaffold removes this too. Until then, anything reading a built
+reader must recover words geometrically; `tests/test_render_integration.py`
+does, and says so.
 
 Reversing all three is: delete two CSS declarations, delete the `.reader-token`
 rule, delete `_suppress_intra_token_breaks` and its call in `_lay_out`, and

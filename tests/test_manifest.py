@@ -13,16 +13,23 @@ from magazine.media_schema import caption_sha256, credit_sha256
 from magazine.records import SourceRecord, load_records
 
 
-# The publication's default reader engine is WeasyPrint.  These fixtures pin the
-# ReportLab engine because the suite built on them asserts that renderer's exact
-# pagination, geometry and error text; the engine switch itself is covered by
-# tests/test_render_engine.py.  See docs/RENDERER_MIGRATION.md.
-RENDER_ENGINE_PIN = '\n[render]\nengine = "reportlab"\n'
+def render_engine_table(engine: str | None) -> str:
+    """The ``[render]`` table pinning ``engine``.
+
+    ``None`` writes no table at all, which is what a real project looks like and
+    what selects the publication default (``render_engine.DEFAULT_ENGINE``).  A
+    fixture only names an engine when the test is about that engine -- pinning
+    by default is how the build suite ended up exercising the rollback.
+    """
+    return "" if engine is None else f'\n[render]\nengine = "{engine}"\n'
 
 
-def make_project(root: Path, *, source_id: str = "source-one") -> None:
+def make_project(
+    root: Path, *, source_id: str = "source-one", engine: str | None = None
+) -> None:
     (root / "magazine.toml").write_text(
-        '[publication]\nname = "Test Review"\n' + RENDER_ENGINE_PIN, encoding="utf-8"
+        '[publication]\nname = "Test Review"\n' + render_engine_table(engine),
+        encoding="utf-8",
     )
     source_dir = root / "library" / "sources" / source_id
     source_dir.mkdir(parents=True)
@@ -69,15 +76,17 @@ def make_project(root: Path, *, source_id: str = "source-one") -> None:
     (edition_dir / "edition.yaml").write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
 
 
-def add_spanish_translation(root: Path) -> None:
+def add_spanish_translation(root: Path, *, engine: str | None = None) -> None:
     edition_data = yaml.safe_load(
         (root / "editions" / "issue-001" / "edition.yaml").read_text(encoding="utf-8")
     )
     has_figures = any(article.get("figures") for article in edition_data.get("articles", []))
     base = load_edition_with_records(root) if has_figures else Magazine(root).validate("issue-001")
+    # This rewrites magazine.toml wholesale, so it has to restate the engine the
+    # project was made with rather than silently dropping the caller's choice.
     (root / "magazine.toml").write_text(
         '[publication]\nname = "Test Review"\nlanguage = "en"\nlanguages = ["en", "es"]\n'
-        + RENDER_ENGINE_PIN,
+        + render_engine_table(engine),
         encoding="utf-8",
     )
     translation_dir = root / "editions" / "issue-001" / "translations" / "es"

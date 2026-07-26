@@ -433,7 +433,7 @@ def render_a5_weasyprint(
     )
 
     layout = _measure_layout(document, semantic.assets, design, plan)
-    _validate_layout_caps(layout)
+    _validate_layout_caps(edition, layout)
     _validate_cover_slots(document)
     _validate_contents_page(document)
     _validate_reader_measures(document)
@@ -2000,7 +2000,7 @@ def _rotated_plate_box(
     return left, _reader_y_points(top, box_width), box_height, box_width
 
 
-def _validate_layout_caps(layout: RenderLayout) -> None:
+def _validate_layout_caps(edition: Edition, layout: RenderLayout) -> None:
     overlong = [
         f"{article_id} ({count} pages)"
         for article_id, count in layout.article_pages.items()
@@ -2009,6 +2009,23 @@ def _validate_layout_caps(layout: RenderLayout) -> None:
     if overlong:
         raise ValidationError(
             "WeasyPrint article page cap exceeded (maximum 7): " + ", ".join(overlong)
+        )
+    # ``minimum_reader_pages`` is an editorial floor per article, declared in the
+    # edition manifest and carried through translation, so it is a rule of the
+    # publication and not of one typesetter: an article that came out shorter
+    # than its editor allowed has lost source detail whichever engine set it.
+    # ``render.py`` has enforced it since the field existed; this path did not,
+    # which made the floor disappear when WeasyPrint became the default.
+    short = [
+        f"{article.id} ({layout.article_pages[article.id]} pages, "
+        f"editorial minimum {article.minimum_reader_pages})"
+        for article in edition.articles
+        if article.id in layout.article_pages
+        and layout.article_pages[article.id] < article.minimum_reader_pages
+    ]
+    if short:
+        raise ValidationError(
+            "WeasyPrint article editorial minimum not met: " + ", ".join(short)
         )
     if layout.editorial_pages is not None and layout.editorial_pages > _MAX_EDITORIAL_PAGES:
         raise ValidationError(

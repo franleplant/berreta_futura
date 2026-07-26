@@ -1,5 +1,31 @@
+"""Build integration for the reader engines.
+
+WeasyPrint is the publication's default renderer, so :class:`DefaultEngineTests`
+writes no ``[render] engine`` key at all and exercises exactly what ``mag build``
+does out of the box.  ReportLab is the supported rollback, so
+:class:`ReportLabRollbackTests` pins it explicitly and re-runs
+:class:`ReaderEngineContract` -- the behaviour any reader engine has to keep --
+plus the assertions that are about that renderer specifically.
+
+Two things this file deliberately does *not* do.
+
+It does not read a built page's *text* with ``pypdf``.  ``pypdf`` reports the
+space characters a producer chose to write, and the two producers disagree about
+that (see :func:`page_texts`); a build test is asserting what is on the page, not
+how one producer encoded it.  ``pypdf`` is still used for what it reads
+faithfully: page count, font resources and content-stream operators.
+
+It does not pin either engine's error strings.  A page cap is a rule of the
+publication, so the refusals below are asserted as *the rule* -- the cap taken
+from the engine's own constant, the offending article named, and nothing
+published -- rather than as one renderer's wording.  The two engines phrase
+these three refusals differently, which is a wart, not a fact worth freezing.
+"""
+
 import importlib.util
 import json
+import shutil
+import subprocess
 from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -14,22 +40,109 @@ from magazine import Magazine, ValidationError
 from magazine.capture import archive_snapshot
 from magazine.media_schema import MediaCaptureReview, SourceMediaAsset
 from magazine.records import load_records
-from magazine.render import (
-    SANS,
-    SANS_BOLD,
-    SANS_MEDIUM,
-    SANS_SEMIBOLD,
-    SERIF,
-    SERIF_BOLD,
-    SERIF_DISPLAY,
-    SERIF_ITALIC,
-    _reportlab,
-)
+from magazine.render_engine import DEFAULT_ENGINE, reader_renderer
 from test_manifest import add_spanish_translation, make_project
 
 
-@unittest.skipUnless(importlib.util.find_spec("reportlab") is not None, "ReportLab not installed in this runtime")
-class RenderIntegrationTests(unittest.TestCase):
+def page_texts(pdf: Path) -> list[str]:
+    """Each page's text, with word boundaries recovered from glyph geometry.
+
+    ``pypdf`` returns the space characters the producer wrote.  ReportLab writes
+    a whole line at a time, spaces included.  WeasyPrint gives every whitespace
+    token its own text matrix and emits no space glyph between them, so a
+    ``pypdf`` read of a WeasyPrint reader returns ``Theoriginalarticle.`` -- a
+    consequence of the ``.reader-token { white-space: nowrap }`` shaping
+    scaffold, which puts one inline box around every token (plain WeasyPrint
+    output does write the spaces).  It affects the reader's prose but not its
+    preformatted code, whose spaces are inside a token rather than between two.
+
+    Poppler recovers the boundary from the glyph advance, which is what a PDF
+    viewer, a text search and ``tools/compare_pipelines.py``'s G3 gate all do.
+    Reading the page that way is what makes the same assertion mean the same
+    thing under either engine.  ``pdftoppm`` from the same package is already a
+    hard requirement of every build here (``render_critic``), so this adds no
+    dependency.
+    """
+    executable = shutil.which("pdftotext")
+    if executable is None:  # pragma: no cover - poppler is a build requirement
+        raise unittest.SkipTest("Reading a built reader requires Poppler's pdftotext")
+    completed = subprocess.run(
+        [executable, str(pdf), "-"], capture_output=True, text=True, check=True
+    )
+    pages = completed.stdout.split("\f")
+    if pages and not pages[-1]:  # pdftotext ends the last page with a form feed too
+        pages.pop()
+    return pages
+
+
+def reader_prose(pdf: Path) -> str:
+    """The whole reader as one whitespace-normalised string.
+
+    Line breaking is the one thing the two engines are *not* required to agree
+    on beyond the frozen edition, so a phrase that fits one measure may wrap in
+    the other.  Collapsing whitespace keeps ``assertIn`` an assertion about the
+    words on the page rather than about where they happened to break.
+    """
+    return " ".join(" ".join(page_texts(pdf)).split())
+
+
+def embedded_base_fonts(pages) -> set[str]:
+    """Every ``/BaseFont`` named by the given pages' resources."""
+    names: set[str] = set()
+    for page in pages:
+        resources = page.get("/Resources")
+        fonts = (resources or {}).get("/Font") or {}
+        if hasattr(fonts, "get_object"):
+            fonts = fonts.get_object()
+        for value in fonts.values():
+            names.add(str(value.get_object().get("/BaseFont")))
+    return names
+
+
+class ReaderEngineContract:
+    """What a reader engine must do, whichever engine the project selects.
+
+    Subclassed once per engine below.  ``ENGINE`` is what the project's
+    ``[render] engine`` key says; ``None`` writes no key, which is how a real
+    project selects the shipped default.  ``MAX_*`` come from the engine's own
+    constants so that each refusal is checked against the rule that engine is
+    actually enforcing -- :class:`PublicationPageRuleTests` pins the two sets of
+    constants to each other.
+    """
+
+    ENGINE: str | None = None
+    MAX_ARTICLE_PAGES: int
+    MAX_EDITORIAL_PAGES: int
+    # What the engine calls its design in a packaged manifest.  ReportLab keeps
+    # two names -- ``DESIGN_MONUMENT`` is the configuration key the dispatch
+    # passes it, ``DESIGN_LABEL`` is what it records -- while WeasyPrint uses one
+    # string for both.  This is the recorded one, from the engine's own module.
+    DESIGN_DIRECTION: str
+
+    def project(self, root: Path) -> None:
+        make_project(root, engine=self.ENGINE)
+
+    def renderer(self):
+        return reader_renderer(self.ENGINE)
+
+    def assert_build_refuses(self, root: Path, *expected: str) -> None:
+        """The build stops with a ``ValidationError`` and publishes no reader.
+
+        ``expected`` are the facts the message has to carry -- the rule's number,
+        the offending item -- never one engine's phrasing of them.  Refusing is
+        only half of it: an edition that broke a hard rule must also leave no
+        packaged reader behind for someone to pick up and print.
+        """
+        with self.assertRaises(ValidationError) as raised:
+            Magazine(root).build("issue-001")
+        message = str(raised.exception)
+        for fragment in expected:
+            self.assertRegex(message, fragment)
+        self.assertFalse(
+            (root / "output" / "issue-001" / "reader.pdf").exists(),
+            "a refused build must not publish a reader",
+        )
+
     def assert_tracked_labels_do_not_leak_character_spacing(self, path: Path) -> None:
         reader = PdfReader(str(path))
         saw_tracking = False
@@ -54,7 +167,7 @@ class RenderIntegrationTests(unittest.TestCase):
     def test_build_produces_reader_booklet_and_checksums(self):
         with TemporaryDirectory() as temporary:
             tmp_path = Path(temporary)
-            make_project(tmp_path)
+            self.project(tmp_path)
             tail_art = tmp_path / "editions" / "issue-001" / "art" / "tail.png"
             Image.new("RGB", (1536, 1024), "white").save(tail_art)
             manifest_path = tmp_path / "editions" / "issue-001" / "edition.yaml"
@@ -111,11 +224,12 @@ class RenderIntegrationTests(unittest.TestCase):
                     f"{label} text must be optically centered in the orange tab",
                 )
             self.assertIn("render-critic.json", (result.output_dir / "SHA256SUMS").read_text())
-            reader = PdfReader(str(result.reader_pdf))
-            self.assertGreaterEqual(len(reader.pages), 8)
-            self.assertEqual((reader.pages[1].extract_text() or "").strip(), "")
-            self.assertEqual((reader.pages[-2].extract_text() or "").strip(), "")
-            contents_lines = (reader.pages[2].extract_text() or "").splitlines()
+            pages = page_texts(result.reader_pdf)
+            self.assertGreaterEqual(len(PdfReader(str(result.reader_pdf)).pages), 8)
+            self.assertEqual(len(pages), len(PdfReader(str(result.reader_pdf)).pages))
+            self.assertEqual(pages[1].strip(), "")
+            self.assertEqual(pages[-2].strip(), "")
+            contents_lines = [line.strip() for line in pages[2].splitlines()]
             self.assertNotIn("01", contents_lines, "contents must not repeat the issue in a medallion")
             preflight = json.loads((result.output_dir / "preflight.json").read_text())
             self.assertTrue(preflight["reader"]["page_count_multiple_of_four"])
@@ -130,12 +244,22 @@ class RenderIntegrationTests(unittest.TestCase):
                 manifest["inputs"]["articles"][0]["tail_art"]["path"],
                 "editions/issue-001/art/tail.png",
             )
-            self.assertEqual(manifest["layout"]["maximum_article_pages"], 7)
-            self.assertEqual(manifest["layout"]["design_direction"], "A / Quiet Standard")
-            self.assertLessEqual(manifest["layout"]["article_pages"]["article"], 7)
-            self.assertEqual(manifest["layout"]["maximum_editorial_pages"], 2)
+            self.assertEqual(manifest["layout"]["maximum_article_pages"], self.MAX_ARTICLE_PAGES)
+            self.assertLessEqual(
+                manifest["layout"]["article_pages"]["article"], self.MAX_ARTICLE_PAGES
+            )
+            self.assertEqual(manifest["layout"]["maximum_editorial_pages"], self.MAX_EDITORIAL_PAGES)
             self.assertEqual(manifest["layout"]["editorial_pages"], 1)
-            reader_text = "\n".join(page.extract_text() or "" for page in PdfReader(str(result.reader_pdf)).pages)
+            # The packaged artifact has to say which renderer set it, and admit
+            # to any typography the renderer is holding down to match the other.
+            # Both come from the renderer's own identity, never from a literal.
+            renderer = self.renderer()
+            self.assertEqual(manifest["layout"]["design_direction"], self.DESIGN_DIRECTION)
+            self.assertEqual(
+                manifest["layout"].get("shaping_scaffolds"),
+                list(renderer.shaping_scaffolds) or None,
+            )
+            reader_text = reader_prose(result.reader_pdf)
             self.assertIn("A Test Editorial", reader_text)
             self.assertIn("AN ORIGINAL ARGUMENT", reader_text)
             self.assertIn("FEATURE 01", reader_text)
@@ -146,10 +270,145 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertNotIn(" ".join(("PRIVATE", "EDITION")), reader_text)
             self.assert_tracked_labels_do_not_leak_character_spacing(result.reader_pdf)
 
+    def test_build_generates_configured_spanish_reader_and_booklet_alongside_english(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.project(root)
+            add_spanish_translation(root, engine=self.ENGINE)
+
+            result = Magazine(root).build("issue-001")
+
+            self.assertEqual([item.language for item in result.languages], ["en", "es"])
+            spanish = result.output_dir / "es"
+            self.assertTrue((spanish / "reader.pdf").is_file())
+            self.assertTrue((spanish / "home" / "booklet-a4.pdf").is_file())
+            self.assertTrue((spanish / "preflight.json").is_file())
+            self.assertTrue((spanish / "edition-manifest.json").is_file())
+            self.assertTrue((spanish / "SHA256SUMS").is_file())
+            text = reader_prose(spanish / "reader.pdf")
+            self.assertIn("Índice", text)
+            self.assertIn("EDITORIAL ORIGINAL", text)
+            self.assertIn("ARTÍCULO 01", text)
+            self.assertIn("EDICIÓN FIEL", text)
+            self.assertIn("Author escribe sobre este tema para Example.", text)
+            self.assertIn("El artículo original.", text)
+            self.assertNotIn(" ".join(("PROHIBIDA", "SU", "VENTA")), text)
+            self.assertNotIn(" ".join(("EDICIÓN", "PRIVADA")), text)
+            spanish_preflight = json.loads((spanish / "preflight.json").read_text())
+            self.assertIn(
+                "No están configurados",
+                spanish_preflight["studio"]["blockers"][0],
+            )
+
+    def test_build_rejects_article_over_the_hard_article_page_cap(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.project(root)
+            edition_dir = root / "editions" / "issue-001"
+            paragraphs = [f"Substantive source paragraph {index} with enough words to occupy space." for index in range(420)]
+            (edition_dir / "articles" / "article.md").write_text(
+                "\n\n".join(paragraphs) + "\n", encoding="utf-8"
+            )
+            ledger = {
+                "schema_version": 1,
+                "source_ids": ["source-one"],
+                "content_mode": "faithful_edit",
+                "paragraphs": [
+                    {"id": f"p{index}", "kind": "p", "status": "retained", "source": text}
+                    for index, text in enumerate(paragraphs)
+                ],
+            }
+            (edition_dir / "fidelity" / "article.yaml").write_text(
+                yaml.safe_dump(ledger), encoding="utf-8"
+            )
+
+            self.assert_build_refuses(
+                root, r"\barticle\b", rf"(?<!\d){self.MAX_ARTICLE_PAGES}(?!\d)"
+            )
+
+    def test_edition_cannot_raise_the_hard_article_page_cap(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.project(root)
+            manifest_path = root / "editions" / "issue-001" / "edition.yaml"
+            manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+            manifest["format"] = {"max_article_pages": self.MAX_ARTICLE_PAGES + 1}
+            manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+
+            self.assert_build_refuses(root, "hard publication rule")
+
+    def test_build_rejects_article_below_its_editorial_page_minimum(self):
+        # minimum_reader_pages is an editorial floor declared per article and
+        # carried through translation, so it binds whichever engine sets the
+        # page.  WeasyPrint did not enforce it until this suite covered it.
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.project(root)
+            manifest_path = root / "editions" / "issue-001" / "edition.yaml"
+            manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+            manifest["articles"][0]["minimum_reader_pages"] = 2
+            manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+
+            self.assert_build_refuses(root, r"\barticle\b", "(?i)minimum", r"(?<!\d)2(?!\d)")
+
+    def test_build_rejects_editorial_over_the_hard_editorial_page_cap(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.project(root)
+            editorial = root / "editions" / "issue-001" / "editorial.md"
+            paragraphs = [
+                f"Editorial paragraph {index} makes an original argument with sufficient detail."
+                for index in range(160)
+            ]
+            editorial.write_text(
+                "---\ntitle: A Long Editorial\nbyline: The editors\n---\n\n"
+                + "\n\n".join(paragraphs),
+                encoding="utf-8",
+            )
+
+            self.assert_build_refuses(
+                root, "(?i)editorial", rf"(?<!\d){self.MAX_EDITORIAL_PAGES}(?!\d)"
+            )
+
+    def test_edition_cannot_raise_the_hard_editorial_page_cap(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.project(root)
+            manifest_path = root / "editions" / "issue-001" / "edition.yaml"
+            manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+            manifest["format"] = {"max_editorial_pages": self.MAX_EDITORIAL_PAGES + 1}
+            manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+
+            self.assert_build_refuses(root, "hard publication rule")
+
+
+@unittest.skipUnless(
+    importlib.util.find_spec("weasyprint") is not None, "WeasyPrint not installed in this runtime"
+)
+class DefaultEngineTests(ReaderEngineContract, unittest.TestCase):
+    """The engine a project gets when it says nothing: WeasyPrint.
+
+    ``ENGINE = None`` is the point of this class -- the fixture writes no
+    ``[render]`` table, so an accidental change to ``DEFAULT_ENGINE`` moves this
+    whole class onto the other renderer rather than passing silently.
+    """
+
+    from magazine.weasyprint_adapter import (  # noqa: PLC0415 - engine's own rule
+        WEASYPRINT_DESIGN as DESIGN_DIRECTION,
+        _MAX_ARTICLE_PAGES as MAX_ARTICLE_PAGES,
+        _MAX_EDITORIAL_PAGES as MAX_EDITORIAL_PAGES,
+    )
+
+    ENGINE = None
+
+    def test_the_default_is_the_engine_this_class_believes_it_is_testing(self):
+        self.assertEqual(DEFAULT_ENGINE, "weasyprint")
+        self.assertEqual(self.renderer().engine, "weasyprint")
+
     def test_signature_padding_uses_distinct_configured_codas_once_each(self):
         with TemporaryDirectory() as temporary:
             root = Path(temporary)
-            make_project(root)
+            self.project(root)
             edition_dir = root / "editions" / "issue-001"
             paragraphs = [
                 f"Substantive source paragraph {index} with enough words to occupy space."
@@ -179,10 +438,9 @@ class RenderIntegrationTests(unittest.TestCase):
 
             result = Magazine(root).build("issue-001")
 
-            reader = PdfReader(str(result.reader_pdf))
-            page_text = [page.extract_text() or "" for page in reader.pages]
-            full_text = "\n".join(page_text)
-            self.assertEqual(len(reader.pages), 16)
+            page_text = page_texts(result.reader_pdf)
+            full_text = " ".join(" ".join(page_text).split())
+            self.assertEqual(len(page_text), 16)
             self.assertEqual(full_text.count("Coda 1"), 1)
             self.assertEqual(full_text.count("Coda 2"), 1)
             self.assertEqual(full_text.count("Coda 3"), 1)
@@ -192,7 +450,7 @@ class RenderIntegrationTests(unittest.TestCase):
     def test_build_places_a_curated_opener_figure_and_audits_its_print_geometry(self):
         with TemporaryDirectory() as temporary:
             root = Path(temporary)
-            make_project(root)
+            self.project(root)
             image_path = root / "source-diagram.png"
             Image.new("RGB", (1800, 900), "white").save(image_path)
 
@@ -270,137 +528,37 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertEqual(preflight["figure_collisions"], [])
             self.assertEqual(preflight["figures"][0]["caption"], "The source diagram.")
 
-    def test_build_generates_configured_spanish_reader_and_booklet_alongside_english(self):
+    def test_reader_sets_every_page_in_the_bundled_publication_faces(self):
+        """No page may fall back to a host font.
+
+        WeasyPrint installs ``@font-face`` only for the font configuration it is
+        also laid out with; miss that and Pango silently sets the whole reader in
+        whatever fontconfig prefers, at the wrong measure.  The bundled faces are
+        embedded as ``Magazine-*`` subsets, and the spliced cover is the one page
+        that is not this renderer's work.
+        """
         with TemporaryDirectory() as temporary:
             root = Path(temporary)
-            make_project(root)
-            add_spanish_translation(root)
+            self.project(root)
 
             result = Magazine(root).build("issue-001")
 
-            self.assertEqual([item.language for item in result.languages], ["en", "es"])
-            spanish = result.output_dir / "es"
-            self.assertTrue((spanish / "reader.pdf").is_file())
-            self.assertTrue((spanish / "home" / "booklet-a4.pdf").is_file())
-            self.assertTrue((spanish / "preflight.json").is_file())
-            self.assertTrue((spanish / "edition-manifest.json").is_file())
-            self.assertTrue((spanish / "SHA256SUMS").is_file())
-            text = "\n".join(
-                page.extract_text() or ""
-                for page in PdfReader(str(spanish / "reader.pdf")).pages
+            # Pages 1-2 and the last two are the spliced cover and its blank
+            # inside faces; everything between them is this renderer's own work.
+            interior = PdfReader(str(result.reader_pdf)).pages[2:-2]
+            fonts = embedded_base_fonts(interior)
+
+            self.assertTrue(interior and fonts, "the reader embedded no fonts at all")
+            self.assertEqual(
+                {font for font in fonts if "+Magazine-" not in font},
+                set(),
+                f"a reader page fell back to a host font: {sorted(fonts)}",
             )
-            self.assertIn("Índice", text)
-            self.assertIn("EDITORIAL ORIGINAL", text)
-            self.assertIn("ARTÍCULO 01", text)
-            self.assertIn("EDICIÓN FIEL", text)
-            self.assertIn("Author escribe sobre este tema para Example.", text)
-            self.assertIn("El artículo original.", text)
-            self.assertNotIn(" ".join(("PROHIBIDA", "SU", "VENTA")), text)
-            self.assertNotIn(" ".join(("EDICIÓN", "PRIVADA")), text)
-            spanish_preflight = json.loads((spanish / "preflight.json").read_text())
-            self.assertIn(
-                "No están configurados",
-                spanish_preflight["studio"]["blockers"][0],
-            )
-
-    def test_bundled_publication_fonts_are_registered(self):
-        _, metrics, _ = _reportlab()
-
-        expected = {
-            SANS,
-            SANS_MEDIUM,
-            SANS_SEMIBOLD,
-            SANS_BOLD,
-            SERIF,
-            SERIF_ITALIC,
-            SERIF_BOLD,
-            SERIF_DISPLAY,
-        }
-        self.assertTrue(expected.issubset(set(metrics.getRegisteredFontNames())))
-
-    def test_build_rejects_article_over_seven_reader_pages(self):
-        with TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            make_project(root)
-            edition_dir = root / "editions" / "issue-001"
-            paragraphs = [f"Substantive source paragraph {index} with enough words to occupy space." for index in range(420)]
-            (edition_dir / "articles" / "article.md").write_text(
-                "\n\n".join(paragraphs) + "\n", encoding="utf-8"
-            )
-            ledger = {
-                "schema_version": 1,
-                "source_ids": ["source-one"],
-                "content_mode": "faithful_edit",
-                "paragraphs": [
-                    {"id": f"p{index}", "kind": "p", "status": "retained", "source": text}
-                    for index, text in enumerate(paragraphs)
-                ],
-            }
-            (edition_dir / "fidelity" / "article.yaml").write_text(
-                yaml.safe_dump(ledger), encoding="utf-8"
-            )
-
-            with self.assertRaisesRegex(ValidationError, "hard cap is 7"):
-                Magazine(root).build("issue-001")
-
-    def test_edition_cannot_raise_the_hard_article_page_cap(self):
-        with TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            make_project(root)
-            manifest_path = root / "editions" / "issue-001" / "edition.yaml"
-            manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
-            manifest["format"] = {"max_article_pages": 8}
-            manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
-
-            with self.assertRaisesRegex(ValidationError, "hard publication rule"):
-                Magazine(root).build("issue-001")
-
-    def test_build_rejects_article_below_its_editorial_page_minimum(self):
-        with TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            make_project(root)
-            manifest_path = root / "editions" / "issue-001" / "edition.yaml"
-            manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
-            manifest["articles"][0]["minimum_reader_pages"] = 2
-            manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
-
-            with self.assertRaisesRegex(ValidationError, "editorial minimum is 2"):
-                Magazine(root).build("issue-001")
-
-    def test_build_rejects_editorial_over_two_reader_pages(self):
-        with TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            make_project(root)
-            editorial = root / "editions" / "issue-001" / "editorial.md"
-            paragraphs = [
-                f"Editorial paragraph {index} makes an original argument with sufficient detail."
-                for index in range(160)
-            ]
-            editorial.write_text(
-                "---\ntitle: A Long Editorial\nbyline: The editors\n---\n\n"
-                + "\n\n".join(paragraphs),
-                encoding="utf-8",
-            )
-
-            with self.assertRaisesRegex(ValidationError, "Editorial spans.*hard cap is 2"):
-                Magazine(root).build("issue-001")
-
-    def test_edition_cannot_raise_the_hard_editorial_page_cap(self):
-        with TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            make_project(root)
-            manifest_path = root / "editions" / "issue-001" / "edition.yaml"
-            manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
-            manifest["format"] = {"max_editorial_pages": 3}
-            manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
-
-            with self.assertRaisesRegex(ValidationError, "hard publication rule"):
-                Magazine(root).build("issue-001")
 
     def test_sections_edition_packages_explicit_blocked_fidelity_status(self):
         with TemporaryDirectory() as temporary:
             tmp_path = Path(temporary)
-            make_project(tmp_path)
+            self.project(tmp_path)
             edition_dir = tmp_path / "editions" / "issue-001"
             (edition_dir / "section.md").write_text("A source-safe section.", encoding="utf-8")
             fidelity_dir = edition_dir / "fidelity"
@@ -431,7 +589,7 @@ class RenderIntegrationTests(unittest.TestCase):
     def test_articles_edition_can_append_backmatter_sections(self):
         with TemporaryDirectory() as temporary:
             tmp_path = Path(temporary)
-            make_project(tmp_path)
+            self.project(tmp_path)
             edition_dir = tmp_path / "editions" / "issue-001"
             (edition_dir / "production-note.md").write_text(
                 "# Production note\n\nMade with care.",
@@ -450,14 +608,14 @@ class RenderIntegrationTests(unittest.TestCase):
 
             result = Magazine(tmp_path).build("issue-001")
 
-            text = "\n".join(page.extract_text() or "" for page in PdfReader(str(result.reader_pdf)).pages)
+            text = reader_prose(result.reader_pdf)
             self.assertIn("The original article.", text)
             self.assertIn("Made with care.", text)
 
     def test_colophon_sections_are_rejected(self):
         with TemporaryDirectory() as temporary:
             tmp_path = Path(temporary)
-            make_project(tmp_path)
+            self.project(tmp_path)
             edition_dir = tmp_path / "editions" / "issue-001"
             (edition_dir / "legacy.md").write_text("Legacy colophon.", encoding="utf-8")
             manifest_path = edition_dir / "edition.yaml"
@@ -473,7 +631,7 @@ class RenderIntegrationTests(unittest.TestCase):
     def test_fenced_code_is_monospaced_line_preserving_and_safely_paginated(self):
         with TemporaryDirectory() as temporary:
             tmp_path = Path(temporary)
-            make_project(tmp_path)
+            self.project(tmp_path)
             edition_dir = tmp_path / "editions" / "issue-001"
             code = "\n".join(f"    call_{index:03d}();" for index in range(120))
             (edition_dir / "articles" / "article.md").write_text(
@@ -493,9 +651,88 @@ class RenderIntegrationTests(unittest.TestCase):
 
             result = Magazine(tmp_path).build("issue-001")
 
-            reader = PdfReader(str(result.reader_pdf))
-            text = "\n".join(page.extract_text() or "" for page in reader.pages)
-            self.assertGreaterEqual(len(reader.pages), 8)
-            self.assertIn("call_000();", text)
-            self.assertIn("call_119();", text)
-            self.assertIn("After code.", text)
+            pages = page_texts(result.reader_pdf)
+            self.assertGreaterEqual(len(pages), 8)
+            # Every source line survives as its own printed line, in order, with
+            # none dropped at the three page breaks the fence spans.  That is
+            # what "line preserving" and "safely paginated" mean for a code
+            # block, and it is what re-flowing the fence would destroy.  The
+            # leading whitespace is deliberately not asserted here: extraction
+            # reports a line's column on the page, not the indent in the source.
+            printed = [line.strip() for page in pages for line in page.splitlines()]
+            expected = [f"call_{index:03d}();" for index in range(120)]
+            self.assertEqual([line for line in printed if "call_" in line], expected)
+            self.assertIn("After code.", reader_prose(result.reader_pdf))
+
+
+@unittest.skipUnless(
+    importlib.util.find_spec("reportlab") is not None, "ReportLab not installed in this runtime"
+)
+class ReportLabRollbackTests(ReaderEngineContract, unittest.TestCase):
+    """The rollback engine, pinned explicitly, on the same contract.
+
+    This is the minority set on purpose: ``engine = "reportlab"`` is a supported
+    escape hatch that has to keep packaging a complete edition and keep refusing
+    the same manuscripts, but the publication is not developed against it.
+    """
+
+    from magazine.render import (  # noqa: PLC0415 - engine's own rule
+        DESIGN_LABEL as DESIGN_DIRECTION,
+        MAX_ARTICLE_PAGES,
+        MAX_EDITORIAL_PAGES,
+    )
+
+    ENGINE = "reportlab"
+
+    def test_the_rollback_is_not_silently_the_default(self):
+        self.assertNotEqual(DEFAULT_ENGINE, self.ENGINE)
+        self.assertEqual(self.renderer().engine, self.ENGINE)
+
+    def test_bundled_publication_fonts_are_registered(self):
+        # The WeasyPrint counterpart of this -- that a built reader embeds only
+        # the bundled Magazine-* subsets -- is
+        # DefaultEngineTests.test_reader_sets_every_page_in_the_bundled_publication_faces.
+        from magazine.render import (
+            SANS,
+            SANS_BOLD,
+            SANS_MEDIUM,
+            SANS_SEMIBOLD,
+            SERIF,
+            SERIF_BOLD,
+            SERIF_DISPLAY,
+            SERIF_ITALIC,
+            _reportlab,
+        )
+
+        _, metrics, _ = _reportlab()
+
+        expected = {
+            SANS,
+            SANS_MEDIUM,
+            SANS_SEMIBOLD,
+            SANS_BOLD,
+            SERIF,
+            SERIF_ITALIC,
+            SERIF_BOLD,
+            SERIF_DISPLAY,
+        }
+        self.assertTrue(expected.issubset(set(metrics.getRegisteredFontNames())))
+
+
+class PublicationPageRuleTests(unittest.TestCase):
+    """The page caps are the publication's, so both engines must hold the same ones.
+
+    Each engine keeps its own constant (``render.MAX_ARTICLE_PAGES`` and
+    ``weasyprint_adapter._MAX_ARTICLE_PAGES``) and the classes above assert each
+    refusal against the engine's own.  That is only sound while the two agree,
+    which is what this pins -- a cap raised on one engine alone is a rollback
+    that changes what the publication accepts.
+    """
+
+    def test_both_engines_enforce_the_same_page_caps(self):
+        from magazine import render, weasyprint_adapter
+
+        self.assertEqual(render.MAX_ARTICLE_PAGES, weasyprint_adapter._MAX_ARTICLE_PAGES)
+        self.assertEqual(render.MAX_EDITORIAL_PAGES, weasyprint_adapter._MAX_EDITORIAL_PAGES)
+        self.assertEqual(render.MAX_ARTICLE_PAGES, 7)
+        self.assertEqual(render.MAX_EDITORIAL_PAGES, 2)

@@ -680,7 +680,30 @@ def test_page_caps_fail_after_measured_layout_and_manifest_caps_are_fixed(tmp_pa
         _validate_caps(replace(edition, raw={"format": {"max_article_pages": 9}}))
     too_long = RenderLayout({}, {"article": 8}, 3, WEASYPRINT_DESIGN, None, {}, {})
     with pytest.raises(ValidationError, match="article page cap"):
-        _validate_layout_caps(too_long)
+        _validate_layout_caps(edition, too_long)
+
+
+def test_an_article_below_its_editorial_minimum_is_refused_like_an_overlong_one(
+    tmp_path: Path,
+):
+    """``minimum_reader_pages`` is the edition's floor, not one typesetter's.
+
+    It is declared per article in the manifest and carried through translation,
+    and ``render.py`` has always refused a build that falls under it.  This path
+    did not, so the floor silently stopped applying when WeasyPrint became the
+    default engine.
+    """
+    article = replace(_edition(tmp_path).articles[0], minimum_reader_pages=3)
+    edition = replace(_edition(tmp_path), articles=(article,))
+
+    def layout(pages: int) -> RenderLayout:
+        return RenderLayout({}, {article.id: pages}, 1, WEASYPRINT_DESIGN, None, {}, {})
+
+    with pytest.raises(ValidationError, match="editorial minimum 3") as raised:
+        _validate_layout_caps(edition, layout(2))
+    assert article.id in str(raised.value)
+    _validate_layout_caps(edition, layout(3))
+    _validate_layout_caps(edition, layout(4))
 
 
 def test_dependency_failure_has_an_actionable_message(monkeypatch):
