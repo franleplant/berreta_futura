@@ -95,13 +95,43 @@ class RendererIdentityTests(unittest.TestCase):
     def test_rollback_engine_never_imports_the_weasyprint_path(self):
         # The rollback is only real if choosing ReportLab pulls in none of the
         # HTML path: the adapter could be deleted and a build would still run.
-        # (The converse does not hold: weasyprint_adapter reuses RenderLayout
-        # from render.py, a dependency that predates this switch.)
         probe = (
             "import sys;"
             "from magazine.render_engine import reader_renderer;"
             "reader_renderer('reportlab');"
             "assert 'magazine.weasyprint_adapter' not in sys.modules"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", probe], capture_output=True, text=True
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_production_adapter_never_imports_the_legacy_typesetter(self):
+        # The converse isolation: the production engine's module must not drag
+        # the 2400-line ReportLab typesetter into the process.  The layout
+        # dataclasses both engines return live in the neutral reader_layout
+        # module precisely so this import cannot creep back in.  A fresh
+        # interpreter is the only honest probe -- the test process itself has
+        # long since imported magazine.render.
+        probe = (
+            "import sys;"
+            "import magazine.weasyprint_adapter;"
+            "assert 'magazine.render' not in sys.modules, "
+            "'importing the WeasyPrint adapter pulled in magazine.render'"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", probe], capture_output=True, text=True
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_selecting_weasyprint_never_imports_the_legacy_typesetter(self):
+        probe = (
+            "import sys;"
+            "from magazine.render_engine import reader_renderer;"
+            "reader_renderer('weasyprint');"
+            "assert 'magazine.render' not in sys.modules"
         )
         result = subprocess.run(
             [sys.executable, "-c", probe], capture_output=True, text=True

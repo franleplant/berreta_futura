@@ -82,6 +82,48 @@ class FidelityTests(unittest.TestCase):
         self.assertEqual(report.modified_edited_words, 2)
         self.assertEqual(report.editorial_addition_words, 2)
 
+    def test_ledger_compares_against_lists_breaks_and_quotes_as_rendered(self):
+        """The gate reads ordered lists, nested lists, ``---`` and quotes as the reader does.
+
+        The old line scanner folded ``1. First point`` into a paragraph and
+        counted the ``---`` as a visible word; the renderer printed an ``<ol>``
+        and drew the break as furniture.  The ledger carries the visible words
+        only -- no list markers, nothing for the thematic break -- and matches.
+        """
+        path = self.root / "ledger.yaml"
+        manuscript = self.root / "article.md"
+        write_ledger(path, [
+            {"id": "o1", "kind": "ordered", "status": "retained", "source": "First point"},
+            {"id": "o2", "kind": "ordered", "status": "retained", "source": "Second point"},
+            {"id": "b1", "kind": "bullet", "status": "retained", "source": "Outer point"},
+            {"id": "b2", "kind": "bullet", "status": "retained", "source": "Inner point"},
+            {"id": "q1", "kind": "quote", "status": "retained", "source": "A quoted claim."},
+            {"id": "q2", "kind": "quote", "status": "retained", "source": "Its continuation."},
+        ])
+        manuscript.write_text(
+            "1. First point\n2. Second point\n\n---\n\n"
+            "- Outer point\n  - Inner point\n\n"
+            "> A quoted claim.\n>\n> Its continuation.\n",
+            encoding="utf-8",
+        )
+
+        report = fidelity_report(path, manuscript)
+
+        self.assertEqual(report.manuscript_blocks, 6)
+        self.assertEqual(report.ledger_blocks, 6)
+
+    def test_an_ordered_item_missing_from_the_ledger_is_refused(self):
+        """An ordered list can no longer hide words from the word-stream gate."""
+        path = self.root / "ledger.yaml"
+        manuscript = self.root / "article.md"
+        write_ledger(path, [
+            {"id": "o1", "kind": "ordered", "status": "retained", "source": "First point"},
+        ])
+        manuscript.write_text("1. First point\n2. Second point\n", encoding="utf-8")
+
+        with self.assertRaisesRegex(ValidationError, "diverges from ledger-derived edited text"):
+            fidelity_report(path, manuscript)
+
     def test_code_indentation_and_line_structure_are_substantive(self):
         path = self.root / "ledger.yaml"
         manuscript = self.root / "article.md"
@@ -96,6 +138,19 @@ class FidelityTests(unittest.TestCase):
         with self.assertRaisesRegex(
             ValidationError,
             r"code block 1 diverges.*code-1.*line 2.*indentation are substantive",
+        ):
+            fidelity_report(path, manuscript)
+
+    def test_manuscript_with_unsupported_vocabulary_is_refused_naming_the_file(self):
+        """A parse failure is a gate refusal that identifies the manuscript."""
+        path = self.root / "ledger.yaml"
+        manuscript = self.root / "article.md"
+        write_ledger(path, [{"id": "p1", "kind": "p", "status": "retained", "source": "A paragraph."}])
+        manuscript.write_text("A paragraph with <span>x</span> inline HTML.\n", encoding="utf-8")
+
+        with self.assertRaisesRegex(
+            ValidationError,
+            r"article\.md: Unsupported Markdown inline token: html_inline",
         ):
             fidelity_report(path, manuscript)
 

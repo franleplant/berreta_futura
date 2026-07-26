@@ -1,7 +1,7 @@
+import dataclasses
 from types import SimpleNamespace
 
 import pytest
-import magazine.render as render_module
 
 from magazine import ValidationError
 from magazine.cover import _cover_date
@@ -15,7 +15,6 @@ from magazine.render import (
     RUNNING_HEADER_SIGNAL_LENGTH,
     SIGNAL_ORANGE,
     TEXT_TOP_INSET,
-    FrameUsage,
     _Typesetter,
     _article_tail_ornament_box,
     _content_mode_label,
@@ -23,8 +22,6 @@ from magazine.render import (
     _opening_sentence,
     _plain,
     _section_label,
-    _terminal_balance_plans,
-    ArticleBalancePlan,
 )
 
 
@@ -281,72 +278,24 @@ def test_curated_figure_anchor_must_match_one_heading_exactly():
         typesetter._validated_figures([("h2", "Section")], (figure,), "article")
 
 
-def test_terminal_balance_quantizes_a_stranded_tail_without_changing_page_count():
-    height = 511.2756
-    layout = SimpleNamespace(
-        article_pages={"article": 5},
-        article_frame_usage={
-            "article": (
-                FrameUsage(4, 0, height, height),
-                FrameUsage(5, 0, 2 * BODY_LEADING, height),
-            )
-        },
-    )
+def test_render_layout_terminal_balance_is_a_documented_always_empty_legacy_field():
+    """The terminal balancer is gone; the manifest key it fed must stay ``{}``.
 
-    plan = _terminal_balance_plans(layout)["article"]
+    ``compiler.py`` writes ``layout.article_terminal_balance`` from this field
+    into ``edition-manifest.json``: every manifest written since the balancer
+    was pinned off carries the key as ``{}``, while edition 001's frozen
+    released artifact retains its historical non-empty values -- so the field
+    survives, permanently empty, rather than changing the bytes of otherwise
+    identical rebuilds.  No planner remains in either engine.
+    """
+    import magazine.reader_layout as reader_layout
+    import magazine.render as render
 
-    assert plan.page_count == 5
-    assert plan.frame_height < height
-    assert abs(plan.frame_height / BODY_LEADING - round(plan.frame_height / BODY_LEADING)) < 1e-9
-
-
-def test_terminal_balance_leaves_an_already_substantial_final_page_alone():
-    height = 511.2756
-    layout = SimpleNamespace(
-        article_pages={"article": 5},
-        article_frame_usage={
-            "article": (
-                FrameUsage(4, 0, height, height),
-                FrameUsage(5, 0, height, height),
-            )
-        },
-    )
-
-    assert _terminal_balance_plans(layout) == {}
-
-
-def test_terminal_balance_can_relax_a_transient_over_cap_draft(monkeypatch):
-    height = 511.2756
-    probe = SimpleNamespace(
-        toc={"article": 5},
-        article_pages={"article": 7},
-        article_frame_usage={
-            "article": (
-                FrameUsage(6, 0, height, height),
-                FrameUsage(6, 1, height, height),
-                FrameUsage(7, 0, 2 * BODY_LEADING, height),
-                FrameUsage(7, 1, 0, height),
-            )
-        },
-    )
-    monkeypatch.setattr(
-        render_module,
-        "_terminal_balance_plans",
-        lambda layout: {"article": ArticleBalancePlan(7, 8 * BODY_LEADING)},
-    )
-    calls = []
-
-    def fake_render_pass(target, edition, toc, **kwargs):
-        calls.append(kwargs["enforce_page_caps"])
-        page_count = 8 if len(calls) == 1 else 7
-        return SimpleNamespace(article_pages={"article": page_count})
-
-    monkeypatch.setattr(render_module, "_render_pass", fake_render_pass)
-
-    plans, draft = render_module._balanced_draft(
-        SimpleNamespace(), probe, design="monument"
-    )
-
-    assert calls == [False, False]
-    assert draft.article_pages == {"article": 7}
-    assert plans["article"].frame_height == 9 * BODY_LEADING
+    assert "article_terminal_balance" in {
+        field.name for field in dataclasses.fields(reader_layout.RenderLayout)
+    }
+    for module in (render, reader_layout):
+        assert not any(
+            "terminal_balance" in name.lower() and name != "article_terminal_balance"
+            for name in vars(module)
+        ), f"{module.__name__} still carries terminal-balance planning code"

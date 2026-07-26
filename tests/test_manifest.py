@@ -499,3 +499,140 @@ class ManifestTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValidationError, "caption pin is stale"):
             load_translation(self.root.resolve(), base, "es")
+
+    STRUCTURED_ARTICLE = (
+        "The original article.\n\n"
+        "1. First point\n2. Second point\n\n"
+        "---\n\n"
+        "- Outer point\n  - Inner point\n\n"
+        "> A quoted claim.\n>\n> Its continuation.\n"
+    )
+    STRUCTURED_TRANSLATION = (
+        "El artículo original.\n\n"
+        "1. Primer punto\n2. Segundo punto\n\n"
+        "---\n\n"
+        "- Punto exterior\n  - Punto interior\n\n"
+        "> Una afirmación citada.\n>\n> Su continuación.\n"
+    )
+
+    def _project_with_structured_article(self):
+        """A project whose article uses edition 003's vocabulary: ordered and
+        nested lists, a thematic break, and a multi-child block quote."""
+        make_project(self.root)
+        article = self.root / "editions" / "issue-001" / "articles" / "article.md"
+        article.write_text(self.STRUCTURED_ARTICLE, encoding="utf-8")
+        ledger = self.root / "editions" / "issue-001" / "fidelity" / "article.yaml"
+        ledger.write_text(yaml.safe_dump({
+            "schema_version": 1,
+            "source_ids": ["source-one"],
+            "paragraphs": [
+                {"status": "retained", "source": "The original article."},
+                {"kind": "ordered", "status": "retained", "source": "First point"},
+                {"kind": "ordered", "status": "retained", "source": "Second point"},
+                {"kind": "bullet", "status": "retained", "source": "Outer point"},
+                {"kind": "bullet", "status": "retained", "source": "Inner point"},
+                {"kind": "quote", "status": "retained", "source": "A quoted claim."},
+                {"kind": "quote", "status": "retained", "source": "Its continuation."},
+            ],
+        }), encoding="utf-8")
+        add_spanish_translation(self.root)
+        return self.root / "editions" / "issue-001" / "translations" / "es" / "articles" / "article.md"
+
+    def _structured_base(self):
+        # ``Magazine.validate`` itself validates every configured translation,
+        # so the refusal tests load the base edition directly and point the
+        # translation gate at it.
+        return load_edition(
+            self.root.resolve(), "issue-001", {"source-one"}, publication_name="Test Review"
+        )
+
+    def test_translation_preserving_lists_breaks_and_quotes_validates(self):
+        translated = self._project_with_structured_article()
+        translated.write_text(self.STRUCTURED_TRANSLATION, encoding="utf-8")
+
+        # The full validation gate, translations included, accepts it.
+        edition = Magazine(self.root).validate("issue-001")
+
+        localized = load_translation(self.root.resolve(), self._structured_base(), "es")
+        self.assertEqual(edition.articles[0].id, "article")
+        self.assertEqual(localized.articles[0].title, "Artículo")
+
+    def test_translation_flattening_an_ordered_list_into_prose_is_refused(self):
+        # The historical blind spot: the old line scanner read `1. …` as a
+        # paragraph, so a translation could fold the list into prose and the
+        # reader would print an <ol> in one language and a <p> in the other.
+        translated = self._project_with_structured_article()
+        translated.write_text(
+            self.STRUCTURED_TRANSLATION.replace(
+                "1. Primer punto\n2. Segundo punto", "Primer punto. Segundo punto."
+            ),
+            encoding="utf-8",
+        )
+
+        with self.assertRaisesRegex(
+            ValidationError, "does not preserve the source Markdown block structure"
+        ):
+            load_translation(self.root.resolve(), self._structured_base(), "es")
+
+    def test_translation_dropping_a_thematic_break_is_refused(self):
+        translated = self._project_with_structured_article()
+        translated.write_text(
+            self.STRUCTURED_TRANSLATION.replace("---\n\n", ""), encoding="utf-8"
+        )
+
+        with self.assertRaisesRegex(
+            ValidationError, "does not preserve the source Markdown block structure"
+        ):
+            load_translation(self.root.resolve(), self._structured_base(), "es")
+
+    def test_translation_regrouping_a_nested_list_is_refused(self):
+        translated = self._project_with_structured_article()
+        translated.write_text(
+            self.STRUCTURED_TRANSLATION.replace(
+                "- Punto exterior\n  - Punto interior",
+                "- Punto exterior\n- Punto interior",
+            ),
+            encoding="utf-8",
+        )
+
+        with self.assertRaisesRegex(
+            ValidationError, "does not preserve the source Markdown block structure"
+        ):
+            load_translation(self.root.resolve(), self._structured_base(), "es")
+
+    def test_translation_with_unsupported_vocabulary_is_refused_naming_the_file(self):
+        # A parse failure in the translated manuscript surfaces as a collected
+        # gate error that names the malformed side and its path.
+        translated = self._project_with_structured_article()
+        translated.write_text(
+            self.STRUCTURED_TRANSLATION + "\nUn párrafo con <span>x</span> HTML.\n",
+            encoding="utf-8",
+        )
+
+        with self.assertRaisesRegex(
+            ValidationError,
+            r"Translation 'es' article article translation .*translations.es.articles.article\.md "
+            r"cannot be parsed as a publication document: "
+            r"Unsupported Markdown inline token: html_inline",
+        ):
+            load_translation(self.root.resolve(), self._structured_base(), "es")
+
+    def test_malformed_english_source_is_refused_naming_the_file(self):
+        # The gate parses each side separately, so an unparseable English
+        # source is reported with its own path rather than blamed on the
+        # translation.
+        translated = self._project_with_structured_article()
+        translated.write_text(self.STRUCTURED_TRANSLATION, encoding="utf-8")
+        base = self._structured_base()
+        base.articles[0].manuscript.write_text(
+            self.STRUCTURED_ARTICLE + "\nA paragraph with <span>x</span> HTML.\n",
+            encoding="utf-8",
+        )
+
+        with self.assertRaisesRegex(
+            ValidationError,
+            r"Translation 'es' article article English source .*articles.article\.md "
+            r"cannot be parsed as a publication document: "
+            r"Unsupported Markdown inline token: html_inline",
+        ):
+            load_translation(self.root.resolve(), base, "es")

@@ -17,7 +17,7 @@ import magazine.weasyprint_adapter as adapter
 from magazine.errors import ValidationError
 from magazine.html_edition import HtmlAsset, render_html_edition
 from magazine.manifest import Edition
-from magazine.render import RenderLayout
+from magazine.reader_layout import RenderLayout
 from magazine.weasyprint_adapter import (
     WEASYPRINT_DESIGN,
     _apply_source_codes,

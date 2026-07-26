@@ -21,6 +21,10 @@ Two properties are load-bearing here.
 **Neither path depends on the other.**  Each renderer is imported lazily, inside
 the factory that builds it, so selecting one engine never imports the other's
 module.  Deleting the unselected renderer would leave the selected one working.
+The layout facts both engines return (``RenderLayout``, ``FigurePlacement``,
+``FrameUsage``) live in the neutral ``reader_layout`` module, owned by neither
+engine, precisely so this stays true; ``tests/test_render_engine.py`` probes
+both directions in fresh interpreters.
 
 **Neither path is handed the other's design.**  ``design`` is not a shared
 vocabulary: ``render_a5`` accepts only ``"monument"`` and
@@ -44,7 +48,7 @@ from .errors import ValidationError
 
 if TYPE_CHECKING:  # pragma: no cover - typing only, keeps both paths unimported
     from .manifest import Edition
-    from .render import RenderLayout
+    from .reader_layout import RenderLayout
 
 
 DEFAULT_ENGINE = "weasyprint"

@@ -26,8 +26,8 @@ from xml.etree.ElementTree import Element, SubElement
 from .errors import DependencyError, ValidationError
 from .html_edition import HtmlAsset, render_html_edition
 from .manifest import Edition
+from .reader_layout import FigurePlacement, RenderLayout
 from .reader_text import educate_reader_quotes, fold_reader_characters
-from .render import FigurePlacement, RenderLayout
 
 
 WEASYPRINT_DESIGN = "WeasyPrint / A5 fold proof"
@@ -2978,6 +2978,9 @@ def _measure_layout(
         editorial_pages=len(editorial_pages) if editorial_pages else None,
         design=design,
         cover_art_size_points=None,
+        # CSS owns its own fragmentation, so this engine has no frames to
+        # measure; the balance field is permanently empty for every engine.
+        # See reader_layout.RenderLayout.
         article_frame_usage={},
         article_terminal_balance={},
         figure_placements=placements,

@@ -4,8 +4,10 @@ from dataclasses import dataclass
 import re
 from pathlib import Path
 
+from .document_structure import visible_blocks
 from .errors import ValidationError
 from .io import load_structured
+from .publication_document import DocumentParseError, parse_publication_document
 
 STATUSES = {"retained", "boilerplate_removed", "substantive_cut", "modified", "editorial_addition"}
 CONTENT_MODES = {"faithful_edit", "faithful_synthesis", "selected_extracts", "original_synthesis"}
@@ -121,14 +123,6 @@ _REPORT_LABELS = {
 }
 
 
-def _strip_frontmatter(text: str) -> str:
-    if text.startswith("---\n"):
-        _, separator, body = text.partition("\n---\n")
-        if separator:
-            return body
-    return text
-
-
 def _visible_prose(text: str) -> str:
     """Return reader-visible prose, ignoring Markdown presentation syntax."""
     text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
@@ -149,51 +143,31 @@ def _visible_code(text: str) -> str:
 def _manuscript_blocks(path: Path) -> list[tuple[str, str]]:
     """Parse the source-article portion of a manuscript into visible blocks.
 
-    YAML frontmatter is production metadata, while title and author are supplied by
-    the edition manifest during rendering. Neither is source-article content.
-    """
-    text = _strip_frontmatter(path.read_text(encoding="utf-8"))
-    blocks: list[tuple[str, str]] = []
-    paragraph: list[str] = []
-    code: list[str] | None = None
+    The blocks come from the same CommonMark parse the renderer typesets
+    (:func:`magazine.publication_document.parse_publication_document`), so the
+    gate sees ordered lists, nested lists, block quotes and thematic breaks
+    exactly as the printed page does.  YAML frontmatter is production metadata,
+    while title and author are supplied by the edition manifest during
+    rendering; neither is source-article content, and the parser removes it.
 
-    def flush_paragraph() -> None:
-        if not paragraph:
-            return
-        first = paragraph[0].lstrip()
-        kind = "p"
-        if re.match(r"^#{1,6}\s+", first):
-            kind = "h" + str(len(first) - len(first.lstrip("#")))
-            paragraph[0] = re.sub(r"^#{1,6}\s+", "", first)
-        elif first.startswith("> "):
-            kind = "quote"
-            paragraph[0] = first[2:]
-        elif re.match(r"^[-*]\s+", first):
-            kind = "bullet"
-            paragraph[0] = re.sub(r"^[-*]\s+", "", first)
-        value = _visible_prose("\n".join(paragraph))
-        paragraph.clear()
+    Ledger text is raw Markdown-flavoured prose normalized by
+    :func:`_visible_prose`, so the manuscript's flattened text goes through the
+    same normalization -- symmetric folding is what makes the word streams
+    comparable.  List markers and thematic breaks contribute no words: the
+    renderer draws them as furniture, and the ledger never carries them.
+    """
+    try:
+        document = parse_publication_document(path.read_text(encoding="utf-8"))
+    except DocumentParseError as exc:
+        raise ValidationError(f"{path}: {exc}") from exc
+    blocks: list[tuple[str, str]] = []
+    for kind, text in visible_blocks(document.blocks):
+        if kind == "code":
+            blocks.append((kind, _visible_code(text)))
+            continue
+        value = _visible_prose(text)
         if value:
             blocks.append((kind, value))
-
-    for line in text.splitlines():
-        if code is not None:
-            if line.strip().startswith("```"):
-                blocks.append(("code", _visible_code("\n".join(code))))
-                code = None
-            else:
-                code.append(line)
-            continue
-        if line.strip().startswith("```"):
-            flush_paragraph()
-            code = []
-        elif not line.strip():
-            flush_paragraph()
-        else:
-            paragraph.append(line)
-    if code is not None:
-        blocks.append(("code", _visible_code("\n".join(code))))
-    flush_paragraph()
     return blocks
 
 

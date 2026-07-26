@@ -9,9 +9,11 @@ from typing import TYPE_CHECKING, Any, Mapping
 
 import yaml
 
+from .document_structure import block_signature
 from .errors import ValidationError
 from .io import load_structured, safe_project_path
 from .media_schema import Figure, localize_figures, resolve_figures
+from .publication_document import DocumentParseError, parse_publication_document
 
 if TYPE_CHECKING:
     from .records import SourceRecord
@@ -647,59 +649,17 @@ def _edition_copy_sha256(edition: Edition) -> str:
 
 
 def _markdown_signature(path: Path) -> list[str]:
-    """Return reader-visible block kinds without coupling the manifest to rendering."""
-    text = path.read_text(encoding="utf-8")
-    if text.startswith("---\n") and "\n---\n" in text:
-        _, _, text = text[4:].partition("\n---\n")
-    signature: list[str] = []
-    paragraph = False
-    in_code = False
-    for line in text.splitlines():
-        stripped = line.strip()
-        if stripped.startswith("```"):
-            if paragraph:
-                signature.append("body")
-                paragraph = False
-            if in_code:
-                signature.append("code")
-            in_code = not in_code
-            continue
-        if in_code:
-            continue
-        if not stripped:
-            if paragraph:
-                signature.append("body")
-                paragraph = False
-        elif stripped.startswith("### "):
-            if paragraph:
-                signature.append("body")
-                paragraph = False
-            signature.append("h3")
-        elif stripped.startswith("## "):
-            if paragraph:
-                signature.append("body")
-                paragraph = False
-            signature.append("h2")
-        elif stripped.startswith("# "):
-            if paragraph:
-                signature.append("body")
-                paragraph = False
-            signature.append("h1")
-        elif re.match(r"^[-*] ", stripped):
-            if paragraph:
-                signature.append("body")
-                paragraph = False
-            signature.append("bullet")
-        elif stripped.startswith("> "):
-            if paragraph:
-                signature.append("body")
-                paragraph = False
-            signature.append("quote")
-        else:
-            paragraph = True
-    if paragraph:
-        signature.append("body")
-    return signature
+    """Return the manuscript's block structure as the renderer sees it.
+
+    The signature is derived from the same CommonMark parse the reader
+    typesets, so a translation is held to the source's *rendered* structure --
+    ordered lists with their start numbers, nested lists, block quotes with
+    their children, and thematic breaks -- not to a smaller Markdown a
+    line scanner happens to know.
+    """
+    return block_signature(
+        parse_publication_document(path.read_text(encoding="utf-8")).blocks
+    )
 
 
 def _validate_translation_file(
@@ -711,13 +671,26 @@ def _validate_translation_file(
 ) -> None:
     if pinned_source_sha256 != _sha256(source):
         errors.append(f"{label} is stale: source_sha256 does not match {source.name}")
-    source_signature = _markdown_signature(source)
-    translation_signature = _markdown_signature(translation)
-    if source_signature != translation_signature:
+    source_signature: list[str] | None = None
+    translation_signature: list[str] | None = None
+    try:
+        source_signature = _markdown_signature(source)
+    except DocumentParseError as exc:
         errors.append(
-            f"{label} does not preserve the source Markdown block structure "
-            f"({len(source_signature)} source blocks, {len(translation_signature)} translated blocks)"
+            f"{label} English source {source} cannot be parsed as a publication document: {exc}"
         )
+    try:
+        translation_signature = _markdown_signature(translation)
+    except DocumentParseError as exc:
+        errors.append(
+            f"{label} translation {translation} cannot be parsed as a publication document: {exc}"
+        )
+    if source_signature is not None and translation_signature is not None:
+        if source_signature != translation_signature:
+            errors.append(
+                f"{label} does not preserve the source Markdown block structure "
+                f"({len(source_signature)} source blocks, {len(translation_signature)} translated blocks)"
+            )
     source_links, source_inline_code, source_fenced_code = _markdown_invariants(source)
     translated_links, translated_inline_code, translated_fenced_code = _markdown_invariants(
         translation

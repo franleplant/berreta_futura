@@ -68,8 +68,13 @@ direction and is consulted only when that engine is selected. Switching engines
 is therefore one key, not two, in both directions.
 
 The two engines also stay independent: each is imported lazily inside its own
-factory, so a ReportLab build never imports `weasyprint_adapter`, and neither
-module has gained a reference to the other.
+factory, so a ReportLab build never imports `weasyprint_adapter` and a
+WeasyPrint build never imports `render`. The layout dataclasses both engines
+return (`RenderLayout`, `FigurePlacement`, `FrameUsage`) live in the neutral
+`reader_layout` module — `weasyprint_adapter` used to import them from
+`render.py`, which eagerly loaded the whole legacy typesetter and made the
+isolation claim false. `tests/test_render_engine.py` probes both directions in
+fresh interpreters.
 
 ### What changes in the built package
 
@@ -621,11 +626,21 @@ positionally instead.
   18.5 / 8.5. The CSS uses the drawn sizes. A heading whose 18.5pt width falls
   between 333.008pt and ~352pt wraps in CSS but not in ReportLab. Not exercised
   by edition 002.
-- **Terminal balance is not reproduced.** The adapter hardcodes
-  `frame_bottom = 45.0`, but `render.py` raises it for the last two pages of any
-  article carrying an `ArticleBalancePlan`. Inert today — the frozen manifest has
-  `article_terminal_balance: {}` — but the tail-ornament rule and the
-  `.article-tail` datum are both silently wrong the first time a plan fires.
+- **Terminal balance — RESOLVED by removal.** The adapter hardcodes
+  `frame_bottom = 45.0`, and `render.py` used to raise it for the last two pages
+  of any article carrying an `ArticleBalancePlan` — so the adapter's tail-ornament
+  rule and `.article-tail` datum would have been silently wrong the first time a
+  plan fired. No plan can fire any more: the planner (`_terminal_balance_plans`,
+  `_balanced_draft`, `ArticleBalancePlan`, the `TERMINAL_BALANCE_*` constants and
+  the frame-shortening branch) was removed from `render.py`, where it had been
+  unreachable since `render_a5` pinned `balance_plans = {}` and was kept alive
+  only by tests monkeypatching `_render_pass`. `RenderLayout.article_terminal_balance`
+  and the manifest's `layout.article_terminal_balance` key stay, documented as a
+  permanently empty legacy field (see `reader_layout.RenderLayout`), because
+  every manifest written since the balancer was pinned off carries the key as
+  `{}`, edition 001's frozen released artifact retains its historical non-empty
+  values, and dropping the key would change the bytes of otherwise identical
+  rebuilds.
 - **Long URLs.** Resolved and measured; see
   [Long URLs](#long-urls) under deferred item 1. Nothing in the reader's flow
   approaches the measure, a hyphenated token now breaks at its hyphen, and an

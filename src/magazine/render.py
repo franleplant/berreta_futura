@@ -11,6 +11,7 @@ from typing import Iterable
 from .errors import DependencyError, ValidationError
 from .image_contrast import prepare_print_image
 from .manifest import Edition
+from .reader_layout import FigurePlacement, FrameUsage, RenderLayout
 
 
 MAX_ARTICLE_PAGES = 7
@@ -38,8 +39,6 @@ OUTER_MARGIN = 15 * 72 / 25.4
 TEXT_TOP_INSET = 52.0
 READING_MEASURE = 325.0
 FOLIO_BASELINE = 19.5
-TERMINAL_BALANCE_FRAMES = 2
-TERMINAL_BALANCE_THRESHOLD = .35
 ARTICLE_TAIL_ORNAMENT_MIN_HEIGHT = 118.0
 ARTICLE_TAIL_ORNAMENT_MAX_HEIGHT = 214.0
 RUNNING_HEADER_BASELINE_INSET = 20.0
@@ -173,46 +172,6 @@ UI_COPY = {
         "figure": "Figura",
     },
 }
-
-
-@dataclass(frozen=True)
-class RenderLayout:
-    toc: dict[str, int]
-    article_pages: dict[str, int]
-    editorial_pages: int | None
-    design: str
-    cover_art_size_points: tuple[float, float] | None
-    article_frame_usage: dict[str, tuple["FrameUsage", ...]]
-    article_terminal_balance: dict[str, float]
-    figure_placements: tuple["FigurePlacement", ...] = ()
-
-
-@dataclass(frozen=True)
-class FigurePlacement:
-    figure_id: str
-    article_id: str
-    page: int
-    path: Path
-    pixel_dimensions: tuple[int, int]
-    box_points: tuple[float, float, float, float]
-    effective_ppi: float
-    caption: str
-    credit: str
-    rights_status: str
-
-
-@dataclass(frozen=True)
-class FrameUsage:
-    relative_page: int
-    frame_index: int
-    used: float
-    capacity: float
-
-
-@dataclass(frozen=True)
-class ArticleBalancePlan:
-    page_count: int
-    frame_height: float
 
 
 def _article_tail_ornament_box(
@@ -392,12 +351,10 @@ class _Typesetter:
         metrics,
         *,
         design: str,
-        balance_plans: dict[str, ArticleBalancePlan] | None = None,
         enforce_page_caps: bool = True,
     ):
         self.pdf, self.edition, self.width, self.height, self.metrics = pdf, edition, *pagesize, metrics
         self.design = design
-        self.balance_plans = balance_plans or {}
         self.enforce_page_caps = enforce_page_caps
         self.inner, self.outer, self.top, self.bottom = INNER_MARGIN, OUTER_MARGIN, TEXT_TOP_INSET, 45.0
         self.left, self.right = self.inner, self.outer
@@ -635,19 +592,8 @@ class _Typesetter:
             role = "continuation"
         else:
             role = "standard"
-        balance_bottom = None
-        if (
-            role == "continuation"
-            and self.active_article_id
-            and self.active_article_start_page is not None
-        ):
-            plan = self.balance_plans.get(self.active_article_id)
-            relative_page = self.page - self.active_article_start_page + 1
-            if plan and relative_page >= plan.page_count - 1:
-                balance_bottom = self.height - self.top - plan.frame_height
         self._configure_frames(
             selected_columns,
-            bottom=balance_bottom,
             role=role,
         )
         if self.page > 2 and not blank_header:
@@ -2224,7 +2170,6 @@ def _render_pass(
     toc: dict[str, int] | None = None,
     *,
     design: str,
-    balance_plans: dict[str, ArticleBalancePlan] | None = None,
     enforce_page_caps: bool = True,
 ) -> RenderLayout:
     A5, metrics, canvas = _reportlab()
@@ -2246,7 +2191,6 @@ def _render_pass(
         A5,
         metrics,
         design=design,
-        balance_plans=balance_plans,
         enforce_page_caps=enforce_page_caps,
     )
     # The cover is compiled once by CoverCompiler and spliced into this
@@ -2266,89 +2210,12 @@ def _render_pass(
         DESIGN_LABEL,
         typesetter.cover_art_size_points,
         dict(typesetter.article_frame_usage),
-        {
-            article_id: round(plan.frame_height, 3)
-            for article_id, plan in (balance_plans or {}).items()
-        },
+        # A legacy layout fact, permanently empty: the terminal balancer is
+        # gone, and the field survives only because the packaged manifest key
+        # derived from it must not change bytes.  See reader_layout.RenderLayout.
+        {},
         tuple(typesetter.figure_placements),
     )
-
-
-def _terminal_balance_plans(layout: RenderLayout) -> dict[str, ArticleBalancePlan]:
-    plans: dict[str, ArticleBalancePlan] = {}
-    for article_id, page_count in layout.article_pages.items():
-        if page_count < 3:
-            continue
-        tail_pages = {page_count - 1, page_count}
-        frames = [
-            frame
-            for frame in layout.article_frame_usage.get(article_id, ())
-            if frame.relative_page in tail_pages
-        ]
-        if len(frames) != TERMINAL_BALANCE_FRAMES:
-            continue
-        frames.sort(key=lambda frame: (frame.relative_page, frame.frame_index))
-        if [(frame.relative_page, frame.frame_index) for frame in frames] != [
-            (page_count - 1, 0),
-            (page_count, 0),
-        ]:
-            continue
-        full_height = max(frame.capacity for frame in frames)
-        final_page_use = frames[1].used
-        if final_page_use / full_height >= TERMINAL_BALANCE_THRESHOLD:
-            continue
-        average = sum(frame.used for frame in frames) / TERMINAL_BALANCE_FRAMES
-        frame_height = math.ceil(average / BODY_LEADING) * BODY_LEADING
-        frame_height = max(frame_height, 8 * BODY_LEADING)
-        if frame_height >= full_height - BODY_LEADING:
-            continue
-        plans[article_id] = ArticleBalancePlan(page_count, frame_height)
-    return plans
-
-
-def _balanced_draft(
-    edition: Edition,
-    probe: RenderLayout,
-    *,
-    design: str,
-) -> tuple[dict[str, ArticleBalancePlan], RenderLayout]:
-    plans = _terminal_balance_plans(probe)
-    maximum_capacity = {
-        article_id: max((frame.capacity for frame in frames), default=0.0)
-        for article_id, frames in probe.article_frame_usage.items()
-    }
-    for _ in range(64):
-        draft = _render_pass(
-            io.BytesIO(),
-            edition,
-            probe.toc,
-            design=design,
-            balance_plans=plans,
-            enforce_page_caps=False,
-        )
-        mismatched = [
-            article_id
-            for article_id, page_count in probe.article_pages.items()
-            if draft.article_pages.get(article_id) != page_count
-        ]
-        if not mismatched:
-            return plans, draft
-        changed = False
-        for article_id in mismatched:
-            plan = plans.get(article_id)
-            if not plan:
-                raise ValidationError(
-                    f"Article {article_id} pagination changed during terminal balancing"
-                )
-            enlarged = plan.frame_height + BODY_LEADING
-            if enlarged >= maximum_capacity.get(article_id, 0.0):
-                del plans[article_id]
-            else:
-                plans[article_id] = ArticleBalancePlan(plan.page_count, enlarged)
-            changed = True
-        if not changed:
-            break
-    raise ValidationError("Terminal-page balancing did not converge deterministically")
 
 
 def render_a5(
@@ -2387,15 +2254,13 @@ def render_a5(
     probe = _render_pass(io.BytesIO(), edition, design=design)
     # Full-height continuation frames keep prose moving naturally. The former
     # terminal balancer shortened the last two frames and manufactured large
-    # white fields in the middle of an article; genuine tail space is now
-    # handled by the small article-end ornament instead.
-    balance_plans: dict[str, ArticleBalancePlan] = {}
+    # white fields in the middle of an article; it has been removed, and
+    # genuine tail space is handled by the small article-end ornament instead.
     draft = _render_pass(
         io.BytesIO(),
         edition,
         probe.toc,
         design=design,
-        balance_plans=balance_plans,
         enforce_page_caps=False,
     )
     final = _render_pass(
@@ -2403,7 +2268,6 @@ def render_a5(
         edition,
         draft.toc,
         design=design,
-        balance_plans=balance_plans,
     )
     if (
         draft.article_pages != final.article_pages
