@@ -1,3 +1,4 @@
+from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import hashlib
@@ -199,6 +200,40 @@ class ManifestTests(unittest.TestCase):
             "Author writes about this subject for Example.",
         )
         self.assertEqual(edition.articles[0].source_ids, ("source-one",))
+
+    def test_validate_resolves_the_first_source_s_canonical_url_onto_the_article(self):
+        """One url per article, from the *first* source id, or nothing.
+
+        ``source_ids`` is authored and ordered, so the first entry is the
+        article's primary source; an article carries one way back, not one per
+        source, and the opener already prints the whole list.
+        """
+        make_project(self.root)
+
+        edition = Magazine(self.root).validate("issue-001")
+
+        self.assertEqual(edition.articles[0].source_url, "https://example.com/source")
+
+    def test_a_source_without_a_canonical_url_leaves_the_article_without_one(self):
+        """No canonical url is an ordinary state and never an error."""
+        make_project(self.root)
+        records = {
+            record.id: replace(record, canonical_url="")
+            for record in load_records(self.root / "library" / "sources")
+        }
+
+        edition = load_edition(
+            self.root, "issue-001", set(records), source_records=records
+        )
+
+        self.assertIsNone(edition.articles[0].source_url)
+
+    def test_an_edition_loaded_without_source_records_carries_no_source_url(self):
+        make_project(self.root)
+
+        edition = load_edition(self.root, "issue-001", {"source-one"})
+
+        self.assertIsNone(edition.articles[0].source_url)
 
     def test_validate_resolves_optional_article_tail_art(self):
         make_project(self.root)

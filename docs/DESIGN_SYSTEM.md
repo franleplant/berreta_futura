@@ -97,6 +97,16 @@ Each opener uses one consistent structure: provenance kicker, large serif title,
 
 Copy flows down one reading measure and then to the next page. Exact short running titles, a quiet header rule, consistent folios, and generous white space carry the identity. Quotations, bullets, headings, and code retain distinct deterministic treatments. Display headings add deliberate space before them except at a fresh frame; a heading that anchors a full-width evidence band is the one exception, and a known open defect — it currently follows its paragraph on 2.65pt of clearance where every other heading has 17.65pt (see `docs/RENDERER_MIGRATION.md`). The final prose paragraph stays together when it fits on one page, making article endings read as intentional conclusions rather than split scraps. A paragraph never ends on a single short word stranded on its own line: the last two words are bound so they wrap together whenever that final word would take less than a seventh of the measure.
 
+### Source codes
+
+A printed page cannot be followed, so every article ends with a QR square carrying the canonical URL of its **first** source id — one code per article, never one per source, because the opener already prints the whole source list. There is no printed URL label; the code is the whole of it. An article whose first source records no canonical URL prints nothing, and the editorial, which has no source, never does.
+
+The code is drawn in the house inks — INK modules, VIOLET finder patterns, over the paper — as vector SVG, so it is exact at any print density. Its size is computed from the URL, not chosen: the module is 0.85mm wherever the page has room, and the square is simply as wide as that URL's symbol needs.
+
+Where it stands is the page's decision and not the author's. The same open-space test that used to earn an article its tail motif now earns its code the large slot at the foot of the reading measure; the motif itself no longer prints and `tail_art_path` is vestigial. An article whose last page has no such room drops its code into the foot margin instead, between the two ends of the folio, at whatever module that band can carry. Both slots are out of flow and can never move a line or open a page. A cramped code gives back error correction rather than cell width, because cell width is what a phone camera needs; below a 0.35mm module the build refuses outright.
+
+Every code is then read back off the rasterized page at 300 ppi by an independent barcode reader, and a build whose code does not decode to its own canonical URL is refused before the PDF is written. A code that looks right and does not scan is worse than no code at all, and nothing but a decode can tell the two apart.
+
 ### Backmatter and back cover
 
 Backmatter uses the same opener and continuation system. The selected Signal fold back cover is a full-bleed orange closing poster with giant localized LOOP CLOSED / CICLO CERRADO display type, a protected vertical identity corridor, and a white statement insert. The insert renders the configured editor-written closing statement without a redundant ownership caption; the lower slug closes with localized END/FIN and the numeric date. It never substitutes an unattributed source quotation.
@@ -115,6 +125,8 @@ The back face is compiled through `uv run --locked mag back-cover-proof <edition
 - Do not reintroduce double-column prose.
 - Do not pin every figure to a page edge; keep it in semantic flow and preserve a useful printed size.
 - Keep every ordinary folio on the shared lower-right baseline.
+- Do not print a source code the build has not decoded back off its own rasterized page.
+- Do not set a source URL as type; the reading measure cannot break one, and the code is the link.
 - Preserve the two-page editorial and seven-page source-article limits.
 - Generate every configured language on validation and build.
 - Run the render critic for every configured language; structural errors block the build.

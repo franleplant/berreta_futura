@@ -1025,8 +1025,13 @@ article > .landscape-plate + p { margin-top: 0; }
  * 45pt frame bottom, i.e. 13.9954pt above this page's own content box, whose
  * foot is on the frame bottom -- and it never moves a line.  Out of flow is what
  * makes that true, so the ornament cannot manufacture the near-empty page an
- * in-flow image did.  Its height is the slack the adapter measured; whether it
- * appears at all is the same decision.
+ * in-flow image did.
+ *
+ * THE MOTIF NO LONGER PRINTS.  The slot it earned is the source code's, and the
+ * adapter removes the figure from every print tree; the rule stays because the
+ * semantic edition still offers the motif to a screen adapter and because the
+ * two numbers below are the slot's, not the motif's -- `img.source-code.tail`
+ * stands its square on the same 13.9954pt and inside the same 325pt measure.
  */
 .article-tail {
   bottom: 13.9954pt;
@@ -1039,6 +1044,34 @@ article > .landscape-plate + p { margin-top: 0; }
 .article-tail img {
   height: 100%; max-height: none; max-width: none; object-fit: cover; width: 100%;
 }
+/*
+ * THE SOURCE CODE.  A printed page cannot be followed, so each article carries
+ * the address of the source it was built from as a QR square.  The link itself
+ * is in the semantic edition and is set nowhere: printing the URL as type would
+ * put a 50-character unbreakable token into a 325pt measure, which
+ * `_validate_reader_measures` refuses on sight and which is not what a reader
+ * is being given.  The code is the whole of it.
+ *
+ * Both slots are absolutely positioned, exactly as the tail motif and the figure
+ * frames are, so a code can never move a line or open a page.  Which slot an
+ * article gets is the *page's* decision and not the author's: where the last
+ * page has the open space `_tail_slot_height` demands, the code takes it; where
+ * it has not, the code drops into the foot margin, which is empty on every page
+ * between the two ends of the folio.  The adapter states `left`, `bottom`,
+ * `width` and `height` on the element, because all four come from a measurement.
+ *
+ * `image-rendering: crisp-edges` is not set and must not be: the code is vector
+ * SVG all the way into the PDF, so there is no resampling to control, and the
+ * property would only bind if some later change made it a raster -- at which
+ * point the 300 dpi decode gate is the thing that would notice.
+ */
+img.source-code {
+  display: block; height: auto; margin: 0; max-height: none; max-width: none;
+  object-fit: fill; position: absolute; width: auto;
+}
+/* The link the code encodes.  It stays in the print tree so that the tree and
+ * the semantic edition disagree about nothing, and it sets no type at all. */
+.source-link { display: none; }
 /*
  * `_closing_plate` (render.py:2170-2196) is a page, not a block: a white sheet,
  * one crop-filled artwork and one fitted display title, with no folio and no

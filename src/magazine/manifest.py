@@ -33,6 +33,20 @@ class Article:
     figures: tuple[Figure, ...] = ()
     minimum_reader_pages: int = 1
     tail_art: Path | None = None
+    source_url: str | None = None
+    """The canonical URL of the article's *first* source, or nothing.
+
+    ``source_ids`` is authored and ordered, so the first entry is the article's
+    primary source and the one a reader is sent back to.  It is resolved here,
+    once, from the same source records the rest of the edition is validated
+    against, because it is an editorial fact about the article and not something
+    a renderer should be reading source records to discover.
+
+    ``None`` is an ordinary state, not a failure: a source record is not
+    required to carry a ``canonical_url``, and an editorial has no source at
+    all.  Every consumer treats the absence as "no link back", never as an
+    error.
+    """
 
 
 @dataclass(frozen=True)
@@ -203,6 +217,7 @@ def load_edition(
                 figures,
                 minimum_reader_pages,
                 tail_art,
+                _primary_source_url(source_ids, source_records),
             )
         )
     edition_dir = manifest_path.parent
@@ -437,6 +452,10 @@ def load_translation(
                 figures,
                 article.minimum_reader_pages,
                 article.tail_art,
+                # A translation renders the same article from the same sources,
+                # so it points back to the same place.  The link is provenance,
+                # not copy, and is never localized.
+                article.source_url,
             )
         )
 
@@ -718,6 +737,25 @@ def _markdown_invariants(path: Path) -> tuple[list[str], list[str], list[str]]:
     without_fences = re.sub(r"```[^\n]*\n.*?\n```", "", text, flags=re.DOTALL)
     inline = re.findall(r"(?<!`)`([^`\n]+)`(?!`)", without_fences)
     return links, inline, fenced
+
+
+def _primary_source_url(
+    source_ids: tuple[str, ...], records: Mapping[str, "SourceRecord"] | None
+) -> str | None:
+    """The canonical URL of the first source, when the records are to hand.
+
+    Deliberately silent about everything it cannot answer.  ``records`` is
+    optional on ``load_edition``, a record need not carry a ``canonical_url``,
+    and an article's first source may not be one this call was given -- each of
+    those is "no link back" and none of them is an error.  Unknown source ids
+    are already an edition-level failure by the time this runs, so nothing is
+    hidden by the lookup being lenient.
+    """
+    if not source_ids or not records:
+        return None
+    record = records.get(source_ids[0])
+    url = str(getattr(record, "canonical_url", "") or "").strip()
+    return url or None
 
 
 def _edition_path(root: Path, edition_dir: Path, value: str) -> Path:

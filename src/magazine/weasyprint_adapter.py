@@ -23,7 +23,7 @@ from typing import Any, NamedTuple
 from urllib.parse import quote
 from xml.etree.ElementTree import Element, SubElement
 
-from .errors import ValidationError
+from .errors import DependencyError, ValidationError
 from .html_edition import HtmlAsset, render_html_edition
 from .manifest import Edition
 from .reader_text import fold_reader_characters
@@ -110,7 +110,11 @@ def _reader_y_points(css_top_points: float, height_points: float) -> float:
     return _PAGE_HEIGHT_POINTS - css_top_points - height_points + _RASTER_NUDGE_POINTS
 
 
-# ``_article_tail_ornament_box`` (render.py:218-231).
+# ``_article_tail_ornament_box`` (render.py:218-231).  The motif itself no longer
+# prints -- the source code took the slot -- but the box is unchanged, because
+# what it encodes is not a decision about ornament: it is the publication's
+# measure of when an article's last page has genuinely ended high enough to
+# carry a large element under the end mark.  See ``_tail_slot_height``.
 _TAIL_ORNAMENT_MIN_HEIGHT = 118.0
 _TAIL_ORNAMENT_MAX_HEIGHT = 214.0
 _TAIL_ORNAMENT_FOOT_INSET = 24.0
@@ -134,6 +138,83 @@ _PAGE_MARGIN_BOTTOM_POINTS = 55.0046
 _FRAME_BOTTOM_RELIEF_POINTS = _FRAME_BOTTOM_POINTS - (
     _PAGE_MARGIN_BOTTOM_POINTS - _FIRST_BASELINE_INSET_POINTS
 )
+
+# THE SOURCE CODE.
+#
+# A print magazine cannot hyperlink, so every article carries the address of the
+# source it was built from as a QR square.  Six numbers decide what that square
+# is, and each is a print decision rather than a taste:
+#
+# ``_CODE_HOUSE_MODULE_POINTS`` is the module -- one cell of the symbol -- at the
+# size the publication sets a code it has room for.  0.85mm is comfortably above
+# every published floor for a code read by a phone off uncoated stock, and it is
+# what makes the largest symbol this publication can produce (a 71-character URL
+# at ECC-H, 49 modules across the quiet zone) land at 41.65mm, which is inside
+# the 118pt the tail slot guarantees.  The house size is therefore not a point
+# size: the *module* is fixed and the square is `modules * module`, so a short
+# URL genuinely prints a smaller code than a long one.
+#
+# ``_CODE_MIN_MODULE_POINTS`` is the floor, and it is the number the design gives
+# way at.  0.35mm is 4.1 dots of a 300 dpi inkjet and about where a phone camera
+# held at an angle over uncoated paper stops being reliable.  A slot that cannot
+# hold the symbol at this module *lowers the error correction* until it can --
+# see ``_fitted_source_code`` -- and a build whose code cannot be set at this
+# module at any level refuses rather than printing something that will not scan.
+#
+# ``_CODE_QUIET_MODULES`` is the QR standard's own four-module quiet zone, and it
+# is inside the element rather than assumed of the page.  The foot slot's code
+# stands two points under the last line of a full page and a few millimetres over
+# the folio; borrowing its quiet zone from whatever happens to be there is the
+# one way this feature fails silently.
+#
+# ``_CODE_FOOT_CLEARANCE_POINTS`` is how far above the sheet's own foot the small
+# code stops: 4mm, which clears the unprintable margin of a domestic inkjet.  The
+# reader is folded from A4 at home, so that edge is a real edge and not a trim.
+_CODE_HOUSE_MODULE_POINTS = 0.85 * 72 / 25.4
+_CODE_MIN_MODULE_POINTS = 0.35 * 72 / 25.4
+_CODE_QUIET_MODULES = 4
+_CODE_FOOT_CLEARANCE_POINTS = 4.0 * 72 / 25.4
+# Highest first.  ``_fitted_source_code`` takes the first level whose symbol
+# clears the module floor in the room it has, so a code with room to spare is set
+# at ECC-H and only a cramped one gives correction back for cell size.  That
+# order is the print trade the other way round from the usual instinct: for a
+# small code, module width buys more read reliability than redundancy does.
+_CODE_ERROR_LEVELS = ("H", "Q", "M", "L")
+# The tail slot's own foot, shared with ``.article-tail``: 24pt above the
+# reader's frame bottom, which from the page's content box is 24 - 10.0046.
+_CODE_TAIL_BOTTOM_POINTS = _TAIL_ORNAMENT_FOOT_INSET - _FIRST_BASELINE_INSET_POINTS
+# The reading measure's own left edge inside the page area, as ``.article-tail``
+# has it: the article box is 325pt centred in the 333.0079pt live width.
+_CODE_MEASURE_LEFT_POINTS = 4.004
+_CODE_MEASURE_POINTS = 325.0
+# The foot slot: from the page's content-box foot -- below which the reading
+# flow sets no type at all -- down to the sheet's printable foot.  It is the same
+# band on every page, which is the point: the small code is furniture with one
+# position, and it does not inherit the end mark's own clamp.  A clamped end mark
+# is a mark that has been pushed *into* the last line of type, and a code that
+# followed it there would be a code printed over prose.
+_CODE_FOOT_ROOM_POINTS = (
+    _PAGE_MARGIN_BOTTOM_POINTS - _RASTER_NUDGE_POINTS - _CODE_FOOT_CLEARANCE_POINTS
+)
+# The resolution the decode gate rasterises at.  300 ppi is the publication's own
+# print floor -- ``_MIN_FIGURE_PPI`` -- so the gate reads the code off the page at
+# the density the page is judged to be printable at, and not at a density chosen
+# to make a code pass.
+_CODE_DECODE_DPI = 300
+# The four corners a decoded symbol reports must land on the box the adapter
+# placed, or the gate has read some other mark and proved nothing.  Two points is
+# under one device pixel at 300 ppi, doubled for the binariser's own edge.
+_CODE_POSITION_TOLERANCE_POINTS = 2.0
+# ``render.py``'s own INK and VIOLET, and the sheet.  Written as the percentages
+# those tuples are, exactly as the stylesheet writes them, so the code's ink is
+# the publication's and not a colour invented for a barcode.
+# What an article puts on its last page *after* its flow has ended, and which
+# ``_article_flow_bottom`` therefore may not measure: both are positioned from
+# the very number that walk produces.
+_OUT_OF_FLOW_CODA_CLASSES = frozenset({"article-tail", "source-code"})
+_CODE_INK = "rgb(5.5%,7.5%,8.5%)"
+_CODE_VIOLET = "rgb(25%,10%,43%)"
+_CODE_PAPER = "rgb(100%,100%,100%)"
 
 # ``_figure_geometry`` (render.py:716-739).
 _CAPTION_SIZE = 6.8
@@ -509,6 +590,13 @@ def render_a5_weasyprint(
         pdf_bytes = document.write_pdf()
     except Exception as exc:
         raise ValidationError(f"WeasyPrint could not write edition {edition.id}: {exc}") from exc
+    # After the bytes exist and before they reach the disk: the source codes are
+    # the one thing here that can only be judged on the rasterised page, so the
+    # gate is given the finished PDF rather than the box tree, and a reader that
+    # fails it is never written.
+    _validate_source_codes(
+        pdf_bytes, edition, plan.source_codes, _measured_source_code_boxes(document)
+    )
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_bytes(pdf_bytes)
     return layout
@@ -584,38 +672,63 @@ def _with_print_slots(html: str) -> str:
     return before + slots + body + ending + after
 
 
+@dataclass(frozen=True, slots=True, order=True)
+class SourceCode:
+    """One article's printed way back to the source it was built from.
+
+    Everything here is decided from a laid-out page and a URL, and nothing from
+    what an author committed: ``slot`` is ``"tail"`` where the article's last
+    page has the open space ``_tail_slot_height`` demands and ``"foot"`` where it
+    has not, ``error`` is the highest QR error correction that room can carry at
+    or above ``_CODE_MIN_MODULE_POINTS``, ``modules`` is the symbol's width in
+    cells *including* its four-module quiet zone, and ``module`` is one cell in
+    points.  The square is ``modules * module`` on a side, so an edition that
+    committed no art at all still prints a code in every slot that fits one.
+    """
+
+    article_id: str
+    slot: str
+    error: str
+    modules: int
+    module: float
+    url: str
+
+    @property
+    def side(self) -> float:
+        return self.modules * self.module
+
+
 @dataclass(frozen=True, slots=True)
 class ReaderPlan:
     """The placement decisions that no stylesheet can reach on its own.
 
     ``closing_plates`` is the number of plates the signature arithmetic in
     ``render.back_cover`` asks for, which is a function of where the content
-    happens to end.  ``tail_ornaments`` maps an article id to the height of the
-    tail motif that article has earned, and omits every article whose last page
-    does not have the open space ``_article_tail_ornament_box`` demands.
-    ``adaptive_images`` maps a figure id to the image height an ``adaptive_band``
-    has been shrunk to so that it can still bridge the page it started on
-    (render.py:901-922), and omits every band that fits at its full height.
-    ``band_offsets`` maps a figure id to the margin mirror a band inherited from
-    the page it was dispatched from, and omits every band that stayed there.
-    ``end_marks`` maps an article id to the distance its end mark is painted back
-    down by, which is a constant except where the reader's own clamp bites.
-    ``runt_binds`` names the prose blocks whose last two words are bound together
-    because the block's last line came out as one short word; see
+    happens to end.  ``source_codes`` is one :class:`SourceCode` per article that
+    has a source to point at, sized and slotted from where that article's own
+    flow ended.  ``adaptive_images`` maps a figure id to the image height an
+    ``adaptive_band`` has been shrunk to so that it can still bridge the page it
+    started on (render.py:901-922), and omits every band that fits at its full
+    height.  ``band_offsets`` maps a figure id to the margin mirror a band
+    inherited from the page it was dispatched from, and omits every band that
+    stayed there.  ``end_marks`` maps an article id to the distance its end mark
+    is painted back down by, which is a constant except where the reader's own
+    clamp bites.  ``runt_binds`` names the prose blocks whose last two words are
+    bound together because the block's last line came out as one short word; see
     ``_RUNT_MEASURE_FRACTION``.  All six are *measured* facts, so a plan is the
     output of one layout and the input to the next.
     """
 
     closing_plates: int
-    tail_ornaments: tuple[tuple[str, float], ...]
+    source_codes: tuple[SourceCode, ...] = ()
     adaptive_images: tuple[tuple[str, float], ...] = ()
     band_offsets: tuple[tuple[str, float], ...] = ()
     end_marks: tuple[tuple[str, float], ...] = ()
     runt_binds: tuple[str, ...] = ()
 
     @property
-    def tail_heights(self) -> dict[str, float]:
-        return dict(self.tail_ornaments)
+    def codes_by_article(self) -> dict[str, SourceCode]:
+        return {code.article_id: code for code in self.source_codes}
 
     @property
     def end_mark_offsets(self) -> dict[str, float]:
@@ -656,15 +769,15 @@ def _render_to_signature(
 ) -> tuple[Any, str, ReaderPlan]:
     """Measure one layout, then lay the reader out again against what it measured.
 
-    Two of ReportLab's placement rules read the finished page rather than the
-    content: the closing-plate count comes from where the body stopped, and a
-    tail ornament appears only when its article's last page really has
+    Two of the reader's placement rules read the finished page rather than the
+    content: the closing-plate count comes from where the body stopped, and an
+    article's source code takes the large slot only when its last page really has
     ``ARTICLE_TAIL_ORNAMENT_MIN_HEIGHT`` of open space below the end mark.
-    Neither question can be asked in CSS, so this renders a probe pass that
-    over-provides both, measures it, and renders the answer.  A third pass then
-    has nothing left to change: closing plates land after the body and the tail
-    ornament is out of flow, so neither decision can move the content that both
-    were derived from -- which is asserted rather than assumed.
+    Neither question can be asked in CSS, so this renders a probe pass carrying
+    neither, measures it, and renders the answer.  A third pass then has nothing
+    left to change: closing plates land after the body and a source code is out
+    of flow, so neither decision can move the content that both were derived
+    from -- which is asserted rather than assumed.
 
     Runt control is measured the same way and one step earlier, because unlike
     the other two it *does* move the content everything else is derived from: a
@@ -675,14 +788,7 @@ def _render_to_signature(
     which is handed the same plan -- carries the answer.
     """
     html = _with_print_slots(semantic_html)
-    bare = ReaderPlan(
-        closing_plates=len(edition.closing_plates),
-        tail_ornaments=tuple(
-            (article.id, _TAIL_ORNAMENT_MAX_HEIGHT)
-            for article in edition.articles
-            if article.tail_art is not None
-        ),
-    )
+    bare = ReaderPlan(closing_plates=len(edition.closing_plates))
     document = _lay_out(HTML, html, stylesheet, edition, bare, font_config=font_config)
     probe = replace(bare, runt_binds=_measured_runt_binds(document))
     if probe != bare:
@@ -865,7 +971,10 @@ def _lay_out(
     _fit_closing_plate_titles(tree, edition)
     _apply_print_contrast(tree)
     _apply_end_marks(tree, plan.end_mark_offsets)
-    _apply_tail_ornaments(tree, plan.tail_heights)
+    # After ``_rewrite_landscape_plates``, which reads the tail figure this
+    # removes: a deferred plate is released by the article's coda, and the coda
+    # has to still be there when that decision is taken.
+    _apply_source_codes(tree, plan.codes_by_article)
     # Last, so that nothing downstream rewrites the rule images' own geometry.
     _apply_figure_rules(tree, figure_rules or {})
     try:
@@ -1819,15 +1928,231 @@ def _fitted_plate_title(title: str) -> tuple[float, list[str]]:
     )
 
 
-def _apply_tail_ornaments(tree: Element, heights: Mapping[str, float]) -> None:
-    """Size each earned tail ornament, and remove the ones no page has room for."""
+def _apply_source_codes(tree: Element, codes: Mapping[str, SourceCode]) -> None:
+    """Stand each article's source code in the slot its own page earned.
+
+    The tail motif comes out here rather than in ``html_edition``, and that is
+    the seam being kept: the semantic edition still offers the motif and the
+    link, because a screen adapter can use both, and this is the one place that
+    knows the code has taken the motif's slot.
+
+    Like the figure frames and like the motif before it, the code is an
+    absolutely positioned replaced element, so it takes nothing out of any box
+    and cannot displace a line.  Every one of its four edges is stated inline
+    because every one of them is a measurement.
+    """
     for article in tree.iter("article"):
-        height = heights.get(article.get("data-article-id") or "")
         for child in [child for child in article if "article-tail" in _element_classes(child)]:
-            if height is None:
-                article.remove(child)
-            else:
-                child.set("style", f"height: {height:.4f}pt")
+            article.remove(child)
+        code = codes.get(article.get("data-article-id") or "")
+        if code is None:
+            continue
+        side = code.side
+        left = _CODE_MEASURE_LEFT_POINTS + (_CODE_MEASURE_POINTS - side) / 2
+        # The tail slot stands on the motif's own foot.  The foot slot hangs from
+        # the page's content-box foot instead of standing on the sheet's, so a
+        # short URL's smaller square stays under the text it belongs to rather
+        # than drifting down onto the folio; ``_CODE_FOOT_ROOM_POINTS`` is then
+        # the ceiling on its side, which is what keeps its lower edge clear of
+        # the printer's own unprintable margin.
+        bottom = _CODE_TAIL_BOTTOM_POINTS if code.slot == "tail" else -side
+        image = SubElement(article, "img")
+        image.set("class", "source-code")
+        image.set("alt", "")
+        image.set("aria-hidden", "true")
+        image.set("data-source-code", code.slot)
+        image.set("src", _source_code_source(code))
+        image.set(
+            "style",
+            f"left: {left:.4f}pt; bottom: {bottom:.4f}pt; "
+            f"width: {side:.4f}pt; height: {side:.4f}pt",
+        )
+
+
+def _fitted_source_code(
+    article_id: str, slot: str, url: str, room: float
+) -> SourceCode | None:
+    """The largest, most redundant code ``room`` points of slot can carry.
+
+    Two knobs, taken in the order that survives a phone camera.  The module is
+    the house one wherever the slot can hold it, so a code with space is set at
+    ``_CODE_HOUSE_MODULE_POINTS`` and simply comes out as wide as its own symbol
+    needs -- which is what makes the printed size a property of the URL and not a
+    constant.  Where the slot is tighter than that, the module shrinks to the
+    slot and error correction is given back a level at a time until the cell is
+    at least ``_CODE_MIN_MODULE_POINTS`` wide again, because a bigger cell is
+    worth more to a real scan than more redundancy behind cells too small to
+    resolve.
+
+    ``None`` means no level fits, which is a build failure and not a smaller
+    code: the caller refuses.  There is no floor-breaking fallback on purpose --
+    an unscannable square printed on paper is worse than nothing, and it looks
+    exactly like a working one.
+    """
+    import segno
+
+    for level in _CODE_ERROR_LEVELS:
+        symbol = segno.make(url, error=level, micro=False)
+        modules = int(symbol.symbol_size(border=_CODE_QUIET_MODULES)[0])
+        module = min(_CODE_HOUSE_MODULE_POINTS, room / modules)
+        if module >= _CODE_MIN_MODULE_POINTS:
+            return SourceCode(article_id, slot, level, modules, module, url)
+    return None
+
+
+def _source_code_matrix(code: SourceCode) -> list[list[bool]]:
+    import segno
+
+    symbol = segno.make(code.url, error=code.error, micro=False)
+    return [[bool(cell) for cell in row] for row in symbol.matrix]
+
+
+def _source_code_source(code: SourceCode) -> str:
+    """The code as an SVG data URI, in the publication's own two inks.
+
+    SVG and not PNG.  A raster would have to be generated at some density and
+    would then be judged against ``_MIN_FIGURE_PPI`` like any other placed
+    image; vector modules are exact at whatever density the sheet is printed at,
+    and the adapter already proves it can put genuine vector geometry through
+    WeasyPrint -- the figure frame had to be an SVG ``rect`` for the same reason.
+    One SVG user unit is one point, as it is there.
+
+    House style, not a generator's default.  Modules are INK, the three finder
+    patterns are VIOLET -- the colour this publication reserves for structure --
+    and the ground is the paper.  The ground is *painted* rather than left
+    transparent, which is the one place robustness beats fidelity: the quiet zone
+    is only a quiet zone if nothing shows through it, and the foot slot's code
+    stands a couple of points below a full page of type.
+
+    Each colour is one path of touching subpaths and not a field of separate
+    rectangles.  A PDF fill computes coverage once over the whole path, so
+    modules that share an edge merge cleanly; drawn as individual rectangles they
+    would each antialias against their neighbour and lay a grid of pale hairlines
+    through the symbol at exactly the scale a binariser is looking at.  Runs are
+    merged along the row first for the same reason, and to keep the URI small.
+
+    No centred publication mark.  ECC-H would carry one, but the foot slot's
+    codes are set at whatever level their room affords and that is regularly not
+    H; a mark on some codes and not others is not a house style, and occluding a
+    code that has already traded away redundancy for cell size is the trade made
+    twice.  Nothing here forecloses it -- an authored artwork pass would replace
+    this function, not extend it.
+    """
+    matrix = _source_code_matrix(code)
+    size = len(matrix)
+    unit = code.module
+    side = code.side
+    runs: dict[str, list[str]] = {"ink": [], "violet": []}
+    for row, cells in enumerate(matrix):
+        column = 0
+        while column < size:
+            if not cells[column]:
+                column += 1
+                continue
+            key = "violet" if _is_finder_module(row, column, size) else "ink"
+            end = column
+            while (
+                end < size
+                and cells[end]
+                and ("violet" if _is_finder_module(row, end, size) else "ink") == key
+            ):
+                end += 1
+            x = (_CODE_QUIET_MODULES + column) * unit
+            y = (_CODE_QUIET_MODULES + row) * unit
+            width = (end - column) * unit
+            runs[key].append(f"M{x:.4f} {y:.4f}h{width:.4f}v{unit:.4f}h{-width:.4f}z")
+            column = end
+    svg = (
+        "<svg xmlns='http://www.w3.org/2000/svg' "
+        f"width='{side:.4f}pt' height='{side:.4f}pt' "
+        f"viewBox='0 0 {side:.4f} {side:.4f}'>"
+        f"<rect width='{side:.4f}' height='{side:.4f}' fill='{_CODE_PAPER}'/>"
+        f"<path fill='{_CODE_INK}' d='{''.join(runs['ink'])}'/>"
+        f"<path fill='{_CODE_VIOLET}' d='{''.join(runs['violet'])}'/></svg>"
+    )
+    return "data:image/svg+xml," + quote(svg, safe="")
+
+
+def _is_finder_module(row: int, column: int, size: int) -> bool:
+    """Whether a cell belongs to one of the three 7x7 position patterns.
+
+    The standard's own separator -- one light module all the way around each
+    finder -- is what keeps this a safe recolouring: no violet cell ever touches
+    an ink one, so the two paths cannot antialias into each other.
+    """
+    edge = size - 7
+    return (
+        (row < 7 and column < 7)
+        or (row < 7 and column >= edge)
+        or (row >= edge and column < 7)
+    )
+
+
+class PlacedCode(NamedTuple):
+    """Where a source code's square actually landed, in PDF page coordinates.
+
+    ``left``/``bottom`` are points from the page's lower-left corner, which is
+    the origin the decode gate's raster is measured against and the origin
+    ``FigurePlacement`` already uses.
+    """
+
+    page: int
+    left: float
+    bottom: float
+    side: float
+
+
+def _measured_source_code_boxes(document: Any) -> dict[str, PlacedCode]:
+    """Every source code the laid-out reader actually placed, by article.
+
+    Read off the box tree rather than trusted from the plan, because the whole
+    of the decode gate rests on knowing which page to rasterise and where on it
+    the square should be.  A code that silently failed to place is the failure
+    mode the gate exists for, and a plan cannot report it.
+    """
+    placed: dict[str, PlacedCode] = {}
+    for page_number, page in enumerate(document.pages, start=1):
+        for article_id, box in _walk_source_code_images(page._page_box):
+            width = float(box.width) * _POINTS_PER_CSS_PIXEL
+            height = float(box.height) * _POINTS_PER_CSS_PIXEL
+            found = PlacedCode(
+                page_number,
+                round(float(box.content_box_x()) * _POINTS_PER_CSS_PIXEL, 4),
+                round(
+                    _reader_y_points(
+                        float(box.content_box_y()) * _POINTS_PER_CSS_PIXEL, height
+                    ),
+                    4,
+                ),
+                round(width, 4),
+            )
+            if abs(width - height) > 1e-3:
+                raise ValidationError(
+                    f"Source code for article {article_id} was laid out "
+                    f"{width:.4f}pt by {height:.4f}pt; a QR symbol is square."
+                )
+            if placed.setdefault(article_id, found) != found:
+                raise ValidationError(
+                    f"Source code for article {article_id} was laid out twice, at "
+                    f"{placed[article_id]} and {found}; an article has one code."
+                )
+    return placed
+
+
+def _walk_source_code_images(box: Any, article_id: str | None = None) -> Iterable[tuple[str, Any]]:
+    element = getattr(box, "element", None)
+    attributes = getattr(element, "attrib", {}) if element is not None else {}
+    if getattr(box, "element_tag", None) == "article" and attributes.get("data-article-id"):
+        article_id = str(attributes["data-article-id"])
+    if (
+        getattr(box, "element_tag", None) == "img"
+        and element is not None
+        and "source-code" in _element_classes(element)
+        and article_id is not None
+    ):
+        yield article_id, box
+    for child in getattr(box, "children", ()) or ():
+        yield from _walk_source_code_images(child, article_id)
 
 
 def _measured_plan(
@@ -1842,19 +2167,17 @@ def _measured_plan(
     what lets the settle check above be an equality.
     """
     content_pages = _content_page_count(document)
-    ornaments: list[tuple[str, float]] = []
+    codes: list[SourceCode] = []
     end_marks: list[tuple[str, float]] = []
     for article in edition.articles:
         flow_bottom = _article_flow_bottom(document, article.id)
         end_marks.append((article.id, _end_mark_offset(flow_bottom)))
-        if article.tail_art is None:
-            continue
-        height = _tail_ornament_height(flow_bottom)
-        if height is not None:
-            ornaments.append((article.id, height))
+        code = _measured_source_code(article, flow_bottom)
+        if code is not None:
+            codes.append(code)
     return ReaderPlan(
         closing_plates=_signature_closing_plates(edition, content_pages),
-        tail_ornaments=tuple(ornaments),
+        source_codes=tuple(sorted(codes)),
         adaptive_images=_measured_adaptive_images(document, edition),
         band_offsets=_measured_band_offsets(document),
         end_marks=tuple(end_marks),
@@ -1862,6 +2185,38 @@ def _measured_plan(
             sorted({*runt_binds, *_measured_runt_binds(document)}, key=int)
         ),
     )
+
+
+def _measured_source_code(article: Any, flow_bottom: float) -> SourceCode | None:
+    """Which slot this article's code takes, and how large it is set.
+
+    The slot is a property of the laid-out page and of nothing else.
+    ``_tail_slot_height`` is the reader's own test for an article that ended
+    high enough to carry a large element under its end mark, and it is reused
+    here rather than restated: an edition whose author committed no art at all
+    still prints a large code wherever a page has the room, and an edition full
+    of art prints no more of them than its pages earn.
+
+    An article with no ``source_url`` prints no code and is not an error -- a
+    source record need not carry a canonical URL, and the editorial has no
+    source at all.
+    """
+    url = str(getattr(article, "source_url", "") or "").strip()
+    if not url:
+        return None
+    slot_height = _tail_slot_height(flow_bottom)
+    slot = "foot" if slot_height is None else "tail"
+    room = _CODE_FOOT_ROOM_POINTS if slot_height is None else slot_height
+    code = _fitted_source_code(str(article.id), slot, url, room)
+    if code is None:
+        raise ValidationError(
+            f"Article {article.id} cannot carry a scannable source code for {url}: "
+            f"the {slot} slot offers {room:.2f}pt, and even at the lowest error "
+            f"correction the symbol's module would fall under "
+            f"{_CODE_MIN_MODULE_POINTS * 25.4 / 72:.2f}mm. Shorten the canonical URL, "
+            "or let the article end higher on its last page."
+        )
+    return code
 
 
 def _end_mark_offset(flow_bottom: float) -> float:
@@ -1933,8 +2288,10 @@ def _article_flow_bottom(document: Any, article_id: str) -> float:
     once the difference between the frame top and a content box derived from the
     first baseline is removed.  Measured against ReportLab on both languages, this
     reproduces ``self.y`` to the third decimal on every article whose last page
-    carries the same copy.  The tail ornament is excluded from the walk because it
-    is exactly what this measurement decides.
+    carries the same copy.  The article's out-of-flow coda is excluded from the
+    walk because it is exactly what this measurement decides: both the tail
+    motif and the source code are placed *from* this number, so counting either
+    of them into it would make the plan measure its own output and never settle.
     """
     lowest = 0.0
     for page in document.pages:
@@ -1955,7 +2312,7 @@ def _article_flow_bottom(document: Any, article_id: str) -> float:
 
 def _article_flow_boxes(box: Any, article_id: str, *, inside: bool = False) -> Iterable[Any]:
     element = getattr(box, "element", None)
-    if element is not None and "article-tail" in _element_classes(element):
+    if element is not None and _element_classes(element) & _OUT_OF_FLOW_CODA_CLASSES:
         return
     if not inside:
         attributes = getattr(element, "attrib", {}) if element is not None else {}
@@ -1969,12 +2326,18 @@ def _article_flow_boxes(box: Any, article_id: str, *, inside: bool = False) -> I
         yield from _article_flow_boxes(child, article_id, inside=inside)
 
 
-def _tail_ornament_height(flow_bottom: float) -> float | None:
+def _tail_slot_height(flow_bottom: float) -> float | None:
     """``_article_tail_ornament_box`` (render.py:218-231), as a height or nothing.
 
-    The motif is drawn only where an article genuinely ends high on its page, and
-    it never displaces a line: it occupies the frame's foot, which is why the
-    stylesheet takes it out of flow entirely.
+    This is the publication's test for "the last page has room", and it is the
+    only one: an article whose flow ended high enough gets a slot of that height
+    under its end mark, and one that did not gets nothing.  It was written for
+    the tail motif and now governs the source code, unchanged -- which is what
+    keeps the decision a property of the laid-out page rather than of what an
+    author happened to commit.
+
+    Whatever stands in the slot never displaces a line: the slot occupies the
+    frame's foot, which is why the stylesheet takes it out of flow entirely.
     """
     endmark_baseline = max(_FRAME_BOTTOM_POINTS + 5.0, flow_bottom - 1.0)
     available = (
@@ -2111,16 +2474,18 @@ def _measure_layout(
 def _asset_is_placed(asset: HtmlAsset, plan: ReaderPlan | None) -> bool:
     """Whether the reader was laid out with this asset on a page at all.
 
-    An edition's inventory offers every closing plate and every tail motif; the
-    plan decides how many plates the signature needs and which tails the pages
-    have room for, so the inventory alone cannot say what should have been found.
+    An edition's inventory offers every closing plate; the plan decides how many
+    of them the signature needs, so the inventory alone cannot say what should
+    have been found.  A tail motif is never placed at all any more -- the source
+    code has its slot -- and the inventory still offers it because the semantic
+    edition is not a print tree.
     """
+    if asset.role == "article_tail":
+        return False
     if plan is None:
         return True
     if asset.role == "closing_plate":
         return int(str(asset.id).rsplit("-", 1)[-1]) <= plan.closing_plates
-    if asset.role == "article_tail":
-        return asset.article_id in plan.tail_heights
     return True
 
 
@@ -2269,6 +2634,199 @@ def _validate_cover_slots(document: Any) -> None:
             "WeasyPrint cover placeholders lost their named-page geometry: "
             f"expected {expected!r}, got {actual!r}"
         )
+
+
+def _validate_source_codes(
+    pdf_bytes: bytes,
+    edition: Edition,
+    codes: Iterable[SourceCode],
+    placed: Mapping[str, PlacedCode],
+) -> None:
+    """Read every source code back off the rasterised page and refuse a bad one.
+
+    THIS IS THE ONLY THING THAT MAKES THE FEATURE REAL.  Every other guard in
+    this module checks that a decision was carried out; this one checks that the
+    result works.  A QR code is the one element on the page whose correctness a
+    human proof-reader cannot judge -- it looks exactly the same whether it
+    carries the right URL, the wrong URL or nothing a scanner can resolve -- so
+    the only honest test is to be a scanner.
+
+    Off the *rasterised page*, not off the SVG.  Reading the symbol back out of
+    the source that produced it proves nothing but that the encoder is
+    self-consistent; everything that can actually go wrong happens after that,
+    in the layout, the vector fill, the PDF and the raster.  So the gate takes
+    the finished PDF bytes -- the exact ones about to be written -- rasterises
+    the page the code landed on at ``_CODE_DECODE_DPI``, and asks a general
+    barcode reader to find whatever QR symbols are on that page.  The reader is
+    not told where to look, which is why finding it is part of the result: a code
+    whose quiet zone is dirty, whose modules have merged, or which is sitting
+    under something else, is a code the reader will not locate.
+
+    Three things are asserted, and the second and third are what stop a pass from
+    being an accident.  Every planned code is decoded; its text is the article's
+    canonical URL character for character; and the symbol's own reported corners
+    land on the box the adapter placed.  Without the last one a page carrying two
+    codes, or a code left behind from another article, could satisfy the first
+    two.
+
+    The gate runs on the bytes before they reach the disk, so a reader that would
+    ship an unscannable code is never written at all.
+    """
+    wanted = {code.article_id: code for code in codes}
+    if not wanted:
+        return
+    missing = sorted(set(wanted) - set(placed))
+    if missing:
+        raise ValidationError(
+            f"WeasyPrint planned a source code for {', '.join(missing)} in edition "
+            f"{edition.id} but laid out no square for it; the code would be absent "
+            "from the printed page."
+        )
+    surplus = sorted(set(placed) - set(wanted))
+    if surplus:
+        raise ValidationError(
+            f"WeasyPrint laid out a source code for {', '.join(surplus)} in edition "
+            f"{edition.id}, which the plan does not carry."
+        )
+    failures: list[str] = []
+    pages = sorted({placed[article_id].page for article_id in wanted})
+    rasters = _rasterised_pages(pdf_bytes, pages)
+    for article_id, code in sorted(wanted.items()):
+        box = placed[article_id]
+        decoded = _decoded_codes(rasters[box.page])
+        match = next(
+            (
+                found
+                for found in decoded
+                if _code_box_matches(found[1], box)
+            ),
+            None,
+        )
+        if match is None:
+            failures.append(
+                f"{article_id}: nothing decoded on the {box.side:.2f}pt square at "
+                f"({box.left:.2f}, {box.bottom:.2f}) of page {box.page}; the page "
+                f"yielded {[text for text, _ in decoded]}"
+            )
+            continue
+        text, _corners = match
+        if text != code.url:
+            failures.append(
+                f"{article_id}: page {box.page} decoded {text!r}, expected {code.url!r}"
+            )
+    if failures:
+        raise ValidationError(
+            "WeasyPrint printed a source code that does not read back off the page at "
+            f"{_CODE_DECODE_DPI} ppi. An unscannable code is worse than none: "
+            + "; ".join(failures[:5])
+        )
+
+
+def _code_box_matches(corners: tuple[tuple[float, float], ...], box: PlacedCode) -> bool:
+    """Whether a decoded symbol's corners stand inside the square that was placed.
+
+    The corners a reader reports are the *symbol's*, so they sit one quiet zone
+    -- four modules -- inside the element on every side.  Rather than reproduce
+    that inset, the test is containment with a tolerance: the symbol must lie
+    within the placed square, and it must not be trivially small inside it.
+    """
+    if len(corners) < 4:
+        return False
+    slack = _CODE_POSITION_TOLERANCE_POINTS
+    xs = [x for x, _ in corners]
+    ys = [y for _, y in corners]
+    inside = (
+        min(xs) >= box.left - slack
+        and max(xs) <= box.left + box.side + slack
+        and min(ys) >= box.bottom - slack
+        and max(ys) <= box.bottom + box.side + slack
+    )
+    return inside and (max(xs) - min(xs)) >= box.side / 2
+
+
+def _rasterised_pages(pdf_bytes: bytes, pages: Iterable[int]) -> dict[int, Any]:
+    """The named reader pages as images at ``_CODE_DECODE_DPI``, via Poppler.
+
+    Poppler's ``pdftoppm`` is the same rasteriser ``render_critic`` judges every
+    build with, so the gate reads the page the critic sees rather than a second
+    interpretation of the PDF.  Only the pages carrying a code are rendered.
+    """
+    import shutil
+    import subprocess
+    import tempfile
+
+    from PIL import Image
+
+    executable = shutil.which("pdftoppm")
+    if not executable:
+        raise DependencyError(
+            "Reading a printed source code back off the page requires Poppler's "
+            "pdftoppm executable, the same one render criticism uses."
+        )
+    rasters: dict[int, Any] = {}
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        reader = root / "reader.pdf"
+        reader.write_bytes(pdf_bytes)
+        for page in pages:
+            prefix = root / f"page-{page}"
+            completed = subprocess.run(
+                [
+                    executable, "-png", "-r", str(_CODE_DECODE_DPI),
+                    "-f", str(page), "-l", str(page), str(reader), str(prefix),
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            rendered = sorted(root.glob(f"page-{page}-*.png"))
+            if completed.returncode or not rendered:
+                detail = (
+                    completed.stderr.strip()
+                    or completed.stdout.strip()
+                    or "no raster was produced"
+                )
+                raise DependencyError(
+                    f"Could not rasterize reader page {page} to read its source code: {detail}"
+                )
+            with Image.open(rendered[0]) as image:
+                rasters[page] = image.convert("L").copy()
+    return rasters
+
+
+def _decoded_codes(raster: Any) -> tuple[tuple[str, tuple[tuple[float, float], ...]], ...]:
+    """Every QR symbol a general reader finds on ``raster``, with its corners.
+
+    Corners come back in points from the page's lower-left corner, so they can be
+    compared with the box the adapter placed.  ``zxing-cpp`` is deliberately an
+    independent decoder and not this module's own encoder run backwards: it
+    locates the finder patterns itself, corrects the perspective and applies the
+    symbol's error correction, which is what a phone does and what a check
+    written against ``segno``'s matrix would not.
+    """
+    try:
+        import zxingcpp
+    except ImportError as exc:  # pragma: no cover - a declared dependency
+        raise ValidationError(
+            "Reading a printed source code back off the page requires zxing-cpp. "
+            f"Run `uv sync --locked`. Original error: {exc}"
+        ) from exc
+    scale = 72 / _CODE_DECODE_DPI
+    height = raster.height
+    results = []
+    for found in zxingcpp.read_barcodes(raster, formats=zxingcpp.BarcodeFormat.QRCode):
+        position = found.position
+        corners = tuple(
+            (point.x * scale, (height - point.y) * scale)
+            for point in (
+                position.top_left,
+                position.top_right,
+                position.bottom_right,
+                position.bottom_left,
+            )
+        )
+        results.append((found.text, corners))
+    return tuple(results)
 
 
 def _validate_reader_measures(document: Any) -> None:

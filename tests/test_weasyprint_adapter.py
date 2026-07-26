@@ -20,7 +20,7 @@ from magazine.manifest import Edition
 from magazine.render import RenderLayout
 from magazine.weasyprint_adapter import (
     WEASYPRINT_DESIGN,
-    _apply_tail_ornaments,
+    _apply_source_codes,
     _configure_macos_library_path,
     _content_page_count,
     _figure_placement,
@@ -31,7 +31,7 @@ from magazine.weasyprint_adapter import (
     _rewrite_landscape_plates,
     _rotated_plate_box,
     _signature_closing_plates,
-    _tail_ornament_height,
+    _tail_slot_height,
     _validate_caps,
     _validate_cover_slots,
     _validate_contents_page,
@@ -482,15 +482,19 @@ def test_reader_pages_up_to_the_first_closing_plate_are_the_content_pages():
     assert _content_page_count(_Document(tuple(_Page(_Box()) for _ in range(6)))) == 4
 
 
-def test_tail_ornament_is_earned_by_open_space_and_capped():
-    """`_article_tail_ornament_box` (render.py:218-231) as a decision, not a figure."""
+def test_the_large_slot_is_earned_by_open_space_and_capped():
+    """`_article_tail_ornament_box` (render.py:218-231) as a decision, not a figure.
+
+    It was the tail motif's test and is now the source code's, unchanged: the
+    slot is a property of where an article's flow ended and of nothing else.
+    """
     # `available` is `y - 101`: 118pt of it is the minimum, 214pt the cap.
-    assert _tail_ornament_height(218.9) is None
-    assert _tail_ornament_height(219.0) == pytest.approx(118.0)
-    assert _tail_ornament_height(280.0) == pytest.approx(179.0)
-    assert _tail_ornament_height(500.0) == pytest.approx(214.0)
+    assert _tail_slot_height(218.9) is None
+    assert _tail_slot_height(219.0) == pytest.approx(118.0)
+    assert _tail_slot_height(280.0) == pytest.approx(179.0)
+    assert _tail_slot_height(500.0) == pytest.approx(214.0)
     # An article that fills its last page earns nothing, floor included.
-    assert _tail_ornament_height(40.0) is None
+    assert _tail_slot_height(40.0) is None
 
 
 def test_measure_then_render_settles_the_plan_and_never_pads_the_signature(tmp_path: Path):
@@ -517,8 +521,11 @@ def test_measure_then_render_settles_the_plan_and_never_pads_the_signature(tmp_p
     # all -- which is not the one plate the probe pass offered, hence two passes.
     assert plan.closing_plates == 0
     assert len(laid_out) == 2 and laid_out[0] == laid_out[1]
-    # The tail motif is earned: the stub article ends 435.271pt above the foot.
-    assert plan.tail_heights == {"article<&>": pytest.approx(214.0)}
+    # The stub article ends 435.271pt above the foot, so its source code earns
+    # the large slot -- which the bare probe pass could not know and did not offer.
+    assert [(code.article_id, code.slot) for code in plan.source_codes] == [
+        ("article<&>", "tail")
+    ]
 
 
 def test_a_reader_that_is_not_a_signature_is_refused_rather_than_padded(tmp_path: Path):
@@ -613,16 +620,32 @@ def test_extra_closing_plates_are_dropped_and_a_shortfall_is_a_hard_error():
         _limit_closing_plates(tree, 5)
 
 
-def test_an_unearned_tail_ornament_is_removed_and_an_earned_one_is_sized():
-    markup = '<figure class="article-tail"><img src="c"></figure>'
-    sized = _parse_article_fragment(markup)
-    _apply_tail_ornaments(sized, {"article": 146.5756})
-    figure = next(sized.iter("figure"))
-    assert figure.get("style") == "height: 146.5756pt"
+def test_the_tail_motif_never_prints_and_the_code_takes_its_slot():
+    """`tail_art_path` is vestigial: the print tree keeps no motif at all.
 
-    dropped = _parse_article_fragment(markup)
-    _apply_tail_ornaments(dropped, {})
-    assert list(dropped.iter("figure")) == []
+    The semantic edition still offers it, because a screen adapter may want it,
+    so removing it is the print adapter's decision and is made here.
+    """
+    markup = '<figure class="article-tail"><img src="c"></figure>'
+    code = adapter.SourceCode(
+        "article", "tail", "H", 49, adapter._CODE_HOUSE_MODULE_POINTS, "https://example.test/a"
+    )
+
+    with_motif = _parse_article_fragment(markup)
+    _apply_source_codes(with_motif, {"article": code})
+    assert list(with_motif.iter("figure")) == []
+    image = next(
+        element for element in with_motif.iter("img") if element.get("class") == "source-code"
+    )
+    # Centred in the 325pt measure, standing on the motif's own 13.9954pt foot.
+    assert image.get("style") == (
+        "left: 107.4725pt; bottom: 13.9954pt; width: 118.0630pt; height: 118.0630pt"
+    )
+
+    without = _parse_article_fragment(markup)
+    _apply_source_codes(without, {})
+    assert list(without.iter("figure")) == []
+    assert [element for element in without.iter("img") if element.get("class") == "source-code"] == []
 
 
 def test_measurement_reports_actual_folios_article_pages_and_figure_box(tmp_path: Path):
@@ -749,8 +772,15 @@ def test_one_font_configuration_reaches_both_stylesheet_parsing_and_layout(
     """
     # The font-safe manuscript carries a code span that looks like a markdown
     # link and prose the reader folds, so a post-pass over assembled markup
-    # cannot slip through the document comparison below unnoticed.
+    # cannot slip through the document comparison below unnoticed.  The article
+    # is stripped of its source url -- a source record need not carry a
+    # canonical one, so this is a real edition shape -- because the layout below
+    # is a hand-built double whose `write_pdf` returns four bytes, and the source
+    # code gate reads a rasterised page.
     edition = _raster_edition(tmp_path, manuscript=_FONT_SAFE_MANUSCRIPT)
+    edition = replace(
+        edition, articles=tuple(replace(a, source_url=None) for a in edition.articles)
+    )
     assets = render_html_edition(edition).assets
     recorded: dict[str, object] = {}
 
@@ -1944,7 +1974,7 @@ _PAINT_HTML = '<figure data-figure-id="fig"><img src="figure.png"></figure>'
 def _paint(monkeypatch, painted: _Document, *, document: _Document | None = None, html: str = _PAINT_HTML):
     monkeypatch.setattr(adapter, "_lay_out", lambda *args, **kwargs: painted)
     edition = SimpleNamespace(id="edition<&>")
-    plan = adapter.ReaderPlan(closing_plates=0, tail_ornaments=())
+    plan = adapter.ReaderPlan(closing_plates=0)
     return adapter._painted_reader(
         object(), html, object(), edition, plan, document or _paint_document()
     )
@@ -2624,3 +2654,211 @@ def test_the_band_anchor_clearance_defect_and_the_declaration_that_repairs_it(
     assert space_before(body, None) == pytest.approx(0.0, abs=1e-3)
     # The repair, as it would ship.
     assert space_before(body, repaired) == pytest.approx(ordinary, abs=1e-3)
+
+
+# ---------------------------------------------------------------------------
+# The source code: a printed way back to the source an article was built from.
+# ---------------------------------------------------------------------------
+
+_CODE_URL = "https://example.test/source?a=1&b=2"
+
+
+def _decoded(pdf: Path) -> dict[int, list[str]]:
+    """Every QR symbol Poppler and zxing find on every page of ``pdf``."""
+    import pypdf
+
+    found: dict[int, list[str]] = {}
+    pages = range(1, len(pypdf.PdfReader(str(pdf)).pages) + 1)
+    rasters = adapter._rasterised_pages(pdf.read_bytes(), pages)
+    for page, raster in rasters.items():
+        texts = [text for text, _corners in adapter._decoded_codes(raster)]
+        if texts:
+            found[page] = texts
+    return found
+
+
+def test_the_code_is_sized_from_its_url_and_never_from_a_point_size():
+    """Two symbols, one module: a longer URL prints a physically larger square."""
+    short = adapter._fitted_source_code("a", "tail", "https://buzz.xyz/", 214.0)
+    long = adapter._fitted_source_code(
+        "b", "tail", "https://www.cs.princeton.edu/~arvindn/talks/icml-2026-annotated-slides/", 214.0
+    )
+
+    assert short.module == long.module == pytest.approx(adapter._CODE_HOUSE_MODULE_POINTS)
+    assert short.modules < long.modules
+    assert short.side < long.side
+    # The house module is 0.85mm, so the square is exactly its own module count.
+    assert short.side == pytest.approx(short.modules * 0.85 * 72 / 25.4)
+
+
+def test_a_slot_with_room_takes_the_highest_error_correction_and_a_tight_one_trades_it():
+    """Cell size before redundancy, which is the trade a small printed code needs."""
+    roomy = adapter._fitted_source_code("a", "tail", _CODE_URL, 214.0)
+    tight = adapter._fitted_source_code("a", "foot", _CODE_URL, adapter._CODE_FOOT_ROOM_POINTS)
+
+    assert roomy.error == "H"
+    assert tight.error in {"Q", "M", "L"}
+    # The tight code gave correction back to buy cell width, and it bought some.
+    assert tight.modules < roomy.modules
+    assert tight.module >= adapter._CODE_MIN_MODULE_POINTS
+    assert tight.side == pytest.approx(adapter._CODE_FOOT_ROOM_POINTS)
+
+
+def test_a_slot_too_small_for_any_level_yields_nothing_rather_than_a_smaller_code():
+    """The floor does not bend: an unscannable square is worse than no square."""
+    assert adapter._fitted_source_code("a", "foot", _CODE_URL, 8.0) is None
+
+    article = SimpleNamespace(id="article", source_url="x" * 900)
+    with pytest.raises(ValidationError, match="cannot carry a scannable source code"):
+        # An article that fills its last page has only the foot slot, and a URL
+        # this long cannot be set in it at any error correction level.
+        adapter._measured_source_code(article, 40.0)
+
+
+def test_which_slot_a_code_takes_is_the_page_s_decision_and_not_the_author_s():
+    """The same article, the same URL, two pages: the layout decides, alone.
+
+    Deliberately asserted against `_tail_slot_height`'s own threshold rather than
+    against `tail_art`: an edition that committed no art at all still earns the
+    large slot wherever a page has the room, which is what makes the rule
+    edition-agnostic.
+    """
+    article = SimpleNamespace(id="article", source_url=_CODE_URL, tail_art=None)
+
+    ended_high = adapter._measured_source_code(article, 500.0)
+    ended_low = adapter._measured_source_code(article, 40.0)
+
+    assert (ended_high.slot, ended_low.slot) == ("tail", "foot")
+    assert ended_high.side > ended_low.side
+    # 218.9 is a point under the slot's own minimum and 219.0 is on it.
+    assert adapter._measured_source_code(article, 218.9).slot == "foot"
+    assert adapter._measured_source_code(article, 219.0).slot == "tail"
+    # No source, no code, no error -- the editorial's case, and a source record's
+    # canonical url is not guaranteed.
+    assert adapter._measured_source_code(SimpleNamespace(id="a", source_url=None), 500.0) is None
+
+
+def test_the_code_is_drawn_in_the_house_inks_over_paper_with_its_quiet_zone():
+    code = adapter._fitted_source_code("a", "tail", _CODE_URL, 214.0)
+    svg = unquote(adapter._source_code_source(code).removeprefix("data:image/svg+xml,"))
+    matrix = adapter._source_code_matrix(code)
+
+    # INK for the modules, VIOLET for the three finder patterns, paper beneath.
+    assert f"fill='{adapter._CODE_INK}'" in svg
+    assert f"fill='{adapter._CODE_VIOLET}'" in svg
+    assert f"<rect width='{code.side:.4f}' height='{code.side:.4f}' fill='rgb(100%,100%,100%)'/>" in svg
+    # One path per ink, not a field of rectangles: a PDF fill computes coverage
+    # once over a whole path, so touching modules merge instead of laying a grid
+    # of antialiased hairlines through the symbol.
+    assert svg.count("<path") == 2
+    assert "<rect" in svg and svg.count("<rect") == 1
+    # The element carries the standard's four-module quiet zone itself.
+    assert code.modules == len(matrix) + 2 * adapter._CODE_QUIET_MODULES
+    assert f"width='{code.side:.4f}pt'" in svg
+    # The first dark module of the top-left finder starts one quiet zone in.
+    inset = adapter._CODE_QUIET_MODULES * code.module
+    assert f"M{inset:.4f} {inset:.4f}" in svg
+
+
+def test_the_foot_slot_hangs_the_code_below_the_frame_and_clear_of_the_sheet_edge():
+    """The small code is furniture with one position, on every page that needs it."""
+    code = adapter._fitted_source_code("article", "foot", _CODE_URL, adapter._CODE_FOOT_ROOM_POINTS)
+    tree = _parse_article_fragment("<p>Body.</p>")
+
+    _apply_source_codes(tree, {"article": code})
+
+    image = next(element for element in tree.iter("img") if element.get("class") == "source-code")
+    assert image.get("data-source-code") == "foot"
+    # Hung from the page's content-box foot, so its own lower edge stands
+    # `_CODE_FOOT_ROOM_POINTS - side` plus 4mm above the sheet's foot; the room
+    # is the ceiling on the side, which is what keeps that clearance positive.
+    assert f"bottom: {-code.side:.4f}pt" in image.get("style")
+    # Its lower edge therefore stands the printer's 4mm above the sheet's foot,
+    # which is what the room is a ceiling on the side *for*.
+    clearance = adapter._PAGE_MARGIN_BOTTOM_POINTS - adapter._RASTER_NUDGE_POINTS - code.side
+    assert clearance == pytest.approx(4.0 * 72 / 25.4)
+    # Centred in the reading measure, which clears both ends of the folio.
+    left = adapter._CODE_MEASURE_LEFT_POINTS + (adapter._CODE_MEASURE_POINTS - code.side) / 2
+    assert f"left: {left:.4f}pt" in image.get("style")
+
+
+def test_a_printed_code_reads_back_off_the_rasterized_page_as_its_canonical_url(
+    tmp_path: Path,
+):
+    """The gate on a real build: rendered, written, rasterized, decoded.
+
+    Read with a general barcode reader that is not told where to look, off a
+    300 ppi raster of the finished PDF -- the publication's own print floor --
+    so what passes here is what a phone would do to the printed sheet.
+    """
+    edition = _raster_edition(tmp_path, manuscript=_FONT_SAFE_MANUSCRIPT)
+    output = tmp_path / "reader.pdf"
+
+    render_a5_weasyprint(edition, output)
+
+    assert list(_decoded(output).values()) == [[_CODE_URL]]
+
+
+def test_a_code_carrying_the_wrong_url_is_refused_even_though_it_scans(tmp_path: Path, monkeypatch):
+    """A perfectly scannable code pointing somewhere else is the silent failure.
+
+    Nothing about the page looks wrong, and no reader could tell -- which is why
+    the gate compares the decoded text with the article's canonical url rather
+    than merely asserting that something decoded.
+    """
+    edition = _raster_edition(tmp_path, manuscript=_FONT_SAFE_MANUSCRIPT)
+    genuine = adapter._source_code_source
+    monkeypatch.setattr(
+        adapter,
+        "_source_code_source",
+        lambda code: genuine(replace(code, url="https://example.test/not-the-source")),
+    )
+    output = tmp_path / "reader.pdf"
+
+    with pytest.raises(ValidationError, match="does not read back off the page"):
+        render_a5_weasyprint(edition, output)
+
+    assert "expected 'https://example.test/source?a=1&b=2'" in _error_text(edition, tmp_path)
+    # And nothing was written: the gate runs on the bytes before they land.
+    assert not output.exists()
+
+
+def test_a_code_damaged_past_its_own_error_correction_is_refused(tmp_path: Path, monkeypatch):
+    """The other half: a code that carries the right URL and cannot be read.
+
+    Half the symbol's rows are inverted, which is far past what any error
+    correction level recovers, so the reader finds nothing at all on the page.
+    """
+    edition = _raster_edition(tmp_path, manuscript=_FONT_SAFE_MANUSCRIPT)
+    genuine = adapter._source_code_matrix
+
+    def damaged(code):
+        matrix = genuine(code)
+        for row in range(len(matrix) // 2, len(matrix)):
+            matrix[row] = [not cell for cell in matrix[row]]
+        return matrix
+
+    monkeypatch.setattr(adapter, "_source_code_matrix", damaged)
+    output = tmp_path / "reader.pdf"
+
+    with pytest.raises(ValidationError, match="nothing decoded on the"):
+        render_a5_weasyprint(edition, output)
+    assert not output.exists()
+
+
+def test_a_planned_code_that_never_reached_a_page_is_refused(tmp_path: Path, monkeypatch):
+    """Silent absence is the third way this feature can fail, and it is caught."""
+    edition = _raster_edition(tmp_path, manuscript=_FONT_SAFE_MANUSCRIPT)
+    monkeypatch.setattr(adapter, "_apply_source_codes", lambda tree, codes: None)
+
+    with pytest.raises(ValidationError, match="laid out no square for it"):
+        render_a5_weasyprint(edition, tmp_path / "reader.pdf")
+
+
+def _error_text(edition: Edition, tmp_path: Path) -> str:
+    """The message the caller above already raised, captured for a second look."""
+    try:
+        render_a5_weasyprint(edition, tmp_path / "again.pdf")
+    except ValidationError as exc:
+        return str(exc)
+    raise AssertionError("expected the source code gate to refuse this reader")

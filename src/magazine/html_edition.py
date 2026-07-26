@@ -311,8 +311,38 @@ def _render_article(
                 2,
             )
         )
+    lines.extend(_indent(_render_source_link(article), 2))
     lines.append("</article>")
     return "\n".join(lines), tuple(assets)
+
+
+def _render_source_link(article: Article) -> tuple[str, ...]:
+    """The article's own way back to the source it was built from, as a link.
+
+    This is a semantic hook and not print policy, and the distinction is worth
+    stating because the thing it exists for is a printed QR code.  What the
+    edition *knows* is that this article was built from a source that lives at a
+    particular address, and that a reader who wants the original should be sent
+    there -- an editorial fact of the same kind as the source ids already
+    printed at the opener, and expressible in HTML as what it is: an anchor with
+    a working ``href``.  A screen adapter follows it.  The print adapter, which
+    cannot, renders it as a code instead, and everything that decision needs --
+    where a square fits on a laid-out page, how wide a module has to be to
+    survive an inkjet, which error-correction level the room can afford -- stays
+    where page geometry is known.  None of it is visible here.
+
+    One link, not one per source: ``source_ids`` is authored and ordered, the
+    first is the primary source, and the article already prints the full list at
+    its opener.  An article whose first source carries no ``canonical_url``
+    emits nothing at all rather than a broken destination.
+    """
+    if not article.source_url:
+        return ()
+    return (
+        f'<a class="source-link" data-source-link="primary" '
+        f'data-source-id="{_attr(article.source_ids[0] if article.source_ids else "")}" '
+        f'href="{_attr(article.source_url)}">{_text(article.source_url)}</a>',
+    )
 
 
 def _render_section(edition: Edition, index: int, section: Section, document: PublicationDocument) -> str:

@@ -52,6 +52,7 @@ def _edition(tmp_path: Path, *, locale: str = "en", manuscript: str | None = Non
         source_ids=("source-one", "source-two"), manuscript=article_path,
         fidelity=tmp_path / "fidelity.yaml", content_mode="faithful_synthesis",
         figures=(opener, figure), tail_art=tail_path,
+        source_url="https://example.test/source?a=1&b=2",
     )
     return Edition(
         id="edition<&>", publication_name="Magazine <&>", issue_number="7", title="Issue <&>",
@@ -251,3 +252,36 @@ def test_current_edition_languages_render_through_public_interface():
         assert rendered.html.startswith("<!doctype html>")
         assert f'<html lang="{edition.locale}"' in rendered.html
         assert len(rendered.assets) >= sum(len(article.figures) for article in edition.articles)
+
+
+def test_the_article_carries_one_working_link_back_to_its_primary_source(tmp_path: Path):
+    """The semantic hook the printed code is rendered from.
+
+    It is a link and not a code: what the edition knows is that this article was
+    built from a source at a particular address, which is an editorial fact of
+    the same kind as the source ids already printed at the opener.  How a print
+    adapter that cannot be followed renders it is not expressible here and is not
+    expressed here -- there is no size, no slot and no colour in this output.
+    """
+    result = render_html_edition(_edition(tmp_path))
+
+    assert (
+        '<a class="source-link" data-source-link="primary" data-source-id="source-one" '
+        'href="https://example.test/source?a=1&amp;b=2">https://example.test/source?a=1&amp;b=2</a>'
+    ) in result.html
+    # One per article, from the first of its two source ids, and after the end
+    # mark: the article's own coda, not a second provenance line.
+    assert result.html.count('class="source-link"') == 1
+    assert result.html.index('class="end-mark"') < result.html.index('class="source-link"')
+    assert 'data-source-link="primary" data-source-id="source-two"' not in result.html
+
+
+def test_an_article_whose_source_has_no_canonical_url_offers_no_link(tmp_path: Path):
+    edition = _edition(tmp_path)
+    without = replace(
+        edition, articles=tuple(replace(a, source_url=None) for a in edition.articles)
+    )
+
+    assert "source-link" not in render_html_edition(without).html
+    # And the editorial, which has no source at all, never had one.
+    assert "source-link" not in render_html_edition(edition).html.split("<article")[0]
