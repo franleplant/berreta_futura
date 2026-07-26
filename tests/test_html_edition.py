@@ -267,8 +267,13 @@ def test_the_article_carries_one_working_link_back_to_its_primary_source(tmp_pat
 
     assert (
         '<a class="source-link" data-source-link="primary" data-source-id="source-one" '
+        'data-source-label="Source / 01" '
         'href="https://example.test/source?a=1&amp;b=2">https://example.test/source?a=1&amp;b=2</a>'
     ) in result.html
+    # The one piece of print policy that has to start here, and only because it
+    # is language: the printed code needs a name beside it, and the name is the
+    # reader's own word.  It is a name and not the address.
+    assert 'data-source-label="Source / 01"' in result.html
     # One per article, from the first of its two source ids, and after the end
     # mark: the article's own coda, not a second provenance line.
     assert result.html.count('class="source-link"') == 1

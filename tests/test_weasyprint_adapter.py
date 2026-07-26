@@ -31,7 +31,8 @@ from magazine.weasyprint_adapter import (
     _rewrite_landscape_plates,
     _rotated_plate_box,
     _signature_closing_plates,
-    _tail_slot_height,
+    _tail_code_room,
+    _tail_code_slot,
     _validate_caps,
     _validate_cover_slots,
     _validate_contents_page,
@@ -316,17 +317,26 @@ def _print_tree(edition: Edition):
     ).etree_element
 
 
-def _parse_article_fragment(inner: str, *, plates: int = 0):
+def _parse_article_fragment(inner: str, *, plates: int = 0, source_label: str = ""):
     HTML, _CSS, _FontConfiguration = _weasyprint_types()
     plate_markup = "".join(
         f'<figure class="closing-plate" data-closing-plate="{index + 1}">'
         f'<img src="p{index}"><figcaption>Plate</figcaption></figure>'
         for index in range(plates)
     )
+    # The anchor `html_edition` writes after the end mark, which is where the
+    # print adapter reads the code's own name from.
+    link = (
+        f'<a class="source-link" data-source-link="primary" '
+        f'data-source-label="{source_label}" href="https://example.test/a">'
+        "https://example.test/a</a>"
+        if source_label
+        else ""
+    )
     return HTML(
         string=(
             '<!doctype html><html><body><main data-edition-id="edition">'
-            f'<article id="article-article" data-article-id="article">{inner}</article>'
+            f'<article id="article-article" data-article-id="article">{inner}{link}</article>'
             f"{plate_markup}</main></body></html>"
         ),
         base_url=Path.cwd().as_uri() + "/",
@@ -483,18 +493,37 @@ def test_reader_pages_up_to_the_first_closing_plate_are_the_content_pages():
 
 
 def test_the_large_slot_is_earned_by_open_space_and_capped():
-    """`_article_tail_ornament_box` (render.py:218-231) as a decision, not a figure.
+    """The slot is a property of where an article's flow ended and of nothing else.
 
-    It was the tail motif's test and is now the source code's, unchanged: the
-    slot is a property of where an article's flow ended and of nothing else.
+    It was the tail motif's test, and it is no longer: the ornament refused a
+    tight fit because a crowded band looks crowded, and the code is not ornament.
+    What replaces the motif's flat 118pt minimum is the code's own question --
+    is there room for a square at least twice the foot slot's, which is what
+    keeps the two printed sizes two classes and not a continuum -- and the
+    motif's 24pt foot inset is gone with it, because a code anchored to the top
+    of its slot never stands on the slot's foot.
     """
-    # `available` is `y - 101`: 118pt of it is the minimum, 214pt the cap.
-    assert _tail_slot_height(218.9) is None
-    assert _tail_slot_height(219.0) == pytest.approx(118.0)
-    assert _tail_slot_height(280.0) == pytest.approx(179.0)
-    assert _tail_slot_height(500.0) == pytest.approx(214.0)
-    # An article that fills its last page earns nothing, floor included.
-    assert _tail_slot_height(40.0) is None
+    # `_tail_code_room` is `y - 82`: from 31pt under the end mark down to the
+    # reader's own floor for type, capped at the ornament's 214.
+    assert _tail_code_room(500.0) == pytest.approx(214.0)
+    assert _tail_code_room(280.0) == pytest.approx(198.0)
+    assert _tail_code_room(219.0) == pytest.approx(137.0)
+    # Twice the foot slot is the threshold, and it is measured and not written.
+    minimum = 2.0 * adapter._CODE_FOOT_ROOM_POINTS
+    assert _tail_code_slot(82.0 + minimum + 0.1) is not None
+    assert _tail_code_slot(82.0 + minimum - 0.1) is None
+    # The two pages the ornament's own minimum turned away now carry the code:
+    # en p18 and es p31 measured 119.17pt and 129.57pt of room against a 118pt
+    # threshold that reserved a further 24pt below it.
+    assert _tail_code_room(201.17) == pytest.approx(119.17)
+    assert _tail_code_slot(201.17) is not None
+    assert _tail_code_slot(211.57) is not None
+    # An article that fills its last page still earns nothing, floor included.
+    assert _tail_code_slot(40.0) is None
+    assert _tail_code_slot(150.0) is None
+    # The slot's own top, in the page content box's coordinates: 31pt under the
+    # end mark's baseline, which is where the code's upper edge lands.
+    assert _tail_code_slot(500.0) == pytest.approx(499.0 - 31.0 - 54.9996)
 
 
 def test_measure_then_render_settles_the_plan_and_never_pads_the_signature(tmp_path: Path):
@@ -620,32 +649,84 @@ def test_extra_closing_plates_are_dropped_and_a_shortfall_is_a_hard_error():
         _limit_closing_plates(tree, 5)
 
 
-def test_the_tail_motif_never_prints_and_the_code_takes_its_slot():
+def test_the_tail_motif_never_prints_and_the_code_hangs_from_its_slot_s_head():
     """`tail_art_path` is vestigial: the print tree keeps no motif at all.
 
     The semantic edition still offers it, because a screen adapter may want it,
     so removing it is the print adapter's decision and is made here.
+
+    And the code takes the slot's *head*, flush left on the measure.  Hung from
+    the slot's foot, as the ornament was, a 41.65mm square left 84-93mm between
+    the end mark and the code on the pages this edition actually sets -- the page
+    read "article ends, silence, black square" -- and a square centred on the
+    measure agreed with nothing else on a page whose every element is flush to
+    one edge.  Anchored to the head the void above it is the slot's own 31pt
+    clearance, whatever the slot's height, and the unused white falls at the
+    page foot where an article ending high has always left it.
     """
     markup = '<figure class="article-tail"><img src="c"></figure>'
     code = adapter.SourceCode(
-        "article", "tail", "H", 49, adapter._CODE_HOUSE_MODULE_POINTS, "https://example.test/a"
+        "article",
+        "tail",
+        "H",
+        49,
+        adapter._CODE_HOUSE_MODULE_POINTS,
+        "https://example.test/a",
+        adapter._CODE_MEASURE_LEFT_POINTS,
+        200.0,
     )
 
-    with_motif = _parse_article_fragment(markup)
+    with_motif = _parse_article_fragment(markup, source_label="Source / 04")
     _apply_source_codes(with_motif, {"article": code})
     assert list(with_motif.iter("figure")) == []
     image = next(
         element for element in with_motif.iter("img") if element.get("class") == "source-code"
     )
-    # Centred in the 325pt measure, standing on the motif's own 13.9954pt foot.
+    # Flush left on the 325pt measure, its upper edge on the slot's own top.
     assert image.get("style") == (
-        "left: 107.4725pt; bottom: 13.9954pt; width: 118.0630pt; height: 118.0630pt"
+        "left: 4.0040pt; bottom: 81.9370pt; width: 118.0630pt; height: 118.0630pt"
+    )
+    # And named, in the tracked caps `END / nn` is set in, on the symbol's own
+    # bottom edge -- four modules above the box's -- one gap to its right.
+    label = next(
+        element for element in with_motif.iter("p") if element.get("class") == "source-label"
+    )
+    assert label.text == "Source / 04"
+    assert code.symbol_bottom == pytest.approx(
+        200.0 - code.side + 4 * adapter._CODE_HOUSE_MODULE_POINTS
+    )
+    assert label.get("style") == (
+        f"left: {code.left + code.side + 12:.4f}pt; "
+        f"bottom: {code.symbol_bottom + 2.47375:.4f}pt"
     )
 
     without = _parse_article_fragment(markup)
     _apply_source_codes(without, {})
     assert list(without.iter("figure")) == []
     assert [element for element in without.iter("img") if element.get("class") == "source-code"] == []
+    assert [element for element in without.iter("p") if element.get("class") == "source-label"] == []
+
+
+def test_a_code_with_no_name_to_print_is_a_build_failure_and_not_a_bare_square():
+    """The unlabelled square is the defect the label exists to repair."""
+    code = adapter.SourceCode(
+        "article", "tail", "H", 49, adapter._CODE_HOUSE_MODULE_POINTS,
+        "https://example.test/a", adapter._CODE_MEASURE_LEFT_POINTS, 200.0,
+    )
+
+    with pytest.raises(ValidationError, match="carries no data-source-label"):
+        _apply_source_codes(_parse_article_fragment("<p>Body.</p>"), {"article": code})
+
+    # Nor may the name run off the measure the square already fills.
+    wide = adapter.SourceCode(
+        "article", "tail", "H", 49, adapter._CODE_HOUSE_MODULE_POINTS,
+        "https://example.test/a", 250.0, 200.0,
+    )
+    with pytest.raises(ValidationError, match="too wide for its own name"):
+        _apply_source_codes(
+            _parse_article_fragment("<p>Body.</p>", source_label="Source / 04"),
+            {"article": wide},
+        )
 
 
 def test_measurement_reports_actual_folios_article_pages_and_figure_box(tmp_path: Path):
@@ -2494,10 +2575,43 @@ def test_a_pair_that_could_not_fit_the_measure_is_never_bound():
     `_validate_reader_measures` would refuse the build over a repair this module
     chose rather than over anything an editor wrote.
     """
-    stranded = [(320.0, "supercalifragilistic" * 5), (20.0, "gate.")]
+    stranded = [(420.0, "supercalifragilistic" * 5), (20.0, "gate.")]
 
     assert not adapter._is_runt(stranded, measure=433.0, size=13.3)
-    assert adapter._is_runt([(320.0, "before each"), (20.0, "gate.")], 433.0, 13.3)
+    # A full penultimate line and a short last word: the case the bind is for.
+    assert adapter._is_runt([(420.0, "before each"), (20.0, "gate.")], 433.0, 13.3)
+
+
+def test_a_bind_that_would_open_a_second_short_line_is_refused():
+    """The cure may not be worse than the defect, and once it was.
+
+    en p29 bound `surrounding` to `context.` and set two short lines in a row --
+    `...and only then expanded with` at 94.8pt, 29.3% of the measure, short --
+    which is a worse defect than the stranded word it repaired.  The word the
+    bind takes off the penultimate line is known without laying the paragraph
+    out again: greedy breaking moves nothing above it, so the line comes out
+    exactly as wide as it is now less its own last word.
+    """
+    measure, size = 433.0, 13.3
+    # The bound word's own width is what the penultimate line pays.
+    short_word = adapter._string_width(" each", "serif", size)
+    long_word = adapter._string_width(" surrounding", "serif", size)
+    assert long_word > short_word
+
+    # A penultimate line that can afford the word it gives up.
+    assert adapter._is_runt([(420.0, "before each"), (20.0, "gate.")], measure, size)
+    # ...and the same paragraph where it cannot: 20% of the measure is the line.
+    opened = measure * adapter._RUNT_MAX_RAG_FRACTION
+    assert adapter._is_runt(
+        [(measure - opened + short_word + 0.5, "before each"), (20.0, "gate.")], measure, size
+    )
+    assert not adapter._is_runt(
+        [(measure - opened + short_word - 0.5, "before each"), (20.0, "gate.")], measure, size
+    )
+    # The threshold is where the population puts it: every bind edition 002 asks
+    # for opens between 4.9% and 18.4% of its measure, or between 22.6% and
+    # 29.5%, and nothing at all in between.
+    assert 0.184 < adapter._RUNT_MAX_RAG_FRACTION < 0.226
 
 
 def test_only_reading_flow_prose_is_keyed_for_runt_control(tmp_path: Path):
@@ -2661,6 +2775,10 @@ def test_the_band_anchor_clearance_defect_and_the_declaration_that_repairs_it(
 # ---------------------------------------------------------------------------
 
 _CODE_URL = "https://example.test/source?a=1&b=2"
+# A 51-character address, the length this edition's canonical URLs actually run
+# to, and the length at which the error-correction levels stop tying: ECC-L sets
+# it in QR version 3 and ECC-M needs version 4.
+_CODE_URL_51 = "https://example.test/source/agent-swarms-and-model"
 
 
 def _decoded(pdf: Path) -> dict[int, list[str]]:
@@ -2691,17 +2809,45 @@ def test_the_code_is_sized_from_its_url_and_never_from_a_point_size():
     assert short.side == pytest.approx(short.modules * 0.85 * 72 / 25.4)
 
 
-def test_a_slot_with_room_takes_the_highest_error_correction_and_a_tight_one_trades_it():
-    """Cell size before redundancy, which is the trade a small printed code needs."""
-    roomy = adapter._fitted_source_code("a", "tail", _CODE_URL, 214.0)
-    tight = adapter._fitted_source_code("a", "foot", _CODE_URL, adapter._CODE_FOOT_ROOM_POINTS)
+def test_the_widest_cell_wins_and_only_a_tie_goes_to_the_higher_correction():
+    """Cell size before redundancy, which is the trade a small printed code needs.
 
+    The rule used to be "the first level that clears the floor", i.e. the highest
+    correction that fits, which is the opposite trade from the one the design
+    states.  For this edition's 51-character URLs it cost 11% of module width for
+    nothing: ECC-M sets 41 modules in the foot slot's square and ECC-L sets 37 in
+    the identical square, and a wider cell is what a phone camera is short of.
+    """
+    roomy = adapter._fitted_source_code("a", "tail", _CODE_URL_51, 214.0)
+    tight = adapter._fitted_source_code(
+        "a", "foot", _CODE_URL_51, adapter._CODE_FOOT_ROOM_POINTS
+    )
+
+    # Room enough for every level to reach the house module is a tie, and a tie
+    # is the one case where more redundancy is free.
     assert roomy.error == "H"
-    assert tight.error in {"Q", "M", "L"}
-    # The tight code gave correction back to buy cell width, and it bought some.
+    assert roomy.module == pytest.approx(adapter._CODE_HOUSE_MODULE_POINTS)
+    # Where they do not tie, the lowest correction wins because it is the
+    # shortest symbol and therefore the widest cell in the same room.
+    assert tight.error == "L"
     assert tight.modules < roomy.modules
     assert tight.module >= adapter._CODE_MIN_MODULE_POINTS
-    assert tight.side == pytest.approx(adapter._CODE_FOOT_ROOM_POINTS)
+    # Measured against every other level the same room admits: none is wider.
+    import segno
+
+    admitted = {
+        level: adapter._slot_module(
+            "foot",
+            int(segno.make(_CODE_URL_51, error=level, micro=False).symbol_size(border=4)[0]),
+            adapter._CODE_FOOT_ROOM_POINTS,
+        )
+        for level in adapter._CODE_ERROR_LEVELS
+    }
+    assert tight.module == pytest.approx(max(admitted.values()))
+    # And the level the old rule took is measurably narrower in the same slot.
+    assert admitted["M"] < tight.module
+    assert tight.module * 25.4 / 72 == pytest.approx(0.3795, abs=5e-4)
+    assert admitted["M"] * 25.4 / 72 == pytest.approx(0.3385, abs=5e-4)
 
 
 def test_a_slot_too_small_for_any_level_yields_nothing_rather_than_a_smaller_code():
@@ -2718,7 +2864,7 @@ def test_a_slot_too_small_for_any_level_yields_nothing_rather_than_a_smaller_cod
 def test_which_slot_a_code_takes_is_the_page_s_decision_and_not_the_author_s():
     """The same article, the same URL, two pages: the layout decides, alone.
 
-    Deliberately asserted against `_tail_slot_height`'s own threshold rather than
+    Deliberately asserted against `_tail_code_slot`'s own threshold rather than
     against `tail_art`: an edition that committed no art at all still earns the
     large slot wherever a page has the room, which is what makes the rule
     edition-agnostic.
@@ -2729,29 +2875,49 @@ def test_which_slot_a_code_takes_is_the_page_s_decision_and_not_the_author_s():
     ended_low = adapter._measured_source_code(article, 40.0)
 
     assert (ended_high.slot, ended_low.slot) == ("tail", "foot")
-    assert ended_high.side > ended_low.side
-    # 218.9 is a point under the slot's own minimum and 219.0 is on it.
-    assert adapter._measured_source_code(article, 218.9).slot == "foot"
-    assert adapter._measured_source_code(article, 219.0).slot == "tail"
+    assert ended_high.side > 2 * ended_low.side
+    # The threshold is room for twice the foot square, and nothing else.
+    boundary = 82.0 + 2.0 * adapter._CODE_FOOT_ROOM_POINTS
+    assert adapter._measured_source_code(article, boundary - 0.1).slot == "foot"
+    assert adapter._measured_source_code(article, boundary + 0.1).slot == "tail"
     # No source, no code, no error -- the editorial's case, and a source record's
     # canonical url is not guaranteed.
     assert adapter._measured_source_code(SimpleNamespace(id="a", source_url=None), 500.0) is None
 
 
-def test_the_code_is_drawn_in_the_house_inks_over_paper_with_its_quiet_zone():
+def test_the_symbol_is_set_in_one_ink_so_a_mono_printer_cannot_screen_a_finder():
+    """The finder patterns were VIOLET and are now INK, on purpose.
+
+    On a colour device the violet is right and measures fine: gray 0.180 against
+    the ink's 0.071, and the binariser is untroubled.  A **monochrome** printer
+    does not reproduce 0.18 as gray, it halftones it, and a halftone cell at the
+    foot code's 0.38mm module is the width of the module -- which puts white
+    holes through a finder ring one module thick, in the one part of the symbol
+    detection depends on before error correction can help.  This magazine is
+    printed at home and that case cannot be measured here, so the symbol is one
+    ink and the house violet moved to `.source-label`, which is type.
+    """
     code = adapter._fitted_source_code("a", "tail", _CODE_URL, 214.0)
     svg = unquote(adapter._source_code_source(code).removeprefix("data:image/svg+xml,"))
     matrix = adapter._source_code_matrix(code)
 
-    # INK for the modules, VIOLET for the three finder patterns, paper beneath.
     assert f"fill='{adapter._CODE_INK}'" in svg
-    assert f"fill='{adapter._CODE_VIOLET}'" in svg
+    assert not hasattr(adapter, "_CODE_VIOLET")
+    assert not hasattr(adapter, "_is_finder_module")
     assert f"<rect width='{code.side:.4f}' height='{code.side:.4f}' fill='rgb(100%,100%,100%)'/>" in svg
-    # One path per ink, not a field of rectangles: a PDF fill computes coverage
-    # once over a whole path, so touching modules merge instead of laying a grid
-    # of antialiased hairlines through the symbol.
-    assert svg.count("<path") == 2
+    # One path and not a field of rectangles: a PDF fill computes coverage once
+    # over a whole path, so touching modules merge instead of laying a grid of
+    # antialiased hairlines through the symbol.  With one ink there is no second
+    # path for the first to antialias against either.
+    assert svg.count("<path") == 1
     assert "<rect" in svg and svg.count("<rect") == 1
+    # Every dark module of the symbol is in that one path, finders included.
+    assert svg.count("z") == sum(
+        1
+        for row in matrix
+        for column, cell in enumerate(row)
+        if cell and (column == 0 or not row[column - 1])
+    )
     # The element carries the standard's four-module quiet zone itself.
     assert code.modules == len(matrix) + 2 * adapter._CODE_QUIET_MODULES
     assert f"width='{code.side:.4f}pt'" in svg
@@ -2760,26 +2926,79 @@ def test_the_code_is_drawn_in_the_house_inks_over_paper_with_its_quiet_zone():
     assert f"M{inset:.4f} {inset:.4f}" in svg
 
 
-def test_the_foot_slot_hangs_the_code_below_the_frame_and_clear_of_the_sheet_edge():
-    """The small code is furniture with one position, on every page that needs it."""
+def test_the_foot_slot_sits_the_small_code_on_the_folio_s_own_baseline():
+    """The small code is furniture with one position, on every page that needs it.
+
+    And that position is a *line*.  The foot band already carries the folio --
+    the publication name at one end, the page number at the other, both on
+    FOLIO_BASELINE 19.5 -- and a square dropped into it with its dark modules
+    ending 1.65pt below that line read as a code that had slipped off the foot.
+    The module is now chosen to land the symbol's own bottom edge on the folio
+    baseline, so `BERRETA FUTURA`, the square, its label and `09` are four items
+    on one line.
+    """
     code = adapter._fitted_source_code("article", "foot", _CODE_URL, adapter._CODE_FOOT_ROOM_POINTS)
-    tree = _parse_article_fragment("<p>Body.</p>")
+    tree = _parse_article_fragment("<p>Body.</p>", source_label="Source / 01")
 
     _apply_source_codes(tree, {"article": code})
 
     image = next(element for element in tree.iter("img") if element.get("class") == "source-code")
     assert image.get("data-source-code") == "foot"
-    # Hung from the page's content-box foot, so its own lower edge stands
-    # `_CODE_FOOT_ROOM_POINTS - side` plus 4mm above the sheet's foot; the room
-    # is the ceiling on the side, which is what keeps that clearance positive.
+    # Hung from the page's content-box foot, below which the reading flow sets
+    # no type at all, so the square's own upper edge is that foot.
     assert f"bottom: {-code.side:.4f}pt" in image.get("style")
-    # Its lower edge therefore stands the printer's 4mm above the sheet's foot,
-    # which is what the room is a ceiling on the side *for*.
-    clearance = adapter._PAGE_MARGIN_BOTTOM_POINTS - adapter._RASTER_NUDGE_POINTS - code.side
-    assert clearance == pytest.approx(4.0 * 72 / 25.4)
+    # The first dark module lands exactly on the folio baseline.
+    symbol_bottom = adapter._CODE_CONTENT_FOOT_POINTS - (
+        (code.modules - adapter._CODE_QUIET_MODULES) * code.module
+    )
+    assert symbol_bottom == pytest.approx(adapter._FOLIO_BASELINE_POINTS)
+    assert code.symbol_bottom == pytest.approx(
+        adapter._FOLIO_BASELINE_POINTS - adapter._CODE_CONTENT_FOOT_POINTS
+    )
+    # ...which puts ink 6.9mm above the sheet's own foot, and the box's white
+    # lower edge 5.4mm above it, both past the 4mm this used to stop at.  On the
+    # imposed A4 booklet that foot is the sheet's physical edge, printed at 100%,
+    # and a domestic printer's trailing margin plus duplex feed skew live there.
+    box_clearance = adapter._CODE_CONTENT_FOOT_POINTS - code.side
+    assert box_clearance * 25.4 / 72 == pytest.approx(5.36, abs=5e-3)
+    assert symbol_bottom * 25.4 / 72 == pytest.approx(6.88, abs=5e-3)
+    assert box_clearance >= adapter._CODE_FOOT_CLEARANCE_POINTS
     # Centred in the reading measure, which clears both ends of the folio.
     left = adapter._CODE_MEASURE_LEFT_POINTS + (adapter._CODE_MEASURE_POINTS - code.side) / 2
     assert f"left: {left:.4f}pt" in image.get("style")
+    # And the label sits on the same line as the symbol it names.
+    label = next(element for element in tree.iter("p") if element.get("class") == "source-label")
+    assert f"bottom: {code.symbol_bottom + 2.47375:.4f}pt" in label.get("style")
+
+
+def test_the_small_code_holds_itself_clear_of_an_end_mark_clamped_into_its_band():
+    """A full last page puts both in the foot band, and that recurs by design.
+
+    The end mark clamps to the reader's floor exactly on the page the foot slot
+    is used on, so on any full last page the two share the band whether or not
+    anyone intended it.  They cannot be separated vertically -- the square needs
+    the whole band and the mark cannot rise into the type -- so the separation is
+    horizontal and stated, at the same 24pt the mark holds its own text off the
+    frame's edge by.
+    """
+    article = SimpleNamespace(id="article", source_url=_CODE_URL, tail_art=None)
+
+    centred = adapter._measured_source_code(article, 40.0, 0.0)
+    crowded = adapter._measured_source_code(article, 40.0, 200.0)
+
+    assert centred.left == pytest.approx(
+        adapter._CODE_MEASURE_LEFT_POINTS
+        + (adapter._CODE_MEASURE_POINTS - centred.side) / 2
+    )
+    assert crowded.left == pytest.approx(adapter._CODE_MEASURE_LEFT_POINTS + 200.0 + 24.0)
+    # Measured on edition 002: `END / 01` reaches 50.36pt across the measure and
+    # the centred square starts at 144.67, so the rule holds by 70pt and moves
+    # nothing.  It is a guarantee and not a repair.
+    assert adapter._measured_source_code(article, 40.0, 50.36).left == centred.left
+    # Past the point where it cannot hold, the build refuses rather than
+    # printing a square over an end mark.
+    with pytest.raises(ValidationError, match="running off the measure"):
+        adapter._measured_source_code(article, 40.0, 300.0)
 
 
 def test_a_printed_code_reads_back_off_the_rasterized_page_as_its_canonical_url(

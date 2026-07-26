@@ -311,12 +311,12 @@ def _render_article(
                 2,
             )
         )
-    lines.extend(_indent(_render_source_link(article), 2))
+    lines.extend(_indent(_render_source_link(edition, article, article_index), 2))
     lines.append("</article>")
     return "\n".join(lines), tuple(assets)
 
 
-def _render_source_link(article: Article) -> tuple[str, ...]:
+def _render_source_link(edition: Edition, article: Article, article_index: int) -> tuple[str, ...]:
     """The article's own way back to the source it was built from, as a link.
 
     This is a semantic hook and not print policy, and the distinction is worth
@@ -335,12 +335,21 @@ def _render_source_link(article: Article) -> tuple[str, ...]:
     first is the primary source, and the article already prints the full list at
     its opener.  An article whose first source carries no ``canonical_url``
     emits nothing at all rather than a broken destination.
+
+    ``data-source-label`` is the one piece of print policy that has to start
+    here, and only because it is *language*: a printed code needs a name beside
+    it or it reads as a sticker, and the name has to be the reader's own word in
+    the reader's own edition.  It is built in the same shape the end mark's is --
+    ``End / nn`` closes an article, ``Source / nn`` names its code -- so the two
+    pieces of chrome that share a page foot share an idiom.  It is a *name* and
+    not the address: the URL below is set nowhere in the printed reader.
     """
     if not article.source_url:
         return ()
     return (
         f'<a class="source-link" data-source-link="primary" '
         f'data-source-id="{_attr(article.source_ids[0] if article.source_ids else "")}" '
+        f'data-source-label="{_attr(_ui(edition, "source"))} / {article_index:02d}" '
         f'href="{_attr(article.source_url)}">{_text(article.source_url)}</a>',
     )
 
@@ -551,6 +560,7 @@ def _ui(edition: Edition, key: str) -> str:
         "issue": "Issue",
         "contents": "Contents",
         "sources": "Sources",
+        "source": "Source",
         "editorial": "Editorial",
         "feature": "Feature",
         "figure": "Figure",
@@ -570,6 +580,7 @@ def _ui(edition: Edition, key: str) -> str:
         "issue": "Número",
         "contents": "Índice",
         "sources": "Fuentes",
+        "source": "Fuente",
         "editorial": "Editorial",
         "feature": "Artículo",
         "figure": "Figura",

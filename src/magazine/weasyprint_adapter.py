@@ -110,14 +110,27 @@ def _reader_y_points(css_top_points: float, height_points: float) -> float:
     return _PAGE_HEIGHT_POINTS - css_top_points - height_points + _RASTER_NUDGE_POINTS
 
 
-# ``_article_tail_ornament_box`` (render.py:218-231).  The motif itself no longer
-# prints -- the source code took the slot -- but the box is unchanged, because
-# what it encodes is not a decision about ornament: it is the publication's
-# measure of when an article's last page has genuinely ended high enough to
-# carry a large element under the end mark.  See ``_tail_slot_height``.
-_TAIL_ORNAMENT_MIN_HEIGHT = 118.0
+# ``_article_tail_ornament_box`` (render.py:218-231), as much of it as still
+# decides anything.  The motif does not print -- the source code took the slot --
+# and two of its four numbers went with it, deliberately:
+#
+# ``ARTICLE_TAIL_ORNAMENT_MIN_HEIGHT`` (118) was the height under which a
+# *decorative* band was not worth printing, and refusing a tight fit is the right
+# instinct for ornament.  It is the wrong instinct for a functional element: a
+# code three points inside its budget scans exactly as well as one with a page to
+# spare, and the two pages this threshold turned away -- en p18 and es p31 -- were
+# carrying the close-up code under 70mm of visible white.  ``_CODE_TAIL_MIN_ROOM``
+# replaces it with the test the code actually has: is there room for a square at
+# least twice the foot slot's, so that the two sizes stay two classes.
+#
+# ``ARTICLE_TAIL_ORNAMENT_FOOT_INSET`` (24) was how far a band had to stop above
+# the frame's foot so as not to crowd the page's own foot.  The code is anchored
+# to the *top* of the slot (see ``_apply_source_codes``) and so never stands on
+# the slot's foot at all; what bounds it below is ``_END_MARK_FLOOR_POINTS``, the
+# floor the publication already gives the last piece of type on a page.
+#
+# The two that survive are the two that were never about ornament.
 _TAIL_ORNAMENT_MAX_HEIGHT = 214.0
-_TAIL_ORNAMENT_FOOT_INSET = 24.0
 _TAIL_ORNAMENT_ENDMARK_CLEARANCE = 31.0
 
 _PLATE_ANCHOR_TAGS = frozenset({"h1", "h2", "h3"})
@@ -142,60 +155,88 @@ _FRAME_BOTTOM_RELIEF_POINTS = _FRAME_BOTTOM_POINTS - (
 # THE SOURCE CODE.
 #
 # A print magazine cannot hyperlink, so every article carries the address of the
-# source it was built from as a QR square.  Six numbers decide what that square
-# is, and each is a print decision rather than a taste:
+# source it was built from as a QR square.  The numbers below decide what that
+# square is and where it stands, and each is a print decision rather than a taste:
 #
 # ``_CODE_HOUSE_MODULE_POINTS`` is the module -- one cell of the symbol -- at the
 # size the publication sets a code it has room for.  0.85mm is comfortably above
 # every published floor for a code read by a phone off uncoated stock, and it is
 # what makes the largest symbol this publication can produce (a 71-character URL
-# at ECC-H, 49 modules across the quiet zone) land at 41.65mm, which is inside
-# the 118pt the tail slot guarantees.  The house size is therefore not a point
-# size: the *module* is fixed and the square is `modules * module`, so a short
-# URL genuinely prints a smaller code than a long one.
+# at ECC-H, 49 modules across the quiet zone) land at 41.65mm.  The house size is
+# therefore not a point size: the *module* is fixed and the square is
+# `modules * module`, so a short URL genuinely prints a smaller code than a long
+# one.
 #
 # ``_CODE_MIN_MODULE_POINTS`` is the floor, and it is the number the design gives
 # way at.  0.35mm is 4.1 dots of a 300 dpi inkjet and about where a phone camera
-# held at an angle over uncoated paper stops being reliable.  A slot that cannot
-# hold the symbol at this module *lowers the error correction* until it can --
-# see ``_fitted_source_code`` -- and a build whose code cannot be set at this
-# module at any level refuses rather than printing something that will not scan.
+# held at an angle over uncoated paper stops being reliable.  A build whose code
+# cannot be set at this module at any error correction level refuses rather than
+# printing something that will not scan.
 #
 # ``_CODE_QUIET_MODULES`` is the QR standard's own four-module quiet zone, and it
 # is inside the element rather than assumed of the page.  The foot slot's code
-# stands two points under the last line of a full page and a few millimetres over
-# the folio; borrowing its quiet zone from whatever happens to be there is the
-# one way this feature fails silently.
+# stands two points under the last line of a full page; borrowing its quiet zone
+# from whatever happens to be there is the one way this feature fails silently.
+# It is also why the element's edges are not the symbol's: everything the eye
+# lines the code up against below is measured to the *first dark module*, four
+# modules inside the box.
 #
 # ``_CODE_FOOT_CLEARANCE_POINTS`` is how far above the sheet's own foot the small
-# code stops: 4mm, which clears the unprintable margin of a domestic inkjet.  The
-# reader is folded from A4 at home, so that edge is a real edge and not a trim.
+# code's box may come.  The reader is folded from A4 at home and the A5 page foot
+# *is* the sheet's physical edge, so that edge is a real edge and not a trim: the
+# 4mm this used to be is inside what many domestic printers reserve on the
+# trailing edge before duplex feed skew of 1-2mm is added, and nothing occupied
+# that band before the code did.  5mm on the box, and the folio pin below puts the
+# nearest dark module 6.9mm up.
 _CODE_HOUSE_MODULE_POINTS = 0.85 * 72 / 25.4
 _CODE_MIN_MODULE_POINTS = 0.35 * 72 / 25.4
 _CODE_QUIET_MODULES = 4
-_CODE_FOOT_CLEARANCE_POINTS = 4.0 * 72 / 25.4
-# Highest first.  ``_fitted_source_code`` takes the first level whose symbol
-# clears the module floor in the room it has, so a code with room to spare is set
-# at ECC-H and only a cramped one gives correction back for cell size.  That
-# order is the print trade the other way round from the usual instinct: for a
-# small code, module width buys more read reliability than redundancy does.
+_CODE_FOOT_CLEARANCE_POINTS = 5.0 * 72 / 25.4
+# Highest first, which is the tie-break and no longer the choice.
+# ``_fitted_source_code`` takes the level whose symbol comes out with the *widest
+# cell* in the room it has, and only where two levels tie -- which is every slot
+# roomy enough to set the house module -- does the higher correction win.  That is
+# what the comment here always claimed and what the code did not do: it took the
+# first level clearing the floor, i.e. the highest correction that fit, which for
+# this edition's 51-character URLs meant ECC-M at a 375um module where ECC-L sets
+# the same square at 415um.  For a small printed code module width buys more read
+# reliability than redundancy does, so the rule now matches the reasoning.
 _CODE_ERROR_LEVELS = ("H", "Q", "M", "L")
-# The tail slot's own foot, shared with ``.article-tail``: 24pt above the
-# reader's frame bottom, which from the page's content box is 24 - 10.0046.
-_CODE_TAIL_BOTTOM_POINTS = _TAIL_ORNAMENT_FOOT_INSET - _FIRST_BASELINE_INSET_POINTS
 # The reading measure's own left edge inside the page area, as ``.article-tail``
 # has it: the article box is 325pt centred in the 333.0079pt live width.
 _CODE_MEASURE_LEFT_POINTS = 4.004
 _CODE_MEASURE_POINTS = 325.0
-# The foot slot: from the page's content-box foot -- below which the reading
-# flow sets no type at all -- down to the sheet's printable foot.  It is the same
-# band on every page, which is the point: the small code is furniture with one
-# position, and it does not inherit the end mark's own clamp.  A clamped end mark
-# is a mark that has been pushed *into* the last line of type, and a code that
-# followed it there would be a code printed over prose.
-_CODE_FOOT_ROOM_POINTS = (
-    _PAGE_MARGIN_BOTTOM_POINTS - _RASTER_NUDGE_POINTS - _CODE_FOOT_CLEARANCE_POINTS
-)
+# The page's content-box foot, from the page's own foot: below this the reading
+# flow sets no type at all, and it is the ceiling on the foot slot.
+_CODE_CONTENT_FOOT_POINTS = _PAGE_MARGIN_BOTTOM_POINTS - _RASTER_NUDGE_POINTS
+# FOLIO_BASELINE (render.py:565-577), and the foot slot's own pin.  The small code
+# shares its band with the folio, and the folio is a *line*: the publication name
+# at one end and the page number at the other, both on 19.5.  A square dropped
+# into that band with its dark modules ending 1.65pt under that line does not read
+# as the third item on it -- it reads as a code that slipped off the foot.  So the
+# module is chosen to land the symbol's own bottom edge exactly on the folio
+# baseline, and the four light modules below it fall into the sheet's foot margin
+# where they cost nothing: white quiet zone is the one part of a symbol a
+# printer's unprintable margin may safely eat.
+_FOLIO_BASELINE_POINTS = 19.5
+_CODE_FOOT_DROP_POINTS = _CODE_CONTENT_FOOT_POINTS - _FOLIO_BASELINE_POINTS
+# The ceiling on the small code's box, kept as an independent guard: whichever of
+# the folio pin and the sheet-edge clearance is tighter is the one that binds.
+_CODE_FOOT_ROOM_POINTS = _CODE_CONTENT_FOOT_POINTS - _CODE_FOOT_CLEARANCE_POINTS
+# The tail slot is admitted only where it can hold a square at least twice the
+# foot slot's.  Two sizes of code on one edition is a legible system; a continuum
+# between them is not, and the ratio is what stops a page with barely enough room
+# from printing a code that is neither.
+_CODE_TAIL_MIN_ROOM_POINTS = 2.0 * _CODE_FOOT_ROOM_POINTS
+# The code's label, in the house's own tracked-caps idiom -- `FEATURE nn`,
+# `FIGURE nn`, `END / nn` -- set on the symbol's own bottom edge, one gap to its
+# right.  It is what makes the square furniture rather than a sticker applied
+# after printing: an unlabelled black square is the only element on the page that
+# does not say what it is.  It is a *name* and not the address -- the URL is set
+# nowhere, in print or in the margin.
+_CODE_LABEL_SIZE_POINTS = 6.8
+_CODE_LABEL_TRACKING_POINTS = .25
+_CODE_LABEL_GAP_POINTS = 12.0
 # The resolution the decode gate rasterises at.  300 ppi is the publication's own
 # print floor -- ``_MIN_FIGURE_PPI`` -- so the gate reads the code off the page at
 # the density the page is judged to be printable at, and not at a density chosen
@@ -205,15 +246,20 @@ _CODE_DECODE_DPI = 300
 # placed, or the gate has read some other mark and proved nothing.  Two points is
 # under one device pixel at 300 ppi, doubled for the binariser's own edge.
 _CODE_POSITION_TOLERANCE_POINTS = 2.0
-# ``render.py``'s own INK and VIOLET, and the sheet.  Written as the percentages
-# those tuples are, exactly as the stylesheet writes them, so the code's ink is
-# the publication's and not a colour invented for a barcode.
+# Two modules are the same width when they differ by less than this, which is a
+# ten-thousandth of the smallest cell this module will print.  It exists so that
+# "the widest cell wins, highest correction breaks the tie" is decided on the
+# geometry and not on the last bit of a float division.
+_MODULE_EPSILON = 1e-9
 # What an article puts on its last page *after* its flow has ended, and which
-# ``_article_flow_bottom`` therefore may not measure: both are positioned from
-# the very number that walk produces.
-_OUT_OF_FLOW_CODA_CLASSES = frozenset({"article-tail", "source-code"})
+# ``_article_flow_bottom`` therefore may not measure: all three are positioned
+# from the very number that walk produces.
+_OUT_OF_FLOW_CODA_CLASSES = frozenset({"article-tail", "source-code", "source-label"})
+# ``render.py``'s own INK and the sheet, written as the percentages those tuples
+# are, exactly as the stylesheet writes them, so the code's ink is the
+# publication's and not a colour invented for a barcode.  ONE INK, deliberately:
+# see ``_source_code_source``.
 _CODE_INK = "rgb(5.5%,7.5%,8.5%)"
-_CODE_VIOLET = "rgb(25%,10%,43%)"
 _CODE_PAPER = "rgb(100%,100%,100%)"
 
 # ``_figure_geometry`` (render.py:716-739).
@@ -343,6 +389,11 @@ _END_MARK_PAINT_POINTS = (
 # ``baseline = max(self.frame_bottom + 5, self.y - 1)``.
 _END_MARK_FLOOR_POINTS = _FRAME_BOTTOM_POINTS + 5.0
 _END_MARK_DROP_POINTS = 1.0
+# How far `END / nn` stands in from the frame's left edge, past its own rule
+# (render.py:2008-2021, `.end-mark`'s `padding-left`).  Borrowed as the house's
+# own answer to "how far apart are two pieces of furniture on the same line",
+# which is what the foot slot's code needs to hold itself off a clamped mark.
+_END_MARK_TEXT_INSET_POINTS = 24.0
 
 _FONT_FILES = {
     "serif": "source-serif-4/SourceSerif4SmText-Regular.ttf",
@@ -384,6 +435,32 @@ _FIELD_OVERFLOW_EPSILON = 0.01
 # observation at all between 14.6% and 16.4%, so 15% is not a tuned number --
 # it can move by +/-0.7 points without reclassifying a single paragraph.
 _RUNT_MEASURE_FRACTION = .15
+#
+# AND THE CURE HAS ITS OWN THRESHOLD.  The bind moves the penultimate line's last
+# word down with the stranded one, so the line above pays for the repair with
+# whatever that word was wide.  Where the bound word is long the payment is worse
+# than the defect: en p29 set `...and only then expanded with` and then
+# `surrounding context.`, two short lines in a row and a 94.8pt hole where there
+# had been one stranded word.  A bind that would open more than a fifth of the
+# measure on the penultimate line is refused and the runt is left standing.
+#
+# A fifth is measured and not chosen, exactly as ``_RUNT_MEASURE_FRACTION`` is.
+# Every bind edition 002 asks for, as the rag its penultimate line would be left
+# with, sorts as
+#
+#   4.9 8.4 9.7 9.8 10.3 10.7 11.6 12.3 12.7 17.3 17.8 18.4
+#     | 22.6 22.9 22.9 23.6 23.6 29.5   (percent, both languages, 18 binds)
+#
+# and the 4.2-point gap between 18.4 and 22.6 is the widest in the distribution,
+# so 20% can move by -1.5 or +2.5 points without reclassifying a single
+# paragraph.  The independent review drew its own line by eye between the same
+# two observations.
+#
+# What it costs: four of the eighteen binds refused are the two reference-list
+# entries that end on a bare year, in each language.  Those are real runts left
+# standing -- `2023.` at 5.3% of the measure -- and they are the price of one
+# rule rather than a rule with a carve-out for bibliographies.
+_RUNT_MAX_RAG_FRACTION = .20
 
 # The tag names that can carry the reading flow's own prose.  A heading is
 # deliberately absent: an opener title and a plate title are auto-fitted, and
@@ -399,7 +476,7 @@ _UNBINDABLE_CLASSES = frozenset(
         "author-note", "byline", "content-label", "contents-kicker", "end-mark",
         "entry-author", "entry-folio", "entry-label", "entry-title", "folio-name",
         "issue-number", "label-primary", "label-secondary", "provenance",
-        "publication-name", "running-head", "subtitle",
+        "publication-name", "running-head", "source-label", "subtitle",
     }
 )
 # Subtrees the reading flow does not include at all: opener chrome, the contents
@@ -678,12 +755,19 @@ class SourceCode:
 
     Everything here is decided from a laid-out page and a URL, and nothing from
     what an author committed: ``slot`` is ``"tail"`` where the article's last
-    page has the open space ``_tail_slot_height`` demands and ``"foot"`` where it
-    has not, ``error`` is the highest QR error correction that room can carry at
-    or above ``_CODE_MIN_MODULE_POINTS``, ``modules`` is the symbol's width in
-    cells *including* its four-module quiet zone, and ``module`` is one cell in
-    points.  The square is ``modules * module`` on a side, so an edition that
-    committed no art at all still prints a code in every slot that fits one.
+    page has the open space ``_tail_code_slot`` demands and ``"foot"`` where it
+    has not, ``error`` is the QR error correction that comes out with the widest
+    cell in that room, ``modules`` is the symbol's width in cells *including* its
+    four-module quiet zone, and ``module`` is one cell in points.  The square is
+    ``modules * module`` on a side, so an edition that committed no art at all
+    still prints a code in every slot that fits one.
+
+    ``left`` and ``top`` are the placement the same measurement implies, in the
+    page content box's own coordinates: ``left`` from its left edge, ``top`` from
+    its foot, positive upward.  They are carried on the plan rather than
+    recomputed at paint time because both are read off a laid-out page -- ``top``
+    from where the end mark landed, ``left`` from how wide the end mark's own
+    line came out -- and the plan is what the settle check compares.
     """
 
     article_id: str
@@ -692,10 +776,22 @@ class SourceCode:
     modules: int
     module: float
     url: str
+    left: float = _CODE_MEASURE_LEFT_POINTS
+    top: float = 0.0
 
     @property
     def side(self) -> float:
         return self.modules * self.module
+
+    @property
+    def symbol_bottom(self) -> float:
+        """The first dark module's own lower edge, in the same coordinates.
+
+        Not ``top - side``: four light modules of quiet zone stand below the
+        symbol, and every alignment the page is judged on -- the folio's
+        baseline, the label's -- is an alignment to ink.
+        """
+        return self.top - self.side + _CODE_QUIET_MODULES * self.module
 
 
 @dataclass(frozen=True, slots=True)
@@ -1138,26 +1234,41 @@ def _measured_runt_binds(document: Any) -> tuple[str, ...]:
 
 
 def _is_runt(set_lines: list[tuple[float, str]], measure: float, size: float) -> bool:
-    """Whether this block's last line is a short word stranded on its own.
+    """Whether this block's last line is a short word stranded on its own, *and*
+    whether binding it would be an improvement.
 
-    The last clause is the one that is not about the defect but about the cure:
-    the bound pair has to fit a line of its own, or Pango has no break left to
+    The last two clauses are not about the defect but about the cure.
+
+    The bound pair has to fit a line of its own, or Pango has no break left to
     take and ``_validate_reader_measures`` refuses the build over a repair this
-    module chose.  It is summed unkerned in the reading face, as everything else
-    this module predicts is -- it needs to be right about a word nearly as wide
-    as the whole measure, not about a tenth of a point.
+    module chose.
+
+    And the line the bound word leaves has to still read as a line.  Under greedy
+    breaking nothing above the penultimate line moves, so the penultimate comes
+    out exactly as wide as it is now less its own final word -- predictable from
+    the measured line without laying the paragraph out again.  Where that leaves
+    more than ``_RUNT_MAX_RAG_FRACTION`` of white the repair has traded one short
+    line for two, which is the worse defect, and the bind is refused.
+
+    Both predictions are summed unkerned in the reading face, as everything else
+    this module predicts is -- they need to be right about a word, not about a
+    tenth of a point.
     """
     if len(set_lines) < 2:
         return False
     width, text = set_lines[-1]
+    previous_width, previous_text = set_lines[-2]
     words = text.split()
-    previous = set_lines[-2][1].split()
+    previous = previous_text.split()
     if len(words) != 1 or not previous:
         return False
     if width > measure * _RUNT_MEASURE_FRACTION:
         return False
     pair = f"{previous[-1]}{_NO_BREAK_SPACE}{words[0]}"
-    return _string_width(pair, "serif", size) <= measure
+    if _string_width(pair, "serif", size) > measure:
+        return False
+    opened = measure - (previous_width - _string_width(f" {previous[-1]}", "serif", size))
+    return opened <= measure * _RUNT_MAX_RAG_FRACTION
 
 
 def _install_page_chrome(tree: Element, edition: Edition) -> None:
@@ -1940,6 +2051,27 @@ def _apply_source_codes(tree: Element, codes: Mapping[str, SourceCode]) -> None:
     absolutely positioned replaced element, so it takes nothing out of any box
     and cannot displace a line.  Every one of its four edges is stated inline
     because every one of them is a measurement.
+
+    THE CODE HANGS FROM THE TOP OF ITS SLOT, NOT FROM THE BOTTOM.  A slot is
+    guaranteed room and not a frame to fill, and a 41mm square dropped to the
+    foot of a 214pt one put 84-93mm of nothing between the end mark and the code
+    -- the page read "article ends, silence, black square", and the square read
+    as applied after printing rather than set with the page.  Anchored to the
+    slot's own top the void is ``_TAIL_ORNAMENT_ENDMARK_CLEARANCE`` on every page
+    that carries a code, the same 31pt the ornament was always given, and the
+    white that is left falls at the page foot where an article ending high on
+    its last page has always left it.
+
+    Flush left on the reading measure, not centred in it.  Every other element on
+    these pages is flush to one edge or the other; a square centred on the
+    measure agrees with none of them.
+
+    And labelled.  ``.source-label`` sets the code's name in the same tracked
+    violet caps as ``END / nn``, on the symbol's own bottom edge, one
+    ``_CODE_LABEL_GAP_POINTS`` to its right -- the same relation in both slots,
+    which is what makes the 41mm code and the 14mm code read as two sizes of one
+    thing.  In the foot slot that bottom edge is the folio's baseline, so the
+    label, the square and the two ends of the folio all sit on one line.
     """
     for article in tree.iter("article"):
         for child in [child for child in article if "article-tail" in _element_classes(child)]:
@@ -1948,14 +2080,7 @@ def _apply_source_codes(tree: Element, codes: Mapping[str, SourceCode]) -> None:
         if code is None:
             continue
         side = code.side
-        left = _CODE_MEASURE_LEFT_POINTS + (_CODE_MEASURE_POINTS - side) / 2
-        # The tail slot stands on the motif's own foot.  The foot slot hangs from
-        # the page's content-box foot instead of standing on the sheet's, so a
-        # short URL's smaller square stays under the text it belongs to rather
-        # than drifting down onto the folio; ``_CODE_FOOT_ROOM_POINTS`` is then
-        # the ceiling on its side, which is what keeps its lower edge clear of
-        # the printer's own unprintable margin.
-        bottom = _CODE_TAIL_BOTTOM_POINTS if code.slot == "tail" else -side
+        bottom = code.top - side
         image = SubElement(article, "img")
         image.set("class", "source-code")
         image.set("alt", "")
@@ -1964,25 +2089,81 @@ def _apply_source_codes(tree: Element, codes: Mapping[str, SourceCode]) -> None:
         image.set("src", _source_code_source(code))
         image.set(
             "style",
-            f"left: {left:.4f}pt; bottom: {bottom:.4f}pt; "
+            f"left: {code.left:.4f}pt; bottom: {bottom:.4f}pt; "
             f"width: {side:.4f}pt; height: {side:.4f}pt",
         )
+        _label_source_code(article, code)
+
+
+def _label_source_code(article: Element, code: SourceCode) -> None:
+    """Name the square, in the publication's own voice, beside its foot.
+
+    The text is the semantic edition's, read off the very anchor the code
+    encodes: ``html_edition`` owns the reader-facing vocabulary in both
+    languages, and an adapter that invented ``SOURCE`` for itself would have
+    invented it in English only.  A code with no name to print is a build
+    failure and not a bare square -- the unlabelled square is the defect this
+    exists to repair.
+    """
+    link = next(
+        (element for element in article.iter("a") if "source-link" in _element_classes(element)),
+        None,
+    )
+    text = ((link.get("data-source-label") if link is not None else None) or "").strip()
+    if not text:
+        raise ValidationError(
+            f"Article {article.get('data-article-id')} prints a source code but its "
+            "semantic edition carries no data-source-label for it; an unlabelled "
+            "square on the page is the defect the label exists to repair."
+        )
+    left = code.left + code.side + _CODE_LABEL_GAP_POINTS
+    width = _string_width(text.upper(), "sans-medium", _CODE_LABEL_SIZE_POINTS) + (
+        _CODE_LABEL_TRACKING_POINTS * len(text)
+    )
+    if left + width > _CODE_MEASURE_LEFT_POINTS + _CODE_MEASURE_POINTS:
+        raise ValidationError(
+            f"Article {article.get('data-article-id')}'s source code label {text!r} "
+            f"runs {left + width:.2f}pt into a "
+            f"{_CODE_MEASURE_LEFT_POINTS + _CODE_MEASURE_POINTS:.2f}pt measure; the "
+            "square is too wide for its own name to stand beside it."
+        )
+    label = SubElement(article, "p")
+    label.set("class", "source-label")
+    label.text = text
+    label.set(
+        "style",
+        f"left: {left:.4f}pt; "
+        f"bottom: {code.symbol_bottom + _ZERO_LEADING_SANS_BASELINE:.4f}pt",
+    )
 
 
 def _fitted_source_code(
-    article_id: str, slot: str, url: str, room: float
+    article_id: str, slot: str, url: str, room: float, *, top: float = 0.0
 ) -> SourceCode | None:
-    """The largest, most redundant code ``room`` points of slot can carry.
+    """The widest-celled code ``room`` points of slot can carry.
 
     Two knobs, taken in the order that survives a phone camera.  The module is
     the house one wherever the slot can hold it, so a code with space is set at
     ``_CODE_HOUSE_MODULE_POINTS`` and simply comes out as wide as its own symbol
     needs -- which is what makes the printed size a property of the URL and not a
-    constant.  Where the slot is tighter than that, the module shrinks to the
-    slot and error correction is given back a level at a time until the cell is
-    at least ``_CODE_MIN_MODULE_POINTS`` wide again, because a bigger cell is
-    worth more to a real scan than more redundancy behind cells too small to
-    resolve.
+    constant.  Where the slot is tighter than that, the module is whatever the
+    slot's own geometry leaves, and the level chosen is the one that leaves the
+    most: a lower error correction is a shorter symbol, a shorter symbol is a
+    wider cell in the same square, and a wider cell is worth more to a real scan
+    than redundancy behind cells too small to resolve.  Measured on this
+    edition's 51-character URLs, ECC-L sets a 415um module where ECC-M sets
+    375um in the identical 15.36mm square -- 11% of cell width for nothing.
+
+    HIGHEST CORRECTION WINS A TIE, and every roomy slot is a tie: there the
+    module is capped at the house one for every level, so the extra cells of
+    ECC-H cost only square inches the slot already has.  That is why the tail
+    codes are ECC-H and the foot codes ECC-L without either being a special case.
+
+    The trade is not free and is not pretended to be: ECC-L carries 7% codeword
+    redundancy against ECC-M's 15%, so a creased or thumbed code recovers less.
+    The measured failure mode of a code this size is optical rather than
+    physical -- its tolerance to ink damage is already four to six times a real
+    inkjet's spread -- so cell width is where the margin is worth spending.
 
     ``None`` means no level fits, which is a build failure and not a smaller
     code: the caller refuses.  There is no floor-breaking fallback on purpose --
@@ -1991,13 +2172,46 @@ def _fitted_source_code(
     """
     import segno
 
+    best: SourceCode | None = None
     for level in _CODE_ERROR_LEVELS:
         symbol = segno.make(url, error=level, micro=False)
         modules = int(symbol.symbol_size(border=_CODE_QUIET_MODULES)[0])
-        module = min(_CODE_HOUSE_MODULE_POINTS, room / modules)
-        if module >= _CODE_MIN_MODULE_POINTS:
-            return SourceCode(article_id, slot, level, modules, module, url)
-    return None
+        module = _slot_module(slot, modules, room)
+        if module < _CODE_MIN_MODULE_POINTS:
+            continue
+        if best is None or module > best.module + _MODULE_EPSILON:
+            side = modules * module
+            left = (
+                _CODE_MEASURE_LEFT_POINTS
+                if slot == "tail"
+                else _CODE_MEASURE_LEFT_POINTS + (_CODE_MEASURE_POINTS - side) / 2
+            )
+            best = SourceCode(article_id, slot, level, modules, module, url, left, top)
+    return best
+
+
+def _slot_module(slot: str, modules: int, room: float) -> float:
+    """One cell of a ``modules``-wide symbol, as this slot's geometry allows it.
+
+    The tail slot is a height and nothing else: the square hangs from the slot's
+    top and the module is whatever fits, capped at the house one.
+
+    The foot slot is a *line*, and that is the whole difference.  Its ceiling is
+    the page's content-box foot, below which no type is set, and its pin is the
+    folio's baseline, which the symbol's own bottom edge has to land on -- so the
+    module divides ``_CODE_FOOT_DROP_POINTS`` between the symbol and the single
+    quiet zone above it, ``modules - _CODE_QUIET_MODULES`` cells in all, and the
+    remaining four cells of quiet zone hang below the folio line into the sheet's
+    foot margin.  ``_CODE_FOOT_ROOM_POINTS`` then holds independently, so a
+    square that would reach the sheet's edge is refused even if the pin is happy.
+    """
+    if slot == "tail":
+        return min(_CODE_HOUSE_MODULE_POINTS, room / modules)
+    return min(
+        _CODE_HOUSE_MODULE_POINTS,
+        _CODE_FOOT_DROP_POINTS / (modules - _CODE_QUIET_MODULES),
+        room / modules,
+    )
 
 
 def _source_code_matrix(code: SourceCode) -> list[list[bool]]:
@@ -2008,7 +2222,7 @@ def _source_code_matrix(code: SourceCode) -> list[list[bool]]:
 
 
 def _source_code_source(code: SourceCode) -> str:
-    """The code as an SVG data URI, in the publication's own two inks.
+    """The code as an SVG data URI, in the publication's own ink on its paper.
 
     SVG and not PNG.  A raster would have to be generated at some density and
     would then be judged against ``_MIN_FIGURE_PPI`` like any other placed
@@ -2017,19 +2231,35 @@ def _source_code_source(code: SourceCode) -> str:
     WeasyPrint -- the figure frame had to be an SVG ``rect`` for the same reason.
     One SVG user unit is one point, as it is there.
 
-    House style, not a generator's default.  Modules are INK, the three finder
-    patterns are VIOLET -- the colour this publication reserves for structure --
-    and the ground is the paper.  The ground is *painted* rather than left
-    transparent, which is the one place robustness beats fidelity: the quiet zone
-    is only a quiet zone if nothing shows through it, and the foot slot's code
-    stands a couple of points below a full page of type.
+    ONE INK, AND THE HOUSE VIOLET MOVED TO THE LABEL.  The three finder patterns
+    used to print in VIOLET, the colour this publication reserves for structure,
+    and on a colour device that is exactly right: measured off the 1200 dpi page,
+    violet renders at gray 0.180 against the ink's 0.071, the LocalAverage
+    binariser is untroubled by the difference, and the symbol survives a 140%
+    illumination gradient.  The case it does not cover is the one this magazine
+    is actually printed on.  A **monochrome** printer does not reproduce a 0.18
+    gray as gray; it halftones it, and at a 0.38mm module a 0.38mm halftone cell
+    puts white holes through a ring one module thick.  The finders are the part
+    of a symbol detection depends on before error correction can help with
+    anything, so that is the one place in the code where a screen cannot be
+    dithered.  It is untestable here without a mono laser, the fix costs nothing,
+    and so the symbol is set entirely in INK.  The house voice is not lost: it
+    moved to ``.source-label``, which is violet tracked caps and is *type* -- a
+    glyph that halftones is still a glyph, and it is not what the scanner reads.
 
-    Each colour is one path of touching subpaths and not a field of separate
-    rectangles.  A PDF fill computes coverage once over the whole path, so
-    modules that share an edge merge cleanly; drawn as individual rectangles they
-    would each antialias against their neighbour and lay a grid of pale hairlines
-    through the symbol at exactly the scale a binariser is looking at.  Runs are
-    merged along the row first for the same reason, and to keep the URI small.
+    The ground is *painted* rather than left transparent, which is the one place
+    robustness beats fidelity: the quiet zone is only a quiet zone if nothing
+    shows through it, and the foot slot's code stands a couple of points below a
+    full page of type.
+
+    One path of touching subpaths and not a field of separate rectangles.  A PDF
+    fill computes coverage once over the whole path, so modules that share an
+    edge merge cleanly; drawn as individual rectangles they would each antialias
+    against their neighbour and lay a grid of pale hairlines through the symbol
+    at exactly the scale a binariser is looking at.  Runs are merged along the
+    row first for the same reason, and to keep the URI small.  With one ink there
+    is no second path for the first to antialias against either, which is the
+    hairline argument's own conclusion taken one step further.
 
     No centred publication mark.  ECC-H would carry one, but the foot slot's
     codes are set at whatever level their room affords and that is regularly not
@@ -2042,50 +2272,29 @@ def _source_code_source(code: SourceCode) -> str:
     size = len(matrix)
     unit = code.module
     side = code.side
-    runs: dict[str, list[str]] = {"ink": [], "violet": []}
+    runs: list[str] = []
     for row, cells in enumerate(matrix):
         column = 0
         while column < size:
             if not cells[column]:
                 column += 1
                 continue
-            key = "violet" if _is_finder_module(row, column, size) else "ink"
             end = column
-            while (
-                end < size
-                and cells[end]
-                and ("violet" if _is_finder_module(row, end, size) else "ink") == key
-            ):
+            while end < size and cells[end]:
                 end += 1
             x = (_CODE_QUIET_MODULES + column) * unit
             y = (_CODE_QUIET_MODULES + row) * unit
             width = (end - column) * unit
-            runs[key].append(f"M{x:.4f} {y:.4f}h{width:.4f}v{unit:.4f}h{-width:.4f}z")
+            runs.append(f"M{x:.4f} {y:.4f}h{width:.4f}v{unit:.4f}h{-width:.4f}z")
             column = end
     svg = (
         "<svg xmlns='http://www.w3.org/2000/svg' "
         f"width='{side:.4f}pt' height='{side:.4f}pt' "
         f"viewBox='0 0 {side:.4f} {side:.4f}'>"
         f"<rect width='{side:.4f}' height='{side:.4f}' fill='{_CODE_PAPER}'/>"
-        f"<path fill='{_CODE_INK}' d='{''.join(runs['ink'])}'/>"
-        f"<path fill='{_CODE_VIOLET}' d='{''.join(runs['violet'])}'/></svg>"
+        f"<path fill='{_CODE_INK}' d='{''.join(runs)}'/></svg>"
     )
     return "data:image/svg+xml," + quote(svg, safe="")
-
-
-def _is_finder_module(row: int, column: int, size: int) -> bool:
-    """Whether a cell belongs to one of the three 7x7 position patterns.
-
-    The standard's own separator -- one light module all the way around each
-    finder -- is what keeps this a safe recolouring: no violet cell ever touches
-    an ink one, so the two paths cannot antialias into each other.
-    """
-    edge = size - 7
-    return (
-        (row < 7 and column < 7)
-        or (row < 7 and column >= edge)
-        or (row >= edge and column < 7)
-    )
 
 
 class PlacedCode(NamedTuple):
@@ -2172,7 +2381,9 @@ def _measured_plan(
     for article in edition.articles:
         flow_bottom = _article_flow_bottom(document, article.id)
         end_marks.append((article.id, _end_mark_offset(flow_bottom)))
-        code = _measured_source_code(article, flow_bottom)
+        code = _measured_source_code(
+            article, flow_bottom, _end_mark_extent(document, article.id)
+        )
         if code is not None:
             codes.append(code)
     return ReaderPlan(
@@ -2187,15 +2398,26 @@ def _measured_plan(
     )
 
 
-def _measured_source_code(article: Any, flow_bottom: float) -> SourceCode | None:
-    """Which slot this article's code takes, and how large it is set.
+def _measured_source_code(
+    article: Any, flow_bottom: float, end_mark_extent: float = 0.0
+) -> SourceCode | None:
+    """Which slot this article's code takes, how large it is set, and where.
 
     The slot is a property of the laid-out page and of nothing else.
-    ``_tail_slot_height`` is the reader's own test for an article that ended
-    high enough to carry a large element under its end mark, and it is reused
-    here rather than restated: an edition whose author committed no art at all
-    still prints a large code wherever a page has the room, and an edition full
-    of art prints no more of them than its pages earn.
+    ``_tail_code_slot`` is the test for an article that ended high enough to
+    carry a large element under its end mark: an edition whose author committed
+    no art at all still prints a large code wherever a page has the room, and an
+    edition full of art prints no more of them than its pages earn.
+
+    ``end_mark_extent`` is how far the article's own end mark reaches across the
+    measure, and it is what keeps the foot slot's code out of the mark's way.
+    The mark clamps to the reader's floor on a page the article fills, which is
+    exactly the page the foot slot is used on, so on any full last page the two
+    share the foot band whether or not anyone intended it.  They cannot be
+    separated vertically -- the square needs the whole band and the mark cannot
+    rise into the type -- so the separation is horizontal and is *stated*: the
+    square never stands closer to the end mark's line than the 24pt the mark
+    already holds its own text off the frame's edge by.
 
     An article with no ``source_url`` prints no code and is not an error -- a
     source record need not carry a canonical URL, and the editorial has no
@@ -2204,10 +2426,12 @@ def _measured_source_code(article: Any, flow_bottom: float) -> SourceCode | None
     url = str(getattr(article, "source_url", "") or "").strip()
     if not url:
         return None
-    slot_height = _tail_slot_height(flow_bottom)
-    slot = "foot" if slot_height is None else "tail"
-    room = _CODE_FOOT_ROOM_POINTS if slot_height is None else slot_height
-    code = _fitted_source_code(str(article.id), slot, url, room)
+    slot_top = _tail_code_slot(flow_bottom)
+    slot = "foot" if slot_top is None else "tail"
+    room = _CODE_FOOT_ROOM_POINTS if slot_top is None else _tail_code_room(flow_bottom)
+    code = _fitted_source_code(
+        str(article.id), slot, url, room, top=0.0 if slot_top is None else slot_top
+    )
     if code is None:
         raise ValidationError(
             f"Article {article.id} cannot carry a scannable source code for {url}: "
@@ -2216,7 +2440,45 @@ def _measured_source_code(article: Any, flow_bottom: float) -> SourceCode | None
             f"{_CODE_MIN_MODULE_POINTS * 25.4 / 72:.2f}mm. Shorten the canonical URL, "
             "or let the article end higher on its last page."
         )
+    if code.slot == "foot":
+        clear = _CODE_MEASURE_LEFT_POINTS + end_mark_extent + _END_MARK_TEXT_INSET_POINTS
+        left = max(code.left, clear)
+        if left + code.side > _CODE_MEASURE_LEFT_POINTS + _CODE_MEASURE_POINTS:
+            raise ValidationError(
+                f"Article {article.id}'s foot-slot source code cannot stand "
+                f"{_END_MARK_TEXT_INSET_POINTS:.0f}pt clear of an end mark reaching "
+                f"{end_mark_extent:.2f}pt across a {_CODE_MEASURE_POINTS:.0f}pt "
+                "measure without running off the measure's own right edge."
+            )
+        code = replace(code, left=left)
     return code
+
+
+def _end_mark_extent(document: Any, article_id: str) -> float:
+    """How far the article's end mark reaches across its own measure, in points.
+
+    Measured off the laid-out mark rather than predicted from ``END / nn``: the
+    text is localized, tracked, and set in a face this module only sums unkerned,
+    and the number it feeds is a clearance.  Zero for an article whose mark has
+    not been laid out, which is every fragment the unit tests build by hand.
+    """
+    reach = 0.0
+    for page_number, page in enumerate(document.pages, start=1):
+        for box in _article_flow_boxes(page._page_box, article_id):
+            element = getattr(box, "element", None)
+            if element is None or "end-mark" not in _element_classes(element):
+                continue
+            for text_box in _walk_boxes(box):
+                if not isinstance(getattr(text_box, "text", None), str):
+                    continue
+                right = (
+                    float(text_box.position_x) + float(text_box.width)
+                ) * _POINTS_PER_CSS_PIXEL
+                reach = max(
+                    reach,
+                    right - _live_area_left(page_number) - _CODE_MEASURE_LEFT_POINTS,
+                )
+    return reach
 
 
 def _end_mark_offset(flow_bottom: float) -> float:
@@ -2326,28 +2588,47 @@ def _article_flow_boxes(box: Any, article_id: str, *, inside: bool = False) -> I
         yield from _article_flow_boxes(child, article_id, inside=inside)
 
 
-def _tail_slot_height(flow_bottom: float) -> float | None:
-    """``_article_tail_ornament_box`` (render.py:218-231), as a height or nothing.
+def _tail_code_room(flow_bottom: float) -> float:
+    """The clear page under an article's end mark, as a height in points.
+
+    From the top of the tail slot -- ``_TAIL_ORNAMENT_ENDMARK_CLEARANCE`` below
+    the mark's own baseline, where the ornament's head always was -- down to
+    ``_END_MARK_FLOOR_POINTS``, the floor the reader gives the last piece of type
+    on a page.  The ornament stopped ``ARTICLE_TAIL_ORNAMENT_FOOT_INSET`` higher
+    than that so as not to crowd the page's foot; the code is anchored to the top
+    of the slot and so does not reach the floor at all unless the slot is nearly
+    the size of the square, which is the only case where the difference bites --
+    and it is exactly the case the ornament's instinct was wrong about.
+
+    Capped at the ornament's own maximum, which is not a constraint on any code
+    this publication can produce but keeps the slot a slot.
+    """
+    endmark_baseline = max(_END_MARK_FLOOR_POINTS, flow_bottom - _END_MARK_DROP_POINTS)
+    top = endmark_baseline - _TAIL_ORNAMENT_ENDMARK_CLEARANCE
+    return min(top - _END_MARK_FLOOR_POINTS, _TAIL_ORNAMENT_MAX_HEIGHT)
+
+
+def _tail_code_slot(flow_bottom: float) -> float | None:
+    """The tail slot's own top, in page-content-box points, or nothing.
 
     This is the publication's test for "the last page has room", and it is the
-    only one: an article whose flow ended high enough gets a slot of that height
-    under its end mark, and one that did not gets nothing.  It was written for
-    the tail motif and now governs the source code, unchanged -- which is what
-    keeps the decision a property of the laid-out page rather than of what an
-    author happened to commit.
+    code's rather than the ornament's: room for a square at least twice the foot
+    slot's, which is what keeps the two printed sizes two classes and not a
+    continuum.  The decision stays a property of the laid-out page and not of
+    what an author happened to commit -- an edition with no art at all still
+    earns the large code wherever a page ends high enough.
 
     Whatever stands in the slot never displaces a line: the slot occupies the
     frame's foot, which is why the stylesheet takes it out of flow entirely.
     """
-    endmark_baseline = max(_FRAME_BOTTOM_POINTS + 5.0, flow_bottom - 1.0)
-    available = (
+    if _tail_code_room(flow_bottom) < _CODE_TAIL_MIN_ROOM_POINTS:
+        return None
+    endmark_baseline = max(_END_MARK_FLOOR_POINTS, flow_bottom - _END_MARK_DROP_POINTS)
+    return (
         endmark_baseline
         - _TAIL_ORNAMENT_ENDMARK_CLEARANCE
-        - (_FRAME_BOTTOM_POINTS + _TAIL_ORNAMENT_FOOT_INSET)
+        - _CODE_CONTENT_FOOT_POINTS
     )
-    if available < _TAIL_ORNAMENT_MIN_HEIGHT:
-        return None
-    return min(available, _TAIL_ORNAMENT_MAX_HEIGHT)
 
 
 def _validate_caps(edition: Edition) -> None:

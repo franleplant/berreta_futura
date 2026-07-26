@@ -285,7 +285,7 @@ main { margin: 0; }
   position: absolute; top: -.3pt; width: 14pt;
 }
 .publication-name, .issue-number, .content-label, .byline, .author-note, .provenance,
-.end-mark, figcaption, [data-edition-navigation="contents"] { font-family: "Magazine Sans", sans-serif; }
+.end-mark, .source-label, figcaption, [data-edition-navigation="contents"] { font-family: "Magazine Sans", sans-serif; }
 .publication-name { color: rgb(25% 10% 43%); font-size: 7.5pt; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .edition-header h1 { font-size: 24pt; line-height: 1.04; margin: 2mm 0; }
 .edition-header .subtitle { font-size: 12pt; line-height: 1.22; margin: 0 0 3mm; }
@@ -1055,10 +1055,12 @@ article > .landscape-plate + p { margin-top: 0; }
  * Both slots are absolutely positioned, exactly as the tail motif and the figure
  * frames are, so a code can never move a line or open a page.  Which slot an
  * article gets is the *page's* decision and not the author's: where the last
- * page has the open space `_tail_slot_height` demands, the code takes it; where
- * it has not, the code drops into the foot margin, which is empty on every page
- * between the two ends of the folio.  The adapter states `left`, `bottom`,
- * `width` and `height` on the element, because all four come from a measurement.
+ * page has the open space `_tail_code_slot` demands, the code takes it, hanging
+ * from the slot's own top so that the square stands directly under the end mark
+ * and the white it does not need falls at the page foot; where it has not, the
+ * code drops into the foot margin, which is empty on every page between the two
+ * ends of the folio.  The adapter states `left`, `bottom`, `width` and `height`
+ * on the element, because all four come from a measurement.
  *
  * `image-rendering: crisp-edges` is not set and must not be: the code is vector
  * SVG all the way into the PDF, so there is no resampling to control, and the
@@ -1068,6 +1070,30 @@ article > .landscape-plate + p { margin-top: 0; }
 img.source-code {
   display: block; height: auto; margin: 0; max-height: none; max-width: none;
   object-fit: fill; position: absolute; width: auto;
+}
+/*
+ * The code's own name, and the reason the square is furniture rather than a
+ * sticker.  Set exactly as `.end-mark` is -- 6.8pt Magazine Sans Medium, VIOLET,
+ * .25pt of tracking, uppercase, on a zero-leading line whose baseline the
+ * adapter states from the symbol's own bottom edge -- because it is the same
+ * kind of thing: a piece of tracked-caps chrome naming a piece of the page.
+ * `END / nn` closes the article; this names what the square beside it is.  It
+ * never sets the address: the URL is in the semantic edition and nowhere on the
+ * sheet.
+ *
+ * Out of flow like the square, and shrink-to-fit: an absolutely positioned box
+ * with a stated `left` and no width takes its own max-content width, so the
+ * label sets on one line for as long as one line fits between `left` and the
+ * page area's edge.  There is deliberately no `white-space: nowrap` holding it
+ * there -- the reader carries no nowrap anywhere and must not start -- and
+ * nothing needs one: `_label_source_code` measures the label against the
+ * reading measure, which stops 4pt inside the page area, and refuses the build
+ * rather than letting a label reach the width at which it would wrap.
+ */
+.source-label {
+  color: rgb(25% 10% 43%); font-size: 6.8pt; font-weight: 500; height: 0;
+  letter-spacing: .25pt; line-height: 0; margin: 0; position: absolute;
+  text-transform: uppercase;
 }
 /* The link the code encodes.  It stays in the print tree so that the tree and
  * the semantic edition disagree about nothing, and it sets no type at all. */
