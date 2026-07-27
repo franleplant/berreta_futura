@@ -3,7 +3,7 @@ language: es
 source_language: en
 locale: es-AR
 fallback_locale: es-ES
-base_copy_sha256: ef118ed8f7c8b5f752216fd22ccd6ca99aab8f63a9d22e4288cc9847ecd2798f
+base_copy_sha256: 28581850773ed22ca4c6897a3fb107d371195469c499852cdf51a5320c1badc7
 policy:
   register: educated_castellano
   regional_preference: restrained_argentinian
@@ -28,16 +28,16 @@ closing_plate_titles:
 - El alquiler, firmado
 editorial:
   path: manuscript/editorial.md
-  source_sha256: 52cf0c8ab509589f396a183b90c237fef7fc7a85155d6bf53c364ae3eda1678b
+  source_sha256: 73ff43738ed2a397712fe15dc0b2a3cf53df698b98ed2beb18e2e59e6c4243a6
 articles:
 - id: why-software-factories-fail
-  title: Por qué fracasan las fábricas de software y cómo volver a encender la luz
+  title: 'Por qué fracasan las fábricas de software: el arnés, la luz y el oráculo'
   short_title: Fábricas de software
   display_emphasis: Fábricas
-  author_note: Dex Horthy operó una fábrica de software a oscuras, cuenta por qué la mantenibilidad la derrotó
+  author_note: Dex Horthy diagnostica las fábricas a oscuras, prueba modelos de frontera con un benchmark longitudinal
     y propone una alternativa dirigida por personas.
   manuscript: articles/why-software-factories-fail.md
-  source_sha256: 160f5a1b8d7f3d2a818977a52b96162895c892eb3c1f4038e15b1ffbb80cd6cc
+  source_sha256: 1b29cd2de3e4f9a2225423aa16f681fe12a0deca0f9211e9d4ca18565ec05055
   figures:
   - id: lights-on-factory
     caption: La fábrica con las luces encendidas devuelve el juicio humano a las etapas anteriores y simultáneas
@@ -50,17 +50,16 @@ articles:
     anchor: Volver a encender la luz
     source_caption_sha256: 01adbb97bc98b0cb874f8aeb65c31751da5ab77f0b45d34d042bd71856f662dd
     source_credit_sha256: 00b06c74acb2da6f7c4362dbdc07573e5627be1a466ac24e4e0d52727f5983a0
-  - id: quality-decline-report
-    caption: El informe de Faros AI citado por el artículo registra más incidentes y errores después de que los
-      equipos adoptaran herramientas de programación con IA; Dex Horthy lo presenta como una correlación orientativa,
-      no como prueba de causalidad.
-    credit: 'Gráfico de Faros AI; fuente inmediata: Dex Horthy, Why Software Factories Fail.'
-    alt_text: Un gráfico titulado la calidad de producción está bajando muestra barras rojas de incidentes por
-      solicitud de cambios, incidentes mensuales, errores por desarrollador y errores por solicitud de cambios,
-      todos en aumento tras una alta adopción de la IA.
-    anchor: Por qué fracasa la fábrica a oscuras
-    source_caption_sha256: ada5cb6a86d26db7b5b31d7521810019d451c8a0c57cb31b84b41a5e404a460b
-    source_credit_sha256: 1bf41fc53f7c2d8345e74fdd0e1b1bb6ced7ddb30cfaf50457b1c3e4d2a491bc
+  - id: slopcodebench-strict-pass
+    caption: En el subconjunto exploratorio de 17 puntos de control de Dex Horthy, Opus 5 supera cuatro; Opus
+      4.8 y Sonnet 5 superan uno cada uno. Debajo aparecen como contexto los resultados del benchmark completo
+      publicados en el paper.
+    credit: 'Diagrama de Dex Horthy; fuente: Why Software Factories Fail: Benchmarking the New Frontier.'
+    alt_text: Barras horizontales comparan tasas de aprobado estricto por punto de control. Opus 5 supera cuatro
+      de diecisiete; Opus 4.8 y Sonnet 5 superan uno cada uno.
+    anchor: El oráculo llega por puntos de control
+    source_caption_sha256: a5125b1a1f0706d5f000466f6d477f4271994f60c27988fd3e50b29a47be4ac3
+    source_credit_sha256: 922b6e9bcd3e67bec16fe21d066070d3e5ec56d777f7947ce8e3fcad54dd59c3
 - id: why-harness-engineering-is-so-hard
   title: Por qué la ingeniería de arneses es tan difícil
   short_title: Ingeniería de arneses

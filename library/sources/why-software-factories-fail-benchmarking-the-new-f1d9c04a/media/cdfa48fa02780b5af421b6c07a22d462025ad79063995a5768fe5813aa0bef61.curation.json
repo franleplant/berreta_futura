@@ -1,0 +1,64 @@
+{
+  "bundle_sha256": "cdfa48fa02780b5af421b6c07a22d462025ad79063995a5768fe5813aa0bef61",
+  "candidate_count": 2,
+  "candidates": [
+    {
+      "artifact_path": "media/handoff-experiment.png",
+      "artifact_sha256": "cce088adc0cc4d497ef2d88d727908993682e9b8764419c8273bd4ec75e062d7",
+      "aspect_ratio": 2.556503,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "include",
+      "description": "Dex Horthy proposes scoring a frontier model's first seven checkpoints by whether a smaller model can successfully implement checkpoint eight on the inherited codebase.",
+      "heading": "the shape of a better oracle for software quality",
+      "id": "raster-001-cce088ad",
+      "mime_type": "image/png",
+      "origin": "raw_raster",
+      "pixel_height": 469,
+      "pixel_width": 1199,
+      "rationale": "the experiment I want to run next is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [],
+      "score": 66,
+      "source_artifact": "media/handoff-experiment.png",
+      "source_artifact_sha256": "cce088adc0cc4d497ef2d88d727908993682e9b8764419c8273bd4ec75e062d7",
+      "source_position": 18,
+      "title": "the experiment I want to run next"
+    },
+    {
+      "artifact_path": "media/strict-pass-rate.jpg",
+      "artifact_sha256": "c6471a04dd3568ff0659821ae98f68417054c802fd74224b90e8fc19612b42e1",
+      "aspect_ratio": 2.205882,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "include",
+      "description": "Dex Horthy's chart compares strict pass rates on his 17-checkpoint subset: Opus 5 at 23.5 percent and Opus 4.8 and Sonnet 5 at 5.9 percent, with the original paper's Opus 4.6 and GPT-5.4 rates shown below for context.",
+      "heading": "benching opus 5 on slopcodebench",
+      "id": "raster-002-c6471a04",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 544,
+      "pixel_width": 1200,
+      "rationale": "strict pass rate is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [],
+      "score": 64,
+      "source_artifact": "media/strict-pass-rate.jpg",
+      "source_artifact_sha256": "c6471a04dd3568ff0659821ae98f68417054c802fd74224b90e8fc19612b42e1",
+      "source_position": 5,
+      "title": "strict pass rate"
+    }
+  ],
+  "curator": "magazine-compiler/automatic-media-curator",
+  "input_sha256": "96f5f84bcbdc26b831ed084783083a9d2ee9f728f53058299a190da19fff130d",
+  "policy_version": "editorial-impact-v4",
+  "schema_version": 1,
+  "selected": [
+    "raster-001-cce088ad",
+    "raster-002-c6471a04"
+  ],
+  "selection_limit": 3,
+  "source_id": "why-software-factories-fail-benchmarking-the-new-f1d9c04a"
+}
