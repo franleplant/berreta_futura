@@ -1,24 +1,23 @@
 schema_version: 1
 edition_id: 003-unreleased
-reviewer: Independent render critic (Claude subagent)
-reviewed_at: '2026-07-27T21:43:09+00:00'
+reviewer: Independent render critic (Codex subagent)
+reviewed_at: '2026-07-27T22:08:44+00:00'
 result: approved
 engine: weasyprint
 design_direction: WeasyPrint / A5 fold proof
 findings: []
-notes: 'Full inspection of both languages after the design revision: plain unlabelled source codes flush
-  left in every article opener with byline and note beside them, all six codes per language decoded off
-  the 300ppi printed pages, tail ornaments printing where the band earns room, one-page editorial, solid
-  fore-edge band with paper sliver at the trim, back panel hugging its statement. Imposition, blank inside
-  covers, contents folios and figure integrity verified; findings cosmetic only.'
+notes: Inspected every English and Spanish reader and booklet contact sheet after Part 3 integration and
+  the July 27 date correction. Revised feature is six pages in both languages; SlopCodeBench figure, captions,
+  credits, headings, terminal flow, editorial page limit, blank inside covers, and imposition all approved
+  with no actionable findings.
 languages:
   en:
-    reader_sha256: 2ed01489ed1e772347dce2632b907dd379531c17a9fff7bd0308726fc84416cb
-    booklet_sha256: 0ea7ba6f54d3dde8c04b2596bbc37a9c2e09f9e306d078a377d3fc7f5eea6310
+    reader_sha256: b93bd2da073e60d6d697126014bde630458a865bf1b29adaf8169294dce2666a
+    booklet_sha256: 16f96023b1e15f031ca700d4a473950321c34c2f034faa95250a9a35151cb1da
     page_count: 36
     machine_result: pass
   es:
-    reader_sha256: 84351d7c6d4ad7d3d0af0e0c2ebc2260713f36c6d037c3b92840a55a8f29118d
-    booklet_sha256: 6f3c9ed4c27a3b7ad935a546f4d855689748c6f4504845b390a81d9d2b6e97f8
+    reader_sha256: 489bd01e3ad6a5687e36dc14b9b069ceb4b737269e89045c1bc111faca3c1dbc
+    booklet_sha256: a97a7fb6e9bdc58bca9a6a89f9a887a09e86adf65bc195e17ddd9f27cddd7926
     page_count: 40
     machine_result: pass

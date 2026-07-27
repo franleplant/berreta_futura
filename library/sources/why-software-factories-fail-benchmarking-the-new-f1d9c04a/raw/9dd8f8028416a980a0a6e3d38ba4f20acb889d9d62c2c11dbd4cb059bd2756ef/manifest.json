@@ -1,0 +1,28 @@
+{
+  "artifact_count": 3,
+  "artifacts": [
+    {
+      "bytes": 1984570,
+      "path": "page.pdf",
+      "sha256": "3a1a952c5d3a1871944158d0893ae3ca22726408c20480cb7dd77315352b83ae"
+    },
+    {
+      "bytes": 3449649,
+      "path": "page.png",
+      "sha256": "2b28c36dd6d963b7a8883a56784081502a3d3b703bf5a89a3cc8326023015721"
+    },
+    {
+      "bytes": 29895,
+      "path": "page.txt",
+      "sha256": "801f5c1f6e31c8299b09967e957eee0a7c6b63cc25c8dcaad1897689e31c961a"
+    }
+  ],
+  "bundle_sha256": "9dd8f8028416a980a0a6e3d38ba4f20acb889d9d62c2c11dbd4cb059bd2756ef",
+  "byte_count": 5464114,
+  "canonical_url": "https://x.com/dexhorthy/status/2081797628552270027",
+  "captured_at": "2026-07-27T21:49:48Z",
+  "method": "public_browser_pdf_full_page_raster_and_rendered_text",
+  "schema_version": 1,
+  "source_id": "why-software-factories-fail-benchmarking-the-new-f1d9c04a",
+  "submitted_url": "https://x.com/dexhorthy/status/2081797628552270027"
+}

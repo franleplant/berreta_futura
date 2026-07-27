@@ -2,7 +2,30 @@
 
 _Generated from structured source records. Do not edit by hand._
 
-_Open edition: `003-unreleased`; 13 queued sources._
+_Open edition: `003-unreleased`; 14 queued sources._
+
+## Why Software Factories Fail: Benchmarking the New Frontier — Dex Horthy
+
+- ID: `why-software-factories-fail-benchmarking-the-new-f1d9c04a`
+- Source: https://x.com/dexhorthy/status/2081797628552270027
+- Kind / status: web / captured
+- Captured: 2026-07-27T21:49:48Z
+- Content hash: `not captured`
+- Raw captures: 3 committed bundle(s)
+- Release: queued for `003-unreleased`
+- Published: 2026-07-27
+- Tags: ai-coding, benchmarks, software-factories
+- Primary material:
+  - https://arxiv.org/abs/2603.24755
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+- Provenance:
+  - primary_material -> https://arxiv.org/abs/2603.24755
+
+Part 3 tests frontier Claude models on a 17-checkpoint SlopCodeBench subset and argues that incrementally revealed specifications provide a better signal for long-term maintainability than one-shot coding benchmarks.
+
+**Editorial note:** Public X article capture; no cookies, authorization headers, browser profile, or session data archived.
 
 ## Why Software Factories Fail: Turning the lights back on — Dex Horthy
 

@@ -1,7 +1,7 @@
 schema_version: 1
 id: 003-unreleased
 issue_number: 3
-publication_date: '2026-07-26'
+publication_date: '2026-07-27'
 title: The Architecture of Agency
 subtitle: Open models, harnesses, loops, context, and the systems that turn intelligence into shared work
 language: en
@@ -22,6 +22,7 @@ cover:
 sources:
 - why-software-factories-fail-f53679d7
 - why-software-factories-fail-turning-the-lights-b-1312d1ad
+- why-software-factories-fail-benchmarking-the-new-f1d9c04a
 - why-harness-engineering-is-so-hard-fe732038
 - loop-engineering-f0ddfd76
 - the-new-rules-of-context-engineering-for-claude--aa1b1ea8
@@ -36,17 +37,18 @@ sources:
 editorial: manuscript/editorial.md
 articles:
 - id: why-software-factories-fail
-  title: Why Software Factories Fail — and How to Turn the Lights Back On
+  title: 'Why Software Factories Fail: The Harness, the Lights, and the Oracle'
   short_title: Software Factories
   display_emphasis: Factories
   opener_variant: split_axis
   author: Dex Horthy
-  author_note: Dex Horthy ran a lights-off software factory, reports why maintainability defeated it,
-    and lays out a human-steered alternative.
+  author_note: Dex Horthy diagnoses lights-off factories, tests frontier models on a longitudinal benchmark,
+    and proposes a human-steered alternative.
   content_mode: faithful_synthesis
   source_ids:
   - why-software-factories-fail-f53679d7
   - why-software-factories-fail-turning-the-lights-b-1312d1ad
+  - why-software-factories-fail-benchmarking-the-new-f1d9c04a
   manuscript: editions/003-unreleased/articles/why-software-factories-fail.md
   fidelity: editions/003-unreleased/fidelity/why-software-factories-fail.yaml
   tail_art_path: editions/003-unreleased/art/article-tails/software-factories.png
@@ -67,21 +69,21 @@ articles:
     - useful
     rationale: This is the combined article's visual hinge, replacing the incomplete loop-hype collage
       with Dex Horthy's complete operating model for restoring human judgment.
-  - id: quality-decline-report
+  - id: slopcodebench-strict-pass
     decision: include
-    source_id: why-software-factories-fail-f53679d7
-    asset_id: raster-003-3df2d1b7
-    caption: The Faros AI report cited by the article records higher incidents and bugs after teams
-      adopted AI coding tools; Dex Horthy presents it as a directional correlation, not proof of causation.
-    alt_text: A chart titled production quality is declining shows red bars for incidents per pull request,
-      monthly incidents, bugs per developer, and bugs per pull request all rising after high AI adoption.
-    anchor: Why the lights-off factory fails
+    source_id: why-software-factories-fail-benchmarking-the-new-f1d9c04a
+    asset_id: raster-002-c6471a04
+    caption: On Dex Horthy's exploratory 17-checkpoint subset, Opus 5 passes four checkpoints; Opus
+      4.8 and Sonnet 5 pass one each. The paper's full-benchmark results appear below for context.
+    alt_text: Horizontal bars compare strict checkpoint pass rates. Opus 5 passes four of seventeen
+      checkpoints, while Opus 4.8 and Sonnet 5 each pass one.
+    anchor: The oracle arrives in checkpoints
     layout: compact_band
     criteria:
     - important
     - useful
-    rationale: The Faros figures provide a directional signal that higher AI adoption coincides with
-      declining production quality; the article explicitly avoids treating that correlation as causal proof.
+    rationale: This is direct, source-authored evidence for the article's maintainability thesis and
+      replaces the weaker correlational Faros chart.
 - id: why-harness-engineering-is-so-hard
   title: Why Harness Engineering Is So Hard
   short_title: Harness Engineering
