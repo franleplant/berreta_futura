@@ -9,7 +9,7 @@ This repository builds private-first, source-faithful magazine editions.
 - Never replace a source article with an unlabeled or generic AI summary. New magazine-authored arguments use `original_synthesis`; length-driven condensation uses attributed, source-mapped `faithful_synthesis`.
 - Write `faithful_synthesis` in the source author's existing grammatical person and point of view. The byline and mode label provide attribution; do not add “the author argues/says/explains” narration unless those are the source's exact words. Prefer retained wording and light edits, summarizing only where the page budget requires it.
 - Source articles may occupy at most seven A5 pages in the rendered reader. If a faithful edit exceeds the cap, use the explicit `faithful_synthesis` mode and preserve the argument, evidence, qualifications, and conclusion through source-to-edited fidelity mappings.
-- The opening editorial must declare and visibly render a title, and may occupy at most two A5 reader pages including its label, title, and byline.
+- The opening editorial must declare and visibly render a title, and may occupy at most one A5 reader page including its label, title, and byline.
 - AI proposes editorial patches; deterministic validation and human decisions advance workflow state.
 - Label original editor text so it cannot be mistaken for a source author's words.
 - A source is not captured until its raw evidence bundle is committed under `library/sources/<source-id>/raw/<bundle-sha256>/`. Archive before queueing; never rely on a live URL as the durable copy.

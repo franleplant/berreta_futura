@@ -26,7 +26,7 @@ lead URL
   -> edition selection
   -> faithful manuscript + editorial patches
   -> seven-page article-budget check (faithful synthesis when over budget)
-  -> titled two-page editorial-budget check
+  -> titled one-page editorial-budget check (per-edition, two-page ceiling)
   -> approved content digest
   -> canonical front/back SVGs -> one-page cover PDFs -> proof PNGs
   -> deterministic interior layout

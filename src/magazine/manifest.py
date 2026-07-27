@@ -49,18 +49,6 @@ class Article:
     all.  Every consumer treats the absence as "no link back", never as an
     error.
     """
-    source_code_art: Path | None = None
-    """Authored artwork carrying this article's source code, or nothing.
-
-    Declared per article as ``source_code_art_path`` -- an explicit
-    repo-relative path, like ``tail_art_path`` -- and produced by ``mag
-    source-art``, which is the only nondeterministic step and runs at author
-    time.  The print adapter uses it only where the page awards the article the
-    large tail slot; the foot slot always prints the plain vector code, and an
-    article without artwork prints the plain code in either slot.  A
-    translation reuses the same file automatically: the code is provenance, the
-    URL is language-free, and so is the artwork around it.
-    """
 
 
 @dataclass(frozen=True)
@@ -178,19 +166,9 @@ def load_edition(
                 if row.get("tail_art_path")
                 else None
             )
-            source_code_art = (
-                safe_project_path(root, row["source_code_art_path"])
-                if row.get("source_code_art_path")
-                else None
-            )
         except ValidationError as exc:
             errors.extend(exc.errors)
             continue
-        if source_code_art is not None and source_code_art.suffix.lower() != ".png":
-            errors.append(
-                f"{label} source_code_art_path must name a PNG: "
-                f"{row['source_code_art_path']}"
-            )
         content_mode = str(row.get("content_mode", "faithful_edit"))
         if content_mode not in {"faithful_edit", "faithful_synthesis", "selected_extracts", "original_synthesis"}:
             errors.append(f"{label} has invalid content_mode: {content_mode}")
@@ -242,7 +220,6 @@ def load_edition(
                 minimum_reader_pages,
                 tail_art,
                 _primary_source_url(source_ids, source_records),
-                source_code_art,
             )
         )
     edition_dir = manifest_path.parent
@@ -490,10 +467,8 @@ def load_translation(
                 article.tail_art,
                 # A translation renders the same article from the same sources,
                 # so it points back to the same place.  The link is provenance,
-                # not copy, and is never localized -- and neither is the
-                # artwork set around it.
+                # not copy, and is never localized.
                 article.source_url,
-                article.source_code_art,
             )
         )
 
@@ -590,17 +565,6 @@ def load_translation(
                         if article.tail_art
                         else None
                     ),
-                    # Stated only when declared, so an edition without artwork
-                    # round-trips to exactly the raw mapping it always had.
-                    **(
-                        {
-                            "source_code_art_path": article.source_code_art.relative_to(
-                                root
-                            ).as_posix()
-                        }
-                        if article.source_code_art
-                        else {}
-                    ),
                     "figures": [
                         {
                             "id": figure.id,
@@ -676,16 +640,6 @@ def _edition_copy_sha256(edition: Edition) -> str:
                 "author": article.author,
                 "author_note": article.author_note,
                 "tail_art_sha256": _sha256(article.tail_art) if article.tail_art else None,
-                # Conditional on purpose: the copy hash is pinned by every
-                # committed translation, so a key that appeared on editions
-                # without artwork would stale every translation ever recorded.
-                # An edition that declares artwork *should* stale its
-                # translations -- the artwork is part of the copy they render.
-                **(
-                    {"source_code_art_sha256": _sha256(article.source_code_art)}
-                    if article.source_code_art
-                    else {}
-                ),
                 "figures": [
                     {
                         "id": figure.id,

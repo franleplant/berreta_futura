@@ -26,6 +26,7 @@ from .io import load_structured
 from .manifest import Edition, load_edition, load_translation
 from .media_curator import curate_source, verify_source_curation
 from .package import package_release
+from .reader_layout import declared_editorial_page_cap
 from .records import SourceRecord, load_records
 from .release import (
     ReleaseState,
@@ -441,19 +442,6 @@ class Magazine:
                             "manuscript": _file_entry(article.manuscript, self.root),
                             "fidelity": _file_entry(article.fidelity, self.root),
                             "tail_art": _optional_file_entry(article.tail_art, self.root),
-                            # Stated only when declared: an edition without
-                            # artwork keeps the exact manifest bytes it always
-                            # produced, and one with artwork pins the PNG the
-                            # page embeds by content, like every other input.
-                            **(
-                                {
-                                    "source_code_art": _file_entry(
-                                        article.source_code_art, self.root
-                                    )
-                                }
-                                if article.source_code_art
-                                else {}
-                            ),
                         }
                         for article in variant.articles
                     ],
@@ -475,7 +463,7 @@ class Magazine:
                     "article_terminal_balance": layout.article_terminal_balance,
                     "maximum_article_pages": 7,
                     "article_pages": layout.article_pages,
-                    "maximum_editorial_pages": 2,
+                    "maximum_editorial_pages": declared_editorial_page_cap(variant.raw, 2),
                     "editorial_pages": layout.editorial_pages,
                     "figures": [
                         {
@@ -545,51 +533,6 @@ class Magazine:
             primary.booklet_pdf,
             tuple(all_files),
             tuple(language_results),
-        )
-
-    def source_art(
-        self,
-        edition_id: str,
-        *,
-        articles: Iterable[str] = (),
-        regenerate: bool = False,
-        model: str | None = None,
-        attempts: int | None = None,
-        runner: Any = None,
-        log: Any = None,
-    ) -> list[str]:
-        """Generate and judge artistic source-code artwork for an edition.
-
-        An authoring command, not a build step: it runs the image model, keeps
-        only candidates that pass the deterministic acceptance gate, saves them
-        under ``editions/<id>/art/source-codes/``, and reports the manifest
-        lines to add.  The edition is loaded without the full translation gate
-        on purpose -- declaring new artwork stales the translation's copy hash,
-        and regenerating must stay possible in exactly that state.
-        """
-        from .source_art import (
-            DEFAULT_SOURCE_ART_ATTEMPTS,
-            DEFAULT_SOURCE_ART_MODEL,
-            generate_source_art,
-        )
-
-        records = load_records(self.sources_dir)
-        edition = load_edition(
-            self.root,
-            edition_id,
-            {record.id for record in records},
-            publication_name=self.publication_name,
-            source_records={record.id: record for record in records},
-        )
-        return generate_source_art(
-            self.root,
-            edition,
-            articles=articles,
-            regenerate=regenerate,
-            model=model or DEFAULT_SOURCE_ART_MODEL,
-            attempts=DEFAULT_SOURCE_ART_ATTEMPTS if attempts is None else attempts,
-            runner=runner,
-            log=log,
         )
 
     def record_render_review(

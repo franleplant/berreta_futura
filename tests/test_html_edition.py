@@ -314,19 +314,19 @@ def test_the_article_carries_one_working_link_back_to_its_primary_source(tmp_pat
     built from a source at a particular address, which is an editorial fact of
     the same kind as the source ids already printed at the opener.  How a print
     adapter that cannot be followed renders it is not expressible here and is not
-    expressed here -- there is no size, no slot and no colour in this output.
+    expressed here -- there is no size, no slot, no colour and no *name* in this
+    output.  A localized `data-source-label` used to ride along for the printed
+    square's caption; the caption is retired and so is the attribute, so the
+    element is once more nothing but a destination.
     """
     result = render_html_edition(_edition(tmp_path))
 
     assert (
         '<a class="source-link" data-source-link="primary" data-source-id="source-one" '
-        'data-source-label="Source / 01" '
         'href="https://example.test/source?a=1&amp;b=2">https://example.test/source?a=1&amp;b=2</a>'
     ) in result.html
-    # The one piece of print policy that has to start here, and only because it
-    # is language: the printed code needs a name beside it, and the name is the
-    # reader's own word.  It is a name and not the address.
-    assert 'data-source-label="Source / 01"' in result.html
+    assert "data-source-label" not in result.html
+    assert "Source / 01" not in result.html
     # One per article, from the first of its two source ids, and after the end
     # mark: the article's own coda, not a second provenance line.
     assert result.html.count('class="source-link"') == 1

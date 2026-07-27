@@ -285,7 +285,7 @@ main { margin: 0; }
   position: absolute; top: -.3pt; width: 14pt;
 }
 .publication-name, .issue-number, .content-label, .byline, .author-note, .provenance,
-.end-mark, .source-label, figcaption, [data-edition-navigation="contents"] { font-family: "Magazine Sans", sans-serif; }
+.end-mark, figcaption, [data-edition-navigation="contents"] { font-family: "Magazine Sans", sans-serif; }
 .publication-name { color: rgb(25% 10% 43%); font-size: 7.5pt; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .edition-header h1 { font-size: 24pt; line-height: 1.04; margin: 2mm 0; }
 .edition-header .subtitle { font-size: 12pt; line-height: 1.22; margin: 0 0 3mm; }
@@ -491,20 +491,15 @@ h1, h2, h3 { font-family: "Magazine Sans", sans-serif; break-after: avoid; line-
  * Without the exclusion a plate article's 12.2pt reading leading reaches it and
  * moves its baseline 6.1pt, which is exactly what it did.
  *
- * AND SO IS THE SOURCE LABEL, which is the same kind of thing and was missing
- * the same exclusion.  `.source-label` states `line-height: 0` and `margin: 0`
- * on a class selector; every rule below outranks it, so on a landscape-plate
- * article -- reader p9, the only page in edition 002 where a plate article ends
- * in the foot slot -- the label was laid out on a 12.2pt line box (baseline
- * 6.100pt low), lifted 4pt by the plate's `margin-bottom`, and then pushed back
- * down 0.3996pt by the plate's paint correction.  Net: `SOURCE / 01` sat 2.50pt
- * below the folio baseline its own square lands on, while `FUENTE / 03` on es
- * p18 -- an ordinary article -- sat exactly on it.  One component, two baselines
- * in one edition, and the lowest ink on the sheet at 5.8mm from the A5 foot.
+ * THE SOURCE CODE NEEDED THE SAME EXCLUSION AND NO LONGER EXISTS TO NEED IT.
+ * The square carried a `SOURCE / nn` label -- a `p`, and therefore prose to
+ * every rule here, which on a landscape-plate article put the one component on
+ * two different baselines in one edition.  The label is retired; the square
+ * itself is an `img` and no prose rule reaches it.
  */
 p { margin: 0 0 5.4pt; orphans: 2; widows: 2; }
-.editorial > p:not(.standfirst):not(.end-mark):not(.source-label),
-.editorial > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark):not(.source-label) { margin-bottom: 6.2pt; }
+.editorial > p:not(.standfirst):not(.end-mark),
+.editorial > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark) { margin-bottom: 6.2pt; }
 .editorial h2 { margin-top: 21.2pt; }
 .editorial h3 { margin-top: 16.2pt; }
 /*
@@ -513,10 +508,10 @@ p { margin: 0 0 5.4pt; orphans: 2; widows: 2; }
  * the 10.005 the page datum is cut for -- 0.3996pt of ink on every line of the
  * article, and nothing at all in the flow.
  */
-article[data-figure-layouts~="landscape_plate"] > p:not(.standfirst):not(.end-mark):not(.source-label),
-article[data-figure-layouts~="landscape_plate"] > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark):not(.source-label),
-article[data-figure-layouts~="landscape_plate_after"] > p:not(.standfirst):not(.end-mark):not(.source-label),
-article[data-figure-layouts~="landscape_plate_after"] > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark):not(.source-label) {
+article[data-figure-layouts~="landscape_plate"] > p:not(.standfirst):not(.end-mark),
+article[data-figure-layouts~="landscape_plate"] > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark),
+article[data-figure-layouts~="landscape_plate_after"] > p:not(.standfirst):not(.end-mark),
+article[data-figure-layouts~="landscape_plate_after"] > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark) {
   line-height: 12.2pt; margin-bottom: 4pt;
   /* 10.0046 - (12.2 / 2 + .3505 * 10) */
   transform: translateY(.3996pt);
@@ -596,6 +591,15 @@ article[data-figure-layouts~="landscape_plate_after"] h3 { margin-top: 14pt; }
  * not `:last-child`, which is the primary span when a label has only one.
  */
 .content-label .label-secondary { transform: translateX(.45pt); }
+/*
+ * The byline and the author note are the CREDIT COLUMN, and on an article that
+ * carries a source code the adapter states a `margin-left` on both: the square
+ * takes the credit line's left origin, so the type beside it starts one end-mark
+ * inset past the symbol's ink and the note is given the column's width as well
+ * (`_fit_credit_measure`).  Neither number can live here -- both are functions of
+ * the URL's own module -- and neither is a default: an opener whose article has
+ * no code keeps the full live width, which is what these two rules set.
+ */
 .byline { font-size: 7.4pt; font-weight: 600; line-height: 0; margin: 0; padding-top: 12pt; text-transform: uppercase; }
 /* `_credit` advances `self.y -= 12` and then draws the note's first baseline
  * there (render.py:1731-1735).  The byline's box ends 2.69189pt below its own
@@ -1073,18 +1077,19 @@ article > .landscape-plate + p { margin-top: 0; }
 
 /*
  * The article tail motif is furniture, not content.  `_article_tail_ornament`
- * (render.py:2023-2052) crop-fills it across the full 325pt reading measure from
- * ARTICLE_TAIL_ORNAMENT_MIN/MAX_HEIGHT above the frame's foot -- 24pt up from the
- * 45pt frame bottom, i.e. 13.9954pt above this page's own content box, whose
- * foot is on the frame bottom -- and it never moves a line.  Out of flow is what
- * makes that true, so the ornament cannot manufacture the near-empty page an
- * in-flow image did.
+ * (render.py:1969-1998) crop-fills it across the full 325pt reading measure,
+ * its foot a constant 24pt up from the 45pt frame bottom, i.e. 13.9954pt above
+ * this page's own content box, whose foot is on the frame bottom -- and it
+ * never moves a line.  Out of flow is what makes that true, so the ornament
+ * cannot manufacture the near-empty page an in-flow image did.
  *
- * THE MOTIF NO LONGER PRINTS.  The slot it earned is the source code's, and the
- * adapter removes the figure from every print tree; the rule stays because the
- * semantic edition still offers the motif to a screen adapter and because the
- * two numbers below are the slot's, not the motif's -- `img.source-code.tail`
- * stands its square on the same 13.9954pt and inside the same 325pt measure.
+ * The band's HEIGHT is the page's decision and the adapter states it inline:
+ * from the ornament's 118pt minimum up to the 214pt below, measured under the
+ * end mark's own baseline (`_measured_tail_art`).  An article whose last page
+ * has less room prints no motif at all -- the adapter removes the figure from
+ * that print tree -- and the semantic edition still offers it to a screen
+ * adapter either way.  214pt here is the ceiling restated as the default, so
+ * the rule alone never prints the motif larger than the reader ever drew it.
  */
 .article-tail {
   bottom: 13.9954pt;
@@ -1105,15 +1110,27 @@ article > .landscape-plate + p { margin-top: 0; }
  * `_validate_reader_measures` refuses on sight and which is not what a reader
  * is being given.  The code is the whole of it.
  *
- * Both slots are absolutely positioned, exactly as the tail motif and the figure
- * frames are, so a code can never move a line or open a page.  Which slot an
- * article gets is the *page's* decision and not the author's: where the last
- * page has the open space `_tail_code_slot` demands, the code takes it, hanging
- * from the slot's own top so that the square stands directly under the end mark
- * and the white it does not need falls at the page foot; where it has not, the
- * code drops into the foot margin, which is empty on every page between the two
- * ends of the folio.  The adapter states `left`, `bottom`, `width` and `height`
- * on the element, because all four come from a measurement.
+ * The square is opener furniture: it OPENS the article's own credit line, its
+ * first dark row on the byline's cap top and its first dark column flush to the
+ * live area's left edge -- the same origin the kicker's `FEATURE nn` and the
+ * fitted title's first character take.  The byline and the author note then set
+ * as one column an inset to its right, so the row reads square, name, biography,
+ * left to right.  The adapter appends it to the opener's `header` so it lands on
+ * the article's first page, and it is absolutely positioned, exactly as the tail
+ * ornament and the figure frames are, so a code can never move a line or open a
+ * page: below the byline it runs down the side of the credit column and into
+ * white the opener already reserves.  The adapter states `left`, `top`, `width`
+ * and `height` on the element, because every one of them is a computation this
+ * stylesheet cannot reach: `left`, `width` and `height` come from the square's
+ * own constant and the URL's module, and `top` is *measured* off the laid-out
+ * byline -- the credit line stands wherever the auto-fitted title actually
+ * ended, which is Pango's answer and not the fit's (`_opener_source_codes`).
+ *
+ * NOTHING PRINTS UNDER IT.  A violet `SOURCE / nn` used to, on the argument that
+ * a black square does not say what it is; a QR code is the one mark on a sheet
+ * whose name every reader already knows, so the caption added a second voice to
+ * a line that has one and is retired.  What makes the square furniture is its
+ * place on the grid, which is why the flush and the inset above are exact.
  *
  * `image-rendering: crisp-edges` is not set and must not be: the code is vector
  * SVG all the way into the PDF, so there is no resampling to control, and the
@@ -1123,30 +1140,6 @@ article > .landscape-plate + p { margin-top: 0; }
 img.source-code {
   display: block; height: auto; margin: 0; max-height: none; max-width: none;
   object-fit: fill; position: absolute; width: auto;
-}
-/*
- * The code's own name, and the reason the square is furniture rather than a
- * sticker.  Set exactly as `.end-mark` is -- 6.8pt Magazine Sans Medium, VIOLET,
- * .25pt of tracking, uppercase, on a zero-leading line whose baseline the
- * adapter states from the symbol's own bottom edge -- because it is the same
- * kind of thing: a piece of tracked-caps chrome naming a piece of the page.
- * `END / nn` closes the article; this names what the square beside it is.  It
- * never sets the address: the URL is in the semantic edition and nowhere on the
- * sheet.
- *
- * Out of flow like the square, and shrink-to-fit: an absolutely positioned box
- * with a stated `left` and no width takes its own max-content width, so the
- * label sets on one line for as long as one line fits between `left` and the
- * page area's edge.  There is deliberately no `white-space: nowrap` holding it
- * there -- the reader carries no nowrap anywhere and must not start -- and
- * nothing needs one: `_label_source_code` measures the label against the
- * reading measure, which stops 4pt inside the page area, and refuses the build
- * rather than letting a label reach the width at which it would wrap.
- */
-.source-label {
-  color: rgb(25% 10% 43%); font-size: 6.8pt; font-weight: 500; height: 0;
-  letter-spacing: .25pt; line-height: 0; margin: 0; position: absolute;
-  text-transform: uppercase;
 }
 /* The link the code encodes.  It stays in the print tree so that the tree and
  * the semantic edition disagree about nothing, and it sets no type at all. */

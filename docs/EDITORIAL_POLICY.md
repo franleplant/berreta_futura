@@ -16,7 +16,7 @@ The default for source articles is `faithful_edit`. The opening editorial is `or
 
 Every rendered source article, including its title and credit, has a hard maximum of seven A5 reader pages. The deterministic renderer measures the real pagination and refuses an over-budget build.
 
-The opening editorial must declare a non-empty title in its frontmatter. Its label, title, and byline are rendered on the opener and its title appears in the contents. The complete editorial has a hard maximum of two A5 reader pages. The renderer measures the real span and refuses an over-budget or untitled build.
+The opening editorial must declare a non-empty title in its frontmatter. Its label, title, and byline are rendered on the opener and its title appears in the contents. The current standard is that the complete editorial fits a single A5 reader page: the editorial is the reader's front door, and a door that turns is not one. The budget is per-edition — `format.max_editorial_pages` in the edition manifest — because edition 001 shipped a two-page editorial and its frozen artifact must keep rebuilding; two A5 pages remain the publication's hard ceiling, which no edition may raise. Editions from 003 on declare `max_editorial_pages: 1`; editions 001 and 002 keep the older `2`. The renderer measures the real span in every language and refuses an over-budget or untitled build.
 
 An over-budget `faithful_edit` is converted to `faithful_synthesis`. The synthesis must retain the source's central argument, important evidence and examples, uncertainty, counterarguments, and conclusion. It must not introduce a new thesis or flatten disagreement into generic summary language. The byline and mode label provide attribution and disclose that the text is condensed rather than verbatim.
 
@@ -104,8 +104,10 @@ rejects translations whose ordered Markdown block structure diverges.
 Spanish uses educated castellano with restrained Argentine preferences and no
 slang. Spain Spanish is the default fallback. Generic Latin American, Mexican,
 Caribbean, and other unrelated regional variants are excluded from the house
-style. Both languages obey the same two-page editorial and seven-page article
-budgets and generate equivalent reader, home-booklet, and preflight packages.
+style. Both languages obey the same editorial and seven-page article budgets --
+the editorial's one page has to hold in Spanish too, which is what makes
+compression part of the translation rather than an afterthought -- and generate
+equivalent reader, home-booklet, and preflight packages.
 
 ## Rights and distribution
 

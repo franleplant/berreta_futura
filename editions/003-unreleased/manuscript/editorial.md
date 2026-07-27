@@ -1,13 +1,11 @@
 ---
 label: EDITORIAL — ORIGINAL EDITOR TEXT
-title: The Rented Room
+title: The Slow Oracle
 byline: The Editors
 ---
 
-Edition 3 climbs a stack. At the bottom, a model. Around it, a harness. Above the harness, loops. Feeding everything, context. And underneath, a question no one at the keyboard can dodge: who owns the floor you are standing on?
+Everything this industry optimizes answers in seconds: a test passes, an eval reports no loss, the loop closes before you look up. Everything that decides who wins reports in months — whether a codebase still bends after a year of machine commits, whether a deleted rule was judgment or luck.
 
-Dex Horthy ran the lights-off factory and turned the lights back on: models pass tests without preserving design, because maintainability has no fast oracle to reward. Winter spent five months learning that the harness itself is a paragraph of English, where a single adjective can be the bug. Addy Osmani moves up a floor—stop prompting agents, design the loops that prompt them. And Thariq reports the strangest number of the season: Anthropic deleted over 80% of Claude Code's system prompt for its newest models with no measurable loss. The craft is inverting. Fewer rules, more judgment; less instruction, more environment.
+The gap is the training signal itself. Reinforcement learning needs an oracle that answers fast, so models became superb at everything a fast oracle can grade — and inherited no opinion about anything it can't. When Anthropic cut over 80% of Claude Code's system prompt and reported "no measurable loss," the operative word was measurable. The instruments see only the fast half of the craft.
 
-That is where ownership walks in. If steering now lives in environments—context, memory, rooms, weights—then whoever holds the environment holds the work. The open statement Microsoft published with some fifty signatories, carried into the feed by Satya Nadella's endorsement, argues that open weights let organizations keep the value and knowledge they build instead of renting it back. And Buzz, the open-source workspace Jack Dorsey introduced from Block, wagers that a community can own the room where humans and agents share identity, memory, and settlement—rather than lease it from whoever runs the chat.
-
-These pieces belong together because they describe one migration: control leaving the prompt and settling into the surroundings. The tension to carry through the issue is this—every rule you delete is trust transferred to a system. Ask of each piece where that trust lands, and whose name is on the lease.
+Our claim: the slow half is the only half you can own. Whatever a benchmark can score, a lab will train and a vendor will rent at a falling price. What nobody can rent back is the verdict that takes a year to arrive — the design that held, the context that compounded, the judgment a team kept exercising while its tools begged it to stop. Every promise in the agent stack comes stamped with a feedback speed; the speed tells you who owns the result. Fast verdicts are rented. Slow verdicts are the deed.

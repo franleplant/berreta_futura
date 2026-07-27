@@ -3,7 +3,7 @@ language: es
 source_language: en
 locale: es-AR
 fallback_locale: es-ES
-base_copy_sha256: 7bc9e2ad0363581d4ef8ede2511f1c3c481bfcd745232b3e5b6cc09be7e53467
+base_copy_sha256: ef118ed8f7c8b5f752216fd22ccd6ca99aab8f63a9d22e4288cc9847ecd2798f
 policy:
   register: educated_castellano
   regional_preference: restrained_argentinian
@@ -13,12 +13,13 @@ policy:
   - generic_latin_american
   - mexican
   - caribbean
-title: El nombre en el contrato de alquiler
-subtitle: Fábricas, arneses, ciclos y contexto, y quién es dueño del piso donde trabajan los agentes
+title: La arquitectura de la acción
+subtitle: Modelos abiertos, arneses, ciclos, contexto y los sistemas que convierten la inteligencia en trabajo
+  compartido
 cover:
-  headline: El nombre en el contrato de alquiler
-  deck: Seis despachos sobre la pila de agentes —modelo, arnés, ciclo, contexto— y quién firma el alquiler
-    de cada piso
+  headline: La arquitectura de la acción
+  deck: Seis despachos sobre modelos abiertos, sistemas de agentes y la nueva arquitectura del trabajo entre
+    personas y máquinas
   back_text: 'El prompt se vacía y los alrededores se llenan. Cada regla que borras es confianza transferida
     a un sistema: pregunta dónde aterriza y a nombre de quién está el contrato de alquiler.'
 closing_plate_titles:
@@ -27,7 +28,7 @@ closing_plate_titles:
 - El alquiler, firmado
 editorial:
   path: manuscript/editorial.md
-  source_sha256: f3f5920328495e56789a1322a7764b5631b98a95c3f37da75b3ac133a7d05fc3
+  source_sha256: 52cf0c8ab509589f396a183b90c237fef7fc7a85155d6bf53c364ae3eda1678b
 articles:
 - id: why-software-factories-fail
   title: Por qué fracasan las fábricas de software y cómo volver a encender la luz

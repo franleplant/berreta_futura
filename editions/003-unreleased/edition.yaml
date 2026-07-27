@@ -2,8 +2,8 @@ schema_version: 1
 id: 003-unreleased
 issue_number: 3
 publication_date: '2026-07-26'
-title: The Name on the Lease
-subtitle: Factories, harnesses, loops, and context — and who owns the floor the agents work on
+title: The Architecture of Agency
+subtitle: Open models, harnesses, loops, context, and the systems that turn intelligence into shared work
 language: en
 distribution: private
 status: provisional
@@ -12,11 +12,10 @@ format:
   home_sheet: A4
   binding: saddle_stitch
   max_article_pages: 7
-  max_editorial_pages: 2
+  max_editorial_pages: 1
 cover:
-  headline: The Name on the Lease
-  deck: Six dispatches on the agent stack — model, harness, loop, context — and who holds the lease
-    on each floor
+  headline: The Architecture of Agency
+  deck: Six dispatches on open models, agent systems, and the new architecture of human-machine work
   back_text: 'The prompt empties and the surroundings fill. Every rule you delete is trust transferred
     to a system: ask where it lands, and whose name is on the lease.'
   art_path: art/cover-art.png
@@ -50,7 +49,7 @@ articles:
   - why-software-factories-fail-turning-the-lights-b-1312d1ad
   manuscript: editions/003-unreleased/articles/why-software-factories-fail.md
   fidelity: editions/003-unreleased/fidelity/why-software-factories-fail.yaml
-  source_code_art_path: editions/003-unreleased/art/source-codes/why-software-factories-fail.png
+  tail_art_path: editions/003-unreleased/art/article-tails/software-factories.png
   figures:
   - id: lights-on-factory
     decision: include
@@ -96,7 +95,7 @@ articles:
   - why-harness-engineering-is-so-hard-fe732038
   manuscript: editions/003-unreleased/articles/why-harness-engineering-is-so-hard.md
   fidelity: editions/003-unreleased/fidelity/why-harness-engineering-is-so-hard.yaml
-  source_code_art_path: editions/003-unreleased/art/source-codes/why-harness-engineering-is-so-hard.png
+  tail_art_path: editions/003-unreleased/art/article-tails/harness-engineering.png
   figures:
   - id: nondeterminism-testing
     decision: include
@@ -142,7 +141,6 @@ articles:
   manuscript: editions/003-unreleased/articles/loop-engineering-above-the-harness.md
   fidelity: editions/003-unreleased/fidelity/loop-engineering-above-the-harness.yaml
   tail_art_path: editions/003-unreleased/art/article-tails/loop-engineering.png
-  source_code_art_path: editions/003-unreleased/art/source-codes/loop-engineering-above-the-harness.png
 - id: new-rules-of-context-engineering
   title: The New Rules of Context Engineering
   short_title: Context Engineering
@@ -156,7 +154,7 @@ articles:
   - the-new-rules-of-context-engineering-for-claude--aa1b1ea8
   manuscript: editions/003-unreleased/articles/new-rules-of-context-engineering.md
   fidelity: editions/003-unreleased/fidelity/new-rules-of-context-engineering.yaml
-  source_code_art_path: editions/003-unreleased/art/source-codes/new-rules-of-context-engineering.png
+  tail_art_path: editions/003-unreleased/art/article-tails/context-engineering.png
   figures:
   - id: assembled-context-conflicts
     decision: include
@@ -188,7 +186,6 @@ articles:
   manuscript: editions/003-unreleased/articles/open-weights-and-american-ai-leadership.md
   fidelity: editions/003-unreleased/fidelity/open-weights-and-american-ai-leadership.yaml
   tail_art_path: editions/003-unreleased/art/article-tails/open-weights.png
-  source_code_art_path: editions/003-unreleased/art/source-codes/open-weights-and-american-ai-leadership.png
 - id: buzz-multiplayer-agent-layer
   title: Beyond the Slack Killer
   short_title: Beyond the Slack Killer
@@ -208,7 +205,6 @@ articles:
   manuscript: editions/003-unreleased/articles/buzz-multiplayer-agent-layer.md
   fidelity: editions/003-unreleased/fidelity/buzz-multiplayer-agent-layer.yaml
   tail_art_path: editions/003-unreleased/art/article-tails/buzz-multiplayer.png
-  source_code_art_path: editions/003-unreleased/art/source-codes/buzz-multiplayer-agent-layer.png
 rights:
   faithful_source_reprint: private_only_while_rights_unknown
   public_release: blocked_pending_permission_or_applicable_exception

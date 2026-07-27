@@ -44,33 +44,6 @@ def parser() -> argparse.ArgumentParser:
             f"(default {DEFAULT_ENGINE}). Nothing is written back to configuration."
         ),
     )
-    source_art = actions.add_parser(
-        "source-art",
-        help="Generate artistic article-tail source codes and gate them for scannability",
-    )
-    source_art.add_argument("edition_id")
-    source_art.add_argument(
-        "--article",
-        action="append",
-        default=[],
-        help="Only this article id (repeatable; default: every article with a source URL)",
-    )
-    source_art.add_argument(
-        "--regenerate",
-        action="store_true",
-        help="Replace artwork that already exists and passes the gate",
-    )
-    source_art.add_argument(
-        "--model",
-        default=None,
-        help="Image model the codex CLI is asked for (default gpt-5.5)",
-    )
-    source_art.add_argument(
-        "--attempts",
-        type=int,
-        default=None,
-        help="Fresh generations to judge per article before giving up (default 3)",
-    )
     cover_proof = actions.add_parser(
         "cover-proof",
         help="Compile a fast cover-only SVG, PDF, PNG, and comparison report",
@@ -184,16 +157,6 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "build":
             result = magazine.build(args.edition_id, engine=args.engine)
             print(result.output_dir)
-        elif args.command == "source-art":
-            for line in magazine.source_art(
-                args.edition_id,
-                articles=args.article,
-                regenerate=args.regenerate,
-                model=args.model,
-                attempts=args.attempts,
-                log=print,
-            ):
-                print(line)
         elif args.command == "cover-proof":
             languages = (
                 None
