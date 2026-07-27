@@ -1,0 +1,135 @@
+schema_version: 1
+language: es
+source_language: en
+locale: es-AR
+fallback_locale: es-ES
+base_copy_sha256: d919cfaaf7716190e44205368a59e2880d6c7b7dee8d3ba28f5d8687f85dcdd5
+policy:
+  register: educated_castellano
+  regional_preference: restrained_argentinian
+  fallback: spain
+  figure_art_labels: preserve_source_language_with_localized_caption_alt_text_and_credit
+  prohibited_fallbacks:
+  - generic_latin_american
+  - mexican
+  - caribbean
+title: El nombre en el contrato de alquiler
+subtitle: Fábricas, arneses, ciclos y contexto, y quién es dueño del piso donde trabajan los agentes
+cover:
+  headline: El nombre en el contrato de alquiler
+  deck: Seis despachos sobre la pila de agentes —modelo, arnés, ciclo, contexto— y quién firma el alquiler
+    de cada piso
+  back_text: 'El prompt se vacía y los alrededores se llenan. Cada regla que borras es confianza transferida
+    a un sistema: pregunta dónde aterriza y a nombre de quién está el contrato de alquiler.'
+closing_plate_titles:
+- La habitación, conservada
+- La confianza, transferida
+- El alquiler, firmado
+editorial:
+  path: manuscript/editorial.md
+  source_sha256: f3f5920328495e56789a1322a7764b5631b98a95c3f37da75b3ac133a7d05fc3
+articles:
+- id: why-software-factories-fail
+  title: Por qué fracasan las fábricas de software
+  short_title: Fábricas de software
+  display_emphasis: Fábricas
+  author_note: Dex Horthy operó una fábrica de software a oscuras y cuenta por qué la mantenibilidad del código
+    la derrotó.
+  manuscript: articles/why-software-factories-fail.md
+  source_sha256: 9efc23ded70a9d2560b8308973951671f14e4476b2920fc5b4522f8a61b5d385
+  figures:
+  - id: loops-prevailing-wisdom
+    caption: 'La sabiduría dominante en su forma primaria, incrustada por el autor: el recordatorio de Peter Steinberger
+      de dejar de escribir prompts a los agentes de programación y diseñar, en su lugar, los ciclos que se los
+      escriben.'
+    credit: 'Diagrama de Dex Horthy; fuente: Why Software Factories Fail.'
+    alt_text: Una captura de una publicación de Peter Steinberger que pide a los lectores dejar de escribir prompts
+      a los agentes y diseñar los ciclos que se los escriben, junto a una tarjeta de título de Loop Engineering
+      y un fotograma de un orador.
+    anchor: Breve historia de la fábrica de software
+    source_caption_sha256: 4b031e9c1a2c569cf337e655e1b05519309d7825aacafa6f6fe2e5ca3f5d277f
+    source_credit_sha256: 9f8736721be4e57aef9bb93dc6fe619c4537a5c4c80eee43175569292692c2ae
+  - id: quality-decline-report
+    caption: 'Del informe de Faros AI que cita el artículo: los incidentes por solicitud de cambios suben un
+      242,7 por ciento, los errores por desarrollador un 54 por ciento, los incidentes mensuales un 57,9 por
+      ciento y los errores por solicitud de cambios un 28,7 por ciento desde que los equipos adoptaron herramientas
+      de programación con IA.'
+    credit: 'Diagrama de Dex Horthy; fuente: Why Software Factories Fail.'
+    alt_text: Un gráfico titulado la calidad de producción está bajando muestra barras rojas de incidentes por
+      solicitud de cambios, incidentes mensuales, errores por desarrollador y errores por solicitud de cambios,
+      todos en aumento tras una alta adopción de la IA.
+    anchor: La fábrica de software a oscuras
+    source_caption_sha256: cbb3c29bc5c6ca56874fd40976f4dc7c8e8167eb0dbc4480214fb33932f5f473
+    source_credit_sha256: 53f3b7306270776b43241f5d15da85619adbfa112ee8956cc22df02cedf8d15c
+- id: why-harness-engineering-is-so-hard
+  title: Por qué la ingeniería de arneses es tan difícil
+  short_title: Ingeniería de arneses
+  display_emphasis: Arneses
+  author_note: Winter pasó cinco meses construyendo un arnés de LLM en producción y cuenta por qué resiste las
+    pruebas y la depuración corrientes.
+  manuscript: articles/why-harness-engineering-is-so-hard.md
+  source_sha256: ec7c7316090751d92ef12826b54e06441b79ea62cde238ef2b6ca8cd01a239d2
+  figures:
+  - id: nondeterminism-testing
+    caption: La misma entrada se abre en abanico hacia salidas correctas, casi correctas y erróneas; la aserción
+      de igualdad tachada es la prueba que no puedes escribir.
+    credit: 'Diagrama de Winter; fuente: Why Harness Engineering Is So Hard.'
+    alt_text: Un diagrama titulado el no determinismo rompe las pruebas muestra una entrada que produce salidas
+      correctas, casi correctas y erróneas, con una aserción de igualdad tachada debajo.
+    anchor: No puedes escribir la prueba que quieres escribir
+    source_caption_sha256: 49e14c6434b108ec55c55caa920d9a473abe62ee7635155d3ee2fd8d65b7f9e9
+    source_credit_sha256: 0f387eb4b923ca5c63a9af20c376daf197fd2f7b0c23d5e8e001e8e832513abc
+  - id: silent-failure-modes
+    caption: El código tradicional se estrella en el punto del fallo; la salida del modelo devuelve un documento
+      que parece terminado con las líneas rotas entretejidas.
+    credit: 'Diagrama de Winter; fuente: Why Harness Engineering Is So Hard.'
+    alt_text: Dos paneles contrastan código tradicional que termina en un fallo estrepitoso con salida de modelo
+      que produce un documento completo marcado como roto.
+    anchor: Depuras prosa, no código
+    source_caption_sha256: 46503035d9756e08f9766ec6f860d8e5dc736143aa08db2be26d37880f28de1c
+    source_credit_sha256: 174d4ade68ebcb253a7afce2158d712eab57678933f539dca02eb336f558c7df
+- id: loop-engineering-above-the-harness
+  title: 'Ingeniería de ciclos: el piso sobre el arnés'
+  short_title: Ingeniería de ciclos
+  display_emphasis: Ciclos
+  author_note: Addy Osmani traza el paso de escribir los prompts a mano a diseñar los ciclos que se los dan a
+    los agentes.
+  manuscript: articles/loop-engineering-above-the-harness.md
+  source_sha256: eefbb972616a7827ba4331feed333488eb2fc0c02a1cef7b3c90f88d272bd845
+- id: new-rules-of-context-engineering
+  title: Las nuevas reglas de la ingeniería de contexto
+  short_title: Ingeniería de contexto
+  display_emphasis: Contexto
+  author_note: Thariq escribe desde el equipo de Claude Code sobre cómo simplificar el contexto para los modelos
+    más recientes de Claude.
+  manuscript: articles/new-rules-of-context-engineering.md
+  source_sha256: 86fd2becc7d575d1f991f18b8b4432bef96b9c7654f758f5f87d8c2a3987eecb
+  figures:
+  - id: assembled-context-conflicts
+    caption: 'Un contexto ensamblado, tres amos: el prompt de sistema permite documentación, una skill prohíbe
+      comentarios, la petición quiere que funcione como el antiguo, y Claude los reconcilia a todos.'
+    credit: 'Diagrama de Thariq; fuente: The New Rules of Context Engineering for Claude 5 Models.'
+    alt_text: Un diagrama del contexto ensamblado destaca instrucciones contradictorias en las secciones de prompt
+      de sistema, skills y petición del usuario.
+    anchor: Quitarle las trabas a Claude
+    source_caption_sha256: fd2886811c9600c32135024e93e0acc76ebda705a137e26750258c5af1806e63
+    source_credit_sha256: 08d67b1f950bd7fd1e109a415f596bfe810f34da2a924b6223fe5c4320c04dfd
+- id: open-weights-and-american-ai-leadership
+  title: Los pesos abiertos y el liderazgo estadounidense en IA
+  short_title: Pesos abiertos
+  display_emphasis: Pesos
+  author: Microsoft y cofirmantes de la industria
+  author_note: Microsoft y unos cincuenta cofirmantes de la industria sostienen que los modelos de pesos abiertos
+    sustentan un ecosistema de IA saludable.
+  manuscript: articles/open-weights-and-american-ai-leadership.md
+  source_sha256: f88d103834156cc92f3bae6a9e016ac85f25e7d99aef50d2539a9080015edfdd
+- id: buzz-multiplayer-agent-layer
+  title: Más allá del asesino de Slack
+  short_title: Más allá del asesino de Slack
+  display_emphasis: asesino de Slack
+  author: La redacción
+  author_note: La redacción lee seis crónicas tempranas de Buzz, el espacio de trabajo de código abierto de Block
+    donde personas y agentes comparten una misma habitación.
+  manuscript: articles/buzz-multiplayer-agent-layer.md
+  source_sha256: 262f355594c0561a47c493e5d7dc8e10e76cec19e03320b9d41d0e0fa1846f47
+sections: []

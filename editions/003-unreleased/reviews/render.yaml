@@ -1,0 +1,23 @@
+schema_version: 1
+edition_id: 003-unreleased
+reviewer: Independent render critic (Claude subagent)
+reviewed_at: '2026-07-27T04:39:45+00:00'
+result: approved
+engine: weasyprint
+design_direction: WeasyPrint / A5 fold proof
+findings: []
+notes: 'Full inspection of both languages across two review rounds: shaping typography, openers, figures,
+  artistic QR system, imposition, contents folios, blank covers all verified. Residual minors are source-capture-inherent
+  (clipped title-card glyph, chart edge clip, sliced embedded caption) plus one discretionary stranded-heading
+  polish on EN p22.'
+languages:
+  en:
+    reader_sha256: 68ee4a91026742d7e6dd2926d8364b5a0b357183d8a7aee8f9f5a8235481266b
+    booklet_sha256: fb66685418edc2b469d9163b1f3d594721cdf0a3808cb890314b439b940843d5
+    page_count: 36
+    machine_result: pass
+  es:
+    reader_sha256: 19661dd4a301cd25e95bc16e4321b958765625aa977ccb811d16a052be4ec6a7
+    booklet_sha256: 8f2a51b0622e7d606c398200e2f4db9a0f99b6126fd603fa9a3c846ecd903a44
+    page_count: 40
+    machine_result: pass
