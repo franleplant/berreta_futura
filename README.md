@@ -322,6 +322,27 @@ review prompts, not automatic failures, because deliberate openers and closing
 plates may use whitespace. The report and review images are included in
 `SHA256SUMS`.
 
+## Release archive
+
+`output/` is generated scratch and is not version-controlled, so an edition's
+as-printed deliverables are preserved by hand in a sibling repository-external
+directory:
+
+```text
+../magazine-releases-archive/<edition-id>/       English reader, booklets, and machine records
+../magazine-releases-archive/<edition-id>/es/    the same set for Spanish
+```
+
+That directory is **the authoritative copy** of what was printed. It holds
+`reader.pdf`, the A4 impositions under `home/`, and the build's own
+`edition-manifest.json`, `render-critic.json`, `preflight.json`, `fidelity.md`
+and `SHA256SUMS`; the `render-review/` rasters are excluded because every build
+regenerates them. Verify an archived edition with `shasum -c SHA256SUMS` inside
+its directory — the raster lines are expected to report missing files. Each
+edition directory carries a README recording its renderer, what changed, and how
+it verified, and the archive root indexes every edition. Editions 001 and 002
+were set by ReportLab and are not reproducible from the current renderer.
+
 Independent visual judgment is recorded by the compiler rather than inferred
 from agent instructions. After inspecting every generated language package:
 
