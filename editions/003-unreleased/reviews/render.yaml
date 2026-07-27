@@ -1,23 +1,25 @@
 schema_version: 1
 edition_id: 003-unreleased
-reviewer: Independent render critic (Codex subagent)
-reviewed_at: '2026-07-27T22:08:44+00:00'
+reviewer: Independent render critic (Claude subagent)
+reviewed_at: '2026-07-27T22:57:14+00:00'
 result: approved
 engine: weasyprint
 design_direction: WeasyPrint / A5 fold proof
 findings: []
-notes: Inspected every English and Spanish reader and booklet contact sheet after Part 3 integration and
-  the July 27 date correction. Revised feature is six pages in both languages; SlopCodeBench figure, captions,
-  credits, headings, terminal flow, editorial page limit, blank inside covers, and imposition all approved
-  with no actionable findings.
+notes: 'Full inspection after the Spanish repagination: the factories article fills exactly its seven-page
+  Spanish allowance with clean flow and intact end furniture, the three shifted Spanish figures keep captions
+  and credits without collision, contents folios match the new starts, openers carry the unlabelled source
+  code flush left with byline and note beside it, ornaments print where the band earns room, inside covers
+  are blank, and both booklet impositions pair correctly. English is unchanged and clean. Findings cosmetic
+  only: two source figures clip a sliver of their own baked-in labels identically in both languages.'
 languages:
   en:
-    reader_sha256: b93bd2da073e60d6d697126014bde630458a865bf1b29adaf8169294dce2666a
-    booklet_sha256: 16f96023b1e15f031ca700d4a473950321c34c2f034faa95250a9a35151cb1da
+    reader_sha256: 302e46214684529453b45d7fe68988f84b1f258b60137731859b84e37acc42b9
+    booklet_sha256: 213341871a50154ca84f703d8d89588b46757608448a9c0ced325df6c67e5026
     page_count: 36
     machine_result: pass
   es:
-    reader_sha256: 489bd01e3ad6a5687e36dc14b9b069ceb4b737269e89045c1bc111faca3c1dbc
-    booklet_sha256: a97a7fb6e9bdc58bca9a6a89f9a887a09e86adf65bc195e17ddd9f27cddd7926
+    reader_sha256: 974922a67f3f731827864bb4438bb82fa96934513e7319d9eb7eeec0572e0dc3
+    booklet_sha256: 9a7d875decb3a7f83fc852f2f484704b2a94627b2026ecf78f1a8d0452eb3891
     page_count: 40
     machine_result: pass

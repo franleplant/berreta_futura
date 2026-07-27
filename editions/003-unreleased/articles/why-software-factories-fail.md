@@ -33,13 +33,13 @@ Promising evaluations are beginning to use longer tasks, compound rewards, mutat
 
 ## The oracle arrives in checkpoints
 
-That claim about benchmarks was not entirely true. SlopCodeBench reveals requirements checkpoint by checkpoint. The model never sees the whole problem up front; it must evolve its own code while every inherited regression test remains binding.
+That claim about benchmarks was not entirely true. SlopCodeBench reveals requirements checkpoint by checkpoint. The model never sees the whole problem up front; it must evolve its own code while every inherited regression test remains binding. What's cool about this benchmark is that it is unsaturated: at the time of running, the best models available, GPT-5.4 and Opus 4.6, got 11 percent and 17 percent strict pass rates, respectively.
 
 I ran Opus 4.8, Sonnet 5, and Opus 5 through three problems—easy, medium, and hard—seventeen checkpoints in total. They received the same prompts and a fresh context window at each checkpoint. A strict pass meant every new and inherited test passed held-out black-box evaluation.
 
-No model finished any challenge cleanly, even the easy one. Opus 5 cleared four of seventeen checkpoints, or 24 percent; Opus 4.8 and Sonnet 5 each cleared one. Three of Opus 5's passes opened a single problem. It won technically, but nobody bought enough correctness. This small subset cannot establish a definitive ranking.
+No model finished any challenge cleanly, even the easy one. Opus 5 cleared four of seventeen checkpoints, or 24 percent; Opus 4.8 and Sonnet 5 each cleared one. Three of Opus 5's passes opened a single problem. It won technically, but nobody bought enough correctness. Obviously this small subset cannot tell us definitively that spending more money will lead to higher pass rates. The big headline is that 24 percent is not much higher than Opus 4.6's 17 percent strict pass rate in the original paper.
 
-The quality measures are repeatable, but I am not sold on linting the slop away. Every model increased verbosity and complexity. Opus 5 wrote five times as many functions as Opus 4.8, though its production-code volume was closer to 1.8 times as large. Most of the 41 metrics did not clearly separate the models; no single metric is established as a proxy for ease of change.
+The quality measures are repeatable, but I am not sold on linting the slop away. Every model increased verbosity and complexity. Opus 5 wrote five times as many functions as Opus 4.8, though its production-code volume was closer to 1.8 times as large. On duplication, however, Opus 5 is basically flat, 2.41 to 2.64, so if you trust duplication as a golden metric, you could argue that we did get incrementally better in the last three months. Big if though, and most software architecture experts would agree it is not black and white. Most of the 41 metrics did not clearly separate the models; no single metric is established as a proxy for ease of change.
 
 ## Can the next model inherit the design?
 
