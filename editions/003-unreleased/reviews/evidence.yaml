@@ -1,20 +1,25 @@
 schema_version: 1
 edition_id: 003-unreleased
 reviewer: Independent evidence critic (Claude subagent)
-reviewed_at: '2026-07-27T03:35:16+00:00'
+reviewed_at: '2026-07-27T21:39:42+00:00'
 result: approved
 findings: []
-notes: 'Adversarial audit of all six articles against committed extractions: coverage complete and exactly-once,
-  retained entries byte-verbatim, both declared section relocations reasoned, hedges and disjunctions
-  restored. Two audit rounds; final verdict approved.'
+notes: 'Two audit rounds. Round two audited the rewritten two-source factories article: pins match, exactly-once
+  coverage across both extractions, all declared spans byte-verbatim, voice clean. Its two MAJOR findings
+  were declaration defects and were remedied in the ledger: the resequencing of both source parts is now
+  declared on each affected entry, and two reasons that described cuts as condensations now name the dropped
+  material.'
 articles:
   why-software-factories-fail:
-    manuscript_sha256: 9efc23ded70a9d2560b8308973951671f14e4476b2920fc5b4522f8a61b5d385
-    ledger_sha256: 7bf93ca31fc927521da967f9134a95f70c07d7866273b83e34b62a3d30820c48
+    manuscript_sha256: 160f5a1b8d7f3d2a818977a52b96162895c892eb3c1f4038e15b1ffbb80cd6cc
+    ledger_sha256: 93e2fb3899f2c591766d28f373d1b7a3db8227862134bda9b4eb1e885ad1ddad
     source_extractions:
       why-software-factories-fail-f53679d7:
         body_sha256: d33fdc4b32b52fc15f7182bdcd5745446577528e319f95736b29305f233b1299
         file_sha256: ac2eaeec654fe060322028a29544e552ad46a64e09f7cfe165043ccabb3f6597
+      why-software-factories-fail-turning-the-lights-b-1312d1ad:
+        body_sha256: e2b15724ecd99d724de29cd01cb5920ff35ead723a0da2e53629304307524939
+        file_sha256: b759fa2b8af26d79e050425e7bcfa5a1334d9eaf015ba86ca5fad3c65d842196
   why-harness-engineering-is-so-hard:
     manuscript_sha256: ec7c7316090751d92ef12826b54e06441b79ea62cde238ef2b6ca8cd01a239d2
     ledger_sha256: 24ca96dc81ed54a83065bbf8b1a6e24e63a423a0dff5a695a2dee8f87cfc6100
