@@ -1,46 +1,54 @@
 ---
-source_id: why-software-factories-fail-f53679d7
+source_ids:
+- why-software-factories-fail-f53679d7
+- why-software-factories-fail-turning-the-lights-b-1312d1ad
 content_mode: faithful_synthesis
 label: FAITHFUL SYNTHESIS
-source_body_sha256: d33fdc4b32b52fc15f7182bdcd5745446577528e319f95736b29305f233b1299
+source_body_sha256:
+  why-software-factories-fail-f53679d7: d33fdc4b32b52fc15f7182bdcd5745446577528e319f95736b29305f233b1299
+  why-software-factories-fail-turning-the-lights-b-1312d1ad: e2b15724ecd99d724de29cd01cb5920ff35ead723a0da2e53629304307524939
 ---
 
-We're all racing to put AI coding into production, and the prevailing wisdom is we should write more loops. StrongDM wrote about their lights-off software factory where no human reads code and no human writes code. The narrative: you are the bottleneck, the models are good enough, code is free, just ship more stuff. These people are really dang smart, but the most cynical take: another excuse to pump more VC money into the slop cannon.
+We're all racing to put AI coding into production, and the prevailing wisdom is that we should write more loops. The lights-off promise is succinct: you are the bottleneck, the models are good enough, code is free, and nobody ever has to read it. Spend more tokens, add automated reviewers, and move 10 to 100 times faster.
 
-Meanwhile, companies that have no business having outages due to coding-agent mishaps are, well, having outages due to coding-agent mishaps, and codebases are falling apart faster than they ever have before. Faros AI put out a report: since we all picked up these tools, review quality is way down, tons of PRs merged with no review, incidents and bugs per developer way up. It's correlation, not a verifiable smoking gun, but it feels directionally valid.
+Meanwhile, companies are having outages from coding-agent mishaps and codebases are falling apart faster than ever. Faros AI reported lower review quality, more PRs merged without review, and rising incidents and bugs per developer after teams adopted AI coding tools. That is correlation, not a smoking gun, but it feels directionally valid. This is not about vibe-coding a disposable side project. It is about hard problems in complex codebases, where the cost of a bad decision arrives months later.
 
-People will tell you this is a skill issue: spend more tokens, let go of reading the code. The promise of all that "just token harder" yapping is, succinctly: 10 to 100x faster, high quality, and nobody ever has to do code review. What I'm gonna try to convince you is that no amount of harness engineering or loopsmaxxing can solve what is fundamentally a model-training issue.
+No amount of harness engineering or loopsmaxxing can solve what is fundamentally a model-training problem. Models are much better at one-off tasks, but I do not trust them to maintain and improve codebase quality over time without human steering. There are no good benchmarks for that ability.
 
-An aside: this has nothing to do with vibe coding—the rest of this is aimed at folks solving hard problems in complex codebases, where an agent-built codebase starts to struggle after maybe three to six months.
+## Why the lights-off factory fails
 
-## A brief history of the software factory
+Before AI, teams already used loops: decide what to build, put it in a tracker, implement it, review the pull request, ship, monitor, and feed what users discover back into the queue. Agentic factories mostly replace “someone builds the thing” with “an agent builds the thing.” Building falls from days to hours or minutes, while review remains expensive, so review becomes the bottleneck. The lights-off factory removes it and shifts trust to tests, sandboxes, automated review, monitoring, rollout, and user feedback.
 
-The term traces back to a NATO conference in 1968, the same one that gave us "software engineering." In a typical 2022 factory, right before AI: people decide what to build, it goes in a tracker, someone builds it, a pull request gets automated checks and a human review, it ships, monitoring pages an engineer at 3am, and user complaints feed the tracker. We haven't even hit AI yet, and there are already several loops in this picture.
+We tried that in July 2025: background agents for the small and medium work, no routine code reading. Eventually an issue arrived that the agent could not solve. I had to return to a codebase I had stopped reading three months earlier while the site was down and users were angry. The first time, I decided the velocity justified the risk. By roughly the third time, it was easier to rewrite from scratch; my cofounder spent two weeks plumbing the patterns by hand.
 
-Now every company and their mother—Ramp, Stripe, WorkOS, Brex—has explained how they built an agent factory that ships on the order of 75% of their code, swapping "someone builds the thing" for "an agent builds the thing." Building drops to minutes or hours; review still takes hours or days, so review is now the bottleneck. You speed review up with agentic code review and regression testing, route incidents and user feedback in, and the job becomes two questions: how much can you stuff into the queue, and how fast can you review what comes out?
+The failure is maintainability: changing one part becomes likely to break another. Tests can report pass or fail in seconds, so reinforcement learning can optimize millions of coding traces against them. The cost of bad architecture appears in weeks, months, or years, when a one-line change must be repeated in eleven places. There is no equally fast, reliable oracle for good design.
 
-## The lights-off software factory
+## There is no penalty for bad design
 
-Dan Shapiro coined the term; Simon Willison wrote about StrongDM's implementation: we no longer read the code. That annoying little code review step? No thanks. Drop it, invest in testing, sandboxes, automated review, monitoring, rollout, feedback signals, and the job becomes one question: how much of the ocean do we want to boil? I'm going to posit something potentially controversial: the lights-off factory does not work.
+A benchmark can ask whether an agent fixed a bug without breaking existing tests. If the suite passes, the patch wins, even when it makes the codebase harder to change. That is how you get try-catches around everything.
 
-In July 2025 we went full lights-off—background agents for everything small and medium. You find one issue gnarly enough that the agent can't solve it, and you have to go dig into the codebase you stopped reading three months ago—while your site was down, your users were pissed, and you were miserable reading all the slop code you let slip in. The first time, I shook it off: the downside risk was worth the velocity. By the third time, in November, it was easier to rewrite from scratch, and my cofounder spent two weeks plumbing out the patterns by hand.
-
-What I want to get to is this: models can't maintain and improve codebase quality over time, not without a decent amount of human steering. By maintainability I mean the specific thing where it becomes really, really hard to change one part of the codebase without breaking another—Martin Fowler's shotgun surgery.
-
-Surely the models have gotten better since then? Way better at one-off problems and vibe-coding a marketing site; not much better at improving codebase quality, as far as I can tell. I can't prove it; neither can you: there are no good benchmarks for a model's ability to maintain codebase quality. Work with coding agents for a while, though, and you have the vibe: they make things worse over time.
-
-## There's no penalty for bad design
-
-Claude Code went from nothing to something like $9B in revenue in under a year, though great CLI agents—aider, cline, codebuff—predated it with the same tools. The canonically-accepted explanation: Anthropic RL'd the model inside the harness, the first time a lab trained a model against the exact tools it would ship with. Build a harness without owning the weights and you're at a disadvantage to a team that owns both.
-
-Coding-agent RL in sixty seconds: generate agent traces that solve a problem, score them with a verifier, update the weights to make good traces more likely, repeat millions of times. The scoring can be whimsically one-dimensional.
-
-Take SWE-bench Multilingual: fifteen-minute tasks scraped from open-source repos, rewarded one or zero—did you fix the thing, without breaking anything else? In one real fastlane task, the human fix was two lines. The agent patches from a base commit and a bug report; its test-file edits are thrown away (we've caught a model quietly commenting out the failing test); the benchmark's tests go on top and the suite runs. If they pass, we win—but there is no penalty for eroding codebase maintainability. That's how you get try-catches around everything.
-
-Tests give feedback in seconds; that's why RL can run millions of loops. The cost function of bad architecture is measured in weeks, months, maybe years—the first time someone opens a file for a one-line change and realizes the same edit now lives in eleven places. Bad design is the one thing today's benchmarks can't evaluate, and I don't trust benchmark gains to mean models stopped slopping up codebases.
-
-Lots of smart folks are working on this; the hype is outrunning the discipline. SWE-Marathon scores ~400-hour tasks with a compound reward channel; DeepSWE builds tasks that can't already sit in the training set; Frontier Code penalizes tests that don't fail on the pre-patch code. But if a model could reliably tell good code from bad, it might have written the good version to begin with—RL needs a fast oracle, and maintainability doesn't have one. More review agents and tokens raise the floor, not the ceiling; the ceiling is whatever we taught the model in RL. They're the first evals even trying to score maintainability. I still wouldn't bet my codebase on them.
+Promising evaluations are beginning to use longer tasks, compound rewards, mutation testing, and model-based quality rules. But if a model could reliably judge good code, it might have written the good version to begin with. More tokens and review agents raise the floor; they do not move the ceiling beyond what the model learned to recognize. The frontier is improving; the hype is outrunning the discipline.
 
 ## Turning the lights back on
 
-Maybe a future model just gets this and we can stop. If you want to yolo prompts until GPT-7 ships, be my guest—but bitter lesson be damned, we've got problems to solve now—how we solve them is part II. Stay tuned.
+For now, the judge is you, so put code review back—but find leverage before the pull request, when changing direction is cheap. We use AI to front-load alignment across four phases: product review, system architecture, program design, and vertical slices.
+
+A product review pins down the user pain, what success looks like, and, when useful, a rough mockup. Reserve it for work where misunderstanding intent would be expensive.
+
+System architecture aligns services, endpoints, schemas, queues, stores, and data flow without deciding the code's internal shape. Review it with the eventual PR reviewer; disagreement here is cheaper than rework.
+
+## Design the program before the agent cooks
+
+Architecture is not enough. Before implementation, go down into program design: types, method signatures, file layout, and call stacks. Pseudocode, call-stack trees, and file-tree diffs make decisions visible. The model drafts; you argue with it before the expensive moment of code review.
+
+Build vertical slices rather than horizontal plans. Models proceed in stack order—database, service layer, API, frontend—leaving nothing touchable until the end. I prefer an end-to-end sliver: serve mock data, consume it in the interface, test it, then wire in services, storage, logic, and error handling.
+
+When the code matters or the model is working in a difficult part of the system, review each slice too. Checking 100–200 lines and resteering is cheaper than reaching the other side of 2,000 lines with no idea what is broken. I usually send a model one to three slices at a time.
+
+## Work within the constraints
+
+This process is proportional. Roughly 40 percent of tasks can still be one-shot or need only light feedback. Medium work can combine product and system design in one plan. Large or risky changes get the full sequence, with the irrelevant phases skipped when appropriate.
+
+I wanted the world where we could ask for production software, let the models cook, and never read the code. But these are constraints, not an argument against AI. Learn them, develop intuition, optimize within them, and seek leverage. It is possible to spend your time chasing 10-to-100-times claims when you could move two to three times faster, safely.
+
+Read the dang code.
