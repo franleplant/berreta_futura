@@ -11,6 +11,16 @@ from .capture import archive_snapshot, index_existing_captures, verify_snapshots
 from .catalog import render_sources
 from .cover import CoverArtifact, CoverCompiler, replace_outer_pages
 from .errors import ValidationError
+from .evidence_review import (
+    create_evidence_review,
+    current_evidence_bindings,
+    evidence_review_path,
+    evidence_review_status as _evidence_review_status,
+    load_evidence_review,
+    require_approved_evidence_review,
+    write_evidence_review,
+)
+from .extraction import verify_ledger_source_extractions
 from .fidelity import fidelity_report
 from .io import load_structured
 from .manifest import Edition, load_edition, load_translation
@@ -21,6 +31,7 @@ from .release import (
     ReleaseState,
     ReleaseTransition,
     finalize_release,
+    load_release_state,
     plan_release,
     sync_release_state,
 )
@@ -172,6 +183,11 @@ class Magazine:
                 f"Edition language {edition.language!r} does not match publication.language "
                 f"{self.primary_language!r}"
             )
+        # The open edition is the only unreleased one, and the only one whose
+        # sources can still be extracted; released editions' source pins
+        # predate committed extractions and are verified opportunistically.
+        release_state = self._require_release_state()
+        require_extractions = edition_id == release_state.open_edition_id
         for article in edition.articles:
             ledger_mode = str(load_structured(article.fidelity).get("content_mode", "faithful_edit"))
             if ledger_mode != article.content_mode:
@@ -180,12 +196,40 @@ class Magazine:
                     f"its fidelity ledger {ledger_mode!r}"
                 )
             fidelity_report(article.fidelity, source_author=article.author)
+            verify_ledger_source_extractions(
+                article.fidelity,
+                self.sources_dir,
+                require_extractions=require_extractions,
+                article_source_ids=article.source_ids,
+            )
         editions = {edition.language: edition}
         for language in self.languages:
             if language == edition.language:
                 continue
             editions[language] = load_translation(self.root, edition, language)
         return editions
+
+    def _require_release_state(self) -> ReleaseState:
+        """The release ledger, which must exist: it names the open edition.
+
+        ``load_release_state`` defaults an absent file to an open edition id,
+        which is right for a brand-new repository being captured into but wrong
+        for validation: with the file missing, the real open edition would
+        silently stop requiring extractions.  This repository always carries
+        ``library/release-state.yaml``, so absence during validation is loss,
+        not youth -- fail loudly.
+        """
+
+        if not self.release_state_path.is_file():
+            raise ValidationError(
+                f"Release state not found: {self.release_state_path}. The release "
+                "ledger names the open edition, so validation cannot decide which "
+                "edition the extraction gate applies to; restore the file rather "
+                "than validating without it."
+            )
+        return load_release_state(
+            self.release_state_path, default_open_id="001-the-work-left-to-us"
+        )
 
     def _load_cover_languages(
         self,
@@ -557,6 +601,80 @@ class Magazine:
             )
         return path, result
 
+    def record_evidence_review(
+        self,
+        edition_id: str,
+        *,
+        reviewer: str,
+        result: str,
+        findings: list[str] | tuple[str, ...] = (),
+        notes: str = "",
+        reviewed_at: str | None = None,
+    ) -> Path:
+        """Bind an independent evidence audit to the exact bytes it compared.
+
+        The record pins every manuscript, fidelity ledger, and extraction body
+        the audit covered.  Recording requires a committed extraction for every
+        ledger source: an audit cannot have compared a manuscript against
+        evidence that does not exist.
+        """
+
+        edition = self.validate(edition_id)
+        bindings = current_evidence_bindings(
+            edition, self.sources_dir, require_extractions=True
+        )
+        record = create_evidence_review(
+            edition_id=edition_id,
+            reviewer=reviewer,
+            result=result,
+            bindings=bindings,
+            findings=findings,
+            notes=notes,
+            reviewed_at=reviewed_at,
+        )
+        return write_evidence_review(
+            evidence_review_path(self.editions_dir, edition_id), record
+        )
+
+    def evidence_review_status(self, edition_id: str) -> dict[str, Any]:
+        """Hash-bound evidence review status, resilient enough for diagnosis.
+
+        Status is a diagnostic surface, so an edition that cannot even be
+        loaded reports its errors instead of aborting the whole command; the
+        release gate goes through :func:`require_approved_evidence_review`
+        with a fully validated edition instead.
+        """
+
+        try:
+            release_state = self._require_release_state()
+            records = load_records(self.sources_dir)
+            edition = load_edition(
+                self.root,
+                edition_id,
+                {record.id for record in records},
+                publication_name=self.publication_name,
+                source_records={record.id: record for record in records},
+            )
+            bindings = current_evidence_bindings(
+                edition, self.sources_dir, require_extractions=False
+            )
+            record = load_evidence_review(
+                evidence_review_path(self.editions_dir, edition_id),
+                edition_id=edition_id,
+            )
+        except ValidationError as exc:
+            return {"status": "unavailable", "errors": list(exc.errors)}
+        status = _evidence_review_status(record, edition_id=edition_id, bindings=bindings)
+        # Only the open edition can still be released, so only it can *owe* an
+        # evidence review; a released edition without one is simply outside the
+        # gate's jurisdiction, not delinquent.
+        if (
+            edition_id != release_state.open_edition_id
+            and status["status"] == "required_before_release"
+        ):
+            status["status"] = "not_required"
+        return status
+
     def render_review_status(self, edition_id: str) -> dict[str, Any]:
         destination = self.output_dir / edition_id
         record = load_render_review(
@@ -611,6 +729,19 @@ class Magazine:
             source_ids=source_ids,
             publication_date=edition.publication_date,
             next_edition_id=next_edition_id,
+        )
+        # The evidence audit binds to manuscripts, ledgers, and extraction
+        # bodies rather than built artifacts, so it can refuse before the
+        # expensive render, mirroring require_approved_reports after it.
+        require_approved_evidence_review(
+            load_evidence_review(
+                evidence_review_path(self.editions_dir, edition.id),
+                edition_id=edition.id,
+            ),
+            edition_id=edition.id,
+            bindings=current_evidence_bindings(
+                edition, self.sources_dir, require_extractions=False
+            ),
         )
         result = self.build(edition_id)
         require_approved_reports(

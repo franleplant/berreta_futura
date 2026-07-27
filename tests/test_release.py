@@ -16,7 +16,7 @@ from magazine.release import (
     load_release_state,
     sync_release_state,
 )
-from test_manifest import make_project
+from test_manifest import add_extraction, make_project, pin_ledger_source_hash
 
 
 class ReleaseStateTests(unittest.TestCase):
@@ -84,7 +84,15 @@ class ReleaseStateTests(unittest.TestCase):
             },
             "released_editions": [],
         }, sort_keys=False), encoding="utf-8")
-        return Magazine(self.root), manifest_path, state_path
+        # issue-001 is now the open edition, so validation requires committed
+        # extractions with matching ledger pins, and release requires a fresh
+        # approved evidence review bound to them.
+        pin_ledger_source_hash(self.root, add_extraction(self.root))
+        magazine = Magazine(self.root)
+        magazine.record_evidence_review(
+            "issue-001", reviewer="Evidence auditor", result="approved"
+        )
+        return magazine, manifest_path, state_path
 
     def add_source_record(self, source_id: str) -> None:
         source = yaml.safe_load(
@@ -164,6 +172,23 @@ class ReleaseStateTests(unittest.TestCase):
             "id": "002-unreleased", "issue_number": 2, "status": "collecting", "source_ids": [],
         })
         self.assertEqual(state.assignments()["source-one"], "released:issue-001")
+
+    def test_release_without_an_evidence_record_refuses_before_building(self):
+        """The evidence gate is wired ahead of the expensive render: no record
+        means a refusal naming the requirement and no output package at all."""
+        magazine, _, _ = self.prepare_releasable_project()
+        (self.root / "editions" / "issue-001" / "reviews" / "evidence.yaml").unlink()
+
+        with patch.object(magazine, "build") as build:
+            with self.assertRaisesRegex(
+                ValidationError,
+                r"(?s)Release requires a current approved evidence review.*"
+                r"required_before_release",
+            ):
+                magazine.release("issue-001")
+
+        build.assert_not_called()
+        self.assertFalse((self.root / "output").exists())
 
     def test_release_refuses_missing_visual_approval_after_build(self):
         magazine, manifest_path, state_path = self.prepare_releasable_project()

@@ -93,9 +93,19 @@ def parser() -> argparse.ArgumentParser:
     review_status = review_actions.add_parser("status", help="Show current hash-bound review status")
     review_status.add_argument("edition_id")
     review_record = review_actions.add_parser(
-        "record", help="Bind an independent visual decision to the current PDFs"
+        "record", help="Bind an independent review decision to the exact bytes it inspected"
     )
     review_record.add_argument("edition_id")
+    review_record.add_argument(
+        "--kind",
+        choices=("render", "evidence"),
+        default="render",
+        help=(
+            "render binds a visual decision to the current PDFs (default); evidence "
+            "binds a manuscript-versus-source audit to the manuscripts, fidelity "
+            "ledgers, and extraction bodies it compared"
+        ),
+    )
     review_record.add_argument("--reviewer", required=True)
     review_record.add_argument(
         "--result", required=True, choices=("approved", "changes_required")
@@ -174,23 +184,34 @@ def main(argv: list[str] | None = None) -> int:
             ):
                 print(artifact.proof_json)
         elif args.command == "review" and args.review_command == "status":
-            print(
-                json.dumps(
-                    magazine.render_review_status(args.edition_id),
-                    ensure_ascii=False,
-                    indent=2,
-                )
-            )
+            status = magazine.render_review_status(args.edition_id)
+            status["evidence"] = magazine.evidence_review_status(args.edition_id)
+            print(json.dumps(status, ensure_ascii=False, indent=2))
         elif args.command == "review" and args.review_command == "record":
-            path, result = magazine.record_render_review(
-                args.edition_id,
-                reviewer=args.reviewer,
-                result=args.result,
-                findings=args.finding,
-                notes=args.notes,
-                engine=args.engine,
-            )
-            print(f"recorded: {path}\noutput: {result.output_dir}")
+            if args.kind == "evidence":
+                if args.engine:
+                    raise MagazineError(
+                        "--engine applies only to render reviews; an evidence review "
+                        "binds to manuscripts and extractions, not rendered PDFs"
+                    )
+                path = magazine.record_evidence_review(
+                    args.edition_id,
+                    reviewer=args.reviewer,
+                    result=args.result,
+                    findings=args.finding,
+                    notes=args.notes,
+                )
+                print(f"recorded: {path}")
+            else:
+                path, result = magazine.record_render_review(
+                    args.edition_id,
+                    reviewer=args.reviewer,
+                    result=args.result,
+                    findings=args.finding,
+                    notes=args.notes,
+                    engine=args.engine,
+                )
+                print(f"recorded: {path}\noutput: {result.output_dir}")
         elif args.command == "release":
             result, transition = magazine.release(
                 args.edition_id, next_edition_id=args.next_edition_id

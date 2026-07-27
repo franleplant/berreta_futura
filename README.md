@@ -78,12 +78,13 @@ project environment is an implementation detail and is never managed by hand.
 library/sources/<source-id>/record.yaml    structured source record
 library/sources/<source-id>/raw/<sha>/     immutable committed raw capture
 library/sources/<source-id>/media/<sha>.json deterministic generated media inventory
-library/sources/<source-id>/extracted.md  local, faithful extraction
+library/sources/<source-id>/extracted.md  faithful extraction of the source body from one raw bundle
 library/release-state.yaml                open-edition and released-edition assignments
 editions/<edition-id>/edition.yaml        edition manifest
 editions/<edition-id>/editorial.md        original opening editorial
 editions/<edition-id>/articles/*.md       edited source manuscripts
 editions/<edition-id>/fidelity/*.yaml     paragraph-level edit ledger
+editions/<edition-id>/reviews/*.yaml      hash-bound render and evidence review records
 editions/<edition-id>/translations/es/    hash-pinned Spanish edition overlay and manuscripts
 output/<edition-id>/                      generated release package
 output/<edition-id>/es/                   Spanish reader, booklet, preflight, and package metadata
@@ -92,6 +93,18 @@ design/covers/canto-vivo/design.toml      canonical cover geometry and ink contr
 ```
 
 `sources.md` is always generated from the source records. Never edit it by hand.
+
+`extracted.md` is the verifiable source side of the fidelity chain. Its YAML
+frontmatter names the source id, the committed raw bundle it was transcribed
+from, and the extraction method; its body is the source's substantive text,
+reproduced verbatim (interface chrome and navigation may be omitted). A
+fidelity ledger's `source_body_sha256` is the SHA-256 of the UTF-8 bytes of
+that body — everything after the frontmatter's closing `---` line. Single-source
+ledgers declare one hex digest; multi-source ledgers declare a mapping keyed by
+source id. Whenever a source has an extraction and a ledger pins it, validation
+requires the hashes to match. Every source of the open (unreleased) edition
+must have an extraction and a matching pin; released editions predate committed
+extractions, so their recorded pins are kept but skipped.
 
 ## Language editions
 
@@ -310,6 +323,23 @@ every configured reader and booklet, then rebuilds the packages so their
 reports expose the decision. Any subsequent PDF change makes the review
 `stale`. A `changes_required` decision must include at least one `--finding`.
 `mag release` refuses missing, stale, or changes-required review state.
+
+The evidence review is the render review's editorial sibling: the adversarial
+manuscript-versus-source audit defined by `prompts/evidence-review.md`,
+recorded rather than merely performed. After auditing every article against its
+fidelity ledger and the committed source extractions:
+
+```sh
+uv run --locked mag review record <edition-id> --kind evidence \
+  --reviewer "Independent auditor" \
+  --result approved
+```
+
+The decision is written to `editions/<edition-id>/reviews/evidence.yaml`,
+binding per article the SHA-256 of the manuscript, of the fidelity ledger, and
+of every extraction body it was audited against. Changing any bound input makes
+the record `stale`. `mag review status` reports both kinds, and `mag release`
+refuses a missing, stale, or changes-required evidence review before rendering.
 
 ## First edition
 

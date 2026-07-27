@@ -55,3 +55,10 @@ the independent critic has no remaining actionable findings. Then record the
 decision only through `uv run --locked mag review record <edition-id>` with the
 reviewer and result flags; do not hand-edit the canonical review record. `mag
 release` must reject a missing, stale, or changes-required review.
+
+Every source of the open edition needs a committed
+`library/sources/<source-id>/extracted.md`, and its fidelity ledgers must pin
+`source_body_sha256` to the extraction body. Before release, perform the
+adversarial manuscript-versus-source audit (`prompts/evidence-review.md`) and
+record it with `uv run --locked mag review record <edition-id> --kind evidence`;
+`mag release` rejects a missing, stale, or changes-required evidence review.

@@ -32,6 +32,11 @@ def make_project(
         '[publication]\nname = "Test Review"\n' + render_engine_table(engine),
         encoding="utf-8",
     )
+    # Validation requires the release ledger to exist so it can name the open
+    # edition.  The fixture's open edition is deliberately *not* issue-001, so
+    # issue-001 validates like a released edition (no extraction requirement);
+    # tests about the open-edition gate call ``set_open_edition``.
+    set_open_edition(root, "999-unreleased", issue_number=999)
     source_dir = root / "library" / "sources" / source_id
     source_dir.mkdir(parents=True)
     source = {
@@ -75,6 +80,78 @@ def make_project(
                       "manuscript": "editions/issue-001/articles/article.md", "fidelity": "editions/issue-001/fidelity/article.yaml"}],
     }
     (edition_dir / "edition.yaml").write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+
+
+def set_open_edition(
+    root: Path,
+    edition_id: str = "issue-001",
+    *,
+    issue_number: int = 1,
+    source_ids: tuple[str, ...] = (),
+) -> None:
+    """Write ``library/release-state.yaml`` naming the open edition."""
+    state_path = root / "library" / "release-state.yaml"
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(
+        yaml.safe_dump({
+            "schema_version": 1,
+            "open_edition": {
+                "id": edition_id,
+                "issue_number": issue_number,
+                "status": "collecting",
+                "source_ids": list(source_ids),
+            },
+            "released_editions": [],
+        }, sort_keys=False),
+        encoding="utf-8",
+    )
+
+
+def add_source(root: Path, source_id: str, *, body: str = "Another article.\n") -> None:
+    """Archive a second minimal source record alongside make_project's."""
+    source = {
+        "schema_version": 1, "id": source_id, "title": source_id, "author": "Author",
+        "canonical_url": f"https://example.com/{source_id}",
+        "submitted_url": f"https://example.com/{source_id}",
+        "captured_at": "2026-07-15T12:00:00Z", "publication_date": None, "kind": "article",
+        "status": "extracted", "content_hash": None, "provenance": [], "rights": {}, "metadata": {}, "notes": "",
+    }
+    fixture = root / f"raw-{source_id}.txt"
+    fixture.write_text(body, encoding="utf-8")
+    archived = archive_snapshot(
+        SourceRecord.from_dict(source), root / "library" / "sources", fixture, method="test_fixture"
+    )
+    archived.write(root / "library" / "sources")
+
+
+def add_extraction(
+    root: Path,
+    *,
+    source_id: str = "source-one",
+    body: str = "The original article.\n",
+) -> str:
+    """Write the source's ``extracted.md`` and return its body SHA-256."""
+    record = yaml.safe_load(
+        (root / "library" / "sources" / source_id / "record.yaml").read_text(encoding="utf-8")
+    )
+    bundle = record["raw_captures"][0]["id"]
+    (root / "library" / "sources" / source_id / "extracted.md").write_text(
+        "---\n"
+        "schema_version: 1\n"
+        f"source_id: {source_id}\n"
+        f"raw_bundle: {bundle}\n"
+        "extraction_method: test fixture transcription\n"
+        "---\n" + body,
+        encoding="utf-8",
+    )
+    return hashlib.sha256(body.encode("utf-8")).hexdigest()
+
+
+def pin_ledger_source_hash(root: Path, body_sha256: str, *, article: str = "article") -> None:
+    ledger_path = root / "editions" / "issue-001" / "fidelity" / f"{article}.yaml"
+    ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
+    ledger["source_body_sha256"] = body_sha256
+    ledger_path.write_text(yaml.safe_dump(ledger), encoding="utf-8")
 
 
 def add_spanish_translation(root: Path, *, engine: str | None = None) -> None:
@@ -333,6 +410,38 @@ class ManifestTests(unittest.TestCase):
         manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
         with self.assertRaisesRegex(ValidationError, "Edition references unknown sources"):
             Magazine(self.root).validate("issue-001")
+
+    def test_validate_requires_the_release_ledger_file(self):
+        """A missing release-state must not silently disable the extraction
+        gate by defaulting the open edition id."""
+        make_project(self.root)
+        (self.root / "library" / "release-state.yaml").unlink()
+
+        with self.assertRaisesRegex(ValidationError, "Release state not found"):
+            Magazine(self.root).validate("issue-001")
+
+    def test_open_edition_validate_fails_when_ledger_and_article_sources_diverge(self):
+        """The reviewer's false pass: article declares [a, b], ledger declares
+        [a]; the ledger's own list used to be the whole coverage universe."""
+        make_project(self.root)
+        add_source(self.root, "source-two")
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        manifest["articles"][0]["source_ids"] = ["source-one", "source-two"]
+        manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+        pin_ledger_source_hash(self.root, add_extraction(self.root))
+        set_open_edition(self.root, "issue-001")
+
+        with self.assertRaisesRegex(
+            ValidationError,
+            r"article\.yaml.*absent from the ledger: source-two",
+        ):
+            Magazine(self.root).validate("issue-001")
+
+        # Only the open edition reconciles; pointing the release ledger at
+        # another edition restores today's released-edition behavior.
+        set_open_edition(self.root, "999-unreleased", issue_number=999)
+        Magazine(self.root).validate("issue-001")
 
     def test_validate_rejects_article_and_ledger_content_mode_mismatch(self):
         make_project(self.root)

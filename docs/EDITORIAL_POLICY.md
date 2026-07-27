@@ -43,6 +43,40 @@ Every synthesis maps the complete substantive source into edited ledger entries,
 
 Editor additions must be visibly labeled as an introduction, editor's note, annotation, caption, sidebar, or afterword.
 
+## Source extractions and the evidence review
+
+`library/sources/<source-id>/extracted.md` is the canonical faithful
+extraction of a source: its substantive text reproduced verbatim from one
+committed raw bundle, in source order, with no summarization, no editorial
+voice, and no invented headings. Interface chrome and navigation may be
+omitted, and the frontmatter must name the source id, the raw bundle the text
+was transcribed from, and the extraction method. For repository captures the
+extraction covers each documentation file in a stable, declared order with
+visible file boundaries.
+
+The extraction body is everything after the frontmatter's closing `---` line,
+and `source_body_sha256` in a fidelity ledger is the SHA-256 of the UTF-8
+bytes of exactly that body. Extraction files are byte-exact: LF newlines only,
+no BOM — a carriage return anywhere in the file fails validation rather than
+being silently normalized. A ledger over one source declares a single digest;
+a ledger synthesizing several sources declares a mapping from source id to
+digest. Validation fails whenever a pinned hash does not match the committed
+extraction. Every source of the open (unreleased) edition must carry an
+extraction and a matching pin before the edition can validate, and each open
+edition ledger's `source_ids` must equal its article's `source_ids` in
+`edition.yaml` exactly, so neither declaration can cover a source the other
+omits. Editions released before extractions existed keep their recorded pins
+unverified (and their recorded coverage as it was).
+
+The evidence review (`prompts/evidence-review.md`) is recorded with
+`mag review record --kind evidence` to
+`editions/<edition-id>/reviews/evidence.yaml`. The record binds the reviewer's
+decision to the exact manuscript, ledger, and extraction bytes audited — for
+each source both the extraction body and the whole `extracted.md` file,
+provenance frontmatter included, across every source the article or its ledger
+declares; any later change to those inputs makes the decision stale, and
+`mag release` refuses a missing, stale, or changes-required evidence review.
+
 ## Fidelity report
 
 Each faithful article reports:
