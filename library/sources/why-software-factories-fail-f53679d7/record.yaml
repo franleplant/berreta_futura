@@ -87,8 +87,8 @@ media_reviews:
     artifact_path: media/003.png
     artifact_sha256: 3df2d1b7098245933a9c976400364e8485d4a7df3b77e3a3ea6d81cb6f226db1
     mime_type: image/png
-    creator: Dex Horthy
-    credit: 'Diagram by Dex Horthy; source: Why Software Factories Fail.'
+    creator: Faros AI
+    credit: 'Chart by Faros AI; immediate source: Dex Horthy, Why Software Factories Fail.'
     rights:
       status: unknown
       intended_use: private_reference

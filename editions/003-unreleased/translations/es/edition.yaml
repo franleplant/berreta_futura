@@ -3,7 +3,7 @@ language: es
 source_language: en
 locale: es-AR
 fallback_locale: es-ES
-base_copy_sha256: d919cfaaf7716190e44205368a59e2880d6c7b7dee8d3ba28f5d8687f85dcdd5
+base_copy_sha256: 7bc9e2ad0363581d4ef8ede2511f1c3c481bfcd745232b3e5b6cc09be7e53467
 policy:
   register: educated_castellano
   regional_preference: restrained_argentinian
@@ -30,37 +30,36 @@ editorial:
   source_sha256: f3f5920328495e56789a1322a7764b5631b98a95c3f37da75b3ac133a7d05fc3
 articles:
 - id: why-software-factories-fail
-  title: Por qué fracasan las fábricas de software
+  title: Por qué fracasan las fábricas de software y cómo volver a encender la luz
   short_title: Fábricas de software
   display_emphasis: Fábricas
-  author_note: Dex Horthy operó una fábrica de software a oscuras y cuenta por qué la mantenibilidad del código
-    la derrotó.
+  author_note: Dex Horthy operó una fábrica de software a oscuras, cuenta por qué la mantenibilidad la derrotó
+    y propone una alternativa dirigida por personas.
   manuscript: articles/why-software-factories-fail.md
-  source_sha256: 9efc23ded70a9d2560b8308973951671f14e4476b2920fc5b4522f8a61b5d385
+  source_sha256: 160f5a1b8d7f3d2a818977a52b96162895c892eb3c1f4038e15b1ffbb80cd6cc
   figures:
-  - id: loops-prevailing-wisdom
-    caption: 'La sabiduría dominante en su forma primaria, incrustada por el autor: el recordatorio de Peter Steinberger
-      de dejar de escribir prompts a los agentes de programación y diseñar, en su lugar, los ciclos que se los
-      escriben.'
-    credit: 'Diagrama de Dex Horthy; fuente: Why Software Factories Fail.'
-    alt_text: Una captura de una publicación de Peter Steinberger que pide a los lectores dejar de escribir prompts
-      a los agentes y diseñar los ciclos que se los escriben, junto a una tarjeta de título de Loop Engineering
-      y un fotograma de un orador.
-    anchor: Breve historia de la fábrica de software
-    source_caption_sha256: 4b031e9c1a2c569cf337e655e1b05519309d7825aacafa6f6fe2e5ca3f5d277f
-    source_credit_sha256: 9f8736721be4e57aef9bb93dc6fe619c4537a5c4c80eee43175569292692c2ae
+  - id: lights-on-factory
+    caption: La fábrica con las luces encendidas devuelve el juicio humano a las etapas anteriores y simultáneas
+      a la implementación; la intención de producto, la arquitectura, el diseño del programa, los cortes verticales
+      y la revisión de código siguen dentro del ciclo.
+    credit: 'Diagrama de Dex Horthy; fuente: Why Software Factories Fail: Turning the lights back on.'
+    alt_text: Un diagrama de flujo titulado Optimizing the Lights-On Factory muestra solicitudes que entran en
+      una cola, un agente que construye a partir de especificaciones de producto y técnicas, comprobaciones automáticas
+      y revisión humana, despliegue a producción y respuesta de usuarios que vuelve a la cola.
+    anchor: Volver a encender la luz
+    source_caption_sha256: 01adbb97bc98b0cb874f8aeb65c31751da5ab77f0b45d34d042bd71856f662dd
+    source_credit_sha256: 00b06c74acb2da6f7c4362dbdc07573e5627be1a466ac24e4e0d52727f5983a0
   - id: quality-decline-report
-    caption: 'Del informe de Faros AI que cita el artículo: los incidentes por solicitud de cambios suben un
-      242,7 por ciento, los errores por desarrollador un 54 por ciento, los incidentes mensuales un 57,9 por
-      ciento y los errores por solicitud de cambios un 28,7 por ciento desde que los equipos adoptaron herramientas
-      de programación con IA.'
-    credit: 'Diagrama de Dex Horthy; fuente: Why Software Factories Fail.'
+    caption: El informe de Faros AI citado por el artículo registra más incidentes y errores después de que los
+      equipos adoptaran herramientas de programación con IA; Dex Horthy lo presenta como una correlación orientativa,
+      no como prueba de causalidad.
+    credit: 'Gráfico de Faros AI; fuente inmediata: Dex Horthy, Why Software Factories Fail.'
     alt_text: Un gráfico titulado la calidad de producción está bajando muestra barras rojas de incidentes por
       solicitud de cambios, incidentes mensuales, errores por desarrollador y errores por solicitud de cambios,
       todos en aumento tras una alta adopción de la IA.
-    anchor: La fábrica de software a oscuras
-    source_caption_sha256: cbb3c29bc5c6ca56874fd40976f4dc7c8e8167eb0dbc4480214fb33932f5f473
-    source_credit_sha256: 53f3b7306270776b43241f5d15da85619adbfa112ee8956cc22df02cedf8d15c
+    anchor: Por qué fracasa la fábrica a oscuras
+    source_caption_sha256: ada5cb6a86d26db7b5b31d7521810019d451c8a0c57cb31b84b41a5e404a460b
+    source_credit_sha256: 1bf41fc53f7c2d8345e74fdd0e1b1bb6ced7ddb30cfaf50457b1c3e4d2a491bc
 - id: why-harness-engineering-is-so-hard
   title: Por qué la ingeniería de arneses es tan difícil
   short_title: Ingeniería de arneses
