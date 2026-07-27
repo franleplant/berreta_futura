@@ -847,9 +847,23 @@ class SourceCode:
     url: str
     left: float = _CODE_MEASURE_LEFT_POINTS
     top: float = 0.0
+    # The authored artwork pass, present only on a tail code whose article
+    # declared ``source_code_art_path``.  ``art`` is the committed PNG the
+    # adapter embeds instead of drawing the vector symbol; ``art_symbol`` is
+    # the symbol's dark-module footprint inside that canvas -- left, top,
+    # right, bottom as fractions, y down -- *measured* off the pixels by the
+    # same independent decoder the page gate uses, never trusted from a
+    # sidecar; and ``art_side`` is the square the artwork prints at.
+    # ``modules``/``module``/``error`` keep describing the plain symbol the
+    # page fitted, which is what the artwork's size is derived from.
+    art: Path | None = None
+    art_symbol: tuple[float, float, float, float] | None = None
+    art_side: float = 0.0
 
     @property
     def side(self) -> float:
+        if self.art is not None:
+            return self.art_side
         return self.modules * self.module
 
     @property
@@ -863,8 +877,12 @@ class SourceCode:
 
         Not ``top - side``: four light modules of quiet zone stand below the
         symbol, and every alignment the page is judged on -- the folio's
-        baseline, the label's -- is an alignment to ink.
+        baseline, the label's -- is an alignment to ink.  On an artwork the
+        margin is not a module count, so the same edge is read off the
+        measured footprint instead.
         """
+        if self.art_symbol is not None:
+            return self.top - self.art_symbol[3] * self.side
         return self.top - self.side + self.quiet
 
     @property
@@ -877,11 +895,15 @@ class SourceCode:
         and every line of the article above it start, and the element therefore
         stands one quiet zone to the left of it.
         """
+        if self.art_symbol is not None:
+            return self.left + self.art_symbol[0] * self.side
         return self.left + self.quiet
 
     @property
     def symbol_right(self) -> float:
         """The last dark module's own right edge, in the same coordinates."""
+        if self.art_symbol is not None:
+            return self.left + self.art_symbol[2] * self.side
         return self.left + self.side - self.quiet
 
 
@@ -2427,9 +2449,23 @@ def _source_code_source(code: SourceCode) -> str:
     codes are set at whatever level their room affords and that is regularly not
     H; a mark on some codes and not others is not a house style, and occluding a
     code that has already traded away redundancy for cell size is the trade made
-    twice.  Nothing here forecloses it -- an authored artwork pass would replace
-    this function, not extend it.
+    twice.  Nothing here forecloses it -- the authored artwork pass exists now,
+    and it replaces this drawing rather than extending it.
+
+    THE ARTWORK BRANCH IS THE ONE RASTER EXCEPTION, taken first.  An accepted
+    artwork is pixels by nature -- an image model composed it -- so it travels
+    as the committed PNG's own bytes, byte for byte: no contrast preparation
+    (``_apply_print_contrast`` reaches only curated figures and this is not
+    one), no re-encode, nothing between the file the acceptance gate judged and
+    the file the page embeds.  Its density against the placed square is
+    enforced where the square is sized (``_dressed_source_code``), and the
+    final raster gate still reads the symbol back off the finished page.
     """
+    if code.art is not None:
+        import base64
+
+        payload = base64.b64encode(code.art.read_bytes()).decode("ascii")
+        return "data:image/png;base64," + payload
     matrix = _source_code_matrix(code)
     size = len(matrix)
     unit = code.module
@@ -2615,6 +2651,18 @@ def _measured_source_code(
             f"{_CODE_MIN_MODULE_POINTS * 25.4 / 72:.2f}mm. Shorten the canonical URL, "
             "or let the article end higher on its last page."
         )
+    if code.slot == "tail" and getattr(article, "source_code_art", None) is not None:
+        # The artwork dresses the tail code the page already earned; it never
+        # changes which slot that is.  It is swapped in *before* the ceiling
+        # test below because the ceiling judges emptiness under the element
+        # that will actually print, and the artwork -- like the tail motif it
+        # descends from -- absorbs white the bare square could not.  ``None``
+        # is the dresser's own demotion: a slot too tight to print the artwork
+        # at least as large as the fitted plain symbol keeps the plain code,
+        # which is proven to fit.
+        dressed = _dressed_source_code(article, code, room)
+        if dressed is not None:
+            code = dressed
     if code.slot == "tail" and _tail_code_foot_white(code) > _CODE_TAIL_MAX_FOOT_WHITE_POINTS:
         smaller = _fitted_source_code(
             str(article.id), "foot", url, _CODE_FOOT_ROOM_POINTS, top=0.0
@@ -2638,6 +2686,105 @@ def _measured_source_code(
             )
         code = replace(code, left=left)
     return code
+
+
+def _dressed_source_code(article: Any, code: SourceCode, room: float) -> SourceCode | None:
+    """The tail code wearing its article's authored artwork, sized and measured.
+
+    Everything here is a *measurement of the committed PNG*, on every plan
+    pass: the payload, the symbol's footprint, its module count, the canvas's
+    pixel count and its ink discipline are read back by the same independent
+    machinery the acceptance gate uses, so there is no sidecar to trust and an
+    artwork edited after acceptance is re-judged by the build that consumes
+    it.  A fault in a declared artwork is a loud refusal and never a silent
+    fallback -- the silent path is reserved for the page's own decisions (a
+    foot slot, a demotion), where the plain vector code is the design and not
+    a repair.
+
+    THE SQUARE GROWS SO THE SYMBOL DOES NOT SHRINK.  The artwork surrounds the
+    symbol with composition, so at the plain code's own side the symbol would
+    print at ``fraction`` of the size the page fitted.  The box is therefore
+    set at ``plain side / fraction`` -- the symbol back at the plain code's
+    full element size, a margin over its ink span -- and capped at the slot's
+    room.
+
+    AND THE CAP IS NOT ALLOWED TO SHRINK IT EITHER: ``None`` -- keep the plain
+    code -- where the capped placement would print the artwork's symbol with a
+    smaller ink span than the plain symbol the page fitted, or with a measured
+    module under ``_CODE_MIN_MODULE_POINTS``.  The two are distinct failures
+    of the same tight slot.  The plain fit may take a *shorter* symbol (a
+    tight room fits ECC-L where the artwork carries the roomy reference's
+    ECC-H), so the artwork can breach the module floor while still spanning
+    more points than the plain ink does -- which is why the cell arithmetic
+    divides the artwork's printed ink span by the artwork's own measured
+    module count, never by the plain code's.  This demotion is the page's
+    decision, like the foot slot: the plain code is proven to fit, and a code
+    that scans beats a composition that does not.
+
+    Flush is the element and not the ink: the artwork is inked to its own
+    edges, so the canvas sits on the reading measure's origin where the plain
+    square hangs its quiet zone outside it.
+    """
+    from .source_art import (
+        ART_MAX_SYMBOL_FRACTION,
+        ART_MIN_SYMBOL_FRACTION,
+        measure_source_code_art,
+        review_source_code_inks,
+    )
+
+    art = Path(article.source_code_art)
+    measurement = measure_source_code_art(art)
+    if measurement.payload != code.url:
+        raise ValidationError(
+            f"Article {article.id}'s source code artwork {art} decodes to "
+            f"{measurement.payload!r}, not the article's canonical URL "
+            f"{code.url!r}. Regenerate it with `mag source-art`."
+        )
+    if not ART_MIN_SYMBOL_FRACTION <= measurement.fraction <= ART_MAX_SYMBOL_FRACTION:
+        raise ValidationError(
+            f"Article {article.id}'s source code artwork {art} sets its symbol at "
+            f"{measurement.fraction:.2f} of the canvas, outside the "
+            f"{ART_MIN_SYMBOL_FRACTION:.2f}-{ART_MAX_SYMBOL_FRACTION:.2f} contract "
+            "the position gate depends on. Regenerate it with `mag source-art`."
+        )
+    side = min(room, (code.modules * code.module) / measurement.fraction)
+    ink_span = side * measurement.fraction
+    plain_ink_span = (code.modules - 2 * _CODE_QUIET_MODULES) * code.module
+    art_module = ink_span / measurement.modules
+    if (
+        ink_span < plain_ink_span - _MODULE_EPSILON
+        or art_module < _CODE_MIN_MODULE_POINTS
+    ):
+        return None
+    required = side / 72.0 * _CODE_DECODE_DPI
+    if measurement.pixels < required:
+        raise ValidationError(
+            f"Article {article.id}'s source code artwork {art} is "
+            f"{measurement.pixels}px wide and prints {side:.2f}pt across, "
+            f"{measurement.pixels / (side / 72.0):.0f} ppi against the "
+            f"{_CODE_DECODE_DPI:.0f} ppi floor. Regenerate it larger with "
+            "`mag source-art`."
+        )
+    # Ink discipline is re-verified at build time because it is the one part
+    # of the acceptance gate the final decode cannot re-check: a violet module
+    # or a dirtied quiet zone still decodes off this build's colour raster and
+    # then halftones into holes on the monochrome printer the magazine is made
+    # on.  The review is cached against the file's identity, so the settle
+    # loop pays for it once.
+    ink_failures = review_source_code_inks(art)
+    if ink_failures:
+        raise ValidationError(
+            f"Article {article.id}'s source code artwork {art} no longer passes "
+            f"the ink review: {'; '.join(ink_failures)}. Regenerate it with "
+            "`mag source-art`."
+        )
+    return replace(
+        code,
+        left=_CODE_MEASURE_LEFT_POINTS,
+        art=art,
+        art_symbol=measurement.box,
+        art_side=side,
+    )
 
 
 def _end_mark_extent(document: Any, article_id: str) -> float:
