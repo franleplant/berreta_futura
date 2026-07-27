@@ -37,7 +37,7 @@ articles:
   author_note: Dex Horthy diagnostica las fábricas a oscuras, prueba modelos de frontera con un benchmark longitudinal
     y propone una alternativa dirigida por personas.
   manuscript: articles/why-software-factories-fail.md
-  source_sha256: 1b29cd2de3e4f9a2225423aa16f681fe12a0deca0f9211e9d4ca18565ec05055
+  source_sha256: 1ebc0a8391c7c96d009dc92e93cbdec4a3094cdb278a3239b5ef36c62a763a37
   figures:
   - id: lights-on-factory
     caption: La fábrica con las luces encendidas devuelve el juicio humano a las etapas anteriores y simultáneas

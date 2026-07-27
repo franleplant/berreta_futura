@@ -1,18 +1,20 @@
 schema_version: 1
 edition_id: 003-unreleased
 reviewer: Independent evidence critic (Claude subagent)
-reviewed_at: '2026-07-27T21:39:42+00:00'
+reviewed_at: '2026-07-27T22:56:21+00:00'
 result: approved
 findings: []
-notes: 'Two audit rounds. Round two audited the rewritten two-source factories article: pins match, exactly-once
-  coverage across both extractions, all declared spans byte-verbatim, voice clean. Its two MAJOR findings
-  were declaration defects and were remedied in the ledger: the resequencing of both source parts is now
-  declared on each affected entry, and two reasons that described cuts as condensations now name the dropped
-  material.'
+notes: 'Three audit rounds on the factories article as it grew to three sources. Round-two and round-three
+  findings were closed in print and in the ledger: the unsaturated-benchmark baseline and the author''s
+  deflating verdict on the 24 percent result now print beside the figure that shows them, the duplication
+  counterargument is restored with its hedge, an invented ranking caveat was replaced by the source''s
+  actual cost caveat, one truncated span was made verbatim, the bulk cut is quoted rather than declared
+  by heading, and the cross-part ordering is declared. Coverage independently re-proved exactly-once across
+  all three extractions; declared source total now equals the sum of the three sources.'
 articles:
   why-software-factories-fail:
-    manuscript_sha256: 160f5a1b8d7f3d2a818977a52b96162895c892eb3c1f4038e15b1ffbb80cd6cc
-    ledger_sha256: 93e2fb3899f2c591766d28f373d1b7a3db8227862134bda9b4eb1e885ad1ddad
+    manuscript_sha256: 1ebc0a8391c7c96d009dc92e93cbdec4a3094cdb278a3239b5ef36c62a763a37
+    ledger_sha256: 9a6c38aad6451f7114e7c4310a5621f8960c5066932f7dacd6348e296a7ff04d
     source_extractions:
       why-software-factories-fail-f53679d7:
         body_sha256: d33fdc4b32b52fc15f7182bdcd5745446577528e319f95736b29305f233b1299
@@ -20,6 +22,9 @@ articles:
       why-software-factories-fail-turning-the-lights-b-1312d1ad:
         body_sha256: e2b15724ecd99d724de29cd01cb5920ff35ead723a0da2e53629304307524939
         file_sha256: b759fa2b8af26d79e050425e7bcfa5a1334d9eaf015ba86ca5fad3c65d842196
+      why-software-factories-fail-benchmarking-the-new-f1d9c04a:
+        body_sha256: 7c991f53c7a43737e5549b24b4cca4b36b899d43721955e3ebc59285fa4e4aba
+        file_sha256: 7ebb2f6cdb12540a413e088ab402302ea8f1cac84fdd6bb34f9e322535fb5ee3
   why-harness-engineering-is-so-hard:
     manuscript_sha256: ec7c7316090751d92ef12826b54e06441b79ea62cde238ef2b6ca8cd01a239d2
     ledger_sha256: 24ca96dc81ed54a83065bbf8b1a6e24e63a423a0dff5a695a2dee8f87cfc6100
