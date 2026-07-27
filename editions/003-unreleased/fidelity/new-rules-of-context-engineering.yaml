@@ -1,0 +1,393 @@
+schema_version: 1
+source_ids:
+- the-new-rules-of-context-engineering-for-claude--aa1b1ea8
+source_author: Thariq
+content_mode: faithful_synthesis
+source_body_sha256: aaeea1ef2ec0a1645ec0eae72d75b920dc73b91bd30dc736cf5eecd6624902a9
+paragraphs:
+- id: source-001
+  kind: p
+  status: boilerplate_removed
+  source: Thariq
+- id: source-002
+  kind: p
+  status: boilerplate_removed
+  source: '@trq212'
+- id: source-003
+  kind: h1
+  status: boilerplate_removed
+  source: The new rules of context engineering for Claude 5 models
+- id: source-004
+  kind: p
+  status: substantive_cut
+  source: I’ve written previously about how to best prompt the newest generation of Claude 5 models and work with
+    them iteratively to discover what you want to build.
+  reason: Opening pointer to the author's earlier post on prompting Claude 5 models; this piece's argument does
+    not depend on it.
+- id: source-005
+  kind: p
+  status: modified
+  source: 'But when you send a message to Claude, the prompt is only a small part of the context it gets. Much of
+    your context is assembled from your system prompt, Skills, CLAUDE.md files, memory, and other sources. We call
+    this context engineering, and it makes a big impact on the results you generate when using Claude Code or in
+    building your own agents.
+
+
+    Unlike a prompt, context is used generally across many requests, so it cannot be as specific.  How do you build
+    these general prompts and guidance for Claude, especially when you don’t know what a user’s prompt might be?'
+  edited: 'When you send a message to Claude, the prompt is only a small part of the context it gets: much is assembled
+    from your system prompt, Skills, CLAUDE.md files, memory, and other sources. Unlike a prompt, this context serves
+    many requests and cannot be as specific—we call it context engineering, and it makes a big impact on your results.'
+  reason: 'Condensed the definitional opening for the page budget: dropped the connective “But” after cutting the
+    lead-in, folded the generality point into the definition, and dropped the rhetorical question the rest of the
+    piece answers. The list of context sources, the generality constraint, and the impact claim are preserved.'
+- id: source-006
+  kind: p
+  status: retained
+  source: This can be surprisingly difficult as Claude’s own capabilities evolve. Most recently, we noticed a large
+    jump in the way we prompt the newest generation of Claude models. We removed over 80% of Claude Code’s system
+    prompt for models like Claude Opus 5 and Claude Fable 5 with no measurable loss on our coding evaluations.
+- id: source-007
+  kind: p
+  status: substantive_cut
+  source: Here’s what we’ve learned about prompting this new class of models, and how you can utilize it to update
+    your context engineering. We’ve put these best practices in `claude doctor`, use the command /doctor in Claude
+    Code to rightsize your skills, and CLAUDE.md files.
+  reason: Transitional preview of the piece; its `claude doctor` / /doctor recommendation is retained verbatim in
+    the closing “Try simplifying” section.
+- id: source-008
+  kind: h2
+  status: retained
+  source: Unhobbling Claude
+- id: source-009
+  kind: p
+  status: retained
+  source: Overall, we found that we were over-constraining Claude Code, both through our system prompt and in our
+    CLAUDE.md files and skills.
+- id: source-010
+  kind: p
+  status: modified
+  source: 'For example, when we read transcripts of our own internal usage of Claude Code, we see several conflicting
+    messages in a single request like “leave documentation as appropriate,” or “DO NOT add comments” as our system
+    prompt, skills, and user requests clash with each other.
+
+
+    Generally, Claude can interpret the user’s intent to get to the right answer, but Claude must think more carefully
+    about these overlapping and conflicting messages before deciding what to do.
+
+
+    And while these constraints were once needed to avoid worst case scenarios, we have since found we can delete
+    many of them and let the model use surrounding context and judgement instead.'
+  edited: In transcripts of our own internal Claude Code usage we see conflicting messages in a single request—“leave
+    documentation as appropriate,” “DO NOT add comments”—as system prompt, skills, and user requests clash. Claude
+    can generally interpret the user’s intent and get to the right answer, but must think more carefully about these
+    conflicts before deciding. Constraints once needed to avoid worst case scenarios can now be deleted—the model
+    uses surrounding context and judgement instead.
+  reason: Merged the transcript evidence with the judgement point and its qualification; the verbatim examples of
+    conflicting guidance, the caveat that conflicts cost extra deliberation, and the conclusion that the old constraints
+    are deletable are all preserved.
+- id: source-011
+  kind: p
+  status: substantive_cut
+  source: Additionally, Claude Code now has many more tools. Claude used to rely on CLAUDE.md as a source of memory,
+    information, and guidance. Now we have memory, artifacts, and skills, which Claude can use to create new ways
+    of loading and sharing context across sessions.
+  reason: Inventory of the newer context tools; each tool’s guidance (progressive disclosure, auto-memory, artifacts)
+    is retained in its own then-and-now item below.
+- id: source-012
+  kind: h2
+  status: retained
+  source: Then and now
+- id: source-013
+  kind: p
+  status: substantive_cut
+  source: 'There were a number of previous context engineering best practices that had become myths. Including:'
+  reason: Transitional lead-in to the myth list; the retained section heading and the then/now item headings preserve
+    the structure.
+- id: source-014
+  kind: h3
+  status: modified
+  source: 'Then: Give Claude rules
+
+
+    Now: Let Claude use judgement'
+  edited: 'Then: Give Claude rules. Now: Let Claude use judgement'
+  reason: Joined the paired then/now slug lines into one print heading; wording unchanged.
+- id: source-015
+  kind: p
+  status: modified
+  source: 'When we first rolled out Claude Code, we needed to be sure that Claude avoided worst case scenarios,
+    such as deleting files. This meant we would give particularly strong guidance that might not always be true,
+    For example, in the system prompt we used to say:'
+  edited: 'When we first rolled out Claude Code we gave particularly strong guidance to keep Claude from worst case
+    scenarios, such as deleting files—guidance that might not always be true. In the system prompt we used to say:'
+  reason: Condensed and repaired the run-on “true, For example”; the deleting-files example and the admission that
+    the guidance was not always true are preserved.
+- id: source-016
+  kind: blockquote
+  status: retained
+  source: 'In code: default to writing no comments. Never write multi-paragraph docstrings or multi-line comment
+    blocks — one short line max. Don''t create planning, decision, or analysis documents unless the user asks for
+    them — work from conversation context, not intermediate files.'
+- id: source-017
+  kind: p
+  status: modified
+  source: 'But for a certain subset of prompts, this guidance would be wrong. In the case of documentation, the
+    user may have their own preferences, or specific parts of very complex code might need multi-line comment blocks.
+
+
+    Still, without these guardrails for older models, the comments Claude wrote would be incorrect in many cases
+    and we had to accept this tradeoff. But newer models have better judgement and can handle these decisions well
+    without explicit rules.'
+  edited: 'For a certain subset of prompts this guidance would be wrong: the user may have their own documentation
+    preferences, or very complex code might need multi-line comment blocks. Older models often wrote incorrect comments
+    without these guardrails, a tradeoff we accepted; newer models have better judgement and handle these decisions
+    without explicit rules.'
+  reason: Merged the counterexamples with the tradeoff acknowledgement; both qualifications (the guidance was once
+    necessary, and it failed for a subset of prompts) are preserved, with “in many cases” carried by “often”.
+- id: source-018
+  kind: p
+  status: retained
+  source: 'In the new system prompt we say: Write code that reads like the surrounding code: match its comment density,
+    naming, and idiom.'
+- id: source-019
+  kind: h3
+  status: modified
+  source: 'Then: Give Claude examples
+
+
+    Now: Design interfaces'
+  edited: 'Then: Give Claude examples. Now: Design interfaces'
+  reason: Joined the paired then/now slug lines into one print heading; wording unchanged.
+- id: source-020
+  kind: p
+  status: modified
+  source: 'The number one rule for tool usage was to give Claude examples on how to use them. With our newest models,
+    we’ve found that giving examples actually constrains them to a certain exploration space.
+
+
+    Instead of using examples, think more about the design of your tools, scripts and files- what parameters does
+    Claude have and how can they be more expressive?
+
+
+    For example, in the Todo tool example, just listing status as an enumeration between pending, in_progress, and
+    completed, hints to Claude about how to use it. The instruction on keeping one item in_progress helps define
+    our requested behavior.'
+  edited: The number one rule for tool usage was to give Claude examples; with our newest models, examples actually
+    constrain them to a certain exploration space. Instead, think about the design of your tools, scripts, and files—what
+    parameters does Claude have, and how can they be more expressive? In the Todo tool, listing status as an enumeration
+    between pending, in_progress, and completed hints at how to use it.
+  reason: Merged the principle with its Todo example, removing the doubled “For example, in the Todo tool example”
+    and, for the page budget, the second illustration that the keep-one-item-in_progress instruction defines the
+    requested behavior; the reversal on examples and the enumeration example are preserved.
+- id: source-021
+  kind: h3
+  status: modified
+  source: 'Then: Put it all upfront
+
+
+    Now: Use progressive disclosure'
+  edited: 'Then: Put it all upfront. Now: Use progressive disclosure'
+  reason: Joined the paired then/now slug lines into one print heading; wording unchanged.
+- id: source-022
+  kind: p
+  status: modified
+  source: 'Because Claude Code was focused on coding, our system prompt included detailed information on how to
+    do code review and verification. These were not always needed, but when they were, it was crucial information.
+
+
+    Since then, Claude Code has gotten very competent at using progressive disclosure- loading the right context
+    at the right times. For example, we moved verification and code review into their own skills that Claude Code
+    could selectively call.'
+  edited: Our coding-focused system prompt included detailed code review and verification information—not always
+    needed, but crucial when it was. Claude Code has since gotten very competent at progressive disclosure, loading
+    the right context at the right times, and we moved verification and code review into their own selectively invoked
+    skills.
+  reason: Merged the before/after pair; the qualification that the upfront material was crucial when needed and
+    the move of verification and review into skills are preserved.
+- id: source-023
+  kind: p
+  status: modified
+  source: 'But progressive disclosure is not just for skills, we also use it for tools. Some of our tools are ‘deferred
+    loading,’ which means the agent must search for their full definitions using ToolSearch before using them. This
+    allows us to have more tools (such as our Task tools) that don’t take up context until they’re needed.
+
+
+    The same can be applied to your own CLAUDE.md and Skill.md files. A common myth is that you want to make these
+    a central repository for every known practice that you might run into, because Claude would not find it otherwise.
+    Instead, consider having a tree of files that can be loaded at the right time.'
+  edited: 'Progressive disclosure is not just for skills: some tools are ‘deferred loading’—the agent must search
+    for their full definitions using ToolSearch—so they don’t take up context until needed. The same applies to
+    your CLAUDE.md and Skill.md files: rather than a central repository of every known practice, consider a tree
+    of files loaded at the right time.'
+  reason: Merged the deferred-loading mechanism with the CLAUDE.md/Skill.md advice, folding the “central repository”
+    myth into the closing contrast and dropping the parenthetical Task-tools example for the page budget.
+- id: source-024
+  kind: h3
+  status: modified
+  source: 'Then: Repeat yourself
+
+
+    Now: Simple tool descriptions'
+  edited: 'Then: Repeat yourself. Now: Simple tool descriptions'
+  reason: Joined the paired then/now slug lines into one print heading; wording unchanged.
+- id: source-025
+  kind: p
+  status: modified
+  source: 'Earlier Claude models could sometimes need repeated instructions or be more likely to listen to instructions
+    at the end of their context window than at the start. This meant our system prompt would sometimes have references
+    to tools in the main system prompt as well as instructions in the tool description.
+
+
+    We found we could delete these repeat examples and put instructions on how to use tools in the tool descriptions
+    rather than the system prompt.'
+  edited: Earlier Claude models could need repeated instructions, or listen more to the end of their context window
+    than the start, so our system prompt referenced tools whose descriptions carried the same guidance. We deleted
+    these repeats and kept tool instructions in the tool descriptions rather than the system prompt.
+  reason: Condensed the historical explanation; the recency-bias caveat about earlier models and the delete-the-repeats
+    conclusion are preserved.
+- id: source-026
+  kind: h3
+  status: modified
+  source: 'Then: Memory in CLAUDE.md files
+
+
+    Now: Auto-memory'
+  edited: 'Then: Memory in CLAUDE.md files. Now: Auto-memory'
+  reason: Joined the paired then/now slug lines into one print heading; wording unchanged.
+- id: source-027
+  kind: p
+  status: retained
+  source: 'We used to encourage users to save things to Claude’s memory, by using the # hotkey to write to their
+    CLAUDE.md automatically. Instead, Claude now automatically saves memories that are relevant to the work and
+    to you.'
+- id: source-028
+  kind: h3
+  status: modified
+  source: 'Then: Simple specs
+
+
+    Now: Rich references'
+  edited: 'Then: Simple specs. Now: Rich references'
+  reason: Joined the paired then/now slug lines into one print heading; wording unchanged.
+- id: source-029
+  kind: p
+  status: modified
+  source: In plan mode, Claude Code has heavily relied on markdown files with plans. Storing these files as plans
+    helped Claude refer to them when needed. Another similar best practice was to store specs in the codebase for
+    Claude to refer to while working across longer projects.
+  edited: In plan mode, Claude Code has relied heavily on markdown plan files, and a similar practice was storing
+    specs in the codebase for longer projects.
+  reason: Condensed the description of the old plan-file and spec-file practice; the artifacts replacement that
+    follows is retained verbatim.
+- id: source-030
+  kind: p
+  status: retained
+  source: But we’ve found that Claude can handle increasingly more complicated references. Instead of simple markdown
+    files, Claude can reference HTML artifacts created by our new artifacts feature.
+- id: source-031
+  kind: p
+  status: modified
+  source: 'You may also give Claude references in the form of code. A spec may also be a detailed test suite, or
+    a function in a different codebase that Claude might port.
+
+
+    Rubrics are another form of references. Rubrics allow Claude to try and verify your taste in a particular field
+    (e.g. what does a good API design look like) by using dynamic workflows and spinning up verifier agents with
+    those rubrics.'
+  edited: 'You may also give references in the form of code—a detailed test suite, or a function in another codebase
+    that Claude might port. Rubrics are another form: verifier agents in dynamic workflows try to verify your taste
+    in a field such as API design.'
+  reason: Merged the code-reference and rubric paragraphs; the test-suite and porting examples, the API-design example,
+    and the hedged “try and verify” are preserved.
+- id: source-032
+  kind: h2
+  status: retained
+  source: Applying this to your context
+- id: source-033
+  kind: p
+  status: substantive_cut
+  source: Pulling this all together, what does this look like when you assemble your context?
+  reason: Transitional question restating the section heading.
+- id: source-034
+  kind: h3
+  status: substantive_cut
+  source: System Prompt
+  reason: Heading of the cut system-prompt subsection.
+- id: source-035
+  kind: p
+  status: substantive_cut
+  source: A system prompt is heavily tied to the product context. It tells Claude what product it’s operating in
+    and what it’s doing. For Claude Code, you will likely never modify this, but if you are building your own agent
+    harness, this is where you should spend a lot of time.
+  reason: Guidance addressed to builders of custom agent harnesses; by the source’s own qualification, Claude Code
+    users “will likely never modify” the system prompt. Cut for the seven-page budget in favor of the CLAUDE.md,
+    skills, and references guidance.
+- id: source-036
+  kind: h3
+  status: retained
+  source: CLAUDE.md
+- id: source-037
+  kind: p
+  status: retained
+  source: Keep your CLAUDE.md lightweight and briefly describe what your repo is for, but spend most of the tokens
+    on gotchas inside of the codebase. For example, you may organize your code to keep types in one monolithic file
+    and nowhere else. Avoid stating ‘the obvious’ things Claude should know by looking at your file system or your
+    repo.
+- id: source-038
+  kind: p
+  status: substantive_cut
+  source: Use progressive disclosure for more details, for example if you have several unique instructions on how
+    to verify your work, create a verification skill and reference it from your CLAUDE.md.
+  reason: Repeats the verification-skill progressive-disclosure guidance retained in the “put it all upfront” item.
+- id: source-039
+  kind: h3
+  status: retained
+  source: Skills
+- id: source-040
+  kind: p
+  status: modified
+  source: 'Think of skills as lightweight guides to let Claude find information when needed. Avoid making them overconstrained,
+    except in highly important areas.
+
+
+    For long skills, try and use progressive disclosure as much as possible- divide it into many files and split
+    them out.
+
+
+    It’s best when skills encode particular opinions, knowledge, or best practices that are particular to you, your
+    team, or product.'
+  edited: Think of skills as lightweight guides that let Claude find information when needed, and avoid making them
+    overconstrained except in highly important areas; divide long skills into many progressively disclosed files.
+    Skills are best when they encode opinions, knowledge, or best practices particular to you, your team, or product.
+  reason: Merged three short paragraphs into one; the overconstraint warning with its exception, the split-long-skills
+    advice, and the encode-your-opinions point are preserved.
+- id: source-041
+  kind: h3
+  status: retained
+  source: References
+- id: source-042
+  kind: p
+  status: modified
+  source: 'You can @ mention files to include them as references. References allow Claude to refer to in-depth information
+    about the current plan.
+
+
+    This might be in specs files, mockups, or even entire codebases. Generally you should prefer files that are
+    in code as it provides clear, high-fidelity instructions to Claude in a language it knows very well. For example,
+    a HTML mockup of a design will generally produce better results than a description of the design or a screenshot.'
+  edited: 'You can @ mention files as references to in-depth information about the current plan—specs, mockups,
+    or even entire codebases. Generally prefer files in code: clear, high-fidelity instructions in a language Claude
+    knows very well. An HTML mockup will generally produce better results than a description or a screenshot.'
+  reason: Merged the @-mention mechanics with the prefer-code rationale; the hedges (“generally”) and the HTML-mockup
+    example are preserved.
+- id: source-043
+  kind: h2
+  status: retained
+  source: Try simplifying
+- id: source-044
+  kind: p
+  status: retained
+  source: Across your system prompt, skills, and CLAUDE.md files, you may need to simplify just like we did. We
+    rolled out a new command called `claude doctor,` which will help you do this automatically as well. For more
+    details on prompting more advanced models specifically, check out our Fable field guide.

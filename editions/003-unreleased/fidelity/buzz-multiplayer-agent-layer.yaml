@@ -6,6 +6,13 @@ source_ids:
 - the-most-interesting-thing-about-buzz-is-shared--f0fc7406
 - buzz-is-the-first-proper-multiplayer-agent-harne-49c061ac
 - buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e
+source_body_sha256:
+  why-we-re-buzzing-1c82f338: 26a04a251c2d135a029bcade698e8fb7d784e10351360f0e988d24fad10b5450
+  buzz-your-people-your-agents-your-project-all-in-833eef43: 0fdcd9f5c79945eebf28a0f1446757423c7181166b484354ecf74bb3b0aa4131
+  buzz-a-workspace-where-humans-and-agents-build-t-59122470: 6b1bb345a5f9a8b0524e46d04b5b9e9ea86ede2a16c8bd1320e94f86f5c9b00c
+  the-most-interesting-thing-about-buzz-is-shared--f0fc7406: a11b6a921c893e7c2a54128c90b3c146c941ed4466fb1557636116b92c079b78
+  buzz-is-the-first-proper-multiplayer-agent-harne-49c061ac: d46d7f0fed3d08a860e819d6bb8d9f10edf6993e30c9a9e3c50d048ddd4e20ad
+  buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e: 969620843a5427f9dd485273a5cdd63f5b553ffa639a3753266c0dce0713e4b8
 source_author: Multiple sources
 content_mode: original_synthesis
 paragraphs:

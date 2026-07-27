@@ -1,0 +1,219 @@
+schema_version: 1
+id: 003-unreleased
+issue_number: 3
+publication_date: '2026-07-26'
+title: The Name on the Lease
+subtitle: Factories, harnesses, loops, and context — and who owns the floor the agents work on
+language: en
+distribution: private
+status: provisional
+format:
+  trim: A5
+  home_sheet: A4
+  binding: saddle_stitch
+  max_article_pages: 7
+  max_editorial_pages: 2
+cover:
+  headline: The Name on the Lease
+  deck: Six dispatches on the agent stack — model, harness, loop, context — and who holds the lease
+    on each floor
+  back_text: 'The prompt empties and the surroundings fill. Every rule you delete is trust transferred
+    to a system: ask where it lands, and whose name is on the lease.'
+  art_path: art/cover-art.png
+sources:
+- why-software-factories-fail-f53679d7
+- why-harness-engineering-is-so-hard-fe732038
+- loop-engineering-f0ddfd76
+- the-new-rules-of-context-engineering-for-claude--aa1b1ea8
+- open-weights-and-american-ai-leadership-7aa6038f
+- open-weight-models-are-essential-to-a-healthy-ai-e7845a41
+- why-we-re-buzzing-1c82f338
+- buzz-your-people-your-agents-your-project-all-in-833eef43
+- buzz-a-workspace-where-humans-and-agents-build-t-59122470
+- the-most-interesting-thing-about-buzz-is-shared--f0fc7406
+- buzz-is-the-first-proper-multiplayer-agent-harne-49c061ac
+- buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e
+editorial: manuscript/editorial.md
+articles:
+- id: why-software-factories-fail
+  title: Why Software Factories Fail
+  short_title: Software Factories
+  display_emphasis: Factories
+  opener_variant: split_axis
+  author: Dex Horthy
+  author_note: Dex Horthy ran a lights-off software factory and reports why codebase maintainability
+    defeated it.
+  content_mode: faithful_synthesis
+  source_ids:
+  - why-software-factories-fail-f53679d7
+  manuscript: editions/003-unreleased/articles/why-software-factories-fail.md
+  fidelity: editions/003-unreleased/fidelity/why-software-factories-fail.yaml
+  source_code_art_path: editions/003-unreleased/art/source-codes/why-software-factories-fail.png
+  figures:
+  - id: loops-prevailing-wisdom
+    decision: include
+    source_id: why-software-factories-fail-f53679d7
+    asset_id: raster-002-6b1bf860
+    caption: The prevailing wisdom in primary form, embedded by the author — Peter Steinberger's reminder
+      to stop prompting coding agents and design loops that prompt them instead.
+    alt_text: A screenshot of a Peter Steinberger post telling readers to stop prompting agents and
+      design loops that prompt them, beside a Loop Engineering title card and a video still of a speaker.
+    anchor: A brief history of the software factory
+    layout: compact_band
+    criteria:
+    - important
+    - useful
+    rationale: The embedded post is the era's slogan straight from the source, and the exact wisdom
+      the article sets out to test.
+  - id: quality-decline-report
+    decision: include
+    source_id: why-software-factories-fail-f53679d7
+    asset_id: raster-003-3df2d1b7
+    caption: From the Faros AI report the article cites, incidents per pull request up 242.7 percent,
+      bugs per developer up 54 percent, monthly incidents up 57.9 percent, and bugs per pull request
+      up 28.7 percent since teams adopted AI coding tools.
+    alt_text: A chart titled production quality is declining shows red bars for incidents per pull request,
+      monthly incidents, bugs per developer, and bugs per pull request all rising after high AI adoption.
+    anchor: The lights-off software factory
+    layout: compact_band
+    criteria:
+    - important
+    - useful
+    rationale: The Faros figures are the article's quantitative evidence that lights-off velocity arrives
+      with a quality bill.
+- id: why-harness-engineering-is-so-hard
+  title: Why Harness Engineering Is So Hard
+  short_title: Harness Engineering
+  display_emphasis: Harness
+  opener_variant: edge_medallion
+  author: Winter
+  author_note: Winter spent five months building a production LLM harness and reports why it resists
+    ordinary testing and debugging.
+  content_mode: faithful_synthesis
+  source_ids:
+  - why-harness-engineering-is-so-hard-fe732038
+  manuscript: editions/003-unreleased/articles/why-harness-engineering-is-so-hard.md
+  fidelity: editions/003-unreleased/fidelity/why-harness-engineering-is-so-hard.yaml
+  source_code_art_path: editions/003-unreleased/art/source-codes/why-harness-engineering-is-so-hard.png
+  figures:
+  - id: nondeterminism-testing
+    decision: include
+    source_id: why-harness-engineering-is-so-hard-fe732038
+    asset_id: raster-002-9a307089
+    caption: The same input fans out to correct, close-but-wrong, and wrong outputs; the crossed-out
+      equality assertion is the test you cannot write.
+    alt_text: A diagram titled non-determinism breaks testing shows one input producing correct, close-but-wrong,
+      and wrong outputs, with an equality assertion crossed out below.
+    anchor: You can't write the test you want to write
+    layout: compact_band
+    criteria:
+    - important
+    - useful
+    rationale: The source sketch compresses the section's argument — determinism-based testing loses
+      its floor — into one legible figure.
+  - id: silent-failure-modes
+    decision: include
+    source_id: why-harness-engineering-is-so-hard-fe732038
+    asset_id: raster-003-7411515f
+    caption: Traditional code crashes at the point of failure; model output returns a document that
+      looks finished with the broken lines woven through it.
+    alt_text: Two panels contrast traditional code ending in a crash with model output producing a full
+      document marked as broken.
+    anchor: You're debugging prose, not code
+    layout: compact_band
+    criteria:
+    - important
+    - useful
+    rationale: The side-by-side makes the silent, graded failure mode visible exactly where the article
+      observes that nothing crashes and everything ships.
+- id: loop-engineering-above-the-harness
+  title: 'Loop Engineering: The Floor Above the Harness'
+  short_title: Loop Engineering
+  display_emphasis: Loop
+  opener_variant: stepped_title
+  author: Addy Osmani
+  author_note: Addy Osmani maps the move from prompting agents directly to designing the loops that
+    prompt them.
+  content_mode: faithful_synthesis
+  source_ids:
+  - loop-engineering-f0ddfd76
+  manuscript: editions/003-unreleased/articles/loop-engineering-above-the-harness.md
+  fidelity: editions/003-unreleased/fidelity/loop-engineering-above-the-harness.yaml
+  tail_art_path: editions/003-unreleased/art/article-tails/loop-engineering.png
+  source_code_art_path: editions/003-unreleased/art/source-codes/loop-engineering-above-the-harness.png
+- id: new-rules-of-context-engineering
+  title: The New Rules of Context Engineering
+  short_title: Context Engineering
+  display_emphasis: Context
+  opener_variant: split_axis
+  author: Thariq
+  author_note: Thariq writes from inside the Claude Code team on simplifying context for the newest
+    Claude models.
+  content_mode: faithful_synthesis
+  source_ids:
+  - the-new-rules-of-context-engineering-for-claude--aa1b1ea8
+  manuscript: editions/003-unreleased/articles/new-rules-of-context-engineering.md
+  fidelity: editions/003-unreleased/fidelity/new-rules-of-context-engineering.yaml
+  source_code_art_path: editions/003-unreleased/art/source-codes/new-rules-of-context-engineering.png
+  figures:
+  - id: assembled-context-conflicts
+    decision: include
+    source_id: the-new-rules-of-context-engineering-for-claude--aa1b1ea8
+    asset_id: raster-002-0d7d13dc
+    caption: One assembled context, three masters — the system prompt allows documentation, a skill
+      forbids comments, the request wants it working like the old one — and Claude reconciles them all.
+    alt_text: A diagram of assembled context highlights conflicting instructions in the system prompt,
+      skills, and user request sections.
+    anchor: Unhobbling Claude
+    layout: compact_band
+    criteria:
+    - important
+    - useful
+    rationale: The diagram shows the exact instruction conflict the section quotes, laid out as the
+      model receives it.
+- id: open-weights-and-american-ai-leadership
+  title: Open Weights and American AI Leadership
+  short_title: Open Weights
+  display_emphasis: Weights
+  opener_variant: edge_medallion
+  author: Microsoft and industry signatories
+  author_note: Microsoft and some fifty industry co-signatories argue that open-weight models underpin
+    a healthy AI ecosystem.
+  content_mode: faithful_edit
+  source_ids:
+  - open-weights-and-american-ai-leadership-7aa6038f
+  - open-weight-models-are-essential-to-a-healthy-ai-e7845a41
+  manuscript: editions/003-unreleased/articles/open-weights-and-american-ai-leadership.md
+  fidelity: editions/003-unreleased/fidelity/open-weights-and-american-ai-leadership.yaml
+  tail_art_path: editions/003-unreleased/art/article-tails/open-weights.png
+  source_code_art_path: editions/003-unreleased/art/source-codes/open-weights-and-american-ai-leadership.png
+- id: buzz-multiplayer-agent-layer
+  title: Beyond the Slack Killer
+  short_title: Beyond the Slack Killer
+  display_emphasis: Slack Killer
+  opener_variant: stepped_title
+  author: The Editors
+  author_note: The Editors read six early accounts of Buzz, Block's open-source workspace where humans
+    and agents share one room.
+  content_mode: original_synthesis
+  source_ids:
+  - why-we-re-buzzing-1c82f338
+  - buzz-your-people-your-agents-your-project-all-in-833eef43
+  - buzz-a-workspace-where-humans-and-agents-build-t-59122470
+  - the-most-interesting-thing-about-buzz-is-shared--f0fc7406
+  - buzz-is-the-first-proper-multiplayer-agent-harne-49c061ac
+  - buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e
+  manuscript: editions/003-unreleased/articles/buzz-multiplayer-agent-layer.md
+  fidelity: editions/003-unreleased/fidelity/buzz-multiplayer-agent-layer.yaml
+  tail_art_path: editions/003-unreleased/art/article-tails/buzz-multiplayer.png
+  source_code_art_path: editions/003-unreleased/art/source-codes/buzz-multiplayer-agent-layer.png
+rights:
+  faithful_source_reprint: private_only_while_rights_unknown
+  public_release: blocked_pending_permission_or_applicable_exception
+closing_plates:
+- title: The Room, Kept
+  art_path: editions/003-unreleased/art/coda-01.png
+- title: Trust, Transferred
+  art_path: editions/003-unreleased/art/coda-02.png
+- title: The Lease, Signed
+  art_path: editions/003-unreleased/art/coda-03.png
