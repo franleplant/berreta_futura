@@ -421,6 +421,17 @@ def load_translation(
                 f"Translation {language!r} article {article.id} author_note must be a "
                 "single line of at most 160 characters"
             )
+        # A localized byline is optional: most authors are proper names and
+        # carry across languages unchanged, so absence means "use the base
+        # author".  Like title and short_title it is a display string, checked
+        # against the pinned base copy as a whole rather than pinned itself.
+        author = article.author
+        if "author" in row:
+            author = str(row.get("author") or "").strip()
+            if not author:
+                errors.append(
+                    f"Translation {language!r} article {article.id} author cannot be blank"
+                )
         display_emphasis = str(row.get("display_emphasis") or "").strip()
         if display_emphasis and display_emphasis.casefold() not in str(row["title"]).casefold():
             errors.append(
@@ -468,7 +479,7 @@ def load_translation(
                 short_title,
                 display_emphasis,
                 article.opener_variant,
-                article.author,
+                author,
                 author_note,
                 article.source_ids,
                 manuscript,

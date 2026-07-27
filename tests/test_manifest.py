@@ -504,6 +504,47 @@ class ManifestTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "requires exactly 3 closing_plate_titles"):
             Magazine(self.root).validate("issue-001")
 
+    def test_translation_localizes_the_article_author_when_declared(self):
+        make_project(self.root)
+        add_spanish_translation(self.root)
+        translation_path = (
+            self.root / "editions" / "issue-001" / "translations" / "es" / "edition.yaml"
+        )
+        translation = yaml.safe_load(translation_path.read_text(encoding="utf-8"))
+        translation["articles"][0]["author"] = "La redacción"
+        translation_path.write_text(
+            yaml.safe_dump(translation, sort_keys=False, allow_unicode=True), encoding="utf-8"
+        )
+        base = Magazine(self.root).validate("issue-001")
+
+        localized = load_translation(self.root.resolve(), base, "es")
+
+        self.assertEqual(localized.articles[0].author, "La redacción")
+
+    def test_translation_without_an_author_keeps_the_base_byline(self):
+        make_project(self.root)
+        add_spanish_translation(self.root)
+        base = Magazine(self.root).validate("issue-001")
+
+        localized = load_translation(self.root.resolve(), base, "es")
+
+        self.assertEqual(localized.articles[0].author, base.articles[0].author)
+
+    def test_translation_refuses_a_blank_author(self):
+        make_project(self.root)
+        add_spanish_translation(self.root)
+        translation_path = (
+            self.root / "editions" / "issue-001" / "translations" / "es" / "edition.yaml"
+        )
+        translation = yaml.safe_load(translation_path.read_text(encoding="utf-8"))
+        translation["articles"][0]["author"] = "   "
+        translation_path.write_text(
+            yaml.safe_dump(translation, sort_keys=False, allow_unicode=True), encoding="utf-8"
+        )
+
+        with self.assertRaisesRegex(ValidationError, "author cannot be blank"):
+            Magazine(self.root).validate("issue-001")
+
     def test_validate_rejects_translation_after_english_source_changes(self):
         make_project(self.root)
         add_spanish_translation(self.root)

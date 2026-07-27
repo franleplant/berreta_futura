@@ -219,7 +219,9 @@ rejection reasons. A build fails if any capture has not been curated.
 
 See `templates/edition.yaml`. An article points at both a manuscript and a
 fidelity ledger, and supplies a concise `author_note` that is rendered below
-the byline. Each language overlay provides its own localized note. Paths are
+the byline. Each language overlay provides its own localized note, and may
+localize the `author` byline itself when it is a description rather than a
+proper name; absent, the base author is used. Paths are
 repository-relative and cannot escape the project. The compiler validates
 required fields, source references, duplicate IDs, and file existence before
 layout.
