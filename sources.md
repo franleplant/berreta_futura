@@ -2,7 +2,30 @@
 
 _Generated from structured source records. Do not edit by hand._
 
-_Open edition: `003-unreleased`; 12 queued sources._
+_Open edition: `003-unreleased`; 13 queued sources._
+
+## Why Software Factories Fail: Turning the lights back on — Dex Horthy
+
+- ID: `why-software-factories-fail-turning-the-lights-b-1312d1ad`
+- Source: https://x.com/dexhorthy/status/2081058573556306030
+- Kind / status: web / captured
+- Captured: 2026-07-27T14:14:22Z
+- Content hash: `not captured`
+- Raw captures: 2 committed bundle(s)
+- Release: queued for `003-unreleased`
+- Published: 2026-07-25
+- Tags: ai-agents, architecture, code-review, maintainability, planning, software-factories
+- Primary material:
+  - https://x.com/dexhorthy/article/2081058573556306030
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+- Provenance:
+  - primary_material -> https://x.com/dexhorthy/article/2081058573556306030
+
+Part two of Dex Horthy’s software-factories argument: restore human judgment through product review, system architecture, program design, vertical slices, and incremental code review, accepting constraint-aware 2–3× gains rather than unsafe 10–100× promises.
+
+**Editorial note:** Submitted X Article captured through the user-authenticated Chrome session. Complete sanitized rendered text, 83 source links, eight article diagrams, and two embedded-video thumbnails are archived in source order; raw artifacts exclude cookies, credentials, profiles, and browser-session storage.
 
 ## Buzz agents are paying each other with Bitcoin — Documenting Bitcoin
 

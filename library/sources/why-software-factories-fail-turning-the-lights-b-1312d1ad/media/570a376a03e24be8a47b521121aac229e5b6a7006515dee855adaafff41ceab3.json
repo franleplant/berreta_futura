@@ -1,0 +1,163 @@
+{
+  "artifact_count": 15,
+  "bundle_sha256": "570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3",
+  "complete": true,
+  "duplicate_groups": [
+    {
+      "paths": [
+        "09-horizontal-plan-video-still.jpg",
+        "10-vertical-slices-video-still.jpg"
+      ],
+      "sha256": "e3e2a3a96b7ae33b7b2526c92fc3f555d240190c7180af2d3b7f438ba45463ee"
+    }
+  ],
+  "image_count": 10,
+  "images": [
+    {
+      "animated": false,
+      "aspect_ratio": 2.5,
+      "bytes": 164287,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/jpeg",
+      "path": "01-title-part-two.jpg",
+      "pixel_height": 1600,
+      "pixel_width": 4000,
+      "sha256": "796dfe0c66acb1353662a229a1e4f427aa5e2b012f09f8c1b613b46412ceebbe"
+    },
+    {
+      "animated": false,
+      "aspect_ratio": 2.269252,
+      "bytes": 406608,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": true,
+      "mime_type": "image/jpeg",
+      "path": "02-lights-on-factory.jpg",
+      "pixel_height": 1805,
+      "pixel_width": 4096,
+      "sha256": "da05c49361d1d56bc7a2e4c7ae09ca8253dd60dfd8a8dc0a2f32960b08ac2dae"
+    },
+    {
+      "animated": false,
+      "aspect_ratio": 2.126154,
+      "bytes": 52552,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/jpeg",
+      "path": "03-system-architecture-sequence-diagram.jpg",
+      "pixel_height": 650,
+      "pixel_width": 1382,
+      "sha256": "a2e8b307615e63ba2ca9a271e45c9f8cebac4076749a8420927c9e45dd3c0a34"
+    },
+    {
+      "animated": false,
+      "aspect_ratio": 1.87234,
+      "bytes": 62080,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/jpeg",
+      "path": "04-contract-endpoint-shapes.jpg",
+      "pixel_height": 1128,
+      "pixel_width": 2112,
+      "sha256": "f4e5f90891c341a726e9015006d0ac06debcc9f7677934bd7ac10b85bf2efc10"
+    },
+    {
+      "animated": false,
+      "aspect_ratio": 1.593897,
+      "bytes": 105770,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/jpeg",
+      "path": "05-data-model-transformations.jpg",
+      "pixel_height": 1704,
+      "pixel_width": 2716,
+      "sha256": "ae86acb161389eb82f0f74b45425a8989b8a21f3408948ee1d3e8c1e782db0a9"
+    },
+    {
+      "animated": false,
+      "aspect_ratio": 1.396825,
+      "bytes": 86683,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/jpeg",
+      "path": "06-call-stack-tree.jpg",
+      "pixel_height": 1512,
+      "pixel_width": 2112,
+      "sha256": "b6ace701eba36715744a232b547688e98bb2fec8e53e9e53f97d94da3ac2c53f"
+    },
+    {
+      "animated": false,
+      "aspect_ratio": 2.845455,
+      "bytes": 132830,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/jpeg",
+      "path": "07-file-tree-diff.jpg",
+      "pixel_height": 1320,
+      "pixel_width": 3756,
+      "sha256": "4a170f0efff5de6406ef0f39766d6493cbb988a6629de01a4d53ab10f9aad550"
+    },
+    {
+      "animated": false,
+      "aspect_ratio": 1.549808,
+      "bytes": 133455,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/jpeg",
+      "path": "08-types-method-signatures.jpg",
+      "pixel_height": 2088,
+      "pixel_width": 3236,
+      "sha256": "5a60c3509b95026f4253b8c84a2840c4ff4db3c2fc5e00cf2873070f2175bcc0"
+    },
+    {
+      "animated": false,
+      "aspect_ratio": 1.777778,
+      "bytes": 5925,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/jpeg",
+      "path": "09-horizontal-plan-video-still.jpg",
+      "pixel_height": 720,
+      "pixel_width": 1280,
+      "sha256": "e3e2a3a96b7ae33b7b2526c92fc3f555d240190c7180af2d3b7f438ba45463ee"
+    },
+    {
+      "animated": false,
+      "aspect_ratio": 1.777778,
+      "bytes": 5925,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/jpeg",
+      "path": "10-vertical-slices-video-still.jpg",
+      "pixel_height": 720,
+      "pixel_width": 1280,
+      "sha256": "e3e2a3a96b7ae33b7b2526c92fc3f555d240190c7180af2d3b7f438ba45463ee"
+    }
+  ],
+  "local_references": [],
+  "missing_references": [],
+  "referenced_image_count": 0,
+  "schema_version": 1,
+  "source_id": "why-software-factories-fail-turning-the-lights-b-1312d1ad",
+  "unresolved_acquisition_references": []
+}

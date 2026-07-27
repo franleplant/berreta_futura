@@ -1,0 +1,52 @@
+[
+  {
+    "file": "01-title-part-two.jpg",
+    "source_order": 1,
+    "context": "Article title card: Why Software Factories Fail, part 2: turning the lights back on."
+  },
+  {
+    "file": "02-lights-on-factory.jpg",
+    "source_order": 2,
+    "context": "Diagram accompanying the return of human review: optimizing the lights-on software factory."
+  },
+  {
+    "file": "03-system-architecture-sequence-diagram.jpg",
+    "source_order": 3,
+    "context": "System architecture example: sequence diagram used to align human and agent understanding."
+  },
+  {
+    "file": "04-contract-endpoint-shapes.jpg",
+    "source_order": 4,
+    "context": "System architecture example: contract and endpoint shapes."
+  },
+  {
+    "file": "05-data-model-transformations.jpg",
+    "source_order": 5,
+    "context": "System architecture example: data models and transformations."
+  },
+  {
+    "file": "06-call-stack-tree.jpg",
+    "source_order": 6,
+    "context": "Program design example: a call-stack tree for an orchestration or control-flow change."
+  },
+  {
+    "file": "07-file-tree-diff.jpg",
+    "source_order": 7,
+    "context": "Program design example: a file-tree diff showing where code lives and what changes."
+  },
+  {
+    "file": "08-types-method-signatures.jpg",
+    "source_order": 8,
+    "context": "Program design example: types and method signatures for key new functions."
+  },
+  {
+    "file": "09-horizontal-plan-video-still.jpg",
+    "source_order": 9,
+    "context": "Embedded video still illustrating a horizontal implementation plan in stack order."
+  },
+  {
+    "file": "10-vertical-slices-video-still.jpg",
+    "source_order": 10,
+    "context": "Embedded video still illustrating incremental vertical slices and early testing."
+  }
+]

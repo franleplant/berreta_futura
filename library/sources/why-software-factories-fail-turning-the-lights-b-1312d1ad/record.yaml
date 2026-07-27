@@ -1,0 +1,67 @@
+schema_version: 1
+id: why-software-factories-fail-turning-the-lights-b-1312d1ad
+title: 'Why Software Factories Fail: Turning the lights back on'
+author: Dex Horthy
+canonical_url: https://x.com/dexhorthy/status/2081058573556306030
+submitted_url: https://x.com/dexhorthy/status/2081058573556306030
+captured_at: '2026-07-27T14:14:22Z'
+publication_date: '2026-07-25'
+kind: web
+status: captured
+content_hash: null
+raw_captures:
+- id: 3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d
+  path: raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/manifest.json
+  method: authenticated_chrome_x_article_text_links_and_source_ordered_media
+  captured_at: '2026-07-27T14:14:22Z'
+  artifact_count: 15
+  byte_count: 438304
+- id: 570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3
+  path: raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/manifest.json
+  method: authenticated_chrome_source_media_originals
+  captured_at: '2026-07-27T14:16:11Z'
+  artifact_count: 15
+  byte_count: 1198077
+provenance:
+- relation: primary_material
+  url: https://x.com/dexhorthy/article/2081058573556306030
+rights:
+  status: unknown
+  intended_use: private_reference
+  attribution_required: true
+  public_reprint_allowed: false
+media_reviews:
+- capture_id: 3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d
+  status: media_rejected
+  assets: []
+  note: 'Automatic curation rejected all candidates: no_semantic_source_context (10).'
+- capture_id: 570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3
+  status: media_curated
+  assets:
+  - id: raster-002-da05c493
+    artifact_path: 02-lights-on-factory.jpg
+    artifact_sha256: da05c49361d1d56bc7a2e4c7ae09ca8253dd60dfd8a8dc0a2f32960b08ac2dae
+    mime_type: image/jpeg
+    creator: Dex Horthy
+    credit: 'Diagram by Dex Horthy; source: Why Software Factories Fail: Turning the lights back on.'
+    rights:
+      status: unknown
+      intended_use: private_reference
+      attribution_required: true
+      public_reprint_allowed: false
+  note: Manual editorial curation selected the clean, source-original lights-on factory diagram;
+    the title card, implementation-detail diagrams, and video stills were intentionally not promoted.
+metadata:
+  tags:
+  - ai-agents
+  - architecture
+  - code-review
+  - maintainability
+  - planning
+  - software-factories
+  synopsis: 'Part two of Dex Horthy’s software-factories argument: restore human judgment through product
+    review, system architecture, program design, vertical slices, and incremental code review, accepting
+    constraint-aware 2–3× gains rather than unsafe 10–100× promises.'
+notes: Submitted X Article captured through the user-authenticated Chrome session. Complete sanitized
+  rendered text, 83 source links, eight article diagrams, and two embedded-video thumbnails are archived
+  in source order; raw artifacts exclude cookies, credentials, profiles, and browser-session storage.

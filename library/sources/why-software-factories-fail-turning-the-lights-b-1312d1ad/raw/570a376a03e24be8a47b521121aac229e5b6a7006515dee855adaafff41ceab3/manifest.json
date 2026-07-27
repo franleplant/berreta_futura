@@ -1,0 +1,88 @@
+{
+  "artifact_count": 15,
+  "artifacts": [
+    {
+      "bytes": 164287,
+      "path": "01-title-part-two.jpg",
+      "sha256": "796dfe0c66acb1353662a229a1e4f427aa5e2b012f09f8c1b613b46412ceebbe"
+    },
+    {
+      "bytes": 406608,
+      "path": "02-lights-on-factory.jpg",
+      "sha256": "da05c49361d1d56bc7a2e4c7ae09ca8253dd60dfd8a8dc0a2f32960b08ac2dae"
+    },
+    {
+      "bytes": 52552,
+      "path": "03-system-architecture-sequence-diagram.jpg",
+      "sha256": "a2e8b307615e63ba2ca9a271e45c9f8cebac4076749a8420927c9e45dd3c0a34"
+    },
+    {
+      "bytes": 62080,
+      "path": "04-contract-endpoint-shapes.jpg",
+      "sha256": "f4e5f90891c341a726e9015006d0ac06debcc9f7677934bd7ac10b85bf2efc10"
+    },
+    {
+      "bytes": 105770,
+      "path": "05-data-model-transformations.jpg",
+      "sha256": "ae86acb161389eb82f0f74b45425a8989b8a21f3408948ee1d3e8c1e782db0a9"
+    },
+    {
+      "bytes": 86683,
+      "path": "06-call-stack-tree.jpg",
+      "sha256": "b6ace701eba36715744a232b547688e98bb2fec8e53e9e53f97d94da3ac2c53f"
+    },
+    {
+      "bytes": 132830,
+      "path": "07-file-tree-diff.jpg",
+      "sha256": "4a170f0efff5de6406ef0f39766d6493cbb988a6629de01a4d53ab10f9aad550"
+    },
+    {
+      "bytes": 133455,
+      "path": "08-types-method-signatures.jpg",
+      "sha256": "5a60c3509b95026f4253b8c84a2840c4ff4db3c2fc5e00cf2873070f2175bcc0"
+    },
+    {
+      "bytes": 5925,
+      "path": "09-horizontal-plan-video-still.jpg",
+      "sha256": "e3e2a3a96b7ae33b7b2526c92fc3f555d240190c7180af2d3b7f438ba45463ee"
+    },
+    {
+      "bytes": 5925,
+      "path": "10-vertical-slices-video-still.jpg",
+      "sha256": "e3e2a3a96b7ae33b7b2526c92fc3f555d240190c7180af2d3b7f438ba45463ee"
+    },
+    {
+      "bytes": 13509,
+      "path": "article.txt",
+      "sha256": "e2b15724ecd99d724de29cd01cb5920ff35ead723a0da2e53629304307524939"
+    },
+    {
+      "bytes": 13631,
+      "path": "authenticated-x-article.txt",
+      "sha256": "698602b2c0eb35e56a318343c297e1bd9d2b5001190762b8e433b242ebbd69ad"
+    },
+    {
+      "bytes": 10365,
+      "path": "links.json",
+      "sha256": "15e2106126bec8c9471c6ab19fee1faf170e2d1285fb9a813a5aa7500173cf8f"
+    },
+    {
+      "bytes": 1746,
+      "path": "media-context.json",
+      "sha256": "d0b1839edc8d1e32020fb44476ceb67b632e99de170387f4794349a3dbba40c2"
+    },
+    {
+      "bytes": 2711,
+      "path": "observed-media.json",
+      "sha256": "eb7a43f79fcba9f05c4ec83ba3600eba5c8ec508804e25ff2565b3be9ae826e2"
+    }
+  ],
+  "bundle_sha256": "570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3",
+  "byte_count": 1198077,
+  "canonical_url": "https://x.com/dexhorthy/status/2081058573556306030",
+  "captured_at": "2026-07-27T14:16:11Z",
+  "method": "authenticated_chrome_source_media_originals",
+  "schema_version": 1,
+  "source_id": "why-software-factories-fail-turning-the-lights-b-1312d1ad",
+  "submitted_url": "https://x.com/dexhorthy/status/2081058573556306030"
+}
