@@ -21,18 +21,18 @@ from magazine.reader_layout import RenderLayout
 from magazine.weasyprint_adapter import (
     WEASYPRINT_DESIGN,
     _apply_source_codes,
+    _apply_tail_arts,
     _configure_macos_library_path,
     _content_page_count,
     _figure_placement,
     _limit_closing_plates,
     _measure_layout,
+    _measured_tail_art,
     _read_print_css,
     _render_to_signature,
     _rewrite_landscape_plates,
     _rotated_plate_box,
     _signature_closing_plates,
-    _tail_code_room,
-    _tail_code_slot,
     _validate_caps,
     _validate_cover_slots,
     _validate_contents_page,
@@ -99,6 +99,21 @@ class _Box:
         return self.height
 
 
+# `_measured_byline_baselines` and friends key on WeasyPrint's own class
+# names, so the stand-ins carry them.
+_BlockBox = type("BlockBox", (_Box,), {})
+_LineBox = type("LineBox", (_Box,), {})
+
+
+def _stub_byline(article_id: str, *, y: float = 150.0, baseline: float = 2.0) -> _Box:
+    """A laid-out opener byline: the anchor the code's `top` is measured off."""
+    line = _LineBox("p", y=y, height=0)
+    line.baseline = baseline
+    return _BlockBox(
+        "p", element=_Element("p", **{"class": "byline"}), children=(line,), y=y
+    )
+
+
 class _Page:
     def __init__(self, box: _Box, *, named: str | None = None):
         self._page_box = box
@@ -139,7 +154,7 @@ def _write_rasters(tmp_path: Path) -> None:
     refuses a placement under 300 ppi, so a fixture that under-resolves is a
     fixture the reader would reject rather than a smaller test.
     """
-    for name, size in (("figure.png", (1600, 800)), ("tail.png", (400, 200)),
+    for name, size in (("figure.png", (1600, 800)), ("tail.png", (2048, 1024)),
                        ("plate.png", (900, 1200))):
         Image.new("RGB", size, "white").save(tmp_path / name)
 
@@ -167,6 +182,7 @@ def _stub_reader_document(
     article = _Box(
         "article",
         element=_Element("article", **{"data-article-id": article_id}),
+        children=(_stub_byline(article_id),),
         x=0, y=100, width=400, height=100,
     )
     figures: list[_Box] = []
@@ -317,26 +333,45 @@ def _print_tree(edition: Edition):
     ).etree_element
 
 
-def _parse_article_fragment(inner: str, *, plates: int = 0, source_label: str = ""):
+def _parse_article_fragment(
+    inner: str,
+    *,
+    plates: int = 0,
+    credit: bool = False,
+    header: str | None = None,
+    author: str = "Author",
+    note: str = "",
+):
     HTML, _CSS, _FontConfiguration = _weasyprint_types()
     plate_markup = "".join(
         f'<figure class="closing-plate" data-closing-plate="{index + 1}">'
         f'<img src="p{index}"><figcaption>Plate</figcaption></figure>'
         for index in range(plates)
     )
-    # The anchor `html_edition` writes after the end mark, which is where the
-    # print adapter reads the code's own name from.
+    # The opener credit block the code is set beside.  Built only when a test
+    # asks, so the fragment tests of other passes stay minimal.
+    header_markup = header
+    if header_markup is None and credit:
+        note_markup = f'<p class="author-note">{note}</p>' if note else ""
+        header_markup = (
+            "<header><h1>Title</h1>"
+            f'<p class="byline"><span class="byline-prefix">By</span> {author}</p>'
+            f"{note_markup}</header>"
+        )
+    # The anchor `html_edition` writes after the end mark.  The print adapter
+    # reads nothing off it -- the code's URL comes from the edition -- and it is
+    # here because the real markup has it.
     link = (
-        f'<a class="source-link" data-source-link="primary" '
-        f'data-source-label="{source_label}" href="https://example.test/a">'
-        "https://example.test/a</a>"
-        if source_label
+        '<a class="source-link" data-source-link="primary" '
+        'href="https://example.test/a">https://example.test/a</a>'
+        if credit
         else ""
     )
     return HTML(
         string=(
             '<!doctype html><html><body><main data-edition-id="edition">'
-            f'<article id="article-article" data-article-id="article">{inner}{link}</article>'
+            f'<article id="article-article" data-article-id="article">'
+            f"{header_markup or ''}{inner}{link}</article>"
             f"{plate_markup}</main></body></html>"
         ),
         base_url=Path.cwd().as_uri() + "/",
@@ -492,38 +527,45 @@ def test_reader_pages_up_to_the_first_closing_plate_are_the_content_pages():
     assert _content_page_count(_Document(tuple(_Page(_Box()) for _ in range(6)))) == 4
 
 
-def test_the_large_slot_is_earned_by_open_space_and_capped():
-    """The slot is a property of where an article's flow ended and of nothing else.
-
-    It was the tail motif's test, and it is no longer: the ornament refused a
-    tight fit because a crowded band looks crowded, and the code is not ornament.
-    What replaces the motif's flat 118pt minimum is the code's own question --
-    is there room for a square at least twice the foot slot's, which is what
-    keeps the two printed sizes two classes and not a continuum -- and the
-    motif's 24pt foot inset is gone with it, because a code anchored to the top
-    of its slot never stands on the slot's foot.
+def test_the_tail_ornament_is_earned_by_open_space_and_capped(tmp_path: Path):
+    """The ornament is a property of where an article's flow ended and of nothing
+    else, and its numbers are `_article_tail_ornament_box`'s own: a band whose
+    foot stands 24pt above the frame's foot, whose head stands 31pt under the
+    end mark, printed only where that leaves 118pt of real room and never
+    taller than 214pt.
     """
-    # `_tail_code_room` is `y - 82`: from 31pt under the end mark down to the
-    # reader's own floor for type, capped at the ornament's 214.
-    assert _tail_code_room(500.0) == pytest.approx(214.0)
-    assert _tail_code_room(280.0) == pytest.approx(198.0)
-    assert _tail_code_room(219.0) == pytest.approx(137.0)
-    # Twice the foot slot is the threshold, and it is measured and not written.
-    minimum = 2.0 * adapter._CODE_FOOT_ROOM_POINTS
-    assert _tail_code_slot(82.0 + minimum + 0.1) is not None
-    assert _tail_code_slot(82.0 + minimum - 0.1) is None
-    # The two pages the ornament's own minimum turned away now carry the code:
-    # en p18 and es p31 measured 119.17pt and 129.57pt of room against a 118pt
-    # threshold that reserved a further 24pt below it.
-    assert _tail_code_room(201.17) == pytest.approx(119.17)
-    assert _tail_code_slot(201.17) is not None
-    assert _tail_code_slot(211.57) is not None
-    # An article that fills its last page still earns nothing, floor included.
-    assert _tail_code_slot(40.0) is None
-    assert _tail_code_slot(150.0) is None
-    # The slot's own top, in the page content box's coordinates: 31pt under the
-    # end mark's baseline, which is where the code's upper edge lands.
-    assert _tail_code_slot(500.0) == pytest.approx(499.0 - 31.0 - 54.9996)
+    _write_rasters(tmp_path)
+    article = SimpleNamespace(id="article", tail_art=tmp_path / "tail.png")
+
+    # Room is `endmark_baseline - 31 - 69`; the minimum is the ornament's 118.
+    assert _measured_tail_art(article, 219.0) == pytest.approx(118.0)
+    assert _measured_tail_art(article, 218.0) is None
+    # An article that ends very high is capped at the ornament's own maximum.
+    assert _measured_tail_art(article, 500.0) == pytest.approx(214.0)
+    assert _measured_tail_art(article, 280.0) == pytest.approx(179.0)
+    # A tight page prints no motif, and an undeclared one never does.
+    assert _measured_tail_art(article, 150.0) is None
+    assert _measured_tail_art(SimpleNamespace(id="a", tail_art=None), 500.0) is None
+    # The committed raster must resolve at 300 ppi across the crop-filled band.
+    Image.new("RGB", (400, 200), "white").save(tmp_path / "soft.png")
+    soft = SimpleNamespace(id="article", tail_art=tmp_path / "soft.png")
+    with pytest.raises(ValidationError, match="ppi"):
+        _measured_tail_art(soft, 500.0)
+
+
+def test_tail_arts_print_at_their_measured_height_or_not_at_all():
+    """`_apply_tail_arts` keeps the figure only where the page earned it."""
+    markup = '<figure class="article-tail" data-asset-role="article_tail"><img src="c"></figure>'
+
+    earned = _parse_article_fragment(markup)
+    _apply_tail_arts(earned, {"article": 179.0})
+    figure = next(iter(earned.iter("figure")))
+    assert figure.get("style") == "height: 179.0000pt"
+
+    unearned = _parse_article_fragment(markup)
+    _apply_tail_arts(unearned, {})
+    assert list(unearned.iter("figure")) == []
+
 
 
 def test_measure_then_render_settles_the_plan_and_never_pads_the_signature(tmp_path: Path):
@@ -550,14 +592,14 @@ def test_measure_then_render_settles_the_plan_and_never_pads_the_signature(tmp_p
     # all -- which is not the one plate the probe pass offered, hence two passes.
     assert plan.closing_plates == 0
     assert len(laid_out) == 2 and laid_out[0] == laid_out[1]
-    # The stub article ends 435.271pt above the foot, so it earns the large slot
-    # on room and then gives it back on the ceiling: a square hung that high
-    # leaves 128mm of page under it, past `_CODE_TAIL_MAX_FOOT_WHITE`.  Either
-    # way the point stands -- the bare probe pass carried no code at all and the
-    # measured plan carries one, which is why there are two passes.
+    # The bare probe pass carried no code and no ornament; the measured plan
+    # carries both -- the code placed off the stub byline the opener laid out,
+    # the ornament at the height the stub article's own ending earned -- which
+    # is why there are two passes.
     assert [(code.article_id, code.slot) for code in plan.source_codes] == [
-        ("article<&>", "foot")
+        ("article<&>", "opener")
     ]
+    assert plan.tail_arts == (("article<&>", 214.0),)
 
 
 def test_a_reader_that_is_not_a_signature_is_refused_rather_than_padded(tmp_path: Path):
@@ -575,6 +617,7 @@ def test_a_reader_that_is_not_a_signature_is_refused_rather_than_padded(tmp_path
     article_box = _Box(
         "article",
         element=_Element("article", **{"data-article-id": edition.articles[0].id}),
+        children=(_stub_byline(edition.articles[0].id),),
         height=100,
     )
     document = _Document(
@@ -652,107 +695,110 @@ def test_extra_closing_plates_are_dropped_and_a_shortfall_is_a_hard_error():
         _limit_closing_plates(tree, 5)
 
 
-def test_the_tail_motif_never_prints_and_the_code_hangs_from_its_slot_s_head():
-    """`tail_art_path` is vestigial: the print tree keeps no motif at all.
+def test_the_code_opens_the_credit_line_flush_left_with_the_column_beside_it():
+    """The code is opener furniture: square, then byline and note as one column.
 
-    The semantic edition still offers it, because a screen adapter may want it,
-    so removing it is the print adapter's decision and is made here.
-
-    And the code takes the slot's *head*, flush left on the measure.  Hung from
-    the slot's foot, as the ornament was, a 41.65mm square left 84-93mm between
-    the end mark and the code on the pages this edition actually sets -- the page
-    read "article ends, silence, black square" -- and a square centred on the
-    measure agreed with nothing else on a page whose every element is flush to
-    one edge.  Anchored to the head the void above it is the slot's own 31pt
-    clearance, whatever the slot's height, and the unused white falls at the
-    page foot where an article ending high has always left it.
-
-    FLUSH IS FLUSH TO THE INK.  The quiet zone lives inside the element, so a box
-    set on the measure's origin puts its first dark module 3.4mm to the right of
-    the END rule and of every line of the article above it, and under a hard
-    flush column the eye reads an indented black block.  The element is pulled
-    one quiet zone left so the module lands on the origin; the light modules that
-    then stand outside the measure print nothing.
+    The element is appended to the opener's `header`, so it lands on the
+    article's first page; its geometry is the plan's own `left`/`top`, stated
+    inline because both are measurements.  FLUSH IS FLUSH TO THE INK: the quiet
+    zone lives inside the element, so the box overhangs the live edge by four
+    light modules and the *first dark module* lands on it, the same origin the
+    kicker's `FEATURE nn` and the fitted title take.  NOTHING IS SET UNDER IT.
     """
-    markup = '<figure class="article-tail"><img src="c"></figure>'
-    code = adapter.SourceCode(
-        "article",
-        "tail",
-        "H",
-        49,
-        adapter._CODE_HOUSE_MODULE_POINTS,
-        "https://example.test/a",
-        adapter._CODE_MEASURE_LEFT_POINTS - 4 * adapter._CODE_HOUSE_MODULE_POINTS,
-        200.0,
+    code = adapter._fitted_source_code(
+        "article", "https://example.test/a", adapter._CODE_OPENER_SIDE_POINTS
     )
-    # ...which is the `left` a fitted tail code comes out with, for any symbol.
-    fitted = adapter._fitted_source_code("article", "tail", _CODE_URL_51, 214.0)
-    assert fitted.symbol_left == pytest.approx(adapter._CODE_MEASURE_LEFT_POINTS)
+    # Placed as `_opener_source_codes` places it: first dark row on a byline
+    # cap top of an arbitrary measured baseline, first dark column on the edge.
+    baseline = 150.0
+    top = baseline - adapter._BYLINE_SIZE_POINTS * adapter._INTER_CAP_RATIO - code.quiet
+    code = replace(code, left=-code.quiet, top=top)
+    assert code.symbol_left == pytest.approx(0.0)
+    assert code.symbol_top == pytest.approx(
+        baseline - adapter._BYLINE_SIZE_POINTS * adapter._INTER_CAP_RATIO
+    )
 
-    with_motif = _parse_article_fragment(markup, source_label="Source / 04")
-    _apply_source_codes(with_motif, {"article": code})
-    assert list(with_motif.iter("figure")) == []
+    tree = _parse_article_fragment(
+        "<p>Body.</p>",
+        credit=True,
+        note="A note that reaches across the live width and must stop short.",
+    )
+    _apply_source_codes(tree, {"article": code})
+
+    header = next(iter(tree.iter("header")))
     image = next(
-        element for element in with_motif.iter("img") if element.get("class") == "source-code"
+        element for element in header.iter("img") if element.get("class") == "source-code"
     )
-    # The first dark module stands on the measure's own origin, so the element
-    # begins one quiet zone -- four modules, 3.4mm -- to the left of it.
-    assert code.symbol_left == pytest.approx(adapter._CODE_MEASURE_LEFT_POINTS)
-    assert code.left == pytest.approx(
-        adapter._CODE_MEASURE_LEFT_POINTS - 4 * adapter._CODE_HOUSE_MODULE_POINTS
-    )
-    # ...its upper edge on the slot's own top.
+    assert image.get("data-source-code") == "opener"
     assert image.get("style") == (
-        "left: -5.6338pt; bottom: 81.9370pt; width: 118.0630pt; height: 118.0630pt"
+        f"left: {code.left:.4f}pt; top: {code.top:.4f}pt; "
+        f"width: {code.side:.4f}pt; height: {code.side:.4f}pt"
     )
-    # And named, in the tracked caps `END / nn` is set in, on the symbol's own
-    # bottom edge -- four modules above the box's -- and one gap to the right of
-    # its *last dark module*, at the same 7pt the end mark's rule gives its own
-    # label.  Stated on the box that gap was 12pt plus a quiet zone, 7.9mm from
-    # anything a reader can see against the end mark's 2.4mm.
-    label = next(
-        element for element in with_motif.iter("p") if element.get("class") == "source-label"
+    # The credit column begins one end-mark inset past the last dark module and
+    # runs to the live area's right edge.  Both lines of it are inset; only the
+    # note, which is prose-length, is also given the width.
+    inset = code.symbol_right + 24.0
+    column = adapter._LIVE_WIDTH_POINTS - inset
+    assert adapter._credit_column_inset(code) == pytest.approx(inset)
+    byline = next(
+        element for element in header.iter("p") if element.get("class") == "byline"
     )
-    assert label.text == "Source / 04"
-    assert code.symbol_bottom == pytest.approx(
-        200.0 - code.side + 4 * adapter._CODE_HOUSE_MODULE_POINTS
+    assert byline.get("style") == f"margin-left: {inset:.4f}pt"
+    note = next(
+        element for element in header.iter("p") if element.get("class") == "author-note"
     )
-    assert code.symbol_right == pytest.approx(
-        code.left + code.side - 4 * adapter._CODE_HOUSE_MODULE_POINTS
+    assert note.get("style") == f"margin-left: {inset:.4f}pt; width: {column:.4f}pt"
+    # And the column is exactly the measure the right-flush note had, so no note
+    # re-rags and no opener changes depth for the flip.
+    mirrored = replace(code, left=adapter._LIVE_WIDTH_POINTS - code.side + code.quiet)
+    assert column == pytest.approx(mirrored.symbol_left - 24.0)
+    # Nothing hangs under the square.
+    assert [element for element in header.iter("p") if element.get("class") == "source-label"] == []
+    # The tail figure is no longer the code's business: it stays in the tree
+    # for `_apply_tail_arts` to judge.
+    with_tail = _parse_article_fragment(
+        '<figure class="article-tail"><img src="c"></figure>', credit=True
     )
-    assert adapter._CODE_LABEL_GAP_POINTS == pytest.approx(7.0)
-    assert label.get("style") == (
-        f"left: {code.symbol_right + 7:.4f}pt; "
-        f"bottom: {code.symbol_bottom + 2.47375:.4f}pt"
+    _apply_source_codes(with_tail, {"article": code})
+    assert any(
+        "article-tail" in adapter._element_classes(figure)
+        for figure in with_tail.iter("figure")
     )
 
-    without = _parse_article_fragment(markup)
+    without = _parse_article_fragment("<p>Body.</p>")
     _apply_source_codes(without, {})
-    assert list(without.iter("figure")) == []
     assert [element for element in without.iter("img") if element.get("class") == "source-code"] == []
-    assert [element for element in without.iter("p") if element.get("class") == "source-label"] == []
 
 
-def test_a_code_with_no_name_to_print_is_a_build_failure_and_not_a_bare_square():
-    """The unlabelled square is the defect the label exists to repair."""
-    code = adapter.SourceCode(
-        "article", "tail", "H", 49, adapter._CODE_HOUSE_MODULE_POINTS,
-        "https://example.test/a", adapter._CODE_MEASURE_LEFT_POINTS, 200.0,
+def test_a_byline_that_would_overrun_the_credit_column_is_refused_not_wrapped():
+    """The refusal re-derived for the flipped row, whose failure mode moved.
+
+    Inset past the square the byline cannot reach the code at all -- it starts
+    beyond it and grows away from it.  What it can do is overrun the measure's
+    right edge, which the right-flush arrangement had in hand, and a byline is a
+    single zero-leading line: wrapping one stacks two rows of ink on one
+    baseline, so it is a loud refusal naming the fix.
+    """
+    code = adapter._fitted_source_code(
+        "article", "https://example.test/a", adapter._CODE_OPENER_SIDE_POINTS
     )
-
-    with pytest.raises(ValidationError, match="carries no data-source-label"):
-        _apply_source_codes(_parse_article_fragment("<p>Body.</p>"), {"article": code})
-
-    # Nor may the name run off the measure the square already fills.
-    wide = adapter.SourceCode(
-        "article", "tail", "H", 49, adapter._CODE_HOUSE_MODULE_POINTS,
-        "https://example.test/a", 250.0, 200.0,
+    code = replace(code, left=-code.quiet, top=140.0)
+    tree = _parse_article_fragment(
+        "<p>Body.</p>",
+        credit=True,
+        author="An Author Whose Collaborative Credit Runs On And On Across The Whole Live Width",
     )
-    with pytest.raises(ValidationError, match="too wide for its own name"):
-        _apply_source_codes(
-            _parse_article_fragment("<p>Body.</p>", source_label="Source / 04"),
-            {"article": wide},
-        )
+    with pytest.raises(ValidationError, match="out through the live area's right edge"):
+        _apply_source_codes(tree, {"article": code})
+
+    # And the byline that fits the column is set in it, not refused.
+    fits = _parse_article_fragment("<p>Body.</p>", credit=True, author="Author")
+    _apply_source_codes(fits, {"article": code})
+    byline = next(
+        element for element in fits.iter("p") if element.get("class") == "byline"
+    )
+    assert byline.get("style") == f"margin-left: {adapter._credit_column_inset(code):.4f}pt"
+
 
 
 def test_measurement_reports_actual_folios_article_pages_and_figure_box(tmp_path: Path):
@@ -1440,12 +1486,18 @@ def test_an_opener_title_that_outgrows_its_reserved_field_is_refused(tmp_path: P
     reached -- and what to do instead.
     """
     edition = _raster_edition(tmp_path, manuscript=_FONT_SAFE_MANUSCRIPT)
+    # AS SHIPPED, which means WITH a source code.  An opener that carries one
+    # earns a *deeper* field so the code's square clears the artwork
+    # (`_opener_code_field_floor`), and a guard that measured the title against
+    # that deeper field would hand the title the code's room and let this very
+    # defect through: the reservation the title is judged against is its own.
     overlong = replace(
         edition,
         articles=tuple(
             replace(article, title=_LOOSENING_TITLE) for article in edition.articles
         ),
     )
+    assert all(article.source_url for article in overlong.articles)
 
     render_a5_weasyprint(edition, tmp_path / "reader.pdf")  # as authored, no refusal
     with pytest.raises(ValidationError) as raised:
@@ -1454,10 +1506,51 @@ def test_an_opener_title_that_outgrows_its_reserved_field_is_refused(tmp_path: P
     message = str(raised.value)
     assert "article<&>" in message, "name the piece an editor has to go and fix"
     assert _LOOSENING_TITLE in message
-    assert "117.8000pt header field" in message, "the room that was reserved"
+    assert "117.8000pt title field" in message, "the room that was reserved"
     assert "overflowing the field by 12.1127pt" in message, "and how far past it"
+    # 117.8 is the title's own reservation -- 59pt of opener chrome plus one
+    # fitted 30pt line.  The field this opener really states is 157.6911, because
+    # its code has to clear the artwork; measured against *that*, the loosened
+    # title's second line comes out 27.78pt clear and the page ships with its
+    # code pushed into the figure.
+    assert "157.6911" not in message, "the code's room is not the title's"
     assert "Shorten the title, or lower the fit range" in message
     assert not (tmp_path / "overlong.pdf").exists(), "and nothing is written"
+
+
+def test_a_source_code_that_reaches_into_the_opener_figure_is_refused(
+    tmp_path: Path, monkeypatch
+):
+    """The other half of the pair: the square is *placed* from a measurement.
+
+    The title guard above holds the credit block where the fit put it, so the
+    square cannot walk down into the artwork while it passes.  But the code's
+    `top` is read off the laid-out byline and the room it needs is predicted from
+    the same byline's arithmetic, and two numbers for one line is the shape of
+    every defect in this module.  So the finished page is asked the question
+    directly, and the way to prove it is asked is to take the room away: with
+    `_opener_code_field_floor` returning nothing, the field is the title's alone,
+    the title still fits it -- so the guard above passes -- and the square's own
+    last dark row lands inside the figure.
+
+    Measured to the SYMBOL: the guard is handed the plan's codes so it can take
+    the quiet zone off the element's foot, because the field reserves room for
+    ink and a guard reading the box would refuse a build that clears the artwork.
+    """
+    edition = _raster_edition(tmp_path, manuscript=_FONT_SAFE_MANUSCRIPT)
+    render_a5_weasyprint(edition, tmp_path / "reader.pdf")  # as authored, no refusal
+
+    monkeypatch.setattr(adapter, "_opener_code_field_floor", lambda *_args: 0.0)
+    with pytest.raises(ValidationError) as raised:
+        render_a5_weasyprint(edition, tmp_path / "unreserved.pdf")
+
+    message = str(raised.value)
+    assert "article<&>" in message, "name the piece"
+    # The title's own 117.8pt field, 42.0004pt down the page, and the figure's
+    # own 10.0046pt of ink relief below its foot.
+    assert "the opener figure's head is 169.8050pt" in message, "and the two boxes"
+    assert "reaches 29.8861pt past the field" in message, "and how far past it"
+    assert not (tmp_path / "unreserved.pdf").exists(), "and nothing is written"
 
 
 def test_a_plate_title_set_on_more_lines_than_it_was_fitted_to_is_refused(tmp_path: Path):
@@ -2361,7 +2454,14 @@ def test_a_heading_reserves_the_reader_s_25pt_and_a_band_anchor_does_not(tmp_pat
 
 
 def test_an_opener_figure_field_is_the_fitted_title_s_own_depth(tmp_path: Path):
-    """O1/F6: the field runs to the figure's head, wherever the title reached."""
+    """O1/F6: the field runs to the figure's head, wherever the title reached.
+
+    As shipped, which means with a source code: the field is then the deeper of
+    the title's own reservation and the depth the code's own square needs to clear
+    the artwork (`_opener_code_field_floor`), and the two are stated separately
+    because only the title is judged against the title's.  An opener with no code
+    states one number, and it is the title's.
+    """
     edition = _edition(tmp_path)
     _write_rasters(tmp_path)
     tree = _print_tree(edition)
@@ -2373,7 +2473,31 @@ def test_an_opener_figure_field_is_the_fitted_title_s_own_depth(tmp_path: Path):
         "Article <&>", 333.0079, 165.0, maximum=30.0, minimum=24.0, maximum_lines=4,
         leading_ratio=.96,
     )
-    assert header.get("style") == f"height: {59 + size * (1 + .96 * len(lines)):.4f}pt"
+    title_field = 59 + size * (1 + .96 * len(lines))
+    floor = adapter._opener_code_field_floor(edition.articles[0], size, len(lines))
+
+    assert header.get("data-title-field") == f"{title_field:.4f}"
+    assert floor > title_field, "this opener's code is what makes the two differ"
+    assert header.get("style") == f"height: {floor:.4f}pt"
+    # And the depth the field borrowed comes back out of the image's own cap, so
+    # the code cannot cost the article a page.
+    image = next(
+        image
+        for article in tree.iter("article")
+        for figure in article.iter("figure")
+        if figure.get("data-anchor") == "__opener__"
+        for image in figure.iter("img")
+    )
+    assert image.get("style") == f"max-height: {270 - (floor - title_field):.4f}pt"
+
+    bare = replace(edition, articles=(replace(edition.articles[0], source_url=None),))
+    bare_tree = _print_tree(bare)
+    adapter._pin_opener_fields(bare_tree, bare)
+    bare_header = next(
+        child for article in bare_tree.iter("article") for child in article if child.tag == "header"
+    )
+    assert bare_header.get("style") == f"height: {title_field:.4f}pt"
+    assert bare_header.get("data-title-field") == f"{title_field:.4f}"
 
 
 def test_an_adaptive_band_shrinks_to_the_page_it_was_dispatched_from(tmp_path: Path):
@@ -2398,6 +2522,35 @@ def test_an_adaptive_band_shrinks_to_the_page_it_was_dispatched_from(tmp_path: P
     assert round(adapter._figure_block_geometry(figure, 333.0079, available)[0], 3) == round(
         available, 3
     )
+
+
+def test_an_adaptive_shrink_merges_onto_the_giveback_the_opener_already_stated(tmp_path: Path):
+    """The opener's own `max-height` is the code's giveback and must survive.
+
+    No `adaptive_band` is anchored to an opener in any edition today, but
+    `media_schema` permits `layout: adaptive_band` with `anchor: __opener__`, and
+    `_apply_adaptive_images` runs after `_pin_opener_fields` in the same pass: a
+    style attribute written over rather than merged would drop the depth the
+    field borrowed for the code's square, and the opener would come out taller
+    than the adapter reserved.
+    """
+    edition = _edition(tmp_path)
+    _write_rasters(tmp_path)
+    tree = _print_tree(edition)
+    adapter._pin_opener_fields(tree, edition)
+    image = next(
+        image
+        for article in tree.iter("article")
+        for figure in article.iter("figure")
+        if figure.get("data-anchor") == "__opener__"
+        for image in figure.iter("img")
+    )
+    giveback = image.get("style") or ""
+    assert giveback.startswith("max-height: "), "the opener stated its giveback"
+
+    adapter._apply_adaptive_images(tree, {"opener-figure": 180.0})
+
+    assert image.get("style") == f"{giveback}; max-height: 180.0000pt"
 
 
 def test_a_closing_plate_bleeds_its_art_to_the_head_under_a_fitted_violet_title(tmp_path: Path):
@@ -2463,7 +2616,11 @@ def test_a_figure_under_300_ppi_at_its_placement_is_refused(tmp_path: Path):
 
 
 def test_print_contrast_reaches_curated_figures_and_no_other_artwork(tmp_path: Path):
-    """F19: `prepare_print_image` is a figure treatment, not an artwork treatment."""
+    """F19: `prepare_print_image` reaches figures and the tail ornament beside
+    them, and never cover art or a closing plate.  The ornament is authored
+    house artwork that should never need the escalation -- which is exactly
+    what a preflight exists to verify, so a pale one is treated like a pale
+    figure rather than shipped soft."""
     from magazine.image_contrast import prepare_print_image
 
     pale = tmp_path / "pale.png"
@@ -2490,7 +2647,7 @@ def test_print_contrast_reaches_curated_figures_and_no_other_artwork(tmp_path: P
         for figure in tree.iter("figure")
         for image_element in figure.iter("img")
     }
-    assert treated == {"fig": True, "article-tail": False, "closing-plate": False}
+    assert treated == {"fig": True, "article-tail": True, "closing-plate": False}
     # The placement still names the file the edition curated, not the derivative.
     figure = next(element for element in tree.iter("figure") if element.get("data-figure-id"))
     assert next(figure.iter("img")).get("data-print-source") == pale.as_uri()
@@ -2502,7 +2659,23 @@ def test_print_contrast_refuses_an_undecodable_curated_figure(tmp_path: Path):
     tree = _parse_article_fragment(
         f'<figure data-figure-id="fig"><img src="{path.as_uri()}"></figure>'
     )
-    with pytest.raises(ValidationError, match="Cannot decode curated figure"):
+    with pytest.raises(ValidationError, match="Cannot decode curated figure fig"):
+        adapter._apply_print_contrast(tree)
+
+
+def test_print_contrast_names_a_tail_ornament_as_the_ornament_it_is(tmp_path: Path):
+    """The pass reaches two kinds of artwork, and a refusal names which it read.
+
+    The ornament prints again, so this branch is live -- and a tail band has no
+    `data-figure-id` to be named by, which is exactly why the message cannot call
+    everything it reads a curated figure.
+    """
+    path = tmp_path / "broken-tail.png"
+    path.write_text("not a raster", encoding="utf-8")
+    tree = _parse_article_fragment(
+        f'<figure class="article-tail"><img src="{path.as_uri()}"></figure>'
+    )
+    with pytest.raises(ValidationError, match="Cannot decode article tail art"):
         adapter._apply_print_contrast(tree)
 
 
@@ -2961,120 +3134,110 @@ def _decoded(pdf: Path) -> dict[int, list[str]]:
     return found
 
 
-def test_the_code_is_sized_from_its_url_and_never_from_a_point_size():
-    """Two symbols, one module: a longer URL prints a physically larger square."""
-    short = adapter._fitted_source_code("a", "tail", "https://buzz.xyz/", 214.0)
+def test_the_square_is_a_constant_and_the_url_buys_density_not_size():
+    """One square on every opener; a longer URL is a denser symbol inside it."""
+    short = adapter._fitted_source_code(
+        "a", "https://buzz.xyz/", adapter._CODE_OPENER_SIDE_POINTS
+    )
     long = adapter._fitted_source_code(
-        "b", "tail", "https://www.cs.princeton.edu/~arvindn/talks/icml-2026-annotated-slides/", 214.0
+        "b",
+        "https://www.cs.princeton.edu/~arvindn/talks/icml-2026-annotated-slides/",
+        adapter._CODE_OPENER_SIDE_POINTS,
     )
 
-    assert short.module == long.module == pytest.approx(adapter._CODE_HOUSE_MODULE_POINTS)
+    assert short.side == pytest.approx(adapter._CODE_OPENER_SIDE_POINTS)
+    assert long.side == pytest.approx(adapter._CODE_OPENER_SIDE_POINTS)
     assert short.modules < long.modules
-    assert short.side < long.side
-    # The house module is 0.85mm, so the square is exactly its own module count.
-    assert short.side == pytest.approx(short.modules * 0.85 * 72 / 25.4)
+    assert short.module > long.module
+    # The square is exactly the constant, so the module is its quotient.
+    assert long.module == pytest.approx(adapter._CODE_OPENER_SIDE_POINTS / long.modules)
 
 
 def test_the_widest_cell_wins_and_only_a_tie_goes_to_the_higher_correction():
     """Cell size before redundancy, which is the trade a small printed code needs.
 
-    The rule used to be "the first level that clears the floor", i.e. the highest
-    correction that fits, which is the opposite trade from the one the design
-    states.  For this edition's 51-character URLs it cost 11% of module width for
-    nothing: ECC-M sets 41 modules in the foot slot's square and ECC-L sets 37 in
-    the identical square, and a wider cell is what a phone camera is short of.
+    In the fixed opener square a lower correction is a shorter symbol and a
+    shorter symbol is a wider cell, so the level taken is the shortest --
+    unless two levels set the same module count, where the extra redundancy is
+    free and the higher correction wins the tie.
     """
-    roomy = adapter._fitted_source_code("a", "tail", _CODE_URL_51, 214.0)
-    tight = adapter._fitted_source_code(
-        "a", "foot", _CODE_URL_51, adapter._CODE_FOOT_ROOM_POINTS
-    )
-
-    # Room enough for every level to reach the house module is a tie, and a tie
-    # is the one case where more redundancy is free.
-    assert roomy.error == "H"
-    assert roomy.module == pytest.approx(adapter._CODE_HOUSE_MODULE_POINTS)
-    # Where they do not tie, the lowest correction wins because it is the
-    # shortest symbol and therefore the widest cell in the same room.
-    assert tight.error == "L"
-    assert tight.modules < roomy.modules
-    assert tight.module >= adapter._CODE_MIN_MODULE_POINTS
-    # Measured against every other level the same room admits: none is wider.
     import segno
 
-    admitted = {
-        level: adapter._slot_module(
-            "foot",
-            int(segno.make(_CODE_URL_51, error=level, micro=False).symbol_size(border=4)[0]),
-            adapter._CODE_FOOT_ROOM_POINTS,
-        )
+    fitted = adapter._fitted_source_code(
+        "a", _CODE_URL_51, adapter._CODE_OPENER_SIDE_POINTS
+    )
+    widths = {
+        level: int(segno.make(_CODE_URL_51, error=level, micro=False).symbol_size(border=4)[0])
         for level in adapter._CODE_ERROR_LEVELS
     }
-    assert tight.module == pytest.approx(max(admitted.values()))
-    # And the level the old rule took is measurably narrower in the same slot.
-    assert admitted["M"] < tight.module
-    assert tight.module * 25.4 / 72 == pytest.approx(0.3795, abs=5e-4)
-    assert admitted["M"] * 25.4 / 72 == pytest.approx(0.3385, abs=5e-4)
-
-
-def test_a_slot_too_small_for_any_level_yields_nothing_rather_than_a_smaller_code():
-    """The floor does not bend: an unscannable square is worse than no square."""
-    assert adapter._fitted_source_code("a", "foot", _CODE_URL, 8.0) is None
-
-    article = SimpleNamespace(id="article", source_url="x" * 900)
-    with pytest.raises(ValidationError, match="cannot carry a scannable source code"):
-        # An article that fills its last page has only the foot slot, and a URL
-        # this long cannot be set in it at any error correction level.
-        adapter._measured_source_code(article, 40.0)
-
-
-def test_which_slot_a_code_takes_is_the_page_s_decision_and_not_the_author_s():
-    """The same article, the same URL, two pages: the layout decides, alone.
-
-    Deliberately asserted against `_tail_code_slot`'s own threshold rather than
-    against `tail_art`: an edition that committed no art at all still earns the
-    large slot wherever a page has the room, which is what makes the rule
-    edition-agnostic.
-
-    THE RULE IS TWO-SIDED, because room alone was the wrong question.  Below the
-    floor the page cannot carry the large square; above the ceiling it should
-    not, and the two are different failures.  An article ending very high leaves
-    the *most* room and is the page least able to absorb what the room buys --
-    en p24 set six lines, an end mark, a 41.8mm black square and 107.7mm of
-    nothing, and the code carried 59.5% of the page's ink.
-    """
-    article = SimpleNamespace(id="article", source_url=_CODE_URL, tail_art=None)
-
-    ended_low = adapter._measured_source_code(article, 40.0)
-    # Room for twice the foot square is the floor, and it is measured, not written.
-    boundary = 82.0 + 2.0 * adapter._CODE_FOOT_ROOM_POINTS
-    assert adapter._measured_source_code(article, boundary - 0.1).slot == "foot"
-    ended_high = adapter._measured_source_code(article, boundary + 0.1)
-
-    assert (ended_high.slot, ended_low.slot) == ("tail", "foot")
-    assert ended_high.side > 2 * ended_low.side
-    # And residual white below the box is the ceiling.  The same article on a
-    # page it ended 500pt up takes the small code instead: the square would hang
-    # with 127mm of empty sheet under it.
-    assert adapter._tail_code_foot_white(ended_high) < adapter._CODE_TAIL_MAX_FOOT_WHITE_POINTS
-    poster = adapter._fitted_source_code(
-        "article", "tail", _CODE_URL, adapter._tail_code_room(500.0),
-        top=adapter._tail_code_slot(500.0),
+    # The 51-character URL really exercises the rule: L is strictly shortest.
+    assert widths["L"] < min(widths[level] for level in "MQH")
+    assert fitted.error == "L"
+    assert fitted.modules == widths["L"]
+    assert fitted.module == pytest.approx(adapter._CODE_OPENER_SIDE_POINTS / widths["L"])
+    # And a URL whose L and M symbols tie goes to M, the higher correction.
+    tie_url = next(
+        url
+        for length in range(20, 60)
+        for url in [f"https://example.test/{'a' * length}"]
+        if int(segno.make(url, error="L", micro=False).symbol_size(border=4)[0])
+        == int(segno.make(url, error="M", micro=False).symbol_size(border=4)[0])
     )
-    assert adapter._tail_code_foot_white(poster) * 25.4 / 72 == pytest.approx(126.9, abs=0.1)
-    assert adapter._measured_source_code(article, 500.0).slot == "foot"
-    # The ceiling is a preference and never a refusal: a URL whose symbol cannot
-    # be set in the foot band keeps the tail slot its page already earned,
-    # because an unscannable small code is not the lesser of two evils.  This is
-    # en p24 and en p31 of edition 002, whose 54- and 60-character addresses need
-    # a 41-module symbol and a 0.338mm module where the floor is 0.35mm.
-    long_url = SimpleNamespace(id="article", source_url="https://example.test/" + "a" * 40)
-    assert adapter._fitted_source_code(
-        "article", "foot", long_url.source_url, adapter._CODE_FOOT_ROOM_POINTS
-    ) is None
-    assert adapter._measured_source_code(long_url, 500.0).slot == "tail"
-    # No source, no code, no error -- the editorial's case, and a source record's
-    # canonical url is not guaranteed.
-    assert adapter._measured_source_code(SimpleNamespace(id="a", source_url=None), 500.0) is None
+    tied = adapter._fitted_source_code("a", tie_url, adapter._CODE_OPENER_SIDE_POINTS)
+    assert tied.error in {"M", "Q", "H"}
+
+
+def test_a_square_too_small_for_any_level_yields_nothing_rather_than_a_smaller_code(
+    tmp_path: Path,
+):
+    """The floor does not bend: an unscannable square is worse than no square."""
+    assert adapter._fitted_source_code("a", _CODE_URL, 8.0) is None
+
+    # And through the plan: a URL too long for the opener square at any error
+    # correction level is a loud refusal naming the fix.
+    edition = _edition(tmp_path)
+    edition = replace(
+        edition,
+        articles=(replace(edition.articles[0], source_url="https://example.test/" + "x" * 200),),
+    )
+    document = _stub_reader_document((), edition.articles[0].id)
+    with pytest.raises(ValidationError, match="cannot carry a scannable source code"):
+        adapter._opener_source_codes(edition, document)
+
+
+def test_the_code_top_is_measured_off_the_laid_out_byline(tmp_path: Path):
+    """The credit line is wherever the title actually ended, which is Pango's
+    line count and not the unkerned fit's -- so `top` is a measurement, read
+    off the byline's own laid-out line box."""
+    edition = _edition(tmp_path)
+    document = _stub_reader_document((), edition.articles[0].id)
+
+    (code,) = adapter._opener_source_codes(edition, document)
+
+    # The stub byline's line box sits at y=150 CSS px with a 2px baseline.
+    baseline = (150.0 + 2.0) * 72 / 96 - adapter._PAGE_MARGIN_TOP_POINTS
+    assert code.slot == "opener"
+    assert code.top == pytest.approx(
+        baseline - adapter._BYLINE_SIZE_POINTS * adapter._INTER_CAP_RATIO - code.quiet
+    )
+    assert code.symbol_left == pytest.approx(0.0)
+    assert code.left == pytest.approx(-code.quiet), "the flush is to the ink"
+    assert code.side == pytest.approx(adapter._CODE_OPENER_SIDE_POINTS)
+
+    # No source, no code, no error -- the editorial's case, and a source
+    # record's canonical url is not guaranteed.
+    unlinked = replace(
+        edition, articles=(replace(edition.articles[0], source_url=None),)
+    )
+    assert adapter._opener_source_codes(unlinked, document) == ()
+
+    # An opener that laid out no byline cannot anchor a code, and says so.
+    bare = _Document((_Page(_Box(children=(
+        _Box("article", element=_Element("article", **{"data-article-id": edition.articles[0].id})),
+    ))),))
+    with pytest.raises(ValidationError, match="laid out no byline"):
+        adapter._opener_source_codes(edition, bare)
+
 
 
 def test_the_symbol_is_set_in_one_ink_so_a_mono_printer_cannot_screen_a_finder():
@@ -3087,9 +3250,10 @@ def test_the_symbol_is_set_in_one_ink_so_a_mono_printer_cannot_screen_a_finder()
     holes through a finder ring one module thick, in the one part of the symbol
     detection depends on before error correction can help.  This magazine is
     printed at home and that case cannot be measured here, so the symbol is one
-    ink and the house violet moved to `.source-label`, which is type.
+    ink -- and the violet label it once moved to is retired, so the square spends
+    no house colour at all now.
     """
-    code = adapter._fitted_source_code("a", "tail", _CODE_URL, 214.0)
+    code = adapter._fitted_source_code("a", _CODE_URL, adapter._CODE_OPENER_SIDE_POINTS)
     svg = unquote(adapter._source_code_source(code).removeprefix("data:image/svg+xml,"))
     matrix = adapter._source_code_matrix(code)
 
@@ -3118,84 +3282,55 @@ def test_the_symbol_is_set_in_one_ink_so_a_mono_printer_cannot_screen_a_finder()
     assert f"M{inset:.4f} {inset:.4f}" in svg
 
 
-def test_the_foot_slot_sits_the_small_code_on_the_folio_s_own_baseline():
-    """The small code is furniture with one position, on every page that needs it.
+def test_an_opener_figure_field_deepens_for_the_code_that_stands_over_it(tmp_path: Path):
+    """The figure's head is the field's foot, and the square must clear it.
 
-    And that position is a *line*.  The foot band already carries the folio --
-    the publication name at one end, the page number at the other, both on
-    FOLIO_BASELINE 19.5 -- and a square dropped into it with its dark modules
-    ending 1.65pt below that line read as a code that had slipped off the foot.
-    The module is now chosen to land the symbol's own bottom edge on the folio
-    baseline, so `BERRETA FUTURA`, the square, its label and `09` are four items
-    on one line.
+    The field is the adapter's own statement (`_pin_opener_fields`); with a code
+    in the credit block the lowest ink is the symbol's last dark row -- an opener
+    figure hides the author note and nothing hangs under the square -- so the
+    stated field runs to it plus the credit's 12pt pad, computed from the fitted
+    title, which never under-counts a valid build's lines.
     """
-    code = adapter._fitted_source_code("article", "foot", _CODE_URL, adapter._CODE_FOOT_ROOM_POINTS)
-    tree = _parse_article_fragment("<p>Body.</p>", source_label="Source / 01")
+    edition = _edition(tmp_path)
+    article = edition.articles[0]
+    assert article.source_url  # the fixture's opener carries a code
 
-    _apply_source_codes(tree, {"article": code})
-
-    image = next(element for element in tree.iter("img") if element.get("class") == "source-code")
-    assert image.get("data-source-code") == "foot"
-    # Hung from the page's content-box foot, below which the reading flow sets
-    # no type at all, so the square's own upper edge is that foot.
-    assert f"bottom: {-code.side:.4f}pt" in image.get("style")
-    # The first dark module lands exactly on the folio baseline.
-    symbol_bottom = adapter._CODE_CONTENT_FOOT_POINTS - (
-        (code.modules - adapter._CODE_QUIET_MODULES) * code.module
+    size, fitted_lines = adapter._fitted_display(
+        str(article.title), adapter._LIVE_WIDTH_POINTS, 165.0,
+        maximum=30.0, minimum=24.0, maximum_lines=4, leading_ratio=.96,
     )
-    assert symbol_bottom == pytest.approx(adapter._FOLIO_BASELINE_POINTS)
-    assert code.symbol_bottom == pytest.approx(
-        adapter._FOLIO_BASELINE_POINTS - adapter._CODE_CONTENT_FOOT_POINTS
+    bare = adapter._OPENER_FIGURE_FIELD_BASE + adapter._opener_title_flow(size, len(fitted_lines))
+    floor = adapter._opener_code_field_floor(article, size, len(fitted_lines))
+    assert floor > bare  # the fixture's short title ends high, so the code binds
+
+    tree = _print_tree(edition)
+    adapter._pin_opener_fields(tree, edition)
+    header = next(
+        header for piece in tree.iter("article") for header in piece if header.tag == "header"
     )
-    # ...which puts ink 6.9mm above the sheet's own foot, and the box's white
-    # lower edge 5.4mm above it, both past the 4mm this used to stop at.  On the
-    # imposed A4 booklet that foot is the sheet's physical edge, printed at 100%,
-    # and a domestic printer's trailing margin plus duplex feed skew live there.
-    box_clearance = adapter._CODE_CONTENT_FOOT_POINTS - code.side
-    assert box_clearance * 25.4 / 72 == pytest.approx(5.36, abs=5e-3)
-    assert symbol_bottom * 25.4 / 72 == pytest.approx(6.88, abs=5e-3)
-    assert box_clearance >= adapter._CODE_FOOT_CLEARANCE_POINTS
-    # Centred in the reading measure, which clears both ends of the folio.
-    left = adapter._CODE_MEASURE_LEFT_POINTS + (adapter._CODE_MEASURE_POINTS - code.side) / 2
-    assert f"left: {left:.4f}pt" in image.get("style")
-    # And the label sits on the same line as the symbol it names.
-    label = next(element for element in tree.iter("p") if element.get("class") == "source-label")
-    assert f"bottom: {code.symbol_bottom + 2.47375:.4f}pt" in label.get("style")
-
-
-def test_the_small_code_holds_itself_clear_of_an_end_mark_in_its_own_band():
-    """A full last page puts both in the foot band, and that recurs by design.
-
-    An article that fills its last page ends its flow in the same band the foot
-    slot uses, so the two share it whether or not anyone intended it.  They
-    cannot be separated vertically -- the square needs the whole band and the
-    mark stands where its own flow ended -- so the separation is horizontal and
-    stated, at the same 24pt the mark holds its own text off the frame's edge by.
-
-    Ink to ink: the clearance is stated on the square's first *dark* module, not
-    on the element, whose quiet zone is four light modules of nothing.
-    """
-    article = SimpleNamespace(id="article", source_url=_CODE_URL, tail_art=None)
-
-    centred = adapter._measured_source_code(article, 40.0, 0.0)
-    crowded = adapter._measured_source_code(article, 40.0, 200.0)
-
-    assert centred.left == pytest.approx(
-        adapter._CODE_MEASURE_LEFT_POINTS
-        + (adapter._CODE_MEASURE_POINTS - centred.side) / 2
+    assert header.get("style") == f"height: {floor:.4f}pt"
+    # The depth the field takes for the code comes back out of the opener
+    # figure's own 270pt image cap, so a full opener stays one page.
+    opener_image = next(
+        image
+        for piece in tree.iter("article")
+        for figure in piece
+        if figure.tag == "figure" and figure.get("data-anchor") == "__opener__"
+        for image in figure.iter("img")
     )
-    assert crowded.symbol_left == pytest.approx(
-        adapter._CODE_MEASURE_LEFT_POINTS + 200.0 + 24.0
+    assert opener_image.get("style") == f"max-height: {270.0 - (floor - bare):.4f}pt"
+
+    # An article with no code keeps the fitted title's own depth.
+    unlinked = replace(
+        edition, articles=(replace(article, source_url=None),)
     )
-    assert crowded.left == pytest.approx(crowded.symbol_left - crowded.quiet)
-    # Measured on edition 002: `END / 01` reaches 50.36pt across the measure and
-    # the centred square starts at 144.67, so the rule holds by 70pt and moves
-    # nothing.  It is a guarantee and not a repair.
-    assert adapter._measured_source_code(article, 40.0, 50.36).left == centred.left
-    # Past the point where it cannot hold, the build refuses rather than
-    # printing a square over an end mark.
-    with pytest.raises(ValidationError, match="running off the measure"):
-        adapter._measured_source_code(article, 40.0, 300.0)
+    bare_tree = _print_tree(unlinked)
+    adapter._pin_opener_fields(bare_tree, unlinked)
+    bare_header = next(
+        header for piece in bare_tree.iter("article") for header in piece if header.tag == "header"
+    )
+    assert bare_header.get("style") == f"height: {bare:.4f}pt"
+
 
 
 def test_a_printed_code_reads_back_off_the_rasterized_page_as_its_canonical_url(
@@ -3210,9 +3345,12 @@ def test_a_printed_code_reads_back_off_the_rasterized_page_as_its_canonical_url(
     edition = _raster_edition(tmp_path, manuscript=_FONT_SAFE_MANUSCRIPT)
     output = tmp_path / "reader.pdf"
 
-    render_a5_weasyprint(edition, output)
+    layout = render_a5_weasyprint(edition, output)
 
-    assert list(_decoded(output).values()) == [[_CODE_URL]]
+    # One code, on the article's own OPENER page: the square is title
+    # furniture now, not a coda on the last page.
+    opener_page = layout.toc[edition.articles[0].id]
+    assert _decoded(output) == {opener_page: [_CODE_URL]}
 
 
 def test_a_code_carrying_the_wrong_url_is_refused_even_though_it_scans(tmp_path: Path, monkeypatch):

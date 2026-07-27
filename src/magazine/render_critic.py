@@ -10,7 +10,7 @@ from typing import Any
 from PIL import Image, ImageDraw, ImageOps
 from pypdf import PdfReader
 
-from .booklet import booklet_spreads
+from .booklet import A4_LANDSCAPE_POINTS, imposed_reader_page_plan, section_reader_pages
 from .errors import DependencyError
 from .render_review import visual_review_status
 
@@ -22,6 +22,7 @@ THUMBNAIL_WIDTH = 260
 LABEL_HEIGHT = 24
 WHITE_THRESHOLD = 245
 SPARSE_INK_RATIO = 0.004
+GEOMETRY_TOLERANCE = 0.75
 
 _STANDALONE_PUNCTUATION = re.compile(r"^[,.;:!?\u2026]+$")
 _COVER_PLACEHOLDER = re.compile(r"(?:\.\.\.|\b(?:TODO|TBD)\b|\[insert\b)", re.IGNORECASE)
@@ -32,6 +33,8 @@ def inspect_render(
     booklet_pdf: Path,
     destination: Path,
     *,
+    interior_booklet_pdf: Path,
+    cover_booklet_pdf: Path,
     language: str,
     toc: dict[str, int],
     article_pages: dict[str, int],
@@ -44,10 +47,25 @@ def inspect_render(
     Structural defects are machine blockers. Sparse-page notices remain review
     prompts because covers, section openers, and signature plates may be sparse
     by design.
+
+    Three imposed documents are gated. The all-in-one booklet keeps its full
+    treatment: every side rasterized, plus exact left/right text pairing against
+    the declared plan. The split cover wrap is rasterized too -- it is one sheet,
+    two sides, so the blank inside-cover contract is checked on real pixels for
+    the price of two rasters. The interior is checked structurally only (side
+    count, A4 landscape geometry, exact left/right text pairing) and is
+    deliberately *not* rasterized: it would add roughly one raster per interior
+    sheet per language on top of the ~20 this function already renders, and it
+    would buy nothing new. Every interior reader page is already rasterized and
+    judged for blankness and sparseness in the reader pass, and the imposition is
+    the same ``pypdf`` merge the main booklet uses over the same pages, with
+    order proven by text pairing rather than by looking at it.
     """
 
     reader = PdfReader(str(reader_pdf))
     booklet = PdfReader(str(booklet_pdf))
+    interior_booklet = PdfReader(str(interior_booklet_pdf))
+    cover_booklet = PdfReader(str(cover_booklet_pdf))
     page_count = len(reader.pages)
     review_dir = destination / "render-review"
     if review_dir.exists():
@@ -56,6 +74,9 @@ def inspect_render(
 
     rendered_pages = _render_pages(reader_pdf, review_dir / "reader-pages")
     rendered_booklet = _render_pages(booklet_pdf, review_dir / "booklet-sides")
+    rendered_cover_booklet = _render_pages(
+        cover_booklet_pdf, review_dir / "cover-booklet-sides"
+    )
     page_rows = [
         _inspect_page(page_path, reader.pages[index], index + 1)
         for index, page_path in enumerate(rendered_pages)
@@ -66,6 +87,11 @@ def inspect_render(
         for index, page_path in enumerate(rendered_booklet)
         if index < len(booklet.pages)
     ]
+    cover_booklet_rows = [
+        _inspect_page(page_path, cover_booklet.pages[index], index + 1)
+        for index, page_path in enumerate(rendered_cover_booklet)
+        if index < len(cover_booklet.pages)
+    ]
     reader_contact_sheets = _write_contact_sheets(
         rendered_pages, review_dir, prefix="reader-contact-sheet"
     )
@@ -73,7 +99,11 @@ def inspect_render(
         rendered_booklet, review_dir, prefix="booklet-contact-sheet"
     )
     review_artifacts = (
-        rendered_pages + rendered_booklet + reader_contact_sheets + booklet_contact_sheets
+        rendered_pages
+        + rendered_booklet
+        + rendered_cover_booklet
+        + reader_contact_sheets
+        + booklet_contact_sheets
     )
 
     issues: list[dict[str, Any]] = []
@@ -96,13 +126,65 @@ def inspect_render(
             "error",
             f"Rasterizer produced {len(rendered_booklet)} sides for a {len(booklet.pages)}-side booklet.",
         )
-    expected_spreads = booklet_spreads(page_count)
+    expected_spreads = imposed_reader_page_plan(section_reader_pages(page_count, "all"))
     spread_checks = _booklet_spread_checks(reader, booklet, expected_spreads)
     if not all(row["text_order_matches"] for row in spread_checks):
         issue(
             "booklet-page-order",
             "error",
             "One or more booklet sides do not contain the expected left/right reader page pair.",
+        )
+    interior_pages = section_reader_pages(page_count, "interior") if page_count >= 4 else ()
+    interior_plan = imposed_reader_page_plan(interior_pages)
+    interior_spread_checks = _booklet_spread_checks(reader, interior_booklet, interior_plan)
+    if len(interior_booklet.pages) != len(interior_plan):
+        issue(
+            "interior-booklet-side-count",
+            "error",
+            f"Interior booklet has {len(interior_booklet.pages)} sides; "
+            f"{len(interior_plan)} are expected for reader pages 3-{page_count - 2}.",
+        )
+    if not _all_a4_landscape(interior_booklet):
+        issue(
+            "interior-booklet-geometry",
+            "error",
+            "Every interior booklet side must be landscape A4.",
+        )
+    if not all(row["text_order_matches"] for row in interior_spread_checks):
+        issue(
+            "interior-booklet-page-order",
+            "error",
+            "One or more interior booklet sides do not contain the expected left/right reader page pair.",
+        )
+    cover_pages = section_reader_pages(page_count, "cover") if page_count >= 4 else ()
+    cover_plan = imposed_reader_page_plan(cover_pages)
+    cover_spread_checks = _booklet_spread_checks(reader, cover_booklet, cover_plan)
+    if len(cover_booklet.pages) != len(cover_plan):
+        issue(
+            "cover-booklet-side-count",
+            "error",
+            f"Cover booklet has {len(cover_booklet.pages)} sides; "
+            f"{len(cover_plan)} are expected for a single wrap sheet.",
+        )
+    if not _all_a4_landscape(cover_booklet):
+        issue(
+            "cover-booklet-geometry",
+            "error",
+            "Every cover booklet side must be landscape A4.",
+        )
+    if not all(row["text_order_matches"] for row in cover_spread_checks):
+        issue(
+            "cover-booklet-page-order",
+            "error",
+            "The cover booklet must impose the back cover beside the front cover, "
+            "then the two inside covers.",
+        )
+    if len(rendered_cover_booklet) != len(cover_booklet.pages):
+        issue(
+            "cover-booklet-raster-side-count",
+            "error",
+            f"Rasterizer produced {len(rendered_cover_booklet)} sides for a "
+            f"{len(cover_booklet.pages)}-side cover booklet.",
         )
     if page_count % 4:
         issue(
@@ -168,6 +250,31 @@ def inspect_render(
                 page=side,
             )
 
+    cover_booklet_inside_sides = {
+        int(row["side"])
+        for row in cover_spread_checks
+        if {row["left_reader_page"], row["right_reader_page"]} == inside_cover_pages
+    }
+    for row in cover_booklet_rows:
+        side = int(row["page"])
+        if side in cover_booklet_inside_sides:
+            if not row["blank"]:
+                issue(
+                    "cover-booklet-inside-not-blank",
+                    "error",
+                    "The cover booklet's inside side must be completely blank "
+                    "(a pure-white raster with no extractable text).",
+                    page=side,
+                )
+        elif row["ink_free"]:
+            issue(
+                "blank-cover-booklet-side",
+                "error",
+                "The cover booklet's outer side carries no ink; it must print the back "
+                "cover beside the front cover.",
+                page=side,
+            )
+
     cover_text = reader.pages[0].extract_text() if reader.pages else ""
     if _COVER_PLACEHOLDER.search(str(cover_text)):
         issue(
@@ -227,6 +334,38 @@ def inspect_render(
             "spreads": spread_checks,
             "pages": booklet_rows,
         },
+        "home_booklet_interior": {
+            "path": interior_booklet_pdf.relative_to(destination).as_posix(),
+            "reader_pages": list(interior_pages),
+            "sheet_sides": len(interior_booklet.pages),
+            "sheets": len(interior_booklet.pages) // 2,
+            "expected_sheet_sides": len(interior_plan),
+            "all_sides_a4_landscape": _all_a4_landscape(interior_booklet),
+            "binding": "saddle_stitch",
+            "duplex_flip": "short_edge",
+            "rasterized": False,
+            "rasterization_rationale": (
+                "Interior sides re-impose reader pages that the reader pass already "
+                "rasterizes and judges; imposition order is proven by exact left/right "
+                "text pairing, so per-side rasters would only add build time."
+            ),
+            "spreads": interior_spread_checks,
+        },
+        "home_booklet_cover": {
+            "path": cover_booklet_pdf.relative_to(destination).as_posix(),
+            "reader_pages": list(cover_pages),
+            "sheet_sides": len(cover_booklet.pages),
+            "sheets": len(cover_booklet.pages) // 2,
+            "expected_sheet_sides": len(cover_plan),
+            "all_sides_a4_landscape": _all_a4_landscape(cover_booklet),
+            "binding": "saddle_stitch_wrap",
+            "duplex_flip": "short_edge",
+            "rasterized": True,
+            "raster_page_count_matches": len(rendered_cover_booklet) == len(cover_booklet.pages),
+            "inside_cover_sides": sorted(cover_booklet_inside_sides),
+            "spreads": cover_spread_checks,
+            "pages": cover_booklet_rows,
+        },
         "visual_review": {
             **visual_review_status(
                 recorded_review,
@@ -247,6 +386,9 @@ def inspect_render(
             "booklet_sides": [
                 path.relative_to(destination).as_posix() for path in rendered_booklet
             ],
+            "cover_booklet_sides": [
+                path.relative_to(destination).as_posix() for path in rendered_cover_booklet
+            ],
             "instructions": (
                 "Inspect every page on the contact sheets at useful zoom; automated checks do not judge "
                 "typographic rhythm, visual hierarchy, or aesthetic quality."
@@ -256,11 +398,27 @@ def inspect_render(
     return report, review_artifacts
 
 
+def _all_a4_landscape(document: PdfReader) -> bool:
+    return bool(document.pages) and all(
+        abs(float(page.mediabox.width) - A4_LANDSCAPE_POINTS[0]) <= GEOMETRY_TOLERANCE
+        and abs(float(page.mediabox.height) - A4_LANDSCAPE_POINTS[1]) <= GEOMETRY_TOLERANCE
+        for page in document.pages
+    )
+
+
 def _booklet_spread_checks(
     reader: PdfReader,
     booklet: PdfReader,
-    spreads: tuple[tuple[int, int], ...],
+    spreads: tuple[tuple[int | None, int | None], ...],
 ) -> list[dict[str, Any]]:
+    """Confirm each imposed side carries exactly its planned reader page pair.
+
+    ``spreads`` is a plan in *reader* page numbers, so the same check serves the
+    all-in-one booklet, the interior, and the cover wrap: whichever pages a
+    section selects, its side ``n`` must extract the left page's text followed by
+    the right page's. ``None`` is a padded blank half-side.
+    """
+
     def normalized(page: Any) -> str:
         return " ".join((page.extract_text() or "").split())
 
@@ -269,7 +427,7 @@ def _booklet_spread_checks(
         expected = " ".join(
             text
             for page_number in (left, right)
-            if page_number <= len(reader.pages)
+            if page_number is not None and page_number <= len(reader.pages)
             for text in [normalized(reader.pages[page_number - 1])]
             if text
         )
@@ -279,8 +437,10 @@ def _booklet_spread_checks(
                 "side": side_index,
                 "sheet": (side_index + 1) // 2,
                 "face": "outside" if side_index % 2 else "inside",
-                "left_reader_page": left if left <= len(reader.pages) else None,
-                "right_reader_page": right if right <= len(reader.pages) else None,
+                "left_reader_page": left if left is not None and left <= len(reader.pages) else None,
+                "right_reader_page": (
+                    right if right is not None and right <= len(reader.pages) else None
+                ),
                 "text_order_matches": actual == expected,
             }
         )

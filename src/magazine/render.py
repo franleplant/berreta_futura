@@ -11,7 +11,12 @@ from typing import Iterable
 from .errors import DependencyError, ValidationError
 from .image_contrast import prepare_print_image
 from .manifest import Edition
-from .reader_layout import FigurePlacement, FrameUsage, RenderLayout
+from .reader_layout import (
+    FigurePlacement,
+    FrameUsage,
+    RenderLayout,
+    declared_editorial_page_cap,
+)
 
 
 MAX_ARTICLE_PAGES = 7
@@ -356,6 +361,11 @@ class _Typesetter:
         self.pdf, self.edition, self.width, self.height, self.metrics = pdf, edition, *pagesize, metrics
         self.design = design
         self.enforce_page_caps = enforce_page_caps
+        # The edition may hold its editorial tighter than the publication's
+        # ceiling; it may never hold it looser.
+        self.editorial_page_cap = declared_editorial_page_cap(
+            edition.raw, MAX_EDITORIAL_PAGES
+        )
         self.inner, self.outer, self.top, self.bottom = INNER_MARGIN, OUTER_MARGIN, TEXT_TOP_INSET, 45.0
         self.left, self.right = self.inner, self.outer
         self.page = 0
@@ -2039,10 +2049,10 @@ class _Typesetter:
                 self.reading_leading = BODY_LEADING
                 self.paragraph_after = 5.4
                 self.editorial_pages = self.page - start_page + 1
-                if self.enforce_page_caps and self.editorial_pages > MAX_EDITORIAL_PAGES:
+                if self.enforce_page_caps and self.editorial_pages > self.editorial_page_cap:
                     raise ValidationError(
                         f"Editorial spans {self.editorial_pages} reader pages; the hard cap is "
-                        f"{MAX_EDITORIAL_PAGES}. Condense it before building."
+                        f"{self.editorial_page_cap}. Condense it before building."
                     )
             article_total = len(self.edition.articles)
             for article_index, article in enumerate(self.edition.articles, 1):
@@ -2238,18 +2248,9 @@ def render_a5(
         raise ValidationError(
             f"format.max_article_pages is a hard publication rule and must remain {MAX_ARTICLE_PAGES}"
         )
-    configured_editorial_cap = edition.raw.get("format", {}).get(
-        "max_editorial_pages", MAX_EDITORIAL_PAGES
-    )
-    try:
-        configured_editorial_cap = int(configured_editorial_cap)
-    except (TypeError, ValueError) as exc:
-        raise ValidationError("format.max_editorial_pages must be the integer 2") from exc
-    if configured_editorial_cap != MAX_EDITORIAL_PAGES:
-        raise ValidationError(
-            f"format.max_editorial_pages is a hard publication rule and must remain "
-            f"{MAX_EDITORIAL_PAGES}"
-        )
+    # A ceiling an edition may tighten, never raise; the typesetter reads the
+    # same resolver, so declaring it here is only the early refusal.
+    declared_editorial_page_cap(edition.raw, MAX_EDITORIAL_PAGES)
     output.parent.mkdir(parents=True, exist_ok=True)
     probe = _render_pass(io.BytesIO(), edition, design=design)
     # Full-height continuation frames keep prose moving naturally. The former

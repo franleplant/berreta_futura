@@ -26,7 +26,7 @@ from xml.etree.ElementTree import Element, SubElement
 from .errors import DependencyError, ValidationError
 from .html_edition import HtmlAsset, render_html_edition
 from .manifest import Edition
-from .reader_layout import FigurePlacement, RenderLayout
+from .reader_layout import FigurePlacement, RenderLayout, declared_editorial_page_cap
 from .reader_text import educate_reader_quotes, fold_reader_characters
 
 
@@ -110,27 +110,27 @@ def _reader_y_points(css_top_points: float, height_points: float) -> float:
     return _PAGE_HEIGHT_POINTS - css_top_points - height_points + _RASTER_NUDGE_POINTS
 
 
-# ``_article_tail_ornament_box`` (render.py:218-231), as much of it as still
-# decides anything.  The motif does not print -- the source code took the slot --
-# and two of its four numbers went with it, deliberately:
+# ``_article_tail_ornament_box`` (render.py:177-190), all four of its numbers.
+# The tail motif prints again -- the source code moved to the article opener, so
+# the slot the code borrowed is the ornament's own once more -- and the contract
+# is the reader's, unchanged:
 #
-# ``ARTICLE_TAIL_ORNAMENT_MIN_HEIGHT`` (118) was the height under which a
-# *decorative* band was not worth printing, and refusing a tight fit is the right
-# instinct for ornament.  It is the wrong instinct for a functional element: a
-# code three points inside its budget scans exactly as well as one with a page to
-# spare, and the two pages this threshold turned away -- en p18 and es p31 -- were
-# carrying the close-up code under 70mm of visible white.  ``_CODE_TAIL_MIN_ROOM``
-# replaces it with the test the code actually has: is there room for a square at
-# least twice the foot slot's, so that the two sizes stay two classes.
+# ``_TAIL_ORNAMENT_MIN_HEIGHT`` is the height under which a *decorative* band is
+# not worth printing.  Refusing a tight fit is the right instinct for ornament:
+# a motif squeezed under an article that nearly fills its last page reads as
+# crowding, so an article that ends low simply prints no motif at all.
 #
-# ``ARTICLE_TAIL_ORNAMENT_FOOT_INSET`` (24) was how far a band had to stop above
-# the frame's foot so as not to crowd the page's own foot.  The code is anchored
-# to the *top* of the slot (see ``_apply_source_codes``) and so never stands on
-# the slot's foot at all; what bounds it below is ``_END_MARK_FLOOR_POINTS``, the
-# floor the publication already gives the last piece of type on a page.
+# ``_TAIL_ORNAMENT_FOOT_INSET`` is how far the band stops above the frame's foot
+# so as not to crowd the page's own foot chrome; the folio keeps its line.  The
+# band is anchored at its *foot* -- the inset is a constant and the top varies
+# with the room -- exactly as ``_article_tail_ornament`` drew it.
 #
-# The two that survive are the two that were never about ornament.
+# ``_TAIL_ORNAMENT_ENDMARK_CLEARANCE`` holds the band's head off the end mark's
+# baseline, and ``_TAIL_ORNAMENT_MAX_HEIGHT`` keeps an article that ends very
+# high from turning its ornament into a poster.
+_TAIL_ORNAMENT_MIN_HEIGHT = 118.0
 _TAIL_ORNAMENT_MAX_HEIGHT = 214.0
+_TAIL_ORNAMENT_FOOT_INSET = 24.0
 _TAIL_ORNAMENT_ENDMARK_CLEARANCE = 31.0
 
 _PLATE_ANCHOR_TAGS = frozenset({"h1", "h2", "h3"})
@@ -148,6 +148,11 @@ _LIVE_WIDTH_POINTS = 333.0079
 # arithmetic rather than as zero: it is zero only while the stylesheet keeps the
 # two frames on the same edge.
 _PAGE_MARGIN_BOTTOM_POINTS = 55.0046
+# ``@page``'s own margin-top, the stylesheet's 42.0004: the frame-top inset
+# less the first-baseline datum, plus the rasteriser nudge.  It is what turns
+# a measured page-absolute ``position_y`` into the content-box coordinate the
+# adapter states absolute placements in.
+_PAGE_MARGIN_TOP_POINTS = 52.0 - _FIRST_BASELINE_INSET_POINTS + _RASTER_NUDGE_POINTS
 _FRAME_BOTTOM_RELIEF_POINTS = _FRAME_BOTTOM_POINTS - (
     _PAGE_MARGIN_BOTTOM_POINTS - _FIRST_BASELINE_INSET_POINTS
 )
@@ -155,113 +160,81 @@ _FRAME_BOTTOM_RELIEF_POINTS = _FRAME_BOTTOM_POINTS - (
 # THE SOURCE CODE.
 #
 # A print magazine cannot hyperlink, so every article carries the address of the
-# source it was built from as a QR square.  The numbers below decide what that
-# square is and where it stands, and each is a print decision rather than a taste:
+# source it was built from as a QR square, set into its opener's own title
+# furniture.  The numbers below decide what that square is and where it stands,
+# and each is a print decision rather than a taste:
 #
-# ``_CODE_HOUSE_MODULE_POINTS`` is the module -- one cell of the symbol -- at the
-# size the publication sets a code it has room for.  0.85mm is comfortably above
-# every published floor for a code read by a phone off uncoated stock, and it is
-# what makes the largest symbol this publication can produce (a 71-character URL
-# at ECC-H, 49 modules across the quiet zone) land at 41.65mm.  The house size is
-# therefore not a point size: the *module* is fixed and the square is
-# `modules * module`, so a short URL genuinely prints a smaller code than a long
-# one.
+# ``_CODE_OPENER_SIDE_POINTS`` is the square, and unlike the retired tail and
+# foot slots it is a *constant*: every opener carries the same credit block --
+# kicker, title, byline -- so the code that joins it has one size on every
+# opener, the way the byline has one size.  15.9mm is chosen against the block
+# it stands beside: the square spans the byline and a two-line author note and
+# little more, and it stays in the small class the retired foot slot proved
+# scannable (its band held a 14mm square at a 0.38mm module; this one is a
+# shade roomier).  What varies with the URL is the *module*: a longer address
+# is a denser symbol in the same square, never a larger square on a page that
+# was not asked.
 #
 # ``_CODE_MIN_MODULE_POINTS`` is the floor, and it is the number the design gives
 # way at.  0.35mm is 4.1 dots of a 300 dpi inkjet and about where a phone camera
 # held at an angle over uncoated paper stops being reliable.  A build whose code
 # cannot be set at this module at any error correction level refuses rather than
-# printing something that will not scan.
+# printing something that will not scan; on the fixed opener square that binds a
+# canonical URL at 106 characters -- QR version 5's byte-mode capacity at ECC-L,
+# whose 45 modules across the quiet zone come out at 0.3528mm, a hair over the
+# floor, where version 6's 49 would come out at 0.324mm and refuse.  Measured by
+# lengthening a URL a character at a time: 106 sets, 107 refuses.  The longest
+# this publication has printed is 75.
 #
 # ``_CODE_QUIET_MODULES`` is the QR standard's own four-module quiet zone, and it
-# is inside the element rather than assumed of the page.  The foot slot's code
-# stands two points under the last line of a full page; borrowing its quiet zone
-# from whatever happens to be there is the one way this feature fails silently.
-# It is also why the element's edges are not the symbol's: everything the eye
-# lines the code up against below is measured to the *first dark module*, four
-# modules inside the box.
-#
-# ``_CODE_FOOT_CLEARANCE_POINTS`` is how far above the sheet's own foot the small
-# code's box may come.  The reader is folded from A4 at home and the A5 page foot
-# *is* the sheet's physical edge, so that edge is a real edge and not a trim: the
-# 4mm this used to be is inside what many domestic printers reserve on the
-# trailing edge before duplex feed skew of 1-2mm is added, and nothing occupied
-# that band before the code did.  5mm on the box, and the folio pin below puts the
-# nearest dark module 6.9mm up.
-_CODE_HOUSE_MODULE_POINTS = 0.85 * 72 / 25.4
+# is inside the element rather than assumed of the page.  The opener's code
+# stands at the head of the credit line with the byline and the author note
+# beginning an inset to its right; borrowing its quiet zone from whatever happens
+# to be there is the one way this feature fails silently.  It is also why the
+# element's edges are not the symbol's: everything the eye lines the code up
+# against is measured to the *first dark module*, four modules inside the box.
+_CODE_OPENER_SIDE_POINTS = 45.0
 _CODE_MIN_MODULE_POINTS = 0.35 * 72 / 25.4
 _CODE_QUIET_MODULES = 4
-_CODE_FOOT_CLEARANCE_POINTS = 5.0 * 72 / 25.4
-# Highest first, which is the tie-break and no longer the choice.
+# Highest first, which is the tie-break and not the choice.
 # ``_fitted_source_code`` takes the level whose symbol comes out with the *widest
-# cell* in the room it has, and only where two levels tie -- which is every slot
-# roomy enough to set the house module -- does the higher correction win.  That is
-# what the comment here always claimed and what the code did not do: it took the
-# first level clearing the floor, i.e. the highest correction that fit, which for
-# this edition's 51-character URLs meant ECC-M at a 375um module where ECC-L sets
-# the same square at 415um.  For a small printed code module width buys more read
-# reliability than redundancy does, so the rule now matches the reasoning.
+# cell* in the square, and only where two levels tie -- the same module count at
+# two corrections -- does the higher correction win.  For a small printed code
+# module width buys more read reliability than redundancy does: on this
+# publication's 44-75 character URLs ECC-L sets 37 or 41 modules across the
+# quiet zone where ECC-H would set 45-57 in the identical square.
+#
+# ON ALL BUT THE SHORTEST OF THEM H IS NOT THE NARROWER CHOICE BUT NO CHOICE AT
+# ALL: 49 to 57 modules in a 45pt square is a 0.2785-0.324mm cell, under the
+# floor above, so H is refused outright and never reaches the tie-break -- and Q
+# goes the same way on the 75-character URL, at 0.2995mm.  Only the 44-character
+# one can carry H at all, at 0.3528mm.  So the widest-cell rule is not what
+# excludes H here; the floor is, and the rule then picks between what is left.
+# Measured across editions 001-003: the level taken is L on ten of the sixteen
+# codes and M on six, where M and L tie at 41 modules and the tie goes up.
 _CODE_ERROR_LEVELS = ("H", "Q", "M", "L")
 # The reading measure's own left edge inside the page area, as ``.article-tail``
 # has it: the article box is 325pt centred in the 333.0079pt live width.
 _CODE_MEASURE_LEFT_POINTS = 4.004
 _CODE_MEASURE_POINTS = 325.0
-# The page's content-box foot, from the page's own foot: below this the reading
-# flow sets no type at all, and it is the ceiling on the foot slot.
-_CODE_CONTENT_FOOT_POINTS = _PAGE_MARGIN_BOTTOM_POINTS - _RASTER_NUDGE_POINTS
-# FOLIO_BASELINE (render.py:565-577), and the foot slot's own pin.  The small code
-# shares its band with the folio, and the folio is a *line*: the publication name
-# at one end and the page number at the other, both on 19.5.  A square dropped
-# into that band with its dark modules ending 1.65pt under that line does not read
-# as the third item on it -- it reads as a code that slipped off the foot.  So the
-# module is chosen to land the symbol's own bottom edge exactly on the folio
-# baseline, and the four light modules below it fall into the sheet's foot margin
-# where they cost nothing: white quiet zone is the one part of a symbol a
-# printer's unprintable margin may safely eat.
+# FOLIO_BASELINE (render.py:565-577): the line the folio's two ends share.  The
+# end mark's hard floor below is stated against it.
 _FOLIO_BASELINE_POINTS = 19.5
-_CODE_FOOT_DROP_POINTS = _CODE_CONTENT_FOOT_POINTS - _FOLIO_BASELINE_POINTS
-# The ceiling on the small code's box, kept as an independent guard: whichever of
-# the folio pin and the sheet-edge clearance is tighter is the one that binds.
-_CODE_FOOT_ROOM_POINTS = _CODE_CONTENT_FOOT_POINTS - _CODE_FOOT_CLEARANCE_POINTS
-# The tail slot is admitted only where it can hold a square at least twice the
-# foot slot's.  Two sizes of code on one edition is a legible system; a continuum
-# between them is not, and the ratio is what stops a page with barely enough room
-# from printing a code that is neither.
-_CODE_TAIL_MIN_ROOM_POINTS = 2.0 * _CODE_FOOT_ROOM_POINTS
-# AND THE TAIL SLOT HAS A CEILING AS WELL AS A FLOOR, because "is there room?" was
-# never the right question on its own.  ``_CODE_TAIL_MIN_ROOM`` asks whether the
-# page *can* carry the large code; this asks whether the page is the kind of page
-# that should.  A 41.6mm square reads as furniture under an article that ran to
-# the foot of its last page and as a poster on an article that ended after six
-# lines -- on en p24 the code carried 59.5% of the page's ink at 51.9% local
-# coverage, and the rest of the sheet was a black square and half a page of
-# nothing.  Residual white below the code box, on the nine large codes of edition
-# 002, sorts as
-#
-#   18.0 18.3 34.4 64.1 | 89.0 98.2 98.2 102.8 107.4  (mm)
-#
-# and the four on the left are the pages where the square closes the page.  60mm
-# is inside the 29.7mm gap that separates them from the rest, 25.6mm above the
-# largest of the four; it is not a tuned number and would classify this edition
-# identically anywhere between 35mm and 88mm.
-#
-# Where the ceiling bites the code takes the foot slot instead -- it joins the
-# folio's own line, where the publication's other foot chrome already lives,
-# instead of standing alone in the void.  The preference is a preference and not
-# a refusal: a URL whose symbol cannot be set in the foot band at
-# ``_CODE_MIN_MODULE_POINTS`` keeps the tail slot it had already earned, because
-# an unscannable small code is worse than an over-large legible one.
-_CODE_TAIL_MAX_FOOT_WHITE_POINTS = 60.0 * 72 / 25.4
-# The code's label, in the house's own tracked-caps idiom -- `FEATURE nn`,
-# `FIGURE nn`, `END / nn` -- set on the symbol's own bottom edge, one gap to its
-# right.  It is what makes the square furniture rather than a sticker applied
-# after printing: an unlabelled black square is the only element on the page that
-# does not say what it is.  It is a *name* and not the address -- the URL is set
-# nowhere, in print or in the margin.
-_CODE_LABEL_SIZE_POINTS = 6.8
-_CODE_LABEL_TRACKING_POINTS = .25
-# Its gap from the square is ``_CODE_LABEL_GAP_POINTS``, which is the end mark's
-# own and is therefore declared with the end mark, below.
+# Inter's own cap height, from the bundled faces' OS/2 table.  The code joins
+# the opener's credit line, and "on the line" is measured to ink: the symbol's
+# first dark row aligns with the byline's cap top, not with a line box that a
+# zero leading has already collapsed.
+_INTER_CAP_RATIO = 1490 / 2048
+# THE SQUARE PRINTS UNNAMED, AND NOTHING HANGS UNDER IT.  It carried a violet
+# `SOURCE / nn` in the house's tracked-caps idiom, on the argument that an
+# unlabelled black square does not say what it is.  On the page it did not read
+# as furniture: a QR code is the one mark on a sheet that every reader already
+# knows the name of, so the caption said nothing the symbol had not, and two
+# pieces of chrome stacked in the credit line where one belonged.  The square is
+# made furniture instead by *where it stands* -- flush on the live area's left
+# edge, on the credit line's own origin, with the byline and the note set as a
+# column beside it -- which is the same argument the kicker makes for `FEATURE
+# nn` and costs the page no second voice.  The URL is still set nowhere.
 # The resolution the decode gate rasterises at.  300 ppi is the publication's own
 # print floor -- ``_MIN_FIGURE_PPI`` -- so the gate reads the code off the page at
 # the density the page is judged to be printable at, and not at a density chosen
@@ -276,10 +249,12 @@ _CODE_POSITION_TOLERANCE_POINTS = 2.0
 # "the widest cell wins, highest correction breaks the tie" is decided on the
 # geometry and not on the last bit of a float division.
 _MODULE_EPSILON = 1e-9
-# What an article puts on its last page *after* its flow has ended, and which
-# ``_article_flow_bottom`` therefore may not measure: all three are positioned
-# from the very number that walk produces.
-_OUT_OF_FLOW_CODA_CLASSES = frozenset({"article-tail", "source-code", "source-label"})
+# What the print adapter lays over an article out of its own flow, and which
+# ``_article_flow_bottom`` therefore may not measure: the tail ornament is
+# positioned from the very number that walk produces, and the opener's code,
+# though it stands on the first page rather than the last, is an absolute box
+# whose geometry says nothing about where the article's prose ended.
+_OUT_OF_FLOW_CODA_CLASSES = frozenset({"article-tail", "source-code"})
 # ``render.py``'s own INK and the sheet, written as the percentages those tuples
 # are, exactly as the stylesheet writes them, so the code's ink is the
 # publication's and not a colour invented for a barcode.  ONE INK, deliberately:
@@ -398,6 +373,12 @@ _ARTICLE_TITLE_MAX = 35.0
 _EDITORIAL_TITLE_MAX = 35.0
 _SECTION_TITLE_MAX = 35.0
 _OPENER_TITLE_MAX_LINES = 4
+# The stylesheet's own cap on an opener-anchored figure's image
+# (`article > figure[data-anchor="__opener__"] > img { max-height: 270pt }`),
+# restated here because the source code borrows depth against it: an opener
+# that carries both a figure and a code deepens its field for the code's label
+# and hands the same depth back out of this cap (see ``_pin_opener_fields``).
+_OPENER_FIGURE_MAX_IMAGE_HEIGHT = 270.0
 
 # ``_article_endmark`` (render.py:2008-2021).  The mark is hoisted 20pt out of
 # the flow by its own negative margin so that it can never open a page, and
@@ -418,12 +399,11 @@ _END_MARK_PAINT_POINTS = (
 _END_MARK_FLOOR_POINTS = _FRAME_BOTTOM_POINTS + 5.0
 _END_MARK_DROP_POINTS = 1.0
 # How far `END / nn` stands in from the frame's left edge, past its own rule
-# (render.py:2008-2021, `.end-mark`'s `padding-left`), and how wide that rule is.
-# The inset is borrowed as the house's own answer to "how far apart are two
-# pieces of furniture on the same line", which is what the foot slot's code needs
-# to hold itself off a clamped mark.
+# (render.py:2008-2021, `.end-mark`'s `padding-left`).  The inset is borrowed as
+# the house's own answer to "how far apart are two pieces of furniture sharing a
+# band", which is what sets the opener's credit column an inset to the right of
+# the code standing beside it (see ``_fit_credit_measure``).
 _END_MARK_TEXT_INSET_POINTS = 24.0
-_END_MARK_RULE_WIDTH_POINTS = 17.0
 # The lowest baseline the mark may take before the build is refused -- the folio's
 # own line plus one reading leading.  It is a floor against *collision*, which is
 # the only thing a floor down here can honestly be about: `END / nn` and the
@@ -431,15 +411,6 @@ _END_MARK_RULE_WIDTH_POINTS = 17.0
 # reader sets two lines of prose at read as one line of chrome rather than as an
 # article ending above a page number.  See ``_end_mark_baseline``.
 _END_MARK_HARD_FLOOR_POINTS = _FOLIO_BASELINE_POINTS + _READING_LEADING
-# And the difference between them is the house's answer to the narrower question
-# "how far from a mark does the mark's own name set?" -- 7pt, ink to ink.  The
-# source label is the same kind of thing naming the same kind of thing, so it
-# takes the same gap, measured from the square's last dark module and not from
-# the element's edge: the quiet zone lives inside the element, so a gap stated on
-# the box is a gap plus four light modules on the page.  At 12pt from the box
-# that put `SOURCE / nn` 7.9mm from anything visible, three times what `END / nn`
-# gets, and the two stopped reading as one idiom.
-_CODE_LABEL_GAP_POINTS = _END_MARK_TEXT_INSET_POINTS - _END_MARK_RULE_WIDTH_POINTS
 
 _FONT_FILES = {
     "serif": "source-serif-4/SourceSerif4SmText-Regular.ttf",
@@ -545,7 +516,7 @@ _UNBINDABLE_CLASSES = frozenset(
         "author-note", "byline", "content-label", "contents-kicker", "end-mark",
         "entry-author", "entry-folio", "entry-label", "entry-title", "folio-name",
         "issue-number", "label-primary", "label-secondary", "provenance",
-        "publication-name", "running-head", "source-label", "subtitle",
+        "publication-name", "running-head", "subtitle",
     }
 )
 # Subtrees the reading flow does not include at all: opener chrome, the contents
@@ -723,6 +694,7 @@ def render_a5_weasyprint(
     _validate_contents_page(document)
     _validate_reader_measures(document)
     _validate_fitted_display(document, edition)
+    _validate_opener_code_clearance(document, plan.codes_by_article)
     document = _painted_reader(
         HTML, html, stylesheet, edition, plan, document, font_config=font_config
     )
@@ -822,21 +794,31 @@ def _with_print_slots(html: str) -> str:
 class SourceCode:
     """One article's printed way back to the source it was built from.
 
-    Everything here is decided from a laid-out page and a URL, and nothing from
-    what an author committed: ``slot`` is ``"tail"`` where the article's last
-    page has the open space ``_tail_code_slot`` demands and ``"foot"`` where it
-    has not, ``error`` is the QR error correction that comes out with the widest
-    cell in that room, ``modules`` is the symbol's width in cells *including* its
-    four-module quiet zone, and ``module`` is one cell in points.  The square is
-    ``modules * module`` on a side, so an edition that committed no art at all
-    still prints a code in every slot that fits one.
+    The symbol is decided from the edition alone: the square is the design
+    constant ``_CODE_OPENER_SIDE_POINTS``, ``error`` is the QR error correction
+    that comes out with the widest cell inside it, ``modules`` is the symbol's
+    width in cells *including* its four-module quiet zone, and ``module`` is
+    one cell in points.  ``slot`` names the furniture the square belongs to and
+    is the value the element carries as ``data-source-code``; it is ``"opener"``
+    on every code this publication prints, and it is kept because the retired
+    tail and foot slots are what the opener's constant square is a decision
+    against and a second slot would be that decision reopened, not a new field.
 
-    ``left`` and ``top`` are the placement the same measurement implies, in the
-    page content box's own coordinates: ``left`` from its left edge, ``top`` from
-    its foot, positive upward.  They are carried on the plan rather than
-    recomputed at paint time because both are read off a laid-out page -- ``top``
-    from where the end mark landed, ``left`` from how wide the end mark's own
-    line came out -- and the plan is what the settle check compares.
+    WHERE IT STANDS IS A MEASUREMENT.  ``left`` is a constant, but ``top`` is
+    read off the laid-out byline line box (``_opener_source_codes``): the credit
+    line is wherever the fitted title actually ended, and the title's line count
+    is Pango's answer and not the unkerned fit's.  So a code is one of the plan's
+    measured facts, it takes part in the settle comparison in
+    ``_render_to_signature`` like every other, and a code built without a
+    laid-out page to read is not a code this class can carry.
+
+    ``left`` and ``top`` are the element box's placement in the page content
+    box's own coordinates, ``left`` from its left edge and ``top`` from its
+    head, positive downward -- CSS's own convention, because the opener is
+    measured down from the page's head where the retired tail slot was
+    measured up from its foot.  ``left`` is *negative* by one quiet zone: the
+    flush is to the ink, so a symbol standing on the live area's left edge puts
+    its four light modules outside it.
     """
 
     article_id: str
@@ -845,25 +827,11 @@ class SourceCode:
     modules: int
     module: float
     url: str
-    left: float = _CODE_MEASURE_LEFT_POINTS
+    left: float = 0.0
     top: float = 0.0
-    # The authored artwork pass, present only on a tail code whose article
-    # declared ``source_code_art_path``.  ``art`` is the committed PNG the
-    # adapter embeds instead of drawing the vector symbol; ``art_symbol`` is
-    # the symbol's dark-module footprint inside that canvas -- left, top,
-    # right, bottom as fractions, y down -- *measured* off the pixels by the
-    # same independent decoder the page gate uses, never trusted from a
-    # sidecar; and ``art_side`` is the square the artwork prints at.
-    # ``modules``/``module``/``error`` keep describing the plain symbol the
-    # page fitted, which is what the artwork's size is derived from.
-    art: Path | None = None
-    art_symbol: tuple[float, float, float, float] | None = None
-    art_side: float = 0.0
 
     @property
     def side(self) -> float:
-        if self.art is not None:
-            return self.art_side
         return self.modules * self.module
 
     @property
@@ -872,38 +840,40 @@ class SourceCode:
         return _CODE_QUIET_MODULES * self.module
 
     @property
-    def symbol_bottom(self) -> float:
-        """The first dark module's own lower edge, in the same coordinates.
+    def symbol_top(self) -> float:
+        """The first dark module's own upper edge, in the same coordinates.
 
-        Not ``top - side``: four light modules of quiet zone stand below the
-        symbol, and every alignment the page is judged on -- the folio's
-        baseline, the label's -- is an alignment to ink.  On an artwork the
-        margin is not a module count, so the same edge is read off the
-        measured footprint instead.
+        Not ``top``: four light modules of quiet zone stand above the symbol,
+        and every alignment the page is judged on -- the byline's cap line,
+        the label's -- is an alignment to ink.
         """
-        if self.art_symbol is not None:
-            return self.top - self.art_symbol[3] * self.side
-        return self.top - self.side + self.quiet
+        return self.top + self.quiet
+
+    @property
+    def symbol_bottom(self) -> float:
+        """The last dark module's own lower edge, in the same coordinates."""
+        return self.top + self.side - self.quiet
 
     @property
     def symbol_left(self) -> float:
         """The first dark module's own left edge, in the same coordinates.
 
-        The same correction as ``symbol_bottom`` and for the same reason.  A
-        column is flush when its *ink* is flush: the tail slot's square is set
-        against the reading measure's own origin, which is where the END rule
-        and every line of the article above it start, and the element therefore
-        stands one quiet zone to the left of it.
+        A column is flush when its *ink* is flush: the opener's square is set
+        against the live area's left edge, the credit line's own origin, where
+        the kicker's ``FEATURE nn`` and the title's first character already
+        flush, and the element therefore stands one quiet zone to the left of
+        it.
         """
-        if self.art_symbol is not None:
-            return self.left + self.art_symbol[0] * self.side
         return self.left + self.quiet
 
     @property
     def symbol_right(self) -> float:
-        """The last dark module's own right edge, in the same coordinates."""
-        if self.art_symbol is not None:
-            return self.left + self.art_symbol[2] * self.side
+        """The last dark module's own right edge, in the same coordinates.
+
+        The edge the credit column's own inset is measured from
+        (``_credit_column_inset``), because the gap between two pieces of
+        furniture is a gap between their ink.
+        """
         return self.left + self.side - self.quiet
 
 
@@ -913,9 +883,15 @@ class ReaderPlan:
 
     ``closing_plates`` is the number of plates the signature arithmetic in
     ``render.back_cover`` asks for, which is a function of where the content
-    happens to end.  ``source_codes`` is one :class:`SourceCode` per article that
-    has a source to point at, sized and slotted from where that article's own
-    flow ended.  ``adaptive_images`` maps a figure id to the image height an
+    happens to end.  ``source_codes`` is one :class:`SourceCode` per article
+    that has a source to point at, sized from its URL and stood on its opener's
+    credit line; its symbol is computed from the URL alone, but its ``top`` is
+    measured off the laid-out byline, so it settles with the rest and it rides
+    the plan so that the decode gate and the layout consume the same object.
+    ``tail_arts`` maps an article id
+    to the height its tail ornament prints at, measured from where that
+    article's own flow ended, and omits every article whose last page earned no
+    ornament.  ``adaptive_images`` maps a figure id to the image height an
     ``adaptive_band`` has been shrunk to so that it can still bridge the page it
     started on (render.py:901-922), and omits every band that fits at its full
     height.  ``band_offsets`` maps a figure id to the margin mirror a band
@@ -926,13 +902,14 @@ class ReaderPlan:
     bound together because the block's last line came out as one short word; see
     ``_RUNT_MEASURE_FRACTION``.  ``midpage_band_anchors`` names the bands whose
     anchor heading was set mid-page under prose, which is what earns the heading
-    its paint-only clearance (see ``_measured_midpage_anchors``).  All seven are
-    *measured* facts, so a plan is the output of one layout and the input to the
-    next.
+    its paint-only clearance (see ``_measured_midpage_anchors``).  Every one of
+    them is a *measured* fact, so a plan is the output of one layout and the
+    input to the next.
     """
 
     closing_plates: int
     source_codes: tuple[SourceCode, ...] = ()
+    tail_arts: tuple[tuple[str, float], ...] = ()
     adaptive_images: tuple[tuple[str, float], ...] = ()
     band_offsets: tuple[tuple[str, float], ...] = ()
     end_marks: tuple[tuple[str, float], ...] = ()
@@ -942,6 +919,10 @@ class ReaderPlan:
     @property
     def codes_by_article(self) -> dict[str, SourceCode]:
         return {code.article_id: code for code in self.source_codes}
+
+    @property
+    def tail_art_heights(self) -> dict[str, float]:
+        return dict(self.tail_arts)
 
     @property
     def end_mark_offsets(self) -> dict[str, float]:
@@ -984,13 +965,20 @@ def _render_to_signature(
 
     Two of the reader's placement rules read the finished page rather than the
     content: the closing-plate count comes from where the body stopped, and an
-    article's source code takes the large slot only when its last page really has
-    ``ARTICLE_TAIL_ORNAMENT_MIN_HEIGHT`` of open space below the end mark.
-    Neither question can be asked in CSS, so this renders a probe pass carrying
+    article's tail ornament prints only when its last page really has
+    ``_TAIL_ORNAMENT_MIN_HEIGHT`` of open space below the end mark.  Neither
+    question can be asked in CSS, so this renders a probe pass carrying
     neither, measures it, and renders the answer.  A third pass then has nothing
-    left to change: closing plates land after the body and a source code is out
+    left to change: closing plates land after the body and the ornament is out
     of flow, so neither decision can move the content that both were derived
     from -- which is asserted rather than assumed.
+
+    The source codes are measured the same way: the square is a constant and
+    its right edge a constant, but the credit line it stands on is wherever the
+    opener's title actually ended, and the title's laid-out line count is
+    Pango's answer, not the unkerned prediction's -- a title the fit wraps at
+    three lines can set on two.  So the code's ``top`` is read off the laid-out
+    byline, like the end mark's offset is read off the laid-out flow.
 
     Runt control is measured the same way and one step earlier, because unlike
     the other two it *does* move the content everything else is derived from: a
@@ -1183,11 +1171,13 @@ def _lay_out(
     _install_flow_clearances(tree)
     _limit_closing_plates(tree, plan.closing_plates)
     _fit_closing_plate_titles(tree, edition)
+    # After ``_rewrite_landscape_plates``, which reads the tail figure this may
+    # remove: a deferred plate is released by the article's coda, and the coda
+    # has to still be there when that decision is taken.  Before the contrast
+    # pass, which prepares whatever ornament survives for the press.
+    _apply_tail_arts(tree, plan.tail_art_heights)
     _apply_print_contrast(tree)
     _apply_end_marks(tree, plan.end_mark_offsets)
-    # After ``_rewrite_landscape_plates``, which reads the tail figure this
-    # removes: a deferred plate is released by the article's coda, and the coda
-    # has to still be there when that decision is taken.
     _apply_source_codes(tree, plan.codes_by_article)
     # Last, so that nothing downstream rewrites the rule images' own geometry.
     _apply_figure_rules(tree, figure_rules or {})
@@ -1559,18 +1549,18 @@ def _pin_opener_fields(tree: Element, edition: Edition) -> None:
     every other box: a CSS box top stands ``_FIRST_BASELINE_INSET_POINTS`` above
     the ``self.y`` it means.
     """
-    titles = {article.id: str(article.title) for article in edition.articles}
+    by_id = {article.id: article for article in edition.articles}
     for article in tree.iter("article"):
         header = _opener_header(article)
-        title = titles.get(article.get("data-article-id") or "")
-        if title is None:
+        declared = by_id.get(article.get("data-article-id") or "")
+        if declared is None:
             raise ValidationError(
                 f"No edition article matches opener {article.get('data-article-id')!r}"
             )
         has_figure = _opener_figure(article) is not None
         height, minimum = _ARTICLE_TITLE_BOX
         size, lines = _fitted_display(
-            title,
+            str(declared.title),
             _LIVE_WIDTH_POINTS,
             height,
             maximum=_ARTICLE_TITLE_MAX_WITH_FIGURE if has_figure else _ARTICLE_TITLE_MAX,
@@ -1580,8 +1570,37 @@ def _pin_opener_fields(tree: Element, edition: Edition) -> None:
         )
         _set_opener_title(header, size)
         if has_figure:
-            field = _OPENER_FIGURE_FIELD_BASE + _opener_title_flow(size, len(lines))
+            title_field = _OPENER_FIGURE_FIELD_BASE + _opener_title_flow(size, len(lines))
+            field = title_field
+            floor = _opener_code_field_floor(declared, size, len(lines))
+            if floor > title_field:
+                # The code's depth comes out of the figure's own band, not out
+                # of the page: the field deepens so the label clears the
+                # figure, and the figure's height cap gives the same depth
+                # back, so an opener that was full stays a page and not two.
+                # A figure bound by its width rather than the cap cannot give
+                # it back; then the flow simply moves, and an article that no
+                # longer fits its own cap is refused loudly downstream.
+                figure = _opener_figure(article)
+                for image in () if figure is None else figure.iter("img"):
+                    style = (image.get("style") or "").strip().rstrip(";")
+                    image.set(
+                        "style",
+                        f"{style + '; ' if style else ''}max-height: "
+                        f"{_OPENER_FIGURE_MAX_IMAGE_HEIGHT - (floor - title_field):.4f}pt",
+                    )
+                field = floor
             header.set("style", f"height: {field:.4f}pt")
+            # The header's height and the *title's* reservation are the same
+            # number until a code deepens the field, and then they are not: the
+            # extra depth is the label's room, not the title's.  Both are stated
+            # because `_validate_fitted_display` judges a title against what was
+            # fitted for the title -- given the field it would hand a loosened
+            # title the label's room, and the guard would pass a page where the
+            # title has pushed the credit block, the code and the label into the
+            # artwork.  `data-title-field` is that reservation, in points, stated
+            # by the arithmetic that owns it.
+            header.set("data-title-field", f"{title_field:.4f}")
     sections = {
         f"section-{index}": (
             str(section.title), _SECTION_TITLE_BOX, _SECTION_TITLE_MAX, _SECTION_FIELD_BASE
@@ -1617,6 +1636,43 @@ def _pin_opener_fields(tree: Element, edition: Edition) -> None:
 def _opener_title_flow(size: float, lines: int) -> float:
     """``size + lines * size * 0.96``, the room ``_fitted_title_box`` consumes."""
     return size * (1 + _OPENER_TITLE_LEADING_RATIO * lines)
+
+
+def _opener_code_field_floor(article: Any, size: float, lines: int) -> float:
+    """The field an opener figure needs so its article's code clears the art.
+
+    The figure's head is the field's foot, and the square's last dark row is the
+    lowest ink the credit block now sets -- an opener figure hides the author
+    note, and nothing hangs under the symbol -- so the field must run to the
+    symbol's own foot plus the credit's 12pt pad.  It ran to a label's baseline
+    while there was a label, which cost every figure opener a further 11.95pt of
+    image cap; that depth is now given back to the artwork.
+
+    Computed from the *fitted* line count rather than measured: the fit never
+    under-counts a valid build's lines (``_validate_fitted_display`` refuses the
+    one direction kerning can cheat), so a field stated from it is deep enough
+    wherever Pango sets the title tighter -- and a field is white space, not an
+    alignment, so deep enough is exact enough.  Zero for an article with no code
+    to place.
+    """
+    url = str(getattr(article, "source_url", "") or "").strip()
+    if not url:
+        return 0.0
+    code = _fitted_source_code(str(article.id), url, _CODE_OPENER_SIDE_POINTS)
+    if code is None:
+        return 0.0  # ``_opener_source_codes`` raises the loud refusal.
+    byline_baseline = (
+        _OPENER_TITLE_TOP_POINTS
+        + _opener_title_flow(size, lines)
+        + _OPENER_TITLE_TO_CREDIT_POINTS
+    )
+    symbol_bottom = (
+        byline_baseline
+        - _BYLINE_SIZE_POINTS * _INTER_CAP_RATIO
+        + code.side
+        - 2 * code.quiet
+    )
+    return symbol_bottom + _OPENER_BYLINE_PAD_POINTS
 
 
 def _band_clearance_height(article: Element) -> float:
@@ -1719,12 +1775,30 @@ def _apply_band_offsets(tree: Element, offsets: Mapping[str, float]) -> None:
 
 
 def _apply_adaptive_images(tree: Element, heights: Mapping[str, float]) -> None:
+    """State each shrunk band's measured image height, keeping what is stated already.
+
+    Merged onto the element's own style, the way ``_apply_band_offsets`` merges
+    its own, and not written over it: an opener figure whose article carries a
+    source code already states a ``max-height`` here -- the depth the field
+    borrowed for the code's label, handed straight back out of the image's cap
+    (``_pin_opener_fields``) -- and this pass runs after it.  No
+    ``adaptive_band`` is anchored to an opener in any edition today, but
+    ``media_schema`` permits ``layout: adaptive_band`` with ``anchor:
+    __opener__``, and a giveback silently overwritten is a page taller than the
+    adapter reserved.  Both declarations are ``max-height`` and the later one
+    wins the cascade, which is the right way round: the shrink measured here is
+    bounded by ``_FIGURE_BAND_MAX_IMAGE_HEIGHT``, under the 270pt cap the
+    giveback reduces, so it is the tighter of the two.
+    """
     for figure in tree.iter("figure"):
         height = heights.get(figure.get("data-figure-id") or "")
         if height is None:
             continue
         for image in figure.iter("img"):
-            image.set("style", f"max-height: {height:.4f}pt")
+            style = (image.get("style") or "").strip().rstrip(";")
+            image.set(
+                "style", f"{style + '; ' if style else ''}max-height: {height:.4f}pt"
+            )
 
 
 def _apply_figure_rules(tree: Element, rules: Mapping[str, MeasuredRule]) -> None:
@@ -2126,14 +2200,17 @@ def _limit_closing_plates(tree: Element, count: int) -> None:
 
 
 def _apply_print_contrast(tree: Element) -> None:
-    """Give every curated figure the print-safe derivative the reader prints.
+    """Give every treated raster the print-safe derivative the reader prints.
 
     ``prepare_print_image`` (render.py:755 and :1040) measures paper dominance,
     mark coverage and median mark contrast, and escalates contrast until a pale
-    diagram survives an uncoated press.  It reaches both figure paths -- a
-    contained image and a landscape plate -- and nothing else: cover art, a tail
-    motif and a closing plate are drawn with ``_draw_image_fill``, which never
-    calls it.  A curated figure is exactly the set that carries a figure id.
+    image survives an uncoated press.  It reaches every curated figure -- a
+    contained image and a landscape plate -- and, now that the ornament prints
+    again, the tail art beside them: authored house artwork should never need
+    the escalation, but "should never" is exactly what a preflight exists to
+    verify, and an ornament that ships pale is as soft a page as a figure that
+    does.  Cover art and a closing plate are drawn with ``_draw_image_fill``
+    and stay untreated.
 
     The treated raster only exists in memory, so it travels to the layout as a
     data URI.  The original source stays on the element, because a placement is
@@ -2144,8 +2221,13 @@ def _apply_print_contrast(tree: Element) -> None:
     from .image_contrast import prepare_print_image
 
     for figure in tree.iter("figure"):
-        if not figure.get("data-figure-id"):
+        figure_id = figure.get("data-figure-id")
+        if not figure_id and "article-tail" not in _element_classes(figure):
             continue
+        # The refusal has to name what the editor actually curated, and this pass
+        # reaches two different kinds of artwork: a figure the edition placed by
+        # id, and an article's own tail ornament, which has none.
+        subject = f"curated figure {figure_id}" if figure_id else "article tail art"
         for image in figure.iter("img"):
             source = image.get("src")
             if not source or source.startswith("data:"):
@@ -2154,7 +2236,7 @@ def _apply_print_contrast(tree: Element) -> None:
             try:
                 prepared = prepare_print_image(path)
             except Exception as exc:  # Pillow's failures differ by format.
-                raise ValidationError(f"Cannot decode curated figure {path}: {exc}") from exc
+                raise ValidationError(f"Cannot decode {subject} {path}: {exc}") from exc
             if not prepared.adjusted:
                 continue
             payload = base64.b64encode(prepared.image.getvalue()).decode("ascii")
@@ -2216,48 +2298,39 @@ def _fitted_plate_title(title: str) -> tuple[float, list[str]]:
 
 
 def _apply_source_codes(tree: Element, codes: Mapping[str, SourceCode]) -> None:
-    """Stand each article's source code in the slot its own page earned.
+    """Stand each article's source code in its opener's own credit block.
 
-    The tail motif comes out here rather than in ``html_edition``, and that is
-    the seam being kept: the semantic edition still offers the motif and the
-    link, because a screen adapter can use both, and this is the one place that
-    knows the code has taken the motif's slot.
+    The code is opener furniture now, not a coda: it went in beside the title
+    because the opener is where the article already states its provenance --
+    the kicker names the mode, the byline names the author, and the square
+    names the source.  The element is a child of the opener's ``header`` so it
+    lands on the article's first page, and it is absolutely positioned like the
+    figure frames and the tail ornament, so it takes nothing out of any box and
+    cannot displace a line.  Every one of its four edges is stated inline
+    because no stylesheet can reach any of them: three come from the square's
+    own constant and the URL's module, and ``top`` is measured off the byline
+    the page laid out.
 
-    Like the figure frames and like the motif before it, the code is an
-    absolutely positioned replaced element, so it takes nothing out of any box
-    and cannot displace a line.  Every one of its four edges is stated inline
-    because every one of them is a measurement.
+    IT OPENS THE CREDIT LINE, FLUSH LEFT ON THE LIVE AREA.  The symbol's first
+    dark column lands on the live area's left edge -- the credit line's own
+    origin, where the kicker's ``FEATURE nn`` and the title's first character
+    already flush -- and its first dark row stands on the byline's cap top.  The
+    byline and the author note then set as one column an inset to its right
+    (``_fit_credit_measure``), so the row reads left to right as the reader does:
+    the square, then who wrote the piece and who they are.  Nothing hangs under
+    the square; it is furniture because of where it stands, and the credit column
+    beside it is the thing that says so.
 
-    THE CODE HANGS FROM THE TOP OF ITS SLOT, NOT FROM THE BOTTOM.  A slot is
-    guaranteed room and not a frame to fill, and a 41mm square dropped to the
-    foot of a 214pt one put 84-93mm of nothing between the end mark and the code
-    -- the page read "article ends, silence, black square", and the square read
-    as applied after printing rather than set with the page.  Anchored to the
-    slot's own top the void is ``_TAIL_ORNAMENT_ENDMARK_CLEARANCE`` on every page
-    that carries a code, the same 31pt the ornament was always given, and the
-    white that is left falls at the page foot where an article ending high on
-    its last page has always left it.
-
-    Flush left on the reading measure, not centred in it.  Every other element on
-    these pages is flush to one edge or the other; a square centred on the
-    measure agrees with none of them.
-
-    And labelled.  ``.source-label`` sets the code's name in the same tracked
-    violet caps as ``END / nn``, on the symbol's own bottom edge, one
-    ``_CODE_LABEL_GAP_POINTS`` to its right -- the same relation in both slots,
-    which is what makes the 41mm code and the 14mm code read as two sizes of one
-    thing.  In the foot slot that bottom edge is the folio's baseline, so the
-    label, the square and the two ends of the folio all sit on one line.
+    Unnamed on purpose.  A QR square is the one mark on the sheet whose name
+    every reader already knows, so the retired ``SOURCE / nn`` said nothing the
+    symbol had not and put a second voice in a line that has one.
     """
     for article in tree.iter("article"):
-        for child in [child for child in article if "article-tail" in _element_classes(child)]:
-            article.remove(child)
         code = codes.get(article.get("data-article-id") or "")
         if code is None:
             continue
-        side = code.side
-        bottom = code.top - side
-        image = SubElement(article, "img")
+        header = _opener_header(article)
+        image = SubElement(header, "img")
         image.set("class", "source-code")
         image.set("alt", "")
         image.set("aria-hidden", "true")
@@ -2265,75 +2338,95 @@ def _apply_source_codes(tree: Element, codes: Mapping[str, SourceCode]) -> None:
         image.set("src", _source_code_source(code))
         image.set(
             "style",
-            f"left: {code.left:.4f}pt; bottom: {bottom:.4f}pt; "
-            f"width: {side:.4f}pt; height: {side:.4f}pt",
+            f"left: {code.left:.4f}pt; top: {code.top:.4f}pt; "
+            f"width: {code.side:.4f}pt; height: {code.side:.4f}pt",
         )
-        _label_source_code(article, code)
+        _fit_credit_measure(article, header, code)
 
 
-def _label_source_code(article: Element, code: SourceCode) -> None:
-    """Name the square, in the publication's own voice, beside its foot.
+def _credit_column_inset(code: SourceCode) -> float:
+    """Where the credit column's own type begins, beside the square.
 
-    The text is the semantic edition's, read off the very anchor the code
-    encodes: ``html_edition`` owns the reader-facing vocabulary in both
-    languages, and an adapter that invented ``SOURCE`` for itself would have
-    invented it in English only.  A code with no name to print is a build
-    failure and not a bare square -- the unlabelled square is the defect this
-    exists to repair.
+    Ink to ink: one ``_END_MARK_TEXT_INSET_POINTS`` to the right of the symbol's
+    last dark module, which is the house's own answer to how far apart two pieces
+    of furniture sharing a band stand -- the same 24pt ``END / nn`` keeps between
+    its rule and its caps.  Measured from the *symbol* and not from the element,
+    because the quiet zone lives inside the box: an inset stated on the box would
+    print as 24pt plus four light modules and the band would read loose.
+
+    The mirror of what the right-flush arrangement gave the author note, and the
+    arithmetic says so: the column runs from here to the live area's right edge,
+    which is ``_LIVE_WIDTH_POINTS - side + 2 * quiet - 24`` wide -- exactly the
+    width the note had when it stopped an inset short of a right-flush square.
+    The measure is unchanged, so no note re-rags and no opener changes depth.
     """
-    link = next(
-        (element for element in article.iter("a") if "source-link" in _element_classes(element)),
-        None,
-    )
-    text = ((link.get("data-source-label") if link is not None else None) or "").strip()
-    if not text:
-        raise ValidationError(
-            f"Article {article.get('data-article-id')} prints a source code but its "
-            "semantic edition carries no data-source-label for it; an unlabelled "
-            "square on the page is the defect the label exists to repair."
-        )
-    left = code.symbol_right + _CODE_LABEL_GAP_POINTS
-    width = _string_width(text.upper(), "sans-medium", _CODE_LABEL_SIZE_POINTS) + (
-        _CODE_LABEL_TRACKING_POINTS * len(text)
-    )
-    if left + width > _CODE_MEASURE_LEFT_POINTS + _CODE_MEASURE_POINTS:
-        raise ValidationError(
-            f"Article {article.get('data-article-id')}'s source code label {text!r} "
-            f"runs {left + width:.2f}pt into a "
-            f"{_CODE_MEASURE_LEFT_POINTS + _CODE_MEASURE_POINTS:.2f}pt measure; the "
-            "square is too wide for its own name to stand beside it."
-        )
-    label = SubElement(article, "p")
-    label.set("class", "source-label")
-    label.text = text
-    label.set(
-        "style",
-        f"left: {left:.4f}pt; "
-        f"bottom: {code.symbol_bottom + _ZERO_LEADING_SANS_BASELINE:.4f}pt",
-    )
+    return code.symbol_right + _END_MARK_TEXT_INSET_POINTS
 
 
-def _fitted_source_code(
-    article_id: str, slot: str, url: str, room: float, *, top: float = 0.0
-) -> SourceCode | None:
-    """The widest-celled code ``room`` points of slot can carry.
+def _fit_credit_measure(article: Element, header: Element, code: SourceCode) -> None:
+    """Set the byline and the author note as one column beside the code.
 
-    Two knobs, taken in the order that survives a phone camera.  The module is
-    the house one wherever the slot can hold it, so a code with space is set at
-    ``_CODE_HOUSE_MODULE_POINTS`` and simply comes out as wide as its own symbol
-    needs -- which is what makes the printed size a property of the URL and not a
-    constant.  Where the slot is tighter than that, the module is whatever the
-    slot's own geometry leaves, and the level chosen is the one that leaves the
-    most: a lower error correction is a shorter symbol, a shorter symbol is a
-    wider cell in the same square, and a wider cell is worth more to a real scan
+    Both are inset, and that is the whole of the new arrangement: the square
+    stands on the credit line's own left origin, so the type that used to start
+    there starts one inset to the right of the symbol's ink instead, and the
+    byline and the note -- the author's name and who the author is -- read as a
+    single block against the square rather than as two lines with a mark at one
+    end.  The note is *also* given the column's width, because it is prose-length
+    (up to 160 characters on a 9.45pt leading) and would otherwise run from the
+    inset to the page's own edge and out past the live area.
+
+    The line the note may take for it is free: an opener without a figure holds
+    the note inside a *fixed* white field, and an opener with one hides the note
+    entirely, so no prose can move.  In fact none is taken -- the column is
+    exactly as wide as the note's old right-flush measure (see
+    ``_credit_column_inset``).
+
+    THE BYLINE'S REFUSAL IS A DIFFERENT FAILURE NOW.  It used to run at the
+    code from the left and could reach it; inset, it can no longer touch the
+    square at all -- it starts past it and grows away from it.  What it can do is
+    overrun the *measure's right edge*, where the old arrangement had the whole
+    of the live width in hand, so the refusal is re-derived to that edge: a
+    byline whose ink would pass the live area is refused rather than wrapped,
+    because it is a single zero-leading line and a wrapped one stacks two rows
+    of ink on one baseline.
+    """
+    column = _LIVE_WIDTH_POINTS - _credit_column_inset(code)
+    inset = f"margin-left: {_credit_column_inset(code):.4f}pt"
+    for note in header.iter("p"):
+        if "author-note" not in _element_classes(note):
+            continue
+        note.set("style", f"{inset}; width: {column:.4f}pt")
+    for byline in header.iter("p"):
+        if "byline" not in _element_classes(byline):
+            continue
+        byline.set("style", inset)
+        text = "".join(byline.itertext()).strip().upper()
+        if _string_width(text, "sans-semibold", _BYLINE_SIZE_POINTS) > column:
+            raise ValidationError(
+                f"Article {article.get('data-article-id')}'s byline {text!r} reaches "
+                f"past the {column:.2f}pt credit column beside its own source code "
+                "and out through the live area's right edge; shorten the byline "
+                "rather than wrapping a zero-leading line."
+            )
+
+
+def _fitted_source_code(article_id: str, url: str, room: float) -> SourceCode | None:
+    """The widest-celled code a square of ``room`` points can carry.
+
+    One knob, taken in the direction that survives a phone camera.  The square
+    is a constant, so the module is whatever ``room`` divided by the symbol's
+    own width leaves, and the level chosen is the one that leaves the most: a
+    lower error correction is a shorter symbol, a shorter symbol is a wider
+    cell in the same square, and a wider cell is worth more to a real scan
     than redundancy behind cells too small to resolve.  Measured on this
-    edition's 51-character URLs, ECC-L sets a 415um module where ECC-M sets
-    375um in the identical 15.36mm square -- 11% of cell width for nothing.
+    publication's URLs, ECC-L sets 37-41 modules across the quiet zone where
+    ECC-H sets 45-57 in the identical square -- and on every one of them but the
+    shortest, H's cell comes out under ``_CODE_MIN_MODULE_POINTS`` and is
+    dropped by the loop below before the widest-cell rule ever compares it.
 
-    HIGHEST CORRECTION WINS A TIE, and every roomy slot is a tie: there the
-    module is capped at the house one for every level, so the extra cells of
-    ECC-H cost only square inches the slot already has.  That is why the tail
-    codes are ECC-H and the foot codes ECC-L without either being a special case.
+    HIGHEST CORRECTION WINS A TIE -- two levels whose symbols come out the
+    same width, which QR's stepped versions produce regularly -- because there
+    the extra redundancy is free.
 
     The trade is not free and is not pretended to be: ECC-L carries 7% codeword
     redundancy against ECC-M's 15%, so a creased or thumbed code recovers less.
@@ -2352,50 +2445,12 @@ def _fitted_source_code(
     for level in _CODE_ERROR_LEVELS:
         symbol = segno.make(url, error=level, micro=False)
         modules = int(symbol.symbol_size(border=_CODE_QUIET_MODULES)[0])
-        module = _slot_module(slot, modules, room)
+        module = room / modules
         if module < _CODE_MIN_MODULE_POINTS:
             continue
         if best is None or module > best.module + _MODULE_EPSILON:
-            side = modules * module
-            # The tail square is flush left on the reading measure, and flush
-            # means its ink is: the element is pulled one quiet zone further left
-            # so the first dark module stands on the same origin as the END rule
-            # and every line of the article above it.  The four light modules
-            # that then sit outside the measure cost nothing -- white quiet zone
-            # in a page margin is exactly what a margin is for.  The foot square
-            # is centred instead, and the quiet zones are symmetric, so centring
-            # the element centres the ink.
-            left = (
-                _CODE_MEASURE_LEFT_POINTS - _CODE_QUIET_MODULES * module
-                if slot == "tail"
-                else _CODE_MEASURE_LEFT_POINTS + (_CODE_MEASURE_POINTS - side) / 2
-            )
-            best = SourceCode(article_id, slot, level, modules, module, url, left, top)
+            best = SourceCode(article_id, "opener", level, modules, module, url)
     return best
-
-
-def _slot_module(slot: str, modules: int, room: float) -> float:
-    """One cell of a ``modules``-wide symbol, as this slot's geometry allows it.
-
-    The tail slot is a height and nothing else: the square hangs from the slot's
-    top and the module is whatever fits, capped at the house one.
-
-    The foot slot is a *line*, and that is the whole difference.  Its ceiling is
-    the page's content-box foot, below which no type is set, and its pin is the
-    folio's baseline, which the symbol's own bottom edge has to land on -- so the
-    module divides ``_CODE_FOOT_DROP_POINTS`` between the symbol and the single
-    quiet zone above it, ``modules - _CODE_QUIET_MODULES`` cells in all, and the
-    remaining four cells of quiet zone hang below the folio line into the sheet's
-    foot margin.  ``_CODE_FOOT_ROOM_POINTS`` then holds independently, so a
-    square that would reach the sheet's edge is refused even if the pin is happy.
-    """
-    if slot == "tail":
-        return min(_CODE_HOUSE_MODULE_POINTS, room / modules)
-    return min(
-        _CODE_HOUSE_MODULE_POINTS,
-        _CODE_FOOT_DROP_POINTS / (modules - _CODE_QUIET_MODULES),
-        room / modules,
-    )
 
 
 def _source_code_matrix(code: SourceCode) -> list[list[bool]]:
@@ -2415,7 +2470,7 @@ def _source_code_source(code: SourceCode) -> str:
     WeasyPrint -- the figure frame had to be an SVG ``rect`` for the same reason.
     One SVG user unit is one point, as it is there.
 
-    ONE INK, AND THE HOUSE VIOLET MOVED TO THE LABEL.  The three finder patterns
+    ONE INK.  The three finder patterns
     used to print in VIOLET, the colour this publication reserves for structure,
     and on a colour device that is exactly right: measured off the 1200 dpi page,
     violet renders at gray 0.180 against the ink's 0.071, the LocalAverage
@@ -2427,14 +2482,14 @@ def _source_code_source(code: SourceCode) -> str:
     of a symbol detection depends on before error correction can help with
     anything, so that is the one place in the code where a screen cannot be
     dithered.  It is untestable here without a mono laser, the fix costs nothing,
-    and so the symbol is set entirely in INK.  The house voice is not lost: it
-    moved to ``.source-label``, which is violet tracked caps and is *type* -- a
-    glyph that halftones is still a glyph, and it is not what the scanner reads.
+    and so the symbol is set entirely in INK.  The house violet is not spent on
+    the square at all now: the label it moved to is retired, and what makes the
+    square the publication's own is its place on the grid rather than a colour.
 
     The ground is *painted* rather than left transparent, which is the one place
     robustness beats fidelity: the quiet zone is only a quiet zone if nothing
-    shows through it, and the foot slot's code stands a couple of points below a
-    full page of type.
+    shows through it, and the opener's code stands an inset away from the
+    credit column's own type.
 
     One path of touching subpaths and not a field of separate rectangles.  A PDF
     fill computes coverage once over the whole path, so modules that share an
@@ -2445,27 +2500,12 @@ def _source_code_source(code: SourceCode) -> str:
     is no second path for the first to antialias against either, which is the
     hairline argument's own conclusion taken one step further.
 
-    No centred publication mark.  ECC-H would carry one, but the foot slot's
-    codes are set at whatever level their room affords and that is regularly not
-    H; a mark on some codes and not others is not a house style, and occluding a
-    code that has already traded away redundancy for cell size is the trade made
-    twice.  Nothing here forecloses it -- the authored artwork pass exists now,
-    and it replaces this drawing rather than extending it.
-
-    THE ARTWORK BRANCH IS THE ONE RASTER EXCEPTION, taken first.  An accepted
-    artwork is pixels by nature -- an image model composed it -- so it travels
-    as the committed PNG's own bytes, byte for byte: no contrast preparation
-    (``_apply_print_contrast`` reaches only curated figures and this is not
-    one), no re-encode, nothing between the file the acceptance gate judged and
-    the file the page embeds.  Its density against the placed square is
-    enforced where the square is sized (``_dressed_source_code``), and the
-    final raster gate still reads the symbol back off the finished page.
+    No centred publication mark.  ECC-H would carry one, but the opener's
+    codes are set at whatever level leaves the widest cell and that is
+    regularly not H; a mark on some codes and not others is not a house style,
+    and occluding a code that has already traded away redundancy for cell size
+    is the trade made twice.
     """
-    if code.art is not None:
-        import base64
-
-        payload = base64.b64encode(code.art.read_bytes()).decode("ascii")
-        return "data:image/png;base64," + payload
     matrix = _source_code_matrix(code)
     size = len(matrix)
     unit = code.module
@@ -2574,19 +2614,18 @@ def _measured_plan(
     what lets the settle check above be an equality.
     """
     content_pages = _content_page_count(document)
-    codes: list[SourceCode] = []
     end_marks: list[tuple[str, float]] = []
+    tail_arts: list[tuple[str, float]] = []
     for article in edition.articles:
         flow_bottom = _article_flow_bottom(document, article.id)
         end_marks.append((article.id, _end_mark_offset(flow_bottom)))
-        code = _measured_source_code(
-            article, flow_bottom, _end_mark_extent(document, article.id)
-        )
-        if code is not None:
-            codes.append(code)
+        tail = _measured_tail_art(article, flow_bottom)
+        if tail is not None:
+            tail_arts.append((article.id, tail))
     return ReaderPlan(
         closing_plates=_signature_closing_plates(edition, content_pages),
-        source_codes=tuple(sorted(codes)),
+        source_codes=_opener_source_codes(edition, document),
+        tail_arts=tuple(tail_arts),
         adaptive_images=_measured_adaptive_images(document, edition),
         band_offsets=_measured_band_offsets(document),
         end_marks=tuple(end_marks),
@@ -2597,221 +2636,180 @@ def _measured_plan(
     )
 
 
-def _measured_source_code(
-    article: Any, flow_bottom: float, end_mark_extent: float = 0.0
-) -> SourceCode | None:
-    """Which slot this article's code takes, how large it is set, and where.
+def _opener_source_codes(edition: Edition, document: Any) -> tuple[SourceCode, ...]:
+    """Every article's code, sized from its URL and placed in its opener.
 
-    The slot is a property of the laid-out page and of nothing else.
-    ``_tail_code_slot`` is the test for an article that ended high enough to
-    carry a large element under its end mark: an edition whose author committed
-    no art at all still prints a large code wherever a page has the room, and an
-    edition full of art prints no more of them than its pages earn.
+    The square and its right edge are constants; where it stands vertically is
+    a *measurement*, like the end mark's offset.  The code joins the credit
+    line, and the credit line is wherever the opener's fitted title actually
+    ended -- the title's laid-out line count is Pango's answer and not the
+    unkerned prediction's, so the byline's baseline is read off the laid-out
+    boxes rather than recomputed from a fit that can be one line generous.
 
-    AND ROOM IS NOT A REASON ON ITS OWN.  An article that ends very high leaves
-    the most room and is the page least able to absorb what the room buys: the
-    square drops in under the end mark and then a half-page of nothing follows
-    it, and a 41.6mm black rectangle is the loudest thing on a sheet holding six
-    lines of type.  So the large slot is also given up where the white left below
-    the square would run past ``_CODE_TAIL_MAX_FOOT_WHITE_POINTS``, and the code
-    joins the folio's line instead.  The give-up is conditional on the foot band
-    being able to hold the symbol at all: where the URL is too long to set there
-    at ``_CODE_MIN_MODULE_POINTS``, the tail slot the page already earned stands,
-    because a code that does not scan is not the smaller of two evils.
+    WHERE IT STANDS.  The symbol's first dark row lands on the byline's cap
+    top -- ink to ink, like every alignment a code is judged on -- and its
+    first dark column lands on the live area's left edge, the credit line's own
+    origin, where the kicker's ``FEATURE nn`` and the title's first character
+    already flush.  Square first, then the byline and the author note as one
+    column beside it (``_fit_credit_measure``); below the byline the square runs
+    down the side of that column and into the white field the opener reserves.
 
-    ``end_mark_extent`` is how far the article's own end mark reaches across the
-    measure, and it is what keeps the foot slot's code out of the mark's way.
-    The mark rests on the reader's floor on a page the article fills, which is
-    one of the pages the foot slot is used on, so on a full last page the two
-    share the foot band whether or not anyone intended it.  They cannot be
-    separated vertically -- the square needs the whole band and the mark cannot
-    rise into the type -- so the separation is horizontal and is *stated*: the
-    square's first dark module never stands closer to the end mark's line than
-    the 24pt the mark already holds its own text off the frame's edge by.  Ink to
-    ink, like every other clearance the code is judged on.
+    CAP TOP AND NOT A CENTRING, and the alternative was built and rendered
+    before this was kept.  Optically centring the symbol on the credit column's
+    own ink -- byline cap top to the note's last baseline -- reads no better on a
+    full opener and fails on the two openers that matter: a figure opener hides
+    the note, so the block the symbol would centre on is a single 5.4pt cap band
+    and a 35pt square centred on it rises 15pt into the fitted title, and on a
+    prose opener the square's position becomes a function of how many lines the
+    note happens to rag onto, so editing a biography moves the furniture.  The
+    cap top is the same alignment the right-flush arrangement used, mirrored: one
+    number, no measurement of the note, and the symbol's head on the line the
+    reader's eye already has.
 
     An article with no ``source_url`` prints no code and is not an error -- a
     source record need not carry a canonical URL, and the editorial has no
     source at all.
     """
-    url = str(getattr(article, "source_url", "") or "").strip()
-    if not url:
-        return None
-    slot_top = _tail_code_slot(flow_bottom)
-    slot = "foot" if slot_top is None else "tail"
-    room = _CODE_FOOT_ROOM_POINTS if slot_top is None else _tail_code_room(flow_bottom)
-    code = _fitted_source_code(
-        str(article.id), slot, url, room, top=0.0 if slot_top is None else slot_top
-    )
-    if code is None:
-        raise ValidationError(
-            f"Article {article.id} cannot carry a scannable source code for {url}: "
-            f"the {slot} slot offers {room:.2f}pt, and even at the lowest error "
-            f"correction the symbol's module would fall under "
-            f"{_CODE_MIN_MODULE_POINTS * 25.4 / 72:.2f}mm. Shorten the canonical URL, "
-            "or let the article end higher on its last page."
-        )
-    if code.slot == "tail" and getattr(article, "source_code_art", None) is not None:
-        # The artwork dresses the tail code the page already earned; it never
-        # changes which slot that is.  It is swapped in *before* the ceiling
-        # test below because the ceiling judges emptiness under the element
-        # that will actually print, and the artwork -- like the tail motif it
-        # descends from -- absorbs white the bare square could not.  ``None``
-        # is the dresser's own demotion: a slot too tight to print the artwork
-        # at least as large as the fitted plain symbol keeps the plain code,
-        # which is proven to fit.
-        dressed = _dressed_source_code(article, code, room)
-        if dressed is not None:
-            code = dressed
-    if code.slot == "tail" and _tail_code_foot_white(code) > _CODE_TAIL_MAX_FOOT_WHITE_POINTS:
-        smaller = _fitted_source_code(
-            str(article.id), "foot", url, _CODE_FOOT_ROOM_POINTS, top=0.0
-        )
-        if smaller is not None:
-            code = smaller
-    if code.slot == "foot":
-        clear = (
-            _CODE_MEASURE_LEFT_POINTS
-            + end_mark_extent
-            + _END_MARK_TEXT_INSET_POINTS
-            - code.quiet
-        )
-        left = max(code.left, clear)
-        if left + code.side > _CODE_MEASURE_LEFT_POINTS + _CODE_MEASURE_POINTS:
+    baselines = _measured_byline_baselines(document)
+    codes: list[SourceCode] = []
+    for article in edition.articles:
+        url = str(getattr(article, "source_url", "") or "").strip()
+        if not url:
+            continue
+        code = _fitted_source_code(str(article.id), url, _CODE_OPENER_SIDE_POINTS)
+        if code is None:
             raise ValidationError(
-                f"Article {article.id}'s foot-slot source code cannot stand "
-                f"{_END_MARK_TEXT_INSET_POINTS:.0f}pt clear of an end mark reaching "
-                f"{end_mark_extent:.2f}pt across a {_CODE_MEASURE_POINTS:.0f}pt "
-                "measure without running off the measure's own right edge."
+                f"Article {article.id} cannot carry a scannable source code for {url}: "
+                f"the opener square offers {_CODE_OPENER_SIDE_POINTS:.2f}pt, and even "
+                f"at the lowest error correction the symbol's module would fall under "
+                f"{_CODE_MIN_MODULE_POINTS * 25.4 / 72:.2f}mm. Shorten the canonical URL."
             )
-        code = replace(code, left=left)
-    return code
+        baseline = baselines.get(str(article.id))
+        if baseline is None:
+            raise ValidationError(
+                f"Article {article.id} carries a source code but its opener laid out "
+                "no byline line; the code's credit-line anchor does not exist."
+            )
+        top = baseline - _BYLINE_SIZE_POINTS * _INTER_CAP_RATIO - code.quiet
+        # Flush to the ink on the live area's left edge, so the element itself
+        # stands one quiet zone outside it -- four light modules of painted paper
+        # in the gutter margin, the exact mirror of the overhang the right-flush
+        # arrangement put in the fore-edge.
+        left = -code.quiet
+        codes.append(replace(code, left=left, top=top))
+    return tuple(sorted(codes))
 
 
-def _dressed_source_code(article: Any, code: SourceCode, room: float) -> SourceCode | None:
-    """The tail code wearing its article's authored artwork, sized and measured.
+def _measured_byline_baselines(document: Any) -> dict[str, float]:
+    """Each opener byline's laid-out baseline, in page-content-box points.
 
-    Everything here is a *measurement of the committed PNG*, on every plan
-    pass: the payload, the symbol's footprint, its module count, the canvas's
-    pixel count and its ink discipline are read back by the same independent
-    machinery the acceptance gate uses, so there is no sidecar to trust and an
-    artwork edited after acceptance is re-judged by the build that consumes
-    it.  A fault in a declared artwork is a loud refusal and never a silent
-    fallback -- the silent path is reserved for the page's own decisions (a
-    foot slot, a demotion), where the plain vector code is the design and not
-    a repair.
-
-    THE SQUARE GROWS SO THE SYMBOL DOES NOT SHRINK.  The artwork surrounds the
-    symbol with composition, so at the plain code's own side the symbol would
-    print at ``fraction`` of the size the page fitted.  The box is therefore
-    set at ``plain side / fraction`` -- the symbol back at the plain code's
-    full element size, a margin over its ink span -- and capped at the slot's
-    room.
-
-    AND THE CAP IS NOT ALLOWED TO SHRINK IT EITHER: ``None`` -- keep the plain
-    code -- where the capped placement would print the artwork's symbol with a
-    smaller ink span than the plain symbol the page fitted, or with a measured
-    module under ``_CODE_MIN_MODULE_POINTS``.  The two are distinct failures
-    of the same tight slot.  The plain fit may take a *shorter* symbol (a
-    tight room fits ECC-L where the artwork carries the roomy reference's
-    ECC-H), so the artwork can breach the module floor while still spanning
-    more points than the plain ink does -- which is why the cell arithmetic
-    divides the artwork's printed ink span by the artwork's own measured
-    module count, never by the plain code's.  This demotion is the page's
-    decision, like the foot slot: the plain code is proven to fit, and a code
-    that scans beats a composition that does not.
-
-    Flush is the element and not the ink: the artwork is inked to its own
-    edges, so the canvas sits on the reading measure's origin where the plain
-    square hangs its quiet zone outside it.
+    The byline is a single zero-leading line inside the opener's header, so its
+    baseline is the line box's own, converted from page coordinates to the
+    content box the code's ``top`` is stated against.
     """
-    from .source_art import (
-        ART_MAX_SYMBOL_FRACTION,
-        ART_MIN_SYMBOL_FRACTION,
-        measure_source_code_art,
-        review_source_code_inks,
-    )
-
-    art = Path(article.source_code_art)
-    measurement = measure_source_code_art(art)
-    if measurement.payload != code.url:
-        raise ValidationError(
-            f"Article {article.id}'s source code artwork {art} decodes to "
-            f"{measurement.payload!r}, not the article's canonical URL "
-            f"{code.url!r}. Regenerate it with `mag source-art`."
-        )
-    if not ART_MIN_SYMBOL_FRACTION <= measurement.fraction <= ART_MAX_SYMBOL_FRACTION:
-        raise ValidationError(
-            f"Article {article.id}'s source code artwork {art} sets its symbol at "
-            f"{measurement.fraction:.2f} of the canvas, outside the "
-            f"{ART_MIN_SYMBOL_FRACTION:.2f}-{ART_MAX_SYMBOL_FRACTION:.2f} contract "
-            "the position gate depends on. Regenerate it with `mag source-art`."
-        )
-    side = min(room, (code.modules * code.module) / measurement.fraction)
-    ink_span = side * measurement.fraction
-    plain_ink_span = (code.modules - 2 * _CODE_QUIET_MODULES) * code.module
-    art_module = ink_span / measurement.modules
-    if (
-        ink_span < plain_ink_span - _MODULE_EPSILON
-        or art_module < _CODE_MIN_MODULE_POINTS
-    ):
-        return None
-    required = side / 72.0 * _CODE_DECODE_DPI
-    if measurement.pixels < required:
-        raise ValidationError(
-            f"Article {article.id}'s source code artwork {art} is "
-            f"{measurement.pixels}px wide and prints {side:.2f}pt across, "
-            f"{measurement.pixels / (side / 72.0):.0f} ppi against the "
-            f"{_CODE_DECODE_DPI:.0f} ppi floor. Regenerate it larger with "
-            "`mag source-art`."
-        )
-    # Ink discipline is re-verified at build time because it is the one part
-    # of the acceptance gate the final decode cannot re-check: a violet module
-    # or a dirtied quiet zone still decodes off this build's colour raster and
-    # then halftones into holes on the monochrome printer the magazine is made
-    # on.  The review is cached against the file's identity, so the settle
-    # loop pays for it once.
-    ink_failures = review_source_code_inks(art)
-    if ink_failures:
-        raise ValidationError(
-            f"Article {article.id}'s source code artwork {art} no longer passes "
-            f"the ink review: {'; '.join(ink_failures)}. Regenerate it with "
-            "`mag source-art`."
-        )
-    return replace(
-        code,
-        left=_CODE_MEASURE_LEFT_POINTS,
-        art=art,
-        art_symbol=measurement.box,
-        art_side=side,
-    )
-
-
-def _end_mark_extent(document: Any, article_id: str) -> float:
-    """How far the article's end mark reaches across its own measure, in points.
-
-    Measured off the laid-out mark rather than predicted from ``END / nn``: the
-    text is localized, tracked, and set in a face this module only sums unkerned,
-    and the number it feeds is a clearance.  Zero for an article whose mark has
-    not been laid out, which is every fragment the unit tests build by hand.
-    """
-    reach = 0.0
-    for page_number, page in enumerate(document.pages, start=1):
-        for box in _article_flow_boxes(page._page_box, article_id):
-            element = getattr(box, "element", None)
-            if element is None or "end-mark" not in _element_classes(element):
-                continue
-            for text_box in _walk_boxes(box):
-                if not isinstance(getattr(text_box, "text", None), str):
+    baselines: dict[str, float] = {}
+    for page in document.pages:
+        for article_id, byline in _walk_article_bylines(page._page_box):
+            for line in _walk_boxes(byline):
+                if type(line).__name__ != "LineBox":
                     continue
-                right = (
-                    float(text_box.position_x) + float(text_box.width)
-                ) * _POINTS_PER_CSS_PIXEL
-                reach = max(
-                    reach,
-                    right - _live_area_left(page_number) - _CODE_MEASURE_LEFT_POINTS,
-                )
-    return reach
+                baseline = (
+                    float(line.position_y) + float(line.baseline)
+                ) * _POINTS_PER_CSS_PIXEL - _PAGE_MARGIN_TOP_POINTS
+                baselines.setdefault(article_id, baseline)
+    return baselines
+
+
+def _walk_article_bylines(box: Any, article_id: str | None = None) -> Iterable[tuple[str, Any]]:
+    element = getattr(box, "element", None)
+    attributes = getattr(element, "attrib", {}) if element is not None else {}
+    if getattr(box, "element_tag", None) == "article" and attributes.get("data-article-id"):
+        article_id = str(attributes["data-article-id"])
+    if (
+        element is not None
+        and "byline" in _element_classes(element)
+        and article_id is not None
+        and type(box).__name__ == "BlockBox"
+    ):
+        yield article_id, box
+    for child in getattr(box, "children", ()) or ():
+        yield from _walk_article_bylines(child, article_id)
+
+
+def _measured_tail_art(article: Any, flow_bottom: float) -> float | None:
+    """The height this article's tail ornament prints at, or nothing.
+
+    ``_article_tail_ornament_box`` (render.py:177-190), rule for rule: the band
+    stands ``_TAIL_ORNAMENT_FOOT_INSET`` above the frame's foot, its head at
+    least ``_TAIL_ORNAMENT_ENDMARK_CLEARANCE`` under the end mark's baseline,
+    and it prints only where that leaves ``_TAIL_ORNAMENT_MIN_HEIGHT`` of real
+    room -- a squeezed ornament reads as crowding, so a tight page prints
+    none.  Capped at the ornament's own maximum so an article that ends very
+    high does not turn its motif into a poster.
+
+    ONE NUMBER IS DELIBERATELY NOT THE READER'S, and it is the datum all three
+    rules are measured from.  The reader took the end mark's baseline through its
+    own ``max(frame_bottom + 5, y - 1)``; ``_end_mark_baseline`` refuses that
+    clamp on purpose -- see the argument there -- so wherever the clamp would
+    have fired, the baseline this measures from is lower than ReportLab's and the
+    room it reports is shorter by the same amount.  Measured on edition 002, the
+    clamp fires on exactly one article ending, es ``software-factories`` on p9:
+    42.48 against the clamp's 50.0, 7.5pt.  That article declares no tail art,
+    and a page ending that low has no ornament to lose either way -- 42.48 and
+    50.0 both leave the band well under ``_TAIL_ORNAMENT_MIN_HEIGHT``.  The
+    divergence is stated because it is one, not because it has reached the paper.
+
+    The 300 ppi floor is the reader's own (render.py:1985-1997): the committed
+    raster must resolve at the crop-filled 325pt-wide band it prints across,
+    or the build refuses rather than shipping a soft ornament.
+    """
+    if getattr(article, "tail_art", None) is None:
+        return None
+    bottom = _FRAME_BOTTOM_POINTS + _TAIL_ORNAMENT_FOOT_INSET
+    top = _end_mark_baseline(flow_bottom) - _TAIL_ORNAMENT_ENDMARK_CLEARANCE
+    available = top - bottom
+    if available < _TAIL_ORNAMENT_MIN_HEIGHT:
+        return None
+    height = min(available, _TAIL_ORNAMENT_MAX_HEIGHT)
+    try:
+        from PIL import Image
+
+        with Image.open(article.tail_art) as image:
+            pixels = (int(image.width), int(image.height))
+    except (OSError, ValueError) as exc:
+        raise ValidationError(
+            f"Article tail art needs a readable raster source: {article.tail_art}"
+        ) from exc
+    effective_ppi = min(
+        pixels[0] / (_CODE_MEASURE_POINTS / 72),
+        pixels[1] / (height / 72),
+    )
+    if effective_ppi < _MIN_FIGURE_PPI:
+        raise ValidationError(
+            f"Article tail art {article.tail_art} resolves to {effective_ppi:.1f} ppi; "
+            f"the minimum is {_MIN_FIGURE_PPI:.0f} ppi"
+        )
+    return height
+
+
+def _apply_tail_arts(tree: Element, heights: Mapping[str, float]) -> None:
+    """Print each article's tail ornament at the height its own page earned.
+
+    The figure is the semantic edition's own; what the print adapter adds is
+    the page's decision.  An article whose last page earned no ornament -- or
+    which declared none -- loses the figure from the print tree, exactly as
+    ``_article_tail_ornament`` simply drew nothing; one that earned it keeps
+    the figure with its measured height stated inline.  The stylesheet owns
+    everything that does not depend on the measurement: the band's foot, its
+    325pt measure and its crop-fill are ``.article-tail``'s own.
+    """
+    for article in tree.iter("article"):
+        height = heights.get(article.get("data-article-id") or "")
+        for figure in [child for child in article if "article-tail" in _element_classes(child)]:
+            if height is None:
+                article.remove(figure)
+            else:
+                figure.set("style", f"height: {height:.4f}pt")
 
 
 def _end_mark_baseline(flow_bottom: float) -> float:
@@ -2829,17 +2827,15 @@ def _end_mark_baseline(flow_bottom: float) -> float:
     into the type it is meant to stand under.  On es p9 it raised it 7.5pt and
     left 5.0pt between the descenders and the rule, against 11.2-16.9pt on the
     other eleven article endings in the edition; the mark took whatever the page
-    had left instead of taking its own space.  The horizontal clearance
-    ``_measured_source_code`` states cannot see that, because the crowding was
-    never horizontal.
+    had left instead of taking its own space.
 
     So the mark keeps its own space and the floor becomes a real one.  Below
-    ``_END_MARK_HARD_FLOOR_POINTS`` its rule and its label would reach the band
-    the folio and the small source code share and the two would read as one line
-    of chrome; that is refused rather than squeezed, because a page that cannot
-    hold its own ending is a pagination fault and not something to absorb
-    silently.  Nothing in edition 002 comes within 10pt of it -- es p9, the one
-    page the old clamp fired on, sets at 42.48 against a floor of 32.5.
+    ``_END_MARK_HARD_FLOOR_POINTS`` its rule and its label would reach the
+    folio's own band and the two would read as one line of chrome; that is
+    refused rather than squeezed, because a page that cannot hold its own
+    ending is a pagination fault and not something to absorb silently.
+    Nothing in edition 002 comes within 10pt of it -- es p9, the one page the
+    old clamp fired on, sets at 42.48 against a floor of 32.5.
 
     The mark is out of flow in both engines, so moving it moves no line: what
     changes on that one page is where a zero-height block is painted.
@@ -2918,10 +2914,14 @@ def _article_flow_bottom(document: Any, article_id: str) -> float:
     once the difference between the frame top and a content box derived from the
     first baseline is removed.  Measured against ReportLab on both languages, this
     reproduces ``self.y`` to the third decimal on every article whose last page
-    carries the same copy.  The article's out-of-flow coda is excluded from the
-    walk because it is exactly what this measurement decides: both the tail
-    motif and the source code are placed *from* this number, so counting either
-    of them into it would make the plan measure its own output and never settle.
+    carries the same copy.  The article's out-of-flow furniture is excluded from
+    the walk because the tail ornament is exactly what this measurement decides:
+    it is placed *from* this number, so counting it into it would make the plan
+    measure its own output and never settle.  The opener's code and label are
+    excluded for the same reason and not as tidiness: their ``top`` is measured
+    off the laid-out byline, so they too are placed from a measurement of the
+    page they stand on -- and an absolute box says nothing about where an
+    article's prose ended in any case.
     """
     lowest = 0.0
     for page in document.pages:
@@ -2956,66 +2956,9 @@ def _article_flow_boxes(box: Any, article_id: str, *, inside: bool = False) -> I
         yield from _article_flow_boxes(child, article_id, inside=inside)
 
 
-def _tail_code_room(flow_bottom: float) -> float:
-    """The clear page under an article's end mark, as a height in points.
-
-    From the top of the tail slot -- ``_TAIL_ORNAMENT_ENDMARK_CLEARANCE`` below
-    the mark's own baseline, where the ornament's head always was -- down to
-    ``_END_MARK_FLOOR_POINTS``, the floor the reader gives the last piece of type
-    on a page.  The ornament stopped ``ARTICLE_TAIL_ORNAMENT_FOOT_INSET`` higher
-    than that so as not to crowd the page's foot; the code is anchored to the top
-    of the slot and so does not reach the floor at all unless the slot is nearly
-    the size of the square, which is the only case where the difference bites --
-    and it is exactly the case the ornament's instinct was wrong about.
-
-    Capped at the ornament's own maximum, which is not a constraint on any code
-    this publication can produce but keeps the slot a slot.
-    """
-    top = _end_mark_baseline(flow_bottom) - _TAIL_ORNAMENT_ENDMARK_CLEARANCE
-    return min(top - _END_MARK_FLOOR_POINTS, _TAIL_ORNAMENT_MAX_HEIGHT)
-
-
-def _tail_code_slot(flow_bottom: float) -> float | None:
-    """The tail slot's own top, in page-content-box points, or nothing.
-
-    This is the publication's test for "the last page has room", and it is the
-    code's rather than the ornament's: room for a square at least twice the foot
-    slot's, which is what keeps the two printed sizes two classes and not a
-    continuum.  The decision stays a property of the laid-out page and not of
-    what an author happened to commit -- an edition with no art at all still
-    earns the large code wherever a page ends high enough.
-
-    Whatever stands in the slot never displaces a line: the slot occupies the
-    frame's foot, which is why the stylesheet takes it out of flow entirely.
-    """
-    if _tail_code_room(flow_bottom) < _CODE_TAIL_MIN_ROOM_POINTS:
-        return None
-    endmark_baseline = _end_mark_baseline(flow_bottom)
-    return (
-        endmark_baseline
-        - _TAIL_ORNAMENT_ENDMARK_CLEARANCE
-        - _CODE_CONTENT_FOOT_POINTS
-    )
-
-
-def _tail_code_foot_white(code: SourceCode) -> float:
-    """The clear page left under a tail square, from its box to the sheet's foot.
-
-    Read from the *box* and not from the last dark module, because what is being
-    judged is emptiness and a quiet zone is empty too.  The square hangs from the
-    top of its slot, so this is everything the slot did not need plus the whole
-    foot margin -- which on the imposed booklet is the physical sheet edge, and
-    which is exactly the band the eye reads as "the page stopped here".
-    """
-    return _CODE_CONTENT_FOOT_POINTS + code.top - code.side
-
-
 def _validate_caps(edition: Edition) -> None:
     format_data = edition.raw.get("format", {})
-    for key, expected in (
-        ("max_article_pages", _MAX_ARTICLE_PAGES),
-        ("max_editorial_pages", _MAX_EDITORIAL_PAGES),
-    ):
+    for key, expected in (("max_article_pages", _MAX_ARTICLE_PAGES),):
         value = format_data.get(key, expected)
         try:
             value = int(value)
@@ -3025,6 +2968,10 @@ def _validate_caps(edition: Edition) -> None:
             raise ValidationError(
                 f"format.{key} is a hard publication rule and must remain {expected}"
             )
+    # The editorial cap is a ceiling an edition may tighten, not a constant it
+    # must repeat; ``declared_editorial_page_cap`` owns that rule for both
+    # engines and refuses anything looser than ``_MAX_EDITORIAL_PAGES``.
+    declared_editorial_page_cap(edition.raw, _MAX_EDITORIAL_PAGES)
 
 
 def _measure_layout(
@@ -3137,16 +3084,15 @@ def _measure_layout(
 def _asset_is_placed(asset: HtmlAsset, plan: ReaderPlan | None) -> bool:
     """Whether the reader was laid out with this asset on a page at all.
 
-    An edition's inventory offers every closing plate; the plan decides how many
-    of them the signature needs, so the inventory alone cannot say what should
-    have been found.  A tail motif is never placed at all any more -- the source
-    code has its slot -- and the inventory still offers it because the semantic
-    edition is not a print tree.
+    An edition's inventory offers every closing plate and every declared tail
+    motif; the plan decides how many plates the signature needs and which last
+    pages earned their ornament, so the inventory alone cannot say what should
+    have been found.
     """
-    if asset.role == "article_tail":
-        return False
     if plan is None:
-        return True
+        return asset.role != "article_tail"
+    if asset.role == "article_tail":
+        return (asset.article_id or "") in plan.tail_art_heights
     if asset.role == "closing_plate":
         return int(str(asset.id).rsplit("-", 1)[-1]) <= plan.closing_plates
     return True
@@ -3275,9 +3221,11 @@ def _validate_layout_caps(edition: Edition, layout: RenderLayout) -> None:
         raise ValidationError(
             "WeasyPrint article editorial minimum not met: " + ", ".join(short)
         )
-    if layout.editorial_pages is not None and layout.editorial_pages > _MAX_EDITORIAL_PAGES:
+    editorial_cap = declared_editorial_page_cap(edition.raw, _MAX_EDITORIAL_PAGES)
+    if layout.editorial_pages is not None and layout.editorial_pages > editorial_cap:
         raise ValidationError(
-            f"WeasyPrint editorial page cap exceeded: {layout.editorial_pages} pages (maximum 2)"
+            f"WeasyPrint editorial page cap exceeded: {layout.editorial_pages} pages "
+            f"(maximum {editorial_cap})"
         )
 
 
@@ -3572,17 +3520,19 @@ def _validate_fitted_display(document: Any, edition: Edition) -> None:
     still silently wrong at the margin; a guard on the finished page is right
     always, and refuses loudly.
 
-    * An opener's ``h1`` margin box must end inside the header field -- the field
-      ``_pin_opener_fields`` states, or the constant the stylesheet holds for an
-      opener without a figure.  Its foot is where the prose, or the opener
-      figure, begins.
+    * An opener's ``h1`` margin box must end inside the room reserved for the
+      title -- ``_opener_title_reservation``, which is the field
+      ``_pin_opener_fields`` states except where a source code deepened it, and
+      the constant the stylesheet holds for an opener without a figure.  Its
+      foot is where the prose, the credit block's own lowest ink, or the opener
+      figure begins.
     * A closing plate's caption must be set on the same number of lines
       ``_fitted_plate_title`` chose its size for.  The caption is positioned from
       that size alone, so an extra line hangs below the plate's title box.
 
     Measured on edition 002 as authored, both languages: every opener clears its
-    field, the tightest by 16.69pt, and every plate caption is set on its fitted
-    line count.
+    title's reservation, the tightest by 16.69pt, and every plate caption is set
+    on its fitted line count.
     """
     failures: list[str] = []
     for page_number, page in enumerate(document.pages, start=1):
@@ -3600,7 +3550,7 @@ def _validate_fitted_display(document: Any, edition: Edition) -> None:
 
 def _collect_field_overflows(box: Any, page_number: int, failures: list[str]) -> None:
     for piece, header, title in _opener_title_boxes(box):
-        field = float(header.height) * _POINTS_PER_CSS_PIXEL
+        field = _opener_title_reservation(header)
         field_bottom = float(header.content_box_y()) * _POINTS_PER_CSS_PIXEL + field
         title_bottom = (
             float(title.position_y) + float(title.margin_height())
@@ -3610,11 +3560,143 @@ def _collect_field_overflows(box: Any, page_number: int, failures: list[str]) ->
         failures.append(
             f"opener {piece!r} title {_box_text(title)!r} was fitted at "
             f"{float(title.style['font_size']) * _POINTS_PER_CSS_PIXEL:.4g}pt into a "
-            f"{field:.4f}pt header field, whose foot is {field_bottom:.4f}pt down "
+            f"{field:.4f}pt title field, whose foot is {field_bottom:.4f}pt down "
             f"page {page_number}; Pango set it on {_line_box_count(title)} lines "
             f"reaching {title_bottom:.4f}pt, overflowing the field by "
             f"{title_bottom - field_bottom:.4f}pt"
         )
+
+
+def _opener_title_reservation(header: Any) -> float:
+    """The room that was reserved for *this* opener's title, in points.
+
+    Not the laid-out header's height, and the difference is the whole of this
+    function.  An opener whose article carries a source code states a field
+    deeper than its title's own reservation, because the square's last dark row
+    is the lowest ink the credit block sets and it has to clear the artwork
+    (``_opener_code_field_floor``).  On edition 002's knowledge-base opener that
+    is 40.84pt of extra depth -- well over half a title line -- and a guard that
+    measured the title against it would let a Pango-loosened title take a line
+    the fit never budgeted for, silently, by spending the code's room on it.
+    The title would then push the credit block and the square down into the
+    figure it stands over, which is exactly the defect this guard exists for, and
+    the decode gate would not notice: the square is painted over the artwork
+    rather than under it, so it still scans.
+
+    So the reservation is read from ``data-title-field``, which
+    ``_pin_opener_fields`` states beside the field for this reason.  An opener
+    the adapter states no field for -- an article without a figure, whose field
+    the stylesheet pins at a constant, and the editorial and the sections, whose
+    field *is* the title's arithmetic -- is judged against the laid-out box, as
+    it always was.
+    """
+    element = getattr(header, "element", None)
+    attributes = getattr(element, "attrib", {}) if element is not None else {}
+    stated = attributes.get("data-title-field")
+    if stated is not None:
+        return float(stated)
+    return float(header.height) * _POINTS_PER_CSS_PIXEL
+
+
+def _validate_opener_code_clearance(
+    document: Any, codes: Mapping[str, SourceCode]
+) -> None:
+    """Refuse a page whose source code has come down into the opener's artwork.
+
+    THE GUARD SURVIVES THE LABEL IT WAS WRITTEN FOR, because what it guards was
+    never the label.  It is belt and braces over ``_opener_title_reservation``,
+    and the belt is the other one: that guard holds the *title* inside the room
+    fitted for it, and with the title held the credit block below it cannot move,
+    so neither can the square.  But the code's ``top`` is a *measurement* -- read
+    off the laid-out byline (``_opener_source_codes``) -- while the room it needs
+    is stated by an arithmetic prediction of the same byline
+    (``_opener_code_field_floor``).  Two numbers for one line is exactly the shape
+    of the defect this pair exists to catch, and removing the label only moved
+    which ink is lowest: with nothing hanging under it the square's own last dark
+    row is the credit block's floor, so the finished page is asked the question
+    the design now promises -- the symbol's foot plus the credit's own 12pt pad
+    stands above the head of the figure the opener carries.
+
+    MEASURED TO THE SYMBOL AND NOT TO THE ELEMENT, which is why the plan's codes
+    are passed in: the quiet zone lives inside the box, so the element's foot is
+    four light modules below the ink and a guard reading it would demand a
+    clearance the field does not reserve and refuse a correct build.  The module
+    is not recoverable from a laid-out box, so it comes from the ``SourceCode``
+    the layout was built from -- which makes the pair a cross-check too, since a
+    square on the page that the plan does not name is not measurable here and is
+    the surplus the decode gate refuses.
+
+    Measured on the laid-out boxes on the page they share -- an opener figure is
+    on its article's first page with the header that reserves room for it, and a
+    square that has landed on some other page is not a clearance question but a
+    placement failure the decode gate will report.  The figure's head is its
+    flow head, which is the field's foot; the artwork's own ink starts lower
+    still, so the refusal fires before anything is painted over.
+    """
+    failures: list[str] = []
+    for page_number, page in enumerate(document.pages, start=1):
+        squares: dict[str, Any] = {}
+        figures: dict[str, Any] = {}
+        for article_id, kind, found in _walk_opener_code_furniture(page._page_box):
+            (squares if kind == "code" else figures).setdefault(article_id, found)
+        for article_id, square in sorted(squares.items()):
+            figure = figures.get(article_id)
+            code = codes.get(article_id)
+            if figure is None or code is None:
+                continue
+            foot = (
+                float(square.content_box_y()) + float(square.height)
+            ) * _POINTS_PER_CSS_PIXEL - code.quiet
+            head = float(figure.position_y) * _POINTS_PER_CSS_PIXEL
+            if foot + _OPENER_BYLINE_PAD_POINTS <= head + _FIELD_OVERFLOW_EPSILON:
+                continue
+            failures.append(
+                f"{article_id}: its source code's last dark row is {foot:.4f}pt down "
+                f"page {page_number} and the opener figure's head is {head:.4f}pt, so "
+                f"the square reaches {foot + _OPENER_BYLINE_PAD_POINTS - head:.4f}pt "
+                "past the field the code's own depth was borrowed for"
+            )
+    if failures:
+        raise ValidationError(
+            "WeasyPrint laid a source code into the opener figure it stands over. "
+            "The field an opener with a code reserves runs to the symbol's last dark "
+            "row plus the credit's 12pt pad, and the figure's head is that field's "
+            "foot; the square is placed from the byline the page laid out, so the two "
+            "have to be checked against each other on the finished page: "
+            + "; ".join(sorted(failures)[:5])
+        )
+
+
+def _walk_opener_code_furniture(
+    box: Any, article_id: str | None = None
+) -> Iterable[tuple[str, str, Any]]:
+    """Each opener's laid-out source code and opener figure, named by article.
+
+    Yielded as ``(article_id, "code" | "figure", box)`` from one walk rather
+    than two, because the guard above compares them and a second traversal for
+    the second box could pick it up from another page.  Neither is walked into:
+    an absolutely positioned box reaches the tree wrapped in a placeholder whose
+    type name is neither ``BlockBox`` nor anything else worth testing for.
+    """
+    element = getattr(box, "element", None)
+    attributes = getattr(element, "attrib", {}) if element is not None else {}
+    if getattr(box, "element_tag", None) == "article" and attributes.get("data-article-id"):
+        article_id = str(attributes["data-article-id"])
+    if element is not None and article_id is not None:
+        if (
+            getattr(box, "element_tag", None) == "img"
+            and "source-code" in _element_classes(element)
+        ):
+            yield article_id, "code", box
+            return
+        if (
+            getattr(box, "element_tag", None) == "figure"
+            and attributes.get("data-anchor") == "__opener__"
+        ):
+            yield article_id, "figure", box
+            return
+    for child in getattr(box, "children", ()) or ():
+        yield from _walk_opener_code_furniture(child, article_id)
 
 
 def _collect_plate_title_overruns(
