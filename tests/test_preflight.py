@@ -27,11 +27,24 @@ def test_raster_dimensions_support_png_and_jpeg(tmp_path: Path):
     assert _raster_dimensions(jpg) == (1200, 800)
 
 
-def _blank_pdf(path: Path, pagesize: tuple[float, float]) -> None:
+def _blank_pdf(path: Path, pagesize: tuple[float, float], pages: int = 1) -> Path:
     writer = PdfWriter()
-    writer.add_blank_page(width=pagesize[0], height=pagesize[1])
+    for _ in range(pages):
+        writer.add_blank_page(width=pagesize[0], height=pagesize[1])
     with path.open("wb") as handle:
         writer.write(handle)
+    return path
+
+
+def _split_documents(tmp_path: Path) -> dict[str, Path]:
+    return {
+        "interior_booklet_pdf": _blank_pdf(
+            tmp_path / "booklet-interior.pdf", A4_LANDSCAPE_POINTS, 2
+        ),
+        "cover_booklet_pdf": _blank_pdf(
+            tmp_path / "booklet-cover.pdf", A4_LANDSCAPE_POINTS, 2
+        ),
+    }
 
 
 def test_preflight_audits_curated_figure_resolution_geometry_and_rights(tmp_path: Path):
@@ -45,6 +58,7 @@ def test_preflight_audits_curated_figure_resolution_geometry_and_rights(tmp_path
     result = inspect_package(
         reader,
         booklet,
+        **_split_documents(tmp_path),
         cover_art=None,
         source_rights=[],
         figure_placements=[
@@ -90,6 +104,7 @@ def test_preflight_records_automatic_print_contrast_treatment(tmp_path: Path):
     result = inspect_package(
         reader,
         booklet,
+        **_split_documents(tmp_path),
         cover_art=None,
         source_rights=[],
         figure_placements=[
@@ -116,3 +131,44 @@ def test_preflight_records_automatic_print_contrast_treatment(tmp_path: Path):
     )
     assert result["contrast_adjusted_figures"][0]["figure_id"] == "faint-evidence"
     assert result["unresolved_low_contrast_figures"] == []
+
+
+def test_preflight_describes_all_three_a4_signatures(tmp_path: Path):
+    """A printer loads three documents, so preflight states the sheet facts for each."""
+    reader = _blank_pdf(tmp_path / "reader.pdf", A5_POINTS, 12)
+    booklet = _blank_pdf(tmp_path / "booklet.pdf", A4_LANDSCAPE_POINTS, 6)
+    interior = _blank_pdf(tmp_path / "booklet-interior.pdf", A4_LANDSCAPE_POINTS, 4)
+    cover = _blank_pdf(tmp_path / "booklet-cover.pdf", A4_LANDSCAPE_POINTS, 2)
+
+    result = inspect_package(
+        reader,
+        booklet,
+        interior_booklet_pdf=interior,
+        cover_booklet_pdf=cover,
+        cover_art=None,
+        source_rights=[],
+    )
+
+    assert result["home_booklet"]["sheets"] == 3
+    assert result["home_booklet_interior"] == {
+        "reader_pages": list(range(3, 11)),
+        "sheet_sides": 4,
+        "sheets": 2,
+        "expected_sheets": 2,
+        "all_pages_a4_landscape": True,
+        "encrypted": False,
+        "print_scale": "100%",
+        "duplex_flip": "short edge",
+        "stock": "text",
+    }
+    assert result["home_booklet_cover"] == {
+        "reader_pages": [1, 2, 11, 12],
+        "sheet_sides": 2,
+        "sheets": 1,
+        "expected_sheets": 1,
+        "all_pages_a4_landscape": True,
+        "encrypted": False,
+        "print_scale": "100%",
+        "duplex_flip": "short edge",
+        "stock": "cover",
+    }

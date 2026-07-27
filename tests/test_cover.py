@@ -16,6 +16,16 @@ from test_manifest import make_project
 
 
 SVG = "{http://www.w3.org/2000/svg}"
+ORANGE_RGB = tuple(int(ORANGE[index : index + 2], 16) for index in (1, 3, 5))
+
+
+def _classify(pixel: tuple[int, int, int]) -> str:
+    """Name a proof pixel as band orange, unprinted paper, or an edge blend."""
+    if max(abs(channel - expected) for channel, expected in zip(pixel, ORANGE_RGB)) <= 2:
+        return "orange"
+    if all(channel >= 253 for channel in pixel):
+        return "paper"
+    return "edge"
 
 
 def _make_cover_project(root: Path) -> Magazine:
@@ -37,7 +47,7 @@ def _make_cover_project(root: Path) -> Magazine:
     return Magazine(root)
 
 
-def test_cover_proof_is_self_contained_outlined_svg_with_a5_pdf_and_full_bleed_tab(
+def test_cover_proof_is_self_contained_outlined_svg_with_a5_pdf_and_one_solid_tab(
     tmp_path: Path,
 ) -> None:
     magazine = _make_cover_project(tmp_path)
@@ -73,19 +83,47 @@ def test_cover_proof_is_self_contained_outlined_svg_with_a5_pdf_and_full_bleed_t
     assert "AUTHOR" in selectable
     assert "A DETERMINISTIC COVER PROOF" not in selectable
 
-    expected_orange = tuple(int(ORANGE[index : index + 2], 16) for index in (1, 3, 5))
     with Image.open(artifact.png) as opened:
         proof = opened.convert("RGB")
+    tab = CoverCompiler(tmp_path).design["tab"]
+    reveal = float(tab["edge_reveal"])
+    band_left = PAGE_WIDTH - float(tab["width"])
+    scale = proof.width / PAGE_WIDTH
+
+    # The fore-edge tab is one solid orange band that stops short of the right
+    # trim, so the outermost pixel column is unprinted paper for the full page
+    # height and the band still bleeds off the head and the foot.
     assert all(
-        max(
-            abs(channel - expected)
-            for channel, expected in zip(
-                proof.getpixel((proof.width - 1, y)), expected_orange
-            )
-        )
-        <= 2
+        _classify(proof.getpixel((proof.width - 1, y))) == "paper"
         for y in range(proof.height)
-    ), "the edge tab must paint the outermost trim pixel for the full page height"
+    ), "the paper reveal must own the outermost trim pixel for the full page height"
+    inside_band = round((PAGE_WIDTH - reveal - 1.0) * scale)
+    assert all(
+        _classify(proof.getpixel((inside_band, y))) == "orange"
+        for y in range(proof.height)
+    ), "the orange band must run unbroken from the head trim to the foot trim"
+
+    # Reading a label-free row outward from the band's inner edge, the page
+    # must show exactly one orange run and then one paper hairline: nothing
+    # splits the band, and the reveal is the only white in the tab.
+    for y_points in (250.0, 380.0):
+        row = [
+            _classify(proof.getpixel((x, round(y_points * scale))))
+            for x in range(round(band_left * scale) + 1, proof.width)
+        ]
+        runs = []
+        for value in row:
+            if not runs or runs[-1][0] != value:
+                runs.append([value, 0])
+            runs[-1][1] += 1
+        solid = [(value, length) for value, length in runs if length > 2]
+        assert [value for value, _ in solid] == ["orange", "paper"], (
+            f"row at {y_points}pt must read as one orange band then one paper "
+            f"hairline, got {runs}"
+        )
+        # The rasterizer snaps both vector edges outward, so the printed
+        # hairline may land up to a pixel wider than its authored width.
+        assert solid[1][1] / scale == pytest.approx(reveal, abs=2.0 / scale)
 
 
 def test_built_reader_uses_exact_cover_proof_and_leaves_inside_front_cover_blank(

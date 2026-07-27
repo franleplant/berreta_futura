@@ -6,8 +6,8 @@ language remains intact unless a paragraph-level edit record says otherwise.
 Articles are capped at seven rendered A5 pages. Over-budget sources become
 explicitly credited, source-mapped faithful syntheses rather than silently
 truncated reprints.
-The opening editorial requires a title and is capped at two rendered A5 pages,
-including its title and byline.
+The opening editorial requires a title and is capped at a single rendered A5
+page, including its label, title, and byline.
 
 The publication compiled by this repository is **BERRETA FUTURA**. Its name is
 configured once under `[publication]` in `magazine.toml`; edition manifests own
@@ -271,11 +271,22 @@ Reader page 2 is an otherwise empty inside front cover, the penultimate reader
 page is an otherwise empty inside back cover, and the designed back cover remains
 the final page. Both inside covers, and their shared A4 booklet side after
 ordinary imposition, remain completely blank.
-The package contains:
+
+Three A4 saddle-stitch impositions of the same block ship together, all folded by
+one rule and all short-edge duplex. `home/booklet-a4.pdf` is the unchanged
+all-in-one for a single-stock print. `home/booklet-a4-interior.pdf` is reader
+pages 3 to N-2 — the magazine without the cover and without the blank inside
+covers — as its own signature. `home/booklet-a4-cover.pdf` is the outer wrap
+alone, one sheet carrying the back cover beside the front cover on its outer side
+and both blank inside covers on its inner side, so the wrap can go on heavier
+stock the way a bindery prints it. `home/printing-instructions.md` states the
+sheet count and stock for each. The package contains:
 
 ```text
 reader.pdf
 home/booklet-a4.pdf
+home/booklet-a4-interior.pdf
+home/booklet-a4-cover.pdf
 home/printing-instructions.md
 fidelity.md
 preflight.json
@@ -286,9 +297,9 @@ edition-manifest.json
 SHA256SUMS
 ```
 
-`preflight.json` validates page geometry, signature length, booklet sheet size,
-cover and figure resolution, figure geometry, rights clearance, and studio
-blockers. Curated figures require captions, credits, non-colliding placement,
+`preflight.json` validates page geometry, signature length, the sheet size and
+sheet count of all three booklets, cover and figure resolution, figure geometry,
+rights clearance, and studio blockers. Curated figures require captions, credits, non-colliding placement,
 and at least 300 effective PPI. The renderer embeds
 the standard PDF fonts by default. A professional print profile is included as
 a specification, but PDF/X conversion, trim bleed, and the printer ICC output
@@ -297,7 +308,11 @@ intent remain explicit studio preflight steps.
 Every language also passes through the render critic before packaging. It
 rasterizes every reader page with Poppler, blocks unintended blank pages, orphan display
 punctuation, inefficient contents pagination, placeholder cover copy, invalid
-signature length, and breached editorial or article page caps. It records
+signature length, and breached editorial or article page caps. It also checks each
+imposed document against its declared plan: the all-in-one booklet and the cover
+wrap side by side with their rasters, and the interior structurally — side count,
+A4 landscape geometry, and exact left/right reader-page pairing — since its pages
+are already judged in the reader pass. It records
 per-page ink geometry in `render-critic.json` and produces numbered contact
 sheets plus 144-DPI individual page and booklet-side rasters for the required
 final visual review. The critic also verifies each imposed left/right page pair
