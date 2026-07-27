@@ -15,6 +15,11 @@ width = 21.0
 overdraw = 1.5
 issue_top = 26.5
 identity_top = 433.5
+# The band is one solid orange stripe. It stops this far short of the right
+# trim so a hairline of unprinted paper survives between the band and the
+# page edge; the band's rotated labels centre on the printed band, never on
+# the reserve. Nothing is ever drawn inside the band.
+edge_reveal = 1.4
 
 [wordmark]
 x = 38.0

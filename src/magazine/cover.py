@@ -29,7 +29,7 @@ PAGE_WIDTH = 419.527559
 PAGE_HEIGHT = 595.275591
 PROOF_DPI = 144
 PRINT_DPI = 300
-COVER_COMPILER_VERSION = "8"
+COVER_COMPILER_VERSION = "10"
 ART_SIZE_POINTS = (249.35, 248.65)
 
 INK = "#0a0b0d"
@@ -75,6 +75,7 @@ class _FontOutliner:
         if not path.is_file():
             raise CoverAssetError(f"Bundled cover font is missing: {path}")
         self._svg_pen = SVGPathPen
+        self._glyph_bounds_cache: dict[str, tuple[float, float, float, float] | None] = {}
         self.font = TTFont(path, lazy=False)
         self.glyph_set = self.font.getGlyphSet()
         self.cmap = self.font.getBestCmap()
@@ -156,6 +157,31 @@ class _FontOutliner:
                 width += tracking * horizontal_scale / 100.0
         return width
 
+    def ink_extent(self, text: str, *, size: float) -> tuple[float, float]:
+        """Measure the inked rise above and drop below the baseline of a line."""
+        rise = 0.0
+        drop = 0.0
+        for character in text:
+            glyph_name = self.cmap.get(ord(character))
+            if glyph_name is None:
+                raise CoverAssetError(f"Bundled cover font has no glyph for {character!r}")
+            bounds = self._glyph_bounds(glyph_name)
+            if bounds is None:
+                continue
+            rise = max(rise, bounds[3])
+            drop = max(drop, -bounds[1])
+        scale = size / self.units
+        return rise * scale, drop * scale
+
+    def _glyph_bounds(self, glyph_name: str) -> tuple[float, float, float, float] | None:
+        if glyph_name not in self._glyph_bounds_cache:
+            from fontTools.pens.boundsPen import BoundsPen
+
+            pen = BoundsPen(self.glyph_set)
+            self.glyph_set[glyph_name].draw(pen)
+            self._glyph_bounds_cache[glyph_name] = pen.bounds
+        return self._glyph_bounds_cache[glyph_name]
+
 
 class CoverCompiler:
     """Deep module for the canonical SVG -> PDF -> proof cover pipeline."""
@@ -171,7 +197,10 @@ class CoverCompiler:
             self.design = {
                 "id": "canto-vivo/1",
                 "color": {"paper": WHITE, "ink": INK, "violet": VIOLET, "orange": ORANGE},
-                "tab": {"width": 21.0, "overdraw": 1.5, "issue_top": 26.5, "identity_top": 433.5},
+                "tab": {
+                    "width": 21.0, "overdraw": 1.5, "issue_top": 26.5,
+                    "identity_top": 433.5, "edge_reveal": 1.4,
+                },
                 "wordmark": {"x": 38.0, "top": 53.0, "right_reserve": 78.0},
                 "headline": {"x": 44.0, "top": 122.0, "width": 302.0},
                 "art": {"x": 85.25, "top": 221.85, "width": 249.35, "height": 248.65},
@@ -335,17 +364,33 @@ class CoverCompiler:
             face,
         )
 
+    def _tab_band(self) -> tuple[float, float]:
+        """Return the printed fore-edge band as (x, width) in page points.
+
+        The band's inner edge is fixed by the design grid; `edge_reveal` is
+        taken off its outer edge, so the page keeps a hairline of unprinted
+        paper between the band and the right trim.
+        """
+        tab = self.design["tab"]
+        width = float(tab["width"])
+        reveal = float(tab.get("edge_reveal", 0.0))
+        return PAGE_WIDTH - width, width - reveal
+
     def _materialize_svg(self, edition: Edition) -> str:
         tab = self.design["tab"]
         paper = str(self.colors["paper"])
         orange = str(self.colors["orange"])
+        band_x, band_width = self._tab_band()
         parts: list[str] = [
             f'<rect data-slot="paper" x="0" y="0" width="{PAGE_WIDTH}" '
             f'height="{PAGE_HEIGHT}" fill="{paper}"/>',
-            # Overdraw is clipped by the SVG viewport and later the PDF MediaBox.
-            f'<rect data-slot="edge-tab" x="{PAGE_WIDTH - float(tab["width"]):.5f}" '
+            # One solid band, bleeding off the head and the foot only: the
+            # vertical overdraw is clipped by the SVG viewport and later the PDF
+            # MediaBox, while the right edge stops short of the trim so the
+            # reserve stays unprinted paper.
+            f'<rect data-slot="edge-tab" x="{band_x:.5f}" '
             f'y="{-float(tab["overdraw"]):.5f}" '
-            f'width="{float(tab["width"]) + float(tab["overdraw"]) * 2:.5f}" '
+            f'width="{band_width:.5f}" '
             f'height="{PAGE_HEIGHT + float(tab["overdraw"]) * 2:.5f}" fill="{orange}"/>',
         ]
         parts.extend(self._wordmark(edition.publication_name))
@@ -443,22 +488,28 @@ class CoverCompiler:
         panel_x = float(back["panel_x"])
         panel_top = float(back["panel_top"])
         panel_width = PAGE_WIDTH - panel_x - float(back["panel_right"])
-        panel_height = PAGE_HEIGHT - panel_top - float(back["panel_bottom"])
+        # panel_bottom is the floor: the panel may never intrude on the slug
+        # zone, but its actual height hugs the measured statement block so the
+        # white insert always carries equal, generous padding on every side.
+        panel_max_height = PAGE_HEIGHT - panel_top - float(back["panel_bottom"])
         panel_padding = float(back["panel_padding"])
         statement = str(
             edition.cover.get("back_text", _back_cover_copy(edition, "back_text_default"))
         ).strip()
-        statement_size, statement_lines = self._fit_back_statement(
-            statement,
-            panel_width - panel_padding * 2,
-            panel_height - panel_padding * 2,
+        statement_size, statement_lines, statement_rise, statement_block = (
+            self._fit_back_statement(
+                statement,
+                panel_width - panel_padding * 2,
+                panel_max_height - panel_padding * 2,
+            )
         )
+        panel_height = statement_block + panel_padding * 2
         statement_leading = statement_size * float(back["statement_leading_ratio"])
         statement_paths = [
             self.serif.outline(
                 line,
                 x=panel_x + panel_padding,
-                baseline=panel_top + panel_padding + statement_size + index * statement_leading,
+                baseline=panel_top + panel_padding + statement_rise + index * statement_leading,
                 size=statement_size,
                 fill=ink,
                 tracking=-.12,
@@ -547,15 +598,25 @@ class CoverCompiler:
         text: str,
         width: float,
         height: float,
-    ) -> tuple[float, list[str]]:
+    ) -> tuple[float, list[str], float, float]:
+        """Fit the statement, returning size, lines, first-line rise, block height.
+
+        The block height is the measured ink extent — first-line rise above its
+        baseline, the baseline-to-baseline run, and the last line's descender
+        drop — so the surrounding panel padding is optically true.
+        """
         back = self.design["back"]
         size = float(back["statement_max_size"])
         minimum = float(back["statement_min_size"])
         leading_ratio = float(back["statement_leading_ratio"])
         while size >= minimum:
             lines = self._wrap(text, self.serif, size, width)
-            if lines and len(lines) * size * leading_ratio <= height:
-                return size, lines
+            if lines:
+                rise, _ = self.serif.ink_extent(lines[0], size=size)
+                _, drop = self.serif.ink_extent(lines[-1], size=size)
+                block = rise + (len(lines) - 1) * size * leading_ratio + drop
+                if block <= height:
+                    return size, lines, rise, block
             size -= .5
         raise CoverOverflowError(f"Back-cover issue statement cannot fit: {text}")
 
@@ -717,8 +778,7 @@ class CoverCompiler:
         issue = f"{label} {str(edition.issue_number).zfill(3)}"
         identity = f"{edition.publication_name.upper()} / BUENOS AIRES"
         tab = self.design["tab"]
-        tab_width = float(tab["width"])
-        tab_x = PAGE_WIDTH - tab_width
+        band_x, band_width = self._tab_band()
 
         def vertical(text: str, top: float, size: float, tracking: float, scale: float = 100):
             outlined = self.bold.outline(
@@ -730,8 +790,10 @@ class CoverCompiler:
                 tracking=tracking,
                 horizontal_scale=scale,
             )
-            # Center the glyph body across the tab, then advance top-to-bottom.
-            cross = tab_x + tab_width / 2 - (outlined.ascent - outlined.descent) / 2
+            # Center the glyph body across the printed band, then advance
+            # top-to-bottom. Centring on the band and not on the tab's full
+            # width keeps the type seated in the orange the reader sees.
+            cross = band_x + band_width / 2 - (outlined.ascent - outlined.descent) / 2
             return (
                 f'<g transform="translate({cross:.5f} {top:.5f}) rotate(90)">'
                 f'{outlined.markup}</g>'
@@ -843,14 +905,16 @@ class CoverCompiler:
             if face == "front":
                 pdf.setFillColorRGB(1, 1, 1)
                 pdf.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
-                tab = self.design["tab"]
-                tab_width = float(tab["width"])
-                tab_overdraw = float(tab["overdraw"])
+                # One vector band over the vector paper. The reserve at the
+                # right trim is the paper rectangle itself showing through, so
+                # the hairline is unprinted rather than painted white.
+                tab_overdraw = float(self.design["tab"]["overdraw"])
+                band_x, band_width = self._tab_band()
                 pdf.setFillColor(HexColor(str(self.colors["orange"])))
                 pdf.rect(
-                    PAGE_WIDTH - tab_width,
+                    band_x,
                     -tab_overdraw,
-                    tab_width + tab_overdraw * 2,
+                    band_width,
                     PAGE_HEIGHT + tab_overdraw * 2,
                     fill=1,
                     stroke=0,

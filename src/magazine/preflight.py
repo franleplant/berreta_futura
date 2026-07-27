@@ -5,11 +5,13 @@ from typing import Any
 
 from pypdf import PdfReader
 
+from .booklet import A4_LANDSCAPE_POINTS, section_reader_pages
 from .image_contrast import prepare_print_image
 
 
 A5_POINTS = (419.5276, 595.2756)
-A4_LANDSCAPE_POINTS = (841.8898, 595.2756)
+
+__all__ = ["A4_LANDSCAPE_POINTS", "A5_POINTS", "inspect_package"]
 
 
 def _page_size(page) -> tuple[float, float]:
@@ -47,10 +49,32 @@ def _effective_image_ppi(
     )
 
 
+def _booklet_section_facts(
+    document: PdfReader, reader: PdfReader, section: str, *, stock: str
+) -> dict[str, Any]:
+    """Describe one split A4 signature: which reader pages, how many sheets, how it feeds."""
+    sizes = [_page_size(page) for page in document.pages]
+    page_count = len(reader.pages)
+    expected = section_reader_pages(page_count, section) if page_count >= 4 else ()
+    return {
+        "reader_pages": list(expected),
+        "sheet_sides": len(document.pages),
+        "sheets": len(document.pages) // 2,
+        "expected_sheets": (len(expected) + (-len(expected) % 4)) // 4,
+        "all_pages_a4_landscape": all(_near(size, A4_LANDSCAPE_POINTS) for size in sizes),
+        "encrypted": document.is_encrypted,
+        "print_scale": "100%",
+        "duplex_flip": "short edge",
+        "stock": stock,
+    }
+
+
 def inspect_package(
     reader_pdf: Path,
     booklet_pdf: Path,
     *,
+    interior_booklet_pdf: Path,
+    cover_booklet_pdf: Path,
     cover_art: Path | None,
     cover_art_size_points: tuple[float, float] | None = None,
     source_rights: list[dict[str, Any]],
@@ -59,6 +83,8 @@ def inspect_package(
 ) -> dict[str, Any]:
     reader = PdfReader(str(reader_pdf))
     booklet = PdfReader(str(booklet_pdf))
+    interior_booklet = PdfReader(str(interior_booklet_pdf))
+    cover_booklet = PdfReader(str(cover_booklet_pdf))
     reader_sizes = [_page_size(page) for page in reader.pages]
     booklet_sizes = [_page_size(page) for page in booklet.pages]
     cover_dimensions = _raster_dimensions(cover_art)
@@ -203,11 +229,21 @@ def inspect_package(
         },
         "home_booklet": {
             "sheet_sides": len(booklet.pages),
+            "sheets": len(booklet.pages) // 2,
             "all_pages_a4_landscape": all(_near(size, A4_LANDSCAPE_POINTS) for size in booklet_sizes),
             "encrypted": booklet.is_encrypted,
             "print_scale": "100%",
             "duplex_flip": "short edge",
         },
+        # The split pair prints the same block on two stocks. Preflight already
+        # answers "what sheet, how many, which way up" for the all-in-one, and a
+        # printer needs those same three facts per document to load the press.
+        "home_booklet_interior": _booklet_section_facts(
+            interior_booklet, reader, "interior", stock="text"
+        ),
+        "home_booklet_cover": _booklet_section_facts(
+            cover_booklet, reader, "cover", stock="cover"
+        ),
         "cover_art": cover_info,
         "figures": figure_rows,
         "low_resolution_figures": low_resolution_figures,

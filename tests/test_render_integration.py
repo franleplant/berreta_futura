@@ -203,10 +203,20 @@ class ReaderEngineContract:
             expected_orange = (240, 87, 56)
             self.assertTrue(
                 all(
-                    max(abs(channel - expected) for channel, expected in zip(pixel, expected_orange)) <= 2
+                    all(channel >= 253 for channel in pixel)
                     for pixel in (cover_raster.getpixel((cover_raster.width - 1, y)) for y in range(cover_raster.height))
                 ),
-                "the orange tab must paint through the outermost trim pixel without a white hairline",
+                "the tab's paper reveal must own the outermost trim pixel for the full page height",
+            )
+            self.assertTrue(
+                all(
+                    max(abs(channel - expected) for channel, expected in zip(pixel, expected_orange)) <= 2
+                    for pixel in (
+                        cover_raster.getpixel((cover_raster.width - 8, y))
+                        for y in range(cover_raster.height)
+                    )
+                ),
+                "the orange band must run unbroken from the head trim to the foot trim",
             )
             tab_pixels = round(21 * 2)
             tab = cover_raster.crop((cover_raster.width - tab_pixels, 0, cover_raster.width, cover_raster.height))
