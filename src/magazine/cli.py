@@ -44,6 +44,29 @@ def parser() -> argparse.ArgumentParser:
             f"(default {DEFAULT_ENGINE}). Nothing is written back to configuration."
         ),
     )
+    fit = actions.add_parser(
+        "fit",
+        help=(
+            "Fast page-budget verdict: paginate the reader without writing "
+            "anything and fail on any budget breach"
+        ),
+    )
+    fit.add_argument("edition_id")
+    fit.add_argument("--language", help="Measure one configured language (default: all)")
+    measure = actions.add_parser(
+        "measure",
+        help="Full pagination measurement as JSON, for agents and scripts",
+    )
+    measure.add_argument("edition_id")
+    measure.add_argument(
+        "--language", help="Measure one configured language (default: all)"
+    )
+    measure.add_argument(
+        "--json",
+        type=Path,
+        metavar="PATH",
+        help="Write the JSON dump to PATH instead of stdout",
+    )
     cover_proof = actions.add_parser(
         "cover-proof",
         help="Compile a fast cover-only SVG, PDF, PNG, and comparison report",
@@ -176,6 +199,23 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "build":
             result = magazine.build(args.edition_id, engine=args.engine)
             print(result.output_dir)
+        elif args.command == "fit":
+            # A breach is the command's answer, not a failure to answer, so it
+            # exits 1 where a MagazineError below exits 2.
+            table, ok = magazine.fit(args.edition_id, language=args.language)
+            print(table)
+            if not ok:
+                return 1
+        elif args.command == "measure":
+            payload = magazine.measure(
+                args.edition_id, language=args.language
+            ).to_json()
+            if args.json is not None:
+                args.json.parent.mkdir(parents=True, exist_ok=True)
+                args.json.write_text(payload, encoding="utf-8")
+                print(args.json)
+            else:
+                print(payload, end="")
         elif args.command == "cover-proof":
             languages = (
                 None
