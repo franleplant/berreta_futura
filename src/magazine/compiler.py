@@ -239,19 +239,26 @@ class Magazine:
         self,
         edition_id: str,
         languages: Iterable[str] | None = None,
+        *,
+        purpose: str = "Cover proof",
     ) -> dict[str, Edition]:
-        """Load only the localized edition data needed by a cover proof."""
+        """Load only the localized edition data a fast proof or measure needs.
+
+        ``purpose`` names the caller in a refusal, because "Cover proof
+        languages are not configured" sends someone running ``mag fit``
+        looking at the wrong command.
+        """
 
         if isinstance(languages, str):
             requested = (languages,)
         else:
             requested = tuple(dict.fromkeys(languages or self.languages))
         if not requested:
-            raise ValidationError("Cover proof requires at least one language")
+            raise ValidationError(f"{purpose} requires at least one language")
         unsupported = sorted(set(requested) - set(self.languages))
         if unsupported:
             raise ValidationError(
-                f"Cover proof languages are not configured: {', '.join(unsupported)}"
+                f"{purpose} languages are not configured: {', '.join(unsupported)}"
             )
 
         records = load_records(self.sources_dir)
@@ -341,6 +348,53 @@ class Magazine:
                 )
             )
         return tuple(artifacts)
+
+    def measure(self, edition_id: str, *, language: str | None = None):
+        """Measure the edition's real pagination without writing any artifact.
+
+        The returned :class:`~.measure.EditionMeasurement` reports, per
+        language, what a build would only learn deep inside the adapter --
+        total reader pages, the editorial's span against its declared cap,
+        every article's span against the seven-page rule, and the paragraph
+        rag table -- using the adapter's own pagination path, so the verdict
+        here is the build's verdict, minutes earlier.  ``language`` narrows
+        the measurement to one configured language; the default measures all
+        of them, English first, exactly as a build renders them.
+
+        Loading mirrors ``cover_proof`` rather than ``build``: measurement is
+        a layout question, so it must be askable *before* the fidelity
+        ledgers, extractions and media triage that gate a build are finished
+        -- learning the page count only after all of that is the failure mode
+        this method exists to remove.
+
+        Imported lazily for the same reason ``render_engine`` imports its
+        engines lazily: selecting ReportLab must keep the WeasyPrint adapter
+        deletable, and ``measure`` paginates with that adapter.
+        """
+
+        from .measure import measure_editions
+
+        if self.render_engine != "weasyprint":
+            raise ValidationError(
+                f"Measurement paginates with the WeasyPrint reader, but [render] "
+                f"engine is {self.render_engine!r}; a measured page count would "
+                "not be the configured engine's. Measure with the weasyprint "
+                "engine configured."
+            )
+        editions = self._load_cover_languages(
+            edition_id,
+            None if language is None else (language,),
+            purpose="Measurement",
+        )
+        return measure_editions(edition_id, editions)
+
+    def fit(self, edition_id: str, *, language: str | None = None) -> tuple[str, bool]:
+        """The fast page-budget verdict: a compact table and whether it holds."""
+
+        from .measure import fit_table
+
+        measurement = self.measure(edition_id, language=language)
+        return fit_table(measurement), measurement.ok
 
     def build(self, edition_id: str, *, engine: str | None = None) -> BuildResult:
         """Render, impose, and package an edition in every configured language.
