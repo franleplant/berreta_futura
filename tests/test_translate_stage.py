@@ -73,7 +73,7 @@ def add_second_article(root: Path) -> None:
         "short_title": "Second Article",
         "opener_variant": "edge_medallion",
         "author": "Author",
-        "author_note": "Author returns with a second subject for Example.",
+        "author_note": "Author is principal engineer at Example Company.",
         "source_ids": ["source-one"],
         "manuscript": "editions/issue-001/articles/second.md",
         "fidelity": "editions/issue-001/fidelity/second.yaml",

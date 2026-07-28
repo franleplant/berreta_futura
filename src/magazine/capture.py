@@ -40,9 +40,14 @@ def archive_snapshot(
     *,
     method: str,
     captured_at: str | None = None,
+    purpose: str = "article",
+    source_url: str | None = None,
 ) -> SourceRecord:
     """Copy a raw source artifact bundle into immutable, content-addressed storage."""
 
+    purpose = str(purpose or "").strip()
+    if purpose not in {"article", "author_identity"}:
+        raise ValidationError(f"Unsupported raw capture purpose: {purpose!r}")
     snapshot = snapshot.expanduser().resolve()
     files = _snapshot_files(snapshot)
     artifacts = [_artifact(snapshot, path) for path in files]
@@ -51,10 +56,12 @@ def archive_snapshot(
     source_dir = sources_dir / record.id
     capture_dir = source_dir / "raw" / bundle_sha256
     manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "source_id": record.id,
         "submitted_url": record.url,
         "canonical_url": record.canonical_url,
+        "purpose": purpose,
+        "source_url": str(source_url or record.canonical_url).strip(),
         "captured_at": captured_at or record.captured_at,
         "method": method.strip() or "unspecified",
         "bundle_sha256": bundle_sha256,
@@ -89,21 +96,34 @@ def archive_snapshot(
 
     inventory_path = _index_verified_manifest(source_dir, manifest, bundle_sha256)
 
+    effective_purpose = str(manifest.get("purpose") or "article")
     reviews = {review.capture_id: review for review in record.media_reviews}
     if bundle_sha256 not in reviews:
-        inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
-        if inventory.get("image_count") == 0:
+        if effective_purpose == "author_identity":
             reviews[bundle_sha256] = MediaCaptureReview(
                 bundle_sha256,
-                "no_media",
+                "media_rejected",
                 (),
-                "The deterministic capture inventory contains no raster assets.",
+                "Author identity evidence is provenance, not article artwork.",
             )
+        else:
+            inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+            if inventory.get("image_count") == 0:
+                reviews[bundle_sha256] = MediaCaptureReview(
+                    bundle_sha256,
+                    "no_media",
+                    (),
+                    "The deterministic capture inventory contains no raster assets.",
+                )
 
     descriptor = {
         "id": bundle_sha256,
         "path": relative_manifest,
         "method": manifest["method"],
+        "purpose": effective_purpose,
+        "source_url": str(
+            manifest.get("source_url") or manifest.get("canonical_url") or record.canonical_url
+        ),
         "captured_at": manifest["captured_at"],
         "artifact_count": manifest["artifact_count"],
         "byte_count": manifest["byte_count"],
@@ -133,7 +153,13 @@ def verify_snapshots(record: SourceRecord, sources_dir: Path) -> None:
         expected = f"raw/{bundle_sha256}/manifest.json"
         if path != expected:
             raise ValidationError(f"Source {record.id} raw capture path must be {expected}")
-        _verify_manifest(record, source_dir, path, bundle_sha256)
+        manifest = _verify_manifest(record, source_dir, path, bundle_sha256)
+        for key in ("purpose", "source_url"):
+            if key in descriptor and str(descriptor[key]) != str(manifest.get(key) or ""):
+                raise ValidationError(
+                    f"Source {record.id} raw capture {bundle_sha256} {key} "
+                    "does not match its immutable manifest"
+                )
 
 
 def index_existing_captures(

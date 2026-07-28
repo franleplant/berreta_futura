@@ -1,7 +1,7 @@
 schema_version: 1
 source_ids:
 - agent-swarms-and-the-new-model-economics-8b346f57
-source_author: Cursor
+source_author: Wilson Lin
 content_mode: faithful_synthesis
 source_body_sha256: edcf558282c8398fbcaec47dbcc35846779ce3ae5081d93cc4dc764bbec3db2a
 paragraphs:

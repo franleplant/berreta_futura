@@ -352,3 +352,56 @@ def test_an_article_whose_source_has_no_canonical_url_offers_no_link(tmp_path: P
     assert "source-link" not in render_html_edition(without).html
     # And the editorial, which has no source at all, never had one.
     assert "source-link" not in render_html_edition(edition).html.split("<article")[0]
+
+
+def test_a_bullet_separated_name_roster_is_stamped_and_prose_bullets_are_not(tmp_path: Path):
+    """A paragraph of bullet-separated names carries ``data-name-roster``.
+
+    The attribute states an editorial fact -- this block is a list of proper
+    nouns set in paragraph clothing, like a signatories roster -- so a print
+    stylesheet can keep the hyphenator out of names no dictionary knows.  The
+    two prose paragraphs below each carry a bullet and must stay unstamped:
+    one bullet yields only two segments, and prose around two bullets yields a
+    segment longer than any name.
+    """
+    manuscript = (
+        "# Reader title\n\n"
+        "An opening paragraph of ordinary running prose.\n\n"
+        "## Signatories\n\n"
+        "DoorDash • The Linux Foundation • Prime Intellect • Y Combinator\n\n"
+        "Running prose may quote one separator • and simply keep going.\n\n"
+        "Alpha • a clause of well over six words is a sentence and not a name"
+        " • Omega\n"
+    )
+    html = render_html_edition(_edition(tmp_path, manuscript=manuscript)).html
+
+    assert (
+        '<p data-name-roster="true">DoorDash • The Linux Foundation • '
+        "Prime Intellect • Y Combinator</p>"
+    ) in html
+    assert html.count("data-name-roster") == 1
+
+
+def test_the_name_roster_boundary_is_three_short_segments():
+    """The roster rule's own boundary, stated segment by segment.
+
+    Three or more bullet-separated segments, every one non-empty and at most
+    six words: fewer segments is an incidental bullet in prose, a long segment
+    is a clause, and an empty segment means the bullets are not separating
+    names at all.
+    """
+    from magazine.html_edition import _is_name_roster
+
+    assert _is_name_roster("AI21 • AMD • Meta")
+    assert _is_name_roster(
+        "American Innovators Network • Palo Alto Networks • Y Combinator"
+    )
+    # Two segments: one bullet quoted inside running prose.
+    assert not _is_name_roster("A sentence with one • in the middle of it")
+    # A seventh word makes a segment a clause rather than a name.
+    assert _is_name_roster("Alpha • one two three four five six • Omega")
+    assert not _is_name_roster("Alpha • one two three four five six seven • Omega")
+    # A trailing or doubled bullet leaves an empty segment: not a roster.
+    assert not _is_name_roster("Alpha • Beta • Gamma •")
+    assert not _is_name_roster("Alpha •• Beta • Gamma")
+    assert not _is_name_roster("No bullets here at all")

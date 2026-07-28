@@ -3,7 +3,7 @@ language: es
 source_language: en
 locale: es-AR
 fallback_locale: es-ES
-base_copy_sha256: 8adb07d7e26c4cb5c7d82ba208e69e8a6b1ae5debb5158d0cf1bf134db37516e
+base_copy_sha256: 521efcfbd2d7b29f3feee7a51ed4748c6c0bea5c4df5bd29f333ddddf10cbc52
 policy:
   register: educated_castellano
   regional_preference: restrained_argentinian
@@ -34,8 +34,7 @@ articles:
   title: Fábricas de software, con luz y a oscuras
   short_title: con luz y a oscuras
   display_emphasis: Fábricas
-  author_note: Addy Osmani escribe sobre sistemas de ingeniería, experiencia de desarrollo y software asistido por
-    IA.
+  author_note: Addy Osmani pasó 14 años liderando equipos de ingeniería de Chrome, Gemini y Google Cloud AI.
   manuscript: articles/software-factories-light-and-dark.md
   source_sha256: 7e4ad5250715a0fc38f75ce81f8f65e1f751979bdf0d03380eea3f231b484960
   figures:
@@ -78,7 +77,8 @@ articles:
   title: Enjambres de agentes y la nueva economía de los modelos
   short_title: Enjambres de agentes
   display_emphasis: Enjambres
-  author_note: Cursor presenta experimentos para escalar enjambres de agentes de programación y su economía.
+  author_note: Wilson Lin es investigador en Cursor, donde trabaja en sistemas de programación autónoma
+    de larga duración.
   manuscript: articles/agent-swarms-and-model-economics.md
   source_sha256: 8a7a5413ad96b2299522a9f49bf953cfb80652bf9be6cdd9c38792cca9637f02
   figures:
@@ -103,22 +103,23 @@ articles:
   title: 'Ingeniería de ciclos: una hoja de ruta más allá del prompt'
   short_title: Ingeniería de ciclos
   display_emphasis: Ciclos
-  author_note: Codez traza una progresión práctica desde los prompts manuales hasta ciclos de agentes verificados
-    y programados.
+  author_note: Codez es el nombre con el que publica Lev Deviatkin.
   manuscript: articles/loop-engineering-roadmap.md
   source_sha256: f3267e632f4217d6769daf07f731c24df7ce163e77a174cc778a7f7c08cb06da
 - id: agentic-pods
   title: 'Pods de agentes: llevar la IA más allá de ingeniería'
   short_title: Pods de agentes
   display_emphasis: Pods
-  author_note: Praveen Neppalli describe el método de dos semanas de Uber para rediseñar flujos de negocio con IA.
+  author_note: Praveen Neppalli Naga es director de tecnología de Uber y antes ocupó puestos de liderazgo
+    en ingeniería en LinkedIn.
   manuscript: articles/agentic-pods.md
   source_sha256: b6e32f00e7c2991e6316130cb2f135a597419fe6f704abda4ffdb6030c8c4dc6
 - id: how-we-built-our-knowledge-base
   title: Cómo construimos nuestra base de conocimiento
   short_title: base de conocimiento
   display_emphasis: conocimiento
-  author_note: Isaac Tai, Daniel Kim y Mike Gao construyeron Cerebras Knowledge para la búsqueda interna.
+  author_note: Isaac Tai, Daniel Kim y Mike Gao trabajan en Cerebras Systems, la empresa de chips de IA
+    creadora del Wafer-Scale Engine.
   manuscript: articles/how-we-built-our-knowledge-base.md
   source_sha256: 03e2ec79ed92616fed51eec3b1e03c7e5cc2024ff9e637bccddaa75d070b7b20
   figures:

@@ -450,6 +450,8 @@ def _render_block(block: Block, *, standfirst: bool = False, references: bool = 
         return f"<h{block.level}>{_render_inlines(block.children)}</h{block.level}>"
     if isinstance(block, Paragraph):
         opening = '<p class="standfirst">' if standfirst else "<p>"
+        if _is_name_roster(_inline_text(block.children)):
+            opening = opening[:-1] + ' data-name-roster="true">'
         return f"{opening}{_render_inlines(block.children)}</p>"
     if isinstance(block, FencedCode):
         language = block.info.split(maxsplit=1)[0] if block.info else ""
@@ -559,6 +561,35 @@ _REFERENCE_HEADINGS = frozenset({"references", "referencias"})
 
 def _is_reference_heading(text: str) -> bool:
     return text.strip().casefold() in _REFERENCE_HEADINGS
+
+
+# A paragraph whose whole text is short segments separated by bullets is a
+# roster of names -- signatories, sponsors, members -- and not running prose,
+# the same editorial distinction `_is_reference_heading` draws for a
+# bibliography.  The boundary is content-derived and deterministic: running
+# prose that happens to quote a bullet yields at most two segments, and prose
+# on both sides of two bullets yields a segment that reads as a clause, longer
+# than any name.  Every entry in the roster this rule was written against is
+# one to four words ("Y Combinator", "American Innovators Network"); six is
+# headroom for a longer organization name, not an invitation to a sentence.
+_ROSTER_SEPARATOR = "\N{BULLET}"
+_ROSTER_MIN_NAMES = 3
+_ROSTER_MAX_NAME_WORDS = 6
+
+
+def _is_name_roster(text: str) -> bool:
+    """True when ``text`` is a bullet-separated roster of names, not prose.
+
+    The answer becomes ``data-name-roster`` on the paragraph, so an adapter
+    can treat the block as what it is -- proper nouns in a list that happens
+    to be set in a paragraph.  The print stylesheet's use is to keep the
+    hyphenator out: a broken "DoorDash" or "Y Combinator" is a misprint, not
+    a rag repair.
+    """
+    names = [segment.strip() for segment in text.split(_ROSTER_SEPARATOR)]
+    if len(names) < _ROSTER_MIN_NAMES:
+        return False
+    return all(name and len(name.split()) <= _ROSTER_MAX_NAME_WORDS for name in names)
 
 
 def _ui(edition: Edition, key: str) -> str:

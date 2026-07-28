@@ -28,7 +28,7 @@ from .manifest import Edition, load_edition, load_translation
 from .media_curator import curate_source, verify_source_curation
 from .package import package_release
 from .reader_layout import declared_editorial_page_cap
-from .records import SourceRecord, load_records
+from .records import AuthorProfile, SourceRecord, canonicalize_url, load_records
 from .release import (
     ReleaseState,
     ReleaseTransition,
@@ -101,6 +101,64 @@ def _clear_web_language_dir(directory: Path) -> None:
     shutil.rmtree(directory)
 
 
+def _archive_author_profile(
+    record: SourceRecord,
+    sources_dir: Path,
+    *,
+    note: str,
+    evidence_inputs: tuple[tuple[str, Path], ...],
+    captured_at: str,
+) -> SourceRecord:
+    evidence_rows: list[dict[str, str]] = []
+    for source_url, snapshot in evidence_inputs:
+        before = {
+            str(row.get("id"))
+            for row in record.raw_captures
+            if isinstance(row, dict) and row.get("id")
+        }
+        record = archive_snapshot(
+            record,
+            sources_dir,
+            snapshot,
+            method="author_identity_profile",
+            captured_at=captured_at,
+            purpose="author_identity",
+            source_url=source_url,
+        )
+        added = {
+            str(row.get("id"))
+            for row in record.raw_captures
+            if isinstance(row, dict) and row.get("id")
+        } - before
+        if len(added) == 1:
+            capture_id = added.pop()
+        else:
+            matching = [
+                str(row.get("id"))
+                for row in record.raw_captures
+                if isinstance(row, dict)
+                and str(row.get("purpose") or "article") == "author_identity"
+                and str(row.get("source_url") or "") == source_url
+                and row.get("id")
+            ]
+            if len(matching) != 1:
+                raise ValidationError(
+                    f"Could not bind author evidence {source_url} to one raw capture"
+                )
+            capture_id = matching[0]
+        evidence_rows.append({"url": source_url, "capture_id": capture_id})
+    raw_capture_ids = {
+        str(row.get("id"))
+        for row in record.raw_captures
+        if isinstance(row, dict) and row.get("id")
+    }
+    profile = AuthorProfile.create(
+        note,
+        evidence=evidence_rows,
+        raw_capture_ids=raw_capture_ids,
+    )
+    return replace(record, schema_version=2, author_profile=profile)
+
 
 class Magazine:
     """Deep module: capture, catalog, validate, and compile through one interface."""
@@ -136,12 +194,53 @@ class Magazine:
         *,
         snapshot: Path,
         capture_method: str = "caller_supplied",
+        author_note: str | None = None,
+        author_evidence: Iterable[tuple[str, Path]] = (),
+        institutional_author: bool = False,
         **metadata: Any,
     ) -> SourceRecord:
         """Archive raw evidence, then store and queue its normalized source record."""
+        evidence_inputs = tuple(
+            (canonicalize_url(source_url), Path(evidence_snapshot))
+            for source_url, evidence_snapshot in author_evidence
+        )
+        author = str(metadata.get("author") or "").strip()
+        profile_requested = author_note is not None or institutional_author
+        if institutional_author and author_note is not None:
+            raise ValidationError(
+                "institutional_author and author_note are mutually exclusive"
+            )
+        if profile_requested and not author:
+            raise ValidationError("Author identity capture requires author")
+        if author_note is not None and not evidence_inputs:
+            raise ValidationError(
+                "author_note requires at least one archived author_evidence snapshot"
+            )
+        if author_note is None and evidence_inputs:
+            raise ValidationError("author_evidence requires author_note")
+        if institutional_author and evidence_inputs:
+            raise ValidationError(
+                "institutional_author must not include author_evidence"
+            )
+        if author_note is not None:
+            # Validate the copy before writing any raw bundle. The real capture
+            # ids replace these placeholders after the evidence is archived.
+            AuthorProfile.create(
+                author_note,
+                evidence=[
+                    {"url": source_url, "capture_id": "0" * 64}
+                    for source_url, _ in evidence_inputs
+                ],
+            )
         candidate = SourceRecord.create(url, **metadata)
         for existing in load_records(self.sources_dir):
             if existing.canonical_url == candidate.canonical_url:
+                if profile_requested:
+                    existing = replace(
+                        existing,
+                        author=candidate.author,
+                        schema_version=2,
+                    )
                 previous_captures = {
                     str(row.get("id")) for row in existing.raw_captures if row.get("id")
                 }
@@ -149,6 +248,14 @@ class Magazine:
                     existing, self.sources_dir, snapshot, method=capture_method,
                     captured_at=candidate.captured_at,
                 )
+                if profile_requested:
+                    existing = _archive_author_profile(
+                        existing,
+                        self.sources_dir,
+                        note=author_note or "",
+                        evidence_inputs=evidence_inputs,
+                        captured_at=candidate.captured_at,
+                    )
                 added = {
                     str(row.get("id")) for row in existing.raw_captures if row.get("id")
                 } - previous_captures
@@ -158,9 +265,19 @@ class Magazine:
                 existing.write(self.sources_dir)
                 self.sync_release_queue()
                 return existing
+        if profile_requested:
+            candidate = replace(candidate, schema_version=2)
         candidate = archive_snapshot(
             candidate, self.sources_dir, snapshot, method=capture_method
         )
+        if profile_requested:
+            candidate = _archive_author_profile(
+                candidate,
+                self.sources_dir,
+                note=author_note or "",
+                evidence_inputs=evidence_inputs,
+                captured_at=candidate.captured_at,
+            )
         candidate, _ = curate_source(
             candidate,
             self.sources_dir,

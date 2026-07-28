@@ -13,6 +13,17 @@ from .io import dump_yaml, load_structured
 from .media_schema import MediaCaptureReview, load_media_reviews
 
 _TRACKING = {"fbclid", "gclid", "mc_cid", "mc_eid", "ref", "source"}
+_AUTHOR_SUMMARY = re.compile(
+    r"\b(?:writes about|reports (?:on|experiments)|describes|maps a|explains|"
+    r"explores|examines|argues|summarizes|outlines|presents experiments)\b",
+    re.IGNORECASE,
+)
+_AUTHOR_IDENTITY = re.compile(
+    r"\b(?:is|are|was|were|spent|works?|serves?|served|founded|co-founded|"
+    r"creator|founder|chief|president|professor|engineer|researcher|member|"
+    r"publishing name|name with which|name under which)\b",
+    re.IGNORECASE,
+)
 
 
 def canonicalize_url(url: str) -> str:
@@ -44,6 +55,107 @@ def source_id(title: str, canonical_url: str) -> str:
 
 
 @dataclass(frozen=True)
+class AuthorEvidence:
+    url: str
+    capture_id: str
+
+    @classmethod
+    def from_dict(
+        cls,
+        data: dict[str, Any],
+        *,
+        raw_capture_ids: set[str] | None = None,
+    ) -> "AuthorEvidence":
+        if not isinstance(data, dict):
+            raise ValidationError("Author biography evidence must be a mapping")
+        url = canonicalize_url(str(data.get("url") or ""))
+        capture_id = str(data.get("capture_id") or "").strip()
+        if not re.fullmatch(r"[0-9a-f]{64}", capture_id):
+            raise ValidationError(
+                "Author biography evidence capture_id must be a SHA-256 bundle id"
+            )
+        if raw_capture_ids is not None and capture_id not in raw_capture_ids:
+            raise ValidationError(
+                f"Author biography evidence references unknown capture {capture_id}"
+            )
+        return cls(url, capture_id)
+
+    def to_dict(self) -> dict[str, str]:
+        return {"url": self.url, "capture_id": self.capture_id}
+
+
+@dataclass(frozen=True)
+class AuthorProfile:
+    """Edition-ready identity copy pinned to durable profile evidence."""
+
+    note: str
+    evidence: tuple[AuthorEvidence, ...] = ()
+
+    @classmethod
+    def create(
+        cls,
+        note: str,
+        *,
+        evidence: list[dict[str, Any] | AuthorEvidence],
+        raw_capture_ids: set[str] | None = None,
+    ) -> "AuthorProfile":
+        normalized_note = str(note or "").strip()
+        if "\n" in normalized_note or len(normalized_note) > 160:
+            raise ValidationError(
+                "Author biography must be a single line of at most 160 characters"
+            )
+        if normalized_note and (
+            _AUTHOR_SUMMARY.search(normalized_note)
+            or not _AUTHOR_IDENTITY.search(normalized_note)
+        ):
+            raise ValidationError(
+                "Author biography must contain identity or CV context, not an article summary"
+            )
+        rows = tuple(
+            item
+            if isinstance(item, AuthorEvidence)
+            else AuthorEvidence.from_dict(item, raw_capture_ids=raw_capture_ids)
+            for item in evidence
+        )
+        if normalized_note and not rows:
+            raise ValidationError(
+                "Author biography requires archived author profile evidence"
+            )
+        if not normalized_note and rows:
+            raise ValidationError(
+                "Institutional author profiles must omit biography evidence"
+            )
+        unique = {(row.url, row.capture_id) for row in rows}
+        if len(unique) != len(rows):
+            raise ValidationError("Author biography evidence must be unique")
+        return cls(normalized_note, rows)
+
+    @classmethod
+    def from_dict(
+        cls,
+        data: dict[str, Any],
+        *,
+        raw_capture_ids: set[str],
+    ) -> "AuthorProfile":
+        if not isinstance(data, dict):
+            raise ValidationError("author_profile must be a mapping")
+        evidence = data.get("evidence", [])
+        if not isinstance(evidence, list):
+            raise ValidationError("author_profile evidence must be a list")
+        return cls.create(
+            str(data.get("note") or ""),
+            evidence=evidence,
+            raw_capture_ids=raw_capture_ids,
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "note": self.note,
+            "evidence": [row.to_dict() for row in self.evidence],
+        }
+
+
+@dataclass(frozen=True)
 class SourceRecord:
     id: str
     url: str
@@ -51,6 +163,7 @@ class SourceRecord:
     title: str
     captured_at: str
     author: str | None = None
+    author_profile: AuthorProfile | None = None
     published_at: str | None = None
     content_mode: str = "faithful_edit"
     tags: list[str] = field(default_factory=list)
@@ -74,6 +187,7 @@ class SourceRecord:
 
     @classmethod
     def create(cls, url: str, *, title: str | None = None, author: str | None = None,
+               author_profile: AuthorProfile | None = None,
                published_at: str | None = None, captured_at: str | None = None,
                tags: list[str] | None = None, primary_material: list[str] | None = None,
                synopsis: str = "", notes: str = "") -> "SourceRecord":
@@ -83,12 +197,17 @@ class SourceRecord:
         return cls(
             id=source_id(resolved_title, canonical), url=url.strip(), canonical_url=canonical,
             title=resolved_title, captured_at=captured, author=author.strip() if author else None,
+            author_profile=author_profile,
             published_at=published_at,
             tags=sorted({tag.strip().lower() for tag in tags or [] if tag.strip()}),
             primary_material=sorted({canonicalize_url(item) for item in primary_material or []}),
             synopsis=synopsis.strip(), notes=notes.strip(),
             provenance=[{"relation": "primary_material", "url": canonicalize_url(item)} for item in primary_material or []],
             metadata={"tags": sorted({tag.strip().lower() for tag in tags or [] if tag.strip()}), "synopsis": synopsis.strip()},
+            # Every brand-new capture uses the provenance-backed schema. A
+            # caller may archive the article before identity research is
+            # complete, but edition validation will refuse that pending record.
+            schema_version=2,
         )
 
     @classmethod
@@ -122,14 +241,24 @@ class SourceRecord:
         missing = [key for key in required if not data.get(key)]
         if missing:
             raise ValidationError(f"Source record missing: {', '.join(missing)}")
+        raw_capture_ids = {
+            str(item.get("id"))
+            for item in data.get("raw_captures", [])
+            if isinstance(item, dict) and item.get("id")
+        }
+        profile_data = data.get("author_profile")
+        data["author_profile"] = (
+            AuthorProfile.from_dict(
+                profile_data,
+                raw_capture_ids=raw_capture_ids,
+            )
+            if profile_data is not None
+            else None
+        )
         data["media_reviews"] = load_media_reviews(
             data.get("media_reviews"),
             source_id=str(data["id"]),
-            raw_capture_ids={
-                str(item.get("id"))
-                for item in data.get("raw_captures", [])
-                if isinstance(item, dict) and item.get("id")
-            },
+            raw_capture_ids=raw_capture_ids,
         )
         known = {field.name for field in cls.__dataclass_fields__.values()}
         return cls(**{key: value for key, value in data.items() if key in known})
@@ -140,6 +269,11 @@ class SourceRecord:
             "id": self.id,
             "title": self.title,
             "author": self.author,
+            **(
+                {"author_profile": self.author_profile.to_dict()}
+                if self.author_profile is not None
+                else {}
+            ),
             "canonical_url": self.canonical_url,
             "submitted_url": self.url,
             "captured_at": self.captured_at,

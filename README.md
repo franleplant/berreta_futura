@@ -38,7 +38,10 @@ The equivalent command line is:
 uv run --locked mag capture https://example.com/article \
   --snapshot /tmp/article-browser-export \
   --capture-method authenticated_browser \
-  --title "An article"
+  --title "An article" \
+  --author "A. Writer" \
+  --author-note "A. Writer is chief architect at Example Company." \
+  --author-evidence https://example.com/author /tmp/author-profile-browser-export
 uv run --locked mag sources
 uv run --locked mag media-index
 uv run --locked mag validate issue-001
@@ -70,10 +73,24 @@ Both take `--language` to narrow to one configured language; `mag measure
 
 `capture` requires a raw file or directory supplied by the caller. It copies the
 bundle into content-addressed, source-local storage before it writes the source
-record or queues the source. The compiler never treats a live URL as the durable
-copy. Web or authenticated-browser acquisition remains an explicit adapter, so
-cookies, credentials, authorization headers, and browser profiles stay outside
-the repository.
+record or queues the source. New CLI captures also require an author identity.
+For a person or named group, `--author-note` contains edition-ready identity or
+CV context and at least one `--author-evidence URL SNAPSHOT` archives the
+official biography, employer page, or profile that supports it. Repeat
+`--author-evidence` when several primary profiles support a collective byline.
+Use `--institutional-author` instead when the organization byline is
+self-explanatory and should carry no biography.
+
+Author evidence is stored as a purpose-tagged immutable raw bundle. The
+schema-v2 source record pins the biography to its evidence URL and bundle ID;
+edition validation then requires the English byline and `author_note` to match
+the captured identity exactly. Article synopses remain separate metadata and
+cannot become biographies by flowing through the assembly path.
+
+The compiler never treats a live URL as the durable copy. Web or
+authenticated-browser acquisition remains an explicit adapter, so cookies,
+credentials, authorization headers, and browser profiles stay outside the
+repository.
 
 ## Python toolchain
 
@@ -110,6 +127,23 @@ design/covers/canto-vivo/design.toml      canonical cover geometry and ink contr
 ```
 
 `sources.md` is always generated from the source records. Never edit it by hand.
+
+New source records carry:
+
+```yaml
+schema_version: 2
+author: A. Writer
+author_profile:
+  note: A. Writer is chief architect at Example Company.
+  evidence:
+  - url: https://example.com/author
+    capture_id: <sha256 of the archived profile bundle>
+```
+
+The `note` is the canonical English author biography used by edition manifests.
+It must identify the author through a role, notable company, founder or creator
+status, career history, first-hand experience, or a publishing identity. It
+must never describe, explain, or summarize the captured article.
 
 `extracted.md` is the verifiable source side of the fidelity chain. Its YAML
 frontmatter names the source id, the committed raw bundle it was transcribed

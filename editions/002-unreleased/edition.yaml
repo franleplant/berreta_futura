@@ -34,7 +34,8 @@ articles:
   display_emphasis: Factories
   opener_variant: split_axis
   author: Addy Osmani
-  author_note: Addy Osmani writes about engineering systems, developer experience, and AI-assisted software.
+  author_note: Addy Osmani spent 14 years leading engineering teams across Chrome, Gemini, and Google
+    Cloud AI.
   content_mode: faithful_synthesis
   source_ids:
   - software-factories-light-and-dark-ef463732
@@ -101,8 +102,9 @@ articles:
   short_title: Agent Swarms
   display_emphasis: Swarms
   opener_variant: stepped_title
-  author: Cursor
-  author_note: Cursor reports experiments in scaling coding-agent swarms and their economics.
+  author: Wilson Lin
+  author_note: Wilson Lin is a researcher at Cursor, where he works on long-running autonomous coding
+    systems.
   content_mode: faithful_synthesis
   source_ids:
   - agent-swarms-and-the-new-model-economics-8b346f57
@@ -144,7 +146,7 @@ articles:
   display_emphasis: Loop
   opener_variant: split_axis
   author: Codez
-  author_note: Codez maps a practical progression from manual prompting to verified, scheduled agent loops.
+  author_note: Codez is the publishing name of Lev Deviatkin.
   content_mode: faithful_synthesis
   source_ids:
   - loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f
@@ -157,8 +159,8 @@ articles:
   display_emphasis: Pods
   opener_variant: edge_medallion
   author: Praveen Neppalli
-  author_note: Praveen Neppalli describes Uber's two-week method for redesigning business workflows with
-    AI.
+  author_note: Praveen Neppalli Naga is Uber's chief technology officer and previously held engineering
+    leadership roles at LinkedIn.
   content_mode: faithful_synthesis
   source_ids:
   - agentic-pods-taking-ai-beyond-engineering-at-ube-5b9382d4
@@ -171,7 +173,8 @@ articles:
   display_emphasis: Knowledge
   opener_variant: stepped_title
   author: Isaac Tai, Daniel Kim & Mike Gao
-  author_note: Isaac Tai, Daniel Kim, and Mike Gao built Cerebras Knowledge for internal search.
+  author_note: Isaac Tai, Daniel Kim, and Mike Gao work at Cerebras Systems, the AI-chip company behind
+    the Wafer-Scale Engine.
   content_mode: selected_extracts
   source_ids:
   - how-we-built-our-knowledge-base-e986baa0

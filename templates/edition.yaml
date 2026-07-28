@@ -13,8 +13,9 @@ articles:
     display_emphasis: Example
     opener_variant: edge_medallion
     author: Original Author
-    # Optional. Use identity or relevant CV context, never an article synopsis.
-    # Omit when the byline is self-explanatory (for example, The Editors).
+    # Copy this exactly from the primary source record's author_profile.note.
+    # It contains identity or relevant CV context, never an article synopsis.
+    # Omit when the captured institutional byline deliberately has no note.
     author_note: Original Author is the founder of Example Company.
     source_ids:
       - example-source-id

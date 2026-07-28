@@ -82,11 +82,11 @@ ARTICLES = [
         "short_title": "Light and Dark",
         "emphasis": "Factories",
         "author": "Addy Osmani",
-        "note": "Addy Osmani writes about engineering systems, developer experience, and AI-assisted software.",
+        "note": "Addy Osmani spent 14 years leading engineering teams across Chrome, Gemini, and Google Cloud AI.",
         "es_title": "Fábricas de software, con luz y a oscuras",
         "es_short": "con luz y a oscuras",
         "es_emphasis": "Fábricas",
-        "es_note": "Addy Osmani escribe sobre sistemas de ingeniería, experiencia de desarrollo y software asistido por IA.",
+        "es_note": "Addy Osmani pasó 14 años liderando equipos de ingeniería de Chrome, Gemini y Google Cloud AI.",
         "figures": [
             {
                 "id": "loop-harness-factory",
@@ -249,12 +249,12 @@ El cambio ya ocurrió. Los bloques y las fábricas de software se refuerzan mutu
         "short_title": "Agent Swarms",
         "minimum_reader_pages": 5,
         "emphasis": "Swarms",
-        "author": "Cursor",
-        "note": "Cursor reports experiments in scaling coding-agent swarms and their economics.",
+        "author": "Wilson Lin",
+        "note": "Wilson Lin is a researcher at Cursor, where he works on long-running autonomous coding systems.",
         "es_title": "Enjambres de agentes y la nueva economía de los modelos",
         "es_short": "Enjambres de agentes",
         "es_emphasis": "Enjambres",
-        "es_note": "Cursor presenta experimentos para escalar enjambres de agentes de programación y su economía.",
+        "es_note": "Wilson Lin es investigador en Cursor, donde trabaja en sistemas de programación autónoma de larga duración.",
         "body": """Earlier this year, a long-running swarm built a web browser from scratch: a useful proof of concept, but far from polished software. After that deliberately empirical hill-climb, we wanted to engineer the system with intent. We returned to a task the old swarm had struggled with—implementing SQLite in Rust from its documentation alone—and the new harness beat it with every model mix. Grok 4.5 reached 80 percent in four hours while the old run spiraled before hour two. More agents were not the decisive variable; topology, memory, coordination, and the planning-execution split changed quality and cost.
 
 ## Trees and memory
@@ -361,11 +361,11 @@ Por eso un enjambre se parece a un compilador. Los planificadores analizan una m
         "short_title": "Loop Engineering",
         "emphasis": "Loop",
         "author": "Codez",
-        "note": "Codez maps a practical progression from manual prompting to verified, scheduled agent loops.",
+        "note": "Codez is the publishing name of Lev Deviatkin.",
         "es_title": "Ingeniería de ciclos: una hoja de ruta más allá del prompt",
         "es_short": "Ingeniería de ciclos",
         "es_emphasis": "Ciclos",
-        "es_note": "Codez traza una progresión práctica desde los prompts manuales hasta ciclos de agentes verificados y programados.",
+        "es_note": "Codez es el nombre con el que publica Lev Deviatkin.",
         "body": """Most developers still prompt an agent by hand, inspect the answer, and decide what to do next. Loop engineering starts when the system finds work, hands it to an agent, checks the result, records state, and chooses the next step. The upgrade is not a cleverer prompt. It is automation, state, a verifier, and a schedule.
 
 ## Decide whether a loop belongs
@@ -416,11 +416,11 @@ La mayoría de los equipos no necesita una gran fábrica autónoma. Se empieza c
         "short_title": "Agentic Pods",
         "emphasis": "Pods",
         "author": "Praveen Neppalli",
-        "note": "Praveen Neppalli describes Uber's two-week method for redesigning business workflows with AI.",
+        "note": "Praveen Neppalli Naga is Uber's chief technology officer and previously held engineering leadership roles at LinkedIn.",
         "es_title": "Pods de agentes: llevar la IA más allá de ingeniería",
         "es_short": "Pods de agentes",
         "es_emphasis": "Pods",
-        "es_note": "Praveen Neppalli describe el método de dos semanas de Uber para rediseñar flujos de negocio con IA.",
+        "es_note": "Praveen Neppalli Naga es director de tecnología de Uber y antes ocupó puestos de liderazgo en ingeniería en LinkedIn.",
         "body": """Agentic AI adoption at Uber has changed how we build. Ninety-nine percent of our engineers use AI tools, more than 70 percent of pull requests are attributed to local or cloud agents, and engineers have built more than 2,500 agent skills across the development lifecycle. Those numbers raised a larger question: how do we bring agentic AI beyond engineering?
 
 ## Pair system knowledge with domain knowledge
@@ -633,6 +633,10 @@ Una buena fábrica preserva la intención, une la evidencia a las decisiones, vu
             row["tail_art_path"] = tail_art_paths[article["id"]]
         article_rows.append(row)
     cerebras["opener_variant"] = "stepped_title"
+    cerebras["author_note"] = (
+        "Isaac Tai, Daniel Kim, and Mike Gao work at Cerebras Systems, "
+        "the AI-chip company behind the Wafer-Scale Engine."
+    )
     cerebras["tail_art_path"] = tail_art_paths["how-we-built-our-knowledge-base"]
     base.update({
         "publication_date": "2026-07-21",
@@ -673,6 +677,10 @@ Una buena fábrica preserva la intención, une la evidencia a las decisiones, vu
     old_translation = yaml.safe_load((ES / "edition.yaml").read_text())
     cerebras_es = next(
         row for row in old_translation["articles"] if row["id"] == "how-we-built-our-knowledge-base"
+    )
+    cerebras_es["author_note"] = (
+        "Isaac Tai, Daniel Kim y Mike Gao trabajan en Cerebras Systems, "
+        "la empresa de chips de IA creadora del Wafer-Scale Engine."
     )
     translated_rows = []
     loaded_articles = {article.id: article for article in loaded.articles}

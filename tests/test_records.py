@@ -9,10 +9,52 @@ from magazine import Magazine
 from magazine.catalog import render_sources
 from magazine.capture import verify_snapshots
 from magazine.errors import ValidationError
-from magazine.records import SourceRecord, canonicalize_url, load_records
+from magazine.records import AuthorProfile, SourceRecord, canonicalize_url, load_records
 
 
 class RecordTests(unittest.TestCase):
+    def test_author_profile_rejects_article_summary_language(self):
+        with self.assertRaisesRegex(ValidationError, "identity or CV context"):
+            AuthorProfile.create(
+                "Author writes about engineering systems and AI-assisted software.",
+                evidence=[{
+                    "url": "https://example.com/author",
+                    "capture_id": "a" * 64,
+                }],
+            )
+
+    def test_author_profile_round_trips_provenance_backed_biography(self):
+        capture_id = "a" * 64
+        record = SourceRecord.from_dict({
+            "schema_version": 2,
+            "id": "source",
+            "title": "Source",
+            "author": "A. Writer",
+            "author_profile": {
+                "note": "A. Writer is chief architect at Example Company.",
+                "evidence": [{
+                    "url": "https://example.com/author",
+                    "capture_id": capture_id,
+                }],
+            },
+            "canonical_url": "https://example.com/",
+            "submitted_url": "https://example.com/",
+            "captured_at": "2026-07-15T12:00:00Z",
+            "raw_captures": [{
+                "id": capture_id,
+                "path": f"raw/{capture_id}/manifest.json",
+            }],
+        })
+
+        self.assertEqual(
+            record.author_profile.note,
+            "A. Writer is chief architect at Example Company.",
+        )
+        self.assertEqual(
+            record.to_dict()["author_profile"]["evidence"][0]["capture_id"],
+            capture_id,
+        )
+
     def test_canonicalize_removes_tracking_fragment_and_normalizes(self):
         self.assertEqual(canonicalize_url("HTTPS://Example.COM/a//b/?utm_source=x&z=2&a=1#part"), "https://example.com/a/b?a=1&z=2")
 
@@ -140,6 +182,66 @@ class RecordTests(unittest.TestCase):
         catalog = magazine.write_sources()
         self.assertIn("## Post", catalog.read_text(encoding="utf-8"))
         self.assertIn("Raw captures: 1 committed bundle", catalog.read_text(encoding="utf-8"))
+
+    def test_capture_archives_author_profile_evidence_and_links_the_biography(self):
+        temporary = TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        article = root / "article.html"
+        profile = root / "author.html"
+        article.write_text("<main>The article.</main>", encoding="utf-8")
+        profile.write_text(
+            "<main>A. Writer is chief architect at Example Company.</main>",
+            encoding="utf-8",
+        )
+
+        record = Magazine(root).capture(
+            "https://example.com/article",
+            snapshot=article,
+            title="Article",
+            author="A. Writer",
+            author_note="A. Writer is chief architect at Example Company.",
+            author_evidence=[("https://example.com/author", profile)],
+        )
+
+        self.assertEqual(record.schema_version, 2)
+        self.assertEqual(
+            record.author_profile.note,
+            "A. Writer is chief architect at Example Company.",
+        )
+        evidence = record.author_profile.evidence[0]
+        descriptor = next(
+            row for row in record.raw_captures if row["id"] == evidence.capture_id
+        )
+        self.assertEqual(descriptor["purpose"], "author_identity")
+        self.assertEqual(descriptor["source_url"], "https://example.com/author")
+        manifest = yaml.safe_load(
+            (
+                root
+                / "library"
+                / "sources"
+                / record.id
+                / descriptor["path"]
+            ).read_text(encoding="utf-8")
+        )
+        self.assertEqual(manifest["purpose"], "author_identity")
+        self.assertEqual(manifest["source_url"], "https://example.com/author")
+
+    def test_capture_rejects_a_biography_without_archived_evidence(self):
+        temporary = TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        article = root / "article.html"
+        article.write_text("<main>The article.</main>", encoding="utf-8")
+
+        with self.assertRaisesRegex(ValidationError, "author_evidence"):
+            Magazine(root).capture(
+                "https://example.com/article",
+                snapshot=article,
+                title="Article",
+                author="A. Writer",
+                author_note="A. Writer is chief architect at Example Company.",
+            )
 
     def test_capture_requires_a_snapshot(self):
         temporary = TemporaryDirectory()
