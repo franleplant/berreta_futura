@@ -514,6 +514,97 @@ p { margin: 0 0 5.4pt; orphans: 2; widows: 2; }
 .editorial h2 { margin-top: 21.2pt; }
 .editorial h3 { margin-top: 16.2pt; }
 /*
+ * HYPHENATION IS ON, FOR BODY PROSE AND FOR NOTHING ELSE.
+ *
+ * The reading column is 325pt of unjustified 10/13pt serif, and without
+ * hyphenation its only break opportunity is whitespace, so every long word
+ * that misses the measure drops whole to the next line and leaves its whole
+ * width as rag.  Spanish pays the most: its words run longer than English's,
+ * so the same manuscripts set about four pages longer (edition 003 measured
+ * en 36 / es 40 total pages before this rule) and es article 3 sits exactly
+ * on the seven-page cap.  `html lang` is set per language (html_edition.py),
+ * so Pango/Pyphen have real dictionaries -- `en` and `es` both ship -- and
+ * `hyphens: auto` is the whole switch.
+ *
+ * The limits are stated, not defaulted.  WeasyPrint 69 validates
+ * `hyphenate-limit-chars` as (total, before, after) and hands the triple
+ * straight to `pyphen.Pyphen(lang, left, right)` (text/line_break.py:370,
+ * 426-434): a word shorter than 6 characters is never broken, and no fragment
+ * shorter than 3 lands on either side of the break -- the default (5, 2, 2)
+ * allows two-letter stubs like `co-` / `ly`, which read as typos at 10pt.
+ * `hyphenate-limit-zone` is supported and deliberately left at its 0 default,
+ * from measurement and not from taste: a zone only *suppresses* hyphenation
+ * until the rag exceeds it, and on this edition a zone of 16 or 24pt changes
+ * almost nothing (a dropped 10pt word usually leaves more rag than that)
+ * while 33pt gives back three of the rag repairs and a line in each language
+ * and still leaves three Spanish ladders standing -- all cost, no cure.
+ *
+ * WHAT THE MEASUREMENT SAYS THIS RULE BUYS, HONESTLY.  Edition 003, both
+ * languages, before -> after: pagination is IDENTICAL -- 36/40 total pages,
+ * every article's span and the closing-plate arithmetic unchanged -- because
+ * the reclaimed lines (en 667 -> 663 prose lines, es 768 -> 754) came out of
+ * article last pages, where they surface as open tail room instead (two
+ * Spanish tail ornaments grow, 194.8 -> 207.8pt and 189.0 -> 214.0pt).  The
+ * deep rag closes a little (paragraphs whose last line is under a third of
+ * the measure: en 39 -> 38, es 40 -> 37).  The es factories article stays
+ * exactly on its 7-page cap.  Anyone re-judging this rule should rebuild and
+ * re-measure rather than trust these numbers across manuscript edits.
+ *
+ * TWO CSS GUARDS DO NOT EXIST IN WEASYPRINT 69, AND BOTH ABSENCES ARE
+ * HANDLED, NOT IGNORED.  `hyphenate-limit-lines` -- the ladder guard against
+ * consecutive hyphen-ended lines -- appears nowhere in the package, so the
+ * adapter audits the laid-out line boxes and *reports* any paragraph ending
+ * more than two consecutive lines on a hyphen (`_report_hyphen_ladders`);
+ * the report is evidence for whether a real guard is ever needed, and
+ * refusing a build over typography is not its job.  `hyphenate-limit-last`
+ * is missing too, so a paragraph's FINAL word can hyphenate and strand its
+ * tail as the whole last line (`...when appro-` / `priate.`); the runt
+ * binder cannot repair that -- there is no space break in it -- and refuses
+ * to pretend otherwise (the word-tail clause in `_is_runt`), so those tails
+ * ship visible and counted in the evidence rather than papered over by
+ * no-op binds.
+ *
+ * PROSE ONLY, and the selectors below are the stylesheet's own definition of
+ * prose -- the same shape the landscape-plate leading rule uses.  Everything
+ * else is excluded by never being matched, not by an override: headings and
+ * fitted titles are auto-fitted display type whose laid-out line count
+ * `_validate_fitted_display` checks against the count the fit reserved, so a
+ * hyphen that bought back a line would move that count out from under its own
+ * guard; opener chrome (byline, author note, content label) is drawn to fixed
+ * metrics inside a field whose height the adapter states; the standfirst is
+ * display furniture at 12/16.4 and reads in single lines, not in a rag; the
+ * contents entries, captions and credits are furniture with their own boxes;
+ * and a bare `p` selector would reach the byline and the author note, which
+ * is the exact trap the paragraph_after comment above warns about.  List
+ * items are prose -- 10pt on the reading leading in the reading measure -- so
+ * they hyphenate, except the reference list: a bibliography is names, years
+ * and titles, and Pyphen breaking a proper noun helps nobody.  Inline `code`
+ * is an identifier, not a word, so it opts back out wherever it appears.
+ *
+ * REVERT PATH: delete this comment and the three rules below.  Nothing else
+ * in the stylesheet or the adapter *depends* on hyphenation -- the runt
+ * binder measures whatever layout it is given, and the ladder audit reports
+ * zero on an unhyphenated reader -- so the revert is one deletion, after
+ * which both languages lay out exactly as before this rule shipped.
+ */
+.editorial > p:not(.standfirst):not(.end-mark),
+.editorial > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark),
+article > p:not(.standfirst):not(.end-mark),
+article > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark),
+main > section > p:not(.standfirst):not(.end-mark),
+main > section > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark),
+.editorial li, article li, main > section li {
+  hyphens: auto;
+  hyphenate-limit-chars: 6 3 3;
+}
+/* Bibliography setting: entry numbers, authors' names, titles and years.  A
+ * broken proper noun is worse than any rag, and the hanging indent already
+ * owns the turn lines.  The attribute selector outranks `article li`. */
+ul[data-reference-list] li { hyphens: manual; }
+/* An identifier is not a word; `hyphens` inherits into inline spans, so code
+ * inside a hyphenating paragraph or list item opts back out here. */
+code { hyphens: manual; }
+/*
  * A landscape-plate article reads on a 12.2pt leading (render.py:2112-2116), so
  * its body line box carries its baseline 9.605pt below its own top rather than
  * the 10.005 the page datum is cut for -- 0.3996pt of ink on every line of the
