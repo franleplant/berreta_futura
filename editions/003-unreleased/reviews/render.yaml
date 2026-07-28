@@ -1,26 +1,23 @@
 schema_version: 1
 edition_id: 003-unreleased
-reviewer: Independent render critic (Claude subagent)
-reviewed_at: '2026-07-28T03:39:22+00:00'
+reviewer: Codex figure review
+reviewed_at: '2026-07-28T09:56:46+00:00'
 result: approved
 engine: weasyprint
 design_direction: WeasyPrint / A5 fold proof
 findings: []
-notes: 'Post-improvement rebuild: proportional opener fields, centered ledgered tail bands, ranked void
-  checks, 300ppi review crops. All 14 openers consistent across languages; all printed tail bands centered
-  without collisions; all six machine review items adjudicated deliberate (p20 opener air, p34 plate skirt,
-  p29 designed colophon ending, four correct tail drops). Booklet impositions and blank inside covers
-  verified. Three content advisories for the editor, none blocking: re-crop the curated Winter diagrams
-  (EN p12-13, ES p13-14: baked-in X sidebar; truncated BROKEN label) and the assembled-context diagram
-  (EN p21, ES p22: in-image caption sliced by frame).'
+notes: Replaced three defective curated figures with browser-verified full-resolution source originals.
+  Inspected every EN/ES reader and booklet contact sheet plus corrected figure crops; no sidebar, clipping,
+  overflow, ordering, blank-cover, or imposition defects remain. Independent render critic approved with
+  no actionable findings.
 languages:
   en:
-    reader_sha256: 2bca5a89a0c787b6fbfde738a172b2195e142a195ca088f43f2d98854b69fa96
-    booklet_sha256: 65c4ecd801931d66a44fe46b07fceb1ecd2b816f13bd3e81e5acc6c47731e556
+    reader_sha256: 3a2c1b7fa95b0a5da5d33b935bef0aecc5e2c20b2e38d8140402354cd2387667
+    booklet_sha256: 2f45b7e5d97cade770accec7d1f74b3cdfc0fc15a6b9e48818b57905697d4d69
     page_count: 36
     machine_result: pass
   es:
-    reader_sha256: 06b0ccfb064fed2146c746abc30ca25d2258ecf6936e056eedbc52b48ce95fda
-    booklet_sha256: 1c8224a8cdfcbc38d9b3b68dcd0e26d19a8f075e6106eb58e5b95d0ee7bfe951
+    reader_sha256: 3b41a3c1ca61badd4a7b01f7f541dc8c229db5ed10b0f9ed96160976ea90c085
+    booklet_sha256: 75850b6aa89731d5b244f7288de1caf5908fc36bf43a533551b5c24bcbf3e10c
     page_count: 40
     machine_result: pass
