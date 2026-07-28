@@ -527,22 +527,25 @@ def test_reader_pages_up_to_the_first_closing_plate_are_the_content_pages():
     assert _content_page_count(_Document(tuple(_Page(_Box()) for _ in range(6)))) == 4
 
 
-def test_the_tail_ornament_is_earned_by_open_space_and_capped(tmp_path: Path):
+def test_the_tail_ornament_is_earned_by_open_space_and_centred_when_capped(tmp_path: Path):
     """The ornament is a property of where an article's flow ended and of nothing
-    else, and its numbers are `_article_tail_ornament_box`'s own: a band whose
-    foot stands 24pt above the frame's foot, whose head stands 31pt under the
-    end mark, printed only where that leaves 118pt of real room and never
-    taller than 214pt.
+    else: a band between the end mark's 31pt clearance and a 24pt foot inset,
+    printed wherever that room reaches the 96pt the render critic calls a void
+    (`_TAIL_ORNAMENT_MIN_HEIGHT`), never taller than 214pt -- and *centred* in
+    its room when that cap bites, half the surplus below and half above, instead
+    of pooling the whole surplus over its own head.
     """
     _write_rasters(tmp_path)
     article = SimpleNamespace(id="article", tail_art=tmp_path / "tail.png")
 
-    # Room is `endmark_baseline - 31 - 69`; the minimum is the ornament's 118.
-    assert _measured_tail_art(article, 219.0) == pytest.approx(118.0)
-    assert _measured_tail_art(article, 218.0) is None
-    # An article that ends very high is capped at the ornament's own maximum.
-    assert _measured_tail_art(article, 500.0) == pytest.approx(214.0)
-    assert _measured_tail_art(article, 280.0) == pytest.approx(179.0)
+    # Room is `endmark_baseline - 31 - 69`; the floor is the critic's own 96.
+    assert _measured_tail_art(article, 197.0) == adapter.TailBand(96.0, 0.0)
+    assert _measured_tail_art(article, 196.0) is None
+    # A band under the cap fills its room exactly, so it earns no lift at all.
+    assert _measured_tail_art(article, 280.0) == adapter.TailBand(179.0, 0.0)
+    # A very high ending is capped at the ornament's own maximum and centred:
+    # room is 399, so the 185 of surplus splits into two 92.5pt margins.
+    assert _measured_tail_art(article, 500.0) == adapter.TailBand(214.0, 92.5)
     # A tight page prints no motif, and an undeclared one never does.
     assert _measured_tail_art(article, 150.0) is None
     assert _measured_tail_art(SimpleNamespace(id="a", tail_art=None), 500.0) is None
@@ -553,18 +556,140 @@ def test_the_tail_ornament_is_earned_by_open_space_and_capped(tmp_path: Path):
         _measured_tail_art(soft, 500.0)
 
 
-def test_tail_arts_print_at_their_measured_height_or_not_at_all():
-    """`_apply_tail_arts` keeps the figure only where the page earned it."""
+def test_tail_arts_print_at_their_measured_band_or_not_at_all():
+    """`_apply_tail_arts` keeps the figure only where the page earned it, and
+    states the whole band: the height, and the foot -- the stylesheet's own
+    13.9954pt constant plus whatever lift centres a max-capped band."""
     markup = '<figure class="article-tail" data-asset-role="article_tail"><img src="c"></figure>'
 
     earned = _parse_article_fragment(markup)
-    _apply_tail_arts(earned, {"article": 179.0})
+    _apply_tail_arts(earned, {"article": adapter.TailBand(179.0, 0.0)})
     figure = next(iter(earned.iter("figure")))
-    assert figure.get("style") == "height: 179.0000pt"
+    assert figure.get("style") == "height: 179.0000pt; bottom: 13.9954pt"
+
+    centred = _parse_article_fragment(markup)
+    _apply_tail_arts(centred, {"article": adapter.TailBand(214.0, 92.5)})
+    figure = next(iter(centred.iter("figure")))
+    assert figure.get("style") == "height: 214.0000pt; bottom: 106.4954pt"
 
     unearned = _parse_article_fragment(markup)
     _apply_tail_arts(unearned, {})
     assert list(unearned.iter("figure")) == []
+
+
+def test_the_tail_art_ledger_accounts_for_every_article_and_names_the_shortfall():
+    """`layout.tail_arts`, row for row: declared, printed, height, drop reason.
+
+    A dropped ornament used to be `article.remove(figure)` and no record
+    anywhere; the ledger is the record, and the render critic's own
+    `tail-art-dropped` contract is its consumer, so the shape here is the
+    contract's -- one row per article, exactly these five keys.
+    """
+    printed = SimpleNamespace(id="printed", tail_art=Path("printed.png"))
+    dropped = SimpleNamespace(id="dropped", tail_art=Path("dropped.png"))
+    bare = SimpleNamespace(id="bare", tail_art=None)
+    edition = SimpleNamespace(articles=(printed, dropped, bare))
+    # Only a *dropped* declaration re-measures its page; the printed row comes
+    # from the settled plan, so the stub document carries just the low ending.
+    low = _Box(
+        "article",
+        element=_Element("article", **{"data-article-id": "dropped"}),
+        y=500, height=80, width=400,
+    )
+    document = _Document((_Page(_Box(children=(low,))),))
+    plan = adapter.ReaderPlan(closing_plates=0, tail_arts=(("printed", 214.0, 60.0),))
+
+    rows = adapter._tail_art_ledger(document, edition, plan)
+
+    assert [sorted(row) for row in rows] == [
+        ["article", "declared", "drop_reason", "height_points", "printed"]
+    ] * 3
+    assert rows[0] == {
+        "article": "printed", "declared": True, "printed": True,
+        "height_points": 214.0, "drop_reason": None,
+    }
+    room = adapter._tail_art_room(adapter._article_flow_bottom(document, "dropped"))
+    assert room < adapter._TAIL_ORNAMENT_MIN_HEIGHT
+    assert rows[1]["article"] == "dropped"
+    assert rows[1]["declared"] and not rows[1]["printed"]
+    assert rows[1]["height_points"] is None
+    # The reason names the measured shortfall, not a shrug: the room, its two
+    # bounds, and the floor the room fell under.
+    assert f"{room:.1f}pt" in rows[1]["drop_reason"]
+    assert "96pt or more" in rows[1]["drop_reason"]
+    assert rows[2] == {
+        "article": "bare", "declared": False, "printed": False,
+        "height_points": None, "drop_reason": None,
+    }
+
+
+def test_a_render_parks_its_tail_ledger_and_packaging_adopts_it_into_layout(tmp_path: Path):
+    """The ledger's route to `layout.tail_arts`, end to end.
+
+    The render seam returns a `RenderLayout` whose fields the compiler copies
+    into fixed manifest keys, so the ledger rides the one object that reaches
+    packaging whole: `manifest["edition"]` *is* `edition.raw`.  The renderer
+    parks it there under a private key; `package._adopt_rendered_layout` moves
+    it into the `layout` block the critic reads and pops the scratch key, so
+    the written artifact's edition mapping is exactly what was declared.
+    `RENDERED_TAIL_ARTS_KEY` is deliberately a restated literal, not an import
+    -- packaging must not import a renderer -- so this asserts the two sides
+    still name the same key.
+    """
+    from magazine.package import RENDERED_TAIL_ARTS_KEY, _adopt_rendered_layout
+
+    assert RENDERED_TAIL_ARTS_KEY == adapter._TAIL_ART_LEDGER_KEY
+
+    edition = _raster_edition(tmp_path, manuscript=_FONT_SAFE_MANUSCRIPT)
+    render_a5_weasyprint(edition, tmp_path / "reader.pdf")
+
+    ledger = edition.raw[RENDERED_TAIL_ARTS_KEY]
+    assert [row["article"] for row in ledger] == [
+        article.id for article in edition.articles
+    ]
+    for row in ledger:
+        assert row["declared"] is True  # the fixture declares its tail art
+        assert row["printed"] == (row["height_points"] is not None)
+        assert row["printed"] == (row["drop_reason"] is None)
+
+    manifest = {"edition": edition.raw, "layout": {"article_pages": {}}}
+    _adopt_rendered_layout(manifest)
+    assert manifest["layout"]["tail_arts"] == ledger
+    assert RENDERED_TAIL_ARTS_KEY not in edition.raw
+
+    # A build whose renderer wrote no ledger -- ReportLab, or history --
+    # packages no key, which the critic reads as nothing to reconcile.
+    predates = {"edition": {"format": {}}, "layout": {}}
+    _adopt_rendered_layout(predates)
+    assert "tail_arts" not in predates["layout"]
+
+
+def test_an_author_note_that_runs_into_the_standfirst_gap_is_refused():
+    """`_validate_opener_credit_depth`: the note is measured type, the field is
+    arithmetic, and the finished page is asked -- the note must keep the
+    credit's own 13pt line above the field's foot."""
+
+    def reader(note_top: float, note_height: float) -> _Document:
+        note = _BlockBox(
+            "p", element=_Element("p", **{"class": "author-note"}),
+            y=note_top, height=note_height,
+        )
+        header = _BlockBox(
+            "header", element=_Element("header"),
+            children=(_BlockBox("h1", element=_Element("h1")), note),
+            y=0, height=400,  # a 300pt field: foot at 300pt in page points
+        )
+        article = _Box(
+            "article", element=_Element("article", **{"data-article-id": "a"}),
+            children=(header,),
+        )
+        return _Document((_Page(_Box(children=(article,))),))
+
+    # 277.5pt of note foot against a 300pt field foot: 22.5pt clear, over 13.
+    adapter._validate_opener_credit_depth(reader(360.0, 10.0))
+    # 297pt against 300: three points is under the credit's own line.
+    with pytest.raises(ValidationError, match="author note"):
+        adapter._validate_opener_credit_depth(reader(390.0, 6.0))
 
 
 
@@ -599,7 +724,10 @@ def test_measure_then_render_settles_the_plan_and_never_pads_the_signature(tmp_p
     assert [(code.article_id, code.slot) for code in plan.source_codes] == [
         ("article<&>", "opener")
     ]
-    assert plan.tail_arts == (("article<&>", 214.0),)
+    # The stub article's flow ends high, so the band is capped at 214 and the
+    # measured surplus is split into the lift that centres it in its room.
+    room = adapter._tail_art_room(adapter._article_flow_bottom(document, "article<&>"))
+    assert plan.tail_arts == (("article<&>", 214.0, (room - 214.0) / 2),)
 
 
 def test_a_reader_that_is_not_a_signature_is_refused_rather_than_padded(tmp_path: Path):
@@ -1754,37 +1882,71 @@ def test_bullets_are_drawn_discs_and_a_reference_list_drops_to_source_notes():
     assert "END / 01" in text
 
 
-def test_article_opener_pins_its_prose_to_the_reserved_white_field():
-    """O1: `_set_reading_frame(top=238)` -- 14 lines, whatever the chrome above."""
+def test_a_figureless_opener_field_follows_its_credit_block_not_a_constant(tmp_path: Path):
+    """O1, recut: the field is the credit block's lowest ink plus one gap.
 
-    def opener(chrome: str, figure: str = ""):
-        document = _typeset_document(
-            f'<article data-article-id="a"><header>{chrome}</header>{figure}'
-            f'<p class="standfirst">{_FILLER_PROSE}</p></article>'
-        )
-        page = document.pages[0]
-        standfirst = _block_of(page, "p")
-        prose = _line_boxes_of(page, "p")
-        return len(prose), round(
-            _painted_baseline_from_page_foot(prose[0], standfirst), 3
-        )
+    The reader pinned `top=238` -- a 305.2756pt field however short the chrome
+    -- and the constant was honest white on exactly one opener, the deepest
+    stack the opener can carry.  The field now follows the fitted title the way
+    a figure opener's does: the symbol's last dark row (or the note's own last
+    line, code or none) plus `_OPENER_STANDFIRST_GAP_POINTS`, so the standfirst
+    starts the same deliberate distance under every credit line.
+    """
+    edition = _edition(tmp_path)
+    article = edition.articles[0]
+    prose_article = replace(
+        article,
+        figures=tuple(figure for figure in article.figures if figure.anchor != "__opener__"),
+    )
+    edition = replace(edition, articles=(prose_article,))
+    tree = _print_tree(edition)
 
-    short = opener("<h1>Short</h1>")
-    tall = opener(
-        "<h1>Short</h1>" + "".join(f'<div style="height: 30pt">chrome {i}</div>' for i in range(5))
+    adapter._pin_opener_fields(tree, edition)
+
+    header = next(
+        child for piece in tree.iter("article") for child in piece if child.tag == "header"
+    )
+    size, lines = adapter._fitted_display(
+        str(prose_article.title), 333.0079, 165.0,
+        maximum=35.0, minimum=24.0, maximum_lines=4, leading_ratio=.96,
+    )
+    field = adapter._opener_prose_field(prose_article, size, len(lines))
+    assert header.get("style") == f"height: {field:.4f}pt"
+    # The title is judged against its own reservation, never against the credit
+    # block's depth or the gap -- the same two-numbers split a figure opener states.
+    assert header.get("data-title-field") == (
+        f"{adapter._OPENER_FIGURE_FIELD_BASE + adapter._opener_title_flow(size, len(lines)):.4f}"
+    )
+    # This opener carries a code, so the governing ink is the symbol's last dark
+    # row, and the field stands exactly one gap below it.
+    code = adapter._opener_credit_code(prose_article)
+    assert field == pytest.approx(
+        adapter._opener_symbol_bottom(code, size, len(lines))
+        + adapter._OPENER_STANDFIRST_GAP_POINTS
     )
 
-    # 238 less the page's own +0.005pt rasterizer nudge.  The field is stated as
-    # a *flow* height, so the standfirst's own 12pt/16.4pt baseline offset is not
-    # in it: the pinned baseline is the flow position plus the paint correction.
-    assert short[1] == 237.995, "the standfirst opens on ReportLab's pinned frame top"
-    assert tall == short, "the reserved field is pinned, not derived from the chrome"
-    # An opener figure replaces the rule rather than the number: ReportLab then
-    # uses the space left after the credit, so the header flows again.
-    with_figure = opener(
-        "<h1>Short</h1>", '<figure data-anchor="__opener__"><figcaption>c</figcaption></figure>'
+    # The gap is measured, not chosen: the deepest opener the retired constant
+    # was cut for -- a four-line title at the 35pt maximum over a 1.5pt-module
+    # code -- reproduces the old 305.2756pt field to the fourth decimal, so the
+    # one page the constant set right is untouched and every shallower stack
+    # tightens to the same breath.
+    house_module_code = SimpleNamespace(side=55.5, quiet=6.0)
+    assert adapter._opener_symbol_bottom(
+        house_module_code, 35.0, 4
+    ) + adapter._OPENER_STANDFIRST_GAP_POINTS == pytest.approx(305.2756, abs=5e-4)
+
+    # And the stated field really is where the prose starts: laid out, the
+    # standfirst's painted baseline opens the frame the field's foot declares.
+    document = _typeset_document(
+        f'<article data-article-id="a"><header style="height: {field:.4f}pt">'
+        '<h1>Short</h1></header>'
+        f'<p class="standfirst">{_FILLER_PROSE}</p></article>'
     )
-    assert with_figure[1] > 238.0
+    page = document.pages[0]
+    standfirst = _block_by_class(page, "standfirst")
+    assert _painted_baseline_from_page_foot(
+        next(_line_boxes(standfirst)), standfirst
+    ) == pytest.approx(543.2756 - field - _NUDGE, abs=5e-4)
 
 
 # The +0.005pt rasterizer nudge on `@page`, which every measured baseline below

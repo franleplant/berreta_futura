@@ -76,7 +76,7 @@ _FRAME_BOTTOM_POINTS = 45.0
 # larger than its own derivation, which leaves the first baseline 0.0004pt low.
 # The residual is deliberately not chased: closing it means moving margin-top,
 # margin-bottom and every constant derived from this one (the opener title top,
-# the header height 305.2756, the editorial 153.2756, the figure's own 10.0046pt
+# every stated opener field, the editorial 153.2756, the figure's own 10.0046pt
 # paint offset) by 0.0008 of a device pixel at 144 DPI, in the same truncation
 # regime where the measured +0.005pt nudge moved roughly one line in four.
 _FIRST_BASELINE_INSET_POINTS = 10.0046
@@ -110,25 +110,50 @@ def _reader_y_points(css_top_points: float, height_points: float) -> float:
     return _PAGE_HEIGHT_POINTS - css_top_points - height_points + _RASTER_NUDGE_POINTS
 
 
-# ``_article_tail_ornament_box`` (render.py:177-190), all four of its numbers.
-# The tail motif prints again -- the source code moved to the article opener, so
-# the slot the code borrowed is the ornament's own once more -- and the contract
-# is the reader's, unchanged:
+# THE TAIL ORNAMENT'S BOX.  ``_article_tail_ornament_box`` (render.py:177-190)
+# is where three of these numbers come from, but the contract is no longer the
+# reader's reproduced -- two of its rules are deliberately departed from, both
+# measured on edition 003, and the departures are the point:
 #
-# ``_TAIL_ORNAMENT_MIN_HEIGHT`` is the height under which a *decorative* band is
-# not worth printing.  Refusing a tight fit is the right instinct for ornament:
-# a motif squeezed under an article that nearly fills its last page reads as
-# crowding, so an article that ends low simply prints no motif at all.
+# ``_TAIL_ORNAMENT_FOOT_INSET`` and ``_TAIL_ORNAMENT_ENDMARK_CLEARANCE`` are the
+# reader's own and are unchanged: the band never crowds the folio's chrome below
+# it and never crowds the end mark's baseline above it.  Together they bound the
+# *room* -- ``_end_mark_baseline - 31`` down to ``frame_bottom + 24`` -- and the
+# room is what every decision below is made on.
 #
-# ``_TAIL_ORNAMENT_FOOT_INSET`` is how far the band stops above the frame's foot
-# so as not to crowd the page's own foot chrome; the folio keeps its line.  The
-# band is anchored at its *foot* -- the inset is a constant and the top varies
-# with the room -- exactly as ``_article_tail_ornament`` drew it.
+# ``_TAIL_ORNAMENT_MIN_HEIGHT`` WAS 118 AND IS 96, and the number is not a
+# taste, it is the render critic's own: ``render_critic.VOID_MIN_HEIGHT_POINTS``
+# is the height at which a full-measure block of untouched paper stops reading
+# as typography and starts reading as dead sheet (96pt, calibrated there against
+# every honest and guilty void in edition 003).  An ornament floor above that
+# bar is self-defeating -- it refuses the motif in exactly the rooms big enough
+# to be mistaken for a defect -- so the floor *is* the bar: wherever the open
+# room under an article could read as dead paper, the declared motif claims it,
+# and a tighter ending than that is an article honestly ending, not a slot.
+# Measured on edition 003 -- after the proportional opener field below moved
+# the flow, so these are the rooms the shipped ledger actually records -- the
+# six articles' rooms come out -42.6 / -27.9 / -22.2 / 154.2 / 335.1 / 410.9pt
+# in English, so English prints 3 of 6 declared ornaments where the old 118
+# floor (measured against the pre-change flow) printed 2, and the three
+# negative rooms are not a floor's business at all: those articles end on a
+# full last page with no slot, and the ledger says so.  Spanish prints 5 of 6
+# -- the harness article's runt last page collapsed when the opener reclaimed
+# its field, taking the article from six pages to five and its tail room to
+# -53.6pt, a drop the ledger records where the old contract would have lost it
+# silently.
 #
-# ``_TAIL_ORNAMENT_ENDMARK_CLEARANCE`` holds the band's head off the end mark's
-# baseline, and ``_TAIL_ORNAMENT_MAX_HEIGHT`` keeps an article that ends very
-# high from turning its ornament into a poster.
-_TAIL_ORNAMENT_MIN_HEIGHT = 118.0
+# ``_TAIL_ORNAMENT_MAX_HEIGHT`` still caps a very high ending's motif at 214 so
+# it cannot become a poster -- but the band is NO LONGER FOOT-ANCHORED when the
+# cap bites.  ``_article_tail_ornament`` pinned the band's foot at the inset and
+# let the whole surplus pool *above* it, between the end mark and the motif's
+# head: on edition 003 that printed 121pt and 197pt of stranded white mid-page
+# (en p19, p29), which the critic flags as exactly the voids they are.  A capped
+# band now stands centred in its room -- ``(room - height) / 2`` below the end
+# mark's clearance and the same above the foot inset -- so the surplus splits
+# into two balanced margins that read as the band's own setting, the way a
+# plate's art centres its overflow.  An uncapped band fills its room exactly and
+# the question does not arise.
+_TAIL_ORNAMENT_MIN_HEIGHT = 96.0
 _TAIL_ORNAMENT_MAX_HEIGHT = 214.0
 _TAIL_ORNAMENT_FOOT_INSET = 24.0
 _TAIL_ORNAMENT_ENDMARK_CLEARANCE = 31.0
@@ -422,6 +447,56 @@ _OPENER_TITLE_MAX_LINES = 4
 # that carries both a figure and a code deepens its field for the code's label
 # and hands the same depth back out of this cap (see ``_pin_opener_fields``).
 _OPENER_FIGURE_MAX_IMAGE_HEIGHT = 270.0
+
+# THE FIGURELESS OPENER'S FIELD IS PROPORTIONAL NOW, and this is the one number
+# that shapes it: how far the standfirst's flow edge stands below the credit
+# block's lowest ink.  ``_render_article_opener`` pinned ``top=238`` -- a
+# 305.2756pt field whatever the chrome above it -- and the constant was cut for
+# exactly one opener: a four-line title at the 35pt maximum whose code sets at
+# the house 1.5pt module, whose symbol's last dark row lands 264.5208pt down the
+# content box and leaves 40.7548pt of paper before the prose.  On that opener
+# the field reads deliberate (edition 003 en p5).  On every shallower stack the
+# same constant pays the difference out as dead sheet between the credit line
+# and the standfirst -- a 108pt full-measure void on a two-line title, which the
+# render critic flags on en p20/p30 and es p33 -- because the white was never a
+# decision, it was the remainder of someone else's.
+#
+# So the field follows the fitted title flow, exactly as a figure opener's
+# already does, and the gap is the constant: the field's foot stands
+# ``_OPENER_STANDFIRST_GAP_POINTS`` below the credit block's lowest ink --
+# the code symbol's last dark row where there is a code, the credit column's
+# own last line where there is not.  40.7548 is *measured, not chosen*:
+# ``305.2756 - 264.5208``, the residual the retired constant left on the one
+# opener class it was right for, so the deepest opener the old rule ever set is
+# reproduced to the fourth decimal and every other opener now gets the same
+# deliberate breath instead of the leftovers.  (Roughly three reading leadings,
+# 39pt, plus the odd 1.75 -- stated as the derivation because the derivation is
+# the reason.)
+_OPENER_STANDFIRST_GAP_POINTS = 305.2756 - 264.5208
+# The credit's own line advance below the byline's baseline, ``_credit``'s 13
+# (render.py:1741): the room the reader itself kept under a credit before
+# anything else, and therefore the floor the laid-out author note must keep
+# above a stated field's foot (``_validate_opener_credit_depth``).
+_OPENER_CREDIT_LINE_POINTS = 13.0
+# The author note's own metrics, for the one field arithmetic that needs them:
+# a figureless opener without a source code has no symbol to govern its credit
+# depth, so the note's own last ink governs instead.  The note sets 6.8pt on a
+# 9.45pt leading with its first baseline 12 below the byline's
+# (render.py:1731-1735, and the stylesheet's ``.author-note`` margin states the
+# same three numbers as a box gap); the descender is Magazine Sans's own
+# 0.2412109375 of the size.  Line count is predicted with ``_wrap`` over the
+# *Medium* face's advances although the note prints Regular -- Medium is the
+# nearest bundled metric and it is wider stroke for stroke, so the prediction
+# can only over-count, and over-counting a white field is the safe direction.
+# No edition to date exercises this branch (every article carries a code, and
+# the code's symbol is always the lower ink); the laid-out page is asked anyway,
+# by ``_validate_opener_credit_depth``, because the note is measured type and
+# the field is arithmetic, and two numbers for one line is the shape of every
+# defect here.
+_NOTE_SIZE_POINTS = 6.8
+_NOTE_LEADING_POINTS = 9.45
+_NOTE_BASELINE_DROP_POINTS = 12.0
+_NOTE_DESCENT_POINTS = _NOTE_SIZE_POINTS * 0.2412109375
 
 # ``_article_endmark`` (render.py:2008-2021).  The mark is hoisted 20pt out of
 # the flow by its own negative margin so that it can never open a page, and
@@ -740,6 +815,7 @@ def render_a5_weasyprint(
     _validate_reader_measures(document)
     _validate_fitted_display(document, edition)
     _validate_opener_code_clearance(document, plan.codes_by_article)
+    _validate_opener_credit_depth(document)
     document = _painted_reader(
         HTML, html, stylesheet, edition, plan, document, font_config=font_config
     )
@@ -762,6 +838,12 @@ def render_a5_weasyprint(
     )
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_bytes(pdf_bytes)
+    # The tail-art ledger, parked for the packaging step to move into the
+    # manifest's ``layout.tail_arts`` (see ``_TAIL_ART_LEDGER_KEY`` for why it
+    # rides the edition mapping and not the return value).  Written only once
+    # the reader itself has been -- a refused build must leave no ledger claiming
+    # its ornaments were decided.
+    edition.raw[_TAIL_ART_LEDGER_KEY] = _tail_art_ledger(document, edition, plan)
     return layout
 
 
@@ -933,10 +1015,14 @@ class ReaderPlan:
     credit line; its symbol is computed from the URL alone, but its ``top`` is
     measured off the laid-out byline, so it settles with the rest and it rides
     the plan so that the decode gate and the layout consume the same object.
-    ``tail_arts`` maps an article id
-    to the height its tail ornament prints at, measured from where that
-    article's own flow ended, and omits every article whose last page earned no
-    ornament.  ``adaptive_images`` maps a figure id to the image height an
+    ``tail_arts`` carries one ``(article_id, height, lift)`` per printed tail
+    ornament, measured from where that article's own flow ended: the height the
+    band prints at, and how far its foot is lifted above the standing
+    ``_TAIL_ORNAMENT_FOOT_INSET`` so a max-capped band stands centred in its
+    room rather than pooling the surplus above its own head.  Articles whose
+    last page earned no ornament are omitted here and accounted for in the
+    packaged manifest's ``layout.tail_arts`` ledger (``_tail_art_ledger``),
+    drop reason and all.  ``adaptive_images`` maps a figure id to the image height an
     ``adaptive_band`` has been shrunk to so that it can still bridge the page it
     started on (render.py:901-922), and omits every band that fits at its full
     height.  ``band_offsets`` maps a figure id to the margin mirror a band
@@ -954,7 +1040,7 @@ class ReaderPlan:
 
     closing_plates: int
     source_codes: tuple[SourceCode, ...] = ()
-    tail_arts: tuple[tuple[str, float], ...] = ()
+    tail_arts: tuple[tuple[str, float, float], ...] = ()
     adaptive_images: tuple[tuple[str, float], ...] = ()
     band_offsets: tuple[tuple[str, float], ...] = ()
     end_marks: tuple[tuple[str, float], ...] = ()
@@ -967,7 +1053,15 @@ class ReaderPlan:
 
     @property
     def tail_art_heights(self) -> dict[str, float]:
-        return dict(self.tail_arts)
+        """Height per printed ornament -- ``measure.py``'s view of the plan."""
+        return {article_id: height for article_id, height, _ in self.tail_arts}
+
+    @property
+    def tail_art_bands(self) -> dict[str, "TailBand"]:
+        return {
+            article_id: TailBand(height, lift)
+            for article_id, height, lift in self.tail_arts
+        }
 
     @property
     def end_mark_offsets(self) -> dict[str, float]:
@@ -980,6 +1074,20 @@ class ReaderPlan:
     @property
     def band_offset_points(self) -> dict[str, float]:
         return dict(self.band_offsets)
+
+
+class TailBand(NamedTuple):
+    """One printed tail ornament: its band height, and its foot's lift.
+
+    ``lift`` is how far the band's foot stands above the constant
+    ``_TAIL_ORNAMENT_FOOT_INSET``: zero for a band that fills its room, and
+    half the surplus for one the 214pt cap stopped short, so the capped band
+    is centred between the end mark's clearance and the foot inset instead of
+    stranding all its surplus above its own head.
+    """
+
+    height: float
+    lift: float
 
 
 class MeasuredRule(NamedTuple):
@@ -1220,7 +1328,7 @@ def _lay_out(
     # remove: a deferred plate is released by the article's coda, and the coda
     # has to still be there when that decision is taken.  Before the contrast
     # pass, which prepares whatever ornament survives for the press.
-    _apply_tail_arts(tree, plan.tail_art_heights)
+    _apply_tail_arts(tree, plan.tail_art_bands)
     _apply_print_contrast(tree)
     _apply_end_marks(tree, plan.end_mark_offsets)
     _apply_source_codes(tree, plan.codes_by_article)
@@ -1584,10 +1692,19 @@ def _pin_opener_fields(tree: Element, edition: Edition) -> None:
     ``_set_custom_frame`` takes another 10 (render.py:1998) and ``_credit`` takes
     12 + 13 with no author note (render.py:1732, 1741).
 
-    What the three openers then do with that differs.  An article without a
-    figure ignores it and pins ``top=238``, so the stylesheet holds a constant.
-    An article *with* one ends on ``_set_reading_frame(top=self.y)`` after
-    handing 13 back (render.py:2001-2003).  The editorial clamps,
+    What the three openers then do with that differs.  An article *with* a
+    figure ends on ``_set_reading_frame(top=self.y)`` after handing 13 back
+    (render.py:2001-2003).  An article *without* one used to ignore all of it
+    and pin ``top=238`` -- the reader's rule, reproduced here as a stylesheet
+    constant until edition 003 showed what the constant costs: the pinned field
+    was cut for the deepest credit stack the opener can carry, and every
+    shallower title paid the difference out as up to 96pt of dead sheet between
+    its credit line and its standfirst (see ``_OPENER_STANDFIRST_GAP_POINTS``).
+    So the figureless field is now stated here too, from the same fitted-title
+    arithmetic the figure opener uses: the credit block's lowest ink -- the code
+    symbol's last dark row, or the note's own last line where an article prints
+    no code -- plus one constant, deliberate gap to the standfirst
+    (``_opener_prose_field``).  The editorial keeps the reader's clamp,
     ``top=min(self.y, 390)`` (render.py:2091), so its natural height is stated
     here and the stylesheet's ``min-height`` is the ``min``.  Every field is a
     *flow* height, measured from the page's content box in the same convention as
@@ -1646,6 +1763,22 @@ def _pin_opener_fields(tree: Element, edition: Edition) -> None:
             # artwork.  `data-title-field` is that reservation, in points, stated
             # by the arithmetic that owns it.
             header.set("data-title-field", f"{title_field:.4f}")
+        else:
+            # The figureless field, stated from the same arithmetic: the credit
+            # block's lowest ink plus the one deliberate gap.  The title's own
+            # reservation is stated beside it for the same reason a figure
+            # opener states both -- the field is deeper than the title's room
+            # by the credit block and the gap, and a guard that judged the
+            # title against the whole field would hand a Pango-loosened title
+            # the credit's room and pass a page where the title has pushed the
+            # byline, the note and the square down into the standfirst.
+            header.set(
+                "style", f"height: {_opener_prose_field(declared, size, len(lines)):.4f}pt"
+            )
+            header.set(
+                "data-title-field",
+                f"{_OPENER_FIGURE_FIELD_BASE + _opener_title_flow(size, len(lines)):.4f}",
+            )
     sections = {
         f"section-{index}": (
             str(section.title), _SECTION_TITLE_BOX, _SECTION_TITLE_MAX, _SECTION_FIELD_BASE
@@ -1700,24 +1833,88 @@ def _opener_code_field_floor(article: Any, size: float, lines: int) -> float:
     alignment, so deep enough is exact enough.  Zero for an article with no code
     to place.
     """
-    url = str(getattr(article, "source_url", "") or "").strip()
-    if not url:
-        return 0.0
-    code = _fitted_source_code(str(article.id), url, _CODE_OPENER_SIDE_POINTS)
+    code = _opener_credit_code(article)
     if code is None:
         return 0.0  # ``_opener_source_codes`` raises the loud refusal.
-    byline_baseline = (
+    return _opener_symbol_bottom(code, size, lines) + _OPENER_BYLINE_PAD_POINTS
+
+
+def _opener_credit_code(article: Any) -> SourceCode | None:
+    """The code this article's credit line opens with, fitted from its URL.
+
+    ``None`` covers both an article with no ``source_url`` -- which prints no
+    code and is not an error -- and a URL no error-correction level can set over
+    the module floor, which *is* an error and stays ``_opener_source_codes``'s
+    to raise loudly; the field arithmetic must not decide it quietly.
+    """
+    url = str(getattr(article, "source_url", "") or "").strip()
+    if not url:
+        return None
+    return _fitted_source_code(str(article.id), url, _CODE_OPENER_SIDE_POINTS)
+
+
+def _opener_byline_baseline(size: float, lines: int) -> float:
+    """Where the credit line's byline baseline lands, from the fitted title."""
+    return (
         _OPENER_TITLE_TOP_POINTS
         + _opener_title_flow(size, lines)
         + _OPENER_TITLE_TO_CREDIT_POINTS
     )
-    symbol_bottom = (
-        byline_baseline
+
+
+def _opener_symbol_bottom(code: SourceCode, size: float, lines: int) -> float:
+    """The symbol's last dark row, from the fitted title: cap top plus the ink."""
+    return (
+        _opener_byline_baseline(size, lines)
         - _BYLINE_SIZE_POINTS * _INTER_CAP_RATIO
         + code.side
         - 2 * code.quiet
     )
-    return symbol_bottom + _OPENER_BYLINE_PAD_POINTS
+
+
+def _opener_prose_field(article: Any, size: float, lines: int) -> float:
+    """The white field a figureless opener reserves, from its own credit block.
+
+    The field's foot is the standfirst's flow edge, and it stands one constant,
+    deliberate ``_OPENER_STANDFIRST_GAP_POINTS`` below the credit block's lowest
+    ink -- which of the block's three pieces that is depends on the article:
+
+    * With a source code, the symbol's last dark row.  The square is a shade
+      taller than a byline and a two-line note by design (see
+      ``_CODE_OPENER_SIDE_POINTS``), so on every article this publication has
+      printed it is the governing ink.
+    * The author note's own last line, where a note out-rags the symbol or the
+      article prints no code.  Predicted from ``_wrap`` like every fitted
+      decision here, over the Medium face's advances, which only ever
+      over-count the Regular the note prints in -- the safe direction for a
+      white field (see ``_NOTE_SIZE_POINTS``).  The laid-out page is asked
+      again by ``_validate_opener_credit_depth``.
+    * The byline's own cap line, for an article with neither code nor note.
+
+    Computed from the *fitted* line count rather than measured, exactly as
+    ``_opener_code_field_floor``: the fit never under-counts a valid build's
+    lines, so a field stated from it is deep enough wherever Pango sets the
+    title tighter -- and a field is white space, not an alignment, so deep
+    enough is exact enough.
+    """
+    baseline = _opener_byline_baseline(size, lines)
+    ink_foot = baseline  # 7.4pt caps set no ink below their own baseline.
+    code = _opener_credit_code(article)
+    column = _LIVE_WIDTH_POINTS
+    if code is not None:
+        ink_foot = max(ink_foot, _opener_symbol_bottom(code, size, lines))
+        column = _LIVE_WIDTH_POINTS - _credit_column_inset(code)
+    note = str(getattr(article, "author_note", "") or "").strip()
+    if note:
+        note_lines = len(_wrap(note, "sans-medium", _NOTE_SIZE_POINTS, column))
+        ink_foot = max(
+            ink_foot,
+            baseline
+            + _NOTE_BASELINE_DROP_POINTS
+            + (note_lines - 1) * _NOTE_LEADING_POINTS
+            + _NOTE_DESCENT_POINTS,
+        )
+    return ink_foot + _OPENER_STANDFIRST_GAP_POINTS
 
 
 def _band_clearance_height(article: Element) -> float:
@@ -2425,8 +2622,10 @@ def _fit_credit_measure(article: Element, header: Element, code: SourceCode) -> 
     inset to the page's own edge and out past the live area.
 
     The line the note may take for it is free: an opener without a figure holds
-    the note inside a *fixed* white field, and an opener with one hides the note
-    entirely, so no prose can move.  In fact none is taken -- the column comes out
+    the note inside a white field stated deep enough for it (and for the
+    symbol below it, which governs -- ``_opener_prose_field``), and an opener
+    with one hides the note entirely, so no prose can move.  In fact none is
+    taken -- the column comes out
     a fraction *wider* than the note's old right-flush measure, which is the
     direction that cannot cost a line (see ``_credit_column_inset``).
 
@@ -2667,13 +2866,13 @@ def _measured_plan(
     """
     content_pages = _content_page_count(document)
     end_marks: list[tuple[str, float]] = []
-    tail_arts: list[tuple[str, float]] = []
+    tail_arts: list[tuple[str, float, float]] = []
     for article in edition.articles:
         flow_bottom = _article_flow_bottom(document, article.id)
         end_marks.append((article.id, _end_mark_offset(flow_bottom)))
-        tail = _measured_tail_art(article, flow_bottom)
-        if tail is not None:
-            tail_arts.append((article.id, tail))
+        band = _measured_tail_art(article, flow_bottom)
+        if band is not None:
+            tail_arts.append((article.id, band.height, band.lift))
     return ReaderPlan(
         closing_plates=_signature_closing_plates(edition, content_pages),
         source_codes=_opener_source_codes(edition, document),
@@ -2788,28 +2987,39 @@ def _walk_article_bylines(box: Any, article_id: str | None = None) -> Iterable[t
         yield from _walk_article_bylines(child, article_id)
 
 
-def _measured_tail_art(article: Any, flow_bottom: float) -> float | None:
-    """The height this article's tail ornament prints at, or nothing.
+def _tail_art_room(flow_bottom: float) -> float:
+    """The open room an article's last page offers its ornament, in points.
 
-    ``_article_tail_ornament_box`` (render.py:177-190), rule for rule: the band
-    stands ``_TAIL_ORNAMENT_FOOT_INSET`` above the frame's foot, its head at
-    least ``_TAIL_ORNAMENT_ENDMARK_CLEARANCE`` under the end mark's baseline,
-    and it prints only where that leaves ``_TAIL_ORNAMENT_MIN_HEIGHT`` of real
-    room -- a squeezed ornament reads as crowding, so a tight page prints
-    none.  Capped at the ornament's own maximum so an article that ends very
-    high does not turn its motif into a poster.
+    From the end mark's ``_TAIL_ORNAMENT_ENDMARK_CLEARANCE`` down to the
+    ``_TAIL_ORNAMENT_FOOT_INSET`` above the frame's foot.  Negative where the
+    flow ends below the band's own head room, which is stated rather than
+    clamped because the ledger's drop reason wants the measured number.
 
-    ONE NUMBER IS DELIBERATELY NOT THE READER'S, and it is the datum all three
-    rules are measured from.  The reader took the end mark's baseline through its
-    own ``max(frame_bottom + 5, y - 1)``; ``_end_mark_baseline`` refuses that
-    clamp on purpose -- see the argument there -- so wherever the clamp would
-    have fired, the baseline this measures from is lower than ReportLab's and the
-    room it reports is shorter by the same amount.  Measured on edition 002, the
-    clamp fires on exactly one article ending, es ``software-factories`` on p9:
-    42.48 against the clamp's 50.0, 7.5pt.  That article declares no tail art,
-    and a page ending that low has no ornament to lose either way -- 42.48 and
-    50.0 both leave the band well under ``_TAIL_ORNAMENT_MIN_HEIGHT``.  The
-    divergence is stated because it is one, not because it has reached the paper.
+    ONE NUMBER IS DELIBERATELY NOT THE READER'S, and it is the datum the two
+    bounds are measured from.  The reader took the end mark's baseline through
+    its own ``max(frame_bottom + 5, y - 1)``; ``_end_mark_baseline`` refuses
+    that clamp on purpose -- see the argument there -- so wherever the clamp
+    would have fired, the baseline this measures from is lower than ReportLab's
+    and the room it reports is shorter by the same amount.  Measured on edition
+    002, the clamp fires on exactly one article ending, es
+    ``software-factories`` on p9: 42.48 against the clamp's 50.0, 7.5pt.  That
+    article declares no tail art, and a page ending that low has no ornament to
+    lose either way.  The divergence is stated because it is one, not because
+    it has reached the paper.
+    """
+    bottom = _FRAME_BOTTOM_POINTS + _TAIL_ORNAMENT_FOOT_INSET
+    top = _end_mark_baseline(flow_bottom) - _TAIL_ORNAMENT_ENDMARK_CLEARANCE
+    return top - bottom
+
+
+def _measured_tail_art(article: Any, flow_bottom: float) -> TailBand | None:
+    """The band this article's tail ornament prints as, or nothing.
+
+    The rules and their numbers are argued at the constants themselves (see
+    ``_TAIL_ORNAMENT_MIN_HEIGHT``): the band prints only where its room clears
+    the floor a full-measure void starts reading as dead sheet at, fills that
+    room exactly when the 214pt cap does not bite, and stands centred in it --
+    half the surplus below, half above -- when it does.
 
     The 300 ppi floor is the reader's own (render.py:1985-1997): the committed
     raster must resolve at the crop-filled 325pt-wide band it prints across,
@@ -2817,9 +3027,7 @@ def _measured_tail_art(article: Any, flow_bottom: float) -> float | None:
     """
     if getattr(article, "tail_art", None) is None:
         return None
-    bottom = _FRAME_BOTTOM_POINTS + _TAIL_ORNAMENT_FOOT_INSET
-    top = _end_mark_baseline(flow_bottom) - _TAIL_ORNAMENT_ENDMARK_CLEARANCE
-    available = top - bottom
+    available = _tail_art_room(flow_bottom)
     if available < _TAIL_ORNAMENT_MIN_HEIGHT:
         return None
     height = min(available, _TAIL_ORNAMENT_MAX_HEIGHT)
@@ -2841,27 +3049,102 @@ def _measured_tail_art(article: Any, flow_bottom: float) -> float | None:
             f"Article tail art {article.tail_art} resolves to {effective_ppi:.1f} ppi; "
             f"the minimum is {_MIN_FIGURE_PPI:.0f} ppi"
         )
-    return height
+    return TailBand(height, (available - height) / 2)
 
 
-def _apply_tail_arts(tree: Element, heights: Mapping[str, float]) -> None:
-    """Print each article's tail ornament at the height its own page earned.
+# The private key ``render_a5_weasyprint`` parks the tail-art ledger under in
+# ``edition.raw``, and ``package_release`` moves into the packaged manifest's
+# ``layout.tail_arts``.  It rides the edition mapping because that mapping is
+# the one object the renderer holds that reaches the packaging step whole: the
+# render seam returns a ``RenderLayout``, whose fields the compiler maps to
+# fixed manifest keys one by one, and the compiler sits between two agents'
+# work and is not this change's to widen.  The literal is restated in
+# ``package.py`` (``RENDERED_TAIL_ARTS_KEY``) rather than imported, because
+# packaging must not import a renderer -- selecting ReportLab keeps this module
+# deletable (see ``render_engine``'s isolation contract).
+_TAIL_ART_LEDGER_KEY = "_rendered_tail_arts"
+
+
+def _tail_art_ledger(
+    document: Any, edition: Edition, plan: ReaderPlan
+) -> list[dict[str, Any]]:
+    """One row per article: what its declared ornament became on the page.
+
+    This is the manifest's ``layout.tail_arts`` contract, the one the render
+    critic reconciles (``render_critic.py``, ``tail-art-dropped``): every
+    article appears, ``declared`` says whether the edition offered a motif,
+    ``printed``/``height_points`` say what the pages did with it, and
+    ``drop_reason`` names the measured shortfall when they did nothing.  The
+    old behaviour -- ``article.remove(figure)`` and no record anywhere -- made
+    the rarest element in the magazine also the only one that could vanish
+    silently; the ledger is what makes a dropped ornament a decision someone
+    can see and overrule.
+
+    ``printed`` and ``height_points`` come from the settled plan rather than
+    being re-decided here, so the ledger can never disagree with the pages the
+    plan actually laid out; only a drop's *reason* re-measures the room, off
+    the same flow bottoms the plan's own equality has already settled.
+    """
+    bands = plan.tail_art_bands
+    rows: list[dict[str, Any]] = []
+    for article in edition.articles:
+        declared = getattr(article, "tail_art", None) is not None
+        row: dict[str, Any] = {
+            "article": str(article.id),
+            "declared": declared,
+            "printed": False,
+            "height_points": None,
+            "drop_reason": None,
+        }
+        band = bands.get(article.id)
+        if band is not None:
+            row["printed"] = True
+            row["height_points"] = round(band.height, 4)
+        elif declared:
+            room = _tail_art_room(_article_flow_bottom(document, article.id))
+            row["drop_reason"] = (
+                f"the article's last page leaves {room:.1f}pt of open tail room "
+                f"between the end mark's {_TAIL_ORNAMENT_ENDMARK_CLEARANCE:.0f}pt "
+                f"clearance and the {_TAIL_ORNAMENT_FOOT_INSET:.0f}pt foot inset; "
+                f"the ornament prints in {_TAIL_ORNAMENT_MIN_HEIGHT:.0f}pt or more"
+            )
+        rows.append(row)
+    return rows
+
+
+# ``.article-tail``'s own ``bottom`` -- the 24pt foot inset stated against the
+# box the ornament is positioned in, whose foot stands
+# ``_FIRST_BASELINE_INSET_POINTS`` below the page's content box.  A printed
+# band's lift is added to it, so the stylesheet's constant and the page's
+# decision meet in one inline declaration.
+_TAIL_BAND_CSS_FOOT_POINTS = _TAIL_ORNAMENT_FOOT_INSET - _FIRST_BASELINE_INSET_POINTS
+
+
+def _apply_tail_arts(tree: Element, bands: Mapping[str, TailBand]) -> None:
+    """Print each article's tail ornament as the band its own page earned.
 
     The figure is the semantic edition's own; what the print adapter adds is
     the page's decision.  An article whose last page earned no ornament -- or
     which declared none -- loses the figure from the print tree, exactly as
-    ``_article_tail_ornament`` simply drew nothing; one that earned it keeps
-    the figure with its measured height stated inline.  The stylesheet owns
-    everything that does not depend on the measurement: the band's foot, its
-    325pt measure and its crop-fill are ``.article-tail``'s own.
+    ``_article_tail_ornament`` simply drew nothing (the drop itself is recorded
+    in ``_tail_art_ledger``, so losing the figure is no longer losing the
+    fact); one that earned it keeps the figure with its measured height and
+    foot stated inline.  The stylesheet owns everything that does not depend
+    on the measurement: the band's 325pt measure and its crop-fill are
+    ``.article-tail``'s own, and its ``bottom`` here is the stylesheet's own
+    constant plus the lift that centres a max-capped band in its room.
     """
     for article in tree.iter("article"):
-        height = heights.get(article.get("data-article-id") or "")
+        band = bands.get(article.get("data-article-id") or "")
         for figure in [child for child in article if "article-tail" in _element_classes(child)]:
-            if height is None:
+            if band is None:
                 article.remove(figure)
             else:
-                figure.set("style", f"height: {height:.4f}pt")
+                figure.set(
+                    "style",
+                    f"height: {band.height:.4f}pt; "
+                    f"bottom: {_TAIL_BAND_CSS_FOOT_POINTS + band.lift:.4f}pt",
+                )
 
 
 def _end_mark_baseline(flow_bottom: float) -> float:
@@ -3573,11 +3856,10 @@ def _validate_fitted_display(document: Any, edition: Edition) -> None:
     always, and refuses loudly.
 
     * An opener's ``h1`` margin box must end inside the room reserved for the
-      title -- ``_opener_title_reservation``, which is the field
-      ``_pin_opener_fields`` states except where a source code deepened it, and
-      the constant the stylesheet holds for an opener without a figure.  Its
-      foot is where the prose, the credit block's own lowest ink, or the opener
-      figure begins.
+      title -- ``_opener_title_reservation``, which is the ``data-title-field``
+      ``_pin_opener_fields`` states on every article opener, figure or not,
+      except where a source code deepened it.  Its foot is where the prose, the
+      credit block's own lowest ink, or the opener figure begins.
     * A closing plate's caption must be set on the same number of lines
       ``_fitted_plate_title`` chose its size for.  The caption is positioned from
       that size alone, so an extra line hangs below the plate's title box.
@@ -3636,11 +3918,11 @@ def _opener_title_reservation(header: Any) -> float:
     rather than under it, so it still scans.
 
     So the reservation is read from ``data-title-field``, which
-    ``_pin_opener_fields`` states beside the field for this reason.  An opener
-    the adapter states no field for -- an article without a figure, whose field
-    the stylesheet pins at a constant, and the editorial and the sections, whose
-    field *is* the title's arithmetic -- is judged against the laid-out box, as
-    it always was.
+    ``_pin_opener_fields`` states beside the field for this reason -- on every
+    article opener now, figure or not, since the figureless field became
+    per-article arithmetic instead of a stylesheet constant.  What still falls
+    through to the laid-out box is exactly the editorial and the sections,
+    whose field *is* the title's arithmetic and which state no attribute.
     """
     element = getattr(header, "element", None)
     attributes = getattr(element, "attrib", {}) if element is not None else {}
@@ -3716,6 +3998,59 @@ def _validate_opener_code_clearance(
             "foot; the square is placed from the byline the page laid out, so the two "
             "have to be checked against each other on the finished page: "
             + "; ".join(sorted(failures)[:5])
+        )
+
+
+def _validate_opener_credit_depth(document: Any) -> None:
+    """Refuse a page whose author note has run down into the standfirst's gap.
+
+    The figureless opener's field is stated by ``_opener_prose_field`` from an
+    arithmetic prediction of the credit block's lowest ink, and the note is the
+    one piece of that block whose depth is *predicted type* rather than module
+    arithmetic: its line count comes from ``_wrap`` over the Medium face's
+    advances, which is not an upper bound on what Pango sets (the same one-way
+    honesty ``_validate_fitted_display`` exists for, argued at
+    ``_advance_widths``).  So the finished page is asked: every laid-out author
+    note inside an opener header must end at least the credit's own
+    ``_OPENER_CREDIT_LINE_POINTS`` above the field's foot -- the room the
+    reader itself kept under a credit before anything else.  An opener figure
+    hides the note entirely and a section sets none, so the guard reaches
+    exactly the openers whose field the note can threaten, and a failure is an
+    editorial problem -- a biography that out-rags its own credit block -- put
+    back where it can be fixed.
+    """
+    failures: list[str] = []
+    for page_number, page in enumerate(document.pages, start=1):
+        for piece, header, _title in _opener_title_boxes(page._page_box):
+            field_foot = (
+                float(header.content_box_y()) + float(header.height)
+            ) * _POINTS_PER_CSS_PIXEL
+            for box in _walk_boxes(header):
+                element = getattr(box, "element", None)
+                if (
+                    element is None
+                    or "author-note" not in _element_classes(element)
+                    or type(box).__name__ != "BlockBox"
+                ):
+                    continue
+                note_foot = (
+                    float(box.position_y) + float(box.margin_height())
+                ) * _POINTS_PER_CSS_PIXEL
+                clearance = field_foot - note_foot
+                if clearance + _FIELD_OVERFLOW_EPSILON >= _OPENER_CREDIT_LINE_POINTS:
+                    continue
+                failures.append(
+                    f"opener {piece!r} sets its author note down to {note_foot:.4f}pt "
+                    f"on page {page_number}, {clearance:.4f}pt above its own field's "
+                    f"foot at {field_foot:.4f}pt, under the credit's "
+                    f"{_OPENER_CREDIT_LINE_POINTS:.0f}pt line"
+                )
+    if failures:
+        raise ValidationError(
+            "WeasyPrint set an opener's author note into the gap its field keeps "
+            "for the standfirst. The field is stated from a predicted note depth "
+            "and the note is measured type, so the finished page is asked; "
+            "shorten the author note: " + "; ".join(sorted(failures)[:5])
         )
 
 

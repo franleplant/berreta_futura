@@ -14,6 +14,40 @@ from .preflight import inspect_package
 from .render_critic import inspect_render
 
 
+# WHERE ``layout.tail_arts`` COMES FROM.  The reader renderer decides, page by
+# page, which declared tail ornaments print and at what height, and the render
+# critic reconciles that record against the declarations (``tail-art-dropped``
+# in ``render_critic.py``) -- so the ledger has to reach the packaged
+# ``edition-manifest.json`` this module writes.  The renderer cannot put it
+# there itself: the render seam returns a ``RenderLayout`` whose fields the
+# compiler copies into fixed ``layout.*`` keys one by one, and this module must
+# not import a renderer either (packaging serves both engines, and selecting
+# ReportLab keeps the WeasyPrint module deletable -- ``render_engine``'s
+# isolation contract).  What does reach packaging whole is the edition mapping
+# the renderer was handed: ``manifest["edition"]`` *is* ``edition.raw``, the
+# same dict object, so ``render_a5_weasyprint`` parks its ledger there under
+# this private key and packaging adopts it into ``layout`` -- popping it, so
+# the scratch key never reaches the written artifact and the edition mapping
+# is handed back exactly as it was declared.  The literal is restated on the
+# renderer's side (``weasyprint_adapter._TAIL_ART_LEDGER_KEY``) rather than
+# imported, for the same isolation reason.  A build whose renderer wrote no
+# ledger -- ReportLab, or any manifest predating the key -- simply packages no
+# ``layout.tail_arts``, which the critic reads as nothing to reconcile.
+RENDERED_TAIL_ARTS_KEY = "_rendered_tail_arts"
+
+
+def _adopt_rendered_layout(manifest: dict[str, Any]) -> None:
+    """Move the renderer's parked tail-art ledger into ``manifest['layout']``."""
+    edition = manifest.get("edition")
+    if not isinstance(edition, dict):
+        return
+    ledger = edition.pop(RENDERED_TAIL_ARTS_KEY, None)
+    if ledger is None:
+        return
+    layout = manifest.setdefault("layout", {})
+    layout["tail_arts"] = ledger
+
+
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -39,6 +73,7 @@ def package_release(
     edition_id: str,
     recorded_review: dict[str, Any] | None = None,
 ) -> list[Path]:
+    _adopt_rendered_layout(manifest)
     destination.mkdir(parents=True, exist_ok=True)
     reader = destination / "reader.pdf"
     shutil.copyfile(reader_pdf, reader)
