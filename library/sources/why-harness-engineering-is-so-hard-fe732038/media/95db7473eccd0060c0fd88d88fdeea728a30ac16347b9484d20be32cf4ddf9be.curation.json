@@ -1,0 +1,64 @@
+{
+  "bundle_sha256": "95db7473eccd0060c0fd88d88fdeea728a30ac16347b9484d20be32cf4ddf9be",
+  "candidate_count": 2,
+  "candidates": [
+    {
+      "artifact_path": "media/002.jpg",
+      "artifact_sha256": "e34191d8f7ebff9beb3b8feb56ea4ea6b05124a57fcc2b0afa58c109381e3b26",
+      "aspect_ratio": 1.0,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "include",
+      "description": "Clean full-resolution original embedded in the source article; one input fans out to correct, close-but-wrong, and wrong outputs.",
+      "heading": "You can't write the test you want to write",
+      "id": "raster-001-e34191d8",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 1254,
+      "pixel_width": 1254,
+      "rationale": "Non-determinism breaks testing is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [],
+      "score": 70,
+      "source_artifact": "media/002.jpg",
+      "source_artifact_sha256": "e34191d8f7ebff9beb3b8feb56ea4ea6b05124a57fcc2b0afa58c109381e3b26",
+      "source_position": 2,
+      "title": "Non-determinism breaks testing"
+    },
+    {
+      "artifact_path": "media/003.jpg",
+      "artifact_sha256": "84bc510b6db01f4a820032c7b0fe618a051520f0df8d6da0a3f0a9a0038097a8",
+      "aspect_ratio": 1.333333,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "include",
+      "description": "Clean full-resolution original embedded in the source article; traditional code crashes while broken lines remain embedded in a finished model document.",
+      "heading": "Failure is silent and graded, not binary",
+      "id": "raster-002-84bc510b",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 1086,
+      "pixel_width": 1448,
+      "rationale": "Traditional code versus model output is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [],
+      "score": 70,
+      "source_artifact": "media/003.jpg",
+      "source_artifact_sha256": "84bc510b6db01f4a820032c7b0fe618a051520f0df8d6da0a3f0a9a0038097a8",
+      "source_position": 3,
+      "title": "Traditional code versus model output"
+    }
+  ],
+  "curator": "magazine-compiler/automatic-media-curator",
+  "input_sha256": "f8a09cb90b212b80425ebd4bfbaafd38e899808f30a447dd6278202d3353c56d",
+  "policy_version": "editorial-impact-v4",
+  "schema_version": 1,
+  "selected": [
+    "raster-001-e34191d8",
+    "raster-002-84bc510b"
+  ],
+  "selection_limit": 3,
+  "source_id": "why-harness-engineering-is-so-hard-fe732038"
+}

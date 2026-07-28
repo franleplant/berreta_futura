@@ -22,6 +22,12 @@ raw_captures:
   captured_at: '2026-07-26T22:17:18Z'
   artifact_count: 11
   byte_count: 1802280
+- id: 95db7473eccd0060c0fd88d88fdeea728a30ac16347b9484d20be32cf4ddf9be
+  path: raw/95db7473eccd0060c0fd88d88fdeea728a30ac16347b9484d20be32cf4ddf9be/manifest.json
+  method: browser_verified_x_article_original_media
+  captured_at: '2026-07-28T09:50:42Z'
+  artifact_count: 3
+  byte_count: 185903
 provenance: []
 rights:
   status: unknown
@@ -105,6 +111,33 @@ media_reviews:
       public_reprint_allowed: false
   note: Automatic curation selected 3 of 6 candidates under editorial-impact-v4; decisions are hash-pinned
     in 3989e617639e19d34b5c1423e278c4870b7edfb4652a38004b435f24b2bd323b.curation.json.
+- capture_id: 95db7473eccd0060c0fd88d88fdeea728a30ac16347b9484d20be32cf4ddf9be
+  status: media_curated
+  assets:
+  - id: raster-001-e34191d8
+    artifact_path: media/002.jpg
+    artifact_sha256: e34191d8f7ebff9beb3b8feb56ea4ea6b05124a57fcc2b0afa58c109381e3b26
+    mime_type: image/jpeg
+    creator: Winter
+    credit: 'Diagram by Winter; source: Why Harness Engineering Is So Hard.'
+    rights:
+      status: unknown
+      intended_use: private_reference
+      attribution_required: true
+      public_reprint_allowed: false
+  - id: raster-002-84bc510b
+    artifact_path: media/003.jpg
+    artifact_sha256: 84bc510b6db01f4a820032c7b0fe618a051520f0df8d6da0a3f0a9a0038097a8
+    mime_type: image/jpeg
+    creator: Winter
+    credit: 'Diagram by Winter; source: Why Harness Engineering Is So Hard.'
+    rights:
+      status: unknown
+      intended_use: private_reference
+      attribution_required: true
+      public_reprint_allowed: false
+  note: Automatic curation selected 2 of 2 candidates under editorial-impact-v4; decisions are hash-pinned
+    in 95db7473eccd0060c0fd88d88fdeea728a30ac16347b9484d20be32cf4ddf9be.curation.json.
 metadata:
   tags:
   - ai-agents

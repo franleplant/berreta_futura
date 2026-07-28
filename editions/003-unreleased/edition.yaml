@@ -102,7 +102,7 @@ articles:
   - id: nondeterminism-testing
     decision: include
     source_id: why-harness-engineering-is-so-hard-fe732038
-    asset_id: raster-002-9a307089
+    asset_id: raster-001-e34191d8
     caption: The same input fans out to correct, close-but-wrong, and wrong outputs; the crossed-out
       equality assertion is the test you cannot write.
     alt_text: A diagram titled non-determinism breaks testing shows one input producing correct, close-but-wrong,
@@ -117,7 +117,7 @@ articles:
   - id: silent-failure-modes
     decision: include
     source_id: why-harness-engineering-is-so-hard-fe732038
-    asset_id: raster-003-7411515f
+    asset_id: raster-002-84bc510b
     caption: Traditional code crashes at the point of failure; model output returns a document that
       looks finished with the broken lines woven through it.
     alt_text: Two panels contrast traditional code ending in a crash with model output producing a full
@@ -161,7 +161,7 @@ articles:
   - id: assembled-context-conflicts
     decision: include
     source_id: the-new-rules-of-context-engineering-for-claude--aa1b1ea8
-    asset_id: raster-002-0d7d13dc
+    asset_id: raster-001-7b66ba87
     caption: One assembled context, three masters — the system prompt allows documentation, a skill
       forbids comments, the request wants it working like the old one — and Claude reconciles them all.
     alt_text: A diagram of assembled context highlights conflicting instructions in the system prompt,
