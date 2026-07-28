@@ -42,8 +42,7 @@ articles:
   display_emphasis: Factories
   opener_variant: split_axis
   author: Dex Horthy
-  author_note: Dex Horthy diagnoses lights-off factories, tests frontier models on a longitudinal benchmark,
-    and proposes a human-steered alternative.
+  author_note: Dex Horthy is the founder of HumanLayer, a YC-backed developer-tools company.
   content_mode: faithful_synthesis
   source_ids:
   - why-software-factories-fail-f53679d7
@@ -90,8 +89,7 @@ articles:
   display_emphasis: Harness
   opener_variant: edge_medallion
   author: Winter
-  author_note: Winter spent five months building a production LLM harness and reports why it resists
-    ordinary testing and debugging.
+  author_note: Winter spent five months and 104 commits building a production LLM harness.
   content_mode: faithful_synthesis
   source_ids:
   - why-harness-engineering-is-so-hard-fe732038
@@ -135,8 +133,8 @@ articles:
   display_emphasis: Loop
   opener_variant: stepped_title
   author: Addy Osmani
-  author_note: Addy Osmani maps the move from prompting agents directly to designing the loops that
-    prompt them.
+  author_note: Addy Osmani spent 14 years leading engineering teams across Chrome, Gemini, and Google
+    Cloud AI.
   content_mode: faithful_synthesis
   source_ids:
   - loop-engineering-f0ddfd76
@@ -148,9 +146,8 @@ articles:
   short_title: Context Engineering
   display_emphasis: Context
   opener_variant: split_axis
-  author: Thariq
-  author_note: Thariq writes from inside the Claude Code team on simplifying context for the newest
-    Claude models.
+  author: Thariq Shihipar
+  author_note: Thariq Shihipar is a member of technical staff at Anthropic, working on Claude Code.
   content_mode: faithful_synthesis
   source_ids:
   - the-new-rules-of-context-engineering-for-claude--aa1b1ea8
@@ -179,8 +176,6 @@ articles:
   display_emphasis: Weights
   opener_variant: edge_medallion
   author: Microsoft and industry signatories
-  author_note: Microsoft and some fifty industry co-signatories argue that open-weight models underpin
-    a healthy AI ecosystem.
   content_mode: faithful_edit
   source_ids:
   - open-weights-and-american-ai-leadership-7aa6038f
@@ -194,8 +189,6 @@ articles:
   display_emphasis: Slack Killer
   opener_variant: stepped_title
   author: The Editors
-  author_note: The Editors read six early accounts of Buzz, Block's open-source workspace where humans
-    and agents share one room.
   content_mode: original_synthesis
   source_ids:
   - why-we-re-buzzing-1c82f338

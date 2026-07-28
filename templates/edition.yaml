@@ -13,7 +13,9 @@ articles:
     display_emphasis: Example
     opener_variant: edge_medallion
     author: Original Author
-    author_note: A one-line description of the author and why readers may know them.
+    # Optional. Use identity or relevant CV context, never an article synopsis.
+    # Omit when the byline is self-explanatory (for example, The Editors).
+    author_note: Original Author is the founder of Example Company.
     source_ids:
       - example-source-id
     manuscript: editions/issue-001/articles/example-article.md

@@ -157,6 +157,15 @@ def test_html_edition_uses_edition_locale_for_spanish(tmp_path: Path):
     assert "café" in html
 
 
+def test_html_edition_omits_empty_author_note_markup(tmp_path: Path):
+    edition = _edition(tmp_path)
+    article = replace(edition.articles[0], author_note="")
+    html = render_html_edition(replace(edition, articles=(article,))).html
+
+    assert '<p class="author-note">' not in html
+    assert '<span class="byline-prefix">By</span> Author &lt;&amp;&gt;' in html
+
+
 def test_reader_keeps_real_quotation_marks_and_educates_the_straight_ones(tmp_path: Path):
     """Authored quotation marks reach the page as real marks, never mixed.
 

@@ -3,7 +3,7 @@ language: es
 source_language: en
 locale: es-AR
 fallback_locale: es-ES
-base_copy_sha256: 28581850773ed22ca4c6897a3fb107d371195469c499852cdf51a5320c1badc7
+base_copy_sha256: 05ba4cc0cd40c4ecc79aa81aa17ec7e15551a8fa3236bc32386e150a1df342e7
 policy:
   register: educated_castellano
   regional_preference: restrained_argentinian
@@ -34,8 +34,8 @@ articles:
   title: 'Por qué fracasan las fábricas de software: el arnés, la luz y el oráculo'
   short_title: Fábricas de software
   display_emphasis: Fábricas
-  author_note: Dex Horthy diagnostica las fábricas a oscuras, prueba modelos de frontera con un benchmark longitudinal
-    y propone una alternativa dirigida por personas.
+  author_note: Dex Horthy es fundador de HumanLayer, una empresa de herramientas para desarrolladores respaldada
+    por YC.
   manuscript: articles/why-software-factories-fail.md
   source_sha256: 1ebc0a8391c7c96d009dc92e93cbdec4a3094cdb278a3239b5ef36c62a763a37
   figures:
@@ -64,8 +64,7 @@ articles:
   title: Por qué la ingeniería de arneses es tan difícil
   short_title: Ingeniería de arneses
   display_emphasis: Arneses
-  author_note: Winter pasó cinco meses construyendo un arnés de LLM en producción y cuenta por qué resiste las
-    pruebas y la depuración corrientes.
+  author_note: Winter pasó cinco meses y 104 commits construyendo un arnés de LLM en producción.
   manuscript: articles/why-harness-engineering-is-so-hard.md
   source_sha256: ec7c7316090751d92ef12826b54e06441b79ea62cde238ef2b6ca8cd01a239d2
   figures:
@@ -91,16 +90,14 @@ articles:
   title: 'Ingeniería de ciclos: el piso sobre el arnés'
   short_title: Ingeniería de ciclos
   display_emphasis: Ciclos
-  author_note: Addy Osmani traza el paso de escribir los prompts a mano a diseñar los ciclos que se los dan a
-    los agentes.
+  author_note: Addy Osmani pasó 14 años liderando equipos de ingeniería de Chrome, Gemini y Google Cloud AI.
   manuscript: articles/loop-engineering-above-the-harness.md
   source_sha256: eefbb972616a7827ba4331feed333488eb2fc0c02a1cef7b3c90f88d272bd845
 - id: new-rules-of-context-engineering
   title: Las nuevas reglas de la ingeniería de contexto
   short_title: Ingeniería de contexto
   display_emphasis: Contexto
-  author_note: Thariq escribe desde el equipo de Claude Code sobre cómo simplificar el contexto para los modelos
-    más recientes de Claude.
+  author_note: Thariq Shihipar forma parte del personal técnico de Anthropic y trabaja en Claude Code.
   manuscript: articles/new-rules-of-context-engineering.md
   source_sha256: 86fd2becc7d575d1f991f18b8b4432bef96b9c7654f758f5f87d8c2a3987eecb
   figures:
@@ -118,8 +115,6 @@ articles:
   short_title: Pesos abiertos
   display_emphasis: Pesos
   author: Microsoft y cofirmantes de la industria
-  author_note: Microsoft y unos cincuenta cofirmantes de la industria sostienen que los modelos de pesos abiertos
-    sustentan un ecosistema de IA saludable.
   manuscript: articles/open-weights-and-american-ai-leadership.md
   source_sha256: f88d103834156cc92f3bae6a9e016ac85f25e7d99aef50d2539a9080015edfdd
 - id: buzz-multiplayer-agent-layer
@@ -127,8 +122,6 @@ articles:
   short_title: Más allá del asesino de Slack
   display_emphasis: asesino de Slack
   author: La redacción
-  author_note: La redacción lee seis crónicas tempranas de Buzz, el espacio de trabajo de código abierto de Block
-    donde personas y agentes comparten una misma habitación.
   manuscript: articles/buzz-multiplayer-agent-layer.md
   source_sha256: 262f355594c0561a47c493e5d7dc8e10e76cec19e03320b9d41d0e0fa1846f47
 sections: []
