@@ -131,6 +131,10 @@ Backmatter uses the same opener and continuation system. The selected Signal fol
 
 The back face is compiled through `uv run --locked mag back-cover-proof <edition-id>` using the same outlined SVG -> one-page PDF -> PDF-derived PNG contract as the front. The generated PDF includes an invisible bundled-font text layer so every word remains searchable and selectable. A full build replaces both outer reader pages in one splice, and A4 imposition consumes that exact reader.
 
+## Screen profile
+
+`mag web` translates Quiet Standard to the screen; the print stylesheet remains the authority for paper. The translation is light-only and deliberate rather than adaptive: warm paper `#F1EADB` behind near-black `#11131A` ink with ultraviolet chrome, one centered 44rem reading measure, and the bundled faces served through `@font-face` so no host font ever sets a line. Print facts keep their screen verdicts — the contents folio is hidden because its number exists only through print's `target-counter`; the source link is a visible anchor, the same editorial fact the printed page sets as a QR code; and the hyphenation opt-outs carry over unchanged, because reference lists, name rosters, and code break for no medium.
+
 ## Guardrails
 
 - Do not draw the cover artwork anywhere after page 1.

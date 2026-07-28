@@ -386,6 +386,23 @@ tail ornament an article declared but the typesetter did not print becomes a
 `tail-art-dropped` review prompt. The report and review images are included in
 `SHA256SUMS`.
 
+## Web edition
+
+`mag web <edition-id>` writes a browsable web edition for every configured
+language to `output/<edition-id>/web/<language>/index.html`, printing one
+`<language>: <index path>` line per language written; `--language` narrows to
+one. The directory is self-contained — the semantic HTML with the screen
+stylesheet injected, the bundled OFL faces and their licenses, and every
+content image copied under a sanitized asset name — so `index.html` opens
+directly from the filesystem or from any static server (`python -m
+http.server` in the output directory). Repeated runs are byte-identical.
+
+The web edition is a private screen profile, not a publication step. It is
+not part of `mag build`, never enters a release package, and is outside the
+hash-bound render review, which binds PDFs only. While captured sources lack
+a public redistribution basis, web output must not be published; it lives
+under `output/`, which stays out of Git.
+
 ## Release archive
 
 `output/` is generated scratch and is not version-controlled, so an edition's
