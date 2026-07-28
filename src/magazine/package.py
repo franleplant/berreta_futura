@@ -53,8 +53,9 @@ def package_release(
         reader, destination / "home" / "booklet-a4-cover.pdf", section="cover"
     )
     # The manifest is written as soon as the PDFs it describes exist, *before*
-    # the render critic runs: the critic reads nothing from it (every fact it
-    # judges arrives as an argument), and a crash or a critic failure anywhere
+    # the render critic runs: the critic reads the edition's declared layout
+    # contract from it (the editorial page cap, the tail-art reconciliation),
+    # so it must already be on disk, and a crash or a critic failure anywhere
     # below must not leave fresh PDFs beside the previous build's manifest --
     # that pairing is what a release-time staleness check exists to catch, and
     # it should never be manufacturable by an interrupted build.
