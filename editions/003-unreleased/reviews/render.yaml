@@ -1,23 +1,22 @@
 schema_version: 1
 edition_id: 003-unreleased
-reviewer: Codex figure review
-reviewed_at: '2026-07-28T09:56:46+00:00'
+reviewer: Rawls (independent render critic)
+reviewed_at: '2026-07-28T10:54:54+00:00'
 result: approved
 engine: weasyprint
 design_direction: WeasyPrint / A5 fold proof
 findings: []
-notes: Replaced three defective curated figures with browser-verified full-resolution source originals.
-  Inspected every EN/ES reader and booklet contact sheet plus corrected figure crops; no sidebar, clipping,
-  overflow, ordering, blank-cover, or imposition defects remain. Independent render critic approved with
-  no actionable findings.
+notes: Inspected all EN/ES reader and booklet contact sheets after author-note policy and copy changes.
+  Personal bios are legible and well spaced; Microsoft and The Editors/La redacción byline-only openers
+  are clean; no clipping, overlap, overflow, imposition defects, or blank-cover regressions.
 languages:
   en:
-    reader_sha256: 3a2c1b7fa95b0a5da5d33b935bef0aecc5e2c20b2e38d8140402354cd2387667
-    booklet_sha256: 2f45b7e5d97cade770accec7d1f74b3cdfc0fc15a6b9e48818b57905697d4d69
+    reader_sha256: 352209e221b9cf6a2936f38165394f23fdb9848d234dc5bcac827d960699d305
+    booklet_sha256: c530da20762eee75a3daebe2b09f7f37689a1886406895eae125b32b50bd3650
     page_count: 36
     machine_result: pass
   es:
-    reader_sha256: 3b41a3c1ca61badd4a7b01f7f541dc8c229db5ed10b0f9ed96160976ea90c085
-    booklet_sha256: 75850b6aa89731d5b244f7288de1caf5908fc36bf43a533551b5c24bcbf3e10c
+    reader_sha256: e801dedd5b5ebcbe5c67acbabd696bde6d24907397f53e56a2d0dfc5aea8141e
+    booklet_sha256: 5ca6b452d216a41392d68416b697a3338540ea386e13dfd1b9b881b1715f7a44
     page_count: 40
     machine_result: pass

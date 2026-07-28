@@ -362,14 +362,36 @@ class ManifestTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "unknown sources"):
             Magazine(self.root).validate("issue-001")
 
-    def test_validate_requires_a_concise_article_author_note(self):
+    def test_validate_allows_an_article_to_omit_author_note(self):
         make_project(self.root)
         manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
         manifest = yaml.safe_load(manifest_path.read_text())
         manifest["articles"][0].pop("author_note")
         manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
 
-        with self.assertRaisesRegex(ValidationError, "missing: author_note"):
+        result = Magazine(self.root).validate("issue-001")
+
+        self.assertEqual(result.articles[0].author_note, "")
+
+    def test_validate_rejects_an_overlong_article_author_note(self):
+        make_project(self.root)
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text())
+        manifest["articles"][0]["author_note"] = "x" * 161
+        manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+
+        with self.assertRaisesRegex(ValidationError, "single line of at most 160"):
+            Magazine(self.root).validate("issue-001")
+
+    def test_validate_rejects_an_author_note_for_the_editors(self):
+        make_project(self.root)
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text())
+        manifest["articles"][0]["author"] = "The Editors"
+        manifest["articles"][0]["author_note"] = "The Editors summarize the sources."
+        manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+
+        with self.assertRaisesRegex(ValidationError, "must omit author_note"):
             Magazine(self.root).validate("issue-001")
 
     def test_validate_rejects_display_emphasis_outside_the_article_title(self):

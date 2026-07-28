@@ -136,7 +136,6 @@ def load_edition(
                 "short_title",
                 "opener_variant",
                 "author",
-                "author_note",
                 "source_ids",
                 "manuscript",
                 "fidelity",
@@ -146,10 +145,20 @@ def load_edition(
         if missing:
             errors.append(f"{label} missing: {', '.join(missing)}")
             continue
-        author_note = str(row["author_note"]).strip()
+        author_note = str(row.get("author_note") or "").strip()
         if "\n" in author_note or len(author_note) > 160:
             errors.append(
                 f"{label} author_note must be a single line of at most 160 characters"
+            )
+        if author_note and str(row["author"]).strip().casefold() in {
+            "editors",
+            "the editors",
+            "editorial team",
+            "the editorial team",
+        }:
+            errors.append(
+                f"{label} must omit author_note for the self-explanatory house byline "
+                f"{row['author']!r}"
             )
         if row["id"] in ids:
             errors.append(f"Duplicate article id: {row['id']}")
@@ -390,15 +399,24 @@ def load_translation(
         if (
             not row.get("title")
             or not row.get("short_title")
-            or not row.get("author_note")
             or not row.get("manuscript")
         ):
             errors.append(
                 f"Translation {language!r} article {article.id} requires title, short_title, "
-                "author_note, and manuscript"
+                "and manuscript"
             )
             continue
-        author_note = str(row["author_note"]).strip()
+        author_note = str(row.get("author_note") or "").strip()
+        if article.author_note and not author_note:
+            errors.append(
+                f"Translation {language!r} article {article.id} requires author_note "
+                "because the source article has one"
+            )
+        elif not article.author_note and author_note:
+            errors.append(
+                f"Translation {language!r} article {article.id} must omit author_note "
+                "because the source article omits it"
+            )
         if "\n" in author_note or len(author_note) > 160:
             errors.append(
                 f"Translation {language!r} article {article.id} author_note must be a "

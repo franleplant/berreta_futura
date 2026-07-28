@@ -261,15 +261,22 @@ def _render_article(
         f"    <h1>{_text(article.title)}</h1>",
         f'    <p class="byline" data-byline="true">'
         f'<span class="byline-prefix">{_text(_ui(edition, "by"))}</span> {_text(article.author)}</p>',
-        f'    <p class="author-note">{_text(article.author_note)}</p>',
-        '    <p class="provenance" data-provenance="source-ids">' + _text(_ui(edition, "sources")) + ': '
-        + ", ".join(
-            f'<span data-source-id="{_attr(source_id)}">{_text(source_id)}</span>'
-            for source_id in article.source_ids
-        )
-        + "</p>",
-        "  </header>",
     ]
+    if article.author_note:
+        lines.append(f'    <p class="author-note">{_text(article.author_note)}</p>')
+    lines.extend(
+        [
+            '    <p class="provenance" data-provenance="source-ids">'
+            + _text(_ui(edition, "sources"))
+            + ": "
+            + ", ".join(
+                f'<span data-source-id="{_attr(source_id)}">{_text(source_id)}</span>'
+                for source_id in article.source_ids
+            )
+            + "</p>",
+            "  </header>",
+        ]
+    )
     for figure in opener_figures:
         figure_html, asset = _render_figure(edition, article.id, figure)
         lines.extend(_indent((figure_html,), 2))

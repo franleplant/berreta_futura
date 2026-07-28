@@ -372,7 +372,8 @@ def _article_row(
     }
     if article.display_emphasis:
         row["display_emphasis"] = article.display_emphasis
-    row["author_note"] = article.author_note
+    if article.author_note:
+        row["author_note"] = article.author_note
     row["manuscript"] = rel
     row["source_sha256"] = _sha256(article.manuscript)
     if article.figures:
@@ -652,7 +653,7 @@ def _repair_article_row(
     writer: _OverlayWriter,
     notes: list[str],
 ) -> None:
-    """Add the keys an existing row is missing; never rewrite ones it has.
+    """Add missing keys and remove an author note the base no longer carries.
 
     Prose keys get English placeholders (reported by the placeholder scan);
     the pin key gets the correct digest outright, because a missing pin is a
@@ -663,8 +664,11 @@ def _repair_article_row(
     placeholders = {
         "title": article.title,
         "short_title": article.short_title,
-        "author_note": article.author_note,
     }
+    if article.author_note:
+        placeholders["author_note"] = article.author_note
+    elif "author_note" in row:
+        editor.delete_key(path, "author_note")
     for key, english in placeholders.items():
         if not row.get(key):
             editor.set_key(path, key, english)
@@ -1077,11 +1081,13 @@ def _untranslated_fields(
         if row is None:
             continue
         pointer = f"articles[{article.id}]"
-        for key, english in (
+        localized_fields = [
             ("title", article.title),
             ("short_title", article.short_title),
-            ("author_note", article.author_note),
-        ):
+        ]
+        if article.author_note:
+            localized_fields.append(("author_note", article.author_note))
+        for key, english in localized_fields:
             if row.get(key) == english:
                 flag(overlay_path, f"{pointer}.{key}", english)
         if article.display_emphasis and row.get("display_emphasis") == article.display_emphasis:

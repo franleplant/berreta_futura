@@ -264,10 +264,15 @@ rejection reasons. A build fails if any capture has not been curated.
 ## Edition manifests
 
 See `templates/edition.yaml`. An article points at both a manuscript and a
-fidelity ledger, and supplies a concise `author_note` that is rendered below
-the byline. Each language overlay provides its own localized note, and may
-localize the `author` byline itself when it is a description rather than a
-proper name; absent, the base author is used. Paths are
+fidelity ledger. It may supply a concise `author_note`, rendered below the
+byline, containing identity or relevant CV context: current role, notable
+company, founder status, or first-hand experience that establishes why the
+author is worth hearing. It must not summarize the article. Omit it for
+self-explanatory house or institutional bylines such as `The Editors`.
+Each language overlay provides a localized note when the English article has
+one and omits it when English does. An overlay may localize the `author` byline
+itself when it is a description rather than a proper name; absent, the base
+author is used. Paths are
 repository-relative and cannot escape the project. The compiler validates
 required fields, source references, duplicate IDs, and file existence before
 layout.
