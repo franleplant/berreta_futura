@@ -6,7 +6,7 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import mkstemp
-from typing import Any
+from typing import Any, Iterable
 
 from .errors import ValidationError
 from .io import dump_yaml, load_structured
@@ -21,6 +21,22 @@ def sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _read_json(path: Path) -> Any:
+    """Parse a package artifact, refusing corruption as a validation error.
+
+    A hand-damaged ``render-critic.json`` used to escape as a raw
+    ``json.JSONDecodeError`` traceback the CLI could not catch; every seam
+    that reads a JSON artifact goes through here so the refusal names the
+    file and stays inside the module's own error type.
+    """
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        raise ValidationError(
+            f"{path} is not valid JSON ({error}); run `mag build` to regenerate it"
+        ) from error
 
 
 def load_render_review(path: Path, *, edition_id: str) -> dict[str, Any] | None:
@@ -146,13 +162,13 @@ def create_render_review(
             raise ValidationError(
                 f"Render review requires a completed {language} build; run `mag build {edition_id}` first"
             )
-        report = json.loads(report_path.read_text(encoding="utf-8"))
+        report = _read_json(report_path)
         if report.get("result") != "pass":
             raise ValidationError(f"Cannot record review: {language} render critic has not passed")
         # The built manifest is the record of which renderer set the PDFs under
         # review; a review recorded against another engine's output would bind
         # the decision to pages the named engine never produced.
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest = _read_json(manifest_path)
         built_direction = manifest.get("layout", {}).get("design_direction")
         if built_direction != design_direction:
             raise ValidationError(
@@ -182,6 +198,156 @@ def create_render_review(
     return record
 
 
+def check_recorded_review_embeddable(
+    package: Path, record: dict[str, Any], *, edition_id: str, language: str
+) -> dict[str, Any]:
+    """Every refusal :func:`embed_recorded_review` can raise, with no writes.
+
+    Recording embeds the decision into every language package, so a caller
+    runs this over all of them *before* writing the review record: a package
+    that would refuse the embed then leaves no record behind -- neither an
+    approved ``render.yaml`` beside a package exposing nothing, nor earlier
+    languages embedded when a later one fails.  Returns the parsed report so
+    the embed that follows does not re-read it.
+    """
+
+    reader = package / "reader.pdf"
+    booklet = package / "home" / "booklet-a4.pdf"
+    report_path = package / "render-critic.json"
+    checksums_path = package / "SHA256SUMS"
+    missing = [
+        path.relative_to(package).as_posix()
+        for path in (reader, booklet, report_path, checksums_path)
+        if not path.is_file()
+    ]
+    if missing:
+        raise ValidationError(
+            f"Cannot expose the review in the {language} package: missing "
+            f"{', '.join(missing)}; run `mag build {edition_id}` first"
+        )
+    row = record.get("languages", {}).get(language)
+    if (
+        not isinstance(row, dict)
+        or row.get("reader_sha256") != sha256(reader)
+        or row.get("booklet_sha256") != sha256(booklet)
+    ):
+        raise ValidationError(
+            f"The {language} package's PDFs are not the bytes the review record "
+            "binds to; rebuild, re-inspect the current PDFs, and record again"
+        )
+    # The record binds whatever bytes are on disk, so a PDF tampered after the
+    # build binds cleanly -- but the package's own inventory still names the
+    # build's bytes.  Recording into a package that fails its own SHA256SUMS
+    # would seal an approval over a package no verifier can accept.
+    listed: dict[str, str] = {}
+    for line in checksums_path.read_text(encoding="utf-8").splitlines():
+        checksum, separator, name = line.partition("  ")
+        if separator:
+            listed[name] = checksum
+    if "render-critic.json" not in listed:
+        raise ValidationError(
+            f"SHA256SUMS in {package} does not list render-critic.json; "
+            "rebuild the package instead of patching it"
+        )
+    tampered = [
+        path.relative_to(package).as_posix()
+        for path in (reader, booklet)
+        if listed.get(path.relative_to(package).as_posix()) != sha256(path)
+    ]
+    if tampered:
+        raise ValidationError(
+            f"The {language} package no longer matches its own inventory "
+            f"({', '.join(tampered)} disagrees with SHA256SUMS); run "
+            f"`mag build {edition_id}`"
+        )
+    report = _read_json(report_path)
+    if not isinstance(report.get("visual_review"), dict):
+        raise ValidationError(
+            f"The {language} render-critic.json carries no visual_review block "
+            f"to update; run `mag build {edition_id}` first"
+        )
+    return report
+
+
+def embed_recorded_review(
+    package: Path, record: dict[str, Any], *, edition_id: str, language: str
+) -> Path:
+    """Expose a recorded decision in an existing package without re-typesetting.
+
+    Recording used to rebuild every language so the packages would carry the
+    decision, but the only package content that changes when a review lands is
+    ``render-critic.json``'s ``visual_review`` block -- its status, reviewer,
+    timestamp, result, and findings all derive from the record -- plus that
+    report's line in ``SHA256SUMS``.  So this rewrites exactly those, in place.
+    The contact-sheet and raster path lists inside the block describe artifacts
+    the build produced and are left untouched, as is every PDF.
+
+    The determinism guarantee moves with it: instead of rebuilding and proving
+    the bytes came out identical, the record must bind to the exact bytes on
+    disk, and the package must still vouch for those bytes itself.  Every
+    refusal lives in :func:`check_recorded_review_embeddable` so a caller can
+    dry-run the whole edition before writing anything.
+    """
+
+    report = check_recorded_review_embeddable(
+        package, record, edition_id=edition_id, language=language
+    )
+    report_path = package / "render-critic.json"
+    checksums_path = package / "SHA256SUMS"
+    reader = package / "reader.pdf"
+    booklet = package / "home" / "booklet-a4.pdf"
+    # The same computation the render critic composes into a fresh report, so
+    # a report updated in place says exactly what a rebuilt one would.
+    report["visual_review"].update(
+        visual_review_status(
+            record,
+            edition_id=edition_id,
+            language=language,
+            reader_pdf=reader,
+            booklet_pdf=booklet,
+        )
+    )
+    # Byte-identical serialization to package_release's, so the only diff in
+    # the report is the review state itself.
+    report_path.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    refresh_checksum_lines(checksums_path, package, [report_path])
+    return report_path
+
+
+def refresh_checksum_lines(
+    checksums_path: Path, package: Path, updated: Iterable[Path]
+) -> None:
+    """Re-hash only the named files' lines in an existing ``SHA256SUMS``.
+
+    Every other line is preserved byte for byte: the inventory keeps vouching
+    for files this operation never touched.  A file the inventory does not
+    list cannot be refreshed -- that is a package from some other shape of
+    build, and the caller should rebuild rather than patch it.
+    """
+
+    relative = {path.relative_to(package).as_posix(): path for path in updated}
+    lines = checksums_path.read_text(encoding="utf-8").splitlines()
+    refreshed: list[str] = []
+    replaced: set[str] = set()
+    for line in lines:
+        _, separator, name = line.partition("  ")
+        if separator and name in relative:
+            refreshed.append(f"{sha256(relative[name])}  {name}")
+            replaced.add(name)
+        else:
+            refreshed.append(line)
+    unlisted = sorted(set(relative) - replaced)
+    if unlisted:
+        raise ValidationError(
+            f"SHA256SUMS in {package} does not list {', '.join(unlisted)}; "
+            "rebuild the package instead of patching it"
+        )
+    checksums_path.write_text("\n".join(refreshed) + "\n", encoding="utf-8")
+
+
 def write_render_review(path: Path, record: dict[str, Any]) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     content = dump_yaml(record).encode("utf-8")
@@ -207,7 +373,7 @@ def require_approved_reports(language_packages: dict[str, Path]) -> None:
         if not path.is_file():
             errors.append(f"{language}: render-critic.json is missing")
             continue
-        report = json.loads(path.read_text(encoding="utf-8"))
+        report = _read_json(path)
         status = report.get("visual_review", {}).get("status")
         if status != "approved":
             errors.append(f"{language}: visual review is {status or 'missing'}")

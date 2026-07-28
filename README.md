@@ -357,10 +357,13 @@ uv run --locked mag release <edition-id>
 
 `mag review record` writes the canonical decision to
 `editions/<edition-id>/reviews/render.yaml`, binding it to the SHA-256 hashes of
-every configured reader and booklet, then rebuilds the packages so their
-reports expose the decision. Any subsequent PDF change makes the review
-`stale`. A `changes_required` decision must include at least one `--finding`.
-`mag release` refuses missing, stale, or changes-required review state.
+every configured reader and booklet exactly as they sit on disk, then rewrites
+each package's `render-critic.json` `visual_review` block (and its `SHA256SUMS`
+line) in place so the reports expose the decision without re-typesetting
+anything; `--rebuild` restores the old rebuild-and-compare proof. Any
+subsequent PDF change makes the review `stale`. A `changes_required` decision
+must include at least one `--finding`. `mag release` refuses missing, stale, or
+changes-required review state.
 
 The evidence review is the render review's editorial sibling: the adversarial
 manuscript-versus-source audit defined by `prompts/evidence-review.md`,
@@ -375,9 +378,16 @@ uv run --locked mag review record <edition-id> --kind evidence \
 
 The decision is written to `editions/<edition-id>/reviews/evidence.yaml`,
 binding per article the SHA-256 of the manuscript, of the fidelity ledger, and
-of every extraction body it was audited against. Changing any bound input makes
-the record `stale`. `mag review status` reports both kinds, and `mag release`
-refuses a missing, stale, or changes-required evidence review before rendering.
+of every extraction body it was audited against. Staleness is derived per
+article: `mag review status` reports, for each article, whether its bound
+hashes still match disk and when it was last audited, and one drifted article
+makes the whole record `stale` (naming the drifted articles and inputs). After
+re-auditing only what changed, `--articles <id,id>` re-binds just those
+articles from current disk state and preserves every other article's recorded
+binding and `reviewed_at`, so one changed manuscript no longer costs a
+full-edition re-audit. `mag review status` reports both kinds, and `mag
+release` refuses a missing, stale, or changes-required evidence review before
+rendering.
 
 ## First edition
 

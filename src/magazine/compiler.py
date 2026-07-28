@@ -17,6 +17,7 @@ from .evidence_review import (
     evidence_review_path,
     evidence_review_status as _evidence_review_status,
     load_evidence_review,
+    rebind_articles,
     require_approved_evidence_review,
     write_evidence_review,
 )
@@ -38,7 +39,9 @@ from .release import (
 )
 from .render_engine import engine_name, reader_renderer
 from .render_review import (
+    check_recorded_review_embeddable,
     create_render_review,
+    embed_recorded_review,
     load_render_review,
     require_approved_reports,
     sha256 as _artifact_sha256,
@@ -545,14 +548,27 @@ class Magazine:
         notes: str = "",
         reviewed_at: str | None = None,
         engine: str | None = None,
-    ) -> tuple[Path, BuildResult]:
-        """Bind an independent visual decision to the current language PDFs.
+        rebuild: bool = False,
+    ) -> tuple[Path, Path]:
+        """Bind an independent visual decision to the PDFs already on disk.
+
+        The record hashes the exact reader and booklet bytes the reviewer just
+        inspected; nothing is re-typeset.  The only package content that
+        carries review state is ``render-critic.json``'s ``visual_review``
+        block, so recording rewrites that block in place in every language
+        package and refreshes its line in ``SHA256SUMS`` (see
+        :func:`~.render_review.embed_recorded_review`).  The determinism
+        guarantee the old rebuild-and-compare provided is now the binding
+        itself: the decision names the bytes on disk, and any PDF that later
+        disagrees surfaces as ``stale``.
 
         ``engine`` mirrors ``build``'s override for reviewing an off-config
-        build. One renderer resolution serves the whole operation: the record
-        names it (checked against every built package's manifest, so a review
-        cannot bind to another engine's pages), and the rebuild below reuses it,
-        so the repackaged PDFs are set by the engine the reviewer looked at.
+        build; the record names it, checked against every built package's
+        manifest, so a review cannot bind to another engine's pages.
+
+        ``rebuild=True`` is the escape hatch to the old behaviour: re-typeset
+        every language with the recorded engine after writing the record, and
+        error if any byte differs from what the record binds to.
         """
 
         self.validate(edition_id)
@@ -576,31 +592,47 @@ class Magazine:
             notes=notes,
             reviewed_at=reviewed_at,
         )
+        if not rebuild:
+            # Refusals before the record exists: every language package must
+            # accept the embed before any review is written, so a refusal
+            # leaves neither an approved render.yaml beside a package that
+            # exposes nothing, nor earlier languages embedded when a later
+            # one fails.
+            for language, package in language_packages.items():
+                check_recorded_review_embeddable(
+                    package, record, edition_id=edition_id, language=language
+                )
         path = write_render_review(
             self.editions_dir / edition_id / "reviews" / "render.yaml",
             record,
         )
-        # Rebuild so package reports and checksums carry the recorded decision,
-        # then prove the rebuilt PDFs are the ones the record binds to.  The
-        # build is deterministic and the engine is the record's own, so any
-        # mismatch means the record is stale the moment it is written -- an
-        # error here, rather than a `status: "stale"` refusal at release time.
-        result = self.build(edition_id, engine=renderer.engine)
-        mismatched = []
-        for item in result.languages:
-            row = record["languages"].get(item.language, {})
-            if row.get("reader_sha256") != _artifact_sha256(item.reader_pdf) or row.get(
-                "booklet_sha256"
-            ) != _artifact_sha256(item.booklet_pdf):
-                mismatched.append(item.language)
-        if mismatched:
-            raise ValidationError(
-                f"Render review for {edition_id} was recorded against PDFs the rebuild "
-                f"did not reproduce ({', '.join(sorted(mismatched))}). The recorded "
-                "review is already stale; rebuild, re-review the current PDFs, and "
-                "record again."
+        if rebuild:
+            # The old proof, kept on request: rebuild with the record's own
+            # engine and require the deterministic build to reproduce the
+            # recorded bytes, so a non-reproducing record is an error the
+            # moment it is written rather than a `status: "stale"` refusal
+            # at release time.
+            built = self.build(edition_id, engine=renderer.engine)
+            mismatched = []
+            for item in built.languages:
+                row = record["languages"].get(item.language, {})
+                if row.get("reader_sha256") != _artifact_sha256(item.reader_pdf) or row.get(
+                    "booklet_sha256"
+                ) != _artifact_sha256(item.booklet_pdf):
+                    mismatched.append(item.language)
+            if mismatched:
+                raise ValidationError(
+                    f"Render review for {edition_id} was recorded against PDFs the rebuild "
+                    f"did not reproduce ({', '.join(sorted(mismatched))}). The recorded "
+                    "review is already stale; rebuild, re-review the current PDFs, and "
+                    "record again."
+                )
+            return path, destination
+        for language, package in language_packages.items():
+            embed_recorded_review(
+                package, record, edition_id=edition_id, language=language
             )
-        return path, result
+        return path, destination
 
     def record_evidence_review(
         self,
@@ -611,6 +643,7 @@ class Magazine:
         findings: list[str] | tuple[str, ...] = (),
         notes: str = "",
         reviewed_at: str | None = None,
+        articles: Iterable[str] | None = None,
     ) -> Path:
         """Bind an independent evidence audit to the exact bytes it compared.
 
@@ -618,12 +651,29 @@ class Magazine:
         the audit covered.  Recording requires a committed extraction for every
         ledger source: an audit cannot have compared a manuscript against
         evidence that does not exist.
+
+        ``articles`` narrows a re-record to the articles actually re-audited:
+        only those are re-bound from current disk state, and every other
+        article keeps the existing record's binding and per-article
+        ``reviewed_at``.  One changed article no longer costs a full-edition
+        re-audit -- edition 003's evidence record was re-recorded three times
+        in a day for exactly that reason.  Omitted, the record binds the whole
+        edition afresh, as it always has.
         """
 
         edition = self.validate(edition_id)
         bindings = current_evidence_bindings(
             edition, self.sources_dir, require_extractions=True
         )
+        if articles is not None:
+            bindings = rebind_articles(
+                load_evidence_review(
+                    evidence_review_path(self.editions_dir, edition_id),
+                    edition_id=edition_id,
+                ),
+                bindings=bindings,
+                article_ids=articles,
+            )
         record = create_evidence_review(
             edition_id=edition_id,
             reviewer=reviewer,
