@@ -104,8 +104,17 @@ def test_render_critic_emits_contact_sheet_and_passes_structural_checks(tmp_path
     assert "render-review/cover-booklet-sides/page-1.png" in relative_artifacts
     assert "render-review/reader-contact-sheet-01.png" in relative_artifacts
     assert "render-review/booklet-contact-sheet-01.png" in relative_artifacts
-    assert len(artifacts) == 20
+    # The 300 ppi crop set rides along with the contact sheets: the sole
+    # contents entry earns an opener crop, and the blank fixture's stub
+    # review item earns its evidence crop.
+    assert "render-review/crops/crop-p04-opener.png" in relative_artifacts
+    assert "render-review/crops/crop-p04-stub.png" in relative_artifacts
+    assert len(artifacts) == 22
     assert all(path.is_file() for path in artifacts)
+    crops = report["visual_review"]["crops"]
+    assert [(row["kind"], row["page"]) for row in crops] == [("opener", 4), ("stub", 4)]
+    assert all(row["ppi"] == 300 for row in crops)
+    assert crops[0]["path"] == "render-review/crops/crop-p04-opener.png"
 
 
 def test_render_critic_reports_the_split_documents_sheet_counts_and_geometry(tmp_path: Path):
@@ -437,9 +446,156 @@ def test_render_critic_flags_unmotivated_voids_but_excuses_an_articles_final_pag
     assert internal["trailing"] is False
     assert internal["width_fraction"] == 1.0
     assert 190 <= internal["height_points"] <= 210
+    assert next(row for row in report["pages"] if row["page"] == 4)["voids"][0] == internal
     final_page = next(row for row in report["pages"] if row["page"] == 6)["largest_void"]
     assert final_page["trailing"] is True
     assert report["checks"]["live_area_points"] == [35.0, 35.0, 245.5, 360.5]
+    # Each flagged void ships its evidence crop; the excused final page none.
+    crop_kinds = [(row["kind"], row["page"]) for row in report["visual_review"]["crops"]]
+    assert ("void", 4) in crop_kinds
+    assert ("void", 5) in crop_kinds
+    assert ("void", 6) not in crop_kinds
+    assert (tmp_path / "render-review" / "crops" / "crop-p04-void.png").is_file()
+    assert (tmp_path / "render-review" / "crops" / "crop-p05-void.png").is_file()
+
+
+def test_a_trailing_excuse_no_longer_shadows_a_reportable_void_above_it(tmp_path: Path):
+    """Every qualifying void answers for itself, not just the page's largest.
+
+    Page 4 is the article's final page: its largest void is the trailing
+    shortfall (excused, the article simply ends), but a second full-measure
+    void sits higher, between two text blocks.  Recording only the largest
+    void let that second void ride out of the report in the excused one's
+    shadow.
+    """
+    body_lines = [f"the running text keeps the page honest, line {index}" for index in range(6)]
+    reader = _lined_reader(tmp_path / "reader.pdf", 8, {4: body_lines})
+    booklet = impose_a5_on_a4(reader, tmp_path / "booklet.pdf")
+
+    def shadowing_rasters(pdf: Path, output: Path) -> list[Path]:
+        blank_sides = {"reader-pages": {2, 7}, "booklet-sides": {2}, "cover-booklet-sides": {2}}[
+            output.name
+        ]
+        output.mkdir(parents=True, exist_ok=True)
+        paths = []
+        for page_number in range(1, len(PdfReader(str(pdf)).pages) + 1):
+            image = Image.new("RGB", (560, 794), "white")
+            draw = ImageDraw.Draw(image)
+            if output.name == "reader-pages" and page_number == 4:
+                # Text, a 130 pt dead band, one more line, then the page
+                # runs dry: the 135 pt trailing void is the largest.
+                draw.rectangle((70, 70, 490, 160), fill="#36333a")
+                draw.rectangle((70, 420, 490, 450), fill="#36333a")
+            elif page_number not in blank_sides:
+                draw.rectangle((70, 70, 490, 720), fill="#36333a")
+            path = output / f"page-{page_number}.png"
+            image.save(path)
+            paths.append(path)
+        return paths
+
+    with patch("magazine.render_critic._render_pages", side_effect=shadowing_rasters):
+        report, _ = inspect_render(
+            reader,
+            booklet,
+            tmp_path,
+            **_imposed_documents(reader, tmp_path),
+            language="en",
+            toc={"article": 4},
+            article_pages={"article": 1},
+            editorial_pages=None,
+            edition_id="issue-001",
+        )
+
+    assert report["result"] == "pass"
+    voids = [issue for issue in report["issues"] if issue["code"] == "whitespace-void"]
+    assert [issue["page"] for issue in voids] == [4]
+    row = next(row for row in report["pages"] if row["page"] == 4)
+    assert row["largest_void"]["trailing"] is True
+    assert len(row["voids"]) == 2
+    assert row["voids"][1]["trailing"] is False
+    assert 120 <= row["voids"][1]["height_points"] <= 140
+    assert (tmp_path / "render-review" / "crops" / "crop-p04-void.png").is_file()
+
+
+def test_a_centered_tail_bands_margins_are_design_but_a_stranded_bands_are_not(tmp_path: Path):
+    """The ornament's symmetric margins pass; a foot-anchored band flags.
+
+    Both variants print a 100 pt band on the article's final page.  Centered,
+    the ~100 pt void above it mirrors the ~80 pt gap below -- the design's
+    own centering -- so nothing is flagged.  Stranded at the foot, the same
+    band leaves a 180 pt void above and nothing below: dead paper.
+    """
+    body_lines = [f"the running text keeps the page honest, line {index}" for index in range(6)]
+    reader = _lined_reader(tmp_path / "reader.pdf", 8, {4: body_lines})
+    booklet = impose_a5_on_a4(reader, tmp_path / "booklet.pdf")
+    _manifest_with_layout(
+        tmp_path,
+        {
+            "tail_arts": [
+                {"article": "article", "declared": True, "printed": True,
+                 "height_points": 100.0, "drop_reason": None},
+            ]
+        },
+    )
+
+    def rasters_with_band(band_top: int):
+        def stub(pdf: Path, output: Path) -> list[Path]:
+            blank_sides = {
+                "reader-pages": {2, 7}, "booklet-sides": {2}, "cover-booklet-sides": {2}
+            }[output.name]
+            output.mkdir(parents=True, exist_ok=True)
+            paths = []
+            for page_number in range(1, len(PdfReader(str(pdf)).pages) + 1):
+                image = Image.new("RGB", (560, 794), "white")
+                draw = ImageDraw.Draw(image)
+                if output.name == "reader-pages" and page_number == 4:
+                    draw.rectangle((70, 70, 490, 160), fill="#36333a")
+                    # The 100 pt tail band (200 px), pale as the press sets it.
+                    draw.rectangle((70, band_top, 490, band_top + 199), fill=(250, 250, 250))
+                elif page_number not in blank_sides:
+                    draw.rectangle((70, 70, 490, 720), fill="#36333a")
+                path = output / f"page-{page_number}.png"
+                image.save(path)
+                paths.append(path)
+            return paths
+
+        return stub
+
+    def inspect(band_top: int):
+        with patch(
+            "magazine.render_critic._render_pages", side_effect=rasters_with_band(band_top)
+        ):
+            report, _ = inspect_render(
+                reader,
+                booklet,
+                tmp_path,
+                **_imposed_documents(reader, tmp_path),
+                language="en",
+                toc={"article": 4},
+                article_pages={"article": 1},
+                editorial_pages=None,
+                edition_id="issue-001",
+            )
+        return report
+
+    # Centered: 100 pt margin above (rows 160-360), 80 pt below (560-720).
+    centered = inspect(360)
+    assert centered["result"] == "pass"
+    assert not [row for row in centered["issues"] if row["code"] == "whitespace-void"]
+    band = next(row for row in centered["pages"] if row["page"] == 4)["tail_band"]
+    assert band is not None
+    assert band["centered"] is True
+    assert 96 <= band["height_points"] <= 104
+    assert abs(band["gap_above_points"] - band["gap_below_points"]) <= 32
+    assert (tmp_path / "render-review" / "crops" / "crop-p04-tail.png").is_file()
+
+    # Stranded at the foot: 180 pt of dead paper above, nothing below.
+    stranded = inspect(520)
+    voids = [row for row in stranded["issues"] if row["code"] == "whitespace-void"]
+    assert [row["page"] for row in voids] == [4]
+    band = next(row for row in stranded["pages"] if row["page"] == 4)["tail_band"]
+    assert band is not None
+    assert band["centered"] is False
 
 
 def test_render_critic_flags_an_article_ending_on_a_stub(tmp_path: Path):

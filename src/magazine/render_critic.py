@@ -47,16 +47,29 @@ PAPER_WHITE = 255
 # margin that keeps a reduced cell at zero only when *every* source pixel
 # was empty: one presence pixel in an 8x8 cell averages to 255/64 =~ 4.
 VOID_DOWNSAMPLE = 8
-# Calibrated on edition 003, both languages.  The real defects -- the dead
-# bands stranded between an END mark and its tail ornament (148 pt and
-# 224 pt), the opener gaps between byline block and body text (108 pt), and
-# the closing plate's dead skirt (108 pt) -- all measure at least 108 pt
-# tall across the full live-area width.  The largest *honest* whitespace on
-# an ordinary page stops at 84 pt at full measure, or 124 pt at 86 % of it
-# (an opener's ragged byline column).  96 pt and 90 % each sit midway
-# between the tallest innocent reading and the shortest guilty one.
+# Calibrated on edition 003, both languages, and re-measured after the
+# opener byline fix and the centered tail bands landed.  The stranded dead
+# bands the first calibration named (148 pt and 224 pt between an END mark
+# and a foot-anchored ornament) no longer exist -- the ornament now centers
+# in its room, and its margins are excused by the tail-band check below --
+# so what remains guilty is the closing plate's dead skirt (108 pt) and a
+# body column running dry above an opener's fold (96 pt, the bar exactly).
+# The largest *honest* whitespace on an ordinary page stops at 84 pt at
+# full measure (a mid-article trailing shortfall), or 100 pt at 61 % of it
+# (an opener's ragged byline column).  96 pt and 90 % still separate the
+# two populations, though the height bar now touches the shortest guilty
+# reading rather than sitting midway -- worth re-measuring if a future
+# edition flags nothing.
 VOID_MIN_HEIGHT_POINTS = 96.0
 VOID_MIN_WIDTH_FRACTION = 0.9
+# One excused giant used to be able to hide a second, reportable void: the
+# sweep recorded only the largest rectangle per page, so on an article's
+# final page the excused trailing void shadowed the (say) 106.5 pt void
+# above the tail band.  A short ranked list -- each found rectangle masked
+# and the sweep re-run -- keeps every void that clears the bars above on the
+# record, so the excuses below can be argued per void rather than per page.
+# Three is one more than any edition-003 page has ever needed.
+VOID_REPORT_LIMIT = 3
 # A void whose bottom edge reaches the bottom of the live area -- nothing
 # beneath it but the folio line -- is the natural shortfall of an article's
 # final page, so article last pages are excused from trailing voids (a
@@ -65,6 +78,31 @@ VOID_MIN_WIDTH_FRACTION = 0.9
 # plausible folio size, while every mid-page void observed clears it by
 # hundreds of points.
 VOID_TRAILING_TOLERANCE_POINTS = 16.0
+# A printed tail ornament stands centered in whatever room the article's end
+# mark left it: by design, half the surplus above and half below (ornaments
+# cap at 214 pt, so edition 003's rooms leave 60-100 pt of margin a side).
+# Those margins are full-measure voids to the sweep -- 106.5 pt and
+# 128.5 pt above the edition's two capped bands -- but they are the design's
+# own centering, not dead paper, so a void that abuts the printed band is
+# excused *when the band's margins agree with each other*.  Locating the
+# band needs no new contract: the manifest's ``layout.tail_arts`` says what
+# height printed on which article, and the presence rows show a run of that
+# height.  The three tolerances, in order: the 4 pt void grid plus the
+# anti-aliased edge measure a 214.0 pt ledger band as 214.5 pt of presence,
+# so 12 pt matches a run to its ledger height with room to spare while no
+# text block on either language's tail pages comes within it; adjacency is
+# two grid cells, since a maximal void ends exactly where the band's
+# presence starts; and the symmetry bar covers the structural skew between
+# the two margins -- the foot side carries the 24 pt foot inset plus about
+# 20.5 pt of frame relief against the head side's 31 pt end-mark clearance,
+# about 13.5 pt of designed asymmetry -- so 32 pt accepts every centered
+# band observed (skews of 13-14 pt) while an ornament left stranded at its
+# foot, the old renderer's defect with all surplus above, misses by ~90 pt.
+# An article that ends absurdly high above its ornament is still caught:
+# that page carries almost no running text, which is the stub check's call.
+TAIL_BAND_HEIGHT_TOLERANCE_POINTS = 12.0
+TAIL_BAND_ADJACENCY_TOLERANCE_POINTS = 8.0
+TAIL_BAND_SYMMETRY_TOLERANCE_POINTS = 32.0
 # An article whose last page carries fewer than five lines of running text
 # ends on a stub -- edition 003 strands two lines of signatories above a
 # tail ornament -- while the leanest healthy closer observed still lands
@@ -79,6 +117,34 @@ STUB_BODY_LINE_MINIMUM = 5
 # critic runs -- the edition's tighter declaration replaces it, so the
 # critic is never looser than the contract the edition set for itself.
 DEFAULT_EDITORIAL_PAGE_CAP = 2
+# The zoom crops are the evidence the contact sheets cannot carry: a 260 px
+# thumbnail shows composition, not type, and the independent reviewer was
+# being asked to judge letterforms from it.  Each opener block, each placed
+# figure, each printed tail band and each flagged region is therefore also
+# cut from a 300 ppi raster of just its own page -- print resolution, so
+# what the crop shows is what the press will set.  The regions come from
+# facts the critic already holds (contents folios, the manifest's figure
+# boxes and tail ledger, the void geometry), never from new measurement.
+CROP_DPI = 300
+# Breathing room around a cropped subject, so a void crop shows the type
+# that bounds it and a band crop shows the paper around the ornament.
+CROP_MARGIN_POINTS = 24.0
+# A figure's caption and credit sit under its box and are part of judging
+# the placement, so figure crops extend this much further below the box.
+CROP_CAPTION_ALLOWANCE_POINTS = 48.0
+# An opener's running head, display title, byline block and QR all sit in
+# the top 320 pt of the page on both languages' openers (the QR block's
+# foot lands near 310 pt); the crop takes the full page width because the
+# title runs to the outer margin.
+OPENER_CROP_HEIGHT_POINTS = 320.0
+# A stub page's evidence is its head: running head, the remnant lines and
+# the END mark all land inside 220 pt on any page stubby enough to flag
+# (fewer than five lines of running text below a ~65 pt head area).
+STUB_CROP_HEIGHT_POINTS = 220.0
+# When the manifest says a band printed but no presence run matches its
+# height, the crop still ships -- the mismatch is exactly what a reviewer
+# should see -- covering the bottom of the page where the band belongs.
+TAIL_FALLBACK_CROP_HEIGHT_POINTS = 300.0
 
 _STANDALONE_PUNCTUATION = re.compile(r"^[,.;:!?\u2026]+$")
 _COVER_PLACEHOLDER = re.compile(r"(?:\.\.\.|\b(?:TODO|TBD)\b|\[insert\b)", re.IGNORECASE)
@@ -275,7 +341,6 @@ def inspect_render(
         for page in range(3, page_count - 1)
         if page not in inside_cover_pages and page not in contents_pages
     }
-    live_area_points = _annotate_void_geometry(rendered_pages, page_rows, body_pages)
     # Where each article sets its final line, from the same declared facts the
     # page-cap checks already trust: its contents folio plus its page count.
     article_last_pages = {
@@ -284,6 +349,24 @@ def inspect_render(
         if slug in toc and int(count) > 0
     }
     last_page_numbers = set(article_last_pages.values())
+    # Which pages should show a printed tail ornament, and at what height:
+    # the ledger names the article, the contents arithmetic above names its
+    # last page.  The void annotation uses this to find each band's presence
+    # run, so the review loop can tell its centered margins from dead paper.
+    printed_tail_bands: dict[int, float] = {}
+    for entry in manifest_layout.get("tail_arts") or ():
+        if not isinstance(entry, dict) or not entry.get("printed"):
+            continue
+        height = entry.get("height_points")
+        band_page = article_last_pages.get(str(entry.get("article")))
+        if isinstance(height, (int, float)) and band_page is not None:
+            printed_tail_bands[band_page] = float(height)
+    live_area_points = _annotate_void_geometry(
+        rendered_pages, page_rows, body_pages, printed_tail_bands
+    )
+    # Regions the reviewer will want enlarged, gathered as their review items
+    # are raised so each crop shows exactly what its item is about.
+    flag_crops: list[dict[str, Any]] = []
     for row in page_rows:
         page = int(row["page"])
         if page in inside_cover_pages:
@@ -304,6 +387,7 @@ def inspect_render(
                 f"Ink coverage is only {row['ink_ratio']:.4f}; confirm that the whitespace is intentional.",
                 page=page,
             )
+            flag_crops.append({"page": page, "kind": "sparse", "span": None})
         if row["standalone_punctuation_lines"]:
             issue(
                 "orphan-punctuation",
@@ -311,16 +395,23 @@ def inspect_render(
                 "A line contains only punctuation, which usually indicates a broken display title.",
                 page=page,
             )
-        void = row["largest_void"]
-        if (
-            void is not None
-            and void["height_points"] >= VOID_MIN_HEIGHT_POINTS
-            and void["width_fraction"] >= VOID_MIN_WIDTH_FRACTION
-            # A trailing void on an article's final page is the article
-            # simply ending; anywhere else -- mid-article, or under a
-            # closing plate that should fill its page -- it is dead paper.
-            and not (void["trailing"] and page in last_page_numbers)
-        ):
+        # Every reportable void answers for itself: the excuses that used to
+        # be applied to the page's single largest rectangle are argued per
+        # void, so an excused giant can no longer shadow a smaller void that
+        # deserves the reviewer's eye.
+        for void in row["voids"]:
+            if void["trailing"] and page in last_page_numbers:
+                # A trailing void on an article's final page is the article
+                # simply ending; anywhere else -- mid-article, or under a
+                # closing plate that should fill its page -- it is dead paper.
+                continue
+            band = row["tail_band"]
+            if band is not None and band["centered"] and _abuts_tail_band(void, band):
+                # The void is a centered tail ornament's own margin -- the
+                # calibration at TAIL_BAND_SYMMETRY_TOLERANCE_POINTS argues
+                # why agreement between the two margins is the design's
+                # signature and disagreement is a stranded band.
+                continue
             issue(
                 "whitespace-void",
                 "review",
@@ -328,6 +419,16 @@ def inspect_render(
                 f"starts {void['y_points']:.0f} pt down the live area; confirm the "
                 "whitespace is doing design work.",
                 page=page,
+            )
+            flag_crops.append(
+                {
+                    "page": page,
+                    "kind": "void",
+                    "span": (
+                        void["y_points"] - CROP_MARGIN_POINTS,
+                        void["y_points"] + void["height_points"] + CROP_MARGIN_POINTS,
+                    ),
+                }
             )
 
     # A machine can hear an article end on a stub even though it cannot judge
@@ -346,6 +447,9 @@ def inspect_render(
                 "text; consider re-cutting the break so the article does not end on a stub.",
                 page=last_page,
             )
+            flag_crops.append(
+                {"page": last_page, "kind": "stub", "span": (0.0, STUB_CROP_HEIGHT_POINTS)}
+            )
 
     # Tail-art reconciliation, a forward contract: when the manifest starts
     # declaring ``layout.tail_arts``, every ornament an article declared but
@@ -363,6 +467,20 @@ def inspect_render(
                 f"Tail art declared for '{article}' was not printed ({reason}); "
                 "confirm the drop is intentional.",
             )
+
+    crop_specs = _review_crop_plan(
+        reader,
+        toc=toc,
+        manifest_layout=manifest_layout,
+        printed_tail_bands=printed_tail_bands,
+        page_rows=page_rows,
+        flag_crops=flag_crops,
+        page_count=page_count,
+    )
+    crop_paths, crop_rows = _write_review_crops(
+        reader_pdf, review_dir / "crops", destination, crop_specs
+    )
+    review_artifacts = review_artifacts + crop_paths
 
     inside_cover_sides = {
         int(row["side"])
@@ -461,6 +579,8 @@ def inspect_render(
             "live_area_points": live_area_points,
             "void_min_height_points": VOID_MIN_HEIGHT_POINTS,
             "void_min_width_fraction": VOID_MIN_WIDTH_FRACTION,
+            "void_report_limit": VOID_REPORT_LIMIT,
+            "tail_band_symmetry_tolerance_points": TAIL_BAND_SYMMETRY_TOLERANCE_POINTS,
             "stub_body_line_minimum": STUB_BODY_LINE_MINIMUM,
         },
         "issues": issues,
@@ -534,9 +654,12 @@ def inspect_render(
             "cover_booklet_sides": [
                 path.relative_to(destination).as_posix() for path in rendered_cover_booklet
             ],
+            "crops": crop_rows,
             "instructions": (
                 "Inspect every page on the contact sheets at useful zoom; automated checks do not judge "
-                "typographic rhythm, visual hierarchy, or aesthetic quality."
+                "typographic rhythm, visual hierarchy, or aesthetic quality. The crops/ set enlarges "
+                "every opener block, placed figure, printed tail band, and flagged region at 300 ppi "
+                "so type quality is judged at print resolution rather than from thumbnails."
             ),
         },
     }
@@ -671,8 +794,15 @@ def _inspect_page(path: Path, pdf_page: Any, page_number: int) -> dict[str, Any]
         "presence_bbox": list(presence_bbox) if presence_bbox else None,
         "body_text_lines": body_text_lines,
         # Filled in by ``_annotate_void_geometry`` for reader body pages; the
-        # key is present on every row so the schema does not shift per page.
+        # keys are present on every row so the schema does not shift per
+        # page.  ``largest_void`` is the single largest empty rectangle
+        # whether or not it is worth reporting; ``voids`` ranks every
+        # rectangle tall and wide enough to matter; ``tail_band`` is the
+        # located presence run of a printed tail ornament, where the
+        # manifest declares one for this page.
         "largest_void": None,
+        "voids": [],
+        "tail_band": None,
         "text_characters": len(text.strip()),
         "blank": pure_white and not text.strip(),
         "ink_free": ink_pixels == 0 and not text.strip(),
@@ -721,17 +851,27 @@ def _declared_editorial_cap(manifest_layout: dict[str, Any]) -> int:
 
 
 def _annotate_void_geometry(
-    rendered_pages: list[Path], page_rows: list[dict[str, Any]], body_pages: set[int]
+    rendered_pages: list[Path],
+    page_rows: list[dict[str, Any]],
+    body_pages: set[int],
+    tail_bands: dict[int, float],
 ) -> list[float] | None:
-    """Fill each body page's ``largest_void`` row; return the live area in points.
+    """Fill each body page's void geometry rows; return the live area in points.
 
     The live area is the union of the body pages' presence boxes -- the frame
     the design actually types into, discovered from the pages themselves so a
     margin change never needs a constant retuned here.  Within that frame,
-    each body page is downsampled and swept for its largest all-paper
-    rectangle: voids are judged in page geometry (points, and a fraction of
-    the live measure) precisely so thresholds read like typography rather
-    than pixel counts.  Pages with no presence at all are skipped; total
+    each body page is downsampled and swept for its all-paper rectangles:
+    voids are judged in page geometry (points, and a fraction of the live
+    measure) precisely so thresholds read like typography rather than pixel
+    counts.  The sweep repeats, masking each rectangle it finds, so one
+    excused giant cannot shadow a second reportable void -- ``voids`` is the
+    ranked list of every rectangle clearing the size bars, ``largest_void``
+    the single largest whether or not it clears them (schema stability).
+    ``tail_bands`` maps an article's last page to the ornament height the
+    manifest says printed there; the matching presence run is recorded as
+    ``tail_band`` so the review loop can tell a centered ornament's margins
+    from dead paper.  Pages with no presence at all are skipped; total
     blankness is the blank-page check's verdict, not a void.
     """
 
@@ -762,32 +902,129 @@ def _annotate_void_geometry(
             cells = presence.crop(live).reduce(VOID_DOWNSAMPLE)
             columns, rows_count = cells.size
             data = cells.tobytes()
-        area, cell_width, cell_height, cell_x, cell_y = _largest_empty_rectangle(
-            data, columns, rows_count
-        )
-        if not area:
-            continue
-        # ``reduce`` ceils a partial trailing cell into existence, so a void
-        # spanning the whole measure can compute a hair over the live width;
-        # clamping keeps the fraction an honest "share of the measure".
-        width_px = min(cell_width * VOID_DOWNSAMPLE, live_width)
-        height_px = cell_height * VOID_DOWNSAMPLE
-        x_px = live[0] + cell_x * VOID_DOWNSAMPLE
-        y_px = live[1] + cell_y * VOID_DOWNSAMPLE
-        trailing_gap = (live[3] - (y_px + height_px)) * scale
-        row["largest_void"] = {
-            "x_points": round(x_px * scale, 1),
-            "y_points": round(y_px * scale, 1),
-            "width_points": round(width_px * scale, 1),
-            "height_points": round(height_px * scale, 1),
-            "width_fraction": round(width_px / live_width, 3),
-            "trailing": trailing_gap <= VOID_TRAILING_TOLERANCE_POINTS,
-        }
+        grid = bytearray(data)
+        voids: list[dict[str, Any]] = []
+        largest: dict[str, Any] | None = None
+        for _ in range(VOID_REPORT_LIMIT):
+            area, cell_width, cell_height, cell_x, cell_y = _largest_empty_rectangle(
+                grid, columns, rows_count
+            )
+            if not area:
+                break
+            # ``reduce`` ceils a partial trailing cell into existence, so a
+            # void spanning the whole measure can compute a hair over the
+            # live width; clamping keeps the fraction an honest "share of
+            # the measure".
+            width_px = min(cell_width * VOID_DOWNSAMPLE, live_width)
+            height_px = cell_height * VOID_DOWNSAMPLE
+            x_px = live[0] + cell_x * VOID_DOWNSAMPLE
+            y_px = live[1] + cell_y * VOID_DOWNSAMPLE
+            trailing_gap = (live[3] - (y_px + height_px)) * scale
+            void = {
+                "x_points": round(x_px * scale, 1),
+                "y_points": round(y_px * scale, 1),
+                "width_points": round(width_px * scale, 1),
+                "height_points": round(height_px * scale, 1),
+                "width_fraction": round(width_px / live_width, 3),
+                "trailing": trailing_gap <= VOID_TRAILING_TOLERANCE_POINTS,
+            }
+            if largest is None:
+                largest = void
+            if (
+                void["height_points"] >= VOID_MIN_HEIGHT_POINTS
+                and void["width_fraction"] >= VOID_MIN_WIDTH_FRACTION
+            ):
+                voids.append(void)
+            for masked_row in range(cell_y, cell_y + cell_height):
+                offset = masked_row * columns
+                for masked_column in range(cell_x, cell_x + cell_width):
+                    grid[offset + masked_column] = 255
+        row["largest_void"] = largest
+        row["voids"] = voids
+        declared_height = tail_bands.get(page)
+        if declared_height is not None:
+            row["tail_band"] = _locate_tail_band(
+                data, columns, rows_count, live, scale, declared_height
+            )
     return [round(value * scale, 1) for value in live]
 
 
+def _locate_tail_band(
+    data: bytes,
+    columns: int,
+    rows_count: int,
+    live: tuple[int, int, int, int],
+    scale: float,
+    declared_height: float,
+) -> dict[str, Any] | None:
+    """The presence run matching a page's declared tail ornament, or nothing.
+
+    The manifest's ledger says an ornament of ``declared_height`` printed on
+    this page; on the downsampled presence grid that ornament is a run of
+    consecutive occupied cell rows of the same height (the tolerance's own
+    comment argues why no text block collides).  The bottommost matching run
+    wins -- the ornament stands below the article's last line by
+    construction, and the folio's own run is a few points tall and can never
+    match a >=96 pt band.  The gaps to the neighbouring runs (or the live
+    edges) are the band's actual margins, and ``centered`` is the design's
+    signature: the two margins agreeing within the calibrated skew.
+    """
+
+    runs: list[tuple[int, int]] = []
+    start: int | None = None
+    for row_index in range(rows_count):
+        offset = row_index * columns
+        occupied = any(data[offset : offset + columns])
+        if occupied and start is None:
+            start = row_index
+        elif not occupied and start is not None:
+            runs.append((start, row_index))
+            start = None
+    if start is not None:
+        runs.append((start, rows_count))
+    cell_points = VOID_DOWNSAMPLE * scale
+    match: int | None = None
+    for index, (run_start, run_end) in enumerate(runs):
+        height = (run_end - run_start) * cell_points
+        if abs(height - declared_height) <= TAIL_BAND_HEIGHT_TOLERANCE_POINTS:
+            match = index
+    if match is None:
+        return None
+    run_start, run_end = runs[match]
+    above_end = runs[match - 1][1] if match else 0
+    below_start = runs[match + 1][0] if match + 1 < len(runs) else rows_count
+    gap_above = (run_start - above_end) * cell_points
+    gap_below = (below_start - run_end) * cell_points
+    return {
+        "y_points": round((live[1] + run_start * VOID_DOWNSAMPLE) * scale, 1),
+        "height_points": round((run_end - run_start) * cell_points, 1),
+        "declared_height_points": round(float(declared_height), 4),
+        "gap_above_points": round(gap_above, 1),
+        "gap_below_points": round(gap_below, 1),
+        "centered": abs(gap_above - gap_below) <= TAIL_BAND_SYMMETRY_TOLERANCE_POINTS,
+    }
+
+
+def _abuts_tail_band(void: dict[str, Any], band: dict[str, Any]) -> bool:
+    """Whether a void is one of the band's own margins.
+
+    A maximal void ends exactly where presence begins, so a margin void's
+    bottom edge sits on the band's top edge (or its top edge on the band's
+    bottom); the tolerance is two grid cells of measurement slack, far under
+    the height of anything reportable.
+    """
+
+    band_top = band["y_points"]
+    band_bottom = band["y_points"] + band["height_points"]
+    void_bottom = void["y_points"] + void["height_points"]
+    return (
+        abs(void_bottom - band_top) <= TAIL_BAND_ADJACENCY_TOLERANCE_POINTS
+        or abs(void["y_points"] - band_bottom) <= TAIL_BAND_ADJACENCY_TOLERANCE_POINTS
+    )
+
+
 def _largest_empty_rectangle(
-    data: bytes, columns: int, rows_count: int
+    data: bytes | bytearray, columns: int, rows_count: int
 ) -> tuple[int, int, int, int, int]:
     """Largest all-zero rectangle in a row-major byte grid.
 
@@ -857,3 +1094,200 @@ def _write_contact_sheets(
         sheet.save(output, format="PNG", optimize=True)
         outputs.append(output)
     return outputs
+
+
+def _review_crop_plan(
+    reader: PdfReader,
+    *,
+    toc: dict[str, int],
+    manifest_layout: dict[str, Any],
+    printed_tail_bands: dict[int, float],
+    page_rows: list[dict[str, Any]],
+    flag_crops: list[dict[str, Any]],
+    page_count: int,
+) -> list[dict[str, Any]]:
+    """Every region the 300 ppi crop set must cover, in page points.
+
+    Four families, all derived from facts the critic already holds: each
+    contents entry's opener block (folio from ``toc``), each placed figure
+    (page and box from the manifest, whose ``box_points`` y runs from the
+    page *bottom*, PDF-fashion), each printed tail ornament (the band the
+    void annotation located, or the foot of the page when the raster shows
+    no band of the declared height -- a discrepancy the reviewer should
+    see), and each flagged review item's own region.  Regions are clamped
+    to the page here, so the writer only converts and cuts.
+    """
+
+    def page_size(page: int) -> tuple[float, float]:
+        box = reader.pages[page - 1].mediabox
+        return float(box.width), float(box.height)
+
+    def clamped(page: int, kind: str, subject: str | None, region) -> dict[str, Any]:
+        width, height = page_size(page)
+        x0, y0, x1, y1 = region if region is not None else (0.0, 0.0, width, height)
+        return {
+            "page": page,
+            "kind": kind,
+            "subject": subject,
+            "region": (
+                max(0.0, min(x0, width)),
+                max(0.0, min(y0, height)),
+                max(0.0, min(x1, width)),
+                max(0.0, min(y1, height)),
+            ),
+        }
+
+    specs: list[dict[str, Any]] = []
+    for page in sorted(set(toc.values())):
+        if not 1 <= page <= page_count:
+            continue
+        opening = ", ".join(sorted(slug for slug, folio in toc.items() if folio == page))
+        width, _ = page_size(page)
+        specs.append(
+            clamped(page, "opener", opening, (0.0, 0.0, width, OPENER_CROP_HEIGHT_POINTS))
+        )
+    for entry in manifest_layout.get("figures") or ():
+        if not isinstance(entry, dict):
+            continue
+        page = entry.get("page")
+        box = entry.get("box_points")
+        if not isinstance(page, int) or not 1 <= page <= page_count:
+            continue
+        if not (isinstance(box, (list, tuple)) and len(box) == 4):
+            continue
+        x, y, box_width, box_height = (float(value) for value in box)
+        _, height = page_size(page)
+        top = height - y - box_height
+        specs.append(
+            clamped(
+                page,
+                "figure",
+                str(entry.get("id") or entry.get("figure_id") or ""),
+                (
+                    x - CROP_MARGIN_POINTS,
+                    top - CROP_MARGIN_POINTS,
+                    x + box_width + CROP_MARGIN_POINTS,
+                    top + box_height + CROP_MARGIN_POINTS + CROP_CAPTION_ALLOWANCE_POINTS,
+                ),
+            )
+        )
+    for page in sorted(printed_tail_bands):
+        if not 1 <= page <= min(page_count, len(page_rows)):
+            continue
+        width, height = page_size(page)
+        band = page_rows[page - 1].get("tail_band")
+        if band is None:
+            region = (0.0, height - TAIL_FALLBACK_CROP_HEIGHT_POINTS, width, height)
+        else:
+            region = (
+                0.0,
+                band["y_points"] - CROP_MARGIN_POINTS,
+                width,
+                band["y_points"] + band["height_points"] + CROP_MARGIN_POINTS,
+            )
+        specs.append(clamped(page, "tail", None, region))
+    for flag in flag_crops:
+        page = flag["page"]
+        if not 1 <= page <= page_count:
+            continue
+        width, _ = page_size(page)
+        span = flag["span"]
+        region = None if span is None else (0.0, span[0], width, span[1])
+        specs.append(clamped(page, flag["kind"], None, region))
+    return specs
+
+
+def _write_review_crops(
+    reader_pdf: Path, crops_dir: Path, destination: Path, specs: list[dict[str, Any]]
+) -> tuple[list[Path], list[dict[str, Any]]]:
+    """Cut each planned region from a 300 ppi raster of its own page.
+
+    Only the pages actually being cropped are rasterized at print
+    resolution, each exactly once however many crops it feeds, and the full
+    -page rasters are scratch -- removed once cut, so the review directory
+    carries ~20 focused crops rather than a second full set of pages five
+    times the size.  Names say what they show (``crop-p05-opener.png``),
+    with a numeric suffix only when one page flags the same kind twice.
+    """
+
+    if not specs:
+        return [], []
+    crops_dir.mkdir(parents=True, exist_ok=True)
+    scratch = crops_dir / "pages-at-300"
+    scale = CROP_DPI / 72.0
+    rendered: dict[int, Path] = {}
+    outputs: list[Path] = []
+    rows: list[dict[str, Any]] = []
+    used_names: set[str] = set()
+    try:
+        for spec in specs:
+            page = int(spec["page"])
+            if page not in rendered:
+                rendered[page] = _render_crop_page(reader_pdf, page, scratch)
+            base = f"crop-p{page:02d}-{spec['kind']}"
+            name = base
+            suffix = 2
+            while name in used_names:
+                name = f"{base}-{suffix}"
+                suffix += 1
+            used_names.add(name)
+            target = crops_dir / f"{name}.png"
+            x0, y0, x1, y1 = spec["region"]
+            with Image.open(rendered[page]) as opened:
+                box = (
+                    max(0, math.floor(x0 * scale)),
+                    max(0, math.floor(y0 * scale)),
+                    min(opened.width, math.ceil(x1 * scale)),
+                    min(opened.height, math.ceil(y1 * scale)),
+                )
+                if box[2] <= box[0] or box[3] <= box[1]:
+                    continue
+                opened.crop(box).save(target, format="PNG", optimize=True)
+            outputs.append(target)
+            rows.append(
+                {
+                    "path": target.relative_to(destination).as_posix(),
+                    "page": page,
+                    "kind": spec["kind"],
+                    "subject": spec["subject"],
+                    "region_points": [round(value, 1) for value in (x0, y0, x1, y1)],
+                    "ppi": CROP_DPI,
+                }
+            )
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+    return outputs, rows
+
+
+def _render_crop_page(reader_pdf: Path, page_number: int, output_dir: Path) -> Path:
+    """One reader page as a 300 ppi raster, for cropping."""
+
+    executable = shutil.which("pdftoppm")
+    if not executable:
+        raise DependencyError("Render criticism requires Poppler's pdftoppm executable.")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    prefix = output_dir / f"page-{page_number:03d}"
+    completed = subprocess.run(
+        [
+            executable,
+            "-png",
+            "-r",
+            str(CROP_DPI),
+            "-f",
+            str(page_number),
+            "-l",
+            str(page_number),
+            str(reader_pdf),
+            str(prefix),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    matches = sorted(output_dir.glob(f"page-{page_number:03d}-*.png"))
+    if completed.returncode or not matches:
+        detail = completed.stderr.strip() or completed.stdout.strip() or "unknown Poppler error"
+        raise DependencyError(
+            f"Could not rasterize reader page {page_number} for crops: {detail}"
+        )
+    return matches[0]
