@@ -19,6 +19,7 @@ import os
 from pathlib import Path
 import platform
 import re
+import sys
 from typing import Any, NamedTuple
 from urllib.parse import quote
 from xml.etree.ElementTree import Element, SubElement
@@ -620,6 +621,19 @@ _RUNT_MEASURE_FRACTION = .15
 # own indent, so a reference ending on `2025.` is ordinary bibliography setting
 # and no longer depends on this rule at all -- but the bind is what keeps the
 # year on the line its citation ends on, and it is allowed again.
+#
+# BOTH THRESHOLDS WERE RE-EXAMINED WHEN PROSE HYPHENATION CAME ON, AND NEITHER
+# MOVED.  Hyphenation (the `hyphens: auto` prose rule in weasyprint-a5.css)
+# changes what a last line and a penultimate rag *are*, so the calibrations
+# above -- made on an unhyphenated reader -- had to be re-measured rather than
+# trusted.  Measured on edition 003, both languages: the single-word last
+# lines a hyphenated reader sets still sort into two populations with the .15
+# line in the gap between them -- stranded word-tails and short words at
+# 6-12% of their measures, whole long words from 16% up, nothing in the
+# 12-16% gap -- and the seventeen binds the hyphenated reader asks for
+# open between 2.2% and 22.6% of their measures, all clear of the .33 refusal
+# by more than ten points.  What hyphenation *did* break is neither number
+# but the bind's reach: see the word-tail clause in `_is_runt`.
 _RUNT_MAX_RAG_FRACTION = .33
 
 # The tag names that can carry the reading flow's own prose.  A heading is
@@ -645,6 +659,22 @@ _UNBINDABLE_CLASSES = frozenset(
 _UNBINDABLE_SUBTREES = frozenset({"header", "nav", "pre", "code"})
 _RUNT_KEY = "data-runt-key"
 _NO_BREAK_SPACE = "\u00a0"
+
+# HYPHEN LADDERS ARE REPORTED, NOT REFUSED.  CSS names a guard for consecutive
+# hyphen-ended lines -- `hyphenate-limit-lines` -- and WeasyPrint 69 does not
+# implement it: the property appears nowhere in the package, so the stylesheet
+# cannot hold a ladder down and this module cannot pretend it did.  What it
+# can do is read the laid-out line boxes and say where the ladders are, which
+# is `_report_hyphen_ladders`: any prose block that ends more than this many
+# consecutive lines on a hyphen is written to stderr, page and text named, and
+# the build proceeds.  Two is the classical ladder allowance and matches the
+# `hyphenate-limit-lines: 2` this would be were it CSS.  A refusal would be
+# wrong twice over -- typographic taste is not a structural defect, and the
+# evidence of how often ladders happen is exactly what the report exists to
+# gather (measured on edition 003: English's longest ladder is 2, Spanish sets
+# five blocks at 3-4).  If a future edition finds them intolerable, the fix
+# belongs in the stylesheet's hyphenation limits, argued from these reports.
+_HYPHEN_LADDER_LIMIT = 2
 
 
 @lru_cache(maxsize=None)
@@ -813,6 +843,10 @@ def render_a5_weasyprint(
     _validate_cover_slots(document)
     _validate_contents_page(document)
     _validate_reader_measures(document)
+    # A report, not a gate, and deliberately between the measure guard and the
+    # display guards: it reads the same settled document they do, so the
+    # ladders it names are the ladders the shipped reader sets.
+    _report_hyphen_ladders(document, edition)
     _validate_fitted_display(document, edition)
     _validate_opener_code_clearance(document, plan.codes_by_article)
     _validate_opener_credit_depth(document)
@@ -1471,7 +1505,7 @@ def _measured_runt_binds(document: Any) -> tuple[str, ...]:
     of one line is not a paragraph with a runt -- it is a short paragraph.
     """
     lines: dict[str, list[tuple[float, str]]] = {}
-    boxes: dict[str, tuple[float, float]] = {}
+    boxes: dict[str, tuple[float, float, "_Hyphenation | None"]] = {}
     for page in document.pages:
         for box in _walk_boxes(page._page_box):
             element = getattr(box, "element", None)
@@ -1480,7 +1514,11 @@ def _measured_runt_binds(document: Any) -> tuple[str, ...]:
             # element too, and counting both would count every line twice.
             if key is None or type(box).__name__ != "BlockBox":
                 continue
-            boxes[key] = (float(box.width), float(box.style["font_size"]))
+            boxes[key] = (
+                float(box.width),
+                float(box.style["font_size"]),
+                _measured_hyphenation(box.style),
+            )
             lines.setdefault(key, []).extend(
                 (float(line.width), _box_text(line))
                 for line in _walk_boxes(box)
@@ -1494,15 +1532,69 @@ def _measured_runt_binds(document: Any) -> tuple[str, ...]:
     )
 
 
-def _is_runt(set_lines: list[tuple[float, str]], measure: float, size: float) -> bool:
+class _Hyphenation(NamedTuple):
+    """How a laid-out prose block hyphenates, read off its own computed style.
+
+    Read from the box rather than restated from the stylesheet, for the same
+    reason every other input to the runt decision is: the stylesheet decides
+    *which* blocks hyphenate (prose does, chrome and bibliography do not), and
+    a prediction made from a restated constant would go quietly wrong the day
+    a selector moved.  ``None`` -- no auto-hyphenation, or no dictionary for
+    the block's language -- restores the pre-hyphenation prediction exactly.
+    """
+
+    lang: str
+    total: int
+    left: int
+    right: int
+    character: str
+
+
+def _measured_hyphenation(style: Any) -> _Hyphenation | None:
+    """``style``'s auto-hyphenation, or ``None`` where Pango takes no part."""
+    if style["hyphens"] != "auto" or not style["lang"]:
+        return None
+    import pyphen  # WeasyPrint's own dependency; deliberately its dictionaries.
+
+    lang = pyphen.language_fallback(style["lang"])
+    if not lang:
+        return None
+    total, left, right = style["hyphenate_limit_chars"]
+    return _Hyphenation(lang, int(total), int(left), int(right), style["hyphenate_character"])
+
+
+def _is_runt(
+    set_lines: list[tuple[float, str]],
+    measure: float,
+    size: float,
+    hyphenation: _Hyphenation | None = None,
+) -> bool:
     """Whether this block's last line is a short word stranded on its own, *and*
     whether binding it would be an improvement.
 
-    The last two clauses are not about the defect but about the cure.
+    All the clauses after the first two are not about the defect but about the
+    cure.
 
     The bound pair has to fit a line of its own, or Pango has no break left to
     take and ``_validate_reader_measures`` refuses the build over a repair this
     module chose.
+
+    A WORD'S OWN TAIL IS NOT A BINDABLE RUNT.  On a hyphenating block the last
+    line can be the stranded tail of the block's *final word* -- edition 003
+    sets ``...skipped when appro-`` / ``priate.``, a 9% last line -- because
+    WeasyPrint has no ``hyphenate-limit-last`` to forbid a hyphen before the
+    very last line.  The bind cannot touch that break: ``U+00A0`` removes the
+    *space* break between the last two words, and the break that stranded the
+    tail is a hyphenation point inside one word, which Pango takes on the bare
+    pass and on the bound pass alike.  This was measured, not deduced: binding
+    the fragment cases of edition 003 (two in English, five in Spanish)
+    re-laid every one of them character for character, the tail still alone on
+    its line.  So a single-word last line under a penultimate line that ends
+    on the block's own hyphenate character is refused -- not because the
+    defect is acceptable but because this repair provably does nothing to it,
+    and a no-op bind would sit in the plan's ledger claiming a repair that
+    never happened.  On an unhyphenated block (``hyphenation is None``) the
+    clause never fires and the prediction is the pre-hyphenation one exactly.
 
     And the line the bound word leaves has to still read as a line.  Under greedy
     breaking nothing above the penultimate line moves, so the penultimate comes
@@ -1511,7 +1603,7 @@ def _is_runt(set_lines: list[tuple[float, str]], measure: float, size: float) ->
     more than ``_RUNT_MAX_RAG_FRACTION`` of white the repair has traded one short
     line for two, which is the worse defect, and the bind is refused.
 
-    Both predictions are summed unkerned in the reading face, as everything else
+    All predictions are summed unkerned in the reading face, as everything else
     this module predicts is -- they need to be right about a word, not about a
     tenth of a point.
     """
@@ -1523,6 +1615,8 @@ def _is_runt(set_lines: list[tuple[float, str]], measure: float, size: float) ->
     previous = previous_text.split()
     if len(words) != 1 or not previous:
         return False
+    if hyphenation and previous_text.rstrip().endswith(hyphenation.character):
+        return False
     if width > measure * _RUNT_MEASURE_FRACTION:
         return False
     pair = f"{previous[-1]}{_NO_BREAK_SPACE}{words[0]}"
@@ -1530,6 +1624,86 @@ def _is_runt(set_lines: list[tuple[float, str]], measure: float, size: float) ->
         return False
     opened = measure - (previous_width - _string_width(f" {previous[-1]}", "serif", size))
     return opened <= measure * _RUNT_MAX_RAG_FRACTION
+
+
+class HyphenLadder(NamedTuple):
+    """One prose block's longest run of consecutive hyphen-ended lines.
+
+    ``key`` is the block's runt key -- the same name a ``ReaderPlan`` bind or a
+    ``mag measure`` paragraph row uses -- ``page`` is the reader page the run
+    starts on, and ``sample`` is the run's first line, so the report puts an
+    eye on the page without anyone re-deriving which paragraph it meant.
+    """
+
+    key: str
+    page: int
+    run: int
+    sample: str
+
+
+def _measured_hyphen_ladders(document: Any) -> tuple[HyphenLadder, ...]:
+    """Every prose block whose hyphen-ended lines run past ``_HYPHEN_LADDER_LIMIT``.
+
+    Measured, like the runt binds, off the finished page and never predicted:
+    a line has ended on a hyphen when its laid-out text says so, whether Pango
+    hyphenated a word there (it appends the block's own ``hyphenate-character``
+    to the line) or the line broke after an explicit hyphen in a compound.
+    Both count, because a reader scanning the rag sees hyphens and not their
+    provenance.  Line boxes accumulate across a block's page fragments under
+    the block's key, exactly as ``_measured_runt_binds`` gathers them, so a
+    ladder that straddles a page break is still one ladder.
+    """
+    lines: dict[str, list[tuple[str, int]]] = {}
+    characters: dict[str, str] = {}
+    for page_number, page in enumerate(document.pages, start=1):
+        for box in _walk_boxes(page._page_box):
+            element = getattr(box, "element", None)
+            key = getattr(element, "attrib", {}).get(_RUNT_KEY) if element is not None else None
+            if key is None or type(box).__name__ != "BlockBox":
+                continue
+            characters[key] = str(box.style["hyphenate_character"])
+            lines.setdefault(key, []).extend(
+                (_box_text(line), page_number)
+                for line in _walk_boxes(box)
+                if type(line).__name__ == "LineBox"
+            )
+    ladders: list[HyphenLadder] = []
+    for key in sorted(lines, key=int):
+        endings = (characters[key], "-")
+        run: list[tuple[str, int]] = []
+        longest: list[tuple[str, int]] = []
+        for text, page_number in lines[key]:
+            run = [*run, (text, page_number)] if text.rstrip().endswith(endings) else []
+            if len(run) > len(longest):
+                longest = run
+        if len(longest) > _HYPHEN_LADDER_LIMIT:
+            ladders.append(
+                HyphenLadder(key, longest[0][1], len(longest), longest[0][0])
+            )
+    return tuple(ladders)
+
+
+def _report_hyphen_ladders(document: Any, edition: Edition) -> tuple[HyphenLadder, ...]:
+    """Say where the ladders are, on stderr, and refuse nothing.
+
+    The report is the whole deliverable: WeasyPrint has no
+    ``hyphenate-limit-lines`` for the stylesheet to state (see
+    ``_HYPHEN_LADDER_LIMIT``), so whether the reader needs a real guard is an
+    open question, and this is the measurement that will answer it edition by
+    edition.  It rides the build log rather than the manifest because it is
+    typographic evidence and not provenance -- and it returns what it wrote so
+    the audit is callable as a measurement on its own.
+    """
+    ladders = _measured_hyphen_ladders(document)
+    for ladder in ladders:
+        print(
+            f"hyphen ladder: edition {edition.id} reader page {ladder.page} sets "
+            f"{ladder.run} consecutive hyphen-ended lines in prose block "
+            f"{ladder.key} (allowed {_HYPHEN_LADDER_LIMIT}), starting "
+            f"{ladder.sample[:60]!r}",
+            file=sys.stderr,
+        )
+    return ladders
 
 
 def _install_page_chrome(tree: Element, edition: Edition) -> None:

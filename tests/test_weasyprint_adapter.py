@@ -3170,6 +3170,173 @@ def test_the_runt_binds_are_carried_forward_rather_than_re_measured():
     assert plan.runt_binds == ("0", "7")
 
 
+# --- Hyphenation -------------------------------------------------------------
+#
+# Body prose hyphenates (`hyphens: auto`, limits 6 3 3, in weasyprint-a5.css)
+# and nothing else does: headings and fitted titles answer to
+# `_validate_fitted_display`'s line counts, chrome is drawn to fixed metrics
+# inside stated fields, and a bibliography is proper nouns.  WeasyPrint 69 has
+# no `hyphenate-limit-lines`, so ladders are measured off the laid-out lines
+# and reported rather than refused.
+
+_HYPHENATING_PROSE = (
+    "Extraordinariamente desproporcionadamente incuestionablemente "
+    "incomprensiblemente institucionalmente irreversiblemente "
+    "internacionalmente descentralizadamente inconstitucionalmente "
+    "contraproducentemente gubernamentalmente latinoamericanamente "
+    "contemporáneamente responsabilidades."
+)
+
+
+def _hyphenating_document(body: str, binds: tuple[str, ...] = ()):
+    """``body`` laid out as ``_runt_document`` lays it, under a Spanish lang.
+
+    WeasyPrint's UA stylesheet maps the ``lang`` attribute to the style the
+    hyphenator reads (`[lang] { -weasy-lang: attr(lang) }`), exactly as the
+    semantic edition's ``html lang`` reaches a build, so `hyphens: auto` is
+    live here iff it is live there.
+    """
+    HTML, CSS, FontConfiguration = _weasyprint_types()
+    font_config = FontConfiguration()
+    stylesheet = CSS(
+        string=_read_print_css(),
+        base_url=resources.files("magazine").joinpath("assets").as_uri() + "/",
+        font_config=font_config,
+    )
+    source = HTML(
+        string=f'<main lang="es" data-edition-id="hyphens">{body}</main>',
+        base_url=Path.cwd().as_uri() + "/",
+    )
+    tree = source.etree_element
+    adapter._key_prose_blocks(tree)
+    adapter._bind_paragraph_tails(tree, binds)
+    return source.render(stylesheets=[stylesheet], font_config=font_config)
+
+
+def test_prose_hyphenates_and_chrome_headings_and_references_never_do():
+    """`hyphens: auto` reaches reading prose and only reading prose.
+
+    Every excluded block below carries the same hyphenation-hungry words as
+    the paragraph that does hyphenate, so a leak would show as a hyphen and
+    not as a silently-passing style assertion.  The styles are read off the
+    laid-out boxes rather than restated from the stylesheet, and
+    `_measured_hyphenation` -- the runt binder's view of the same styles --
+    must agree: the prose block yields the (6, 3, 3) Spanish dictionary the
+    stylesheet states, the standfirst yields nothing.
+    """
+    long_words = _HYPHENATING_PROSE
+    body = (
+        '<article id="a" data-article-id="a">'
+        "<header><h1>Responsabilidades interdepartamentales extraordinariamente"
+        " descentralizadas</h1>"
+        '<p class="byline">POR DEPARTAMENTOS GUBERNAMENTALES INTERNACIONALES'
+        " EXTRAORDINARIAMENTE DESCENTRALIZADOS</p></header>"
+        f'<p class="standfirst">{long_words}</p>'
+        f"<p>{long_words}</p>"
+        "<h2>Independencia interdepartamental extraordinariamente"
+        " incuestionable</h2>"
+        f"<ul><li>{long_words}</li></ul>"
+        f'<ul data-reference-list="true"><li>1 — {long_words}</li></ul>'
+        "</article>"
+    )
+    document = _hyphenating_document(body)
+
+    blocks: dict[tuple[str, str], list] = {}
+    for page in document.pages:
+        for box in adapter._walk_boxes(page._page_box):
+            element = getattr(box, "element", None)
+            if element is None or type(box).__name__ != "BlockBox":
+                continue
+            label = (str(box.element_tag), (element.get("class") or "").strip())
+            blocks.setdefault(label, []).append(box)
+
+    def lines(box) -> list[str]:
+        return [
+            adapter._box_text(line)
+            for line in adapter._walk_boxes(box)
+            if type(line).__name__ == "LineBox"
+        ]
+
+    prose = blocks[("p", "")][0]
+    assert prose.style["hyphens"] == "auto"
+    assert tuple(prose.style["hyphenate_limit_chars"]) == (6, 3, 3)
+    assert adapter._measured_hyphenation(prose.style) == adapter._Hyphenation(
+        "es", 6, 3, 3, "‐"
+    )
+    assert any(line.endswith("‐") for line in lines(prose))
+    # No fragment shorter than the stated limits reaches a page: 6-letter
+    # minimum word, 3 letters on each side of every break the prose takes.
+    for line in lines(prose):
+        if line.endswith("‐"):
+            assert len(line.rstrip("‐").rsplit(" ", 1)[-1]) >= 3
+
+    # The two list items set the same words; only the reading-flow one breaks.
+    # A list item can lay out as more than one box, so both are found by the
+    # one style that separates them -- the reference demotion to 7.2pt.
+    plain_lis = [b for b in blocks[("li", "")] if float(b.style["font_size"]) > 12]
+    reference_lis = [b for b in blocks[("li", "")] if float(b.style["font_size"]) < 12]
+    assert plain_lis and reference_lis
+    assert {b.style["hyphens"] for b in plain_lis} == {"auto"}
+    assert {b.style["hyphens"] for b in reference_lis} == {"manual"}
+    assert any(line.endswith("‐") for b in plain_lis for line in lines(b))
+    assert not any(line.endswith("‐") for b in reference_lis for line in lines(b))
+
+    for label in (("h1", ""), ("h2", ""), ("p", "byline"), ("p", "standfirst")):
+        for box in blocks[label]:
+            assert box.style["hyphens"] != "auto", label
+            assert adapter._measured_hyphenation(box.style) is None, label
+            assert not any(line.endswith("‐") for line in lines(box)), label
+
+
+def test_a_hyphen_ladder_is_reported_on_stderr_and_never_refused(capsys):
+    """The audit WeasyPrint's missing `hyphenate-limit-lines` would have been.
+
+    A paragraph of adverbs ends three consecutive lines on a hyphen -- one
+    past the classical allowance `_HYPHEN_LADDER_LIMIT` states -- and the
+    report names the page, the run and the run's first line on stderr, then
+    hands the same measurement back to its caller.  Nothing raises: whether a
+    ladder is tolerable is a stylesheet decision this evidence exists to
+    inform, not a structural defect.  A settled paragraph reports nothing.
+    """
+    document = _hyphenating_document(_article(_HYPHENATING_PROSE))
+    edition = SimpleNamespace(id="003-hyphens")
+
+    ladders = adapter._report_hyphen_ladders(document, edition)
+
+    assert ladders == adapter._measured_hyphen_ladders(document)
+    assert [(ladder.key, ladder.page, ladder.run) for ladder in ladders] == [("0", 1, 3)]
+    assert ladders[0].sample.endswith("‐")
+    err = capsys.readouterr().err
+    assert "hyphen ladder: edition 003-hyphens reader page 1 sets 3" in err
+
+    settled = _hyphenating_document(_article(_SETTLED_PROSE))
+    assert adapter._report_hyphen_ladders(settled, edition) == ()
+    assert capsys.readouterr().err == ""
+
+
+def test_a_word_tail_stranded_by_the_hyphenator_is_not_a_bindable_runt():
+    """The bind repairs a space break, and a hyphen break has no space in it.
+
+    WeasyPrint has no `hyphenate-limit-last`, so a block's final word can be
+    hyphenated and its tail stranded as the last line (edition 003 sets
+    `...when appro-` / `priate.`).  Binding the last two words re-lays that
+    block character for character -- measured, twice, on both languages --
+    because U+00A0 removes a break Pango was not taking.  So the tail is
+    refused as a bind, on the block's own measured hyphenate character; the
+    same lines on an unhyphenated block keep the pre-hyphenation answer, and
+    an ordinary short word on a hyphenated block is still repaired.
+    """
+    hyphenation = adapter._Hyphenation("es", 6, 3, 3, "‐")
+    measure, size = 433.0, 13.3
+    tail = [(430.0, "que permanece completamente ocu‐"), (30.0, "rriendo.")]
+    word = [(430.0, "que permanece completamente aquí"), (30.0, "hoy.")]
+
+    assert not adapter._is_runt(tail, measure, size, hyphenation)
+    assert adapter._is_runt(word, measure, size, hyphenation)
+    # `hyphenation is None` is the revert path: the clause never fires.
+    assert adapter._is_runt(tail, measure, size)
+
+
 def test_the_band_anchor_clearance_defect_and_the_declaration_that_repairs_it(
     tmp_path: Path,
 ):
