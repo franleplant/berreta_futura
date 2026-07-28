@@ -69,9 +69,9 @@
  * 543.275186 before the +0.005pt nudge described below, against the reader's
  * 543.2756.  The 0.0004 is deliberately left alone: it is 0.0008 of a device
  * pixel at 144 DPI, and closing it would move margin-bottom and every constant
- * derived from the same datum -- the 10.0046 below, `article > header`'s
- * 305.2756, the editorial's 153.2756, the figure's 10.0046pt paint offset -- in
- * the very truncation regime the nudge exists to sit still inside.
+ * derived from the same datum -- the 10.0046 below, every opener field the
+ * adapter states, the editorial's 153.2756, the figure's 10.0046pt paint offset
+ * -- in the very truncation regime the nudge exists to sit still inside.
  *
  * The half-leading also differs by 0.4pt between the 13pt body leading and
  * article 1's 12.2pt plate leading, so one margin cannot satisfy both: the body
@@ -377,18 +377,29 @@ main { margin: 0; }
  * to the third decimal, and never a fitted number.
  */
 /*
- * The article opener reserves a white field: `_render_article_opener` ends with
- * `_set_reading_frame(top=238)` whenever the opener carries no figure, so the
- * opener's prose frame runs 238 -> 45 and holds fourteen 13pt lines, however
- * short the label / title / byline / author-note stack above it turns out to be.
- * The header is therefore a fixed-height field, not a flowed block: its box runs
- * from the page's content top down to the flow edge of the first prose block,
- * which is `595.2756 - 41.9954 - 238 - 10.0046` = 305.2756pt below the content
- * top.  The standfirst's own 12pt/16.4pt baseline offset is *not* in that
- * number: it is the standfirst's paint correction below, so that the field stays
- * a flow height and the flow edge below it keeps the invariant.
+ * The article opener reserves a white field, and the field's height is the
+ * adapter's to state -- for every article opener now, figure or not.  It held
+ * a constant here (`height: 305.2756pt`, the reader's own `_set_reading_frame
+ * (top=238)`) for the figureless case, and the constant was honest white on
+ * exactly one opener: the deepest stack the opener can carry, a four-line
+ * title at the 35pt maximum over a 1.5pt-module source code.  Every shallower
+ * title paid the difference out as dead sheet between its credit line and its
+ * standfirst -- a 108pt full-measure void on a two-line title, which the
+ * render critic flags as exactly that (edition 003 en p20/p30, es p33).  The
+ * field is a decision about white space and a constant cannot make it, so the
+ * adapter states it per opener from the fitted title's own arithmetic: the
+ * credit block's lowest ink plus one deliberate gap to the standfirst
+ * (`_opener_prose_field`, and `_OPENER_STANDFIRST_GAP_POINTS` for the gap's
+ * derivation -- the deepest opener the old constant was cut for reproduces to
+ * the fourth decimal).  The standfirst's own 12pt/16.4pt baseline offset is
+ * *not* in the stated number: it is the standfirst's paint correction below,
+ * so that the field stays a flow height and the flow edge below it keeps the
+ * invariant.  No height is held here at all, so a header the adapter failed
+ * to reach would flow to its natural depth and `_validate_fitted_display` /
+ * `_validate_opener_credit_depth` read their reservations off the stated
+ * attributes -- the omission is loud, not 305.2756pt quiet.
  */
-article > header { height: 305.2756pt; margin-bottom: 0; }
+article > header { margin-bottom: 0; }
 /*
  * The editorial's field is a *clamp*, not a constant: `body` (render.py:2091)
  * ends its opener on `_set_reading_frame(top=min(self.y, 390))`, so the field is
@@ -408,12 +419,12 @@ article > header > :first-child,
 .editorial > header > :first-child,
 main > section > header > :first-child { margin-top: 0; }
 /*
- * An opener figure changes the rule rather than the number: ReportLab then ends
- * the opener on `_set_reading_frame(top=self.y)` instead of a pinned 238, so the
- * field runs to wherever the auto-fitted title and the credit reached.  That
- * height is the adapter's to state, and the figure's head is the field's foot.
+ * An opener figure changes what the stated field means, not who states it:
+ * the figure's head is the field's foot, so the field runs to the symbol's
+ * last dark row plus the credit's 12pt pad, where a figureless opener's runs
+ * one `_OPENER_STANDFIRST_GAP_POINTS` under the credit block's lowest ink.
+ * Both are inline heights from `_pin_opener_fields`; nothing here to hold.
  */
-article > header:has(+ figure[data-anchor="__opener__"]) { height: auto; margin-bottom: 0; }
 h1, h2, h3 { font-family: "Magazine Sans", sans-serif; break-after: avoid; line-height: 1.08; }
 /*
  * An opener title is not a heading in the flow: `_fitted_title_box`
@@ -544,8 +555,8 @@ article[data-figure-layouts~="landscape_plate_after"] h3 { margin-top: 14pt; }
  * (render.py:1710-1731) then sets `BY <AUTHOR>` in Inter-SemiBold 7.4pt caps and
  * the author note in Inter CAPTION_SIZE SLATE on a BASE*3 leading.
  *
- * The whole stack lives inside the opener's pinned white field, whose height is
- * fixed above, so none of these metrics can move a line of prose.  It escapes
+ * The whole stack lives inside the opener's white field, whose height the
+ * adapter states, so none of these metrics can move a line of prose.  It escapes
  * the reading measure by the 4.004pt that measure is inset from the live width,
  * because ReportLab draws the opener chrome across `self.left`/`self.live_width`
  * and only narrows to the reading frame for the prose below it.
@@ -1084,13 +1095,19 @@ article > .landscape-plate + p { margin-top: 0; }
  * never moves a line.  Out of flow is what makes that true, so the ornament
  * cannot manufacture the near-empty page an in-flow image did.
  *
- * The band's HEIGHT is the page's decision and the adapter states it inline:
- * from the ornament's 118pt minimum up to the 214pt below, measured under the
- * end mark's own baseline (`_measured_tail_art`).  An article whose last page
- * has less room prints no motif at all -- the adapter removes the figure from
- * that print tree -- and the semantic edition still offers it to a screen
- * adapter either way.  214pt here is the ceiling restated as the default, so
- * the rule alone never prints the motif larger than the reader ever drew it.
+ * The band's HEIGHT AND FOOT are the page's decision and the adapter states
+ * both inline: from the ornament's 96pt minimum -- the render critic's own
+ * void floor, argued at `_TAIL_ORNAMENT_MIN_HEIGHT` -- up to the 214pt below,
+ * measured under the end mark's own baseline (`_measured_tail_art`).  A band
+ * the 214pt cap stops short is centred in its room, so the stated `bottom` is
+ * this rule's constant plus half the surplus; an uncapped band fills its room
+ * and keeps the constant exactly.  An article whose last page has less room
+ * prints no motif at all -- the adapter removes the figure from that print
+ * tree and records the drop in the manifest's `layout.tail_arts` ledger
+ * (`_tail_art_ledger`) -- and the semantic edition still offers it to a
+ * screen adapter either way.  214pt here is the ceiling restated as the
+ * default, so the rule alone never prints the motif larger than the reader
+ * ever drew it.
  */
 .article-tail {
   bottom: 13.9954pt;
