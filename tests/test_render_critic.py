@@ -866,10 +866,12 @@ def test_an_unreadable_pdf_still_fails_with_popplers_own_diagnosis(tmp_path: Pat
 
     Planning the shards reads the page count with ``pypdf``, which puts a second
     parser in front of Poppler's.  An unreadable file must not start raising
-    that parser's ``PdfStreamError``: the error every caller of this function is
-    written against -- ``tools/compare_pipelines.py`` calls it directly -- is a
-    ``DependencyError`` quoting Poppler, and the fallback to the unsharded
-    command is what keeps it so.
+    that parser's ``PdfStreamError``: the error this module owes a caller for a
+    file Poppler cannot read is a ``DependencyError`` quoting Poppler, and the
+    fallback to the unsharded command is what keeps it so.
+    ``tools/compare_pipelines.py`` is the one caller that reaches this function
+    directly, without ``inspect_render``'s prior ``PdfReader`` construction to
+    fail first, so it is the only path where the difference is observable.
     """
     import shutil
 
