@@ -15,10 +15,43 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+import yaml
+from PIL import Image
 
 from magazine import Magazine, ValidationError
 from magazine.cli import main as cli_main
 from test_manifest import add_spanish_translation, make_project
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _spy_on_adapter(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
+    """Record what ``Magazine.web`` hands the adapter, then let it write.
+
+    The compiler owns the two facts the adapter cannot know -- where the
+    composed cover face was compiled, and which canonical URL each source id
+    resolves to -- so the seam between them is exactly these keyword
+    arguments, and the spy pins them without repeating the adapter's own
+    rendering tests.
+    """
+
+    import magazine.web_edition as web_edition_module
+
+    real = web_edition_module.write_web_edition
+    calls: list[dict] = []
+
+    def spy(edition, destination, *, cover_face=None, source_urls=None):
+        calls.append(
+            {
+                "language": edition.language,
+                "cover_face": cover_face,
+                "source_urls": source_urls,
+            }
+        )
+        return real(edition, destination, cover_face=cover_face, source_urls=source_urls)
+
+    monkeypatch.setattr(web_edition_module, "write_web_edition", spy)
+    return calls
 
 
 def test_web_writes_one_self_contained_directory_per_configured_language(tmp_path: Path):
@@ -103,3 +136,82 @@ def test_the_cli_prints_one_line_per_language_and_reports_errors_as_errors(
 
     assert cli_main(["--root", str(tmp_path), "web", "no-such-edition"]) == 2
     assert "error:" in capsys.readouterr().err
+
+
+def test_a_project_without_the_cover_system_gets_no_face_and_full_source_urls(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """No design file means ``cover_face=None`` -- never an error.
+
+    The design file is the marker that a project carries the cover system;
+    every minimal fixture lacks it, and ``mag web`` must keep working there
+    rather than demanding resvg, Poppler and cover art it cannot have.  The
+    source-id -> canonical-url mapping rides along regardless, because the
+    records exist in any project that captured a source.
+    """
+
+    make_project(tmp_path)
+    calls = _spy_on_adapter(monkeypatch)
+
+    results = Magazine(tmp_path).web("issue-001")
+
+    (call,) = calls
+    assert call["cover_face"] is None
+    assert call["source_urls"] == {"source-one": "https://example.com/source"}
+    assert results[0].index.is_file()
+
+
+def test_the_written_pages_link_the_source_by_its_canonical_url(tmp_path: Path):
+    """The record's canonical URL appears as a working ``href`` in the output.
+
+    The compiler reads the mapping from the source records and the adapter
+    turns it into anchors; this asserts the round trip at the level a reader
+    experiences it -- the URL is followable from the written HTML -- without
+    pinning which element carries it.
+    """
+
+    make_project(tmp_path)
+
+    Magazine(tmp_path).web("issue-001", language="en")
+
+    pages = list((tmp_path / "output" / "issue-001" / "web" / "en").glob("*.html"))
+    assert pages
+    assert any(
+        'href="https://example.com/source"' in page.read_text(encoding="utf-8")
+        for page in pages
+    )
+
+
+def test_a_project_with_the_cover_system_hands_the_composed_face_to_the_adapter(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """With the design file present, the adapter receives the compiled face.
+
+    The face is the cover compiler's own ``cover.png``, compiled into the
+    canonical ``cover-proof/<language>`` location (memoized by input digest,
+    so a later ``mag cover-proof`` finds its work already done).  The fixture
+    borrows the repository's real design geometry and sets a solid-color art
+    plate, which is enough for the whole SVG -> PDF -> PNG chain to run.
+    """
+
+    make_project(tmp_path)
+    design = REPO_ROOT / "design" / "covers" / "canto-vivo" / "design.toml"
+    target = tmp_path / "design" / "covers" / "canto-vivo" / "design.toml"
+    target.parent.mkdir(parents=True)
+    target.write_text(design.read_text(encoding="utf-8"), encoding="utf-8")
+    art = tmp_path / "editions" / "issue-001" / "art" / "cover-art.png"
+    Image.new("RGB", (1200, 1200), "#5332C8").save(art)
+    manifest_path = tmp_path / "editions" / "issue-001" / "edition.yaml"
+    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    manifest["cover"]["art_path"] = "editions/issue-001/art/cover-art.png"
+    manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+    calls = _spy_on_adapter(monkeypatch)
+
+    Magazine(tmp_path).web("issue-001")
+
+    (call,) = calls
+    face = call["cover_face"]
+    assert face is not None and face.is_file()
+    assert face.resolve() == (
+        tmp_path / "output" / "issue-001" / "cover-proof" / "en" / "cover.png"
+    ).resolve()

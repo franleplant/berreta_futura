@@ -1,0 +1,31 @@
+// Cloudflare Worker with Static Assets for the assembled web editions.
+// JSONC is current wrangler's preferred configuration format (wrangler v4
+// scaffolds it and the docs lead with it; wrangler.toml remains supported).
+// See docs/WEB_DEPLOY.md — in particular: this deploys PRIVATE content and
+// must sit behind Cloudflare Access before it is given any URL at all.
+{
+  "name": "berreta-futura-web",
+  "main": "worker.js",
+  "compatibility_date": "2026-07-01",
+  // A workers.dev deployment is public the instant `wrangler deploy`
+  // returns, and the subdomain is guessable. Keep it off until the Access
+  // policy is verified in front (deploy/web/README.md, step 1); only then
+  // flip this, or attach a custom domain the same policy covers.
+  "workers_dev": false,
+  "assets": {
+    // Written by assemble.py; never edited by hand.
+    "directory": "./dist",
+    "binding": "ASSETS",
+    // Requests that match an uploaded asset would otherwise be served by
+    // the asset layer without ever invoking worker.js, which would make its
+    // cache headers dead code. Routing every request through the Worker is
+    // the whole point of having one.
+    "run_worker_first": true,
+    // A wrong URL is a wrong URL: no SPA fallback, no custom 404 page that
+    // could leak an editions listing to an unauthenticated prober.
+    "not_found_handling": "none"
+  },
+  "observability": {
+    "enabled": false
+  }
+}

@@ -426,6 +426,16 @@ class Magazine:
         deliberately not part of a build, a package, or a release, and no
         render review binds to it -- it is a private screen profile, not a
         production artifact.
+
+        The page opens with the edition's real cover -- the composed face the
+        cover compiler sets, wordmark and canto vivo tab included -- not the
+        bare artwork.  The face is compiled through :meth:`cover_proof` into
+        its own ``cover-proof/<language>`` directory, so there is exactly one
+        canonical copy of the composed cover and the compile is memoized by
+        the proof's input digest.  Each article's opener source ids become
+        working links: the mapping from source id to canonical URL is read
+        from the source records here, where the records live, and handed to
+        the adapter as data.
         """
 
         from .web_edition import write_web_edition
@@ -435,10 +445,36 @@ class Magazine:
             None if language is None else (language,),
             purpose="Web edition",
         )
+        # The design file is the marker that this project carries the cover
+        # system.  CoverCompiler itself would fall back to built-in geometry,
+        # but its SVG -> PDF -> PNG chain needs resvg, ReportLab and Poppler,
+        # and a minimal project (every test fixture) has no cover art to set
+        # -- so absence of the design file means "no composed face", never an
+        # error.  A missing approved reference stays harmless downstream:
+        # the proof records ``missing_reference`` and ``check=False`` never
+        # raises on it.
+        faces: dict[str, Path] = {}
+        if (self.root / "design" / "covers" / "canto-vivo" / "design.toml").is_file():
+            faces = {
+                artifact.language: artifact.png
+                for artifact in self.cover_proof(
+                    edition_id, languages=tuple(editions)
+                )
+            }
+        source_urls = {
+            record.id: record.canonical_url
+            for record in load_records(self.sources_dir)
+            if record.canonical_url
+        }
         root = destination or (self.output_dir / edition_id / "web")
         results: list[LanguageWebResult] = []
         for name, edition in editions.items():
-            written = write_web_edition(edition, root / name)
+            written = write_web_edition(
+                edition,
+                root / name,
+                cover_face=faces.get(name),
+                source_urls=source_urls,
+            )
             results.append(
                 LanguageWebResult(
                     language=name, output_dir=written.root, index=written.index

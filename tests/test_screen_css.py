@@ -23,10 +23,14 @@ from magazine.media_schema import Figure
 _ASSETS = resources.files("magazine").joinpath("assets")
 
 # Vocabulary the stylesheet may use that the semantic layer deliberately does
-# not emit.  ``cover-plate`` is inserted by the web adapter (web_edition.py):
-# html_edition.py inventories the cover art without painting an element for
-# it, because cover presentation is adapter policy.
-_SCREEN_ONLY_CLASSES = frozenset({"cover-plate"})
+# not emit -- all of it the web adapter's (web_edition.py) own page chrome.
+# ``cover-plate`` leads the cover page (html_edition.py inventories the cover
+# art without painting an element for it); ``masthead`` heads every piece page
+# with the way back to that cover; the ``page-turn`` trio is the previous/next
+# spine between piece pages.
+_SCREEN_ONLY_CLASSES = frozenset(
+    {"cover-plate", "masthead", "page-turn", "page-turn-previous", "page-turn-next"}
+)
 
 
 def _screen_css() -> str:

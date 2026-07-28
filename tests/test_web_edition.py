@@ -1,11 +1,13 @@
-"""The web adapter's contract: a self-contained, deterministic, styled page.
+"""The web adapter's contract: a self-contained, deterministic, paged edition.
 
 These tests exercise :mod:`magazine.web_edition` through its public seam,
 :func:`write_web_edition`, against the same hostile fixture edition the
 semantic HTML suite uses -- ids and titles full of markup metacharacters, a
 cover and a figure sharing one source file -- because the web directory is
 where every one of those properties finally meets a real filesystem and a
-real browser.
+real browser.  The paging contract is held page by page: the cover index links
+onward to one page per piece, the pieces turn into each other in reading
+order, and ``edition.html`` keeps the whole document for one scroll.
 """
 
 from __future__ import annotations
@@ -78,31 +80,19 @@ def _edition(tmp_path: Path, *, locale: str = "en", manuscript: str | None = Non
     )
 
 
-@pytest.fixture(autouse=True)
-def _stub_screen_css_when_unauthored(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Stand in for the screen stylesheet until it is authored.
-
-    The stylesheet is its own piece of work; this suite tests the adapter's
-    copy path, not the CSS.  When the packaged file exists the stub steps
-    aside and the real bytes ship.
-    """
-
-    try:
-        web_edition._read_screen_css()
-    except ValidationError:
-        monkeypatch.setattr(web_edition, "_read_screen_css", lambda: b"/* stub */\n")
+def _cover_face(tmp_path: Path) -> Path:
+    face = tmp_path / "cover-face.png"
+    face.write_bytes(b"composed cover face")
+    return face
 
 
-def _screen_css_is_authored() -> bool:
-    try:
-        web_edition._read_screen_css()
-    except ValidationError:
-        return False
-    return True
+def _page_files(result: web_edition.WebEdition) -> list[Path]:
+    return [result.index, *result.pages, result.edition_document]
 
 
 def test_the_web_directory_is_self_contained_and_every_src_resolves(tmp_path: Path):
-    """No ``file:`` URI survives, and every ``src`` names a shipped file.
+    """No ``file:`` URI survives, and every ``src`` on any page names a
+    shipped file.
 
     Self-containment is the whole point of the adapter: the directory must be
     servable from any path and openable from the filesystem, so a single
@@ -111,14 +101,152 @@ def test_the_web_directory_is_self_contained_and_every_src_resolves(tmp_path: Pa
     """
 
     result = write_web_edition(_edition(tmp_path), tmp_path / "web")
+
+    seen: list[str] = []
+    for page in _page_files(result):
+        html = page.read_text(encoding="utf-8")
+        assert "file:" not in html, page.name
+        for src in re.findall(r'src="([^"]+)"', html):
+            assert not src.startswith("file:")
+            assert (result.root / src).is_file(), f"{page.name}: {src}"
+            seen.append(src)
+    assert seen, "the fixture edition renders figures and plates"
+
+
+def test_the_edition_is_paged_one_file_per_piece_in_reading_order(tmp_path: Path):
+    """Editorial, article and section each get their own page, in order.
+
+    The page files carry the pieces' own destination ids as names, the cover
+    index and the one-scroll document stand beside them, and each piece page
+    holds exactly its piece -- the editorial page has no article markup and
+    the article page no section.
+    """
+
+    result = write_web_edition(_edition(tmp_path), tmp_path / "web")
+
+    assert result.index.name == "index.html"
+    assert result.edition_document.name == "edition.html"
+    assert [page.name for page in result.pages][0] == "editorial.html"
+    assert len(result.pages) == 3
+    for page in result.pages:
+        assert page.is_file()
+
+    editorial, article, section = (
+        page.read_text(encoding="utf-8") for page in result.pages
+    )
+    assert 'class="editorial"' in editorial and "<article" not in editorial
+    assert "<article" in article and 'class="editorial"' not in article
+    assert 'data-section-kind="source_record"' in section and "<article" not in section
+
+
+def test_the_index_is_the_cover_page_and_links_onward_to_the_piece_pages(tmp_path: Path):
+    """The cover index links every contents entry at a page, not an anchor.
+
+    The index holds the cover plate, the edition header, the contents whose
+    hrefs are the piece files, and the closing plates -- the edition's own
+    furniture -- while the piece markup itself lives only on the piece pages.
+    """
+
+    result = write_web_edition(_edition(tmp_path), tmp_path / "web")
     html = result.index.read_text(encoding="utf-8")
 
-    sources = re.findall(r'src="([^"]+)"', html)
-    assert sources, "the fixture edition renders figures, tails and plates"
-    for src in sources:
-        assert not src.startswith("file:")
-        assert (result.root / src).is_file(), src
-    assert "file:" not in html
+    assert 'class="cover-plate"' in html
+    assert 'class="edition-header"' in html
+    assert 'class="closing-plate"' in html
+    assert "<article" not in html
+
+    hrefs = re.findall(r'<a class="entry-title" href="([^"]+)"', html)
+    assert hrefs and not [href for href in hrefs if href.startswith("#")]
+    for href in hrefs:
+        assert (result.root / href).is_file(), href
+    assert hrefs[0] == "editorial.html"
+
+
+def test_the_piece_pages_turn_into_each_other_in_reading_order(tmp_path: Path):
+    """Prev/next chain: first page has no previous, last no next, labels are
+    the neighbours' own short titles, and every turn names an existing file.
+
+    The masthead on every piece page is the way back to the cover index.
+    """
+
+    result = write_web_edition(_edition(tmp_path), tmp_path / "web")
+    pages = [page.read_text(encoding="utf-8") for page in result.pages]
+
+    for html in pages:
+        assert '<nav class="masthead" data-web-chrome="masthead"><a href="index.html">' in html
+
+    first, middle, last = pages
+    assert "page-turn-previous" not in first
+    assert f'rel="next" href="{result.pages[1].name}"' in first
+    assert f'rel="prev" href="{result.pages[0].name}"' in middle
+    assert f'rel="next" href="{result.pages[2].name}"' in middle
+    assert "page-turn-next" not in last
+    assert f'rel="prev" href="{result.pages[1].name}"' in last
+    # The labels are the neighbours' short titles as the document wrote them.
+    assert ">Article</a>" in first
+    assert ">Editorial</a>" in middle
+
+
+def test_provenance_ids_link_when_an_address_is_known_and_stay_text_when_not(tmp_path: Path):
+    """``source_urls`` turns provenance mentions into links, id by id.
+
+    The article names two sources; mapping one address links exactly that
+    mention -- on its piece page and in the one-scroll document alike -- and
+    leaves the other a plain span rather than a broken link.  Without the
+    mapping nothing links at all.
+    """
+
+    edition = _edition(tmp_path)
+    result = write_web_edition(
+        edition, tmp_path / "web", source_urls={"source-one": "https://example.test/one?a=1&b=2"}
+    )
+
+    linked = '<a data-source-id="source-one" href="https://example.test/one?a=1&amp;b=2">source-one</a>'
+    plain = '<span data-source-id="source-two">source-two</span>'
+    article = result.pages[1].read_text(encoding="utf-8")
+    whole = result.edition_document.read_text(encoding="utf-8")
+    assert linked in article and plain in article
+    assert linked in whole and plain in whole
+
+    unmapped = write_web_edition(edition, tmp_path / "web-unmapped")
+    assert "https://example.test/one" not in unmapped.pages[1].read_text(encoding="utf-8")
+
+
+def test_print_furniture_is_dropped_tail_art_bytes_and_all(tmp_path: Path):
+    """No page carries a tail figure or the bottom source-link anchor.
+
+    Both are print furniture (the adapter's docstring states the verdicts);
+    the tail's bytes do not ship either -- not as a page reference and not as
+    a file under ``assets/`` -- and the asset inventory the caller receives
+    excludes it.
+    """
+
+    result = write_web_edition(_edition(tmp_path), tmp_path / "web")
+
+    for page in _page_files(result):
+        html = page.read_text(encoding="utf-8")
+        assert "article-tail" not in html, page.name
+        assert "source-link" not in html, page.name
+    assert not [web for web in result.assets if web.asset.role == "article_tail"]
+    assert not list((result.root / "assets").glob("*tail*"))
+
+
+def test_the_one_scroll_document_keeps_the_whole_edition_and_its_anchors(tmp_path: Path):
+    """``edition.html`` is the full document: every piece, anchor links intact.
+
+    Paging is presentation; the one-scroll document stays the reading path for
+    whoever wants the edition as one page, so its contents still navigate by
+    in-document anchor exactly as the semantic layer wrote them.
+    """
+
+    result = write_web_edition(_edition(tmp_path), tmp_path / "web")
+    html = result.edition_document.read_text(encoding="utf-8")
+
+    assert 'class="editorial"' in html and "<article" in html
+    assert 'data-section-kind="source_record"' in html
+    assert 'class="cover-plate"' in html
+    assert re.search(r'<a class="entry-title" href="#', html)
+    assert "masthead" not in html and "page-turn" not in html
 
 
 def test_asset_filenames_are_sanitized_unique_and_carry_their_suffix(tmp_path: Path):
@@ -190,24 +318,27 @@ def test_ids_differing_only_by_case_are_refused_everywhere(tmp_path: Path):
         write_web_edition(colliding, tmp_path / "web")
 
 
-def test_the_head_gains_viewport_and_stylesheet_exactly_once_after_charset(tmp_path: Path):
-    """The injected head is one viewport and one stylesheet link, in order.
+def test_every_page_gains_viewport_and_stylesheet_exactly_once_after_charset(tmp_path: Path):
+    """The injected head is one viewport and one stylesheet link, in order,
+    on the cover index, every piece page, and the one-scroll document alike.
 
-    Both land inside ``<head>`` immediately after the charset declaration, and
-    exactly once each: a doubled viewport is a browser quirk lottery, and a
-    doubled stylesheet is a hint the injection anchor matched more than it
-    should.
+    A doubled viewport is a browser quirk lottery, and a doubled stylesheet is
+    a hint the injection anchor matched more than it should.
     """
 
     result = write_web_edition(_edition(tmp_path), tmp_path / "web")
-    html = result.index.read_text(encoding="utf-8")
 
     viewport = '<meta name="viewport" content="width=device-width, initial-scale=1">'
     stylesheet = '<link rel="stylesheet" href="edition.css">'
-    assert html.count(viewport) == 1
-    assert html.count(stylesheet) == 1
-    head = html.split("</head>")[0]
-    assert head.index('<meta charset="utf-8">') < head.index(viewport) < head.index(stylesheet)
+    for page in _page_files(result):
+        html = page.read_text(encoding="utf-8")
+        assert html.count(viewport) == 1, page.name
+        assert html.count(stylesheet) == 1, page.name
+        head = html.split("</head>")[0]
+        assert (
+            head.index('<meta charset="utf-8">') < head.index(viewport) < head.index(stylesheet)
+        ), page.name
+        assert "<title>" in head, page.name
 
 
 def test_a_head_of_unexpected_shape_is_a_named_refusal(tmp_path: Path):
@@ -227,26 +358,90 @@ def test_a_head_of_unexpected_shape_is_a_named_refusal(tmp_path: Path):
         web_edition._inject_head(doubled)
 
 
-def test_the_cover_leads_main_and_its_absence_leaves_no_plate(tmp_path: Path):
-    """The cover plate is the first child of ``<main>``, or nothing at all.
+def test_an_unrecognized_top_level_element_is_a_named_refusal(tmp_path: Path):
+    """Paging refuses a document whose top level it cannot account for.
 
-    The semantic layer records the cover in its inventory but paints nothing,
-    because placement is adapter policy; on screen the edition leads with it.
-    An edition without cover art gets no empty frame.
+    The split is anchored to the boundaries the renderer guarantees; an
+    unrecognized line at the top level means the semantic body changed shape,
+    and half a paged edition shipped quietly is worse than no edition.
+    """
+
+    with pytest.raises(ValidationError, match="does not recognize"):
+        web_edition._parse_document(
+            "\n".join(
+                [
+                    "<!doctype html>",
+                    '<html lang="en">',
+                    "<head>",
+                    "  <title>T</title>",
+                    "</head>",
+                    "<body>",
+                    '  <main data-edition-id="e">',
+                    "    <p>a stray top-level paragraph</p>",
+                    "  </main>",
+                    "</body>",
+                    "</html>",
+                ]
+            )
+        )
+
+
+def test_the_cover_face_leads_the_cover_pages_and_raw_art_is_the_fallback(tmp_path: Path):
+    """``cover_face`` is what ships; without it the raw art; without either,
+    no plate at all.
+
+    When the composed face is supplied it is the cover on both the index and
+    the one-scroll document, its bytes are what lands under ``assets/``, and
+    the unshipped raw artwork does not ride along.  An edition with neither
+    gets no empty frame.
     """
 
     edition = _edition(tmp_path)
-    result = write_web_edition(edition, tmp_path / "web")
-    lines = result.index.read_text(encoding="utf-8").split("\n")
+    faced = write_web_edition(
+        edition, tmp_path / "web-faced", cover_face=_cover_face(tmp_path)
+    )
+    cover = next(web for web in faced.assets if web.asset.role == "cover_art")
+    assert (faced.root / cover.href).read_bytes() == b"composed cover face"
+    for page in (faced.index, faced.edition_document):
+        html = page.read_text(encoding="utf-8")
+        plate = re.search(r'<figure class="cover-plate"[^>]*><img src="([^"]+)"', html)
+        assert plate is not None and plate.group(1) == cover.href, page.name
+    raw_copies = [
+        path
+        for path in (faced.root / "assets").iterdir()
+        if path.read_bytes() == b"image" and path.name.startswith("cover")
+    ]
+    assert not raw_copies, "the raw artwork must not ship beside the face"
 
-    (main_index,) = [i for i, line in enumerate(lines) if line.lstrip().startswith("<main ")]
-    plate = lines[main_index + 1]
-    assert plate.startswith('    <figure class="cover-plate" data-asset-role="cover_art">')
-    assert 'alt="Cover &lt;&amp;&gt;"' in plate
+    fallback = write_web_edition(edition, tmp_path / "web-fallback")
+    cover = next(web for web in fallback.assets if web.asset.role == "cover_art")
+    assert (fallback.root / cover.href).read_bytes() == b"image"
+    assert 'alt="Cover &lt;&amp;&gt;"' in fallback.index.read_text(encoding="utf-8")
 
-    without = replace(edition, cover_art=None)
-    bare = write_web_edition(without, tmp_path / "web-bare")
+    bare = write_web_edition(
+        replace(edition, cover_art=None), tmp_path / "web-bare"
+    )
     assert "cover-plate" not in bare.index.read_text(encoding="utf-8")
+
+
+def test_a_coverless_edition_with_a_supplied_face_still_gets_a_cover_page(tmp_path: Path):
+    """The face stands alone: no authored raw art is needed to ship a cover.
+
+    The semantic inventory only records a cover when the edition authored raw
+    artwork; the adapter fabricates the entry for the supplied face with the
+    same alt text the semantic layer would have chosen.
+    """
+
+    edition = replace(_edition(tmp_path), cover_art=None)
+    result = write_web_edition(
+        edition, tmp_path / "web", cover_face=_cover_face(tmp_path)
+    )
+
+    html = result.index.read_text(encoding="utf-8")
+    assert 'class="cover-plate"' in html
+    assert 'alt="Cover &lt;&amp;&gt;"' in html
+    cover = next(web for web in result.assets if web.asset.role == "cover_art")
+    assert (result.root / cover.href).read_bytes() == b"composed cover face"
 
 
 def test_fonts_licenses_and_stylesheet_ship_with_the_page(tmp_path: Path):
@@ -258,7 +453,7 @@ def test_fonts_licenses_and_stylesheet_ship_with_the_page(tmp_path: Path):
 
     result = write_web_edition(_edition(tmp_path), tmp_path / "web")
 
-    assert (result.root / "edition.css").is_file()
+    assert (result.root / "edition.css").read_bytes() == web_edition._read_screen_css()
     fonts = result.root / "fonts"
     assert list(fonts.rglob("*.ttf")), "the bundled faces ship with the page"
     assert [
@@ -266,26 +461,19 @@ def test_fonts_licenses_and_stylesheet_ship_with_the_page(tmp_path: Path):
     ], "the OFL texts travel with the fonts they cover"
 
 
-@pytest.mark.skipif(
-    not _screen_css_is_authored(), reason="assets/screen-edition.css not authored yet"
-)
-def test_the_shipped_stylesheet_is_the_packaged_one_byte_for_byte(tmp_path: Path):
-    """``edition.css`` is the packaged screen stylesheet, unmodified."""
-
-    result = write_web_edition(_edition(tmp_path), tmp_path / "web")
-    assert (result.root / "edition.css").read_bytes() == web_edition._read_screen_css()
-
-
 def test_two_builds_of_the_same_edition_are_byte_identical(tmp_path: Path):
-    """Determinism: the same validated edition writes the same tree twice.
+    """Determinism: the same validated inputs write the same tree twice.
 
     No timestamps, no enumeration order, no randomness -- the property both
-    print engines already contract to, holding on the web path as well.
+    print engines already contract to, holding across every page, asset and
+    font of the web tree as well.
     """
 
     edition = _edition(tmp_path)
-    first = write_web_edition(edition, tmp_path / "first")
-    second = write_web_edition(edition, tmp_path / "second")
+    face = _cover_face(tmp_path)
+    urls = {"source-one": "https://example.test/one"}
+    first = write_web_edition(edition, tmp_path / "first", cover_face=face, source_urls=urls)
+    second = write_web_edition(edition, tmp_path / "second", cover_face=face, source_urls=urls)
 
     first_files = sorted(
         path.relative_to(first.root) for path in first.root.rglob("*") if path.is_file()
