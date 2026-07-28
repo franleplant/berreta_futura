@@ -241,57 +241,6 @@ code {
   border-bottom: 1px solid var(--rule);
   margin-bottom: clamp(2rem, 6vw, 3.5rem);
 }
-/* A cover is held at arm's length, whole: on anything laptop-shaped the
- * entire unit -- lockup, headline, cue, artwork, register, date -- fits the
- * first viewport, the artwork flexing into whatever height the fixed rows
- * leave and the rows themselves giving way by viewport height, never below
- * their floors.  The height is svh so a browser chrome bar cannot push the
- * date under the fold, minus the main frame's own top padding, and capped so
- * a tall portrait monitor gets a composed sheet rather than a stretched one.
- * Phones and squat windows keep the flowing stack above: a strict viewport
- * fit there would crush the type below legibility, and the mobile cover was
- * judged right as it flows. */
-@media (min-width: 48rem) and (min-height: 40rem) {
-  .cover {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    box-sizing: border-box;
-    height: min(calc(100vh - 3.5rem), 68rem);
-    height: min(calc(100svh - 3.5rem), 68rem);
-    padding: clamp(1rem, 3vh, 2.5rem) 0 clamp(1rem, 2.5vh, 2rem);
-  }
-  .cover-wordmark {
-    width: auto;
-    height: min(7.4rem, 16vh);
-    max-width: 100%;
-    margin-bottom: clamp(1rem, 3.5vh, 3rem);
-  }
-  .cover-headline {
-    font-size: min(3.4rem, max(2rem, 7vh));
-    margin-bottom: clamp(0.75rem, 2.5vh, 2rem);
-  }
-  .cover-art {
-    flex: 1 1 auto;
-    min-height: 0;
-    align-self: stretch;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: clamp(0.5rem, 2vh, 1.5rem) 0;
-  }
-  .cover-art img {
-    height: 100%;
-    width: auto;
-    max-width: min(100%, 34rem);
-    max-height: min(100%, 34rem);
-    object-fit: contain;
-    margin: 0;
-  }
-  .cover-roster {
-    margin-bottom: clamp(0.6rem, 1.6vh, 1.5rem);
-  }
-}
 .cover-wordmark {
   display: block;
   width: min(100%, 26rem);
@@ -372,6 +321,58 @@ code {
   font-size: 0.72rem;
   letter-spacing: 0.2em;
   color: var(--ink);
+}
+/* A cover is held at arm's length, whole: on anything laptop-shaped the
+ * entire unit -- lockup, headline, cue, artwork, register, date -- fits the
+ * first viewport, the artwork flexing into whatever height the fixed rows
+ * leave and the rows themselves giving way by viewport height, never below
+ * their floors.  The height is svh so a browser chrome bar cannot push the
+ * date under the fold, minus the main frame's own top padding, and capped so
+ * a tall portrait monitor gets a composed sheet rather than a stretched one.
+ * Phones and squat windows keep the flowing stack above: a strict viewport
+ * fit there would crush the type below legibility, and the mobile cover was
+ * judged right as it flows.  This block stands after the base cover rules
+ * because it must win their ties -- same specificity, later order. */
+@media (min-width: 48rem) and (min-height: 40rem) {
+  .cover {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    box-sizing: border-box;
+    height: min(calc(100vh - 3.5rem), 68rem);
+    height: min(calc(100svh - 3.5rem), 68rem);
+    padding: clamp(1rem, 3vh, 2.5rem) 0 clamp(1rem, 2.5vh, 2rem);
+  }
+  .cover-wordmark {
+    width: auto;
+    height: min(7.4rem, 16vh);
+    max-width: 100%;
+    margin-bottom: clamp(1rem, 3.5vh, 3rem);
+  }
+  .cover-headline {
+    font-size: min(3.4rem, max(2rem, 7vh));
+    margin-bottom: clamp(0.75rem, 2.5vh, 2rem);
+  }
+  .cover-art {
+    flex: 1 1 auto;
+    min-height: 0;
+    align-self: stretch;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: clamp(0.5rem, 2vh, 1.5rem) 0;
+  }
+  .cover-art img {
+    height: 100%;
+    width: auto;
+    max-width: min(100%, 34rem);
+    max-height: min(100%, 34rem);
+    object-fit: contain;
+    margin: 0;
+  }
+  .cover-roster {
+    margin-bottom: clamp(0.6rem, 1.6vh, 1.5rem);
+  }
 }
 /* The canto: fixed to the right edge like the tab is fixed to the fore-edge,
  * reading downward.  It is the cover page's element -- pieces navigate by
