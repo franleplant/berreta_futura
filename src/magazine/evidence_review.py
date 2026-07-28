@@ -8,16 +8,30 @@ audited.  The record pins, per article, the SHA-256 of the manuscript, of the
 fidelity ledger, and -- for every source the article or its ledger declares --
 of the extraction body *and* the whole ``extracted.md`` file, so rewriting the
 provenance frontmatter (``raw_bundle``, ``extraction_method``) after approval
-is as staleness-visible as rewriting the body.  Any change to any bound input
-makes the record stale, and ``mag release`` refuses a missing, stale, or
-changes-required evidence review.
+is as staleness-visible as rewriting the body.
+
+Staleness is derived *per article*: each recorded article row is compared
+against the same article's current bindings, and the overall status derives
+from those comparisons -- every article current and the result approved means
+approved; any drifted, unrecorded, or removed article means stale, naming the
+articles (and, per article, which bound input moved).  The release gate keeps
+the whole-edition strictness -- one drifted article still refuses release --
+but a re-audit no longer has to repeat itself: ``mag review record --kind
+evidence --articles a,b`` re-binds only the named articles from disk and
+preserves every other article's recorded binding and ``reviewed_at`` byte for
+byte (see :func:`rebind_articles`).
+
+The schema stays at version 1: per-article ``reviewed_at`` is an additive,
+optional key beside the bound hashes, so records written before it existed
+(edition 003's among them) load unchanged and report the record-level
+timestamp for every article.
 """
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Iterable
 
 from .errors import ValidationError
 from .extraction import EXTRACTION_FILENAME, ledger_source_ids, load_extraction
@@ -28,6 +42,11 @@ if TYPE_CHECKING:
     from .manifest import Edition
 
 _HEX_DIGITS = set("0123456789abcdef")
+
+# The keys of an article row that *bind*.  Rows also carry audit metadata --
+# the per-article ``reviewed_at`` -- which must never participate in staleness:
+# when an article was last audited says nothing about whether its bytes moved.
+_ARTICLE_BINDING_KEYS = ("manuscript_sha256", "ledger_sha256", "source_extractions")
 
 
 def evidence_review_path(editions_dir: Path, edition_id: str) -> Path:
@@ -115,6 +134,14 @@ def load_evidence_review(path: Path, *, edition_id: str) -> dict[str, Any] | Non
         for key in ("manuscript_sha256", "ledger_sha256"):
             if not _is_sha256(row.get(key)):
                 errors.append(f"Evidence review article {article_id} has invalid {key}")
+        # Per-article ``reviewed_at`` postdates edition 003's record, so its
+        # absence is legal (the record-level timestamp stands in); an empty
+        # value is not.
+        if "reviewed_at" in row and not str(row.get("reviewed_at") or "").strip():
+            errors.append(
+                f"Evidence review article {article_id} reviewed_at must be a "
+                "non-empty string when present"
+            )
         extractions = row.get("source_extractions")
         if not isinstance(extractions, dict) or not extractions:
             errors.append(
@@ -141,21 +168,71 @@ def _is_sha256(value: Any) -> bool:
     return len(text) == 64 and set(text) <= _HEX_DIGITS
 
 
+def _recorded_binding(row: dict[str, Any]) -> dict[str, Any]:
+    """The comparable slice of a recorded article row: hashes, not metadata."""
+
+    return {key: row.get(key) for key in _ARTICLE_BINDING_KEYS}
+
+
+def article_drift(recorded: dict[str, Any], current: dict[str, Any]) -> list[str]:
+    """Name exactly which of one article's bound inputs no longer match disk.
+
+    The names are for the human deciding what to re-audit: ``manuscript`` and
+    ``ledger`` for the article's own files, ``extraction:<source-id>`` for any
+    extraction whose body or file hash moved (or that appeared or vanished
+    from the covered set).
+    """
+
+    drift: list[str] = []
+    if recorded.get("manuscript_sha256") != current.get("manuscript_sha256"):
+        drift.append("manuscript")
+    if recorded.get("ledger_sha256") != current.get("ledger_sha256"):
+        drift.append("ledger")
+    recorded_extractions = recorded.get("source_extractions") or {}
+    current_extractions = current.get("source_extractions") or {}
+    for source_id in sorted(set(recorded_extractions) | set(current_extractions)):
+        if recorded_extractions.get(source_id) != current_extractions.get(source_id):
+            drift.append(f"extraction:{source_id}")
+    return drift
+
+
 def evidence_review_status(
     review: dict[str, Any] | None,
     *,
     edition_id: str,
     bindings: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
+    """Derive the review's standing per article, then the whole from the parts.
+
+    ``articles`` reports, for every article the edition or the record knows,
+    whether its recorded binding still matches disk:
+
+    - ``current``: every bound hash matches; ``reviewed_at`` says when this
+      article was last audited (falling back to the record's timestamp for
+      rows written before per-article stamps existed).
+    - ``drifted``: some bound input changed; ``drift`` names which.
+    - ``unrecorded``: the edition has the article but the record never bound
+      it (it joined the edition after the audit).
+    - ``removed``: the record bound an article the edition no longer carries.
+    - ``unreviewed``: no record exists at all.
+
+    Any article that is not ``current`` makes the whole record stale; the
+    release gate stays exactly as strict as the old whole-mapping comparison,
+    but the drift is now attributable article by article.
+    """
+
+    articles: dict[str, Any] = {}
     base: dict[str, Any] = {
         "status": "required_before_release",
         "reviewer": None,
         "reviewed_at": None,
         "result": None,
         "findings": [],
-        "articles": bindings,
+        "articles": articles,
     }
     if review is None:
+        for article_id in bindings:
+            articles[article_id] = {"status": "unreviewed", "reviewed_at": None}
         return base
     base.update(
         {
@@ -165,7 +242,32 @@ def evidence_review_status(
             "findings": list(review.get("findings", [])),
         }
     )
-    if review.get("edition_id") != edition_id or review.get("articles") != bindings:
+    recorded = review.get("articles") or {}
+    fallback_reviewed_at = review.get("reviewed_at")
+    any_drift = False
+    for article_id in sorted(set(bindings) | set(recorded)):
+        row = recorded.get(article_id)
+        current = bindings.get(article_id)
+        if not isinstance(row, dict):
+            articles[article_id] = {"status": "unrecorded", "reviewed_at": None}
+            any_drift = True
+            continue
+        entry: dict[str, Any] = {
+            "reviewed_at": row.get("reviewed_at") or fallback_reviewed_at
+        }
+        if current is None:
+            entry["status"] = "removed"
+            any_drift = True
+        else:
+            drift = article_drift(row, current)
+            if drift:
+                entry["status"] = "drifted"
+                entry["drift"] = drift
+                any_drift = True
+            else:
+                entry["status"] = "current"
+        articles[article_id] = entry
+    if review.get("edition_id") != edition_id or any_drift:
         base["status"] = "stale"
     elif review.get("result") == "approved":
         base["status"] = "approved"
@@ -196,6 +298,13 @@ def create_evidence_review(
     if not bindings:
         raise ValidationError("Evidence review requires at least one article to audit")
     timestamp = reviewed_at or datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    # Every article row records when *it* was audited.  Rows arriving without
+    # a stamp were audited now (a full record, or the re-bound articles of a
+    # partial one); rows that already carry one are preserved bindings whose
+    # audit history must survive the re-record (see rebind_articles).
+    articles = {
+        article_id: {"reviewed_at": timestamp, **row} for article_id, row in bindings.items()
+    }
     return {
         "schema_version": 1,
         "edition_id": edition_id,
@@ -204,8 +313,70 @@ def create_evidence_review(
         "result": result,
         "findings": clean_findings,
         "notes": notes.strip(),
-        "articles": bindings,
+        "articles": articles,
     }
+
+
+def rebind_articles(
+    review: dict[str, Any] | None,
+    *,
+    bindings: dict[str, dict[str, Any]],
+    article_ids: Iterable[str],
+) -> dict[str, dict[str, Any]]:
+    """Merge a partial re-audit into an existing record's bindings.
+
+    ``--articles`` names the articles whose audit was actually repeated; those
+    are re-bound from ``bindings`` (current disk state) and will be stamped
+    with the new record's timestamp by :func:`create_evidence_review`.  Every
+    other article in the edition keeps its recorded binding *and* its recorded
+    ``reviewed_at`` unchanged, so an untouched article's approval history
+    survives the re-record and a drifted-but-unnamed article stays visibly
+    drifted rather than being silently re-blessed.
+
+    The edition's current article list is the universe: recorded articles that
+    left the edition simply fall out of the new record, and an article that is
+    in the edition but neither named nor previously recorded is refused --
+    there is no audit, old or new, to carry for it.
+    """
+
+    requested = [str(item).strip() for item in article_ids if str(item).strip()]
+    if not requested:
+        raise ValidationError(
+            "A partial evidence re-record requires at least one article id"
+        )
+    if review is None:
+        raise ValidationError(
+            "A partial evidence re-record amends an existing record, and none "
+            "exists; record the full audit first with "
+            "`mag review record --kind evidence`"
+        )
+    unknown = sorted(set(requested) - set(bindings))
+    if unknown:
+        raise ValidationError(
+            "Cannot re-bind articles the edition does not carry: " + ", ".join(unknown)
+        )
+    recorded = review.get("articles") or {}
+    fallback_reviewed_at = review.get("reviewed_at")
+    merged: dict[str, dict[str, Any]] = {}
+    unbound: list[str] = []
+    named = set(requested)
+    for article_id, current in bindings.items():
+        if article_id in named:
+            merged[article_id] = dict(current)
+        elif isinstance(recorded.get(article_id), dict):
+            row = recorded[article_id]
+            preserved = {"reviewed_at": row.get("reviewed_at") or fallback_reviewed_at}
+            preserved.update(_recorded_binding(row))
+            merged[article_id] = preserved
+        else:
+            unbound.append(article_id)
+    if unbound:
+        raise ValidationError(
+            "Articles have no recorded audit to preserve: "
+            + ", ".join(unbound)
+            + "; name them in --articles or record the full audit"
+        )
+    return merged
 
 
 def write_evidence_review(path: Path, record: dict[str, Any]) -> Path:
@@ -225,11 +396,12 @@ def require_approved_evidence_review(
         return
     detail = f"evidence review is {status['status']}"
     if status["status"] == "stale" and review is not None:
-        recorded = review.get("articles", {})
+        # The per-article rows already say exactly what moved; the error names
+        # the articles so the refusal doubles as the re-audit worklist.
         drifted = [
             article_id
-            for article_id in sorted(set(recorded) | set(bindings))
-            if recorded.get(article_id) != bindings.get(article_id)
+            for article_id, row in status["articles"].items()
+            if row.get("status") != "current"
         ]
         if drifted:
             detail += "; changed since the recorded audit: " + ", ".join(drifted)

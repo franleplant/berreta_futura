@@ -113,6 +113,25 @@ def parser() -> argparse.ArgumentParser:
     review_record.add_argument("--finding", action="append", default=[])
     review_record.add_argument("--notes", default="")
     review_record.add_argument(
+        "--articles",
+        help=(
+            "Evidence only: comma-separated article ids whose audit was actually "
+            "repeated. Only they are re-bound from current disk state; every other "
+            "article keeps the existing record's binding and reviewed_at. Omit to "
+            "record the full audit."
+        ),
+    )
+    review_record.add_argument(
+        "--rebuild",
+        action="store_true",
+        help=(
+            "Render only: after recording, re-typeset every language with the "
+            "recorded engine and error if any byte differs from the record. By "
+            "default the decision is exposed in the existing package in place, "
+            "without rebuilding."
+        ),
+    )
+    review_record.add_argument(
         "--engine",
         choices=ENGINES,
         help=(
@@ -194,24 +213,44 @@ def main(argv: list[str] | None = None) -> int:
                         "--engine applies only to render reviews; an evidence review "
                         "binds to manuscripts and extractions, not rendered PDFs"
                     )
+                if args.rebuild:
+                    raise MagazineError(
+                        "--rebuild applies only to render reviews; an evidence review "
+                        "touches no package"
+                    )
+                articles = None
+                if args.articles is not None:
+                    articles = [
+                        item.strip() for item in args.articles.split(",") if item.strip()
+                    ]
                 path = magazine.record_evidence_review(
                     args.edition_id,
                     reviewer=args.reviewer,
                     result=args.result,
                     findings=args.finding,
                     notes=args.notes,
+                    articles=articles,
                 )
                 print(f"recorded: {path}")
             else:
-                path, result = magazine.record_render_review(
+                # ``is not None`` mirrors the evidence branch: even an empty
+                # ``--articles ""`` expresses the intent to narrow and must be
+                # refused, not silently ignored.
+                if args.articles is not None:
+                    raise MagazineError(
+                        "--articles applies only to evidence reviews; a render review "
+                        "binds whole-language PDFs, not individual articles"
+                    )
+                path, output_dir = magazine.record_render_review(
                     args.edition_id,
                     reviewer=args.reviewer,
                     result=args.result,
                     findings=args.finding,
                     notes=args.notes,
                     engine=args.engine,
+                    rebuild=args.rebuild,
                 )
-                print(f"recorded: {path}\noutput: {result.output_dir}")
+                print(f"recorded: {path}\noutput: {output_dir}")
         elif args.command == "release":
             result, transition = magazine.release(
                 args.edition_id, next_edition_id=args.next_edition_id
