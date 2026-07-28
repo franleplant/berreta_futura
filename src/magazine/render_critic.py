@@ -12,6 +12,7 @@ from PIL import Image, ImageDraw, ImageOps
 from pypdf import PdfReader
 
 from .booklet import A4_LANDSCAPE_POINTS, imposed_reader_page_plan, section_reader_pages
+from .concurrency import ordered_map, worker_count
 from .errors import DependencyError
 from .render_review import visual_review_status
 
@@ -150,6 +151,69 @@ _STANDALONE_PUNCTUATION = re.compile(r"^[,.;:!?\u2026]+$")
 _COVER_PLACEHOLDER = re.compile(r"(?:\.\.\.|\b(?:TODO|TBD)\b|\[insert\b)", re.IGNORECASE)
 
 
+class _PageTexts:
+    """One document's extracted page text, asked of ``pypdf`` at most once.
+
+    ``extract_text`` is the most expensive thing this critic asks of pypdf --
+    about 39 ms a page on edition 003 -- and a build used to pay it four times
+    over for the same reader page: once for the page's own row in
+    ``_inspect_page``, and once in each of the three ``_booklet_spread_checks``
+    passes, which impose the all-in-one booklet, the interior and the cover
+    wrap over between them every reader page again. The saving therefore lives
+    *between* those passes, which is why the store is built once per document
+    in ``inspect_render`` and handed down rather than created inside the
+    function that does the comparing: a store owned by ``_booklet_spread_checks``
+    could only ever dedupe the two halves of one side, and the third pass would
+    re-extract everything the first two already read.
+
+    Pages are extracted on first ask, never up front. A document whose checks
+    short-circuit -- a plan shorter than the booklet it is checked against, a
+    section that selects four of thirty-six pages -- must go on paying nothing
+    for the pages nobody looked at, and eager extraction would only move that
+    cost rather than remove it, making the smallest editions slower.
+
+    Both shapes the checks want come off the one extraction: the raw text whose
+    lines ``_inspect_page`` counts, and the whitespace-collapsed text that
+    imposition order is compared on. Page numbers are 1-indexed, as they are in
+    every report row and every check in this module, so no call site translates.
+    """
+
+    def __init__(self, document: PdfReader) -> None:
+        self._document = document
+        self._raw: dict[int, str] = {}
+        self._normalized: dict[int, str] = {}
+
+    @property
+    def page_count(self) -> int:
+        return len(self._document.pages)
+
+    def raw(self, page_number: int) -> str:
+        """The page's text as ``extract_text`` gives it, or ``""`` where it gives nothing."""
+
+        if page_number not in self._raw:
+            self._raw[page_number] = self._document.pages[page_number - 1].extract_text() or ""
+        return self._raw[page_number]
+
+    def normalized(self, page_number: int) -> str:
+        """The same text with every run of whitespace collapsed to a single space."""
+
+        if page_number not in self._normalized:
+            self._normalized[page_number] = " ".join(self.raw(page_number).split())
+        return self._normalized[page_number]
+
+
+def _page_texts(document: PdfReader | _PageTexts) -> _PageTexts:
+    """A document's text store, wrapping a bare ``PdfReader`` when that is what arrived.
+
+    ``inspect_render`` passes stores it built itself, so its three imposition
+    passes share one extraction per reader page; ``tools/compare_pipelines.py``
+    still hands ``_booklet_spread_checks`` plain readers, and a caller checking
+    one document once has nothing to share with anybody anyway.
+    """
+
+    return document if isinstance(document, _PageTexts) else _PageTexts(document)
+
+
 def inspect_render(
     reader_pdf: Path,
     booklet_pdf: Path,
@@ -190,6 +254,15 @@ def inspect_render(
     booklet = PdfReader(str(booklet_pdf))
     interior_booklet = PdfReader(str(interior_booklet_pdf))
     cover_booklet = PdfReader(str(cover_booklet_pdf))
+    # One text store per document, built here and handed to every check that
+    # needs a page's words: the three imposition passes below all read the same
+    # reader pages, so sharing one store across them is what keeps each page's
+    # extraction to one.  See ``_PageTexts`` for why this cannot live inside
+    # ``_booklet_spread_checks`` and why nothing is extracted until it is asked for.
+    reader_texts = _PageTexts(reader)
+    booklet_texts = _PageTexts(booklet)
+    interior_booklet_texts = _PageTexts(interior_booklet)
+    cover_booklet_texts = _PageTexts(cover_booklet)
     page_count = len(reader.pages)
     review_dir = destination / "render-review"
     if review_dir.exists():
@@ -208,17 +281,17 @@ def inspect_render(
     # are read from it rather than re-hardcoded here more loosely.
     manifest_layout = _manifest_layout(destination)
     page_rows = [
-        _inspect_page(page_path, reader.pages[index], index + 1)
+        _inspect_page(page_path, reader.pages[index], index + 1, texts=reader_texts)
         for index, page_path in enumerate(rendered_pages)
         if index < page_count
     ]
     booklet_rows = [
-        _inspect_page(page_path, booklet.pages[index], index + 1)
+        _inspect_page(page_path, booklet.pages[index], index + 1, texts=booklet_texts)
         for index, page_path in enumerate(rendered_booklet)
         if index < len(booklet.pages)
     ]
     cover_booklet_rows = [
-        _inspect_page(page_path, cover_booklet.pages[index], index + 1)
+        _inspect_page(page_path, cover_booklet.pages[index], index + 1, texts=cover_booklet_texts)
         for index, page_path in enumerate(rendered_cover_booklet)
         if index < len(cover_booklet.pages)
     ]
@@ -257,7 +330,7 @@ def inspect_render(
             f"Rasterizer produced {len(rendered_booklet)} sides for a {len(booklet.pages)}-side booklet.",
         )
     expected_spreads = imposed_reader_page_plan(section_reader_pages(page_count, "all"))
-    spread_checks = _booklet_spread_checks(reader, booklet, expected_spreads)
+    spread_checks = _booklet_spread_checks(reader_texts, booklet_texts, expected_spreads)
     if not all(row["text_order_matches"] for row in spread_checks):
         issue(
             "booklet-page-order",
@@ -266,7 +339,9 @@ def inspect_render(
         )
     interior_pages = section_reader_pages(page_count, "interior") if page_count >= 4 else ()
     interior_plan = imposed_reader_page_plan(interior_pages)
-    interior_spread_checks = _booklet_spread_checks(reader, interior_booklet, interior_plan)
+    interior_spread_checks = _booklet_spread_checks(
+        reader_texts, interior_booklet_texts, interior_plan
+    )
     if len(interior_booklet.pages) != len(interior_plan):
         issue(
             "interior-booklet-side-count",
@@ -288,7 +363,7 @@ def inspect_render(
         )
     cover_pages = section_reader_pages(page_count, "cover") if page_count >= 4 else ()
     cover_plan = imposed_reader_page_plan(cover_pages)
-    cover_spread_checks = _booklet_spread_checks(reader, cover_booklet, cover_plan)
+    cover_spread_checks = _booklet_spread_checks(reader_texts, cover_booklet_texts, cover_plan)
     if len(cover_booklet.pages) != len(cover_plan):
         issue(
             "cover-booklet-side-count",
@@ -531,7 +606,8 @@ def inspect_render(
                 page=side,
             )
 
-    cover_text = reader.pages[0].extract_text() if reader.pages else ""
+    # The cover's own row already read page 1, so this comes out of the store.
+    cover_text = reader_texts.raw(1) if reader_texts.page_count else ""
     if _COVER_PLACEHOLDER.search(str(cover_text)):
         issue(
             "cover-placeholder-copy",
@@ -675,8 +751,8 @@ def _all_a4_landscape(document: PdfReader) -> bool:
 
 
 def _booklet_spread_checks(
-    reader: PdfReader,
-    booklet: PdfReader,
+    reader: PdfReader | _PageTexts,
+    booklet: PdfReader | _PageTexts,
     spreads: tuple[tuple[int | None, int | None], ...],
 ) -> list[dict[str, Any]]:
     """Confirm each imposed side carries exactly its planned reader page pair.
@@ -685,29 +761,39 @@ def _booklet_spread_checks(
     all-in-one booklet, the interior, and the cover wrap: whichever pages a
     section selects, its side ``n`` must extract the left page's text followed by
     the right page's. ``None`` is a padded blank half-side.
+
+    Either document may arrive as a ``PdfReader`` or as the ``_PageTexts`` store
+    ``inspect_render`` shares between its three passes over one reader; a bare
+    reader is wrapped in a store of its own, which costs nothing and reads the
+    same, but only the shared one spares the second and third pass the
+    extraction the first already paid for.
     """
 
-    def normalized(page: Any) -> str:
-        return " ".join((page.extract_text() or "").split())
-
+    reader_texts = _page_texts(reader)
+    booklet_texts = _page_texts(booklet)
+    reader_pages = reader_texts.page_count
     rows: list[dict[str, Any]] = []
     for side_index, (left, right) in enumerate(spreads, 1):
         expected = " ".join(
             text
             for page_number in (left, right)
-            if page_number is not None and page_number <= len(reader.pages)
-            for text in [normalized(reader.pages[page_number - 1])]
+            if page_number is not None and page_number <= reader_pages
+            for text in [reader_texts.normalized(page_number)]
             if text
         )
-        actual = normalized(booklet.pages[side_index - 1]) if side_index <= len(booklet.pages) else ""
+        actual = (
+            booklet_texts.normalized(side_index)
+            if side_index <= booklet_texts.page_count
+            else ""
+        )
         rows.append(
             {
                 "side": side_index,
                 "sheet": (side_index + 1) // 2,
                 "face": "outside" if side_index % 2 else "inside",
-                "left_reader_page": left if left is not None and left <= len(reader.pages) else None,
+                "left_reader_page": left if left is not None and left <= reader_pages else None,
                 "right_reader_page": (
-                    right if right is not None and right <= len(reader.pages) else None
+                    right if right is not None and right <= reader_pages else None
                 ),
                 "text_order_matches": actual == expected,
             }
@@ -716,20 +802,106 @@ def _booklet_spread_checks(
 
 
 def _render_pages(reader_pdf: Path, output_dir: Path) -> list[Path]:
+    """Rasterize every page of a PDF to ``page-001.png``, in document order.
+
+    ``pdftoppm`` is single-threaded and this is the most expensive thing the
+    build does, so the document is cut into contiguous page ranges rendered at
+    once.  Sharding cannot move a pixel or a name, but that rests on two
+    Poppler behaviours which nothing in this repository pins and which Poppler
+    does not document as guarantees; both were verified empirically against the
+    installed Poppler (25.08.0), and an upgrade is worth re-checking on both
+    counts.  First, a page's rendered bytes do not depend on whether it was
+    asked for alone or as part of the whole document.  Second, Poppler pads
+    each file name to the width of the *document's* page count rather than the
+    requested range's, so a 36-page document names its fifth page
+    ``page-05.png`` under ``-f 5 -l 5`` exactly as it does under a single-shot
+    run.  A future Poppler that padded to the requested range's width instead
+    would break this silently rather than loudly: that same page would arrive
+    as ``page-5.png`` from a one-page shard and as ``page-05.png`` from a wider
+    one, and the normalization below would sort a set of names that no longer
+    reflects the document and renumber the pages into the wrong order.
+
+    Given those two, the normalization is looking at the same directory of
+    files either way, and it -- not any shard -- is what decides the returned
+    names and their order.  Sorting by page number only after every shard has
+    finished is what keeps that order owing nothing to which shard finished
+    first.
+    """
+
     executable = shutil.which("pdftoppm")
     if not executable:
         raise DependencyError("Render criticism requires Poppler's pdftoppm executable.")
     output_dir.mkdir(parents=True, exist_ok=True)
     prefix = output_dir / "page"
-    completed = subprocess.run(
-        [executable, "-png", "-r", str(RASTER_DPI), str(reader_pdf), str(prefix)],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if completed.returncode:
-        detail = completed.stderr.strip() or completed.stdout.strip() or "unknown Poppler error"
-        raise DependencyError(f"Could not rasterize reader PDF for criticism: {detail}")
+
+    def rasterize(window: tuple[int, int] | None) -> None:
+        """Render one inclusive page range, or the whole document for ``None``."""
+        selection = [] if window is None else ["-f", str(window[0]), "-l", str(window[1])]
+        completed = subprocess.run(
+            [
+                executable,
+                "-png",
+                "-r",
+                str(RASTER_DPI),
+                *selection,
+                str(reader_pdf),
+                str(prefix),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if completed.returncode:
+            detail = (
+                completed.stderr.strip() or completed.stdout.strip() or "unknown Poppler error"
+            )
+            raise DependencyError(f"Could not rasterize reader PDF for criticism: {detail}")
+
+    # Every shard pays its own process startup and document setup -- spawning
+    # pdftoppm, reading the xref and the catalog, preparing the output device --
+    # before it renders anything, and none of that is shared between shards, so
+    # a shard is only worth its process once it has a couple of pages to render;
+    # holding each to two keeps the cover wrap's two sides, and any document on
+    # a single-core machine, on the unsharded command that has always run here.
+    try:
+        page_count = len(PdfReader(str(reader_pdf)).pages)
+    except Exception:
+        # A page count that cannot be read is not an error to raise here, only a
+        # split that cannot be planned: sharding is an optimization, so when the
+        # plan is unavailable this falls back to the unsharded command that has
+        # always run here and lets Poppler judge the file.  A truncated or
+        # malformed PDF then fails as it always did, with the ``DependencyError``
+        # carrying Poppler's own diagnosis, rather than with whatever pypdf
+        # raised on its way to a number this function only wanted in order to
+        # divide it.  Callers reaching past ``inspect_render`` --
+        # ``tools/compare_pipelines.py`` does -- are written against that error
+        # and would not recognise a ``PdfStreamError``.  Zero plans no shards,
+        # so the branch below is the one that runs.
+        page_count = 0
+    shard_count = worker_count(page_count // 2)
+    if shard_count < 2:
+        rasterize(None)
+    else:
+        # Cutting at ``page_count * index // shard_count`` gives contiguous
+        # ranges that between them cover every page exactly once and leave none
+        # empty, so long as there are no more shards than pages; it is
+        # ``worker_count``'s clamp to the work that exists that guarantees that,
+        # and without it the arithmetic degenerates into windows that run
+        # backwards and windows that repeat a page.
+        #
+        # The two ways the cuts could be wrong are not equally visible, and only
+        # one of them is caught anywhere.  A gap loses pages, which
+        # ``inspect_render``'s raster-page-count check does report: dropping one
+        # window of a 118-page reader left 111 rasters and the check fired.  An
+        # overlap is the more dangerous one exactly because nothing reports it --
+        # every page is still covered, so the count matches and the check stays
+        # silent, while two ``pdftoppm`` processes write the same PNG at the same
+        # time and leave a torn file that no count can see.  ``cuts[index] + 1``
+        # is the whole of what rules the overlap out, by opening each window one
+        # page past where the previous one closed.
+        cuts = [page_count * index // shard_count for index in range(shard_count + 1)]
+        windows = [(cuts[index] + 1, cuts[index + 1]) for index in range(shard_count)]
+        ordered_map(rasterize, windows)
 
     def page_number(path: Path) -> int:
         try:
@@ -747,7 +919,9 @@ def _render_pages(reader_pdf: Path, output_dir: Path) -> list[Path]:
     return normalized
 
 
-def _inspect_page(path: Path, pdf_page: Any, page_number: int) -> dict[str, Any]:
+def _inspect_page(
+    path: Path, pdf_page: Any, page_number: int, *, texts: _PageTexts | None = None
+) -> dict[str, Any]:
     with Image.open(path) as opened:
         gray = ImageOps.grayscale(opened)
         ink_mask = gray.point(lambda value: 255 if value < WHITE_THRESHOLD else 0)
@@ -769,7 +943,12 @@ def _inspect_page(path: Path, pdf_page: Any, page_number: int) -> dict[str, Any]
         presence_bbox = presence_mask.getbbox()
         pure_white = gray.getextrema() == (255, 255)
         width, height = gray.size
-    text = pdf_page.extract_text() or ""
+    # The words come from the document's shared store when ``inspect_render``
+    # supplies one, so this row and the imposition passes do not each pay pypdf
+    # for the same page; a caller holding only the page object -- the synthetic
+    # pages in the tests, tools/compare_pipelines.py -- extracts it here as this
+    # function always did.
+    text = texts.raw(page_number) if texts is not None else (pdf_page.extract_text() or "")
     punctuation = [
         line.strip()
         for line in text.splitlines()
@@ -1208,6 +1387,10 @@ def _write_review_crops(
     carries ~20 focused crops rather than a second full set of pages five
     times the size.  Names say what they show (``crop-p05-opener.png``),
     with a numeric suffix only when one page flags the same kind twice.
+
+    The rasters are taken all at once on threads, because thirty-odd Poppler
+    invocations waited on in turn were a fifth of the build a human sits
+    through between asking for a review and reading it.
     """
 
     if not specs:
@@ -1215,15 +1398,34 @@ def _write_review_crops(
     crops_dir.mkdir(parents=True, exist_ok=True)
     scratch = crops_dir / "pages-at-300"
     scale = CROP_DPI / 72.0
-    rendered: dict[int, Path] = {}
     outputs: list[Path] = []
     rows: list[dict[str, Any]] = []
     used_names: set[str] = set()
+
+    def rasterize(page: int) -> Path:
+        return _render_crop_page(reader_pdf, page, scratch)
+
     try:
+        # Every page a spec names, including one whose box the loop below finds
+        # degenerate and skips: that spec costs its page a raster today, before
+        # the box is even computed, so keeping it in the set is what makes this
+        # rasterize neither more nor fewer pages -- and therefore report neither
+        # more nor fewer Poppler failures -- than the serial version did.
+        # Sorting is what makes a failure deterministic: ``ordered_map`` raises
+        # for the lowest-index item that failed, so lowest index has to mean
+        # lowest page number rather than whichever page a thread reached first.
+        pages = sorted({int(spec["page"]) for spec in specs})
+        rasters = ordered_map(rasterize, pages, workers=worker_count(len(pages)))
+        rendered = dict(zip(pages, rasters, strict=True))
+        # Walking ``specs`` rather than ``pages`` from here on, because the
+        # ``-2`` suffix is assigned in the order the specs arrive; consuming the
+        # prepared rasters in page order instead would move suffixes between two
+        # crops of one page and rename files a review has already accepted.  The
+        # cropping itself stays on this thread: it is a quarter of the cost and
+        # pure-Python pixel work, so threads would contend for the interpreter
+        # rather than overlap, and the PNGs are written in one fixed order.
         for spec in specs:
             page = int(spec["page"])
-            if page not in rendered:
-                rendered[page] = _render_crop_page(reader_pdf, page, scratch)
             base = f"crop-p{page:02d}-{spec['kind']}"
             name = base
             suffix = 2

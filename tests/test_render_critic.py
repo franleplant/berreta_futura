@@ -1,14 +1,29 @@
+import hashlib
 import json
+import subprocess
+import time
+from collections import Counter
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
+import pytest
 from PIL import Image, ImageDraw
-from pypdf import PdfReader, PdfWriter
+from pypdf import PageObject, PdfReader, PdfWriter
 from reportlab.pdfgen.canvas import Canvas
 
-from magazine.booklet import impose_a5_on_a4
-from magazine.render_critic import _COVER_PLACEHOLDER, _inspect_page, inspect_render
+from magazine.booklet import impose_a5_on_a4, imposed_reader_page_plan, section_reader_pages
+from magazine.errors import DependencyError
+from magazine.render_critic import (
+    _COVER_PLACEHOLDER,
+    _PageTexts,
+    _booklet_spread_checks,
+    _inspect_page,
+    _render_crop_page,
+    _render_pages,
+    _write_review_crops,
+    inspect_render,
+)
 
 A5 = (419.5276, 595.2756)
 A4_LANDSCAPE = (841.8898, 595.2756)
@@ -751,7 +766,477 @@ def test_page_inspection_detects_orphan_display_punctuation(tmp_path: Path):
     assert result["standalone_punctuation_lines"] == [","]
 
 
+def _recorded_run(commands: list[list[str]]):
+    """Wrap ``subprocess.run`` so a test can read the argv the critic built."""
+    real_run = subprocess.run
+
+    def run(command, *args, **kwargs):
+        commands.append([str(part) for part in command])
+        return real_run(command, *args, **kwargs)
+
+    return run
+
+
+def _window(command: list[str]) -> tuple[int, int] | None:
+    """The inclusive ``-f``/``-l`` page range of a pdftoppm argv, if it has one."""
+    if "-f" not in command:
+        return None
+    return int(command[command.index("-f") + 1]), int(command[command.index("-l") + 1])
+
+
+def test_sharded_rasterization_is_byte_identical_to_one_pdftoppm_run(tmp_path: Path):
+    """The pages a build reviews must not depend on how the raster was split.
+
+    Recorded review decisions bind the SHA-256 of the packaged rasters, so the
+    sharded render has to agree with the single-command render on every name,
+    on their order, and on every byte.
+    """
+    reader = _numbered_reader(tmp_path / "reader.pdf", 12)
+
+    commands: list[list[str]] = []
+    with patch("magazine.render_critic.subprocess.run", side_effect=_recorded_run(commands)):
+        sharded = _render_pages(reader, tmp_path / "sharded")
+    with patch("magazine.render_critic.worker_count", return_value=1):
+        single = _render_pages(reader, tmp_path / "single")
+
+    windows = [_window(command) for command in commands]
+    assert len(windows) > 1 and all(window is not None for window in windows)
+    # Contiguous, gapless, and covering all twelve pages exactly once.
+    assert [page for first, last in windows for page in range(first, last + 1)] == list(
+        range(1, 13)
+    )
+
+    def digests(pages: list[Path]) -> list[tuple[str, str]]:
+        return [(page.name, hashlib.sha256(page.read_bytes()).hexdigest()) for page in pages]
+
+    assert [page.name for page in single] == [f"page-{number:03d}.png" for number in range(1, 13)]
+    assert digests(sharded) == digests(single)
+
+
+def test_a_short_document_rasterizes_with_a_single_unwindowed_command(tmp_path: Path):
+    """One or two pages keep the exact command this function has always run."""
+    for page_count in (1, 2):
+        reader = _numbered_reader(tmp_path / f"reader-{page_count}.pdf", page_count)
+        commands: list[list[str]] = []
+        with patch("magazine.render_critic.subprocess.run", side_effect=_recorded_run(commands)):
+            pages = _render_pages(reader, tmp_path / f"pages-{page_count}")
+
+        assert len(commands) == 1
+        assert "-f" not in commands[0] and "-l" not in commands[0]
+        assert [page.name for page in pages] == [
+            f"page-{number:03d}.png" for number in range(1, page_count + 1)
+        ]
+
+
+def test_the_lowest_shard_owns_the_error_whichever_shard_failed_first(tmp_path: Path):
+    """A Poppler failure must read the same however the threads were scheduled."""
+    reader = _numbered_reader(tmp_path / "reader.pdf", 12)
+
+    def run(command, *args, **kwargs):
+        window = _window(command)
+        if window == (4, 6):
+            # Loses the race deliberately: the last shard has already failed by
+            # the time this one reports, so only ordering can pick this message.
+            time.sleep(0.2)
+            return subprocess.CompletedProcess(command, 1, "", "second shard broke")
+        if window == (10, 12):
+            return subprocess.CompletedProcess(command, 1, "", "last shard broke")
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    with patch("magazine.render_critic.worker_count", return_value=4):
+        with patch("magazine.render_critic.subprocess.run", side_effect=run):
+            with pytest.raises(DependencyError) as raised:
+                _render_pages(reader, tmp_path / "pages")
+
+    assert str(raised.value) == (
+        "Could not rasterize reader PDF for criticism: second shard broke"
+    )
+
+
+def test_rasterizing_without_pdftoppm_raises_a_dependency_error(tmp_path: Path):
+    reader = _numbered_reader(tmp_path / "reader.pdf", 4)
+
+    with patch("magazine.render_critic.shutil.which", return_value=None):
+        with pytest.raises(DependencyError, match="Poppler's pdftoppm executable"):
+            _render_pages(reader, tmp_path / "pages")
+
+
+def test_an_unreadable_pdf_still_fails_with_popplers_own_diagnosis(tmp_path: Path):
+    """A document too broken to plan a split for must fail as it always did.
+
+    Planning the shards reads the page count with ``pypdf``, which puts a second
+    parser in front of Poppler's.  An unreadable file must not start raising
+    that parser's ``PdfStreamError``: the error every caller of this function is
+    written against -- ``tools/compare_pipelines.py`` calls it directly -- is a
+    ``DependencyError`` quoting Poppler, and the fallback to the unsharded
+    command is what keeps it so.
+    """
+    import shutil
+
+    if shutil.which("pdftoppm") is None:  # pragma: no cover - Poppler is a build requirement
+        pytest.skip("Only Poppler can refuse the broken PDF this test hands it")
+
+    readable = _numbered_reader(tmp_path / "reader.pdf", 12).read_bytes()
+    truncated = tmp_path / "truncated.pdf"
+    truncated.write_bytes(readable[: len(readable) // 2])
+    # The premise of the test: a file pypdf can still read would exercise the
+    # ordinary sharded path and prove nothing about the fallback.
+    with pytest.raises(Exception):
+        len(PdfReader(str(truncated)).pages)
+
+    with pytest.raises(DependencyError) as raised:
+        _render_pages(truncated, tmp_path / "pages")
+
+    assert type(raised.value).__module__.startswith("magazine")
+    assert "Could not rasterize reader PDF for criticism" in str(raised.value)
+    assert "Syntax Error" in str(raised.value)
+
+
 def test_cover_placeholder_pattern_rejects_ellipsis_and_drafting_markers():
     assert _COVER_PLACEHOLDER.search("AGENT SWARMS...")
     assert _COVER_PLACEHOLDER.search("TBD")
     assert not _COVER_PLACEHOLDER.search("Reusable blocks")
+
+
+def _extraction_log(log: list[tuple[int, int, str]]):
+    """Wrap pypdf's own extraction so a test sees every real call the critic makes.
+
+    A call is identified by the document object it came from and the page's PDF
+    object number, which is what "the same page of the same document" means
+    underneath the critic's own 1-indexed numbering. The collapsed text rides
+    along because it names the page: a reader page of ``_numbered_reader``
+    carries one token, an imposed side carries the two it pairs.
+    """
+    real_extract_text = PageObject.extract_text
+
+    def extract_text(self, *args, **kwargs):
+        text = real_extract_text(self, *args, **kwargs)
+        reference = self.indirect_reference
+        log.append((id(reference.pdf), reference.idnum, " ".join((text or "").split())))
+        return text
+
+    return extract_text
+
+
+def _fake_document(*texts: str):
+    """A document of literal page texts, plus the log of pages actually extracted."""
+    calls: list[int] = []
+
+    def page(number: int) -> SimpleNamespace:
+        def extract_text() -> str:
+            calls.append(number)
+            return texts[number - 1]
+
+        return SimpleNamespace(extract_text=extract_text)
+
+    return SimpleNamespace(pages=[page(number) for number in range(1, len(texts) + 1)]), calls
+
+
+class _UncachedPageTexts(_PageTexts):
+    """The critic as it behaved before the store cached: every ask re-extracts.
+
+    Only the memoization is defeated -- the real extraction and the real
+    whitespace collapse still run -- so a report built through this store
+    differs from a cached one in nothing but how many times pypdf was asked.
+    """
+
+    def raw(self, page_number: int) -> str:
+        self._raw.pop(page_number, None)
+        return super().raw(page_number)
+
+    def normalized(self, page_number: int) -> str:
+        self._normalized.pop(page_number, None)
+        return super().normalized(page_number)
+
+
+def test_no_page_of_any_document_is_extracted_twice_in_one_inspection(tmp_path: Path):
+    """Extraction is the critic's most expensive call, so a page pays it once.
+
+    A reader page used to be pulled from pypdf up to four times in one run --
+    once for its own row, then again by each of the three imposition passes,
+    which between them re-cover every page -- and the shared ``_PageTexts``
+    store exists to make the second, third and fourth ask free. Reader page 3
+    is the case that proves the sharing: the all-in-one booklet and the
+    interior both impose it, so a store built inside the comparing function
+    would extract it twice. Page 1 is read three times over, by the all-in-one
+    booklet, the cover wrap and the cover placeholder check.
+    """
+    reader = _numbered_reader(tmp_path / "reader.pdf", 8)
+    booklet = impose_a5_on_a4(reader, tmp_path / "booklet.pdf")
+    imposed = _imposed_documents(reader, tmp_path)
+    log: list[tuple[int, int, str]] = []
+
+    with patch("magazine.render_critic._render_pages", side_effect=_rasters(_CLEAN)):
+        with patch.object(PageObject, "extract_text", _extraction_log(log)):
+            report, _ = inspect_render(
+                reader,
+                booklet,
+                tmp_path,
+                **imposed,
+                language="en",
+                toc={"article": 4},
+                article_pages={"article": 1},
+                editorial_pages=None,
+                edition_id="issue-001",
+            )
+
+    assert report["result"] == "pass"
+    assert all(row["text_order_matches"] for row in report["home_booklet"]["spreads"])
+    extractions = Counter((document, page) for document, page, _ in log)
+    assert extractions and max(extractions.values()) == 1
+    # Reader pages 2 and 7 are the blank inside covers, so the six that carry a
+    # single token are every reader page with words on it -- each extracted once.
+    reader_pages = Counter(text for _, _, text in log if text and " " not in text)
+    assert reader_pages == Counter(f"READERPAGE{page}" for page in (1, 3, 4, 5, 6, 8))
+
+
+def test_page_text_is_extracted_only_when_a_check_asks_for_it(tmp_path: Path):
+    """Nothing is pre-extracted: an unasked page costs a run nothing at all.
+
+    The interior here carries four sides where the plan reaches two, the shape a
+    mis-imposed section really takes, and the two sides no check looks at must
+    stay unread. Extracting a document up front would only move that cost.
+    """
+    reader = _numbered_reader(tmp_path / "reader.pdf", 8)
+    booklet = impose_a5_on_a4(reader, tmp_path / "booklet.pdf")
+    interior = _a4_landscape_pdf(tmp_path / "interior.pdf", 4)
+    cover = impose_a5_on_a4(reader, tmp_path / "cover.pdf", section="cover")
+    log: list[tuple[int, int, str]] = []
+
+    with patch("magazine.render_critic._render_pages", side_effect=_rasters(_CLEAN)):
+        with patch.object(PageObject, "extract_text", _extraction_log(log)):
+            report, _ = inspect_render(
+                reader,
+                booklet,
+                tmp_path,
+                interior_booklet_pdf=interior,
+                cover_booklet_pdf=cover,
+                language="en",
+                toc={"article": 4},
+                article_pages={"article": 1},
+                editorial_pages=None,
+                edition_id="issue-001",
+            )
+
+    assert "interior-booklet-side-count" in {issue["code"] for issue in report["issues"]}
+    # Eight reader pages, four all-in-one sides, two cover sides and the two
+    # interior sides the plan reaches: the extra two interior sides are absent.
+    assert len(log) == 16
+    assert len(set((document, page) for document, page, _ in log)) == 16
+
+
+def test_the_cached_report_is_identical_to_one_extracted_page_by_page(tmp_path: Path):
+    """The store is a pure optimization: same rows, same fields, same order.
+
+    Recorded review decisions bind the SHA-256 of the packaged artifacts, so
+    render-critic.json has to serialize byte for byte as it did when every check
+    extracted its own text. The comparison runs the same fixture through a store
+    that never caches -- the old behaviour exactly -- and compares the serialized
+    reports, which catches a reordered key as well as a changed value.
+    """
+    body_lines = [f"the running text keeps the page honest, line {index}" for index in range(6)]
+    reader = _lined_reader(tmp_path / "reader.pdf", 8, {4: body_lines, 5: body_lines})
+    booklet = impose_a5_on_a4(reader, tmp_path / "booklet.pdf")
+    imposed = _imposed_documents(reader, tmp_path)
+
+    def inspect() -> dict:
+        with patch("magazine.render_critic._render_pages", side_effect=_rasters(_CLEAN)):
+            report, _ = inspect_render(
+                reader,
+                booklet,
+                tmp_path,
+                **imposed,
+                language="en",
+                toc={"article": 4},
+                article_pages={"article": 3},
+                editorial_pages=None,
+                edition_id="issue-001",
+            )
+        return report
+
+    cached_log: list[tuple[int, int, str]] = []
+    with patch.object(PageObject, "extract_text", _extraction_log(cached_log)):
+        cached = inspect()
+    uncached_log: list[tuple[int, int, str]] = []
+    with patch.object(PageObject, "extract_text", _extraction_log(uncached_log)):
+        with patch("magazine.render_critic._PageTexts", _UncachedPageTexts):
+            uncached = inspect()
+
+    assert json.dumps(cached, indent=2) == json.dumps(uncached, indent=2)
+    # The comparison only means something if the uncached run really did the
+    # work twice over, which is the work the store removes.
+    assert len(uncached_log) > len(cached_log)
+
+
+def test_page_texts_serves_the_raw_and_collapsed_shapes_from_one_extraction():
+    """Both shapes the checks want come off a single ask, whatever the whitespace.
+
+    ``_inspect_page`` counts lines, so it needs the text as pypdf gives it;
+    imposition order is compared on whitespace-collapsed text. Deriving the
+    second from the first is what keeps a page from being extracted twice for
+    the two shapes.
+    """
+    document, calls = _fake_document("Title \n\n  two   spaces \n", "never asked for")
+    texts = _PageTexts(document)
+
+    assert texts.raw(1) == "Title \n\n  two   spaces \n"
+    assert texts.normalized(1) == "Title two spaces"
+    assert texts.raw(1) == "Title \n\n  two   spaces \n"
+    assert texts.normalized(1) == "Title two spaces"
+    assert calls == [1]
+    assert texts.page_count == 2
+
+
+def test_spread_checks_still_accept_bare_readers_for_the_comparison_tool(tmp_path: Path):
+    """``tools/compare_pipelines.py`` passes two ``PdfReader``s and must keep working."""
+    reader = _numbered_reader(tmp_path / "reader.pdf", 8)
+    booklet = impose_a5_on_a4(reader, tmp_path / "booklet.pdf")
+    plan = imposed_reader_page_plan(section_reader_pages(8, "all"))
+
+    from_readers = _booklet_spread_checks(PdfReader(str(reader)), PdfReader(str(booklet)), plan)
+    from_stores = _booklet_spread_checks(
+        _PageTexts(PdfReader(str(reader))), _PageTexts(PdfReader(str(booklet))), plan
+    )
+
+    assert from_readers == from_stores
+    assert all(row["text_order_matches"] for row in from_readers)
+
+
+def _crop_specs() -> list[dict]:
+    """Crop specs whose awkward cases the concurrent rasterization must survive.
+
+    Page 3 is asked for twice with one kind, so the ``-2`` suffix depends on the
+    order the specs are walked; page 4 carries a degenerate box, which the serial
+    version still rasterized its page for before discarding the crop; and page 5
+    is reached before page 4 is, so spec order and page order disagree.
+    """
+    width, height = A5
+
+    def spec(page: int, kind: str, subject: str | None, region: tuple[float, ...]) -> dict:
+        return {"page": page, "kind": kind, "subject": subject, "region": region}
+
+    return [
+        spec(3, "opener", "Opening block", (0.0, 40.0, width, 320.0)),
+        spec(5, "tail", None, (0.0, 300.0, width, height)),
+        spec(3, "opener", "Byline column", (0.0, 210.0, width, 500.0)),
+        spec(4, "figure", "Collapsed box", (12.0, 12.0, 12.0, 12.0)),
+        spec(7, "void", "Dead skirt", (0.0, 0.0, width, 240.0)),
+    ]
+
+
+def test_review_crops_are_byte_identical_however_wide_the_rasterization_was(tmp_path: Path):
+    """The crops a human signs off on must not depend on the raster fan-out.
+
+    Recorded review decisions bind the SHA-256 of the packaged crops, so the
+    threaded run has to agree with a one-thread run on every file name, on the
+    manifest rows including their rounded ``region_points``, and on every byte.
+    """
+    reader = _numbered_reader(tmp_path / "reader.pdf", 8)
+
+    threaded_root = tmp_path / "threaded"
+    serial_root = tmp_path / "serial"
+    threaded, threaded_rows = _write_review_crops(
+        reader, threaded_root / "crops", threaded_root, _crop_specs()
+    )
+    with patch("magazine.render_critic.worker_count", return_value=1):
+        serial, serial_rows = _write_review_crops(
+            reader, serial_root / "crops", serial_root, _crop_specs()
+        )
+
+    # The degenerate box writes nothing, and page 3's second crop earns the
+    # suffix because it is the later of the two *specs*, not the later page.
+    assert [path.name for path in threaded] == [
+        "crop-p03-opener.png",
+        "crop-p05-tail.png",
+        "crop-p03-opener-2.png",
+        "crop-p07-void.png",
+    ]
+    assert [path.name for path in threaded] == [path.name for path in serial]
+    assert threaded_rows == serial_rows
+    assert [row["region_points"][2] for row in threaded_rows] == [419.5] * 4
+
+    def digests(paths: list[Path]) -> list[tuple[str, str]]:
+        return [(path.name, hashlib.sha256(path.read_bytes()).hexdigest()) for path in paths]
+
+    assert digests(threaded) == digests(serial)
+
+
+def test_every_cropped_page_is_rasterized_once_including_a_degenerate_box(tmp_path: Path):
+    """Pre-rendering may not change which pages Poppler is asked for.
+
+    A page feeding two crops still costs one raster, and the page whose box
+    collapses still costs one -- dropping it would quietly stop reporting a
+    Poppler failure that a build reports today.
+    """
+    reader = _numbered_reader(tmp_path / "reader.pdf", 8)
+    requested: list[int] = []
+
+    def render(reader_pdf: Path, page_number: int, output_dir: Path) -> Path:
+        requested.append(page_number)
+        return _render_crop_page(reader_pdf, page_number, output_dir)
+
+    review = tmp_path / "review"
+    with patch("magazine.render_critic._render_crop_page", side_effect=render):
+        _write_review_crops(reader, review / "crops", review, _crop_specs())
+
+    assert sorted(requested) == [3, 4, 5, 7]
+
+
+def test_the_lowest_cropped_page_owns_the_error_whichever_page_failed_first(tmp_path: Path):
+    """A Poppler failure must read the same however the threads were scheduled.
+
+    Page 5 is named before page 4 in the spec list and fails first, so only
+    handing the pages over in page order picks page 4's message: completion order
+    and spec order both choose page 5's.
+    """
+    reader = _numbered_reader(tmp_path / "reader.pdf", 8)
+
+    def render(reader_pdf: Path, page_number: int, output_dir: Path) -> Path:
+        if page_number == 4:
+            # Loses the race deliberately: page 5 has already failed by the time
+            # this one reports, so only input ordering can pick this message.
+            time.sleep(0.2)
+            raise DependencyError("Could not rasterize reader page 4 for crops: lower page broke")
+        if page_number == 5:
+            raise DependencyError("Could not rasterize reader page 5 for crops: higher page broke")
+        return _render_crop_page(reader_pdf, page_number, output_dir)
+
+    with patch("magazine.render_critic.worker_count", return_value=4):
+        with patch("magazine.render_critic._render_crop_page", side_effect=render):
+            with pytest.raises(DependencyError) as raised:
+                _write_review_crops(
+                    reader, tmp_path / "review" / "crops", tmp_path / "review", _crop_specs()
+                )
+
+    assert str(raised.value) == "Could not rasterize reader page 4 for crops: lower page broke"
+
+
+def test_the_full_page_rasters_are_gone_whether_the_cropping_finished_or_raised(tmp_path: Path):
+    """300 ppi full pages are five times the size of the crops they feed.
+
+    Leaving them behind on a failure would ship them in the review directory
+    the next time a build got further than this one did.
+    """
+    reader = _numbered_reader(tmp_path / "reader.pdf", 8)
+
+    done_root = tmp_path / "done"
+    _write_review_crops(reader, done_root / "crops", done_root, _crop_specs())
+    assert not (done_root / "crops" / "pages-at-300").exists()
+
+    failed_root = tmp_path / "failed"
+
+    def render(reader_pdf: Path, page_number: int, output_dir: Path) -> Path:
+        path = _render_crop_page(reader_pdf, page_number, output_dir)
+        if page_number == 7:
+            raise DependencyError("Could not rasterize reader page 7 for crops: broke late")
+        return path
+
+    with patch("magazine.render_critic._render_crop_page", side_effect=render):
+        with pytest.raises(DependencyError):
+            _write_review_crops(reader, failed_root / "crops", failed_root, _crop_specs())
+    assert not (failed_root / "crops" / "pages-at-300").exists()
+
+    # An edition with nothing to crop touches the filesystem not at all.
+    empty_root = tmp_path / "none"
+    assert _write_review_crops(reader, empty_root / "crops", empty_root, []) == ([], [])
+    assert not empty_root.exists()
