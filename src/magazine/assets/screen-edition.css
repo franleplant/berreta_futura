@@ -1,0 +1,547 @@
+/* BERRETA FUTURA -- screen edition stylesheet.
+ *
+ * This sheet is the web adapter's (web_edition.py) answer to what
+ * weasyprint-a5.css answers for print: Quiet Standard on a scrolling page.
+ * Book typography, one calm centered reading measure, emphatic hierarchy, no
+ * ornament.  It styles only the vocabulary html_edition.py emits -- plus
+ * `.cover-plate`, which the web adapter itself inserts, because the semantic
+ * layer leaves cover presentation to adapters -- and tests/test_screen_css.py
+ * holds that contract: a class styled here that nothing emits is a failing
+ * test, not silence.
+ *
+ * Light theme only, in the cover ink set rather than the print interior's
+ * unprinted white: the sheet of a web page is the browser's, so the page
+ * claims the publication's own warm paper instead.  Ink #11131A, paper
+ * #F1EADB, ultraviolet #5332C8 for provenance and navigation, and signal
+ * orange #FF5A1F spent the way the design system spends it inside the
+ * magazine -- a tick on the end mark, never a panel or a heading.
+ *
+ * Everything is rem and unitless line-height.  Points are print vocabulary;
+ * nothing here may depend on a page size, because there isn't one.
+ */
+
+/* ---- Bundled faces -------------------------------------------------------
+ * The same files the print reader embeds, served relative to index.html
+ * (the adapter copies src/magazine/assets/fonts/ to fonts/ beside it).  No
+ * system font lookups: the fallback stacks below are a courtesy for the
+ * seconds before the faces arrive, not an alternative repertoire. */
+@font-face {
+  font-family: "Inter";
+  src: url(fonts/inter/Inter-Regular.ttf) format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url(fonts/inter/Inter-Medium.ttf) format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url(fonts/inter/Inter-SemiBold.ttf) format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url(fonts/inter/Inter-Bold.ttf) format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Source Serif 4 SmText";
+  src: url(fonts/source-serif-4/SourceSerif4SmText-Regular.ttf) format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Source Serif 4 SmText";
+  src: url(fonts/source-serif-4/SourceSerif4SmText-It.ttf) format("truetype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Source Serif 4 SmText";
+  src: url(fonts/source-serif-4/SourceSerif4SmText-Bold.ttf) format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Source Serif 4 Display";
+  src: url(fonts/source-serif-4/SourceSerif4Display-Semibold.ttf) format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---- Tokens --------------------------------------------------------------
+ * The cover ink set, named once.  Slate is the print interior's secondary
+ * metadata gray carried over; the rule and the code panel are tints of ink
+ * and violet respectively, so the palette stays four inks and a gray however
+ * many declarations spend them. */
+:root {
+  --paper: #f1eadb;
+  --ink: #11131a;
+  --violet: #5332c8;
+  --orange: #ff5a1f;
+  --slate: #4f595e;
+  --rule: rgba(17, 19, 26, 0.18);
+  --panel: rgba(83, 50, 200, 0.06);
+}
+
+/* ---- Base ---------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Source Serif 4 SmText", Georgia, serif;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* One reading measure for the whole edition -- the screen translation of the
+ * print reader's single 325pt column.  clamp() keeps the gutters honest on a
+ * phone without a media query, which is why nothing in this sheet scrolls
+ * sideways at 375px. */
+main {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 5vw, 3.5rem) clamp(1rem, 5vw, 2.5rem) clamp(3rem, 8vw, 6rem);
+}
+
+/* An image wider than the measure is a horizontal scrollbar; code that is
+ * wider scrolls inside its own frame instead (below). */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+a {
+  color: var(--violet);
+  text-decoration-thickness: from-font;
+  text-underline-offset: 0.15em;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 2.5rem 0;
+}
+
+p {
+  margin: 0 0 0.9em;
+}
+
+/* Body prose hyphenates for the same rag the print reader repairs; the same
+ * three opt-outs apply for the same editorial reasons the print sheet states:
+ * a bibliography and a name roster are proper nouns no dictionary knows, and
+ * an identifier is not a word. */
+p,
+li {
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+[data-reference-list] li,
+p[data-name-roster],
+code {
+  hyphens: manual;
+  -webkit-hyphens: manual;
+}
+
+/* ---- Edition header ------------------------------------------------------ */
+.edition-header {
+  text-align: center;
+  padding: clamp(1.5rem, 6vw, 3rem) 0 clamp(1.25rem, 4vw, 2rem);
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: clamp(2rem, 6vw, 3.5rem);
+}
+.edition-header p {
+  margin: 0;
+  hyphens: manual;
+  -webkit-hyphens: manual;
+}
+.publication-name {
+  color: var(--violet);
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.issue-number,
+.edition-header time {
+  color: var(--slate);
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+}
+.edition-header h1 {
+  font-family: "Source Serif 4 Display", Georgia, serif;
+  font-weight: 600;
+  font-size: clamp(2.2rem, 7vw, 3.4rem);
+  line-height: 1.08;
+  margin: 0.6rem 0 0.5rem;
+}
+.subtitle {
+  font-size: 1.1rem;
+  font-style: italic;
+  color: var(--slate);
+  margin-bottom: 0.5rem;
+}
+
+/* ---- Cover plate ---------------------------------------------------------
+ * Screen-only vocabulary: html_edition.py inventories the cover art but
+ * paints no element for it, so web_edition.py inserts this figure at the top
+ * of <main>.  The artwork appears exactly once, full measure, unornamented --
+ * the design system's own rule for it. */
+.cover-plate {
+  margin: 0 0 clamp(2rem, 6vw, 3.5rem);
+}
+.cover-plate img {
+  width: 100%;
+}
+
+/* ---- Contents ------------------------------------------------------------
+ * A scrolling page has no folios to resolve, so the print reader's oversized
+ * violet page numbers have nothing to say here: `.entry-folio`'s only text is
+ * print's target-counter, and an empty anchor is noise to a screen reader and
+ * a phantom tab stop to a keyboard.  The entry title is already the link. */
+nav[data-edition-navigation="contents"] {
+  margin-bottom: clamp(2.5rem, 7vw, 4rem);
+}
+.contents-kicker {
+  color: var(--violet);
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin: 0;
+}
+nav[data-edition-navigation="contents"] h2 {
+  font-family: "Source Serif 4 Display", Georgia, serif;
+  font-weight: 600;
+  font-size: 1.7rem;
+  margin: 0.4rem 0 1.2rem;
+}
+nav[data-edition-navigation="contents"] ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+nav[data-edition-navigation="contents"] li {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  column-gap: 1rem;
+  align-items: baseline;
+  padding: 0.8rem 0;
+  border-top: 1px solid var(--rule);
+}
+.entry-folio {
+  display: none;
+}
+.entry-label {
+  color: var(--violet);
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.entry-title {
+  font-family: "Source Serif 4 Display", Georgia, serif;
+  font-weight: 600;
+  font-size: 1.15rem;
+  line-height: 1.3;
+  color: inherit;
+  text-decoration: none;
+  grid-column: 2;
+}
+.entry-title:hover {
+  color: var(--violet);
+}
+.entry-author {
+  grid-column: 2;
+  color: var(--slate);
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 0.8rem;
+  margin-top: 0.15rem;
+}
+@media (max-width: 480px) {
+  nav[data-edition-navigation="contents"] li {
+    grid-template-columns: 1fr;
+  }
+  .entry-title,
+  .entry-author {
+    grid-column: 1;
+  }
+}
+
+/* ---- Openers: editorial, articles, sections ------------------------------ */
+article,
+main > section {
+  margin-bottom: clamp(3rem, 9vw, 5rem);
+}
+article > header,
+main > section > header,
+.editorial > header {
+  margin-bottom: 1.75rem;
+}
+
+/* The provenance kicker.  FAITHFUL SYNTHESIS and its siblings are provenance
+ * facts, not decorations: primary in violet at left, the mode statement in
+ * slate at right, one quiet rule under both -- the screen reading of the
+ * print opener's kicker band. */
+.content-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 0.5rem;
+  margin: 0 0 1.4rem;
+}
+.content-label .label-primary {
+  color: var(--violet);
+}
+.content-label .label-secondary {
+  color: var(--slate);
+}
+
+article h1,
+main > section h1,
+.editorial h1 {
+  font-family: "Source Serif 4 Display", Georgia, serif;
+  font-weight: 600;
+  font-size: clamp(1.8rem, 5.5vw, 2.6rem);
+  line-height: 1.12;
+  margin: 0 0 0.8rem;
+}
+
+/* The credit column: byline, author note, provenance line.  Chrome, so Inter,
+ * so no hyphenation -- names again. */
+.byline,
+.author-note,
+.provenance {
+  font-family: "Inter", system-ui, sans-serif;
+  margin: 0;
+  hyphens: manual;
+  -webkit-hyphens: manual;
+}
+.byline {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+.byline-prefix {
+  color: var(--violet);
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.author-note {
+  color: var(--slate);
+  font-size: 0.82rem;
+  margin-top: 0.25rem;
+}
+.provenance {
+  color: var(--slate);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  margin-top: 0.6rem;
+}
+
+/* The standfirst is an editorial role the semantic document already marks;
+ * here it is simply larger, looser reading type. */
+.standfirst {
+  font-size: 1.3rem;
+  line-height: 1.45;
+  margin-bottom: 1.4rem;
+}
+
+/* ---- Running prose ------------------------------------------------------- */
+article h2,
+main > section h2,
+.editorial h2 {
+  font-family: "Source Serif 4 Display", Georgia, serif;
+  font-weight: 600;
+  font-size: 1.45rem;
+  line-height: 1.25;
+  margin: 2.2rem 0 0.7rem;
+}
+article h3,
+main > section h3,
+.editorial h3 {
+  font-family: "Source Serif 4 Display", Georgia, serif;
+  font-weight: 600;
+  font-size: 1.15rem;
+  margin: 1.8rem 0 0.5rem;
+}
+
+/* Quotations take the emphasis face and an inset, nothing else: an indent is
+ * structure, a border would be ornament. */
+blockquote {
+  margin: 1.4rem 0 1.4rem 1.5rem;
+  font-style: italic;
+}
+blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+ul,
+ol {
+  margin: 0 0 0.9em;
+  padding-left: 1.5rem;
+}
+li > p {
+  margin-bottom: 0.3em;
+}
+
+/* Fenced code keeps its full-width frame; a frame narrower than its longest
+ * line scrolls itself rather than the page.  Pale violet is the one place the
+ * print palette lets a panel exist. */
+pre {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  padding: 0.9rem 1.1rem;
+  overflow-x: auto;
+  margin: 1.4rem 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+code {
+  font-family: "Courier New", Courier, monospace;
+}
+p code,
+li code {
+  font-size: 0.92em;
+}
+
+/* A reference list's items carry their own marker inside the text (`4 — …`),
+ * so it hangs that marker exactly as the print reader does: turn lines stand
+ * under the entry's first letter, never on the marker's edge. */
+[data-reference-list] {
+  list-style: none;
+  padding-left: 0;
+}
+[data-reference-list] li {
+  padding-left: 1.6em;
+  text-indent: -1.6em;
+  margin-bottom: 0.35em;
+}
+
+/* A name roster is a list set in paragraph clothing -- signatories, sponsors
+ * -- so it takes the chrome face, quietly tracked, and no hyphenator (opted
+ * out with the bibliography above). */
+p[data-name-roster] {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+  line-height: 1.8;
+  color: var(--slate);
+}
+
+/* ---- Figures ------------------------------------------------------------- */
+figure[data-figure-id] {
+  margin: 1.8rem 0;
+}
+figure[data-figure-id] figcaption {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  margin-top: 0.5rem;
+}
+figure[data-figure-id] .caption {
+  display: block;
+}
+figure[data-figure-id] .credit {
+  display: block;
+  color: var(--slate);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  margin-top: 0.2rem;
+}
+
+/* ---- Article furniture ---------------------------------------------------
+ * The end mark keeps its signal-orange tick -- the one place the design
+ * system spends orange inside the magazine.  The tail ornament under it is a
+ * sign-off, not a plate: on paper it sets a few ems wide, so the screen caps
+ * it to ornament size and centers it rather than letting a small PNG fill the
+ * whole measure.  The tail files carry their own white ground; multiply lets
+ * the warm paper show through so only the ornament's ink lands on the page,
+ * the same way the printed tail owns no box. */
+.end-mark {
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--violet);
+  margin: 2.2rem 0 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.end-mark::before {
+  content: "";
+  width: 1rem;
+  border-top: 2px solid var(--orange);
+}
+.article-tail {
+  margin: 2rem 0 0;
+}
+.article-tail img {
+  width: auto;
+  max-width: 100%;
+  max-height: 6rem;
+  margin: 0 auto;
+  mix-blend-mode: multiply;
+}
+
+/* On paper this destination is a QR square in the opener's furniture; on
+ * screen it is what the semantic layer says it is -- an anchor a reader
+ * follows.  URLs do not wrap at spaces, so the anchor may break anywhere
+ * rather than push the measure. */
+.source-link {
+  display: block;
+  margin-top: 1rem;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 0.8rem;
+  word-break: break-all;
+}
+
+/* ---- Closing plates ------------------------------------------------------ */
+.closing-plate {
+  margin: clamp(2.5rem, 7vw, 4rem) 0 0;
+}
+.closing-plate img {
+  width: 100%;
+}
+.closing-plate figcaption {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 0.78rem;
+  color: var(--slate);
+  margin-top: 0.5rem;
+}

@@ -44,6 +44,15 @@ def parser() -> argparse.ArgumentParser:
             f"(default {DEFAULT_ENGINE}). Nothing is written back to configuration."
         ),
     )
+    web = actions.add_parser(
+        "web",
+        help=(
+            "Write the browsable web edition for each configured language "
+            "(a private screen profile; never part of a build or release)"
+        ),
+    )
+    web.add_argument("edition_id")
+    web.add_argument("--language", help="Write one configured language (default: all)")
     fit = actions.add_parser(
         "fit",
         help=(
@@ -216,6 +225,9 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "build":
             result = magazine.build(args.edition_id, engine=args.engine)
             print(result.output_dir)
+        elif args.command == "web":
+            for written in magazine.web(args.edition_id, language=args.language):
+                print(f"{written.language}: {written.index}")
         elif args.command == "fit":
             # A breach is the command's answer, not a failure to answer, so it
             # exits 1 where a MagazineError below exits 2.

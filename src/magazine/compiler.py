@@ -69,6 +69,13 @@ class BuildResult:
     languages: tuple[LanguageBuildResult, ...]
 
 
+@dataclass(frozen=True)
+class LanguageWebResult:
+    language: str
+    output_dir: Path
+    index: Path
+
+
 class Magazine:
     """Deep module: capture, catalog, validate, and compile through one interface."""
 
@@ -395,6 +402,49 @@ class Magazine:
 
         measurement = self.measure(edition_id, language=language)
         return fit_table(measurement), measurement.ok
+
+    def web(
+        self,
+        edition_id: str,
+        *,
+        language: str | None = None,
+        destination: Path | None = None,
+    ) -> tuple[LanguageWebResult, ...]:
+        """Write the browsable web edition, one directory per language.
+
+        Each directory is the screen adapter's self-contained output --
+        ``index.html``, ``edition.css``, ``assets/``, ``fonts/`` -- written by
+        :func:`~.web_edition.write_web_edition` under
+        ``output/<edition_id>/web/<language>/``, or under ``destination`` when
+        the caller owns the location.  ``language`` narrows to one configured
+        language; the default writes all of them, in configuration order,
+        exactly as a build renders them.
+
+        Loading mirrors ``cover_proof`` and ``measure`` rather than ``build``:
+        a browsable proof is a reading question, so it must be askable before
+        the ledgers and pins that gate a build are finished.  The output is
+        deliberately not part of a build, a package, or a release, and no
+        render review binds to it -- it is a private screen profile, not a
+        production artifact.
+        """
+
+        from .web_edition import write_web_edition
+
+        editions = self._load_cover_languages(
+            edition_id,
+            None if language is None else (language,),
+            purpose="Web edition",
+        )
+        root = destination or (self.output_dir / edition_id / "web")
+        results: list[LanguageWebResult] = []
+        for name, edition in editions.items():
+            written = write_web_edition(edition, root / name)
+            results.append(
+                LanguageWebResult(
+                    language=name, output_dir=written.root, index=written.index
+                )
+            )
+        return tuple(results)
 
     def pin(self, edition_id: str):
         """Recompute every derivable hash pin in the edition's authored files.

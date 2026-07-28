@@ -99,3 +99,6 @@ Recommended roles are source researcher, article production editor, evidence che
 - Reader: A5 pages, RGB, links, compact images.
 - Home: A5 pages imposed two-up on A4, duplex instructions, no required bleed, page count padded to a multiple of four.
 - Studio: printer-specific trim, bleed, output intent, PDF/X target, image limits, font rules, and binding geometry. This profile remains blocked until a printer contract exists.
+- Web: per-language, self-contained HTML directory for screens (`mag web`). Private profile: never part of a build or release package, and outside the hash-bound render review, which binds PDFs only.
+
+Print and web output share one renderer-neutral seam: `render_html_edition` produces the semantic edition both adapters consume. Page geometry and print policy stay in the WeasyPrint adapter; screen policy stays in the web adapter; neither leaks into the seam.
