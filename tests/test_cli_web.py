@@ -15,24 +15,21 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-import yaml
-from PIL import Image
 
 from magazine import Magazine, ValidationError
 from magazine.cli import main as cli_main
 from test_manifest import add_spanish_translation, make_project
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def _spy_on_adapter(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
     """Record what ``Magazine.web`` hands the adapter, then let it write.
 
     The compiler owns the two facts the adapter cannot know -- where the
-    composed cover face was compiled, and which canonical URL each source id
-    resolves to -- so the seam between them is exactly these keyword
-    arguments, and the spy pins them without repeating the adapter's own
-    rendering tests.
+    publication's wordmark was materialized, and which canonical URL each
+    source id resolves to -- so the seam between them is exactly these
+    keyword arguments, and the spy pins them without repeating the adapter's
+    own rendering tests.
     """
 
     import magazine.web_edition as web_edition_module
@@ -40,15 +37,9 @@ def _spy_on_adapter(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
     real = web_edition_module.write_web_edition
     calls: list[dict] = []
 
-    def spy(edition, destination, *, cover_face=None, source_urls=None):
-        calls.append(
-            {
-                "language": edition.language,
-                "cover_face": cover_face,
-                "source_urls": source_urls,
-            }
-        )
-        return real(edition, destination, cover_face=cover_face, source_urls=source_urls)
+    def spy(edition, destination, **kwargs):
+        calls.append({"language": edition.language, **kwargs})
+        return real(edition, destination, **kwargs)
 
     monkeypatch.setattr(web_edition_module, "write_web_edition", spy)
     return calls
@@ -138,16 +129,14 @@ def test_the_cli_prints_one_line_per_language_and_reports_errors_as_errors(
     assert "error:" in capsys.readouterr().err
 
 
-def test_a_project_without_the_cover_system_gets_no_face_and_full_source_urls(
+def test_every_project_gets_the_wordmark_and_the_full_source_urls(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
-    """No design file means ``cover_face=None`` -- never an error.
-
-    The design file is the marker that a project carries the cover system;
-    every minimal fixture lacks it, and ``mag web`` must keep working there
-    rather than demanding resvg, Poppler and cover art it cannot have.  The
-    source-id -> canonical-url mapping rides along regardless, because the
-    records exist in any project that captured a source.
+    """The lockup needs only FontTools and the bundled faces, so even a
+    minimal fixture project gets it -- outlined from the built-in canto-vivo
+    geometry, no design file, resvg or cover art required.  The source-id ->
+    canonical-url mapping rides along regardless, because the records exist
+    in any project that captured a source.
     """
 
     make_project(tmp_path)
@@ -156,9 +145,54 @@ def test_a_project_without_the_cover_system_gets_no_face_and_full_source_urls(
     results = Magazine(tmp_path).web("issue-001")
 
     (call,) = calls
-    assert call["cover_face"] is None
+    mark = call["wordmark"]
+    assert mark is not None and mark.is_file()
+    assert mark == tmp_path / "output" / "issue-001" / "web" / "wordmark.svg"
+    svg = mark.read_text(encoding="utf-8")
+    assert svg.startswith("<svg ") and 'data-slot="wordmark"' in svg and "viewBox" in svg
     assert call["source_urls"] == {"source-one": "https://example.com/source"}
     assert results[0].index.is_file()
+    # The favicon rides beside the lockup, from the same outlined paths.
+    icon = call["favicon"]
+    assert icon is not None and icon == tmp_path / "output" / "issue-001" / "web" / "favicon.svg"
+    assert icon.read_text(encoding="utf-8").startswith("<svg ")
+    # The headline break is the cover compiler's own; sibling languages are
+    # the alternates, and a single-language project has none.
+    assert call["headline_lines"] and " ".join(call["headline_lines"])
+    assert call["alternates"] == {}
+
+
+def test_a_rebuild_clears_its_own_stale_output_and_refuses_foreign_directories(
+    tmp_path: Path,
+):
+    """``Magazine.web`` owns ``output/``, so it may clear a prior web edition.
+
+    A file the previous contract shipped and the current one does not must
+    not survive a rebuild -- stale assets ride into any deploy gather -- so
+    the language directory is emptied first.  The same clearing refuses a
+    non-empty directory with no ``index.html``: that is somebody else's data,
+    not a prior web edition, and a refusal beats a wipe.
+    """
+
+    make_project(tmp_path)
+    magazine = Magazine(tmp_path)
+    first = magazine.web("issue-001")
+    stale = first[0].output_dir / "assets" / "closing-plate-1.png"
+    stale.write_bytes(b"stale plate from an earlier contract")
+
+    second = magazine.web("issue-001")
+    assert not stale.exists()
+    assert second[0].index.is_file()
+
+    foreign = tmp_path / "output" / "issue-001" / "web" / "en"
+    import shutil
+
+    shutil.rmtree(foreign)
+    foreign.mkdir(parents=True)
+    (foreign / "keep.txt").write_text("not a web edition", encoding="utf-8")
+    with pytest.raises(ValidationError, match="refusing to clear"):
+        magazine.web("issue-001")
+    assert (foreign / "keep.txt").read_text(encoding="utf-8") == "not a web edition"
 
 
 def test_the_written_pages_link_the_source_by_its_canonical_url(tmp_path: Path):
@@ -182,36 +216,24 @@ def test_the_written_pages_link_the_source_by_its_canonical_url(tmp_path: Path):
     )
 
 
-def test_a_project_with_the_cover_system_hands_the_composed_face_to_the_adapter(
+def test_one_wordmark_serves_every_language_and_lands_on_every_page(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
-    """With the design file present, the adapter receives the compiled face.
-
-    The face is the cover compiler's own ``cover.png``, compiled into the
-    canonical ``cover-proof/<language>`` location (memoized by input digest,
-    so a later ``mag cover-proof`` finds its work already done).  The fixture
-    borrows the repository's real design geometry and sets a solid-color art
-    plate, which is enough for the whole SVG -> PDF -> PNG chain to run.
+    """The lockup is publication identity, never translated: both languages
+    receive the same file, written once at the web root, and every written
+    page -- cover and pieces alike -- sets it from ``assets/wordmark.svg``.
     """
 
     make_project(tmp_path)
-    design = REPO_ROOT / "design" / "covers" / "canto-vivo" / "design.toml"
-    target = tmp_path / "design" / "covers" / "canto-vivo" / "design.toml"
-    target.parent.mkdir(parents=True)
-    target.write_text(design.read_text(encoding="utf-8"), encoding="utf-8")
-    art = tmp_path / "editions" / "issue-001" / "art" / "cover-art.png"
-    Image.new("RGB", (1200, 1200), "#5332C8").save(art)
-    manifest_path = tmp_path / "editions" / "issue-001" / "edition.yaml"
-    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
-    manifest["cover"]["art_path"] = "editions/issue-001/art/cover-art.png"
-    manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+    add_spanish_translation(tmp_path)
     calls = _spy_on_adapter(monkeypatch)
 
-    Magazine(tmp_path).web("issue-001")
+    results = Magazine(tmp_path).web("issue-001")
 
-    (call,) = calls
-    face = call["cover_face"]
-    assert face is not None and face.is_file()
-    assert face.resolve() == (
-        tmp_path / "output" / "issue-001" / "cover-proof" / "en" / "cover.png"
-    ).resolve()
+    (mark,) = {call["wordmark"] for call in calls}
+    assert mark == tmp_path / "output" / "issue-001" / "web" / "wordmark.svg"
+    for result in results:
+        shipped = result.output_dir / "assets" / "wordmark.svg"
+        assert shipped.read_bytes() == mark.read_bytes()
+        for page in result.output_dir.glob("*.html"):
+            assert 'src="assets/wordmark.svg"' in page.read_text(encoding="utf-8"), page

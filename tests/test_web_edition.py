@@ -80,10 +80,10 @@ def _edition(tmp_path: Path, *, locale: str = "en", manuscript: str | None = Non
     )
 
 
-def _cover_face(tmp_path: Path) -> Path:
-    face = tmp_path / "cover-face.png"
-    face.write_bytes(b"composed cover face")
-    return face
+def _wordmark(tmp_path: Path) -> Path:
+    mark = tmp_path / "wordmark.svg"
+    mark.write_text("<svg><!-- the lockup --></svg>", encoding="utf-8")
+    return mark
 
 
 def _page_files(result: web_edition.WebEdition) -> list[Path]:
@@ -142,17 +142,19 @@ def test_the_edition_is_paged_one_file_per_piece_in_reading_order(tmp_path: Path
 def test_the_index_is_the_cover_page_and_links_onward_to_the_piece_pages(tmp_path: Path):
     """The cover index links every contents entry at a page, not an anchor.
 
-    The index holds the cover plate, the edition header, the contents whose
-    hrefs are the piece files, and the closing plates -- the edition's own
-    furniture -- while the piece markup itself lives only on the piece pages.
+    Without a wordmark the index falls back to the raw artwork over the
+    semantic edition header; either way it holds the contents whose hrefs are
+    the piece files, while the piece markup itself lives only on the piece
+    pages.  Closing plates are filler art and never reach the index (their
+    own test below owns the whole-tree absence).
     """
 
     result = write_web_edition(_edition(tmp_path), tmp_path / "web")
     html = result.index.read_text(encoding="utf-8")
 
-    assert 'class="cover-plate"' in html
+    assert 'class="cover-art"' in html
     assert 'class="edition-header"' in html
-    assert 'class="closing-plate"' in html
+    assert 'class="closing-plate"' not in html
     assert "<article" not in html
 
     hrefs = re.findall(r'<a class="entry-title" href="([^"]+)"', html)
@@ -188,12 +190,15 @@ def test_the_piece_pages_turn_into_each_other_in_reading_order(tmp_path: Path):
 
 
 def test_provenance_ids_link_when_an_address_is_known_and_stay_text_when_not(tmp_path: Path):
-    """``source_urls`` turns provenance mentions into links, id by id.
+    """``source_urls`` turns provenance mentions into numbered references.
 
-    The article names two sources; mapping one address links exactly that
-    mention -- on its piece page and in the one-scroll document alike -- and
-    leaves the other a plain span rather than a broken link.  Without the
-    mapping nothing links at all.
+    A source mention's visible text is its two-digit index in the opener's
+    order -- a raw slug set as type wraps mid-filename and reads as build
+    infrastructure, the stylistic critics' unanimous worst offender -- while
+    the id survives as the ``title``, so the fact stays inspectable.  Mapping
+    one address links exactly that mention -- on its piece page and in the
+    one-scroll document alike -- and leaves the other a plain span rather
+    than a broken link.  Without the mapping nothing links at all.
     """
 
     edition = _edition(tmp_path)
@@ -201,34 +206,55 @@ def test_provenance_ids_link_when_an_address_is_known_and_stay_text_when_not(tmp
         edition, tmp_path / "web", source_urls={"source-one": "https://example.test/one?a=1&b=2"}
     )
 
-    linked = '<a data-source-id="source-one" href="https://example.test/one?a=1&amp;b=2">source-one</a>'
-    plain = '<span data-source-id="source-two">source-two</span>'
+    linked = (
+        '<a class="provenance-source" data-source-id="source-one" title="source-one" '
+        'aria-label="source-one" href="https://example.test/one?a=1&amp;b=2">01</a>'
+    )
+    plain = (
+        '<span class="provenance-source" data-source-id="source-two" title="source-two" '
+        'aria-label="source-two">02</span>'
+    )
     article = result.pages[1].read_text(encoding="utf-8")
     whole = result.edition_document.read_text(encoding="utf-8")
     assert linked in article and plain in article
     assert linked in whole and plain in whole
+    # The slug never ships as visible text: it lives only in attributes.
+    assert ">source-one</a>" not in article and ">source-two</span>" not in article
 
     unmapped = write_web_edition(edition, tmp_path / "web-unmapped")
     assert "https://example.test/one" not in unmapped.pages[1].read_text(encoding="utf-8")
 
 
-def test_print_furniture_is_dropped_tail_art_bytes_and_all(tmp_path: Path):
-    """No page carries a tail figure or the bottom source-link anchor.
+def test_print_furniture_is_dropped_tail_art_and_closing_plates_bytes_and_all(tmp_path: Path):
+    """No page carries a tail figure, a closing plate, or the source-link anchor.
 
-    Both are print furniture (the adapter's docstring states the verdicts);
-    the tail's bytes do not ship either -- not as a page reference and not as
-    a file under ``assets/`` -- and the asset inventory the caller receives
-    excludes it.
+    All three are print furniture (the adapter's docstring states the
+    verdicts; the plates are the filler art a printed object closes on).
+    The tail's and plates' bytes do not ship either -- not as a page
+    reference and not as a file under ``assets/`` -- and the asset inventory
+    the caller receives excludes them.  The fixture declares one plate, so
+    absence here is a dropped plate, not a plateless edition.
     """
 
-    result = write_web_edition(_edition(tmp_path), tmp_path / "web")
+    edition = _edition(tmp_path)
+    assert edition.closing_plates
+    result = write_web_edition(edition, tmp_path / "web")
 
     for page in _page_files(result):
         html = page.read_text(encoding="utf-8")
         assert "article-tail" not in html, page.name
         assert "source-link" not in html, page.name
-    assert not [web for web in result.assets if web.asset.role == "article_tail"]
+        assert "closing-plate" not in html, page.name
+    dropped = {"article_tail", "closing_plate"}
+    assert not [web for web in result.assets if web.asset.role in dropped]
     assert not list((result.root / "assets").glob("*tail*"))
+    assert not list((result.root / "assets").glob("*plate*"))
+    plate_bytes = edition.closing_plates[0].art_path.read_bytes()
+    assert not [
+        copied
+        for copied in (result.root / "assets").iterdir()
+        if copied.read_bytes() == plate_bytes
+    ]
 
 
 def test_the_one_scroll_document_keeps_the_whole_edition_and_its_anchors(tmp_path: Path):
@@ -244,7 +270,7 @@ def test_the_one_scroll_document_keeps_the_whole_edition_and_its_anchors(tmp_pat
 
     assert 'class="editorial"' in html and "<article" in html
     assert 'data-section-kind="source_record"' in html
-    assert 'class="cover-plate"' in html
+    assert 'class="cover-art"' in html
     assert re.search(r'<a class="entry-title" href="#', html)
     assert "masthead" not in html and "page-turn" not in html
 
@@ -386,62 +412,189 @@ def test_an_unrecognized_top_level_element_is_a_named_refusal(tmp_path: Path):
         )
 
 
-def test_the_cover_face_leads_the_cover_pages_and_raw_art_is_the_fallback(tmp_path: Path):
-    """``cover_face`` is what ships; without it the raw art; without either,
-    no plate at all.
+def test_the_wordmark_makes_the_cover_native_and_heads_every_masthead(tmp_path: Path):
+    """With a wordmark the cover is composed for the medium, not pasted.
 
-    When the composed face is supplied it is the cover on both the index and
-    the one-scroll document, its bytes are what lands under ``assets/``, and
-    the unshipped raw artwork does not ride along.  An edition with neither
-    gets no empty frame.
+    The index opens on the cover block -- lockup, localized cover headline,
+    the framed raw artwork, the contributor register the printed deck derives
+    from the article records, the spaced date, and the canto strip carrying
+    the issue and the publication identity -- and the semantic edition header
+    stands aside.  Every piece page's masthead sets the lockup image in place
+    of the text name, the one-scroll document leads with the same block, and
+    the SVG bytes ship once under ``assets/wordmark.svg``.
     """
 
     edition = _edition(tmp_path)
-    faced = write_web_edition(
-        edition, tmp_path / "web-faced", cover_face=_cover_face(tmp_path)
-    )
-    cover = next(web for web in faced.assets if web.asset.role == "cover_art")
-    assert (faced.root / cover.href).read_bytes() == b"composed cover face"
-    for page in (faced.index, faced.edition_document):
-        html = page.read_text(encoding="utf-8")
-        plate = re.search(r'<figure class="cover-plate"[^>]*><img src="([^"]+)"', html)
-        assert plate is not None and plate.group(1) == cover.href, page.name
-    raw_copies = [
-        path
-        for path in (faced.root / "assets").iterdir()
-        if path.read_bytes() == b"image" and path.name.startswith("cover")
-    ]
-    assert not raw_copies, "the raw artwork must not ship beside the face"
+    result = write_web_edition(edition, tmp_path / "web", wordmark=_wordmark(tmp_path))
 
-    fallback = write_web_edition(edition, tmp_path / "web-fallback")
-    cover = next(web for web in fallback.assets if web.asset.role == "cover_art")
-    assert (fallback.root / cover.href).read_bytes() == b"image"
-    assert 'alt="Cover &lt;&amp;&gt;"' in fallback.index.read_text(encoding="utf-8")
-
-    bare = write_web_edition(
-        replace(edition, cover_art=None), tmp_path / "web-bare"
-    )
-    assert "cover-plate" not in bare.index.read_text(encoding="utf-8")
-
-
-def test_a_coverless_edition_with_a_supplied_face_still_gets_a_cover_page(tmp_path: Path):
-    """The face stands alone: no authored raw art is needed to ship a cover.
-
-    The semantic inventory only records a cover when the edition authored raw
-    artwork; the adapter fabricates the entry for the supplied face with the
-    same alt text the semantic layer would have chosen.
-    """
-
-    edition = replace(_edition(tmp_path), cover_art=None)
-    result = write_web_edition(
-        edition, tmp_path / "web", cover_face=_cover_face(tmp_path)
-    )
+    shipped = result.root / "assets" / "wordmark.svg"
+    assert shipped.read_text(encoding="utf-8") == "<svg><!-- the lockup --></svg>"
 
     html = result.index.read_text(encoding="utf-8")
-    assert 'class="cover-plate"' in html
-    assert 'alt="Cover &lt;&amp;&gt;"' in html
-    cover = next(web for web in result.assets if web.asset.role == "cover_art")
-    assert (result.root / cover.href).read_bytes() == b"composed cover face"
+    assert '<header class="cover" data-web-chrome="cover">' in html
+    assert 'class="edition-header"' not in html
+    assert (
+        '<img class="cover-wordmark" src="assets/wordmark.svg" '
+        'alt="Magazine &lt;&amp;&gt;">' in html
+    )
+    # The cover headline is the authored cover mapping, localized upstream.
+    assert '<h1 class="cover-headline">Cover &lt;&amp;&gt;</h1>' in html
+    # The register is the printed deck's own derivation: article authors,
+    # joined and uppercased by cover._cover_contributors.
+    assert '<p class="cover-roster">AUTHOR &lt;&amp;&gt;</p>' in html
+    # The canto restates the printed tab's exact words: the zero-padded issue
+    # at the head, the identity line -- city and all -- at the foot, both
+    # from the cover module's own derivations, so the two media cannot drift.
+    assert (
+        '<p class="canto"><span class="canto-issue">ISSUE 007</span>'
+        '<span class="canto-identity">MAGAZINE &lt;&amp;&gt; / BUENOS AIRES</span></p>'
+    ) in html
+    # The first screen says where the reading starts: a cue down to the
+    # contents, labelled with the contents' own heading.
+    assert '<a class="cover-cue" href="#contents">' in html
+    assert '<nav id="contents" ' in html
+    # The date is spaced the way the printed footer spaces it.
+    assert '<time class="cover-date" datetime="2026-07-24">2026 07 24</time>' in html
+    art = re.search(r'<figure class="cover-art"[^>]*><img src="([^"]+)"', html)
+    assert art is not None and (result.root / art.group(1)).read_bytes() == b"image"
+
+    for page in result.pages:
+        assert (
+            '<img class="masthead-wordmark" src="assets/wordmark.svg" '
+            'alt="Magazine &lt;&amp;&gt;">' in page.read_text(encoding="utf-8")
+        )
+    one_scroll = result.edition_document.read_text(encoding="utf-8")
+    assert '<header class="cover" data-web-chrome="cover">' in one_scroll
+
+    bare = write_web_edition(
+        replace(edition, cover_art=None), tmp_path / "web-bare",
+        wordmark=_wordmark(tmp_path),
+    )
+    bare_html = bare.index.read_text(encoding="utf-8")
+    assert '<header class="cover"' in bare_html
+    assert 'class="cover-art"' not in bare_html
+
+
+def test_the_closing_and_navigation_chrome_answer_the_stylistic_critique(tmp_path: Path):
+    """The critique fixes that are page chrome, asserted fact by fact.
+
+    The favicon ships beside the wordmark and is linked from every head; a
+    derived headline break sets the printed face's own lines while a break
+    for some other text falls back to one run; the colophon closes the cover
+    page and the one-scroll document with the identity line, the sibling
+    document, the sibling languages, and the date; every page turn carries
+    the way home to the contents; and every figure image is a link to its
+    own shipped bytes.
+    """
+
+    edition = _edition(tmp_path)
+    favicon = tmp_path / "favicon.svg"
+    favicon.write_text("<svg><!-- the slug bar --></svg>", encoding="utf-8")
+    result = write_web_edition(
+        edition,
+        tmp_path / "web",
+        wordmark=_wordmark(tmp_path),
+        favicon=favicon,
+        headline_lines=("Cover", "<&>"),
+        alternates={"es": "../es/"},
+    )
+
+    shipped = result.root / "assets" / "favicon.svg"
+    assert shipped.read_text(encoding="utf-8") == "<svg><!-- the slug bar --></svg>"
+    icon = '<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">'
+    pages = [result.index, result.edition_document, *result.pages]
+    for page in pages:
+        assert icon in page.read_text(encoding="utf-8")
+
+    html = result.index.read_text(encoding="utf-8")
+    # The derived break sets the printed face's lines inside the h1.
+    assert (
+        '<h1 class="cover-headline"><span class="cover-headline-line">Cover</span>'
+        '<span class="cover-headline-line">&lt;&amp;&gt;</span></h1>'
+    ) in html
+    # The colophon: identity, sibling document, sibling language, date.
+    for document, sibling, label in (
+        (html, "edition.html", "ISSUE 007"),
+        (result.edition_document.read_text(encoding="utf-8"), "index.html", None),
+    ):
+        assert '<footer class="colophon" data-web-chrome="colophon">' in document
+        assert '<p class="colophon-identity">MAGAZINE &lt;&amp;&gt; / BUENOS AIRES</p>' in document
+        assert f'<a class="colophon-sibling" href="{sibling}">' in document
+        assert 'hreflang="es"' in document and ">ES</a>" in document
+        assert '<time class="colophon-date" datetime="2026-07-24">2026 07 24</time>' in document
+        if label:
+            assert f'href="{sibling}">{label}</a>' in document
+    # Piece pages do not close on the colophon; their foot is the page turn,
+    # whose centre is the way home.
+    for page in result.pages:
+        page_html = page.read_text(encoding="utf-8")
+        assert 'class="colophon"' not in page_html
+        assert '<a class="page-turn-contents" href="index.html">' in page_html
+    # Every evidence figure's image is a link to its own shipped bytes.
+    article = result.pages[1].read_text(encoding="utf-8")
+    match = re.search(r'<a class="figure-link" href="([^"]+)"><img src="([^"]+)"', article)
+    assert match is not None and match.group(1) == match.group(2)
+    assert (result.root / match.group(1)).is_file()
+
+    # A break for some other text is refused into the fallback: one run of
+    # the edition's own words, never a silently mismatched construction.
+    other = write_web_edition(
+        edition,
+        tmp_path / "web-mismatch",
+        wordmark=_wordmark(tmp_path),
+        headline_lines=("Some", "Other", "Words"),
+    )
+    mismatch = other.index.read_text(encoding="utf-8")
+    assert '<h1 class="cover-headline">Cover &lt;&amp;&gt;</h1>' in mismatch
+    assert "cover-headline-line" not in mismatch
+
+
+def test_without_a_wordmark_the_mastheads_and_cover_fall_back_to_text(tmp_path: Path):
+    """No lockup file, no lockup: the name is set as text and nothing 404s.
+
+    The cover page keeps the semantic edition header led by the raw artwork
+    when there is any, the mastheads set the publication name as the text
+    span, and no page references ``assets/wordmark.svg``.
+    """
+
+    edition = _edition(tmp_path)
+    result = write_web_edition(edition, tmp_path / "web")
+
+    assert not (result.root / "assets" / "wordmark.svg").exists()
+    html = result.index.read_text(encoding="utf-8")
+    assert 'class="edition-header"' in html
+    assert 'class="cover-art"' in html
+    assert 'data-web-chrome="cover"' not in html
+    for page in result.pages:
+        page_html = page.read_text(encoding="utf-8")
+        assert "wordmark" not in page_html
+        assert '<span class="publication-name">Magazine &lt;&amp;&gt;</span>' in page_html
+
+    bare = write_web_edition(replace(edition, cover_art=None), tmp_path / "web-bare")
+    assert 'class="cover-art"' not in bare.index.read_text(encoding="utf-8")
+
+
+def test_an_asset_that_would_shadow_the_wordmark_is_refused(tmp_path: Path):
+    """``assets/wordmark.svg`` is publication chrome; an inventory entry may
+    not silently overwrite it.
+
+    No current asset id can spell ``wordmark`` -- figures are prefixed
+    ``figure-...``, plates ``closing-plate-...`` -- so the guard is exercised
+    at the materializer, the seam every future id vocabulary must pass.
+    """
+
+    from magazine.html_edition import HtmlAsset
+
+    mark_art = tmp_path / "mark.svg"
+    mark_art.write_bytes(b"<svg/>")
+    shadowing = HtmlAsset(
+        id="wordmark", role="figure", path=mark_art,
+        src=mark_art.as_uri(), alt_text="a shadow",
+    )
+    with pytest.raises(ValidationError, match="collision"):
+        web_edition._materialize_assets(
+            (shadowing,), tmp_path / "web", _wordmark(tmp_path)
+        )
 
 
 def test_fonts_licenses_and_stylesheet_ship_with_the_page(tmp_path: Path):
@@ -470,10 +623,10 @@ def test_two_builds_of_the_same_edition_are_byte_identical(tmp_path: Path):
     """
 
     edition = _edition(tmp_path)
-    face = _cover_face(tmp_path)
+    mark = _wordmark(tmp_path)
     urls = {"source-one": "https://example.test/one"}
-    first = write_web_edition(edition, tmp_path / "first", cover_face=face, source_urls=urls)
-    second = write_web_edition(edition, tmp_path / "second", cover_face=face, source_urls=urls)
+    first = write_web_edition(edition, tmp_path / "first", wordmark=mark, source_urls=urls)
+    second = write_web_edition(edition, tmp_path / "second", wordmark=mark, source_urls=urls)
 
     first_files = sorted(
         path.relative_to(first.root) for path in first.root.rglob("*") if path.is_file()

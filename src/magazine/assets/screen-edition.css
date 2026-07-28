@@ -4,7 +4,8 @@
  * weasyprint-a5.css answers for print: Quiet Standard on a scrolling page.
  * Book typography, one calm centered reading measure, emphatic hierarchy, no
  * ornament.  It styles only the vocabulary html_edition.py emits -- plus the
- * web adapter's own page chrome (`.cover-plate`, `.masthead`, `.page-turn`),
+ * web adapter's own page chrome (`.cover`, `.canto`, `.masthead`,
+ * `.page-turn`),
  * which the semantic layer deliberately leaves to adapters -- and
  * tests/test_screen_css.py holds that contract: a class styled here that
  * nothing emits is a failing test, not silence.
@@ -109,17 +110,30 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: "Source Serif 4 SmText", Georgia, serif;
-  font-size: 1.0625rem;
+  font-size: 1.125rem;
   line-height: 1.6;
   -webkit-text-size-adjust: 100%;
 }
 
+/* Text a reader sweeps or tabs to answers in the house inks, not the
+ * browser's: selection is the one place the violet may fill a field, and
+ * the focus ring is the same violet drawn outside the box it names. */
+::selection {
+  background: var(--violet);
+  color: #ffffff;
+}
+:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: 2px;
+}
+
 /* One reading measure for the whole edition -- the screen translation of the
- * print reader's single 325pt column.  clamp() keeps the gutters honest on a
- * phone without a media query, which is why nothing in this sheet scrolls
- * sideways at 375px. */
+ * print reader's single 325pt column.  18px over a 42rem frame lands the
+ * measure in the mid-60s of characters, where the print reader's own column
+ * sits; clamp() keeps the gutters honest on a phone without a media query,
+ * which is why nothing in this sheet scrolls sideways at 375px. */
 main {
-  max-width: 44rem;
+  max-width: 42rem;
   margin: 0 auto;
   padding: clamp(1.25rem, 5vw, 3.5rem) clamp(1rem, 5vw, 2.5rem) clamp(3rem, 8vw, 6rem);
 }
@@ -156,6 +170,12 @@ p,
 li {
   hyphens: auto;
   -webkit-hyphens: auto;
+  /* The print sheet's own limits: a six-letter word breaks with at least
+   * three letters on each side, so no two-letter stub opens or closes a
+   * line ("ar-gue" is a misprint at any measure). */
+  hyphenate-limit-chars: 6 3 3;
+  -webkit-hyphenate-limit-before: 3;
+  -webkit-hyphenate-limit-after: 3;
 }
 [data-reference-list] li,
 p[data-name-roster],
@@ -205,21 +225,133 @@ code {
   margin-bottom: 0.5rem;
 }
 
-/* ---- Cover plate ---------------------------------------------------------
- * Screen-only vocabulary: html_edition.py inventories the cover art but
- * paints no element for it, so web_edition.py leads its cover page with this
- * figure.  What it usually holds is the composed cover face -- wordmark,
- * headline, canto vivo tab, an entire A5 portrait -- so it sizes like a page
- * shown to a reader: capped to the viewport, centered, unornamented.  The
- * raw-artwork fallback is squarer and simply never reaches the cap. */
-.cover-plate {
-  margin: 0 0 clamp(2rem, 6vw, 3.5rem);
+/* ---- Cover ----------------------------------------------------------------
+ * Screen-only vocabulary, emitted by web_edition.py (`_cover_lines`).  The
+ * printed cover is a fixed A5 sheet; this block restates its facts natively
+ * for a scrolling page instead of pasting the sheet's raster: the Corte bruto
+ * lockup large (an <img> over the outlined SVG, so no host font ever draws a
+ * letter of it), the cover headline as compressed Inter capitals in ink, the
+ * framed artwork, the contributor register in quiet tracked capitals, the
+ * spaced date, and the canto vivo translated from a fore-edge to a fixed
+ * right-of-viewport strip -- orange as navigation, not as a picture of a
+ * book edge.  The strip carries the issue at its head and the publication
+ * identity at its foot, exactly the two things the printed tab says. */
+.cover {
+  padding: clamp(2rem, 7vw, 4rem) 0 clamp(2rem, 6vw, 3rem);
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: clamp(2rem, 6vw, 3.5rem);
 }
-.cover-plate img {
+.cover-wordmark {
+  display: block;
+  width: min(100%, 26rem);
+  margin: 0 0 clamp(1.75rem, 5vw, 3rem);
+}
+.cover-headline {
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: clamp(2rem, 6.5vw, 3.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  margin: 0 0 clamp(2rem, 6vw, 3rem);
+  hyphens: manual;
+  -webkit-hyphens: manual;
+}
+/* The printed face's own construction: the headline breaks on the lines the
+ * cover compiler measured (cover.py, `cover_headline_lines`), and the ink
+ * alternates -- even lines ultraviolet, staggered right -- the same tight
+ * two-tone stack the printed cover sets.  Without a derived break the h1
+ * holds one run of ink, the stated fallback, never an invented break. */
+.cover-headline-line {
+  display: block;
+}
+.cover-headline-line:nth-child(even) {
+  color: var(--violet);
+  margin-left: 0.9em;
+}
+/* The first screen must say where the reading starts: a quiet tracked link
+ * down to the contents, its label the contents' own heading.  The cue is
+ * drawn, not typed -- a chevron of borders, since chrome takes no characters
+ * from the reader repertoire. */
+.cover-cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  margin-top: 0.5rem;
+}
+.cover-cue::after {
+  content: "";
+  width: 0.45em;
+  height: 0.45em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translateY(-15%);
+}
+.cover-art {
+  margin: 0 0 clamp(1.5rem, 4vw, 2.25rem);
+}
+.cover-art img {
   width: auto;
-  max-width: 100%;
-  max-height: min(88vh, 52rem);
+  max-width: min(100%, 34rem);
+  max-height: min(72vh, 34rem);
   margin: 0 auto;
+}
+.cover-roster {
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  color: var(--slate);
+  max-width: 34rem;
+  margin: 0 auto clamp(1.5rem, 4vw, 2.25rem);
+  text-align: center;
+  hyphens: manual;
+  -webkit-hyphens: manual;
+}
+.cover-date {
+  display: block;
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  color: var(--ink);
+}
+/* The canto: fixed to the right edge like the tab is fixed to the fore-edge,
+ * reading downward.  It is the cover page's element -- pieces navigate by
+ * masthead and page turns instead -- and it steps aside on narrow viewports,
+ * where a fixed strip would tax the measure it decorates. */
+.canto {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: clamp(1.4rem, 2vw, 1.8rem);
+  margin: 0;
+  background: var(--orange);
+  color: #ffffff;
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.4rem 0;
+  hyphens: manual;
+  -webkit-hyphens: manual;
+}
+@media (max-width: 40rem) {
+  .canto {
+    display: none;
+  }
 }
 
 /* ---- Contents ------------------------------------------------------------
@@ -376,11 +508,25 @@ main > section h1,
   letter-spacing: 0.04em;
   margin-top: 0.6rem;
 }
+/* A source mention is a numbered reference, not a slug: the adapter sets the
+ * two-digit index as the visible text (the id survives as the title), so the
+ * line reads in the house label grammar and can never wrap mid-filename.
+ * Linked mentions take the violet; unlinked ones stay slate facts. */
+.provenance-source {
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+a.provenance-source {
+  text-decoration-thickness: from-font;
+  text-underline-offset: 0.15em;
+}
 
 /* The standfirst is an editorial role the semantic document already marks;
- * here it is simply larger, looser reading type. */
+ * here it is simply larger, looser reading type.  1.375rem over the 1.125rem
+ * body keeps the print reader's own step -- 12pt over 10pt, 1.22 -- which a
+ * body-size change alone had quietly compressed. */
 .standfirst {
-  font-size: 1.3rem;
+  font-size: 1.375rem;
   line-height: 1.45;
   margin-bottom: 1.4rem;
 }
@@ -395,12 +541,16 @@ main > section h2,
   line-height: 1.25;
   margin: 2.2rem 0 0.7rem;
 }
+/* A heading is a step, not a bolded body line: h3 keeps a real size gap over
+ * the 1.125rem body and takes a heading's leading, or it disappears into the
+ * paragraph it introduces. */
 article h3,
 main > section h3,
 .editorial h3 {
   font-family: "Source Serif 4 Display", Georgia, serif;
   font-weight: 600;
-  font-size: 1.15rem;
+  font-size: 1.25rem;
+  line-height: 1.25;
   margin: 1.8rem 0 0.5rem;
 }
 
@@ -471,6 +621,17 @@ p[data-name-roster] {
 figure[data-figure-id] {
   margin: 1.8rem 0;
 }
+/* Every figure is a link to its own full-size file -- the escape hatch a
+ * column-width diagram needs on a phone -- and every plate takes a hairline
+ * frame, so a white-ground source figure reads as a deliberate plate on the
+ * paper rather than a pasted rectangle.  Content is never recoloured:
+ * curated evidence keeps its own palette. */
+.figure-link {
+  display: block;
+}
+figure[data-figure-id] img {
+  border: 1px solid var(--rule);
+}
 figure[data-figure-id] figcaption {
   font-family: "Inter", system-ui, sans-serif;
   font-size: 0.78rem;
@@ -529,12 +690,24 @@ figure[data-figure-id] .credit {
 .masthead a {
   text-decoration: none;
   display: flex;
-  align-items: baseline;
+  align-items: flex-end;
   gap: 0.75rem;
+}
+/* The lockup at running-head size: 2.5rem, because any smaller and the
+ * misregistered orange underprint -- the whole corte bruto argument --
+ * reduces to a smudge and the mark goes polite.  The <img> keeps width:auto
+ * against the global img rule so the SVG's own proportions govern; the
+ * issue text bottom-aligns to the slug's baseline rather than floating at
+ * the lockup's vertical seam. */
+.masthead-wordmark {
+  height: 2.5rem;
+  width: auto;
+}
+.masthead .issue-number {
+  padding-bottom: 0.2rem;
 }
 .page-turn {
   display: flex;
-  justify-content: space-between;
   gap: 1rem;
   border-top: 1px solid var(--rule);
   padding-top: 0.9rem;
@@ -549,27 +722,56 @@ figure[data-figure-id] .credit {
 .page-turn a:hover {
   text-decoration: underline;
 }
+/* The contents link is the way home after a long read; its auto margins
+ * hold the centre whether or not a previous or next neighbour exists. */
+.page-turn-contents {
+  margin: 0 auto;
+  color: var(--slate);
+}
 .page-turn-next {
-  margin-left: auto;
   text-align: right;
+}
+
+/* The colophon: the screen's small version of the printed book's closing
+ * gesture.  A page that simply stops strands the reader, so the cover page
+ * and the one-scroll document close on the identity line the canto tab
+ * carries, the route to the sibling document and the sibling languages, and
+ * the spaced date -- all quiet tracked chrome over one rule, no artwork. */
+.colophon {
+  border-top: 1px solid var(--rule);
+  margin-top: clamp(2.5rem, 7vw, 4rem);
+  padding-top: 1.1rem;
+  text-align: center;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.colophon-identity {
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 0.5rem;
+}
+.colophon-links {
+  display: flex;
+  justify-content: center;
+  gap: 1.4rem;
+  margin-bottom: 0.5rem;
+}
+.colophon-links a {
+  font-weight: 600;
+  text-decoration: none;
+}
+.colophon-links a:hover {
+  text-decoration: underline;
+}
+.colophon-date {
+  color: var(--slate);
+  font-weight: 600;
 }
 .page-turn-previous::before {
   content: "← ";
 }
 .page-turn-next::after {
   content: " →";
-}
-
-/* ---- Closing plates ------------------------------------------------------ */
-.closing-plate {
-  margin: clamp(2.5rem, 7vw, 4rem) 0 0;
-}
-.closing-plate img {
-  width: 100%;
-}
-.closing-plate figcaption {
-  font-family: "Inter", system-ui, sans-serif;
-  font-size: 0.78rem;
-  color: var(--slate);
-  margin-top: 0.5rem;
 }

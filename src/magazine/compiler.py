@@ -10,7 +10,7 @@ from typing import Any, Iterable
 from .capture import archive_snapshot, index_existing_captures, verify_snapshots
 from .catalog import render_sources
 from .cover import CoverArtifact, CoverCompiler, replace_outer_pages
-from .errors import ValidationError
+from .errors import DependencyError, ValidationError
 from .evidence_review import (
     create_evidence_review,
     current_evidence_bindings,
@@ -74,6 +74,32 @@ class LanguageWebResult:
     language: str
     output_dir: Path
     index: Path
+
+
+def _clear_web_language_dir(directory: Path) -> None:
+    """Empty a web language directory before the adapter rewrites it.
+
+    The adapter honours "the caller owns the destination" and never deletes,
+    so stale assets from earlier contracts would otherwise accumulate and
+    ride into any deploy gather.  Magazine.web owns ``output/``, so the
+    clearing lives here -- with the same guard-rail spirit as
+    ``deploy/web/assemble.py``: a non-empty directory that does not look like
+    a prior web edition (no ``index.html``) is somebody else's data, and the
+    answer is a refusal, not a wipe.
+    """
+
+    import shutil
+
+    if not directory.exists():
+        return
+    if any(directory.iterdir()) and not (directory / "index.html").is_file():
+        raise ValidationError(
+            f"web output directory {directory} is non-empty and carries no "
+            "index.html from a prior web edition; refusing to clear it -- "
+            "move or empty it, or point the build elsewhere"
+        )
+    shutil.rmtree(directory)
+
 
 
 class Magazine:
@@ -427,15 +453,16 @@ class Magazine:
         render review binds to it -- it is a private screen profile, not a
         production artifact.
 
-        The page opens with the edition's real cover -- the composed face the
-        cover compiler sets, wordmark and canto vivo tab included -- not the
-        bare artwork.  The face is compiled through :meth:`cover_proof` into
-        its own ``cover-proof/<language>`` directory, so there is exactly one
-        canonical copy of the composed cover and the compile is memoized by
-        the proof's input digest.  Each article's opener source ids become
-        working links: the mapping from source id to canonical URL is read
-        from the source records here, where the records live, and handed to
-        the adapter as data.
+        The cover page and every masthead carry the publication's Corte bruto
+        lockup, materialized once per build as a standalone SVG through
+        :func:`magazine.cover.materialize_wordmark_svg` -- the same outlined
+        paths the printed cover sets, honouring the project's authored cover
+        inks when a design file exists.  The lockup is publication identity,
+        never translated, so one file at the web root serves every language
+        and the adapter copies it into each.  Each article's opener source ids
+        become working links: the mapping from source id to canonical URL is
+        read from the source records here, where the records live, and handed
+        to the adapter as data.
         """
 
         from .web_edition import write_web_edition
@@ -445,35 +472,58 @@ class Magazine:
             None if language is None else (language,),
             purpose="Web edition",
         )
-        # The design file is the marker that this project carries the cover
-        # system.  CoverCompiler itself would fall back to built-in geometry,
-        # but its SVG -> PDF -> PNG chain needs resvg, ReportLab and Poppler,
-        # and a minimal project (every test fixture) has no cover art to set
-        # -- so absence of the design file means "no composed face", never an
-        # error.  A missing approved reference stays harmless downstream:
-        # the proof records ``missing_reference`` and ``check=False`` never
-        # raises on it.
-        faces: dict[str, Path] = {}
-        if (self.root / "design" / "covers" / "canto-vivo" / "design.toml").is_file():
-            faces = {
-                artifact.language: artifact.png
-                for artifact in self.cover_proof(
-                    edition_id, languages=tuple(editions)
-                )
-            }
+        root = destination or (self.output_dir / edition_id / "web")
+        # Outlining needs only FontTools and the bundled faces -- CoverCompiler
+        # falls back to built-in canto-vivo geometry without a design file --
+        # so every project gets the lockup, fixtures included.  A missing
+        # toolchain is the one reason to ship the text masthead instead, and
+        # it is a degradation, never an error.
+        wordmark: Path | None = None
+        favicon: Path | None = None
+        try:
+            from .cover import materialize_favicon_svg, materialize_wordmark_svg
+
+            publication = next(iter(editions.values())).publication_name
+            lockup = materialize_wordmark_svg(publication, self.root)
+            mark = materialize_favicon_svg(publication, self.root)
+        except DependencyError:
+            pass
+        else:
+            root.mkdir(parents=True, exist_ok=True)
+            wordmark = root / "wordmark.svg"
+            wordmark.write_text(lockup, encoding="utf-8")
+            favicon = root / "favicon.svg"
+            favicon.write_text(mark, encoding="utf-8")
         source_urls = {
             record.id: record.canonical_url
             for record in load_records(self.sources_dir)
             if record.canonical_url
         }
-        root = destination or (self.output_dir / edition_id / "web")
         results: list[LanguageWebResult] = []
         for name, edition in editions.items():
+            directory = root / name
+            _clear_web_language_dir(directory)
+            # The printed face's own line construction, derived per language
+            # because the headline is localized.  A headline no size fits, or
+            # a project without the cover toolchain, sets as one run -- the
+            # adapter's stated fallback, not an error.
+            headline = str(edition.cover.get("headline") or edition.title)
+            try:
+                from .cover import CoverOverflowError, cover_headline_lines
+
+                lines: tuple[str, ...] | None = cover_headline_lines(headline, self.root)
+            except (DependencyError, CoverOverflowError):
+                lines = None
             written = write_web_edition(
                 edition,
-                root / name,
-                cover_face=faces.get(name),
+                directory,
+                wordmark=wordmark,
+                favicon=favicon,
                 source_urls=source_urls,
+                headline_lines=lines,
+                alternates={
+                    other: f"../{other}/" for other in editions if other != name
+                },
             )
             results.append(
                 LanguageWebResult(
