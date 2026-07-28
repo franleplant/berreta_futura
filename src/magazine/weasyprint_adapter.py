@@ -167,24 +167,32 @@ _FRAME_BOTTOM_RELIEF_POINTS = _FRAME_BOTTOM_POINTS - (
 # ``_CODE_OPENER_SIDE_POINTS`` is the square, and unlike the retired tail and
 # foot slots it is a *constant*: every opener carries the same credit block --
 # kicker, title, byline -- so the code that joins it has one size on every
-# opener, the way the byline has one size.  15.9mm is chosen against the block
-# it stands beside: the square spans the byline and a two-line author note and
-# little more, and it stays in the small class the retired foot slot proved
-# scannable (its band held a 14mm square at a 0.38mm module; this one is a
-# shade roomier).  What varies with the URL is the *module*: a longer address
-# is a denser symbol in the same square, never a larger square on a page that
-# was not asked.
+# opener, the way the byline has one size.  55.5pt -- 19.6mm -- is chosen as a
+# whole multiple of the symbol most of this publication's addresses set at: nine
+# of the twelve codes editions 002 and 003 print come out 37 modules across the
+# quiet zone, and 37 * 1.5 lands their cell on a round point and a half
+# (0.5292mm) rather than on a division's remainder.  A cell that is a clean
+# number is not decoration: the printer, the 300 ppi decode gate and the eye all
+# quantise, and a module at 1.5pt is 6.25 device pixels at the gate's own
+# density where the old 45pt square's 1.21622pt was 5.068.  The size was raised
+# from 45pt (15.9mm), which was chosen to span the byline and a two-line author
+# note and little more; at 19.6mm the square is a shade taller than that block
+# and reads as the credit line's own opening mark rather than as a token beside
+# it, and every module it prints is roughly a quarter wider than before, which
+# is where a phone camera's margin lives.  What varies with the URL is still the
+# *module*: a longer address is a denser symbol in the same square, never a
+# larger square on a page that was not asked.
 #
 # ``_CODE_MIN_MODULE_POINTS`` is the floor, and it is the number the design gives
 # way at.  0.35mm is 4.1 dots of a 300 dpi inkjet and about where a phone camera
 # held at an angle over uncoated paper stops being reliable.  A build whose code
 # cannot be set at this module at any error correction level refuses rather than
 # printing something that will not scan; on the fixed opener square that binds a
-# canonical URL at 106 characters -- QR version 5's byte-mode capacity at ECC-L,
-# whose 45 modules across the quiet zone come out at 0.3528mm, a hair over the
-# floor, where version 6's 49 would come out at 0.324mm and refuse.  Measured by
-# lengthening a URL a character at a time: 106 sets, 107 refuses.  The longest
-# this publication has printed is 75.
+# canonical URL at 154 characters -- QR version 7's byte-mode capacity at ECC-L,
+# whose 53 modules across the quiet zone come out at 0.3694mm, over the floor,
+# where version 8's 57 would come out at 0.3435mm and refuse.  Measured by
+# lengthening a URL a character at a time: 154 sets, 155 refuses.  The 45pt
+# square bound 106.  The longest this publication has printed is 75.
 #
 # ``_CODE_QUIET_MODULES`` is the QR standard's own four-module quiet zone, and it
 # is inside the element rather than assumed of the page.  The opener's code
@@ -193,9 +201,37 @@ _FRAME_BOTTOM_RELIEF_POINTS = _FRAME_BOTTOM_POINTS - (
 # to be there is the one way this feature fails silently.  It is also why the
 # element's edges are not the symbol's: everything the eye lines the code up
 # against is measured to the *first dark module*, four modules inside the box.
-_CODE_OPENER_SIDE_POINTS = 45.0
+_CODE_OPENER_SIDE_POINTS = 55.5
 _CODE_MIN_MODULE_POINTS = 0.35 * 72 / 25.4
 _CODE_QUIET_MODULES = 4
+# HOW FAR THE CREDIT COLUMN STANDS FROM THE SQUARE, ink to ink.  It borrowed the
+# end mark's 24pt on the argument that ``END / nn`` is the house's own answer to
+# "how far apart do two pieces of furniture sharing a band stand", and on the
+# printed page it was the wrong loan: the end mark's rule is a hairline and its
+# caps are 6.8pt, so 24pt there separates two thin marks, where the opener sets a
+# 19.6mm block of solid modules against a 7.4pt cap line and the same 24pt reads
+# as a hole between them.  4.5 * the 3.15pt base -- one and a half grid gutters,
+# 14.175pt -- closes it to where the square and the name read as one row without
+# the modules ever touching the type: the quiet zone is 5.4-6pt of that gap, so
+# 8pt of plain paper still stands between the element's own edge and the byline.
+# MEASURED AND NOT ASSUMED: rasterised at 1200 ppi across both editions and both
+# languages, the last dark column to the byline's first ink comes out at
+# 14.70-14.76pt, against 24.54-24.60pt before; the fraction over nominal is the
+# byline's own left side bearing and nothing else.  The alternative prototyped
+# against it was ``_FIGURE_GAP``'s 15.75pt (5 * base), which measured 16.32pt and
+# still left a hole; both were rendered and looked at before this one was kept.
+#
+# AND THE QUIET ZONE IS NOT A SECOND GAP.  The inset is stated from the symbol's
+# ink (``_credit_column_inset``), so the four light modules are spent inside it:
+# enlarging the square from 45pt to 55.5pt grew the quiet zone by a quarter and
+# moved the type right by exactly the same amount, printing the identical 24.6pt.
+# Growing a code cannot loosen this row on its own, and closing it cannot be done
+# by shrinking the square.  The two decisions are separate and are taken here.
+#
+# It is NOT derived from the module.  A gap stated in modules would be a
+# different gap on every opener -- 37-module and 41-module codes set cells 0.15pt
+# apart -- and the credit line is a row the reader sees six times in an edition.
+_CODE_CREDIT_GAP_POINTS = 4.5 * 3.15
 # Highest first, which is the tie-break and not the choice.
 # ``_fitted_source_code`` takes the level whose symbol comes out with the *widest
 # cell* in the square, and only where two levels tie -- the same module count at
@@ -204,14 +240,21 @@ _CODE_QUIET_MODULES = 4
 # publication's 44-75 character URLs ECC-L sets 37 or 41 modules across the
 # quiet zone where ECC-H would set 45-57 in the identical square.
 #
-# ON ALL BUT THE SHORTEST OF THEM H IS NOT THE NARROWER CHOICE BUT NO CHOICE AT
-# ALL: 49 to 57 modules in a 45pt square is a 0.2785-0.324mm cell, under the
-# floor above, so H is refused outright and never reaches the tie-break -- and Q
-# goes the same way on the 75-character URL, at 0.2995mm.  Only the 44-character
-# one can carry H at all, at 0.3528mm.  So the widest-cell rule is not what
-# excludes H here; the floor is, and the rule then picks between what is left.
-# Measured across editions 001-003: the level taken is L on ten of the sixteen
-# codes and M on six, where M and L tie at 41 modules and the tie goes up.
+#
+# A BIGGER SQUARE CHANGED NO LEVEL, AND COULD NOT HAVE.  At 45pt the floor did
+# most of the excluding -- 49 to 57 modules came out at 0.2785-0.324mm and H was
+# refused outright on all but the shortest URL, Q with it on the longest -- and at
+# 55.5pt almost everything clears: H now sets at 0.3996mm on a 45-character
+# address where it used to refuse.  The level taken is nevertheless identical on
+# every code this publication prints, because the floor can only ever exclude a
+# *loser*.  The winner is the level with the fewest modules; a level with fewer
+# modules than the winner would have a wider cell than the winner and so could not
+# have been below a floor the winner cleared.  Growing the square therefore
+# widens every cell and reopens levels that lose anyway: it buys read margin, not
+# redundancy, and if the publication ever wants the redundancy it has to be asked
+# for here rather than hoped for from a size change.  Measured across editions
+# 001-003: the level taken is L on ten of the sixteen codes and M on six, where M
+# and L tie at 41 modules and the tie goes up -- the same sixteen at both sizes.
 _CODE_ERROR_LEVELS = ("H", "Q", "M", "L")
 # The reading measure's own left edge inside the page area, as ``.article-tail``
 # has it: the article box is 325pt centred in the 333.0079pt live width.
@@ -399,10 +442,12 @@ _END_MARK_PAINT_POINTS = (
 _END_MARK_FLOOR_POINTS = _FRAME_BOTTOM_POINTS + 5.0
 _END_MARK_DROP_POINTS = 1.0
 # How far `END / nn` stands in from the frame's left edge, past its own rule
-# (render.py:2008-2021, `.end-mark`'s `padding-left`).  The inset is borrowed as
-# the house's own answer to "how far apart are two pieces of furniture sharing a
-# band", which is what sets the opener's credit column an inset to the right of
-# the code standing beside it (see ``_fit_credit_measure``).
+# (render.py:2008-2021, `.end-mark`'s `padding-left`).  It was once lent to the
+# opener's credit column as the house's own answer to "how far apart are two
+# pieces of furniture sharing a band"; that loan is withdrawn -- 24pt separates a
+# hairline rule from 6.8pt caps, which is not the problem a 19.6mm block of solid
+# modules beside a byline poses -- and the credit column now states its own
+# ``_CODE_CREDIT_GAP_POINTS``.  This number is the end mark's alone again.
 _END_MARK_TEXT_INSET_POINTS = 24.0
 # The lowest baseline the mark may take before the build is refused -- the folio's
 # own line plus one reading leading.  It is a floor against *collision*, which is
@@ -2347,20 +2392,24 @@ def _apply_source_codes(tree: Element, codes: Mapping[str, SourceCode]) -> None:
 def _credit_column_inset(code: SourceCode) -> float:
     """Where the credit column's own type begins, beside the square.
 
-    Ink to ink: one ``_END_MARK_TEXT_INSET_POINTS`` to the right of the symbol's
-    last dark module, which is the house's own answer to how far apart two pieces
-    of furniture sharing a band stand -- the same 24pt ``END / nn`` keeps between
-    its rule and its caps.  Measured from the *symbol* and not from the element,
-    because the quiet zone lives inside the box: an inset stated on the box would
-    print as 24pt plus four light modules and the band would read loose.
+    Ink to ink: one ``_CODE_CREDIT_GAP_POINTS`` to the right of the symbol's last
+    dark module.  Measured from the *symbol* and not from the element, because the
+    quiet zone lives inside the box: an inset stated on the box would print as the
+    gap plus four light modules, and the four light modules are exactly the part
+    of this distance that grows when the square does.  That is why enlarging the
+    square did not widen the printed gap by itself, and why tightening it is a
+    separate decision taken separately -- see ``_CODE_CREDIT_GAP_POINTS``.
 
-    The mirror of what the right-flush arrangement gave the author note, and the
-    arithmetic says so: the column runs from here to the live area's right edge,
-    which is ``_LIVE_WIDTH_POINTS - side + 2 * quiet - 24`` wide -- exactly the
-    width the note had when it stopped an inset short of a right-flush square.
-    The measure is unchanged, so no note re-rags and no opener changes depth.
+    The column runs from here to the live area's right edge:
+    ``_LIVE_WIDTH_POINTS - side + 2 * quiet - gap`` wide.  It is no longer the
+    measure the retired right-flush arrangement gave the author note -- the square
+    grew by 10.5pt and the gap closed by 9.825pt, and the gap won, so the column
+    comes out 1.37-1.60pt *wider* than it was, depending on the URL's module (the
+    quiet zone grew with the square and gave part of the closure back).  Wider is the safe
+    direction: a wider measure can only shed a rag line, never take one, so no
+    author note can gain a line and no opener can gain depth from this row.
     """
-    return code.symbol_right + _END_MARK_TEXT_INSET_POINTS
+    return code.symbol_right + _CODE_CREDIT_GAP_POINTS
 
 
 def _fit_credit_measure(article: Element, header: Element, code: SourceCode) -> None:
@@ -2377,9 +2426,9 @@ def _fit_credit_measure(article: Element, header: Element, code: SourceCode) -> 
 
     The line the note may take for it is free: an opener without a figure holds
     the note inside a *fixed* white field, and an opener with one hides the note
-    entirely, so no prose can move.  In fact none is taken -- the column is
-    exactly as wide as the note's old right-flush measure (see
-    ``_credit_column_inset``).
+    entirely, so no prose can move.  In fact none is taken -- the column comes out
+    a fraction *wider* than the note's old right-flush measure, which is the
+    direction that cannot cost a line (see ``_credit_column_inset``).
 
     THE BYLINE'S REFUSAL IS A DIFFERENT FAILURE NOW.  It used to run at the
     code from the left and could reach it; inset, it can no longer touch the
@@ -2420,9 +2469,12 @@ def _fitted_source_code(article_id: str, url: str, room: float) -> SourceCode | 
     cell in the same square, and a wider cell is worth more to a real scan
     than redundancy behind cells too small to resolve.  Measured on this
     publication's URLs, ECC-L sets 37-41 modules across the quiet zone where
-    ECC-H sets 45-57 in the identical square -- and on every one of them but the
-    shortest, H's cell comes out under ``_CODE_MIN_MODULE_POINTS`` and is
-    dropped by the loop below before the widest-cell rule ever compares it.
+    ECC-H sets 45-57 in the identical square, so L wins on width and the outcome
+    does not depend on the square's size at all: the floor below can only ever
+    drop a level whose symbol is *longer* than the winner's, which is a level
+    that would have lost the comparison anyway.  Enlarging the square from 45pt
+    to 55.5pt changed the level on none of the sixteen codes editions 001-003
+    print, and would not have.
 
     HIGHEST CORRECTION WINS A TIE -- two levels whose symbols come out the
     same width, which QR's stepped versions produce regularly -- because there

@@ -594,8 +594,9 @@ article[data-figure-layouts~="landscape_plate_after"] h3 { margin-top: 14pt; }
 /*
  * The byline and the author note are the CREDIT COLUMN, and on an article that
  * carries a source code the adapter states a `margin-left` on both: the square
- * takes the credit line's left origin, so the type beside it starts one end-mark
- * inset past the symbol's ink and the note is given the column's width as well
+ * takes the credit line's left origin, so the type beside it starts one
+ * `_CODE_CREDIT_GAP_POINTS` -- 14.175pt, ink to ink -- past the symbol's last
+ * dark module, and the note is given the column's width as well
  * (`_fit_credit_measure`).  Neither number can live here -- both are functions of
  * the URL's own module -- and neither is a default: an opener whose article has
  * no code keeps the full live width, which is what these two rules set.
@@ -1114,8 +1115,8 @@ article > .landscape-plate + p { margin-top: 0; }
  * first dark row on the byline's cap top and its first dark column flush to the
  * live area's left edge -- the same origin the kicker's `FEATURE nn` and the
  * fitted title's first character take.  The byline and the author note then set
- * as one column an inset to its right, so the row reads square, name, biography,
- * left to right.  The adapter appends it to the opener's `header` so it lands on
+ * as one column a gutter and a half to its right, so the row reads square, name,
+ * biography, left to right, close enough to be one object.  The adapter appends it to the opener's `header` so it lands on
  * the article's first page, and it is absolutely positioned, exactly as the tail
  * ornament and the figure frames are, so a code can never move a line or open a
  * page: below the byline it runs down the side of the credit column and into

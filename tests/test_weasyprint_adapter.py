@@ -734,10 +734,16 @@ def test_the_code_opens_the_credit_line_flush_left_with_the_column_beside_it():
         f"left: {code.left:.4f}pt; top: {code.top:.4f}pt; "
         f"width: {code.side:.4f}pt; height: {code.side:.4f}pt"
     )
-    # The credit column begins one end-mark inset past the last dark module and
-    # runs to the live area's right edge.  Both lines of it are inset; only the
-    # note, which is prose-length, is also given the width.
-    inset = code.symbol_right + 24.0
+    # The credit column begins one credit gap past the last dark module and runs
+    # to the live area's right edge.  Both lines of it are inset; only the note,
+    # which is prose-length, is also given the width.  The gap is measured from
+    # the SYMBOL, so the quiet zone is inside it: growing the square grows the
+    # quiet zone and moves the type by exactly as much, which is why the printed
+    # ink-to-text distance is this constant and not this constant plus a border.
+    inset = code.symbol_right + adapter._CODE_CREDIT_GAP_POINTS
+    assert adapter._CODE_CREDIT_GAP_POINTS == pytest.approx(14.175)
+    assert inset - code.symbol_right == pytest.approx(14.175)
+    assert inset - (code.left + code.side) == pytest.approx(14.175 - code.quiet)
     column = adapter._LIVE_WIDTH_POINTS - inset
     assert adapter._credit_column_inset(code) == pytest.approx(inset)
     byline = next(
@@ -748,10 +754,21 @@ def test_the_code_opens_the_credit_line_flush_left_with_the_column_beside_it():
         element for element in header.iter("p") if element.get("class") == "author-note"
     )
     assert note.get("style") == f"margin-left: {inset:.4f}pt; width: {column:.4f}pt"
-    # And the column is exactly the measure the right-flush note had, so no note
-    # re-rags and no opener changes depth for the flip.
-    mirrored = replace(code, left=adapter._LIVE_WIDTH_POINTS - code.side + code.quiet)
-    assert column == pytest.approx(mirrored.symbol_left - 24.0)
+    # And the column is a shade WIDER than the 45pt-square-at-24pt arrangement
+    # gave it -- the square grew 10.5pt and the gap closed 9.825pt, and the gap
+    # won -- which is the direction that cannot cost a rag line and so cannot
+    # change an opener's depth.  Narrower is the dangerous sign, so it is asserted.
+    old_quiet = 4 * 45.0 / code.modules
+    old_column = adapter._LIVE_WIDTH_POINTS - (45.0 - 2 * old_quiet) - 24.0
+    assert column > old_column
+    # 24 - 14.175 recovered, 55.5 - 45 spent, and two quiet zones' growth handed
+    # back: 1.37pt on the densest code this publication prints, 1.60pt on the
+    # commonest.  The sign is what matters and the arithmetic is why it holds.
+    assert column - old_column == pytest.approx(
+        (24.0 - adapter._CODE_CREDIT_GAP_POINTS)
+        - (adapter._CODE_OPENER_SIDE_POINTS - 45.0)
+        + 2 * 4 * (adapter._CODE_OPENER_SIDE_POINTS - 45.0) / code.modules
+    )
     # Nothing hangs under the square.
     assert [element for element in header.iter("p") if element.get("class") == "source-label"] == []
     # The tail figure is no longer the code's business: it stays in the tree
@@ -778,6 +795,12 @@ def test_a_byline_that_would_overrun_the_credit_column_is_refused_not_wrapped():
     right edge, which the right-flush arrangement had in hand, and a byline is a
     single zero-leading line: wrapping one stacks two rows of ink on one
     baseline, so it is a loud refusal naming the fix.
+
+    THE EDGE IS WALKED, not assumed.  The column is a function of the square and
+    of the gap beside it, and both moved when the square grew: a test that only
+    refuses a byline three times too long would keep passing however far the
+    threshold slid.  So the last name that fits and the first that does not are
+    found from the measure itself and both are put through the guard.
     """
     code = adapter._fitted_source_code(
         "article", "https://example.test/a", adapter._CODE_OPENER_SIDE_POINTS
@@ -790,6 +813,25 @@ def test_a_byline_that_would_overrun_the_credit_column_is_refused_not_wrapped():
     )
     with pytest.raises(ValidationError, match="out through the live area's right edge"):
         _apply_source_codes(tree, {"article": code})
+
+    # The threshold itself: the widest byline the column takes passes, and one
+    # letter more is refused.  `_parse_article_fragment` sets the author verbatim
+    # and `_fit_credit_measure` upper-cases before measuring, as `.byline` does.
+    column = adapter._LIVE_WIDTH_POINTS - adapter._credit_column_inset(code)
+    set_as = lambda name: adapter._string_width(  # noqa: E731 - the byline's own ink
+        f"BY {name}".upper(), "sans-semibold", adapter._BYLINE_SIZE_POINTS
+    )
+    longest = next("N" * n for n in range(1, 400) if set_as("N" * (n + 1)) > column)
+    assert set_as(longest) <= column < set_as(longest + "N")
+    _apply_source_codes(
+        _parse_article_fragment("<p>Body.</p>", credit=True, author=longest),
+        {"article": code},
+    )
+    with pytest.raises(ValidationError, match="out through the live area's right edge"):
+        _apply_source_codes(
+            _parse_article_fragment("<p>Body.</p>", credit=True, author=longest + "N"),
+            {"article": code},
+        )
 
     # And the byline that fits the column is set in it, not refused.
     fits = _parse_article_fragment("<p>Body.</p>", credit=True, author="Author")
@@ -1549,7 +1591,9 @@ def test_a_source_code_that_reaches_into_the_opener_figure_is_refused(
     # The title's own 117.8pt field, 42.0004pt down the page, and the figure's
     # own 10.0046pt of ink relief below its foot.
     assert "the opener figure's head is 169.8050pt" in message, "and the two boxes"
-    assert "reaches 29.8861pt past the field" in message, "and how far past it"
+    # 8.2298pt more than the 45pt square overran by, which is exactly the symbol's
+    # own growth: 10.5pt of square less the two quiet zones it also grew.
+    assert "reaches 38.1159pt past the field" in message, "and how far past it"
     assert not (tmp_path / "unreserved.pdf").exists(), "and nothing is written"
 
 
