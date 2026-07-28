@@ -22,6 +22,12 @@ raw_captures:
   captured_at: '2026-07-26T22:17:28Z'
   artifact_count: 10
   byte_count: 549128
+- id: ea53bb693f7443c38bdd95c2199b072ae47de3e3f243482dcc39175a159eabf0
+  path: raw/ea53bb693f7443c38bdd95c2199b072ae47de3e3f243482dcc39175a159eabf0/manifest.json
+  method: browser_verified_x_article_original_media
+  captured_at: '2026-07-28T09:50:43Z'
+  artifact_count: 2
+  byte_count: 124250
 provenance:
 - relation: primary_material
   url: https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
@@ -111,6 +117,22 @@ media_reviews:
       public_reprint_allowed: false
   note: Automatic curation selected 3 of 5 candidates under editorial-impact-v4; decisions are hash-pinned
     in 36ee6309f236ecd0506f76c973bb4eb64beaa1abbcdddf8bcc66b9bec8a4798d.curation.json.
+- capture_id: ea53bb693f7443c38bdd95c2199b072ae47de3e3f243482dcc39175a159eabf0
+  status: media_curated
+  assets:
+  - id: raster-001-7b66ba87
+    artifact_path: media/002.jpg
+    artifact_sha256: 7b66ba87ff76c4b19eab01343485df12cc0b42ce3b6f10a0e3236789aaa8b05a
+    mime_type: image/jpeg
+    creator: Thariq
+    credit: 'Diagram by Thariq; source: The New Rules of Context Engineering for Claude 5 Models.'
+    rights:
+      status: unknown
+      intended_use: private_reference
+      attribution_required: true
+      public_reprint_allowed: false
+  note: Automatic curation selected 1 of 1 candidates under editorial-impact-v4; decisions are hash-pinned
+    in ea53bb693f7443c38bdd95c2199b072ae47de3e3f243482dcc39175a159eabf0.curation.json.
 metadata:
   tags:
   - ai-agents
