@@ -317,10 +317,21 @@ def localize_figures(
             )
         expected_caption_hash = caption_sha256(figure.id, figure.caption)
         expected_credit_hash = credit_sha256(figure.id, figure.credit)
+        # A stale pin is only fixable when the error names the digest the
+        # overlay should carry; stating both sides turns re-pinning into a
+        # copy after review instead of a private hashing ritual.
         if row.get("source_caption_sha256") != expected_caption_hash:
-            errors.append(f"Translation {language!r} figure {figure.id} caption pin is stale")
+            errors.append(
+                f"Translation {language!r} figure {figure.id} caption pin is stale: "
+                f"source_caption_sha256 is {row.get('source_caption_sha256')!r}, but "
+                f"the base caption hashes to {expected_caption_hash}"
+            )
         if row.get("source_credit_sha256") != expected_credit_hash:
-            errors.append(f"Translation {language!r} figure {figure.id} credit pin is stale")
+            errors.append(
+                f"Translation {language!r} figure {figure.id} credit pin is stale: "
+                f"source_credit_sha256 is {row.get('source_credit_sha256')!r}, but "
+                f"the base credit hashes to {expected_credit_hash}"
+            )
         if anchor != "__opener__" and anchor not in headings:
             errors.append(
                 f"Translation {language!r} figure {figure.id} anchor does not match a translated heading"
@@ -467,8 +478,15 @@ def _resolve_asset(
     else:
         errors.append(f"{label} asset does not match its archived bundle or curation audit")
         return None
-    if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != asset.artifact_sha256:
-        errors.append(f"{label} asset file is missing or changed after capture")
+    if not path.is_file():
+        errors.append(f"{label} asset file is missing after capture: {path}")
+        return None
+    found_sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
+    if found_sha256 != asset.artifact_sha256:
+        errors.append(
+            f"{label} asset file changed after capture: artifact_sha256 is "
+            f"{asset.artifact_sha256}, but {path.name} now hashes to {found_sha256}"
+        )
         return None
     return review, asset, path
 

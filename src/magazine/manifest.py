@@ -324,9 +324,15 @@ def load_translation(
             f"Translation source_language must be {base.language!r}"
         )
     expected_copy_hash = _edition_copy_sha256(base)
-    if data.get("base_copy_sha256") != expected_copy_hash:
+    pinned_copy_hash = data.get("base_copy_sha256")
+    if pinned_copy_hash != expected_copy_hash:
+        # Withholding the expected digest here used to force authors to
+        # reconstruct it by hand; the error now states both sides so the fix is
+        # a review followed by a re-pin, not an archaeology dig.
         errors.append(
-            f"Translation {language!r} is stale: base edition copy hash does not match"
+            f"Translation {language!r} is stale: base_copy_sha256 is "
+            f"{pinned_copy_hash!r}, but the base edition copy hashes to "
+            f"{expected_copy_hash}; the overlay no longer matches the base edition"
         )
 
     translated_cover = data.get("cover")
@@ -680,8 +686,13 @@ def _validate_translation_file(
     label: str,
     errors: list[str],
 ) -> None:
-    if pinned_source_sha256 != _sha256(source):
-        errors.append(f"{label} is stale: source_sha256 does not match {source.name}")
+    expected_source_sha256 = _sha256(source)
+    if pinned_source_sha256 != expected_source_sha256:
+        errors.append(
+            f"{label} is stale: source_sha256 is {pinned_source_sha256!r}, but "
+            f"{source.name} hashes to {expected_source_sha256}; the translation "
+            "no longer matches its English source"
+        )
     source_signature: list[str] | None = None
     translation_signature: list[str] | None = None
     try:
