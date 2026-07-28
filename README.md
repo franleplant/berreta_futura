@@ -42,6 +42,7 @@ uv run --locked mag capture https://example.com/article \
 uv run --locked mag sources
 uv run --locked mag media-index
 uv run --locked mag validate issue-001
+uv run --locked mag fit issue-001
 uv run --locked mag cover-proof issue-001 --all-languages
 uv run --locked mag build issue-001
 ```
@@ -50,6 +51,22 @@ uv run --locked mag build issue-001
 self-contained SVG, the exact one-page PDF later used by the full build, a
 PDF-derived PNG, and visual comparison evidence. Its warm cached path avoids
 article pagination and booklet imposition.
+
+`fit` is the fast measurement loop, the same idea for page budgets. The
+seven-page article cap and the declared editorial cap used to be enforceable
+only deep inside a full build, so an author finished a manuscript, its ledger,
+its translation, and every hash pin before learning the piece did not fit.
+`mag fit` paginates the reader with the adapter's own front half — the same
+HTML compilation, stylesheet, and measure-then-settle passes a build runs —
+then stops before paint: no PDF, no rasters, no package. It prints a verdict
+for every configured language in about four seconds instead of a forty-second
+build and exits nonzero on any budget breach. `mag measure` reports the full
+measurement as JSON for agents and scripts — the editorial span, every
+article's span against its cap, the last page's body-line count, end-mark and
+tail measurements, and a per-paragraph rag table — so judging a layout
+question no longer requires a throwaway script into the renderer's privates.
+Both take `--language` to narrow to one configured language; `mag measure
+--json PATH` writes the dump to a file instead of stdout.
 
 `capture` requires a raw file or directory supplied by the caller. It copies the
 bundle into content-addressed, source-local storage before it writes the source
@@ -106,6 +123,20 @@ requires the hashes to match. Every source of the open (unreleased) edition
 must have an extraction and a matching pin; released editions predate committed
 extractions, so their recorded pins are kept but skipped.
 
+Every such pin — a ledger's extraction-body hashes, a translation overlay's
+base copy and per-file source hashes, a localized figure's caption and credit
+pins — is a pure function of files already in the repository, so it is
+recomputed by command rather than by hand: `mag pin <edition-id>` refreshes
+every derivable pin in the edition's authored files and reports each digest it
+moved. The rewrite is a targeted textual substitution — only the digest
+changes, the author's comments, key order, and wrapping survive — and the
+whole batch is verified by re-parsing before anything reaches disk. It never
+invents a missing pin key, and it refuses anything under `reviews/` outright:
+review records are written only by `mag review record`. Repinning is always
+this explicit command; `mag validate` reports staleness but never repins,
+though every staleness error now states both the pinned and the expected
+digest, so the fix is a decision rather than an investigation.
+
 ## Language editions
 
 `publication.language` selects the source edition and `publication.languages`
@@ -119,6 +150,21 @@ articles, and backmatter. It must preserve the ordered Markdown block structure
 of the English manuscript, including headings, paragraphs, lists, quotations,
 and code. Changing an English input therefore makes the translation stale and
 blocks validation until it is reviewed and updated.
+
+`mag translate <edition-id> <language>` does the clerical half of that update,
+and refuses, loudly, to do the creative half. A missing overlay is scaffolded
+whole: structure mirrored from the English edition, every derivable pin
+computed with the canonical hashers validation uses, and every localized prose
+field filled with its English text as a placeholder — each one named in the
+report as untranslated backlog, so nothing English can ship as Spanish
+silently. An existing overlay is reconciled, not regenerated: new English
+articles, figures, and plates gain placeholder rows with correct pins; missing
+pin keys are repaired in place; rows whose English counterpart vanished are
+dropped with their localized prose quoted in the report, because deleting a
+translation someone wrote is a fact the author must see; and every changed
+English input becomes a re-translation advisory. Staging writes only inside
+its own overlay, never overwrites an existing translation, and is a no-op on a
+finished one — what remains after staging is exactly the prose.
 
 The Spanish house register is educated castellano with a restrained Argentine
 inclination where it reads naturally, without slang or lunfardo. Where no clear
@@ -319,7 +365,19 @@ final visual review. The critic also verifies each imposed left/right page pair
 against the declared saddle-stitch, short-edge-duplex plan, including the
 inside-cover side, which must be blank. Sparse pages are
 review prompts, not automatic failures, because deliberate openers and closing
-plates may use whitespace. The report and review images are included in
+plates may use whitespace. Because pale ornaments barely register as ink, each
+page row also records a presence ratio and bounding box, its running-text line
+count, and its largest all-paper rectangle inside the live area; on those
+measurements the critic raises a `whitespace-void` review item for a void at
+least 96 pt tall spanning at least ninety percent of the measure (a trailing
+void on an article's last page is the article simply ending, and is excused)
+and an `article-stub-last-page` item when an article's final page carries
+fewer than five lines of running text, prompting a human to re-cut the break.
+The editorial page cap is read from the package's own `edition-manifest.json`,
+clamped to the publication ceiling, rather than hardcoded. And when the build
+manifest declares `layout.tail_arts`, the critic reconciles the ledger: every
+tail ornament an article declared but the typesetter did not print becomes a
+`tail-art-dropped` review prompt. The report and review images are included in
 `SHA256SUMS`.
 
 ## Release archive

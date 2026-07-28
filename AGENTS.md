@@ -22,6 +22,8 @@ This repository builds private-first, source-faithful magazine editions.
 - Release only with `uv run --locked mag release <edition-id>`. Every source record must be queued and represented in a rendered article's `source_ids`; a top-level manifest declaration alone cannot silently postpone material.
 - Use UV for every Python operation. Never use `pip`, bare `python`, `python -m venv`, an activated virtualenv, or an ad-hoc dependency directory.
 - Generate every language listed in `publication.languages` on every validation, build, and release. English remains the source edition; Spanish translations use educated castellano with restrained Argentine preferences, fall back to Spain Spanish, avoid slang and generic Latin American regionalisms, preserve Markdown block structure, and pin the exact English input hashes.
+- Never compute or hand-edit a SHA-256 pin. After changing any English input, refresh the derivable pins with `uv run --locked mag pin <edition-id>` and stage each configured overlay with `uv run --locked mag translate <edition-id> <language>`; translate the placeholder and advisory rows it reports before validating. `mag validate` reports staleness (with the expected digest) but never repins.
+- Check page budgets with `uv run --locked mag fit <edition-id>` before authoring the translation or fidelity ledger for a new article, and again after every manuscript edit. Use `uv run --locked mag measure <edition-id>` when you need spans, caps, last-page lines, or the per-paragraph rag table as JSON. Never run a full build, or reach into the renderer with ad-hoc scripts, just to ask whether a piece fits.
 - Run project tools as `uv run --locked <command>`, synchronize with `uv sync --locked`, and change dependencies with `uv add`, `uv remove`, or `uv lock`.
 - Commit `pyproject.toml`, `.python-version`, and `uv.lock` whenever their state changes. UV's internal environment must never be managed manually.
 
@@ -53,8 +55,12 @@ page-specific visual defects, and avoid changing locked elements. Fix confirmed
 defects, rebuild all languages, and repeat until the machine report passes and
 the independent critic has no remaining actionable findings. Then record the
 decision only through `uv run --locked mag review record <edition-id>` with the
-reviewer and result flags; do not hand-edit the canonical review record. `mag
-release` must reject a missing, stale, or changes-required review.
+reviewer and result flags; do not hand-edit the canonical review record.
+Recording binds the decision to the PDFs exactly as they sit on disk and
+rewrites only the packaged reports in place — it does not rebuild, so record
+against the packages you actually inspected; pass `--rebuild` only when the
+rebuild-and-compare proof is explicitly wanted. `mag release` must reject a
+missing, stale, or changes-required review.
 
 Every source of the open edition needs a committed
 `library/sources/<source-id>/extracted.md`, and its fidelity ledgers must pin
@@ -62,3 +68,8 @@ Every source of the open edition needs a committed
 adversarial manuscript-versus-source audit (`prompts/evidence-review.md`) and
 record it with `uv run --locked mag review record <edition-id> --kind evidence`;
 `mag release` rejects a missing, stale, or changes-required evidence review.
+Evidence staleness is derived per article: when `mag review status` names
+drifted articles, re-audit those articles against their ledgers and
+extractions, then re-record with `--articles <id,id>` naming exactly the
+articles whose audit was actually repeated — never an article you did not
+re-audit. Every other article keeps its recorded binding and `reviewed_at`.
