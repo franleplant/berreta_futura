@@ -75,3 +75,11 @@ generic-generation artifacts, crop safety, tonal reproduction, and whether the
 three branches are meaningfully distinct. The editor selects the production
 asset by updating only `cover.art_path`; unselected candidates remain preserved
 as process evidence.
+
+If the editor selects none, generate a complete new round containing all three
+branches. Change the editorial proposition, subject, metaphor, and prompt input
+for each branch, but do not change the branch's established art direction or
+the shared cover constraints. Store every round as versioned sibling assets and
+a versioned candidate record. Continue generating full three-candidate rounds
+until the editor explicitly selects one; never infer selection from approval of
+the process, and never change `cover.art_path` while selection is pending.
