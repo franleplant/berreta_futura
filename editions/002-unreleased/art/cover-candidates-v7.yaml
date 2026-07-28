@@ -1,6 +1,7 @@
 schema_version: 2
 round: 7
-selection_status: rejected_by_editor
+selection_status: selected
+selected_variant: art_directed
 editorial_reading: >-
   Software is increasingly assembled from reusable blocks, agents, loops,
   teams, and knowledge systems, while coherence depends on deliberate human

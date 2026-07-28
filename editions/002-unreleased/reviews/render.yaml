@@ -1,22 +1,22 @@
 schema_version: 1
 edition_id: 002-unreleased
-reviewer: Codex edition 2 regeneration review
-reviewed_at: '2026-07-28T11:29:44+00:00'
+reviewer: Independent Edition 2 render critic
+reviewed_at: '2026-07-28T17:08:28+00:00'
 result: approved
 engine: weasyprint
 design_direction: WeasyPrint / A5 fold proof
 findings: []
-notes: Regenerated edition 2 with the current pipeline. Independent critic inspected every EN/ES reader
-  and booklet contact sheet plus all six synthetic, art-directed, and wildcard cover trials; no actionable
-  page, crop, typography, blank-cover, QR, or imposition defects.
+notes: Inspected every English and Spanish reader and booklet contact sheet after selecting the central-void
+  monotype. Cover crops, typography, figures, blank inside covers, page order, imposition, and back covers
+  passed with no actionable defects.
 languages:
   en:
-    reader_sha256: 9510204489f422ecf7a3a4fc232d27456d783ec76a7c53d7214f5c5d523f9de3
-    booklet_sha256: 714efee3cfd3a34cecdfa7cbf8f8154cecec6e119c972a2c3bf4bbb3429fa586
+    reader_sha256: b45ebae09b3386cb3a9d9636456a3f30a77b6641dcac2ee0257075d0fc77b668
+    booklet_sha256: c2aa238ae2ff5c23c24f50ddbe5e6325708319e6663838852739877b07fa0317
     page_count: 32
     machine_result: pass
   es:
-    reader_sha256: dc79d95f09bb60203456eb724ac1b4afe04943e632dfe820a2e672254772ef2f
-    booklet_sha256: dc36d6b95091f28dc9a65f06d020db6be5cb412bd118754ae1b866a833618b69
+    reader_sha256: e95333639cd7cd63e32bb7914a757dcd11115bf50a7a324c24212a223a662f48
+    booklet_sha256: e37bbd9a7c32a3410e819ad2090204233c72ab31377e5802dcc851ee54ba4a4c
     page_count: 36
     machine_result: pass
