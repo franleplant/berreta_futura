@@ -296,6 +296,34 @@ class PinRefreshTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "no committed extraction"):
             refresh_pins(self.root, "issue-001")
 
+    def test_within_confines_the_sweep_to_the_named_directory(self):
+        # A ledger whose pin key is missing aborts the whole edition-wide
+        # sweep; scoped to the overlay directory, the ledger is not this
+        # refresh's business -- not read, not required, not written -- and
+        # the overlay's own stale pin is still repaired.
+        consistent_project(self.root)
+        ledger = yaml.safe_load(self.ledger_path().read_text(encoding="utf-8"))
+        del ledger["source_body_sha256"]
+        self.ledger_path().write_text(yaml.safe_dump(ledger), encoding="utf-8")
+        article = self.root / "editions" / "issue-001" / "articles" / "article.md"
+        article.write_text("The original article, revised.", encoding="utf-8")
+        ledger_before = self.ledger_path().read_bytes()
+
+        # The default sweep still demands the whole edition be refreshable.
+        with self.assertRaisesRegex(ValidationError, "refresh never inserts keys"):
+            refresh_pins(self.root, "issue-001")
+
+        report = refresh_pins(
+            self.root, "issue-001", within=[self.overlay_path().parent]
+        )
+
+        self.assertEqual(
+            [change.pin for change in report.changes],
+            ["articles[article].source_sha256"],
+        )
+        self.assertEqual(report.files, (self.overlay_path(),))
+        self.assertEqual(self.ledger_path().read_bytes(), ledger_before)
+
     def test_review_records_are_refused_outright(self):
         make_project(self.root)
         pin_ledger_source_hash(self.root, add_extraction(self.root))

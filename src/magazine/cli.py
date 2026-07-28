@@ -67,6 +67,23 @@ def parser() -> argparse.ArgumentParser:
         metavar="PATH",
         help="Write the JSON dump to PATH instead of stdout",
     )
+    pin = actions.add_parser(
+        "pin",
+        help=(
+            "Recompute every derivable hash pin in the edition's authored "
+            "files and report each digest moved"
+        ),
+    )
+    pin.add_argument("edition_id")
+    translate = actions.add_parser(
+        "translate",
+        help=(
+            "Stage a language overlay: scaffold or reconcile its structure "
+            "and pins, and report the untranslated backlog"
+        ),
+    )
+    translate.add_argument("edition_id")
+    translate.add_argument("language")
     cover_proof = actions.add_parser(
         "cover-proof",
         help="Compile a fast cover-only SVG, PDF, PNG, and comparison report",
@@ -216,6 +233,33 @@ def main(argv: list[str] | None = None) -> int:
                 print(args.json)
             else:
                 print(payload, end="")
+        elif args.command == "pin":
+            report = magazine.pin(args.edition_id)
+            for change in report.changes:
+                print(f"{change.path}: {change.pin} {change.old} -> {change.new}")
+            print(f"repinned: {len(report.changes)} pin(s) across {len(report.files)} file(s)")
+        elif args.command == "translate":
+            report = magazine.stage_translation(args.edition_id, args.language)
+            for path in report.created:
+                print(f"created: {path}")
+            for path in report.updated:
+                print(f"updated: {path}")
+            for change in report.pin_changes:
+                print(f"repinned: {change.path}: {change.pin} {change.old} -> {change.new}")
+            for advisory in report.advisories:
+                print(f"re-translate: {advisory.pointer} ({advisory.reason})")
+            for dropped in report.dropped:
+                print(f"dropped: {dropped.pointer}: {dropped.content!r} ({dropped.note})")
+            for field in report.placeholders:
+                print(f"untranslated: {field.path}: {field.pointer}")
+            for note in report.notes:
+                print(f"note: {note}")
+            for error in report.validation_errors:
+                print(f"still invalid: {error}")
+            print(
+                f"staged {args.language}: {len(report.placeholders)} field(s) awaiting "
+                f"translation, {len(report.advisories)} advisory(ies)"
+            )
         elif args.command == "cover-proof":
             languages = (
                 None

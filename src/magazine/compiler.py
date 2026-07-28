@@ -396,6 +396,36 @@ class Magazine:
         measurement = self.measure(edition_id, language=language)
         return fit_table(measurement), measurement.ok
 
+    def pin(self, edition_id: str):
+        """Recompute every derivable hash pin in the edition's authored files.
+
+        The digests this rewrites are all *derived* facts -- the overlay's
+        base-copy hash, each article's source hash, figure caption and credit
+        pins, ledger extraction-body pins -- so refreshing them is clerical,
+        not editorial.  It is deliberately a separate, explicit command:
+        ``validate`` never repins silently, because a stale pin is sometimes
+        the only thing telling a reviewer that an input changed under an
+        approval.  Run it after the change is understood, not instead of
+        understanding it.
+        """
+
+        from .pin import refresh_pins
+
+        return refresh_pins(self.root, edition_id)
+
+    def stage_translation(self, edition_id: str, language: str):
+        """Scaffold or reconcile one language overlay against the base edition.
+
+        Everything derivable -- structure, pins, placeholder rows -- is
+        generated or repaired; everything human -- the actual translated
+        prose -- is reported as an explicit backlog so untranslated English
+        can never ship silently as a finished translation.
+        """
+
+        from .translate_stage import stage_translation
+
+        return stage_translation(self.root, edition_id, language)
+
     def build(self, edition_id: str, *, engine: str | None = None) -> BuildResult:
         """Render, impose, and package an edition in every configured language.
 
