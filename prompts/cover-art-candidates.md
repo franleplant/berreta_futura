@@ -67,6 +67,12 @@ shows that the result remains compatible with the fixed cover system. Surprise
 does not excuse darkness, muddy reproduction, visual clutter, arbitrary
 symbols, incoherent physics, or familiar AI-futurist imagery.
 
+The wildcard must also pass an impact test that the other branches do not:
+at thumbnail size, it needs an unmistakable visual event, a memorable
+silhouette, and at least one strong source of tension such as scale shock,
+precarious balance, spatial invasion, or arrested motion. A technically
+coherent but polite, static, or merely unusual object fails this branch.
+
 ## Review and selection
 
 Review the three candidates together at full size, as thumbnails, and inside the

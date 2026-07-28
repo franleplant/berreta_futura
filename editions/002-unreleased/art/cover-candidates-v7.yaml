@@ -1,0 +1,32 @@
+schema_version: 2
+round: 7
+selection_status: rejected_by_editor
+editorial_reading: >-
+  Software is increasingly assembled from reusable blocks, agents, loops,
+  teams, and knowledge systems, while coherence depends on deliberate human
+  choices.
+variants:
+  synthetic:
+    art_path: art/cover-candidate-synthetic-v7.png
+    asset_sha256: cd605c97052908cf65ff6d95d5aefd5c83dc1a50caad7e9143f5362fbb162196
+    generation_method: imagegen
+    direction: >-
+      The locked synthetic-geometry direction receives a new compression input:
+      violet, orange, and ivory modules arrive from different vectors and lock
+      into one compact central engine.
+  art_directed:
+    art_path: art/cover-candidate-art-directed-v7.png
+    asset_sha256: 4ce90b663f68d733e25375f53d4cc3dae03388c94ced5ee3c74cdf7d3b19f903
+    generation_method: imagegen
+    direction: >-
+      The locked analog-monotype direction receives a new distributed-pressure
+      input: violet plate impressions collectively reveal a central ivory
+      keystone, completed by one orange printed block.
+  wildcard:
+    art_path: art/cover-candidate-wildcard-v7.png
+    asset_sha256: 9c403f90efe011814abd6c2608d2bd03f656f532514c5929ad83c6885de61da1
+    generation_method: imagegen
+    direction: >-
+      The locked high-key fabricated-installation direction receives a new
+      scale-shock input: a monumental violet branching mechanism erupts through
+      a gallery from one ordinary orange floor plug.
