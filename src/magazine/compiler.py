@@ -594,7 +594,6 @@ class Magazine:
                 fidelity_md,
                 cover_art=variant.cover_art,
                 cover_art_size_points=layout.cover_art_size_points,
-                source_rights=[source_records[source_id].to_dict() for source_id in used_source_ids],
                 figure_placements=layout.figure_placements,
                 language=language,
                 toc=layout.toc,

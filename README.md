@@ -350,7 +350,8 @@ SHA256SUMS
 
 `preflight.json` validates page geometry, signature length, the sheet size and
 sheet count of all three booklets, cover and figure resolution, figure geometry,
-rights clearance, and studio blockers. Curated figures require captions, credits, non-colliding placement,
+and studio blockers. Rights metadata remains part of source provenance but does
+not gate preflight, builds, or releases. Curated figures require captions, credits, non-colliding placement,
 and at least 300 effective PPI. The renderer embeds
 the standard PDF fonts by default. A professional print profile is included as
 a specification, but PDF/X conversion, trim bleed, and the printer ICC output
