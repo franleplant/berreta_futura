@@ -1,25 +1,26 @@
 schema_version: 1
 edition_id: 003-unreleased
 reviewer: Independent render critic (Claude subagent)
-reviewed_at: '2026-07-27T22:57:14+00:00'
+reviewed_at: '2026-07-28T03:39:22+00:00'
 result: approved
 engine: weasyprint
 design_direction: WeasyPrint / A5 fold proof
 findings: []
-notes: 'Full inspection after the Spanish repagination: the factories article fills exactly its seven-page
-  Spanish allowance with clean flow and intact end furniture, the three shifted Spanish figures keep captions
-  and credits without collision, contents folios match the new starts, openers carry the unlabelled source
-  code flush left with byline and note beside it, ornaments print where the band earns room, inside covers
-  are blank, and both booklet impositions pair correctly. English is unchanged and clean. Findings cosmetic
-  only: two source figures clip a sliver of their own baked-in labels identically in both languages.'
+notes: 'Post-improvement rebuild: proportional opener fields, centered ledgered tail bands, ranked void
+  checks, 300ppi review crops. All 14 openers consistent across languages; all printed tail bands centered
+  without collisions; all six machine review items adjudicated deliberate (p20 opener air, p34 plate skirt,
+  p29 designed colophon ending, four correct tail drops). Booklet impositions and blank inside covers
+  verified. Three content advisories for the editor, none blocking: re-crop the curated Winter diagrams
+  (EN p12-13, ES p13-14: baked-in X sidebar; truncated BROKEN label) and the assembled-context diagram
+  (EN p21, ES p22: in-image caption sliced by frame).'
 languages:
   en:
-    reader_sha256: 302e46214684529453b45d7fe68988f84b1f258b60137731859b84e37acc42b9
-    booklet_sha256: 213341871a50154ca84f703d8d89588b46757608448a9c0ced325df6c67e5026
+    reader_sha256: 2bca5a89a0c787b6fbfde738a172b2195e142a195ca088f43f2d98854b69fa96
+    booklet_sha256: 65c4ecd801931d66a44fe46b07fceb1ecd2b816f13bd3e81e5acc6c47731e556
     page_count: 36
     machine_result: pass
   es:
-    reader_sha256: 974922a67f3f731827864bb4438bb82fa96934513e7319d9eb7eeec0572e0dc3
-    booklet_sha256: 9a7d875decb3a7f83fc852f2f484704b2a94627b2026ecf78f1a8d0452eb3891
+    reader_sha256: 06b0ccfb064fed2146c746abc30ca25d2258ecf6936e056eedbc52b48ce95fda
+    booklet_sha256: 1c8224a8cdfcbc38d9b3b68dcd0e26d19a8f075e6106eb58e5b95d0ee7bfe951
     page_count: 40
     machine_result: pass
