@@ -154,17 +154,32 @@ _COVER_PLACEHOLDER = re.compile(r"(?:\.\.\.|\b(?:TODO|TBD)\b|\[insert\b)", re.IG
 class _PageTexts:
     """One document's extracted page text, asked of ``pypdf`` at most once.
 
-    ``extract_text`` is the most expensive thing this critic asks of pypdf --
-    about 39 ms a page on edition 003 -- and a build used to pay it four times
-    over for the same reader page: once for the page's own row in
-    ``_inspect_page``, and once in each of the three ``_booklet_spread_checks``
-    passes, which impose the all-in-one booklet, the interior and the cover
-    wrap over between them every reader page again. The saving therefore lives
-    *between* those passes, which is why the store is built once per document
-    in ``inspect_render`` and handed down rather than created inside the
-    function that does the comparing: a store owned by ``_booklet_spread_checks``
-    could only ever dedupe the two halves of one side, and the third pass would
-    re-extract everything the first two already read.
+    ``extract_text`` is the most expensive thing this critic asks of pypdf:
+    measured warm and single-threaded on edition 003, 8.5 ms a page on the
+    English reader and 8.6 ms on the Spanish, rising to 17.2 ms a page on the
+    imposed interior, the dearest of the four documents. Warm and
+    single-threaded is the honest way to read those figures, because the build
+    extracts alongside the rasterizer threads. A build used to pay that cost
+    three times over for the same reader page: once for the page's own row in
+    ``_inspect_page``, once in the ``_booklet_spread_checks`` pass that imposes
+    the all-in-one booklet, and once in whichever of the interior and cover-wrap
+    passes covers it. Those two never both cover it -- ``section_reader_pages``
+    partitions the reader, the cover wrap taking pages 1, 2, ``n - 1`` and
+    ``n`` and the interior 3 through ``n - 2`` -- so only page 1 was read a
+    fourth time, and its fourth reader is the cover-placeholder check rather
+    than a third imposition. The saving therefore lives *between* those passes,
+    which is why the store is built once per document in ``inspect_render`` and
+    handed down rather than created inside the function that does the comparing:
+    a store owned by ``_booklet_spread_checks`` could only ever dedupe the two
+    halves of one side, and the pass after it would re-extract what the passes
+    before it had already read.
+
+    At that price the sharing is worth on the order of one and a half to two
+    seconds of a thirty-seven-second build, so it is the small one of the three
+    changes and the rasterizer fan-outs are where the wall clock actually went.
+    It still earns its place -- one extraction per page instead of three, 165
+    calls down to 72 on a 36-page fixture, at no cost to anything -- but it is
+    not what made the build fast.
 
     Pages are extracted on first ask, never up front. A document whose checks
     short-circuit -- a plan shorter than the booklet it is checked against, a
@@ -873,10 +888,12 @@ def _render_pages(reader_pdf: Path, output_dir: Path) -> list[Path]:
         # malformed PDF then fails as it always did, with the ``DependencyError``
         # carrying Poppler's own diagnosis, rather than with whatever pypdf
         # raised on its way to a number this function only wanted in order to
-        # divide it.  Callers reaching past ``inspect_render`` --
-        # ``tools/compare_pipelines.py`` does -- are written against that error
-        # and would not recognise a ``PdfStreamError``.  Zero plans no shards,
-        # so the branch below is the one that runs.
+        # divide it.  ``tools/compare_pipelines.py`` is the one caller that
+        # reaches this function directly, without ``inspect_render``'s prior
+        # ``PdfReader`` construction to fail first, so it is the only path where
+        # this fallback is observable at all -- and the error it observes should
+        # be this module's own, not a pypdf internal.  Zero plans no shards, so
+        # the branch below is the one that runs.
         page_count = 0
     shard_count = worker_count(page_count // 2)
     if shard_count < 2:
@@ -891,12 +908,14 @@ def _render_pages(reader_pdf: Path, output_dir: Path) -> list[Path]:
         #
         # The two ways the cuts could be wrong are not equally visible, and only
         # one of them is caught anywhere.  A gap loses pages, which
-        # ``inspect_render``'s raster-page-count check does report: dropping one
-        # window of a 118-page reader left 111 rasters and the check fired.  An
-        # overlap is the more dangerous one exactly because nothing reports it --
-        # every page is still covered, so the count matches and the check stays
-        # silent, while two ``pdftoppm`` processes write the same PNG at the same
-        # time and leave a torn file that no count can see.  ``cuts[index] + 1``
+        # ``inspect_render``'s raster-page-count check does report: a 118-page
+        # reader shards into eight windows of fourteen or fifteen pages, and
+        # dropping one of them -- ``(30, 44)`` -- left 103 of the 118 rasters,
+        # which the check fired on.  An overlap is the more dangerous one exactly
+        # because nothing reports it -- every page is still covered, so the count
+        # matches and the check stays silent, while two ``pdftoppm`` processes
+        # write the same PNG at the same time and leave a torn file that no count
+        # can see.  ``cuts[index] + 1``
         # is the whole of what rules the overlap out, by opening each window one
         # page past where the previous one closed.
         cuts = [page_count * index // shard_count for index in range(shard_count + 1)]
