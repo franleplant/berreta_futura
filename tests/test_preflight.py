@@ -47,7 +47,7 @@ def _split_documents(tmp_path: Path) -> dict[str, Path]:
     }
 
 
-def test_preflight_audits_curated_figure_resolution_geometry_and_rights(tmp_path: Path):
+def test_preflight_audits_curated_figure_resolution_and_geometry(tmp_path: Path):
     reader = tmp_path / "reader.pdf"
     booklet = tmp_path / "booklet.pdf"
     figure = tmp_path / "figure.jpg"
@@ -60,7 +60,6 @@ def test_preflight_audits_curated_figure_resolution_geometry_and_rights(tmp_path
         booklet,
         **_split_documents(tmp_path),
         cover_art=None,
-        source_rights=[],
         figure_placements=[
             {
                 "figure_id": "evidence",
@@ -71,7 +70,6 @@ def test_preflight_audits_curated_figure_resolution_geometry_and_rights(tmp_path
                 "box_points": (40, 250, 180, 120),
                 "caption": "Evidence.",
                 "credit": "Source credit.",
-                "rights_status": "private_reference",
             }
         ],
     )
@@ -80,9 +78,9 @@ def test_preflight_audits_curated_figure_resolution_geometry_and_rights(tmp_path
     assert result["low_resolution_figures"] == [
         {"figure_id": "evidence", "effective_ppi": 240.0}
     ]
-    assert result["figure_rights_blockers"] == [
-        {"figure_id": "evidence", "status": "private_reference"}
-    ]
+    assert "figure_rights_blockers" not in result
+    assert "rights_blockers" not in result
+    assert "rights_status" not in result["figures"][0]
     assert result["invalid_figure_boxes"] == []
     assert result["figure_collisions"] == []
     assert result["contrast_adjusted_figures"] == []
@@ -106,7 +104,6 @@ def test_preflight_records_automatic_print_contrast_treatment(tmp_path: Path):
         booklet,
         **_split_documents(tmp_path),
         cover_art=None,
-        source_rights=[],
         figure_placements=[
             {
                 "figure_id": "faint-evidence",
@@ -117,7 +114,6 @@ def test_preflight_records_automatic_print_contrast_treatment(tmp_path: Path):
                 "box_points": (40, 250, 180, 120),
                 "caption": "Evidence.",
                 "credit": "Source credit.",
-                "rights_status": "author_owned",
             }
         ],
     )
@@ -146,7 +142,6 @@ def test_preflight_describes_all_three_a4_signatures(tmp_path: Path):
         interior_booklet_pdf=interior,
         cover_booklet_pdf=cover,
         cover_art=None,
-        source_rights=[],
     )
 
     assert result["home_booklet"]["sheets"] == 3

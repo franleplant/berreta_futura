@@ -77,7 +77,6 @@ def inspect_package(
     cover_booklet_pdf: Path,
     cover_art: Path | None,
     cover_art_size_points: tuple[float, float] | None = None,
-    source_rights: list[dict[str, Any]],
     figure_placements: list[Any] | tuple[Any, ...] | None = None,
     language: str = "en",
 ) -> dict[str, Any]:
@@ -98,13 +97,7 @@ def inspect_package(
         cover_info["effective_ppi_at_placement"] = round(effective_at_placement, 1)
         cover_info["studio_300ppi_target_met"] = effective_at_placement >= 300
 
-    rights_blockers = [
-        {"source_id": row["id"], "status": row.get("rights", {}).get("status", "unknown")}
-        for row in source_rights
-        if row.get("rights", {}).get("public_reprint_allowed") is not True
-    ]
     figure_rows: list[dict[str, Any]] = []
-    figure_rights_blockers: list[dict[str, Any]] = []
     low_resolution_figures: list[dict[str, Any]] = []
     contrast_adjusted_figures: list[dict[str, Any]] = []
     unresolved_low_contrast_figures: list[dict[str, Any]] = []
@@ -141,17 +134,12 @@ def inspect_package(
             "effective_ppi": round(float(ppi), 1) if ppi is not None else None,
             "caption": str(value("caption", "")),
             "credit": str(value("credit", "")),
-            "rights_status": str(value("rights_status", "unknown")),
             "print_contrast": contrast,
         }
         figure_rows.append(row)
         if row["effective_ppi"] is None or row["effective_ppi"] < 300:
             low_resolution_figures.append(
                 {"figure_id": row["figure_id"], "effective_ppi": row["effective_ppi"]}
-            )
-        if row["rights_status"] not in {"licensed", "permission", "public_domain", "author_owned"}:
-            figure_rights_blockers.append(
-                {"figure_id": row["figure_id"], "status": row["rights_status"]}
             )
         if contrast and contrast["treatment"] == "contrast_strengthened":
             contrast_adjusted_figures.append(
@@ -213,11 +201,6 @@ def inspect_package(
         studio_blockers.append(messages["figure_geometry"])
     if unresolved_low_contrast_figures:
         studio_blockers.append(messages["figure_contrast"])
-    if rights_blockers:
-        studio_blockers.append(messages["rights"])
-    if figure_rights_blockers:
-        studio_blockers.append(messages["figure_rights"])
-
     return {
         "schema_version": 1,
         "result": "home_ready_studio_blocked" if studio_blockers else "ready",
@@ -249,10 +232,8 @@ def inspect_package(
         "low_resolution_figures": low_resolution_figures,
         "contrast_adjusted_figures": contrast_adjusted_figures,
         "unresolved_low_contrast_figures": unresolved_low_contrast_figures,
-        "figure_rights_blockers": figure_rights_blockers,
         "invalid_figure_boxes": invalid_figure_boxes,
         "figure_collisions": figure_collisions,
-        "rights_blockers": rights_blockers,
         "studio": {"ready": not studio_blockers, "blockers": studio_blockers},
     }
 
@@ -265,8 +246,6 @@ _MESSAGES = {
         "figure_resolution": "One or more curated figures are below 300 ppi at their rendered placement.",
         "figure_geometry": "One or more curated figure placements are invalid or collide.",
         "figure_contrast": "One or more curated figures remain too faint after print-contrast treatment.",
-        "rights": "One or more declared sources are not cleared for public reprint.",
-        "figure_rights": "One or more curated figures are not cleared for public reprint.",
     },
     "es": {
         "pdfx": "No están configurados la conversión a PDF/X-4 ni el propósito de salida de la imprenta.",
@@ -275,7 +254,5 @@ _MESSAGES = {
         "figure_resolution": "Una o más figuras seleccionadas no alcanzan 300 ppp en su tamaño de reproducción.",
         "figure_geometry": "Una o más ubicaciones de figuras seleccionadas son inválidas o se superponen.",
         "figure_contrast": "Una o más figuras seleccionadas siguen siendo demasiado tenues después del ajuste de contraste para impresión.",
-        "rights": "Una o más fuentes declaradas no están autorizadas para su reedición pública.",
-        "figure_rights": "Una o más figuras seleccionadas no están autorizadas para su reedición pública.",
     },
 }
