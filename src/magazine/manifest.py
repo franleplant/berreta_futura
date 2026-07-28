@@ -181,6 +181,30 @@ def load_edition(
         content_mode = str(row.get("content_mode", "faithful_edit"))
         if content_mode not in {"faithful_edit", "faithful_synthesis", "selected_extracts", "original_synthesis"}:
             errors.append(f"{label} has invalid content_mode: {content_mode}")
+        if (
+            source_records is not None
+            and source_ids
+            and content_mode != "original_synthesis"
+        ):
+            primary_record = source_records.get(source_ids[0])
+            if primary_record is not None and primary_record.schema_version >= 2:
+                captured_author = str(primary_record.author or "").strip()
+                captured_profile = primary_record.author_profile
+                if not captured_author or captured_profile is None:
+                    errors.append(
+                        f"{label} primary source {primary_record.id} has no captured "
+                        "author identity; recapture it with author profile evidence"
+                    )
+                else:
+                    if str(row["author"]).strip() != captured_author:
+                        errors.append(
+                            f"{label} byline must match captured source author "
+                            f"{captured_author!r}"
+                        )
+                    if author_note != captured_profile.note:
+                        errors.append(
+                            f"{label} author_note must match the captured author biography"
+                        )
         try:
             minimum_reader_pages = int(row.get("minimum_reader_pages", 1))
         except (TypeError, ValueError):

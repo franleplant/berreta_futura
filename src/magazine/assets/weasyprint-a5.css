@@ -578,21 +578,25 @@ p { margin: 0 0 5.4pt; orphans: 2; widows: 2; }
  * is the exact trap the paragraph_after comment above warns about.  List
  * items are prose -- 10pt on the reading leading in the reading measure -- so
  * they hyphenate, except the reference list: a bibliography is names, years
- * and titles, and Pyphen breaking a proper noun helps nobody.  Inline `code`
- * is an identifier, not a word, so it opts back out wherever it appears.
+ * and titles, and Pyphen breaking a proper noun helps nobody.  A name roster
+ * -- a paragraph of bullet-separated signatories, stamped `data-name-roster`
+ * where the shape is detected (html_edition.py, `_is_name_roster`) -- is the
+ * same case in paragraph clothing, so the prose selectors decline it by
+ * attribute.  Inline `code` is an identifier, not a word, so it opts back
+ * out wherever it appears.
  *
- * REVERT PATH: delete this comment and the three rules below.  Nothing else
+ * REVERT PATH: delete this comment and the four rules below.  Nothing else
  * in the stylesheet or the adapter *depends* on hyphenation -- the runt
  * binder measures whatever layout it is given, and the ladder audit reports
  * zero on an unhyphenated reader -- so the revert is one deletion, after
  * which both languages lay out exactly as before this rule shipped.
  */
-.editorial > p:not(.standfirst):not(.end-mark),
-.editorial > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark),
-article > p:not(.standfirst):not(.end-mark),
-article > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark),
-main > section > p:not(.standfirst):not(.end-mark),
-main > section > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark),
+.editorial > p:not(.standfirst):not(.end-mark):not([data-name-roster]),
+.editorial > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark):not([data-name-roster]),
+article > p:not(.standfirst):not(.end-mark):not([data-name-roster]),
+article > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark):not([data-name-roster]),
+main > section > p:not(.standfirst):not(.end-mark):not([data-name-roster]),
+main > section > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark):not([data-name-roster]),
 .editorial li, article li, main > section li {
   hyphens: auto;
   hyphenate-limit-chars: 6 3 3;
@@ -601,6 +605,13 @@ main > section > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark),
  * broken proper noun is worse than any rag, and the hanging indent already
  * owns the turn lines.  The attribute selector outranks `article li`. */
 ul[data-reference-list] li { hyphens: manual; }
+/* A name roster is proper nouns separated by bullets ("DoorDash • The Linux
+ * Foundation • Y Combinator ..."), never running prose, so the same verdict
+ * as the bibliography: no dictionary knows these words, and "Door- / Dash"
+ * is a misprint.  The prose selectors above already decline the attribute;
+ * this rule is for the roster a hyphenating `li` would otherwise hand its
+ * inherited `auto` down to. */
+p[data-name-roster] { hyphens: manual; }
 /* An identifier is not a word; `hyphens` inherits into inline spans, so code
  * inside a hyphenating paragraph or list item opts back out here. */
 code { hyphens: manual; }

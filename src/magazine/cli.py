@@ -19,7 +19,31 @@ def parser() -> argparse.ArgumentParser:
     capture.add_argument("--snapshot", type=Path, required=True, help="Raw file or directory to copy into the source archive")
     capture.add_argument("--capture-method", default="caller_supplied", help="How the supplied snapshot was acquired")
     capture.add_argument("--title")
-    capture.add_argument("--author")
+    capture.add_argument("--author", required=True)
+    author_profile = capture.add_mutually_exclusive_group(required=True)
+    author_profile.add_argument(
+        "--author-note",
+        help=(
+            "Edition-ready identity or CV context; never an article synopsis. "
+            "Requires at least one --author-evidence."
+        ),
+    )
+    author_profile.add_argument(
+        "--institutional-author",
+        action="store_true",
+        help="Explicitly omit a biography for a self-explanatory institutional byline",
+    )
+    capture.add_argument(
+        "--author-evidence",
+        action="append",
+        nargs=2,
+        default=[],
+        metavar=("URL", "SNAPSHOT"),
+        help=(
+            "Official/profile URL and sanitized snapshot supporting the author note; "
+            "repeat for additional authors or affiliations"
+        ),
+    )
     capture.add_argument("--published-at")
     capture.add_argument("--captured-at")
     capture.add_argument("--tag", action="append", default=[])
@@ -209,6 +233,12 @@ def main(argv: list[str] | None = None) -> int:
                 title=args.title, author=args.author, published_at=args.published_at,
                 captured_at=args.captured_at, tags=args.tag, primary_material=args.primary_material,
                 synopsis=args.synopsis, notes=args.notes,
+                author_note=args.author_note,
+                author_evidence=[
+                    (source_url, Path(snapshot))
+                    for source_url, snapshot in args.author_evidence
+                ],
+                institutional_author=args.institutional_author,
             )
             print(json.dumps(record.to_dict(), ensure_ascii=False, indent=2))
         elif args.command == "sources":

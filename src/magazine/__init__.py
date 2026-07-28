@@ -2,11 +2,12 @@
 
 from .compiler import BuildResult, LanguageBuildResult, Magazine
 from .errors import MagazineError, ValidationError
-from .records import SourceRecord
+from .records import AuthorProfile, SourceRecord
 from .release import ReleaseTransition
 
 __all__ = [
     "BuildResult",
+    "AuthorProfile",
     "LanguageBuildResult",
     "Magazine",
     "MagazineError",

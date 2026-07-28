@@ -68,6 +68,8 @@ def curate_source(record, sources_dir: Path, *, refresh_capture_ids: set[str] | 
     reviews = {review.capture_id: review for review in record.media_reviews}
     paths: list[Path] = []
     for descriptor in sorted(record.raw_captures, key=lambda row: str(row.get("id", ""))):
+        if str(descriptor.get("purpose") or "article") != "article":
+            continue
         bundle = str(descriptor.get("id") or "")
         if not bundle:
             raise ValidationError(f"Source {record.id} has an invalid raw capture descriptor")

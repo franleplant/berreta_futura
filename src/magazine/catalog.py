@@ -32,6 +32,21 @@ def render_sources(records: list[SourceRecord], release_state: ReleaseState | No
             lines.append(f"- Published: {record.published_at}")
         if record.tags:
             lines.append(f"- Tags: {', '.join(record.tags)}")
+        if record.author_profile is not None:
+            if record.author_profile.note:
+                lines.append(f"- Author biography: {record.author_profile.note}")
+                lines.append("- Author biography evidence:")
+                lines.extend(
+                    [
+                        f"  - {evidence.url} "
+                        f"(raw bundle `{evidence.capture_id}`)"
+                        for evidence in record.author_profile.evidence
+                    ]
+                )
+            else:
+                lines.append("- Author biography: omitted for institutional byline")
+        elif record.schema_version >= 2:
+            lines.append("- Author biography: pending; source cannot enter an edition")
         if record.primary_material:
             lines.extend(["- Primary material:", *[f"  - {url}" for url in record.primary_material]])
         rights = record.rights or {}

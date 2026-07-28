@@ -3288,6 +3288,58 @@ def test_prose_hyphenates_and_chrome_headings_and_references_never_do():
             assert not any(line.endswith("‐") for line in lines(box)), label
 
 
+def test_a_name_roster_paragraph_never_hyphenates():
+    """`data-name-roster` -- html_edition's "these are names" stamp -- opts out.
+
+    A signatories roster is proper nouns separated by bullets, and Pyphen
+    breaking one ("Door- / Dash", "Y Combin- / ator", edition 003 measured
+    both) is a misprint.  The roster below sets the same hyphenation-hungry
+    Spanish words as its unstamped twin, so a leak would show as a hyphen on
+    a page and not as a silently-passing style assertion.  Both the direct
+    case -- a roster paragraph in the article flow, which the prose selectors
+    must decline by attribute -- and the inherited one -- a roster inside a
+    hyphenating list item, which only the `p[data-name-roster]` rule can
+    reach -- stay unbroken.
+    """
+    words = _HYPHENATING_PROSE.rstrip(".").split()
+    roster = " • ".join(words)
+    body = (
+        '<article id="a" data-article-id="a">'
+        f'<p data-name-roster="true">{roster}</p>'
+        f"<p>{_HYPHENATING_PROSE}</p>"
+        f'<ul><li><p data-name-roster="true">{roster}</p></li></ul>'
+        "</article>"
+    )
+    document = _hyphenating_document(body)
+
+    rosters, prose = [], []
+    for page in document.pages:
+        for box in adapter._walk_boxes(page._page_box):
+            element = getattr(box, "element", None)
+            if element is None or type(box).__name__ != "BlockBox":
+                continue
+            if str(box.element_tag) != "p":
+                continue
+            (rosters if element.get("data-name-roster") else prose).append(box)
+
+    def lines(box) -> list[str]:
+        return [
+            adapter._box_text(line)
+            for line in adapter._walk_boxes(box)
+            if type(line).__name__ == "LineBox"
+        ]
+
+    assert len(rosters) == 2 and prose
+    for box in rosters:
+        assert box.style["hyphens"] == "manual"
+        assert adapter._measured_hyphenation(box.style) is None
+        assert not any(line.endswith("‐") for line in lines(box))
+    # The unstamped twin still hyphenates: the opt-out is the attribute, not
+    # a change to what prose is.
+    assert {b.style["hyphens"] for b in prose} == {"auto"}
+    assert any(line.endswith("‐") for b in prose for line in lines(b))
+
+
 def test_a_hyphen_ladder_is_reported_on_stderr_and_never_refused(capsys):
     """The audit WeasyPrint's missing `hyphenate-limit-lines` would have been.
 

@@ -151,15 +151,20 @@ def inspect_package(
                     ),
                 }
             )
-            if prepared.after.needs_treatment:
-                unresolved_low_contrast_figures.append(
-                    {
-                        "figure_id": row["figure_id"],
-                        "post_treatment_minimum_mark_contrast_ratio": (
-                            contrast["post_treatment_minimum_mark_contrast_ratio"]
-                        ),
-                    }
-                )
+        # Unresolved is a fact about the figure, not about whether a treatment
+        # was attempted: the ladder now ships the original bytes when no rung
+        # improves the median, so a figure can fail the floor with treatment
+        # "none".  Gating this on the adjusted branch is how the blocker went
+        # dead the first time.
+        if contrast and prepared.after.needs_treatment:
+            unresolved_low_contrast_figures.append(
+                {
+                    "figure_id": row["figure_id"],
+                    "post_treatment_minimum_mark_contrast_ratio": (
+                        contrast["post_treatment_minimum_mark_contrast_ratio"]
+                    ),
+                }
+            )
     invalid_figure_boxes: list[dict[str, Any]] = []
     figure_collisions: list[dict[str, Any]] = []
     by_page: dict[int, list[dict[str, Any]]] = {}

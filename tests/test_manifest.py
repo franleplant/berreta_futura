@@ -76,7 +76,7 @@ def make_project(
         "closing_plates": closing_plates,
         "articles": [{"id": "article", "title": "Article", "short_title": "Article",
                       "opener_variant": "edge_medallion", "author": "Author",
-                      "author_note": "Author writes about this subject for Example.", "source_ids": [source_id],
+                      "author_note": "Author is chief architect at Example Company.", "source_ids": [source_id],
                       "manuscript": "editions/issue-001/articles/article.md", "fidelity": "editions/issue-001/fidelity/article.yaml"}],
     }
     (edition_dir / "edition.yaml").write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
@@ -196,7 +196,7 @@ def add_spanish_translation(root: Path, *, engine: str | None = None) -> None:
             "id": "article",
             "title": "Artículo",
             "short_title": "Artículo",
-            "author_note": "Author escribe sobre este tema para Example.",
+            "author_note": "Author es responsable de arquitectura en Example Company.",
             "manuscript": "articles/article.md",
             "source_sha256": hashlib.sha256(source_article.read_bytes()).hexdigest(),
         }],
@@ -274,9 +274,98 @@ class ManifestTests(unittest.TestCase):
         self.assertEqual(edition.title, "Issue")
         self.assertEqual(
             edition.articles[0].author_note,
-            "Author writes about this subject for Example.",
+            "Author is chief architect at Example Company.",
         )
         self.assertEqual(edition.articles[0].source_ids, ("source-one",))
+
+    def test_schema_two_source_requires_the_captured_author_identity(self):
+        make_project(self.root)
+        record_path = (
+            self.root / "library" / "sources" / "source-one" / "record.yaml"
+        )
+        record = yaml.safe_load(record_path.read_text(encoding="utf-8"))
+        capture_id = record["raw_captures"][0]["id"]
+        record["schema_version"] = 2
+        record["author_profile"] = {
+            "note": "Author is principal engineer at Example Company.",
+            "evidence": [{
+                "url": "https://example.com/author",
+                "capture_id": capture_id,
+            }],
+        }
+        record_path.write_text(
+            yaml.safe_dump(record, sort_keys=False), encoding="utf-8"
+        )
+
+        with self.assertRaisesRegex(
+            ValidationError, "must match the captured author biography"
+        ):
+            Magazine(self.root).validate("issue-001")
+
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        manifest["articles"][0]["author_note"] = (
+            "Author is principal engineer at Example Company."
+        )
+        manifest_path.write_text(
+            yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+        )
+
+        edition = Magazine(self.root).validate("issue-001")
+        self.assertEqual(
+            edition.articles[0].author_note,
+            "Author is principal engineer at Example Company.",
+        )
+
+    def test_schema_two_source_cannot_enter_an_edition_while_identity_is_pending(self):
+        make_project(self.root)
+        record_path = (
+            self.root / "library" / "sources" / "source-one" / "record.yaml"
+        )
+        record = yaml.safe_load(record_path.read_text(encoding="utf-8"))
+        record["schema_version"] = 2
+        record.pop("author_profile", None)
+        record_path.write_text(
+            yaml.safe_dump(record, sort_keys=False), encoding="utf-8"
+        )
+
+        with self.assertRaisesRegex(
+            ValidationError, "has no captured author identity"
+        ):
+            Magazine(self.root).validate("issue-001")
+
+    def test_schema_two_source_requires_the_captured_author_byline(self):
+        make_project(self.root)
+        record_path = (
+            self.root / "library" / "sources" / "source-one" / "record.yaml"
+        )
+        record = yaml.safe_load(record_path.read_text(encoding="utf-8"))
+        capture_id = record["raw_captures"][0]["id"]
+        record["schema_version"] = 2
+        record["author_profile"] = {
+            "note": "Author is chief architect at Example Company.",
+            "evidence": [{
+                "url": "https://example.com/author",
+                "capture_id": capture_id,
+            }],
+        }
+        record_path.write_text(
+            yaml.safe_dump(record, sort_keys=False), encoding="utf-8"
+        )
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        manifest["articles"][0]["author"] = "Example Company"
+        manifest["articles"][0]["author_note"] = (
+            "Author is chief architect at Example Company."
+        )
+        manifest_path.write_text(
+            yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+        )
+
+        with self.assertRaisesRegex(
+            ValidationError, "byline must match captured source author"
+        ):
+            Magazine(self.root).validate("issue-001")
 
     def test_validate_resolves_the_first_source_s_canonical_url_onto_the_article(self):
         """One url per article, from the *first* source id, or nothing.
