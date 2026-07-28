@@ -53,65 +53,16 @@ def render_hinge(size: int) -> Image.Image:
     return image.resize((size, size), Image.Resampling.LANCZOS)
 
 
-def render_relay(size: int) -> Image.Image:
-    """Render issue 2's relay: three inputs, one switch, one output."""
-    scale = 4
-    canvas = size * scale
-    image = Image.new("RGB", (canvas, canvas), PALETTE["paper"])
-    draw = ImageDraw.Draw(image)
-
-    channels = (
-        (
-            PALETTE["violet"],
-            [(0.00, 0.17), (0.54, 0.42), (0.50, 0.49), (0.00, 0.32)],
-        ),
-        (
-            PALETTE["violet"],
-            [(0.00, 0.43), (0.52, 0.46), (0.52, 0.54), (0.00, 0.58)],
-        ),
-        (
-            PALETTE["violet"],
-            [(0.00, 0.76), (0.50, 0.51), (0.54, 0.58), (0.00, 0.91)],
-        ),
-    )
-    for color, points in channels:
-        draw.polygon(scaled_points(points, canvas), fill=color)
-
-    draw.polygon(
-        scaled_points(
-            [(0.49, 0.50), (0.59, 0.40), (0.69, 0.50), (0.59, 0.60)],
-            canvas,
-        ),
-        fill=PALETTE["ink"],
-    )
-    draw.polygon(
-        scaled_points(
-            [(0.65, 0.46), (1.00, 0.28), (1.00, 0.46), (0.65, 0.54)],
-            canvas,
-        ),
-        fill=PALETTE["ink"],
-    )
-    pivot_x = round(0.59 * canvas)
-    pivot_y = round(0.50 * canvas)
-    radius = round(0.035 * canvas)
-    draw.ellipse(
-        (pivot_x - radius, pivot_y - radius, pivot_x + radius, pivot_y + radius),
-        fill=PALETTE["signal"],
-    )
-
-    return image.resize((size, size), Image.Resampling.LANCZOS)
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Render deterministic BERRETA FUTURA cover artwork.")
     parser.add_argument("output", type=Path)
     parser.add_argument("--size", type=int, default=1800)
-    parser.add_argument("--motif", choices=("hinge", "relay"), default="hinge")
+    parser.add_argument("--motif", choices=("hinge",), default="hinge")
     args = parser.parse_args()
 
     if args.size < 512:
         parser.error("--size must be at least 512 pixels")
-    image = render_relay(args.size) if args.motif == "relay" else render_hinge(args.size)
+    image = render_hinge(args.size)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     image.save(args.output, format="PNG", optimize=True)
 

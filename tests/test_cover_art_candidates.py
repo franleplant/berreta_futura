@@ -73,6 +73,31 @@ def test_requires_editorial_reading(tmp_path: Path) -> None:
         validate_cover_art_candidates(tmp_path)
 
 
+def test_schema_two_requires_image_generated_synthetic_branch(tmp_path: Path) -> None:
+    path, record = _write_candidate_record(tmp_path)
+    record["schema_version"] = 2
+    for row in record["variants"].values():
+        row["generation_method"] = "imagegen"
+    record["variants"]["synthetic"]["generation_method"] = "deterministic"
+    path.write_text(yaml.safe_dump(record), encoding="utf-8")
+
+    with pytest.raises(
+        ValidationError,
+        match="synthetic must use generation_method imagegen",
+    ):
+        validate_cover_art_candidates(tmp_path)
+
+
+def test_schema_two_accepts_declared_generation_methods(tmp_path: Path) -> None:
+    path, record = _write_candidate_record(tmp_path)
+    record["schema_version"] = 2
+    for row in record["variants"].values():
+        row["generation_method"] = "imagegen"
+    path.write_text(yaml.safe_dump(record), encoding="utf-8")
+
+    validate_cover_art_candidates(tmp_path)
+
+
 def test_rejects_non_square_candidate(tmp_path: Path) -> None:
     path, record = _write_candidate_record(tmp_path)
     candidate = tmp_path / "art" / "wildcard.png"
