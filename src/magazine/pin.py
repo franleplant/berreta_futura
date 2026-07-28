@@ -30,8 +30,11 @@ stale ones in place.  Two rules keep it honest:
   spelling the pattern cannot see -- so after substitution each file's
   rewritten text is re-parsed with the same loader validation uses, and every
   refreshed pin must read back as its new digest.  Only when every file
-  verifies does any file reach disk: a raise, from anywhere, means the
-  working tree is exactly as the author left it.
+  verifies does any file reach disk: a raise from this module's own checks,
+  anywhere, means the working tree is exactly as the author left it.  The
+  write phase itself still belongs to the operating system -- an I/O fault
+  mid-loop can leave earlier files written -- so a caller that must stay
+  atomic under faults snapshots first, or narrows the sweep with ``within``.
 
 The function deliberately reuses the canonical hashers -- ``extraction.py``'s
 body hash, ``manifest.py``'s edition-copy hash, ``media_schema.py``'s caption
@@ -45,7 +48,7 @@ import hashlib
 import json
 import re
 import tomllib
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -92,7 +95,9 @@ class PinReport:
         return tuple(dict.fromkeys(change.path for change in self.changes))
 
 
-def refresh_pins(root: Path, edition_id: str) -> PinReport:
+def refresh_pins(
+    root: Path, edition_id: str, *, within: Iterable[Path] | None = None
+) -> PinReport:
     """Recompute every derivable pin in the edition's authored files.
 
     Covers, for the named edition: the ``source_body_sha256`` pins of every
@@ -102,14 +107,23 @@ def refresh_pins(root: Path, edition_id: str) -> PinReport:
     editorial's and each article's and section's ``source_sha256``, and each
     figure's caption and credit pins.
 
+    ``within`` narrows the sweep: when given, only pinned files under those
+    directories are examined -- everything else is neither read nor required
+    to be refreshable, exactly as if it were not there.  That is how a caller
+    with authority over one overlay (the translation stage) refreshes it
+    without demanding the rest of the edition be consistent first.  The
+    default, ``None``, sweeps the whole edition.
+
     Stale pins are rewritten in place by textual substitution and reported as
     ``PinChange`` rows; correct pins are left byte-for-byte alone.  Raises
     ``ValidationError`` when a pin key it expects is missing (it never inserts
     keys), when a target file lives under ``reviews/``, when a rewritten file
     does not re-parse to its new digests, or when the base edition itself
-    cannot be loaded -- a broken base has no truth to pin.  Every raise, from
-    any file, happens before anything is written: a failed refresh leaves the
-    working tree byte-for-byte as it found it.
+    cannot be loaded -- a broken base has no truth to pin.  Every such raise
+    happens before anything is written: a refresh this module refuses leaves
+    the working tree byte-for-byte as it found it.  (An I/O fault *during*
+    the write phase is the one thing that can still interrupt it mid-batch;
+    see the module docstring.)
     """
     root = root.resolve()
     config = _load_config(root)
@@ -129,13 +143,22 @@ def refresh_pins(root: Path, edition_id: str) -> PinReport:
         source_records=records,
     )
 
+    # The scope test is by directory ancestry, resolved on both sides, so a
+    # caller may name the overlay directory and cover whatever lives in it.
+    scope = None if within is None else tuple(Path(path).resolve() for path in within)
+
+    def in_scope(path: Path) -> bool:
+        return scope is None or any(
+            path.resolve().is_relative_to(ancestor) for ancestor in scope
+        )
+
     # Two-phase commit, in miniature: every file's rewritten text is computed
     # and verified first, and only when the whole batch verifies does any file
     # reach disk.  Otherwise a failure in the second file would leave the
     # first one changed while the report explaining the change was discarded.
     files: list[_PinnedFile] = []
-    files.extend(_refresh_ledgers(base, sources_dir, reviews_dir))
-    files.extend(_refresh_overlays(base, edition_dir, reviews_dir))
+    files.extend(_refresh_ledgers(base, sources_dir, reviews_dir, in_scope))
+    files.extend(_refresh_overlays(base, edition_dir, reviews_dir, in_scope))
     for file in files:
         file.verify()
     changes: list[PinChange] = []
@@ -281,19 +304,23 @@ class _PinnedFile:
 
 
 def _refresh_ledgers(
-    base: Edition, sources_dir: Path, reviews_dir: Path
+    base: Edition, sources_dir: Path, reviews_dir: Path, in_scope: Callable[[Path], bool]
 ) -> list[_PinnedFile]:
     """Prepare every fidelity ledger's re-pin against the extraction bodies.
 
     The expected digest is ``Extraction.body_sha256`` -- the same byte-exact
     body hash ``extraction.py`` verifies -- never a rehash invented here.  A
     covered source without a committed extraction is an error: there is
-    nothing true to pin to.  Nothing is written here; the caller verifies the
-    whole batch and only then commits it to disk.
+    nothing true to pin to.  A ledger outside the caller's scope is skipped
+    before it is even read -- out of scope means not this refresh's business,
+    stale or not.  Nothing is written here; the caller verifies the whole
+    batch and only then commits it to disk.
     """
     files: list[_PinnedFile] = []
     for article in base.articles:
         ledger_path = article.fidelity
+        if not in_scope(ledger_path):
+            continue
         data = load_structured(ledger_path)
         source_ids = ledger_source_ids(ledger_path, data)
         if not source_ids:
@@ -353,13 +380,15 @@ def _refresh_ledgers(
 
 
 def _refresh_overlays(
-    base: Edition, edition_dir: Path, reviews_dir: Path
+    base: Edition, edition_dir: Path, reviews_dir: Path, in_scope: Callable[[Path], bool]
 ) -> list[_PinnedFile]:
     """Prepare every on-disk language overlay's re-pin against the base.
 
     Overlays are found by looking, not by configuration: whatever manifests
     live under ``translations/*/edition.yaml`` are the overlays an author can
-    have left stale.  Which languages *must* exist is validation's question.
+    have left stale.  Which languages *must* exist is validation's question,
+    and an overlay outside the caller's scope is skipped unread -- a
+    half-staged sibling language must not be able to veto this one's refresh.
     Nothing is written here; the caller verifies the whole batch first.
     """
     files: list[_PinnedFile] = []
@@ -367,6 +396,8 @@ def _refresh_overlays(
     if not translations_dir.is_dir():
         return files
     for overlay_path in sorted(translations_dir.glob("*/edition.yaml")):
+        if not in_scope(overlay_path):
+            continue
         language = overlay_path.parent.name
         data = load_structured(overlay_path)
         file = _PinnedFile(overlay_path, reviews_dir)
