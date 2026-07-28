@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import math
 import re
 import shutil
@@ -21,8 +22,63 @@ CONTACT_ROWS = 4
 THUMBNAIL_WIDTH = 260
 LABEL_HEIGHT = 24
 WHITE_THRESHOLD = 245
+# SPARSE_INK_RATIO has never fired on a real page: the emptiest page edition
+# 003 printed (two closing lines above a tail ornament) still inks 0.028 of
+# its raster, seven times this bar.  The constant and the ``sparse`` field it
+# feeds stay for schema stability, but the working whitespace judgment now
+# lives in the void geometry below, which asks *where* the paper shows
+# through rather than merely how much of it does.
 SPARSE_INK_RATIO = 0.004
 GEOMETRY_TOLERANCE = 0.75
+# ``ink_ratio`` judges legibility, so WHITE_THRESHOLD deliberately ignores
+# near-white ink; the price is that pale ornament work -- the tail-art bands
+# render around grey 254 -- contributes zero ink and is invisible to it.
+# ``presence_ratio`` therefore counts every pixel that is anything but
+# untouched paper: pdftoppm renders unprinted stock as exactly 255, so
+# "below 255" is precisely "the press touched it", with no tolerance band to
+# tune and no change to what ``ink_ratio`` means downstream.
+PAPER_WHITE = 255
+# The void critic hunts unmotivated whitespace: full-measure white blocks a
+# reader falls into mid-page.  It searches the presence mask, so a pale
+# ornament terminates a void exactly the way dark type does, and it runs on
+# a raster downsampled by 8 (one cell is 4 pt at 144 dpi) because a
+# maximal-rectangle sweep at full resolution would buy sub-point precision
+# that no threshold here can use.  8 is also safely inside the rounding
+# margin that keeps a reduced cell at zero only when *every* source pixel
+# was empty: one presence pixel in an 8x8 cell averages to 255/64 =~ 4.
+VOID_DOWNSAMPLE = 8
+# Calibrated on edition 003, both languages.  The real defects -- the dead
+# bands stranded between an END mark and its tail ornament (148 pt and
+# 224 pt), the opener gaps between byline block and body text (108 pt), and
+# the closing plate's dead skirt (108 pt) -- all measure at least 108 pt
+# tall across the full live-area width.  The largest *honest* whitespace on
+# an ordinary page stops at 84 pt at full measure, or 124 pt at 86 % of it
+# (an opener's ragged byline column).  96 pt and 90 % each sit midway
+# between the tallest innocent reading and the shortest guilty one.
+VOID_MIN_HEIGHT_POINTS = 96.0
+VOID_MIN_WIDTH_FRACTION = 0.9
+# A void whose bottom edge reaches the bottom of the live area -- nothing
+# beneath it but the folio line -- is the natural shortfall of an article's
+# final page, so article last pages are excused from trailing voids (a
+# too-empty final page is the stub check's business, below).  16 pt of
+# slack is enough to read "only the folio below" as "nothing below" at any
+# plausible folio size, while every mid-page void observed clears it by
+# hundreds of points.
+VOID_TRAILING_TOLERANCE_POINTS = 16.0
+# An article whose last page carries fewer than five lines of running text
+# ends on a stub -- edition 003 strands two lines of signatories above a
+# tail ornament -- while the leanest healthy closer observed still lands
+# seven.  A running-text line is one containing any lowercase letter:
+# folios, running heads and END marks are set in caps and digits in both
+# publication languages, so they never inflate the count.
+STUB_BODY_LINE_MINIMUM = 5
+# The editorial cap when the packaged manifest is unreachable: the
+# publication ceiling, which edition 001's two-page editorial legitimately
+# used.  When ``layout.maximum_editorial_pages`` is readable from the
+# build's own edition-manifest.json -- written beside the PDFs before this
+# critic runs -- the edition's tighter declaration replaces it, so the
+# critic is never looser than the contract the edition set for itself.
+DEFAULT_EDITORIAL_PAGE_CAP = 2
 
 _STANDALONE_PUNCTUATION = re.compile(r"^[,.;:!?\u2026]+$")
 _COVER_PLACEHOLDER = re.compile(r"(?:\.\.\.|\b(?:TODO|TBD)\b|\[insert\b)", re.IGNORECASE)
@@ -44,9 +100,11 @@ def inspect_render(
 ) -> tuple[dict[str, Any], list[Path]]:
     """Rasterize and audit a reader PDF, returning a stable review bundle.
 
-    Structural defects are machine blockers. Sparse-page notices remain review
-    prompts because covers, section openers, and signature plates may be sparse
-    by design.
+    Structural defects are machine blockers. Whitespace judgments -- sparse
+    pages, unmotivated voids, articles ending on stubs, dropped tail arts --
+    remain review prompts because covers, section openers, and signature
+    plates may be sparse by design, and only a human can say whether a given
+    stretch of paper is doing design work.
 
     Three imposed documents are gated. The all-in-one booklet keeps its full
     treatment: every side rasterized, plus exact left/right text pairing against
@@ -77,6 +135,12 @@ def inspect_render(
     rendered_cover_booklet = _render_pages(
         cover_booklet_pdf, review_dir / "cover-booklet-sides"
     )
+    # The build's own manifest sits beside the PDFs before this critic runs
+    # (package_release writes it first, precisely so an interrupted build
+    # cannot pair fresh PDFs with a stale manifest), so declared layout
+    # contracts -- the edition's own editorial cap, the tail-art ledger --
+    # are read from it rather than re-hardcoded here more loosely.
+    manifest_layout = _manifest_layout(destination)
     page_rows = [
         _inspect_page(page_path, reader.pages[index], index + 1)
         for index, page_path in enumerate(rendered_pages)
@@ -198,6 +262,28 @@ def inspect_render(
     # near-white ink fails it; an unintended blank body page is one with no
     # ink a reader could see, so near-white ink fails that too.
     inside_cover_pages = {2, page_count - 1}
+    expected_contents_pages = max(1, math.ceil(len(toc) / 8))
+    first_body_page = min(toc.values(), default=3 + expected_contents_pages)
+    actual_contents_pages = first_body_page - 3
+    # The pages whose whitespace is anyone's business: covers and inside
+    # covers are sparse or blank by contract, and the contents page carries
+    # however few entries the edition has, so only the run of body pages
+    # between contents and the inside back cover is judged for voids.
+    contents_pages = set(range(3, 3 + max(actual_contents_pages, 0)))
+    body_pages = {
+        page
+        for page in range(3, page_count - 1)
+        if page not in inside_cover_pages and page not in contents_pages
+    }
+    live_area_points = _annotate_void_geometry(rendered_pages, page_rows, body_pages)
+    # Where each article sets its final line, from the same declared facts the
+    # page-cap checks already trust: its contents folio plus its page count.
+    article_last_pages = {
+        slug: toc[slug] + int(count) - 1
+        for slug, count in article_pages.items()
+        if slug in toc and int(count) > 0
+    }
+    last_page_numbers = set(article_last_pages.values())
     for row in page_rows:
         page = int(row["page"])
         if page in inside_cover_pages:
@@ -224,6 +310,58 @@ def inspect_render(
                 "error",
                 "A line contains only punctuation, which usually indicates a broken display title.",
                 page=page,
+            )
+        void = row["largest_void"]
+        if (
+            void is not None
+            and void["height_points"] >= VOID_MIN_HEIGHT_POINTS
+            and void["width_fraction"] >= VOID_MIN_WIDTH_FRACTION
+            # A trailing void on an article's final page is the article
+            # simply ending; anywhere else -- mid-article, or under a
+            # closing plate that should fill its page -- it is dead paper.
+            and not (void["trailing"] and page in last_page_numbers)
+        ):
+            issue(
+                "whitespace-void",
+                "review",
+                f"A {void['width_points']:.0f}x{void['height_points']:.0f} pt white void "
+                f"starts {void['y_points']:.0f} pt down the live area; confirm the "
+                "whitespace is doing design work.",
+                page=page,
+            )
+
+    # A machine can hear an article end on a stub even though it cannot judge
+    # the prose: the last declared page carrying almost no running text means
+    # the break upstream left a remnant, and a human should re-cut it.
+    for slug in sorted(article_last_pages):
+        last_page = article_last_pages[slug]
+        if not 1 <= last_page <= len(page_rows):
+            continue
+        line_count = int(page_rows[last_page - 1]["body_text_lines"])
+        if line_count < STUB_BODY_LINE_MINIMUM:
+            issue(
+                "article-stub-last-page",
+                "review",
+                f"The final page of '{slug}' carries only {line_count} line(s) of running "
+                "text; consider re-cutting the break so the article does not end on a stub.",
+                page=last_page,
+            )
+
+    # Tail-art reconciliation, a forward contract: when the manifest starts
+    # declaring ``layout.tail_arts``, every ornament an article declared but
+    # the typesetter dropped becomes a review prompt.  Builds that predate
+    # the key simply have nothing to reconcile.
+    for entry in manifest_layout.get("tail_arts") or ():
+        if not isinstance(entry, dict):
+            continue
+        if entry.get("declared") and not entry.get("printed"):
+            article = entry.get("article") or "unknown article"
+            reason = entry.get("drop_reason") or "no drop reason recorded"
+            issue(
+                "tail-art-dropped",
+                "review",
+                f"Tail art declared for '{article}' was not printed ({reason}); "
+                "confirm the drop is intentional.",
             )
 
     inside_cover_sides = {
@@ -284,9 +422,6 @@ def inspect_render(
             page=1,
         )
 
-    expected_contents_pages = max(1, math.ceil(len(toc) / 8))
-    first_body_page = min(toc.values(), default=3 + expected_contents_pages)
-    actual_contents_pages = first_body_page - 3
     if actual_contents_pages != expected_contents_pages:
         issue(
             "contents-pagination",
@@ -297,8 +432,14 @@ def inspect_render(
         issue("contents-folio-range", "error", "A contents folio points outside the body page range.")
     if any(count > 7 for count in article_pages.values()):
         issue("article-page-cap", "error", "A source article exceeds the seven-page reader cap.")
-    if editorial_pages is not None and editorial_pages > 2:
-        issue("editorial-page-cap", "error", "The opening editorial exceeds its two-page reader cap.")
+    editorial_page_cap = _declared_editorial_cap(manifest_layout)
+    if editorial_pages is not None and editorial_pages > editorial_page_cap:
+        issue(
+            "editorial-page-cap",
+            "error",
+            f"The opening editorial occupies {editorial_pages} reader pages; "
+            f"this edition allows {editorial_page_cap}.",
+        )
 
     errors = [row for row in issues if row["severity"] == "error"]
     review_items = [row for row in issues if row["severity"] == "review"]
@@ -316,7 +457,11 @@ def inspect_render(
             "expected_contents_pages": expected_contents_pages,
             "inside_cover_pages": sorted(inside_cover_pages),
             "article_page_cap": 7,
-            "editorial_page_cap": 2,
+            "editorial_page_cap": editorial_page_cap,
+            "live_area_points": live_area_points,
+            "void_min_height_points": VOID_MIN_HEIGHT_POINTS,
+            "void_min_width_fraction": VOID_MIN_WIDTH_FRACTION,
+            "stub_body_line_minimum": STUB_BODY_LINE_MINIMUM,
         },
         "issues": issues,
         "summary": {
@@ -487,10 +632,18 @@ def _inspect_page(path: Path, pdf_page: Any, page_number: int) -> dict[str, Any]
         ink_pixels = histogram[255]
         total_pixels = gray.width * gray.height
         bbox = ink_mask.getbbox()
-        # ``ink_ratio`` counts a pixel as ink below WHITE_THRESHOLD (245), so a
-        # 246-254 tint or hairline has a ratio of exactly 0.0.  "Blank" is
-        # therefore held to the stricter standard tools/compare_pipelines.py
-        # uses: a pure-white raster and zero extracted characters.
+        # Two masks, two questions.  ``ink_ratio`` counts a pixel as ink below
+        # WHITE_THRESHOLD (245), so a 246-254 tint or hairline has a ratio of
+        # exactly 0.0 -- it asks what a reader can *read*.  ``presence_ratio``
+        # counts everything below pure paper white, so the same pale tint is
+        # fully visible to it -- it asks what the press *printed*, which is
+        # what the void geometry must honour lest a pale ornament read as
+        # empty paper.  "Blank" is held to the stricter standard
+        # tools/compare_pipelines.py uses: a pure-white raster and zero
+        # extracted characters.
+        presence_mask = gray.point(lambda value: 255 if value < PAPER_WHITE else 0)
+        presence_pixels = presence_mask.histogram()[255]
+        presence_bbox = presence_mask.getbbox()
         pure_white = gray.getextrema() == (255, 255)
         width, height = gray.size
     text = pdf_page.extract_text() or ""
@@ -499,18 +652,175 @@ def _inspect_page(path: Path, pdf_page: Any, page_number: int) -> dict[str, Any]
         for line in text.splitlines()
         if _STANDALONE_PUNCTUATION.fullmatch(line.strip())
     ]
+    # Running text has lowercase letters; folios, running heads and END marks
+    # are set in caps and digits, in both publication languages, so counting
+    # only lines with any lowercase measures how much *body* a page carries.
+    body_text_lines = sum(
+        1
+        for line in (raw.strip() for raw in text.splitlines())
+        if line and any(character.islower() for character in line)
+    )
     ratio = ink_pixels / total_pixels if total_pixels else 0.0
+    presence_ratio = presence_pixels / total_pixels if total_pixels else 0.0
     return {
         "page": page_number,
         "pixel_dimensions": [width, height],
         "ink_ratio": round(ratio, 6),
         "ink_bbox": list(bbox) if bbox else None,
+        "presence_ratio": round(presence_ratio, 6),
+        "presence_bbox": list(presence_bbox) if presence_bbox else None,
+        "body_text_lines": body_text_lines,
+        # Filled in by ``_annotate_void_geometry`` for reader body pages; the
+        # key is present on every row so the schema does not shift per page.
+        "largest_void": None,
         "text_characters": len(text.strip()),
         "blank": pure_white and not text.strip(),
         "ink_free": ink_pixels == 0 and not text.strip(),
         "sparse": 0 < ratio < SPARSE_INK_RATIO,
         "standalone_punctuation_lines": punctuation,
     }
+
+
+def _manifest_layout(destination: Path) -> dict[str, Any]:
+    """The ``layout`` block of the package's own edition-manifest.json, or {}.
+
+    ``package_release`` writes the manifest before it calls the critic, so on
+    a real build the file is always there; the tolerance is for the critic's
+    synthetic-test harnesses and for hand-assembled packages, where a missing
+    or malformed manifest must degrade to "nothing declared" rather than
+    block the raster checks that need no manifest at all.
+    """
+
+    path = destination / "edition-manifest.json"
+    if not path.is_file():
+        return {}
+    try:
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    layout = manifest.get("layout") if isinstance(manifest, dict) else None
+    return layout if isinstance(layout, dict) else {}
+
+
+def _declared_editorial_cap(manifest_layout: dict[str, Any]) -> int:
+    """The editorial page cap this edition declared for itself, if readable.
+
+    ``layout.maximum_editorial_pages`` is the value the build resolved through
+    ``reader_layout.declared_editorial_page_cap`` -- already clamped to the
+    publication ceiling -- but a hand-assembled package could declare any
+    number, so the critic re-clamps to the publication default rather than
+    letting a manifest loosen the ERROR below it; anything unreadable falls
+    back to the publication default rather than failing the build over a
+    manifest field the raster checks never needed.
+    """
+
+    declared = manifest_layout.get("maximum_editorial_pages")
+    if isinstance(declared, int) and not isinstance(declared, bool) and declared >= 1:
+        return min(declared, DEFAULT_EDITORIAL_PAGE_CAP)
+    return DEFAULT_EDITORIAL_PAGE_CAP
+
+
+def _annotate_void_geometry(
+    rendered_pages: list[Path], page_rows: list[dict[str, Any]], body_pages: set[int]
+) -> list[float] | None:
+    """Fill each body page's ``largest_void`` row; return the live area in points.
+
+    The live area is the union of the body pages' presence boxes -- the frame
+    the design actually types into, discovered from the pages themselves so a
+    margin change never needs a constant retuned here.  Within that frame,
+    each body page is downsampled and swept for its largest all-paper
+    rectangle: voids are judged in page geometry (points, and a fraction of
+    the live measure) precisely so thresholds read like typography rather
+    than pixel counts.  Pages with no presence at all are skipped; total
+    blankness is the blank-page check's verdict, not a void.
+    """
+
+    scale = 72.0 / RASTER_DPI
+    boxes = [
+        row["presence_bbox"]
+        for row in page_rows
+        if row["page"] in body_pages and row["presence_bbox"]
+    ]
+    if not boxes:
+        return None
+    live = (
+        min(box[0] for box in boxes),
+        min(box[1] for box in boxes),
+        max(box[2] for box in boxes),
+        max(box[3] for box in boxes),
+    )
+    live_width = live[2] - live[0]
+    if live_width < VOID_DOWNSAMPLE or (live[3] - live[1]) < VOID_DOWNSAMPLE:
+        return [round(value * scale, 1) for value in live]
+    for row in page_rows:
+        page = int(row["page"])
+        if page not in body_pages or not row["presence_bbox"] or page > len(rendered_pages):
+            continue
+        with Image.open(rendered_pages[page - 1]) as opened:
+            gray = ImageOps.grayscale(opened)
+            presence = gray.point(lambda value: 255 if value < PAPER_WHITE else 0)
+            cells = presence.crop(live).reduce(VOID_DOWNSAMPLE)
+            columns, rows_count = cells.size
+            data = cells.tobytes()
+        area, cell_width, cell_height, cell_x, cell_y = _largest_empty_rectangle(
+            data, columns, rows_count
+        )
+        if not area:
+            continue
+        # ``reduce`` ceils a partial trailing cell into existence, so a void
+        # spanning the whole measure can compute a hair over the live width;
+        # clamping keeps the fraction an honest "share of the measure".
+        width_px = min(cell_width * VOID_DOWNSAMPLE, live_width)
+        height_px = cell_height * VOID_DOWNSAMPLE
+        x_px = live[0] + cell_x * VOID_DOWNSAMPLE
+        y_px = live[1] + cell_y * VOID_DOWNSAMPLE
+        trailing_gap = (live[3] - (y_px + height_px)) * scale
+        row["largest_void"] = {
+            "x_points": round(x_px * scale, 1),
+            "y_points": round(y_px * scale, 1),
+            "width_points": round(width_px * scale, 1),
+            "height_points": round(height_px * scale, 1),
+            "width_fraction": round(width_px / live_width, 3),
+            "trailing": trailing_gap <= VOID_TRAILING_TOLERANCE_POINTS,
+        }
+    return [round(value * scale, 1) for value in live]
+
+
+def _largest_empty_rectangle(
+    data: bytes, columns: int, rows_count: int
+) -> tuple[int, int, int, int, int]:
+    """Largest all-zero rectangle in a row-major byte grid.
+
+    The classic histogram-of-heights sweep: each row extends a column-height
+    histogram of consecutive empty cells, and a monotonic stack finds the
+    best rectangle ending on that row, so the whole search is linear in the
+    number of cells.  Returns ``(area, width, height, x, y)`` in cells; a
+    fully occupied grid returns all zeros.
+    """
+
+    heights = [0] * columns
+    best = (0, 0, 0, 0, 0)
+    for row_index in range(rows_count):
+        offset = row_index * columns
+        for column in range(columns):
+            heights[column] = 0 if data[offset + column] else heights[column] + 1
+        stack: list[tuple[int, int]] = []
+        for column in range(columns + 1):
+            height = heights[column] if column < columns else 0
+            start = column
+            while stack and stack[-1][1] >= height:
+                start, stacked_height = stack.pop()
+                area = stacked_height * (column - start)
+                if area > best[0]:
+                    best = (
+                        area,
+                        column - start,
+                        stacked_height,
+                        start,
+                        row_index - stacked_height + 1,
+                    )
+            stack.append((start, height))
+    return best
 
 
 def _write_contact_sheets(
