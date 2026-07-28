@@ -23,15 +23,24 @@ not from one convenient article or from generic AI imagery.
 - Judge anatomy, materials, lighting, intersections, and physical relationships
   as strictly as composition. Reject generic-AI incoherence.
 - Record the three promoted candidates and their SHA-256 digests in
-  `art/cover-candidates.yaml`. `edition.yaml` selects one production candidate.
+  `art/cover-candidates.yaml` using schema version 2 and declare each branch's
+  `generation_method`. The `synthetic` branch must declare `imagegen`.
+  `edition.yaml` selects one production candidate.
 
 ## `synthetic`
 
-Preserve the existing synthetic cover grammar unchanged: one compact abstract
-proposition, three to seven exact geometric components, a large field of
-negative space, flat opaque color, and the publication ink set. Prefer
-deterministic, editable construction. This branch provides continuity across
-editions.
+Preserve the existing synthetic cover grammar: one compact abstract
+proposition, three to seven large geometric components, a substantial field of
+negative space, and the publication ink set. Generate this branch with the
+image model, using an existing approved synthetic cover as an art-direction
+reference when one is available. The reference controls visual language,
+geometric confidence, palette discipline, and print character; it does not
+license copying the earlier composition, motif, or spatial arrangement.
+
+Controlled dimensional shading and synthetic material depth are welcome when
+they strengthen the proposition. Avoid literal diagrams, icon systems,
+generic-AI futurism, or ornamental complexity. This branch provides continuity
+through recognizable art direction rather than deterministic construction.
 
 ## `art_directed`
 

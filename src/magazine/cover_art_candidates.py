@@ -12,6 +12,7 @@ from magazine.errors import ValidationError
 
 
 COVER_ART_VARIANTS = ("synthetic", "art_directed", "wildcard")
+SUPPORTED_SCHEMA_VERSIONS = (1, 2)
 MIN_CANDIDATE_PIXELS = 1000
 MAX_CANDIDATE_PIXELS = 10000
 
@@ -63,8 +64,12 @@ def validate_cover_art_candidates(
 
     path = record_path or edition_dir / "art" / "cover-candidates.yaml"
     data = _load_mapping(path)
-    if data.get("schema_version") != 1:
-        raise ValidationError("Cover-art candidate schema_version must be 1")
+    schema_version = data.get("schema_version")
+    if schema_version not in SUPPORTED_SCHEMA_VERSIONS:
+        raise ValidationError(
+            "Cover-art candidate schema_version must be one of "
+            f"{list(SUPPORTED_SCHEMA_VERSIONS)}"
+        )
     editorial_reading = data.get("editorial_reading")
     if not isinstance(editorial_reading, str) or not editorial_reading.strip():
         raise ValidationError("Cover-art candidate record requires an editorial_reading")
@@ -93,6 +98,16 @@ def validate_cover_art_candidates(
         direction = row.get("direction")
         if not isinstance(direction, str) or not direction.strip():
             raise ValidationError(f"Cover-art variant {variant} requires a direction")
+        if schema_version >= 2:
+            generation_method = row.get("generation_method")
+            if not isinstance(generation_method, str) or not generation_method.strip():
+                raise ValidationError(
+                    f"Cover-art variant {variant} requires a generation_method"
+                )
+            if variant == "synthetic" and generation_method != "imagegen":
+                raise ValidationError(
+                    "Cover-art variant synthetic must use generation_method imagegen"
+                )
 
         declared = row.get("art_path")
         candidate = _candidate_path(edition_dir, declared, variant=variant)
