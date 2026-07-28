@@ -554,7 +554,13 @@ class ManifestTests(unittest.TestCase):
             encoding="utf-8",
         )
 
-        with self.assertRaisesRegex(ValidationError, "is stale"):
+        # The error must state the digest the overlay should carry, so the fix
+        # is a review followed by a re-pin rather than a shasum expedition.
+        expected = hashlib.sha256(editorial.read_bytes()).hexdigest()
+        with self.assertRaisesRegex(
+            ValidationError,
+            rf"is stale: source_sha256 is .* but editorial\.md hashes to {expected}",
+        ):
             Magazine(self.root).validate("issue-001")
 
     def test_load_edition_resolves_explicit_curated_figure_from_archived_source(self):
@@ -647,7 +653,11 @@ class ManifestTests(unittest.TestCase):
             yaml.safe_dump(translation, sort_keys=False, allow_unicode=True), encoding="utf-8"
         )
 
-        with self.assertRaisesRegex(ValidationError, "caption pin is stale"):
+        expected = caption_sha256("diagram", "The source diagram.")
+        with self.assertRaisesRegex(
+            ValidationError,
+            rf"caption pin is stale: .* the base caption hashes to {expected}",
+        ):
             load_translation(self.root.resolve(), base, "es")
 
     STRUCTURED_ARTICLE = (
