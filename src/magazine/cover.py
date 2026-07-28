@@ -706,8 +706,14 @@ class CoverCompiler:
             f'<g data-slot="wordmark">{head_path}<g transform="{group}">{slug}{orange}{white}</g></g>'
         ]
 
-    def _headline(self, text: str) -> list[str]:
-        value = text.upper().strip()
+    def _headline_layout(self, value: str, *, described_as: str | None = None) -> tuple[list[str], float]:
+        """The headline's line construction: balanced lines and the fitted size.
+
+        Shared between the printed face (:meth:`_headline`) and the web
+        cover's :func:`cover_headline_lines`, so both media break the issue
+        title on the same words for the same measured reasons.
+        """
+
         size = 29.0
         headline = self.design["headline"]
         width = float(headline["width"])
@@ -728,7 +734,15 @@ class CoverCompiler:
                 break
             size -= .5
         if size < 20:
-            raise CoverOverflowError(f"Cover headline cannot fit: {text}")
+            raise CoverOverflowError(
+                f"Cover headline cannot fit: {described_as if described_as is not None else value}"
+            )
+        return lines, size
+
+    def _headline(self, text: str) -> list[str]:
+        value = text.upper().strip()
+        headline = self.design["headline"]
+        lines, size = self._headline_layout(value, described_as=text)
         baseline = float(headline["top"]) + size
         leading = size * .78
         colors = (str(self.colors["ink"]), str(self.colors["violet"]), str(self.colors["ink"]))
@@ -774,9 +788,8 @@ class CoverCompiler:
         return [f'<g data-slot="deck">{"".join(paths)}</g>']
 
     def _tab_labels(self, edition: Edition) -> list[str]:
-        label = "ISSUE" if edition.language.split("-", 1)[0] == "en" else "NÚMERO"
-        issue = f"{label} {str(edition.issue_number).zfill(3)}"
-        identity = f"{edition.publication_name.upper()} / BUENOS AIRES"
+        issue = cover_tab_issue(edition)
+        identity = cover_tab_identity(edition)
         tab = self.design["tab"]
         band_x, band_width = self._tab_band()
 
@@ -1225,6 +1238,189 @@ def _cover_contributors(edition: Edition) -> str:
     if authors:
         return " / ".join(authors).upper()
     return str(edition.cover.get("deck", "")).strip()
+
+
+def materialize_wordmark_svg(publication_name: str, root: Path | None = None) -> str:
+    """The Corte bruto lockup alone, as one standalone self-contained SVG.
+
+    The markup is exactly what :meth:`CoverCompiler._wordmark` sets on the
+    printed cover -- the compressed near-black head, the skewed slug, the
+    misregistered orange under the reversed letters -- outlined from the
+    bundled Inter Bold, so no page that shows it ever consults a host font.
+    What this function adds is only a frame: a tight ``viewBox`` around the
+    lockup's ink and a transparent background, which is what lets a screen
+    surface place the mark at any size like the paste-up it is.
+
+    ``root`` is a project root whose authored cover design (inks, wordmark
+    slot) should be honoured; without one, or without a design file under it,
+    the compiler's built-in canto-vivo defaults apply.  Deterministic: the
+    same name and design yield the same bytes.
+
+    The bounds below MIRROR the sizing loop in ``_wordmark``.  Drift between
+    the two only loosens or crops the frame's padding -- the lockup itself
+    always comes from ``_wordmark`` -- and the mirror is kept rather than
+    shared because the print method's loop lives mid-layout, entangled with
+    page coordinates this frame deliberately forgets.
+    """
+
+    value = publication_name.upper().strip()
+    markup, frame, _ = _wordmark_frames(
+        CoverCompiler(root if root is not None else Path(".")), value
+    )
+    return _framed_svg(markup, frame, value)
+
+
+def materialize_favicon_svg(publication_name: str, root: Path | None = None) -> str:
+    """The lockup's slug alone -- the skewed FUTURA bar -- framed as a favicon.
+
+    A favicon is the lockup at sixteen pixels, and at sixteen pixels the whole
+    two-story paste-up is noise; the slug -- the black printer's bar with the
+    reversed letters over the misregistered orange -- is the piece of the mark
+    that still reads.  The markup is the complete lockup exactly as
+    :meth:`CoverCompiler._wordmark` sets it, with the ``viewBox`` cropped to
+    the slug's own box, so the icon is a crop of the real mark, never new
+    artwork.  A single-word publication name has no slug and gets the full
+    lockup frame instead.
+    """
+
+    value = publication_name.upper().strip()
+    markup, frame, slug_frame = _wordmark_frames(
+        CoverCompiler(root if root is not None else Path(".")), value
+    )
+    return _framed_svg(markup, slug_frame or frame, value)
+
+
+def cover_headline_lines(text: str, root: Path | None = None) -> tuple[str, ...]:
+    """The printed cover's own line construction for ``text``.
+
+    The printed face breaks the issue title into width-balanced lines measured
+    on the bundled bold (``CoverCompiler._headline_layout``) and alternates
+    the ink: odd lines set violet, staggered right.  A screen cover restating
+    the headline must break on the same words or it reads as a different
+    construction, so this returns that break -- in the text's authored casing,
+    since casing is presentation the stylesheet owns.  Raises
+    :class:`CoverOverflowError` when no size fits, exactly as the print path
+    would; callers with a single-line fallback catch it.
+    """
+
+    compiler = CoverCompiler(root if root is not None else Path("."))
+    lines, _ = compiler._headline_layout(str(text).upper().strip(), described_as=str(text))
+    words = str(text).split()
+    authored: list[str] = []
+    cursor = 0
+    for line in lines:
+        count = len(line.split())
+        authored.append(" ".join(words[cursor : cursor + count]))
+        cursor += count
+    return tuple(authored)
+
+
+def cover_tab_issue(edition: Edition) -> str:
+    """The canto-vivo tab's head label, exactly as the printed tab sets it.
+
+    Zero-padded to three digits -- the shelf-navigation grammar -- under the
+    localized issue word.  Shared by the printed tab (:meth:`_tab_labels`) and
+    the web cover's canto strip, so the two media cannot drift apart.
+    """
+
+    label = "ISSUE" if edition.language.split("-", 1)[0] == "en" else "NÚMERO"
+    return f"{label} {str(edition.issue_number).zfill(3)}"
+
+
+def cover_tab_identity(edition: Edition) -> str:
+    """The canto-vivo tab's foot: the publication's identity line.
+
+    The city is the foot's whole point -- it is what the tab says when
+    editions stand on a shelf -- and it lives here, in the cover module that
+    owns cover copy, so every surface that states the identity states the
+    same one.
+    """
+
+    return f"{edition.publication_name.upper()} / BUENOS AIRES"
+
+
+def _wordmark_frames(
+    compiler: CoverCompiler, value: str
+) -> tuple[str, tuple[float, float, float, float], tuple[float, float, float, float] | None]:
+    """The lockup markup with its tight frame and, when a slug exists, the
+    slug's own frame.
+
+    The bounds MIRROR the sizing loop in ``_wordmark``.  Drift between the two
+    only loosens or crops a frame's padding -- the lockup itself always comes
+    from ``_wordmark`` -- and the mirror is kept rather than shared because the
+    print method's loop lives mid-layout, entangled with page coordinates
+    these frames deliberately forget.
+    """
+
+    head, separator, tail = value.rpartition(" ")
+    if not separator:
+        head, tail = value, ""
+    wordmark = compiler.design["wordmark"]
+    x, top = float(wordmark["x"]), float(wordmark["top"])
+    # PAGE_HEIGHT - (pdf_baseline - 1.65) with pdf_baseline = PAGE_HEIGHT - top:
+    # the head sits 1.65pt below the slot's nominal top line.
+    baseline = top + 1.65
+    max_width = (
+        PAGE_WIDTH - float(compiler.design["tab"]["width"]) - float(wordmark["right_reserve"])
+    )
+    size, tracking, head_scale = 42.0, -3.6, 89.9
+    while size >= 25:
+        head_width = compiler.bold.measure(
+            head, size=size, tracking=tracking, horizontal_scale=head_scale
+        )
+        tail_width = compiler.bold.measure(
+            tail, size=size, tracking=tracking, horizontal_scale=105.1
+        ) if tail else 0.0
+        tail_offset = size * (97 / 42)
+        box_width = tail_width + (13 if tail else 0)
+        if max(head_width, tail_offset + box_width) <= max_width:
+            break
+        size -= .5
+    if size < 25:
+        raise CoverOverflowError(f"Publication wordmark cannot fit: {value}")
+
+    try:
+        cap_units = float(compiler.bold.font["OS/2"].sCapHeight)
+    except (KeyError, AttributeError):  # A face without OS/2 caps: use ascent.
+        cap_units = compiler.bold.ascent_units
+    cap = cap_units / compiler.bold.units * size
+    left = x - 1.0
+    top_edge = baseline - cap - 1.0
+    right = x + .36 + head_width + 1.0
+    bottom = baseline + 2.0
+    slug_frame: tuple[float, float, float, float] | None = None
+    if tail:
+        # The slug group: translate(tail_x, tail_origin_y), sheared ~10deg
+        # about its own centre.  Its ink spans group-y [8 - box_height - .65, 8]
+        # and group-x [-13, -7 + box_width]; the shear reaches at most
+        # tan(10deg) * half the box height sideways.
+        box_height = size * 1.04 - 1
+        tail_origin_y = top + size * .91
+        reach = math.tan(math.radians(10)) * (box_height + .65) / 2 + 1.0
+        slug_frame = (
+            x + tail_offset - 13 - reach - 1.0,
+            tail_origin_y + 8 - box_height - .65 - 1.0,
+            x + tail_offset - 7 + box_width + reach + 1.0,
+            tail_origin_y + 8 + 1.0,
+        )
+        right = max(right, slug_frame[2])
+        left = min(left, slug_frame[0])
+        bottom = max(bottom, slug_frame[3])
+    markup = compiler._wordmark(value)[0]
+    return markup, (left, top_edge, right, bottom), slug_frame
+
+
+def _framed_svg(markup: str, frame: tuple[float, float, float, float], value: str) -> str:
+    left, top_edge, right, bottom = frame
+    label = escape(value)
+    return (
+        '<svg xmlns="http://www.w3.org/2000/svg" '
+        f'viewBox="{left:.3f} {top_edge:.3f} {right - left:.3f} {bottom - top_edge:.3f}" '
+        f'role="img" aria-label="{label}">\n'
+        f"  <title>{label}</title>\n"
+        f"  {markup}\n"
+        "</svg>\n"
+    )
 
 
 def _back_cover_copy(edition: Edition, key: str):

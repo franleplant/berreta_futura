@@ -24,12 +24,23 @@ _ASSETS = resources.files("magazine").joinpath("assets")
 
 # Vocabulary the stylesheet may use that the semantic layer deliberately does
 # not emit -- all of it the web adapter's (web_edition.py) own page chrome.
-# ``cover-plate`` leads the cover page (html_edition.py inventories the cover
-# art without painting an element for it); ``masthead`` heads every piece page
-# with the way back to that cover; the ``page-turn`` trio is the previous/next
-# spine between piece pages.
+# The ``cover`` family is the native cover block (`_cover_lines`): the
+# lockup, headline, framed artwork, contributor register, spaced date, and
+# the ``canto`` strip translating the printed fore-edge tab; ``cover-art``
+# also stands alone as the wordmark-less fallback figure.  ``masthead`` (and
+# its lockup image) heads every piece page with the way back to the cover;
+# the ``page-turn`` trio is the previous/next spine between piece pages.
 _SCREEN_ONLY_CLASSES = frozenset(
-    {"cover-plate", "masthead", "page-turn", "page-turn-previous", "page-turn-next"}
+    {
+        "cover", "cover-wordmark", "cover-headline", "cover-headline-line",
+        "cover-art", "cover-roster", "cover-date", "cover-cue",
+        "canto", "canto-issue", "canto-identity",
+        "masthead", "masthead-wordmark",
+        "page-turn", "page-turn-previous", "page-turn-contents", "page-turn-next",
+        "colophon", "colophon-identity", "colophon-links",
+        "colophon-sibling", "colophon-language", "colophon-date",
+        "provenance-source", "figure-link",
+    }
 )
 
 
