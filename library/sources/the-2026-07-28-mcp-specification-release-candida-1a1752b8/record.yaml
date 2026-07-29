@@ -55,7 +55,5 @@ metadata:
   synopsis: 'The maintainers explain MCP 2026-07-28: a stateless core, first-class extensions, authorization
     hardening, deprecations, and full JSON Schema for tools.'
 notes: >-
-  Edition 4 editorial decision: this is the lead source for one MCP protocol-update
-  article. Include architecture-overview-ce5cb1d1 in the same article as a brief,
-  example-driven “MCP in a nutshell” section covering hosts, clients, servers,
-  resources, prompts, tools, and a concrete discovery-to-tool-call sequence.
+  Edition 4 editorial decision: develop this source as a standalone full article
+  about the MCP protocol update.

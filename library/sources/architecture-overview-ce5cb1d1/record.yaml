@@ -41,7 +41,6 @@ metadata:
   synopsis: The versioned official explanation of MCP hosts, clients, servers, data and transport layers,
     primitives, discovery, tool calls, and notifications.
 notes: >-
-  Edition 4 supporting source only; do not produce a standalone article. Use this
-  material for a brief, example-driven “MCP in a nutshell” section inside the MCP
-  specification-update article sourced primarily from
-  the-2026-07-28-mcp-specification-release-candida-1a1752b8.
+  Edition 4 editorial decision: develop this source as a standalone full
+  “MCP in a nutshell” article. Make it concrete and example-driven, covering
+  hosts, clients, servers, resources, prompts, tools, and practical uses.
