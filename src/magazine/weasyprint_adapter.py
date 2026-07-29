@@ -282,8 +282,10 @@ _CODE_CREDIT_GAP_POINTS = 4.5 * 3.15
 # 001-003: the level taken is L on ten of the sixteen codes and M on six, where M
 # and L tie at 41 modules and the tie goes up -- the same sixteen at both sizes.
 _CODE_ERROR_LEVELS = ("H", "Q", "M", "L")
-# The reading measure's own left edge inside the page area, as ``.article-tail``
-# has it: the article box is 325pt centred in the 333.0079pt live width.
+# The article reading rail inside the page area: the 325pt article box is centred
+# in the 333.0079pt live width, so title, code and prose share this 4.004pt inset.
+# The names predate the opener's move onto that rail; tail-art resolution also
+# uses the same 325pt measure below.
 _CODE_MEASURE_LEFT_POINTS = 4.004
 _CODE_MEASURE_POINTS = 325.0
 # FOLIO_BASELINE (render.py:565-577): the line the folio's two ends share.  The
@@ -300,8 +302,8 @@ _INTER_CAP_RATIO = 1490 / 2048
 # as furniture: a QR code is the one mark on a sheet that every reader already
 # knows the name of, so the caption said nothing the symbol had not, and two
 # pieces of chrome stacked in the credit line where one belonged.  The square is
-# made furniture instead by *where it stands* -- flush on the live area's left
-# edge, on the credit line's own origin, with the byline and the note set as a
+# made furniture instead by *where it stands* -- flush on the article reading
+# rail, on the credit line's own origin, with the byline and the note set as a
 # column beside it -- which is the same argument the kicker makes for `FEATURE
 # nn` and costs the page no second voice.  The URL is still set nowhere.
 # The resolution the decode gate rasterises at.  300 ppi is the publication's own
@@ -978,9 +980,9 @@ class SourceCode:
     box's own coordinates, ``left`` from its left edge and ``top`` from its
     head, positive downward -- CSS's own convention, because the opener is
     measured down from the page's head where the retired tail slot was
-    measured up from its foot.  ``left`` is *negative* by one quiet zone: the
-    flush is to the ink, so a symbol standing on the live area's left edge puts
-    its four light modules outside it.
+    measured up from its foot.  ``left`` puts the first dark module on the
+    article's reading rail: the rail's 4.004pt live-area inset less one quiet
+    zone, so the four light modules stand outside the article measure.
     """
 
     article_id: str
@@ -1021,7 +1023,7 @@ class SourceCode:
         """The first dark module's own left edge, in the same coordinates.
 
         A column is flush when its *ink* is flush: the opener's square is set
-        against the live area's left edge, the credit line's own origin, where
+        against the article reading rail, the credit line's own origin, where
         the kicker's ``FEATURE nn`` and the title's first character already
         flush, and the element therefore stands one quiet zone to the left of
         it.
@@ -1898,7 +1900,7 @@ def _pin_opener_fields(tree: Element, edition: Edition) -> None:
         height, minimum = _ARTICLE_TITLE_BOX
         size, lines = _fitted_display(
             str(declared.title),
-            _LIVE_WIDTH_POINTS,
+            _CODE_MEASURE_POINTS,
             height,
             maximum=_ARTICLE_TITLE_MAX_WITH_FIGURE if has_figure else _ARTICLE_TITLE_MAX,
             minimum=minimum,
@@ -2075,10 +2077,10 @@ def _opener_prose_field(article: Any, size: float, lines: int) -> float:
     baseline = _opener_byline_baseline(size, lines)
     ink_foot = baseline  # 7.4pt caps set no ink below their own baseline.
     code = _opener_credit_code(article)
-    column = _LIVE_WIDTH_POINTS
+    column = _CODE_MEASURE_POINTS
     if code is not None:
         ink_foot = max(ink_foot, _opener_symbol_bottom(code, size, lines))
-        column = _LIVE_WIDTH_POINTS - _credit_column_inset(code)
+        column = _CODE_MEASURE_POINTS - _credit_column_inset(code)
     note = str(getattr(article, "author_note", "") or "").strip()
     if note:
         note_lines = len(_wrap(note, "sans-medium", _NOTE_SIZE_POINTS, column))
@@ -2728,10 +2730,10 @@ def _apply_source_codes(tree: Element, codes: Mapping[str, SourceCode]) -> None:
     own constant and the URL's module, and ``top`` is measured off the byline
     the page laid out.
 
-    IT OPENS THE CREDIT LINE, FLUSH LEFT ON THE LIVE AREA.  The symbol's first
-    dark column lands on the live area's left edge -- the credit line's own
-    origin, where the kicker's ``FEATURE nn`` and the title's first character
-    already flush -- and its first dark row stands on the byline's cap top.  The
+    IT OPENS THE CREDIT LINE, FLUSH LEFT ON THE ARTICLE RAIL.  The symbol's first
+    dark column lands on the 325pt reading rail -- the credit line's own origin,
+    where the kicker's ``FEATURE nn``, the title and the prose already flush --
+    and its first dark row stands on the byline's cap top.  The
     byline and the author note then set as one column an inset to its right
     (``_fit_credit_measure``), so the row reads left to right as the reader does:
     the square, then who wrote the piece and who they are.  Nothing hangs under
@@ -2772,16 +2774,16 @@ def _credit_column_inset(code: SourceCode) -> float:
     square did not widen the printed gap by itself, and why tightening it is a
     separate decision taken separately -- see ``_CODE_CREDIT_GAP_POINTS``.
 
-    The column runs from here to the live area's right edge:
-    ``_LIVE_WIDTH_POINTS - side + 2 * quiet - gap`` wide.  It is no longer the
-    measure the retired right-flush arrangement gave the author note -- the square
-    grew by 10.5pt and the gap closed by 9.825pt, and the gap won, so the column
-    comes out 1.37-1.60pt *wider* than it was, depending on the URL's module (the
-    quiet zone grew with the square and gave part of the closure back).  Wider is the safe
-    direction: a wider measure can only shed a rag line, never take one, so no
-    author note can gain a line and no opener can gain depth from this row.
+    The column runs from here to the 325pt article rail's right edge:
+    ``_CODE_MEASURE_POINTS - side + 2 * quiet - gap`` wide.  Both the prediction
+    in ``_opener_prose_field`` and the laid-out note use that same measure, so a
+    note that gains a line when the opener narrows also deepens its white field.
     """
-    return code.symbol_right + _CODE_CREDIT_GAP_POINTS
+    # ``code.left`` is a page-content coordinate on a settled plan but is zero
+    # on the edition-only code used to predict a field.  The credit column is
+    # relative to the article rail in both cases, so its inset is the symbol's
+    # ink width, independent of either absolute placement.
+    return code.side - 2 * code.quiet + _CODE_CREDIT_GAP_POINTS
 
 
 def _fit_credit_measure(article: Element, header: Element, code: SourceCode) -> None:
@@ -2794,26 +2796,23 @@ def _fit_credit_measure(article: Element, header: Element, code: SourceCode) -> 
     single block against the square rather than as two lines with a mark at one
     end.  The note is *also* given the column's width, because it is prose-length
     (up to 160 characters on a 9.45pt leading) and would otherwise run from the
-    inset to the page's own edge and out past the live area.
+    inset to the article rail's own edge and out past its reading measure.
 
-    The line the note may take for it is free: an opener without a figure holds
-    the note inside a white field stated deep enough for it (and for the
-    symbol below it, which governs -- ``_opener_prose_field``), and an opener
-    with one hides the note entirely, so no prose can move.  In fact none is
-    taken -- the column comes out
-    a fraction *wider* than the note's old right-flush measure, which is the
-    direction that cannot cost a line (see ``_credit_column_inset``).
+    The line the note may take is accounted for: an opener without a figure
+    holds the note inside a white field predicted against this exact column
+    (``_opener_prose_field``), and an opener with a figure hides the note
+    entirely.  The settled-page credit-depth guard checks the prediction.
 
     THE BYLINE'S REFUSAL IS A DIFFERENT FAILURE NOW.  It used to run at the
     code from the left and could reach it; inset, it can no longer touch the
     square at all -- it starts past it and grows away from it.  What it can do is
     overrun the *measure's right edge*, where the old arrangement had the whole
-    of the live width in hand, so the refusal is re-derived to that edge: a
-    byline whose ink would pass the live area is refused rather than wrapped,
+    of the article rail in hand, so the refusal is re-derived to that edge: a
+    byline whose ink would pass the article rail is refused rather than wrapped,
     because it is a single zero-leading line and a wrapped one stacks two rows
     of ink on one baseline.
     """
-    column = _LIVE_WIDTH_POINTS - _credit_column_inset(code)
+    column = _CODE_MEASURE_POINTS - _credit_column_inset(code)
     inset = f"margin-left: {_credit_column_inset(code):.4f}pt"
     for note in header.iter("p"):
         if "author-note" not in _element_classes(note):
@@ -3082,9 +3081,9 @@ def _opener_source_codes(edition: Edition, document: Any) -> tuple[SourceCode, .
 
     WHERE IT STANDS.  The symbol's first dark row lands on the byline's cap
     top -- ink to ink, like every alignment a code is judged on -- and its
-    first dark column lands on the live area's left edge, the credit line's own
-    origin, where the kicker's ``FEATURE nn`` and the title's first character
-    already flush.  Square first, then the byline and the author note as one
+    first dark column lands on the article's 325pt reading rail, the credit
+    line's own origin, where the kicker's ``FEATURE nn``, the title and the
+    prose already flush.  Square first, then the byline and the author note as one
     column beside it (``_fit_credit_measure``); below the byline the square runs
     down the side of that column and into the white field the opener reserves.
 
@@ -3125,11 +3124,11 @@ def _opener_source_codes(edition: Edition, document: Any) -> tuple[SourceCode, .
                 "no byline line; the code's credit-line anchor does not exist."
             )
         top = baseline - _BYLINE_SIZE_POINTS * _INTER_CAP_RATIO - code.quiet
-        # Flush to the ink on the live area's left edge, so the element itself
-        # stands one quiet zone outside it -- four light modules of painted paper
-        # in the gutter margin, the exact mirror of the overhang the right-flush
-        # arrangement put in the fore-edge.
-        left = -code.quiet
+        # Flush the ink to the article's reading rail.  The element itself begins
+        # one quiet zone before that rail, but remains in the page content box's
+        # coordinate system because an absolutely positioned source code has the
+        # page, not the static header, as its containing block.
+        left = _CODE_MEASURE_LEFT_POINTS - code.quiet
         codes.append(replace(code, left=left, top=top))
     return tuple(sorted(codes))
 

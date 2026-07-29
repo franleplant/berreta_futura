@@ -652,18 +652,20 @@ article[data-figure-layouts~="landscape_plate_after"] h3 { margin-top: 14pt; }
 .standfirst + h3 { margin-top: 23pt; }
 /*
  * `_label` (render.py:1696-1708) is a pair, not one label: the piece's own
- * kicker in VIOLET at the live area's left and the mode -- or, for the
+ * kicker in VIOLET at its opener rail's left and the mode -- or, for the
  * editorial, `An original argument` -- right-aligned in INK.  `_credit`
  * (render.py:1710-1731) then sets `BY <AUTHOR>` in Inter-SemiBold 7.4pt caps and
  * the author note in Inter CAPTION_SIZE SLATE on a BASE*3 leading.
  *
  * The whole stack lives inside the opener's white field, whose height the
- * adapter states, so none of these metrics can move a line of prose.  It escapes
- * the reading measure by the 4.004pt that measure is inset from the live width,
- * because ReportLab draws the opener chrome across `self.left`/`self.live_width`
- * and only narrows to the reading frame for the prose below it.
+ * adapter states, so none of these metrics can move a line of prose.  Article
+ * chrome uses the same centred 325pt rail as its standfirst and running prose:
+ * title, source symbol, credit and text therefore share one left edge.  The
+ * editorial and section openers retain ReportLab's full live-width chrome,
+ * because they do not belong to the article reading-grid decision.
  */
-.editorial > header, article > header, main > section > header { margin-left: -4.004pt; margin-right: -4.004pt; }
+.editorial > header, main > section > header { margin-left: -4.004pt; margin-right: -4.004pt; }
+article > header { margin-left: 0; margin-right: 0; }
 .content-label {
   color: rgb(5.5% 7.5% 8.5%); display: flex; font-size: 6.8pt; font-weight: 500;
   justify-content: space-between; letter-spacing: .45pt; line-height: 0;
@@ -707,12 +709,12 @@ article[data-figure-layouts~="landscape_plate_after"] h3 { margin-top: 14pt; }
 /*
  * The byline and the author note are the CREDIT COLUMN, and on an article that
  * carries a source code the adapter states a `margin-left` on both: the square
- * takes the credit line's left origin, so the type beside it starts one
+ * takes the 325pt article rail's left origin, so the type beside it starts one
  * `_CODE_CREDIT_GAP_POINTS` -- 14.175pt, ink to ink -- past the symbol's last
  * dark module, and the note is given the column's width as well
  * (`_fit_credit_measure`).  Neither number can live here -- both are functions of
  * the URL's own module -- and neither is a default: an opener whose article has
- * no code keeps the full live width, which is what these two rules set.
+ * no code keeps the full 325pt article rail, which is what these two rules set.
  */
 .byline { font-size: 7.4pt; font-weight: 600; line-height: 0; margin: 0; padding-top: 12pt; text-transform: uppercase; }
 /* `_credit` advances `self.y -= 12` and then draws the note's first baseline
@@ -1232,8 +1234,8 @@ article > .landscape-plate + p { margin-top: 0; }
  *
  * The square is opener furniture: it OPENS the article's own credit line, its
  * first dark row on the byline's cap top and its first dark column flush to the
- * live area's left edge -- the same origin the kicker's `FEATURE nn` and the
- * fitted title's first character take.  The byline and the author note then set
+ * article's 325pt reading rail -- the same origin the kicker's `FEATURE nn`,
+ * the fitted title and the prose take.  The byline and the author note then set
  * as one column a gutter and a half to its right, so the row reads square, name,
  * biography, left to right, close enough to be one object.  The adapter appends it to the opener's `header` so it lands on
  * the article's first page, and it is absolutely positioned, exactly as the tail
