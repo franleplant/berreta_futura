@@ -803,6 +803,20 @@ class Magazine:
                         if illustration_plan is not None
                         else None
                     ),
+                    "illustration_direction": (
+                        _file_entry(illustration_plan.direction_path, self.root)
+                        if illustration_plan is not None
+                        and illustration_plan.direction_path is not None
+                        else None
+                    ),
+                    "illustration_references": (
+                        [
+                            _file_entry(path, self.root)
+                            for path in illustration_plan.direction.reference_paths
+                        ]
+                        if illustration_plan is not None
+                        else []
+                    ),
                     "cover_faces": {
                         "front": {
                             "input_sha256": cover.input_sha256,

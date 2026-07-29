@@ -3,6 +3,9 @@ issue_number: "001"
 title: A title for the collection
 publication_date: 2026-07-15
 editorial: editions/issue-001/editorial.md
+# For illustrated editions, copy templates/illustrations.yaml into the edition
+# and uncomment this path. The reusable direction preset is declared there.
+# art_direction_path: editions/issue-001/art/illustrations.yaml
 cover:
   headline: A title for the collection
   back_text: An independent anthology of writing worth keeping.
@@ -21,6 +24,8 @@ articles:
       - example-source-id
     manuscript: editions/issue-001/articles/example-article.md
     fidelity: editions/issue-001/fidelity/example-article.yaml
+    # Uncomment when the illustration plan declares this article-tail asset.
+    # tail_art_path: editions/issue-001/art/article-tails/example-article.png
     # Curate zero to three source-verified figures. The anchor must be __opener__
     # or exactly match a ## heading in the manuscript. Supported layouts are
     # evidence_band, evidence_band_prose, and column_plate.

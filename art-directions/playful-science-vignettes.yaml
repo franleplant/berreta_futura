@@ -1,0 +1,40 @@
+schema_version: 1
+direction:
+  name: Playful Science Vignettes
+  visual_language: >-
+    Original late-20th-century Japanese children's science-manga language,
+    especially the cheerful economy and playful gadget logic associated with
+    Doraemon-era work: friendly rounded figures, large readable expressions,
+    simple confident black contours, whimsical machines, sparse hatching,
+    restrained halftone, warm cream stock, and slightly imperfect print
+    registration. Every image is one self-contained narrative vignette, not a
+    montage or a page of panels. Use broad period cues only; never reproduce a
+    franchise character, costume, face, or signature gadget.
+  palette: >-
+    Relaxed flat spot colors over warm cream paper: sky and cobalt blue,
+    turquoise and jade green, vermilion and brick red, sunflower and mustard
+    yellow, muted violet, and occasional coral. Black ink carries the drawing.
+    The palette may vary freely between illustrations; it is not restricted to
+    the publication's house colors.
+  reference_images:
+  - art-directions/references/playful-science-square.png
+  - art-directions/references/playful-science-wide.png
+  constraints:
+  - Entirely wordless editorial storytelling
+  - One clear situation, action, or visual proposition per illustration
+  - Original rounded characters and friendly gadgets with no franchise likeness
+  - Strong silhouettes and expressions that remain legible at A5 size
+  - Thin hand-drawn frame with softly rounded corners when the composition benefits
+  - Article tails favor a wide single vignette with essential action inside the safe crop
+  - Square single vignettes are preferred for standalone placements when the layout supports them
+  - Portrait scenes are secondary and reserved for genuinely vertical subjects or closing plates
+  - Print-friendly contrast with simple black contours, sparse hatching, and restrained halftone
+  - Slightly imperfect spot-color registration and visible warm paper texture
+  avoid:
+  - Direct copies of Doraemon, Nobita, or any recognizable franchise character
+  - Blue robotic cats, signature franchise gadgets, copied costumes, or copied faces
+  - Multi-panel comic pages, montages, contact sheets, or decorative filler patterns
+  - Dense technical realism, steampunk clutter, or excessive crosshatching
+  - Modern glossy anime rendering, painterly concept art, neon cyberpunk, or photorealism
+  - Generic corporate vector art, abstract geometry, or empty symbolic decoration
+  - Decorative pseudo-writing, interface glyphs, captions, labels, or speech balloons

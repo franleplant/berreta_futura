@@ -1,0 +1,18 @@
+# Copy this file into editions/<edition-id>/art/illustrations.yaml and replace
+# the example asset with the edition's exact illustration inventory.
+schema_version: 1
+direction_preset: art-directions/playful-science-vignettes.yaml
+assets:
+- id: tail-example-article
+  role: article_tail
+  article_id: example-article
+  art_path: editions/issue-001/art/article-tails/example-article.png
+  subject: >-
+    Describe one concrete, playful situation that expresses the article's
+    central idea through people, friendly machines, objects, and action.
+  composition: >-
+    One wide self-contained vignette, not multiple panels. Keep the essential
+    faces, gesture, and visual proposition inside the safe central crop while
+    preserving the hand-drawn frame when possible.
+  alt_text: A concise description of the finished illustration.
+  credit: Illustration by the editors with Codex image generation.
