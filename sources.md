@@ -44,7 +44,7 @@ A practical model for applying AI across planning, alignment, coding, review, an
 
 The versioned official explanation of MCP hosts, clients, servers, data and transport layers, primitives, discovery, tool calls, and notifications.
 
-**Editorial note:** Edition 4 supporting source only; do not produce a standalone article. Use this material for a brief, example-driven “MCP in a nutshell” section inside the MCP specification-update article sourced primarily from the-2026-07-28-mcp-specification-release-candida-1a1752b8.
+**Editorial note:** Edition 4 editorial decision: develop this source as a standalone full “MCP in a nutshell” article. Make it concrete and example-driven, covering hosts, clients, servers, resources, prompts, tools, and practical uses.
 
 ## The 2026-07-28 MCP Specification Release Candidate — David Soria Parra, Den Delimarsky
 
@@ -66,7 +66,7 @@ The versioned official explanation of MCP hosts, clients, servers, data and tran
 
 The maintainers explain MCP 2026-07-28: a stateless core, first-class extensions, authorization hardening, deprecations, and full JSON Schema for tools.
 
-**Editorial note:** Edition 4 editorial decision: this is the lead source for one MCP protocol-update article. Include architecture-overview-ce5cb1d1 in the same article as a brief, example-driven “MCP in a nutshell” section covering hosts, clients, servers, resources, prompts, tools, and a concrete discovery-to-tool-call sequence.
+**Editorial note:** Edition 4 editorial decision: develop this source as a standalone full article about the MCP protocol update.
 
 ## Eval Engineering: the step that turns a $200 model into a $200,000 system — Argona
 
