@@ -9,6 +9,10 @@ from PIL import Image
 
 from magazine.cover_art_candidates import (
     COVER_ART_VARIANTS,
+    DEFAULT_COVER_ART_DIRECTIONS,
+    cover_art_candidate_record_path,
+    hydrate_cover_art_candidates,
+    scaffold_cover_art_candidates,
     write_cover_art_prompt_package,
     validate_cover_art_candidates,
 )
@@ -35,6 +39,56 @@ def _write_candidate_record(tmp_path: Path) -> tuple[Path, dict]:
     path = art / "cover-candidates.yaml"
     path.write_text(yaml.safe_dump(record, sort_keys=False), encoding="utf-8")
     return path, record
+
+
+def test_scaffold_uses_canonical_three_branch_contract(tmp_path: Path) -> None:
+    path = scaffold_cover_art_candidates(tmp_path)
+    record = yaml.safe_load(path.read_text(encoding="utf-8"))
+
+    assert path == cover_art_candidate_record_path(tmp_path)
+    assert record["selection_status"] == "pending_editor_choice"
+    assert tuple(record["variants"]) == COVER_ART_VARIANTS
+    for variant in COVER_ART_VARIANTS:
+        row = record["variants"][variant]
+        assert row["generation_method"] == "imagegen"
+        assert row["direction"] == DEFAULT_COVER_ART_DIRECTIONS[variant]
+        assert row["asset_sha256"] == "PENDING"
+
+
+def test_scaffold_never_overwrites_existing_cover_work(tmp_path: Path) -> None:
+    path = cover_art_candidate_record_path(tmp_path)
+    path.parent.mkdir(parents=True)
+    path.write_text("existing: true\n", encoding="utf-8")
+
+    scaffold_cover_art_candidates(tmp_path)
+
+    assert path.read_text(encoding="utf-8") == "existing: true\n"
+
+
+def test_hydrate_replaces_only_the_collection_placeholder(
+    tmp_path: Path,
+) -> None:
+    path = scaffold_cover_art_candidates(tmp_path)
+
+    hydrate_cover_art_candidates(
+        tmp_path,
+        editorial_reading="Models become systems through their surroundings.",
+    )
+
+    record = yaml.safe_load(path.read_text(encoding="utf-8"))
+    assert record["editorial_reading"] == (
+        "Models become systems through their surroundings."
+    )
+    record["editorial_reading"] = "A human-authored reading."
+    path.write_text(yaml.safe_dump(record, sort_keys=False), encoding="utf-8")
+
+    hydrate_cover_art_candidates(
+        tmp_path,
+        editorial_reading="This must not overwrite the human reading.",
+    )
+
+    preserved = yaml.safe_load(path.read_text(encoding="utf-8"))
+    assert preserved["editorial_reading"] == "A human-authored reading."
 
 
 def test_validates_exact_three_candidates_and_selected_path(tmp_path: Path) -> None:

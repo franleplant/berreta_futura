@@ -68,6 +68,31 @@ def make_project(
             "title": f"Coda {index}",
             "art_path": art_path.relative_to(root).as_posix(),
         })
+    cover_variants = {}
+    for index, variant in enumerate(
+        ("synthetic", "art_directed", "wildcard"),
+        start=1,
+    ):
+        art_path = edition_dir / "art" / f"cover-candidate-{variant}.png"
+        Image.new("RGB", (1000, 1000), (index * 50, 20, 40)).save(art_path)
+        cover_variants[variant] = {
+            "art_path": f"art/cover-candidate-{variant}.png",
+            "asset_sha256": hashlib.sha256(art_path.read_bytes()).hexdigest(),
+            "generation_method": "imagegen",
+            "direction": f"{variant} test direction",
+        }
+    (edition_dir / "art" / "cover-candidates.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 2,
+                "selection_status": "pending_editor_choice",
+                "editorial_reading": "A test cover reading.",
+                "variants": cover_variants,
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
     ledger = {"schema_version": 1, "source_ids": [source_id], "paragraphs": [{"status": "retained", "source": "The original article.", "edited": "The original article."}]}
     (edition_dir / "fidelity" / "article.yaml").write_text(yaml.safe_dump(ledger), encoding="utf-8")
     manifest = {
