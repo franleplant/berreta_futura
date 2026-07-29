@@ -50,12 +50,28 @@ def parser() -> argparse.ArgumentParser:
     capture.add_argument("--primary-material", action="append", default=[])
     capture.add_argument("--synopsis", default="")
     capture.add_argument("--notes", default="")
+    capture.add_argument(
+        "--edition",
+        help=(
+            "Collecting edition to receive this source "
+            "(default: the release ledger's intake edition)"
+        ),
+    )
     actions.add_parser("sources", help="Regenerate sources.md")
     actions.add_parser(
         "media-index",
         help="Regenerate deterministic media inventories for all raw captures",
     )
-    actions.add_parser("queue", help="Assign every unassigned source to the open edition")
+    collect = actions.add_parser(
+        "collect",
+        help="Open a collecting edition and select it for subsequent intake",
+    )
+    collect.add_argument("edition_id")
+    collect.add_argument("--issue-number", required=True, type=int)
+    actions.add_parser(
+        "queue",
+        help="Assign every unassigned source to the selected intake edition",
+    )
     validate = actions.add_parser("validate", help="Validate an edition and its fidelity ledgers")
     validate.add_argument("edition_id")
     build = actions.add_parser("build", help="Render, impose, and package an edition")
@@ -247,6 +263,7 @@ def main(argv: list[str] | None = None) -> int:
                     for source_url, snapshot in args.author_evidence
                 ],
                 institutional_author=args.institutional_author,
+                edition_id=args.edition,
             )
             print(json.dumps(record.to_dict(), ensure_ascii=False, indent=2))
         elif args.command == "sources":
@@ -254,6 +271,12 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "media-index":
             for path in magazine.index_media():
                 print(path)
+        elif args.command == "collect":
+            state = magazine.open_collection(
+                args.edition_id,
+                issue_number=args.issue_number,
+            )
+            print(json.dumps(state.to_dict(), ensure_ascii=False, indent=2))
         elif args.command == "queue":
             state = magazine.sync_release_queue()
             print(json.dumps(state.to_dict(), ensure_ascii=False, indent=2))

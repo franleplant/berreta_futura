@@ -21,7 +21,7 @@ The CLI and conversational interface are adapters over this interface. Individua
 lead URL
   -> immutable source snapshot
   -> normalized source record
-  -> assignment to the single open edition
+  -> assignment to the selected intake edition
   -> provenance-linked source bundle
   -> edition selection
   -> faithful manuscript + editorial patches
@@ -38,9 +38,9 @@ lead URL
 ## Invariants
 
 - Raw snapshots are committed beside their source record and approved artifacts are immutable and content-addressed.
-- Every captured source is assigned exactly once: either to the open edition or to one released edition.
-- Intake batches never imply edition boundaries; only an explicit release closes the open edition.
-- Release first reconciles all source records, then requires exact equality between the open queue and rendered articles' `source_ids`; a bare inventory declaration cannot silently postpone a source.
+- Every captured source is assigned exactly once: either to one collecting edition or to one released edition.
+- Several editions may collect concurrently, but one explicit intake target receives new sources by default; intake batches never create collections implicitly.
+- Release first reconciles all source records, then requires exact equality between the target edition's queue and rendered articles' `source_ids`; sources queued to other collecting editions are unaffected.
 - Release state advances only after validation and a complete deterministic build succeed.
 - The edition manifest is replaced before the authoritative ledger, and both are restored if either replacement fails.
 - Release preserves private distribution and rights restrictions; it records production completion, not public reprint permission.

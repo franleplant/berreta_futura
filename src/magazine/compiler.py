@@ -39,6 +39,7 @@ from .release import (
     ReleaseTransition,
     finalize_release,
     load_release_state,
+    open_collection,
     plan_release,
     sync_release_state,
 )
@@ -202,6 +203,7 @@ class Magazine:
         author_note: str | None = None,
         author_evidence: Iterable[tuple[str, Path]] = (),
         institutional_author: bool = False,
+        edition_id: str | None = None,
         **metadata: Any,
     ) -> SourceRecord:
         """Archive raw evidence, then store and queue its normalized source record."""
@@ -268,7 +270,7 @@ class Magazine:
                     existing, self.sources_dir, refresh_capture_ids=added
                 )
                 existing.write(self.sources_dir)
-                self.sync_release_queue()
+                self.sync_release_queue(target_edition_id=edition_id)
                 return existing
         if profile_requested:
             candidate = replace(candidate, schema_version=2)
@@ -289,7 +291,7 @@ class Magazine:
             refresh_capture_ids={str(row["id"]) for row in candidate.raw_captures},
         )
         candidate.write(self.sources_dir)
-        self.sync_release_queue()
+        self.sync_release_queue(target_edition_id=edition_id)
         return candidate
 
     def write_sources(self, destination: Path | None = None) -> Path:
@@ -311,13 +313,34 @@ class Magazine:
             paths.extend(plans)
         return tuple(paths)
 
-    def sync_release_queue(self, records: list[SourceRecord] | None = None) -> ReleaseState:
+    def sync_release_queue(
+        self,
+        records: list[SourceRecord] | None = None,
+        *,
+        target_edition_id: str | None = None,
+    ) -> ReleaseState:
         current = records if records is not None else load_records(self.sources_dir)
         for record in current:
             verify_snapshots(record, self.sources_dir)
         return sync_release_state(
             self.release_state_path,
             {record.id for record in current},
+            default_open_id="001-the-work-left-to-us",
+            target_edition_id=target_edition_id,
+        )
+
+    def open_collection(
+        self,
+        edition_id: str,
+        *,
+        issue_number: str | int,
+    ) -> ReleaseState:
+        """Open and select an edition for subsequent source intake."""
+
+        return open_collection(
+            self.release_state_path,
+            edition_id=edition_id,
+            issue_number=issue_number,
             default_open_id="001-the-work-left-to-us",
         )
 
@@ -343,11 +366,11 @@ class Magazine:
                 f"{self.primary_language!r}"
             )
         validate_illustration_plan(self.root, edition)
-        # The open edition is the only unreleased one, and the only one whose
-        # sources can still be extracted; released editions' source pins
-        # predate committed extractions and are verified opportunistically.
+        # Every collecting edition remains mutable and therefore owes the full
+        # extraction chain. Released editions' source pins predate committed
+        # extractions and are verified opportunistically.
         release_state = self._require_release_state()
-        require_extractions = edition_id == release_state.open_edition_id
+        require_extractions = edition_id in release_state.collecting_edition_ids
         for article in edition.articles:
             ledger_mode = str(load_structured(article.fidelity).get("content_mode", "faithful_edit"))
             if ledger_mode != article.content_mode:
@@ -1092,11 +1115,10 @@ class Magazine:
         except ValidationError as exc:
             return {"status": "unavailable", "errors": list(exc.errors)}
         status = _evidence_review_status(record, edition_id=edition_id, bindings=bindings)
-        # Only the open edition can still be released, so only it can *owe* an
-        # evidence review; a released edition without one is simply outside the
-        # gate's jurisdiction, not delinquent.
+        # Only collecting editions can still be released, so only they can owe
+        # an evidence review.
         if (
-            edition_id != release_state.open_edition_id
+            edition_id not in release_state.collecting_edition_ids
             and status["status"] == "required_before_release"
         ):
             status["status"] = "not_required"

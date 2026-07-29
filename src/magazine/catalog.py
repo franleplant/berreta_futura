@@ -8,10 +8,18 @@ def render_sources(records: list[SourceRecord], release_state: ReleaseState | No
     lines = ["# Sources", "", "_Generated from structured source records. Do not edit by hand._", ""]
     assignments = release_state.assignments() if release_state else {}
     if release_state:
-        lines.extend([
-            f"_Open edition: `{release_state.open_edition_id}`; {len(release_state.queued_source_ids)} queued sources._",
-            "",
-        ])
+        summaries = [
+            f"`{edition_id}` ({len(release_state.queued_source_ids_for(edition_id))} queued)"
+            for edition_id in release_state.collecting_edition_ids
+        ]
+        lines.extend(
+            [
+                f"_Intake edition: `{release_state.intake_edition_id}`. "
+                f"Open edition: `{release_state.intake_edition_id}`. "
+                f"Collecting: {', '.join(summaries)}._",
+                "",
+            ]
+        )
     if not records:
         return "\n".join(lines + ["No sources captured yet.", ""])
     for record in records:

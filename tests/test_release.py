@@ -14,6 +14,8 @@ from magazine.release import (
     _released_package_updates,
     finalize_release,
     load_release_state,
+    open_collection,
+    plan_release,
     sync_release_state,
 )
 from test_manifest import add_extraction, make_project, pin_ledger_source_hash
@@ -61,6 +63,106 @@ class ReleaseStateTests(unittest.TestCase):
         self.assertIn("Open edition: `001-the-work-left-to-us`", catalog)
         self.assertIn(f"Release: queued for `001-the-work-left-to-us`", catalog)
         self.assertIn(record.id, catalog)
+
+    def test_a_future_edition_can_receive_intake_while_the_current_one_stays_collecting(self):
+        path = self.root / "library" / "release-state.yaml"
+        path.parent.mkdir(parents=True)
+        path.write_text(yaml.safe_dump({
+            "schema_version": 1,
+            "open_edition": {
+                "id": "003-unreleased",
+                "issue_number": 3,
+                "status": "collecting",
+                "source_ids": ["edition-three-source"],
+            },
+            "released_editions": [],
+        }, sort_keys=False), encoding="utf-8")
+
+        opened = open_collection(
+            path,
+            edition_id="004-unreleased",
+            issue_number=4,
+        )
+        synced = sync_release_state(
+            path,
+            {"edition-three-source", "edition-four-source"},
+        )
+
+        self.assertEqual(opened.intake_edition_id, "004-unreleased")
+        self.assertEqual(
+            synced.queued_source_ids_for("003-unreleased"),
+            ("edition-three-source",),
+        )
+        self.assertEqual(
+            synced.queued_source_ids_for("004-unreleased"),
+            ("edition-four-source",),
+        )
+        self.assertEqual(
+            synced.assignments()["edition-four-source"],
+            "queued:004-unreleased",
+        )
+
+    def test_capture_can_target_one_of_several_collecting_editions(self):
+        magazine = Magazine(self.root)
+        magazine.open_collection("002-unreleased", issue_number=2)
+        snapshot = self.root / "article.html"
+        snapshot.write_text("article", encoding="utf-8")
+
+        record = magazine.capture(
+            "https://example.com/article",
+            snapshot=snapshot,
+            title="Article",
+            edition_id="001-the-work-left-to-us",
+        )
+
+        state = load_release_state(self.root / "library" / "release-state.yaml")
+        self.assertEqual(state.intake_edition_id, "002-unreleased")
+        self.assertEqual(
+            state.queued_source_ids_for("001-the-work-left-to-us"),
+            (record.id,),
+        )
+        self.assertEqual(state.queued_source_ids_for("002-unreleased"), ())
+
+    def test_releasing_an_older_collection_preserves_the_newer_intake_queue(self):
+        path = self.root / "library" / "release-state.yaml"
+        path.parent.mkdir(parents=True)
+        path.write_text(yaml.safe_dump({
+            "schema_version": 2,
+            "intake_edition_id": "004-unreleased",
+            "collecting_editions": [
+                {
+                    "id": "003-unreleased",
+                    "issue_number": 3,
+                    "status": "collecting",
+                    "source_ids": ["three"],
+                },
+                {
+                    "id": "004-unreleased",
+                    "issue_number": 4,
+                    "status": "collecting",
+                    "source_ids": ["four"],
+                },
+            ],
+            "released_editions": [],
+        }, sort_keys=False), encoding="utf-8")
+
+        transition = plan_release(
+            load_release_state(path),
+            edition_id="003-unreleased",
+            issue_number=3,
+            source_ids={"three"},
+            publication_date="2026-07-28",
+        )
+
+        self.assertEqual(transition.next_edition_id, "004-unreleased")
+        self.assertEqual(
+            transition.state.collecting_edition_ids,
+            ("004-unreleased",),
+        )
+        self.assertEqual(
+            transition.state.queued_source_ids_for("004-unreleased"),
+            ("four",),
+        )
 
     def prepare_releasable_project(self) -> tuple[Magazine, Path, Path]:
         make_project(self.root)
