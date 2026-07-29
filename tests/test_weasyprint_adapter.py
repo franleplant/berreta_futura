@@ -829,19 +829,24 @@ def test_the_code_opens_the_credit_line_flush_left_with_the_column_beside_it():
     The element is appended to the opener's `header`, so it lands on the
     article's first page; its geometry is the plan's own `left`/`top`, stated
     inline because both are measurements.  FLUSH IS FLUSH TO THE INK: the quiet
-    zone lives inside the element, so the box overhangs the live edge by four
-    light modules and the *first dark module* lands on it, the same origin the
-    kicker's `FEATURE nn` and the fitted title take.  NOTHING IS SET UNDER IT.
+    zone lives inside the element, so the box begins four light modules before
+    the article rail and the *first dark module* lands on it, the same origin the
+    kicker's `FEATURE nn`, fitted title and prose take.  NOTHING IS SET UNDER IT.
     """
     code = adapter._fitted_source_code(
         "article", "https://example.test/a", adapter._CODE_OPENER_SIDE_POINTS
     )
     # Placed as `_opener_source_codes` places it: first dark row on a byline
-    # cap top of an arbitrary measured baseline, first dark column on the edge.
+    # cap top of an arbitrary measured baseline, first dark column on the
+    # article's centred 325pt reading rail.
     baseline = 150.0
     top = baseline - adapter._BYLINE_SIZE_POINTS * adapter._INTER_CAP_RATIO - code.quiet
-    code = replace(code, left=-code.quiet, top=top)
-    assert code.symbol_left == pytest.approx(0.0)
+    code = replace(
+        code,
+        left=adapter._CODE_MEASURE_LEFT_POINTS - code.quiet,
+        top=top,
+    )
+    assert code.symbol_left == pytest.approx(adapter._CODE_MEASURE_LEFT_POINTS)
     assert code.symbol_top == pytest.approx(
         baseline - adapter._BYLINE_SIZE_POINTS * adapter._INTER_CAP_RATIO
     )
@@ -863,16 +868,16 @@ def test_the_code_opens_the_credit_line_flush_left_with_the_column_beside_it():
         f"width: {code.side:.4f}pt; height: {code.side:.4f}pt"
     )
     # The credit column begins one credit gap past the last dark module and runs
-    # to the live area's right edge.  Both lines of it are inset; only the note,
+    # to the article rail's right edge.  Both lines of it are inset; only the note,
     # which is prose-length, is also given the width.  The gap is measured from
     # the SYMBOL, so the quiet zone is inside it: growing the square grows the
     # quiet zone and moves the type by exactly as much, which is why the printed
     # ink-to-text distance is this constant and not this constant plus a border.
-    inset = code.symbol_right + adapter._CODE_CREDIT_GAP_POINTS
+    symbol_width = code.side - 2 * code.quiet
+    inset = symbol_width + adapter._CODE_CREDIT_GAP_POINTS
     assert adapter._CODE_CREDIT_GAP_POINTS == pytest.approx(14.175)
-    assert inset - code.symbol_right == pytest.approx(14.175)
-    assert inset - (code.left + code.side) == pytest.approx(14.175 - code.quiet)
-    column = adapter._LIVE_WIDTH_POINTS - inset
+    assert inset - symbol_width == pytest.approx(14.175)
+    column = adapter._CODE_MEASURE_POINTS - inset
     assert adapter._credit_column_inset(code) == pytest.approx(inset)
     byline = next(
         element for element in header.iter("p") if element.get("class") == "byline"
@@ -882,21 +887,7 @@ def test_the_code_opens_the_credit_line_flush_left_with_the_column_beside_it():
         element for element in header.iter("p") if element.get("class") == "author-note"
     )
     assert note.get("style") == f"margin-left: {inset:.4f}pt; width: {column:.4f}pt"
-    # And the column is a shade WIDER than the 45pt-square-at-24pt arrangement
-    # gave it -- the square grew 10.5pt and the gap closed 9.825pt, and the gap
-    # won -- which is the direction that cannot cost a rag line and so cannot
-    # change an opener's depth.  Narrower is the dangerous sign, so it is asserted.
-    old_quiet = 4 * 45.0 / code.modules
-    old_column = adapter._LIVE_WIDTH_POINTS - (45.0 - 2 * old_quiet) - 24.0
-    assert column > old_column
-    # 24 - 14.175 recovered, 55.5 - 45 spent, and two quiet zones' growth handed
-    # back: 1.37pt on the densest code this publication prints, 1.60pt on the
-    # commonest.  The sign is what matters and the arithmetic is why it holds.
-    assert column - old_column == pytest.approx(
-        (24.0 - adapter._CODE_CREDIT_GAP_POINTS)
-        - (adapter._CODE_OPENER_SIDE_POINTS - 45.0)
-        + 2 * 4 * (adapter._CODE_OPENER_SIDE_POINTS - 45.0) / code.modules
-    )
+    assert inset + column == pytest.approx(adapter._CODE_MEASURE_POINTS)
     # Nothing hangs under the square.
     assert [element for element in header.iter("p") if element.get("class") == "source-label"] == []
     # The tail figure is no longer the code's business: it stays in the tree
@@ -913,6 +904,63 @@ def test_the_code_opens_the_credit_line_flush_left_with_the_column_beside_it():
     without = _parse_article_fragment("<p>Body.</p>")
     _apply_source_codes(without, {})
     assert [element for element in without.iter("img") if element.get("class") == "source-code"] == []
+
+
+def test_a_qr_opener_prose_shares_the_title_and_symbol_left_edge():
+    """The opener's prose must not step right from its visible grid.
+
+    The title, square, lead and running body read as parts of one vertical edge,
+    so their line origins must coincide throughout the opener.  This is about
+    the article's centred 325pt prose rail, not the credit column beside the
+    square.
+    """
+    from xml.etree.ElementTree import tostring
+
+    code = adapter._fitted_source_code(
+        "article", "https://example.test/a", adapter._CODE_OPENER_SIDE_POINTS
+    )
+    code = replace(
+        code,
+        left=adapter._CODE_MEASURE_LEFT_POINTS - code.quiet,
+        top=120.0,
+    )
+    tree = _parse_article_fragment(
+        '<p class="standfirst">First body prose on the opener.</p>'
+        '<p>Running body prose continues on the opener.</p>',
+        credit=True,
+    )
+    _apply_source_codes(tree, {"article": code})
+    article = next(tree.iter("article"))
+    document = _typeset_document(tostring(article, encoding="unicode"))
+    page = document.pages[0]
+
+    title = _block_of(page, "h1")
+    standfirst = _block_by_class(page, "standfirst")
+    running = _box_of(
+        page,
+        lambda box: (
+            type(box).__name__ == "BlockBox"
+            and getattr(box, "element_tag", None) == "p"
+            and getattr(box, "element", None) is not None
+            and not adapter._element_classes(box.element)
+        ),
+    )
+    image = _box_of(
+        page,
+        lambda box: (
+            getattr(box, "element_tag", None) == "img"
+            and getattr(box, "element", None) is not None
+            and "source-code" in adapter._element_classes(box.element)
+        ),
+    )
+    title_left = title.content_box_x() * _POINTS_PER_CSS_PIXEL
+    symbol_left = image.content_box_x() * _POINTS_PER_CSS_PIXEL + code.quiet
+    standfirst_left = standfirst.content_box_x() * _POINTS_PER_CSS_PIXEL
+    running_left = running.content_box_x() * _POINTS_PER_CSS_PIXEL
+
+    assert symbol_left == pytest.approx(title_left, abs=5e-4)
+    assert standfirst_left == pytest.approx(title_left, abs=5e-4)
+    assert running_left == pytest.approx(title_left, abs=5e-4)
 
 
 def test_a_long_byline_is_compressed_within_a_readability_floor():
@@ -1645,7 +1693,9 @@ def test_a_kerned_title_wider_than_summed_is_measured_wider_and_not_narrower():
     assert shaped > summed
 
 
-def test_an_opener_title_that_outgrows_its_reserved_field_is_refused(tmp_path: Path):
+def test_an_opener_title_that_outgrows_its_reserved_field_is_refused(
+    tmp_path: Path, monkeypatch
+):
     """The defect: a fitted title takes a line the opener did not reserve room for.
 
     An opener carrying a figure ends its white field wherever the auto-fitted
@@ -1675,6 +1725,16 @@ def test_an_opener_title_that_outgrows_its_reserved_field_is_refused(tmp_path: P
     assert all(article.source_url for article in overlong.articles)
 
     render_a5_weasyprint(edition, tmp_path / "reader.pdf")  # as authored, no refusal
+    genuine_fit = adapter._fitted_display
+
+    def understated_fit(title, *args, **kwargs):
+        # Model the defect directly: the fitter claims this 30pt title occupies
+        # one line, while Pango lays it out on two against the 325pt article rail.
+        if title == _LOOSENING_TITLE:
+            return 30.0, [title]
+        return genuine_fit(title, *args, **kwargs)
+
+    monkeypatch.setattr(adapter, "_fitted_display", understated_fit)
     with pytest.raises(ValidationError) as raised:
         render_a5_weasyprint(overlong, tmp_path / "overlong.pdf")
 
@@ -2563,9 +2623,9 @@ def test_the_opener_kicker_is_flushed_by_its_ink_and_still_sets_on_one_line():
         and "label-secondary" in (box.element.get("class") or "").split(),
     )
 
-    # The flushed item's border box ends on the live area's right edge; the
+    # The flushed item's border box ends on the article rail's right edge; the
     # transform then carries its ink the trailing letter-space further right.
-    assert round((secondary.position_x + secondary.width) * _POINTS_PER_CSS_PIXEL, 4) == 377.0079
+    assert round((secondary.position_x + secondary.width) * _POINTS_PER_CSS_PIXEL, 4) == 373.0039
     ((function, (along, across)),) = secondary.style["transform"]
     assert function == "translate"
     assert (round(along.value * _POINTS_PER_CSS_PIXEL, 4), across.value) == (0.45, 0)
@@ -3650,8 +3710,10 @@ def test_the_code_top_is_measured_off_the_laid_out_byline(tmp_path: Path):
     assert code.top == pytest.approx(
         baseline - adapter._BYLINE_SIZE_POINTS * adapter._INTER_CAP_RATIO - code.quiet
     )
-    assert code.symbol_left == pytest.approx(0.0)
-    assert code.left == pytest.approx(-code.quiet), "the flush is to the ink"
+    assert code.symbol_left == pytest.approx(adapter._CODE_MEASURE_LEFT_POINTS)
+    assert code.left == pytest.approx(
+        adapter._CODE_MEASURE_LEFT_POINTS - code.quiet
+    ), "the flush is to the article-rail ink"
     assert code.side == pytest.approx(adapter._CODE_OPENER_SIDE_POINTS)
 
     # No source, no code, no error -- the editorial's case, and a source

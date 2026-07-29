@@ -1,24 +1,24 @@
 schema_version: 1
 edition_id: 004-unreleased
-reviewer: Independent render critic
-reviewed_at: '2026-07-29T19:22:19+00:00'
+reviewer: Independent opener render critic
+reviewed_at: '2026-07-29T19:44:47+00:00'
 result: approved
 engine: weasyprint
 design_direction: WeasyPrint / A5 fold proof
 findings: []
-notes: Inspected every English and Spanish reader and booklet contact sheet after final rebuild. Both
-  MCP articles have distinct full openers and substantive endings; inside covers are blank; all imposed
-  sides are upright and correctly paired; text-free closing plates are correct; no clipping, overlap,
-  stubs, figure, byline, or reflow defects remain. Machine whitespace review items are intentional opener
-  and figure rhythm.
+notes: Inspected all EN/ES reader and booklet contact sheets, all 12 article opener rasters, and every
+  automated review item after the shared 325pt opener-rail fix. Kicker, title, QR dark edge, credit block,
+  standfirst, and running prose align; QR-to-credit spacing remains consistent; no vertical movement,
+  clipping, overlap, long-byline overflow, stubs, pagination, blank-cover, imposition, or MCP-separation
+  regressions remain.
 languages:
   en:
-    reader_sha256: e57cf35bd655488da6f45f43d960559da3671678f018946ad5b4d8040be63e9d
-    booklet_sha256: 889ca4d3938b7ce7064268f1971eeb65cef68fd4fb9bb6573a9ceddb827bae22
+    reader_sha256: 83d88f1b1cf9f8258d999df6f8aca782d845da81330895c3a34273c5c11e2b3c
+    booklet_sha256: 38ecf416d2cb3436d06aadd1ec2c95e81b60999f7ee35580ec8b4232670e4fd4
     page_count: 40
     machine_result: pass
   es:
-    reader_sha256: 98ba6f59cde85627ea58d4d9dbd663fe55104b3a0a71ac374bece79f12feee59
-    booklet_sha256: 8875305d596d0402ee9c150b88ad63569cbc6a5b7ec9cc00fd6c41a73fbbcd87
+    reader_sha256: 39c391126a6e92b3b70173715584eca8bb8601f24e0a993d89eac500cf2d0b7d
+    booklet_sha256: bb421d125ecf6f37d940decdee2cfab742876080d9892b9153256c999f158cd3
     page_count: 40
     machine_result: pass
