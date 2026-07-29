@@ -14,22 +14,49 @@ from .io import dump_yaml, load_structured
 
 @dataclass(frozen=True)
 class ReleaseState:
-    open_edition: dict[str, Any]
+    collecting_editions: tuple[dict[str, Any], ...]
+    intake_edition_id: str
     released_editions: tuple[dict[str, Any], ...]
-    schema_version: int = 1
+    schema_version: int = 2
+
+    @property
+    def open_edition(self) -> dict[str, Any]:
+        """Compatibility view of the edition currently receiving intake."""
+
+        return self.collecting_edition(self.intake_edition_id)
 
     @property
     def open_edition_id(self) -> str:
-        return str(self.open_edition["id"])
+        """Compatibility name for the edition currently receiving intake."""
+
+        return self.intake_edition_id
 
     @property
     def queued_source_ids(self) -> tuple[str, ...]:
-        return tuple(str(value) for value in self.open_edition.get("source_ids", []))
+        """Compatibility view of the intake edition's source queue."""
+
+        return self.queued_source_ids_for(self.intake_edition_id)
+
+    @property
+    def collecting_edition_ids(self) -> tuple[str, ...]:
+        return tuple(str(edition["id"]) for edition in self.collecting_editions)
+
+    def collecting_edition(self, edition_id: str) -> dict[str, Any]:
+        for edition in self.collecting_editions:
+            if str(edition.get("id")) == edition_id:
+                return dict(edition)
+        raise ValidationError(f"Edition is not collecting: {edition_id}")
+
+    def queued_source_ids_for(self, edition_id: str) -> tuple[str, ...]:
+        edition = self.collecting_edition(edition_id)
+        return tuple(str(value) for value in edition.get("source_ids", []))
 
     def assignments(self) -> dict[str, str]:
         result: dict[str, str] = {}
-        for source_id in self.queued_source_ids:
-            result[source_id] = f"queued:{self.open_edition_id}"
+        for edition in self.collecting_editions:
+            edition_id = str(edition["id"])
+            for source_id in edition.get("source_ids", []):
+                result[str(source_id)] = f"queued:{edition_id}"
         for edition in self.released_editions:
             edition_id = str(edition["id"])
             for source_id in edition.get("source_ids", []):
@@ -38,8 +65,11 @@ class ReleaseState:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "schema_version": self.schema_version,
-            "open_edition": dict(self.open_edition),
+            "schema_version": 2,
+            "intake_edition_id": self.intake_edition_id,
+            "collecting_editions": [
+                dict(edition) for edition in self.collecting_editions
+            ],
             "released_editions": [dict(edition) for edition in self.released_editions],
         }
 
@@ -57,40 +87,78 @@ class ReleaseTransition:
 def load_release_state(path: Path, *, default_open_id: str = "001-unreleased") -> ReleaseState:
     if not path.is_file():
         return ReleaseState(
-            open_edition={
-                "id": default_open_id,
-                "issue_number": 1,
-                "status": "collecting",
-                "source_ids": [],
-            },
+            collecting_editions=(_collecting_edition(default_open_id, 1),),
+            intake_edition_id=default_open_id,
             released_editions=(),
         )
     data = load_structured(path)
-    open_edition = data.get("open_edition")
+    schema_version = int(data.get("schema_version", 1))
+    if schema_version == 1:
+        legacy_open = data.get("open_edition")
+        if isinstance(legacy_open, dict):
+            normalized_open = dict(legacy_open)
+            normalized_open["status"] = "collecting"
+            collecting = [normalized_open]
+        else:
+            collecting = []
+        intake_edition_id = str(
+            legacy_open.get("id") if isinstance(legacy_open, dict) else ""
+        )
+    elif schema_version == 2:
+        collecting = data.get("collecting_editions", [])
+        intake_edition_id = str(data.get("intake_edition_id") or "")
+    else:
+        raise ValidationError(f"Unsupported release state schema_version: {schema_version}")
     released = data.get("released_editions", [])
     errors: list[str] = []
-    if not isinstance(open_edition, dict):
-        errors.append("Release state requires an open_edition mapping")
-        open_edition = {}
-    for key in ("id", "issue_number", "status", "source_ids"):
-        if open_edition.get(key) in (None, ""):
-            errors.append(f"Open edition missing: {key}")
-    if not isinstance(open_edition.get("source_ids"), list):
-        errors.append("Open edition source_ids must be a list")
+    if not isinstance(collecting, list) or not collecting:
+        errors.append("Release state requires at least one collecting edition")
+        collecting = []
+    elif any(not isinstance(item, dict) for item in collecting):
+        errors.append("collecting_editions must be a list of mappings")
+        collecting = []
+    for edition in collecting:
+        label = str(edition.get("id") or "<unknown>")
+        for key in ("id", "issue_number", "status", "source_ids"):
+            if edition.get(key) in (None, ""):
+                errors.append(f"Collecting edition {label} missing: {key}")
+        if edition.get("status") != "collecting":
+            errors.append(f"Collecting edition {label} status must be collecting")
+        if not isinstance(edition.get("source_ids"), list):
+            errors.append(f"Collecting edition {label} source_ids must be a list")
+    collecting_ids = [str(item.get("id")) for item in collecting]
+    if len(set(collecting_ids)) != len(collecting_ids):
+        errors.append("Collecting edition ids must be unique")
+    if intake_edition_id not in collecting_ids:
+        errors.append("intake_edition_id must name a collecting edition")
     if not isinstance(released, list) or any(not isinstance(item, dict) for item in released):
         errors.append("released_editions must be a list of mappings")
         released = []
     if errors:
         raise ValidationError(errors)
-    state = ReleaseState(dict(open_edition), tuple(dict(item) for item in released), int(data.get("schema_version", 1)))
+    state = ReleaseState(
+        tuple(dict(item) for item in collecting),
+        intake_edition_id,
+        tuple(dict(item) for item in released),
+    )
     assignments = state.assignments()
-    expected = len(state.queued_source_ids) + sum(len(item.get("source_ids", [])) for item in state.released_editions)
+    expected = sum(
+        len(item.get("source_ids", [])) for item in state.collecting_editions
+    ) + sum(len(item.get("source_ids", [])) for item in state.released_editions)
     if len(assignments) != expected:
-        raise ValidationError("A source may appear in only one open or released edition")
+        raise ValidationError(
+            "A source may appear in only one collecting or released edition"
+        )
     return state
 
 
-def sync_release_state(path: Path, source_ids: set[str], *, default_open_id: str = "001-unreleased") -> ReleaseState:
+def sync_release_state(
+    path: Path,
+    source_ids: set[str],
+    *,
+    default_open_id: str = "001-unreleased",
+    target_edition_id: str | None = None,
+) -> ReleaseState:
     state = load_release_state(path, default_open_id=default_open_id)
     assignments = state.assignments()
     unassigned = sorted(source_ids - assignments.keys())
@@ -99,9 +167,73 @@ def sync_release_state(path: Path, source_ids: set[str], *, default_open_id: str
         raise ValidationError(f"Release state references unknown sources: {', '.join(unknown)}")
     if not unassigned and path.is_file():
         return state
-    open_edition = dict(state.open_edition)
-    open_edition["source_ids"] = sorted(set(state.queued_source_ids) | set(unassigned))
-    updated = ReleaseState(open_edition, state.released_editions, state.schema_version)
+    destination_id = target_edition_id or state.intake_edition_id
+    state.collecting_edition(destination_id)
+    collecting: list[dict[str, Any]] = []
+    for edition in state.collecting_editions:
+        row = dict(edition)
+        if str(row["id"]) == destination_id:
+            row["source_ids"] = sorted(
+                set(str(value) for value in row.get("source_ids", []))
+                | set(unassigned)
+            )
+        collecting.append(row)
+    updated = ReleaseState(
+        tuple(collecting),
+        state.intake_edition_id,
+        state.released_editions,
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(dump_yaml(updated.to_dict()), encoding="utf-8")
+    return updated
+
+
+def open_collection(
+    path: Path,
+    *,
+    edition_id: str,
+    issue_number: str | int,
+    select_for_intake: bool = True,
+    default_open_id: str = "001-unreleased",
+) -> ReleaseState:
+    """Create a collecting edition and optionally make it the intake target."""
+
+    clean_id = str(edition_id or "").strip()
+    if not clean_id:
+        raise ValidationError("Collecting edition id cannot be empty")
+    try:
+        number = int(issue_number)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError("Collecting edition issue_number must be an integer") from exc
+    if number < 1:
+        raise ValidationError("Collecting edition issue_number must be positive")
+    state = load_release_state(path, default_open_id=default_open_id)
+    all_ids = set(state.collecting_edition_ids) | {
+        str(item.get("id")) for item in state.released_editions
+    }
+    if clean_id in all_ids:
+        if clean_id in state.collecting_edition_ids and select_for_intake:
+            updated = ReleaseState(
+                state.collecting_editions,
+                clean_id,
+                state.released_editions,
+            )
+            path.write_text(dump_yaml(updated.to_dict()), encoding="utf-8")
+            return updated
+        raise ValidationError(f"Edition id is already in use: {clean_id}")
+    used_numbers = {
+        int(item["issue_number"])
+        for item in (*state.collecting_editions, *state.released_editions)
+        if str(item.get("issue_number", "")).isdigit()
+    }
+    if number in used_numbers:
+        raise ValidationError(f"Edition issue_number is already in use: {number}")
+    collecting = (*state.collecting_editions, _collecting_edition(clean_id, number))
+    updated = ReleaseState(
+        collecting,
+        clean_id if select_for_intake else state.intake_edition_id,
+        state.released_editions,
+    )
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(dump_yaml(updated.to_dict()), encoding="utf-8")
     return updated
@@ -119,14 +251,16 @@ def plan_release(
     """Validate and construct a release transition without writing anything."""
 
     errors: list[str] = []
-    if state.open_edition_id != edition_id:
-        errors.append(
-            f"Cannot release {edition_id}: the open edition is {state.open_edition_id}"
-        )
-    if not state.queued_source_ids:
+    if edition_id not in state.collecting_edition_ids:
+        errors.append(f"Cannot release {edition_id}: the edition is not collecting")
+        queued: set[str] = set()
+        collecting_edition: dict[str, Any] = {}
+    else:
+        collecting_edition = state.collecting_edition(edition_id)
+        queued = set(state.queued_source_ids_for(edition_id))
+    if not queued:
         errors.append("Cannot release an edition with no queued sources")
 
-    queued = set(state.queued_source_ids)
     missing = sorted(queued - source_ids)
     unexpected = sorted(source_ids - queued)
     if missing:
@@ -144,24 +278,42 @@ def plan_release(
         number = 0
         errors.append(f"Edition issue_number must be an integer: {issue_number!r}")
     try:
-        open_number = int(state.open_edition["issue_number"])
+        open_number = int(collecting_edition["issue_number"])
     except (KeyError, TypeError, ValueError):
         open_number = 0
-        errors.append("Open edition issue_number must be an integer")
+        errors.append("Collecting edition issue_number must be an integer")
     if number and open_number and number != open_number:
         errors.append(
-            f"Edition issue_number {number} does not match open edition issue_number {open_number}"
+            f"Edition issue_number {number} does not match collecting edition issue_number {open_number}"
         )
 
     released_ids = {str(item.get("id")) for item in state.released_editions}
     if edition_id in released_ids:
         errors.append(f"Edition is already released: {edition_id}")
-    next_number = number + 1 if number else open_number + 1
-    selected_next_id = next_edition_id or f"{next_number:03d}-unreleased"
-    if not selected_next_id.strip():
-        errors.append("Next edition id cannot be empty")
-    if selected_next_id == edition_id or selected_next_id in released_ids:
-        errors.append(f"Next edition id is already in use: {selected_next_id}")
+    remaining = tuple(
+        dict(item)
+        for item in state.collecting_editions
+        if str(item.get("id")) != edition_id
+    )
+    if remaining:
+        if next_edition_id is not None:
+            errors.append(
+                "Cannot override the next edition while another collecting edition exists"
+            )
+        selected_next_id = (
+            state.intake_edition_id
+            if state.intake_edition_id != edition_id
+            else str(remaining[-1]["id"])
+        )
+        next_collecting = remaining
+    else:
+        next_number = number + 1 if number else open_number + 1
+        selected_next_id = next_edition_id or f"{next_number:03d}-unreleased"
+        if not selected_next_id.strip():
+            errors.append("Next edition id cannot be empty")
+        if selected_next_id == edition_id or selected_next_id in released_ids:
+            errors.append(f"Next edition id is already in use: {selected_next_id}")
+        next_collecting = (_collecting_edition(selected_next_id, next_number),)
     if errors:
         raise ValidationError(errors)
 
@@ -172,16 +324,10 @@ def plan_release(
         "publication_date": publication_date,
         "source_ids": sorted(source_ids),
     }
-    open_edition = {
-        "id": selected_next_id,
-        "issue_number": next_number,
-        "status": "collecting",
-        "source_ids": [],
-    }
     updated = ReleaseState(
-        open_edition,
+        next_collecting,
+        selected_next_id,
         (*state.released_editions, released),
-        state.schema_version,
     )
     return ReleaseTransition(edition_id, selected_next_id, tuple(sorted(source_ids)), updated)
 
@@ -230,6 +376,15 @@ def finalize_release(
         )
     )
     return transition
+
+
+def _collecting_edition(edition_id: str, issue_number: int) -> dict[str, Any]:
+    return {
+        "id": edition_id,
+        "issue_number": issue_number,
+        "status": "collecting",
+        "source_ids": [],
+    }
 
 
 def _released_package_updates(package_dir: Path) -> tuple[tuple[Path, bytes], ...]:

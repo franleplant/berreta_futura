@@ -17,8 +17,8 @@ This repository builds private-first, source-faithful magazine editions.
 - Never claim an edition is press-ready without a named printer profile and a passing preflight.
 - Cover art contains no baked-in masthead or cover lines. Layout code owns all typography.
 - Keep the inside front cover (reader page 2) and inside back cover (the penultimate reader page) completely blank; the imposed inside-cover sheet side must therefore also be blank.
-- Treat intake batches as transport only. Every unreleased source belongs to the single open edition until that edition is explicitly released.
-- Never create a new edition merely because the user sends another group of links. Releasing the open edition is the transition that creates the next collection.
+- Treat intake batches as transport only. Every unreleased source belongs to exactly one collecting edition; several editions may collect concurrently, with one explicit intake target.
+- Never create a collecting edition merely because the user sends another group of links. Open or select one only through `uv run --locked mag collect <edition-id> --issue-number <number>` or an equally explicit human decision.
 - Release only with `uv run --locked mag release <edition-id>`. Every source record must be queued and represented in a rendered article's `source_ids`; a top-level manifest declaration alone cannot silently postpone material.
 - Use UV for every Python operation. Never use `pip`, bare `python`, `python -m venv`, an activated virtualenv, or an ad-hoc dependency directory.
 - Generate every language listed in `publication.languages` on every validation, build, and release. English remains the source edition; Spanish translations use educated castellano with restrained Argentine preferences, fall back to Spain Spanish, avoid slang and generic Latin American regionalisms, preserve Markdown block structure, and pin the exact English input hashes.
@@ -62,7 +62,7 @@ against the packages you actually inspected; pass `--rebuild` only when the
 rebuild-and-compare proof is explicitly wanted. `mag release` must reject a
 missing, stale, or changes-required review.
 
-Every source of the open edition needs a committed
+Every source of every collecting edition needs a committed
 `library/sources/<source-id>/extracted.md`, and its fidelity ledgers must pin
 `source_body_sha256` to the extraction body. Before release, perform the
 adversarial manuscript-versus-source audit (`prompts/evidence-review.md`) and

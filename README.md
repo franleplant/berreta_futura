@@ -205,38 +205,47 @@ inclination where it reads naturally, without slang or lunfardo. Where no clear
 Argentine preference applies, use Spain Spanish; do not fall back to generic
 Latin American, Mexican, Caribbean, or other regional variants.
 
-## The open edition
+## Collecting editions
 
-The repository has exactly one open edition. Every newly captured source is
-assigned to it automatically; a batch of submitted links is never treated as an
-edition boundary. `mag capture` queues its source immediately, while `mag
-sources` and `mag queue` reconcile manually created records into the same open
-edition.
+The repository may have several collecting editions, with exactly one selected
+as the intake target. This lets production continue on one edition while new
+leads accumulate in the next without pretending the earlier edition is
+released. Opening a collection is explicit:
 
-`library/release-state.yaml` is the authoritative ledger. A source appears
-either in the open edition or in one released edition, never both. Only an
-explicit release closes the collection and permits the next edition to open.
+```sh
+uv run --locked mag collect 004-unreleased --issue-number 4
+```
 
-Release the complete open edition with:
+New captures are queued to the intake edition by default. `mag capture
+--edition <edition-id>` can deliberately target another collecting edition,
+while `mag sources` and `mag queue` reconcile otherwise unassigned records into
+the intake edition. A batch of submitted links never creates an edition
+implicitly.
+
+`library/release-state.yaml` is the authoritative ledger. A source appears in
+exactly one collecting or released edition. Release a complete collecting
+edition with:
 
 ```sh
 uv run --locked mag release <edition-id>
 ```
 
 Release is deliberately all-or-nothing. The command first reconciles every
-source record into the open queue and verifies that every queued source appears
+source record into the intake queue and verifies that every source queued to
+the release target appears
 in a rendered article's `source_ids` provenance. A bare entry under the
 manifest's top-level `sources` inventory is not enough. It then validates the fidelity
 ledgers, and successfully builds the reader and home-print packages. Only then
 does it mark the edition manifest `released`, move its sources into
-`released_editions`, and open an empty incremented edition such as
+`released_editions`. Other collecting editions and their queues are unchanged;
+if none remains, release opens an empty incremented edition such as
 `002-unreleased`. Manifest and ledger updates use atomic replacements with
 rollback on failure. Rights and distribution fields are preserved unchanged;
 release does not turn a private reprint into a publicly cleared one.
 
 Use `--next-edition-id 002-a-working-title` only when the next collection
-already has an intentional identifier. New captures after release are queued
-there; sources assigned to the released edition are never requeued.
+has not already been opened and already has an intentional identifier. Sources
+assigned to the released edition are never requeued.
 
 ## Source records
 
