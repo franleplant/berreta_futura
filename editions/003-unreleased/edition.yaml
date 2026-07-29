@@ -6,7 +6,7 @@ title: The Architecture of Agency
 subtitle: Open models, harnesses, loops, context, and the systems that turn intelligence into shared work
 language: en
 distribution: private
-status: provisional
+status: released
 format:
   trim: A5
   home_sheet: A4
@@ -73,17 +73,17 @@ articles:
     decision: include
     source_id: why-software-factories-fail-benchmarking-the-new-f1d9c04a
     asset_id: raster-002-c6471a04
-    caption: On Dex Horthy's exploratory 17-checkpoint subset, Opus 5 passes four checkpoints; Opus
-      4.8 and Sonnet 5 pass one each. The paper's full-benchmark results appear below for context.
-    alt_text: Horizontal bars compare strict checkpoint pass rates. Opus 5 passes four of seventeen
-      checkpoints, while Opus 4.8 and Sonnet 5 each pass one.
+    caption: On Dex Horthy's exploratory 17-checkpoint subset, Opus 5 passes four checkpoints; Opus 4.8
+      and Sonnet 5 pass one each. The paper's full-benchmark results appear below for context.
+    alt_text: Horizontal bars compare strict checkpoint pass rates. Opus 5 passes four of seventeen checkpoints,
+      while Opus 4.8 and Sonnet 5 each pass one.
     anchor: The oracle arrives in checkpoints
     layout: compact_band
     criteria:
     - important
     - useful
-    rationale: This is direct, source-authored evidence for the article's maintainability thesis and
-      replaces the weaker correlational Faros chart.
+    rationale: This is direct, source-authored evidence for the article's maintainability thesis and replaces
+      the weaker correlational Faros chart.
 - id: why-harness-engineering-is-so-hard
   title: Why Harness Engineering Is So Hard
   short_title: Harness Engineering
@@ -102,8 +102,8 @@ articles:
     decision: include
     source_id: why-harness-engineering-is-so-hard-fe732038
     asset_id: raster-001-e34191d8
-    caption: The same input fans out to correct, close-but-wrong, and wrong outputs; the crossed-out
-      equality assertion is the test you cannot write.
+    caption: The same input fans out to correct, close-but-wrong, and wrong outputs; the crossed-out equality
+      assertion is the test you cannot write.
     alt_text: A diagram titled non-determinism breaks testing shows one input producing correct, close-but-wrong,
       and wrong outputs, with an equality assertion crossed out below.
     anchor: You can't write the test you want to write
@@ -111,14 +111,14 @@ articles:
     criteria:
     - important
     - useful
-    rationale: The source sketch compresses the section's argument — determinism-based testing loses
-      its floor — into one legible figure.
+    rationale: The source sketch compresses the section's argument — determinism-based testing loses its
+      floor — into one legible figure.
   - id: silent-failure-modes
     decision: include
     source_id: why-harness-engineering-is-so-hard-fe732038
     asset_id: raster-002-84bc510b
-    caption: Traditional code crashes at the point of failure; model output returns a document that
-      looks finished with the broken lines woven through it.
+    caption: Traditional code crashes at the point of failure; model output returns a document that looks
+      finished with the broken lines woven through it.
     alt_text: Two panels contrast traditional code ending in a crash with model output producing a full
       document marked as broken.
     anchor: You're debugging prose, not code
@@ -160,8 +160,8 @@ articles:
     decision: include
     source_id: the-new-rules-of-context-engineering-for-claude--aa1b1ea8
     asset_id: raster-001-7b66ba87
-    caption: One assembled context, three masters — the system prompt allows documentation, a skill
-      forbids comments, the request wants it working like the old one — and Claude reconciles them all.
+    caption: One assembled context, three masters — the system prompt allows documentation, a skill forbids
+      comments, the request wants it working like the old one — and Claude reconciles them all.
     alt_text: A diagram of assembled context highlights conflicting instructions in the system prompt,
       skills, and user request sections.
     anchor: Unhobbling Claude
@@ -169,8 +169,8 @@ articles:
     criteria:
     - important
     - useful
-    rationale: The diagram shows the exact instruction conflict the section quotes, laid out as the
-      model receives it.
+    rationale: The diagram shows the exact instruction conflict the section quotes, laid out as the model
+      receives it.
 - id: open-weights-and-american-ai-leadership
   title: Open Weights and American AI Leadership
   short_title: Open Weights
