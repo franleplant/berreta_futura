@@ -1,24 +1,22 @@
 schema_version: 1
 edition_id: 004-unreleased
-reviewer: Independent opener render critic
-reviewed_at: '2026-07-29T19:44:47+00:00'
+reviewer: edition4_manga_render_critic
+reviewed_at: '2026-07-29T20:38:39+00:00'
 result: approved
 engine: weasyprint
 design_direction: WeasyPrint / A5 fold proof
 findings: []
-notes: Inspected all EN/ES reader and booklet contact sheets, all 12 article opener rasters, and every
-  automated review item after the shared 325pt opener-rail fix. Kicker, title, QR dark edge, credit block,
-  standfirst, and running prose align; QR-to-credit spacing remains consistent; no vertical movement,
-  clipping, overlap, long-byline overflow, stubs, pagination, blank-cover, imposition, or MCP-separation
-  regressions remain.
+notes: Inspected every EN and ES reader and booklet contact sheet plus MCP tail crops. All four panels
+  are visible in Western order; manga plates, blank inside covers, imposition, and unchanged production
+  cover are approved.
 languages:
   en:
-    reader_sha256: 83d88f1b1cf9f8258d999df6f8aca782d845da81330895c3a34273c5c11e2b3c
-    booklet_sha256: 38ecf416d2cb3436d06aadd1ec2c95e81b60999f7ee35580ec8b4232670e4fd4
+    reader_sha256: 63357c3ec6dea4835d7bcb13f1fb5c036b5397a74676d1ae99740a8edd4bf065
+    booklet_sha256: 97db22a61feae29a4ceeb3142445d3656904453a2ae6ee16b828a3e0ded40b1d
     page_count: 40
     machine_result: pass
   es:
-    reader_sha256: 39c391126a6e92b3b70173715584eca8bb8601f24e0a993d89eac500cf2d0b7d
-    booklet_sha256: bb421d125ecf6f37d940decdee2cfab742876080d9892b9153256c999f158cd3
+    reader_sha256: efb289fc96891d06326159653f807bb2d1ae23f9712bd3e5c26b52100e475037
+    booklet_sha256: 2dab2d8a5db10fa0fc20b5530097fd2e2e43a9eb872ea5dd7b7037e8de2e16dd
     page_count: 40
     machine_result: pass

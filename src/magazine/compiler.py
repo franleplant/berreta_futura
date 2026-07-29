@@ -10,6 +10,10 @@ from typing import Any, Iterable
 from .capture import archive_snapshot, index_existing_captures, verify_snapshots
 from .catalog import render_sources
 from .cover import CoverArtifact, CoverCompiler, replace_outer_pages
+from .cover_art_candidates import (
+    validate_cover_art_candidates,
+    write_cover_art_prompt_package,
+)
 from .errors import DependencyError, ValidationError
 from .evidence_review import (
     create_evidence_review,
@@ -23,7 +27,7 @@ from .evidence_review import (
 )
 from .extraction import verify_ledger_source_extractions
 from .fidelity import fidelity_report
-from .io import load_structured
+from .io import load_structured, safe_project_path
 from .illustration import (
     load_illustration_plan,
     validate_illustration_plan,
@@ -366,6 +370,23 @@ class Magazine:
                 f"{self.primary_language!r}"
             )
         validate_illustration_plan(self.root, edition)
+        cover_candidates_path = edition.raw.get("cover_candidates_path")
+        if cover_candidates_path:
+            record_path = safe_project_path(
+                self.root, str(cover_candidates_path)
+            )
+            validate_cover_art_candidates(
+                self.editions_dir / edition.id,
+                record_path=record_path,
+                selected_art_path=(
+                    str((edition.raw.get("cover") or {}).get("art_path") or "")
+                    if str(
+                        load_structured(record_path).get("selection_status") or ""
+                    ).strip()
+                    == "selected"
+                    else None
+                ),
+            )
         # Every collecting edition remains mutable and therefore owes the full
         # extraction chain. Released editions' source pins predate committed
         # extractions and are verified opportunistically.
@@ -404,11 +425,22 @@ class Magazine:
             source_records={record.id: record for record in records},
             allow_missing_art=True,
         )
-        return write_illustration_package(
+        destination = write_illustration_package(
             self.root,
             self.output_dir,
             edition,
         )
+        cover_candidates_path = edition.raw.get("cover_candidates_path")
+        if cover_candidates_path:
+            record_path = safe_project_path(
+                self.root, str(cover_candidates_path)
+            )
+            write_cover_art_prompt_package(
+                self.editions_dir / edition.id,
+                destination,
+                record_path=record_path,
+            )
+        return destination
 
     def _require_release_state(self) -> ReleaseState:
         """The release ledger, which must exist: it names the open edition.

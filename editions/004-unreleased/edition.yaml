@@ -13,6 +13,9 @@ format:
   binding: saddle_stitch
   max_article_pages: 7
   max_editorial_pages: 1
+cover_candidates_path: editions/004-unreleased/art/cover-candidates.yaml
+art_direction_path: editions/004-unreleased/art/illustrations.yaml
+tail_art_fit: contain
 cover:
   headline: The Systems Around the Model
   deck: Six reports on the machinery that makes intelligence useful, legible, and safe
@@ -175,6 +178,7 @@ articles:
   - architecture-overview-ce5cb1d1
   manuscript: editions/004-unreleased/articles/mcp-in-a-nutshell.md
   fidelity: editions/004-unreleased/fidelity/mcp-in-a-nutshell.yaml
+  tail_art_path: editions/004-unreleased/art/article-tails/mcp-four-vignettes.png
 - id: mcp-protocol-update
   title: The MCP Protocol Update
   short_title: MCP Protocol Update
@@ -192,8 +196,8 @@ rights:
   public_release: blocked_pending_permission_or_applicable_exception
 closing_plates:
 - title: Signal Through Gates
-  art_path: editions/004-unreleased/art/closing-signal-gates.png
+  art_path: editions/004-unreleased/art/closing-signal-gates-manga.png
 - title: Memory and Retrieval
-  art_path: editions/004-unreleased/art/closing-memory-rings.png
+  art_path: editions/004-unreleased/art/closing-memory-rings-manga.png
 - title: The Useful Boundary
-  art_path: editions/004-unreleased/art/closing-protocol-exchange.png
+  art_path: editions/004-unreleased/art/closing-protocol-exchange-manga.png

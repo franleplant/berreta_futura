@@ -305,6 +305,9 @@ def _render_article(
         )
     )
     if article.tail_art is not None:
+        tail_art_fit = str(
+            (getattr(edition, "raw", {}) or {}).get("tail_art_fit") or "cover"
+        )
         asset = _asset(
             id=f"article-tail-{article.id}", role="article_tail", path=article.tail_art,
             alt_text=f"Tail art for {article.title}", article_id=article.id,
@@ -314,7 +317,8 @@ def _render_article(
         lines.extend(
             _indent(
                 (
-                    f'<figure class="article-tail" data-asset-role="article_tail">'
+                    f'<figure class="article-tail" data-asset-role="article_tail" '
+                    f'data-fit="{_attr(tail_art_fit)}">'
                     f'<img src="{_attr(asset.src)}" alt="{_attr(asset.alt_text)}"></figure>',
                 ),
                 2,

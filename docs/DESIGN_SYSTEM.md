@@ -125,7 +125,23 @@ Every code is then read back off the rasterized page at 300 ppi by an independen
 
 With the source code on the opener, the article’s last page closes with the **tail ornament** again: a restrained, article-specific motif in the cover grammar, declared per article as `tail_art_path` and crop-filled across the full 325pt reading measure. Its room is bounded by the reader’s own chrome — the band never comes closer than 24pt to the frame’s foot or 31pt to the end mark’s baseline — and it prints only where that leaves at least 96pt of real room, deliberately the render critic’s own void bar: wherever the open paper under an article could read as dead sheet, the declared motif claims it, and a tighter ending than that is an article honestly ending, not a slot. The band is capped at 214pt so an article that ends very high does not turn its motif into a poster, and a capped band is centred in its room rather than sunk to the foot, so no dead band strands above it. Every declaration is ledgered: the packaged manifest’s `layout.tail_arts` records, per article, whether the ornament printed, at what height, or exactly how much room it was short by, and the render critic raises each dropped ornament for review — a tail can no longer vanish silently. The band is out of flow and can never move a line or open a page; the committed raster must resolve at 300 ppi in the band it prints across, and it passes the same print-contrast preflight as a curated figure, because an ornament that ships pale is as soft a page as a diagram that does.
 
+The edition-level `tail_art_fit` defaults to `cover`. It may be set to
+`contain` when the complete horizontal sequence is editorially meaningful,
+such as a multi-step comic, and no edge may be cropped as the available tail
+height changes between languages.
+
 ### Authored illustration direction
+
+Every new cover art round carries exactly three alternatives before selection:
+`synthetic`, `art_directed`, and `wildcard`. They must express one editorial
+reading through materially different media or visual languages, and none may
+contain baked-in typography. The edition declares `cover_candidates_path`; the
+record pins all three square PNGs, their generation methods, directions, and
+selection state. `uv run --locked mag illustrate <edition-id>` writes all three
+cover prompts beside the interior illustration prompts. `mag validate` refuses
+a missing, duplicated, undersized, non-square, or hash-drifted candidate. A
+pending round leaves the existing production cover untouched until an editor
+selects one.
 
 An edition may replace geometric tail ornaments and signature-closing filler
 with wordless editorial illustrations. The generation step remains

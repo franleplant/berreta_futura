@@ -286,6 +286,9 @@ def load_edition(
             continue
         sections.append(Section(str(row["kind"]), str(row.get("title") or _section_title(row["kind"])), path))
     cover = dict(data.get("cover") or {})
+    tail_art_fit = str(data.get("tail_art_fit") or "cover").strip()
+    if tail_art_fit not in {"cover", "contain"}:
+        errors.append("Edition tail_art_fit must be cover or contain")
     cover_art = None
     if cover.get("art_path"):
         try:

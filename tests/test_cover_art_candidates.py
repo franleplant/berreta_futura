@@ -9,6 +9,7 @@ from PIL import Image
 
 from magazine.cover_art_candidates import (
     COVER_ART_VARIANTS,
+    write_cover_art_prompt_package,
     validate_cover_art_candidates,
 )
 from magazine.errors import ValidationError
@@ -76,6 +77,7 @@ def test_requires_editorial_reading(tmp_path: Path) -> None:
 def test_schema_two_requires_image_generated_synthetic_branch(tmp_path: Path) -> None:
     path, record = _write_candidate_record(tmp_path)
     record["schema_version"] = 2
+    record["selection_status"] = "pending_editor_choice"
     for row in record["variants"].values():
         row["generation_method"] = "imagegen"
     record["variants"]["synthetic"]["generation_method"] = "deterministic"
@@ -93,9 +95,39 @@ def test_schema_two_accepts_declared_generation_methods(tmp_path: Path) -> None:
     record["schema_version"] = 2
     for row in record["variants"].values():
         row["generation_method"] = "imagegen"
+    record["selection_status"] = "pending_editor_choice"
     path.write_text(yaml.safe_dump(record), encoding="utf-8")
 
     validate_cover_art_candidates(tmp_path)
+
+
+def test_prompt_package_always_contains_three_distinct_cover_briefs(
+    tmp_path: Path,
+) -> None:
+    path, record = _write_candidate_record(tmp_path)
+    record["schema_version"] = 2
+    record["selection_status"] = "pending_editor_choice"
+    for row in record["variants"].values():
+        row["generation_method"] = "imagegen"
+    path.write_text(yaml.safe_dump(record, sort_keys=False), encoding="utf-8")
+
+    destination = write_cover_art_prompt_package(
+        tmp_path,
+        tmp_path / "output",
+    )
+
+    payload = yaml.safe_load(
+        (destination / "cover-candidates.json").read_text(encoding="utf-8")
+    )
+    assert [row["variant"] for row in payload["variants"]] == list(
+        COVER_ART_VARIANTS
+    )
+    prompts = [
+        (destination / row["prompt"]).read_text(encoding="utf-8")
+        for row in payload["variants"]
+    ]
+    assert len(set(prompts)) == 3
+    assert all("Do not add words" in prompt for prompt in prompts)
 
 
 def test_rejects_non_square_candidate(tmp_path: Path) -> None:

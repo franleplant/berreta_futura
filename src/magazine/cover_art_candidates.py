@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
 from typing import Any
 import warnings
@@ -15,6 +16,7 @@ COVER_ART_VARIANTS = ("synthetic", "art_directed", "wildcard")
 SUPPORTED_SCHEMA_VERSIONS = (1, 2)
 MIN_CANDIDATE_PIXELS = 1000
 MAX_CANDIDATE_PIXELS = 10000
+SELECTION_STATES = {"pending_editor_choice", "selected"}
 
 
 def _sha256(path: Path) -> str:
@@ -73,6 +75,12 @@ def validate_cover_art_candidates(
     editorial_reading = data.get("editorial_reading")
     if not isinstance(editorial_reading, str) or not editorial_reading.strip():
         raise ValidationError("Cover-art candidate record requires an editorial_reading")
+    selection_status = str(data.get("selection_status") or "").strip()
+    if schema_version >= 2 and selection_status not in SELECTION_STATES:
+        raise ValidationError(
+            "Cover-art candidate record requires selection_status to be "
+            "pending_editor_choice or selected"
+        )
 
     variants = data.get("variants")
     if not isinstance(variants, dict):
@@ -167,12 +175,103 @@ def validate_cover_art_candidates(
             )
         resolved[variant] = candidate
 
-    if selected_art_path is not None and selected_art_path not in declared_paths:
+    if (
+        (schema_version == 1 or selection_status == "selected")
+        and selected_art_path is not None
+        and selected_art_path not in declared_paths
+    ):
         raise ValidationError(
             f"Selected cover art {selected_art_path} is not one of the three recorded candidates"
+        )
+    if selection_status == "selected" and selected_art_path is None:
+        raise ValidationError(
+            "Cover-art candidate record marked selected requires selected_art_path"
         )
     return {
         "record_path": path,
         "variants": resolved,
+        "selection_status": selection_status,
         "selected_art_path": selected_art_path,
     }
+
+
+def cover_art_candidate_prompt(
+    editorial_reading: str,
+    *,
+    variant: str,
+    direction: str,
+) -> str:
+    """Compile one typography-free square cover prompt from the candidate record."""
+
+    return (
+        "Use case: magazine cover art candidate\n"
+        f"Variant: {variant}\n"
+        "Output: exactly one square RGB PNG, at least 1000x1000 pixels\n"
+        f"Editorial reading: {editorial_reading.strip()}\n"
+        f"Art direction: {direction.strip()}\n"
+        "The image must materially differ in medium and visual language from the "
+        "other two variants while expressing the same editorial reading.\n"
+        "Reserve calm negative space near the upper and lower edges for layout-owned "
+        "typography.\n"
+        "Do not add words, letters, numbers, logos, mastheads, cover lines, QR codes, "
+        "watermarks, or decorative borders."
+    )
+
+
+def write_cover_art_prompt_package(
+    edition_dir: Path,
+    destination: Path,
+    *,
+    record_path: Path | None = None,
+) -> Path:
+    """Write the exact three cover prompts before or after image generation."""
+
+    path = record_path or edition_dir / "art" / "cover-candidates.yaml"
+    data = _load_mapping(path)
+    editorial_reading = str(data.get("editorial_reading") or "").strip()
+    if not editorial_reading:
+        raise ValidationError("Cover-art candidate record requires an editorial_reading")
+    variants = data.get("variants")
+    if not isinstance(variants, dict) or set(variants) != set(COVER_ART_VARIANTS):
+        raise ValidationError(
+            f"Cover-art variants must be exactly {list(COVER_ART_VARIANTS)}"
+        )
+    destination.mkdir(parents=True, exist_ok=True)
+    inventory: list[dict[str, str]] = []
+    for variant in COVER_ART_VARIANTS:
+        row = variants[variant]
+        if not isinstance(row, dict):
+            raise ValidationError(f"Cover-art variant {variant} must be a mapping")
+        direction = str(row.get("direction") or "").strip()
+        if not direction:
+            raise ValidationError(f"Cover-art variant {variant} requires a direction")
+        prompt = cover_art_candidate_prompt(
+            editorial_reading,
+            variant=variant,
+            direction=direction,
+        )
+        prompt_path = destination / f"cover-{variant}.txt"
+        prompt_path.write_text(prompt + "\n", encoding="utf-8")
+        inventory.append(
+            {
+                "variant": variant,
+                "prompt": prompt_path.name,
+                "prompt_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
+                "art_path": str(row.get("art_path") or ""),
+            }
+        )
+    (destination / "cover-candidates.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "record_path": path.relative_to(edition_dir).as_posix(),
+                "editorial_reading": editorial_reading,
+                "variants": inventory,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return destination
