@@ -1,0 +1,25 @@
+{
+  "artifact_count": 2,
+  "artifacts": [
+    {
+      "bytes": 672212,
+      "path": "article.pdf",
+      "sha256": "7e52f6ab0e89b5d9ba9e0ea5f08627e916b5b7516bf87a7443e371288a015c0b"
+    },
+    {
+      "bytes": 2615175,
+      "path": "article.png",
+      "sha256": "ccc83816f31ee65f0ac1eb324036bde5bb5d619c4e24ea84628cfe9fd2a5d242"
+    }
+  ],
+  "bundle_sha256": "1ced8cc9c9845813bd7544a26e4ec78ce05fc460eb5ca1261fb21d14b3280c03",
+  "byte_count": 3287387,
+  "canonical_url": "https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture",
+  "captured_at": "2026-07-29T00:36:21Z",
+  "method": "authenticated_browser",
+  "purpose": "article",
+  "schema_version": 2,
+  "source_id": "architecture-overview-ce5cb1d1",
+  "source_url": "https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture",
+  "submitted_url": "https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture"
+}

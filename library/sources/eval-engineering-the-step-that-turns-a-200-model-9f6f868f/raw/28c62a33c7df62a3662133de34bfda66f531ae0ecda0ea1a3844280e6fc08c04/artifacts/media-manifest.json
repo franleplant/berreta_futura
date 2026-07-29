@@ -1,0 +1,81 @@
+{
+  "schema_version": 2,
+  "source_url": "https://x.com/argona0x/status/2082127026538868839",
+  "captured_from": "authenticated_browser_original_media",
+  "referenced_asset_count": 8,
+  "present_asset_count": 8,
+  "assets": [
+    {
+      "relative_url": "media/001.jpg",
+      "source_url": "https://pbs.twimg.com/media/HOUtOu4WYAATMfP.jpg?name=orig",
+      "source_position": 1,
+      "role": "title_card",
+      "title": "Article cover image",
+      "description": "The source article's cover image.",
+      "alt_text": "Article cover image"
+    },
+    {
+      "relative_url": "media/002.jpg",
+      "source_url": "https://pbs.twimg.com/media/HOUtgeJXcAA5epr.jpg?name=orig",
+      "source_position": 2,
+      "role": "figure",
+      "title": "Embedded figure 2",
+      "description": "Original embedded media archived from the source article.",
+      "alt_text": "Source article figure 2"
+    },
+    {
+      "relative_url": "media/003.jpg",
+      "source_url": "https://pbs.twimg.com/media/HOUuHAFW0AAy9nT.jpg?name=orig",
+      "source_position": 3,
+      "role": "figure",
+      "title": "Embedded figure 3",
+      "description": "Original embedded media archived from the source article.",
+      "alt_text": "Source article figure 3"
+    },
+    {
+      "relative_url": "media/004.jpg",
+      "source_url": "https://pbs.twimg.com/media/HOUu-s5XoAAkGVE.jpg?name=orig",
+      "source_position": 4,
+      "role": "figure",
+      "title": "Embedded figure 4",
+      "description": "Original embedded media archived from the source article.",
+      "alt_text": "Source article figure 4"
+    },
+    {
+      "relative_url": "media/005.jpg",
+      "source_url": "https://pbs.twimg.com/media/HOUvnQnW8AA0Qvl.jpg?name=orig",
+      "source_position": 5,
+      "role": "figure",
+      "title": "Embedded figure 5",
+      "description": "Original embedded media archived from the source article.",
+      "alt_text": "Source article figure 5"
+    },
+    {
+      "relative_url": "media/006.jpg",
+      "source_url": "https://pbs.twimg.com/media/HOUwkclWYAAvZNd.jpg?name=orig",
+      "source_position": 6,
+      "role": "figure",
+      "title": "Embedded figure 6",
+      "description": "Original embedded media archived from the source article.",
+      "alt_text": "Source article figure 6"
+    },
+    {
+      "relative_url": "media/007.jpg",
+      "source_url": "https://pbs.twimg.com/media/HOUxKuKWAAAyfdz.jpg?name=orig",
+      "source_position": 7,
+      "role": "figure",
+      "title": "Embedded figure 7",
+      "description": "Original embedded media archived from the source article.",
+      "alt_text": "Source article figure 7"
+    },
+    {
+      "relative_url": "media/008.jpg",
+      "source_url": "https://pbs.twimg.com/media/HOUyev1WAAIXFaI.jpg?name=orig",
+      "source_position": 8,
+      "role": "figure",
+      "title": "Embedded figure 8",
+      "description": "Original embedded media archived from the source article.",
+      "alt_text": "Source article figure 8"
+    }
+  ]
+}

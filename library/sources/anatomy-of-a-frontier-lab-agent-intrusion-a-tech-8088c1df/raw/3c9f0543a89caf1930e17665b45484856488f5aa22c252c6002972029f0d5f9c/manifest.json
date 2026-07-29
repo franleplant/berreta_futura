@@ -1,0 +1,20 @@
+{
+  "artifact_count": 1,
+  "artifacts": [
+    {
+      "bytes": 1234714,
+      "path": "xcid-profile.pdf",
+      "sha256": "a430929f22a0b1feea99daf324a308ae020b9a2b496c154040cc114d5436b8f2"
+    }
+  ],
+  "bundle_sha256": "3c9f0543a89caf1930e17665b45484856488f5aa22c252c6002972029f0d5f9c",
+  "byte_count": 1234714,
+  "canonical_url": "https://huggingface.co/blog/agent-intrusion-technical-timeline",
+  "captured_at": "2026-07-29T00:35:45Z",
+  "method": "author_identity_profile",
+  "purpose": "author_identity",
+  "schema_version": 2,
+  "source_id": "anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df",
+  "source_url": "https://huggingface.co/XciD",
+  "submitted_url": "https://huggingface.co/blog/agent-intrusion-technical-timeline"
+}

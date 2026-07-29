@@ -1,0 +1,37 @@
+{
+  "bundle_sha256": "1ced8cc9c9845813bd7544a26e4ec78ce05fc460eb5ca1261fb21d14b3280c03",
+  "candidate_count": 1,
+  "candidates": [
+    {
+      "artifact_path": "article.png",
+      "artifact_sha256": "ccc83816f31ee65f0ac1eb324036bde5bb5d619c4e24ea84628cfe9fd2a5d242",
+      "aspect_ratio": 0.064712,
+      "criteria": [],
+      "decision": "reject",
+      "description": "",
+      "heading": "",
+      "id": "raster-001-ccc83816",
+      "mime_type": "image/png",
+      "origin": "raw_raster",
+      "pixel_height": 19780,
+      "pixel_width": 1280,
+      "rationale": "",
+      "rejection_reasons": [
+        "extreme_aspect_ratio_or_full_page_capture",
+        "no_semantic_source_context"
+      ],
+      "score": 0,
+      "source_artifact": "article.png",
+      "source_artifact_sha256": "ccc83816f31ee65f0ac1eb324036bde5bb5d619c4e24ea84628cfe9fd2a5d242",
+      "source_position": 1,
+      "title": "article"
+    }
+  ],
+  "curator": "magazine-compiler/automatic-media-curator",
+  "input_sha256": "b134c7243712299813b486ce33fd1b2d7b82cf74dd6f56c91f51904cd99b7895",
+  "policy_version": "editorial-impact-v4",
+  "schema_version": 1,
+  "selected": [],
+  "selection_limit": 3,
+  "source_id": "architecture-overview-ce5cb1d1"
+}

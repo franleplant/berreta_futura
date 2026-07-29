@@ -1,0 +1,118 @@
+schema_version: 2
+id: eval-engineering-the-step-that-turns-a-200-model-9f6f868f
+title: 'Eval Engineering: the step that turns a $200 model into a $200,000 system'
+author: Argona
+author_profile:
+  note: Argona is the publishing name of @Argona0x, an AI-focused X account.
+  evidence:
+  - url: https://x.com/Argona0x
+    capture_id: 1aae1d4a293e043b82cd53145d8f506d3f37fb9256947628847939623d087050
+canonical_url: https://x.com/argona0x/status/2082127026538868839
+submitted_url: https://x.com/argona0x/status/2082127026538868839
+captured_at: '2026-07-29T00:36:02Z'
+publication_date: '2026-07-28'
+kind: web
+status: captured
+content_hash: null
+raw_captures:
+- id: 6b7c4575be0b61404a0aed9b2fb9fd9363a579516f59d434331628de7f817447
+  path: raw/6b7c4575be0b61404a0aed9b2fb9fd9363a579516f59d434331628de7f817447/manifest.json
+  method: authenticated_browser
+  purpose: article
+  source_url: https://x.com/argona0x/status/2082127026538868839
+  captured_at: '2026-07-29T00:36:02Z'
+  artifact_count: 2
+  byte_count: 4010719
+- id: a8a18eb8ba9a2281cd1e480c3abd944fb558084fad70b524c356619bbe7d96e4
+  path: raw/a8a18eb8ba9a2281cd1e480c3abd944fb558084fad70b524c356619bbe7d96e4/manifest.json
+  method: author_identity_profile
+  purpose: author_identity
+  source_url: https://x.com/Argona0x
+  captured_at: '2026-07-29T00:36:02Z'
+  artifact_count: 2
+  byte_count: 2283779
+- id: 1aae1d4a293e043b82cd53145d8f506d3f37fb9256947628847939623d087050
+  path: raw/1aae1d4a293e043b82cd53145d8f506d3f37fb9256947628847939623d087050/manifest.json
+  method: author_identity_profile
+  purpose: author_identity
+  source_url: https://x.com/Argona0x
+  captured_at: '2026-07-29T00:44:55Z'
+  artifact_count: 1
+  byte_count: 868380
+- id: 28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04
+  path: raw/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/manifest.json
+  method: authenticated_browser_original_media
+  purpose: article
+  source_url: https://x.com/argona0x/status/2082127026538868839
+  captured_at: '2026-07-29T00:44:55Z'
+  artifact_count: 11
+  byte_count: 5588062
+provenance: []
+rights:
+  status: unknown
+  intended_use: private_reference
+  attribution_required: true
+  public_reprint_allowed: false
+media_reviews:
+- capture_id: 1aae1d4a293e043b82cd53145d8f506d3f37fb9256947628847939623d087050
+  status: media_rejected
+  assets: []
+  note: Author identity evidence is provenance, not article artwork.
+- capture_id: 28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04
+  status: media_curated
+  assets:
+  - id: raster-002-8e40815e
+    artifact_path: media/002.jpg
+    artifact_sha256: 8e40815eef28e32d00a53ad180729a88ff7ec9ad05bfb5125959d26b64772b49
+    mime_type: image/jpeg
+    creator: Argona
+    credit: 'Diagram by Argona; source: Eval Engineering: the step that turns a $200 model into a $200,000
+      system.'
+    rights:
+      status: unknown
+      intended_use: private_reference
+      attribution_required: true
+      public_reprint_allowed: false
+  - id: raster-003-92da0fe4
+    artifact_path: media/003.jpg
+    artifact_sha256: 92da0fe4ced1f723b2e74ec7468fe25ddf3100f9f8577649cca27a081d54a9ae
+    mime_type: image/jpeg
+    creator: Argona
+    credit: 'Diagram by Argona; source: Eval Engineering: the step that turns a $200 model into a $200,000
+      system.'
+    rights:
+      status: unknown
+      intended_use: private_reference
+      attribution_required: true
+      public_reprint_allowed: false
+  - id: raster-004-4a90e2c3
+    artifact_path: media/004.jpg
+    artifact_sha256: 4a90e2c3f539e6f1b9233dea84ab24aaf8f6dd13b0a2249e71cee9d4e8b36c5b
+    mime_type: image/jpeg
+    creator: Argona
+    credit: 'Diagram by Argona; source: Eval Engineering: the step that turns a $200 model into a $200,000
+      system.'
+    rights:
+      status: unknown
+      intended_use: private_reference
+      attribution_required: true
+      public_reprint_allowed: false
+  note: Automatic curation selected 3 of 9 candidates under editorial-impact-v4; decisions are hash-pinned
+    in 28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04.curation.json.
+- capture_id: 6b7c4575be0b61404a0aed9b2fb9fd9363a579516f59d434331628de7f817447
+  status: media_rejected
+  assets: []
+  note: 'Automatic curation rejected all candidates: extreme_aspect_ratio_or_full_page_capture (1), no_semantic_source_context
+    (1).'
+- capture_id: a8a18eb8ba9a2281cd1e480c3abd944fb558084fad70b524c356619bbe7d96e4
+  status: media_rejected
+  assets: []
+  note: Author identity evidence is provenance, not article artwork.
+metadata:
+  tags:
+  - agents
+  - engineering
+  - evaluations
+  synopsis: A practical argument for turning evaluations into routing, retry, quarantine, review, and
+    merge decisions inside agent systems.
+notes: ''

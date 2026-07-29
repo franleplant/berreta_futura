@@ -2,7 +2,134 @@
 
 _Generated from structured source records. Do not edit by hand._
 
-_Open edition: `003-unreleased`; 14 queued sources._
+_Intake edition: `004-unreleased`. Open edition: `004-unreleased`. Collecting: `004-unreleased` (6 queued)._
+
+## Pragmatic Leverage in the Software Factory — Dex Horthy
+
+- ID: `pragmatic-leverage-in-the-software-factory-09879736`
+- Source: https://x.com/dexhorthy/status/2082510831858893115
+- Kind / status: web / captured
+- Captured: 2026-07-29T17:23:57Z
+- Content hash: `not captured`
+- Raw captures: 2 committed bundle(s)
+- Release: queued for `004-unreleased`
+- Published: 2026-07-29
+- Tags: agents, planning, software-factories
+- Author biography: Dex Horthy is the founder of HumanLayer, a YC-backed developer-tools company.
+- Author biography evidence:
+  - https://x.com/dexhorthy (raw bundle `3b23a434aba80bb0a966965912d17c1fd0b9d3cc44413902396efe8ce6956df4`)
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+
+A practical model for applying AI across planning, alignment, coding, review, and verification while minimizing expected rework.
+
+**Editorial note:** Edition 4 editorial decision: develop this source as a standalone article.
+
+## Architecture overview — Model Context Protocol
+
+- ID: `architecture-overview-ce5cb1d1`
+- Source: https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture
+- Kind / status: web / captured
+- Captured: 2026-07-29T00:36:21Z
+- Content hash: `not captured`
+- Raw captures: 1 committed bundle(s)
+- Release: queued for `004-unreleased`
+- Published: 2026-07-28
+- Tags: architecture, documentation, mcp
+- Author biography: omitted for institutional byline
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+
+The versioned official explanation of MCP hosts, clients, servers, data and transport layers, primitives, discovery, tool calls, and notifications.
+
+**Editorial note:** Edition 4 supporting source only; do not produce a standalone article. Use this material for a brief, example-driven “MCP in a nutshell” section inside the MCP specification-update article sourced primarily from the-2026-07-28-mcp-specification-release-candida-1a1752b8.
+
+## The 2026-07-28 MCP Specification Release Candidate — David Soria Parra, Den Delimarsky
+
+- ID: `the-2026-07-28-mcp-specification-release-candida-1a1752b8`
+- Source: https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate
+- Kind / status: web / captured
+- Captured: 2026-07-29T00:36:13Z
+- Content hash: `not captured`
+- Raw captures: 2 committed bundle(s)
+- Release: queued for `004-unreleased`
+- Published: 2026-05-21
+- Tags: infrastructure, mcp, protocols
+- Author biography: David Soria Parra and Den Delimarsky are lead maintainers of the Model Context Protocol.
+- Author biography evidence:
+  - https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate (raw bundle `68def973fb16beb2dadfe9ddd477055a471d0c02103cf1e593df19db1f7343a2`)
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+
+The maintainers explain MCP 2026-07-28: a stateless core, first-class extensions, authorization hardening, deprecations, and full JSON Schema for tools.
+
+**Editorial note:** Edition 4 editorial decision: this is the lead source for one MCP protocol-update article. Include architecture-overview-ce5cb1d1 in the same article as a brief, example-driven “MCP in a nutshell” section covering hosts, clients, servers, resources, prompts, tools, and a concrete discovery-to-tool-call sequence.
+
+## Eval Engineering: the step that turns a $200 model into a $200,000 system — Argona
+
+- ID: `eval-engineering-the-step-that-turns-a-200-model-9f6f868f`
+- Source: https://x.com/argona0x/status/2082127026538868839
+- Kind / status: web / captured
+- Captured: 2026-07-29T00:36:02Z
+- Content hash: `not captured`
+- Raw captures: 4 committed bundle(s)
+- Release: queued for `004-unreleased`
+- Published: 2026-07-28
+- Tags: agents, engineering, evaluations
+- Author biography: Argona is the publishing name of @Argona0x, an AI-focused X account.
+- Author biography evidence:
+  - https://x.com/Argona0x (raw bundle `1aae1d4a293e043b82cd53145d8f506d3f37fb9256947628847939623d087050`)
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+
+A practical argument for turning evaluations into routing, retry, quarantine, review, and merge decisions inside agent systems.
+
+## 22580: From GPT2 to Kimi3, Explained — ali
+
+- ID: `22580-from-gpt2-to-kimi3-explained-8f01b0fe`
+- Source: https://x.com/waterloo_intern/status/2081762065392541951
+- Kind / status: web / captured
+- Captured: 2026-07-29T00:35:54Z
+- Content hash: `not captured`
+- Raw captures: 4 committed bundle(s)
+- Release: queued for `004-unreleased`
+- Published: 2026-07-27
+- Tags: inference, model-architecture, transformers
+- Author biography: ali works on inference at Baseten and studies engineering at the University of Waterloo.
+- Author biography evidence:
+  - https://x.com/waterloo_intern (raw bundle `6673eb827dc1ca5a5ee8a8fbe17dc5e842a3977f4ea65ea0350db2a29153318c`)
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+
+A code-led lineage from GPT-2 through linear attention, DeltaNet, Kimi Linear, and the KimiK3 architecture.
+
+## Anatomy of a Frontier Lab Agent Intrusion: A Technical Timeline of the July 2026 Incident — Hugo Larcher, Adrien Carreira, raphael g, Christophe Rannou
+
+- ID: `anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df`
+- Source: https://huggingface.co/blog/agent-intrusion-technical-timeline
+- Kind / status: web / captured
+- Captured: 2026-07-29T00:35:45Z
+- Content hash: `not captured`
+- Raw captures: 6 committed bundle(s)
+- Release: queued for `004-unreleased`
+- Published: 2026-07-27
+- Tags: agents, incident-response, security
+- Author biography: Hugo Larcher, Adrien Carreira, raphael g, and Christophe Rannou are contributors publishing through Hugging Face.
+- Author biography evidence:
+  - https://huggingface.co/hlarcher (raw bundle `bcd3ca158feee252ef505105058f70e46fdb4515458ca2889d4e52bb3117ef02`)
+  - https://huggingface.co/XciD (raw bundle `3c9f0543a89caf1930e17665b45484856488f5aa22c252c6002972029f0d5f9c`)
+  - https://huggingface.co/raphael-gl (raw bundle `5c08267de5a525e7ae4b49383c2a99405142b2416261ddbd1f14333c34b721f9`)
+  - https://huggingface.co/chris-rannou (raw bundle `950c9ba8f8b3dcb5329cc5c99f14ddb3be81d97f69cc584178ad05bd1841dc9b`)
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+
+A forensic reconstruction of an autonomous agent intrusion across evaluation, cloud, cluster, and software-supply-chain trust boundaries.
 
 ## Why Software Factories Fail: Benchmarking the New Frontier — Dex Horthy
 
@@ -12,7 +139,7 @@ _Open edition: `003-unreleased`; 14 queued sources._
 - Captured: 2026-07-27T21:49:48Z
 - Content hash: `not captured`
 - Raw captures: 3 committed bundle(s)
-- Release: queued for `003-unreleased`
+- Release: released for `003-unreleased`
 - Published: 2026-07-27
 - Tags: ai-coding, benchmarks, software-factories
 - Primary material:
@@ -35,7 +162,7 @@ Part 3 tests frontier Claude models on a 17-checkpoint SlopCodeBench subset and 
 - Captured: 2026-07-27T14:14:22Z
 - Content hash: `not captured`
 - Raw captures: 2 committed bundle(s)
-- Release: queued for `003-unreleased`
+- Release: released for `003-unreleased`
 - Published: 2026-07-25
 - Tags: ai-agents, architecture, code-review, maintainability, planning, software-factories
 - Primary material:
@@ -58,7 +185,7 @@ Part two of Dex Horthy’s software-factories argument: restore human judgment t
 - Captured: 2026-07-26T22:23:15Z
 - Content hash: `not captured`
 - Raw captures: 2 committed bundle(s)
-- Release: queued for `003-unreleased`
+- Release: released for `003-unreleased`
 - Published: 2026-07-26T11:02:21Z
 - Tags: agents, bitcoin, buzz, payments
 - Primary material:
@@ -83,7 +210,7 @@ Documenting Bitcoin reports an early Buzz demonstration in which AI agents indep
 - Captured: 2026-07-26T22:23:04Z
 - Content hash: `not captured`
 - Raw captures: 1 committed bundle(s)
-- Release: queued for `003-unreleased`
+- Release: released for `003-unreleased`
 - Published: 2026-07-26T06:29:49Z
 - Tags: agents, buzz, collaboration, network-effects
 - Primary material:
@@ -108,7 +235,7 @@ Justin Waldron argues that Buzz should be understood as a multiplayer agent harn
 - Captured: 2026-07-26T22:22:57Z
 - Content hash: `not captured`
 - Raw captures: 1 committed bundle(s)
-- Release: queued for `003-unreleased`
+- Release: released for `003-unreleased`
 - Published: 2026-07-25T18:44:15Z
 - Tags: agents, buzz, community-owned-ai, shared-compute
 - Primary material:
@@ -133,7 +260,7 @@ Greg Isenberg interprets Buzz's shared-compute capability as a way for communiti
 - Captured: 2026-07-26T22:12:54Z
 - Content hash: `not captured`
 - Raw captures: 2 committed bundle(s)
-- Release: queued for `003-unreleased`
+- Release: released for `003-unreleased`
 - Published: 2026-07-24
 - Tags: ai-agents, evaluation, harness-engineering, maintainability, software-factories
 - Primary material:
@@ -155,8 +282,8 @@ Dex Horthy argues that faster agent loops and automated review cannot solve a mo
 - Kind / status: web / captured
 - Captured: 2026-07-26T22:12:40Z
 - Content hash: `not captured`
-- Raw captures: 2 committed bundle(s)
-- Release: queued for `003-unreleased`
+- Raw captures: 3 committed bundle(s)
+- Release: released for `003-unreleased`
 - Published: 2026-07-24
 - Tags: ai-agents, claude, context-engineering, progressive-disclosure, skills
 - Primary material:
@@ -182,8 +309,8 @@ Thariq describes simplifying Claude Code context for newer models: replacing rig
 - Kind / status: web / captured
 - Captured: 2026-07-26T22:12:26Z
 - Content hash: `not captured`
-- Raw captures: 2 committed bundle(s)
-- Release: queued for `003-unreleased`
+- Raw captures: 3 committed bundle(s)
+- Release: released for `003-unreleased`
 - Published: 2026-07-25
 - Tags: ai-agents, evaluation, harness-engineering, prompt-engineering
 - Rights status: unknown
@@ -202,7 +329,7 @@ A field account of why production LLM harnesses resist ordinary testing and debu
 - Captured: 2026-07-26T22:12:08Z
 - Content hash: `not captured`
 - Raw captures: 2 committed bundle(s)
-- Release: queued for `003-unreleased`
+- Release: released for `003-unreleased`
 - Published: 2026-07-24
 - Tags: ai-policy, economic-opportunity, national-security, open-weight-models
 - Primary material:
@@ -225,7 +352,7 @@ Satya Nadella introduces a cross-industry case for open-weight AI as a foundatio
 - Captured: 2026-07-26T22:11:54Z
 - Content hash: `not captured`
 - Raw captures: 1 committed bundle(s)
-- Release: queued for `003-unreleased`
+- Release: released for `003-unreleased`
 - Published: 2026-07-24
 - Tags: ai-policy, competition, national-security, open-weight-models
 - Rights status: unknown
@@ -244,7 +371,7 @@ A multi-company statement arguing that open-weight models strengthen U.S. AI lea
 - Captured: 2026-07-26T22:11:38Z
 - Content hash: `not captured`
 - Raw captures: 1 committed bundle(s)
-- Release: queued for `003-unreleased`
+- Release: released for `003-unreleased`
 - Published: 2026-06-07
 - Tags: ai-agents, automation, loop-engineering, software-engineering
 - Rights status: unknown
@@ -263,7 +390,7 @@ A practical account of moving from direct prompting to designed agent loops buil
 - Captured: 2026-07-23T12:32:52Z
 - Content hash: `not captured`
 - Raw captures: 1 committed bundle(s)
-- Release: queued for `003-unreleased`
+- Release: released for `003-unreleased`
 - Published: 2026-07-22
 - Tags: agents, buzz, collaboration, identity
 - Rights status: unknown
@@ -285,7 +412,7 @@ Jack Dorsey introduces Buzz, an open-source workspace that places people, agents
 - Captured: 2026-07-23T12:32:52Z
 - Content hash: `not captured`
 - Raw captures: 1 committed bundle(s)
-- Release: queued for `003-unreleased`
+- Release: released for `003-unreleased`
 - Published: 2026-07-22
 - Tags: agents, buzz, collaboration
 - Rights status: unknown
@@ -307,7 +434,7 @@ Official product site for Buzz, a workspace where people and agents collaborate 
 - Captured: 2026-07-23T12:32:52Z
 - Content hash: `not captured`
 - Raw captures: 1 committed bundle(s)
-- Release: queued for `003-unreleased`
+- Release: released for `003-unreleased`
 - Published: 2026-07-22
 - Tags: agents, buzz, nostr, open-source
 - Rights status: licensed

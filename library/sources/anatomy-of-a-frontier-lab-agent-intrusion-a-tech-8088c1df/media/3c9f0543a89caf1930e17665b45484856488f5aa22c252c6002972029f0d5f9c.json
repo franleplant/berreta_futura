@@ -1,0 +1,14 @@
+{
+  "artifact_count": 1,
+  "bundle_sha256": "3c9f0543a89caf1930e17665b45484856488f5aa22c252c6002972029f0d5f9c",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 0,
+  "images": [],
+  "local_references": [],
+  "missing_references": [],
+  "referenced_image_count": 0,
+  "schema_version": 1,
+  "source_id": "anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df",
+  "unresolved_acquisition_references": []
+}
