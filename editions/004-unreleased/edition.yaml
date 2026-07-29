@@ -13,7 +13,6 @@ format:
   binding: saddle_stitch
   max_article_pages: 7
   max_editorial_pages: 1
-cover_candidates_path: editions/004-unreleased/art/cover-candidates.yaml
 art_direction_path: editions/004-unreleased/art/illustrations.yaml
 tail_art_fit: contain
 cover:

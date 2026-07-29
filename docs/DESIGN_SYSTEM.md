@@ -135,9 +135,12 @@ height changes between languages.
 Every new cover art round carries exactly three alternatives before selection:
 `synthetic`, `art_directed`, and `wildcard`. They must express one editorial
 reading through materially different media or visual languages, and none may
-contain baked-in typography. The edition declares `cover_candidates_path`; the
-record pins all three square PNGs, their generation methods, directions, and
-selection state. `uv run --locked mag illustrate <edition-id>` writes all three
+contain baked-in typography. The canonical
+`editions/<edition-id>/art/cover-candidates.yaml` record pins all three square
+PNGs, their generation methods, directions, and selection state. `mag collect`
+scaffolds this record for every collecting edition, and the release transition
+does the same for the next edition. No edition manifest key enables or disables
+the contract. `uv run --locked mag illustrate <edition-id>` writes all three
 cover prompts beside the interior illustration prompts. `mag validate` refuses
 a missing, duplicated, undersized, non-square, or hash-drifted candidate. A
 pending round leaves the existing production cover untouched until an editor

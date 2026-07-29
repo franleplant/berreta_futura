@@ -11,6 +11,9 @@ from .capture import archive_snapshot, index_existing_captures, verify_snapshots
 from .catalog import render_sources
 from .cover import CoverArtifact, CoverCompiler, replace_outer_pages
 from .cover_art_candidates import (
+    cover_art_candidate_record_path,
+    hydrate_cover_art_candidates,
+    scaffold_cover_art_candidates,
     validate_cover_art_candidates,
     write_cover_art_prompt_package,
 )
@@ -27,7 +30,7 @@ from .evidence_review import (
 )
 from .extraction import verify_ledger_source_extractions
 from .fidelity import fidelity_report
-from .io import load_structured, safe_project_path
+from .io import load_structured
 from .illustration import (
     load_illustration_plan,
     validate_illustration_plan,
@@ -326,12 +329,14 @@ class Magazine:
         current = records if records is not None else load_records(self.sources_dir)
         for record in current:
             verify_snapshots(record, self.sources_dir)
-        return sync_release_state(
+        state = sync_release_state(
             self.release_state_path,
             {record.id for record in current},
             default_open_id="001-the-work-left-to-us",
             target_edition_id=target_edition_id,
         )
+        self._scaffold_collecting_cover_records(state)
+        return state
 
     def open_collection(
         self,
@@ -341,12 +346,24 @@ class Magazine:
     ) -> ReleaseState:
         """Open and select an edition for subsequent source intake."""
 
-        return open_collection(
+        state = open_collection(
             self.release_state_path,
             edition_id=edition_id,
             issue_number=issue_number,
             default_open_id="001-the-work-left-to-us",
         )
+        self._scaffold_collecting_cover_records(state)
+        return state
+
+    def _scaffold_collecting_cover_records(
+        self, state: ReleaseState
+    ) -> None:
+        """Give every collecting edition the canonical three-branch brief."""
+
+        for collecting_id in state.collecting_edition_ids:
+            scaffold_cover_art_candidates(
+                self.editions_dir / collecting_id
+            )
 
     def validate(self, edition_id: str) -> Edition:
         return self._validate_languages(edition_id)[self.primary_language]
@@ -370,11 +387,16 @@ class Magazine:
                 f"{self.primary_language!r}"
             )
         validate_illustration_plan(self.root, edition)
-        cover_candidates_path = edition.raw.get("cover_candidates_path")
-        if cover_candidates_path:
-            record_path = safe_project_path(
-                self.root, str(cover_candidates_path)
-            )
+        release_state = self._require_release_state()
+        record_path = cover_art_candidate_record_path(
+            self.editions_dir / edition.id
+        )
+        if edition_id in release_state.collecting_edition_ids:
+            if not record_path.is_file():
+                raise ValidationError(
+                    f"Collecting edition {edition_id} requires the canonical "
+                    f"three-branch cover-art record: {record_path}"
+                )
             validate_cover_art_candidates(
                 self.editions_dir / edition.id,
                 record_path=record_path,
@@ -390,7 +412,6 @@ class Magazine:
         # Every collecting edition remains mutable and therefore owes the full
         # extraction chain. Released editions' source pins predate committed
         # extractions and are verified opportunistically.
-        release_state = self._require_release_state()
         require_extractions = edition_id in release_state.collecting_edition_ids
         for article in edition.articles:
             ledger_mode = str(load_structured(article.fidelity).get("content_mode", "faithful_edit"))
@@ -414,7 +435,7 @@ class Magazine:
         return editions
 
     def illustration_package(self, edition_id: str) -> Path:
-        """Compile the edition's art direction into exact authoring prompts."""
+        """Compile generic cover prompts and any interior-art prompts."""
 
         records = load_records(self.sources_dir)
         edition = load_edition(
@@ -425,15 +446,25 @@ class Magazine:
             source_records={record.id: record for record in records},
             allow_missing_art=True,
         )
-        destination = write_illustration_package(
-            self.root,
-            self.output_dir,
-            edition,
-        )
-        cover_candidates_path = edition.raw.get("cover_candidates_path")
-        if cover_candidates_path:
-            record_path = safe_project_path(
-                self.root, str(cover_candidates_path)
+        destination = self.output_dir / edition.id / "illustration-prompts"
+        destination.mkdir(parents=True, exist_ok=True)
+        for generated in destination.glob("*.txt"):
+            generated.unlink()
+        for name in ("illustrations.json", "cover-candidates.json"):
+            generated = destination / name
+            if generated.is_file():
+                generated.unlink()
+        if load_illustration_plan(self.root, edition) is not None:
+            destination = write_illustration_package(
+                self.root,
+                self.output_dir,
+                edition,
+            )
+        release_state = self._require_release_state()
+        if edition.id in release_state.collecting_edition_ids:
+            record_path = hydrate_cover_art_candidates(
+                self.editions_dir / edition.id,
+                editorial_reading=self._cover_editorial_reading(edition),
             )
             write_cover_art_prompt_package(
                 self.editions_dir / edition.id,
@@ -441,6 +472,22 @@ class Magazine:
                 record_path=record_path,
             )
         return destination
+
+    @staticmethod
+    def _cover_editorial_reading(edition: Edition) -> str:
+        """Derive a useful first cover reading without manifest wiring."""
+
+        cover = edition.cover or {}
+        parts = [
+            str(edition.title or "").strip(),
+            str(
+                cover.get("deck")
+                or edition.raw.get("subtitle")
+                or cover.get("back_text")
+                or ""
+            ).strip(),
+        ]
+        return ". ".join(part.rstrip(".") for part in parts if part) + "."
 
     def _require_release_state(self) -> ReleaseState:
         """The release ledger, which must exist: it names the open edition.
@@ -1254,6 +1301,12 @@ class Magazine:
             publication_date=edition.publication_date,
             next_edition_id=next_edition_id,
             package_dir=result.output_dir,
+        )
+        # `finalize_release` may open the next collecting edition implicitly.
+        # Give that collection the same generic cover brief as `mag collect`;
+        # neither path depends on a key in an edition manifest.
+        self._scaffold_collecting_cover_records(
+            self._require_release_state()
         )
         return result, transition
 

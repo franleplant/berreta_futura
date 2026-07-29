@@ -13,10 +13,89 @@ from magazine.errors import ValidationError
 
 
 COVER_ART_VARIANTS = ("synthetic", "art_directed", "wildcard")
+COVER_ART_CANDIDATE_RECORD = Path("art/cover-candidates.yaml")
 SUPPORTED_SCHEMA_VERSIONS = (1, 2)
 MIN_CANDIDATE_PIXELS = 1000
 MAX_CANDIDATE_PIXELS = 10000
 SELECTION_STATES = {"pending_editor_choice", "selected"}
+
+DEFAULT_COVER_ART_DIRECTIONS = {
+    "synthetic": (
+        "Synthetic/geometric. Build a precise, image-generated composition from "
+        "clean systems geometry, controlled perspective, and a restrained palette."
+    ),
+    "art_directed": (
+        "Art-directed/material. Interpret the editorial idea through a tactile "
+        "physical medium such as collage, printmaking, painted paper, or constructed objects."
+    ),
+    "wildcard": (
+        "Wildcard. Take a surprising visual approach that is clearly distinct from "
+        "the synthetic and art-directed branches while preserving the editorial idea."
+    ),
+}
+
+
+def cover_art_candidate_record_path(edition_dir: Path) -> Path:
+    """Return the canonical, manifest-independent candidate record path."""
+
+    return edition_dir / COVER_ART_CANDIDATE_RECORD
+
+
+def scaffold_cover_art_candidates(edition_dir: Path) -> Path:
+    """Create the standard three-branch cover brief without overwriting work.
+
+    Collection does not yet know an edition's editorial reading, so the
+    scaffold is deliberately incomplete. Authoring replaces the TODO reading
+    and pending hashes after generating the three named assets. Validation
+    then treats this canonical record exactly like a hand-authored record.
+    """
+
+    path = cover_art_candidate_record_path(edition_dir)
+    if path.exists():
+        return path
+    data = {
+        "schema_version": 2,
+        "selection_status": "pending_editor_choice",
+        "editorial_reading": (
+            f"TODO: define the editorial reading for {edition_dir.name}"
+        ),
+        "variants": {
+            variant: {
+                "art_path": f"art/cover-candidate-{variant.replace('_', '-')}.png",
+                "asset_sha256": "PENDING",
+                "generation_method": "imagegen",
+                "direction": DEFAULT_COVER_ART_DIRECTIONS[variant],
+            }
+            for variant in COVER_ART_VARIANTS
+        },
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+    return path
+
+
+def hydrate_cover_art_candidates(
+    edition_dir: Path,
+    *,
+    editorial_reading: str,
+) -> Path:
+    """Replace only the untouched collection placeholder with edition context."""
+
+    path = scaffold_cover_art_candidates(edition_dir)
+    data = _load_mapping(path)
+    current = str(data.get("editorial_reading") or "").strip()
+    if current.startswith("TODO: define the editorial reading for "):
+        reading = editorial_reading.strip()
+        if not reading:
+            raise ValidationError(
+                f"Cannot hydrate cover-art candidates without an editorial reading: {path}"
+            )
+        data["editorial_reading"] = reading
+        path.write_text(
+            yaml.safe_dump(data, sort_keys=False),
+            encoding="utf-8",
+        )
+    return path
 
 
 def _sha256(path: Path) -> str:
@@ -64,7 +143,7 @@ def validate_cover_art_candidates(
     sole production image through ``cover.art_path``.
     """
 
-    path = record_path or edition_dir / "art" / "cover-candidates.yaml"
+    path = record_path or cover_art_candidate_record_path(edition_dir)
     data = _load_mapping(path)
     schema_version = data.get("schema_version")
     if schema_version not in SUPPORTED_SCHEMA_VERSIONS:
@@ -75,6 +154,12 @@ def validate_cover_art_candidates(
     editorial_reading = data.get("editorial_reading")
     if not isinstance(editorial_reading, str) or not editorial_reading.strip():
         raise ValidationError("Cover-art candidate record requires an editorial_reading")
+    if editorial_reading.strip().startswith(
+        "TODO: define the editorial reading for "
+    ):
+        raise ValidationError(
+            "Cover-art candidate editorial_reading is still the collection placeholder"
+        )
     selection_status = str(data.get("selection_status") or "").strip()
     if schema_version >= 2 and selection_status not in SELECTION_STATES:
         raise ValidationError(
@@ -131,6 +216,10 @@ def validate_cover_art_candidates(
             raise ValidationError(f"Cover-art variant {variant} is missing: {declared}")
 
         expected_sha = row.get("asset_sha256")
+        if expected_sha == "PENDING":
+            raise ValidationError(
+                f"Cover-art variant {variant} still has a pending asset hash"
+            )
         actual_sha = _sha256(candidate)
         if expected_sha != actual_sha:
             raise ValidationError(
@@ -226,7 +315,7 @@ def write_cover_art_prompt_package(
 ) -> Path:
     """Write the exact three cover prompts before or after image generation."""
 
-    path = record_path or edition_dir / "art" / "cover-candidates.yaml"
+    path = record_path or cover_art_candidate_record_path(edition_dir)
     data = _load_mapping(path)
     editorial_reading = str(data.get("editorial_reading") or "").strip()
     if not editorial_reading:

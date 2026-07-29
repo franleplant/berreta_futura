@@ -123,6 +123,28 @@ class ReleaseStateTests(unittest.TestCase):
         )
         self.assertEqual(state.queued_source_ids_for("002-unreleased"), ())
 
+    def test_open_collection_scaffolds_generic_cover_candidate_brief(self):
+        magazine = Magazine(self.root)
+
+        magazine.open_collection("004-unreleased", issue_number=4)
+
+        record_path = (
+            self.root
+            / "editions"
+            / "004-unreleased"
+            / "art"
+            / "cover-candidates.yaml"
+        )
+        record = yaml.safe_load(record_path.read_text(encoding="utf-8"))
+        self.assertEqual(
+            tuple(record["variants"]),
+            ("synthetic", "art_directed", "wildcard"),
+        )
+        self.assertEqual(
+            record["selection_status"],
+            "pending_editor_choice",
+        )
+
     def test_releasing_an_older_collection_preserves_the_newer_intake_queue(self):
         path = self.root / "library" / "release-state.yaml"
         path.parent.mkdir(parents=True)
@@ -274,6 +296,22 @@ class ReleaseStateTests(unittest.TestCase):
             "id": "002-unreleased", "issue_number": 2, "status": "collecting", "source_ids": [],
         })
         self.assertEqual(state.assignments()["source-one"], "released:issue-001")
+        next_cover_record = (
+            self.root
+            / "editions"
+            / "002-unreleased"
+            / "art"
+            / "cover-candidates.yaml"
+        )
+        self.assertTrue(next_cover_record.is_file())
+        self.assertEqual(
+            tuple(
+                yaml.safe_load(
+                    next_cover_record.read_text(encoding="utf-8")
+                )["variants"]
+            ),
+            ("synthetic", "art_directed", "wildcard"),
+        )
 
     def test_release_without_an_evidence_record_refuses_before_building(self):
         """The evidence gate is wired ahead of the expensive render: no record
