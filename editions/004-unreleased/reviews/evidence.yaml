@@ -1,0 +1,60 @@
+schema_version: 1
+edition_id: 004-unreleased
+reviewer: Codex evidence audit
+reviewed_at: '2026-07-29T19:17:17+00:00'
+result: approved
+findings: []
+notes: Compared all six English manuscripts against committed extractions and normalized fidelity ledgers.
+  Corrected unsupported illustrative MCP examples to source-backed weather, database, filesystem, and
+  Sentry examples; split repeated source mappings so each evidence fragment is accounted for once; found
+  no remaining unlogged omissions, altered qualifications, unsupported additions, broken attribution,
+  or overstated captions.
+articles:
+  frontier-lab-agent-intrusion:
+    reviewed_at: '2026-07-29T19:17:17+00:00'
+    manuscript_sha256: 0dc087e8d35919de08af63acd3dd9bbd917d2c98ab9890a3f5297107ae5e1144
+    ledger_sha256: 9e6a6b7ace3bf5ab28a0d6426fbf2b7a4a2fca64f942ef5842587f1c72ec1741
+    source_extractions:
+      anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df:
+        body_sha256: 70ae2dbdd1e3cf5bd8d2dde5ceb6036b1854b5f2393ed62c00f925247f40e8a0
+        file_sha256: 1fe981f16cd673acb07ef4f9ec9d9d8cd8098c396a9e8c152692786d960b39be
+  eval-engineering:
+    reviewed_at: '2026-07-29T19:17:17+00:00'
+    manuscript_sha256: 949b54ba812b5feff35d408eb7021d32e7e2f2374a862aeef9f8e5f93d076279
+    ledger_sha256: 1cdee053a6b4c15b7a5e64a036bbeea3877d7eb4832f006a673b703b7d2f420e
+    source_extractions:
+      eval-engineering-the-step-that-turns-a-200-model-9f6f868f:
+        body_sha256: 53649c4c91e0f22f26899b33938dfb5abb5675ab4867b37823d7dd9547b0fcd6
+        file_sha256: 3c49a322db681e6b90feef6c48c627ad932af9f20407bcd5c7caca82428a8fb7
+  pragmatic-leverage:
+    reviewed_at: '2026-07-29T19:17:17+00:00'
+    manuscript_sha256: 6f18975108e80f314976643fd1dddb308da09df16272527c0ed1df5d509bbed4
+    ledger_sha256: 3b207a6b7b2b1cb0435aec582487d9186975b917cca210013b29d295622dc3ed
+    source_extractions:
+      pragmatic-leverage-in-the-software-factory-09879736:
+        body_sha256: db9f336036f94d88a8a180abf98f9e77489523ece8b739a9b462d4b829ea4dd1
+        file_sha256: f6c72fe2cf0ea5efef216a536182cf0911f5f84c5c8560b7b8bb41fda4b4e921
+  from-gpt2-to-kimi3:
+    reviewed_at: '2026-07-29T19:17:17+00:00'
+    manuscript_sha256: be409aaeda234e1d9a575e04d226d68858725236442f13f0bc1b7fecb4bfbd3c
+    ledger_sha256: 092750ba00822c33f2e3738f5ea4de7ebf12373edc184f897299aab02c50afb9
+    source_extractions:
+      22580-from-gpt2-to-kimi3-explained-8f01b0fe:
+        body_sha256: f69c8b4a3825d7c13a5f06dd7a95c96ce7bf961a44ae602c4ff2bd2aee8a4e1f
+        file_sha256: 50c0be5f80cc59040d148268f7338eb28b0c94a99eb14f673df8e43218814bed
+  mcp-in-a-nutshell:
+    reviewed_at: '2026-07-29T19:17:17+00:00'
+    manuscript_sha256: ee3ec0d454816c298ddebd80db963c9685a11d985c7df426aba3fa9e44024781
+    ledger_sha256: 6a125d0f3d7220e42ea7bf58163931306e7348a238c4666f9b91ca46de9e793e
+    source_extractions:
+      architecture-overview-ce5cb1d1:
+        body_sha256: 74744013db1438ad8802651d8fb8d2d8df14a02b51f198fc4588c6783964cc4a
+        file_sha256: 49bd88275bf3305ee79534e437810feb2dd5113ee6d6f52056b4a36dcf0b0739
+  mcp-protocol-update:
+    reviewed_at: '2026-07-29T19:17:17+00:00'
+    manuscript_sha256: 3d65b78ca8cb043a9e6a217bfa1068da48002eaf5501a69a03b2326c92bf6078
+    ledger_sha256: ebb4a351fa7bae11f215500ae2c77396a465e54f4f81a5de9bd4a1cf9e09044a
+    source_extractions:
+      the-2026-07-28-mcp-specification-release-candida-1a1752b8:
+        body_sha256: 987de8e4b9e000fe802d99ddbf71be645a08cf0a9b86c7bd2d585f695fc71e2d
+        file_sha256: cead91e1c71b94f504e3e30d58cd4e5c6adf3ab547b5630501521f7f49561db0

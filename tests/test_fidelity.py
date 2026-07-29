@@ -244,6 +244,28 @@ class FidelityTests(unittest.TestCase):
 
         self.assertGreater(report.modified_source_words, report.modified_edited_words)
 
+    def test_faithful_synthesis_does_not_find_mononym_inside_another_word(self):
+        path = self.root / "ledger.yaml"
+        path.write_text(yaml.safe_dump({
+            "schema_version": 1,
+            "source_ids": ["s"],
+            "content_mode": "faithful_synthesis",
+            "paragraphs": [{
+                "id": "synthesis",
+                "status": "modified",
+                "source": (
+                    "The model applies a final normalization before producing logits. "
+                    "Earlier stages construct embeddings, transform them through many layers, "
+                    "and preserve intermediate state for the final prediction."
+                ),
+                "edited": "A final normalization and language-model head produce vocabulary logits.",
+            }],
+        }), encoding="utf-8")
+
+        report = fidelity_report(path, source_author="ali")
+
+        self.assertGreater(report.modified_source_words, 0)
+
     def test_report_labels_can_be_rendered_in_spanish(self):
         path = self.root / "ledger.yaml"
         write_ledger(path, [{"status": "retained", "source": "texto fuente"}])

@@ -1,0 +1,199 @@
+schema_version: 1
+id: 004-unreleased
+issue_number: 4
+publication_date: '2026-08-03'
+title: The Systems Around the Model
+subtitle: Protocols, evaluations, architectures, and the operational work that turns model capability into dependable systems
+language: en
+distribution: private
+status: provisional
+format:
+  trim: A5
+  home_sheet: A4
+  binding: saddle_stitch
+  max_article_pages: 7
+  max_editorial_pages: 1
+cover:
+  headline: The Systems Around the Model
+  deck: Six reports on the machinery that makes intelligence useful, legible, and safe
+  back_text: 'The model is only one component. Reliability lives in the protocol, the evidence,
+    the feedback loop, the architecture, and the judgment that connects them.'
+  art_path: art/cover-art.png
+sources:
+- anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
+- eval-engineering-the-step-that-turns-a-200-model-9f6f868f
+- pragmatic-leverage-in-the-software-factory-09879736
+- 22580-from-gpt2-to-kimi3-explained-8f01b0fe
+- architecture-overview-ce5cb1d1
+- the-2026-07-28-mcp-specification-release-candida-1a1752b8
+editorial: manuscript/editorial.md
+articles:
+- id: frontier-lab-agent-intrusion
+  title: Anatomy of a Frontier Lab Agent Intrusion
+  short_title: Agent Intrusion
+  display_emphasis: Intrusion
+  opener_variant: stepped_title
+  author: Hugo Larcher, Adrien Carreira, raphael g, Christophe Rannou
+  author_note: Hugo Larcher, Adrien Carreira, raphael g, and Christophe Rannou are contributors publishing through Hugging Face.
+  content_mode: faithful_synthesis
+  source_ids:
+  - anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
+  manuscript: editions/004-unreleased/articles/frontier-lab-agent-intrusion.md
+  fidelity: editions/004-unreleased/fidelity/frontier-lab-agent-intrusion.yaml
+  figures:
+  - id: campaign-timeline
+    decision: include
+    source_id: anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
+    asset_id: raster-002-55dae29d
+    caption: The recovered campaign compresses into a 4.5-day timeline of foothold, command and control, lateral movement, credential use, and cleanup.
+    alt_text: A campaign timeline shows event volume and phase activity across four and a half days.
+    anchor: The kill chain
+    layout: evidence_band_prose
+    criteria:
+    - important
+    - useful
+    rationale: The timeline is the clearest source-authored overview of the intrusion's speed and overlapping phases.
+- id: eval-engineering
+  title: Eval Engineering
+  short_title: Eval Engineering
+  display_emphasis: Eval
+  opener_variant: edge_medallion
+  author: Argona
+  author_note: Argona is the publishing name of @Argona0x, an AI-focused X account.
+  content_mode: faithful_synthesis
+  source_ids:
+  - eval-engineering-the-step-that-turns-a-200-model-9f6f868f
+  manuscript: editions/004-unreleased/articles/eval-engineering.md
+  fidelity: editions/004-unreleased/fidelity/eval-engineering.yaml
+  figures:
+  - id: eval-engine
+    decision: include
+    source_id: eval-engineering-the-step-that-turns-a-200-model-9f6f868f
+    asset_id: raster-002-8e40815e
+    caption: Evaluation becomes engineering when production traces, failure labels, and repeatable graders form one operating loop.
+    alt_text: A source diagram presents the first stage of an evaluation-engineering workflow.
+    anchor: The examiner you already own
+    layout: evidence_band_prose
+    criteria:
+    - important
+    - useful
+    rationale: The figure establishes the article's practical workflow at the point where the argument turns into implementation.
+  - id: eval-routing
+    decision: include
+    source_id: eval-engineering-the-step-that-turns-a-200-model-9f6f868f
+    asset_id: raster-003-92da0fe4
+    caption: 'Scores become useful only when they change the next edge: retry, reject, quarantine, block, or route to human review.'
+    alt_text: A source diagram maps evaluation failures to routing decisions.
+    anchor: Make the score change the next edge
+    layout: column_plate
+    criteria:
+    - important
+    - useful
+    rationale: This is the article's central distinction between passive analytics and operational evaluation.
+- id: pragmatic-leverage
+  title: Pragmatic Leverage in the Software Factory
+  short_title: Pragmatic Leverage
+  display_emphasis: Leverage
+  opener_variant: stepped_title
+  author: Dex Horthy
+  author_note: Dex Horthy is the founder of HumanLayer, a YC-backed developer-tools company.
+  content_mode: faithful_edit
+  source_ids:
+  - pragmatic-leverage-in-the-software-factory-09879736
+  manuscript: editions/004-unreleased/articles/pragmatic-leverage.md
+  fidelity: editions/004-unreleased/fidelity/pragmatic-leverage.yaml
+  figures:
+  - id: delivery-time
+    decision: include
+    source_id: pragmatic-leverage-in-the-software-factory-09879736
+    asset_id: raster-003-3781e0b2
+    caption: Coding is only one fraction of feature delivery; alignment, review, rework, testing, and verification consume the rest.
+    alt_text: A source diagram breaks feature delivery time into coding and surrounding work.
+    anchor: Seeking leverage
+    layout: evidence_band_prose
+    criteria:
+    - important
+    - useful
+    rationale: The diagram makes the article's opening constraint visible before the planning argument begins.
+  - id: minimal-prompt-risk
+    decision: include
+    source_id: pragmatic-leverage-in-the-software-factory-09879736
+    asset_id: raster-006-8ea5b085
+    caption: A minimal prompt saves preparation time but leaves a large chance of costly rework.
+    alt_text: A source diagram relates a two-sentence prompt to expected rework.
+    anchor: The 80/20 rule in AI coding leverage
+    layout: column_plate
+    criteria:
+    - important
+    - useful
+    rationale: The image anchors the low-effort end of the author's expected-pain curve.
+- id: from-gpt2-to-kimi3
+  title: From GPT-2 to KimiK3
+  short_title: GPT-2 to KimiK3
+  display_emphasis: KimiK3
+  opener_variant: split_axis
+  author: ali
+  author_note: ali works on inference at Baseten and studies engineering at the University of Waterloo.
+  content_mode: faithful_synthesis
+  source_ids:
+  - 22580-from-gpt2-to-kimi3-explained-8f01b0fe
+  manuscript: editions/004-unreleased/articles/from-gpt2-to-kimi3.md
+  fidelity: editions/004-unreleased/fidelity/from-gpt2-to-kimi3.yaml
+  figures:
+  - id: gpt2-baseline
+    decision: include
+    source_id: 22580-from-gpt2-to-kimi3-explained-8f01b0fe
+    asset_id: raster-002-7f1aea9b
+    caption: 'GPT-2 supplies the recognizable baseline: token and position embeddings, transformer blocks, normalization, and a language-model head.'
+    alt_text: A source diagram outlines the GPT-2 decoder-only architecture.
+    anchor: GPT-2 and the cache
+    layout: evidence_band_prose
+    criteria:
+    - important
+    - useful
+    rationale: The baseline lets every later architectural change read as a specific response rather than a list of names.
+  - id: attention-progression
+    decision: include
+    source_id: 22580-from-gpt2-to-kimi3-explained-8f01b0fe
+    asset_id: raster-003-af0218d8
+    caption: The worklog follows attention from full pairwise comparison toward recurrent state and delta-rule correction.
+    alt_text: A source diagram compares stages in the evolution of attention mechanisms.
+    anchor: From linear attention to DeltaNet
+    layout: column_plate
+    criteria:
+    - important
+    - useful
+    rationale: The visual supports the article's main technical progression.
+- id: mcp-in-a-nutshell
+  title: MCP in a Nutshell
+  short_title: MCP in a Nutshell
+  display_emphasis: MCP
+  opener_variant: edge_medallion
+  author: Model Context Protocol
+  content_mode: faithful_synthesis
+  source_ids:
+  - architecture-overview-ce5cb1d1
+  manuscript: editions/004-unreleased/articles/mcp-in-a-nutshell.md
+  fidelity: editions/004-unreleased/fidelity/mcp-in-a-nutshell.yaml
+- id: mcp-protocol-update
+  title: The MCP Protocol Update
+  short_title: MCP Protocol Update
+  display_emphasis: Protocol
+  opener_variant: stepped_title
+  author: David Soria Parra, Den Delimarsky
+  author_note: David Soria Parra and Den Delimarsky are lead maintainers of the Model Context Protocol.
+  content_mode: faithful_synthesis
+  source_ids:
+  - the-2026-07-28-mcp-specification-release-candida-1a1752b8
+  manuscript: editions/004-unreleased/articles/mcp-protocol-update.md
+  fidelity: editions/004-unreleased/fidelity/mcp-protocol-update.yaml
+rights:
+  faithful_source_reprint: private_only_while_rights_unknown
+  public_release: blocked_pending_permission_or_applicable_exception
+closing_plates:
+- title: Signal Through Gates
+  art_path: editions/004-unreleased/art/closing-signal-gates.png
+- title: Memory and Retrieval
+  art_path: editions/004-unreleased/art/closing-memory-rings.png
+- title: The Useful Boundary
+  art_path: editions/004-unreleased/art/closing-protocol-exchange.png

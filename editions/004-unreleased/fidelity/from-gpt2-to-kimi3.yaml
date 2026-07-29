@@ -1,0 +1,944 @@
+schema_version: 1
+source_ids:
+- 22580-from-gpt2-to-kimi3-explained-8f01b0fe
+source_author: ali
+content_mode: faithful_synthesis
+source_body_sha256: f69c8b4a3825d7c13a5f06dd7a95c96ce7bf961a44ae602c4ff2bd2aee8a4e1f
+paragraphs:
+- id: synthesis-001
+  kind: p
+  status: modified
+  source: Twenty-two thousand five hundred and eighty. That’s how many GPT-2 (2019) models fit inside
+    KimiK3 (2026). We scaled up by a factor of 22,580 in seven years. But is it just... scale?
+  edited: Twenty-two thousand five hundred and eighty. That is how many 124-million-parameter GPT-2 models
+    fit inside a 2.8-trillion-parameter KimiK3. The scale changed by that factor in seven years, but the
+    architecture did not simply become a larger copy.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-002
+  kind: p
+  status: modified
+  source: sparse expert capacity, and selective depth-wise residual access.
+  edited: This progression follows the pressure created by sequence length, memory bandwidth, recurrent
+    state, selective retrieval, and sparse capacity.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-003
+  kind: h2
+  status: modified
+  source: 'GPT-2 GPT-2 is a decoder-only architecture:'
+  edited: GPT-2 and the cache
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-004
+  kind: p
+  status: modified
+  source: Once the final hidden-state matrix is produced, the language-model head maps it into vocabulary
+    logits. During autoregressive decoding, only the logits at the final position are needed to select
+    the next token.
+  edited: GPT-2 is a decoder-only transformer. Token and positional embeddings enter a stack of blocks.
+    Each block applies causal self-attention and an MLP through residual connections. A final normalization
+    and language-model head produce vocabulary logits.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-005
+  kind: p
+  status: modified
+  source: 'This is an inefficiency of decoder-only generation: the model computes representations for
+    every input position, but each decode step consumes only the final position’s logits. Without caching,
+    much of that work would be repeated for the next token.'
+  edited: During autoregressive generation, only the logits at the final position select the next token.
+    Without caching, each new token would force the model to recompute projections for the entire preceding
+    sequence.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-006
+  kind: p
+  status: modified
+  source: That storage is the KV cache. It retains vectors for the previous N-1 tokens and can become
+    large enough to create a memory-bandwidth bottleneck.
+  edited: The KV cache stores the keys and values from earlier tokens. It removes redundant compute, but
+    the cache grows with sequence length and can become a memory-bandwidth bottleneck. Full softmax attention
+    also compares every query with every key, so long contexts remain expensive even when generation is
+    cached.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-007
+  kind: h2
+  status: modified
+  source: combine multiple forms of attention within one architecture, like Gated DeltaNet withM Mamba.
+  edited: From linear attention to DeltaNet
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-008
+  kind: p
+  status: modified
+  source: Linear Attention Don't miss what's happening Softmax attention applies its nonlinearity after
+    the q·k product, Log coupling in everyup Sign People on X are the first to know. query to every key.
+    Linear attention instead applies a feature map, such as ELU+1,
+  edited: Softmax attention applies its nonlinearity after the query-key product. Linear attention applies
+    a feature map to queries and keys separately, which allows the computation to be reassociated. Instead
+    of retaining every key-value pair, the model can fold history into a fixed-size state.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-009
+  kind: p
+  status: modified
+  source: This preserves the basic attention contract, but uses a less expressive feature map to make
+    the QK scores non-negative.
+  edited: That changes the scaling behavior, but it also compresses information. Multiple keys write into
+    the same state. Similar representations interfere, and the feature map is less expressive than full
+    softmax attention.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-010
+  kind: p
+  status: modified
+  source: Q is also a learned pointer. Wq and Wk read the same residual stream, and the query for a fact
+    points at the key direction that fact was written into. The update first asks what information the
+    current key retrieves from the cache. It subtracts that existing information from the value we want
+    to store, multiplies the key by the difference, and adds the result back. Old information is removed
+    and new information is written in its place.
+  edited: DeltaNet treats the state like fast weights and applies a delta rule. Before writing a new key-value
+    association, it estimates what the current state would retrieve for that key. The update stores the
+    difference between the desired value and the existing prediction.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-011
+  kind: p
+  status: modified
+  source: 'Unlike standard attention, this formulation requires a correction at every key vector, so the
+    path to a parallel matrix multiplication is not immediately obvious. Even without the Delta rule,
+    a direct linear-attention prefill remains sequential:'
+  edited: The correction reduces interference. It does not make the recurrence free. Prefill still has
+    sequential structure, and a useful implementation must recover parallel work.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-012
+  kind: p
+  status: modified
+  source: Within a block, we do q(kᵀv). This is score first, the normal attention order with masking.
+    Across blocks, we follow (kᵀv)q, so we’re doing recurrent order, state first. Attention grows in O(N²)
+    and this does not. Inside a block I do real attention (the masked QKᵀ times V), and across blocks
+    I fold everything into the state and read it back with one matmul. So the cost splits in two. There's
+    a fixed piece, 2Ld², Don't miss what's which happening is the state work and doesn't care about C
+    at all. And there's Log in a growing Sign up People on X are the 2LCd, piece, first towhich know.is
+    the score matrices sitting on the diagonal. Full attention is
+  edited: Chunkwise formulations provide the bridge. A chunk can compute ordinary attention-like work
+    within the block while carrying a recurrent state between blocks. A chunk size of one resembles pure
+    recurrence. A chunk as large as the sequence approaches full quadratic attention. Intermediate sizes
+    trade local pairwise capacity for bounded recurrent state.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-013
+  kind: h2
+  status: modified
+  source: Kimi Linear improves on Gated DeltaNet by introducing fine-grained gating. Instead of a single
+    scalar decay, it learns a separate decay value for each channel.
+  edited: Gated DeltaNet
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-014
+  kind: p
+  status: modified
+  source: The problem is the lack of selective access. Different layer types receive the same aggregated
+    state, even though they may benefit from different weightings. Instead of treating all the layers
+    equally, AttnRes multiplies each term of that sum by a specialized weight, which lets the model give
+    more importance to whichever layers are most useful in context.
+  edited: Purely additive recurrent state never forgets. A gate lets the model decay old information before
+    applying the delta update.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-015
+  kind: p
+  status: modified
+  source: It does this through element-wise multiplication with a gate projected from the input.
+  edited: Gated DeltaNet combines a Mamba-style gated recurrence with the delta rule. The gate decides
+    how much state survives. The delta correction decides how a new association should replace what the
+    state currently predicts.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-016
+  kind: p
+  status: modified
+  source: The central change is not scale alone. Each architectural step changes what the model stores,
+    how it updates that state, or how it retrieves information that a fixed-size state cannot preserve.
+  edited: This is more than an optimization. Fixed-size memory must choose what to preserve and what to
+    overwrite. Gating makes that choice learnable.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-017
+  kind: h2
+  status: modified
+  source: 'At first glance, the changes from Kimi Linear appear modest:'
+  edited: Kimi Linear
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-018
+  kind: p
+  status: modified
+  source: KDA/Kimi Linear At this point, researchers began experimenting with hybrid models that
+  edited: Kimi Linear builds on Gated DeltaNet with Kimi Delta Attention and more fine-grained gating.
+    It is a hybrid architecture rather than a declaration that one mechanism replaces every other one.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-019
+  kind: p
+  status: modified
+  source: KDA supplies constant-state recurrent memory, while periodic MLA layers retain full softmax
+    retrieval over the context. The following simplified visualization provides a useful reference for
+    the changes discussed below.
+  edited: The design interleaves recurrent KDA layers with periodic Multi-head Latent Attention layers.
+    KDA provides constant-state recurrent memory. MLA can retrieve selectively from token context when
+    compressed state is not enough.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-020
+  kind: p
+  status: modified
+  source: 1. It uses a hybrid system that interleaves Multi-head Latent Attention (MLA) layers. 2. It
+    replaces the MLP with a Mixture-of-Experts (MoE) layer. 3. It adds capacity to DeltaNet through the
+    alpha projection.
+  edited: The architecture also replaces dense MLP blocks with Mixture-of-Experts layers. Sparse routing
+    increases parameter capacity without activating every parameter for every token. Additional projections
+    expand the capacity of the delta path.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-021
+  kind: p
+  status: modified
+  source: The result is a system that spends additional
+  edited: The important shift is division of labor. Recurrent state handles cheap continuous memory. Periodic
+    attention performs selective reads from fuller context. Experts provide conditional computation.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-022
+  kind: h2
+  status: modified
+  source: This completes the progression
+  edited: KimiK3
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-023
+  kind: p
+  status: modified
+  source: Kimi K3 Ultimately, the KimiK3 language backbone looks similar to the Kimi Linear model above.
+    It contains 23 four-layer macrocycles. In each macrocycle, three layers use Kimi Delta Attention and
+    the fourth uses Multi-head Latent Attention. The first layer uses a dense feed-forward network; every
+    remaining layer uses a latent Mixture-of-Experts.
+  edited: KimiK3 keeps the hybrid shape. Three of every four attention layers use Kimi Delta Attention,
+    while the fourth uses Multi-head Latent Attention. Its feed-forward capacity comes from a large Mixture-of-Experts
+    system.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-024
+  kind: p
+  status: modified
+  source: In a conventional MoE, a learned router uses dot-product similarity to send each token to a
+    subset of expert networks. KimiK3 has 898 experts in total. Two are shared and process every token;
+    of the remaining 896, the router selects 16 for each token.
+  edited: The model has 898 experts in total. Two are shared, while the router selects among the remaining
+    experts for each token. The experts operate in a compressed latent space, reducing the cost of sparse
+    capacity.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-025
+  kind: p
+  status: modified
+  source: Gated MLA determines how much of each retrieved feature passes from MLA into the residual stream.
+  edited: Gated MLA controls how much of each retrieved feature passes into the residual stream. MLA query
+    compression and output gating reduce the cost and regulate what the attention layer contributes.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-026
+  kind: p
+  status: modified
+  source: Because the recurrence is purely additive, later layers must also learn increasingly large outputs
+    to influence the accumulated residual, which can destabilize training.
+  edited: KimiK3 also uses blockwise attention residuals. A standard transformer carries one residual
+    stream through every layer. Here, blocks can retrieve from accumulated attention and MLP outputs across
+    a group of layers. The model gains selective access across depth without paying for that mechanism
+    at every layer.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-027
+  kind: p
+  status: modified
+  source: AttnRes and MLA address the same underlying limitation from different directions. KDA layers
+    operate with constant-size state and must inevitably discard information. MLA retrieves from the token
+    context, while AttnRes retrieves from earlier depth-wise representations.
+  edited: The recurrence and depth mechanisms address related losses. KDA compresses sequence history
+    into fixed state and must discard information. MLA can retrieve from the token context. Blockwise
+    residual access lets later layers recover selected information from earlier computation.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-028
+  kind: h2
+  status: modified
+  source: Don't miss what's happening Log in Sign up People on X are the first to know.
+  edited: What changed
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-029
+  kind: p
+  status: modified
+  source: from GPT-2 to KimiK3.
+  edited: The progression from GPT-2 to KimiK3 is not a straight replacement of attention.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-030
+  kind: p
+  status: modified
+  source: capacity where it has a specific functional role.
+  edited: The KV cache avoids recomputing the past but keeps a growing memory. Linear attention compresses
+    the past into fixed state but loses expressive precision. DeltaNet corrects writes to reduce interference.
+    Gating learns what to forget. KDA makes those updates more selective. Periodic MLA restores full-context
+    retrieval. Sparse experts add conditional capacity. Blockwise residual access adds selective depth-wise
+    memory.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: synthesis-031
+  kind: p
+  status: modified
+  source: KimiK3 combines constant-state recurrent memory, periodic softmax retrieval,
+  edited: KimiK3 combines constant-state recurrent memory, periodic softmax retrieval, sparse expert capacity,
+    and selective access across layers. The model is vastly larger than GPT-2, but the more interesting
+    story is how its components divide the work that one uniform transformer block once tried to do alone.
+  reason: Condensed and reorganized for the A5 page budget while preserving the source claim and point
+    of view.
+- id: cut-boilerplate
+  kind: p
+  status: boilerplate_removed
+  source: 'In this worklog, I’ll walk through how we got here and how much, or how little, has Don''t
+    miss what''s actually changedhappening since then. We’ll trace the major architectural developments
+    Log in Sign up leading People on X are to KimiK3. the first to know.
+
+
+    Don''t miss what''s happening Log in Sign up People on X are the first to know.
+
+
+    Don''t miss what''s happening # output projection Log in Sign up People on X are the first to know.
+
+
+    #get attn (bhtt x bhtd) Don''t miss what''s happening attn=scores.softmax(-1)#bhtt Log in Sign up
+    People on X are the first to know. o=attn@v #bhtd
+
+
+    Don''t miss what''s happening Log inwith: Notice the excessive reads and writes, which this paper
+    replaces Sign up People on X are the first to know.
+
+
+    1. Make the qk scores non-negative. Linear attention uses ELU+1, while softmax uses exponentiation.
+    2. Divide by the sum. Don''t miss what''s happening 3. Compute the weighted average of the values.
+    Log in Sign up People on X are the first to know.
+
+
+    def forward(self, x, mask=None, cache=None): # x is b,t,d b,t,d=x.shape d_head=d//self.num_heads Don''t
+    miss what''s happening h=self.num_heads Log in Sign up qkv=self.qkv_proj(x) People on X are the first
+    to know.
+
+
+    Don''t miss what''s happening Log in Sign up People on X are the first to know.
+
+
+    S=S_old+k@v Don''t miss what''s o=q@S happening #bhtd Log in Sign up People on X are the first to
+    know. o=self.norm(o)
+
+
+    Don''t miss what''s happening Log in Sign up People on X are the first to know.
+
+
+    Don''t miss Here,what''s happening a sequential loop computes one delta per iteration. The reparameterized
+    Log in Sign up People on X are formthe is:first to know.
+
+
+    Don''t miss what''s happening Log in Sign up People on X are the first to know.
+
+
+    Uniformly decaying all key-value associations at each time step by a dynamic ratio Don''t miss what''s
+    happening Log in Sign up is a working approach, and it''s what Mamba does. But it doesn''t account
+    for the People on X are the first to know.
+
+
+    Don''t miss what''s happening Log in Sign up People on X are the first to know.
+
+
+    Don''t miss what''s happening Log in Sign up People on X are the first to know.
+
+
+    Don''t miss Here,what''s happening alpha.reshape(nb, C, d) captures the paper’s most significant Log
+    in contribution: Sign up People on X are the first tocontrol fine-grained know. over memory decay.
+
+
+    A substantial increase in scale Don''t missBlockwise what''sAttnRes happening every 12 layers Log
+    in Sign up People on X are the MLA first to know. query LoRA and output gating
+
+
+    d = x.shape[-1] // 2 Don''t missgate what''s happening = x[..., :d].to(torch.float32) Log in Sign
+    up People on X areup the=first x[..., d:].to(torch.float32) to know.
+
+
+    AttnRes Thanks to @chloey3k for help with this section. In each forward pass, the input passes through
+    a stack of layers. Here, each layer consists of an attention block (KDA or MLA) and an MLP or MoE
+    block. Normally, the input to each layer is the Don''t miss what''s happening Log in Sign up People
+    on X are the first to know.
+
+
+    Don''t miss what''s happening Log in Sign up People on X are the first to know.
+
+
+    Don''t miss191 what''s happening 1.9K 11K 24K Log in Sign up People on X are the first to know.
+
+
+    Don''t miss what''s happening Log in Sign up People on X are the first to know.'
+  reason: Removed page navigation, sign-in prompts, and repeated interface chrome.
+- id: cut-substantive
+  kind: p
+  status: substantive_cut
+  source: 'Post
+
+
+    ali @waterloo_intern
+
+
+    22580: From GPT2 to Kimi3, Explained
+
+
+    python
+
+
+    tok_emb = self.transformer.wte(idx) # token embeddings of shape (b pos_emb = self.transformer.wpe(pos)
+    # position embeddings of shape x = self.transformer.drop(tok_emb + pos_emb) for block in self.transformer.h:
+    x = block(x) x = self.transformer.ln_f(x) logits = self.lm_head(x) return logits
+
+
+    The input receives token and positional embeddings:
+
+
+    Each transformer block, zoomed in, looks like this:
+
+
+    python
+
+
+    class Block(nn.Module): def __init__(self, config): super().__init__() self.ln_1 = LayerNorm(config.n_embd,
+    bias=config.bias) self.attn = CausalSelfAttention(config) self.ln_2 = LayerNorm(config.n_embd, bias=config.bias)
+    self.mlp = MLP(config)
+
+
+    def forward(self, x): x = x + self.attn(self.ln_1(x)) x = x + self.mlp(self.ln_2(x)) return x
+
+
+    The attention process:
+
+
+    python
+
+
+    B, T, C = x.size() # batch size, sequence length, embedding
+
+
+    # calculate query, key, values for all heads in batch and q, k, v = self.c_attn(x).split(self.n_embd,
+    dim=2) k = k.view(B, T, self.n_head, C // self.n_head).transpose q = q.view(B, T, self.n_head, C //
+    self.n_head).transpose v = v.view(B, T, self.n_head, C // self.n_head).transpose
+
+
+    # manual implementation of attention att = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(k.size att
+    = att.masked_fill(self.bias[:,:,:T,:T] == 0, float(''-i att = F.softmax(att, dim=-1) att = self.attn_dropout(att)
+    y = att @ v # (B, nh, T, T) x (B, nh, T, hs) -> (B, nh, T y = y.transpose(1, 2).contiguous().view(B,
+    T, C) # re-asse
+
+
+    y = self.resid_dropout(self.c_proj(y)) return y
+
+
+    The KV cache comes from a straightforward observation: after appending the generated token to the
+    input, the model would otherwise recompute projections for all previous tokens. Storing their key
+    and value vectors avoids that redundant work.
+
+
+    Overall, with about 50k possible tokens, 12 blocks, 12 heads, and an embedding dimension of 768, our
+    baseline model is about 124M parameters.
+
+
+    python
+
+
+    vocab_size: int = 50304 # GPT-2 vocab_size of 50257, padded up to n_layer: int = 12 n_head: int =
+    12 n_embd: int = 768
+
+
+    At 2.8 trillion parameters, one KimiK3 model contains roughly as many parameters as 22,580 GPT-2 models.
+
+
+    to q and k separately. This makes the product re-associable, so the growing set of K and V vectors
+    can be folded into a fixed D×D state.
+
+
+    The paper’s O(N²) framing threw me off. It''s not true that "the cost per time-step for transformers
+    scales with the square of the current sequence length". That''s what Flash Attention fixes... then
+    I saw that it was released in 2020.
+
+
+    At the time, training commonly materialized the full N×N attention matrix, FlashAttention did not
+    exist, and reference autoregressive implementations often recomputed the token history without a KV
+    cache.
+
+
+    python
+
+
+    def forward(self, x, mask=None, past_kv=None): # x is b,t,d b,t,d=x.shape d_head=d//self.num_heads
+    h=self.num_heads qkv=self.qkv_proj(x)
+
+
+    q=qkv[:, :, :d].view(b,t,h,d_head).transpose(1,2) k=qkv[:, :, d:2*d].view(b,t,h,d_head).transpose(1,2)
+    v=qkv[:, :, 2*d:].view(b,t,h,d_head).transpose(1,2)
+
+
+    # at prefill, q,k,v have shapes b,h,t,d # at decode, shape is b, h, 1, d # so i cat at the t dimension,
+    dim(2)
+
+
+    if past_kv is not None: k_past=past_kv[0] v_past=past_kv[1] k=torch.cat((k_past, k), dim=2) v=torch.cat((v_past,
+    v), dim=2)
+
+
+    scores=(q@k.transpose(-1,-2))/math.sqrt(d_head) if past_kv is None: #we''re in prefill and need to
+    mask causal_mask=torch.ones(t,t,dtype=bool, device=q.device) causal_mask=torch.triu(causal_mask, diagonal=1)
+    scores=scores.masked_fill(causal_mask, float(''-inf''))
+
+
+    if mask is not None: scores=scores.masked_fill(~mask, float(''-inf''))
+
+
+    o=o.transpose(1,2).contiguous().view(b,t,d) #b,t,d
+
+
+    # use x to get qkv o_proj=self.o_proj(o) past_kv=(k, v) return o_proj, past_kv
+
+
+    The same process is easier to see visually. Each decode step performs two ND reads and two 1D writes
+    to HBM, while the KV cache grows linearly, in O(N), with the sequence length.
+
+
+    python
+
+
+    def forward(self, x, mask=None, cache=None): # x is b,t,d b,t,d=x.shape d_head=d//self.num_heads h=self.num_heads
+    qkv=self.qkv_proj(x)
+
+
+    q=qkv[:, :, :d].view(b,t,h,d_head).transpose(1,2) k=qkv[:, :, d:2*d].view(b,t,h,d_head).transpose(1,2)
+    v=qkv[:, :, 2*d:].view(b,t,h,d_head).transpose(1,2)
+
+
+    k=F.elu(k)+1 k=k.transpose(-1,-2) q=F.elu(q)+1
+
+
+    S,z=cache if cache is not None else (0.0, 0.0) S=S+k@v z=z+k
+
+
+    o=q@S #bhtd denom=q@z o_scaled=o/denom o_scaled=o_scaled.transpose(1,2).contiguous().view(b,t,d) o_proj=self.o_proj(o_scaled)
+    cache=(S,z)
+
+
+    return o_proj, cache
+
+
+    There is a trade-off.
+
+
+    Here, we replace the exponential used by softmax with ELU+1 applied separately to q and k before they
+    interact. Both approaches normalize the resulting scores, but the feature map used by linear attention
+    is a less expressive approximation of the softmax kernel. That approximation can reduce fidelity,
+    although the practical accuracy loss depends on the architecture and workload.
+
+
+    Notice that we still divide by the sum of qk, which is omitted from the diagram for simplicity. At
+    a high level, attention consists of three steps:
+
+
+    DeltaNet (Fast Weight Programmers) A finite cache must overwrite or combine with information already
+    stored. The state from token i-1 does not receive its own slot; it is added to the same D by D matrix.
+    New queries can therefore no longer retrieve a perfectly isolated representation of each earlier token.
+
+
+    That addition is also the source of the efficiency gain. Updating the cache additively rather than
+    by concatenation prevents it from growing in O(N), but the same operation causes information to interfere.
+    DeltaNet addresses this loss of recoverability.
+
+
+    Eloquently put by Schlag’s paper (Fast Weight Programmers): “when the sequence length exceeds storage
+    capacity, the model may end up in an overcapacity regime. To properly operate under such a regime,
+    the model should learn to dynamically interact with the memory contents and selectively decide which
+    key-value associations to keep and which ones to delete. The purely additive instruction may be inappropriate
+    for this purpose…. endlessly adding new associations to a memory of finite size, as in Eq. 17, inevitably
+    will reach a limit.“
+
+
+    The regime that makes linear attention attractive, where N is much larger than D, also exposes its
+    main limitation. Once the state exceeds its effective capacity, associations begin to interfere because
+    the update is additive and nothing leaves the cache.
+
+
+    python
+
+
+    q=qkv[:, :, :d].view(b,t,h,d_head).transpose(1,2) k=qkv[:, :, d:2*d].view(b,t,h,d_head).transpose(1,2)
+    v=qkv[:, :, 2*d:].view(b,t,h,d_head).transpose(1,2)
+
+
+    q = F.normalize(F.silu(q), dim=-1) k = F.normalize(F.silu(k), dim=-1) beta = torch.sigmoid(self.w_beta(x)).view(b,
+    1, t, 1) # new: per-token write strength
+
+
+    S = cache if cache is not None else 0.0
+
+
+    v_old = k @ S # read the board at this key u = beta * (v - v_old) # the delta: only what''s actually
+    new S = S + k.transpose(-1, -2) @ u # same outer-product write as be
+
+
+    o = q @ S # read, no denominator o = o.transpose(1, 2).contiguous().view(b, t, d) return self.o_proj(o),
+    S
+
+
+    A visual example makes this easier to follow.
+
+
+    Take a single association written as S = k.T @ v. If read back with the same key and you get k @ (k.T
+    @ v), which is (k @ k.T) v, which is the squared norm of k times v. So read returns scaled by key''s
+    squared norm, and if normalize k to unit length, or just divide result by norm, get v back exactly.
+
+
+    DeltaNet (Parallelizing Linear Transformers with Delta Rule) This is the most difficult section of
+    the post. It took me about seven hours to develop a working understanding of it, so I will build the
+    explanation from the implementation. In short, DeltaNet implements a first-order linear recurrence
+    with generalized Householder transition matrices, enabling chunk-wise parallel forward passes for
+    hardware-efficient linear-time training. It splits the inputs and outputs into several chunks of size
+    C, and computes outputs for each chunk based on the final state of the previous chunk and the query
+    key value blocks of the current chunk.
+
+
+    The practical problem is prefill. A direct implementation of the Delta rule over a sequence of T tokens
+    would look like this:
+
+
+    python
+
+
+    S = torch.zeros(b, h, dh, dh) if cache is None else cache outs = [] for i in range(t): k_i = k[:,
+    :, i:i+1] v_i = v[:, :, i:i+1] b_i = beta[:, :, i:i+1] v_old = k_i @ S u_i = b_i * (v_i - v_old) S
+    = S + k_i.transpose(-1, -2) @ u_i # write outs.append(q[:, :, i:i+1] @ S) o = torch.cat(outs, dim=2)
+
+
+    python
+
+
+    S = torch.zeros(b, h, dh, dh) if cache is None else cache outs = [] for i in range(t): q = q[:, :,
+    i:i+1] k = k[:, :, i:i+1] v = v[:, :, i:i+1]
+
+
+    o=o.transpose(1, 2).contiguous().view(b, t, d)
+
+
+    out=self.o_proj(o) cache=S outs.append(out)
+
+
+    o = torch.cat(outs, dim=2)
+
+
+    A chunked formulation provides a more efficient approach. The mechanics are easier to understand through
+    an example:
+
+
+    Setting C=N recovers standard O(N^2) attention, while C=1 gives regular linear attention. Intermediate
+    values we interpolate between trade additional within- chunk work for better hardware utilization.
+    In practice, C is often 64 or 128 because tensor-core instructions operate efficiently at that granularity;
+    UMMA is one example.
+
+
+    The intermediate tiles are folded into S as part of the state update:
+
+
+    python
+
+
+    S = torch.zeros(b, h, dh, dh) if cache is None else cache outs = [] for i in range(t//C): q_c = q[:,
+    :, i*C:(i+1)*C] k_c = k[:, :, i*C:(i+1)*C] v_c = v[:, :, i*C:(i+1)*C]
+
+
+    o_prev=q_c@S #this is everything up to this block
+
+
+    attn=(q_c@k_c.transpose(-1,-2)).tril() #masked attention o_curr=attn@v_c
+
+
+    o=o_prev+o_curr
+
+
+    S_new=k_c.transpose(-1,-2)@v_c #recurrent attention S=S+S_new outs.append(o)
+
+
+    o = torch.cat(outs, dim=2)
+
+
+    just the case where C equals L, and then that second term becomes 2L²d, quadratic. So the smaller
+    I make C, the fewer FLOPs I do.
+
+
+    C=1 is the cheapest option in pure FLOP terms, but not necessarily in wall-clock time. A GPU can complete
+    more arithmetic faster when the work maps efficiently onto its matrix-multiply hardware.
+
+
+    The next step is to extend the same approach to DeltaNet.
+
+
+    The underlying issue is simple: the chunking method used for purely additive attention does not directly
+    apply to the delta updates:
+
+
+    python
+
+
+    v_old = k_i @ S u_i = b_i * (v_i - v_old)
+
+
+    We need every single state in order to compute the information that needs to be subtracted out. We
+    can''t parallelize it the same way without some mathematical re-parameterization. The authors therefore
+    rewrite the delta updates from:
+
+
+    python
+
+
+    u=v_new-v_old S_t= S_(t-1)+K.T@u o=q@S_T
+
+
+    python
+
+
+    S_t = S_{t-1}(I − β_t k_t k_tᵀ) + β_t v_t k_tᵀ o_t = S_t q_t
+
+
+    This formulation allows the chunked code to compute all C deltas at once:
+
+
+    python
+
+
+    def chunk_delta_rule_forward(Q, K, V, beta, C): # L: sequence length, d: head dimension L, d = Q.shape
+    # chunking Q, K, V = map(lambda x: x.reshape(-1,C,d), [Q, K, V]) beta = beta.reshape(-1, C) K_beta
+    = K * beta.unsqueeze(-1) V_beta = V * beta.unsqueeze(-1)
+
+
+    # compute eq. 10 with vectorized forward substitution for T = -(K_beta @ K.t()).tril(-1) for i in
+    range(1, C): T[i, :i] = T[i, :i] + (T[i, :, None] * T[:, :i]).s
+
+
+    T += torch.eye(C) W = T @ K_beta U = T @ V_beta
+
+
+    # chunkwise parallel. Eq. 8-9 S = torch.zeros(d, d) O = torch.empty_like(V)
+
+
+    for i in range(L//C): q_i, k_i, w_i = Q[i], K[i], W[i] u_i = U[i] - w_i @ S # the corrections, all
+    of one o_inter = q_i @ S A_i = (q_i @ k_i.t()).tril() #qk.t o_intra = A_i @ u_i # attention @ v (with
+    correcti S += k_i.t() @ u_i # update state with addition O[i] = o_intra + o_inter #update output with
+    flash return O.reshape(L, d)
+
+
+    This gets us to our first comparison point: MHA vs DeltaNet Transformers:
+
+
+    Gated Delta Net We now have a method for making precise changes to the cache. With each new fact (each
+    new key vector), we can look at exactly the old information stored at that point and replace it with
+    the new information we want to attend to.
+
+
+    However, this mechanism can forget only an association for which it has a specific replacement. It
+    cannot efficiently clear multiple associations during a context switch or decay memory generally to
+    free capacity.
+
+
+    If we were doing purely additive linear attention:
+
+
+    Adding the ability to forget would be simple. We''d just need a parameter controlling the forgetful
+    state:
+
+
+    python
+
+
+    S_old=cache S_new=k@v # cache=S_old+S_new cache=alpha * S_old + S_new
+
+
+    This is the Mamba-2 contribution. We decay the previous cache, then add the new cache at full strength,
+    preventing the state from growing without bound.
+
+
+    varying importance of different key-value associations.
+
+
+    That is, if the model needs to forget one specific association, all associations are forgotten equally.
+    The Delta rule, in contrast, can update a single fact but has no way to make the rest of the facts
+    decay.
+
+
+    So the Gated Delta rule combines Mamba''s gated update rule with the Delta rule. It adds a parameter,
+    alpha, that switches to the pure Delta rule when set to one and clears the memory when set to zero.
+    The challenge is implementing this with the same parallel-chunks method.
+
+
+    The implementation uses the same DeltaNet reparameterization described in the previous section. The
+    mathematics is nearly identical, with one addition: a data- dependent scalar between zero and one
+    that controls the decay of the previous state. This combines effective key-value association learning
+    with adaptive memory management.
+
+
+    The corresponding code changes are shown below:
+
+
+    γ γⁱ The ʳ/ term accounts for cumulative decay. A token written at time step x and read at x+t has
+    been multiplied by αₓαₓ₊₁αₓ₊₂…αₓ₊ₜ. This is the multiplicative analogue of a prefix-sum calculation.
+
+
+    The resulting architecture looks like this:
+
+
+    Kimi Linear drew attention for one central claim: under controlled comparisons, it outperformed full
+    attention. The authors presented it as a drop-in architectural replacement with better quality and
+    up to 6x higher decode throughput.
+
+
+    The KDA update rule remains similar, but the code now looks more like this:
+
+
+    Placed beside the DeltaNet Transformer, the Kimi Linear architecture introduces three major changes:
+
+
+    The later sections cover MLA and MoE in more detail. For now, the important point is that this is
+    not blind scaling. The additional capacity has a specific mathematical purpose: the per-channel scale
+    gives the model finer control over memory decay.
+
+
+    Scaling laws remain relevant, but capacity must be added in the right place and in a form the system
+    can use. Each architecture in this progression adds capacity to address a concrete limitation in the
+    preceding system.
+
+
+    Latent-space MoE SiTU activations Gated MLA
+
+
+    We will begin with the more direct changes: Gated MLA, latent-space MoE, and SiTU activations.
+
+
+    KimiK3 also changes the expert activation. Instead of applying SiLU to the up projection, multiplying
+    it element-wise by the gate, and then applying the down projection, it uses SiTU:
+
+
+    text
+
+
+    situ_a = self.beta * torch.tanh(gate / self.beta) * torch.sigmoid if self.linear_beta is not None:
+    up = self.linear_beta * torch.tanh(up / self.linear_beta) return (situ_a * up).to(x.dtype)
+
+
+    The model also down-projects inputs to the shared experts and up-projects their final sum:
+
+
+    This illustrates a recurring challenge in model inference. Without a fused kernel, the new activation
+    is almost 3x slower than the original path. One offsetting optimization is that the experts operate
+    in a compressed latent space, which makes their forward pass much faster and nearly halves the FLOPs.
+
+
+    The remaining changes are MLA query LoRA, output gating, and blockwise Attention Residuals every 12
+    layers. AttnRes adds roughly 2% inference latency, but provides two important benefits:
+
+
+    Selective retrieval of earlier representations, which mitigates residual dilution and hidden-state
+    growth A 1.25x compute advantage
+
+
+    sum of the original embedding and every preceding layer''s output, all weighted equally.
+
+
+    h_l = h_1 + \sum_{i=1}^{l-1} f_i(h_i)
+
+
+    Here, h_i is the input to layer i, h_1 is the embedding of the current token (the last token in the
+    sequence so far), and f_i(h_i) is the output of layer i (an attention or MLP block).
+
+
+    h_l = \alpha_0 \cdot h_1 + \sum_{i=1}^{l-1} \alpha_i \cdot f_i(h_i
+
+
+    Each weight alpha_i is computed from a query-key dot product. The query is learned for each layer,
+    while the keys and values come from earlier residual- stream states. The scores are normalized to
+    sum to one, then used to form a weighted combination of those states.
+
+
+    The model therefore does not have to condition only on its immediate predecessor. AttnRes gives each
+    layer selective access to earlier layer outputs, allowing its learned query to retrieve the representations
+    most useful for the current computation.
+
+
+    The pseudocode below applies the same idea at block granularity. A block is the element-wise sum of
+    the attention and MLP outputs accumulated across 12 decoder layers, stored as a single depth representation
+    for later AttnRes mixing.
+
+
+    Applying residual attention at every layer would add too much training and inference cost. Applying
+    it only at fixed block boundaries captures most of the benefit at a lower cost. In KimiK3, each boundary
+    occurs after 12 decoder layers. Across 23 four-layer macrocycles, this produces eight AttnRes blocks,
+    which increases our inference speed.
+
+
+    This is possibly the most important part of the block_attn_res function
+
+
+    python
+
+
+    V = torch.stack(blocks + [partial_block]) # [N+1, B, T, D] K = norm(V) logits = torch.einsum(''d,
+    n b t d -> n b t'', proj.weight.squeeze( h = torch.einsum(''n b t, n b t d -> b t d'', logits.softmax(0),
+    V) return h
+
+
+    In essence, a fixed-capacity associative memory (fixed dimensions) needs an eviction policy, since
+    a purely additive linear operation eventually adds interference once at capacity. To that end, learned
+    selection, like gating, routing, or decay, is necessary, and attention is the most effective selective-read
+    mechanism.
+
+
+    3:22 PM · Jul 27, 2026 · 4.4M Views
+
+
+    Dibyadeep Saha @dibyadeepsaha · Jul 27 This has to be one of the best made write-ups I’ve seen of
+    any Transformer model lineage EVER!! What a work of art! Massive respect, and you just gained a loyal
+    follower :)
+
+
+    1 62 30K
+
+
+    Ara @arafatkatze · Jul 27 Post: Liked Account: Followed Respect: Gained
+
+
+    1 29 14K
+
+
+    Hakm @hakmgpt · Jul 27 i cant see this for free , this is art
+
+
+    1 28 17K
+
+
+    Join the conversation
+
+
+    Read 188 more replies'
+  reason: Omitted implementation detail, repetition, extended examples, and peripheral material to remain
+    within the seven-page article cap.

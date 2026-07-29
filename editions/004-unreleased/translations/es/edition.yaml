@@ -1,0 +1,126 @@
+schema_version: 1
+language: es
+source_language: en
+locale: es
+base_copy_sha256: fb1727c2169209a0ab31a72746f8f3488e5c127f8fa5b30eebf13aac15258b62
+title: Los sistemas alrededor del modelo
+subtitle: Protocolos, evaluaciones, arquitecturas y el trabajo operativo que convierte la capacidad de los modelos
+  en sistemas confiables
+cover:
+  headline: Los sistemas alrededor del modelo
+  deck: Seis informes sobre la maquinaria que hace útil, comprensible y segura a la inteligencia
+  back_text: El modelo es solo un componente. La confiabilidad vive en el protocolo, la evidencia, el ciclo de
+    retroalimentación, la arquitectura y el criterio que los conecta.
+closing_plate_titles:
+- Señales entre compuertas
+- Memoria y recuperación
+- El límite útil
+editorial:
+  path: manuscript/editorial.md
+  source_sha256: 0423af321d753a9a24e4956d354ac7264b4a304d4c594e21d7909d39a97ec221
+articles:
+- id: frontier-lab-agent-intrusion
+  title: Anatomía de la intrusión de un agente en un laboratorio de frontera
+  short_title: Intrusión de un agente
+  display_emphasis: Intrusión
+  author_note: Hugo Larcher, Adrien Carreira, raphael g y Christophe Rannou son colaboradores que publican a través
+    de Hugging Face.
+  manuscript: articles/frontier-lab-agent-intrusion.md
+  source_sha256: 0dc087e8d35919de08af63acd3dd9bbd917d2c98ab9890a3f5297107ae5e1144
+  figures:
+  - id: campaign-timeline
+    caption: La campaña reconstruida se condensa en una cronología de cuatro días y medio de afianzamiento, mando
+      y control, movimiento lateral, uso de credenciales y limpieza.
+    credit: 'Diagrama de Hugo Larcher, Adrien Carreira, raphael g y Christophe Rannou; fuente: Anatomy of a Frontier
+      Lab Agent Intrusion: A Technical Timeline of the July 2026 Incident.'
+    alt_text: Una cronología de la campaña muestra el volumen de eventos y la actividad de cada fase durante cuatro
+      días y medio.
+    anchor: La cadena de ataque
+    source_caption_sha256: 4d10de4196ba1a89478cb37753dbbb502640d6444e28829f68bc2929727178b2
+    source_credit_sha256: c2d7ee9fa2fafa90c075dc70c409d9ce9b2ac011a98eb073cb6512b9bce11a43
+- id: eval-engineering
+  title: Ingeniería de evaluaciones
+  short_title: Ingeniería de evaluaciones
+  display_emphasis: evaluaciones
+  author_note: Argona es el nombre con el que publica @Argona0x, una cuenta de X centrada en IA.
+  manuscript: articles/eval-engineering.md
+  source_sha256: 949b54ba812b5feff35d408eb7021d32e7e2f2374a862aeef9f8e5f93d076279
+  figures:
+  - id: eval-engine
+    caption: La evaluación se convierte en ingeniería cuando las trazas de producción, las etiquetas de fallos
+      y los evaluadores repetibles forman un único ciclo operativo.
+    credit: 'Diagrama de Argona; fuente: Eval Engineering: the step that turns a $200 model into a $200,000 system.'
+    alt_text: Un diagrama de la fuente presenta la primera etapa de un flujo de ingeniería de evaluaciones.
+    anchor: El examinador que ya tienes
+    source_caption_sha256: 849b740adb60433fcd49bcf483b7fa1ef65748bf1f86cb3624daf3fb85ecbfbc
+    source_credit_sha256: d7edf84b73f053caabd4715a7c3ddb39363237e244699803b8a728fcd7fbf3af
+  - id: eval-routing
+    caption: 'Las puntuaciones solo resultan útiles cuando cambian la siguiente arista: reintentar, rechazar, poner
+      en cuarentena, bloquear o enviar a revisión humana.'
+    credit: 'Diagrama de Argona; fuente: Eval Engineering: the step that turns a $200 model into a $200,000 system.'
+    alt_text: Un diagrama de la fuente asocia fallos de evaluación con decisiones de enrutamiento.
+    anchor: Haz que la puntuación cambie la siguiente arista
+    source_caption_sha256: cf47ae3c32fb691eee442fd77cd5b1b91f8e8f14a911cd4081c13d4f0805cf1f
+    source_credit_sha256: 1a297db745b0ea6eb13991421746ead4d1563b80fc2cf1e39ad627a794286d8b
+- id: pragmatic-leverage
+  title: Apalancamiento pragmático en la fábrica de software
+  short_title: Apalancamiento pragmático
+  display_emphasis: Apalancamiento
+  author_note: Dex Horthy es el fundador de HumanLayer, una empresa de herramientas para desarrolladores respaldada
+    por YC.
+  manuscript: articles/pragmatic-leverage.md
+  source_sha256: 6f18975108e80f314976643fd1dddb308da09df16272527c0ed1df5d509bbed4
+  figures:
+  - id: delivery-time
+    caption: Programar es solo una fracción de la entrega de una funcionalidad; la alineación, la revisión, la
+      reelaboración, las pruebas y la verificación consumen el resto.
+    credit: 'Diagrama de Dex Horthy; fuente: Pragmatic Leverage in the Software Factory.'
+    alt_text: Un diagrama de la fuente divide el tiempo de entrega entre programación y trabajo circundante.
+    anchor: Buscar apalancamiento
+    source_caption_sha256: e9050764d4735865af4f28cb33fc0aeac036eb2a7a4f1134cbdc93a9bd328f31
+    source_credit_sha256: c6aaa9e73f59451de8e9adae1419b0b8ef5ca37461c06ae57689952108444fec
+  - id: minimal-prompt-risk
+    caption: Un prompt mínimo ahorra tiempo de preparación, pero deja una gran probabilidad de reelaboración costosa.
+    credit: 'Diagrama de Dex Horthy; fuente: Pragmatic Leverage in the Software Factory.'
+    alt_text: Un diagrama de la fuente relaciona un prompt de dos oraciones con la reelaboración esperada.
+    anchor: La regla 80/20 del apalancamiento al programar con IA
+    source_caption_sha256: 95277e9236e0b1c2f375ce2bd16e0c01e75d857da04223453d94323a87f68b5e
+    source_credit_sha256: 5f40f8afb785a81dd32f9e9b3ab025d2e05735c0ede822bb8eec925f873ee2f6
+- id: from-gpt2-to-kimi3
+  title: De GPT-2 a KimiK3
+  short_title: GPT-2 a KimiK3
+  display_emphasis: De GPT-2 a KimiK3
+  author_note: ali trabaja en inferencia en Baseten y estudia ingeniería en la Universidad de Waterloo.
+  manuscript: articles/from-gpt2-to-kimi3.md
+  source_sha256: be409aaeda234e1d9a575e04d226d68858725236442f13f0bc1b7fecb4bfbd3c
+  figures:
+  - id: gpt2-baseline
+    caption: 'GPT-2 aporta el punto de partida reconocible: embeddings de tokens y posiciones, bloques transformer,
+      normalización y una cabeza de modelo de lenguaje.'
+    credit: 'Diagrama de ali; fuente: 22580: From GPT2 to Kimi3, Explained.'
+    alt_text: Un diagrama de la fuente resume la arquitectura de solo decodificador de GPT-2.
+    anchor: GPT-2 y la caché
+    source_caption_sha256: 6d0a5d4ad46da8507d2a69f7a68141a9607119ee20b8b286950e1d65a335704d
+    source_credit_sha256: d2dc3b94c213628d4b463e88535f567f659c9188ca3bb098f0116581e1697189
+  - id: attention-progression
+    caption: El registro de trabajo sigue la atención desde la comparación completa entre pares hasta el estado
+      recurrente y la corrección mediante la regla delta.
+    credit: 'Diagrama de ali; fuente: 22580: From GPT2 to Kimi3, Explained.'
+    alt_text: Un diagrama de la fuente compara etapas en la evolución de los mecanismos de atención.
+    anchor: De la atención lineal a DeltaNet
+    source_caption_sha256: bafc29791379bc8efe258dffc87fe5fc5c25183c34476bf24565e9505d28a540
+    source_credit_sha256: e8c40d323cd29dad7662e35d63be00efc2364d3bd9928d3355799e903dd8e9e4
+- id: mcp-in-a-nutshell
+  title: MCP en pocas palabras
+  short_title: MCP en pocas palabras
+  display_emphasis: MCP en pocas palabras
+  manuscript: articles/mcp-in-a-nutshell.md
+  source_sha256: ee3ec0d454816c298ddebd80db963c9685a11d985c7df426aba3fa9e44024781
+- id: mcp-protocol-update
+  title: La actualización del protocolo MCP
+  short_title: protocolo MCP
+  display_emphasis: Protocolo
+  author_note: David Soria Parra y Den Delimarsky son mantenedores principales del Model Context Protocol.
+  manuscript: articles/mcp-protocol-update.md
+  source_sha256: 3d65b78ca8cb043a9e6a217bfa1068da48002eaf5501a69a03b2326c92bf6078
+sections: []

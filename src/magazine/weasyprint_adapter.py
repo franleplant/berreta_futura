@@ -411,6 +411,7 @@ _OPENER_LABEL_BOX_POINTS = 7.53085
 _SANS_ZERO_LEADING_RATIO = (0.96875 - 0.2412109375) / 2
 _ZERO_LEADING_SANS_BASELINE = 2.47375
 _BYLINE_SIZE_POINTS = 7.4
+_BYLINE_MIN_HORIZONTAL_SCALE = 0.78
 _BYLINE_ZERO_LEADING_BASELINE = _BYLINE_SIZE_POINTS * _SANS_ZERO_LEADING_RATIO
 # ``_set_custom_frame(top=title_bottom - 10)`` then ``_credit``'s own 12pt pad.
 _OPENER_TITLE_TO_CREDIT_POINTS = 10.0
@@ -2823,12 +2824,20 @@ def _fit_credit_measure(article: Element, header: Element, code: SourceCode) -> 
             continue
         byline.set("style", inset)
         text = "".join(byline.itertext()).strip().upper()
-        if _string_width(text, "sans-semibold", _BYLINE_SIZE_POINTS) > column:
+        width = _string_width(text, "sans-semibold", _BYLINE_SIZE_POINTS)
+        scale = min(1.0, column / width) if width else 1.0
+        if scale < _BYLINE_MIN_HORIZONTAL_SCALE:
             raise ValidationError(
                 f"Article {article.get('data-article-id')}'s byline {text!r} reaches "
                 f"past the {column:.2f}pt credit column beside its own source code "
-                "and out through the live area's right edge; shorten the byline "
-                "rather than wrapping a zero-leading line."
+                "and would require excessive horizontal compression; shorten the "
+                "captured byline or redesign the credit row."
+            )
+        if scale < 1.0:
+            tracking = (column - width) / max(1, len(text) - 1)
+            byline.set(
+                "style",
+                f"{inset}; letter-spacing: {tracking:.6f}pt; white-space: nowrap",
             )
 
 
