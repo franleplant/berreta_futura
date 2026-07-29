@@ -435,6 +435,20 @@ Edition-owned illustration directions are compiled separately from the build:
 uv run --locked mag illustrate <edition-id>
 ```
 
+New illustrated editions should begin with `templates/illustrations.yaml`. Its
+`direction_preset` points to
+`art-directions/playful-science-vignettes.yaml`, the publication's reusable
+default: original Doraemon-era children's science-manga energy, one wordless
+narrative vignette, friendly rounded figures and gadgets, simple black ink,
+warm paper, and relaxed spot color. Wide single scenes are the default for
+article tails; square scenes are preferred when a standalone placement
+supports them; portrait scenes are secondary and reserved for vertical ideas
+or closing plates. The preset explicitly forbids recognizable franchise
+characters and copied signature gadgets. It also names the approved square and
+wide prototypes under `art-directions/references/`; their hashes travel with
+the prompt package and build manifest so future generations use the same visual
+anchors rather than relying on prose alone.
+
 The command validates the committed article-tail and closing-plate inventory,
 then writes exact authoring prompts and a hash-bound selection manifest under
 `output/<edition-id>/illustration-prompts/`. Image generation and candidate

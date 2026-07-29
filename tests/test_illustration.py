@@ -117,6 +117,80 @@ def test_prompt_package_binds_prompts_and_selected_pixels(tmp_path: Path):
     assert "Franchise characters" in prompt
 
 
+def test_plan_can_reuse_a_hash_bound_direction_preset(tmp_path: Path):
+    edition, plan_path = _fixture(tmp_path)
+    preset_path = tmp_path / "art-directions" / "playful-science-vignettes.yaml"
+    preset_path.parent.mkdir()
+    reference_path = preset_path.parent / "reference-square.png"
+    Image.new("RGB", (1024, 1024), "white").save(reference_path)
+    preset_path.write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "direction": {
+                    "name": "Playful Science Vignettes",
+                    "visual_language": "One friendly manga vignette with simple ink.",
+                    "palette": "Relaxed spot colors over warm cream paper.",
+                    "reference_images": [
+                        reference_path.relative_to(tmp_path).as_posix()
+                    ],
+                    "constraints": ["One self-contained scene", "Original characters"],
+                    "avoid": ["Franchise characters", "Multi-panel pages"],
+                },
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+    plan_data = yaml.safe_load(plan_path.read_text(encoding="utf-8"))
+    plan_data.pop("direction")
+    plan_data["direction_preset"] = preset_path.relative_to(tmp_path).as_posix()
+    plan_path.write_text(
+        yaml.safe_dump(plan_data, sort_keys=False),
+        encoding="utf-8",
+    )
+
+    plan = load_illustration_plan(tmp_path, edition)
+    destination = write_illustration_package(
+        tmp_path, tmp_path / "output", edition
+    )
+    payload = json.loads(
+        (destination / "illustrations.json").read_text(encoding="utf-8")
+    )
+
+    assert plan is not None
+    assert plan.direction.name == "Playful Science Vignettes"
+    assert plan.direction_path == preset_path
+    assert plan.direction.reference_paths == (reference_path,)
+    assert payload["direction_preset"]["path"] == (
+        "art-directions/playful-science-vignettes.yaml"
+    )
+    assert len(payload["direction_preset"]["sha256"]) == 64
+    assert payload["reference_images"][0]["path"] == (
+        "art-directions/reference-square.png"
+    )
+    assert len(payload["reference_images"][0]["sha256"]) == 64
+    assert "One friendly manga vignette" in (
+        destination / "tail-article.txt"
+    ).read_text(encoding="utf-8")
+    assert "art-directions/reference-square.png" in (
+        destination / "tail-article.txt"
+    ).read_text(encoding="utf-8")
+
+
+def test_plan_cannot_mix_inline_direction_and_preset(tmp_path: Path):
+    edition, plan_path = _fixture(tmp_path)
+    plan_data = yaml.safe_load(plan_path.read_text(encoding="utf-8"))
+    plan_data["direction_preset"] = "art-directions/default.yaml"
+    plan_path.write_text(
+        yaml.safe_dump(plan_data, sort_keys=False),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValidationError, match="not both"):
+        load_illustration_plan(tmp_path, edition)
+
+
 def test_a_plan_cannot_point_somewhere_other_than_the_manifest(tmp_path: Path):
     edition, _ = _fixture(tmp_path)
     wrong = tmp_path / "editions" / "issue" / "art" / "wrong.png"

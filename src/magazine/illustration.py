@@ -42,6 +42,7 @@ class IllustrationDirection:
     palette: str
     constraints: tuple[str, ...]
     avoid: tuple[str, ...]
+    reference_paths: tuple[Path, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -62,6 +63,7 @@ class IllustrationPlan:
     path: Path
     direction: IllustrationDirection
     assets: tuple[IllustrationAsset, ...]
+    direction_path: Path | None = None
 
 
 def load_illustration_plan(root: Path, edition: Edition) -> IllustrationPlan | None:
@@ -86,8 +88,43 @@ def load_illustration_plan(root: Path, edition: Edition) -> IllustrationPlan | N
     if data.get("schema_version") != 1:
         errors.append(f"Illustration plan {path} requires schema_version: 1")
     direction_row = data.get("direction")
+    direction_preset = data.get("direction_preset")
+    direction_path: Path | None = None
+    if direction_row is not None and direction_preset is not None:
+        errors.append(
+            f"Illustration plan {path} must declare direction or direction_preset, not both"
+        )
+        direction_row = {}
+    elif direction_preset is not None:
+        try:
+            direction_path = safe_project_path(root, direction_preset)
+        except ValidationError as exc:
+            errors.extend(exc.errors)
+            direction_row = {}
+        else:
+            if not direction_path.is_file():
+                errors.append(
+                    f"Illustration direction preset not found: {direction_path}"
+                )
+                direction_row = {}
+            else:
+                preset = load_structured(direction_path)
+                if not isinstance(preset, dict):
+                    errors.append(
+                        f"Illustration direction preset must be a mapping: {direction_path}"
+                    )
+                    direction_row = {}
+                else:
+                    if preset.get("schema_version") != 1:
+                        errors.append(
+                            f"Illustration direction preset {direction_path} "
+                            "requires schema_version: 1"
+                        )
+                    direction_row = preset.get("direction")
     if not isinstance(direction_row, dict):
-        errors.append(f"Illustration plan {path} requires a direction mapping")
+        errors.append(
+            f"Illustration plan {path} requires a direction mapping or direction_preset"
+        )
         direction_row = {}
     direction_values: dict[str, str] = {}
     for key in ("name", "visual_language", "palette"):
@@ -99,6 +136,11 @@ def load_illustration_plan(root: Path, edition: Edition) -> IllustrationPlan | N
         direction_row.get("constraints"), "direction.constraints", errors
     )
     avoid = _string_list(direction_row.get("avoid"), "direction.avoid", errors)
+    reference_paths = _reference_paths(
+        root,
+        direction_row.get("reference_images"),
+        errors,
+    )
 
     rows = data.get("assets")
     if not isinstance(rows, list) or not rows:
@@ -178,8 +220,10 @@ def load_illustration_plan(root: Path, edition: Edition) -> IllustrationPlan | N
             palette=direction_values["palette"],
             constraints=constraints,
             avoid=avoid,
+            reference_paths=reference_paths,
         ),
         assets=tuple(assets),
+        direction_path=direction_path,
     )
 
 
@@ -260,6 +304,17 @@ def illustration_prompt(plan: IllustrationPlan, asset: IllustrationAsset) -> str
 
     constraints = "\n".join(f"- {item}" for item in plan.direction.constraints)
     avoid = "\n".join(f"- {item}" for item in plan.direction.avoid)
+    references = (
+        "\nReference images:\n"
+        + "\n".join(
+            f"- {path.as_posix()}"
+            for path in plan.direction.reference_paths
+        )
+        + "\nUse them only as visual-language, print-treatment, and composition "
+        "references; never copy their characters or exact scenes."
+        if plan.direction.reference_paths
+        else ""
+    )
     size = "1536x1024 landscape" if asset.role == "article_tail" else "1024x1536 portrait"
     slot = (
         "an article-tail illustration crop-filled into a variable-height 325pt-wide "
@@ -276,6 +331,7 @@ def illustration_prompt(plan: IllustrationPlan, asset: IllustrationAsset) -> str
         f"Art direction: {plan.direction.name}\n"
         f"Visual language: {plan.direction.visual_language}\n"
         f"Palette: {plan.direction.palette}\n"
+        f"{references}\n"
         f"Subject: {asset.subject}\n"
         f"Composition: {asset.composition}\n"
         "Constraints:\n"
@@ -330,6 +386,21 @@ def write_illustration_package(
         "edition_id": edition.id,
         "plan_path": plan.path.relative_to(root).as_posix(),
         "plan_sha256": _sha256(plan.path),
+        "direction_preset": (
+            {
+                "path": plan.direction_path.relative_to(root).as_posix(),
+                "sha256": _sha256(plan.direction_path),
+            }
+            if plan.direction_path is not None
+            else None
+        ),
+        "reference_images": [
+            {
+                "path": path.relative_to(root).as_posix(),
+                "sha256": _sha256(path),
+            }
+            for path in plan.direction.reference_paths
+        ],
         "assets": inventory,
     }
     (destination / "illustrations.json").write_text(
@@ -377,6 +448,32 @@ def _string_list(value: Any, label: str, errors: list[str]) -> tuple[str, ...]:
     if len(normalized) != len(value):
         errors.append(f"Illustration plan {label} must contain non-empty strings")
     return normalized
+
+
+def _reference_paths(
+    root: Path,
+    value: Any,
+    errors: list[str],
+) -> tuple[Path, ...]:
+    if value is None:
+        return ()
+    if not isinstance(value, list):
+        errors.append("Illustration plan direction.reference_images must be a list")
+        return ()
+    references: list[Path] = []
+    for raw_path in value:
+        try:
+            path = safe_project_path(root, raw_path)
+        except ValidationError as exc:
+            errors.extend(exc.errors)
+            continue
+        if not path.is_file():
+            errors.append(f"Illustration direction reference not found: {path}")
+            continue
+        references.append(path)
+    if len(set(references)) != len(references):
+        errors.append("Illustration direction reference_images must be unique")
+    return tuple(references)
 
 
 def _sha256(path: Path) -> str:

@@ -132,11 +132,29 @@ with wordless editorial illustrations. The generation step remains
 **author-time only**: `mag build` never calls an image model and never changes
 selected pixels. The edition declares `art_direction_path`, whose plan records
 one shared visual language plus an exact brief, description, credit, role, and
-committed path for every article tail and closing plate. `uv run --locked mag
-illustrate <edition-id>` validates that the plan and manifest name the same
-inventory, checks each PNG's role-specific resolution and orientation, and
-writes exact prompts plus a hash-bound inventory under
+committed path for every article tail and closing plate. A plan may carry that
+direction inline or name one reusable `direction_preset`; it may never do both.
+The selected preset is a first-class build input and its path and SHA-256 are
+recorded beside the plan, so improving the publication default cannot silently
+change an older edition's recipe. `uv run --locked mag illustrate
+<edition-id>` validates that the plan and manifest name the same inventory,
+checks each PNG's role-specific resolution and orientation, and writes exact
+prompts plus a hash-bound inventory under
 `output/<edition-id>/illustration-prompts/`.
+
+The default for new editions is
+`art-directions/playful-science-vignettes.yaml`: original late-20th-century
+Japanese children's science-manga energy, especially the cheerful economy and
+gadget logic associated with Doraemon-era work, without copying any franchise
+character or signature object. Each image is one wordless narrative vignette,
+with friendly rounded figures, simple black contours, warm paper, sparse
+halftone, and relaxed spot color. Article tails favor wide scenes whose core
+action survives the safe crop. Square scenes are preferred for standalone
+placements when the layout supports them. Portraits are secondary, used only
+for truly vertical subjects and closing plates. The preset's approved square
+and wide prototype PNGs are also first-class, hash-bound inputs: prompt
+packages tell the authoring tool which visual anchors to use, and build
+manifests record the exact files that informed the selected art.
 
 The prompt package is a reproducible editorial recipe, not an approval. An
 editor still selects the candidates and commits the chosen PNGs. Builds bind
