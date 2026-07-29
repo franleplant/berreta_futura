@@ -1,0 +1,14 @@
+{
+  "artifact_count": 1,
+  "bundle_sha256": "1aae1d4a293e043b82cd53145d8f506d3f37fb9256947628847939623d087050",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 0,
+  "images": [],
+  "local_references": [],
+  "missing_references": [],
+  "referenced_image_count": 0,
+  "schema_version": 1,
+  "source_id": "eval-engineering-the-step-that-turns-a-200-model-9f6f868f",
+  "unresolved_acquisition_references": []
+}

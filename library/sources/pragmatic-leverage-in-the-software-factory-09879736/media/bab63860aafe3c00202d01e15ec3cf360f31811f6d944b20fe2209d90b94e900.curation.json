@@ -1,0 +1,239 @@
+{
+  "bundle_sha256": "bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900",
+  "candidate_count": 9,
+  "candidates": [
+    {
+      "artifact_path": "article.png",
+      "artifact_sha256": "393e74962d9b86aa50654ec98ec10f141bb2328f835b18c05de03e8f7e2194fe",
+      "aspect_ratio": 0.266823,
+      "criteria": [],
+      "decision": "reject",
+      "description": "",
+      "heading": "",
+      "id": "raster-001-393e7496",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 4681,
+      "pixel_width": 1249,
+      "rationale": "",
+      "rejection_reasons": [
+        "not_referenced_by_source_content"
+      ],
+      "score": 0,
+      "source_artifact": "article.png",
+      "source_artifact_sha256": "393e74962d9b86aa50654ec98ec10f141bb2328f835b18c05de03e8f7e2194fe",
+      "source_position": 1,
+      "title": "article"
+    },
+    {
+      "artifact_path": "media/001.png",
+      "artifact_sha256": "8925967c0eb1c7879eb87da11fab28d68b170e520454b2dd4f76292ae135bcc6",
+      "aspect_ratio": 2.5,
+      "criteria": [],
+      "decision": "reject",
+      "description": "The source article's cover image.",
+      "heading": "",
+      "id": "raster-002-8925967c",
+      "mime_type": "image/png",
+      "origin": "raw_raster",
+      "pixel_height": 1600,
+      "pixel_width": 4000,
+      "rationale": "",
+      "rejection_reasons": [
+        "article_title_card"
+      ],
+      "score": 0,
+      "source_artifact": "media/001.png",
+      "source_artifact_sha256": "8925967c0eb1c7879eb87da11fab28d68b170e520454b2dd4f76292ae135bcc6",
+      "source_position": 1,
+      "title": "Article cover image"
+    },
+    {
+      "artifact_path": "media/002.jpg",
+      "artifact_sha256": "3781e0b28128fa9fe69691da2b6b1afb88e6c1b279f0502157e0f9a6dca8dcb9",
+      "aspect_ratio": 1.985486,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "include",
+      "description": "Source diagram supporting the article's breakdown of software delivery time.",
+      "heading": "Seeking Leverage",
+      "id": "raster-003-3781e0b2",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 1378,
+      "pixel_width": 2736,
+      "rationale": "Software delivery time before AI is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [],
+      "score": 74,
+      "source_artifact": "media/002.jpg",
+      "source_artifact_sha256": "3781e0b28128fa9fe69691da2b6b1afb88e6c1b279f0502157e0f9a6dca8dcb9",
+      "source_position": 2,
+      "title": "Software delivery time before AI"
+    },
+    {
+      "artifact_path": "media/003.jpg",
+      "artifact_sha256": "90e286025e35e76ee02b53ba4170df8eaacd075bf44c79d4932678a11c1b8a36",
+      "aspect_ratio": 2.223663,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "include",
+      "description": "Source diagram showing the limited leverage from accelerating coding alone.",
+      "heading": "Seeking Leverage",
+      "id": "raster-004-90e28602",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 1234,
+      "pixel_width": 2744,
+      "rationale": "AI applied only to coding is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [],
+      "score": 74,
+      "source_artifact": "media/003.jpg",
+      "source_artifact_sha256": "90e286025e35e76ee02b53ba4170df8eaacd075bf44c79d4932678a11c1b8a36",
+      "source_position": 3,
+      "title": "AI applied only to coding"
+    },
+    {
+      "artifact_path": "media/004.jpg",
+      "artifact_sha256": "cdc35a1870197c062562d7c869fe52121fdde5444ca301fbfcad8efe545ab66c",
+      "aspect_ratio": 2.285714,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Source diagram showing broader leverage from applying AI to planning and alignment.",
+      "heading": "Seeking Leverage",
+      "id": "raster-005-cdc35a18",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 1190,
+      "pixel_width": 2720,
+      "rationale": "AI applied to planning and alignment is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 74,
+      "source_artifact": "media/004.jpg",
+      "source_artifact_sha256": "cdc35a1870197c062562d7c869fe52121fdde5444ca301fbfcad8efe545ab66c",
+      "source_position": 4,
+      "title": "AI applied to planning and alignment"
+    },
+    {
+      "artifact_path": "media/005.jpg",
+      "artifact_sha256": "8ea5b0859de035c406a8c8dac4c34a0dafe1fd2af7adea8b8622529c4339aef5",
+      "aspect_ratio": 1.552764,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "include",
+      "description": "Source diagram illustrating expected rework after a minimal prompt.",
+      "heading": "The 80/20 rule in AI coding leverage",
+      "id": "raster-006-8ea5b085",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 1592,
+      "pixel_width": 2472,
+      "rationale": "Two-sentence prompt is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [],
+      "score": 74,
+      "source_artifact": "media/005.jpg",
+      "source_artifact_sha256": "8ea5b0859de035c406a8c8dac4c34a0dafe1fd2af7adea8b8622529c4339aef5",
+      "source_position": 5,
+      "title": "Two-sentence prompt"
+    },
+    {
+      "artifact_path": "media/006.jpg",
+      "artifact_sha256": "7cba4626faf91106e7d2e12ac854f7b52f349f94bcb05803ec38a96ee511f72e",
+      "aspect_ratio": 1.552764,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Source diagram illustrating expected rework after extensive up-front specification.",
+      "heading": "The 80/20 rule in AI coding leverage",
+      "id": "raster-007-7cba4626",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 1592,
+      "pixel_width": 2472,
+      "rationale": "Detailed specification is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 74,
+      "source_artifact": "media/006.jpg",
+      "source_artifact_sha256": "7cba4626faf91106e7d2e12ac854f7b52f349f94bcb05803ec38a96ee511f72e",
+      "source_position": 6,
+      "title": "Detailed specification"
+    },
+    {
+      "artifact_path": "media/007.jpg",
+      "artifact_sha256": "706707a054cdfff461e2516e1baefcb394ed03ef51e4a02c6f77d8d85a4fb02e",
+      "aspect_ratio": 1.552764,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Source diagram illustrating the manual-work endpoint of the author's model.",
+      "heading": "The 80/20 rule in AI coding leverage",
+      "id": "raster-008-706707a0",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 1592,
+      "pixel_width": 2472,
+      "rationale": "Writing every line manually is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 74,
+      "source_artifact": "media/007.jpg",
+      "source_artifact_sha256": "706707a054cdfff461e2516e1baefcb394ed03ef51e4a02c6f77d8d85a4fb02e",
+      "source_position": 7,
+      "title": "Writing every line manually"
+    },
+    {
+      "artifact_path": "media/008.jpg",
+      "artifact_sha256": "6460b75ab35398ba1a9f7311c95d8248ae5b657abc9194db44882639e81310aa",
+      "aspect_ratio": 1.552764,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Source diagram plotting the inverse relationship between up-front effort and expected pain.",
+      "heading": "The 80/20 rule in AI coding leverage",
+      "id": "raster-009-6460b75a",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 1592,
+      "pixel_width": 2472,
+      "rationale": "Up-front effort and expected pain is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 74,
+      "source_artifact": "media/008.jpg",
+      "source_artifact_sha256": "6460b75ab35398ba1a9f7311c95d8248ae5b657abc9194db44882639e81310aa",
+      "source_position": 8,
+      "title": "Up-front effort and expected pain"
+    }
+  ],
+  "curator": "magazine-compiler/automatic-media-curator",
+  "input_sha256": "20cfade2c65a00ed4d161529a0cf03c7c9402a5080f5a6e1582336a021689209",
+  "policy_version": "editorial-impact-v4",
+  "schema_version": 1,
+  "selected": [
+    "raster-003-3781e0b2",
+    "raster-006-8ea5b085",
+    "raster-004-90e28602"
+  ],
+  "selection_limit": 3,
+  "source_id": "pragmatic-leverage-in-the-software-factory-09879736"
+}

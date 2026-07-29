@@ -1,0 +1,20 @@
+{
+  "artifact_count": 1,
+  "artifacts": [
+    {
+      "bytes": 1243055,
+      "path": "profile.pdf",
+      "sha256": "84d4568780596484db1684364d4147ef950938b0da90a1f43d8849108e213e39"
+    }
+  ],
+  "bundle_sha256": "6673eb827dc1ca5a5ee8a8fbe17dc5e842a3977f4ea65ea0350db2a29153318c",
+  "byte_count": 1243055,
+  "canonical_url": "https://x.com/waterloo_intern/status/2081762065392541951",
+  "captured_at": "2026-07-29T00:44:55Z",
+  "method": "author_identity_profile",
+  "purpose": "author_identity",
+  "schema_version": 2,
+  "source_id": "22580-from-gpt2-to-kimi3-explained-8f01b0fe",
+  "source_url": "https://x.com/waterloo_intern",
+  "submitted_url": "https://x.com/waterloo_intern/status/2081762065392541951"
+}

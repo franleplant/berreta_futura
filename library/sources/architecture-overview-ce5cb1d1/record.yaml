@@ -1,0 +1,47 @@
+schema_version: 2
+id: architecture-overview-ce5cb1d1
+title: Architecture overview
+author: Model Context Protocol
+author_profile:
+  note: ''
+  evidence: []
+canonical_url: https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture
+submitted_url: https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture
+captured_at: '2026-07-29T00:36:21Z'
+publication_date: '2026-07-28'
+kind: web
+status: captured
+content_hash: null
+raw_captures:
+- id: 1ced8cc9c9845813bd7544a26e4ec78ce05fc460eb5ca1261fb21d14b3280c03
+  path: raw/1ced8cc9c9845813bd7544a26e4ec78ce05fc460eb5ca1261fb21d14b3280c03/manifest.json
+  method: authenticated_browser
+  purpose: article
+  source_url: https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture
+  captured_at: '2026-07-29T00:36:21Z'
+  artifact_count: 2
+  byte_count: 3287387
+provenance: []
+rights:
+  status: unknown
+  intended_use: private_reference
+  attribution_required: true
+  public_reprint_allowed: false
+media_reviews:
+- capture_id: 1ced8cc9c9845813bd7544a26e4ec78ce05fc460eb5ca1261fb21d14b3280c03
+  status: media_rejected
+  assets: []
+  note: 'Automatic curation rejected all candidates: extreme_aspect_ratio_or_full_page_capture (1), no_semantic_source_context
+    (1).'
+metadata:
+  tags:
+  - architecture
+  - documentation
+  - mcp
+  synopsis: The versioned official explanation of MCP hosts, clients, servers, data and transport layers,
+    primitives, discovery, tool calls, and notifications.
+notes: >-
+  Edition 4 supporting source only; do not produce a standalone article. Use this
+  material for a brief, example-driven “MCP in a nutshell” section inside the MCP
+  specification-update article sourced primarily from
+  the-2026-07-28-mcp-specification-release-candida-1a1752b8.

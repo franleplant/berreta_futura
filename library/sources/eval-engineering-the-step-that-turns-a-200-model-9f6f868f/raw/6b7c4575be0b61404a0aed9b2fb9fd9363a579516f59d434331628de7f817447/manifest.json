@@ -1,0 +1,25 @@
+{
+  "artifact_count": 2,
+  "artifacts": [
+    {
+      "bytes": 1048525,
+      "path": "post.pdf",
+      "sha256": "ed17e4c8c1832b878abd7ee5e35b1037749b678750e079bfc56607c2b826ba95"
+    },
+    {
+      "bytes": 2962194,
+      "path": "post.png",
+      "sha256": "b92dd4da8b6a25478db1e08a73808ae4a6f9ca6ec3c0d4a166561459ddc625e0"
+    }
+  ],
+  "bundle_sha256": "6b7c4575be0b61404a0aed9b2fb9fd9363a579516f59d434331628de7f817447",
+  "byte_count": 4010719,
+  "canonical_url": "https://x.com/argona0x/status/2082127026538868839",
+  "captured_at": "2026-07-29T00:36:02Z",
+  "method": "authenticated_browser",
+  "purpose": "article",
+  "schema_version": 2,
+  "source_id": "eval-engineering-the-step-that-turns-a-200-model-9f6f868f",
+  "source_url": "https://x.com/argona0x/status/2082127026538868839",
+  "submitted_url": "https://x.com/argona0x/status/2082127026538868839"
+}
