@@ -420,6 +420,17 @@ tail ornament an article declared but the typesetter did not print becomes a
 `tail-art-dropped` review prompt. The report and review images are included in
 `SHA256SUMS`.
 
+Edition-owned illustration directions are compiled separately from the build:
+
+```sh
+uv run --locked mag illustrate <edition-id>
+```
+
+The command validates the committed article-tail and closing-plate inventory,
+then writes exact authoring prompts and a hash-bound selection manifest under
+`output/<edition-id>/illustration-prompts/`. Image generation and candidate
+selection happen at author time; `mag build` only consumes the committed PNGs.
+
 ## Web edition
 
 `mag web <edition-id>` writes a browsable web edition for every configured

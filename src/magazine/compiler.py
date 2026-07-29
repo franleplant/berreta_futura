@@ -24,6 +24,11 @@ from .evidence_review import (
 from .extraction import verify_ledger_source_extractions
 from .fidelity import fidelity_report
 from .io import load_structured
+from .illustration import (
+    load_illustration_plan,
+    validate_illustration_plan,
+    write_illustration_package,
+)
 from .manifest import Edition, load_edition, load_translation
 from .media_curator import curate_source, verify_source_curation
 from .package import package_release
@@ -337,6 +342,7 @@ class Magazine:
                 f"Edition language {edition.language!r} does not match publication.language "
                 f"{self.primary_language!r}"
             )
+        validate_illustration_plan(self.root, edition)
         # The open edition is the only unreleased one, and the only one whose
         # sources can still be extracted; released editions' source pins
         # predate committed extractions and are verified opportunistically.
@@ -362,6 +368,24 @@ class Magazine:
                 continue
             editions[language] = load_translation(self.root, edition, language)
         return editions
+
+    def illustration_package(self, edition_id: str) -> Path:
+        """Compile the edition's art direction into exact authoring prompts."""
+
+        records = load_records(self.sources_dir)
+        edition = load_edition(
+            self.root,
+            edition_id,
+            {record.id for record in records},
+            publication_name=self.publication_name,
+            source_records={record.id: record for record in records},
+            allow_missing_art=True,
+        )
+        return write_illustration_package(
+            self.root,
+            self.output_dir,
+            edition,
+        )
 
     def _require_release_state(self) -> ReleaseState:
         """The release ledger, which must exist: it names the open edition.
@@ -705,6 +729,7 @@ class Magazine:
         language_results: list[LanguageBuildResult] = []
         all_files: list[Path] = []
         cover_compiler = CoverCompiler(self.root)
+        illustration_plan = load_illustration_plan(self.root, edition)
         for language in self.languages:
             variant = editions[language]
             language_destination = destination if language == self.primary_language else destination / language
@@ -750,6 +775,11 @@ class Magazine:
                 },
                 "edition": variant.raw,
                 "inputs": {
+                    "illustration_plan": (
+                        _file_entry(illustration_plan.path, self.root)
+                        if illustration_plan is not None
+                        else None
+                    ),
                     "cover_faces": {
                         "front": {
                             "input_sha256": cover.input_sha256,
@@ -784,6 +814,16 @@ class Magazine:
                             "tail_art": _optional_file_entry(article.tail_art, self.root),
                         }
                         for article in variant.articles
+                    ],
+                    "closing_plates": [
+                        {
+                            "index": index,
+                            "title": plate.title,
+                            "art": _file_entry(plate.art_path, self.root),
+                        }
+                        for index, plate in enumerate(
+                            variant.closing_plates, start=1
+                        )
                     ],
                     "sources": [
                         {
