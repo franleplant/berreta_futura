@@ -4,27 +4,27 @@ content_mode: faithful_synthesis
 label: SÍNTESIS FIEL
 ---
 
-El Model Context Protocol define cómo una aplicación de IA intercambia contexto y acciones con programas externos. No define cómo usa la aplicación un modelo de lenguaje, cómo planifica una tarea ni cómo administra su contexto interno. Define el límite.
+El Model Context Protocol define cómo una aplicación de IA intercambia contexto y acciones con programas externos. No define el uso del modelo, la planificación ni el contexto interno; define el límite.
 
-El proyecto MCP incluye la especificación, SDK para distintos lenguajes, herramientas de desarrollo como Inspector e implementaciones de servidores de referencia. La mayoría de los desarrolladores interactúa con los SDK. Aun así, vale la pena entender la arquitectura subyacente porque explica qué se conecta con qué, qué puede exponer un servidor y cómo una solicitud se convierte en una acción.
+El proyecto incluye la especificación, SDK, Inspector y servidores de referencia. Entender la arquitectura aclara las conexiones, lo que expone cada servidor y cómo una solicitud se vuelve acción.
 
 ## Host, cliente y servidor
 
 Un host MCP es la aplicación de IA. Visual Studio Code, Claude Code o un asistente de escritorio pueden actuar como host.
 
-El host crea un cliente MCP para cada servidor MCP. El cliente es el componente que mantiene la conexión, descubre capacidades, envía solicitudes y devuelve al host los resultados del servidor.
+El host crea un cliente por servidor. Cada cliente mantiene la conexión, descubre capacidades, envía solicitudes y devuelve resultados.
 
 Un servidor MCP es un programa que ofrece contexto o acciones. Puede ejecutarse de forma local o remota.
 
-Supongamos que Visual Studio Code se conecta a un servidor local de sistema de archivos y a un servidor remoto de Sentry. VS Code es un solo host. Dentro de él, un cliente se conecta al servidor de archivos y otro cliente se conecta a Sentry. Las conexiones permanecen separadas aunque el host pueda usar ambas durante la misma tarea.
+Si Visual Studio Code conecta un servidor local de archivos y Sentry remoto, sigue siendo un host con dos clientes separados, aunque use ambos en una tarea.
 
-El servidor de archivos podría leer archivos mediante la entrada y salida estándar en la misma máquina. El servidor de Sentry podría aceptar solicitudes HTTP autenticadas de muchos usuarios. Ambos son servidores MCP porque hablan el mismo protocolo de capa de datos.
+El servidor de archivos puede usar stdio local y Sentry, HTTP autenticado. Ambos hablan la misma capa de datos MCP.
 
 ## Dos capas
 
 MCP separa la capa de datos de la capa de transporte.
 
-La capa de datos define mensajes JSON-RPC, descubrimiento de capacidades y versiones, herramientas, recursos, prompts, solicitud de información, notificaciones e informes de progreso. Esta es la parte que describe el significado.
+La capa de datos define JSON-RPC, versiones, capacidades, herramientas, recursos, prompts, solicitudes de información, notificaciones y progreso: describe el significado.
 
 La capa de transporte mueve esos mensajes. Los servidores locales suelen usar stdio, que conecta dos procesos sin sobrecarga de red. Los servidores remotos usan Streamable HTTP, con HTTP POST para las solicitudes y Server-Sent Events opcionales para transmitir notificaciones. La autenticación pertenece a esta capa exterior.
 
@@ -32,13 +32,13 @@ El mismo mensaje `tools/call` puede viajar por cualquiera de los dos transportes
 
 ## Las tres primitivas del servidor
 
-Las herramientas son funciones ejecutables. Una herramienta puede leer un archivo, consultar una base de datos, crear un issue, enviar un mensaje o llamar a una API. El host decide cuándo invocarla, por lo general después de que el modelo la selecciona como parte de una tarea.
+Las herramientas son funciones ejecutables: pueden leer un archivo, consultar una base, crear un issue, enviar un mensaje o llamar a una API. El host decide cuándo invocarlas.
 
-Los recursos son datos de contexto. Un recurso puede ser un archivo, un esquema de base de datos, un registro, un flujo de logs o la respuesta de una API. Los recursos permiten que el host recupere información sin fingir que toda lectura es una acción.
+Los recursos son contexto: archivos, esquemas, registros, logs o respuestas de API. Permiten leer sin fingir que toda lectura es una acción.
 
 Los prompts son plantillas de interacción reutilizables. Un servidor puede publicar un prompt que codifique un flujo de trabajo conocido, las entradas esperadas o ejemplos de pocos disparos para usar sus herramientas.
 
-Pensemos en un servidor de base de datos. Podría exponer `query_database` como herramienta, el esquema actual como recurso y un prompt `diagnose_slow_query` con ejemplos. El host puede leer el esquema, aplicar el prompt y luego llamar a la herramienta de consulta con un argumento bien informado.
+Un servidor de base de datos podría exponer `query_database`, el esquema como recurso y `diagnose_slow_query` como prompt. El host lee el esquema, aplica el prompt y consulta con un argumento informado.
 
 Cada primitiva admite descubrimiento. Un cliente enumera herramientas con `tools/list`, recursos con `resources/list` y prompts con `prompts/list`. Solo recupera o ejecuta algo después de saber qué ofrece actualmente el servidor.
 
@@ -58,13 +58,13 @@ Esta es la forma completa de MCP en miniatura: descubrir, enumerar, seleccionar,
 
 ## Usos prácticos
 
-Un host de programación como Visual Studio Code puede conectarse a un servidor local de sistema de archivos y a un servidor remoto de Sentry. Cada conexión recibe su propio cliente MCP, mientras que el host puede usar ambas durante la misma tarea.
+Un host de programación puede combinar archivos locales con un servicio remoto como Sentry, manteniendo un cliente por conexión.
 
-Un servidor de base de datos puede exponer funciones de consulta como herramientas, su esquema como recurso y ejemplos de pocos disparos como prompt. El host puede leer el esquema antes de pedir al modelo que seleccione y llame a una herramienta de consulta.
+Un servidor de base de datos puede ofrecer consultas como herramientas, el esquema como recurso y ejemplos como prompt.
 
-Una aplicación de IA puede reunir las herramientas de todos los servidores conectados en un único registro. El modelo ve las acciones disponibles, selecciona una durante una conversación y recibe el resultado como contexto.
+El host reúne esas capacidades; el modelo selecciona una acción y recibe el resultado como contexto.
 
-Un servidor local de sistema de archivos puede usar stdio en la misma máquina. Un servicio remoto como Sentry puede exponer el mismo protocolo mediante Streamable HTTP autenticado.
+El servidor local puede usar stdio y el remoto, Streamable HTTP autenticado.
 
 El protocolo no decide cómo usa la aplicación un modelo de lenguaje ni cómo administra el contexto que recibe. Esas decisiones siguen en manos del host.
 

@@ -1224,6 +1224,9 @@ article > .landscape-plate + p { margin-top: 0; }
 .article-tail img {
   height: 100%; max-height: none; max-width: none; object-fit: cover; width: 100%;
 }
+.article-tail[data-fit="contain"] img {
+  object-fit: contain;
+}
 /*
  * THE SOURCE CODE.  A printed page cannot be followed, so each article carries
  * the address of the source it was built from as a QR square.  The link itself
