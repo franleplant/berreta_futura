@@ -1,0 +1,24 @@
+schema_version: 1
+edition_id: 004-unreleased
+reviewer: Independent render critic
+reviewed_at: '2026-07-29T19:22:19+00:00'
+result: approved
+engine: weasyprint
+design_direction: WeasyPrint / A5 fold proof
+findings: []
+notes: Inspected every English and Spanish reader and booklet contact sheet after final rebuild. Both
+  MCP articles have distinct full openers and substantive endings; inside covers are blank; all imposed
+  sides are upright and correctly paired; text-free closing plates are correct; no clipping, overlap,
+  stubs, figure, byline, or reflow defects remain. Machine whitespace review items are intentional opener
+  and figure rhythm.
+languages:
+  en:
+    reader_sha256: e57cf35bd655488da6f45f43d960559da3671678f018946ad5b4d8040be63e9d
+    booklet_sha256: 889ca4d3938b7ce7064268f1971eeb65cef68fd4fb9bb6573a9ceddb827bae22
+    page_count: 40
+    machine_result: pass
+  es:
+    reader_sha256: 98ba6f59cde85627ea58d4d9dbd663fe55104b3a0a71ac374bece79f12feee59
+    booklet_sha256: 8875305d596d0402ee9c150b88ad63569cbc6a5b7ec9cc00fd6c41a73fbbcd87
+    page_count: 40
+    machine_result: pass

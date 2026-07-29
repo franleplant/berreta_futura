@@ -915,32 +915,25 @@ def test_the_code_opens_the_credit_line_flush_left_with_the_column_beside_it():
     assert [element for element in without.iter("img") if element.get("class") == "source-code"] == []
 
 
-def test_a_byline_that_would_overrun_the_credit_column_is_refused_not_wrapped():
-    """The refusal re-derived for the flipped row, whose failure mode moved.
-
-    Inset past the square the byline cannot reach the code at all -- it starts
-    beyond it and grows away from it.  What it can do is overrun the measure's
-    right edge, which the right-flush arrangement had in hand, and a byline is a
-    single zero-leading line: wrapping one stacks two rows of ink on one
-    baseline, so it is a loud refusal naming the fix.
-
-    THE EDGE IS WALKED, not assumed.  The column is a function of the square and
-    of the gap beside it, and both moved when the square grew: a test that only
-    refuses a byline three times too long would keep passing however far the
-    threshold slid.  So the last name that fits and the first that does not are
-    found from the measure itself and both are put through the guard.
-    """
+def test_a_long_byline_is_compressed_within_a_readability_floor():
+    """A source-faithful long credit fits one line without becoming illegible."""
     code = adapter._fitted_source_code(
-        "article", "https://example.test/a", adapter._CODE_OPENER_SIDE_POINTS
+        "article",
+        "https://huggingface.co/blog/agent-intrusion-technical-timeline",
+        adapter._CODE_OPENER_SIDE_POINTS,
     )
     code = replace(code, left=-code.quiet, top=140.0)
     tree = _parse_article_fragment(
         "<p>Body.</p>",
         credit=True,
-        author="An Author Whose Collaborative Credit Runs On And On Across The Whole Live Width",
+        author="Hugo Larcher, Adrien Carreira, raphael g, Christophe Rannou",
     )
-    with pytest.raises(ValidationError, match="out through the live area's right edge"):
-        _apply_source_codes(tree, {"article": code})
+    _apply_source_codes(tree, {"article": code})
+    byline = next(
+        element for element in tree.iter("p") if element.get("class") == "byline"
+    )
+    assert "white-space: nowrap" in byline.get("style")
+    assert "letter-spacing:" in byline.get("style")
 
     # The threshold itself: the widest byline the column takes passes, and one
     # letter more is refused.  `_parse_article_fragment` sets the author verbatim
@@ -955,9 +948,21 @@ def test_a_byline_that_would_overrun_the_credit_column_is_refused_not_wrapped():
         _parse_article_fragment("<p>Body.</p>", credit=True, author=longest),
         {"article": code},
     )
-    with pytest.raises(ValidationError, match="out through the live area's right edge"):
+    compressed = _parse_article_fragment(
+        "<p>Body.</p>", credit=True, author=longest + "N"
+    )
+    _apply_source_codes(compressed, {"article": code})
+    compressed_byline = next(
+        element
+        for element in compressed.iter("p")
+        if element.get("class") == "byline"
+    )
+    assert "letter-spacing:" in compressed_byline.get("style")
+
+    impossible = "N" * 200
+    with pytest.raises(ValidationError, match="excessive horizontal compression"):
         _apply_source_codes(
-            _parse_article_fragment("<p>Body.</p>", credit=True, author=longest + "N"),
+            _parse_article_fragment("<p>Body.</p>", credit=True, author=impossible),
             {"article": code},
         )
 

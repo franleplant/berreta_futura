@@ -218,27 +218,26 @@ def validate_faithful_synthesis_voice(
     author = source_author.strip()
     if not author:
         return
-    name_parts = author.casefold().split()
-    surname = name_parts[-1]
-    first_name = name_parts[0]
+    surname_pattern = re.compile(
+        rf"(?<!\w){re.escape(author.split()[-1])}(?!\w)",
+    )
+    author_pattern = re.compile(
+        rf"(?<!\w){re.escape(author.casefold())}(?!\w)",
+        re.IGNORECASE,
+    )
     errors: list[str] = []
     for index, paragraph in enumerate(paragraphs):
         if paragraph.get("status") != "modified":
             continue
         source = " ".join(str(paragraph.get("source", "")).split()).casefold()
         for sentence in _sentences(str(paragraph.get("edited", ""))):
-            sentence_words: set[str] = set()
-            for word in re.findall(r"[\w'-]+", sentence):
-                folded = word.casefold()
-                sentence_words.add(folded[:-2] if folded.endswith("'s") else folded)
             normalized = " ".join(sentence.split()).casefold()
             names_author = (
-                surname in sentence_words
-                or author.casefold() in normalized
-                or (
-                    first_name in sentence_words
-                    and re.search(rf"\b(?:{DISTANCING_VERBS})\b", sentence, re.IGNORECASE)
+                (
+                surname_pattern.search(sentence) is not None
+                or author_pattern.search(normalized) is not None
                 )
+                and re.search(rf"\b(?:{DISTANCING_VERBS})\b", sentence, re.IGNORECASE)
             )
             if (
                 not names_author
