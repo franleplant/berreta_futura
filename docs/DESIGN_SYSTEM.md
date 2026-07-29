@@ -125,6 +125,33 @@ Every code is then read back off the rasterized page at 300 ppi by an independen
 
 With the source code on the opener, the article’s last page closes with the **tail ornament** again: a restrained, article-specific motif in the cover grammar, declared per article as `tail_art_path` and crop-filled across the full 325pt reading measure. Its room is bounded by the reader’s own chrome — the band never comes closer than 24pt to the frame’s foot or 31pt to the end mark’s baseline — and it prints only where that leaves at least 96pt of real room, deliberately the render critic’s own void bar: wherever the open paper under an article could read as dead sheet, the declared motif claims it, and a tighter ending than that is an article honestly ending, not a slot. The band is capped at 214pt so an article that ends very high does not turn its motif into a poster, and a capped band is centred in its room rather than sunk to the foot, so no dead band strands above it. Every declaration is ledgered: the packaged manifest’s `layout.tail_arts` records, per article, whether the ornament printed, at what height, or exactly how much room it was short by, and the render critic raises each dropped ornament for review — a tail can no longer vanish silently. The band is out of flow and can never move a line or open a page; the committed raster must resolve at 300 ppi in the band it prints across, and it passes the same print-contrast preflight as a curated figure, because an ornament that ships pale is as soft a page as a diagram that does.
 
+### Authored illustration direction
+
+An edition may replace geometric tail ornaments and signature-closing filler
+with wordless editorial illustrations. The generation step remains
+**author-time only**: `mag build` never calls an image model and never changes
+selected pixels. The edition declares `art_direction_path`, whose plan records
+one shared visual language plus an exact brief, description, credit, role, and
+committed path for every article tail and closing plate. `uv run --locked mag
+illustrate <edition-id>` validates that the plan and manifest name the same
+inventory, checks each PNG's role-specific resolution and orientation, and
+writes exact prompts plus a hash-bound inventory under
+`output/<edition-id>/illustration-prompts/`.
+
+The prompt package is a reproducible editorial recipe, not an approval. An
+editor still selects the candidates and commits the chosen PNGs. Builds bind
+the plan, every article tail, and every closing plate into the packaged input
+manifest. Historical editions need no plan; once an edition declares one, a
+missing brief, uncredited image, stale path, undersized raster, or role mismatch
+is a validation error.
+
+Illustrations own their palette. They may use a broad family of print-safe
+colors when the edition's direction calls for it; house violet and signal
+orange are available accents, not a mandatory gamut. Continuity comes from the
+declared visual language, black-ink structure, paper relationship, and page
+layout. The compiler guards resolution and placement while the final render
+critic judges the actual printed contrast and crop.
+
 ### Backmatter and back cover
 
 Backmatter uses the same opener and continuation system. The selected Signal fold back cover is a full-bleed orange closing poster with giant localized LOOP CLOSED / CICLO CERRADO display type, a protected vertical identity corridor, and a white statement insert. The insert renders the configured editor-written closing statement without a redundant ownership caption; the lower slug closes with localized END/FIN and the numeric date. It never substitutes an unattributed source quotation.

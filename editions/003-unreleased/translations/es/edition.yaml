@@ -3,7 +3,7 @@ language: es
 source_language: en
 locale: es-AR
 fallback_locale: es-ES
-base_copy_sha256: 05ba4cc0cd40c4ecc79aa81aa17ec7e15551a8fa3236bc32386e150a1df342e7
+base_copy_sha256: 1f2c691c8c81f2b2d492a78a6defb756fc2cd4ac555e0b5f9b3473dca8399ae3
 policy:
   register: educated_castellano
   regional_preference: restrained_argentinian

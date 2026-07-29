@@ -68,6 +68,14 @@ def parser() -> argparse.ArgumentParser:
             f"(default {DEFAULT_ENGINE}). Nothing is written back to configuration."
         ),
     )
+    illustrate = actions.add_parser(
+        "illustrate",
+        help=(
+            "Compile an edition's illustration direction and asset briefs into "
+            "deterministic authoring prompts"
+        ),
+    )
+    illustrate.add_argument("edition_id")
     web = actions.add_parser(
         "web",
         help=(
@@ -255,6 +263,8 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "build":
             result = magazine.build(args.edition_id, engine=args.engine)
             print(result.output_dir)
+        elif args.command == "illustrate":
+            print(magazine.illustration_package(args.edition_id))
         elif args.command == "web":
             for written in magazine.web(args.edition_id, language=args.language):
                 print(f"{written.language}: {written.index}")

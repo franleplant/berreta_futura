@@ -97,6 +97,7 @@ def load_edition(
     *,
     publication_name: str = "Magazine",
     source_records: Mapping[str, "SourceRecord"] | None = None,
+    allow_missing_art: bool = False,
 ) -> Edition:
     manifest_path = root / "editions" / edition_id / "edition.yaml"
     if not manifest_path.is_file():
@@ -171,7 +172,11 @@ def load_edition(
             manuscript = safe_project_path(root, row["manuscript"])
             fidelity = safe_project_path(root, row["fidelity"])
             tail_art = (
-                safe_project_path(root, row["tail_art_path"])
+                safe_project_path(
+                    root,
+                    row["tail_art_path"],
+                    must_exist=not allow_missing_art,
+                )
                 if row.get("tail_art_path")
                 else None
             )
@@ -300,7 +305,11 @@ def load_edition(
             continue
         title = str(row["title"]).strip()
         try:
-            art_path = safe_project_path(root, row["art_path"])
+            art_path = safe_project_path(
+                root,
+                row["art_path"],
+                must_exist=not allow_missing_art,
+            )
         except ValidationError as exc:
             errors.extend(exc.errors)
             continue

@@ -13,6 +13,7 @@ format:
   binding: saddle_stitch
   max_article_pages: 7
   max_editorial_pages: 1
+art_direction_path: editions/003-unreleased/art/illustrations.yaml
 cover:
   headline: The Architecture of Agency
   deck: Six dispatches on open models, agent systems, and the new architecture of human-machine work
@@ -50,7 +51,7 @@ articles:
   - why-software-factories-fail-benchmarking-the-new-f1d9c04a
   manuscript: editions/003-unreleased/articles/why-software-factories-fail.md
   fidelity: editions/003-unreleased/fidelity/why-software-factories-fail.yaml
-  tail_art_path: editions/003-unreleased/art/article-tails/software-factories.png
+  tail_art_path: editions/003-unreleased/art/article-tails/software-factories-manga-v1.png
   figures:
   - id: lights-on-factory
     decision: include
@@ -95,7 +96,7 @@ articles:
   - why-harness-engineering-is-so-hard-fe732038
   manuscript: editions/003-unreleased/articles/why-harness-engineering-is-so-hard.md
   fidelity: editions/003-unreleased/fidelity/why-harness-engineering-is-so-hard.yaml
-  tail_art_path: editions/003-unreleased/art/article-tails/harness-engineering.png
+  tail_art_path: editions/003-unreleased/art/article-tails/harness-engineering-manga-v1.png
   figures:
   - id: nondeterminism-testing
     decision: include
@@ -140,7 +141,7 @@ articles:
   - loop-engineering-f0ddfd76
   manuscript: editions/003-unreleased/articles/loop-engineering-above-the-harness.md
   fidelity: editions/003-unreleased/fidelity/loop-engineering-above-the-harness.yaml
-  tail_art_path: editions/003-unreleased/art/article-tails/loop-engineering.png
+  tail_art_path: editions/003-unreleased/art/article-tails/loop-engineering-manga-v1.png
 - id: new-rules-of-context-engineering
   title: The New Rules of Context Engineering
   short_title: Context Engineering
@@ -153,7 +154,7 @@ articles:
   - the-new-rules-of-context-engineering-for-claude--aa1b1ea8
   manuscript: editions/003-unreleased/articles/new-rules-of-context-engineering.md
   fidelity: editions/003-unreleased/fidelity/new-rules-of-context-engineering.yaml
-  tail_art_path: editions/003-unreleased/art/article-tails/context-engineering.png
+  tail_art_path: editions/003-unreleased/art/article-tails/context-engineering-manga-v1.png
   figures:
   - id: assembled-context-conflicts
     decision: include
@@ -182,7 +183,7 @@ articles:
   - open-weight-models-are-essential-to-a-healthy-ai-e7845a41
   manuscript: editions/003-unreleased/articles/open-weights-and-american-ai-leadership.md
   fidelity: editions/003-unreleased/fidelity/open-weights-and-american-ai-leadership.yaml
-  tail_art_path: editions/003-unreleased/art/article-tails/open-weights.png
+  tail_art_path: editions/003-unreleased/art/article-tails/open-weights-manga-v1.png
 - id: buzz-multiplayer-agent-layer
   title: Beyond the Slack Killer
   short_title: Beyond the Slack Killer
@@ -199,14 +200,14 @@ articles:
   - buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e
   manuscript: editions/003-unreleased/articles/buzz-multiplayer-agent-layer.md
   fidelity: editions/003-unreleased/fidelity/buzz-multiplayer-agent-layer.yaml
-  tail_art_path: editions/003-unreleased/art/article-tails/buzz-multiplayer.png
+  tail_art_path: editions/003-unreleased/art/article-tails/buzz-multiplayer-manga-v1.png
 rights:
   faithful_source_reprint: private_only_while_rights_unknown
   public_release: blocked_pending_permission_or_applicable_exception
 closing_plates:
 - title: The Room, Kept
-  art_path: editions/003-unreleased/art/coda-01.png
+  art_path: editions/003-unreleased/art/coda-manga-01.png
 - title: Trust, Transferred
-  art_path: editions/003-unreleased/art/coda-02.png
+  art_path: editions/003-unreleased/art/coda-manga-02.png
 - title: The Lease, Signed
-  art_path: editions/003-unreleased/art/coda-03.png
+  art_path: editions/003-unreleased/art/coda-manga-03.png
