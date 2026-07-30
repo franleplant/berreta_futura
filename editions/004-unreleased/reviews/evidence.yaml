@@ -1,14 +1,12 @@
 schema_version: 1
 edition_id: 004-unreleased
 reviewer: Codex evidence audit
-reviewed_at: '2026-07-29T19:17:17+00:00'
+reviewed_at: '2026-07-30T01:25:01+00:00'
 result: approved
 findings: []
-notes: Compared all six English manuscripts against committed extractions and normalized fidelity ledgers.
-  Corrected unsupported illustrative MCP examples to source-backed weather, database, filesystem, and
-  Sentry examples; split repeated source mappings so each evidence fragment is accounted for once; found
-  no remaining unlogged omissions, altered qualifications, unsupported additions, broken attribution,
-  or overstated captions.
+notes: Compared the three X post extraction bodies, the final faithful-edit manuscript, and every ledger
+  mapping. All substantive source claims, qualifications, examples, and conclusions are accounted for
+  exactly once; social-post asides and marker cleanup are explicitly logged.
 articles:
   frontier-lab-agent-intrusion:
     reviewed_at: '2026-07-29T19:17:17+00:00'
@@ -42,6 +40,20 @@ articles:
       22580-from-gpt2-to-kimi3-explained-8f01b0fe:
         body_sha256: f69c8b4a3825d7c13a5f06dd7a95c96ce7bf961a44ae602c4ff2bd2aee8a4e1f
         file_sha256: 50c0be5f80cc59040d148268f7338eb28b0c94a99eb14f673df8e43218814bed
+  factory-systems-problem:
+    reviewed_at: '2026-07-30T01:25:01+00:00'
+    manuscript_sha256: 13b7f600ef24405ff8c108ebd1c8eea3700a6d3b315f76e8448a6b4724de90cd
+    ledger_sha256: ed1341eb2e4392d5c107664551f94e77302534d1fed160b2ba414b1628ba2f48
+    source_extractions:
+      software-factories-are-super-real-but-the-factor-ab8ad3ab:
+        body_sha256: c1e72b77c8e16a6f7aed9b385d237243f16afad51f21d28837711ed3d94e96f3
+        file_sha256: 7d39ba20dd2eb67ee478ad427a8c26c984b68a9a432611dda1521590e7bed91f
+      factories-are-not-a-token-or-llm-problem-ba5fabbf:
+        body_sha256: d07d492137bf2c4389e165188601024f7e79e711cfc592adc9f1590d11abcac3
+        file_sha256: 52303ba3396c8a703ea1cf34d91ec72c61320d94c76eb0ed61bbaf216648b9a6
+      do-not-make-the-service-bus-non-deterministic-3a92442c:
+        body_sha256: c858605a35e5ef473b309c2fe984cb94fb9d9a48fedac29b3a0a042a9dfd0e08
+        file_sha256: 59bf66661944953b8ceedb0baf402e21c1a438bf9666bca55ec6825875831886
   mcp-in-a-nutshell:
     reviewed_at: '2026-07-29T19:17:17+00:00'
     manuscript_sha256: ee3ec0d454816c298ddebd80db963c9685a11d985c7df426aba3fa9e44024781

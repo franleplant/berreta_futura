@@ -1,22 +1,22 @@
 schema_version: 1
 edition_id: 004-unreleased
-reviewer: Codex independent render critic
-reviewed_at: '2026-07-30T01:20:43+00:00'
+reviewer: edition4_article_render_critic
+reviewed_at: '2026-07-30T01:28:17+00:00'
 result: approved
 engine: weasyprint
 design_direction: WeasyPrint / A5 fold proof
 findings: []
-notes: Inspected all English and Spanish reader and booklet contact sheets after final rebuild. Round
-  2 Wildcard cover retained. Factory illustration present on EN p27 and ES p29 and in both booklet impositions.
-  No actionable defects.
+notes: Independent critic inspected every final English and Spanish reader and booklet contact sheet after
+  the last rebuild. The factory article, illustration, typography, imposition, margins, and blank inside
+  covers have no actionable defects.
 languages:
   en:
-    reader_sha256: 9847f4664326b7a5c2b845f78297be1efb9bb47a0de31db010aacab5a4ed65f7
-    booklet_sha256: adf366c88eebbab81f7e8628fa7e23b5badba280268d141f4f53ddb03605b9dc
+    reader_sha256: 4aadcd35bf82e96dfa00ca9e9e8c20fc53473f3558166132320e5031b46415fa
+    booklet_sha256: 7c4abd19baebfffae0e05f95263949d35d069c0aa925f3ebfacbf72746a26759
     page_count: 40
     machine_result: pass
   es:
-    reader_sha256: 37719eaccbc65d75334ae710e6e928bb0877759f585b58cc66f32aaad067b1b8
-    booklet_sha256: 5285994cb14a8bc0d9bc93e71805fa1f1b6e51ad9ff1a2f422c905f24f266584
+    reader_sha256: df15ebc541ecbc8b8fe38fa4313b5ebe26062a2e69cadb732337857f9509f3ca
+    booklet_sha256: 9a501ced12af2bd86eb151e0e8b0dc4033f08cb21b4dffba126fe570a5ba9a93
     page_count: 44
     machine_result: pass
