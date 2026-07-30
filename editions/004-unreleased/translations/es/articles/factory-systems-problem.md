@@ -13,9 +13,9 @@ Las fábricas de software son reales, pero debemos ser realistas. La fábrica mi
 
 Si alguien te vende una fábrica y no pertenece al pequeño grupo de startups creadas en los últimos seis meses ni a las cerca de diez personas que llevan dos años intentándolo y fracasando, te vende humo. Aún no está resuelto, pero el rompecabezas avanza cada día.
 
-La meta es una fábrica casi a oscuras. La mejor práctica es construir las abstracciones y piezas necesarias resolviendo cuestiones ajenas a los agentes: aislamiento, monorrepositorios, builds reproducibles, CI/CD, gestión de identidades y secretos, y fricción corporativa en la experiencia de desarrollo.
+La meta es una fábrica casi a oscuras. La mejor práctica es construir las abstracciones y piezas necesarias resolviendo cuestiones ajenas a los agentes: aislamiento, monorrepositorios, builds reproducibles, CI/CD, gestión de identidades y secretos, y derribar la fricción corporativa en la experiencia de desarrollo.
 
-En tu tiempo libre, avanza sobre este problema en tu laboratorio doméstico si quieres un ascenso rápido y trato de alfombra roja en tu próxima entrevista. El mayor retorno está en aprender toda la pila, automatizarla y mostrar el trabajo en una entrevista o charla grabada.
+En tu tiempo libre, avanza sobre este problema en tu laboratorio doméstico si quieres un ascenso muy rápido y trato de alfombra roja en tu próxima entrevista. El mayor retorno está en aprender toda la pila, automatizarla y mostrar el trabajo en una entrevista o charla grabada.
 
 ## Sistemas y cultura, no tokens
 
@@ -23,8 +23,8 @@ Debo insistir: las fábricas no son un problema de tokens ni de LLM. Los tokens 
 
 ## Mantén determinista el bus de servicios
 
-Segunda opinión polémica. n8n fue una idea absurda. Sospecho que la construyeron jóvenes desarrolladores de Silicon Valley arrastrados por la fiebre de los LLM, sin experiencia corporativa ni conocimiento de que los buses de servicios son un problema resuelto con muchos antecedentes en el inquietante mundo empresarial.
+Segunda opinión polémica. n8n fue una idea absurda. Siempre sospeché que la construyeron jóvenes desarrolladores de Silicon Valley arrastrados por la fiebre de los LLM, sin experiencia corporativa ni conocimiento de que los buses de servicios son un problema resuelto con muchos antecedentes en el inquietante mundo empresarial.
 
-Busca en [`.NET`](https://x.com/dotnet), incluidos MassTransit, NServiceBus y WCF, ideas para diseñar prompts. WCF me trae malos recuerdos. La implementación no es gran cosa, pero la teoría y la formación suelen ser acertadas.
+Busca en [`.NET`](https://x.com/dotnet), incluidos MassTransit, NServiceBus y WCF, si quieres robar ideas para tus prompts. WCF me trae malos recuerdos. La implementación no es gran cosa, pero la teoría y la formación suelen ser acertadas.
 
 Para una opción moderna lista para usar, emplea [Temporal](https://x.com/temporalio) y haz que un job invoque a un agente como proceso.

@@ -53,7 +53,7 @@ paragraphs:
     The target is an almost-lights-out factory. Best practice now is to build
     the needed abstractions and pieces by solving non-agent topics: sandboxes,
     monorepos, reproducible builds, CI/CD, identity and secret management, and
-    corporate friction in developer experience for agents.
+    smashing corporate friction in developer experience for agents.
   reason: Resolved the numbered cross-references, expanded shorthand, and tightened the list without dropping a named practice.
 - id: factories-005
   kind: p
@@ -65,7 +65,7 @@ paragraphs:
     entire damn stack, automating it and showing it at your next interview/doing
     a recorded talk at a meetup.
   edited: >-
-    In your free time, crack on this problem in your homelab for a fast
+    In your free time, crack on this problem in your homelab for a super-fast
     promotion and red-carpet treatment at your next interview. The highest ROI
     now is learning the entire damn stack, automating it, and showing the work
     at an interview or in a recorded meetup talk.
@@ -103,11 +103,11 @@ paragraphs:
     in their life thus didn’t have the knowledge that service busses are a
     solved problem and there’s deep prior art in the spooky land of enterprise.
   edited: >-
-    Second hot take. n8n was a silly idea. I suspect it was built by young
-    Silicon Valley developers swept up in the LLM craze, without corporate
-    experience or knowledge that service buses are a solved problem with deep
-    prior art in the spooky land of enterprise.
-  reason: Regularized capitalization, number agreement, and syntax while preserving the author’s suspicion, the developers’ inexperience, and the enterprise prior art.
+    Second hot take. n8n was a silly idea. I’ve always suspected it was built
+    by young Silicon Valley developers swept up in the LLM craze, without
+    corporate experience or knowledge that service buses are a solved problem
+    with deep prior art in the spooky land of enterprise.
+  reason: Regularized capitalization, number agreement, and syntax, and removed the social-response aside while preserving the author’s suspicion, the developers’ inexperience, and the enterprise prior art.
 - id: factories-010
   kind: p
   status: modified
@@ -117,8 +117,9 @@ paragraphs:
     here, not great tech impl but the theory / education is generally on point.
   edited: >-
     Look in [`.NET`](https://x.com/dotnet), including MassTransit, NServiceBus,
-    and WCF, for prompting ideas. WCF gives me bad memories. The implementation
-    isn’t great, but the theory and education are generally on point.
+    and WCF, to steal prompting ideas. WCF gives me bad memories. The
+    implementation isn’t great, but the theory and education are generally on
+    point.
   reason: Expanded names, preserved the source link and qualification, resolved the footnote marker, and moved the WCF aside beside its reference.
 - id: factories-011
   kind: p
