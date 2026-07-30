@@ -1387,10 +1387,10 @@ class _Snapshot:
                 details,
                 "human-review",
                 (
-                    "Confirm the reviewed packages are the intended release, then run the "
-                    "single authoritative release command."
+                    "Confirm the edition looks finished, then run the single finishing "
+                    "command. It owns the stable id, rebuild, freeze, and next collection."
                 ),
-                f"uv run --locked mag release {self.edition_id}",
+                f"uv run --locked mag finish {self.edition_id}",
             )
         blocker = next(
             (checkpoint for checkpoint in checkpoints if checkpoint.status == "blocked"),

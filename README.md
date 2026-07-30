@@ -134,9 +134,10 @@ review sheet without generating an image.
 
 The older focused commands remain supported. `mag illustrate` still emits its
 combined legacy prompt package, while `mag cover-proof`, `mag translate`,
-`mag fit`, `mag measure`, `mag validate`, `mag build`, and `mag release` keep
-their existing behavior. New automation should prefer `status`, conservative
-`run`, and the two studio surfaces.
+`mag fit`, `mag measure`, `mag validate`, and `mag build` keep their existing
+behavior. Humans finish an approved edition with `mag finish`; `mag release`
+remains the lower-level compatibility command. New automation should prefer
+`status`, conservative `run`, and the two studio surfaces.
 
 `cover-proof` is the fast design loop. It compiles only the cover and writes a
 self-contained SVG, the exact one-page PDF later used by the full build, a
@@ -311,29 +312,36 @@ the intake edition. A batch of submitted links never creates an edition
 implicitly.
 
 `library/release-state.yaml` is the authoritative ledger. A source appears in
-exactly one collecting or released edition. Release a complete collecting
-edition with:
+exactly one collecting or released edition. Once the PDF and web preview look
+right, the human finishing step is one command:
 
 ```sh
-uv run --locked mag release <edition-id>
+uv run --locked mag finish <edition-id>
 ```
 
-Release is deliberately all-or-nothing. The command first reconciles every
-source record into the intake queue and verifies that every source queued to
-the release target appears
-in a rendered article's `source_ids` provenance. A bare entry under the
-manifest's top-level `sources` inventory is not enough. It then validates the fidelity
-ledgers, and successfully builds the reader and home-print packages. Only then
-does it mark the edition manifest `released`, move its sources into
-`released_editions`. Other collecting editions and their queues are unchanged;
-if none remains, release opens an empty incremented edition such as
-`002-unreleased`. Manifest and ledger updates use atomic replacements with
-rollback on failure. Rights and distribution fields are preserved unchanged;
-release does not turn a private reprint into a publicly cleared one.
+`mag finish` derives a permanent id from the issue number and title, writes the
+web edition, rebuilds every configured print language, freezes the approved
+packages, and opens the next empty collection. It prints only the finished id,
+the reader PDF, and the next collection id.
 
-Use `--next-edition-id 002-a-working-title` only when the next collection
-has not already been opened and already has an intentional identifier. Sources
-assigned to the released edition are never requeued.
+The checks inside that command protect four things the printed proof cannot
+show by itself: every submitted source is represented, edited source material
+still maps to its evidence, every language is current, and the bytes being
+frozen are the reviewed PDFs. If any check fails, the collection keeps its
+working identity and remains editable. The lower-level `mag release` command is
+retained for compatibility and specialized automation.
+
+The transition is all-or-nothing. Other collecting editions and their queues
+are unchanged; if none remains, finishing opens an empty incremented edition
+such as `002-unreleased`. Rights and distribution fields are preserved
+unchanged; finishing does not turn a private reprint into a publicly cleared
+one.
+
+The stable id is normally automatic. Use `--as 004-short-name` only when the
+derived name is not the intended archive identity. Use
+`--next-edition-id 005-a-working-title` only when the next collection has not
+already been opened and needs an intentional identifier. Sources assigned to
+the finished edition are never requeued.
 
 ## Source records
 
@@ -627,7 +635,7 @@ uv run --locked mag review record <edition-id> \
   --reviewer "Independent critic" \
   --result approved \
   --notes "All reader pages and booklet sides inspected."
-uv run --locked mag release <edition-id>
+uv run --locked mag finish <edition-id>
 ```
 
 `mag review record` writes the canonical decision to
@@ -637,7 +645,7 @@ each package's `render-critic.json` `visual_review` block (and its `SHA256SUMS`
 line) in place so the reports expose the decision without re-typesetting
 anything; `--rebuild` restores the old rebuild-and-compare proof. Any
 subsequent PDF change makes the review `stale`. A `changes_required` decision
-must include at least one `--finding`. `mag release` refuses missing, stale, or
+must include at least one `--finding`. `mag finish` refuses missing, stale, or
 changes-required review state.
 
 The evidence review is the render review's editorial sibling: the adversarial

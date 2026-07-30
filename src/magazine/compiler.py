@@ -57,9 +57,11 @@ from .release import (
     ReleaseState,
     ReleaseTransition,
     finalize_release,
+    finished_edition_id,
     load_release_state,
     open_collection,
     plan_release,
+    rename_collecting_edition,
     sync_release_state,
 )
 from .render_engine import engine_name, reader_renderer
@@ -1749,7 +1751,7 @@ class Magazine:
         state = self.sync_release_queue()
         # Fail cheap before rendering, then repeat the check against current
         # on-disk state during finalization after the build has succeeded.
-        plan_release(
+        planned_transition = plan_release(
             state,
             edition_id=edition.id,
             issue_number=edition.issue_number,
@@ -1770,30 +1772,117 @@ class Magazine:
                 edition, self.sources_dir, require_extractions=False
             ),
         )
-        result = self.build(edition_id)
-        require_approved_reports(
-            {
-                item.language: item.output_dir
-                for item in result.languages
-            }
+        new_scaffolds = tuple(
+            cover_art_candidate_record_path(self.editions_dir / collecting_id)
+            for collecting_id in planned_transition.state.collecting_edition_ids
+            if not cover_art_candidate_record_path(
+                self.editions_dir / collecting_id
+            ).exists()
         )
-        transition = finalize_release(
-            self.release_state_path,
-            self.editions_dir / edition.id / "edition.yaml",
-            edition_id=edition.id,
-            issue_number=edition.issue_number,
-            source_ids=source_ids,
-            publication_date=edition.publication_date,
-            next_edition_id=next_edition_id,
-            package_dir=result.output_dir,
-        )
-        # `finalize_release` may open the next collecting edition implicitly.
-        # Give that collection the same generic cover brief as `mag collect`;
-        # neither path depends on a key in an edition manifest.
-        self._scaffold_collecting_cover_records(
-            self._require_release_state()
-        )
+        try:
+            # Prepare the next collection before committing release state. No
+            # fallible housekeeping is allowed after the edition is frozen.
+            self._scaffold_collecting_cover_records(planned_transition.state)
+            result = self.build(edition_id)
+            require_approved_reports(
+                {
+                    item.language: item.output_dir
+                    for item in result.languages
+                }
+            )
+            transition = finalize_release(
+                self.release_state_path,
+                self.editions_dir / edition.id / "edition.yaml",
+                edition_id=edition.id,
+                issue_number=edition.issue_number,
+                source_ids=source_ids,
+                publication_date=edition.publication_date,
+                next_edition_id=next_edition_id,
+                package_dir=result.output_dir,
+            )
+        except BaseException:
+            for path in new_scaffolds:
+                path.unlink(missing_ok=True)
+                for parent in (path.parent, path.parent.parent):
+                    try:
+                        parent.rmdir()
+                    except OSError:
+                        pass
+            raise
         return result, transition
+
+    def finish(
+        self,
+        edition_id: str,
+        *,
+        final_id: str | None = None,
+        next_edition_id: str | None = None,
+    ) -> tuple[BuildResult, ReleaseTransition]:
+        """Publish web and print outputs, then give a collection its stable identity."""
+
+        edition = self.validate(edition_id)
+        stable_id = final_id or finished_edition_id(
+            edition.issue_number,
+            edition.title,
+        )
+        if stable_id == edition_id:
+            self.web(stable_id)
+            return self.release(
+                edition_id,
+                next_edition_id=next_edition_id,
+            )
+
+        stable_output = self.output_dir / stable_id
+        if stable_output.exists():
+            raise ValidationError(
+                f"Finished output already exists: {stable_output}. "
+                "Move or archive it before finishing this collection."
+            )
+        rename_collecting_edition(
+            self.release_state_path,
+            self.editions_dir,
+            old_id=edition_id,
+            new_id=stable_id,
+        )
+        try:
+            self.web(stable_id)
+            return self.release(
+                stable_id,
+                next_edition_id=next_edition_id,
+            )
+        except BaseException as exc:
+            state = load_release_state(self.release_state_path)
+            if stable_id in state.collecting_edition_ids:
+                rollback_errors: list[str] = []
+                try:
+                    rename_collecting_edition(
+                        self.release_state_path,
+                        self.editions_dir,
+                        old_id=stable_id,
+                        new_id=edition_id,
+                    )
+                except BaseException as rollback_exc:
+                    rollback_errors.append(
+                        f"could not restore edition identity: {rollback_exc}"
+                    )
+                try:
+                    shutil.rmtree(stable_output)
+                except FileNotFoundError:
+                    pass
+                except OSError as cleanup_exc:
+                    rollback_errors.append(
+                        f"could not remove generated output {stable_output}: "
+                        f"{cleanup_exc}"
+                    )
+                if stable_output.exists():
+                    rollback_errors.append(
+                        f"generated output still exists: {stable_output}"
+                    )
+                if rollback_errors:
+                    raise ValidationError(
+                        [f"Finish failed: {exc}", *rollback_errors]
+                    ) from exc
+            raise
 
 
 def _file_entry(path: Path, root: Path) -> dict[str, str]:

@@ -13,6 +13,7 @@ from magazine import Magazine, ValidationError
 from magazine.release import (
     _released_package_updates,
     finalize_release,
+    finished_edition_id,
     load_release_state,
     open_collection,
     plan_release,
@@ -186,6 +187,16 @@ class ReleaseStateTests(unittest.TestCase):
             ("four",),
         )
 
+    def test_finished_edition_id_comes_from_issue_number_and_title(self):
+        self.assertEqual(
+            finished_edition_id(4, "The Systems Around the Model"),
+            "004-the-systems-around-the-model",
+        )
+        self.assertEqual(
+            finished_edition_id("12", "Diseño, revisión y señal"),
+            "012-diseno-revision-y-senal",
+        )
+
     def prepare_releasable_project(self) -> tuple[Magazine, Path, Path]:
         make_project(self.root)
         manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
@@ -312,6 +323,134 @@ class ReleaseStateTests(unittest.TestCase):
             ),
             ("synthetic", "art_directed", "wildcard"),
         )
+
+    def test_finish_renames_the_collection_and_delegates_one_release(self):
+        magazine, _, state_path = self.prepare_releasable_project()
+        note = self.root / "editions" / "issue-001" / "prototypes" / "note.md"
+        note.parent.mkdir()
+        note.write_text(
+            "The working label issue-001 appears here as quoted prose.\n",
+            encoding="utf-8",
+        )
+        build_result = SimpleNamespace(output_dir=self.root / "output" / "001-issue")
+        transition = SimpleNamespace(
+            released_edition_id="001-issue",
+            next_edition_id="002-unreleased",
+        )
+
+        with patch.object(
+            magazine,
+            "release",
+            return_value=(build_result, transition),
+        ) as release, patch.object(magazine, "web") as web:
+            result, finished = magazine.finish("issue-001")
+
+        web.assert_called_once_with("001-issue")
+        release.assert_called_once_with("001-issue", next_edition_id=None)
+        self.assertIs(result, build_result)
+        self.assertIs(finished, transition)
+        self.assertFalse((self.root / "editions" / "issue-001").exists())
+        renamed = self.root / "editions" / "001-issue"
+        self.assertTrue(renamed.is_dir())
+        manifest = yaml.safe_load(
+            (renamed / "edition.yaml").read_text(encoding="utf-8")
+        )
+        self.assertEqual(manifest["id"], "001-issue")
+        self.assertIn(
+            "editions/001-issue/articles/article.md",
+            manifest["articles"][0]["manuscript"],
+        )
+        self.assertIn(
+            "working label issue-001",
+            (renamed / "prototypes" / "note.md").read_text(encoding="utf-8"),
+        )
+        evidence = yaml.safe_load(
+            (renamed / "reviews" / "evidence.yaml").read_text(encoding="utf-8")
+        )
+        self.assertEqual(evidence["edition_id"], "001-issue")
+        state = load_release_state(state_path)
+        self.assertEqual(state.intake_edition_id, "001-issue")
+        self.assertEqual(state.collecting_edition_ids, ("001-issue",))
+
+    def test_finish_rolls_the_identity_back_when_release_fails(self):
+        magazine, _, state_path = self.prepare_releasable_project()
+
+        def write_web(_edition_id):
+            index = self.root / "output" / "001-issue" / "web" / "en" / "index.html"
+            index.parent.mkdir(parents=True)
+            index.write_text("generated", encoding="utf-8")
+
+        with patch.object(
+            magazine,
+            "release",
+            side_effect=ValidationError("render failed"),
+        ), patch.object(magazine, "web", side_effect=write_web):
+            with self.assertRaisesRegex(ValidationError, "render failed"):
+                magazine.finish("issue-001")
+
+        original = self.root / "editions" / "issue-001"
+        self.assertTrue(original.is_dir())
+        self.assertFalse((self.root / "editions" / "001-issue").exists())
+        manifest = yaml.safe_load(
+            (original / "edition.yaml").read_text(encoding="utf-8")
+        )
+        self.assertEqual(manifest["id"], "issue-001")
+        evidence = yaml.safe_load(
+            (original / "reviews" / "evidence.yaml").read_text(encoding="utf-8")
+        )
+        self.assertEqual(evidence["edition_id"], "issue-001")
+        self.assertEqual(load_release_state(state_path).intake_edition_id, "issue-001")
+        self.assertFalse((self.root / "output" / "001-issue").exists())
+
+    def test_finish_reports_when_generated_output_cannot_be_removed(self):
+        magazine, _, state_path = self.prepare_releasable_project()
+
+        def write_web(_edition_id):
+            index = self.root / "output" / "001-issue" / "web" / "en" / "index.html"
+            index.parent.mkdir(parents=True)
+            index.write_text("generated", encoding="utf-8")
+
+        with patch.object(
+            magazine,
+            "release",
+            side_effect=ValidationError("render failed"),
+        ), patch.object(
+            magazine,
+            "web",
+            side_effect=write_web,
+        ), patch(
+            "magazine.compiler.shutil.rmtree",
+            side_effect=OSError("permission denied"),
+        ):
+            with self.assertRaisesRegex(
+                ValidationError,
+                "could not remove generated output",
+            ):
+                magazine.finish("issue-001")
+
+        self.assertTrue((self.root / "editions" / "issue-001").is_dir())
+        self.assertEqual(load_release_state(state_path).intake_edition_id, "issue-001")
+
+    def test_release_does_not_commit_if_next_collection_scaffolding_fails(self):
+        magazine, _, state_path = self.prepare_releasable_project()
+
+        with patch.object(
+            magazine,
+            "_scaffold_collecting_cover_records",
+            side_effect=OSError("disk full"),
+        ), patch.object(magazine, "build") as build:
+            with self.assertRaisesRegex(OSError, "disk full"):
+                magazine.release("issue-001")
+
+        build.assert_not_called()
+        state = load_release_state(state_path)
+        self.assertEqual(state.collecting_edition_ids, ("issue-001",))
+        manifest = yaml.safe_load(
+            (self.root / "editions" / "issue-001" / "edition.yaml").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertNotEqual(manifest["status"], "released")
 
     def test_release_without_an_evidence_record_refuses_before_building(self):
         """The evidence gate is wired ahead of the expensive render: no record
@@ -471,6 +610,9 @@ class ReleaseStateTests(unittest.TestCase):
             )
             (language_root / "reader.pdf").write_bytes(language.encode("ascii"))
             (language_root / "SHA256SUMS").write_text("stale\n", encoding="utf-8")
+        web_index = package / "web" / "en" / "index.html"
+        web_index.parent.mkdir(parents=True)
+        web_index.write_text("private web output", encoding="utf-8")
 
         updates = dict(_released_package_updates(package))
 
@@ -479,4 +621,5 @@ class ReleaseStateTests(unittest.TestCase):
         self.assertEqual(english_manifest["edition"]["status"], "released")
         self.assertEqual(spanish_manifest["edition"]["status"], "released")
         self.assertNotIn("es/", updates[package / "SHA256SUMS"].decode("utf-8"))
+        self.assertNotIn("web/", updates[package / "SHA256SUMS"].decode("utf-8"))
         self.assertIn("reader.pdf", updates[spanish / "SHA256SUMS"].decode("utf-8"))

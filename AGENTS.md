@@ -23,7 +23,7 @@ This repository builds private-first, source-faithful magazine editions.
 - Keep the inside front cover (reader page 2) and inside back cover (the penultimate reader page) completely blank; the imposed inside-cover sheet side must therefore also be blank.
 - Treat intake batches as transport only. Every unreleased source belongs to exactly one collecting edition; several editions may collect concurrently, with one explicit intake target.
 - Never create a collecting edition merely because the user sends another group of links. Open or select one only through `uv run --locked mag collect <edition-id> --issue-number <number>` or an equally explicit human decision.
-- Release only with `uv run --locked mag release <edition-id>`. Every source record must be queued and represented in a rendered article's `source_ids`; a top-level manifest declaration alone cannot silently postpone material.
+- Finish a human-approved collecting edition only with `uv run --locked mag finish <edition-id>`. That command owns its stable id, web and print generation, release transaction, and next collection. `mag release` is the lower-level compatibility seam. Every source record must be queued and represented in a rendered article's `source_ids`; a top-level manifest declaration alone cannot silently postpone material.
 - Use UV for every Python operation. Never use `pip`, bare `python`, `python -m venv`, an activated virtualenv, or an ad-hoc dependency directory.
 - Generate every language listed in `publication.languages` on every validation, build, and release. English remains the source edition; Spanish translations use educated castellano with restrained Argentine preferences, fall back to Spain Spanish, avoid slang and generic Latin American regionalisms, preserve Markdown block structure, and pin the exact English input hashes.
 - Never compute or hand-edit a SHA-256 pin. After changing any English input, refresh the derivable pins with `uv run --locked mag pin <edition-id>` and stage each configured overlay with `uv run --locked mag translate <edition-id> <language>`; translate the placeholder and advisory rows it reports before validating. `mag validate` reports staleness (with the expected digest) but never repins.
@@ -69,7 +69,7 @@ flags; do not hand-edit the canonical review record.
 Recording binds the decision to the PDFs exactly as they sit on disk and
 rewrites only the packaged reports in place; it does not rebuild, so record
 against the packages you actually inspected; pass `--rebuild` only when the
-rebuild-and-compare proof is explicitly wanted. `mag release` must reject a
+rebuild-and-compare proof is explicitly wanted. `mag finish` and `mag release` must reject a
 missing, stale, or changes-required review.
 
 Every source of every collecting edition needs a committed
@@ -77,7 +77,7 @@ Every source of every collecting edition needs a committed
 `source_body_sha256` to the extraction body. Before release, perform the
 adversarial manuscript-versus-source audit (`prompts/evidence-review.md`) and
 record it with `uv run --locked mag review record <edition-id> --kind evidence`;
-`mag release` rejects a missing, stale, or changes-required evidence review.
+`mag finish` and `mag release` reject a missing, stale, or changes-required evidence review.
 Evidence staleness is derived per article: when `mag review status` names
 drifted articles, re-audit those articles against their ledgers and
 extractions, then re-record with `--articles <id,id>` naming exactly the

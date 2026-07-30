@@ -91,7 +91,8 @@ decision to the exact manuscript, ledger, and extraction bytes audited — for
 each source both the extraction body and the whole `extracted.md` file,
 provenance frontmatter included, across every source the article or its ledger
 declares; any later change to those inputs makes the decision stale, and
-`mag release` refuses a missing, stale, or changes-required evidence review.
+`mag finish` and the lower-level `mag release` command refuse a missing, stale,
+or changes-required evidence review.
 
 ## Fidelity report
 

@@ -1042,5 +1042,5 @@ def test_release_readiness_requires_current_evidence_and_render_decisions(
     assert report.next_checkpoint.id == "release"
     assert report.next_checkpoint.next_action.classification == "human-review"
     assert report.next_checkpoint.next_action.command == (
-        f"uv run --locked mag release {EDITION_ID}"
+        f"uv run --locked mag finish {EDITION_ID}"
     )
