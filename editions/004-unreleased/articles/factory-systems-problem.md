@@ -9,22 +9,22 @@ label: FAITHFUL EDIT
 
 ## Software factories are super real
 
-Software factories are super real, but we need to be realistic. The factory aspects haven’t been cracked yet; the innovators are toying around with discovering practices and pieces.
+Software factories are real, but we need to be realistic. The factory itself isn’t cracked; innovators are still discovering practices and pieces.
 
-If someone is selling you a factory right now and they aren’t in the super-small cohort (likely startups created in the last six months), or among the roughly ten people in the who’s-who who have been trying and realistically failing over the last two years, they are selling bullshit. It isn’t cracked, but it’s a puzzle that’s being solved daily.
+If someone is selling you a factory now and they aren’t in the small cohort of startups created in the last six months, or among the roughly ten people who have tried and realistically failed for two years, they are selling bullshit. It isn’t cracked, but the puzzle is being solved daily.
 
-The target is an almost-lights-out factory. The best practice right now is to build the abstractions and pieces we need. That entails solving non-agent topics: sandboxing, monorepos, reproducible builds, CI/CD, identity and secret management, and smashing corporate friction in the realm of developer experience for agents.
+The target is an almost-lights-out factory. Best practice now is to build the needed abstractions and pieces by solving non-agent topics: sandboxes, monorepos, reproducible builds, CI/CD, identity and secret management, and corporate friction in developer experience for agents.
 
-At home, in your homelab, you should be cracking on this problem space in your free time if you want a super-fast promotion and red-carpet service at your next interview. The highest ROI you can have right now is learning the entire stack, automating it, and showing it at your next interview or in a recorded talk at a meetup.
+In your free time, crack on this problem in your homelab for a fast promotion and red-carpet treatment at your next interview. The highest ROI now is learning the entire damn stack, automating it, and showing the work at an interview or in a recorded meetup talk.
 
-## A systems engineering and corporate culture problem
+## Systems and culture, not tokens
 
-I must stress that factories are not a token or LLM problem. They won’t be solved through tokens or how you apply them, although that is a piece of the puzzle.
+I must stress: factories aren’t a token or LLM problem. Tokens and their application won’t solve them, though tokens are one piece of the puzzle.
 
 ## Keep the service bus deterministic
 
-Second hot take, as it seems the first one landed. n8n was a silly idea, which I’ve always suspected was developed by young folks in Silicon Valley who are all in on the LLM craze, have never worked in corporate in their lives, and thus didn’t know that service buses are a solved problem with deep prior art in the spooky land of enterprise.
+Second hot take. n8n was a silly idea. I suspect it was built by young Silicon Valley developers swept up in the LLM craze, without corporate experience or knowledge that service buses are a solved problem with deep prior art in the spooky land of enterprise.
 
-Look up anything in the [`.NET`](https://x.com/dotnet) space, such as MassTransit, NServiceBus, or WCF, if you want to steal ideas for prompting. WCF gives me lots of bad memories. The implementation isn’t great, but the theory and education are generally on point.
+Look in [`.NET`](https://x.com/dotnet), including MassTransit, NServiceBus, and WCF, for prompting ideas. WCF gives me bad memories. The implementation isn’t great, but the theory and education are generally on point.
 
-If you want a modern plug-and-play choice, [Temporal](https://x.com/temporalio) exists. Use it and have a job invoke an agent as a process.
+For a modern plug-and-play option, use [Temporal](https://x.com/temporalio) and have a job invoke an agent as a process.

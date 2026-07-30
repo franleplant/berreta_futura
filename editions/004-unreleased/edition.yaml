@@ -173,7 +173,7 @@ articles:
   title: The Factory Is a Systems Problem
   short_title: Factory Is a Systems Problem
   display_emphasis: Systems
-  opener_variant: split_axis
+  opener_variant: stepped_title
   author: Geoffrey Huntley
   author_note: Geoffrey Huntley is the creator of the Ralph loop.
   content_mode: faithful_edit

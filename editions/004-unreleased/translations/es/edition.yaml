@@ -2,7 +2,7 @@ schema_version: 1
 language: es
 source_language: en
 locale: es
-base_copy_sha256: e6b1e25d4c6fac0a01986668f71f89bbfb18bae1c9795682dd150cd2941afc6d
+base_copy_sha256: 8df333bd79ff7f9dde0889a0daa38330e44b14be523000003ea358a3f4565f7a
 title: Los sistemas alrededor del modelo
 subtitle: Protocolos, evaluaciones, arquitecturas y el trabajo operativo que convierte la capacidad de los modelos
   en sistemas confiables
@@ -129,5 +129,5 @@ articles:
   display_emphasis: sistemas
   author_note: Geoffrey Huntley es el creador del bucle Ralph.
   manuscript: articles/factory-systems-problem.md
-  source_sha256: 496df872acae9ec4c4a012aa69ab439a47d3454f422356b66d81e90a1330ca30
+  source_sha256: 57a5371a27dd8fd144f67a34ee9bff35bf59820f759e034321945c43189a3057
 sections: []

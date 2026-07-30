@@ -9,22 +9,22 @@ label: EDICIÓN FIEL
 
 ## Las fábricas de software son muy reales
 
-Las fábricas de software son muy reales, pero tenemos que ser realistas. Los aspectos fabriles todavía no están resueltos; los innovadores experimentan para descubrir prácticas y piezas.
+Las fábricas de software son reales, pero debemos ser realistas. La fábrica misma no está resuelta; los innovadores aún descubren prácticas y piezas.
 
-Si alguien te está vendiendo una fábrica ahora mismo y no pertenece al grupo muy reducido de empresas emergentes que probablemente nacieron en los últimos seis meses, ni está entre las aproximadamente diez personas del quién es quién que llevan dos años intentándolo y, siendo realistas, fracasando, te está vendiendo humo. El problema no está resuelto, pero es un rompecabezas que se resuelve a diario.
+Si alguien te vende una fábrica y no pertenece al pequeño grupo de startups creadas en los últimos seis meses ni a las cerca de diez personas que llevan dos años intentándolo y fracasando, te vende humo. Aún no está resuelto, pero el rompecabezas avanza cada día.
 
-El objetivo es una fábrica casi a oscuras. La mejor práctica actual consiste en construir las abstracciones y las piezas que necesitamos. Eso exige resolver cuestiones ajenas a los agentes: aislamiento, monorrepositorios, compilaciones reproducibles, CI/CD, gestión de identidades y secretos, y la eliminación de las fricciones corporativas en la experiencia de desarrollo para agentes.
+La meta es una fábrica casi a oscuras. La mejor práctica es construir las abstracciones y piezas necesarias resolviendo cuestiones ajenas a los agentes: aislamiento, monorrepositorios, builds reproducibles, CI/CD, gestión de identidades y secretos, y fricción corporativa en la experiencia de desarrollo.
 
-En casa, en tu laboratorio doméstico, deberías avanzar sobre este campo en tu tiempo libre si quieres un ascenso muy rápido y trato de alfombra roja en tu próxima entrevista. El mayor retorno de la inversión que puedes obtener ahora mismo consiste en aprender toda la pila, automatizarla y mostrarla en tu próxima entrevista o en una charla grabada durante un encuentro.
+En tu tiempo libre, avanza sobre este problema en tu laboratorio doméstico si quieres un ascenso rápido y trato de alfombra roja en tu próxima entrevista. El mayor retorno está en aprender toda la pila, automatizarla y mostrar el trabajo en una entrevista o charla grabada.
 
-## Un problema de ingeniería de sistemas y cultura empresarial
+## Sistemas y cultura, no tokens
 
-Debo insistir en que las fábricas no son un problema de tokens ni de LLM. No se resolverán mediante tokens ni por cómo los apliques, aunque eso sea una pieza del rompecabezas.
+Debo insistir: las fábricas no son un problema de tokens ni de LLM. Los tokens y su aplicación no las resolverán, aunque sean una pieza del rompecabezas.
 
 ## Mantén determinista el bus de servicios
 
-Segunda opinión polémica, ya que parece que la primera llegó. n8n fue una idea absurda que siempre sospeché que habían desarrollado jóvenes de Silicon Valley entregados por completo a la fiebre de los LLM, que nunca habían trabajado en una gran empresa y, por tanto, ignoraban que los buses de servicios son un problema resuelto y cuentan con muchos antecedentes en el inquietante mundo del software empresarial.
+Segunda opinión polémica. n8n fue una idea absurda. Sospecho que la construyeron jóvenes desarrolladores de Silicon Valley arrastrados por la fiebre de los LLM, sin experiencia corporativa ni conocimiento de que los buses de servicios son un problema resuelto con muchos antecedentes en el inquietante mundo empresarial.
 
-Busca cualquier cosa en el espacio de [`.NET`](https://x.com/dotnet), como MassTransit, NServiceBus o WCF, si quieres robar ideas para el diseño de prompts. WCF me trae muchos malos recuerdos. La implementación no es gran cosa, pero la teoría y el material educativo suelen ser acertados.
+Busca en [`.NET`](https://x.com/dotnet), incluidos MassTransit, NServiceBus y WCF, ideas para diseñar prompts. WCF me trae malos recuerdos. La implementación no es gran cosa, pero la teoría y la formación suelen ser acertadas.
 
-Si quieres una opción moderna lista para usar, [Temporal](https://x.com/temporalio) existe. Úsala y haz que un job invoque a un agente como proceso.
+Para una opción moderna lista para usar, emplea [Temporal](https://x.com/temporalio) y haz que un job invoque a un agente como proceso.
