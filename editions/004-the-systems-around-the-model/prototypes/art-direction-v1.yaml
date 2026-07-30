@@ -20,7 +20,7 @@ direction:
     local accent when the scene benefits, but never as the automatic field,
     paper tint, or full-image cast.
   reference_images:
-  - editions/004-unreleased/prototypes/assets/factory-systems-boy-robot-color-v1.png
+  - editions/004-the-systems-around-the-model/prototypes/assets/factory-systems-boy-robot-color-v1.png
   constraints:
   - Entirely wordless editorial storytelling
   - Exactly one recurring boy and one recurring robot in every authored illustration

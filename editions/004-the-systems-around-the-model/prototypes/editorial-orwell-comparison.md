@@ -10,7 +10,7 @@ contract.
 
 Sources:
 
-- Current editorial: `editions/004-unreleased/manuscript/editorial.md`
+- Current editorial: `editions/004-the-systems-around-the-model/manuscript/editorial.md`
 - Editing method: `docs/WRITING_RULES.md`
 
 ## Current

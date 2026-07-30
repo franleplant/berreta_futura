@@ -501,6 +501,7 @@ def finalize_release(
     publication_date: str,
     next_edition_id: str | None = None,
     package_dir: Path | None = None,
+    additional_updates: tuple[tuple[Path, bytes], ...] = (),
 ) -> ReleaseTransition:
     """Atomically commit manifest and ledger state after a successful build.
 
@@ -528,12 +529,18 @@ def finalize_release(
     released_manifest = dict(manifest)
     released_manifest["status"] = "released"
     package_updates = _released_package_updates(package_dir) if package_dir else ()
-    _replace_files_atomically(
-        package_updates + (
+    updates = (
+        package_updates
+        + additional_updates
+        + (
             (manifest_path, dump_yaml(released_manifest).encode("utf-8")),
             (state_path, dump_yaml(transition.state.to_dict()).encode("utf-8")),
         )
     )
+    paths = [path for path, _ in updates]
+    if len(paths) != len(set(paths)):
+        raise ValidationError("Release transaction contains duplicate file updates")
+    _replace_files_atomically(updates)
     return transition
 
 

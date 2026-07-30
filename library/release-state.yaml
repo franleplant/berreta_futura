@@ -1,19 +1,10 @@
 schema_version: 2
-intake_edition_id: 004-unreleased
+intake_edition_id: 005-unreleased
 collecting_editions:
-- id: 004-unreleased
-  issue_number: 4
+- id: 005-unreleased
+  issue_number: 5
   status: collecting
-  source_ids:
-  - 22580-from-gpt2-to-kimi3-explained-8f01b0fe
-  - anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
-  - architecture-overview-ce5cb1d1
-  - do-not-make-the-service-bus-non-deterministic-3a92442c
-  - eval-engineering-the-step-that-turns-a-200-model-9f6f868f
-  - factories-are-not-a-token-or-llm-problem-ba5fabbf
-  - pragmatic-leverage-in-the-software-factory-09879736
-  - software-factories-are-super-real-but-the-factor-ab8ad3ab
-  - the-2026-07-28-mcp-specification-release-candida-1a1752b8
+  source_ids: []
 released_editions:
 - id: 001-the-work-left-to-us
   issue_number: 1
@@ -55,3 +46,17 @@ released_editions:
   - why-software-factories-fail-f53679d7
   - why-software-factories-fail-turning-the-lights-b-1312d1ad
   - why-we-re-buzzing-1c82f338
+- id: 004-the-systems-around-the-model
+  issue_number: 4
+  status: released
+  publication_date: '2026-08-03'
+  source_ids:
+  - 22580-from-gpt2-to-kimi3-explained-8f01b0fe
+  - anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
+  - architecture-overview-ce5cb1d1
+  - do-not-make-the-service-bus-non-deterministic-3a92442c
+  - eval-engineering-the-step-that-turns-a-200-model-9f6f868f
+  - factories-are-not-a-token-or-llm-problem-ba5fabbf
+  - pragmatic-leverage-in-the-software-factory-09879736
+  - software-factories-are-super-real-but-the-factor-ab8ad3ab
+  - the-2026-07-28-mcp-specification-release-candida-1a1752b8

@@ -19,6 +19,7 @@ from magazine.release import (
     plan_release,
     sync_release_state,
 )
+from magazine.render_review import create_render_review, load_render_review, write_render_review
 from test_manifest import add_extraction, make_project, pin_ledger_source_hash
 
 
@@ -307,6 +308,9 @@ class ReleaseStateTests(unittest.TestCase):
             "id": "002-unreleased", "issue_number": 2, "status": "collecting", "source_ids": [],
         })
         self.assertEqual(state.assignments()["source-one"], "released:issue-001")
+        catalog = (self.root / "sources.md").read_text(encoding="utf-8")
+        self.assertIn("Release: released for `issue-001`", catalog)
+        self.assertIn("Intake edition: `002-unreleased`", catalog)
         next_cover_record = (
             self.root
             / "editions"
@@ -342,11 +346,21 @@ class ReleaseStateTests(unittest.TestCase):
             magazine,
             "release",
             return_value=(build_result, transition),
-        ) as release, patch.object(magazine, "web") as web:
+        ) as release, patch.object(magazine, "web") as web, patch.object(
+            magazine,
+            "render_review_status",
+            return_value={
+                "languages": {"en": {"status": "approved", "machine_result": "pass"}}
+            },
+        ):
             result, finished = magazine.finish("issue-001")
 
         web.assert_called_once_with("001-issue")
-        release.assert_called_once_with("001-issue", next_edition_id=None)
+        release.assert_called_once_with(
+            "001-issue",
+            next_edition_id=None,
+            review_baseline=("issue-001", magazine.output_dir / "issue-001"),
+        )
         self.assertIs(result, build_result)
         self.assertIs(finished, transition)
         self.assertFalse((self.root / "editions" / "issue-001").exists())
@@ -385,8 +399,17 @@ class ReleaseStateTests(unittest.TestCase):
             "release",
             side_effect=ValidationError("render failed"),
         ), patch.object(magazine, "web", side_effect=write_web):
-            with self.assertRaisesRegex(ValidationError, "render failed"):
-                magazine.finish("issue-001")
+            with patch.object(
+                magazine,
+                "render_review_status",
+                return_value={
+                    "languages": {
+                        "en": {"status": "approved", "machine_result": "pass"}
+                    }
+                },
+            ):
+                with self.assertRaisesRegex(ValidationError, "render failed"):
+                    magazine.finish("issue-001")
 
         original = self.root / "editions" / "issue-001"
         self.assertTrue(original.is_dir())
@@ -421,6 +444,12 @@ class ReleaseStateTests(unittest.TestCase):
         ), patch(
             "magazine.compiler.shutil.rmtree",
             side_effect=OSError("permission denied"),
+        ), patch.object(
+            magazine,
+            "render_review_status",
+            return_value={
+                "languages": {"en": {"status": "approved", "machine_result": "pass"}}
+            },
         ):
             with self.assertRaisesRegex(
                 ValidationError,
@@ -451,6 +480,109 @@ class ReleaseStateTests(unittest.TestCase):
             )
         )
         self.assertNotEqual(manifest["status"], "released")
+
+    def test_release_rebinds_an_identity_only_visual_match_before_freezing(self):
+        magazine, _, state_path = self.prepare_releasable_project()
+
+        def reviewable_package(path: Path, *, pdf_marker: bytes) -> Path:
+            (path / "home").mkdir(parents=True)
+            (path / "reader.pdf").write_bytes(pdf_marker + b" reader")
+            (path / "home" / "booklet-a4.pdf").write_bytes(
+                pdf_marker + b" booklet"
+            )
+            (path / "edition-manifest.json").write_text(
+                json.dumps(
+                    {
+                        "edition": {"id": "issue-001", "status": "assembling"},
+                        "layout": {
+                            "design_direction": "WeasyPrint / A5 fold proof"
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (path / "render-critic.json").write_text(
+                json.dumps(
+                    {
+                        "result": "pass",
+                        "page_count": 1,
+                        "visual_review": {"status": "stale"},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            for directory in (
+                "reader-pages",
+                "booklet-sides",
+                "cover-booklet-sides",
+            ):
+                raster = path / "render-review" / directory / "page-001.png"
+                raster.parent.mkdir(parents=True)
+                raster.write_bytes(b"identical printed pixels " + directory.encode())
+            files = sorted(
+                item
+                for item in path.rglob("*")
+                if item.is_file() and item.name != "SHA256SUMS"
+            )
+            (path / "SHA256SUMS").write_text(
+                "".join(
+                    f"{hashlib.sha256(item.read_bytes()).hexdigest()}  "
+                    f"{item.relative_to(path).as_posix()}\n"
+                    for item in files
+                ),
+                encoding="utf-8",
+            )
+            return path
+
+        baseline = reviewable_package(
+            self.root / "reviewed-output",
+            pdf_marker=b"working-id",
+        )
+        candidate = reviewable_package(
+            magazine.output_dir / "issue-001",
+            pdf_marker=b"stable-id",
+        )
+        record = create_render_review(
+            edition_id="issue-001",
+            reviewer="Independent critic",
+            result="approved",
+            language_packages={"en": baseline},
+            engine="weasyprint",
+            design_direction="WeasyPrint / A5 fold proof",
+            reviewed_at="2026-07-21T18:00:00+00:00",
+        )
+        review_path = (
+            self.root / "editions" / "issue-001" / "reviews" / "render.yaml"
+        )
+        write_render_review(review_path, record)
+        built = SimpleNamespace(
+            output_dir=candidate,
+            languages=(
+                SimpleNamespace(language="en", output_dir=candidate),
+            ),
+        )
+
+        with patch.object(magazine, "build", return_value=built):
+            _, transition = magazine.release(
+                "issue-001",
+                review_baseline=("working-id", baseline),
+            )
+
+        rebound = load_render_review(review_path, edition_id="issue-001")
+        self.assertEqual(transition.released_edition_id, "issue-001")
+        self.assertEqual(
+            rebound["identity_rebind"]["method"],
+            "exact_reader_and_booklet_raster_match",
+        )
+        self.assertEqual(
+            rebound["languages"]["en"]["reader_sha256"],
+            hashlib.sha256((candidate / "reader.pdf").read_bytes()).hexdigest(),
+        )
+        report = json.loads(
+            (candidate / "render-critic.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(report["visual_review"]["status"], "approved")
+        self.assertNotIn("issue-001", load_release_state(state_path).collecting_edition_ids)
 
     def test_release_without_an_evidence_record_refuses_before_building(self):
         """The evidence gate is wired ahead of the expensive render: no record

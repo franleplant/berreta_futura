@@ -1,12 +1,13 @@
 schema_version: 1
-id: 004-unreleased
+id: 004-the-systems-around-the-model
 issue_number: 4
 publication_date: '2026-08-03'
 title: The Systems Around the Model
-subtitle: Protocols, evaluations, architectures, and the operational work that turns model capability into dependable systems
+subtitle: Protocols, evaluations, architectures, and the operational work that turns model capability
+  into dependable systems
 language: en
 distribution: private
-status: provisional
+status: released
 format:
   trim: A5
   home_sheet: A4
@@ -14,13 +15,13 @@ format:
   article_opener: illustrated_paper_spots_v1
   max_article_pages: 7
   max_editorial_pages: 1
-art_direction_path: editions/004-unreleased/art/illustrations.yaml
+art_direction_path: editions/004-the-systems-around-the-model/art/illustrations.yaml
 tail_art_fit: contain
 cover:
   headline: The Systems Around the Model
   deck: Seven reports on the machinery that makes intelligence useful, legible, and safe
-  back_text: 'The model is only one component. Reliability lives in the protocol, the evidence,
-    the feedback loop, the architecture, and the judgment that connects them.'
+  back_text: The model is only one component. Reliability lives in the protocol, the evidence, the feedback
+    loop, the architecture, and the judgment that connects them.
   art_path: art/cover-candidate-wildcard-v2.png
 sources:
 - anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
@@ -40,29 +41,33 @@ articles:
   display_emphasis: Intrusion
   opener_variant: stepped_title
   author: Hugo Larcher, Adrien Carreira, raphael g, Christophe Rannou
-  author_note: Hugo Larcher, Adrien Carreira, raphael g, and Christophe Rannou are contributors publishing through Hugging Face.
+  author_note: Hugo Larcher, Adrien Carreira, raphael g, and Christophe Rannou are contributors publishing
+    through Hugging Face.
   content_mode: faithful_synthesis
   source_ids:
   - anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
-  manuscript: editions/004-unreleased/articles/frontier-lab-agent-intrusion.md
-  fidelity: editions/004-unreleased/fidelity/frontier-lab-agent-intrusion.yaml
+  manuscript: editions/004-the-systems-around-the-model/articles/frontier-lab-agent-intrusion.md
+  fidelity: editions/004-the-systems-around-the-model/fidelity/frontier-lab-agent-intrusion.yaml
   opener_art:
-    path: editions/004-unreleased/art/article-openers/frontier-lab-agent-intrusion.png
-    alt_text: A bespectacled boy and friendly helper robot trace a red signal through layered workshop gates and contain it in a clear box.
+    path: editions/004-the-systems-around-the-model/art/article-openers/frontier-lab-agent-intrusion.png
+    alt_text: A bespectacled boy and friendly helper robot trace a red signal through layered workshop
+      gates and contain it in a clear box.
     credit: Original illustration by the editors with Codex image generation.
   figures:
   - id: campaign-timeline
     decision: include
     source_id: anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
     asset_id: raster-002-55dae29d
-    caption: The recovered campaign compresses into a 4.5-day timeline of foothold, command and control, lateral movement, credential use, and cleanup.
+    caption: The recovered campaign compresses into a 4.5-day timeline of foothold, command and control,
+      lateral movement, credential use, and cleanup.
     alt_text: A campaign timeline shows event volume and phase activity across four and a half days.
     anchor: The kill chain
     layout: evidence_band_prose
     criteria:
     - important
     - useful
-    rationale: The timeline is the clearest source-authored overview of the intrusion's speed and overlapping phases.
+    rationale: The timeline is the clearest source-authored overview of the intrusion's speed and overlapping
+      phases.
 - id: eval-engineering
   title: Eval Engineering
   short_title: Eval Engineering
@@ -73,30 +78,34 @@ articles:
   content_mode: faithful_synthesis
   source_ids:
   - eval-engineering-the-step-that-turns-a-200-model-9f6f868f
-  manuscript: editions/004-unreleased/articles/eval-engineering.md
-  fidelity: editions/004-unreleased/fidelity/eval-engineering.yaml
+  manuscript: editions/004-the-systems-around-the-model/articles/eval-engineering.md
+  fidelity: editions/004-the-systems-around-the-model/fidelity/eval-engineering.yaml
   opener_art:
-    path: editions/004-unreleased/art/article-openers/eval-engineering.png
-    alt_text: A boy and helper robot test colorful model outputs on a looping tray system while one failed sample springs back for another pass.
+    path: editions/004-the-systems-around-the-model/art/article-openers/eval-engineering.png
+    alt_text: A boy and helper robot test colorful model outputs on a looping tray system while one failed
+      sample springs back for another pass.
     credit: Original illustration by the editors with Codex image generation.
   figures:
   - id: eval-engine
     decision: include
     source_id: eval-engineering-the-step-that-turns-a-200-model-9f6f868f
     asset_id: raster-002-8e40815e
-    caption: Evaluation becomes engineering when production traces, failure labels, and repeatable graders form one operating loop.
+    caption: Evaluation becomes engineering when production traces, failure labels, and repeatable graders
+      form one operating loop.
     alt_text: A source diagram presents the first stage of an evaluation-engineering workflow.
     anchor: The examiner you already own
     layout: compact_band
     criteria:
     - important
     - useful
-    rationale: The figure establishes the article's practical workflow at the point where the argument turns into implementation.
+    rationale: The figure establishes the article's practical workflow at the point where the argument
+      turns into implementation.
   - id: eval-routing
     decision: include
     source_id: eval-engineering-the-step-that-turns-a-200-model-9f6f868f
     asset_id: raster-003-92da0fe4
-    caption: 'Scores become useful only when they change the next edge: retry, reject, quarantine, block, or route to human review.'
+    caption: 'Scores become useful only when they change the next edge: retry, reject, quarantine, block,
+      or route to human review.'
     alt_text: A source diagram maps evaluation failures to routing decisions.
     anchor: Make the score change the next edge
     layout: compact_band
@@ -114,25 +123,28 @@ articles:
   content_mode: faithful_edit
   source_ids:
   - pragmatic-leverage-in-the-software-factory-09879736
-  manuscript: editions/004-unreleased/articles/pragmatic-leverage.md
-  fidelity: editions/004-unreleased/fidelity/pragmatic-leverage.yaml
+  manuscript: editions/004-the-systems-around-the-model/articles/pragmatic-leverage.md
+  fidelity: editions/004-the-systems-around-the-model/fidelity/pragmatic-leverage.yaml
   opener_art:
-    path: editions/004-unreleased/art/article-openers/pragmatic-leverage.png
-    alt_text: A boy and helper robot follow a small blueprint to build one sturdy stool as a huge pile of rushed redo boxes topples harmlessly nearby.
+    path: editions/004-the-systems-around-the-model/art/article-openers/pragmatic-leverage.png
+    alt_text: A boy and helper robot follow a small blueprint to build one sturdy stool as a huge pile
+      of rushed redo boxes topples harmlessly nearby.
     credit: Original illustration by the editors with Codex image generation.
   figures:
   - id: delivery-time
     decision: include
     source_id: pragmatic-leverage-in-the-software-factory-09879736
     asset_id: raster-003-3781e0b2
-    caption: Coding is only one fraction of feature delivery; alignment, review, rework, testing, and verification consume the rest.
+    caption: Coding is only one fraction of feature delivery; alignment, review, rework, testing, and
+      verification consume the rest.
     alt_text: A source diagram breaks feature delivery time into coding and surrounding work.
     anchor: Seeking leverage
     layout: evidence_band_prose
     criteria:
     - important
     - useful
-    rationale: The diagram makes the article's opening constraint visible before the planning argument begins.
+    rationale: The diagram makes the article's opening constraint visible before the planning argument
+      begins.
   - id: minimal-prompt-risk
     decision: include
     source_id: pragmatic-leverage-in-the-software-factory-09879736
@@ -155,30 +167,34 @@ articles:
   content_mode: faithful_synthesis
   source_ids:
   - 22580-from-gpt2-to-kimi3-explained-8f01b0fe
-  manuscript: editions/004-unreleased/articles/from-gpt2-to-kimi3.md
-  fidelity: editions/004-unreleased/fidelity/from-gpt2-to-kimi3.yaml
+  manuscript: editions/004-the-systems-around-the-model/articles/from-gpt2-to-kimi3.md
+  fidelity: editions/004-the-systems-around-the-model/fidelity/from-gpt2-to-kimi3.yaml
   opener_art:
-    path: editions/004-unreleased/art/article-openers/from-gpt2-to-kimi3.png
-    alt_text: A boy and tool robot compare a sprawling coral attention ribbon with a compact teal memory spool as a small sequence machine lights up.
+    path: editions/004-the-systems-around-the-model/art/article-openers/from-gpt2-to-kimi3.png
+    alt_text: A boy and tool robot compare a sprawling coral attention ribbon with a compact teal memory
+      spool as a small sequence machine lights up.
     credit: Original illustration by the editors with Codex image generation.
   figures:
   - id: gpt2-baseline
     decision: include
     source_id: 22580-from-gpt2-to-kimi3-explained-8f01b0fe
     asset_id: raster-002-7f1aea9b
-    caption: 'GPT-2 supplies the recognizable baseline: token and position embeddings, transformer blocks, normalization, and a language-model head.'
+    caption: 'GPT-2 supplies the recognizable baseline: token and position embeddings, transformer blocks,
+      normalization, and a language-model head.'
     alt_text: A source diagram outlines the GPT-2 decoder-only architecture.
     anchor: GPT-2 and the cache
     layout: evidence_band_prose
     criteria:
     - important
     - useful
-    rationale: The baseline lets every later architectural change read as a specific response rather than a list of names.
+    rationale: The baseline lets every later architectural change read as a specific response rather than
+      a list of names.
   - id: attention-progression
     decision: include
     source_id: 22580-from-gpt2-to-kimi3-explained-8f01b0fe
     asset_id: raster-003-af0218d8
-    caption: The worklog follows attention from full pairwise comparison toward recurrent state and delta-rule correction.
+    caption: The worklog follows attention from full pairwise comparison toward recurrent state and delta-rule
+      correction.
     alt_text: A source diagram compares stages in the evolution of attention mechanisms.
     anchor: From linear attention to DeltaNet
     layout: column_plate
@@ -198,13 +214,14 @@ articles:
   - software-factories-are-super-real-but-the-factor-ab8ad3ab
   - factories-are-not-a-token-or-llm-problem-ba5fabbf
   - do-not-make-the-service-bus-non-deterministic-3a92442c
-  manuscript: editions/004-unreleased/articles/factory-systems-problem.md
-  fidelity: editions/004-unreleased/fidelity/factory-systems-problem.yaml
+  manuscript: editions/004-the-systems-around-the-model/articles/factory-systems-problem.md
+  fidelity: editions/004-the-systems-around-the-model/fidelity/factory-systems-problem.yaml
   opener_art:
-    path: editions/004-unreleased/art/article-openers/factory-systems-problem.png
-    alt_text: A boy and tool robot inspect a layered software factory with sandbox, build press, identity vault, approval gate, and a small model module moving through the system.
+    path: editions/004-the-systems-around-the-model/art/article-openers/factory-systems-problem.png
+    alt_text: A boy and tool robot inspect a layered software factory with sandbox, build press, identity
+      vault, approval gate, and a small model module moving through the system.
     credit: Original illustration by the editors with Codex image generation.
-  tail_art_path: editions/004-unreleased/art/article-tails/factory-systems-problem.png
+  tail_art_path: editions/004-the-systems-around-the-model/art/article-tails/factory-systems-problem.png
 - id: mcp-in-a-nutshell
   title: MCP in a Nutshell
   short_title: MCP in a Nutshell
@@ -215,13 +232,14 @@ articles:
   content_mode: faithful_synthesis
   source_ids:
   - architecture-overview-ce5cb1d1
-  manuscript: editions/004-unreleased/articles/mcp-in-a-nutshell.md
-  fidelity: editions/004-unreleased/fidelity/mcp-in-a-nutshell.yaml
+  manuscript: editions/004-the-systems-around-the-model/articles/mcp-in-a-nutshell.md
+  fidelity: editions/004-the-systems-around-the-model/fidelity/mcp-in-a-nutshell.yaml
   opener_art:
-    path: editions/004-unreleased/art/article-openers/mcp-in-a-nutshell.png
-    alt_text: A boy and compact helper robot connect a host box to document, database, and tool endpoints in a cheerful workshop.
+    path: editions/004-the-systems-around-the-model/art/article-openers/mcp-in-a-nutshell.png
+    alt_text: A boy and compact helper robot connect a host box to document, database, and tool endpoints
+      in a cheerful workshop.
     credit: Original illustration by the editors with Codex image generation.
-  tail_art_path: editions/004-unreleased/art/article-tails/mcp-four-vignettes.png
+  tail_art_path: editions/004-the-systems-around-the-model/art/article-tails/mcp-four-vignettes.png
 - id: mcp-protocol-update
   title: The MCP Protocol Update
   short_title: MCP Protocol Update
@@ -232,19 +250,20 @@ articles:
   content_mode: faithful_synthesis
   source_ids:
   - the-2026-07-28-mcp-specification-release-candida-1a1752b8
-  manuscript: editions/004-unreleased/articles/mcp-protocol-update.md
-  fidelity: editions/004-unreleased/fidelity/mcp-protocol-update.yaml
+  manuscript: editions/004-the-systems-around-the-model/articles/mcp-protocol-update.md
+  fidelity: editions/004-the-systems-around-the-model/fidelity/mcp-protocol-update.yaml
   opener_art:
-    path: editions/004-unreleased/art/article-openers/mcp-protocol-update.png
-    alt_text: A boy and tool robot update a three-connector workshop, using an orange adapter after an old plug refuses a new socket beside an open approval gate.
+    path: editions/004-the-systems-around-the-model/art/article-openers/mcp-protocol-update.png
+    alt_text: A boy and tool robot update a three-connector workshop, using an orange adapter after an
+      old plug refuses a new socket beside an open approval gate.
     credit: Original illustration by the editors with Codex image generation.
 rights:
   faithful_source_reprint: private_only_while_rights_unknown
   public_release: blocked_pending_permission_or_applicable_exception
 closing_plates:
 - title: Signal Through Gates
-  art_path: editions/004-unreleased/art/closing-signal-gates-manga.png
+  art_path: editions/004-the-systems-around-the-model/art/closing-signal-gates-manga.png
 - title: Memory and Retrieval
-  art_path: editions/004-unreleased/art/closing-memory-rings-manga.png
+  art_path: editions/004-the-systems-around-the-model/art/closing-memory-rings-manga.png
 - title: The Useful Boundary
-  art_path: editions/004-unreleased/art/closing-protocol-exchange-manga.png
+  art_path: editions/004-the-systems-around-the-model/art/closing-protocol-exchange-manga.png

@@ -70,6 +70,7 @@ from .render_review import (
     create_render_review,
     embed_recorded_review,
     load_render_review,
+    rebind_equivalent_render_review,
     require_approved_reports,
     sha256 as _artifact_sha256,
     visual_review_status,
@@ -1740,11 +1741,16 @@ class Magazine:
         return {"edition_id": edition_id, "languages": statuses}
 
     def release(
-        self, edition_id: str, *, next_edition_id: str | None = None
+        self,
+        edition_id: str,
+        *,
+        next_edition_id: str | None = None,
+        review_baseline: tuple[str, Path] | None = None,
     ) -> tuple[BuildResult, ReleaseTransition]:
         """Build and then freeze the complete open edition as one transaction."""
 
         edition = self.validate(edition_id)
+        review_path = self.editions_dir / edition.id / "reviews" / "render.yaml"
         source_ids = _edition_source_ids(edition)
         # Reconcile records before planning so a stale/manual source record can
         # never be omitted merely because the release ledger was not refreshed.
@@ -1784,6 +1790,52 @@ class Magazine:
             # fallible housekeeping is allowed after the edition is frozen.
             self._scaffold_collecting_cover_records(planned_transition.state)
             result = self.build(edition_id)
+            if review_baseline is not None:
+                baseline_edition_id, baseline_root = review_baseline
+                record = load_render_review(review_path, edition_id=edition.id)
+                if record is None:
+                    raise ValidationError(
+                        "A stable-id transition requires an approved render review"
+                    )
+                candidate_packages = {
+                    item.language: item.output_dir for item in result.languages
+                }
+                baseline_packages = {
+                    language: (
+                        baseline_root
+                        if language == self.primary_language
+                        else baseline_root / language
+                    )
+                    for language in self.languages
+                }
+                review_renderer = reader_renderer(
+                    self.render_engine,
+                    design=self.render_design,
+                )
+                rebound = rebind_equivalent_render_review(
+                    record,
+                    baseline_edition_id=baseline_edition_id,
+                    edition_id=edition.id,
+                    baseline_packages=baseline_packages,
+                    candidate_packages=candidate_packages,
+                    engine=review_renderer.engine,
+                    design_direction=review_renderer.design_direction,
+                )
+                for language, package in candidate_packages.items():
+                    check_recorded_review_embeddable(
+                        package,
+                        rebound,
+                        edition_id=edition.id,
+                        language=language,
+                    )
+                write_render_review(review_path, rebound)
+                for language, package in candidate_packages.items():
+                    embed_recorded_review(
+                        package,
+                        rebound,
+                        edition_id=edition.id,
+                        language=language,
+                    )
             require_approved_reports(
                 {
                     item.language: item.output_dir
@@ -1799,6 +1851,15 @@ class Magazine:
                 publication_date=edition.publication_date,
                 next_edition_id=next_edition_id,
                 package_dir=result.output_dir,
+                additional_updates=(
+                    (
+                        self.root / "sources.md",
+                        render_sources(
+                            load_records(self.sources_dir),
+                            planned_transition.state,
+                        ).encode("utf-8"),
+                    ),
+                ),
             )
         except BaseException:
             for path in new_scaffolds:
@@ -1838,6 +1899,22 @@ class Magazine:
                 f"Finished output already exists: {stable_output}. "
                 "Move or archive it before finishing this collection."
             )
+        review_status = self.render_review_status(edition_id)
+        unapproved = [
+            language
+            for language, status in review_status["languages"].items()
+            if status.get("status") != "approved"
+            or status.get("machine_result") != "pass"
+        ]
+        if unapproved:
+            raise ValidationError(
+                "Finish requires the current approved print packages: "
+                + ", ".join(sorted(unapproved))
+            )
+        original_review = load_render_review(
+            self.editions_dir / edition_id / "reviews" / "render.yaml",
+            edition_id=edition_id,
+        )
         rename_collecting_edition(
             self.release_state_path,
             self.editions_dir,
@@ -1849,11 +1926,13 @@ class Magazine:
             return self.release(
                 stable_id,
                 next_edition_id=next_edition_id,
+                review_baseline=(edition_id, self.output_dir / edition_id),
             )
         except BaseException as exc:
             state = load_release_state(self.release_state_path)
             if stable_id in state.collecting_edition_ids:
                 rollback_errors: list[str] = []
+                identity_restored = False
                 try:
                     rename_collecting_edition(
                         self.release_state_path,
@@ -1861,6 +1940,7 @@ class Magazine:
                         old_id=stable_id,
                         new_id=edition_id,
                     )
+                    identity_restored = True
                 except BaseException as rollback_exc:
                     rollback_errors.append(
                         f"could not restore edition identity: {rollback_exc}"
@@ -1878,6 +1958,20 @@ class Magazine:
                     rollback_errors.append(
                         f"generated output still exists: {stable_output}"
                     )
+                if identity_restored and original_review is not None:
+                    try:
+                        write_render_review(
+                            self.editions_dir
+                            / edition_id
+                            / "reviews"
+                            / "render.yaml",
+                            original_review,
+                        )
+                    except BaseException as review_rollback_exc:
+                        rollback_errors.append(
+                            "could not restore the original render review: "
+                            f"{review_rollback_exc}"
+                        )
                 if rollback_errors:
                     raise ValidationError(
                         [f"Finish failed: {exc}", *rollback_errors]
