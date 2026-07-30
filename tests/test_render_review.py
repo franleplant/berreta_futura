@@ -9,6 +9,7 @@ from magazine.render_review import (
     create_render_review,
     embed_recorded_review,
     load_render_review,
+    rebind_equivalent_render_review,
     visual_review_status,
     write_render_review,
 )
@@ -86,6 +87,84 @@ def test_changed_pdf_makes_an_approved_review_stale(tmp_path: Path):
     )
 
     assert status["status"] == "stale"
+
+
+def _identity_review_rasters(package: Path, *, marker: bytes = b"same") -> None:
+    for directory in ("reader-pages", "booklet-sides", "cover-booklet-sides"):
+        path = package / "render-review" / directory / "page-001.png"
+        path.parent.mkdir(parents=True)
+        path.write_bytes(marker + directory.encode("ascii"))
+
+
+def test_identity_only_rebind_requires_exact_reader_and_booklet_rasters(
+    tmp_path: Path,
+):
+    baseline = _package(tmp_path / "output" / "working")
+    candidate = _package(tmp_path / "output" / "stable")
+    candidate.joinpath("reader.pdf").write_bytes(b"same page, different PDF bytes")
+    candidate.joinpath("home", "booklet-a4.pdf").write_bytes(
+        b"same imposed sides, different PDF bytes"
+    )
+    _identity_review_rasters(baseline)
+    _identity_review_rasters(candidate)
+    record = create_render_review(
+        edition_id="001-stable",
+        reviewer="Independent critic",
+        result="approved",
+        language_packages={"en": baseline},
+        engine="weasyprint",
+        design_direction=WEASYPRINT_DIRECTION,
+        reviewed_at="2026-07-21T18:00:00+00:00",
+    )
+
+    rebound = rebind_equivalent_render_review(
+        record,
+        baseline_edition_id="issue-001",
+        edition_id="001-stable",
+        baseline_packages={"en": baseline},
+        candidate_packages={"en": candidate},
+        engine="weasyprint",
+        design_direction=WEASYPRINT_DIRECTION,
+    )
+
+    assert rebound["reviewed_at"] == record["reviewed_at"]
+    assert rebound["languages"]["en"]["reader_sha256"] == hashlib.sha256(
+        candidate.joinpath("reader.pdf").read_bytes()
+    ).hexdigest()
+    assert rebound["identity_rebind"] == {
+        "from_edition_id": "issue-001",
+        "method": "exact_reader_and_booklet_raster_match",
+        "raster_counts": {"en": 3},
+    }
+
+
+def test_identity_only_rebind_refuses_one_changed_page_raster(tmp_path: Path):
+    baseline = _package(tmp_path / "output" / "working")
+    candidate = _package(tmp_path / "output" / "stable")
+    _identity_review_rasters(baseline)
+    _identity_review_rasters(candidate)
+    candidate.joinpath(
+        "render-review", "reader-pages", "page-001.png"
+    ).write_bytes(b"changed pixels")
+    record = create_render_review(
+        edition_id="001-stable",
+        reviewer="Independent critic",
+        result="approved",
+        language_packages={"en": baseline},
+        engine="weasyprint",
+        design_direction=WEASYPRINT_DIRECTION,
+    )
+
+    with pytest.raises(ValidationError, match="final pages differ"):
+        rebind_equivalent_render_review(
+            record,
+            baseline_edition_id="issue-001",
+            edition_id="001-stable",
+            baseline_packages={"en": baseline},
+            candidate_packages={"en": candidate},
+            engine="weasyprint",
+            design_direction=WEASYPRINT_DIRECTION,
+        )
 
 
 def test_changes_required_review_needs_a_finding(tmp_path: Path):

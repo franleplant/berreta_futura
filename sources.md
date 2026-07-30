@@ -2,7 +2,7 @@
 
 _Generated from structured source records. Do not edit by hand._
 
-_Intake edition: `004-unreleased`. Open edition: `004-unreleased`. Collecting: `004-unreleased` (9 queued)._
+_Intake edition: `005-unreleased`. Open edition: `005-unreleased`. Collecting: `005-unreleased` (0 queued)._
 
 ## Software Factories Are Super Real, but the Factory Is Not Cracked — Geoffrey Huntley
 
@@ -12,7 +12,7 @@ _Intake edition: `004-unreleased`. Open edition: `004-unreleased`. Collecting: `
 - Captured: 2026-07-29T21:40:25-03:00
 - Content hash: `not captured`
 - Raw captures: 2 committed bundle(s)
-- Release: queued for `004-unreleased`
+- Release: released for `004-the-systems-around-the-model`
 - Published: 2026-07-29
 - Tags: agents, software-factories, systems-engineering
 - Author biography: Geoffrey Huntley is the creator of the Ralph loop.
@@ -30,7 +30,7 @@ _Intake edition: `004-unreleased`. Open edition: `004-unreleased`. Collecting: `
 - Captured: 2026-07-29T21:40:25-03:00
 - Content hash: `not captured`
 - Raw captures: 2 committed bundle(s)
-- Release: queued for `004-unreleased`
+- Release: released for `004-the-systems-around-the-model`
 - Published: 2026-07-29
 - Tags: agents, software-factories, systems-engineering
 - Author biography: Geoffrey Huntley is the creator of the Ralph loop.
@@ -48,7 +48,7 @@ _Intake edition: `004-unreleased`. Open edition: `004-unreleased`. Collecting: `
 - Captured: 2026-07-29T21:40:25-03:00
 - Content hash: `not captured`
 - Raw captures: 2 committed bundle(s)
-- Release: queued for `004-unreleased`
+- Release: released for `004-the-systems-around-the-model`
 - Published: 2026-07-29
 - Tags: agents, software-factories, systems-engineering
 - Author biography: Geoffrey Huntley is the creator of the Ralph loop.
@@ -66,7 +66,7 @@ _Intake edition: `004-unreleased`. Open edition: `004-unreleased`. Collecting: `
 - Captured: 2026-07-29T17:23:57Z
 - Content hash: `not captured`
 - Raw captures: 2 committed bundle(s)
-- Release: queued for `004-unreleased`
+- Release: released for `004-the-systems-around-the-model`
 - Published: 2026-07-29
 - Tags: agents, planning, software-factories
 - Author biography: Dex Horthy is the founder of HumanLayer, a YC-backed developer-tools company.
@@ -88,10 +88,12 @@ A practical model for applying AI across planning, alignment, coding, review, an
 - Captured: 2026-07-29T00:36:21Z
 - Content hash: `not captured`
 - Raw captures: 1 committed bundle(s)
-- Release: queued for `004-unreleased`
+- Release: released for `004-the-systems-around-the-model`
 - Published: 2026-07-28
 - Tags: architecture, documentation, mcp
-- Author biography: omitted for institutional byline
+- Author biography: Model Context Protocol is a Series of LF Projects, LLC.
+- Author biography evidence:
+  - https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture (raw bundle `1ced8cc9c9845813bd7544a26e4ec78ce05fc460eb5ca1261fb21d14b3280c03`)
 - Rights status: unknown
 - Intended use: private_reference
 - Public reprint: not cleared
@@ -108,7 +110,7 @@ The versioned official explanation of MCP hosts, clients, servers, data and tran
 - Captured: 2026-07-29T00:36:13Z
 - Content hash: `not captured`
 - Raw captures: 2 committed bundle(s)
-- Release: queued for `004-unreleased`
+- Release: released for `004-the-systems-around-the-model`
 - Published: 2026-05-21
 - Tags: infrastructure, mcp, protocols
 - Author biography: David Soria Parra and Den Delimarsky are lead maintainers of the Model Context Protocol.
@@ -130,7 +132,7 @@ The maintainers explain MCP 2026-07-28: a stateless core, first-class extensions
 - Captured: 2026-07-29T00:36:02Z
 - Content hash: `not captured`
 - Raw captures: 4 committed bundle(s)
-- Release: queued for `004-unreleased`
+- Release: released for `004-the-systems-around-the-model`
 - Published: 2026-07-28
 - Tags: agents, engineering, evaluations
 - Author biography: Argona is the publishing name of @Argona0x, an AI-focused X account.
@@ -150,7 +152,7 @@ A practical argument for turning evaluations into routing, retry, quarantine, re
 - Captured: 2026-07-29T00:35:54Z
 - Content hash: `not captured`
 - Raw captures: 4 committed bundle(s)
-- Release: queued for `004-unreleased`
+- Release: released for `004-the-systems-around-the-model`
 - Published: 2026-07-27
 - Tags: inference, model-architecture, transformers
 - Author biography: ali works on inference at Baseten and studies engineering at the University of Waterloo.
@@ -170,7 +172,7 @@ A code-led lineage from GPT-2 through linear attention, DeltaNet, Kimi Linear, a
 - Captured: 2026-07-29T00:35:45Z
 - Content hash: `not captured`
 - Raw captures: 6 committed bundle(s)
-- Release: queued for `004-unreleased`
+- Release: released for `004-the-systems-around-the-model`
 - Published: 2026-07-27
 - Tags: agents, incident-response, security
 - Author biography: Hugo Larcher, Adrien Carreira, raphael g, and Christophe Rannou are contributors publishing through Hugging Face.

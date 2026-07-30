@@ -13,6 +13,11 @@ from .io import dump_yaml, load_structured
 
 
 REVIEW_RESULTS = {"approved", "changes_required"}
+IDENTITY_REVIEW_RASTER_DIRS = (
+    "reader-pages",
+    "booklet-sides",
+    "cover-booklet-sides",
+)
 
 
 def sha256(path: Path) -> str:
@@ -196,6 +201,123 @@ def create_render_review(
         "languages": languages,
     }
     return record
+
+
+def rebind_equivalent_render_review(
+    record: dict[str, Any],
+    *,
+    baseline_edition_id: str,
+    edition_id: str,
+    baseline_packages: dict[str, Path],
+    candidate_packages: dict[str, Path],
+    engine: str,
+    design_direction: str,
+) -> dict[str, Any]:
+    """Carry a visual approval across an identity-only PDF rebuild.
+
+    A stable edition id can change PDF metadata and therefore PDF hashes
+    without moving any printed mark. The approval may follow only when every
+    reviewed baseline package is still current and every final reader and
+    imposed-booklet raster matches it byte for byte.
+    """
+
+    errors: list[str] = []
+    if record.get("result") != "approved":
+        errors.append("The existing render decision is not approved")
+    expected_languages = set(record.get("languages", {}))
+    if set(baseline_packages) != expected_languages:
+        errors.append("Baseline language packages do not match the render review")
+    if set(candidate_packages) != expected_languages:
+        errors.append("Candidate language packages do not match the render review")
+
+    evidence_counts: dict[str, int] = {}
+    for language in sorted(expected_languages):
+        baseline = baseline_packages.get(language)
+        candidate = candidate_packages.get(language)
+        if baseline is None or candidate is None:
+            continue
+        required_pdfs = (
+            baseline / "reader.pdf",
+            baseline / "home" / "booklet-a4.pdf",
+        )
+        missing = [str(path) for path in required_pdfs if not path.is_file()]
+        if missing:
+            errors.append(
+                f"{language}: baseline review package is incomplete "
+                f"({', '.join(missing)})"
+            )
+            continue
+        status = visual_review_status(
+            record,
+            edition_id=edition_id,
+            language=language,
+            reader_pdf=baseline / "reader.pdf",
+            booklet_pdf=baseline / "home" / "booklet-a4.pdf",
+        )
+        if status["status"] != "approved":
+            errors.append(
+                f"{language}: the baseline PDFs are not the approved review bytes"
+            )
+            continue
+        baseline_inventory = _render_raster_inventory(baseline)
+        candidate_inventory = _render_raster_inventory(candidate)
+        if not baseline_inventory or not candidate_inventory:
+            errors.append(f"{language}: render review page rasters are missing")
+            continue
+        if set(baseline_inventory) != set(candidate_inventory):
+            errors.append(
+                f"{language}: baseline and candidate raster inventories differ"
+            )
+            continue
+        changed = [
+            path
+            for path in baseline_inventory
+            if baseline_inventory[path] != candidate_inventory[path]
+        ]
+        if changed:
+            errors.append(
+                f"{language}: final pages differ from the approved edition "
+                f"({changed[0]})"
+            )
+            continue
+        evidence_counts[language] = len(baseline_inventory)
+    if errors:
+        raise ValidationError(
+            [
+                "Cannot carry the render approval across the stable-id transition.",
+                *errors,
+            ]
+        )
+
+    rebound = create_render_review(
+        edition_id=edition_id,
+        reviewer=str(record.get("reviewer") or ""),
+        result="approved",
+        language_packages=candidate_packages,
+        engine=engine,
+        design_direction=design_direction,
+        findings=tuple(record.get("findings", [])),
+        notes=str(record.get("notes") or ""),
+        reviewed_at=str(record.get("reviewed_at") or ""),
+    )
+    rebound["identity_rebind"] = {
+        "from_edition_id": baseline_edition_id,
+        "method": "exact_reader_and_booklet_raster_match",
+        "raster_counts": evidence_counts,
+    }
+    return rebound
+
+
+def _render_raster_inventory(package: Path) -> dict[str, str]:
+    review_root = package / "render-review"
+    inventory: dict[str, str] = {}
+    for directory_name in IDENTITY_REVIEW_RASTER_DIRS:
+        directory = review_root / directory_name
+        if not directory.is_dir():
+            continue
+        for path in sorted(directory.glob("*.png")):
+            inventory[path.relative_to(review_root).as_posix()] = sha256(path)
+    return inventory
 
 
 def check_recorded_review_embeddable(

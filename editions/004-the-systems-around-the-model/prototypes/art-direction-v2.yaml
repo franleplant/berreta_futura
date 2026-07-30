@@ -66,8 +66,8 @@ direction:
     their characters, compositions, costumes, faces, silhouettes, or gadgets as
     image inputs or things to reproduce.
   character_references:
-  - editions/004-unreleased/prototypes/assets/mcp-opener-boy-robot-color-v2.png
-  - editions/004-unreleased/prototypes/assets/factory-systems-boy-robot-color-v1.png
+  - editions/004-the-systems-around-the-model/prototypes/assets/mcp-opener-boy-robot-color-v2.png
+  - editions/004-the-systems-around-the-model/prototypes/assets/factory-systems-boy-robot-color-v1.png
   constraints:
   - Entirely wordless editorial storytelling
   - Exactly one recurring boy and one recurring robot in every authored illustration
@@ -92,7 +92,7 @@ direction:
   - Decorative pseudo-writing, captions, labels, interface text, logos, speech balloons, or watermarks
 prototype_variants:
 - id: mcp-opener-boy-robot-muted-watercolor-v1
-  path: editions/004-unreleased/prototypes/assets/mcp-opener-boy-robot-muted-watercolor-v1.png
+  path: editions/004-the-systems-around-the-model/prototypes/assets/mcp-opener-boy-robot-muted-watercolor-v1.png
   generation_mode: built-in-imagegen
   role: color-treatment prototype
   generation_prompt: |-
