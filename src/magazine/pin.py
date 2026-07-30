@@ -11,18 +11,20 @@ each was computed by hand -- eighteen shasum invocations per Spanish overlay --
 so a routine base-copy edit meant an afternoon of ritual.
 
 ``refresh_pins`` recomputes every such pin for one edition and rewrites the
-stale ones in place.  Two rules keep it honest:
+stale ones in place. Three rules keep it honest:
 
-* **The digest is the only thing that changes.**  These files are
-  hand-authored; their comments, key order, quoting, and line wrapping are the
-  author's.  So the rewrite is a targeted textual substitution -- find the pin
-  key with its current digest, replace exactly the digest -- never a YAML
-  round-trip, which would launder the whole file through a dumper's taste.
+* **Existing pins are changed surgically.** These files are hand-authored;
+  their comments, key order, quoting, and line wrapping are the author's.
+  Ordinary refreshes therefore replace exactly the digest. The structural
+  collecting-ledger repair replaces only the derived top-level field in YAML;
+  JSON ledgers retain JSON form.
 
-* **It refreshes pins; it never invents them.**  A missing pin key is an
-  authoring decision this tool must not make, so it raises instead of
-  inserting.  Anything under ``editions/<id>/reviews/`` is a signed record of
-  what a reviewer actually saw and is refused outright: review records are
+* **It repairs only derivable state.** A collecting edition's fidelity-ledger
+  pin structure is wholly determined by source ids and committed extractions,
+  so missing or malformed ``source_body_sha256`` structure is repaired by
+  machine. Released editions retain the historical rule that pin keys must
+  already exist. Anything under ``editions/<id>/reviews/`` is a signed record
+  of what a reviewer actually saw and is refused outright: review records are
   recorded only via ``mag review record``.
 
 * **Verify everything, then write everything.**  A textual match can be a
@@ -31,10 +33,10 @@ stale ones in place.  Two rules keep it honest:
   rewritten text is re-parsed with the same loader validation uses, and every
   refreshed pin must read back as its new digest.  Only when every file
   verifies does any file reach disk: a raise from this module's own checks,
-  anywhere, means the working tree is exactly as the author left it.  The
-  write phase itself still belongs to the operating system -- an I/O fault
-  mid-loop can leave earlier files written -- so a caller that must stay
-  atomic under faults snapshots first, or narrows the sweep with ``within``.
+  anywhere, means the working tree is exactly as the author left it. The
+  edition-scoped write lock, compare-and-swap check, and rollback keep the
+  complete multi-file refresh atomic under write faults and cooperative
+  concurrent refreshes.
 
 The function deliberately reuses the canonical hashers -- ``extraction.py``'s
 body hash, ``manifest.py``'s edition-copy hash, ``media_schema.py``'s caption
@@ -44,13 +46,17 @@ construction the pin validation expects.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
+import fcntl
 import hashlib
 import json
+import os
 import re
 import tomllib
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
+from tempfile import gettempdir, mkstemp
 
 import yaml
 
@@ -60,11 +66,15 @@ from .io import load_structured
 from .manifest import Article, Edition, _edition_copy_sha256, load_edition
 from .media_schema import caption_sha256, credit_sha256
 from .records import load_records
+from .release import load_release_state
+
+_LOCK_DIRECTORY = Path(gettempdir()) / "magazine-pin-locks"
+_SAFE_EDITION_ID = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 
 
 @dataclass(frozen=True)
 class PinChange:
-    """One digest rewritten in one authored file.
+    """One derivable pin value rewritten in one authored file.
 
     ``pin`` is a human-readable locator (``articles[the-id].source_sha256``,
     ``source_body_sha256[source-id]``) rather than a byte offset, because the
@@ -95,6 +105,23 @@ class PinReport:
         return tuple(dict.fromkeys(change.path for change in self.changes))
 
 
+@dataclass(frozen=True)
+class _InputFingerprint:
+    path: Path
+    content_sha256: str
+
+
+@dataclass
+class _PinnedInstall:
+    file: "_PinnedFile"
+    backup: Path
+    installed_identity: tuple[int, int] | None = None
+
+
+class _ConcurrentWrite(ValidationError):
+    """A target changed during commit and its new bytes were preserved."""
+
+
 def refresh_pins(
     root: Path, edition_id: str, *, within: Iterable[Path] | None = None
 ) -> PinReport:
@@ -115,25 +142,61 @@ def refresh_pins(
     default, ``None``, sweeps the whole edition.
 
     Stale pins are rewritten in place by textual substitution and reported as
-    ``PinChange`` rows; correct pins are left byte-for-byte alone.  Raises
-    ``ValidationError`` when a pin key it expects is missing (it never inserts
-    keys), when a target file lives under ``reviews/``, when a rewritten file
-    does not re-parse to its new digests, or when the base edition itself
-    cannot be loaded -- a broken base has no truth to pin.  Every such raise
+    ``PinChange`` rows; correct pins are left byte-for-byte alone. Collecting
+    fidelity ledgers also have missing or malformed ``source_body_sha256``
+    structure repaired from committed extractions. Raises ``ValidationError``
+    when a released-edition pin key it expects is missing, when a target file
+    lives under ``reviews/``, when a rewritten file does not re-parse to its
+    new value, or when the base edition itself cannot be loaded. Every such raise
     happens before anything is written: a refresh this module refuses leaves
-    the working tree byte-for-byte as it found it.  (An I/O fault *during*
-    the write phase is the one thing that can still interrupt it mid-batch;
-    see the module docstring.)
+    the working tree byte-for-byte as it found it. Write faults trigger a
+    rollback of every completed replacement.
     """
+    _validate_edition_id(edition_id)
     root = root.resolve()
+    with _edition_lock(root, edition_id):
+        return _refresh_pins_locked(root, edition_id, within=within)
+
+
+def _refresh_pins_locked(
+    root: Path, edition_id: str, *, within: Iterable[Path] | None = None
+) -> PinReport:
+    """Prepare, verify, compare-and-swap, and commit one locked pin batch."""
+
+    _validate_edition_id(edition_id)
     config = _load_config(root)
-    editions_dir = root / config["editions"]
-    sources_dir = root / config["sources"]
-    edition_dir = editions_dir / edition_id
+    editions_dir = _safe_repo_path(
+        root,
+        root / config["editions"],
+        label="Configured editions directory",
+    )
+    sources_dir = _safe_repo_path(
+        root,
+        root / config["sources"],
+        label="Configured sources directory",
+    )
+    edition_dir = _safe_repo_path(
+        editions_dir,
+        editions_dir / edition_id,
+        label=f"Edition {edition_id}",
+    )
     if not (edition_dir / "edition.yaml").is_file():
         raise ValidationError(f"Edition manifest not found: {edition_dir / 'edition.yaml'}")
     reviews_dir = edition_dir / "reviews"
+    release_state_path = _safe_repo_path(
+        root,
+        root / config["release_state"],
+        label="Configured release state",
+    )
+    release_state = load_release_state(release_state_path)
+    repair_ledger_structure = edition_id in release_state.collecting_edition_ids
 
+    dependency_snapshot = _snapshot_pin_dependencies(
+        root,
+        edition_dir,
+        sources_dir,
+        release_state_path,
+    )
     records = {record.id: record for record in load_records(sources_dir)}
     base = load_edition(
         root,
@@ -157,18 +220,34 @@ def refresh_pins(
     # reach disk.  Otherwise a failure in the second file would leave the
     # first one changed while the report explaining the change was discarded.
     files: list[_PinnedFile] = []
-    files.extend(_refresh_ledgers(base, sources_dir, reviews_dir, in_scope))
+    files.extend(
+        _refresh_ledgers(
+            base,
+            sources_dir,
+            reviews_dir,
+            in_scope,
+            repair_derived_structure=repair_ledger_structure,
+        )
+    )
     files.extend(_refresh_overlays(base, edition_dir, reviews_dir, in_scope))
     for file in files:
         file.verify()
-    changes: list[PinChange] = []
-    for file in files:
-        changes.extend(file.write())
+    changed_files = [file for file in files if file.changes]
+    if changed_files:
+        _replace_pinned_files_atomically(
+            changed_files,
+            dependencies=dependency_snapshot,
+        )
+    changes = [
+        change
+        for file in changed_files
+        for change in file.changes
+    ]
     return PinReport(edition_id, tuple(changes))
 
 
 def _load_config(root: Path) -> dict[str, str]:
-    """The three facts ``magazine.toml`` contributes, with its own defaults.
+    """The path and publication facts ``magazine.toml`` contributes.
 
     Read directly rather than through the compiler so the pin refresher stays
     importable on its own; the defaults restate the compiler's.
@@ -181,6 +260,9 @@ def _load_config(root: Path) -> dict[str, str]:
         "publication_name": str(publication.get("name") or "Magazine").strip(),
         "sources": str(paths.get("sources", "library/sources")),
         "editions": str(paths.get("editions", "editions")),
+        "release_state": str(
+            paths.get("release_state", "library/release-state.yaml")
+        ),
     }
 
 
@@ -201,9 +283,16 @@ class _PinnedFile:
                 "recorded only via `mag review record`, never edited in place"
             )
         self.path = path
-        self.text = path.read_text(encoding="utf-8")
+        self.original_bytes = path.read_bytes()
+        try:
+            self.text = self.original_bytes.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise ValidationError(f"{path}: pin file is not valid UTF-8: {exc}") from exc
         self.changes: list[PinChange] = []
-        self._reads: list[Callable[[dict], object]] = []
+        self._staged_path: Path | None = None
+        self._checks: list[
+            tuple[str, object, Callable[[dict], object]]
+        ] = []
 
     def pin(
         self, key: str, old: object, new: str, label: str, read: Callable[[dict], object]
@@ -252,7 +341,52 @@ class _PinnedFile:
             )
         self.text = pattern.sub(lambda m: f"{m.group(0)[: -len(old)]}{new}", self.text, count=1)
         self.changes.append(PinChange(self.path, label, old, new))
-        self._reads.append(read)
+        self._checks.append((label, new, read))
+
+    def set_top_level(
+        self,
+        key: str,
+        value: object,
+        label: str,
+        read: Callable[[dict], object],
+    ) -> None:
+        """Insert or reshape one fully derivable top-level field.
+
+        This is reserved for collecting-edition fidelity ledgers. JSON input
+        keeps JSON form. YAML input replaces only the named top-level entry,
+        or inserts it immediately before ``paragraphs`` when absent.
+        """
+
+        try:
+            parsed = yaml.safe_load(self.text)
+        except yaml.YAMLError as exc:
+            raise ValidationError(
+                f"{self.path}: cannot parse ledger for {label} repair: {exc}"
+            ) from exc
+        if not isinstance(parsed, dict):
+            raise ValidationError(f"{self.path}: fidelity ledger must be a mapping")
+        old = parsed.get(key, "<missing>")
+        if old == value:
+            return
+        if self.text.lstrip().startswith("{"):
+            parsed[key] = value
+            self.text = json.dumps(parsed, indent=2, ensure_ascii=False) + "\n"
+        else:
+            self.text = _replace_top_level_yaml_entry(
+                self.path,
+                self.text,
+                key,
+                value,
+            )
+        self.changes.append(
+            PinChange(
+                self.path,
+                label,
+                _pin_value_display(old),
+                _pin_value_display(value),
+            )
+        )
+        self._checks.append((label, value, read))
 
     def verify(self) -> None:
         """Prove the rewritten text still parses to every refreshed digest.
@@ -284,27 +418,138 @@ class _PinnedFile:
                 f"{self.path}: the refreshed text no longer parses as a mapping; "
                 "nothing was written -- fix the file's spelling by hand"
             )
-        for change, read in zip(self.changes, self._reads):
+        for label, expected, read in self._checks:
             found = read(data)
-            if found != change.new:
+            if found != expected:
                 raise ValidationError(
-                    f"{self.path}: rewriting {change.pin} changed text the parser "
-                    f"does not read as that pin (it re-parses to {found!r}, not the "
-                    "new digest); the real pin is spelled in a way the refresher "
+                    f"{self.path}: rewriting {label} changed text the parser "
+                    f"does not read as that pin (it re-parses to {found!r}, not "
+                    f"{expected!r}); the real pin is spelled in a way the refresher "
                     "cannot target -- a folded scalar, or a comment carrying the "
                     "same digest.  Nothing was written; respell the pin as a plain "
                     "`key: digest` line by hand and refresh again"
                 )
 
+    @property
+    def updated_bytes(self) -> bytes:
+        return self.text.encode("utf-8")
+
     def write(self) -> list[PinChange]:
-        """Persist the substitutions, if there were any, and hand them back."""
+        """Commit the already-staged replacement.
+
+        Kept as the narrow write seam used by translation staging fault tests.
+        """
+
         if self.changes:
-            self.path.write_text(self.text, encoding="utf-8")
+            if self._staged_path is None:
+                raise OSError(f"No staged replacement is ready for {self.path}")
+            try:
+                os.link(
+                    self._staged_path,
+                    self.path,
+                    follow_symlinks=False,
+                )
+            except FileExistsError as exc:
+                raise _ConcurrentWrite(
+                    f"Pin destination appeared during commit and was preserved: "
+                    f"{self.path}"
+                ) from exc
         return self.changes
 
 
+def _ledger_pin_shape_matches(
+    declared: object,
+    source_ids: tuple[str, ...],
+) -> bool:
+    """Whether a collecting ledger already uses its canonical pin shape."""
+
+    if len(source_ids) == 1:
+        return isinstance(declared, str) and bool(declared.strip())
+    return (
+        isinstance(declared, dict)
+        and set(str(key) for key in declared) == set(source_ids)
+        and all(
+            isinstance(declared.get(source_id), str)
+            and bool(str(declared[source_id]).strip())
+            for source_id in source_ids
+        )
+    )
+
+
+def _replace_top_level_yaml_entry(
+    path: Path,
+    text: str,
+    key: str,
+    value: object,
+) -> str:
+    """Replace or insert one YAML root key while retaining unrelated text."""
+
+    try:
+        root_node = yaml.compose(text)
+    except yaml.YAMLError as exc:
+        raise ValidationError(
+            f"{path}: cannot locate {key} for structural repair: {exc}"
+        ) from exc
+    if not isinstance(root_node, yaml.MappingNode):
+        raise ValidationError(f"{path}: fidelity ledger must be a mapping")
+    pairs = list(root_node.value)
+    matching = [
+        (index, key_node)
+        for index, (key_node, _) in enumerate(pairs)
+        if getattr(key_node, "value", None) == key
+    ]
+    if len(matching) > 1:
+        raise ValidationError(
+            f"{path}: {key} appears more than once; structural repair is ambiguous"
+        )
+    lines = text.splitlines(keepends=True)
+    replacement = yaml.safe_dump(
+        {key: value},
+        sort_keys=False,
+        allow_unicode=True,
+        width=100,
+    ).splitlines(keepends=True)
+    if matching:
+        index, key_node = matching[0]
+        start = key_node.start_mark.line
+        end = (
+            pairs[index + 1][0].start_mark.line
+            if index + 1 < len(pairs)
+            else len(lines)
+        )
+        preserved = [
+            line
+            for line in lines[start + 1 : end]
+            if not line.strip() or line.lstrip().startswith("#")
+        ]
+        return "".join(lines[:start] + replacement + preserved + lines[end:])
+    paragraphs = next(
+        (
+            key_node
+            for key_node, _ in pairs
+            if getattr(key_node, "value", None) == "paragraphs"
+        ),
+        None,
+    )
+    insertion = paragraphs.start_mark.line if paragraphs is not None else len(lines)
+    if insertion == len(lines) and text and not text.endswith("\n"):
+        replacement.insert(0, "\n")
+    return "".join(lines[:insertion] + replacement + lines[insertion:])
+
+
+def _pin_value_display(value: object) -> str:
+    if isinstance(value, str):
+        return value
+    return json.dumps(value, sort_keys=True, ensure_ascii=False)
+
+
 def _refresh_ledgers(
-    base: Edition, sources_dir: Path, reviews_dir: Path, in_scope: Callable[[Path], bool]
+    base: Edition,
+    sources_dir: Path,
+    reviews_dir: Path,
+    in_scope: Callable[[Path], bool],
+    *,
+    repair_derived_structure: bool,
 ) -> list[_PinnedFile]:
     """Prepare every fidelity ledger's re-pin against the extraction bodies.
 
@@ -314,7 +559,9 @@ def _refresh_ledgers(
     nothing true to pin to.  A ledger outside the caller's scope is skipped
     before it is even read -- out of scope means not this refresh's business,
     stale or not.  Nothing is written here; the caller verifies the whole
-    batch and only then commits it to disk.
+    batch and only then commits it to disk. When
+    ``repair_derived_structure`` is true, missing or incorrectly shaped pin
+    structure is repaired from those same extractions.
     """
     files: list[_PinnedFile] = []
     for article in base.articles:
@@ -329,12 +576,12 @@ def _refresh_ledgers(
                 "source_body_sha256 to refresh"
             )
         declared = data.get("source_body_sha256")
-        if declared is None:
+        if declared is None and not repair_derived_structure:
             raise ValidationError(
                 f"{ledger_path}: has no source_body_sha256 key; add it by hand first "
                 "-- refresh never inserts keys"
             )
-        file = _PinnedFile(ledger_path, reviews_dir)
+        extractions = {}
         for source_id in source_ids:
             extraction = load_extraction(sources_dir, source_id)
             if extraction is None:
@@ -343,6 +590,29 @@ def _refresh_ledgers(
                     f"library/sources/{source_id}/{EXTRACTION_FILENAME}, so its "
                     "source_body_sha256 cannot be recomputed"
                 )
+            extractions[source_id] = extraction
+        file = _PinnedFile(ledger_path, reviews_dir)
+        expected: str | dict[str, str]
+        if len(source_ids) == 1:
+            expected = extractions[source_ids[0]].body_sha256
+        else:
+            expected = {
+                source_id: extractions[source_id].body_sha256
+                for source_id in source_ids
+            }
+        if repair_derived_structure and not _ledger_pin_shape_matches(
+            declared, source_ids
+        ):
+            file.set_top_level(
+                "source_body_sha256",
+                expected,
+                "source_body_sha256",
+                lambda refreshed: refreshed.get("source_body_sha256"),
+            )
+            files.append(file)
+            continue
+        for source_id in source_ids:
+            extraction = extractions[source_id]
             if isinstance(declared, str):
                 # The single-digest shape only ever covers one source; a
                 # multi-source ledger spelled this way is a validation problem,
@@ -541,3 +811,222 @@ def _parsed_figure(data: dict, article_id: str, figure_id: str) -> object:
 
 def _file_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+@contextmanager
+def _edition_lock(root: Path, edition_id: str):
+    """Serialize pin refreshes for one edition without touching the repo."""
+
+    lock_name = hashlib.sha256(
+        f"{root}:{edition_id}".encode("utf-8")
+    ).hexdigest()
+    lock_path = _LOCK_DIRECTORY / f"{lock_name}.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+b") as lock:
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
+
+
+def _replace_pinned_files_atomically(
+    files: list[_PinnedFile],
+    *,
+    dependencies: tuple[_InputFingerprint, ...],
+) -> None:
+    """Conditionally commit every pin file without overwriting new bytes."""
+
+    staged: dict[Path, Path] = {}
+    installs: list[_PinnedInstall] = []
+    active: _PinnedInstall | None = None
+    try:
+        for file in files:
+            staged[file.path] = _stage_bytes(file.path, file.updated_bytes)
+            file._staged_path = staged[file.path]
+        _assert_pin_dependencies(dependencies, installs)
+        for file in files:
+            _assert_pin_dependencies(dependencies, installs)
+            active = _prepare_pinned_install(file)
+            installs.append(active)
+            file.write()
+            stat = file.path.stat()
+            active.installed_identity = (stat.st_dev, stat.st_ino)
+            active = None
+        _assert_pin_dependencies(dependencies, installs)
+    except (ValidationError, OSError) as exc:
+        rollback_errors: list[str] = []
+        io_fault_active = active if isinstance(exc, OSError) else None
+        for install in reversed(installs):
+            try:
+                _restore_pinned_install(
+                    install,
+                    discard_partial=install is io_fault_active,
+                )
+            except OSError as rollback_exc:
+                rollback_errors.append(f"{install.file.path}: {rollback_exc}")
+        if not rollback_errors:
+            raise
+        detail = f"Cannot refresh pins atomically: {exc}"
+        detail += "; rollback failed: " + "; ".join(rollback_errors)
+        raise ValidationError(detail) from exc
+    else:
+        for install in installs:
+            install.backup.unlink(missing_ok=True)
+    finally:
+        for file in files:
+            file._staged_path = None
+        for install in installs:
+            install.backup.unlink(missing_ok=True)
+        for temporary in staged.values():
+            temporary.unlink(missing_ok=True)
+
+
+def _prepare_pinned_install(file: _PinnedFile) -> _PinnedInstall:
+    backup = _reserve_backup(file.path)
+    install = _PinnedInstall(file, backup)
+    try:
+        os.replace(file.path, backup)
+    except OSError:
+        backup.unlink(missing_ok=True)
+        raise
+    if backup.read_bytes() != file.original_bytes:
+        _restore_pinned_install(install, discard_partial=False)
+        raise _ConcurrentWrite(
+            f"Pin destination changed during commit and was preserved: {file.path}"
+        )
+    return install
+
+
+def _restore_pinned_install(
+    install: _PinnedInstall,
+    *,
+    discard_partial: bool,
+) -> None:
+    file = install.file
+    path = file.path
+    if discard_partial and (path.exists() or path.is_symlink()):
+        path.unlink()
+    elif install.installed_identity is not None and path.exists():
+        stat = path.stat()
+        if (
+            (stat.st_dev, stat.st_ino) == install.installed_identity
+            and path.read_bytes() == file.updated_bytes
+        ):
+            path.unlink()
+    if not path.exists() and not path.is_symlink():
+        try:
+            os.link(install.backup, path, follow_symlinks=False)
+        except FileExistsError:
+            pass
+    install.backup.unlink(missing_ok=True)
+
+
+def _assert_pin_dependencies(
+    dependencies: tuple[_InputFingerprint, ...],
+    installs: list[_PinnedInstall],
+) -> None:
+    committed = {
+        install.file.path: install.file.updated_bytes
+        for install in installs
+        if install.installed_identity is not None
+    }
+    conflicts: list[str] = []
+    for fingerprint in dependencies:
+        expected = committed.get(fingerprint.path)
+        expected_sha256 = (
+            hashlib.sha256(expected).hexdigest()
+            if expected is not None
+            else fingerprint.content_sha256
+        )
+        if (
+            not fingerprint.path.is_file()
+            or fingerprint.path.is_symlink()
+            or _file_sha256(fingerprint.path) != expected_sha256
+        ):
+            conflicts.append(str(fingerprint.path))
+    if conflicts:
+        raise ValidationError(
+            [
+                "Pin refresh is stale; no files were written",
+                *(f"changed while refreshing: {path}" for path in conflicts),
+            ]
+        )
+
+
+def _snapshot_pin_dependencies(
+    root: Path,
+    edition_dir: Path,
+    sources_dir: Path,
+    release_state_path: Path,
+) -> tuple[_InputFingerprint, ...]:
+    paths = {
+        root / "magazine.toml",
+        release_state_path,
+        *edition_dir.rglob("*.md"),
+        *edition_dir.rglob("*.yaml"),
+        *edition_dir.rglob("*.yml"),
+        *edition_dir.rglob("*.json"),
+        *sources_dir.glob("*/record.y*ml"),
+        *sources_dir.glob("*/extracted.md"),
+    }
+    return tuple(
+        _InputFingerprint(path, _file_sha256(path))
+        for path in sorted(paths)
+        if path.is_file() and not path.is_symlink()
+    )
+
+
+def _validate_edition_id(edition_id: str) -> None:
+    if not isinstance(edition_id, str) or not _SAFE_EDITION_ID.fullmatch(edition_id):
+        raise ValidationError(
+            "Edition id must use lowercase letters, digits, and hyphens"
+        )
+
+
+def _safe_repo_path(root: Path, path: Path, *, label: str) -> Path:
+    root = root.resolve()
+    candidate = path if path.is_absolute() else root / path
+    try:
+        lexical = candidate.relative_to(root)
+    except ValueError as exc:
+        raise ValidationError(f"{label} escapes its configured root: {candidate}") from exc
+    if ".." in lexical.parts:
+        raise ValidationError(f"{label} escapes its configured root: {candidate}")
+    current = root
+    for part in lexical.parts:
+        current = current / part
+        if current.is_symlink():
+            raise ValidationError(f"{label} cannot use symlink path component: {current}")
+    resolved = candidate.resolve(strict=False)
+    if not resolved.is_relative_to(root):
+        raise ValidationError(f"{label} escapes its configured root: {candidate}")
+    return resolved
+
+
+def _reserve_backup(destination: Path) -> Path:
+    descriptor, name = mkstemp(
+        prefix=f".{destination.name}.",
+        suffix=".rollback",
+        dir=destination.parent,
+    )
+    os.close(descriptor)
+    return Path(name)
+
+
+def _stage_bytes(destination: Path, content: bytes) -> Path:
+    descriptor, name = mkstemp(
+        prefix=f".{destination.name}.",
+        suffix=".tmp",
+        dir=destination.parent,
+    )
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(name, destination.stat().st_mode)
+    except BaseException:
+        Path(name).unlink(missing_ok=True)
+        raise
+    return Path(name)

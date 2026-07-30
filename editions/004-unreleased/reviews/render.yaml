@@ -1,22 +1,21 @@
 schema_version: 1
 edition_id: 004-unreleased
-reviewer: edition4_article_render_critic
-reviewed_at: '2026-07-30T01:28:17+00:00'
+reviewer: Codex final render critic
+reviewed_at: '2026-07-30T03:04:09+00:00'
 result: approved
 engine: weasyprint
 design_direction: WeasyPrint / A5 fold proof
 findings: []
-notes: Independent critic inspected every final English and Spanish reader and booklet contact sheet after
-  the last rebuild. The factory article, illustration, typography, imposition, margins, and blank inside
-  covers have no actionable defects.
+notes: Independent inspection of all English and Spanish reader and booklet contact sheets after Eval
+  Engineering pagination repair; no actionable visual findings.
 languages:
   en:
-    reader_sha256: 4aadcd35bf82e96dfa00ca9e9e8c20fc53473f3558166132320e5031b46415fa
-    booklet_sha256: 7c4abd19baebfffae0e05f95263949d35d069c0aa925f3ebfacbf72746a26759
+    reader_sha256: f4f9a90d07e94a213e736dacacac73da3db307f0a7e966ce5ff0e373375c91fa
+    booklet_sha256: 2d2132f20c224b5afd44b8c542ad6aa6c56f50dfd1d74fcbc81c37f6dd35aefd
     page_count: 40
     machine_result: pass
   es:
-    reader_sha256: df15ebc541ecbc8b8fe38fa4313b5ebe26062a2e69cadb732337857f9509f3ca
-    booklet_sha256: 9a501ced12af2bd86eb151e0e8b0dc4033f08cb21b4dffba126fe570a5ba9a93
-    page_count: 44
+    reader_sha256: cdea1c9908825ffc9b57171a40b6252501d93a04cc28c876737d1294a8c3a31f
+    booklet_sha256: eb8a4c4d2e9703c864f2fa501b097cc4c0b1dd2a8e5e7aeb5e694821b45c108f
+    page_count: 40
     machine_result: pass

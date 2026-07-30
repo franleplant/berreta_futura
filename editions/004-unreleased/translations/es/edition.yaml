@@ -2,7 +2,7 @@ schema_version: 1
 language: es
 source_language: en
 locale: es
-base_copy_sha256: 8df333bd79ff7f9dde0889a0daa38330e44b14be523000003ea358a3f4565f7a
+base_copy_sha256: 4cce9d7338301a002dbfd16c600a5a609db96ff4522922e2e5d6199290ceef70
 title: Los sistemas alrededor del modelo
 subtitle: Protocolos, evaluaciones, arquitecturas y el trabajo operativo que convierte la capacidad de los modelos
   en sistemas confiables

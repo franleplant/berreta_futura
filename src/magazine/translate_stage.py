@@ -142,6 +142,17 @@ class StageReport:
 
 
 def stage_translation(root: Path, edition_id: str, language: str) -> StageReport:
+    """Stage one overlay and normalize parser failures as validation errors."""
+
+    try:
+        return _stage_translation(root, edition_id, language)
+    except yaml.YAMLError as exc:
+        raise ValidationError(
+            f"Cannot parse translation overlay for {edition_id} {language}: {exc}"
+        ) from exc
+
+
+def _stage_translation(root: Path, edition_id: str, language: str) -> StageReport:
     """Generate or reconcile one language overlay against the English edition.
 
     A missing overlay is scaffolded whole -- structure mirrored, pins

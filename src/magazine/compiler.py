@@ -2,14 +2,21 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import shutil
+import tempfile
 import tomllib
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Iterable
 
+from PIL import Image, ImageDraw
+
+from .article_stage import ArticleBrief, plan_article_stage, stage_article
 from .capture import archive_snapshot, index_existing_captures, verify_snapshots
 from .catalog import render_sources
 from .cover import CoverArtifact, CoverCompiler, replace_outer_pages
+from .cover_studio import CoverProofRequest, CoverStudio
 from .cover_art_candidates import (
     cover_art_candidate_record_path,
     hydrate_cover_art_candidates,
@@ -36,6 +43,11 @@ from .illustration import (
     validate_illustration_plan,
     write_illustration_package,
 )
+from .illustration_studio import (
+    IllustrationBrief,
+    IllustrationReviewPlan,
+    IllustrationStudio,
+)
 from .manifest import Edition, load_edition, load_translation
 from .media_curator import curate_source, verify_source_curation
 from .package import package_release
@@ -61,6 +73,7 @@ from .render_review import (
     visual_review_status,
     write_render_review,
 )
+from .workflow import Workflow
 
 
 @dataclass(frozen=True)
@@ -87,6 +100,147 @@ class LanguageWebResult:
     language: str
     output_dir: Path
     index: Path
+
+
+@dataclass(frozen=True)
+class ArticleWorkflowReport:
+    """One article scaffold plus every required language-overlay reconciliation."""
+
+    edition_id: str
+    article_id: str
+    dry_run: bool
+    changed: bool
+    created: tuple[Path, ...]
+    updated: tuple[Path, ...]
+    kept: tuple[Path, ...]
+    translations: tuple[dict[str, Any], ...]
+
+    def to_dict(self, root: Path | None = None) -> dict[str, Any]:
+        def display(path: Path) -> str:
+            if root is not None:
+                try:
+                    return path.relative_to(root).as_posix()
+                except ValueError:
+                    pass
+            return path.as_posix()
+
+        return {
+            "schema_version": 1,
+            "edition_id": self.edition_id,
+            "article_id": self.article_id,
+            "dry_run": self.dry_run,
+            "changed": self.changed,
+            "created": [display(path) for path in self.created],
+            "updated": [display(path) for path in self.updated],
+            "kept": [display(path) for path in self.kept],
+            "translations": [
+                {
+                    **item,
+                    "created": [display(path) for path in item["created"]],
+                    "updated": [display(path) for path in item["updated"]],
+                    "placeholders": [
+                        {
+                            **placeholder,
+                            "path": display(placeholder["path"]),
+                        }
+                        for placeholder in item["placeholders"]
+                    ],
+                }
+                for item in self.translations
+            ],
+        }
+
+
+class _MagazineCoverProofAdapter:
+    """Render one studio request through the production cover compiler."""
+
+    def __init__(self, magazine: "Magazine") -> None:
+        self.magazine = magazine
+
+    def render(self, request: CoverProofRequest) -> dict[str, bytes]:
+        editions = self.magazine.load_cover_languages(
+            request.edition_dir.name,
+            (request.language,),
+            purpose="Cover Studio proof",
+        )
+        edition = editions[request.language]
+        cover = {**edition.cover, **dict(request.cover_override)}
+        edition = replace(
+            edition,
+            cover=cover,
+            cover_art=request.art_path,
+        )
+        with tempfile.TemporaryDirectory(prefix="mag-cover-proof-") as temporary:
+            artifact = CoverCompiler(self.magazine.root).compile(
+                edition,
+                Path(temporary),
+            )
+            return {
+                "cover.svg": artifact.svg.read_bytes(),
+                "cover.pdf": artifact.pdf.read_bytes(),
+                "cover.png": artifact.png.read_bytes(),
+                "proof.json": artifact.proof_json.read_bytes(),
+            }
+
+
+class _MagazineIllustrationReviewAdapter:
+    """Create a compact, deterministic review sheet from registered assets."""
+
+    def __init__(self, root: Path) -> None:
+        self.root = root
+
+    def render(self, plan: IllustrationReviewPlan) -> dict[str, bytes]:
+        cell_width = 480
+        cell_height = 360
+        label_height = 54
+        rows = max(1, len(plan.assets))
+        sheet = Image.new(
+            "RGB",
+            (cell_width, rows * (cell_height + label_height)),
+            "white",
+        )
+        draw = ImageDraw.Draw(sheet)
+        inventory: list[dict[str, Any]] = []
+        for index, asset in enumerate(plan.assets):
+            with Image.open(asset.art_path) as source:
+                image = source.convert("RGB")
+                image.thumbnail((cell_width, cell_height))
+            top = index * (cell_height + label_height)
+            left = (cell_width - image.width) // 2
+            sheet.paste(image, (left, top))
+            label = asset.id
+            if asset.article_id:
+                label += f" | article {asset.article_id}"
+            if asset.plate_index is not None:
+                label += f" | closing plate {asset.plate_index}"
+            draw.text((12, top + cell_height + 12), label, fill="black")
+            inventory.append(
+                {
+                    "id": asset.id,
+                    "role": asset.role,
+                    "article_id": asset.article_id,
+                    "plate_index": asset.plate_index,
+                    "art_path": asset.art_path.relative_to(self.root).as_posix(),
+                    "asset_sha256": asset.asset_sha256,
+                    "prompt_sha256": asset.prompt_sha256,
+                }
+            )
+        import io
+
+        stream = io.BytesIO()
+        sheet.save(stream, format="PNG", optimize=False)
+        payload = {
+            "schema_version": 1,
+            "edition_id": plan.edition_id,
+            "revision": plan.revision,
+            "assets": inventory,
+        }
+        return {
+            "review.png": stream.getvalue(),
+            "review.json": (
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+            ).encode("utf-8"),
+        }
 
 
 def _clear_web_language_dir(directory: Path) -> None:
@@ -355,6 +509,324 @@ class Magazine:
         self._scaffold_collecting_cover_records(state)
         return state
 
+    def workflow_status(self, edition_id: str):
+        """Return the complete read-only workflow report for one edition."""
+
+        return Workflow(self.root).status(edition_id)
+
+    def workflow_run(self, edition_id: str):
+        """Advance clerical checkpoints and stop before authorship or judgment."""
+
+        return Workflow(self.root).run(edition_id)
+
+    workflow_advance = workflow_run
+
+    def stage_article(
+        self,
+        brief: ArticleBrief | dict[str, Any] | Path,
+        *,
+        dry_run: bool = False,
+    ) -> ArticleWorkflowReport:
+        """Stage an article and reconcile every configured translation as one unit.
+
+        The article module validates the source-to-manifest plan first. An
+        isolated copy then exercises the article and every configured overlay
+        before the real edition is touched. A real run conditionally restores
+        only files this invocation changed if a later overlay refuses.
+        """
+
+        if isinstance(brief, Path):
+            brief = ArticleBrief.from_dict(load_structured(brief))
+        elif isinstance(brief, dict):
+            brief = ArticleBrief.from_dict(brief)
+        plan = plan_article_stage(self.root, brief)
+        preflight = _preflight_article_transaction(self, brief, plan)
+        report = stage_article(self.root, brief, dry_run=True)
+        if dry_run:
+            return ArticleWorkflowReport(
+                edition_id=report.edition_id,
+                article_id=report.article_id,
+                dry_run=True,
+                changed=plan.changed
+                or any(row["changed"] for row in preflight.translations),
+                created=report.created,
+                updated=report.updated,
+                kept=report.kept,
+                translations=tuple(
+                    {**row, "dry_run": True}
+                    for row in preflight.translations
+                ),
+            )
+
+        tracker = _ArticleTransaction(
+            self.root,
+            preflight.committed,
+        )
+        try:
+            report = stage_article(self.root, brief)
+            tracker.commit(
+                (*report.created, *report.updated),
+            )
+            translation_rows: list[dict[str, Any]] = []
+            for language in self.languages:
+                if language == self.primary_language:
+                    continue
+                staged = self.stage_translation(plan.edition_id, language)
+                touched = _translation_touched_paths(staged)
+                tracker.commit(touched)
+                translation_rows.append(
+                    _translation_report_row(
+                        staged,
+                        source_root=self.root,
+                        destination_root=self.root,
+                        dry_run=False,
+                    )
+                )
+        except BaseException as exc:
+            conflicts = tracker.rollback()
+            if conflicts:
+                original = (
+                    list(exc.errors)
+                    if isinstance(exc, ValidationError)
+                    else [str(exc)]
+                )
+                raise ValidationError(
+                    [
+                        *original,
+                        (
+                            "Article integration preserved concurrently edited "
+                            "touched files while rolling back every other safe "
+                            "write: "
+                            + ", ".join(
+                                path.relative_to(self.root).as_posix()
+                                for path in conflicts
+                            )
+                        ),
+                    ]
+                ) from exc
+            raise
+        return ArticleWorkflowReport(
+            edition_id=report.edition_id,
+            article_id=report.article_id,
+            dry_run=False,
+            changed=report.changed
+            or any(row["changed"] for row in translation_rows),
+            created=report.created,
+            updated=report.updated,
+            kept=report.kept,
+            translations=tuple(translation_rows),
+        )
+
+    def cover_studio_status(self, edition_id: str):
+        return self._cover_studio(edition_id).status()
+
+    def cover_studio_scaffold(
+        self,
+        edition_id: str,
+        *,
+        editorial_reading: str | None = None,
+        dry_run: bool = False,
+        expected_revision: str | None = None,
+    ):
+        return self._cover_studio(edition_id).scaffold_next_round(
+            editorial_reading=editorial_reading,
+            dry_run=dry_run,
+            expected_revision=expected_revision,
+        )
+
+    def cover_studio_prompts(
+        self,
+        edition_id: str,
+        round_number: int,
+        *,
+        dry_run: bool = False,
+        expected_revision: str | None = None,
+    ):
+        return self._cover_studio(edition_id).emit_prompt_package(
+            round_number,
+            dry_run=dry_run,
+            expected_revision=expected_revision,
+        )
+
+    def cover_studio_register(
+        self,
+        edition_id: str,
+        round_number: int,
+        images: dict[str, Path],
+        *,
+        dry_run: bool = False,
+        expected_revision: str | None = None,
+    ):
+        return self._cover_studio(edition_id).register_round(
+            round_number,
+            images,
+            dry_run=dry_run,
+            expected_revision=expected_revision,
+        )
+
+    def cover_studio_proof_plan(
+        self,
+        edition_id: str,
+        *,
+        languages: Iterable[str] | None = None,
+        rounds: Iterable[int] | None = None,
+    ):
+        requested = tuple(languages or self.languages)
+        unsupported = sorted(set(requested) - set(self.languages))
+        if unsupported:
+            raise ValidationError(
+                "Cover Studio proof languages are not configured: "
+                + ", ".join(unsupported)
+            )
+        return self._cover_studio(edition_id).proof_plan(
+            requested,
+            rounds=rounds,
+        )
+
+    def cover_studio_render_proofs(
+        self,
+        edition_id: str,
+        *,
+        languages: Iterable[str] | None = None,
+        rounds: Iterable[int] | None = None,
+        dry_run: bool = False,
+        expected_revision: str | None = None,
+    ) -> tuple[Any, Path]:
+        requested = tuple(languages or self.languages)
+        studio = self._cover_studio(edition_id, proofs=True)
+        action = studio.render_proofs(
+            requested,
+            rounds=rounds,
+            dry_run=dry_run,
+            expected_revision=expected_revision,
+        )
+        comparison = (
+            self.editions_dir
+            / edition_id
+            / "art"
+            / "cover-rounds"
+            / "full-cover-comparison.png"
+        )
+        if not dry_run:
+            requests = studio.proof_plan(requested, rounds=rounds)
+            _write_full_cover_comparison(requests, comparison)
+        return action, comparison
+
+    def cover_studio_compare(
+        self,
+        edition_id: str,
+        *,
+        dry_run: bool = False,
+        expected_revision: str | None = None,
+    ):
+        return self._cover_studio(edition_id).create_comparison_sheet(
+            dry_run=dry_run,
+            expected_revision=expected_revision,
+        )
+
+    def cover_studio_select(
+        self,
+        edition_id: str,
+        round_number: int,
+        variant: str,
+        *,
+        dry_run: bool = False,
+        expected_revision: str | None = None,
+    ):
+        return self._cover_studio(edition_id).select(
+            round_number,
+            variant,
+            dry_run=dry_run,
+            expected_revision=expected_revision,
+        )
+
+    def illustration_studio_status(self, edition_id: str):
+        return self._illustration_studio().status(edition_id)
+
+    def illustration_studio_scaffold(
+        self,
+        brief: IllustrationBrief | dict[str, Any] | Path,
+        *,
+        dry_run: bool = False,
+        expected_revision: str | None = None,
+    ):
+        return self._illustration_studio().scaffold(
+            brief,
+            dry_run=dry_run,
+            expected_revision=expected_revision,
+        )
+
+    def illustration_studio_prompts(
+        self,
+        edition_id: str,
+        *,
+        dry_run: bool = False,
+        expected_revision: str | None = None,
+    ):
+        return self._illustration_studio().emit_prompt_package(
+            edition_id,
+            dry_run=dry_run,
+            expected_revision=expected_revision,
+        )
+
+    def illustration_studio_register(
+        self,
+        edition_id: str,
+        asset_id: str,
+        source: Path,
+        *,
+        dry_run: bool = False,
+        expected_revision: str | None = None,
+    ):
+        return self._illustration_studio().register_asset(
+            edition_id,
+            asset_id,
+            source,
+            dry_run=dry_run,
+            expected_revision=expected_revision,
+        )
+
+    def illustration_studio_review_plan(self, edition_id: str):
+        return self._illustration_studio().review_plan(edition_id)
+
+    def illustration_studio_review_sheet(
+        self,
+        edition_id: str,
+        *,
+        dry_run: bool = False,
+        expected_revision: str | None = None,
+    ):
+        return self._illustration_studio(review=True).create_review_sheet(
+            edition_id,
+            dry_run=dry_run,
+            expected_revision=expected_revision,
+        )
+
+    def _cover_studio(self, edition_id: str, *, proofs: bool = False) -> CoverStudio:
+        edition_dir = (self.editions_dir / edition_id).resolve()
+        try:
+            edition_dir.relative_to(self.editions_dir.resolve())
+        except ValueError as exc:
+            raise ValidationError(
+                f"Cover Studio edition id escapes the editions directory: {edition_id}"
+            ) from exc
+        if not edition_dir.is_dir():
+            raise ValidationError(f"Edition directory not found: {edition_dir}")
+        return CoverStudio(
+            edition_dir,
+            proof_adapter=_MagazineCoverProofAdapter(self) if proofs else None,
+        )
+
+    def _illustration_studio(self, *, review: bool = False) -> IllustrationStudio:
+        return IllustrationStudio(
+            self.root,
+            review_adapter=(
+                _MagazineIllustrationReviewAdapter(self.root)
+                if review
+                else None
+            ),
+        )
+
     def _scaffold_collecting_cover_records(
         self, state: ReleaseState
     ) -> None:
@@ -511,7 +983,7 @@ class Magazine:
             self.release_state_path, default_open_id="001-the-work-left-to-us"
         )
 
-    def _load_cover_languages(
+    def load_cover_languages(
         self,
         edition_id: str,
         languages: Iterable[str] | None = None,
@@ -561,6 +1033,8 @@ class Magazine:
             )
         return editions
 
+    _load_cover_languages = load_cover_languages
+
     def cover_proof(
         self,
         edition_id: str,
@@ -571,7 +1045,7 @@ class Magazine:
     ) -> tuple[CoverArtifact, ...]:
         """Compile fast browser/PDF cover proofs without typesetting interiors."""
 
-        editions = self._load_cover_languages(edition_id, languages)
+        editions = self.load_cover_languages(edition_id, languages)
         compiler = CoverCompiler(self.root)
         artifacts: list[CoverArtifact] = []
         for language, edition in editions.items():
@@ -603,7 +1077,7 @@ class Magazine:
     ) -> tuple[CoverArtifact, ...]:
         """Compile fast localized Signal fold back-cover proofs."""
 
-        editions = self._load_cover_languages(edition_id, languages)
+        editions = self.load_cover_languages(edition_id, languages)
         compiler = CoverCompiler(self.root)
         artifacts: list[CoverArtifact] = []
         for language, edition in editions.items():
@@ -657,7 +1131,7 @@ class Magazine:
                 "not be the configured engine's. Measure with the weasyprint "
                 "engine configured."
             )
-        editions = self._load_cover_languages(
+        editions = self.load_cover_languages(
             edition_id,
             None if language is None else (language,),
             purpose="Measurement",
@@ -710,7 +1184,7 @@ class Magazine:
 
         from .web_edition import write_web_edition
 
-        editions = self._load_cover_languages(
+        editions = self.load_cover_languages(
             edition_id,
             None if language is None else (language,),
             purpose="Web edition",
@@ -1346,6 +1820,415 @@ def _edition_source_ids(edition: Edition) -> set[str]:
 
 def _optional_file_entry(path: Path | None, root: Path) -> dict[str, str] | None:
     return _file_entry(path, root) if path is not None and path.is_file() else None
+
+
+@dataclass(frozen=True)
+class _ArticlePreflight:
+    translations: tuple[dict[str, Any], ...]
+    committed: dict[Path, bytes | None]
+
+
+def _preflight_article_transaction(
+    magazine: Magazine,
+    brief: ArticleBrief,
+    plan: Any,
+) -> _ArticlePreflight:
+    """Exercise article and overlay staging in an isolated project copy."""
+
+    with tempfile.TemporaryDirectory(prefix="mag-article-preflight-") as temporary:
+        sandbox = Path(temporary).resolve()
+        _copy_preflight_project(
+            magazine,
+            sandbox,
+            edition_id=plan.edition_id,
+            source_ids=brief.source_ids,
+        )
+        article_updates = tuple(plan._updates)
+        for path, content in article_updates:
+            target = _map_preflight_path(path, magazine.root, sandbox)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(content)
+        from .translate_stage import stage_translation as stage_overlay
+
+        rows: list[dict[str, Any]] = []
+        committed = {
+            path.resolve(): content
+            for path, content in article_updates
+        }
+        for language in magazine.languages:
+            if language == magazine.primary_language:
+                continue
+            report = stage_overlay(sandbox, plan.edition_id, language)
+            rows.append(
+                _translation_report_row(
+                    report,
+                    source_root=sandbox,
+                    destination_root=magazine.root,
+                    dry_run=True,
+                )
+            )
+            for path in _translation_touched_paths(report):
+                real_path = _map_preflight_path(path, sandbox, magazine.root)
+                committed[real_path] = _path_bytes(path)
+        return _ArticlePreflight(
+            translations=tuple(rows),
+            committed=committed,
+        )
+
+
+def _copy_preflight_project(
+    magazine: Magazine,
+    sandbox: Path,
+    *,
+    edition_id: str,
+    source_ids: Iterable[str],
+) -> None:
+    """Copy the minimum project state needed for a writing preflight."""
+
+    config = magazine.root / "magazine.toml"
+    if config.is_file():
+        shutil.copy2(config, sandbox / "magazine.toml")
+
+    sources_relative = _project_relative(
+        magazine.root,
+        magazine.sources_dir,
+        label="Configured sources directory",
+    )
+    _copy_preflight_sources(
+        magazine.sources_dir,
+        sandbox / sources_relative,
+        source_ids=source_ids,
+    )
+
+    edition_dir = magazine.editions_dir / edition_id
+    editions_relative = _project_relative(
+        magazine.root,
+        magazine.editions_dir,
+        label="Configured editions directory",
+    )
+    destination = sandbox / editions_relative / edition_id
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(
+        edition_dir,
+        destination,
+        copy_function=_copy_preflight_edition_file,
+    )
+
+    release_relative = _project_relative(
+        magazine.root,
+        magazine.release_state_path,
+        label="Configured release state",
+    )
+    release_destination = sandbox / release_relative
+    release_destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(magazine.release_state_path, release_destination)
+
+
+def _copy_preflight_sources(
+    sources_dir: Path,
+    destination: Path,
+    *,
+    source_ids: Iterable[str],
+) -> None:
+    """Copy source metadata plus only the brief's extraction bodies."""
+
+    sources_root = sources_dir.resolve()
+    _require_plain_preflight_path(sources_dir, sources_dir, label="Sources directory")
+    destination.mkdir(parents=True, exist_ok=True)
+
+    records = sorted(sources_dir.glob("*/record.y*ml"))
+    for record in records:
+        _require_plain_preflight_path(record, sources_dir, label="Source record")
+        relative = record.resolve().relative_to(sources_root)
+        target = destination / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(record, target)
+
+    for source_id in tuple(dict.fromkeys(source_ids)):
+        source_dir = sources_dir / source_id
+        extraction = source_dir / "extracted.md"
+        _require_plain_preflight_path(
+            extraction,
+            sources_dir,
+            label=f"Source {source_id} extraction",
+        )
+        relative = extraction.resolve().relative_to(sources_root)
+        target = destination / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(extraction, target)
+
+
+def _require_plain_preflight_path(
+    path: Path,
+    root: Path,
+    *,
+    label: str,
+) -> None:
+    """Reject missing, escaping, or symlinked preflight source inputs."""
+
+    if path.is_symlink():
+        raise ValidationError(f"{label} must not be a symbolic link: {path}")
+    root_resolved = root.resolve()
+    try:
+        lexical = path.absolute().relative_to(root.absolute())
+    except ValueError as exc:
+        raise ValidationError(f"{label} escapes the sources directory: {path}") from exc
+    current = root.absolute()
+    for part in lexical.parts:
+        current = current / part
+        if current.is_symlink():
+            raise ValidationError(
+                f"{label} has a symbolic-link path component: {current}"
+            )
+    resolved = path.resolve()
+    try:
+        resolved.relative_to(root_resolved)
+    except ValueError as exc:
+        raise ValidationError(f"{label} escapes the sources directory: {path}") from exc
+    if path.absolute() == root.absolute():
+        if not path.is_dir():
+            raise ValidationError(f"{label} is not a directory: {path}")
+    elif not path.is_file():
+        raise ValidationError(f"{label} is not a regular file: {path}")
+
+
+def _hardlink_read_only(source: str, destination: str) -> str:
+    try:
+        os.link(source, destination)
+    except OSError:
+        return shutil.copy2(source, destination)
+    return destination
+
+
+def _copy_preflight_edition_file(source: str, destination: str) -> str:
+    """Copy writable prose and hardlink immutable binary inputs."""
+
+    if Path(source).suffix.lower() in {".yaml", ".yml", ".md", ".json"}:
+        return shutil.copy2(source, destination)
+    return _hardlink_read_only(source, destination)
+
+
+def _project_relative(root: Path, path: Path, *, label: str) -> Path:
+    try:
+        return path.resolve().relative_to(root.resolve())
+    except ValueError as exc:
+        raise ValidationError(f"{label} escapes the project root: {path}") from exc
+
+
+def _map_preflight_path(path: Path, source_root: Path, destination_root: Path) -> Path:
+    relative = _project_relative(
+        source_root,
+        path,
+        label="Preflight output",
+    )
+    return destination_root / relative
+
+
+def _translation_touched_paths(report: Any) -> tuple[Path, ...]:
+    return tuple(
+        dict.fromkeys(
+            (
+                *report.created,
+                *report.updated,
+                *(change.path for change in report.pin_changes),
+            )
+        )
+    )
+
+
+def _translation_report_row(
+    report: Any,
+    *,
+    source_root: Path,
+    destination_root: Path,
+    dry_run: bool,
+) -> dict[str, Any]:
+    def mapped(path: Path) -> Path:
+        return _map_preflight_path(path, source_root, destination_root)
+
+    return {
+        "language": report.language,
+        "changed": report.changed,
+        "dry_run": dry_run,
+        "created": tuple(mapped(path) for path in report.created),
+        "updated": tuple(mapped(path) for path in report.updated),
+        "placeholders": tuple(
+            {
+                "path": mapped(field.path),
+                "pointer": field.pointer,
+            }
+            for field in report.placeholders
+        ),
+        "advisories": tuple(
+            {
+                "pointer": advisory.pointer,
+                "reason": advisory.reason,
+            }
+            for advisory in report.advisories
+        ),
+        "validation_errors": report.validation_errors,
+    }
+
+
+def _path_bytes(path: Path) -> bytes | None:
+    if path.is_symlink():
+        raise ValidationError(f"Article integration refuses symbolic links: {path}")
+    if not path.exists():
+        return None
+    if not path.is_file():
+        raise ValidationError(f"Article integration expected a file: {path}")
+    return path.read_bytes()
+
+
+class _ArticleTransaction:
+    """Conditionally restore only files this integration invocation changed."""
+
+    def __init__(
+        self,
+        root: Path,
+        planned: dict[Path, bytes | None],
+    ) -> None:
+        self.root = root.resolve()
+        self.before: dict[Path, bytes | None] = {}
+        self.expected: dict[Path, bytes | None] = {}
+        self.committed: dict[Path, bytes | None] = {}
+        self.before_directories: set[Path] = set()
+        for path, expected in planned.items():
+            resolved = self._path(path)
+            self.before.setdefault(resolved, _path_bytes(resolved))
+            self.expected[resolved] = expected
+            parent = resolved.parent
+            while parent.is_relative_to(self.root):
+                if parent.is_dir():
+                    self.before_directories.add(parent)
+                if parent == self.root:
+                    break
+                parent = parent.parent
+
+    def commit(self, paths: Iterable[Path]) -> None:
+        for path in paths:
+            resolved = self._path(path)
+            if resolved not in self.before:
+                raise ValidationError(
+                    "Article integration wrote a file its preflight did not plan: "
+                    f"{resolved.relative_to(self.root)}"
+                )
+            current = _path_bytes(resolved)
+            expected = self.expected[resolved]
+            self.committed[resolved] = expected
+            if current != expected:
+                raise ValidationError(
+                    "Article integration output changed after preflight; preserving "
+                    f"the current bytes at {resolved.relative_to(self.root)}"
+                )
+
+    def rollback(self) -> tuple[Path, ...]:
+        conflicts: list[Path] = []
+        restored: list[Path] = []
+        for path in sorted(self.committed):
+            if _path_bytes(path) != self.committed[path]:
+                conflicts.append(path)
+                continue
+            before = self.before[path]
+            if before is None:
+                path.unlink(missing_ok=True)
+            else:
+                _replace_file_bytes(path, before)
+            restored.append(path)
+        for directory in sorted(
+            {
+                parent
+                for path in restored
+                for parent in path.parents
+                if parent.is_relative_to(self.root)
+                and parent not in self.before_directories
+            },
+            key=lambda item: len(item.parts),
+            reverse=True,
+        ):
+            if directory != self.root and directory.is_dir() and not any(directory.iterdir()):
+                directory.rmdir()
+        return tuple(conflicts)
+
+    def _path(self, path: Path) -> Path:
+        resolved = path.resolve()
+        try:
+            resolved.relative_to(self.root)
+        except ValueError as exc:
+            raise ValidationError(
+                f"Article integration path escapes the project: {path}"
+            ) from exc
+        return resolved
+
+
+def _replace_file_bytes(path: Path, content: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary = tempfile.mkstemp(
+        prefix=f".{path.name}.restore-",
+        dir=path.parent,
+    )
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        temporary_path = Path(temporary)
+        if temporary_path.exists():
+            temporary_path.unlink()
+
+
+def _write_full_cover_comparison(
+    requests: Iterable[CoverProofRequest],
+    destination: Path,
+) -> None:
+    """Write one deterministic contact sheet of every rendered full cover."""
+
+    planned = tuple(requests)
+    if not planned:
+        raise ValidationError("A full-cover comparison requires at least one proof")
+    cell_width = 300
+    cell_height = 426
+    label_height = 36
+    columns = 3
+    rows = (len(planned) + columns - 1) // columns
+    sheet = Image.new(
+        "RGB",
+        (columns * cell_width, rows * (cell_height + label_height)),
+        "white",
+    )
+    draw = ImageDraw.Draw(sheet)
+    for index, request in enumerate(planned):
+        proof = request.destination / "cover.png"
+        if not proof.is_file():
+            raise ValidationError(f"Cover Studio proof is missing: {proof}")
+        with Image.open(proof) as source:
+            image = source.convert("RGB")
+            image.thumbnail((cell_width, cell_height))
+        column = index % columns
+        row = index // columns
+        x = column * cell_width + (cell_width - image.width) // 2
+        y = row * (cell_height + label_height)
+        sheet.paste(image, (x, y))
+        draw.text(
+            (column * cell_width + 8, y + cell_height + 10),
+            f"round {request.round_number} | {request.language} | {request.variant}",
+            fill="black",
+        )
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary = tempfile.mkstemp(
+        prefix=f".{destination.name}.",
+        dir=destination.parent,
+    )
+    os.close(descriptor)
+    try:
+        sheet.save(temporary, format="PNG", optimize=False)
+        os.replace(temporary, destination)
+    finally:
+        temporary_path = Path(temporary)
+        if temporary_path.exists():
+            temporary_path.unlink()
 
 
 def _section_fidelity_report(root: Path, edition: Edition) -> str:

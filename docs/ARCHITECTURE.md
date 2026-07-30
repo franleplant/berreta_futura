@@ -15,6 +15,56 @@ The publishing module exposes four conceptual operations:
 
 The CLI and conversational interface are adapters over this interface. Individual extractors, AI roles, renderers, and packaging steps are private implementation details.
 
+The concrete publishing seam is now:
+
+```python
+mag.workflow_status(edition_id)       # read-only, complete checkpoint report
+mag.workflow_run(edition_id)          # conservative deterministic advancement
+mag.stage_article(versioned_brief)    # source, ledger, manifest, translation unit
+mag.cover_studio_*()                  # immutable rounds and explicit selection
+mag.illustration_studio_*()           # explicit inventory and asset registration
+```
+
+`workflow_status` is the single source of recovery instructions. A checkpoint
+classifies its next action as deterministic, authorial, or human review.
+`workflow_run` dispatches only a finite allowlist of deterministic actions and
+stops when the remaining work requires prose, image generation, selection,
+review, or release. Repeating it is safe.
+
+Article staging owns the first post-capture transaction. A schema-versioned
+brief names one collecting edition, one article identity, and one or more
+queued source ids. The article staging module prepares the manuscript TODO,
+exact extraction pins, fidelity skeleton, and manifest row without inventing
+source text. The publishing module then reconciles every configured
+non-source-language overlay. Those writes are exposed as one transaction: an
+overlay refusal conditionally restores only files this invocation changed.
+Unrelated concurrent files are preserved. A concurrently edited touched file
+is also preserved and reported while every other safely restorable write rolls
+back.
+
+Creative studios are intentionally outside `run`. The Cover Studio owns
+append-only candidate rounds, computed asset hashes, prompt evidence, all-round
+localized full-cover proofs, comparison sheets, and an explicit atomic
+selection. The Illustration Studio owns an explicit subset of article tails
+and closing plates, prompt packages, validated asset registration, and review
+sheets. Neither studio invokes image generation. Their revisions support
+optimistic concurrency so a stale caller refuses instead of replacing newer
+work.
+
+The CLI mirrors these boundaries:
+
+```text
+mag status <edition> [--json]
+mag run <edition> [--json]
+mag article stage <brief> [--dry-run]
+mag cover-art <status|next-round|prompts|register|proof-plan|proof|compare|select>
+mag interior-art <status|scaffold|prompts|register|review-plan|review-sheet>
+```
+
+Legacy focused commands remain compatibility adapters. In particular,
+`illustrate` retains its combined prompt-package behavior and `cover-proof`
+retains the canonical selected-cover fast proof.
+
 ## Artifact flow
 
 ```text
@@ -23,10 +73,13 @@ lead URL
   -> normalized source record
   -> assignment to the selected intake edition
   -> provenance-linked source bundle
-  -> edition selection
+  -> versioned article brief
+  -> transactional manuscript, fidelity, manifest, and translation staging
   -> faithful manuscript + editorial patches
   -> seven-page article-budget check (faithful synthesis when over budget)
   -> titled one-page editorial-budget check (per-edition, two-page ceiling)
+  -> append-only cover rounds + full-cover comparisons + human selection
+  -> explicit interior-art inventory + validated registered assets
   -> approved content digest
   -> canonical front/back SVGs -> one-page cover PDFs -> proof PNGs
   -> deterministic interior layout

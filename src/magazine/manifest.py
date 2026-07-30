@@ -110,9 +110,13 @@ def load_edition(
     if data.get("id") != edition_id:
         errors.append(f"Edition id {data.get('id')!r} does not match directory {edition_id!r}")
     declared_sources = data.get("sources", [])
-    if declared_sources and not isinstance(declared_sources, list):
+    if not isinstance(declared_sources, list):
         errors.append("Edition sources must be a list")
-    elif isinstance(declared_sources, list):
+        declared_sources = []
+    elif any(not isinstance(value, str) or not value.strip() for value in declared_sources):
+        errors.append("Edition sources must contain non-empty source id strings")
+        declared_sources = []
+    else:
         unknown_declared = sorted(set(declared_sources) - known_sources)
         if unknown_declared:
             errors.append(f"Edition references unknown sources: {', '.join(unknown_declared)}")
@@ -146,6 +150,21 @@ def load_edition(
         if missing:
             errors.append(f"{label} missing: {', '.join(missing)}")
             continue
+        article_id = row["id"]
+        if not isinstance(article_id, str) or not article_id.strip():
+            errors.append(f"Article {index + 1} id must be a non-empty string")
+            continue
+        declared_article_sources = row["source_ids"]
+        if (
+            not isinstance(declared_article_sources, list)
+            or not declared_article_sources
+            or any(
+                not isinstance(source_id, str) or not source_id.strip()
+                for source_id in declared_article_sources
+            )
+        ):
+            errors.append(f"{label} source_ids must be a non-empty list of strings")
+            continue
         author_note = str(row.get("author_note") or "").strip()
         if "\n" in author_note or len(author_note) > 160:
             errors.append(
@@ -161,19 +180,20 @@ def load_edition(
                 f"{label} must omit author_note for the self-explanatory house byline "
                 f"{row['author']!r}"
             )
-        if row["id"] in ids:
-            errors.append(f"Duplicate article id: {row['id']}")
-        ids.add(row["id"])
-        source_ids = tuple(row["source_ids"])
+        if article_id in ids:
+            errors.append(f"Duplicate article id: {article_id}")
+        ids.add(article_id)
+        source_ids = tuple(declared_article_sources)
         unknown = sorted(set(source_ids) - known_sources)
         if unknown:
             errors.append(f"{label} references unknown sources: {', '.join(unknown)}")
         try:
-            manuscript = safe_project_path(root, row["manuscript"])
-            fidelity = safe_project_path(root, row["fidelity"])
+            manuscript = _edition_path(root, manifest_path.parent, row["manuscript"])
+            fidelity = _edition_path(root, manifest_path.parent, row["fidelity"])
             tail_art = (
-                safe_project_path(
+                _edition_path(
                     root,
+                    manifest_path.parent,
                     row["tail_art_path"],
                     must_exist=not allow_missing_art,
                 )
@@ -232,7 +252,7 @@ def load_edition(
         try:
             figures = resolve_figures(
                 root,
-                article_id=str(row["id"]),
+                article_id=article_id,
                 article_source_ids=source_ids,
                 manuscript=manuscript,
                 rows=row.get("figures"),
@@ -243,7 +263,7 @@ def load_edition(
             figures = ()
         articles.append(
             Article(
-                row["id"],
+                article_id,
                 row["title"],
                 short_title,
                 display_emphasis,
@@ -269,7 +289,9 @@ def load_edition(
         editorial = None
     sections: list[Section] = []
     section_rows = data.get("sections", [])
-    if section_rows and not isinstance(section_rows, list):
+    if section_rows is None:
+        section_rows = []
+    elif not isinstance(section_rows, list):
         errors.append("Edition sections must be a list")
         section_rows = []
     for index, row in enumerate(section_rows):
@@ -285,7 +307,14 @@ def load_edition(
             errors.extend(exc.errors)
             continue
         sections.append(Section(str(row["kind"]), str(row.get("title") or _section_title(row["kind"])), path))
-    cover = dict(data.get("cover") or {})
+    raw_cover = data.get("cover")
+    if raw_cover is None:
+        cover: dict[str, Any] = {}
+    elif not isinstance(raw_cover, dict):
+        errors.append("Edition cover must be a mapping")
+        cover = {}
+    else:
+        cover = dict(raw_cover)
     tail_art_fit = str(data.get("tail_art_fit") or "cover").strip()
     if tail_art_fit not in {"cover", "contain"}:
         errors.append("Edition tail_art_fit must be cover or contain")
@@ -295,8 +324,10 @@ def load_edition(
             cover_art = _edition_path(root, edition_dir, cover["art_path"])
         except ValidationError as exc:
             errors.extend(exc.errors)
-    closing_rows = data.get("closing_plates") or []
-    if not isinstance(closing_rows, list):
+    closing_rows = data.get("closing_plates", [])
+    if closing_rows is None:
+        closing_rows = []
+    elif not isinstance(closing_rows, list):
         errors.append("Edition closing_plates must be a list")
         closing_rows = []
     closing_plates: list[ClosingPlate] = []
@@ -308,8 +339,9 @@ def load_edition(
             continue
         title = str(row["title"]).strip()
         try:
-            art_path = safe_project_path(
+            art_path = _edition_path(
                 root,
+                edition_dir,
                 row["art_path"],
                 must_exist=not allow_missing_art,
             )
@@ -807,16 +839,26 @@ def _primary_source_url(
     return url or None
 
 
-def _edition_path(root: Path, edition_dir: Path, value: str) -> Path:
+def _edition_path(
+    root: Path,
+    edition_dir: Path,
+    value: object,
+    *,
+    must_exist: bool = True,
+) -> Path:
+    if not isinstance(value, str) or not value.strip():
+        raise ValidationError(
+            f"Referenced path must be a non-empty string, got {value!r}"
+        )
     path = Path(value)
     if path.parts and path.parts[0] == "editions":
-        return safe_project_path(root, value)
+        return safe_project_path(root, value, must_exist=must_exist)
     relative = (edition_dir / path).resolve()
     try:
         relative.relative_to(root.resolve())
     except ValueError as exc:
         raise ValidationError(f"Path escapes project root: {value}") from exc
-    if not relative.is_file():
+    if must_exist and not relative.is_file():
         raise ValidationError(f"Referenced file does not exist: {relative.relative_to(root)}")
     return relative
 
