@@ -1,22 +1,22 @@
 schema_version: 1
 edition_id: 004-unreleased
-reviewer: edition4_manga_render_critic
-reviewed_at: '2026-07-29T20:38:39+00:00'
+reviewer: Codex independent render critic
+reviewed_at: '2026-07-30T01:20:43+00:00'
 result: approved
 engine: weasyprint
 design_direction: WeasyPrint / A5 fold proof
 findings: []
-notes: Inspected every EN and ES reader and booklet contact sheet plus MCP tail crops. All four panels
-  are visible in Western order; manga plates, blank inside covers, imposition, and unchanged production
-  cover are approved.
+notes: Inspected all English and Spanish reader and booklet contact sheets after final rebuild. Round
+  2 Wildcard cover retained. Factory illustration present on EN p27 and ES p29 and in both booklet impositions.
+  No actionable defects.
 languages:
   en:
-    reader_sha256: 63357c3ec6dea4835d7bcb13f1fb5c036b5397a74676d1ae99740a8edd4bf065
-    booklet_sha256: 97db22a61feae29a4ceeb3142445d3656904453a2ae6ee16b828a3e0ded40b1d
+    reader_sha256: 9847f4664326b7a5c2b845f78297be1efb9bb47a0de31db010aacab5a4ed65f7
+    booklet_sha256: adf366c88eebbab81f7e8628fa7e23b5badba280268d141f4f53ddb03605b9dc
     page_count: 40
     machine_result: pass
   es:
-    reader_sha256: efb289fc96891d06326159653f807bb2d1ae23f9712bd3e5c26b52100e475037
-    booklet_sha256: 2dab2d8a5db10fa0fc20b5530097fd2e2e43a9eb872ea5dd7b7037e8de2e16dd
-    page_count: 40
+    reader_sha256: 37719eaccbc65d75334ae710e6e928bb0877759f585b58cc66f32aaad067b1b8
+    booklet_sha256: 5285994cb14a8bc0d9bc93e71805fa1f1b6e51ad9ff1a2f422c905f24f266584
+    page_count: 44
     machine_result: pass
