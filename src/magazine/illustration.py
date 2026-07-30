@@ -21,6 +21,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 from pathlib import Path
+import re
 from typing import Any
 
 from PIL import Image
@@ -31,6 +32,7 @@ from .manifest import Edition
 
 
 _ROLES = {"article_tail", "closing_plate"}
+_ASSET_ID = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 _TAIL_MINIMUM = (1536, 1024)
 _PLATE_MINIMUM = (1024, 1400)
 
@@ -149,6 +151,8 @@ def load_illustration_plan(root: Path, edition: Edition) -> IllustrationPlan | N
     assets: list[IllustrationAsset] = []
     ids: set[str] = set()
     paths: set[Path] = set()
+    article_ids: set[str] = set()
+    plate_indices: set[int] = set()
     for index, row in enumerate(rows, start=1):
         label = f"Illustration asset {index}"
         if not isinstance(row, dict):
@@ -156,8 +160,10 @@ def load_illustration_plan(root: Path, edition: Edition) -> IllustrationPlan | N
             continue
         asset_id = str(row.get("id") or "").strip()
         role = str(row.get("role") or "").strip()
-        if not asset_id:
-            errors.append(f"{label} requires id")
+        if not _ASSET_ID.fullmatch(asset_id):
+            errors.append(
+                f"{label} id must use lowercase letters, digits, and single hyphens"
+            )
         elif asset_id in ids:
             errors.append(f"Illustration asset id must be unique: {asset_id}")
         ids.add(asset_id)
@@ -186,6 +192,12 @@ def load_illustration_plan(root: Path, edition: Edition) -> IllustrationPlan | N
         if role == "article_tail":
             if not article_id:
                 errors.append(f"{label} article_tail requires article_id")
+            elif article_id in article_ids:
+                errors.append(
+                    f"Illustration article_id must be unique: {article_id}"
+                )
+            else:
+                article_ids.add(article_id)
             if row.get("plate_index") is not None:
                 errors.append(f"{label} article_tail must not declare plate_index")
         elif role == "closing_plate":
@@ -197,6 +209,12 @@ def load_illustration_plan(root: Path, edition: Edition) -> IllustrationPlan | N
                 errors.append(f"{label} closing_plate requires integer plate_index")
             if plate_index not in {1, 2, 3}:
                 errors.append(f"{label} plate_index must be 1, 2, or 3")
+            elif plate_index in plate_indices:
+                errors.append(
+                    f"Illustration plate_index must be unique: {plate_index}"
+                )
+            else:
+                plate_indices.add(plate_index)
         assets.append(
             IllustrationAsset(
                 id=asset_id,
@@ -418,6 +436,9 @@ def _review_raster(asset: IllustrationAsset) -> list[str]:
             width, height = image.size
             mode = image.mode
             format_name = image.format
+            image.verify()
+        with Image.open(asset.art_path) as image:
+            image.load()
     except Exception as exc:
         return [f"Illustration asset cannot be decoded: {asset.art_path} ({exc})"]
     errors: list[str] = []

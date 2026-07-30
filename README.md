@@ -50,6 +50,91 @@ uv run --locked mag cover-proof issue-001 --all-languages
 uv run --locked mag build issue-001
 ```
 
+## Fast edition workflow
+
+`mag status` is the read-only control plane. It reports every checkpoint, the
+first blocker, whether the next action is deterministic, authorial, or a human
+review, and the exact recovery command. `mag run` performs only the named
+deterministic work, then stops. It never writes prose, generates images,
+selects artwork, records a review, or releases an edition.
+
+```sh
+uv run --locked mag status 004-unreleased
+uv run --locked mag status 004-unreleased --json
+uv run --locked mag run 004-unreleased --json
+```
+
+After capture and extraction, a versioned article brief is the first safe unit
+of editorial assembly:
+
+```yaml
+schema_version: 1
+edition_id: 004-unreleased
+id: systems-that-hold
+title: Systems That Hold
+short_title: Systems
+display_emphasis: Hold
+opener_variant: edge_medallion
+content_mode: faithful_edit
+minimum_reader_pages: 1
+source_ids:
+- source-one
+- source-two
+```
+
+```sh
+uv run --locked mag article stage article-brief.yaml --dry-run
+uv run --locked mag article stage article-brief.yaml
+```
+
+The real stage is one integration transaction. It creates the source-linked
+manuscript slot and fidelity skeleton, updates the edition manifest, and
+immediately reconciles every configured non-English overlay so its placeholder
+and advisory backlog is visible. It writes no article prose and no
+translation. If any overlay staging step fails, the edition is restored to its
+pre-command bytes for every file this invocation changed, provided its current
+bytes still match the staged result. Unrelated concurrent files are ignored;
+concurrently edited touched files are preserved and reported while every other
+safe write is rolled back. Capture remains URL-by-URL because durable snapshot
+and author-evidence acquisition are explicit adapters; the brief begins only
+after those source bundles exist.
+
+Creative work has separate studio commands:
+
+```sh
+# Immutable cover rounds
+uv run --locked mag cover-art status 004-unreleased
+uv run --locked mag cover-art next-round 004-unreleased \
+  --editorial-reading "A precise statement of the issue's visual argument."
+uv run --locked mag cover-art prompts 004-unreleased 2
+uv run --locked mag cover-art register 004-unreleased 2 \
+  --image synthetic=/tmp/synthetic.png \
+  --image art_directed=/tmp/art-directed.png \
+  --image wildcard=/tmp/wildcard.png
+uv run --locked mag cover-art proof 004-unreleased
+uv run --locked mag cover-art select 004-unreleased 2 wildcard
+
+# Explicit interior illustration inventory
+uv run --locked mag interior-art status 004-unreleased
+uv run --locked mag interior-art scaffold illustration-brief.yaml
+uv run --locked mag interior-art prompts 004-unreleased
+uv run --locked mag interior-art register 004-unreleased tail-systems /tmp/tail.png
+uv run --locked mag interior-art review-sheet 004-unreleased
+```
+
+Cover rounds are append-only. Registration computes hashes from validated PNG
+bytes, `proof` renders every requested round, branch, and language through the
+production cover compiler, and writes one full-cover comparison sheet.
+Selection is a separate human decision. Interior art likewise requires an
+explicit versioned brief, validates each registered asset, and produces a
+review sheet without generating an image.
+
+The older focused commands remain supported. `mag illustrate` still emits its
+combined legacy prompt package, while `mag cover-proof`, `mag translate`,
+`mag fit`, `mag measure`, `mag validate`, `mag build`, and `mag release` keep
+their existing behavior. New automation should prefer `status`, conservative
+`run`, and the two studio surfaces.
+
 `cover-proof` is the fast design loop. It compiles only the cover and writes a
 self-contained SVG, the exact one-page PDF later used by the full build, a
 PDF-derived PNG, and visual comparison evidence. Its warm cached path avoids

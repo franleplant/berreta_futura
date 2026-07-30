@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import fields, is_dataclass
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 from .compiler import Magazine
 from .errors import MagazineError
@@ -72,6 +74,102 @@ def parser() -> argparse.ArgumentParser:
         "queue",
         help="Assign every unassigned source to the selected intake edition",
     )
+    status = actions.add_parser(
+        "status",
+        help="Explain every edition checkpoint and its exact next action",
+    )
+    status.add_argument("edition_id")
+    status.add_argument("--json", action="store_true", help="Emit stable JSON")
+    run = actions.add_parser(
+        "run",
+        help="Advance safe clerical work, then stop before authorship or judgment",
+    )
+    run.add_argument("edition_id")
+    run.add_argument("--json", action="store_true", help="Emit stable JSON")
+
+    article = actions.add_parser(
+        "article",
+        help="Stage source-backed article work from a versioned brief",
+    )
+    article_actions = article.add_subparsers(dest="article_command", required=True)
+    article_stage = article_actions.add_parser(
+        "stage",
+        help="Create a manuscript slot, fidelity skeleton, and translation placeholders",
+    )
+    article_stage.add_argument("brief", type=Path)
+    article_stage.add_argument("--dry-run", action="store_true")
+
+    cover_art = actions.add_parser(
+        "cover-art",
+        help="Manage immutable cover rounds, proofs, and selection",
+    )
+    cover_actions = cover_art.add_subparsers(dest="cover_art_command", required=True)
+    cover_status = cover_actions.add_parser("status")
+    cover_status.add_argument("edition_id")
+    cover_round = cover_actions.add_parser("next-round")
+    cover_round.add_argument("edition_id")
+    cover_round.add_argument("--editorial-reading")
+    cover_round.add_argument("--dry-run", action="store_true")
+    cover_prompts = cover_actions.add_parser("prompts")
+    cover_prompts.add_argument("edition_id")
+    cover_prompts.add_argument("round_number", type=int)
+    cover_prompts.add_argument("--dry-run", action="store_true")
+    cover_register = cover_actions.add_parser("register")
+    cover_register.add_argument("edition_id")
+    cover_register.add_argument("round_number", type=int)
+    cover_register.add_argument(
+        "--image",
+        action="append",
+        required=True,
+        metavar="VARIANT=PNG",
+        help="Supply synthetic, art_directed, and wildcard once each",
+    )
+    cover_register.add_argument("--dry-run", action="store_true")
+    cover_plan = cover_actions.add_parser("proof-plan")
+    cover_plan.add_argument("edition_id")
+    cover_plan.add_argument("--language", action="append")
+    cover_plan.add_argument("--round", action="append", type=int)
+    cover_proofs = cover_actions.add_parser("proof")
+    cover_proofs.add_argument("edition_id")
+    cover_proofs.add_argument("--language", action="append")
+    cover_proofs.add_argument("--round", action="append", type=int)
+    cover_proofs.add_argument("--dry-run", action="store_true")
+    cover_compare = cover_actions.add_parser("compare")
+    cover_compare.add_argument("edition_id")
+    cover_compare.add_argument("--dry-run", action="store_true")
+    cover_select = cover_actions.add_parser("select")
+    cover_select.add_argument("edition_id")
+    cover_select.add_argument("round_number", type=int)
+    cover_select.add_argument("variant")
+    cover_select.add_argument("--dry-run", action="store_true")
+
+    interior_art = actions.add_parser(
+        "interior-art",
+        help="Manage explicit interior illustration briefs and registered assets",
+    )
+    interior_actions = interior_art.add_subparsers(
+        dest="interior_art_command",
+        required=True,
+    )
+    interior_status = interior_actions.add_parser("status")
+    interior_status.add_argument("edition_id")
+    interior_scaffold = interior_actions.add_parser("scaffold")
+    interior_scaffold.add_argument("brief", type=Path)
+    interior_scaffold.add_argument("--dry-run", action="store_true")
+    interior_prompts = interior_actions.add_parser("prompts")
+    interior_prompts.add_argument("edition_id")
+    interior_prompts.add_argument("--dry-run", action="store_true")
+    interior_register = interior_actions.add_parser("register")
+    interior_register.add_argument("edition_id")
+    interior_register.add_argument("asset_id")
+    interior_register.add_argument("source", type=Path)
+    interior_register.add_argument("--dry-run", action="store_true")
+    interior_plan = interior_actions.add_parser("review-plan")
+    interior_plan.add_argument("edition_id")
+    interior_sheet = interior_actions.add_parser("review-sheet")
+    interior_sheet.add_argument("edition_id")
+    interior_sheet.add_argument("--dry-run", action="store_true")
+
     validate = actions.add_parser("validate", help="Validate an edition and its fidelity ledgers")
     validate.add_argument("edition_id")
     build = actions.add_parser("build", help="Render, impose, and package an edition")
@@ -245,6 +343,60 @@ def parser() -> argparse.ArgumentParser:
     return command
 
 
+def _json_value(value: Any, *, root: Path | None = None) -> Any:
+    if isinstance(value, Path):
+        if root is not None:
+            try:
+                return value.resolve().relative_to(root.resolve()).as_posix()
+            except ValueError:
+                pass
+        return value.as_posix()
+    if is_dataclass(value) and not isinstance(value, type):
+        return {
+            field.name: _json_value(getattr(value, field.name), root=root)
+            for field in fields(value)
+            if not field.name.startswith("_")
+        }
+    if isinstance(value, dict):
+        return {
+            str(key): _json_value(item, root=root)
+            for key, item in value.items()
+        }
+    if isinstance(value, (list, tuple)):
+        return [_json_value(item, root=root) for item in value]
+    return value
+
+
+def _print_json(value: Any, *, root: Path) -> None:
+    if hasattr(value, "to_dict"):
+        try:
+            value = value.to_dict(root)
+        except TypeError:
+            value = value.to_dict()
+    print(
+        json.dumps(
+            _json_value(value, root=root),
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+
+
+def _cover_images(values: list[str]) -> dict[str, Path]:
+    images: dict[str, Path] = {}
+    for raw in values:
+        variant, separator, path = raw.partition("=")
+        variant = variant.strip()
+        if not separator or not variant or not path.strip():
+            raise MagazineError(
+                f"Invalid --image {raw!r}; expected VARIANT=PNG"
+            )
+        if variant in images:
+            raise MagazineError(f"Duplicate cover image variant: {variant}")
+        images[variant] = Path(path)
+    return images
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
@@ -280,6 +432,157 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "queue":
             state = magazine.sync_release_queue()
             print(json.dumps(state.to_dict(), ensure_ascii=False, indent=2))
+        elif args.command == "status":
+            report = magazine.workflow_status(args.edition_id)
+            if args.json:
+                _print_json(report, root=magazine.root)
+            else:
+                checkpoint = report.next_checkpoint
+                print(
+                    f"{report.edition_id}: {report.lifecycle}; "
+                    f"release_ready={str(report.release_ready).lower()}"
+                )
+                if checkpoint is None:
+                    print("next: none")
+                else:
+                    print(f"next: {checkpoint.id} ({checkpoint.next_action.classification})")
+                    print(checkpoint.next_action.instruction)
+                    if checkpoint.next_action.command:
+                        print(f"command: {checkpoint.next_action.command}")
+        elif args.command == "run":
+            result = magazine.workflow_run(args.edition_id)
+            if args.json:
+                _print_json(result, root=magazine.root)
+            else:
+                for action in result.actions:
+                    print(f"done: {action}")
+                checkpoint = result.report.next_checkpoint
+                if checkpoint is None:
+                    print("stopped: no unresolved checkpoint")
+                else:
+                    print(
+                        f"stopped: {checkpoint.id} "
+                        f"({checkpoint.next_action.classification})"
+                    )
+                    print(checkpoint.next_action.instruction)
+        elif args.command == "article" and args.article_command == "stage":
+            result = magazine.stage_article(args.brief, dry_run=args.dry_run)
+            _print_json(result, root=magazine.root)
+        elif args.command == "cover-art" and args.cover_art_command == "status":
+            _print_json(
+                magazine.cover_studio_status(args.edition_id),
+                root=magazine.root,
+            )
+        elif args.command == "cover-art" and args.cover_art_command == "next-round":
+            _print_json(
+                magazine.cover_studio_scaffold(
+                    args.edition_id,
+                    editorial_reading=args.editorial_reading,
+                    dry_run=args.dry_run,
+                ),
+                root=magazine.root,
+            )
+        elif args.command == "cover-art" and args.cover_art_command == "prompts":
+            _print_json(
+                magazine.cover_studio_prompts(
+                    args.edition_id,
+                    args.round_number,
+                    dry_run=args.dry_run,
+                ),
+                root=magazine.root,
+            )
+        elif args.command == "cover-art" and args.cover_art_command == "register":
+            _print_json(
+                magazine.cover_studio_register(
+                    args.edition_id,
+                    args.round_number,
+                    _cover_images(args.image),
+                    dry_run=args.dry_run,
+                ),
+                root=magazine.root,
+            )
+        elif args.command == "cover-art" and args.cover_art_command == "proof-plan":
+            _print_json(
+                magazine.cover_studio_proof_plan(
+                    args.edition_id,
+                    languages=args.language,
+                    rounds=args.round,
+                ),
+                root=magazine.root,
+            )
+        elif args.command == "cover-art" and args.cover_art_command == "proof":
+            action, comparison = magazine.cover_studio_render_proofs(
+                args.edition_id,
+                languages=args.language,
+                rounds=args.round,
+                dry_run=args.dry_run,
+            )
+            _print_json(
+                {"action": action, "full_cover_comparison": comparison},
+                root=magazine.root,
+            )
+        elif args.command == "cover-art" and args.cover_art_command == "compare":
+            _print_json(
+                magazine.cover_studio_compare(
+                    args.edition_id,
+                    dry_run=args.dry_run,
+                ),
+                root=magazine.root,
+            )
+        elif args.command == "cover-art" and args.cover_art_command == "select":
+            _print_json(
+                magazine.cover_studio_select(
+                    args.edition_id,
+                    args.round_number,
+                    args.variant,
+                    dry_run=args.dry_run,
+                ),
+                root=magazine.root,
+            )
+        elif args.command == "interior-art" and args.interior_art_command == "status":
+            _print_json(
+                magazine.illustration_studio_status(args.edition_id),
+                root=magazine.root,
+            )
+        elif args.command == "interior-art" and args.interior_art_command == "scaffold":
+            _print_json(
+                magazine.illustration_studio_scaffold(
+                    args.brief,
+                    dry_run=args.dry_run,
+                ),
+                root=magazine.root,
+            )
+        elif args.command == "interior-art" and args.interior_art_command == "prompts":
+            _print_json(
+                magazine.illustration_studio_prompts(
+                    args.edition_id,
+                    dry_run=args.dry_run,
+                ),
+                root=magazine.root,
+            )
+        elif args.command == "interior-art" and args.interior_art_command == "register":
+            _print_json(
+                magazine.illustration_studio_register(
+                    args.edition_id,
+                    args.asset_id,
+                    args.source,
+                    dry_run=args.dry_run,
+                ),
+                root=magazine.root,
+            )
+        elif args.command == "interior-art" and args.interior_art_command == "review-plan":
+            _print_json(
+                magazine.illustration_studio_review_plan(args.edition_id),
+                root=magazine.root,
+            )
+        elif args.command == "interior-art" and args.interior_art_command == "review-sheet":
+            _print_json(
+                magazine.illustration_studio_review_sheet(
+                    args.edition_id,
+                    dry_run=args.dry_run,
+                ),
+                root=magazine.root,
+            )
         elif args.command == "validate":
             magazine.validate(args.edition_id)
             print(f"valid: {args.edition_id}")

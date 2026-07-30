@@ -78,7 +78,7 @@ articles:
     caption: Evaluation becomes engineering when production traces, failure labels, and repeatable graders form one operating loop.
     alt_text: A source diagram presents the first stage of an evaluation-engineering workflow.
     anchor: The examiner you already own
-    layout: evidence_band_prose
+    layout: compact_band
     criteria:
     - important
     - useful
@@ -90,7 +90,7 @@ articles:
     caption: 'Scores become useful only when they change the next edge: retry, reject, quarantine, block, or route to human review.'
     alt_text: A source diagram maps evaluation failures to routing decisions.
     anchor: Make the score change the next edge
-    layout: column_plate
+    layout: compact_band
     criteria:
     - important
     - useful

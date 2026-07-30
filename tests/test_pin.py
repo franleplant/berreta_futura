@@ -12,10 +12,13 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import hashlib
 import json
+import os
 import unittest
+from unittest.mock import patch
 
 import yaml
 
+import magazine.pin as pin_module
 from magazine import Magazine, ValidationError
 from magazine.manifest import load_translation
 from magazine.media_schema import caption_sha256
@@ -29,6 +32,7 @@ from test_manifest import (
     load_edition_with_records,
     make_project,
     pin_ledger_source_hash,
+    set_open_edition,
 )
 
 
@@ -289,6 +293,59 @@ class PinRefreshTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "refresh never inserts keys"):
             refresh_pins(self.root, "issue-001")
 
+    def test_a_collecting_ledger_gets_its_missing_derived_pin_by_machine(self):
+        make_project(self.root)
+        expected = add_extraction(self.root)
+        set_open_edition(
+            self.root,
+            "issue-001",
+            source_ids=("source-one",),
+        )
+
+        report = refresh_pins(self.root, "issue-001")
+
+        self.assertEqual(len(report.changes), 1)
+        self.assertEqual(report.changes[0].pin, "source_body_sha256")
+        ledger = yaml.safe_load(self.ledger_path().read_text(encoding="utf-8"))
+        self.assertEqual(ledger["source_body_sha256"], expected)
+
+    def test_a_collecting_multi_source_ledger_gets_canonical_mapping_shape(self):
+        make_project(self.root)
+        add_source(self.root, "source-two")
+        first = add_extraction(self.root)
+        second = add_extraction(
+            self.root,
+            source_id="source-two",
+            body="Another article.\n",
+        )
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        manifest["articles"][0]["source_ids"] = ["source-one", "source-two"]
+        manifest_path.write_text(
+            yaml.safe_dump(manifest, sort_keys=False),
+            encoding="utf-8",
+        )
+        ledger = yaml.safe_load(self.ledger_path().read_text(encoding="utf-8"))
+        ledger["source_ids"] = ["source-one", "source-two"]
+        ledger["source_body_sha256"] = "0" * 64
+        self.ledger_path().write_text(
+            yaml.safe_dump(ledger, sort_keys=False),
+            encoding="utf-8",
+        )
+        set_open_edition(
+            self.root,
+            "issue-001",
+            source_ids=("source-one", "source-two"),
+        )
+
+        refresh_pins(self.root, "issue-001")
+
+        repaired = yaml.safe_load(self.ledger_path().read_text(encoding="utf-8"))
+        self.assertEqual(
+            repaired["source_body_sha256"],
+            {"source-one": first, "source-two": second},
+        )
+
     def test_a_covered_source_without_an_extraction_cannot_be_refreshed(self):
         make_project(self.root)
         pin_ledger_source_hash(self.root, "0" * 64)
@@ -338,6 +395,101 @@ class PinRefreshTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValidationError, "mag review record"):
             refresh_pins(self.root, "issue-001")
+
+    def test_write_failure_rolls_back_every_pin_file(self):
+        consistent_project(self.root)
+        pin_ledger_source_hash(self.root, "0" * 64)
+        article = self.root / "editions" / "issue-001" / "articles" / "article.md"
+        article.write_text("The original article, revised.\n", encoding="utf-8")
+        ledger_before = self.ledger_path().read_bytes()
+        overlay_before = self.overlay_path().read_bytes()
+        real_replace = os.replace
+        calls = 0
+
+        def fail_second(source, destination):
+            nonlocal calls
+            calls += 1
+            if calls == 2:
+                raise OSError("injected pin replacement failure")
+            return real_replace(source, destination)
+
+        with patch("magazine.pin.os.replace", side_effect=fail_second):
+            with self.assertRaisesRegex(OSError, "injected pin replacement failure"):
+                refresh_pins(self.root, "issue-001")
+
+        self.assertEqual(self.ledger_path().read_bytes(), ledger_before)
+        self.assertEqual(self.overlay_path().read_bytes(), overlay_before)
+
+    def test_concurrent_pin_file_edit_aborts_before_writes_and_is_preserved(self):
+        consistent_project(self.root)
+        pin_ledger_source_hash(self.root, "0" * 64)
+        article = self.root / "editions" / "issue-001" / "articles" / "article.md"
+        article.write_text("The original article, revised.\n", encoding="utf-8")
+        ledger_before = self.ledger_path().read_bytes()
+        real_replace = os.replace
+        calls = 0
+
+        def concurrent_edit(source, destination):
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                with self.overlay_path().open("a", encoding="utf-8") as handle:
+                    handle.write("# concurrent translator note\n")
+            return real_replace(source, destination)
+
+        with patch("magazine.pin.os.replace", side_effect=concurrent_edit):
+            with self.assertRaisesRegex(ValidationError, "stale"):
+                refresh_pins(self.root, "issue-001")
+
+        self.assertEqual(self.ledger_path().read_bytes(), ledger_before)
+        self.assertTrue(
+            self.overlay_path().read_text(encoding="utf-8").endswith(
+                "# concurrent translator note\n"
+            )
+        )
+
+    def test_destination_created_inside_pin_write_is_never_overwritten(self):
+        consistent_project(self.root)
+        pin_ledger_source_hash(self.root, "0" * 64)
+        original_write = pin_module._PinnedFile.write
+        injected = False
+
+        def concurrent_write(pinned):
+            nonlocal injected
+            if pinned.path == self.ledger_path() and not injected:
+                injected = True
+                pinned.path.write_bytes(b"CONCURRENT EDIT")
+            return original_write(pinned)
+
+        with patch.object(
+            pin_module._PinnedFile,
+            "write",
+            concurrent_write,
+        ):
+            with self.assertRaisesRegex(ValidationError, "preserved"):
+                refresh_pins(self.root, "issue-001")
+
+        self.assertEqual(self.ledger_path().read_bytes(), b"CONCURRENT EDIT")
+
+    def test_invalid_edition_id_is_rejected_before_path_lookup(self):
+        consistent_project(self.root)
+        before = self.ledger_path().read_bytes()
+
+        with self.assertRaisesRegex(ValidationError, "Edition id"):
+            refresh_pins(self.root, "../outside")
+
+        self.assertEqual(self.ledger_path().read_bytes(), before)
+
+    def test_symlinked_edition_directory_is_rejected(self):
+        consistent_project(self.root)
+        editions_dir = self.root / "editions"
+        (editions_dir / "linked-issue").symlink_to(
+            editions_dir / "issue-001",
+            target_is_directory=True,
+        )
+
+        with self.assertRaisesRegex(ValidationError, "symlink path component"):
+            refresh_pins(self.root, "linked-issue")
 
 
 if __name__ == "__main__":

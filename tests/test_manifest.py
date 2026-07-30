@@ -1,6 +1,7 @@
 from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import copy
 import hashlib
 import unittest
 
@@ -302,6 +303,35 @@ class ManifestTests(unittest.TestCase):
             "Author is chief architect at Example Company.",
         )
         self.assertEqual(edition.articles[0].source_ids, ("source-one",))
+
+    def test_malformed_nested_manifest_shapes_raise_validation_errors(self):
+        make_project(self.root)
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        original = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        cases = (
+            ("sources", lambda row: row.update({"sources": {"source-one": True}})),
+            (
+                "source_ids",
+                lambda row: row["articles"][0].update({"source_ids": 7}),
+            ),
+            ("cover", lambda row: row.update({"cover": "not-a-mapping"})),
+            ("sections", lambda row: row.update({"sections": {}})),
+            ("closing_plates", lambda row: row.update({"closing_plates": {}})),
+            (
+                "editorial",
+                lambda row: row.update({"editorial": {"path": "editorial.md"}}),
+            ),
+        )
+        for label, mutate in cases:
+            with self.subTest(label=label):
+                manifest = copy.deepcopy(original)
+                mutate(manifest)
+                manifest_path.write_text(
+                    yaml.safe_dump(manifest, sort_keys=False),
+                    encoding="utf-8",
+                )
+                with self.assertRaises(ValidationError):
+                    load_edition(self.root, "issue-001", {"source-one"})
 
     def test_schema_two_source_requires_the_captured_author_identity(self):
         make_project(self.root)
