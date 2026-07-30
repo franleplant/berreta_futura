@@ -1,0 +1,142 @@
+schema_version: 1
+source_ids:
+- software-factories-are-super-real-but-the-factor-ab8ad3ab
+- factories-are-not-a-token-or-llm-problem-ba5fabbf
+- do-not-make-the-service-bus-non-deterministic-3a92442c
+source_author: Geoffrey Huntley
+content_mode: faithful_edit
+source_body_sha256:
+  software-factories-are-super-real-but-the-factor-ab8ad3ab: "c1e72b77c8e16a6f7aed9b385d237243f16afad51f21d28837711ed3d94e96f3"
+  factories-are-not-a-token-or-llm-problem-ba5fabbf: "d07d492137bf2c4389e165188601024f7e79e711cfc592adc9f1590d11abcac3"
+  do-not-make-the-service-bus-non-deterministic-3a92442c: "c858605a35e5ef473b309c2fe984cb94fb9d9a48fedac29b3a0a042a9dfd0e08"
+paragraphs:
+- id: factories-001
+  kind: h2
+  status: modified
+  source: software factories are super real but we need to be realistic.
+  edited: Software factories are super real
+  reason: Shortened the source opening into a section heading.
+- id: factories-002
+  kind: p
+  status: modified
+  source: >-
+    software factories are super real but we need to be realistic. the factory
+    aspects haven’t been cracked yet, the innovators are toying around with
+    discovering practices and pieces.
+  edited: >-
+    Software factories are super real, but we need to be realistic. The factory
+    aspects haven’t been cracked yet; the innovators are toying around with
+    discovering practices and pieces.
+  reason: Regularized capitalization and punctuation without changing the claim.
+- id: factories-003
+  kind: p
+  status: modified
+  source: >-
+    if someone is selling you a factory rn and they aren’t in the super small
+    cohort (ie. they are likely startups created in last six months!) or circa
+    <10 people in the who’s-who, who have been trying (and realistically
+    failing) over the last two years. they are selling bullshit. it isn’t
+    cracked but it’s a puzzle that’s being solved daily.
+  edited: >-
+    If someone is selling you a factory right now and they aren’t in the
+    super-small cohort (likely startups created in the last six months), or
+    among the roughly ten people in the who’s-who who have been trying and
+    realistically failing over the last two years, they are selling bullshit.
+    It isn’t cracked, but it’s a puzzle that’s being solved daily.
+  reason: Expanded abbreviations and clarified syntax while preserving the point of view.
+- id: factories-004
+  kind: p
+  status: modified
+  source: >-
+    the best practices right now are to build abstractions/pieces needed which
+    entails solving [2] non-agent topics. [1] almost lights out. [2] sandboxing,
+    monorepo, reproducible builds, ci/cd, identity/secret management, smashing
+    corporate friction in the realm of devex for agents.
+  edited: >-
+    The target is an almost-lights-out factory. The best practice right now is
+    to build the abstractions and pieces we need. That entails solving non-agent
+    topics: sandboxing, monorepos, reproducible builds, CI/CD, identity and
+    secret management, and smashing corporate friction in the realm of
+    developer experience for agents.
+  reason: Resolved the numbered cross-references, expanded shorthand, and regularized the list without changing its substance.
+- id: factories-005
+  kind: p
+  status: modified
+  source: >-
+    at home, in your homelab, you should be cracking on this problem space in
+    your free time if you want a super fast promotion and red carpet service at
+    your next interview. highest roi you can have right now is learning the
+    entire damn stack, automating it and showing it at your next
+    interview/doing a recorded talk at a meetup.
+  edited: >-
+    At home, in your homelab, you should be cracking on this problem space in
+    your free time if you want a super-fast promotion and red-carpet service at
+    your next interview. The highest ROI you can have right now is learning the
+    entire stack, automating it, and showing it at your next interview or in a
+    recorded talk at a meetup.
+  reason: Lightly edited for print while preserving the source advice and voice.
+- id: factories-006
+  kind: h2
+  status: modified
+  source: factories is not a token or llm problem. it’s a systems engineering and corporate culture problem.
+  edited: A systems engineering and corporate culture problem
+  reason: Converted the central source claim into a section heading.
+- id: factories-007
+  kind: p
+  status: modified
+  source: >-
+    i must stress that factories is not a token or llm problem. it’s a systems
+    engineering and corporate culture problem. it won’t be solved through
+    tokens or how you apply the tokens (but it is a piece of the puzzle) ugh.
+    blog post time.
+  edited: >-
+    I must stress that factories are not a token or LLM problem. They won’t be
+    solved through tokens or how you apply them, although that is a piece of the
+    puzzle.
+  reason: Corrected grammar, avoided repeating the section heading, and removed the trailing social-post aside.
+- id: factories-008
+  kind: h2
+  status: modified
+  source: don’t make the entire service bus non-deterministic.
+  edited: Keep the service bus deterministic
+  reason: Recast the source conclusion as a concise positive section heading.
+- id: factories-009
+  kind: p
+  status: modified
+  source: >-
+    second hot take, as it seems the first hot take landed. n8n was a silly
+    idea, which i’ve always suspected was developed by young folks in silicon
+    valley who are all in on the LLM craze who have never worked in corporate
+    in their life thus didn’t have the knowledge that service busses are a
+    solved problem and there’s deep prior art in the spooky land of enterprise.
+  edited: >-
+    Second hot take, as it seems the first one landed. n8n was a silly idea,
+    which I’ve always suspected was developed by young folks in Silicon Valley
+    who are all in on the LLM craze, have never worked in corporate in their
+    lives, and thus didn’t know that service buses are a solved problem with
+    deep prior art in the spooky land of enterprise.
+  reason: Regularized capitalization, number agreement, and syntax.
+- id: factories-010
+  kind: p
+  status: modified
+  source: >-
+    look up anything in the @dotnet space such as mass transit, nservicebus,
+    [1] wcf if you wanna steal ideas for prompting. [1] lots of bad memories
+    here, not great tech impl but the theory / education is generally on point.
+  edited: >-
+    Look up anything in the [`.NET`](https://x.com/dotnet) space, such as
+    MassTransit, NServiceBus, or WCF, if you want to steal ideas for prompting.
+    WCF gives me lots of bad memories. The implementation isn’t great, but the
+    theory and education are generally on point.
+  reason: Expanded names, preserved the source link, resolved the footnote marker, and moved the WCF aside beside its reference.
+- id: factories-011
+  kind: p
+  status: modified
+  source: >-
+    if you want a modern plug and play choice, @temporalio exists. use it and
+    have a job invoke an agent as a process.
+  edited: >-
+    If you want a modern plug-and-play choice,
+    [Temporal](https://x.com/temporalio) exists. Use it and have a job invoke an
+    agent as a process.
+  reason: Normalized capitalization and the compound, and replaced the source handle with the linked product name.

@@ -1,31 +1,31 @@
 schema_version: 2
-round: 3
-selection_status: pending_editor_choice
+round: 2
+selection_status: selected
 editorial_reading: >-
   A capable model becomes useful, legible, and safe only through the protocols,
   evaluations, architectures, memory, boundaries, and human judgment around it.
 variants:
   synthetic:
-    art_path: art/cover-candidate-synthetic-v3.png
-    asset_sha256: 734be3f08ed9fd0785f12584aacde4910c5829b4bc01cd200e8779be8fbe8f50
+    art_path: art/cover-candidate-synthetic-v2.png
+    asset_sha256: 634d40be127ceb204eb05fcdda5a37372e07fe29e84d10e13b99f92b64bd6e0e
     generation_method: imagegen
     direction: >-
-      Six enormous translucent folded planes use distinct apertures, hinges,
-      testing fins, and gates to shape one narrow signal around a tiny suspended
-      core. Severe constructivist geometry dominates the system.
+      An exploded axonometric system ascends diagonally through offset protocol,
+      evaluation, memory, architecture, boundary, and review layers. A tiny
+      luminous core remains visibly subordinate to the surrounding structure.
   art_directed:
-    art_path: art/cover-candidate-art-directed-v3.png
-    asset_sha256: f671cae3521efabad63625df978b7a5f31d596d08819abb7c39fc0d51979940b
+    art_path: art/cover-candidate-art-directed-v2.png
+    asset_sha256: 07be2d2f377a5ef4a9e8c4697cf66bec88c8f584230fae301b524c757d0aec10
     generation_method: imagegen
     direction: >-
-      A photographed ceramic wall relief connects six hand-built glazed modules
-      with copper wire, black cord, and a thumb-operated approval lever around
-      one small luminous porcelain seed.
+      A photographed hand-stitched textile system uses distinct fabric patches,
+      colored threads, knots, eyelets, and a human-fastened safety clasp around
+      one tiny reflective model bead.
   wildcard:
-    art_path: art/cover-candidate-wildcard-v3.png
-    asset_sha256: 96f7a9a8766599dfe9ece7f08564ace3e891a14d982344737f392f227bf97bf4
+    art_path: art/cover-candidate-wildcard-v2.png
+    asset_sha256: a8c7dc40ff79c8860d61ee74c7c349b9b2649e9e4b3795831ecc5a346e37b89b
     generation_method: imagegen
     direction: >-
-      A cinematic greenhouse makes the system living and operational. Trellises,
-      irrigation, observation, quarantine, and human gardeners surround a tiny
-      glowing seed chamber at blue hour.
+      An aerial architectural photograph turns the system into monumental
+      desert land art. Protocol corridors, checkpoints, memory basins, boundary
+      walls, and human-maintained bridges surround a tiny glowing pavilion.
