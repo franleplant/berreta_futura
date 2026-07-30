@@ -210,6 +210,55 @@ def test_raster_shape_and_resolution_are_part_of_the_plan_contract(tmp_path: Pat
         validate_illustration_plan(tmp_path, edition)
 
 
+def test_article_opener_is_a_distinct_landscape_role_bound_to_manifest_copy(
+    tmp_path: Path,
+):
+    edition, plan_path = _fixture(tmp_path)
+    opener_path = (
+        tmp_path
+        / "editions"
+        / "issue"
+        / "art"
+        / "article-openers"
+        / "article.png"
+    )
+    opener_path.parent.mkdir()
+    Image.new("RGB", (1536, 1024), "white").save(opener_path)
+    edition.articles[0].opener_art = SimpleNamespace(
+        path=opener_path,
+        alt_text="A boy and robot inspect a useful system.",
+        credit="Original illustration by the editors.",
+    )
+    plan = yaml.safe_load(plan_path.read_text(encoding="utf-8"))
+    plan["assets"].insert(
+        0,
+        {
+            "id": "opener-article",
+            "role": "article_opener",
+            "article_id": "article",
+            "art_path": opener_path.relative_to(tmp_path).as_posix(),
+            "subject": "A boy and robot inspect a useful system.",
+            "composition": "A wide central scene for the article opener.",
+            "alt_text": "A boy and robot inspect a useful system.",
+            "credit": "Original illustration by the editors.",
+        },
+    )
+    plan_path.write_text(yaml.safe_dump(plan, sort_keys=False), encoding="utf-8")
+
+    loaded = validate_illustration_plan(tmp_path, edition)
+
+    assert loaded is not None
+    assert loaded.assets[0].role == "article_opener"
+    assert "348pt by 203pt panel" in illustration_prompt(
+        loaded, loaded.assets[0]
+    )
+
+    loaded.assets[0].art_path.unlink()
+    Image.new("RGB", (1024, 1536), "white").save(opener_path)
+    with pytest.raises(ValidationError, match="requires at least 1536x1024"):
+        validate_illustration_plan(tmp_path, edition)
+
+
 def test_absent_plan_is_ordinary_for_historical_editions(tmp_path: Path):
     edition = SimpleNamespace(raw={}, articles=(), closing_plates=())
     assert load_illustration_plan(tmp_path, edition) is None

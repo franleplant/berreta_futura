@@ -12,12 +12,20 @@ publication builds under.
 
 from __future__ import annotations
 
+from dataclasses import replace
 import re
 from importlib import resources
 from pathlib import Path
 
 from magazine.html_edition import render_html_edition
-from magazine.manifest import Article, ClosingPlate, Edition, Editorial, Section
+from magazine.manifest import (
+    Article,
+    ArticleOpenerArt,
+    ClosingPlate,
+    Edition,
+    Editorial,
+    Section,
+)
 from magazine.media_schema import Figure
 
 _ASSETS = resources.files("magazine").joinpath("assets")
@@ -39,7 +47,7 @@ _SCREEN_ONLY_CLASSES = frozenset(
         "page-turn", "page-turn-previous", "page-turn-contents", "page-turn-next",
         "colophon", "colophon-identity", "colophon-links",
         "colophon-sibling", "colophon-language", "colophon-date",
-        "provenance-source", "figure-link",
+        "provenance-source", "figure-link", "opener-source-link", "source-qr",
     }
 )
 
@@ -88,8 +96,8 @@ def _edition(tmp_path: Path) -> Edition:
     article_path = tmp_path / "article.md"
     article_path.write_text(
         "---\nlabel: FAITHFUL SYNTHESIS\n---\n"
-        "# Reader title\n\n"
         "An opening paragraph with a [working link](https://example.test/a) and `code`.\n\n"
+        "# Reader title\n\n"
         "> A quoted line.\n\n"
         "- First point\n\n"
         "## Exact anchor\n\n"
@@ -132,6 +140,11 @@ def _edition(tmp_path: Path) -> Edition:
         fidelity=tmp_path / "fidelity.yaml", content_mode="faithful_synthesis",
         figures=(opener, figure), tail_art=tail_path,
         source_url="https://example.test/source",
+        opener_art=ArticleOpenerArt(
+            image_path,
+            "A boy and robot inspect a system.",
+            "Original illustration.",
+        ),
     )
     return Edition(
         id="edition-one", publication_name="Magazine", issue_number="7", title="Issue seven",
@@ -139,7 +152,11 @@ def _edition(tmp_path: Path) -> Edition:
         editorial=Editorial(editorial_path, "Editorial", "The Editors", "ORIGINAL"),
         articles=(article,), sections=(Section("source_record", "Sources", section_path),),
         cover={"headline": "Cover"}, cover_art=image_path,
-        closing_plates=(ClosingPlate("Plate", plate_path),), raw={"subtitle": "A subtitle"},
+        closing_plates=(ClosingPlate("Plate", plate_path),),
+        raw={
+            "subtitle": "A subtitle",
+            "format": {"article_opener": "illustrated_paper_spots_v1"},
+        },
     )
 
 
@@ -157,7 +174,18 @@ def test_every_selector_the_screen_sheet_styles_is_emitted_vocabulary(tmp_path: 
     styled_data_attributes = set(re.findall(r"\[\s*(data-[\w-]+)", preludes))
     assert styled_classes and styled_data_attributes  # The extraction itself works.
 
-    html = render_html_edition(_edition(tmp_path)).html
+    illustrated = _edition(tmp_path)
+    legacy = replace(
+        illustrated,
+        articles=(
+            replace(illustrated.articles[0], opener_art=None),
+        ),
+        raw={"subtitle": "A subtitle"},
+    )
+    html = (
+        render_html_edition(illustrated).html
+        + render_html_edition(legacy).html
+    )
     emitted_classes = {
         token
         for value in re.findall(r'class="([^"]*)"', html)
@@ -193,6 +221,29 @@ def test_every_css_url_is_a_local_font_the_package_ships():
         assert url.startswith("fonts/"), f"URL outside the copied fonts tree: {url}"
         packaged = _ASSETS.joinpath("fonts").joinpath(url.removeprefix("fonts/"))
         assert packaged.is_file(), f"CSS references a font the package does not ship: {url}"
+
+
+def test_illustrated_opener_uses_white_paper_and_locked_spot_marks():
+    css = _screen_css()
+
+    assert ":root {" in css
+    assert "--paper: #f1eadb;" in css
+    assert "--orange: #ff5a1f;" in css
+    assert "--rule: rgba(17, 19, 26, 0.18);" in css
+    assert 'html[data-article-opener-format="illustrated_paper_spots_v1"]' in css
+    assert "--paper: #ffffff;" in css
+    assert "--cobalt: #315d8c;" in css
+    assert "--orange: #f05738;" in css
+    assert "--rule: #c8c0b3;" in css
+    assert "aspect-ratio: 348 / 203;" in css
+    assert "box-shadow: 0.3125rem 0.3125rem 0 var(--orange);" in css
+    assert "border-bottom: 1px solid var(--rule);" in css
+    assert ".opener-tick {" in css
+    assert "width: 18px;" in css and "height: 3px;" in css
+    assert ".opener-meta::before" not in css
+    assert ".article-opener > .standfirst::first-letter" in css
+    assert "grid-template-columns: minmax(0, 1fr) auto;" in css
+    assert "grid-column: 1;" in css and "grid-column: 2;" in css
 
 
 def test_the_font_licenses_ship_beside_the_faces_they_cover():

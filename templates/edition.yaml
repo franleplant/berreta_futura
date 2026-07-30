@@ -3,9 +3,11 @@ issue_number: "001"
 title: A title for the collection
 publication_date: 2026-07-15
 editorial: editions/issue-001/editorial.md
-# For illustrated editions, copy templates/illustrations.yaml into the edition
-# and uncomment this path. The reusable direction preset is declared there.
-# art_direction_path: editions/issue-001/art/illustrations.yaml
+format:
+  article_opener: illustrated_paper_spots_v1
+# Copy templates/illustrations.yaml here. The reusable direction preset is
+# declared in that plan.
+art_direction_path: editions/issue-001/art/illustrations.yaml
 cover:
   headline: A title for the collection
   back_text: An independent anthology of writing worth keeping.
@@ -18,12 +20,16 @@ articles:
     author: Original Author
     # Copy this exactly from the primary source record's author_profile.note.
     # It contains identity or relevant CV context, never an article synopsis.
-    # Omit when the captured institutional byline deliberately has no note.
+    # Illustrated openers require it, including for institutional bylines.
     author_note: Original Author is the founder of Example Company.
     source_ids:
       - example-source-id
     manuscript: editions/issue-001/articles/example-article.md
     fidelity: editions/issue-001/fidelity/example-article.yaml
+    opener_art:
+      path: editions/issue-001/art/article-openers/example-article.png
+      alt_text: A boy and a friendly robot connect a document to a database and tools.
+      credit: Original illustration for this edition.
     # Uncomment when the illustration plan declares this article-tail asset.
     # tail_art_path: editions/issue-001/art/article-tails/example-article.png
     # Curate zero to three source-verified figures. The anchor must be __opener__

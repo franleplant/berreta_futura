@@ -8,7 +8,7 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-from PIL import Image, ImageDraw, ImageOps
+from PIL import Image, ImageChops, ImageDraw, ImageOps
 from pypdf import PdfReader
 
 from .booklet import A4_LANDSCAPE_POINTS, imposed_reader_page_plan, section_reader_pages
@@ -127,17 +127,28 @@ DEFAULT_EDITORIAL_PAGE_CAP = 2
 # facts the critic already holds (contents folios, the manifest's figure
 # boxes and tail ledger, the void geometry), never from new measurement.
 CROP_DPI = 300
+# The illustrated opener's orange rectangle is not a border. It is a 4.1pt
+# copy of the black frame translated right and down. At the critic's 144 DPI
+# this is 8.2 pixels. A flush padding/background treatment has the same outer
+# bounds, so resemblance is not enough: the orange must begin after both the
+# top-right and bottom-left corners.
+OPENER_OFFSET_POINTS = 4.1
+OPENER_FRAME_RGB = (23, 25, 28)
+OPENER_OFFSET_RGB = (240, 87, 56)
+OPENER_OFFSET_TOLERANCE_PIXELS = 2.0
+OPENER_FRAME_MIN_RUN_FRACTION = 0.65
+OPENER_CROP_FIDELITY_MAX_RGB_MAE = 8.0
+OPENER_CROP_FRAME_MAX_EDGE_DELTA_INCHES = 0.01
 # Breathing room around a cropped subject, so a void crop shows the type
 # that bounds it and a band crop shows the paper around the ornament.
 CROP_MARGIN_POINTS = 24.0
 # A figure's caption and credit sit under its box and are part of judging
 # the placement, so figure crops extend this much further below the box.
 CROP_CAPTION_ALLOWANCE_POINTS = 48.0
-# An opener's running head, display title, byline block and QR all sit in
-# the top 320 pt of the page on both languages' openers (the QR block's
-# foot lands near 310 pt); the crop takes the full page width because the
-# title runs to the outer margin.
-OPENER_CROP_HEIGHT_POINTS = 320.0
+# An article opener is a full-page composition: illustration, display title,
+# byline, QR, rule, and intro all participate in the visual decision. Its
+# evidence crop therefore takes the complete media box, not only the old
+# title-and-byline head.
 # A stub page's evidence is its head: running head, the remnant lines and
 # the END mark all land inside 220 pt on any page stubby enough to flag
 # (fewer than five lines of running text below a ~65 pt head area).
@@ -295,6 +306,7 @@ def inspect_render(
     # contracts -- the edition's own editorial cap, the tail-art ledger --
     # are read from it rather than re-hardcoded here more loosely.
     manifest_layout = _manifest_layout(destination)
+    illustrated_articles = _manifest_opener_article_ids(destination)
     page_rows = [
         _inspect_page(page_path, reader.pages[index], index + 1, texts=reader_texts)
         for index, page_path in enumerate(rendered_pages)
@@ -412,6 +424,44 @@ def inspect_render(
             "error",
             f"Reader page count {page_count} is not a multiple of four.",
         )
+
+    opener_offset_checks: list[dict[str, Any]] = []
+    for article_id in illustrated_articles:
+        page = toc.get(article_id)
+        if page is None or not 1 <= page <= len(rendered_pages):
+            offset_check = {
+                "article": article_id,
+                "page": page,
+                "pass": False,
+                "message": (
+                    "The packaged opener declaration has no valid article start "
+                    "page in the contents map."
+                ),
+            }
+            opener_offset_checks.append(offset_check)
+            issue(
+                "article-opener-offset-shadow",
+                "error",
+                f"Article '{article_id}' declares opener art but has no valid reader "
+                "page on which to verify its offset.",
+                page=page,
+            )
+            continue
+        offset_check = {
+            "article": article_id,
+            "page": page,
+            **_inspect_opener_offset(rendered_pages[page - 1]),
+        }
+        opener_offset_checks.append(offset_check)
+        if not offset_check["pass"]:
+            issue(
+                "article-opener-offset-shadow",
+                "error",
+                f"Article '{article_id}' does not have a true {OPENER_OFFSET_POINTS:g}pt "
+                "down-right orange illustration offset. "
+                f"{offset_check['message']}",
+                page=page,
+            )
 
     # Both directions of blankness are checked, at different strictness: an
     # inside cover must be *completely* blank (pure-white raster, no text), so
@@ -571,6 +621,39 @@ def inspect_render(
         reader_pdf, review_dir / "crops", destination, crop_specs
     )
     review_artifacts = review_artifacts + crop_paths
+    opener_crop_fidelity: list[dict[str, Any]] = []
+    for crop in crop_rows:
+        if crop["kind"] != "opener":
+            continue
+        page = int(crop["page"])
+        if not 1 <= page <= len(rendered_pages):
+            continue
+        with Image.open(rendered_pages[page - 1]) as reference:
+            expected_width = round(float(crop["region_points"][2]) * RASTER_DPI / 72)
+            expected_height = round(float(crop["region_points"][3]) * RASTER_DPI / 72)
+            if (
+                abs(reference.width - expected_width) > 1
+                or abs(reference.height - expected_height) > 1
+            ):
+                # Synthetic critic tests may substitute reduced rasters. Real
+                # package rasters are always emitted at RASTER_DPI.
+                continue
+        fidelity = {
+            "page": page,
+            "path": crop["path"],
+            **_inspect_opener_crop_fidelity(
+                destination / crop["path"], rendered_pages[page - 1]
+            ),
+        }
+        opener_crop_fidelity.append(fidelity)
+        if not fidelity["pass"]:
+            issue(
+                "article-opener-crop-fidelity",
+                "error",
+                f"Full-page opener crop for reader page {page} does not match "
+                f"the final-PDF page raster. {fidelity['message']}",
+                page=page,
+            )
 
     inside_cover_sides = {
         int(row["side"])
@@ -673,6 +756,11 @@ def inspect_render(
             "void_report_limit": VOID_REPORT_LIMIT,
             "tail_band_symmetry_tolerance_points": TAIL_BAND_SYMMETRY_TOLERANCE_POINTS,
             "stub_body_line_minimum": STUB_BODY_LINE_MINIMUM,
+            "article_opener_offsets": opener_offset_checks,
+            "article_opener_offset_count_matches": (
+                len(opener_offset_checks) == len(illustrated_articles)
+            ),
+            "article_opener_crop_fidelity": opener_crop_fidelity,
         },
         "issues": issues,
         "summary": {
@@ -747,10 +835,14 @@ def inspect_render(
             ],
             "crops": crop_rows,
             "instructions": (
-                "Inspect every page on the contact sheets at useful zoom; automated checks do not judge "
-                "typographic rhythm, visual hierarchy, or aesthetic quality. The crops/ set enlarges "
-                "every opener block, placed figure, printed tail band, and flagged region at 300 ppi "
-                "so type quality is judged at print resolution rather than from thumbnails."
+                "Inspect every page on the contact sheets, then reopen every crop from its exact file "
+                "path at original resolution. Do not approve from a resized preview. Automated checks "
+                "do not judge typographic rhythm, visual hierarchy, or aesthetic quality. For an "
+                "illustrated opener, verify the orange rectangle begins down and right: white remains "
+                "outside the black frame at the top-right before the shadow begins and at the "
+                "bottom-left before it begins. The crops/ set enlarges every opener block, placed "
+                "figure, printed tail band, and flagged region at 300 ppi so type quality and locked "
+                "geometry are judged from source pixels rather than thumbnails."
             ),
         },
     }
@@ -1028,6 +1120,216 @@ def _manifest_layout(destination: Path) -> dict[str, Any]:
         return {}
     layout = manifest.get("layout") if isinstance(manifest, dict) else None
     return layout if isinstance(layout, dict) else {}
+
+
+def _manifest_opener_article_ids(destination: Path) -> tuple[str, ...]:
+    """Article ids whose packaged inputs declare first-class opener art."""
+
+    path = destination / "edition-manifest.json"
+    if not path.is_file():
+        return ()
+    try:
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return ()
+    inputs = manifest.get("inputs") if isinstance(manifest, dict) else None
+    articles = inputs.get("articles") if isinstance(inputs, dict) else None
+    if not isinstance(articles, list):
+        return ()
+    return tuple(
+        str(row["id"])
+        for row in articles
+        if isinstance(row, dict)
+        and isinstance(row.get("id"), str)
+        and isinstance(row.get("opener_art"), dict)
+    )
+
+
+def _opener_frame_bbox(
+    image: Image.Image, *, color_tolerance: int = 0
+) -> tuple[int, int, int, int] | None:
+    """Locate the long near-black illustration frame in a page raster."""
+
+    pixels = image.load()
+    minimum_run = int(image.width * OPENER_FRAME_MIN_RUN_FRACTION)
+    frame_runs: list[tuple[int, int, int]] = []
+    for y in range(image.height // 2):
+        start: int | None = None
+        for x in range(image.width + 1):
+            is_frame = x < image.width and all(
+                abs(channel - target) <= color_tolerance
+                for channel, target in zip(
+                    pixels[x, y], OPENER_FRAME_RGB, strict=True
+                )
+            )
+            if is_frame and start is None:
+                start = x
+            elif not is_frame and start is not None:
+                if x - start >= minimum_run:
+                    frame_runs.append((start, x, y))
+                start = None
+    if not frame_runs:
+        return None
+    longest = max(end - start for start, end, _y in frame_runs)
+    border_rows = [
+        (start, end, y)
+        for start, end, y in frame_runs
+        if end - start >= longest - 2
+    ]
+    return (
+        min(start for start, _end, _y in border_rows),
+        min(y for _start, _end, y in border_rows),
+        max(end for _start, end, _y in border_rows),
+        max(y for _start, _end, y in border_rows) + 1,
+    )
+
+
+def _inspect_opener_crop_fidelity(crop_path: Path, reader_page_path: Path) -> dict[str, Any]:
+    """Compare 300 ppi review evidence with its 144 dpi final-PDF raster."""
+
+    with Image.open(reader_page_path) as opened:
+        reference = opened.convert("RGB")
+    with Image.open(crop_path) as opened:
+        normalized = opened.convert("RGB").resize(
+            reference.size, Image.Resampling.LANCZOS
+        )
+
+    histogram = ImageChops.difference(normalized, reference).histogram()
+    channel_values = reference.width * reference.height * 3
+    rgb_mae = sum((index % 256) * count for index, count in enumerate(histogram))
+    rgb_mae /= channel_values
+
+    # Lanczos normalization softens the long frame rows even when the two
+    # rasters describe the same physical page. A 24-channel tolerance keeps
+    # those rows detectable without admitting the much lighter artwork.
+    crop_frame = _opener_frame_bbox(normalized, color_tolerance=24)
+    reference_frame = _opener_frame_bbox(reference, color_tolerance=24)
+    frame_delta: float | None
+    frames_match = crop_frame is not None and reference_frame is not None
+    if frames_match:
+        frame_delta = max(
+            abs(crop_edge - reference_edge)
+            for crop_edge, reference_edge in zip(crop_frame, reference_frame, strict=True)
+        ) / RASTER_DPI
+    elif crop_frame is None and reference_frame is None:
+        frame_delta = None
+        frames_match = True
+    else:
+        frame_delta = None
+
+    passed = (
+        rgb_mae <= OPENER_CROP_FIDELITY_MAX_RGB_MAE
+        and frames_match
+        and (
+            frame_delta is None
+            or frame_delta <= OPENER_CROP_FRAME_MAX_EDGE_DELTA_INCHES
+        )
+    )
+    frame_text = (
+        "no illustration frame detected in either raster"
+        if frame_delta is None and frames_match
+        else (
+            f"frame edge delta {frame_delta:.4f}in"
+            if frame_delta is not None
+            else "illustration frame detected in only one raster"
+        )
+    )
+    return {
+        "pass": passed,
+        "rgb_mae": round(rgb_mae, 4),
+        "maximum_rgb_mae": OPENER_CROP_FIDELITY_MAX_RGB_MAE,
+        "frame_edge_delta_inches": (
+            None if frame_delta is None else round(frame_delta, 4)
+        ),
+        "maximum_frame_edge_delta_inches": OPENER_CROP_FRAME_MAX_EDGE_DELTA_INCHES,
+        "normalized_pixels": [reference.width, reference.height],
+        "message": f"RGB MAE {rgb_mae:.2f}/255; {frame_text}.",
+    }
+
+
+def _inspect_opener_offset(path: Path) -> dict[str, Any]:
+    """Measure the translated orange rectangle from a finished page raster."""
+
+    with Image.open(path) as opened:
+        image = opened.convert("RGB")
+    pixels = image.load()
+    minimum_run = int(image.width * OPENER_FRAME_MIN_RUN_FRACTION)
+    frame_runs: list[tuple[int, int, int]] = []
+    for y in range(image.height // 2):
+        start: int | None = None
+        for x in range(image.width + 1):
+            is_frame = x < image.width and pixels[x, y] == OPENER_FRAME_RGB
+            if is_frame and start is None:
+                start = x
+            elif not is_frame and start is not None:
+                if x - start >= minimum_run:
+                    frame_runs.append((start, x, y))
+                start = None
+    if not frame_runs:
+        return {
+            "pass": False,
+            "message": "The critic could not locate the long near-black illustration frame.",
+        }
+
+    longest = max(end - start for start, end, _y in frame_runs)
+    border_rows = [
+        (start, end, y)
+        for start, end, y in frame_runs
+        if end - start >= longest - 2
+    ]
+    frame_left = min(start for start, _end, _y in border_rows)
+    frame_right = max(end for _start, end, _y in border_rows)
+    frame_top = min(y for _start, _end, y in border_rows)
+    frame_bottom = max(y for _start, _end, y in border_rows) + 1
+    search = max(4, round(OPENER_OFFSET_POINTS * RASTER_DPI / 72 * 3))
+
+    right_orange = [
+        (x, y)
+        for y in range(frame_top, min(image.height, frame_bottom + search))
+        for x in range(frame_right, min(image.width, frame_right + search))
+        if pixels[x, y] == OPENER_OFFSET_RGB
+    ]
+    bottom_orange = [
+        (x, y)
+        for y in range(frame_bottom, min(image.height, frame_bottom + search))
+        for x in range(frame_left, min(image.width, frame_right + search))
+        if pixels[x, y] == OPENER_OFFSET_RGB
+    ]
+    if not right_orange or not bottom_orange:
+        return {
+            "pass": False,
+            "frame_bbox_pixels": [
+                frame_left,
+                frame_top,
+                frame_right,
+                frame_bottom,
+            ],
+            "message": "The critic could not locate orange beyond both the frame's right and bottom edges.",
+        }
+
+    offset_x = min(x for x, _y in bottom_orange) - frame_left
+    offset_y = min(y for _x, y in right_orange) - frame_top
+    extension_x = max(x for x, _y in right_orange) + 1 - frame_right
+    extension_y = max(y for _x, y in bottom_orange) + 1 - frame_bottom
+    expected = OPENER_OFFSET_POINTS * RASTER_DPI / 72
+    values = (offset_x, offset_y, extension_x, extension_y)
+    passed = all(
+        abs(value - expected) <= OPENER_OFFSET_TOLERANCE_PIXELS
+        for value in values
+    )
+    return {
+        "pass": passed,
+        "frame_bbox_pixels": [frame_left, frame_top, frame_right, frame_bottom],
+        "offset_pixels": [offset_x, offset_y],
+        "extension_pixels": [extension_x, extension_y],
+        "expected_offset_pixels": round(expected, 2),
+        "tolerance_pixels": OPENER_OFFSET_TOLERANCE_PIXELS,
+        "message": (
+            f"Measured orange start {offset_x}px right and {offset_y}px down, "
+            f"with {extension_x}px right and {extension_y}px bottom extension; "
+            f"expected {expected:.1f}px on every edge."
+        ),
+    }
 
 
 def _declared_editorial_cap(manifest_layout: dict[str, Any]) -> int:
@@ -1340,9 +1642,9 @@ def _review_crop_plan(
         if not 1 <= page <= page_count:
             continue
         opening = ", ".join(sorted(slug for slug, folio in toc.items() if folio == page))
-        width, _ = page_size(page)
+        width, height = page_size(page)
         specs.append(
-            clamped(page, "opener", opening, (0.0, 0.0, width, OPENER_CROP_HEIGHT_POINTS))
+            clamped(page, "opener", opening, (0.0, 0.0, width, height))
         )
     for entry in manifest_layout.get("figures") or ():
         if not isinstance(entry, dict):

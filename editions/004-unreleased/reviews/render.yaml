@@ -1,21 +1,23 @@
 schema_version: 1
 edition_id: 004-unreleased
-reviewer: Codex final render critic
-reviewed_at: '2026-07-30T03:04:09+00:00'
+reviewer: Codex independent final exact-file visual and pipeline critics
+reviewed_at: '2026-07-30T15:52:04+00:00'
 result: approved
 engine: weasyprint
 design_direction: WeasyPrint / A5 fold proof
 findings: []
-notes: Independent inspection of all English and Spanish reader and booklet contact sheets after Eval
-  Engineering pagination repair; no actionable visual findings.
+notes: Fresh final-build review inspected all 10 EN/ES reader and booklet contact sheets plus all 14 article
+  opener crops at original resolution. Every opener has a true 4.1pt down-right orange rectangle with
+  white at the top-right and bottom-left before orange begins; no actionable layout, imposition, or crop-fidelity
+  defects remain.
 languages:
   en:
-    reader_sha256: f4f9a90d07e94a213e736dacacac73da3db307f0a7e966ce5ff0e373375c91fa
-    booklet_sha256: 2d2132f20c224b5afd44b8c542ad6aa6c56f50dfd1d74fcbc81c37f6dd35aefd
+    reader_sha256: 29925877425527466d29e00f07442608ffe2e4a6cced225af32454aead5e9a3e
+    booklet_sha256: bc0e1b5f6359ea3e8a3306870dda8d9b3760208f5333a27b243ac527fd244584
     page_count: 40
     machine_result: pass
   es:
-    reader_sha256: cdea1c9908825ffc9b57171a40b6252501d93a04cc28c876737d1294a8c3a31f
-    booklet_sha256: eb8a4c4d2e9703c864f2fa501b097cc4c0b1dd2a8e5e7aeb5e694821b45c108f
-    page_count: 40
+    reader_sha256: 5ccce7862d4bc8244420bfdc7a665725eb4ba898a6d6c5647b71cd3cc443015f
+    booklet_sha256: eaa318132bb8a018ac576d1a051ccb6d616e4f67421e34df0bf3e30c18ee7919
+    page_count: 44
     machine_result: pass

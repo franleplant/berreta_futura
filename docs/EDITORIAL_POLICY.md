@@ -12,6 +12,22 @@ Every piece is explicitly one of:
 
 The default for source articles is `faithful_edit`. The opening editorial is `original_editorial` and may be opinionated, interpretive, and stylistically distinct.
 
+## Opening editorial contract
+
+The opening editorial develops a distinct unifying idea, set of ideas, or
+emergent narrative across the edition. Its value lies in the new argument the
+editors discover between the sources, not in recounting what each source says.
+It must not summarize the articles one by one, tour them in sequence, or act as
+a prose table of contents. It may name one or two sources when the argument
+needs their evidence, with precise attribution.
+
+Draft and edit every opening editorial with the Orwell-based method in
+`docs/WRITING_RULES.md`. The method sharpens the magazine's idea; it does not
+replace editorial judgment or flatten necessary technical language. The
+publication-ready manuscript keeps a visible title, byline, and label that
+identifies it as original editor text. AI may propose the draft, but a human
+must approve the argument and final prose.
+
 ## Print-length budget
 
 Every rendered source article, including its title and credit, has a hard maximum of seven A5 reader pages. The deterministic renderer measures the real pagination and refuses an over-budget build.

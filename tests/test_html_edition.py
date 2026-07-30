@@ -3,7 +3,14 @@ from pathlib import Path
 
 from magazine import Magazine
 from magazine.html_edition import render_html_edition
-from magazine.manifest import Article, ClosingPlate, Edition, Editorial, Section
+from magazine.manifest import (
+    Article,
+    ArticleOpenerArt,
+    ClosingPlate,
+    Edition,
+    Editorial,
+    Section,
+)
 from magazine.media_schema import Figure
 from magazine.reader_text import fold_reader_characters
 from magazine.render import _plain
@@ -150,6 +157,7 @@ def test_html_edition_uses_edition_locale_for_spanish(tmp_path: Path):
     html = render_html_edition(_edition(tmp_path, locale="es-AR")).html
 
     assert '<html lang="es-AR"' in html
+    assert "data-article-opener-format" not in html
     assert ">Número 7</p>" in html
     assert '<nav aria-label="Índice" data-edition-navigation="contents">' in html
     assert "<h2>Índice</h2>" in html
@@ -164,6 +172,98 @@ def test_html_edition_omits_empty_author_note_markup(tmp_path: Path):
 
     assert '<p class="author-note">' not in html
     assert '<span class="byline-prefix">By</span> Author &lt;&amp;&gt;' in html
+
+
+def test_illustrated_article_opener_has_shared_semantic_order_and_asset(tmp_path: Path):
+    edition = _edition(
+        tmp_path,
+        manuscript=(
+            "---\nlabel: FAITHFUL SYNTHESIS\n---\n"
+            "An opening paragraph with a [working link](https://example.test).\n\n"
+            "> A quoted continuation.\n\n"
+            "## Exact anchor\n\n"
+            "After the anchor.\n"
+        ),
+    )
+    article = replace(
+        edition.articles[0],
+        opener_art=ArticleOpenerArt(
+            path=tmp_path / "figure.png",
+            alt_text="Boy and robot connect systems.",
+            credit="Original illustration.",
+        ),
+    )
+    edition = replace(
+        edition,
+        articles=(article,),
+        raw={
+            **edition.raw,
+            "format": {"article_opener": "illustrated_paper_spots_v1"},
+        },
+    )
+
+    result = render_html_edition(edition)
+    html = result.html
+
+    assert 'data-article-opener-format="illustrated_paper_spots_v1"' in html
+    article_start = html.index('data-article-opener="illustrated_paper_spots_v1"')
+    art = html.index(
+        '<figure class="article-opener-art" data-asset-role="article_opener">',
+        article_start,
+    )
+    art_offset = html.index(
+        '<span class="article-opener-art-offset" aria-hidden="true"></span>',
+        art,
+    )
+    art_image = html.index('<img src="', art_offset)
+    label = html.index('<p class="content-label"', art)
+    title = html.index("<h1>Article &lt;&amp;&gt;</h1>", label)
+    tick = html.index('<span class="opener-tick" aria-hidden="true"></span>', title)
+    meta = html.index('<div class="opener-meta">', tick)
+    credit = html.index('<div class="opener-credit">', meta)
+    byline = html.index('<p class="byline"', credit)
+    bio = html.index('<p class="author-note">', byline)
+    source_link = html.index(
+        '<a class="source-link" data-source-link="primary"', bio
+    )
+    standfirst = html.index('<p class="standfirst">', source_link)
+    opener_end = html.index("</header>", standfirst)
+    evidence = html.index('data-figure-id="opener-figure"', opener_end)
+    continuation = html.index("<blockquote>", evidence)
+
+    assert (
+        art
+        < art_offset
+        < art_image
+        < label
+        < title
+        < tick
+        < meta
+        < credit
+        < byline
+        < bio
+        < source_link
+        < standfirst
+        < opener_end
+        < evidence
+        < continuation
+    )
+    assert '<span class="label-primary">Feature 01</span>' in html
+    assert '<span class="label-separator" aria-hidden="true"> / </span>' in html
+    assert '<span class="label-secondary">FAITHFUL SYNTHESIS</span>' in html
+    assert 'data-source-ids="source-one source-two"' in html
+    article_html = html[article_start : html.index("</article>", article_start)]
+    assert 'data-provenance="source-ids"' not in article_html
+    assert ">Sources:" not in article_html
+    assert article_html.count('data-source-link="primary"') == 1
+    assert "<figcaption>Original illustration." not in article_html
+
+    opener_asset = result.assets[0]
+    assert opener_asset.id == "article-opener-article<&>"
+    assert opener_asset.role == "article_opener"
+    assert opener_asset.alt_text == "Boy and robot connect systems."
+    assert opener_asset.credit == "Original illustration."
+    assert opener_asset.rights_status == "author_owned"
 
 
 def test_reader_keeps_real_quotation_marks_and_educates_the_straight_ones(tmp_path: Path):

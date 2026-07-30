@@ -11,6 +11,7 @@ format:
   trim: A5
   home_sheet: A4
   binding: saddle_stitch
+  article_opener: illustrated_paper_spots_v1
   max_article_pages: 7
   max_editorial_pages: 1
 art_direction_path: editions/004-unreleased/art/illustrations.yaml
@@ -45,6 +46,10 @@ articles:
   - anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
   manuscript: editions/004-unreleased/articles/frontier-lab-agent-intrusion.md
   fidelity: editions/004-unreleased/fidelity/frontier-lab-agent-intrusion.yaml
+  opener_art:
+    path: editions/004-unreleased/art/article-openers/frontier-lab-agent-intrusion.png
+    alt_text: A bespectacled boy and friendly helper robot trace a red signal through layered workshop gates and contain it in a clear box.
+    credit: Original illustration by the editors with Codex image generation.
   figures:
   - id: campaign-timeline
     decision: include
@@ -70,6 +75,10 @@ articles:
   - eval-engineering-the-step-that-turns-a-200-model-9f6f868f
   manuscript: editions/004-unreleased/articles/eval-engineering.md
   fidelity: editions/004-unreleased/fidelity/eval-engineering.yaml
+  opener_art:
+    path: editions/004-unreleased/art/article-openers/eval-engineering.png
+    alt_text: A boy and helper robot test colorful model outputs on a looping tray system while one failed sample springs back for another pass.
+    credit: Original illustration by the editors with Codex image generation.
   figures:
   - id: eval-engine
     decision: include
@@ -107,6 +116,10 @@ articles:
   - pragmatic-leverage-in-the-software-factory-09879736
   manuscript: editions/004-unreleased/articles/pragmatic-leverage.md
   fidelity: editions/004-unreleased/fidelity/pragmatic-leverage.yaml
+  opener_art:
+    path: editions/004-unreleased/art/article-openers/pragmatic-leverage.png
+    alt_text: A boy and helper robot follow a small blueprint to build one sturdy stool as a huge pile of rushed redo boxes topples harmlessly nearby.
+    credit: Original illustration by the editors with Codex image generation.
   figures:
   - id: delivery-time
     decision: include
@@ -144,6 +157,10 @@ articles:
   - 22580-from-gpt2-to-kimi3-explained-8f01b0fe
   manuscript: editions/004-unreleased/articles/from-gpt2-to-kimi3.md
   fidelity: editions/004-unreleased/fidelity/from-gpt2-to-kimi3.yaml
+  opener_art:
+    path: editions/004-unreleased/art/article-openers/from-gpt2-to-kimi3.png
+    alt_text: A boy and tool robot compare a sprawling coral attention ribbon with a compact teal memory spool as a small sequence machine lights up.
+    credit: Original illustration by the editors with Codex image generation.
   figures:
   - id: gpt2-baseline
     decision: include
@@ -183,6 +200,10 @@ articles:
   - do-not-make-the-service-bus-non-deterministic-3a92442c
   manuscript: editions/004-unreleased/articles/factory-systems-problem.md
   fidelity: editions/004-unreleased/fidelity/factory-systems-problem.yaml
+  opener_art:
+    path: editions/004-unreleased/art/article-openers/factory-systems-problem.png
+    alt_text: A boy and tool robot inspect a layered software factory with sandbox, build press, identity vault, approval gate, and a small model module moving through the system.
+    credit: Original illustration by the editors with Codex image generation.
   tail_art_path: editions/004-unreleased/art/article-tails/factory-systems-problem.png
 - id: mcp-in-a-nutshell
   title: MCP in a Nutshell
@@ -190,11 +211,16 @@ articles:
   display_emphasis: MCP
   opener_variant: edge_medallion
   author: Model Context Protocol
+  author_note: Model Context Protocol is a Series of LF Projects, LLC.
   content_mode: faithful_synthesis
   source_ids:
   - architecture-overview-ce5cb1d1
   manuscript: editions/004-unreleased/articles/mcp-in-a-nutshell.md
   fidelity: editions/004-unreleased/fidelity/mcp-in-a-nutshell.yaml
+  opener_art:
+    path: editions/004-unreleased/art/article-openers/mcp-in-a-nutshell.png
+    alt_text: A boy and compact helper robot connect a host box to document, database, and tool endpoints in a cheerful workshop.
+    credit: Original illustration by the editors with Codex image generation.
   tail_art_path: editions/004-unreleased/art/article-tails/mcp-four-vignettes.png
 - id: mcp-protocol-update
   title: The MCP Protocol Update
@@ -208,6 +234,10 @@ articles:
   - the-2026-07-28-mcp-specification-release-candida-1a1752b8
   manuscript: editions/004-unreleased/articles/mcp-protocol-update.md
   fidelity: editions/004-unreleased/fidelity/mcp-protocol-update.yaml
+  opener_art:
+    path: editions/004-unreleased/art/article-openers/mcp-protocol-update.png
+    alt_text: A boy and tool robot update a three-connector workshop, using an orange adapter after an old plug refuses a new socket beside an open approval gate.
+    credit: Original illustration by the editors with Codex image generation.
 rights:
   faithful_source_reprint: private_only_while_rights_unknown
   public_release: blocked_pending_permission_or_applicable_exception

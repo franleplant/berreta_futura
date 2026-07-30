@@ -52,11 +52,12 @@ The bundled font files and SIL Open Font License texts live under `src/magazine/
 | Violet | deep process violet | Provenance labels, figure numbers, end marks, restrained navigation |
 | Slate | neutral gray | Secondary metadata |
 | Cool gray | light neutral | Contents separators and quiet structure |
+| Cobalt | muted blue | Illustrated-opener kicker and first-paragraph drop cap |
 | Pale violet | very light tint | Code panels only |
 | White | unprinted sheet | Every page background, including the front cover |
-| Signal orange | muted vermilion | Canto vivo tab and wordmark underprint; tiny continuation and end signals inside |
+| Signal orange | muted vermilion | Canto vivo tab and wordmark underprint; illustrated-opener image offset and tick; tiny continuation and end signals |
 
-The cover artwork does not determine the interior colors. Violet is a publication-level navigation color and stays a minority of each interior page. Signal orange is the exact Canto vivo vermilion: inside the magazine it appears only as a short tick at the start of continuation rules and as the line in an article end mark. It never becomes a panel, heading color, or decorative wash. The Canto vivo cover retains the white sheet and calibrates only its artwork-matched violet, near-black, and muted vermilion inks to the approved cover proof.
+The cover artwork does not determine the interior colors. Violet is a publication-level navigation color and stays a minority of each interior page. Signal orange is the exact Canto vivo vermilion: inside the magazine it appears as a small navigation signal, including the illustrated-opener image offset and title tick, the start of continuation rules, and the line in an article end mark. It never becomes a panel, heading color, or decorative wash. The Canto vivo cover retains the white sheet and calibrates only its artwork-matched violet, near-black, and muted vermilion inks to the approved cover proof.
 
 ## A5 page architecture
 
@@ -91,7 +92,41 @@ The editorial uses the same title, byline, standfirst, and single-column reading
 
 ### Feature openers
 
-Each opener uses one consistent structure: provenance kicker, large serif title, author and author note, then a standfirst in the reading measure. An opener-anchored figure may use the available lower field; prose begins on the next page when the figure consumes that depth. `FAITHFUL EDIT`, `FAITHFUL SYNTHESIS`, `SELECTED EXTRACTS`, and `ORIGINAL SYNTHESIS` are provenance facts, never interchangeable decorations.
+`format.article_opener: illustrated_paper_spots_v1` is the permanent format for
+new editions. It requires a first-class `opener_art` declaration on every
+article. The opener is one semantic composition, in this order:
+
+1. a large landscape illustration about the article, featuring the recurring
+   boy and robot in a simple, colorful children's science-manga vignette;
+2. an inline cobalt provenance kicker such as
+   `FEATURE 06 / FAITHFUL SYNTHESIS`;
+3. a large Source Serif display title;
+4. a short signal-orange tick;
+5. author and biography at left with an unlabeled source QR at right;
+6. one quiet gray horizontal rule; and
+7. the introductory paragraph, beginning with a cobalt drop cap.
+
+The sheet is pure white. The illustration has a near-black square border and a
+small signal-orange rectangle translated 4.1pt to the right and below. This is
+not an orange border: the orange begins after the black frame's top-right and
+bottom-left corners, and extends equally beyond its right and bottom edges. It
+has no yellow page panel, decorative side bar, large duplicate feature number,
+bottom feature label, visible `SOURCE` wording, visible URL, or second rule. The
+QR resolves to the canonical URL of the article's first source. It must scan in
+PDF and remains a clickable link on the web. The opener ends after the
+introductory paragraph; the remaining article begins on the next print page.
+Empty paper below a short intro is intentional.
+
+The art is editorial material rather than a captured evidence figure. Its
+palette follows the scene and the edition direction, with muted, grainy color
+and no default yellow field. The boy and robot provide continuity, while each
+scene must communicate the particular article. `FAITHFUL EDIT`,
+`FAITHFUL SYNTHESIS`, `SELECTED EXTRACTS`, and `ORIGINAL SYNTHESIS` remain
+provenance facts, never interchangeable decorations.
+
+Historical editions without `format.article_opener` retain the legacy opener.
+This compatibility path exists to reproduce them, not as a choice for new
+editions.
 
 ### Continuation pages
 
@@ -101,7 +136,21 @@ A reference list is the one list whose items carry their own marker inside the t
 
 ### Source codes
 
-A printed page cannot be followed, so every article opener carries a QR square with the canonical URL of its **first** source id — one code per article, never one per source, because the opener already prints the whole source list. The URL itself is never set as type. **Nothing is set under the square either.** It carried a `SOURCE / nn` (`FUENTE / nn`) label in tracked violet caps, on the argument that an unnamed black square reads as a sticker; a QR code is the one mark on a sheet whose name every reader already knows, so the caption said nothing the symbol had not and put a second voice into a credit line that has one. What makes the square furniture is *where it stands* on the opener's grid, which is the same argument the kicker makes for `FEATURE nn` and costs the page no chrome. An article whose first source records no canonical URL prints nothing, and the editorial, which has no source, never does.
+A printed page cannot be followed, so every article opener carries one QR
+square for the canonical URL of its **first** source id. The URL and the word
+`SOURCE` are never set as visible type, and nothing is set under the square.
+An article whose first source records no canonical URL prints nothing. The
+editorial has no source and never prints a code.
+
+For `illustrated_paper_spots_v1`, the byline and biography stay at the left of
+the metadata row and the QR stays at the right. A single gray rule closes the
+row. The same semantic anchor becomes both the scannable printed square and the
+clickable web square, with no duplicate link at the end of the article.
+
+#### Legacy source-code geometry
+
+The following placement contract applies only to historical editions that do
+not declare `format.article_opener`.
 
 The code **opens** the title block’s own credit line: the symbol’s first dark row stands on the byline’s cap top and its first dark column on the live area’s left edge, the credit line’s own origin, where the kicker’s `FEATURE nn` and the fitted title’s first character already flush. The byline and the author note — the author’s name and who the author is — then set as **one column** an inset to its right, so the row reads square, name, biography, left to right: `[ ▪ ] | BY AUTHOR / author note`. Flush and clear are measured to the **ink**, never to the element: the four-module quiet zone lives inside the box (so the element’s own left edge is one quiet zone outside the live area), and the byline’s laid-out baseline — not a predicted one, because Pango may set a fitted title on fewer lines than the unkerned fit reserved — is the vertical anchor.
 
@@ -146,13 +195,15 @@ a missing, duplicated, undersized, non-square, or hash-drifted candidate. A
 pending round leaves the existing production cover untouched until an editor
 selects one.
 
-An edition may replace geometric tail ornaments and signature-closing filler
-with wordless editorial illustrations. The generation step remains
+An edition may use wordless editorial illustrations for every article opener,
+and may replace geometric tail ornaments and signature-closing filler with
+illustrations too. The generation step remains
 **author-time only**: `mag build` never calls an image model and never changes
 selected pixels. The edition declares `art_direction_path`, whose plan records
 one shared visual language plus an exact brief, description, credit, role, and
-committed path for every article tail and closing plate. A plan may carry that
-direction inline or name one reusable `direction_preset`; it may never do both.
+committed path for every required opener, article tail, and closing plate. A
+plan may carry that direction inline or name one reusable `direction_preset`;
+it may never do both.
 The selected preset is a first-class build input and its path and SHA-256 are
 recorded beside the plan, so improving the publication default cannot silently
 change an older edition's recipe. `uv run --locked mag illustrate
@@ -177,10 +228,13 @@ manifests record the exact files that informed the selected art.
 
 The prompt package is a reproducible editorial recipe, not an approval. An
 editor still selects the candidates and commits the chosen PNGs. Builds bind
-the plan, every article tail, and every closing plate into the packaged input
-manifest. Historical editions need no plan; once an edition declares one, a
-missing brief, uncredited image, stale path, undersized raster, or role mismatch
-is a validation error.
+the plan, every article opener, every article tail, and every closing plate
+into the packaged input manifest. For
+`format.article_opener: illustrated_paper_spots_v1`, the plan and manifest must
+contain exactly one matching `article_opener` asset per article, including its
+path, alt text, and credit. Historical editions need no plan; once an edition
+declares one, a missing brief, uncredited image, stale path, undersized raster,
+wrong orientation, or role mismatch is a validation error.
 
 Illustrations own their palette. They may use a broad family of print-safe
 colors when the edition's direction calls for it; house violet and signal
@@ -197,7 +251,18 @@ The back face is compiled through `uv run --locked mag back-cover-proof <edition
 
 ## Screen profile
 
-`mag web` translates Quiet Standard to the screen; the print stylesheet remains the authority for paper. The translation is light-only and deliberate rather than adaptive: warm paper `#F1EADB` behind near-black `#11131A` ink with ultraviolet chrome, one centered 44rem reading measure, and the bundled faces served through `@font-face` so no host font ever sets a line. Print facts keep their screen verdicts — the contents folio is hidden because its number exists only through print's `target-counter`; the source link is a visible anchor, the same editorial fact the printed page sets as a QR code; and the hyphenation opt-outs carry over unchanged, because reference lists, name rosters, and code break for no medium.
+`mag web` translates Quiet Standard to the screen; the print stylesheet remains
+the authority for paper. The translation uses pure white behind near-black ink,
+one centered 44rem reading measure, and the bundled faces served through
+`@font-face` so no host font ever sets a line. The illustrated opener preserves
+the same semantic order, art crop, orange offset, color signals, metadata
+hierarchy, QR anchor, single rule, and drop cap as print. Its layout contracts
+responsively at phone widths without horizontal overflow: the title reflows,
+the art remains landscape, and the QR keeps a touch-safe clickable area and a
+scannable square. Print facts keep their screen verdicts: the contents folio is
+hidden because its number exists only through print's `target-counter`, and
+the hyphenation opt-outs carry over unchanged because reference lists, name
+rosters, and code break for no medium.
 
 ## Guardrails
 
@@ -217,6 +282,6 @@ The back face is compiled through `uv run --locked mag back-cover-proof <edition
 - Preserve the one-page editorial and seven-page source-article limits; an edition may declare a tighter editorial budget than the two-page ceiling, never a looser one.
 - Generate every configured language on validation and build.
 - Run the render critic for every configured language; structural errors block the build.
-- Inspect every numbered render-review contact sheet after layout changes and before delivery.
+- Inspect every numbered render-review contact sheet after layout changes and before delivery. Reopen every full-page opener crop from its exact path at original resolution; do not approve from a resized preview. For the illustrated opener, explicitly check that white remains outside the black frame at the top-right and bottom-left corners before the translated orange rectangle begins.
 - Record independent approval with `mag review record`; release requires hashes matching every current language PDF.
 - Do not call an edition press-ready without a named printer profile and a passing studio preflight.

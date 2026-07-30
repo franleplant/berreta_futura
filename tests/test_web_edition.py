@@ -20,7 +20,14 @@ import pytest
 
 from magazine import web_edition
 from magazine.errors import ValidationError
-from magazine.manifest import Article, ClosingPlate, Edition, Editorial, Section
+from magazine.manifest import (
+    Article,
+    ArticleOpenerArt,
+    ClosingPlate,
+    Edition,
+    Editorial,
+    Section,
+)
 from magazine.media_schema import Figure
 from magazine.web_edition import write_web_edition
 
@@ -223,6 +230,59 @@ def test_provenance_ids_link_when_an_address_is_known_and_stay_text_when_not(tmp
 
     unmapped = write_web_edition(edition, tmp_path / "web-unmapped")
     assert "https://example.test/one" not in unmapped.pages[1].read_text(encoding="utf-8")
+
+
+def test_illustrated_opener_ships_art_and_a_clickable_qr_without_source_copy(
+    tmp_path: Path,
+):
+    edition = _edition(
+        tmp_path,
+        manuscript=(
+            "---\nlabel: FAITHFUL SYNTHESIS\n---\n"
+            "The opener introduces the article in one direct paragraph.\n\n"
+            "## First section\n\nContinuation prose.\n"
+        ),
+    )
+    article = replace(
+        edition.articles[0],
+        opener_art=ArticleOpenerArt(
+            edition.articles[0].figures[0].path,
+            "A boy and robot connect useful systems.",
+            "Original illustration.",
+        ),
+    )
+    edition = replace(
+        edition,
+        articles=(article,),
+        raw={
+            **edition.raw,
+            "format": {"article_opener": "illustrated_paper_spots_v1"},
+        },
+    )
+
+    result = write_web_edition(edition, tmp_path / "web")
+    article_html = result.pages[1].read_text(encoding="utf-8")
+
+    assert 'data-article-opener-format="illustrated_paper_spots_v1"' in article_html
+    assert 'class="article-opener"' in article_html
+    assert 'data-asset-role="article_opener"' in article_html
+    assert 'class="source-link opener-source-link"' in article_html
+    assert 'class="source-qr"' in article_html
+    assert article_html.count('data-source-link="primary"') == 1
+    assert ">https://example.test/source" not in article_html
+    assert "Sources:" not in article_html
+    assert '<a class="figure-link"' not in article_html.split(
+        'class="article-opener-art"', 1
+    )[1].split("</figure>", 1)[0]
+    opener = next(
+        web for web in result.assets if web.asset.role == "article_opener"
+    )
+    assert (result.root / opener.href).is_file()
+    code_src = re.search(r'class="source-qr" src="([^"]+)"', article_html)
+    assert code_src is not None
+    assert (result.root / code_src.group(1)).is_file()
+    whole = result.edition_document.read_text(encoding="utf-8")
+    assert whole.count('class="source-qr"') == 1
 
 
 def test_print_furniture_is_dropped_tail_art_and_closing_plates_bytes_and_all(tmp_path: Path):

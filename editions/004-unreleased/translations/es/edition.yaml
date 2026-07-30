@@ -2,7 +2,7 @@ schema_version: 1
 language: es
 source_language: en
 locale: es
-base_copy_sha256: 4cce9d7338301a002dbfd16c600a5a609db96ff4522922e2e5d6199290ceef70
+base_copy_sha256: 8088f0f36f46fe6541874a52dc58eb2265e6bc3a0d245da28cf0d7513b10084c
 title: Los sistemas alrededor del modelo
 subtitle: Protocolos, evaluaciones, arquitecturas y el trabajo operativo que convierte la capacidad de los modelos
   en sistemas confiables
@@ -114,6 +114,7 @@ articles:
   title: MCP en pocas palabras
   short_title: MCP en pocas palabras
   display_emphasis: MCP en pocas palabras
+  author_note: Model Context Protocol es una iniciativa de LF Projects, LLC.
   manuscript: articles/mcp-in-a-nutshell.md
   source_sha256: ee3ec0d454816c298ddebd80db963c9685a11d985c7df426aba3fa9e44024781
 - id: mcp-protocol-update
@@ -129,5 +130,5 @@ articles:
   display_emphasis: sistemas
   author_note: Geoffrey Huntley es el creador del bucle Ralph.
   manuscript: articles/factory-systems-problem.md
-  source_sha256: 13b7f600ef24405ff8c108ebd1c8eea3700a6d3b315f76e8448a6b4724de90cd
+  source_sha256: f51bbbb1bec4e25697d468bfe4b30f8abe13ae095798a439f7d3c22ab3adc4de
 sections: []

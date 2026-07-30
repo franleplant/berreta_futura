@@ -158,6 +158,49 @@ def test_scaffold_explicit_subset_preserves_unselected_articles(tmp_path: Path):
     assert all(row["asset_sha256"] == "PENDING" for row in plan["assets"])
 
 
+def test_illustrated_format_scaffolds_one_opener_mapping_per_article(tmp_path: Path):
+    edition_dir = _project(tmp_path)
+    manifest_path = edition_dir / "edition.yaml"
+    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    manifest["format"] = {"article_opener": "illustrated_paper_spots_v1"}
+    manifest_path.write_text(
+        yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+    )
+    brief = _brief(articles=())
+    brief["assets"] = [
+        *[
+            {
+                "id": f"opener-{article_id}",
+                "role": "article_opener",
+                "article_id": article_id,
+                "subject": f"A useful opener for {article_id}.",
+                "composition": "A wide central scene.",
+                "alt_text": f"A useful opener for {article_id}.",
+                "credit": "Original illustration by the editors.",
+            }
+            for article_id in ("one", "two")
+        ],
+        *brief["assets"],
+    ]
+
+    IllustrationStudio(tmp_path).scaffold(brief)
+
+    updated = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    for article in updated["articles"]:
+        opener = article["opener_art"]
+        assert opener["path"].endswith(
+            f"/article-openers/{article['id']}.png"
+        )
+        assert opener["alt_text"] == f"A useful opener for {article['id']}."
+    plan = yaml.safe_load(
+        (edition_dir / "art" / "illustrations.yaml").read_text(encoding="utf-8")
+    )
+    assert [row["role"] for row in plan["assets"][:2]] == [
+        "article_opener",
+        "article_opener",
+    ]
+
+
 def test_status_separates_missing_brief_prompt_ready_and_ready(tmp_path: Path):
     edition_dir = _project(tmp_path)
     studio = IllustrationStudio(tmp_path)

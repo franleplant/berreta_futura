@@ -16,8 +16,9 @@ from PIL import Image
 import magazine.weasyprint_adapter as adapter
 from magazine.errors import ValidationError
 from magazine.html_edition import HtmlAsset, render_html_edition
-from magazine.manifest import Edition
+from magazine.manifest import ArticleOpenerArt, Edition
 from magazine.reader_layout import RenderLayout
+from magazine.render_critic import _render_crop_page
 from magazine.weasyprint_adapter import (
     WEASYPRINT_DESIGN,
     _apply_source_codes,
@@ -187,7 +188,7 @@ def _stub_reader_document(
     )
     figures: list[_Box] = []
     for asset in assets:
-        if asset.role not in {"figure", "article_tail", "closing_plate"}:
+        if asset.role not in {"figure", "article_opener", "article_tail", "closing_plate"}:
             continue
         image = _Box("img", element=_Element("img", src=asset.src), x=0, y=0, width=100, height=50)
         if asset.role != "figure":
@@ -2012,6 +2013,349 @@ def test_a_figureless_opener_field_follows_its_credit_block_not_a_constant(tmp_p
     assert _painted_baseline_from_page_foot(
         next(_line_boxes(standfirst)), standfirst
     ) == pytest.approx(543.2756 - field - _NUDGE, abs=5e-4)
+
+
+def _illustrated_edition(tmp_path: Path) -> Edition:
+    edition = _raster_edition(
+        tmp_path,
+        manuscript=(
+            "---\nlabel: FAITHFUL SYNTHESIS\n---\n"
+            "The first paragraph is the standfirst placed inside the illustrated "
+            "opener header.\n\n"
+            "Continuation prose begins on the next page.\n"
+        ),
+    )
+    article = replace(
+        edition.articles[0],
+        opener_art=ArticleOpenerArt(
+            path=tmp_path / "figure.png",
+            alt_text="A boy and robot connect a set of tools.",
+            credit="Original illustration.",
+        ),
+    )
+    return replace(
+        edition,
+        articles=(article,),
+        raw={
+            **edition.raw,
+            "format": {"article_opener": "illustrated_paper_spots_v1"},
+        },
+    )
+
+
+def test_the_illustrated_opener_uses_its_own_two_line_title_fit(tmp_path: Path):
+    edition = _illustrated_edition(tmp_path)
+    tree = _print_tree(edition)
+
+    adapter._pin_opener_fields(tree, edition)
+
+    header = next(
+        child
+        for article in tree.iter("article")
+        for child in article
+        if child.tag == "header"
+    )
+    title = next(header.iter("h1"))
+    size, lines = adapter._fitted_display(
+        str(edition.articles[0].title),
+        adapter._ILLUSTRATED_OPENER_RAIL_POINTS,
+        adapter._ILLUSTRATED_OPENER_TITLE_BOX[0],
+        maximum=adapter._ILLUSTRATED_OPENER_TITLE_MAX,
+        minimum=adapter._ILLUSTRATED_OPENER_TITLE_BOX[1],
+        maximum_lines=adapter._ILLUSTRATED_OPENER_TITLE_MAX_LINES,
+        leading_ratio=adapter._OPENER_TITLE_LEADING_RATIO,
+    )
+
+    assert header.get("style") is None, "the new header is natural flow, not a legacy field"
+    assert header.get("data-title-lines") == str(len(lines))
+    assert title.get("style") == (
+        f"font-size: {size:.4f}pt; "
+        f"line-height: {size * adapter._OPENER_TITLE_LEADING_RATIO:.4f}pt"
+    )
+    assert len(lines) <= 2
+
+
+def test_the_illustrated_opener_qr_belongs_to_the_metadata_link(tmp_path: Path):
+    edition = _illustrated_edition(tmp_path)
+    tree = _print_tree(edition)
+    code = adapter._opener_source_codes(edition, _Document((_Page(_Box()),)))[0]
+
+    assert code.side == pytest.approx(adapter._ILLUSTRATED_OPENER_CODE_SIDE_POINTS)
+    assert code.left == 0 and code.top == 0, "CSS grid placement is not absolute"
+
+    adapter._apply_source_codes(tree, {code.article_id: code})
+
+    header = next(
+        child
+        for article in tree.iter("article")
+        for child in article
+        if child.tag == "header"
+    )
+    link = next(
+        item
+        for item in header.iter("a")
+        if "source-link" in adapter._element_classes(item)
+    )
+    image = next(link.iter("img"))
+    byline = next(
+        item for item in header.iter("p") if "byline" in adapter._element_classes(item)
+    )
+
+    assert link.text is None
+    assert image.get("data-source-code") == "opener"
+    assert image.get("style") == f"width: {code.side:.4f}pt; height: {code.side:.4f}pt"
+    assert "left:" not in image.get("style") and "top:" not in image.get("style")
+    assert byline.get("style") is None, "the metadata grid owns the credit column"
+
+
+def test_the_illustrated_opener_print_css_locks_the_approved_spot_geometry():
+    css = _read_print_css()
+    scope = 'article[data-article-opener="illustrated_paper_spots_v1"]'
+
+    assert (
+        'article:not([data-article-opener="illustrated_paper_spots_v1"])'
+        '\n  > header:has(+ figure[data-anchor="__opener__"]) .author-note'
+    ) in css
+    assert f"{scope} > header.article-opener" in css
+    assert "break-after: page;" in css
+    assert "margin-left: -11.5pt;" in css
+    assert "width: 348pt;" in css
+    assert "height: 203pt;" in css
+    assert "border: 2.4pt solid rgb(23 25 28);" in css
+    assert "background: rgb(240 87 56);" in css
+    assert ".article-opener-art-offset {" in css
+    assert "left: 4.1pt;" in css and "top: 4.1pt;" in css
+    assert "padding: 0 4.1pt 4.1pt 0;" not in css
+    assert "grid-template-columns: 1fr 41pt;" in css
+    assert ".opener-tick {" in css
+    assert ".opener-meta::before" not in css
+    assert "grid-column: 1;" in css and "grid-column: 2;" in css
+    assert "border-bottom: 1pt solid rgb(200 192 179);" in css
+    assert "width: 14.5pt;" in css and "height: 2.4pt;" in css
+    assert "font-size: 10.2pt;" in css and "line-height: 14.4pt;" in css
+    assert "font-size: 18.7pt;" in css
+
+
+def test_the_illustrated_header_owns_one_page_and_sets_the_art_frame(tmp_path: Path):
+    art = tmp_path / "opener.png"
+    Image.new("RGB", (1600, 900), "white").save(art)
+    document = _typeset_document(
+        '<article data-article-id="a" '
+        'data-article-opener="illustrated_paper_spots_v1">'
+        '<header class="article-opener">'
+        '<figure class="article-opener-art" data-asset-role="article_opener">'
+        '<span class="article-opener-art-offset" aria-hidden="true"></span>'
+        f'<img src="{art.as_uri()}" alt=""></figure>'
+        '<p class="content-label"><span class="label-primary">Feature 06</span>'
+        '<span class="label-separator"> / </span>'
+        '<span class="label-secondary">Faithful synthesis</span></p>'
+        '<h1 style="font-size: 32.5pt; line-height: 31.2pt">A connected system</h1>'
+        '<span class="opener-tick" aria-hidden="true"></span>'
+        '<div class="opener-meta"><div class="opener-credit">'
+        '<p class="byline"><span class="byline-prefix">By</span> Author</p>'
+        '<p class="author-note">A short biography.</p></div>'
+        '<a class="source-link" href="https://example.test/source"></a></div>'
+        '<p class="standfirst">The opening idea belongs to the designed first page.</p>'
+        "</header>"
+        "<p>Continuation prose begins on the next page.</p>"
+        "</article>"
+    )
+
+    page_text = [
+        " ".join(
+            box.text
+            for box in adapter._walk_boxes(page._page_box)
+            if type(box).__name__ == "TextBox"
+        )
+        for page in document.pages
+    ]
+    assert "opening idea" in page_text[0]
+    assert "Continuation prose" not in page_text[0]
+    assert "Continuation prose" in page_text[1]
+
+    first_page = document.pages[0]
+    header = _block_by_class(first_page, "article-opener")
+    art_image = next(
+        box
+        for box in adapter._walk_boxes(first_page._page_box)
+        if getattr(box, "element_tag", None) == "img"
+        and getattr(box, "element", None) is not None
+        and box.element.get("src") == art.as_uri()
+    )
+    frame_width = (
+        art_image.width
+        + art_image.style["border_left_width"]
+        + art_image.style["border_right_width"]
+    ) * _POINTS_PER_CSS_PIXEL
+    frame_height = (
+        art_image.height
+        + art_image.style["border_top_width"]
+        + art_image.style["border_bottom_width"]
+    ) * _POINTS_PER_CSS_PIXEL
+
+    assert header.width * _POINTS_PER_CSS_PIXEL == pytest.approx(348.0)
+    assert frame_width == pytest.approx(348.0)
+    assert frame_height == pytest.approx(203.0)
+
+
+def test_the_illustration_orange_is_a_true_down_right_offset_in_the_pdf(
+    tmp_path: Path,
+):
+    """The orange rectangle begins down/right, rather than touching two frame corners."""
+    edition = _illustrated_edition(tmp_path)
+    HTML, CSS, FontConfiguration = _weasyprint_types()
+    font_config = FontConfiguration()
+    stylesheet = CSS(
+        string=_read_print_css(),
+        base_url=resources.files("magazine").joinpath("assets").as_uri() + "/",
+        font_config=font_config,
+    )
+    semantic = render_html_edition(edition)
+    document, _html, _plan = adapter._render_to_signature(
+        HTML,
+        semantic.html,
+        stylesheet,
+        edition,
+        font_config=font_config,
+    )
+    opener_page = next(
+        page_number
+        for page_number, page in enumerate(document.pages, start=1)
+        if any(
+            type(box).__name__ == "BlockBox"
+            and getattr(box, "element_tag", None) == "header"
+            and adapter._is_illustrated_header(box)
+            for box in adapter._walk_boxes(page._page_box)
+        )
+    )
+    pdf = tmp_path / "offset-shadow.pdf"
+    pdf.write_bytes(document.write_pdf())
+    raster = _render_crop_page(pdf, opener_page, tmp_path / "offset-shadow-raster")
+
+    with Image.open(raster) as opened:
+        upper_page = opened.convert("RGB").crop((0, 0, opened.width, 1000))
+
+    def exact_color_bbox(color: tuple[int, int, int]) -> tuple[int, int, int, int]:
+        mask = Image.new("1", upper_page.size)
+        mask.putdata(
+            [pixel == color for pixel in upper_page.get_flattened_data()]
+        )
+        bbox = mask.getbbox()
+        assert bbox is not None
+        return bbox
+
+    orange = exact_color_bbox((240, 87, 56))
+    frame = exact_color_bbox((23, 25, 28))
+    offset_x = orange[0] - frame[0]
+    offset_y = orange[1] - frame[1]
+
+    assert offset_x == pytest.approx(17, abs=2)
+    assert offset_y == pytest.approx(17, abs=2)
+    assert orange[2] - frame[2] == pytest.approx(17, abs=2)
+    assert orange[3] - frame[3] == pytest.approx(17, abs=2)
+
+
+def test_the_illustrated_drop_cap_and_long_intro_lay_out_together(tmp_path: Path):
+    """A content-rich intro compacts, stays whole and releases body on page two."""
+    edition = _illustrated_edition(tmp_path)
+    edition.articles[0].manuscript.write_text(
+        "---\nlabel: FAITHFUL SYNTHESIS\n---\n"
+        "Over roughly two and a half days inside our infrastructure, an autonomous "
+        "AI agent driven by a combination of OpenAI models ran an end-to-end "
+        "intrusion against our platform. It was not one brilliant exploit. It was "
+        "thousands of small decisions executed at machine speed across short-lived "
+        "sandboxes, with command and control staged on ordinary public web "
+        "services.\n\nContinuation prose begins on the next page.\n",
+        encoding="utf-8",
+    )
+    edition = replace(
+        edition,
+        articles=(
+            replace(
+                edition.articles[0],
+                title="Anatomy of a Frontier Lab Agent Intrusion",
+                short_title="Agent Intrusion",
+                display_emphasis="Intrusion",
+                author=(
+                    "Hugo Larcher, Adrien Carreira, raphael g, Christophe Rannou"
+                ),
+                author_note=(
+                    "Hugo Larcher, Adrien Carreira, raphael g, and Christophe "
+                    "Rannou are contributors publishing through Hugging Face."
+                ),
+                source_url="https://example.test/frontier-agent-intrusion",
+                figures=(),
+                tail_art=None,
+            ),
+        ),
+    )
+    tree = _print_tree(edition)
+    adapter._pin_opener_fields(tree, edition)
+    header = next(
+        item
+        for item in tree.iter("header")
+        if "article-opener" in adapter._element_classes(item)
+    )
+    assert header.get("data-opener-density") == "compact"
+
+    HTML, CSS, FontConfiguration = _weasyprint_types()
+    font_config = FontConfiguration()
+    stylesheet = CSS(
+        string=_read_print_css(),
+        base_url=resources.files("magazine").joinpath("assets").as_uri() + "/",
+        font_config=font_config,
+    )
+    semantic = render_html_edition(edition)
+    document, _html, _plan = adapter._render_to_signature(
+        HTML,
+        semantic.html,
+        stylesheet,
+        edition,
+        font_config=font_config,
+    )
+    page_text = [
+        " ".join(
+            box.text
+            for box in adapter._walk_boxes(page._page_box)
+            if type(box).__name__ == "TextBox"
+        )
+        for page in document.pages
+    ]
+    opener_pages = [
+        page_number
+        for page_number, page in enumerate(document.pages, start=1)
+        if any(
+            type(box).__name__ == "BlockBox"
+            and getattr(box, "element_tag", None) == "header"
+            and adapter._is_illustrated_header(box)
+            for box in adapter._walk_boxes(page._page_box)
+        )
+    ]
+
+    assert len(opener_pages) == 1
+    opener_page = opener_pages[0]
+    assert "ordinary public web services" in page_text[opener_page - 1]
+    assert "Continuation prose" not in page_text[opener_page - 1]
+    assert "Continuation prose" in page_text[opener_page]
+    adapter._validate_illustrated_opener_integrity(document)
+
+
+def test_article_opener_art_is_required_on_page_but_not_a_figure_placement():
+    asset = HtmlAsset(
+        id="article-opener-article",
+        role="article_opener",
+        path=Path("/tmp/opener.png"),
+        src="file:///tmp/opener.png",
+        alt_text="A boy and robot.",
+        article_id="article",
+        rights_status="author_owned",
+    )
+    document = _stub_reader_document((asset,), article_id="article")
+
+    layout = _measure_layout(document, (asset,), WEASYPRINT_DESIGN)
+
+    assert layout.figure_placements == ()
+    assert layout.article_pages == {"article": 1}
 
 
 # The +0.005pt rasterizer nudge on `@page`, which every measured baseline below

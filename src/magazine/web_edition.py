@@ -23,9 +23,10 @@ of its verdicts are content decisions this medium reverses mechanically:
   screen each named id whose address the caller supplies (``source_urls``)
   becomes a working link, because a screen can follow where paper can only
   print.
-* The bottom ``source-link`` anchor -- the semantic hook print renders as a QR
-  code -- is dropped: the linked provenance line above already answers it, and
-  answering twice is clutter.
+* A legacy bottom ``source-link`` anchor is dropped because the linked
+  provenance line above already answers it.  The illustrated opener keeps that
+  same semantic anchor in its metadata row and fills it with a deterministic,
+  clickable QR so screen and paper share the approved composition.
 * Tail art is dropped entirely, page and bytes both: the ornament closes a
   printed page, and a scrolling page is closed by its own end mark.
 * Closing plates are dropped the same way, page and bytes both.  They are
@@ -47,6 +48,7 @@ from __future__ import annotations
 
 import re
 import shutil
+from io import BytesIO
 from collections.abc import Mapping
 from dataclasses import dataclass
 from html import escape
@@ -92,6 +94,11 @@ _PROVENANCE_SPAN = re.compile(r'<span data-source-id="([^"]*)">(.*?)</span>')
 # shows the figure at the reading measure, so the image itself must link to
 # the shipped bytes a reader can open at native size.
 _FIGURE_IMAGE = re.compile(r'(<img src="([^"]*)"[^>]*>)')
+_SOURCE_LINK_LINE = re.compile(
+    r'^(?P<indent>\s*)<a class="source-link" '
+    r'data-source-link="primary" data-source-id="(?P<source_id>[^"]*)" '
+    r'href="(?P<href>[^"]*)">.*</a>$'
+)
 _PIECE_OPENING = re.compile(r'^    <(article|section) id="([^"]*)"')
 _HEADING_LINE = re.compile(r"^\s*<h1>(.*)</h1>$")
 _CONTENTS_HEADING = re.compile(r"^\s*<h2>(.*)</h2>$")
@@ -197,7 +204,9 @@ def write_web_edition(
     destination.mkdir(parents=True, exist_ok=True)
 
     web_assets, chrome = _materialize_assets(semantic.assets, destination, wordmark, favicon)
-    html = _drop_print_only_lines(semantic.html)
+    source_codes = _materialize_source_codes(edition, destination, web_assets)
+    html = _install_illustrated_source_codes(semantic.html, source_codes)
+    html = _drop_print_only_lines(html)
     html = _number_provenance(html, source_urls or {})
     html = _rewrite_sources(html, web_assets)
     html = _link_figures(html)
@@ -312,6 +321,88 @@ def _materialize_assets(
 
 def _sanitize(value: str) -> str:
     return _UNSAFE_NAME_CHARACTERS.sub("-", value)
+
+
+def _materialize_source_codes(
+    edition: Edition,
+    destination: Path,
+    web_assets: tuple[WebAsset, ...],
+) -> dict[str, str]:
+    """Write one deterministic SVG QR per illustrated primary source.
+
+    The semantic anchor remains the provenance fact.  This helper only gives
+    its screen presentation bytes, using the same canonical URL print encodes.
+    """
+
+    if not any(getattr(article, "opener_art", None) for article in edition.articles):
+        return {}
+    directory = destination / "assets"
+    claimed = {Path(web.href).name.casefold() for web in web_assets}
+    result: dict[str, str] = {}
+    for article in edition.articles:
+        if getattr(article, "opener_art", None) is None or not article.source_url:
+            continue
+        source_id = article.source_ids[0] if article.source_ids else article.id
+        if source_id in result:
+            continue
+        name = f"source-code-{_sanitize(source_id)}.svg"
+        if name.casefold() in claimed:
+            raise ValidationError(
+                f"web source-code filename collision at assets/{name}"
+            )
+        claimed.add(name.casefold())
+        payload = BytesIO()
+        try:
+            import segno
+
+            segno.make(article.source_url, error="L", micro=False).save(
+                payload,
+                kind="svg",
+                scale=1,
+                border=4,
+                dark="#17191c",
+                light="#ffffff",
+                xmldecl=False,
+                svgns=True,
+                nl=False,
+            )
+        except Exception as exc:
+            raise ValidationError(
+                f"Could not generate web source code for article {article.id}: {exc}"
+            ) from exc
+        (directory / name).write_bytes(payload.getvalue())
+        result[source_id] = f"assets/{name}"
+    return result
+
+
+def _install_illustrated_source_codes(
+    html: str, source_codes: Mapping[str, str]
+) -> str:
+    """Fill source links inside illustrated openers and leave legacy links alone."""
+
+    lines: list[str] = []
+    in_illustrated_opener = False
+    for line in html.split("\n"):
+        if '<header class="article-opener">' in line:
+            in_illustrated_opener = True
+        match = _SOURCE_LINK_LINE.match(line) if in_illustrated_opener else None
+        if match is not None:
+            source_id = match.group("source_id")
+            code = source_codes.get(source_id)
+            if code is None:
+                raise ValidationError(
+                    f"Illustrated opener source link {source_id!r} has no web QR asset"
+                )
+            line = (
+                f'{match.group("indent")}<a class="source-link opener-source-link" '
+                f'data-source-link="primary" data-source-id="{source_id}" '
+                f'href="{match.group("href")}" aria-label="{match.group("href")}">'
+                f'<img class="source-qr" src="{_attr(code)}" alt=""></a>'
+            )
+        lines.append(line)
+        if in_illustrated_opener and line.strip() == "</header>":
+            in_illustrated_opener = False
+    return "\n".join(lines)
 
 
 def _drop_print_only_lines(html: str) -> str:

@@ -45,9 +45,10 @@ back.
 Creative studios are intentionally outside `run`. The Cover Studio owns
 append-only candidate rounds, computed asset hashes, prompt evidence, all-round
 localized full-cover proofs, comparison sheets, and an explicit atomic
-selection. The Illustration Studio owns an explicit subset of article tails
-and closing plates, prompt packages, validated asset registration, and review
-sheets. Neither studio invokes image generation. Their revisions support
+selection. The Illustration Studio owns article openers plus an explicit subset
+of article tails and closing plates, prompt packages, validated asset
+registration, and review sheets. Neither studio invokes image generation.
+Their revisions support
 optimistic concurrency so a stale caller refuses instead of replacing newer
 work.
 
@@ -77,9 +78,10 @@ lead URL
   -> transactional manuscript, fidelity, manifest, and translation staging
   -> faithful manuscript + editorial patches
   -> seven-page article-budget check (faithful synthesis when over budget)
+  -> emergent-narrative editorial drafted under docs/WRITING_RULES.md
   -> titled one-page editorial-budget check (per-edition, two-page ceiling)
   -> append-only cover rounds + full-cover comparisons + human selection
-  -> explicit interior-art inventory + validated registered assets
+  -> explicit opener and interior-art inventory + validated registered assets
   -> approved content digest
   -> canonical front/back SVGs -> one-page cover PDFs -> proof PNGs
   -> deterministic interior layout
@@ -120,6 +122,7 @@ Canonical authored material:
 - edition manifests and briefs;
 - approved manuscripts and clearly labeled editor text;
 - cover direction and selected artwork;
+- article-opener art declarations and committed opener images;
 - `design/covers/canto-vivo/design.toml` and approved cover references;
 - hash-bound independent render-review decisions;
 - decisions tied to revisions.
@@ -145,7 +148,7 @@ Production and recorded/fixture adapters justify seams for web retrieval and AI 
 
 Editorial jobs receive immutable artifact references and schema-constrained tasks. Each run records source hashes, prompt and schema versions, model configuration, tool versions, timing, trace location, and output hash. Parallel agents write isolated results; the coordinator validates and merges them.
 
-Recommended roles are source researcher, article production editor, evidence checker, copy editor, editorial writer, art director, and visual proof reviewer. Faithful article production uses patch proposals rather than free rewriting.
+Recommended roles are source researcher, article production editor, evidence checker, copy editor, editorial writer, art director, and visual proof reviewer. Faithful article production uses patch proposals rather than free rewriting. The editorial writer applies `docs/WRITING_RULES.md` to one original unifying idea, set of ideas, or emergent narrative across the edition, never to an article-by-article summary.
 
 ## Output profiles
 
@@ -154,4 +157,17 @@ Recommended roles are source researcher, article production editor, evidence che
 - Studio: printer-specific trim, bleed, output intent, PDF/X target, image limits, font rules, and binding geometry. This profile remains blocked until a printer contract exists.
 - Web: per-language, self-contained HTML directory for screens (`mag web`). Private profile: never part of a build or release package, and outside the hash-bound render review, which binds PDFs only.
 
-Print and web output share one renderer-neutral seam: `render_html_edition` produces the semantic edition both adapters consume. Page geometry and print policy stay in the WeasyPrint adapter; screen policy stays in the web adapter; neither leaks into the seam.
+Print and web output share one renderer-neutral seam: `render_html_edition`
+produces the semantic edition both adapters consume. When
+`format.article_opener` is `illustrated_paper_spots_v1`, that seam emits one
+`article-opener` header containing the first-class art, inline provenance
+kicker, title, author and biography, source anchor, and first manuscript
+paragraph. The opener art is not a captured evidence figure. The source anchor
+retains the canonical URL as semantic text for provenance and accessibility.
+The PDF adapter replaces its visible presentation with a verified QR, while
+the web adapter presents it as a clickable QR, so neither finished output shows
+the URL or a `SOURCE` label. The print adapter also forces the remaining
+manuscript onto the next page. Page geometry and print policy stay in the
+WeasyPrint adapter; responsive screen policy stays in the web adapter; neither
+leaks into the seam. Editions without the format key keep the legacy semantic
+and adapter paths for reproducible historical builds.

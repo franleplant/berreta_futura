@@ -7,8 +7,6 @@ content_mode: faithful_edit
 label: EDICIÓN FIEL
 ---
 
-## Las fábricas de software son muy reales
-
 Las fábricas de software son reales, pero debemos ser realistas. La fábrica misma no está resuelta; los innovadores aún descubren prácticas y piezas.
 
 Si alguien te vende una fábrica y no pertenece al pequeño grupo de startups creadas en los últimos seis meses ni a las cerca de diez personas que llevan dos años intentándolo y fracasando, te vende humo. Aún no está resuelto, pero el rompecabezas avanza cada día.

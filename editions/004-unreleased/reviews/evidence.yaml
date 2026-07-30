@@ -1,12 +1,12 @@
 schema_version: 1
 edition_id: 004-unreleased
-reviewer: Codex evidence audit
-reviewed_at: '2026-07-30T01:25:01+00:00'
+reviewer: Codex adversarial evidence auditor
+reviewed_at: '2026-07-30T14:58:08+00:00'
 result: approved
 findings: []
-notes: Compared the three X post extraction bodies, the final faithful-edit manuscript, and every ledger
-  mapping. All substantive source claims, qualifications, examples, and conclusions are accounted for
-  exactly once; social-post asides and marker cleanup are explicitly logged.
+notes: Re-audited current manuscript and fidelity ledger against all three pinned extraction bodies. Redundant
+  source heading is logged as a substantive cut; its proposition remains once in the opener. No fidelity
+  findings.
 articles:
   frontier-lab-agent-intrusion:
     reviewed_at: '2026-07-29T19:17:17+00:00'
@@ -41,9 +41,9 @@ articles:
         body_sha256: f69c8b4a3825d7c13a5f06dd7a95c96ce7bf961a44ae602c4ff2bd2aee8a4e1f
         file_sha256: 50c0be5f80cc59040d148268f7338eb28b0c94a99eb14f673df8e43218814bed
   factory-systems-problem:
-    reviewed_at: '2026-07-30T01:25:01+00:00'
-    manuscript_sha256: 13b7f600ef24405ff8c108ebd1c8eea3700a6d3b315f76e8448a6b4724de90cd
-    ledger_sha256: ed1341eb2e4392d5c107664551f94e77302534d1fed160b2ba414b1628ba2f48
+    reviewed_at: '2026-07-30T14:58:08+00:00'
+    manuscript_sha256: f51bbbb1bec4e25697d468bfe4b30f8abe13ae095798a439f7d3c22ab3adc4de
+    ledger_sha256: ee0e8fabc688e8b8b37fa117d1d17acd095812e8218a6953b76a71c24598cd08
     source_extractions:
       software-factories-are-super-real-but-the-factor-ab8ad3ab:
         body_sha256: c1e72b77c8e16a6f7aed9b385d237243f16afad51f21d28837711ed3d94e96f3
