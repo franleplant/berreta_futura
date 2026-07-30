@@ -1,8 +1,21 @@
 # Copy this file into editions/<edition-id>/art/illustrations.yaml and replace
-# the example asset with the edition's exact illustration inventory.
+# the example assets with the edition's exact illustration inventory.
 schema_version: 1
 direction_preset: art-directions/playful-science-vignettes.yaml
 assets:
+- id: opener-example-article
+  role: article_opener
+  article_id: example-article
+  art_path: editions/issue-001/art/article-openers/example-article.png
+  subject: >-
+    Describe one simple, funny visual proposition that expresses the article's
+    central idea through the recurring boy and helper robot.
+  composition: >-
+    One wide self-contained scene. Keep the cast, gesture, and essential action
+    inside the central crop. Leave all title, metadata, and QR typography to the
+    layout pipeline.
+  alt_text: A concise description of the finished opener illustration.
+  credit: Original illustration by the editors with Codex image generation.
 - id: tail-example-article
   role: article_tail
   article_id: example-article

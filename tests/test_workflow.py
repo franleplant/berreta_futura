@@ -305,6 +305,41 @@ def _add_complete_art(root: Path, manifest: dict) -> None:
     )
 
 
+def _add_article_opener(root: Path) -> None:
+    edition_dir = root / "editions" / EDITION_ID
+    opener = edition_dir / "art" / "article-opener.png"
+    Image.new("RGB", (1600, 900), (70, 110, 150)).save(opener)
+
+    manifest_path = edition_dir / "edition.yaml"
+    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    manifest["format"] = {
+        "article_opener": "illustrated_paper_spots_v1",
+    }
+    manifest["articles"][0]["author_note"] = "Author writes about evidence."
+    manifest["articles"][0]["opener_art"] = {
+        "path": f"editions/{EDITION_ID}/art/article-opener.png",
+        "alt_text": "A boy and robot inspect the evidence.",
+        "credit": "Original illustration by the editors.",
+    }
+    _write_yaml(manifest_path, manifest)
+
+    plan_path = edition_dir / "art" / "illustrations.yaml"
+    plan = yaml.safe_load(plan_path.read_text(encoding="utf-8"))
+    plan["assets"].append(
+        {
+            "id": "article-opener",
+            "role": "article_opener",
+            "article_id": "article",
+            "art_path": f"editions/{EDITION_ID}/art/article-opener.png",
+            "subject": "A boy and robot inspect the evidence.",
+            "composition": "A wide workshop scene.",
+            "alt_text": "A boy and robot inspect the evidence.",
+            "credit": "Original illustration by the editors.",
+        }
+    )
+    _write_yaml(plan_path, plan)
+
+
 def _write_build(root: Path) -> None:
     package = root / "output" / EDITION_ID
     (package / "home").mkdir(parents=True, exist_ok=True)
@@ -323,6 +358,12 @@ def _write_build(root: Path) -> None:
         root / "editions" / EDITION_ID / manifest["cover"]["art_path"]
     )
     tail_art = root / manifest["articles"][0]["tail_art_path"]
+    opener_art_value = manifest["articles"][0].get("opener_art")
+    opener_art = (
+        root / opener_art_value["path"]
+        if isinstance(opener_art_value, dict)
+        else None
+    )
     source_record = (
         root / "library" / "sources" / SOURCE_ID / "record.yaml"
     )
@@ -360,6 +401,11 @@ def _write_build(root: Path) -> None:
                             "id": "article",
                             "manuscript": _file_entry(root, manuscript),
                             "fidelity": _file_entry(root, ledger),
+                            "opener_art": (
+                                _file_entry(root, opener_art)
+                                if opener_art is not None
+                                else None
+                            ),
                             "tail_art": _file_entry(root, tail_art),
                         }
                     ],
@@ -875,6 +921,19 @@ def test_build_manifest_requires_the_complete_current_input_inventory(
     assert build.details["languages"]["en"]["stale_inputs"] == [
         f"missing input binding: editions/{EDITION_ID}/fidelity/article.yaml"
     ]
+
+
+def test_build_inventory_accepts_article_opener_art_binding(tmp_path: Path):
+    _make_project(tmp_path, extraction=True, complete_art=True)
+    _add_article_opener(tmp_path)
+    _write_build(tmp_path)
+
+    build = Workflow(tmp_path, adapter=BuildAdapter()).status(
+        EDITION_ID
+    ).checkpoint("build")
+
+    assert build.details["languages"]["en"]["stale_inputs"] == []
+    assert build.details["stale_languages"] == []
 
 
 def test_build_manifest_rejects_malformed_hashes_and_escaping_paths(

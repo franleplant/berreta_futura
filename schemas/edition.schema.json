@@ -10,6 +10,14 @@
     "title": {"type": "string", "minLength": 1},
     "publication_date": {"type": "string", "format": "date"},
     "editorial": {"type": "string"},
+    "format": {
+      "type": "object",
+      "properties": {
+        "article_opener": {"enum": ["illustrated_paper_spots_v1"]}
+      },
+      "additionalProperties": true
+    },
+    "art_direction_path": {"type": "string", "minLength": 1},
     "cover": {
       "type": "object",
       "required": ["headline"],
@@ -35,6 +43,16 @@
           "source_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}},
           "manuscript": {"type": "string"},
           "fidelity": {"type": "string"},
+          "opener_art": {
+            "type": "object",
+            "required": ["path", "alt_text", "credit"],
+            "properties": {
+              "path": {"type": "string", "minLength": 1},
+              "alt_text": {"type": "string", "minLength": 1},
+              "credit": {"type": "string", "minLength": 1}
+            },
+            "additionalProperties": false
+          },
           "figures": {
             "type": "array",
             "maxItems": 3,
@@ -63,5 +81,31 @@
         }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "format": {
+            "type": "object",
+            "properties": {
+              "article_opener": {"const": "illustrated_paper_spots_v1"}
+            },
+            "required": ["article_opener"]
+          }
+        },
+        "required": ["format"]
+      },
+      "then": {
+        "required": ["art_direction_path"],
+        "properties": {
+          "articles": {
+            "items": {
+              "required": ["opener_art"]
+            }
+          }
+        }
+      }
+    }
+  ]
 }

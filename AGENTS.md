@@ -12,6 +12,10 @@ This repository builds private-first, source-faithful magazine editions.
 - The opening editorial must declare and visibly render a title, and may occupy at most one A5 reader page including its label, title, and byline.
 - AI proposes editorial patches; deterministic validation and human decisions advance workflow state.
 - Label original editor text so it cannot be mistaken for a source author's words.
+- Never author the Unicode em dash character U+2014 in repository prose, code comments, prompts, UI copy, or social copy. Use a period, comma, colon, semicolon, or parentheses instead. Preserve U+2014 only inside immutable raw evidence or an exact source quotation where changing it would break fidelity.
+- Keep the reusable Orwell-based writing method in `docs/WRITING_RULES.md`. Apply it to opening editorials and to social posts through `docs/SOCIAL_WRITING.md`. Do not apply it to other artifact types unless the user asks.
+- An opening editorial develops a distinct unifying idea, set of ideas, or emergent narrative across the edition. It must not summarize the articles one by one or become a prose table of contents.
+- Social drafts must be concise, direct, source-linked, and approved by a human before publication.
 - A source is not captured until its raw evidence bundle is committed under `library/sources/<source-id>/raw/<bundle-sha256>/`. Archive before queueing; never rely on a live URL as the durable copy.
 - Raw bundles may contain page responses, rendered text, images, or sanitized browser exports. Never commit cookies, credentials, authorization headers, browser profiles, or session data.
 - Never claim an edition is press-ready without a named printer profile and a passing preflight.
@@ -50,14 +54,20 @@ generates numbered contact sheets and 144-DPI individual rasters under
 
 After each meaningful layout change and before delivery, spawn an independent
 render-critic subagent. Give it every reader and booklet contact sheet plus any
-explicitly locked design decisions. It must inspect every sheet, identify
-page-specific visual defects, and avoid changing locked elements. Fix confirmed
-defects, rebuild all languages, and repeat until the machine report passes and
-the independent critic has no remaining actionable findings. Then record the
-decision only through `uv run --locked mag review record <edition-id>` with the
-reviewer and result flags; do not hand-edit the canonical review record.
+explicitly locked design decisions. It must inspect every sheet, then reopen
+every relevant crop from its exact path at original resolution rather than
+judging a resized preview. It must turn locked geometry into explicit
+pass/fail observations. For the illustrated opener, this includes confirming
+that the orange rectangle begins down and right of the black frame, leaving
+white at the top-right and bottom-left corners before the shadow begins. It
+must identify page-specific visual defects and avoid changing locked elements.
+Fix confirmed defects, rebuild all languages, and repeat until the machine
+report passes and the independent critic has no remaining actionable findings.
+Then record the decision only through
+`uv run --locked mag review record <edition-id>` with the reviewer and result
+flags; do not hand-edit the canonical review record.
 Recording binds the decision to the PDFs exactly as they sit on disk and
-rewrites only the packaged reports in place — it does not rebuild, so record
+rewrites only the packaged reports in place; it does not rebuild, so record
 against the packages you actually inspected; pass `--rebuild` only when the
 rebuild-and-compare proof is explicitly wanted. `mag release` must reject a
 missing, stale, or changes-required review.
@@ -71,5 +81,5 @@ record it with `uv run --locked mag review record <edition-id> --kind evidence`;
 Evidence staleness is derived per article: when `mag review status` names
 drifted articles, re-audit those articles against their ledgers and
 extractions, then re-record with `--articles <id,id>` naming exactly the
-articles whose audit was actually repeated — never an article you did not
+articles whose audit was actually repeated; never name an article you did not
 re-audit. Every other article keeps its recorded binding and `reviewed_at`.

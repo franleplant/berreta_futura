@@ -568,6 +568,206 @@ class ManifestTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "invalid opener_variant"):
             Magazine(self.root).validate("issue-001")
 
+    def test_illustrated_article_opener_resolves_required_art(self):
+        make_project(self.root)
+        art_path = (
+            self.root
+            / "editions"
+            / "issue-001"
+            / "art"
+            / "article-opener.png"
+        )
+        Image.new("RGB", (1600, 900), "white").save(art_path)
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        manifest["format"] = {
+            "article_opener": "illustrated_paper_spots_v1"
+        }
+        manifest["art_direction_path"] = "art/illustrations.yaml"
+        manifest["articles"][0]["opener_art"] = {
+            "path": "art/article-opener.png",
+            "alt_text": "A boy and robot connect two systems.",
+            "credit": "Original illustration.",
+        }
+        manifest_path.write_text(
+            yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+        )
+
+        edition = load_edition(self.root, "issue-001", {"source-one"})
+
+        self.assertEqual(
+            edition.raw["format"]["article_opener"],
+            "illustrated_paper_spots_v1",
+        )
+        self.assertEqual(edition.articles[0].opener_art.path, art_path.resolve())
+        self.assertEqual(
+            edition.articles[0].opener_art.alt_text,
+            "A boy and robot connect two systems.",
+        )
+        self.assertEqual(
+            edition.articles[0].opener_art.credit, "Original illustration."
+        )
+
+    def test_illustrated_article_opener_requires_an_illustration_plan(self):
+        make_project(self.root)
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        manifest["format"] = {
+            "article_opener": "illustrated_paper_spots_v1"
+        }
+        manifest["articles"][0]["opener_art"] = {
+            "path": "art/article-opener.png",
+            "alt_text": "A boy and robot connect two systems.",
+            "credit": "Original illustration.",
+        }
+        manifest_path.write_text(
+            yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+        )
+
+        with self.assertRaisesRegex(ValidationError, "requires art_direction_path"):
+            load_edition(
+                self.root,
+                "issue-001",
+                {"source-one"},
+                allow_missing_art=True,
+            )
+
+    def test_illustrated_article_opener_requires_author_biography(self):
+        make_project(self.root)
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        manifest["format"] = {
+            "article_opener": "illustrated_paper_spots_v1"
+        }
+        manifest["art_direction_path"] = "art/illustrations.yaml"
+        manifest["articles"][0].pop("author_note")
+        manifest["articles"][0]["opener_art"] = {
+            "path": "art/article-opener.png",
+            "alt_text": "A boy and robot connect two systems.",
+            "credit": "Original illustration.",
+        }
+        manifest_path.write_text(
+            yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+        )
+
+        with self.assertRaisesRegex(ValidationError, "requires author_note"):
+            load_edition(
+                self.root,
+                "issue-001",
+                {"source-one"},
+                allow_missing_art=True,
+            )
+
+    def test_illustrated_article_opener_requires_complete_art_mapping(self):
+        make_project(self.root)
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        manifest["format"] = {
+            "article_opener": "illustrated_paper_spots_v1"
+        }
+        manifest["art_direction_path"] = "art/illustrations.yaml"
+        manifest["articles"][0]["opener_art"] = {
+            "path": "art/article-opener.png",
+            "alt_text": "",
+        }
+        manifest_path.write_text(
+            yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+        )
+
+        with self.assertRaisesRegex(
+            ValidationError, "opener_art requires non-empty alt_text, credit"
+        ):
+            load_edition(self.root, "issue-001", {"source-one"})
+
+    def test_illustrated_article_opener_art_honors_missing_art_mode_and_safe_paths(self):
+        make_project(self.root)
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        manifest["format"] = {
+            "article_opener": "illustrated_paper_spots_v1"
+        }
+        manifest["art_direction_path"] = "art/illustrations.yaml"
+        manifest["articles"][0]["opener_art"] = {
+            "path": "art/not-generated-yet.png",
+            "alt_text": "A boy and robot connect two systems.",
+            "credit": "Original illustration.",
+        }
+        manifest_path.write_text(
+            yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+        )
+
+        with self.assertRaisesRegex(ValidationError, "does not exist"):
+            load_edition(self.root, "issue-001", {"source-one"})
+
+        edition = load_edition(
+            self.root,
+            "issue-001",
+            {"source-one"},
+            allow_missing_art=True,
+        )
+        self.assertEqual(
+            edition.articles[0].opener_art.path,
+            (
+                self.root
+                / "editions"
+                / "issue-001"
+                / "art"
+                / "not-generated-yet.png"
+            ).resolve(),
+        )
+
+        manifest["articles"][0]["opener_art"]["path"] = "../../../outside.png"
+        manifest_path.write_text(
+            yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+        )
+        with self.assertRaisesRegex(ValidationError, "Path escapes project root"):
+            load_edition(
+                self.root,
+                "issue-001",
+                {"source-one"},
+                allow_missing_art=True,
+            )
+
+    def test_illustrated_article_opener_requires_opening_paragraph(self):
+        make_project(self.root)
+        art_path = (
+            self.root
+            / "editions"
+            / "issue-001"
+            / "art"
+            / "article-opener.png"
+        )
+        Image.new("RGB", (1600, 900), "white").save(art_path)
+        manuscript_path = (
+            self.root
+            / "editions"
+            / "issue-001"
+            / "articles"
+            / "article.md"
+        )
+        manuscript_path.write_text(
+            "## A heading\n\nThe first paragraph.", encoding="utf-8"
+        )
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        manifest["format"] = {
+            "article_opener": "illustrated_paper_spots_v1"
+        }
+        manifest["art_direction_path"] = "art/illustrations.yaml"
+        manifest["articles"][0]["opener_art"] = {
+            "path": "art/article-opener.png",
+            "alt_text": "A boy and robot connect two systems.",
+            "credit": "Original illustration.",
+        }
+        manifest_path.write_text(
+            yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+        )
+
+        with self.assertRaisesRegex(
+            ValidationError, "first manuscript block must be a paragraph"
+        ):
+            load_edition(self.root, "issue-001", {"source-one"})
+
     def test_validate_rejects_unknown_declared_edition_source(self):
         make_project(self.root)
         manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"

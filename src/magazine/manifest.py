@@ -13,10 +13,17 @@ from .document_structure import block_signature
 from .errors import ValidationError
 from .io import load_structured, safe_project_path
 from .media_schema import Figure, localize_figures, resolve_figures
-from .publication_document import DocumentParseError, parse_publication_document
+from .publication_document import DocumentParseError, Paragraph, parse_publication_document
 
 if TYPE_CHECKING:
     from .records import SourceRecord
+
+
+@dataclass(frozen=True)
+class ArticleOpenerArt:
+    path: Path
+    alt_text: str
+    credit: str
 
 
 @dataclass(frozen=True)
@@ -49,6 +56,7 @@ class Article:
     all.  Every consumer treats the absence as "no link back", never as an
     error.
     """
+    opener_art: ArticleOpenerArt | None = None
 
 
 @dataclass(frozen=True)
@@ -122,6 +130,29 @@ def load_edition(
             errors.append(f"Edition references unknown sources: {', '.join(unknown_declared)}")
     if not data.get("sections") and (not data.get("editorial") or not data.get("articles")):
         errors.append("Edition requires either sections, or editorial plus articles")
+    raw_format = data.get("format")
+    if raw_format is None:
+        edition_format: dict[str, Any] = {}
+    elif not isinstance(raw_format, dict):
+        errors.append("Edition format must be a mapping")
+        edition_format = {}
+    else:
+        edition_format = dict(raw_format)
+    article_opener_format = str(edition_format.get("article_opener") or "").strip()
+    if article_opener_format and article_opener_format != "illustrated_paper_spots_v1":
+        errors.append(
+            f"Edition has invalid format.article_opener: {article_opener_format}"
+        )
+    illustrated_article_openers = (
+        article_opener_format == "illustrated_paper_spots_v1"
+    )
+    if illustrated_article_openers and not str(
+        data.get("art_direction_path") or ""
+    ).strip():
+        errors.append(
+            "Edition format.article_opener illustrated_paper_spots_v1 requires "
+            "art_direction_path"
+        )
     article_rows = data.get("articles", [])
     if not isinstance(article_rows, list):
         errors.append("Edition articles must be a list")
@@ -203,6 +234,64 @@ def load_edition(
         except ValidationError as exc:
             errors.extend(exc.errors)
             continue
+        opener_art = None
+        if illustrated_article_openers:
+            if not author_note:
+                errors.append(
+                    f"{label} requires author_note for "
+                    "format.article_opener illustrated_paper_spots_v1"
+                )
+            raw_opener_art = row.get("opener_art")
+            if not isinstance(raw_opener_art, dict) or not raw_opener_art:
+                errors.append(
+                    f"{label} requires a non-empty opener_art mapping for "
+                    "format.article_opener illustrated_paper_spots_v1"
+                )
+            else:
+                missing_opener_art = [
+                    key
+                    for key in ("path", "alt_text", "credit")
+                    if not isinstance(raw_opener_art.get(key), str)
+                    or not raw_opener_art[key].strip()
+                ]
+                if missing_opener_art:
+                    errors.append(
+                        f"{label} opener_art requires non-empty "
+                        + ", ".join(missing_opener_art)
+                    )
+                else:
+                    try:
+                        opener_art_path = _edition_path(
+                            root,
+                            manifest_path.parent,
+                            raw_opener_art["path"],
+                            must_exist=not allow_missing_art,
+                        )
+                    except ValidationError as exc:
+                        errors.extend(exc.errors)
+                    else:
+                        opener_art = ArticleOpenerArt(
+                            path=opener_art_path,
+                            alt_text=raw_opener_art["alt_text"].strip(),
+                            credit=raw_opener_art["credit"].strip(),
+                        )
+            try:
+                opener_document = parse_publication_document(
+                    manuscript.read_text(encoding="utf-8")
+                )
+            except DocumentParseError as exc:
+                errors.append(
+                    f"{label} manuscript cannot be parsed as a publication document: {exc}"
+                )
+            else:
+                if (
+                    not opener_document.blocks
+                    or not isinstance(opener_document.blocks[0], Paragraph)
+                ):
+                    errors.append(
+                        f"{label} first manuscript block must be a paragraph for "
+                        "format.article_opener illustrated_paper_spots_v1"
+                    )
         content_mode = str(row.get("content_mode", "faithful_edit"))
         if content_mode not in {"faithful_edit", "faithful_synthesis", "selected_extracts", "original_synthesis"}:
             errors.append(f"{label} has invalid content_mode: {content_mode}")
@@ -278,6 +367,7 @@ def load_edition(
                 minimum_reader_pages,
                 tail_art,
                 _primary_source_url(source_ids, source_records),
+                opener_art,
             )
         )
     edition_dir = manifest_path.parent
@@ -561,6 +651,7 @@ def load_translation(
                 # so it points back to the same place.  The link is provenance,
                 # not copy, and is never localized.
                 article.source_url,
+                article.opener_art,
             )
         )
 
@@ -657,6 +748,19 @@ def load_translation(
                         if article.tail_art
                         else None
                     ),
+                    **(
+                        {
+                            "opener_art": {
+                                "path": article.opener_art.path.relative_to(
+                                    root
+                                ).as_posix(),
+                                "alt_text": article.opener_art.alt_text,
+                                "credit": article.opener_art.credit,
+                            }
+                        }
+                        if article.opener_art
+                        else {}
+                    ),
                     "figures": [
                         {
                             "id": figure.id,
@@ -732,6 +836,17 @@ def _edition_copy_sha256(edition: Edition) -> str:
                 "author": article.author,
                 "author_note": article.author_note,
                 "tail_art_sha256": _sha256(article.tail_art) if article.tail_art else None,
+                **(
+                    {
+                        "opener_art": {
+                            "art_sha256": _sha256(article.opener_art.path),
+                            "alt_text": article.opener_art.alt_text,
+                            "credit": article.opener_art.credit,
+                        }
+                    }
+                    if article.opener_art
+                    else {}
+                ),
                 "figures": [
                     {
                         "id": figure.id,
@@ -859,7 +974,9 @@ def _edition_path(
     except ValueError as exc:
         raise ValidationError(f"Path escapes project root: {value}") from exc
     if must_exist and not relative.is_file():
-        raise ValidationError(f"Referenced file does not exist: {relative.relative_to(root)}")
+        raise ValidationError(
+            f"Referenced file does not exist: {relative.relative_to(root.resolve())}"
+        )
     return relative
 
 

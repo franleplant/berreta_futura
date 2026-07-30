@@ -3,8 +3,10 @@ id: architecture-overview-ce5cb1d1
 title: Architecture overview
 author: Model Context Protocol
 author_profile:
-  note: ''
-  evidence: []
+  note: Model Context Protocol is a Series of LF Projects, LLC.
+  evidence:
+  - url: https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture
+    capture_id: 1ced8cc9c9845813bd7544a26e4ec78ce05fc460eb5ca1261fb21d14b3280c03
 canonical_url: https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture
 submitted_url: https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture
 captured_at: '2026-07-29T00:36:21Z'

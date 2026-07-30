@@ -1776,6 +1776,7 @@ def _current_build_input_paths(
     for article in variant.articles:
         add(article.manuscript)
         add(article.fidelity)
+        add(article.opener_art.path if article.opener_art else None)
         add(article.tail_art)
     for plate in variant.closing_plates:
         add(plate.art_path)

@@ -445,6 +445,51 @@ _ARTICLE_TITLE_MAX = 35.0
 _EDITORIAL_TITLE_MAX = 35.0
 _SECTION_TITLE_MAX = 35.0
 _OPENER_TITLE_MAX_LINES = 4
+# The permanent illustrated opener is its own composition, not a variant of
+# the legacy title-and-credit field.  Its title spans the 348pt opener rail,
+# steps down from 32.5pt, and is never allowed to take more than two lines.
+_ILLUSTRATED_OPENER_RAIL_POINTS = 348.0
+_ILLUSTRATED_OPENER_TITLE_BOX = (64.0, 22.0)
+_ILLUSTRATED_OPENER_TITLE_MAX = 32.5
+_ILLUSTRATED_OPENER_TITLE_MAX_LINES = 2
+# A content-rich opener keeps the approved art frame and furniture, then
+# tightens only type and intervals when the natural stack would not fit the
+# printable page.  These numbers mirror the two CSS density rules below.  The
+# adapter owns the decision because title, credit and paragraph line counts are
+# measurements, not selectors.
+_ILLUSTRATED_OPENER_COMPACT_TITLE_MAX = 30.0
+_ILLUSTRATED_OPENER_META_MEASURE_POINTS = 293.0
+_ILLUSTRATED_OPENER_PAGE_HEIGHT_POINTS = (
+    _PAGE_HEIGHT_POINTS - _PAGE_MARGIN_TOP_POINTS - 54.9996
+)
+_ILLUSTRATED_OPENER_STANDARD = {
+    "art": 195.1,
+    "label": 24.0 + 7.15,
+    "title_gap": 8.0,
+    "tick": 25.0 + 2.4,
+    "meta_padding": 9.0,
+    "standfirst_gap": 23.5 + 9.0,
+    "standfirst_size": 10.2,
+    "standfirst_leading": 14.4,
+}
+_ILLUSTRATED_OPENER_COMPACT = {
+    "art": 195.1,
+    "label": 20.0 + 7.15,
+    "title_gap": 6.0,
+    "tick": 18.0 + 2.4,
+    "meta_padding": 7.0,
+    "standfirst_gap": 16.0 + 6.0,
+    "standfirst_size": 9.6,
+    "standfirst_leading": 13.2,
+}
+# One compact line absorbs the small shaping difference between the unkerned
+# advance-width predictor and Pango.  If even compact mode cannot fit with this
+# reserve, the adapter refuses the input instead of letting the paragraph split.
+_ILLUSTRATED_OPENER_PANGO_RESERVE_POINTS = 13.2
+# The approved opener places a compact, unlabeled QR at the right edge of the
+# metadata grid.  The semantic link owns the box in flow; these points decide
+# only the symbol's module geometry and printed size.
+_ILLUSTRATED_OPENER_CODE_SIDE_POINTS = 41.0
 # The stylesheet's own cap on an opener-anchored figure's image
 # (`article > figure[data-anchor="__opener__"] > img { max-height: 270pt }`),
 # restated here because the source code borrows depth against it: an opener
@@ -851,6 +896,7 @@ def render_a5_weasyprint(
     # ladders it names are the ladders the shipped reader sets.
     _report_hyphen_ladders(document, edition)
     _validate_fitted_display(document, edition)
+    _validate_illustrated_opener_integrity(document)
     _validate_opener_code_clearance(document, plan.codes_by_article)
     _validate_opener_credit_depth(document)
     document = _painted_reader(
@@ -1822,6 +1868,121 @@ def _opener_header(piece: Element) -> Element:
     return header
 
 
+def _is_illustrated_article(article: Any) -> bool:
+    """Whether an edition article uses the permanent illustrated opener."""
+    return getattr(article, "opener_art", None) is not None
+
+
+def _is_illustrated_header(header: Any) -> bool:
+    """Whether a semantic or laid-out header is the illustrated opener."""
+    element = getattr(header, "element", None)
+    if element is None and getattr(header, "tag", None) is not None:
+        element = header
+    return element is not None and "article-opener" in _element_classes(element)
+
+
+def _set_illustrated_opener_title(header: Element, size: float) -> None:
+    """State the measured display size for the two-line illustrated title."""
+    for title in header.iter("h1"):
+        title.set(
+            "style",
+            f"font-size: {size:.4f}pt; "
+            f"line-height: {size * _OPENER_TITLE_LEADING_RATIO:.4f}pt",
+        )
+        return
+    raise ValidationError(
+        "An illustrated opener header must carry the article title as an h1"
+    )
+
+
+def _illustrated_opener_height(
+    header: Element,
+    *,
+    title_size: float,
+    title_lines: int,
+    density: Mapping[str, float],
+) -> float:
+    """Predict one illustrated header's complete flow height in points.
+
+    The art and QR keep their approved dimensions.  Only the measured title,
+    credit depth and opening paragraph vary.  The prediction deliberately uses
+    the wider bundled Medium face for credit text, plus a one-line Pango reserve
+    at the decision seam, so a page close to the foot selects compact mode.
+    """
+    byline = next(
+        (
+            item
+            for item in header.iter("p")
+            if "byline" in _element_classes(item)
+        ),
+        None,
+    )
+    note = next(
+        (
+            item
+            for item in header.iter("p")
+            if "author-note" in _element_classes(item)
+        ),
+        None,
+    )
+    standfirst = next(
+        (
+            item
+            for item in header.iter("p")
+            if "standfirst" in _element_classes(item)
+        ),
+        None,
+    )
+    if byline is None or standfirst is None:
+        raise ValidationError(
+            "An illustrated opener needs a byline and first paragraph inside its header"
+        )
+
+    byline_text = "".join(byline.itertext()).strip()
+    byline_lines = len(
+        _wrap(
+            byline_text,
+            "sans-semibold",
+            _BYLINE_SIZE_POINTS,
+            _ILLUSTRATED_OPENER_META_MEASURE_POINTS,
+        )
+    )
+    credit_height = byline_lines * 8.5
+    if note is not None:
+        note_text = "".join(note.itertext()).strip()
+        if note_text:
+            credit_height += 3.2 + len(
+                _wrap(
+                    note_text,
+                    "sans-medium",
+                    6.8,
+                    _ILLUSTRATED_OPENER_META_MEASURE_POINTS,
+                )
+            ) * 9.4
+    meta_height = max(_ILLUSTRATED_OPENER_CODE_SIDE_POINTS, credit_height)
+    meta_height += 2 * density["meta_padding"] + 1.0
+
+    standfirst_text = "".join(standfirst.itertext()).strip()
+    standfirst_lines = len(
+        _wrap(
+            standfirst_text,
+            "serif",
+            density["standfirst_size"],
+            _ILLUSTRATED_OPENER_RAIL_POINTS,
+        )
+    )
+    return (
+        density["art"]
+        + density["label"]
+        + density["title_gap"]
+        + title_lines * title_size * _OPENER_TITLE_LEADING_RATIO
+        + density["tick"]
+        + meta_height
+        + density["standfirst_gap"]
+        + standfirst_lines * density["standfirst_leading"]
+    )
+
+
 def _set_opener_title(header: Element, size: float) -> None:
     """State the auto-fitted display size, and the two margins that follow it.
 
@@ -1896,6 +2057,58 @@ def _pin_opener_fields(tree: Element, edition: Edition) -> None:
             raise ValidationError(
                 f"No edition article matches opener {article.get('data-article-id')!r}"
             )
+        if _is_illustrated_article(declared):
+            height, minimum = _ILLUSTRATED_OPENER_TITLE_BOX
+            size, lines = _fitted_display(
+                str(declared.title),
+                _ILLUSTRATED_OPENER_RAIL_POINTS,
+                height,
+                maximum=_ILLUSTRATED_OPENER_TITLE_MAX,
+                minimum=minimum,
+                maximum_lines=_ILLUSTRATED_OPENER_TITLE_MAX_LINES,
+                leading_ratio=_OPENER_TITLE_LEADING_RATIO,
+            )
+            natural_height = _illustrated_opener_height(
+                header,
+                title_size=size,
+                title_lines=len(lines),
+                density=_ILLUSTRATED_OPENER_STANDARD,
+            )
+            if (
+                natural_height + _ILLUSTRATED_OPENER_PANGO_RESERVE_POINTS
+                > _ILLUSTRATED_OPENER_PAGE_HEIGHT_POINTS
+            ):
+                size, lines = _fitted_display(
+                    str(declared.title),
+                    _ILLUSTRATED_OPENER_RAIL_POINTS,
+                    height,
+                    maximum=_ILLUSTRATED_OPENER_COMPACT_TITLE_MAX,
+                    minimum=minimum,
+                    maximum_lines=_ILLUSTRATED_OPENER_TITLE_MAX_LINES,
+                    leading_ratio=_OPENER_TITLE_LEADING_RATIO,
+                )
+                compact_height = _illustrated_opener_height(
+                    header,
+                    title_size=size,
+                    title_lines=len(lines),
+                    density=_ILLUSTRATED_OPENER_COMPACT,
+                )
+                if (
+                    compact_height + _ILLUSTRATED_OPENER_PANGO_RESERVE_POINTS
+                    > _ILLUSTRATED_OPENER_PAGE_HEIGHT_POINTS
+                ):
+                    raise ValidationError(
+                        f"Article {declared.id}'s opening paragraph cannot fit its "
+                        "illustrated opener page at compact density; shorten that "
+                        "paragraph rather than splitting the opener"
+                    )
+                header.set("data-opener-density", "compact")
+            _set_illustrated_opener_title(header, size)
+            # This composition flows naturally and closes the page after its
+            # standfirst.  The title guard therefore records the fitted line
+            # count rather than pretending the whole header is a title field.
+            header.set("data-title-lines", str(len(lines)))
+            continue
         has_figure = _opener_figure(article) is not None
         height, minimum = _ARTICLE_TITLE_BOX
         size, lines = _fitted_display(
@@ -2749,18 +2962,45 @@ def _apply_source_codes(tree: Element, codes: Mapping[str, SourceCode]) -> None:
         if code is None:
             continue
         header = _opener_header(article)
-        image = SubElement(header, "img")
+        illustrated = _is_illustrated_header(header)
+        owner = header
+        if illustrated:
+            owner = next(
+                (
+                    link
+                    for meta in header.iter()
+                    if "opener-meta" in _element_classes(meta)
+                    for link in meta.iter("a")
+                    if "source-link" in _element_classes(link)
+                ),
+                None,
+            )
+            if owner is None:
+                raise ValidationError(
+                    f"Article {article.get('data-article-id')}'s illustrated opener "
+                    "has no source link inside its metadata grid"
+                )
+            # The URL remains the anchor's accessible name in the semantic
+            # edition.  The print tree replaces its text with the symbol.
+            owner.text = None
+        image = SubElement(owner, "img")
         image.set("class", "source-code")
         image.set("alt", "")
         image.set("aria-hidden", "true")
         image.set("data-source-code", code.slot)
         image.set("src", _source_code_source(code))
-        image.set(
-            "style",
-            f"left: {code.left:.4f}pt; top: {code.top:.4f}pt; "
-            f"width: {code.side:.4f}pt; height: {code.side:.4f}pt",
-        )
-        _fit_credit_measure(article, header, code)
+        if illustrated:
+            image.set(
+                "style",
+                f"width: {code.side:.4f}pt; height: {code.side:.4f}pt",
+            )
+        else:
+            image.set(
+                "style",
+                f"left: {code.left:.4f}pt; top: {code.top:.4f}pt; "
+                f"width: {code.side:.4f}pt; height: {code.side:.4f}pt",
+            )
+            _fit_credit_measure(article, header, code)
 
 
 def _credit_column_inset(code: SourceCode) -> float:
@@ -3109,14 +3349,25 @@ def _opener_source_codes(edition: Edition, document: Any) -> tuple[SourceCode, .
         url = str(getattr(article, "source_url", "") or "").strip()
         if not url:
             continue
-        code = _fitted_source_code(str(article.id), url, _CODE_OPENER_SIDE_POINTS)
+        illustrated = _is_illustrated_article(article)
+        room = (
+            _ILLUSTRATED_OPENER_CODE_SIDE_POINTS
+            if illustrated
+            else _CODE_OPENER_SIDE_POINTS
+        )
+        code = _fitted_source_code(str(article.id), url, room)
         if code is None:
             raise ValidationError(
                 f"Article {article.id} cannot carry a scannable source code for {url}: "
-                f"the opener square offers {_CODE_OPENER_SIDE_POINTS:.2f}pt, and even "
+                f"the opener square offers {room:.2f}pt, and even "
                 f"at the lowest error correction the symbol's module would fall under "
                 f"{_CODE_MIN_MODULE_POINTS * 25.4 / 72:.2f}mm. Shorten the canonical URL."
             )
+        if illustrated:
+            # The source link is a fixed cell in the metadata grid.  CSS places
+            # it, so no byline-derived absolute coordinates enter the plan.
+            codes.append(code)
+            continue
         baseline = baselines.get(str(article.id))
         if baseline is None:
             raise ValidationError(
@@ -3507,7 +3758,7 @@ def _measure_layout(
     placed_assets = tuple(
         asset
         for asset in assets
-        if asset.role in {"figure", "article_tail", "closing_plate"}
+        if asset.role in {"figure", "article_opener", "article_tail", "closing_plate"}
         and _asset_is_placed(asset, plan)
     )
     for asset in placed_assets:
@@ -4066,6 +4317,21 @@ def _validate_fitted_display(document: Any, edition: Edition) -> None:
 
 def _collect_field_overflows(box: Any, page_number: int, failures: list[str]) -> None:
     for piece, header, title in _opener_title_boxes(box):
+        element = getattr(header, "element", None)
+        attributes = getattr(element, "attrib", {}) if element is not None else {}
+        stated_lines = attributes.get("data-title-lines")
+        if stated_lines is not None:
+            fitted_lines = int(stated_lines)
+            set_lines = _line_box_count(title)
+            if set_lines <= fitted_lines:
+                continue
+            failures.append(
+                f"opener {piece!r} title {_box_text(title)!r} was fitted at "
+                f"{float(title.style['font_size']) * _POINTS_PER_CSS_PIXEL:.4g}pt "
+                f"over {fitted_lines} line(s), but Pango set it on {set_lines} "
+                f"on page {page_number}"
+            )
+            continue
         field = _opener_title_reservation(header)
         field_bottom = float(header.content_box_y()) * _POINTS_PER_CSS_PIXEL + field
         title_bottom = (
@@ -4080,6 +4346,36 @@ def _collect_field_overflows(box: Any, page_number: int, failures: list[str]) ->
             f"page {page_number}; Pango set it on {_line_box_count(title)} lines "
             f"reaching {title_bottom:.4f}pt, overflowing the field by "
             f"{title_bottom - field_bottom:.4f}pt"
+        )
+
+
+def _validate_illustrated_opener_integrity(document: Any) -> None:
+    """Refuse an illustrated header that fragmented across reader pages."""
+    pages_by_header: dict[int, tuple[str, set[int]]] = {}
+    for page_number, page in enumerate(document.pages, start=1):
+        for box in _walk_boxes(page._page_box):
+            element = getattr(box, "element", None)
+            if (
+                getattr(box, "element_tag", None) != "header"
+                or type(box).__name__ != "BlockBox"
+                or not _is_illustrated_header(box)
+                or element is None
+            ):
+                continue
+            title = next(
+                ("".join(item.itertext()).strip() for item in element.iter("h1")),
+                "untitled article",
+            )
+            pages_by_header.setdefault(id(element), (title, set()))[1].add(page_number)
+    split = [
+        f"{title!r} across pages {', '.join(str(page) for page in sorted(pages))}"
+        for title, pages in pages_by_header.values()
+        if len(pages) > 1
+    ]
+    if split:
+        raise ValidationError(
+            "An illustrated opener must keep its complete first paragraph on one "
+            "page: " + "; ".join(split)
         )
 
 
@@ -4204,6 +4500,8 @@ def _validate_opener_credit_depth(document: Any) -> None:
     failures: list[str] = []
     for page_number, page in enumerate(document.pages, start=1):
         for piece, header, _title in _opener_title_boxes(page._page_box):
+            if _is_illustrated_header(header):
+                continue
             field_foot = (
                 float(header.content_box_y()) + float(header.height)
             ) * _POINTS_PER_CSS_PIXEL

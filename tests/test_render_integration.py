@@ -259,6 +259,11 @@ class ReaderEngineContract:
                 manifest["inputs"]["articles"][0]["tail_art"]["path"],
                 "editions/issue-001/art/tail.png",
             )
+            self.assertNotIn(
+                "opener_art",
+                manifest["inputs"]["articles"][0],
+                "legacy package manifests must retain their historical shape",
+            )
             self.assertEqual(manifest["layout"]["maximum_article_pages"], self.MAX_ARTICLE_PAGES)
             self.assertLessEqual(
                 manifest["layout"]["article_pages"]["article"], self.MAX_ARTICLE_PAGES

@@ -120,10 +120,19 @@ def render_html_edition(edition: Edition) -> HtmlEdition:
     _add_cover_asset(edition, assets)
 
     title = f"{edition.publication_name} — {edition.title}"
+    article_opener_format = _article_opener_format(edition)
+    opener_format_attribute = (
+        ' data-article-opener-format="illustrated_paper_spots_v1"'
+        if article_opener_format == "illustrated_paper_spots_v1"
+        else ""
+    )
     html = "\n".join(
         [
             "<!doctype html>",
-            f'<html lang="{_attr(edition.locale)}" data-edition-id="{_attr(edition.id)}">',
+            (
+                f'<html lang="{_attr(edition.locale)}" '
+                f'data-edition-id="{_attr(edition.id)}"{opener_format_attribute}>'
+            ),
             "<head>",
             '  <meta charset="utf-8">',
             f"  <title>{_text(title)}</title>",
@@ -248,6 +257,19 @@ def _render_article(
         else:
             figures_by_anchor.setdefault(_anchor_key(figure.anchor), []).append(figure)
 
+    if (
+        _article_opener_format(edition) == "illustrated_paper_spots_v1"
+        and article.opener_art is not None
+    ):
+        return _render_illustrated_article(
+            edition,
+            article,
+            document,
+            article_index,
+            opener_figures,
+            figures_by_anchor,
+        )
+
     assets: list[HtmlAsset] = []
     lines = [
         f'<article id="{_attr(_article_destination_id(article))}" data-article-id="{_attr(article.id)}" '
@@ -325,6 +347,123 @@ def _render_article(
             )
         )
     lines.extend(_indent(_render_source_link(article), 2))
+    lines.append("</article>")
+    return "\n".join(lines), tuple(assets)
+
+
+def _render_illustrated_article(
+    edition: Edition,
+    article: Article,
+    document: PublicationDocument,
+    article_index: int,
+    opener_figures: list[Figure],
+    figures_by_anchor: dict[str, list[Figure]],
+) -> tuple[str, tuple[HtmlAsset, ...]]:
+    """Render the shared semantic structure for the illustrated opener."""
+
+    if not document.blocks or not isinstance(document.blocks[0], Paragraph):
+        raise ValueError(
+            "illustrated_paper_spots_v1 requires a paragraph as the first manuscript block"
+        )
+    opener_art = article.opener_art
+    if opener_art is None:
+        raise ValueError("illustrated_paper_spots_v1 requires article opener art")
+
+    art_asset = _asset(
+        id=f"article-opener-{article.id}",
+        role="article_opener",
+        path=opener_art.path,
+        alt_text=opener_art.alt_text,
+        article_id=article.id,
+        credit=opener_art.credit,
+        rights_status="author_owned",
+    )
+    assets: list[HtmlAsset] = [art_asset]
+    source_link = _render_source_link(article)
+    lines = [
+        f'<article id="{_attr(_article_destination_id(article))}" data-article-id="{_attr(article.id)}" '
+        f'data-content-mode="{_attr(article.content_mode)}" data-source-ids="{_attr(" ".join(article.source_ids))}" '
+        f'data-figure-layouts="{_attr(_figure_layouts(article))}" '
+        f'data-short-title="{_attr(article.short_title)}" '
+        'data-article-opener="illustrated_paper_spots_v1">',
+        '  <header class="article-opener">',
+        '    <figure class="article-opener-art" data-asset-role="article_opener">',
+        '      <span class="article-opener-art-offset" aria-hidden="true"></span>',
+        f'      <img src="{_attr(art_asset.src)}" alt="{_attr(art_asset.alt_text)}">',
+        "    </figure>",
+        f'    <p class="content-label" data-content-mode="{_attr(article.content_mode)}">'
+        f'<span class="label-primary">{_text(_ui(edition, "feature"))} {article_index:02d}</span>'
+        '<span class="label-separator" aria-hidden="true"> / </span>'
+        f'<span class="label-secondary">{_text(_content_label(edition, document, article.content_mode))}</span></p>',
+        f"    <h1>{_text(article.title)}</h1>",
+        '    <span class="opener-tick" aria-hidden="true"></span>',
+        '    <div class="opener-meta">',
+        '      <div class="opener-credit">',
+        f'        <p class="byline" data-byline="true">'
+        f'<span class="byline-prefix">{_text(_ui(edition, "by"))}</span> {_text(article.author)}</p>',
+    ]
+    if article.author_note:
+        lines.append(f'        <p class="author-note">{_text(article.author_note)}</p>')
+    lines.extend(
+        [
+            "      </div>",
+            *_indent(source_link, 6),
+            "    </div>",
+            "    " + _render_block(document.blocks[0], standfirst=True),
+            "  </header>",
+        ]
+    )
+
+    for figure in opener_figures:
+        figure_html, asset = _render_figure(edition, article.id, figure)
+        lines.extend(_indent((figure_html,), 2))
+        assets.append(asset)
+
+    references = False
+    for block in document.blocks[1:]:
+        if isinstance(block, Heading):
+            references = _is_reference_heading(_inline_text(block.children))
+        lines.extend(_indent((_render_block(block, references=references),), 2))
+        if isinstance(block, Heading):
+            for figure in figures_by_anchor.get(
+                _anchor_key(_inline_text(block.children)), ()
+            ):
+                figure_html, asset = _render_figure(edition, article.id, figure)
+                lines.extend(_indent((figure_html,), 2))
+                assets.append(asset)
+
+    lines.extend(
+        _indent(
+            (
+                f'<p class="end-mark" data-end-mark="true">'
+                f"{_text(_ui(edition, 'end'))} / {article_index:02d}</p>",
+            ),
+            2,
+        )
+    )
+    if article.tail_art is not None:
+        tail_art_fit = str(
+            (getattr(edition, "raw", {}) or {}).get("tail_art_fit") or "cover"
+        )
+        asset = _asset(
+            id=f"article-tail-{article.id}",
+            role="article_tail",
+            path=article.tail_art,
+            alt_text=f"Tail art for {article.title}",
+            article_id=article.id,
+            rights_status="author_owned",
+        )
+        assets.append(asset)
+        lines.extend(
+            _indent(
+                (
+                    f'<figure class="article-tail" data-asset-role="article_tail" '
+                    f'data-fit="{_attr(tail_art_fit)}">'
+                    f'<img src="{_attr(asset.src)}" alt="{_attr(asset.alt_text)}"></figure>',
+                ),
+                2,
+            )
+        )
     lines.append("</article>")
     return "\n".join(lines), tuple(assets)
 
@@ -543,6 +682,13 @@ def _figure_layouts(article: Article) -> str:
         if layout and layout not in layouts:
             layouts.append(layout)
     return " ".join(layouts)
+
+
+def _article_opener_format(edition: Edition) -> str:
+    raw_format = (getattr(edition, "raw", {}) or {}).get("format")
+    if not isinstance(raw_format, dict):
+        return ""
+    return str(raw_format.get("article_opener") or "").strip()
 
 
 def _article_destination_id(article: Article) -> str:

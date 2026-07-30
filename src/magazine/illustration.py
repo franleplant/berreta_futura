@@ -11,8 +11,9 @@ publication compiler:
   are the same files the edition manifest declares.
 
 The renderer therefore keeps its existing, deliberately small interface:
-``tail_art_path`` and ``closing_plates[].art_path``.  It never learns about
-models, prompts, retries, candidates, or editorial art direction.
+article opener art, ``tail_art_path`` and ``closing_plates[].art_path``.  It
+never learns about models, prompts, retries, candidates, or editorial art
+direction.
 """
 
 from __future__ import annotations
@@ -31,8 +32,9 @@ from .io import load_structured, safe_project_path
 from .manifest import Edition
 
 
-_ROLES = {"article_tail", "closing_plate"}
+_ROLES = {"article_opener", "article_tail", "closing_plate"}
 _ASSET_ID = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+_OPENER_MINIMUM = (1536, 1024)
 _TAIL_MINIMUM = (1536, 1024)
 _PLATE_MINIMUM = (1024, 1400)
 
@@ -151,7 +153,7 @@ def load_illustration_plan(root: Path, edition: Edition) -> IllustrationPlan | N
     assets: list[IllustrationAsset] = []
     ids: set[str] = set()
     paths: set[Path] = set()
-    article_ids: set[str] = set()
+    article_slots: set[tuple[str, str]] = set()
     plate_indices: set[int] = set()
     for index, row in enumerate(rows, start=1):
         label = f"Illustration asset {index}"
@@ -169,7 +171,8 @@ def load_illustration_plan(root: Path, edition: Edition) -> IllustrationPlan | N
         ids.add(asset_id)
         if role not in _ROLES:
             errors.append(
-                f"{label} role must be article_tail or closing_plate, not {role!r}"
+                f"{label} role must be article_opener, article_tail, or "
+                f"closing_plate, not {role!r}"
             )
         try:
             art_path = safe_project_path(
@@ -189,17 +192,17 @@ def load_illustration_plan(root: Path, edition: Edition) -> IllustrationPlan | N
             values[key] = value
         article_id = str(row.get("article_id") or "").strip() or None
         plate_index: int | None = None
-        if role == "article_tail":
+        if role in {"article_opener", "article_tail"}:
             if not article_id:
-                errors.append(f"{label} article_tail requires article_id")
-            elif article_id in article_ids:
+                errors.append(f"{label} {role} requires article_id")
+            elif (role, article_id) in article_slots:
                 errors.append(
-                    f"Illustration article_id must be unique: {article_id}"
+                    f"Illustration {role} article_id must be unique: {article_id}"
                 )
             else:
-                article_ids.add(article_id)
+                article_slots.add((role, article_id))
             if row.get("plate_index") is not None:
-                errors.append(f"{label} article_tail must not declare plate_index")
+                errors.append(f"{label} {role} must not declare plate_index")
         elif role == "closing_plate":
             if article_id:
                 errors.append(f"{label} closing_plate must not declare article_id")
@@ -263,6 +266,48 @@ def _inventory_errors(
     edition: Edition, plan: IllustrationPlan
 ) -> list[str]:
     errors: list[str] = []
+    planned_openers = {
+        asset.article_id: asset
+        for asset in plan.assets
+        if asset.role == "article_opener"
+    }
+    declared_openers = {
+        article.id: article.opener_art
+        for article in edition.articles
+        if getattr(article, "opener_art", None) is not None
+    }
+    if set(planned_openers) != set(declared_openers):
+        missing = sorted(set(declared_openers) - set(planned_openers))
+        extra = sorted(set(planned_openers) - set(declared_openers))
+        if missing:
+            errors.append(
+                "Illustration plan is missing declared article openers: "
+                + ", ".join(missing)
+            )
+        if extra:
+            errors.append(
+                "Illustration plan has undeclared article openers: "
+                + ", ".join(extra)
+            )
+    for article_id in sorted(set(planned_openers) & set(declared_openers)):
+        planned = planned_openers[article_id]
+        declared = declared_openers[article_id]
+        if planned.art_path != declared.path:
+            errors.append(
+                f"Illustration plan path for opener {article_id} does not match "
+                "edition.yaml"
+            )
+        if planned.alt_text != declared.alt_text:
+            errors.append(
+                f"Illustration plan alt_text for opener {article_id} does not "
+                "match edition.yaml"
+            )
+        if planned.credit != declared.credit:
+            errors.append(
+                f"Illustration plan credit for opener {article_id} does not "
+                "match edition.yaml"
+            )
+
     planned_tails = {
         asset.article_id: asset
         for asset in plan.assets
@@ -333,15 +378,26 @@ def illustration_prompt(plan: IllustrationPlan, asset: IllustrationAsset) -> str
         if plan.direction.reference_paths
         else ""
     )
-    size = "1536x1024 landscape" if asset.role == "article_tail" else "1024x1536 portrait"
-    slot = (
-        "an article-tail illustration crop-filled into a variable-height 325pt-wide "
-        "band; keep all essential action in the central horizontal third so both "
-        "96pt and 214pt crops remain meaningful"
-        if asset.role == "article_tail"
-        else "a closing-plate illustration crop-filled above an editor-set title; "
-        "the image must work alone because signature arithmetic may print only this plate"
-    )
+    if asset.role == "article_opener":
+        size = "1536x1024 landscape"
+        slot = (
+            "an A5 article-opening illustration crop-filled into a wide 348pt by "
+            "203pt panel; keep the recurring cast and essential action inside the "
+            "central crop, with no baked-in title or label"
+        )
+    elif asset.role == "article_tail":
+        size = "1536x1024 landscape"
+        slot = (
+            "an article-tail illustration crop-filled into a variable-height 325pt-wide "
+            "band; keep all essential action in the central horizontal third so both "
+            "96pt and 214pt crops remain meaningful"
+        )
+    else:
+        size = "1024x1536 portrait"
+        slot = (
+            "a closing-plate illustration crop-filled above an editor-set title; "
+            "the image must work alone because signature arithmetic may print only this plate"
+        )
     return (
         "Use case: illustration-story\n"
         f"Asset type: {slot}\n"
@@ -448,14 +504,19 @@ def _review_raster(asset: IllustrationAsset) -> list[str]:
         errors.append(
             f"Illustration asset must be RGB or RGBA, not {mode}: {asset.art_path}"
         )
-    minimum = _TAIL_MINIMUM if asset.role == "article_tail" else _PLATE_MINIMUM
+    minimum = {
+        "article_opener": _OPENER_MINIMUM,
+        "article_tail": _TAIL_MINIMUM,
+        "closing_plate": _PLATE_MINIMUM,
+    }[asset.role]
     if width < minimum[0] or height < minimum[1]:
         errors.append(
             f"Illustration asset {asset.art_path} is {width}x{height}px; "
             f"{asset.role} requires at least {minimum[0]}x{minimum[1]}px"
         )
-    if asset.role == "article_tail" and width <= height:
-        errors.append(f"Article-tail illustration must be landscape: {asset.art_path}")
+    if asset.role in {"article_opener", "article_tail"} and width <= height:
+        label = "Article-opener" if asset.role == "article_opener" else "Article-tail"
+        errors.append(f"{label} illustration must be landscape: {asset.art_path}")
     if asset.role == "closing_plate" and height <= width:
         errors.append(f"Closing-plate illustration must be portrait: {asset.art_path}")
     return errors

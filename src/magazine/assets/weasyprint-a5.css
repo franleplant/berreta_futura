@@ -730,7 +730,8 @@ article > header { margin-left: 0; margin-right: 0; }
  * and is suppressed here rather than dropped from the document.
  */
 .provenance { display: none; }
-article > header:has(+ figure[data-anchor="__opener__"]) .author-note { display: none; }
+article:not([data-article-opener="illustrated_paper_spots_v1"])
+  > header:has(+ figure[data-anchor="__opener__"]) .author-note { display: none; }
 /*
  * A bullet is its own block in the reader (render.py:367-371): SERIF 10pt on the
  * reading leading, indented 14pt, with a 2.5pt VIOLET disc drawn 4pt above the
@@ -1269,6 +1270,201 @@ img.source-code {
 /* The link the code encodes.  It stays in the print tree so that the tree and
  * the semantic edition disagree about nothing, and it sets no type at all. */
 .source-link { display: none; }
+/*
+ * THE ILLUSTRATED PAPER-AND-SPOTS OPENER.
+ *
+ * This is a new semantic composition and is deliberately scoped by
+ * `data-article-opener`, so archived and legacy editions keep every opener
+ * rule above unchanged.  The first page is unprinted white paper.  A 348pt
+ * rail escapes the 325pt reading measure by 11.5pt on each side, while the
+ * article continuation returns to the ordinary reading measure on the next
+ * page.
+ *
+ * The orange offset is a real decorative rectangle positioned 4.1pt right and
+ * down behind the image. WeasyPrint does not paint CSS box shadows, so a
+ * `box-shadow` spelling would silently disappear from the PDF. The black frame
+ * remains 348 by 203pt; the orange rectangle clears its top-right and
+ * bottom-left corners before extending beyond its right and foot.
+ */
+article[data-article-opener="illustrated_paper_spots_v1"] {
+  background: rgb(100% 100% 100%);
+}
+article[data-article-opener="illustrated_paper_spots_v1"] > header.article-opener {
+  background: rgb(100% 100% 100%);
+  break-after: page;
+  break-inside: avoid;
+  height: auto;
+  margin-left: -11.5pt;
+  margin-right: -11.5pt;
+  width: 348pt;
+}
+article[data-article-opener="illustrated_paper_spots_v1"] .article-opener-art {
+  background: transparent;
+  box-sizing: border-box;
+  height: 207.1pt;
+  margin: -12.0004pt 0 0;
+  overflow: visible;
+  position: relative;
+  width: 352.1pt;
+}
+article[data-article-opener="illustrated_paper_spots_v1"] .article-opener-art-offset {
+  background: rgb(240 87 56);
+  display: block;
+  height: 203pt;
+  left: 4.1pt;
+  position: absolute;
+  top: 4.1pt;
+  width: 348pt;
+  z-index: 0;
+}
+article[data-article-opener="illustrated_paper_spots_v1"] .article-opener-art img {
+  border: 2.4pt solid rgb(23 25 28);
+  box-sizing: border-box;
+  display: block;
+  height: 203pt;
+  margin: 0;
+  max-height: none;
+  max-width: none;
+  object-fit: cover;
+  object-position: 49% 47%;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 348pt;
+  z-index: 1;
+}
+article[data-article-opener="illustrated_paper_spots_v1"] > header > .content-label {
+  color: rgb(49 93 140);
+  display: block;
+  font-size: 6.5pt;
+  font-weight: 600;
+  letter-spacing: .16em;
+  line-height: 7.15pt;
+  margin: 24pt 0 0;
+  padding: 0;
+  text-transform: uppercase;
+}
+article[data-article-opener="illustrated_paper_spots_v1"] .content-label span {
+  color: inherit;
+  transform: none;
+}
+article[data-article-opener="illustrated_paper_spots_v1"] > header > h1 {
+  color: rgb(23 25 28);
+  letter-spacing: -.045em;
+  margin: 8pt 0 0;
+}
+article[data-article-opener="illustrated_paper_spots_v1"] .opener-meta {
+  align-items: center;
+  border-bottom: 1pt solid rgb(200 192 179);
+  display: grid;
+  grid-template-columns: 1fr 41pt;
+  column-gap: 14pt;
+  margin-top: 0;
+  padding: 9pt 0;
+  position: relative;
+}
+article[data-article-opener="illustrated_paper_spots_v1"] .opener-tick {
+  background: rgb(240 87 56);
+  display: block;
+  height: 2.4pt;
+  margin-top: 25pt;
+  width: 14.5pt;
+}
+article[data-article-opener="illustrated_paper_spots_v1"] .opener-credit {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+article[data-article-opener="illustrated_paper_spots_v1"] .byline {
+  color: rgb(23 25 28);
+  font-size: 7.4pt;
+  font-weight: 700;
+  letter-spacing: .04em;
+  line-height: 8.5pt;
+  margin: 0;
+  padding: 0;
+}
+article[data-article-opener="illustrated_paper_spots_v1"] .byline-prefix {
+  color: rgb(49 93 140);
+  font-size: 6.2pt;
+  letter-spacing: .15em;
+  margin-right: .35em;
+}
+article[data-article-opener="illustrated_paper_spots_v1"] .author-note {
+  color: rgb(93 96 96);
+  display: block;
+  font-size: 6.8pt;
+  line-height: 9.4pt;
+  margin: 3.2pt 0 0;
+}
+article[data-article-opener="illustrated_paper_spots_v1"] .opener-meta .source-link {
+  color: transparent;
+  display: block;
+  font-size: 0;
+  grid-column: 2;
+  grid-row: 1;
+  height: 41pt;
+  line-height: 0;
+  margin: 0;
+  text-decoration: none;
+  width: 41pt;
+}
+article[data-article-opener="illustrated_paper_spots_v1"] .opener-meta img.source-code {
+  display: block;
+  height: 41pt;
+  margin: 0;
+  max-height: none;
+  max-width: none;
+  object-fit: fill;
+  position: static;
+  width: 41pt;
+}
+article[data-article-opener="illustrated_paper_spots_v1"] > header > .standfirst {
+  font-size: 10.2pt;
+  line-height: 14.4pt;
+  margin: 23.5pt 0 0;
+  padding-top: 9pt;
+  transform: none;
+}
+/*
+ * Compact density is selected from measured title, credit and standfirst
+ * wraps.  The fixed 348 by 203pt art, border, orange offset, QR, rule and tick
+ * do not move.  Only the display size set inline by the adapter, the intervals
+ * around the existing furniture and the opening paragraph's reading metrics
+ * tighten enough to keep the complete paragraph on this page.
+ */
+article[data-article-opener="illustrated_paper_spots_v1"]
+  > header[data-opener-density="compact"] > .content-label {
+  margin-top: 20pt;
+}
+article[data-article-opener="illustrated_paper_spots_v1"]
+  > header[data-opener-density="compact"] > h1 {
+  margin-top: 6pt;
+}
+article[data-article-opener="illustrated_paper_spots_v1"]
+  > header[data-opener-density="compact"] .opener-tick {
+  margin-top: 18pt;
+}
+article[data-article-opener="illustrated_paper_spots_v1"]
+  > header[data-opener-density="compact"] .opener-meta {
+  padding-bottom: 7pt;
+  padding-top: 7pt;
+}
+article[data-article-opener="illustrated_paper_spots_v1"]
+  > header[data-opener-density="compact"] > .standfirst {
+  font-size: 9.6pt;
+  line-height: 13.2pt;
+  margin-top: 16pt;
+  padding-top: 6pt;
+}
+article[data-article-opener="illustrated_paper_spots_v1"] > header > .standfirst::first-letter {
+  color: rgb(49 93 140);
+  font-family: "Magazine Serif Display", "Magazine Serif", serif;
+  font-size: 18.7pt;
+  font-weight: 600;
+  line-height: .7;
+  margin-right: 1pt;
+}
 /*
  * `_closing_plate` (render.py:2170-2196) is a page, not a block: a white sheet,
  * one crop-filled artwork and one fitted display title, with no folio and no

@@ -7,8 +7,6 @@ content_mode: faithful_edit
 label: FAITHFUL EDIT
 ---
 
-## Software factories are super real
-
 Software factories are real, but we need to be realistic. The factory itself isn’t cracked; innovators are still discovering practices and pieces.
 
 If someone is selling you a factory now and they aren’t in the small cohort of startups created in the last six months, or among the roughly ten people who have tried and realistically failed for two years, they are selling bullshit. It isn’t cracked, but the puzzle is being solved daily.

@@ -18,9 +18,12 @@ from magazine.render_critic import (
     _COVER_PLACEHOLDER,
     _PageTexts,
     _booklet_spread_checks,
+    _inspect_opener_crop_fidelity,
+    _inspect_opener_offset,
     _inspect_page,
     _render_crop_page,
     _render_pages,
+    _review_crop_plan,
     _write_review_crops,
     inspect_render,
 )
@@ -52,6 +55,120 @@ def _split_documents(tmp_path: Path) -> dict[str, Path]:
         "interior_booklet_pdf": _a4_landscape_pdf(tmp_path / "interior.pdf", 2),
         "cover_booklet_pdf": _a4_landscape_pdf(tmp_path / "cover.pdf", 2),
     }
+
+
+def _opener_shadow_raster(path: Path, *, offset: int) -> Path:
+    image = Image.new("RGB", (840, 1191), "white")
+    draw = ImageDraw.Draw(image)
+    left, top, width, height, extension = 70, 60, 696, 406, 8
+    draw.rectangle(
+        (
+            left + offset,
+            top + offset,
+            left + width + extension - 1,
+            top + height + extension - 1,
+        ),
+        fill=(240, 87, 56),
+    )
+    draw.rectangle(
+        (left, top, left + width - 1, top + height - 1),
+        fill="white",
+        outline=(23, 25, 28),
+        width=5,
+    )
+    image.save(path)
+    return path
+
+
+def test_opener_offset_critic_distinguishes_translation_from_flush_padding(
+    tmp_path: Path,
+):
+    translated = _inspect_opener_offset(
+        _opener_shadow_raster(tmp_path / "translated.png", offset=8)
+    )
+    flush = _inspect_opener_offset(
+        _opener_shadow_raster(tmp_path / "flush.png", offset=0)
+    )
+
+    assert translated["pass"] is True
+    assert translated["offset_pixels"] == [8, 8]
+    assert translated["extension_pixels"] == [8, 8]
+    assert flush["pass"] is False
+    assert flush["offset_pixels"] == [0, 0]
+    assert flush["extension_pixels"] == [8, 8]
+
+
+def _opener_fidelity_raster(path: Path, size: tuple[int, int]) -> Path:
+    image = Image.new("RGB", size, "white")
+    draw = ImageDraw.Draw(image)
+    sx, sy = size[0] / 840, size[1] / 1191
+    frame = (
+        round(70 * sx),
+        round(60 * sy),
+        round(766 * sx),
+        round(466 * sy),
+    )
+    draw.rectangle(
+        (
+            frame[0] + round(8 * sx),
+            frame[1] + round(8 * sy),
+            frame[2] + round(8 * sx),
+            frame[3] + round(8 * sy),
+        ),
+        fill=(240, 87, 56),
+    )
+    draw.rectangle(
+        frame,
+        fill=(211, 225, 232),
+        outline=(23, 25, 28),
+        width=max(1, round(5 * sx)),
+    )
+    draw.rectangle(
+        (round(120 * sx), round(520 * sy), round(650 * sx), round(548 * sy)),
+        fill=(49, 93, 140),
+    )
+    image.save(path)
+    return path
+
+
+def test_full_page_opener_crop_fidelity_normalizes_dpi(tmp_path: Path):
+    reference = _opener_fidelity_raster(tmp_path / "page.png", (840, 1191))
+    crop = tmp_path / "crop.png"
+    with Image.open(reference) as opened:
+        opened.resize((1750, 2481), Image.Resampling.LANCZOS).save(crop)
+
+    result = _inspect_opener_crop_fidelity(crop, reference)
+
+    assert result["pass"] is True, result
+    assert result["rgb_mae"] <= 8
+    assert result["frame_edge_delta_inches"] <= 0.01
+
+
+def test_full_page_opener_crop_fidelity_rejects_shift_and_scale(tmp_path: Path):
+    reference = _opener_fidelity_raster(tmp_path / "page.png", (840, 1191))
+    with Image.open(reference) as opened:
+        source = opened.convert("RGB").resize((1750, 2481), Image.Resampling.LANCZOS)
+    shifted = Image.new("RGB", source.size, "white")
+    shifted.paste(source, (12, 12))
+    shifted_path = tmp_path / "shifted.png"
+    shifted.save(shifted_path)
+    scaled_source = source.resize(
+        (round(source.width * 0.98), round(source.height * 0.98)),
+        Image.Resampling.LANCZOS,
+    )
+    scaled = Image.new("RGB", source.size, "white")
+    scaled.paste(
+        scaled_source,
+        (
+            (source.width - scaled_source.width) // 2,
+            (source.height - scaled_source.height) // 2,
+        ),
+    )
+    scaled_path = tmp_path / "scaled.png"
+    scaled.save(scaled_path)
+
+    assert _inspect_opener_crop_fidelity(shifted_path, reference)["pass"] is False
+    assert _inspect_opener_crop_fidelity(scaled_path, reference)["pass"] is False
 
 
 def _numbered_reader(path: Path, page_count: int) -> Path:
@@ -130,6 +247,85 @@ def test_render_critic_emits_contact_sheet_and_passes_structural_checks(tmp_path
     assert [(row["kind"], row["page"]) for row in crops] == [("opener", 4), ("stub", 4)]
     assert all(row["ppi"] == 300 for row in crops)
     assert crops[0]["path"] == "render-review/crops/crop-p04-opener.png"
+    assert crops[0]["region_points"] == [0.0, 0.0, 419.5, 595.3]
+
+
+def test_declared_opener_without_a_toc_page_is_a_machine_error(tmp_path: Path):
+    reader = _numbered_reader(tmp_path / "reader.pdf", 8)
+    booklet = _numbered_reader(tmp_path / "booklet.pdf", 8)
+    (tmp_path / "edition-manifest.json").write_text(
+        json.dumps(
+            {
+                "inputs": {
+                    "articles": [
+                        {
+                            "id": "missing-opener",
+                            "opener_art": {"path": "art/missing.png"},
+                        }
+                    ]
+                },
+                "layout": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with patch("magazine.render_critic._render_pages", side_effect=_rasters(_CLEAN)):
+        report, _artifacts = inspect_render(
+            reader,
+            booklet,
+            tmp_path,
+            **_split_documents(tmp_path),
+            language="en",
+            toc={"article": 4},
+            article_pages={"article": 1},
+            editorial_pages=None,
+            edition_id="issue-001",
+        )
+
+    assert report["result"] == "fail"
+    offset_rows = report["checks"]["article_opener_offsets"]
+    assert offset_rows == [
+        {
+            "article": "missing-opener",
+            "page": None,
+            "pass": False,
+            "message": (
+                "The packaged opener declaration has no valid article start "
+                "page in the contents map."
+            ),
+        }
+    ]
+    assert report["checks"]["article_opener_offset_count_matches"] is True
+    assert any(
+        issue["code"] == "article-opener-offset-shadow"
+        and issue["severity"] == "error"
+        for issue in report["issues"]
+    )
+
+
+def test_opener_crop_uses_each_page_full_media_box_and_clamps_non_a5_pages(tmp_path: Path):
+    reader_path = tmp_path / "mixed-pages.pdf"
+    writer = PdfWriter()
+    writer.add_blank_page(width=A5[0], height=A5[1])
+    writer.add_blank_page(width=300.0, height=400.0)
+    with reader_path.open("wb") as handle:
+        writer.write(handle)
+
+    specs = _review_crop_plan(
+        PdfReader(str(reader_path)),
+        toc={"a5-opener": 1, "small-opener": 2},
+        manifest_layout={},
+        printed_tail_bands={},
+        page_rows=[],
+        flag_crops=[],
+        page_count=2,
+    )
+
+    assert [spec["region"] for spec in specs] == [
+        (0.0, 0.0, A5[0], A5[1]),
+        (0.0, 0.0, 300.0, 400.0),
+    ]
 
 
 def test_render_critic_reports_the_split_documents_sheet_counts_and_geometry(tmp_path: Path):

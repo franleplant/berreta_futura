@@ -1401,6 +1401,17 @@ class Magazine:
                             "id": article.id,
                             "manuscript": _file_entry(article.manuscript, self.root),
                             "fidelity": _file_entry(article.fidelity, self.root),
+                            **(
+                                {
+                                    "opener_art": {
+                                        **_file_entry(article.opener_art.path, self.root),
+                                        "alt_text": article.opener_art.alt_text,
+                                        "credit": article.opener_art.credit,
+                                    }
+                                }
+                                if article.opener_art
+                                else {}
+                            ),
                             "tail_art": _optional_file_entry(article.tail_art, self.root),
                         }
                         for article in variant.articles

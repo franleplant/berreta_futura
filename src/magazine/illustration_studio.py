@@ -4,7 +4,7 @@ The publication compiler already owns the illustration contract in
 ``magazine.illustration``.  This module does not create a second contract.  It
 coordinates the author-time work around that contract:
 
-* an explicit brief selects the exact article tails and closing plates;
+* an explicit brief selects the exact article openers, tails and closing plates;
 * scaffolding reconciles that selection with the manifest and plan;
 * prompt packages compile the existing plan through ``illustration_prompt``;
 * registration validates and hash-binds one supplied PNG; and
@@ -127,7 +127,7 @@ class IllustrationBrief:
             rows = []
         assets: list[IllustrationTargetBrief] = []
         ids: set[str] = set()
-        article_ids: set[str] = set()
+        article_slots: set[tuple[str, str]] = set()
         plate_indices: set[int] = set()
         paths: set[str] = set()
         for index, row in enumerate(rows, start=1):
@@ -140,9 +140,10 @@ class IllustrationBrief:
                 errors.append(f"Illustration brief asset id must be unique: {asset_id}")
             ids.add(asset_id)
             role = str(row.get("role") or "").strip()
-            if role not in {"article_tail", "closing_plate"}:
+            if role not in {"article_opener", "article_tail", "closing_plate"}:
                 errors.append(
-                    f"{label} role must be article_tail or closing_plate, not {role!r}"
+                    f"{label} role must be article_opener, article_tail, or "
+                    f"closing_plate, not {role!r}"
                 )
             values: dict[str, str] = {}
             for field in ("subject", "composition", "alt_text", "credit"):
@@ -152,17 +153,17 @@ class IllustrationBrief:
                 values[field] = value
             article_id = None
             plate_index = None
-            if role == "article_tail":
+            if role in {"article_opener", "article_tail"}:
                 article_id = _safe_identifier(
                     row.get("article_id"), f"{label} article_id", errors
                 )
-                if article_id in article_ids:
+                if (role, article_id) in article_slots:
                     errors.append(
-                        f"Illustration brief article tail must be unique: {article_id}"
+                        f"Illustration brief {role} must be unique: {article_id}"
                     )
-                article_ids.add(article_id)
+                article_slots.add((role, article_id))
                 if row.get("plate_index") is not None:
-                    errors.append(f"{label} article_tail must not declare plate_index")
+                    errors.append(f"{label} {role} must not declare plate_index")
             elif role == "closing_plate":
                 if row.get("article_id") is not None:
                     errors.append(f"{label} closing_plate must not declare article_id")
@@ -421,7 +422,7 @@ class IllustrationStudio:
             manifest, manifest_bytes = self._load_manifest(edition_id)
             edition_dir = self._edition_dir(edition_id)
             plan_path = edition_dir / _PLAN_PATH
-            intended_rows, manifest_tail_paths = self._brief_rows(
+            intended_rows, manifest_opener_arts, manifest_tail_paths = self._brief_rows(
                 parsed, manifest, edition_dir
             )
             intended_plan = {
@@ -437,6 +438,7 @@ class IllustrationStudio:
             selected_manifest = self._reconcile_manifest(
                 manifest_bytes,
                 manifest_path_value,
+                manifest_opener_arts,
                 manifest_tail_paths,
                 path=edition_dir / _MANIFEST_PATH,
             )
@@ -886,7 +888,11 @@ class IllustrationStudio:
         brief: IllustrationBrief,
         manifest: Mapping[str, Any],
         edition_dir: Path,
-    ) -> tuple[list[dict[str, Any]], dict[str, str]]:
+    ) -> tuple[
+        list[dict[str, Any]],
+        dict[str, dict[str, str]],
+        dict[str, str],
+    ]:
         article_rows = manifest.get("articles")
         if not isinstance(article_rows, list):
             raise ValidationError("Edition articles must be a list")
@@ -896,17 +902,44 @@ class IllustrationStudio:
         closing_rows = manifest.get("closing_plates") or []
         if not isinstance(closing_rows, list):
             raise ValidationError("Edition closing_plates must be a list")
-        selected_articles = {
+        selected_openers = {
+            target.article_id
+            for target in brief.assets
+            if target.role == "article_opener"
+        }
+        selected_tails = {
             target.article_id
             for target in brief.assets
             if target.role == "article_tail"
         }
+        format_row = manifest.get("format") or {}
+        illustrated = (
+            isinstance(format_row, Mapping)
+            and format_row.get("article_opener") == "illustrated_paper_spots_v1"
+        )
+        if illustrated and selected_openers != set(articles):
+            raise ValidationError(
+                "Illustration brief article openers must match every article in "
+                f"the illustrated edition (brief {sorted(selected_openers)}, "
+                f"edition {sorted(articles)})"
+            )
+        existing_openers = {
+            article_id
+            for article_id, row in articles.items()
+            if row.get("opener_art")
+        }
+        unselected_openers = sorted(existing_openers - selected_openers)
+        if unselected_openers:
+            raise ValidationError(
+                "Illustration brief omits manifest-declared article openers: "
+                + ", ".join(unselected_openers)
+            )
         existing_tails = {
             article_id
             for article_id, row in articles.items()
             if row.get("tail_art_path")
         }
-        unselected = sorted(existing_tails - selected_articles)
+        unselected = sorted(existing_tails - selected_tails)
         if unselected:
             raise ValidationError(
                 "Illustration brief omits manifest-declared article tails: "
@@ -925,30 +958,69 @@ class IllustrationStudio:
                 f"edition {sorted(expected_plates)})"
             )
         rows: list[dict[str, Any]] = []
+        opener_arts: dict[str, dict[str, str]] = {}
         tail_paths: dict[str, str] = {}
         normalized_paths: set[str] = set()
         for target in brief.assets:
-            if target.role == "article_tail":
+            if target.role in {"article_opener", "article_tail"}:
                 assert target.article_id is not None
                 if target.article_id not in articles:
                     raise ValidationError(
                         f"Illustration brief names unknown article: {target.article_id}"
                     )
-                manifest_value = articles[target.article_id].get("tail_art_path")
-                art_path = target.art_path or (
-                    f"editions/{brief.edition_id}/art/article-tails/"
-                    f"{target.article_id}.png"
-                )
-                if manifest_value:
-                    manifest_path = self._edition_relative_project_path(
-                        edition_dir, manifest_value, label="Article tail"
+                article_row = articles[target.article_id]
+                if target.role == "article_opener":
+                    manifest_value = article_row.get("opener_art")
+                    art_path = target.art_path or (
+                        f"editions/{brief.edition_id}/art/article-openers/"
+                        f"{target.article_id}.png"
                     )
-                    if manifest_path != art_path:
-                        raise ValidationError(
-                            f"Illustration brief path for {target.article_id} does "
-                            f"not match tail_art_path: {manifest_value}"
+                    if manifest_value:
+                        if not isinstance(manifest_value, Mapping):
+                            raise ValidationError(
+                                f"Article {target.article_id} opener_art must be a mapping"
+                            )
+                        manifest_path = self._edition_relative_project_path(
+                            edition_dir,
+                            manifest_value.get("path"),
+                            label="Article opener",
                         )
-                tail_paths[target.article_id] = art_path
+                        expected = {
+                            "path": manifest_path,
+                            "alt_text": str(manifest_value.get("alt_text") or "").strip(),
+                            "credit": str(manifest_value.get("credit") or "").strip(),
+                        }
+                        proposed = {
+                            "path": art_path,
+                            "alt_text": target.alt_text,
+                            "credit": target.credit,
+                        }
+                        if expected != proposed:
+                            raise ValidationError(
+                                f"Illustration brief for opener {target.article_id} "
+                                "does not match edition.yaml"
+                            )
+                    opener_arts[target.article_id] = {
+                        "path": art_path,
+                        "alt_text": target.alt_text,
+                        "credit": target.credit,
+                    }
+                else:
+                    manifest_value = article_row.get("tail_art_path")
+                    art_path = target.art_path or (
+                        f"editions/{brief.edition_id}/art/article-tails/"
+                        f"{target.article_id}.png"
+                    )
+                    if manifest_value:
+                        manifest_path = self._edition_relative_project_path(
+                            edition_dir, manifest_value, label="Article tail"
+                        )
+                        if manifest_path != art_path:
+                            raise ValidationError(
+                                f"Illustration brief path for {target.article_id} does "
+                                f"not match tail_art_path: {manifest_value}"
+                            )
+                    tail_paths[target.article_id] = art_path
                 row = {
                     "id": target.id,
                     "role": target.role,
@@ -1003,12 +1075,13 @@ class IllustrationStudio:
                 }
             )
             rows.append(row)
-        return rows, tail_paths
+        return rows, opener_arts, tail_paths
 
     def _reconcile_manifest(
         self,
         content: bytes,
         plan_path: str,
+        opener_arts: Mapping[str, Mapping[str, str]],
         tail_paths: Mapping[str, str],
         *,
         path: Path,
@@ -1035,11 +1108,37 @@ class IllustrationStudio:
             if not isinstance(item, MappingNode):
                 continue
             id_node = _optional_mapping_value(item, "id")
-            if not isinstance(id_node, ScalarNode) or id_node.value not in tail_paths:
+            if (
+                not isinstance(id_node, ScalarNode)
+                or id_node.value not in set(opener_arts) | set(tail_paths)
+            ):
                 continue
             article_id = id_node.value
             found.add(article_id)
+            if article_id in opener_arts:
+                opener_node = _optional_mapping_value(item, "opener_art")
+                if opener_node is None:
+                    opener = opener_arts[article_id]
+                    offset = item.end_mark.index
+                    indent = item.start_mark.column
+                    child = " " * (indent + 2)
+                    edits.append(
+                        (
+                            offset,
+                            offset,
+                            " " * indent
+                            + "opener_art:\n"
+                            + child
+                            + f"path: {opener['path']}\n"
+                            + child
+                            + f"alt_text: {opener['alt_text']}\n"
+                            + child
+                            + f"credit: {opener['credit']}\n",
+                        )
+                    )
             tail_node = _optional_mapping_value(item, "tail_art_path")
+            if article_id not in tail_paths:
+                continue
             if tail_node is not None:
                 declared = (
                     tail_node.value if isinstance(tail_node, ScalarNode) else None
@@ -1063,7 +1162,7 @@ class IllustrationStudio:
                     + f"tail_art_path: {tail_paths[article_id]}\n",
                 )
             )
-        missing = sorted(set(tail_paths) - found)
+        missing = sorted((set(opener_arts) | set(tail_paths)) - found)
         if missing:
             raise ValidationError(
                 "Illustration brief names unknown articles: " + ", ".join(missing)
@@ -1179,6 +1278,33 @@ class IllustrationStudio:
         )
 
     def _inventory_errors(self, edition: Any, plan: Any) -> list[str]:
+        planned_openers = {
+            asset.article_id: asset
+            for asset in plan.assets
+            if asset.role == "article_opener"
+        }
+        declared_openers = {
+            article.id: article.opener_art
+            for article in edition.articles
+            if article.opener_art is not None
+        }
+        errors: list[str] = []
+        if set(planned_openers) != set(declared_openers):
+            errors.append(
+                "Illustration plan article openers do not match edition.yaml "
+                f"(plan {sorted(planned_openers)}, edition {sorted(declared_openers)})"
+            )
+        for article_id in set(planned_openers) & set(declared_openers):
+            planned = planned_openers[article_id]
+            declared = declared_openers[article_id]
+            if (
+                planned.art_path != declared.path
+                or planned.alt_text != declared.alt_text
+                or planned.credit != declared.credit
+            ):
+                errors.append(
+                    f"Illustration plan opener {article_id} does not match edition.yaml"
+                )
         planned_tails = {
             asset.article_id: asset.art_path
             for asset in plan.assets
@@ -1189,7 +1315,6 @@ class IllustrationStudio:
             for article in edition.articles
             if article.tail_art is not None
         }
-        errors: list[str] = []
         if set(planned_tails) != set(declared_tails):
             errors.append(
                 "Illustration plan article tails do not match edition.yaml "
@@ -1248,7 +1373,29 @@ class IllustrationStudio:
                 if row.get("tail_art_path")
                 else None
             )
-            articles.append(SimpleNamespace(id=article_id, tail_art=tail))
+            opener_row = row.get("opener_art")
+            opener = None
+            if opener_row is not None:
+                if not isinstance(opener_row, Mapping):
+                    raise ValidationError(
+                        f"Article {article_id} opener_art must be a mapping"
+                    )
+                opener = SimpleNamespace(
+                    path=self._manifest_asset_path(
+                        edition_dir,
+                        opener_row.get("path"),
+                        label=f"Article {article_id} opener_art.path",
+                    ),
+                    alt_text=str(opener_row.get("alt_text") or "").strip(),
+                    credit=str(opener_row.get("credit") or "").strip(),
+                )
+            articles.append(
+                SimpleNamespace(
+                    id=article_id,
+                    opener_art=opener,
+                    tail_art=tail,
+                )
+            )
         closing_rows = manifest.get("closing_plates") or []
         if not isinstance(closing_rows, list):
             raise ValidationError("Edition closing_plates must be a list")
@@ -1512,7 +1659,7 @@ def _brief_dict(brief: IllustrationBrief) -> dict[str, Any]:
                 "role": asset.role,
                 **(
                     {"article_id": asset.article_id}
-                    if asset.role == "article_tail"
+                    if asset.role in {"article_opener", "article_tail"}
                     else {"plate_index": asset.plate_index}
                 ),
                 **({"art_path": asset.art_path} if asset.art_path else {}),

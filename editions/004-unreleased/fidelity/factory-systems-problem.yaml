@@ -12,10 +12,9 @@ source_body_sha256:
 paragraphs:
 - id: factories-001
   kind: h2
-  status: modified
+  status: substantive_cut
   source: '[1] software factories are super real'
-  edited: Software factories are super real
-  reason: Promoted the opening claim to a section heading and removed its inline cross-reference.
+  reason: Removed the redundant heading so the source's opening paragraph can serve as the article introduction on the illustrated opener.
 - id: factories-002
   kind: p
   status: modified

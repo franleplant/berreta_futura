@@ -7,7 +7,10 @@ Articles are capped at seven rendered A5 pages. Over-budget sources become
 explicitly credited, source-mapped faithful syntheses rather than silently
 truncated reprints.
 The opening editorial requires a title and is capped at a single rendered A5
-page, including its label, title, and byline.
+page, including its label, title, and byline. It uses the Orwell-based method
+in `docs/WRITING_RULES.md` to develop an original unifying idea or emergent
+narrative across the issue. It never summarizes the articles one by one or
+acts as a prose table of contents.
 
 The publication compiled by this repository is **BERRETA FUTURA**. Its name is
 configured once under `[publication]` in `magazine.toml`; edition manifests own
@@ -405,6 +408,35 @@ repository-relative and cannot escape the project. The compiler validates
 required fields, source references, duplicate IDs, and file existence before
 layout.
 
+New editions declare the permanent article-opener format and one first-class
+opener image per article:
+
+```yaml
+format:
+  article_opener: illustrated_paper_spots_v1
+
+articles:
+  - id: an-article
+    opener_art:
+      path: editions/005-unreleased/art/article-openers/an-article.png
+      alt_text: The recurring boy and robot explore the article's central idea.
+      credit: Illustration by BERRETA FUTURA.
+```
+
+The declaration is all-or-nothing. Every article must have exactly one matching
+`article_opener` entry in the edition's illustration plan, with the same path,
+alt text, and credit. Validation checks the committed image, landscape
+orientation, role-specific minimum resolution, and deterministic inventory
+before layout. Older editions without `format.article_opener` continue through
+the legacy opener path.
+
+Both PDF and web consume the same semantic opener: large landscape boy-and-robot
+art, inline provenance kicker, Source Serif title, author and biography, an
+unlabeled source anchor, and the first manuscript paragraph. The PDF sets that
+anchor as a scannable QR and starts the rest of the manuscript on the next
+page. The web keeps the same square clickable and makes the composition
+responsive without changing its editorial order.
+
 An article may select at most three curated figures. Each selection records why
 it is important, useful, beautiful, or cool; resolves to a hash-verified source
 asset; and uses a full-width `evidence_band`, an `evidence_band_prose` with a
@@ -524,20 +556,22 @@ New illustrated editions should begin with `templates/illustrations.yaml`. Its
 `direction_preset` points to
 `art-directions/playful-science-vignettes.yaml`, the publication's reusable
 default: original Doraemon-era children's science-manga energy, one wordless
-narrative vignette, friendly rounded figures and gadgets, simple black ink,
-warm paper, and relaxed spot color. Wide single scenes are the default for
-article tails; square scenes are preferred when a standalone placement
-supports them; portrait scenes are secondary and reserved for vertical ideas
-or closing plates. The preset explicitly forbids recognizable franchise
-characters and copied signature gadgets. It also names the approved square and
-wide prototypes under `art-directions/references/`; their hashes travel with
+narrative vignette, the recurring boy and robot, friendly rounded figures and
+gadgets, simple black ink, muted grainy color, and no mandatory yellow
+background. Wide single scenes are required for article openers and are the
+default for article tails; square scenes are preferred when a standalone
+placement supports them; portrait scenes are secondary and reserved for
+vertical ideas or closing plates. The preset explicitly forbids recognizable
+franchise characters and copied signature gadgets. It also names the approved
+square and wide prototypes under `art-directions/references/`; their hashes travel with
 the prompt package and build manifest so future generations use the same visual
 anchors rather than relying on prose alone.
 
-The command validates the committed article-tail and closing-plate inventory,
-then writes exact authoring prompts and a hash-bound selection manifest under
-`output/<edition-id>/illustration-prompts/`. Image generation and candidate
-selection happen at author time; `mag build` only consumes the committed PNGs.
+The command validates the committed article-opener, article-tail, and
+closing-plate inventory, then writes exact authoring prompts and a hash-bound
+selection manifest under `output/<edition-id>/illustration-prompts/`. Image
+generation and candidate selection happen at author time; `mag build` only
+consumes the committed PNGs.
 
 ## Web edition
 
@@ -555,6 +589,13 @@ not part of `mag build`, never enters a release package, and is outside the
 hash-bound render review, which binds PDFs only. While captured sources lack
 a public redistribution basis, web output must not be published; it lives
 under `output/`, which stays out of Git.
+
+For `illustrated_paper_spots_v1`, each article page retains the print opener on
+pure white: bordered landscape art with its signal-orange offset, cobalt
+kicker, Source Serif title, short orange tick, left-hand author block,
+right-hand QR, one gray rule, and cobalt drop cap. The QR is the canonical
+source anchor and remains clickable. Responsive rules preserve the landscape
+art and scannable square while preventing horizontal overflow on phone screens.
 
 ## Release archive
 
