@@ -1,32 +1,31 @@
 schema_version: 2
-round: 1
+round: 2
 selection_status: pending_editor_choice
 editorial_reading: >-
   A capable model becomes useful, legible, and safe only through the protocols,
   evaluations, architectures, memory, boundaries, and human judgment around it.
 variants:
   synthetic:
-    art_path: art/cover-candidate-synthetic.png
-    asset_sha256: 833562913cd1eadf853f8c4e6affcccb12b69989a3090f797cd156a5121c65a0
+    art_path: art/cover-candidate-synthetic-v2.png
+    asset_sha256: 634d40be127ceb204eb05fcdda5a37372e07fe29e84d10e13b99f92b64bd6e0e
     generation_method: imagegen
     direction: >-
-      A crisp retro-futurist systems map. A luminous model core sits inside
-      concentric protocol sockets, evaluation gates, memory loops, architecture
-      modules, human checkpoints, and security barriers, rendered as flat
-      geometric editorial forms in the issue palette.
+      An exploded axonometric system ascends diagonally through offset protocol,
+      evaluation, memory, architecture, boundary, and review layers. A tiny
+      luminous core remains visibly subordinate to the surrounding structure.
   art_directed:
-    art_path: art/cover-candidate-art-directed.png
-    asset_sha256: 75b023988a07105ff026499e63a652b061bc536d84be277f50b30dd4291d1f08
+    art_path: art/cover-candidate-art-directed-v2.png
+    asset_sha256: 07be2d2f377a5ef4a9e8c4697cf66bec88c8f584230fae301b524c757d0aec10
     generation_method: imagegen
     direction: >-
-      A tactile analog risograph and monotype collage. Hand-cut systems,
-      looping ribbons, plugs, scaffolds, and adjusting hands surround a small
-      intelligence seed on warm fibrous paper with visible ink misregistration.
+      A photographed hand-stitched textile system uses distinct fabric patches,
+      colored threads, knots, eyelets, and a human-fastened safety clasp around
+      one tiny reflective model bead.
   wildcard:
-    art_path: art/cover-candidate-wildcard.png
-    asset_sha256: b4c7f8caf2c370ba5f97b66fb3a6d8da73cb41666d9d07d0453e43ef7315cdbb
+    art_path: art/cover-candidate-wildcard-v2.png
+    asset_sha256: a8c7dc40ff79c8860d61ee74c7c349b9b2649e9e4b3795831ecc5a346e37b89b
     generation_method: imagegen
     direction: >-
-      A high-key fabricated tabletop installation photographed in a studio.
-      Ceramic sockets, patch cables, evaluation dials, memory spools, gates,
-      mirrors, and one tuning hand dominate a tiny glowing core.
+      An aerial architectural photograph turns the system into monumental
+      desert land art. Protocol corridors, checkpoints, memory basins, boundary
+      walls, and human-maintained bridges surround a tiny glowing pavilion.
