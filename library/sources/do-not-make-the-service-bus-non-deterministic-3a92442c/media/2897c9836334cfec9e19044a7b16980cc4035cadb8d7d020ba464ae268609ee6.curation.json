@@ -1,0 +1,12 @@
+{
+  "bundle_sha256": "2897c9836334cfec9e19044a7b16980cc4035cadb8d7d020ba464ae268609ee6",
+  "candidate_count": 0,
+  "candidates": [],
+  "curator": "magazine-compiler/automatic-media-curator",
+  "input_sha256": "c161504aeb56c0c8b0204efdb4d0a9b92ec953d57053f4b11475b9201991174e",
+  "policy_version": "editorial-impact-v4",
+  "schema_version": 1,
+  "selected": [],
+  "selection_limit": 3,
+  "source_id": "do-not-make-the-service-bus-non-deterministic-3a92442c"
+}

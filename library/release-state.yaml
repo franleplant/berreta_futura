@@ -8,8 +8,11 @@ collecting_editions:
   - 22580-from-gpt2-to-kimi3-explained-8f01b0fe
   - anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
   - architecture-overview-ce5cb1d1
+  - do-not-make-the-service-bus-non-deterministic-3a92442c
   - eval-engineering-the-step-that-turns-a-200-model-9f6f868f
+  - factories-are-not-a-token-or-llm-problem-ba5fabbf
   - pragmatic-leverage-in-the-software-factory-09879736
+  - software-factories-are-super-real-but-the-factor-ab8ad3ab
   - the-2026-07-28-mcp-specification-release-candida-1a1752b8
 released_editions:
 - id: 001-the-work-left-to-us

@@ -1,0 +1,14 @@
+{
+  "artifact_count": 1,
+  "bundle_sha256": "5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 0,
+  "images": [],
+  "local_references": [],
+  "missing_references": [],
+  "referenced_image_count": 0,
+  "schema_version": 1,
+  "source_id": "do-not-make-the-service-bus-non-deterministic-3a92442c",
+  "unresolved_acquisition_references": []
+}

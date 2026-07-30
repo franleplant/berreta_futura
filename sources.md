@@ -2,7 +2,61 @@
 
 _Generated from structured source records. Do not edit by hand._
 
-_Intake edition: `004-unreleased`. Open edition: `004-unreleased`. Collecting: `004-unreleased` (6 queued)._
+_Intake edition: `004-unreleased`. Open edition: `004-unreleased`. Collecting: `004-unreleased` (9 queued)._
+
+## Software Factories Are Super Real, but the Factory Is Not Cracked — Geoffrey Huntley
+
+- ID: `software-factories-are-super-real-but-the-factor-ab8ad3ab`
+- Source: https://x.com/GeoffreyHuntley/status/2082525589416923314
+- Kind / status: web / captured
+- Captured: 2026-07-29T21:40:25-03:00
+- Content hash: `not captured`
+- Raw captures: 2 committed bundle(s)
+- Release: queued for `004-unreleased`
+- Published: 2026-07-29
+- Tags: agents, software-factories, systems-engineering
+- Author biography: Geoffrey Huntley is the creator of the Ralph loop.
+- Author biography evidence:
+  - https://x.com/GeoffreyHuntley (raw bundle `5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88`)
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+
+## Factories Are Not a Token or LLM Problem — Geoffrey Huntley
+
+- ID: `factories-are-not-a-token-or-llm-problem-ba5fabbf`
+- Source: https://x.com/GeoffreyHuntley/status/2082526705160478906
+- Kind / status: web / captured
+- Captured: 2026-07-29T21:40:25-03:00
+- Content hash: `not captured`
+- Raw captures: 2 committed bundle(s)
+- Release: queued for `004-unreleased`
+- Published: 2026-07-29
+- Tags: agents, software-factories, systems-engineering
+- Author biography: Geoffrey Huntley is the creator of the Ralph loop.
+- Author biography evidence:
+  - https://x.com/GeoffreyHuntley (raw bundle `5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88`)
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+
+## Do Not Make the Service Bus Non-deterministic — Geoffrey Huntley
+
+- ID: `do-not-make-the-service-bus-non-deterministic-3a92442c`
+- Source: https://x.com/GeoffreyHuntley/status/2082576563439312982
+- Kind / status: web / captured
+- Captured: 2026-07-29T21:40:25-03:00
+- Content hash: `not captured`
+- Raw captures: 2 committed bundle(s)
+- Release: queued for `004-unreleased`
+- Published: 2026-07-29
+- Tags: agents, software-factories, systems-engineering
+- Author biography: Geoffrey Huntley is the creator of the Ralph loop.
+- Author biography evidence:
+  - https://x.com/GeoffreyHuntley (raw bundle `5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88`)
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
 
 ## Pragmatic Leverage in the Software Factory — Dex Horthy
 

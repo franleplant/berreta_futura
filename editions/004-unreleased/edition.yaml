@@ -17,10 +17,10 @@ art_direction_path: editions/004-unreleased/art/illustrations.yaml
 tail_art_fit: contain
 cover:
   headline: The Systems Around the Model
-  deck: Six reports on the machinery that makes intelligence useful, legible, and safe
+  deck: Seven reports on the machinery that makes intelligence useful, legible, and safe
   back_text: 'The model is only one component. Reliability lives in the protocol, the evidence,
     the feedback loop, the architecture, and the judgment that connects them.'
-  art_path: art/cover-art.png
+  art_path: art/cover-candidate-wildcard-v2.png
 sources:
 - anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
 - eval-engineering-the-step-that-turns-a-200-model-9f6f868f
@@ -28,6 +28,9 @@ sources:
 - 22580-from-gpt2-to-kimi3-explained-8f01b0fe
 - architecture-overview-ce5cb1d1
 - the-2026-07-28-mcp-specification-release-candida-1a1752b8
+- software-factories-are-super-real-but-the-factor-ab8ad3ab
+- factories-are-not-a-token-or-llm-problem-ba5fabbf
+- do-not-make-the-service-bus-non-deterministic-3a92442c
 editorial: manuscript/editorial.md
 articles:
 - id: frontier-lab-agent-intrusion
@@ -166,6 +169,21 @@ articles:
     - important
     - useful
     rationale: The visual supports the article's main technical progression.
+- id: factory-systems-problem
+  title: The Factory Is a Systems Problem
+  short_title: Factory Is a Systems Problem
+  display_emphasis: Systems
+  opener_variant: split_axis
+  author: Geoffrey Huntley
+  author_note: Geoffrey Huntley is the creator of the Ralph loop.
+  content_mode: faithful_edit
+  source_ids:
+  - software-factories-are-super-real-but-the-factor-ab8ad3ab
+  - factories-are-not-a-token-or-llm-problem-ba5fabbf
+  - do-not-make-the-service-bus-non-deterministic-3a92442c
+  manuscript: editions/004-unreleased/articles/factory-systems-problem.md
+  fidelity: editions/004-unreleased/fidelity/factory-systems-problem.yaml
+  tail_art_path: editions/004-unreleased/art/article-tails/factory-systems-problem.png
 - id: mcp-in-a-nutshell
   title: MCP in a Nutshell
   short_title: MCP in a Nutshell

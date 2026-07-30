@@ -30,6 +30,22 @@ direction:
   - Modern glossy anime rendering, painterly concept art, neon cyberpunk, or photorealism
   - Decorative pseudo-writing, interface glyphs, captions, labels, or speech balloons
 assets:
+- id: factory-systems-problem
+  role: article_tail
+  article_id: factory-systems-problem
+  art_path: editions/004-unreleased/art/article-tails/factory-systems-problem.png
+  subject: >-
+    The engineer and helper robot inspect a software factory whose small model
+    module rides inside a much larger system of sandboxing, source control,
+    reproducible builds, delivery gates, identity controls, and human approval.
+  composition: >-
+    One wide self-contained factory cutaway with the essential characters,
+    conveyor, bounded agent process, and control gates inside the safe central
+    crop. The machinery remains legible as one deterministic system.
+  alt_text: >-
+    A manga engineer and helper robot inspect a layered software factory with a
+    conveyor, sandbox, build machinery, identity vault, and human approval lever.
+  credit: Original illustration by the editors with Codex image generation.
 - id: mcp-four-vignettes
   role: article_tail
   article_id: mcp-in-a-nutshell

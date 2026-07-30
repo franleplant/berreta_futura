@@ -2,13 +2,13 @@ schema_version: 1
 language: es
 source_language: en
 locale: es
-base_copy_sha256: 4ad13eca8cfea8839028e2d7c14201861040638f057a21be654131075fd382f1
+base_copy_sha256: e6b1e25d4c6fac0a01986668f71f89bbfb18bae1c9795682dd150cd2941afc6d
 title: Los sistemas alrededor del modelo
 subtitle: Protocolos, evaluaciones, arquitecturas y el trabajo operativo que convierte la capacidad de los modelos
   en sistemas confiables
 cover:
   headline: Los sistemas alrededor del modelo
-  deck: Seis informes sobre la maquinaria que hace útil, comprensible y segura a la inteligencia
+  deck: Siete informes sobre la maquinaria que hace útil, comprensible y segura a la inteligencia
   back_text: El modelo es solo un componente. La confiabilidad vive en el protocolo, la evidencia, el ciclo de
     retroalimentación, la arquitectura y el criterio que los conecta.
 closing_plate_titles:
@@ -123,4 +123,11 @@ articles:
   author_note: David Soria Parra y Den Delimarsky son mantenedores principales del Model Context Protocol.
   manuscript: articles/mcp-protocol-update.md
   source_sha256: 3d65b78ca8cb043a9e6a217bfa1068da48002eaf5501a69a03b2326c92bf6078
+- id: factory-systems-problem
+  title: La fábrica es un problema de sistemas
+  short_title: La fábrica es un problema de sistemas
+  display_emphasis: sistemas
+  author_note: Geoffrey Huntley es el creador del bucle Ralph.
+  manuscript: articles/factory-systems-problem.md
+  source_sha256: 496df872acae9ec4c4a012aa69ab439a47d3454f422356b66d81e90a1330ca30
 sections: []
