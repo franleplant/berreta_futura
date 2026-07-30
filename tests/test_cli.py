@@ -4,6 +4,21 @@ from magazine.cli import parser
 
 
 class CliTests(unittest.TestCase):
+    def test_finish_defaults_the_final_id_and_accepts_an_override(self):
+        automatic = parser().parse_args(["finish", "004-unreleased"])
+        explicit = parser().parse_args(
+            [
+                "finish",
+                "004-unreleased",
+                "--as",
+                "004-systems",
+            ]
+        )
+
+        self.assertEqual(automatic.command, "finish")
+        self.assertIsNone(automatic.final_id)
+        self.assertEqual(explicit.final_id, "004-systems")
+
     def test_capture_requires_author_identity_mode(self):
         with self.assertRaises(SystemExit):
             parser().parse_args([

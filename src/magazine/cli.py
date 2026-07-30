@@ -340,6 +340,20 @@ def parser() -> argparse.ArgumentParser:
     release = actions.add_parser("release", help="Build and freeze the complete open edition")
     release.add_argument("edition_id")
     release.add_argument("--next-edition-id", help="Override the next empty edition id")
+    finish = actions.add_parser(
+        "finish",
+        help="Give an approved edition its stable id, freeze it, and open the next",
+    )
+    finish.add_argument("edition_id")
+    finish.add_argument(
+        "--as",
+        dest="final_id",
+        help="Override the stable id derived from the issue number and title",
+    )
+    finish.add_argument(
+        "--next-edition-id",
+        help="Override the next empty collecting edition id",
+    )
     return command
 
 
@@ -721,6 +735,17 @@ def main(argv: list[str] | None = None) -> int:
                 f"released: {transition.released_edition_id}\n"
                 f"output: {result.output_dir}\n"
                 f"open: {transition.next_edition_id}"
+            )
+        elif args.command == "finish":
+            result, transition = magazine.finish(
+                args.edition_id,
+                final_id=args.final_id,
+                next_edition_id=args.next_edition_id,
+            )
+            print(
+                f"finished: {transition.released_edition_id}\n"
+                f"pdf: {result.reader_pdf}\n"
+                f"next: {transition.next_edition_id}"
             )
         return 0
     except MagazineError as exc:

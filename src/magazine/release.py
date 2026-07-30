@@ -3,6 +3,8 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import mkstemp
@@ -10,6 +12,25 @@ from typing import Any
 
 from .errors import ValidationError
 from .io import dump_yaml, load_structured
+
+
+_EDITION_ID = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+_EDITION_TEXT_SUFFIXES = {
+    ".css",
+    ".html",
+    ".json",
+    ".md",
+    ".svg",
+    ".toml",
+    ".txt",
+    ".yaml",
+    ".yml",
+}
+_EDITION_IDENTITY_FILES = {
+    Path("edition.yaml"),
+    Path("reviews/evidence.yaml"),
+    Path("reviews/render.yaml"),
+}
 
 
 @dataclass(frozen=True)
@@ -82,6 +103,144 @@ class ReleaseTransition:
     next_edition_id: str
     source_ids: tuple[str, ...]
     state: ReleaseState
+
+
+def finished_edition_id(issue_number: str | int, title: str) -> str:
+    """Derive the stable released id a human expects from issue copy."""
+
+    try:
+        number = int(issue_number)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError("Edition issue_number must be an integer") from exc
+    if number < 1:
+        raise ValidationError("Edition issue_number must be positive")
+    ascii_title = (
+        unicodedata.normalize("NFKD", str(title))
+        .encode("ascii", "ignore")
+        .decode("ascii")
+        .lower()
+    )
+    slug = re.sub(r"[^a-z0-9]+", "-", ascii_title).strip("-")
+    if not slug:
+        raise ValidationError("Edition title cannot produce a finished id")
+    return f"{number:03d}-{slug}"
+
+
+def rename_collecting_edition(
+    state_path: Path,
+    editions_dir: Path,
+    *,
+    old_id: str,
+    new_id: str,
+) -> None:
+    """Atomically migrate one collecting edition's identity and local paths."""
+
+    old_id = str(old_id or "").strip()
+    new_id = str(new_id or "").strip()
+    for label, value in (("Current", old_id), ("Finished", new_id)):
+        if not _EDITION_ID.fullmatch(value):
+            raise ValidationError(
+                f"{label} edition id must use lowercase letters, numbers, and hyphens: "
+                f"{value!r}"
+            )
+    if old_id == new_id:
+        return
+
+    state = load_release_state(state_path)
+    if old_id not in state.collecting_edition_ids:
+        raise ValidationError(f"Edition is not collecting: {old_id}")
+    used_ids = set(state.collecting_edition_ids) | {
+        str(row.get("id")) for row in state.released_editions
+    }
+    if new_id in used_ids:
+        raise ValidationError(f"Edition id is already in use: {new_id}")
+
+    editions_root = editions_dir.resolve()
+    old_dir = (editions_dir / old_id).resolve()
+    new_dir = (editions_dir / new_id).resolve()
+    if not old_dir.is_relative_to(editions_root) or not new_dir.is_relative_to(
+        editions_root
+    ):
+        raise ValidationError("Edition rename escapes the editions directory")
+    if not old_dir.is_dir():
+        raise ValidationError(f"Edition directory not found: {old_dir}")
+    if new_dir.exists():
+        raise ValidationError(f"Finished edition directory already exists: {new_dir}")
+
+    manifest = load_structured(old_dir / "edition.yaml")
+    if manifest.get("id") != old_id:
+        raise ValidationError(
+            f"Edition manifest id {manifest.get('id')!r} does not match {old_id!r}"
+        )
+
+    edition_updates: list[tuple[Path, bytes]] = []
+    for path in sorted(old_dir.rglob("*")):
+        if not path.is_file() or path.suffix.lower() not in _EDITION_TEXT_SUFFIXES:
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        relative = path.relative_to(old_dir)
+        replaced = text.replace(
+            f"editions/{old_id}/",
+            f"editions/{new_id}/",
+        ).replace(
+            f"output/{old_id}/",
+            f"output/{new_id}/",
+        )
+        if relative in _EDITION_IDENTITY_FILES:
+            replaced = re.sub(
+                rf"^(\s*(?:id|edition_id):\s*){re.escape(old_id)}(\s*(?:#.*)?)$",
+                rf"\g<1>{new_id}\g<2>",
+                replaced,
+                flags=re.MULTILINE,
+            )
+        if replaced != text:
+            edition_updates.append(
+                (relative, replaced.encode("utf-8"))
+            )
+
+    collecting = []
+    for row in state.collecting_editions:
+        renamed = dict(row)
+        if str(renamed.get("id")) == old_id:
+            renamed["id"] = new_id
+        collecting.append(renamed)
+    renamed_state = ReleaseState(
+        tuple(collecting),
+        new_id if state.intake_edition_id == old_id else state.intake_edition_id,
+        state.released_editions,
+    )
+
+    try:
+        old_dir.rename(new_dir)
+    except OSError as exc:
+        raise ValidationError(
+            f"Cannot rename collecting edition {old_id} to {new_id}: {exc}"
+        ) from exc
+    try:
+        _replace_files_atomically(
+            tuple(
+                (new_dir / relative, content)
+                for relative, content in edition_updates
+            )
+            + (
+                (
+                    state_path,
+                    dump_yaml(renamed_state.to_dict()).encode("utf-8"),
+                ),
+            )
+        )
+    except BaseException:
+        try:
+            new_dir.rename(old_dir)
+        except OSError as rollback_exc:
+            raise ValidationError(
+                f"Edition rename failed and directory rollback also failed: "
+                f"{rollback_exc}"
+            ) from rollback_exc
+        raise
 
 
 def load_release_state(path: Path, *, default_open_id: str = "001-unreleased") -> ReleaseState:
@@ -420,11 +579,13 @@ def _released_single_package_updates(package_dir: Path) -> tuple[tuple[Path, byt
     nested_package_roots = {
         path.parent for path in package_dir.glob("*/edition-manifest.json")
     }
+    web_root = package_dir / "web"
     files = sorted(
         path
         for path in package_dir.rglob("*")
         if path.is_file()
         and path.name != "SHA256SUMS"
+        and not path.is_relative_to(web_root)
         and not any(path.is_relative_to(nested) for nested in nested_package_roots)
     )
     if manifest_path not in files:
