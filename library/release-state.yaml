@@ -4,7 +4,9 @@ collecting_editions:
 - id: 005-unreleased
   issue_number: 5
   status: collecting
-  source_ids: []
+  source_ids:
+  - how-enabling-two-settings-tripled-our-scores-on--265c6a01
+  - investigating-three-real-world-incidents-in-our--8b96329a
 released_editions:
 - id: 001-the-work-left-to-us
   issue_number: 1

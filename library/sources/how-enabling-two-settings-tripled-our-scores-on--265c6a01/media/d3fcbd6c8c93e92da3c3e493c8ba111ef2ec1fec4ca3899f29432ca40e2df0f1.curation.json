@@ -1,0 +1,12 @@
+{
+  "bundle_sha256": "d3fcbd6c8c93e92da3c3e493c8ba111ef2ec1fec4ca3899f29432ca40e2df0f1",
+  "candidate_count": 0,
+  "candidates": [],
+  "curator": "magazine-compiler/automatic-media-curator",
+  "input_sha256": "4f8a636582ebb48d7aa2ed6ff775a692d1837411e451682706377f0ade4bd45a",
+  "policy_version": "editorial-impact-v4",
+  "schema_version": 1,
+  "selected": [],
+  "selection_limit": 3,
+  "source_id": "how-enabling-two-settings-tripled-our-scores-on--265c6a01"
+}

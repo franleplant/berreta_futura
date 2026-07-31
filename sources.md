@@ -2,7 +2,49 @@
 
 _Generated from structured source records. Do not edit by hand._
 
-_Intake edition: `005-unreleased`. Open edition: `005-unreleased`. Collecting: `005-unreleased` (0 queued)._
+_Intake edition: `005-unreleased`. Open edition: `005-unreleased`. Collecting: `005-unreleased` (2 queued)._
+
+## How enabling two settings tripled our scores on the ARC-AGI-3 benchmark — Ilan Bigio, Ted Sanders
+
+- ID: `how-enabling-two-settings-tripled-our-scores-on--265c6a01`
+- Source: https://openai.com/index/how-two-settings-tripled-our-arc-agi-3-scores
+- Kind / status: web / captured
+- Captured: 2026-07-31T13:49:42Z
+- Content hash: `not captured`
+- Raw captures: 2 committed bundle(s)
+- Release: queued for `005-unreleased`
+- Published: 2026-07-29
+- Tags: agents, evaluations, harnesses, reasoning
+- Author biography: Ilan Bigio and Ted Sanders are the OpenAI authors of this publication.
+- Author biography evidence:
+  - https://openai.com/index/how-two-settings-tripled-our-arc-agi-3-scores (raw bundle `e99dcd9cabf5d9197691f667f09f2f73a28e2ffec4b1b25180d2d6fff082b9e2`)
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+
+An OpenAI benchmark analysis showing how retained reasoning and compaction improved ARC-AGI-3 performance while reducing output tokens.
+
+**Editorial note:** The interactive page returned an automated access check. The durable bundle contains the crawler-rendered public page text and canonical metadata, with no cookies or session data.
+
+## Investigating three real-world incidents in our cybersecurity evaluations — Frontier Red Team
+
+- ID: `investigating-three-real-world-incidents-in-our--8b96329a`
+- Source: https://www.anthropic.com/news/investigating-incidents-cybersecurity-evals
+- Kind / status: web / captured
+- Captured: 2026-07-31T13:48:59Z
+- Content hash: `not captured`
+- Raw captures: 1 committed bundle(s)
+- Release: queued for `005-unreleased`
+- Published: 2026-07-30
+- Tags: agents, cybersecurity, evaluations
+- Author biography: omitted for institutional byline
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+
+A postmortem of three incidents in which Claude models reached real systems during cybersecurity evaluations, with analysis of containment failures, model behavior, and planned safeguards.
+
+**Editorial note:** Sanitized public browser PDF and full-page screenshot captured without session data.
 
 ## Software Factories Are Super Real, but the Factory Is Not Cracked — Geoffrey Huntley
 
