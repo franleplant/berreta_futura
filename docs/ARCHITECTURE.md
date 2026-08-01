@@ -103,7 +103,8 @@ lead URL
 - Release first reconciles all source records, then requires exact equality between the target edition's queue and rendered articles' `source_ids`; sources queued to other collecting editions are unaffected.
 - Release state advances only after validation and a complete deterministic build succeed.
 - The edition manifest is replaced before the authoritative release state, and both are restored if either replacement fails.
-- Every fenced code block in a manuscript is a contiguous run of lines from one of the article's pinned source extractions. This is the only deterministic content check on a manuscript; everything else about faithfulness is judged at claim level by the fact-checker.
+- Every fenced code block in a manuscript is a contiguous run of lines from one of the article's pinned source extractions. Everything else about faithfulness is judged at claim level by the fact-checker.
+- A manuscript that is still the slot `mag article stage` wrote is not writing. Validation refuses it and names every unfinished piece at once, so build, packaging, release and every recorded review refuse with it. The marker is recognized structurally — `stage_status: todo` in frontmatter is authoritative, the printed `EDITORIAL WORK REQUIRED` label and a body that is only the staging TODO corroborate — and never from length, because a short editorial is still an editorial. `mag produce` reaches the same check through its edition gate, where a marker is a reported pre-existing failure rather than a stop: markers are produce's input.
 - Release preserves private distribution and rights restrictions; it records production completion, not public reprint permission.
 - Refetching changed content creates a revision rather than mutating history.
 - Every factual claim, quotation, figure, and caption resolves to captured evidence.

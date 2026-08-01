@@ -106,6 +106,7 @@ from .render_review import (
     visual_review_status,
     write_render_review,
 )
+from .staging_marker import require_written_manuscripts
 from .workflow import Workflow
 
 
@@ -955,6 +956,13 @@ class Magazine:
         return self._validate_languages(edition_id)[self.primary_language]
 
     def _validate_languages(self, edition_id: str) -> dict[str, Edition]:
+        # First, and before any other reading: a staging marker is a
+        # well-formed short manuscript, so every check after this one passes on
+        # an edition that has not been written.  Validation is the single
+        # chokepoint the write-side commands share -- build, package, release,
+        # finish and every `mag review record` reach it -- which is why the
+        # refusal lives here rather than being repeated at each of them.
+        require_written_manuscripts(self.root, self.editions_dir, edition_id)
         records = load_records(self.sources_dir)
         for record in records:
             verify_snapshots(record, self.sources_dir)

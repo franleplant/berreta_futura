@@ -57,7 +57,6 @@ from .learning_review import (
     load_learning_review,
 )
 from .line_review import (
-    EDITORIAL_ARTICLE_ID,
     current_line_bindings,
     line_review_path,
     line_review_status,
@@ -79,6 +78,7 @@ from .production_record import (
 from .records import load_records
 from .release import load_release_state, sync_release_state
 from .render_review import load_render_review, visual_review_status
+from .staging_marker import declared_manuscript_paths, is_staging_marker
 from .translate_stage import (
     _pin_advisories,
     _structural_validation,
@@ -1134,7 +1134,7 @@ class _Snapshot:
         for piece_id, manuscript in self._manuscript_paths().items():
             record = load_piece_record(self.paths["editions"], self.edition_id, piece_id)
             status = str((record or {}).get("status") or "none")
-            staged = _is_staging_marker(manuscript)
+            staged = is_staging_marker(manuscript)
             pieces[piece_id] = {
                 "manuscript": _relative(self.root, manuscript),
                 "manuscript_present": manuscript.is_file(),
@@ -1205,34 +1205,12 @@ class _Snapshot:
 
         Raw, like the evidence checkpoint's pins, so a manifest that will not
         load for an unrelated reason still reports which pieces are undrafted
-        rather than collapsing into one opaque error.
+        rather than collapsing into one opaque error.  Resolution lives in
+        :mod:`~magazine.staging_marker` because ``validate`` has to name the
+        same set of files from outside the workflow.
         """
 
-        paths: dict[str, Path] = {}
-        for index, row in enumerate(self.article_rows, start=1):
-            declared = str(row.get("manuscript") or "").strip()
-            if not declared:
-                continue
-            paths[str(row.get("id") or f"article-{index}")] = self._declared_file(
-                declared
-            )
-        editorial = str((self.manifest or {}).get("editorial") or "").strip()
-        if editorial:
-            paths[EDITORIAL_ARTICLE_ID] = self._declared_file(editorial)
-        return paths
-
-    def _declared_file(self, declared: str) -> Path:
-        """Resolve a manifest path the way the manifest loader does.
-
-        A path beginning ``editions/`` is project-relative; anything else is
-        relative to this edition's own directory, which is how a manuscript can
-        legitimately live outside ``editions/``.
-        """
-
-        path = Path(declared)
-        if path.parts and path.parts[0] == "editions":
-            return self.root / path
-        return self.edition_dir / path
+        return declared_manuscript_paths(self.root, self.edition_dir, self.manifest)
 
     def _agent_ready(self) -> list[str]:
         """Work items the cooperative backend has emitted and not yet ingested."""
@@ -2141,25 +2119,6 @@ def _blocked(
         details,
         NextAction(classification, instruction, command, action),
     )
-
-
-def _is_staging_marker(manuscript: Path) -> bool:
-    """Whether this file is still the slot ``mag article stage`` created.
-
-    The staged skeleton declares ``stage_status: todo`` in its frontmatter and
-    says in a comment that no source prose was generated.  Reading that, rather
-    than guessing from length, is what lets the production checkpoint tell an
-    undrafted piece from a short one -- and lets it stay silent about the
-    editions that were written before this pipeline existed.
-    """
-
-    if not manuscript.is_file():
-        return False
-    try:
-        head = manuscript.read_text(encoding="utf-8")[:600]
-    except OSError:
-        return False
-    return "stage_status: todo" in head
 
 
 def _all_complete(checkpoints: tuple[Checkpoint, ...] | list[Checkpoint]) -> bool:

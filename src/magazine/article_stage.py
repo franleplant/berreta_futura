@@ -38,6 +38,12 @@ from .io import dump_yaml, load_structured
 from .manifest import CONTENT_MODES, EDITOR_VOICE_CONTENT_MODES
 from .records import SourceRecord, load_records
 from .release import load_release_state
+from .staging_marker import (
+    STAGE_STATUS_KEY,
+    STAGE_STATUS_TODO,
+    STAGING_LABEL,
+    STAGING_TODO,
+)
 
 ARTICLE_BRIEF_SCHEMA_VERSION = 1
 OPENER_VARIANTS = {"edge_medallion", "split_axis", "stepped_title"}
@@ -588,18 +594,24 @@ def _article_row(
 
 
 def _manuscript_skeleton(brief: ArticleBrief) -> str:
+    """The empty slot, in the exact shape :mod:`~magazine.staging_marker` reads.
+
+    The frontmatter keys are that module's constants rather than literals here,
+    so the thing that writes the marker and the thing that refuses one can
+    never drift apart.
+    """
+
     metadata = {
         "source_ids": list(brief.source_ids),
         "content_mode": brief.content_mode,
-        "label": "EDITORIAL WORK REQUIRED",
-        "stage_status": "todo",
+        "label": STAGING_LABEL,
+        STAGE_STATUS_KEY: STAGE_STATUS_TODO,
     }
     return (
         "---\n"
         + dump_yaml(metadata)
         + "---\n\n"
-        + "<!-- TODO(editor): Replace this staging marker with a "
-        + "source-faithful manuscript. No source prose was generated. -->\n"
+        + f"<!-- {STAGING_TODO} -->\n"
     )
 
 
