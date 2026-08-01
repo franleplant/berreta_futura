@@ -25,13 +25,19 @@ them is going back to the writer whatever a judge would have said.  Running
 them first is not only cheaper, it keeps the judges' findings about the writing
 rather than about a broken build.
 
-**Why the edition-wide gates have a baseline.**  ``validate`` and ``fit`` see
-the whole issue, so a stub manuscript three articles away can fail them for
-reasons the writer in front of us cannot fix.  Produce therefore measures them
-once before any model call and again after every draft, and only a failure that
-is *new*, or that names this piece, is fed back to the writer.  Everything else
-is reported to the human at the end.  Without this the first piece of a fresh
-edition would burn three rounds against somebody else's missing cover art.
+**Why an edition-wide gate is routed rather than broadcast.**  ``validate`` and
+``fit`` see the whole issue, so one stub manuscript, or one article that runs a
+page long, fails them for the entire edition.  A gate failure is not the
+edition's, though: it belongs to whichever piece's prose is wrong, and only
+that piece's writer can clear it.  So every complaint an edition-wide gate
+makes is attributed -- ``fit`` by the measurement, which knows which article it
+measured, ``validate`` by the piece its message names -- and reaches that one
+writer's round and nobody else's.  A complaint that belongs to no piece belongs
+to no round: it fails nothing and is reported to the human, the way a stale
+translation overlay already is.  Produce also measures both gates once before
+any model call, so the state the edition arrived in can be told apart from the
+state this run put it in.  Without this the first piece of a fresh edition
+would burn three rounds against somebody else's missing cover art.
 
 **What produce will not do.**  It never generates an image: the illustration
 runner is not imported here and no path through this module can reach one.  A
@@ -69,9 +75,11 @@ the seam here rather than around here.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol
 
@@ -268,10 +276,35 @@ _GATE_FAILURES = (MagazineError, DocumentParseError)
 
 
 @dataclass(frozen=True)
+class Breach:
+    """One thing a gate is unhappy about, and the piece that can clear it.
+
+    ``piece_id`` is ``None`` when the complaint belongs to the edition rather
+    than to anybody's prose -- a manifest that will not load, a missing plate.
+    No writer can be sent to fix one of those from inside a drafting round, so
+    an unowned breach fails no piece and is reported to the human instead.
+    """
+
+    piece_id: str | None
+    detail: str
+
+
+@dataclass(frozen=True)
 class GateResult:
+    """One check's verdict, and -- where the check knows -- whose it is.
+
+    ``breaches`` is how an edition-wide gate says which piece each of its
+    complaints is about, so produce can hand it to that piece's writer and to
+    nobody else.  ``fit`` knows, because it measures article by article.  A
+    gate that leaves ``breaches`` empty is read line by line against the
+    edition's piece names instead (:func:`_attributed`), which is all a check
+    that can only raise a sentence has to offer.
+    """
+
     name: str
     ok: bool
     detail: str = ""
+    breaches: tuple[Breach, ...] = ()
 
 
 class ProductionGates(Protocol):
@@ -363,11 +396,28 @@ class DefaultProductionGates:
             stored = memo.get(kind)
             if stored is not None and isinstance(stored.get("ok"), bool):
                 results.append(
-                    GateResult(name, stored["ok"], str(stored.get("detail") or ""))
+                    GateResult(
+                        name,
+                        stored["ok"],
+                        str(stored.get("detail") or ""),
+                        _stored_breaches(stored.get("breaches")),
+                    )
                 )
                 continue
             gate = run()
-            memo.set(kind, {"ok": gate.ok, "detail": gate.detail})
+            # Attribution is stored with the verdict.  A memo that kept only
+            # the sentence would turn every hit into an unattributed gate and
+            # quietly restore the misrouting this pairing exists to stop.
+            memo.set(
+                kind,
+                {
+                    "ok": gate.ok,
+                    "detail": gate.detail,
+                    "breaches": [
+                        [breach.piece_id, breach.detail] for breach in gate.breaches
+                    ],
+                },
+            )
             results.append(gate)
         return tuple(results)
 
@@ -410,13 +460,33 @@ def _fit_gate(magazine: "Magazine", edition_id: str) -> GateResult:
     reviser cannot restage a translation.  Restaging is ``mag translate``'s
     job and a translator's.  The primary language is the one this draft can be
     held to.
+
+    The verdict is read off the measurement rather than off ``mag fit``'s
+    table.  The table is a report for an eye -- one row per piece, most of them
+    saying OK -- and handing it back as a gate failure told four writers about
+    a fifth writer's overlong article.  The measurement knows which article
+    each breach came from, so this states the breaches and who owns them and
+    nothing else.  Pagination that refuses outright -- an opening paragraph
+    that cannot fit its illustrated opener, say -- never reaches a measurement,
+    and its message is then the only handle on ownership there is.
     """
 
     try:
-        table, ok = magazine.fit(edition_id, language=magazine.primary_language)
+        measurement = magazine.measure(edition_id, language=magazine.primary_language)
     except _GATE_FAILURES as error:
         return GateResult("fit", False, str(error))
-    return GateResult("fit", ok, "" if ok else table)
+    breaches = tuple(
+        Breach(piece_id, detail)
+        for piece_id, detail in measurement.attributed_breaches
+    )
+    if not breaches:
+        return GateResult("fit", True)
+    return GateResult(
+        "fit",
+        False,
+        "\n".join(breach.detail for breach in breaches),
+        breaches,
+    )
 
 
 def _guarded(name: str, action) -> GateResult:
@@ -688,11 +758,7 @@ class Production:
         pieces = {piece.id: piece for piece in self._select(edition, articles)}
         human_actions: list[str] = list(plan.human_actions)
         baseline = self._edition_gate_failures(edition_id)
-        if baseline:
-            human_actions.extend(
-                f"pre-existing gate failure ({name}): {detail.splitlines()[0]}"
-                for name, detail in baseline.items()
-            )
+        human_actions.extend(self._baseline_actions(baseline, edition, plan))
 
         outcomes: list[PieceOutcome] = []
         produced: list[str] = []
@@ -903,7 +969,9 @@ class Production:
             record.manuscript_sha256 = round_record.manuscript_sha256
             write_piece_record(self.magazine.editions_dir, record)
 
-            failures = self._gate_failures(edition_id, piece, extractions, baseline)
+            failures = self._gate_failures(
+                edition_id, edition, piece, extractions, baseline
+            )
             if failures:
                 round_record.gate_failures = tuple(failures)
                 round_record.result = "changes_required"
@@ -1278,20 +1346,62 @@ class Production:
             if not gate.ok
         }
 
+    def _baseline_actions(
+        self, baseline: Mapping[str, str], edition: Edition, plan: ProducePlan
+    ) -> list[str]:
+        """How the edition's gates already stood, before a model was called.
+
+        Worth stating: a run that begins on a failing edition ends on one
+        unless the drafting happens to clear it, and an operator should not
+        have to infer that.  But a failure that names only pieces this run is
+        about to draft is not a fault at all -- an unwritten piece fails
+        ``validate`` by definition, and ``mag produce`` is the command that
+        writes it -- so it is stated as the expected thing it is.  Reported as
+        a fault on every invocation, as it was, it teaches an operator to skim
+        past the line where a real failure will one day appear.
+        """
+
+        drafting = {row.piece_id for row in plan.pieces if not row.settled}
+        names = _piece_names(edition)
+        actions: list[str] = []
+        for gate_name, detail in baseline.items():
+            named = {
+                piece_id
+                for piece_id, needles in names.items()
+                if _names_piece(detail, needles)
+            }
+            headline = detail.splitlines()[0] if detail.splitlines() else detail
+            if named and named <= drafting:
+                actions.append(
+                    f"pre-existing gate failure ({gate_name}), expected and "
+                    "cleared by this run, which is drafting every piece it "
+                    f"names: {headline}"
+                )
+            else:
+                actions.append(f"pre-existing gate failure ({gate_name}): {headline}")
+        return actions
+
     def _gate_failures(
         self,
         edition_id: str,
+        edition: Edition,
         piece: Piece,
         extractions: Sequence[Extraction],
         baseline: Mapping[str, str],
     ) -> list[str]:
-        """Everything this draft broke, and nothing it merely inherited.
+        """Everything this draft broke, and nothing that is somebody else's.
 
-        A per-piece gate is always the writer's problem.  An edition-wide gate
-        is the writer's problem only when its complaint is new or names this
-        piece: a stub three articles away failing ``validate`` is not something
-        a reviser of this piece can clear, and feeding it back would spend the
-        round budget on an impossible instruction.
+        A per-piece gate is always this writer's problem.  An edition-wide gate
+        is a report about the whole issue, and every complaint inside it
+        belongs to somebody: to one piece, whose writer is told and is the only
+        one told, or to the edition, which no writer can be sent to fix and
+        which therefore fails nobody and goes to the human instead.
+
+        The routing is the point.  ``fit`` measures the edition, so one article
+        whose opening paragraph will not fit its opener used to fail every
+        other piece in the round -- four writers handed an instruction to
+        shorten a paragraph in an article they cannot edit, every round, until
+        somebody fixed the fifth piece by hand.
         """
 
         failures = [
@@ -1299,26 +1409,43 @@ class Production:
             for gate in self.gates.check_piece(piece, extractions)
             if not gate.ok
         ]
+        names = _piece_names(edition)
         for gate in self.gates.check_edition(edition_id):
             if gate.ok:
                 continue
-            if gate.name in baseline and not _names_piece(gate.detail, piece):
-                continue
-            actionable, advisory = _split_translation_drift(
-                _piece_slice(gate.detail, piece)
-            )
-            if advisory:
-                # Rewriting the English manuscript stales the overlays that pin
-                # it, every time, and no reviser can fix that from inside a
-                # drafting round.  Reported once, to the human who will run
-                # `mag translate`, rather than fed back as an impossible
-                # instruction that would spend the round budget.
-                self._advisories.add(
-                    "language overlays are stale after this rewrite; restage them "
-                    f"with `mag translate {edition_id} <language>`: " + advisory
-                )
-            if actionable:
-                failures.append(f"{gate.name}: {actionable}")
+            inherited = baseline.get(gate.name, "")
+            mine: list[str] = []
+            for breach in _attributed(gate, names):
+                actionable, drift = _split_translation_drift(breach.detail)
+                if drift:
+                    # Rewriting the English manuscript stales the overlays that
+                    # pin it, every time, and no reviser can fix that from
+                    # inside a drafting round.  Reported once, to the human who
+                    # will run `mag translate`, rather than fed back as an
+                    # impossible instruction that would spend the round budget.
+                    self._advisories.add(
+                        "language overlays are stale after this rewrite; restage "
+                        f"them with `mag translate {edition_id} <language>`: "
+                        + drift
+                    )
+                if not actionable:
+                    continue
+                if breach.piece_id is None:
+                    if actionable in inherited:
+                        # The edition arrived in this state and the pre-existing
+                        # report has already said so, once, before any model was
+                        # called.  Repeating it per piece per round is how the
+                        # one that matters gets skimmed past.
+                        continue
+                    self._advisories.add(
+                        f"{gate.name} fails for {edition_id} as a whole, and no "
+                        "single piece's rewrite can clear it: " + actionable
+                    )
+                    continue
+                if breach.piece_id == piece.id:
+                    mine.append(actionable)
+            if mine:
+                failures.append(f"{gate.name}: " + "\n".join(mine))
         return failures
 
     # -- recording --------------------------------------------------------
@@ -1924,8 +2051,91 @@ def _page_budget(edition: Edition, key: str, default: int) -> int:
     return default
 
 
-def _names_piece(detail: str, piece: Piece) -> bool:
-    return piece.id in detail or str(piece.manuscript) in detail
+def _piece_names(edition: Edition) -> dict[str, tuple[str, ...]]:
+    """What a gate's report would call each piece of this edition.
+
+    Its id and the path of the manuscript it lives in: between them those are
+    everything a gate says when it means one piece.
+    """
+
+    names = {
+        article.id: (article.id, str(article.manuscript))
+        for article in edition.articles
+    }
+    if edition.editorial is not None:
+        names[EDITORIAL_ARTICLE_ID] = (
+            EDITORIAL_ARTICLE_ID,
+            str(edition.editorial.path),
+        )
+    return names
+
+
+@lru_cache(maxsize=None)
+def _whole_word(name: str) -> re.Pattern[str]:
+    """One piece's name, matched whole rather than as a substring.
+
+    ``editorial`` is a substring of ``editorial minimum``, which is the phrase
+    ``fit`` uses when an *article* runs short, so a plain ``in`` test hands
+    that article's complaint to the editorial's writer as well.
+    """
+
+    return re.compile(rf"(?<![\w-]){re.escape(name)}(?![\w-])")
+
+
+def _names_piece(text: str, names: Sequence[str]) -> bool:
+    return any(_whole_word(name).search(text) for name in names)
+
+
+def _attributed(
+    gate: GateResult, names: Mapping[str, Sequence[str]]
+) -> tuple[Breach, ...]:
+    """One gate's report, split into the pieces its complaints are about.
+
+    A gate that already knows is believed: ``fit`` measures article by article
+    and hands back its breaches already owned.  Everything else -- ``validate``
+    above all -- accumulates the whole edition's complaints into one message,
+    and the only handle left on ownership is which piece a line names.  A line
+    naming pieces belongs to them; a line naming none belongs to the edition,
+    and so to no writer's round.
+
+    Reading the message is the second choice and is taken only where there is
+    no measurement to read instead: ``validate`` raises sentences, and it would
+    have to carry an owner on every error it accumulates before this could be
+    anything better.
+    """
+
+    if gate.breaches:
+        return gate.breaches
+    found: list[Breach] = []
+    for line in gate.detail.splitlines():
+        if not line.strip():
+            continue
+        owners = [
+            piece_id
+            for piece_id, needles in names.items()
+            if _names_piece(line, needles)
+        ]
+        if owners:
+            found.extend(Breach(owner, line) for owner in owners)
+        else:
+            found.append(Breach(None, line))
+    return tuple(found)
+
+
+def _stored_breaches(raw: Any) -> tuple[Breach, ...]:
+    """Rebuild a memoized gate's attribution.
+
+    A cache entry written before gates carried attribution has none, and a
+    gate with none is read by naming -- the same answer the miss would give.
+    """
+
+    if not isinstance(raw, list):
+        return ()
+    return tuple(
+        Breach(item[0] if isinstance(item[0], str) else None, str(item[1]))
+        for item in raw
+        if isinstance(item, (list, tuple)) and len(item) == 2
+    )
 
 
 _TRANSLATION_MARKERS = ("Translation ", "translation manifest", "/translations/")
@@ -1949,18 +2159,6 @@ def _split_translation_drift(detail: str) -> tuple[str, str]:
         )
         target.append(line)
     return "\n".join(actionable).strip(), "\n".join(advisory).strip()
-
-
-def _piece_slice(detail: str, piece: Piece) -> str:
-    """The lines of a multi-error gate report that concern this piece.
-
-    ``validate`` accumulates every complaint in the edition.  Handing all of
-    them to a writer who can act on one is how a revision round gets spent
-    reading somebody else's problem.
-    """
-
-    lines = [line for line in detail.splitlines() if _names_piece(line, piece)]
-    return "\n".join(lines) if lines else detail
 
 
 def _install(path: Path, text: str) -> None:
