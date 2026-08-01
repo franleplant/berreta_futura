@@ -10,6 +10,24 @@ The source extraction at `library/sources/<source-id>/extracted.md` (or several
 extractions when the article combines short posts by one author), and the
 article's row in the edition manifest.
 
+## Required reading
+
+`docs/WRITING_RULES.md` and `docs/WRITING_EXEMPLARS.md`, once at the start of a
+session. Here they govern only the words you write yourself, which are captions
+and nothing else. Never apply them to the author's sentences: rule vi's second
+legitimate use is this mode, where the author's clichés, jokes, profanity and
+broken rules survive intact.
+
+## Before you edit: why is this a reprint?
+
+`faithful_edit` runs at the source's length, so it buys the reader no time and
+has to buy them access or legibility instead. Name which applies, in your reply,
+before you start: a paywalled or ephemeral source, slides, a thread, scattered
+short posts collected. If none does, this is a page the reader can already read
+as it stands. Say so before you edit rather than after; changing the mode or
+dropping the piece is an editor's call, and `worth` files `no_added_value` at
+`blocking` when the answer is nothing.
+
 ## Procedure
 
 1. Read the whole extraction.
@@ -18,9 +36,11 @@ article's row in the edition manifest.
 3. Normalize typography, whitespace, headings, lists, links, and footnotes for
    print, and repair obvious extraction or OCR errors.
 4. Adapt figure captions without changing their meaning.
-5. Add the frontmatter below and check the page budget. If the result exceeds
-   seven A5 reader pages, stop: the piece converts to `faithful_synthesis`
-   under `docs/EDITORIAL_POLICY.md`. Do not compress it here.
+5. Add the frontmatter below and check the page budget. Every step above removes
+   or normalizes, so the result is never longer than the source body. If it
+   exceeds seven A5 reader pages, stop: the piece converts to
+   `faithful_synthesis` under `docs/EDITORIAL_POLICY.md`. Do not compress it
+   here.
 
 ## Hard rules
 
@@ -29,21 +49,26 @@ article's row in the edition manifest.
 - Keep the author's voice intact, including profanity, jokes, asides, insults,
   and sign-offs. "they are selling bullshit" and "Good luck." are the reason
   this mode exists.
-- Write as little new prose as possible. Any addition must be rare, necessary,
-  and visibly labeled to the reader as an "Editor's note".
-- Never manufacture a quotation, a link, a number, or a claim, and never
-  reorder the argument.
+- **No editor's notes.** Write no new prose. No editor's note, no author's note,
+  no bracketed gloss, no explanatory standfirst, no transition, no apparatus of
+  any kind inside the article. The owner's instruction is flat: editor's notes
+  suck and he does not want them in the articles.
+- **Missing referents.** A reprint sometimes lacks context the original page
+  supplied: who "we" is, what "the post" points at, which product "it" names.
+  Two repairs, and nothing else. Restore the referent inside the author's own
+  sentence where the extraction supports it, so "the post" becomes "the June
+  pricing post" only if the source names it. Or leave it and let the piece
+  stand; a reader survives an unexplained "we". Record the ones you left in your
+  working notes, so a finding on them reaches a human as an `editor_decision`
+  instead of tempting the next reviser into a note.
+- Never manufacture a quotation, a link, a number, or a claim, and never reorder
+  the argument.
 - When several short posts by one author are combined, keep each post's text
   intact and in a declared order. Do not write transitions in the author's
   voice between them.
 - If the source is slides, preserve its sequence and wording while converting
   visual hierarchy into headings, captions, and lists. Do not infer missing
   prose.
-- `docs/WRITING_RULES.md` governs only the text you write yourself, such as an
-  editor's note or a caption; there the banned tics apply, including the
-  antithesis close "It is not X. It is Y." Never apply the rules to the
-  author's sentences, and never rewrite one because it uses a banned
-  construction.
 
 ## Format
 
@@ -76,7 +101,9 @@ End your reply with a line containing exactly:
 
     <!-- SCRATCH: not part of the manuscript -->
 
-and put your working notes below it: what you kept, what chrome you removed, and every sentence you wrote yourself. Everything above that line is the
+and put your working notes below it: why this is a reprint, what chrome you
+removed, every referent you restored and every one you left standing, and every
+word you wrote yourself. Everything above that line is the
 manuscript and is written to disk as it stands; everything below it is stripped
 before the file is written and is never shown to a judge or to a reader.
 
@@ -89,8 +116,18 @@ resting on.
 
 ## How this will be judged
 
-- A fact-checker reads the manuscript against the extraction claim by claim:
-  every manuscript claim must be present in the source, and every substantive
-  source claim must be present in the manuscript or be removable chrome.
-- A line editor checks typography, structure, labeling of any editor addition,
-  and confirms the author's voice was not smoothed.
+Seven narrow lenses, one concern each, staged; `prompts/README.md` has the
+detail. `worth` runs first and is blocking: what does a reader gain over having
+the source open. Then `mechanics` (the English as typeset, where capitalisation
+and grammar are never voice), `evidence` (every claim the source's), `shape`
+(order, duplication, orphan referents), `craft` (did a person write this),
+`edition` (does it belong in the issue).
+
+- Scores exist and never reach you. You get findings.
+- Every finding carries a disposition. `fix` is yours; `editor_decision` means
+  the defect sits in the author's own retained sentence and a human picks the
+  remedy. That is not a pass: it blocks the release and is never softened. Most
+  findings on this mode will be `editor_decision`, and that is the mode working.
+- A finding is an obligation; the `suggestion` beside it is advice at every
+  severity. Clear the defect, decline a line that would damage the piece, and
+  say in your reply what you did instead.
