@@ -1902,6 +1902,120 @@ def _set_illustrated_opener_title(header: Element, size: float) -> None:
     )
 
 
+@dataclass(frozen=True)
+class OpenerIntroBudget:
+    """How much opening paragraph one illustrated opener page has room for.
+
+    The constraint is real, enforced, and until now stated nowhere an author
+    could see it.  An illustrated opener sets art, label, title, tick, credit
+    block and the article's *first paragraph* on one page, and the paragraph
+    is the only elastic part; when it will not fit even at compact density the
+    build refuses, and the refusal arrives after a model call rather than
+    before one.  Two pieces hit it in a single rerun and the number they were
+    given to aim at was a guess.
+
+    ``lines`` is the honest limit: whole rendered lines of the compact
+    standfirst face across the opener rail, for *this* article's title and
+    credit block, which are what consume the rest of the page.
+    ``characters`` is that limit expressed in a unit an author can count while
+    writing.  It is derived, not chosen: the mean glyph advance of a supplied
+    sample of the piece's own prose, at the same face and size the page sets.
+    It is therefore an estimate of the same measurement rather than a second
+    rule -- :meth:`fits` answers the real question exactly.
+    """
+
+    lines: int
+    characters: int
+    measure_points: float
+    size_points: float
+
+    def fits(self, intro: str) -> bool:
+        """Whether this opening paragraph fits, by the gate's own arithmetic."""
+
+        return (
+            len(_wrap(intro, "serif", self.size_points, self.measure_points))
+            <= self.lines
+        )
+
+
+def illustrated_opener_intro_budget(
+    *,
+    title: str,
+    byline: str,
+    author_note: str = "",
+    sample: str = "",
+) -> OpenerIntroBudget | None:
+    """Predict one article's opening-paragraph budget without rendering it.
+
+    Pure arithmetic over font advance widths: no WeasyPrint, no layout, no
+    edition on disk, cheap enough to call while composing a writer's brief.
+    Compact density throughout, because compact is the tier the refusal is
+    measured at -- standard is an attempt, not a gate.
+
+    ``None`` when the title itself cannot be fitted, which is a different
+    refusal with its own message and not this function's to pre-empt.
+
+    Nothing here varies by ``opener_variant``.  That field is manifest and
+    brief metadata; no layout code reads it, so no per-variant number exists
+    to state and inventing one would be worse than saying so.  What the budget
+    does vary by is this article's title (a two-line title costs about two
+    lines of paragraph) and the depth of its byline and author note.
+    """
+
+    density = _ILLUSTRATED_OPENER_COMPACT
+    try:
+        title_size, title_lines = _fitted_display(
+            title,
+            _ILLUSTRATED_OPENER_RAIL_POINTS,
+            _ILLUSTRATED_OPENER_TITLE_BOX[0],
+            maximum=_ILLUSTRATED_OPENER_COMPACT_TITLE_MAX,
+            minimum=_ILLUSTRATED_OPENER_TITLE_BOX[1],
+            maximum_lines=_ILLUSTRATED_OPENER_TITLE_MAX_LINES,
+            leading_ratio=_OPENER_TITLE_LEADING_RATIO,
+        )
+    except ValidationError:
+        return None
+    fixed = _opener_stack_height(
+        title_size=title_size,
+        title_lines=len(title_lines),
+        byline_text=byline,
+        note_text=author_note,
+        standfirst_lines=0,
+        density=density,
+    )
+    room = (
+        _ILLUSTRATED_OPENER_PAGE_HEIGHT_POINTS
+        - _ILLUSTRATED_OPENER_PANGO_RESERVE_POINTS
+        - fixed
+    )
+    size = density["standfirst_size"]
+    lines = max(int(room // density["standfirst_leading"]), 0)
+    return OpenerIntroBudget(
+        lines=lines,
+        characters=lines * _characters_per_line(sample, size),
+        measure_points=_ILLUSTRATED_OPENER_RAIL_POINTS,
+        size_points=size,
+    )
+
+
+def _characters_per_line(sample: str, size: float) -> int:
+    """How many characters of ``sample``-like prose one rail line holds.
+
+    Measured, not assumed: the mean advance of the sample's own characters in
+    the face and size the page sets.  An empty or unmeasurable sample yields
+    zero, and the caller states the limit in lines alone rather than quoting a
+    character count it cannot stand behind.
+    """
+
+    text = " ".join(sample.split())
+    if not text:
+        return 0
+    width = _string_width(text, "serif", size)
+    if width <= 0:
+        return 0
+    return int(_ILLUSTRATED_OPENER_RAIL_POINTS // (width / len(text)))
+
+
 def _illustrated_opener_height(
     header: Element,
     *,
@@ -1945,7 +2059,42 @@ def _illustrated_opener_height(
             "An illustrated opener needs a byline and first paragraph inside its header"
         )
 
-    byline_text = "".join(byline.itertext()).strip()
+    standfirst_text = "".join(standfirst.itertext()).strip()
+    return _opener_stack_height(
+        title_size=title_size,
+        title_lines=title_lines,
+        byline_text="".join(byline.itertext()).strip(),
+        note_text="".join(note.itertext()).strip() if note is not None else "",
+        standfirst_lines=len(
+            _wrap(
+                standfirst_text,
+                "serif",
+                density["standfirst_size"],
+                _ILLUSTRATED_OPENER_RAIL_POINTS,
+            )
+        ),
+        density=density,
+    )
+
+
+def _opener_stack_height(
+    *,
+    title_size: float,
+    title_lines: int,
+    byline_text: str,
+    note_text: str,
+    standfirst_lines: int,
+    density: Mapping[str, float],
+) -> float:
+    """The same sum, over measurements rather than over a header element.
+
+    Split out so the budget an author is told before drafting
+    (:func:`illustrated_opener_intro_budget`) and the refusal that fires after
+    they have drafted are one arithmetic rather than two.  A predicted limit
+    that disagreed with the gate would be worse than no limit: it would cost a
+    round *and* teach the wrong number.
+    """
+
     byline_lines = len(
         _wrap(
             byline_text,
@@ -1955,29 +2104,17 @@ def _illustrated_opener_height(
         )
     )
     credit_height = byline_lines * 8.5
-    if note is not None:
-        note_text = "".join(note.itertext()).strip()
-        if note_text:
-            credit_height += 3.2 + len(
-                _wrap(
-                    note_text,
-                    "sans-medium",
-                    6.8,
-                    _ILLUSTRATED_OPENER_META_MEASURE_POINTS,
-                )
-            ) * 9.4
+    if note_text:
+        credit_height += 3.2 + len(
+            _wrap(
+                note_text,
+                "sans-medium",
+                6.8,
+                _ILLUSTRATED_OPENER_META_MEASURE_POINTS,
+            )
+        ) * 9.4
     meta_height = max(_ILLUSTRATED_OPENER_CODE_SIDE_POINTS, credit_height)
     meta_height += 2 * density["meta_padding"] + 1.0
-
-    standfirst_text = "".join(standfirst.itertext()).strip()
-    standfirst_lines = len(
-        _wrap(
-            standfirst_text,
-            "serif",
-            density["standfirst_size"],
-            _ILLUSTRATED_OPENER_RAIL_POINTS,
-        )
-    )
     return (
         density["art"]
         + density["label"]

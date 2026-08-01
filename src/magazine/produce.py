@@ -46,6 +46,16 @@ model, and a :class:`ProductionGates` adapter is injected the way
 ``workflow.WorkflowAdapter`` is, so a test can exercise the state machine
 without paginating an edition for every round.
 
+**Editing this module while an edition is in flight is a schema migration.**
+Under the agent backend a piece's finished work lives on disk as replies bound
+to the identity of the question they answered.  That identity is now the prompt
+file plus the content of the call
+(:func:`~magazine.produce_prompts.work_identity`), so reformatting a brief is
+free -- but changing the identity functions, the prompt files, or what a call is
+handed will void every stored answer for the affected role, exactly as altering
+a primary key would.  It is a supported change; it is not a safe one to make
+under a running fleet.  Finish the edition, or expect to recover replies by hand.
+
 **Who makes the call is not this module's business.**  Every model call goes
 through one dispatch function, which is handed a :class:`WorkItem` naming the
 piece, the role and the round.  An autonomous backend ignores the name and
@@ -60,7 +70,7 @@ the seam here rather than around here.
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol
@@ -68,6 +78,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 from .concurrency import ordered_map
 from .errors import MagazineError, ValidationError
 from .extraction import Extraction, load_extraction, verify_source_extractions
+from .footnotes import verify_manuscript_footnotes
 from .code_blocks import verify_manuscript_code_blocks
 from .learning_review import explainer_article_ids, furniture_projection
 from .line_review import EDITORIAL_ARTICLE_ID
@@ -78,6 +89,7 @@ from .produce_prompts import (
     JUDGE_PROMPTS,
     EditionReviewInput,
     EvidenceReviewInput,
+    FigureSlot,
     LearningReviewInput,
     LineReviewInput,
     ManagerRunAInput,
@@ -93,9 +105,15 @@ from .produce_prompts import (
     compose_manager_run_a,
     compose_writer_prompt,
     contains_scratch,
+    edition_identity,
+    evidence_identity,
+    learning_identity,
+    line_identity,
     load_prompt,
+    manager_run_a_identity,
     parse_verdict,
-    split_scratch,
+    split_reply,
+    writer_identity,
     writer_prompt_path,
 )
 from .production_record import (
@@ -103,10 +121,12 @@ from .production_record import (
     PieceRecord,
     RoundRecord,
     accumulated_findings,
+    close_filed_findings,
     inputs_fingerprint,
     is_settled,
     issue_record_path,
     load_piece_record,
+    open_filed_findings,
     piece_record_path,
     text_sha256,
     write_issue_record,
@@ -115,6 +135,7 @@ from .production_record import (
 from .render_review import REVIEW_RESULTS
 from .review_findings import normalize_findings
 from .runner import ModelRunner
+from .translate_stage import set_figure_anchors
 
 if TYPE_CHECKING:  # pragma: no cover - import cycle avoidance only
     from .compiler import Magazine
@@ -195,14 +216,19 @@ class ReadyItem:
 
     ``prompt`` is the whole composed brief, byte for byte what an autonomous
     backend would have been sent, so a worker needs nothing else.
-    ``brief_sha256`` is what makes a late answer refusable: it covers the
-    manuscript, the findings, and the notes the brief embeds, so a reply written
-    against a brief the pipeline has since recomposed cannot be applied.
+    ``work_sha256`` is what makes a late answer refusable.  It digests the
+    *question*: the prompt file, the manuscript, the findings and the notes
+    this call was handed, each by digest, and never the wording this module
+    chose for them.  So an answer is void when the piece moved under it and
+    survives when a brief was merely reworded -- which is the difference
+    between a reviser's work being asked again and a dozen finished model
+    calls being thrown away by a refactor.  See
+    :func:`~magazine.produce_prompts.work_identity`.
     """
 
     item: WorkItem
     prompt: str
-    brief_sha256: str
+    work_sha256: str
     prompt_path: str
     prompt_sha256: str
     returns: str
@@ -222,7 +248,7 @@ class ReadyItem:
             "returns": self.returns,
             "prompt_path": self.prompt_path,
             "prompt_sha256": self.prompt_sha256,
-            "brief_sha256": self.brief_sha256,
+            "work_sha256": self.work_sha256,
             "brief": self.brief_path,
             "reply": self.reply_path,
         }
@@ -262,7 +288,22 @@ class ProductionGates(Protocol):
 
 @dataclass
 class DefaultProductionGates:
-    """The real checks, run through the compiler the CLI already exposes."""
+    """The real checks, run through the compiler the CLI already exposes.
+
+    ``check_edition`` is memoized on the content of the tree it reads.  Both
+    of its checks cost minutes on a real edition and both are pure functions
+    of the files on disk, and this pipeline asks for them constantly: once as
+    a baseline per invocation, once after every draft, and an agent-driven
+    edition is dozens of invocations most of which change nothing.  The memo
+    is :class:`~magazine.workflow.ProbeMemo`, which is the same one the
+    workflow report uses for the same two checks -- reusing it rather than
+    writing a second one keeps a single definition of which files a verdict
+    depends on, so a hit provably means the tree is byte-identical.
+
+    A fresh memo is built on every call, deliberately: a produce round installs
+    a manuscript between calls, and a memo held across that write would key the
+    new tree's question against the old tree's answer.
+    """
 
     magazine: "Magazine"
 
@@ -292,13 +333,43 @@ class DefaultProductionGates:
                 )
             )
         results.append(_anchor_gate(piece))
+        # Also an edition-wide validation error, but named per piece here so
+        # the writer that typed the marker is the one told about it, in the
+        # same round rather than after the whole issue fails.
+        results.append(
+            _guarded(
+                "footnotes",
+                lambda: verify_manuscript_footnotes(
+                    f"{piece.manuscript}: piece {piece.id}", piece.manuscript
+                ),
+            )
+        )
         return tuple(results)
 
     def check_edition(self, edition_id: str) -> tuple[GateResult, ...]:
-        return (
-            _guarded("validate", lambda: self.magazine.validate(edition_id)),
-            _fit_gate(self.magazine, edition_id),
-        )
+        from .workflow import ProbeMemo
+
+        memo = ProbeMemo(self.magazine.root, edition_id)
+        results: list[GateResult] = []
+        for name, run in (
+            ("validate", lambda: _guarded("validate", lambda: self.magazine.validate(edition_id))),
+            ("fit", lambda: _fit_gate(self.magazine, edition_id)),
+        ):
+            # The memo's own kind namespace: the workflow report stores its
+            # `fit` under that name and means every configured language, while
+            # this one means the primary language alone.  Two answers to two
+            # different questions must never share a slot.
+            kind = f"produce:{name}"
+            stored = memo.get(kind)
+            if stored is not None and isinstance(stored.get("ok"), bool):
+                results.append(
+                    GateResult(name, stored["ok"], str(stored.get("detail") or ""))
+                )
+                continue
+            gate = run()
+            memo.set(kind, {"ok": gate.ok, "detail": gate.detail})
+            results.append(gate)
+        return tuple(results)
 
 
 def _pins_for(magazine: "Magazine", piece: Piece):
@@ -411,6 +482,7 @@ class PiecePlan:
     anchors: tuple[str, ...]
     settled: bool
     action: str
+    filed_findings: int = 0
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -424,6 +496,7 @@ class PiecePlan:
             "source_ids": list(self.source_ids),
             "figure_anchors": list(self.anchors),
             "settled": self.settled,
+            "filed_findings": self.filed_findings,
         }
 
 
@@ -558,7 +631,14 @@ class Production:
             extractions = self._extractions(piece)
             fingerprint = self._fingerprint(edition, piece, prompt, extractions)
             record = load_piece_record(self.magazine.editions_dir, edition_id, piece.id)
-            settled = is_settled(
+            filed = open_filed_findings(
+                self.magazine.editions_dir, edition_id, piece.id
+            )
+            # A filed finding outranks settledness by construction: the whole
+            # point of filing one is that the approved draft is wrong in a way
+            # its judges did not catch, so "the judges approved and nothing
+            # moved" is exactly the state it has to override.
+            settled = not filed and is_settled(
                 record,
                 inputs_sha256=fingerprint,
                 manuscript_sha256=_file_sha256(piece.manuscript),
@@ -574,7 +654,8 @@ class Production:
                     source_ids=piece.source_ids,
                     anchors=piece.anchors,
                     settled=settled,
-                    action="skip: settled" if settled else "draft and judge",
+                    filed_findings=len(filed),
+                    action=_plan_action(settled, len(filed)),
                 )
             )
         return ProducePlan(
@@ -739,6 +820,18 @@ class Production:
         previous_notes: str | None = None
         findings: tuple[Mapping[str, Any], ...] = ()
         gate_failures: tuple[str, ...] = ()
+        # A finding filed from outside the loop makes round one a revision:
+        # the draft it complains about is the one on disk, and a writer asked
+        # to clear a defect without being shown the text carrying it would
+        # start from nothing and lose everything else the piece got right.
+        filed = open_filed_findings(self.magazine.editions_dir, edition_id, piece.id)
+        if filed:
+            findings = tuple(filed)
+            if piece.manuscript.is_file():
+                previous_manuscript = _read(piece.manuscript)
+                previous_notes = _last_round_notes(
+                    self.magazine.editions_dir, edition_id, piece.id
+                )
 
         for round_number in range(1, self.max_rounds + 1):
             brief = WriterBrief(
@@ -758,9 +851,10 @@ class Production:
                 WorkItem(piece.id, "writer", round_number),
                 prompt,
                 text,
+                identity=writer_identity(prompt, brief),
                 cwd=self.root,
             )
-            manuscript, notes = split_scratch(generated.text)
+            manuscript, declared_anchors, notes = split_reply(generated.text)
             if not manuscript.strip():
                 raise ProduceError(
                     f"The writer returned no manuscript for {piece.id}: its whole "
@@ -774,6 +868,21 @@ class Production:
                     "scratch marker; the manuscript boundary is ambiguous"
                 )
             _install(piece.manuscript, manuscript)
+            # Before the gates, and before anything is recorded: the draft on
+            # disk is now the fact, and the manifest's anchors are a claim
+            # about a heading list that no longer exists.  Reconciling here
+            # means the anchor gate below judges the reconciled state, which
+            # is the state `mag validate` will judge too.
+            piece, reconciled = self._reconcile_anchors(piece, declared_anchors)
+            if reconciled:
+                # The manifest row moved, so the fingerprint that decides
+                # whether this piece may be skipped next time has to move with
+                # it -- otherwise the very next invocation recomputes a
+                # different digest, calls a settled piece unsettled, and
+                # redrafts it for ever.
+                record.inputs_sha256 = self._fingerprint(
+                    edition, piece, prompt, extractions
+                )
             round_record = RoundRecord(
                 round_number=round_number,
                 writer=ModelCall(
@@ -821,6 +930,13 @@ class Production:
             if not changed:
                 record.status = "passed"
                 write_piece_record(self.magazine.editions_dir, record)
+                if filed:
+                    close_filed_findings(
+                        self.magazine.editions_dir,
+                        edition_id,
+                        piece.id,
+                        round_number=round_number,
+                    )
                 return PieceOutcome(
                     piece_id=piece.id,
                     status="passed",
@@ -862,6 +978,59 @@ class Production:
             findings=tuple(accumulated),
         )
 
+    # -- anchors ----------------------------------------------------------
+
+    def _reconcile_anchors(
+        self, piece: Piece, declared: Mapping[str, str]
+    ) -> tuple[Piece, bool]:
+        """Move each stranded figure to the heading the new draft gives it.
+
+        The old rule was that a rewrite must preserve every heading a figure
+        was pinned to, and the gate enforced it.  That is the wrong way round:
+        a piece is rewritten because its argument changed, and a heading the
+        argument no longer wants is not worth a figure's place.  So the writer
+        declares where each figure now sits and this moves the manifest to
+        match -- one edit, in the one file that is authoritative, made by the
+        process that caused the change.
+
+        Only a *stranded* figure is moved.  A figure whose current anchor is
+        still a heading of the draft is left alone even when the writer named
+        a different one, because the manifest is the editor's and a writer
+        does not get to relocate a figure that was never in danger.  And a
+        declaration naming a heading the draft does not carry is ignored: that
+        is a second stranded anchor, not a repair, and the gate's report --
+        which lists the headings the draft actually has -- is the more useful
+        answer.
+        """
+
+        if piece.kind != "article" or not piece.anchored_figures:
+            return piece, False
+        if not piece.manuscript.is_file():
+            return piece, False
+        headings = semantic_headings(piece.manuscript)
+        wanted: dict[str, str] = {}
+        for figure in piece.anchored_figures:
+            if figure.anchor in headings:
+                continue
+            candidate = str(declared.get(figure.id) or "").strip()
+            if candidate and candidate in headings:
+                wanted[figure.id] = candidate
+        if not wanted:
+            return piece, False
+        manifest = self.magazine.editions_dir / piece.edition_id / "edition.yaml"
+        if not set_figure_anchors(manifest, piece.id, wanted):
+            return piece, False
+        return (
+            replace(
+                piece,
+                figures=tuple(
+                    replace(figure, anchor=wanted.get(figure.id, figure.anchor))
+                    for figure in piece.figures
+                ),
+            ),
+            True,
+        )
+
     # -- judging ----------------------------------------------------------
 
     def _judge_piece(
@@ -883,35 +1052,36 @@ class Production:
 
         evidence_prompt = self._prompt(JUDGE_PROMPTS["evidence"])
         line_prompt = self._prompt(JUDGE_PROMPTS["line"])
-        evidence_text = compose_evidence_prompt(
-            evidence_prompt,
-            EvidenceReviewInput(
-                piece_id=piece.id,
-                content_mode=piece.content_mode,
-                byline=piece.byline,
-                manuscript=manuscript,
-                extractions=tuple(extractions),
-                peer_manuscripts=self._peers(edition, piece),
-            ),
+        evidence_input = EvidenceReviewInput(
+            piece_id=piece.id,
+            content_mode=piece.content_mode,
+            byline=piece.byline,
+            manuscript=manuscript,
+            extractions=tuple(extractions),
+            peer_manuscripts=self._peers(edition, piece),
         )
-        line_text = compose_line_prompt(
-            line_prompt,
-            LineReviewInput(
-                piece_id=piece.id,
-                content_mode=piece.content_mode,
-                byline=piece.byline,
-                max_pages=piece.max_pages,
-                manuscript=manuscript,
-            ),
+        line_input = LineReviewInput(
+            piece_id=piece.id,
+            content_mode=piece.content_mode,
+            byline=piece.byline,
+            max_pages=piece.max_pages,
+            manuscript=manuscript,
         )
+        evidence_text = compose_evidence_prompt(evidence_prompt, evidence_input)
+        line_text = compose_line_prompt(line_prompt, line_input)
         # The type already makes a source impossible to pass; this catches a
         # future edit that smuggles one in through the manuscript or a peer.
         assert_source_withheld(
             line_text, extractions, manuscript=manuscript, label="line editor"
         )
         jobs = (
-            ("evidence", evidence_prompt, evidence_text),
-            ("line", line_prompt, line_text),
+            (
+                "evidence",
+                evidence_prompt,
+                evidence_text,
+                evidence_identity(evidence_prompt, evidence_input),
+            ),
+            ("line", line_prompt, line_text, line_identity(line_prompt, line_input)),
         )
         # Both jobs run whatever either does, so under a cooperative backend
         # both briefs are composed and offered even though the first one to
@@ -919,12 +1089,17 @@ class Production:
         # the fact-checker and the line editor a *pair* a driver can fan out.
         results = ordered_map(
             lambda job: self._verdict(
-                *job, piece_id=piece.id, round_number=round_number
+                job[0],
+                job[1],
+                job[2],
+                piece_id=piece.id,
+                identity=job[3],
+                round_number=round_number,
             ),
             jobs,
             workers=2,
         )
-        return {name: verdict for (name, _, _), verdict in zip(jobs, results)}
+        return {job[0]: verdict for job, verdict in zip(jobs, results)}
 
     def _issue_records_present(self, edition_id: str) -> bool:
         """Whether both whole-issue judgments have already been made.
@@ -955,13 +1130,12 @@ class Production:
 
         learning_prompt = self._prompt(JUDGE_PROMPTS["learning"])
         furniture = furniture_projection(edition)
+        run_a_input = ManagerRunAInput(edition_id=edition_id, furniture=furniture)
         run_a = self._dispatch(
             WorkItem(ISSUE_PIECE_ID, "manager_run_a"),
             learning_prompt,
-            compose_manager_run_a(
-                learning_prompt,
-                ManagerRunAInput(edition_id=edition_id, furniture=furniture),
-            ),
+            compose_manager_run_a(learning_prompt, run_a_input),
+            identity=manager_run_a_identity(learning_prompt, run_a_input),
             cwd=self.root,
         )
         takeaways_document = parse_verdict(run_a.text, label="manager run A")
@@ -979,24 +1153,23 @@ class Production:
             if article.id not in explainer_ids:
                 continue
             extractions.extend(self._extractions_for(article.source_ids))
+        learning_input = LearningReviewInput(
+            edition_id=edition_id,
+            furniture=furniture,
+            manager_takeaways=run_a_block,
+            explainers=explainers,
+            articles=tuple(
+                (article.id, _read(article.manuscript))
+                for article in edition.articles
+            ),
+            extractions=tuple(extractions),
+        )
         learning_verdict = self._verdict(
             "learning",
             learning_prompt,
-            compose_learning_prompt(
-                learning_prompt,
-                LearningReviewInput(
-                    edition_id=edition_id,
-                    furniture=furniture,
-                    manager_takeaways=run_a_block,
-                    explainers=explainers,
-                    articles=tuple(
-                        (article.id, _read(article.manuscript))
-                        for article in edition.articles
-                    ),
-                    extractions=tuple(extractions),
-                ),
-            ),
+            compose_learning_prompt(learning_prompt, learning_input),
             piece_id=ISSUE_PIECE_ID,
+            identity=learning_identity(learning_prompt, learning_input),
         )
         _require_unrevised_takeaways(takeaways, learning_verdict.document)
         write_issue_record(
@@ -1022,26 +1195,25 @@ class Production:
         )
 
         edition_prompt = self._prompt(JUDGE_PROMPTS["edition"])
+        edition_input = EditionReviewInput(
+            edition_id=edition_id,
+            manifest=_issue_furniture(edition),
+            editorial=(
+                _read(edition.editorial.path)
+                if edition.editorial is not None
+                else None
+            ),
+            articles=tuple(
+                (article.id, article.content_mode, _read(article.manuscript))
+                for article in edition.articles
+            ),
+        )
         edition_verdict = self._verdict(
             "edition",
             edition_prompt,
-            compose_edition_prompt(
-                edition_prompt,
-                EditionReviewInput(
-                    edition_id=edition_id,
-                    manifest=_issue_furniture(edition),
-                    editorial=(
-                        _read(edition.editorial.path)
-                        if edition.editorial is not None
-                        else None
-                    ),
-                    articles=tuple(
-                        (article.id, article.content_mode, _read(article.manuscript))
-                        for article in edition.articles
-                    ),
-                ),
-            ),
+            compose_edition_prompt(edition_prompt, edition_input),
             piece_id=ISSUE_PIECE_ID,
+            identity=edition_identity(edition_prompt, edition_input),
         )
         write_issue_record(
             self.magazine.editions_dir,
@@ -1058,10 +1230,15 @@ class Production:
         text: str,
         *,
         piece_id: str,
+        identity: str,
         round_number: int = 0,
     ) -> "Verdict":
         generated = self._dispatch(
-            WorkItem(piece_id, name, round_number), prompt, text, cwd=self.root
+            WorkItem(piece_id, name, round_number),
+            prompt,
+            text,
+            identity=identity,
+            cwd=self.root,
         )
         document = parse_verdict(generated.text, label=f"{name} judge")
         result = str(document.get("result") or "").strip()
@@ -1400,6 +1577,7 @@ class Production:
         return [piece for piece in pieces if piece.id in set(wanted)]
 
     def _article_piece(self, edition: Edition, article: Any) -> Piece:
+        budget = _opener_intro_budget(edition, article, self._extractions_for_quietly(article))
         return Piece(
             id=article.id,
             kind="article",
@@ -1409,12 +1587,15 @@ class Production:
             manuscript=article.manuscript,
             edition_id=edition.id,
             source_ids=tuple(article.source_ids),
-            figure_anchors=tuple(
-                (figure.id, figure.anchor) for figure in article.figures
+            figures=tuple(
+                FigureSlot(figure.id, figure.anchor, figure.caption)
+                for figure in article.figures
             ),
             max_pages=_page_budget(edition, "max_article_pages", DEFAULT_ARTICLE_PAGES),
             key_ideas=tuple(article.key_ideas),
             has_opener_art=article.opener_art is not None,
+            opener_intro_lines=budget.lines if budget else 0,
+            opener_intro_characters=budget.characters if budget else 0,
         )
 
     def _editorial_piece(self, edition: Edition) -> Piece:
@@ -1446,6 +1627,24 @@ class Production:
             for article in edition.articles
             if article.manuscript.is_file()
         )
+
+    def _extractions_for_quietly(self, article: Any) -> str:
+        """This article's source prose, for measuring characters per line.
+
+        Quietly, because a missing extraction is a refusal the drafting path
+        already makes with a much better message; failing to state a character
+        estimate is not worth pre-empting it here.
+        """
+
+        bodies: list[str] = []
+        for source_id in getattr(article, "source_ids", ()) or ():
+            try:
+                extraction = load_extraction(self.magazine.sources_dir, source_id)
+            except MagazineError:
+                continue
+            if extraction is not None:
+                bodies.append(extraction.body)
+        return "\n".join(bodies)
 
     def _extractions(self, piece: Piece) -> tuple[Extraction, ...]:
         return self._extractions_for(piece.source_ids)
@@ -1551,10 +1750,40 @@ def _direct_dispatch(runner: ModelRunner):
     machinery: the name is composed, handed to this function, and dropped.
     """
 
-    def call(item: WorkItem, prompt: PromptFile, text: str, *, cwd: Path):
+    def call(
+        item: WorkItem,
+        prompt: PromptFile,
+        text: str,
+        *,
+        identity: str,
+        cwd: Path,
+    ):
         return runner.generate(text, cwd=cwd)
 
     return call
+
+
+def _plan_action(settled: bool, filed: int) -> str:
+    if filed:
+        return f"draft and judge: {filed} filed finding(s) to clear"
+    return "skip: settled" if settled else "draft and judge"
+
+
+def _last_round_notes(editions_dir: Path, edition_id: str, piece_id: str) -> str | None:
+    """The working notes of the last recorded round, if there was one.
+
+    A filed finding arrives long after the process that drafted the piece has
+    exited, so the predecessor's mind is only where it was durably put.  This
+    is the case the notes were made durable for.
+    """
+
+    record = load_piece_record(editions_dir, edition_id, piece_id)
+    rounds = (record or {}).get("rounds") or ()
+    if not isinstance(rounds, Sequence) or not rounds:
+        return None
+    last = rounds[-1]
+    notes = str(last.get("notes") or "") if isinstance(last, Mapping) else ""
+    return notes or None
 
 
 def _grounded_in_the_other_pieces(piece: Piece) -> bool:
@@ -1651,6 +1880,40 @@ def _issue_furniture(edition: Edition) -> dict[str, Any]:
             for article in edition.articles
         ],
     }
+
+
+def _opener_intro_budget(edition: Edition, article: Any, sample: str):
+    """This article's opening-paragraph budget, or ``None`` when it has none.
+
+    The constraint belongs to one composition: an illustrated opener, which
+    needs both the edition-level format and this article's own opener art.
+    An article without either flows its first paragraph like any other and is
+    told nothing, because a limit that does not apply is a limit a writer will
+    eventually work around for no reason.
+
+    Every failure is silent.  A brief that could not state the number is worse
+    than one that states it, and far better than a produce run that aborted
+    while measuring an advisory.
+    """
+
+    raw_format = (edition.raw or {}).get("format")
+    if not isinstance(raw_format, Mapping):
+        return None
+    if str(raw_format.get("article_opener") or "") != "illustrated_paper_spots_v1":
+        return None
+    if getattr(article, "opener_art", None) is None:
+        return None
+    try:
+        from .weasyprint_adapter import illustrated_opener_intro_budget
+
+        return illustrated_opener_intro_budget(
+            title=str(article.title or ""),
+            byline=str(getattr(article, "author", "") or ""),
+            author_note=str(getattr(article, "author_note", "") or ""),
+            sample=sample,
+        )
+    except Exception:
+        return None
 
 
 def _page_budget(edition: Edition, key: str, default: int) -> int:

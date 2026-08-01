@@ -149,12 +149,42 @@ The set is everything unblocked, not the next item: several writers are ready at
 once, and a draft's fact-checker and line editor become ready together. Nothing
 is remembered between invocations; each one replays the pipeline over the
 answers on disk, so a driver that crashes mid-fleet re-emits the same set rather
-than a second copy of it. A brief is keyed by the SHA-256 of its own text, so a
-reply written against a draft the pipeline has since recomposed is set aside as
-`reply.superseded.md` and the brief is reissued rather than silently applied.
+than a second copy of it.
+
+A work item is keyed by what it *asks*, not by how the brief is worded: the
+prompt file's digest plus the digests of the manuscript, sources, findings and
+notes the call was handed. A reply written against a draft, a source or a
+prompt file that has since moved is set aside as `reply.superseded.md` and the
+brief is reissued rather than silently applied; a reply that would only have
+been voided by reformatting the brief is kept and used. That distinction is
+load-bearing. When the key was the digest of the composed text, a refactor of
+the prompt composer landing mid-run made a dozen completed, judged model calls
+unreachable through the front door in one commit. Editing the prompt files, or
+the identity functions in `src/magazine/produce_prompts.py`, is still a
+breaking change for a run in flight, and should be treated like a schema
+migration: finish the edition first. Produce also names every stored reply a
+replay did not reach, so nothing goes quietly.
 `editions/<id>/production/agent/ready.yaml` is the current state at a glance;
 deleting a piece's directory there discards its answers and redrafts it from
 round one, which is how an escalated piece is offered a fresh start.
+
+A defect found *outside* the loop -- an edition-level review, a reader, your own
+re-reading of a shipped piece -- is filed rather than improvised into somebody's
+prompt:
+
+```sh
+uv run --locked mag finding file 004-unreleased the-model-is-not-the-system \
+  --note "The deprecation claim about the retired endpoint is wrong." \
+  --locator "paragraph twelve" --filed-by "edition review"
+uv run --locked mag finding list 004-unreleased
+```
+
+The finding is stored beside the production records. The piece stops counting
+as settled, so the next `mag produce` redrafts it; its writer brief carries the
+finding in the same block the judges' findings appear in, together with the
+draft it complains about and that draft's working notes; and a round that then
+passes marks the finding addressed rather than deleting it. `mag status` blocks
+the production checkpoint while anything is open.
 
 Creative work has separate studio commands:
 

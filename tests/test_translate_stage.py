@@ -537,3 +537,170 @@ def _clone(source: Path, destination: Path) -> None:
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RewriteFollowUpTests(unittest.TestCase):
+    """One `mag translate` after an English rewrite, and nothing by hand.
+
+    This is the edition-4 rerun in miniature.  Produce rewrote every English
+    manuscript; the Spanish overlay was left holding byte-copies of the
+    *previous* English -- staging markers, one block where the new manuscript
+    is nineteen -- and the structural gate rejected them.  The workaround was
+    to copy each English file over its Spanish counterpart by hand.
+    """
+
+    def setUp(self):
+        self.temporary = TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name).resolve()
+        make_project(self.root)
+
+    def overlay_dir(self) -> Path:
+        return self.root / "editions" / "issue-001" / "translations" / "es"
+
+    def english(self, name: str = "articles/article.md") -> Path:
+        return self.root / "editions" / "issue-001" / name
+
+    def rewrite_english(self, body: str, name: str = "articles/article.md") -> None:
+        self.english(name).write_text(body, encoding="utf-8")
+
+    def test_a_placeholder_is_re_mirrored_from_the_rewritten_english(self):
+        stage_translation(self.root, "issue-001", "es")
+        self.rewrite_english(
+            "A wholly rewritten article.\n\n## A new section\n\nWith more blocks.\n"
+        )
+
+        report = stage_translation(self.root, "issue-001", "es")
+
+        copied = self.overlay_dir() / "articles" / "article.md"
+        self.assertEqual(copied.read_bytes(), self.english().read_bytes())
+        self.assertTrue(
+            any("Re-mirrored" in note for note in report.notes), report.notes
+        )
+        # And the overlay now loads: the block structures agree again, which is
+        # the failure the hand-copying existed to clear.
+        self.assertEqual(report.validation_errors, ())
+
+    def test_the_editorial_placeholder_is_re_mirrored_too(self):
+        stage_translation(self.root, "issue-001", "es")
+        self.rewrite_english(
+            "---\ntitle: A Test Editorial\nbyline: The editors\n"
+            "label: ORIGINAL EDITORIAL\n---\n\nA wholly new argument.\n\nIn two parts.\n",
+            name="editorial.md",
+        )
+
+        stage_translation(self.root, "issue-001", "es")
+
+        self.assertEqual(
+            (self.overlay_dir() / "editorial.md").read_bytes(),
+            self.english("editorial.md").read_bytes(),
+        )
+
+    def test_a_real_translation_is_never_overwritten_by_a_rewrite(self):
+        stage_translation(self.root, "issue-001", "es")
+        translated = self.overlay_dir() / "articles" / "article.md"
+        translated.write_text("El artículo original.", encoding="utf-8")
+        self.rewrite_english("A wholly rewritten article.\n")
+
+        report = stage_translation(self.root, "issue-001", "es")
+
+        self.assertEqual(
+            translated.read_text(encoding="utf-8"), "El artículo original."
+        )
+        # It is reported as needing re-translation rather than silently fixed.
+        self.assertTrue(
+            any(
+                advisory.pointer == "articles[article].manuscript"
+                for advisory in report.advisories
+            ),
+            report.advisories,
+        )
+
+    def test_an_untouched_overlay_still_reports_no_change_on_a_second_run(self):
+        stage_translation(self.root, "issue-001", "es")
+
+        self.assertFalse(stage_translation(self.root, "issue-001", "es").changed)
+
+
+class OverlayAnchorTests(unittest.TestCase):
+    """The overlay's figure anchor follows the base while it mirrors English."""
+
+    def setUp(self):
+        self.temporary = TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name).resolve()
+        make_project(self.root)
+        add_curated_figure(self.root)
+        self.set_base_anchor("The kill chain")
+        (self.root / "editions" / "issue-001" / "articles" / "article.md").write_text(
+            "The original article.\n\n## The kill chain\n\nSomething.\n",
+            encoding="utf-8",
+        )
+
+    def base_path(self) -> Path:
+        return self.root / "editions" / "issue-001" / "edition.yaml"
+
+    def set_base_anchor(self, anchor: str) -> None:
+        data = yaml.safe_load(self.base_path().read_text(encoding="utf-8"))
+        data["articles"][0]["figures"][0]["anchor"] = anchor
+        self.base_path().write_text(
+            yaml.safe_dump(data, sort_keys=False), encoding="utf-8"
+        )
+
+    def overlay_anchor(self) -> str:
+        data = yaml.safe_load(
+            (
+                self.root
+                / "editions"
+                / "issue-001"
+                / "translations"
+                / "es"
+                / "edition.yaml"
+            ).read_text(encoding="utf-8")
+        )
+        return data["articles"][0]["figures"][0]["anchor"]
+
+    def test_the_overlay_anchor_follows_a_moved_base_anchor(self):
+        stage_translation(self.root, "issue-001", "es")
+        self.assertEqual(self.overlay_anchor(), "The kill chain")
+
+        # Produce rewrote the English and moved the figure with it.
+        (self.root / "editions" / "issue-001" / "articles" / "article.md").write_text(
+            "The original article.\n\n## Where it actually happened\n\nSomething.\n",
+            encoding="utf-8",
+        )
+        self.set_base_anchor("Where it actually happened")
+        stage_translation(self.root, "issue-001", "es")
+
+        self.assertEqual(self.overlay_anchor(), "Where it actually happened")
+
+    def test_a_translated_manuscript_keeps_its_translated_anchor(self):
+        stage_translation(self.root, "issue-001", "es")
+        translated = (
+            self.root
+            / "editions"
+            / "issue-001"
+            / "translations"
+            / "es"
+            / "articles"
+            / "article.md"
+        )
+        translated.write_text(
+            "El artículo original.\n\n## La cadena de ataque\n\nAlgo.\n",
+            encoding="utf-8",
+        )
+        overlay_path = translated.parent.parent / "edition.yaml"
+        data = yaml.safe_load(overlay_path.read_text(encoding="utf-8"))
+        data["articles"][0]["figures"][0]["anchor"] = "La cadena de ataque"
+        overlay_path.write_text(
+            yaml.safe_dump(data, sort_keys=False, allow_unicode=True), encoding="utf-8"
+        )
+        (self.root / "editions" / "issue-001" / "articles" / "article.md").write_text(
+            "The original article.\n\n## Where it actually happened\n\nSomething.\n",
+            encoding="utf-8",
+        )
+        self.set_base_anchor("Where it actually happened")
+
+        stage_translation(self.root, "issue-001", "es")
+
+        self.assertEqual(self.overlay_anchor(), "La cadena de ataque")

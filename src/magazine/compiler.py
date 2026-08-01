@@ -6,6 +6,7 @@ import os
 import shutil
 import tempfile
 import tomllib
+from datetime import datetime, timezone
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Iterable, Mapping
@@ -62,6 +63,7 @@ from .line_review import (
 )
 from .scores import scores_are_current, scores_path, write_scores
 from .code_blocks import verify_manuscript_code_blocks
+from .footnotes import footnote_errors
 from .extraction import verify_source_extractions
 from .io import load_structured
 from .illustration import (
@@ -106,7 +108,9 @@ from .render_review import (
     visual_review_status,
     write_render_review,
 )
-from .staging_marker import require_written_manuscripts
+from .production_record import file_finding, load_filed_findings
+from .review_findings import normalize_findings
+from .staging_marker import declared_manuscript_paths, require_written_manuscripts
 from .workflow import Workflow
 
 
@@ -636,6 +640,77 @@ class Magazine:
             dry_run=dry_run,
         )
 
+    def file_finding(
+        self,
+        edition_id: str,
+        piece_id: str,
+        *,
+        note: str,
+        severity: str = "major",
+        category: str = "editorial",
+        locator: str | None = None,
+        repair_from: str | None = None,
+        suggestion: str | None = None,
+        filed_by: str = "filed finding",
+    ) -> Path:
+        """File a defect against one piece so its next brief carries it.
+
+        The piece id is checked against the manifest before anything is
+        written.  A finding filed against a typo'd id would sit in the queue
+        for ever, blocking the production checkpoint for a piece that does not
+        exist, and the person who typed it would have no reason to look.
+        """
+
+        edition_dir = self.editions_dir / edition_id
+        manifest_path = edition_dir / "edition.yaml"
+        if not manifest_path.is_file():
+            raise ValidationError(f"{edition_id} has no {manifest_path}")
+        manifest = load_structured(manifest_path)
+        pieces = declared_manuscript_paths(self.root, edition_dir, manifest)
+        if piece_id not in pieces:
+            raise ValidationError(
+                f"{edition_id} has no piece {piece_id!r}; it carries "
+                + ", ".join(sorted(pieces))
+            )
+        finding = {
+            key: value
+            for key, value in (
+                ("severity", severity),
+                ("category", category),
+                ("locator", locator),
+                ("repair_from", repair_from),
+                ("note", note),
+                ("suggestion", suggestion),
+            )
+            if value
+        }
+        # Through the bench's own normalizer, so a filed finding is stored in
+        # exactly the shape a judge's is and the brief renders both the same
+        # way -- and so a missing severity or note is refused here rather than
+        # discovered by a writer.
+        normalized = normalize_findings([finding], label=f"filed finding for {piece_id}")
+        return file_finding(
+            self.editions_dir,
+            edition_id,
+            piece_id,
+            normalized[0],
+            filed_by=filed_by.strip() or "filed finding",
+            filed_at=datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+        )
+
+    def filed_findings(self, edition_id: str) -> list[dict[str, Any]]:
+        """Every finding filed against this edition, open ones first."""
+
+        rows = load_filed_findings(self.editions_dir, edition_id)
+        return sorted(
+            rows,
+            key=lambda row: (
+                str(row.get("status") or "open") != "open",
+                str(row.get("piece") or ""),
+                str(row.get("filed_at") or ""),
+            ),
+        )
+
     def stage_article(
         self,
         brief: ArticleBrief | dict[str, Any] | Path,
@@ -1024,13 +1099,22 @@ class Magazine:
                 verify_manuscript_code_blocks(article.manuscript, extractions)
             except ValidationError as exc:
                 errors.extend(exc.errors)
+        errors.extend(_footnote_errors(self.root, edition))
         if errors:
             raise ValidationError(errors)
         editions = {edition.language: edition}
         for language in self.languages:
             if language == edition.language:
                 continue
-            editions[language] = load_translation(self.root, edition, language)
+            translated = load_translation(self.root, edition, language)
+            # A translator copies a marker across as readily as a writer
+            # invents one, and the overlay's manuscripts are typeset by the
+            # same renderer. Reported per language so the refusal names the
+            # file to fix.
+            overlay_errors = _footnote_errors(self.root, translated)
+            if overlay_errors:
+                raise ValidationError(overlay_errors)
+            editions[language] = translated
         return editions
 
     def illustration_package(self, edition_id: str) -> Path:
@@ -2761,3 +2845,24 @@ def _write_full_cover_comparison(
             temporary_path.unlink()
 
 
+
+
+def _footnote_errors(root: Path, edition: Edition) -> list[str]:
+    """Every declared manuscript of one language, checked for footnote syntax.
+
+    Sections and the editorial are included, not only articles: the renderer
+    typesets all three the same way, and a marker prints wherever it sits.
+    """
+
+    errors: list[str] = []
+    declared: list[Path] = [article.manuscript for article in edition.articles]
+    declared.extend(section.path for section in edition.sections)
+    if edition.editorial is not None:
+        declared.append(edition.editorial.path)
+    for path in declared:
+        try:
+            label = path.resolve().relative_to(root.resolve()).as_posix()
+        except ValueError:
+            label = path.as_posix()
+        errors.extend(footnote_errors(label, path))
+    return errors

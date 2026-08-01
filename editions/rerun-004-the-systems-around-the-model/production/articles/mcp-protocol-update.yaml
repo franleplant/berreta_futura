@@ -3,17 +3,17 @@ edition_id: rerun-004-the-systems-around-the-model
 piece_id: mcp-protocol-update
 content_mode: faithful_synthesis
 status: drafting
-produced_at: '2026-08-01T17:56:46+00:00'
-inputs_sha256: 6f7bf756c1423544170c68bebcf21e12ed8d80b2f6deeeff9460b0adc79671dc
-manuscript_sha256: 37c5c490184b4ace57be5381eb801101f9188c7d63f39200d6bda3b8588a8b39
+produced_at: '2026-08-01T19:24:31+00:00'
+inputs_sha256: 3262d19b2b298f00fa4afd842dcfb24e6b9c41b9477eb63cb68447f1b35f6fbc
+manuscript_sha256: fa2dd7bc55cdf3f418d69137d9e3c98fdabde2b90575e08cf5724fc4df87728a
 rounds:
 - round: 1
   result: changes_required
-  manuscript_sha256: 37c5c490184b4ace57be5381eb801101f9188c7d63f39200d6bda3b8588a8b39
+  manuscript_sha256: fa2dd7bc55cdf3f418d69137d9e3c98fdabde2b90575e08cf5724fc4df87728a
   writer:
     role: writer
     prompt_path: prompts/faithful-synthesis.md
-    prompt_sha256: ed62c00d30c4ffd23ee725b0ece2cdcdec561dd0fd428d0f905ef00510ec2745
+    prompt_sha256: 56f083c8f2bb39a6dcfd6d35f153aedeaedbe7825dc06909c5ef4196a27da277
     backend: agent
     model: null
     argv:
@@ -24,352 +24,186 @@ rounds:
     - agent
     - --submit
     - mcp-protocol-update/r1-writer
-    - --brief-sha256
-    - f1ceee66a3872fe908e9dcbb5a8b131448532c8fd7d3e10dfa2bebaf0b3bee76
+    - --work-sha256
+    - 1734aa4c53ea3325261710e4a158f5d9274a2489f495cd076b492eac442c507b
     duration_seconds: 0.0
-    output_sha256: add6145f00c38b2f725424a0759a8c86f377ee7fae5d8c2c243f33d7ab6ebd03
-  gate_failures: []
+    output_sha256: c99b4a742c61995b00ec62136e5ca6f30d88df6458d68cb26ab756a25cc9ddf2
+  gate_failures:
+  - 'fit: Article pragmatic-leverage''s opening paragraph cannot fit its illustrated opener page at compact
+    density; shorten that paragraph rather than splitting the opener'
   anchors_reconciled: []
-  judges:
-    evidence:
-      result: approved
-      findings: []
-      scores:
-        claim_support: 5
-        qualification_survival: 4
-        quote_accuracy: 5
-        attribution: 5
-      notes: 'I read the complete pinned extraction of
+  judges: {}
+  notes: '## Round 2 notes. Read these before the round 1 notes below them.
 
-        the-2026-07-28-mcp-specification-release-candida-1a1752b8 in full before the
 
-        manuscript, confirmed the manuscript''s declared source_ids matches it, then
+    The round 1 claim ladder and voice signature are unchanged and are reproduced at the bottom; they
+    are still the map of this piece. What follows is only what round 2 changed and why, because every
+    change was made to clear a finding and a round 3 reviser needs to know which sentences are now load-bearing
+    for a *review* reason rather than an argument reason.
 
-        enumerated every checkable assertion in the piece: the opening claim that a
 
-        server that needed sticky sessions, a shared session store, and deep packet
+    ### The shape changed in one place: Authorization is a section again
 
-        inspection can now run behind a plain round-robin load balancer and that this
 
-        is the largest revision since launch; all six section headings; the removal
+    Round 1 folded the whole authorization category into two clauses of "What you have to change now"
+    and cut five of the six authorization SEPs. That was a defensible budget call and it survived the
+    fact-check, but it lost a category the source''s own dek names as one of six headline changes, so
+    a reader finished the piece not knowing that authorization moved at all. Round 2 gives it back its
+    own section under the source''s own heading.
 
-        of the initialize/initialized handshake and of the Mcp-Session-Id header; the
 
-        migration of protocol version, client info, and client capabilities into
+    What is in it now, in the order it runs: the alignment claim; `iss` validation with the mix-up rationale
+    and the future-version expectation; credential binding to the `issuer` plus re-registration on migration;
+    the refresh-token, step-up scope and `.well-known` clarifications in one sentence; and `application_type`
+    last. All six authorization SEPs from the source are now represented.
 
-        _meta; server/discover; the SEP-2260 rule that server-initiated requests may
 
-        issue only while the server is processing a client request (recommended
+    Two deliberate choices inside it:
 
-        before, now required); InputRequiredResult and the echoed requestState
 
-        replacing a held-open SSE stream; the explicit-handle pattern with basket_id
+    - **Source order was broken once.** `application_type` is last, not second, because it is the most
+    concretely developer-visible fix in the section and the section needed a landing that was not a list
+    of clarifications. Reverting it to source order costs nothing but the ending.
 
-        and browser_id; the Mcp-Method and Mcp-Name header requirement; ttlMs and
+    - **The `iss` future expectation stays hedged exactly.** "In a future version, clients will be expected
+    to reject responses that omit `iss`" and "should begin supplying it now" are the whole claim strength
+    of that sentence. This is not a requirement of this release. Do not tighten it.
 
-        cacheScope modeled on HTTP Cache-Control with tools/list freshness and
 
-        cross-user sharing; the fixed traceparent, tracestate, and baggage key names
+    Cost: roughly 90 words. The piece is still inside the prompt''s 700 to 1,100 band. If a future round
+    needs the space back, take it from the `.well-known`/step-up/refresh-token sentence first, then from
+    the credential-binding sentence, and leave `iss` and `application_type` alone.
 
-        and the single OpenTelemetry span tree; the extensions map, ext-*
 
-        repositories, independent versioning, and the Extensions Track; two official
+    ### Finding 1, repeated_cadence, is the finding this draft is built around
 
-        extensions; MCP Apps'' sandboxed iframe, ahead-of-time template declaration
 
-        for security review, and the shared JSON-RPC audit and consent path; Tasks
+    The line editor was right and the diagnosis was exact: three consecutive sections ran the same engine
+    (announce a count, list two items, close on a sentence-initial "And"), so the back half read as one
+    paragraph shape run four times. Every instance was the synthesis''s own arrangement, not the authors''
+    wording, so all of it was repairable without touching a source sentence. What was removed:
 
-        shipping experimentally in the last release, moving to an extension, the
 
-        removal of tasks/list for want of session scoping, and the migration burden;
+    - "Three smaller changes make the resulting traffic easier to operate." Cut. This was carried in round
+    1 as a voice sentence, and losing it is a real cost, but it is the clearest instance of the count
+    engine and the section reads fine opening cold on the `Mcp-Method` requirement. If a round 3 wants
+    it back, it can only come back if no other section announces a count.
 
-        the Roots, Sampling, and Logging deprecations with all three replacements and
+    - "And the `traceparent`..." Now runs as the third sentence of a three-sentence section with no announced
+    count and no "And".
 
-        the annotation-only, one-year, separate-SEP conditions; iss validation per
+    - "Three governance SEPs are designed so that..." Now "The governance work in it is designed so that...".
+    The count is gone; the claim is not.
 
-        RFC 9207, the mix-up-attack rationale tied to the single-client, many-server
+    - "And a Standards Track SEP can no longer reach Final status..." Now opens on its own subject.
 
-        pattern, and the future rejection of responses omitting iss; the -32002 to
+    - "And the error code for a missing resource changes..." Now its own paragraph opening on "The error
+    code".
 
-        -32602 Invalid Params change; the three governance SEPs, the Active /
 
-        Deprecated / Removed lifecycle with at least twelve months to earliest
+    **No sentence in this manuscript begins with "And". Check that before shipping any round 3 edit.**
+    Two of the three removals were counts, and re-adding any count anywhere reopens this finding, because
+    the surviving triads (the heading "Routable, cacheable, traceable", the three-item deprecation list,
+    "Active, Deprecated, and Removed") are all the source''s own and cannot go.
 
-        removal, extension-first stabilization, and the conformance-suite gate on
 
-        Final status tied to the SDK tier system; and the May 21, 2026 lock, July 28,
+    Section openings now run: a concrete header requirement; a history sentence; an alignment claim; a
+    deprecation announcement with a list; the authors'' verbatim "This release contains breaking changes."
+    Section endings run: a span tree; a migration obligation; a rejected localhost redirect URI; an imperative;
+    a hedged expectation. That spread is the fix. Preserve the spread, not the specific sentences.
 
-        2026 publication, and ten-week validation window. Every one of them has a
 
-        directly corresponding passage in the extraction; no number, date, version
+    ### Finding 2, duplication, lede versus first section
 
-        string, header name, method name, error code, or RFC number is altered, and
 
-        the byline matches the extraction''s two lead maintainers, which also licenses
+    Cut the trailing clause "and the sticky routing and shared session stores that horizontal deployments
+    needed are no longer required at the protocol layer". The opener already spends sticky sessions and
+    the shared session store; the section now ends on "any MCP request can land on any server instance",
+    which is the part the opener does not say.
 
-        the manuscript''s first-person "we". The reverse pass found the source''s
 
-        hedges intact: "annotation-only", "at least twelve months", "before, if
+    One consequence to watch: that clause carried the second instance of the "at the protocol layer" qualifier,
+    which round 1''s notes flagged as deliberate. The qualifier still appears on the claim sentence that
+    needs it ("MCP is now stateless at the protocol layer"), and "Removing the protocol-level session"
+    carries the same restriction in the next section. Nothing hardened. But if anyone edits the first
+    sentence of "The handshake and session are gone", that qualifier is now the only one in the piece.
 
-        ever", "our expectation is", "we don''t intend for that to be the norm", and
 
-        the concession that this release contains breaking changes all survive, and
+    ### Findings 3 and 4, the stateful-applications paragraph
 
-        the manuscript reaches no thesis the source does not. Two compressions I
 
-        examined and judged sub-threshold rather than findings: the closing sentence
+    Both cleared by cutting, and both cuts are of the authors'' own sentences, so they were made as conservatively
+    as possible.
 
-        drops the source''s co-condition "and with deprecation windows and extensions
 
-        as the standard tools going forward", but the immediately preceding paragraph
+    - Cut "The protocol no longer manages that state for you, but it doesn''t prevent you from managing
+    it yourself." It restated the paragraph''s opening sentence and occupied the position where the consequence
+    belongs. The paragraph now ends on the compose/reason/hand-off claim, which is the actual argument.
 
-        states both of those mechanisms explicitly, so the condition still reads; and
+    - The "not just X but Y" split is gone. The sentence is now "In practice, we''ve found this pattern,
+    the model threading an identifier from one tool call to the next, to be often a more powerful substitute
+    for session state." Every load-bearing token survives: "In practice, we''ve found" (a first-person
+    judgment, not a measurement), "often", "more powerful", "substitute for session state". What went
+    is "more than just a workable", which was the half the line editor called empty.
 
-        "never really allowed" becomes "never allowed", which is not presented as a
 
-        quotation and does not change the meaning. Omissions elsewhere are the
+    This sentence is the only first-person judgment in the piece and it is why the section is not a magazine
+    opinion. Do not paraphrase it into third person and do not drop "In practice, we''ve found" or "often".
 
-        permitted kind: the Authorization Hardening section beyond iss, the JSON
 
-        Schema 2020-12 section, all SEP numbers, the Tier 1 SDK expectation, the
+    ### Finding 5, SEP jargon
 
-        header/body disagreement rule, and inputResponses alongside requestState are
 
-        dropped detail, not dropped qualification, counterargument, or conclusion.
+    Expanded at first mention, in the Extensions section, using the source''s own expansion: "a new Extensions
+    Track in the Specification Enhancement Proposal (SEP) process". First mention is now genuinely first:
+    no SEP appears before that section in this draft. If a round 3 reorders sections, the expansion moves
+    with the first mention.
 
-        What I could not check: the manuscript carries no title, deck, figure
 
-        caption, or pull quote, so any furniture added downstream is outside this
+    ### Finding 6, orphan referent
 
-        audit, and the extraction is a lossy text capture of a blog post whose two
 
-        diagrams and one truncated JSON body I could only read as far as the capture
+    "the new SDK tier system" is gone rather than glossed. The source never explains it beyond naming
+    it, so an in-piece gloss would have had to come from outside the extraction. The closing governance
+    sentence now stops at "until a matching scenario lands in the conformance suite", which is the governance
+    claim; whose SDKs that suite also scores is not. The Tier 1 SDK expectation stays cut for the same
+    reason, so "SDK maintainers" in the timeline paragraph is now the only mention of SDKs and it needs
+    no antecedent.
 
-        preserves them, though no manuscript claim depends on the truncated portions.'
-      call:
-        role: evidence_judge
-        prompt_path: prompts/evidence-review.md
-        prompt_sha256: 2d368985eba3011b23c2f03fa926da4791a03975bd5ee4403ed6d8d19503d264
-        backend: agent
-        model: null
-        argv:
-        - mag
-        - produce
-        - rerun-004-the-systems-around-the-model
-        - --backend
-        - agent
-        - --submit
-        - mcp-protocol-update/r1-evidence
-        - --brief-sha256
-        - ffeb1b7ebca9c2ea5a053f8b4add551077794b31cb9ce97d0bb3d406b883889e
-        duration_seconds: 0.0
-        output_sha256: 1d347f34b3e4ef5f82a98ce37f2cabc2d35b991e99469d8512adf3eef2867de3
-    line:
-      result: changes_required
-      findings:
-      - severity: major
-        article: mcp-protocol-update
-        locator: Routable, cacheable, traceable | And the `traceparent`, `tracestate`, and `baggage` key
-          names are now fixed in the spec | 1
-        category: repeated_cadence
-        note: 'Three consecutive sections are built by the same engine: announce a count,
 
-          list two items, close with a sentence-initial "And". "Three smaller
+    ### Two things this draft is protecting and a round 3 must not undo
 
-          changes make the resulting traffic easier to operate... And the
 
-          `traceparent`, `tracestate`, and `baggage` key names are now fixed in the
+    1. **The fact-check passed with zero findings and house style scored 5.** Every round 2 change is
+    a cut, a re-arrangement, or a restoration from the extraction. No claim, number, hedge or example
+    entered this draft from outside the source.
 
-          spec". "Clients must now validate the `iss` parameter... And the error
+    2. **The deprecations are annotation-only.** "The methods, types, and capability flags keep working
+    in this release and in every specification version published within a year of it, and removing any
+    of them will require a separate SEP." A sibling article in this edition wrongly implied Roots, Sampling
+    and Logging were removed and is being corrected against this piece. If any round 3 compresses that
+    sentence, the two articles fall out of agreement and this one is the reference. "Keep working" and
+    the one-year floor both stay.
 
-          code for a missing resource changes from the MCP-custom `-32002`".
 
-          "Three governance SEPs are designed so that future revisions can evolve
+    ### Still-standing decisions from round 1 that round 2 did not revisit
 
-          the protocol... And a Standards Track SEP can no longer reach Final status
 
-          until a matching scenario lands in the conformance suite". The triad
+    Full JSON Schema 2020-12 for tools (SEP-2106) is still dropped whole and is still the largest single
+    omission; the error-code change from the same source section carries the obligation. All four fenced
+    code blocks are still dropped: the pdftotext extraction has wrapped and re-indented them and the `_meta`
+    line is truncated mid-token, so no block can be reproduced character for character. Take a clean copy
+    from the spec if a future revision wants them; do not reconstruct from the extraction. Every SEP identifier
+    is still cut, and the ladder below keeps all of them so any one can be re-attached cheaply.
 
-          framing reinforces it: the heading "Routable, cacheable, traceable",
 
-          "Three smaller changes", "Three governance SEPs", the three-item Roots and
+    ---
 
-          Sampling and Logging list, "Active, Deprecated, and Removed". Individually
 
-          each is a real list of three; stacked, the back half of the piece reads as
+    ## Round 1 notes, carried forward
 
-          one paragraph shape run four times, and the reader starts skimming for the
 
-          "And" to know a section is ending. Arrangement is the synthesis''s own, so
-
-          this is repairable without touching the authors'' wording: vary the
-
-          openings and let one section run on something other than a count.'
-        suggestion: The `traceparent`, `tracestate`, and `baggage` key names are also fixed in the spec
-          now, so a tool call can show up as one span tree in an OpenTelemetry-compatible backend.
-      - severity: major
-        article: mcp-protocol-update
-        locator: The handshake and session are gone | the sticky routing and shared session stores that
-          horizontal deployments needed are no longer required at the protocol layer | 1
-        category: duplication
-        note: 'The lede''s payoff is spent twice with the same two items. Opening: "A
-
-          remote MCP server that needed sticky sessions, a shared session store, and
-
-          deep packet inspection at the gateway can now run behind a plain
-
-          round-robin load balancer." End of the first section: "With both gone, any
-
-          MCP request can land on any server instance, and the sticky routing and
-
-          shared session stores that horizontal deployments needed are no longer
-
-          required at the protocol layer." A lede that asserts an effect and a body
-
-          that derives it is fine, but the derivation here re-enumerates sticky
-
-          routing and shared session stores rather than adding to them, so the
-
-          section ends on a sentence the reader has already read. The repair is a
-
-          cut of the trailing clause, which changes no wording, tone or claim
-
-          strength.'
-        suggestion: With both gone, any MCP request can land on any server instance.
-      - severity: minor
-        article: mcp-protocol-update
-        locator: Stateless protocol, stateful applications | The protocol no longer manages that state
-          for you, but it doesn't prevent you from managing it yourself. | 1
-        category: duplication
-        note: 'The paragraph opens and closes on the same proposition. First sentence:
-
-          "Removing the protocol-level session does not mean your application has to
-
-          be stateless." Last sentence: "The protocol no longer manages that state
-
-          for you, but it doesn''t prevent you from managing it yourself." Nothing
-
-          between them changes the claim, so the closer is a restatement occupying
-
-          the position where the reader expects the consequence. The repair is a
-
-          cut; capped at minor because the sentences are the authors'' own.'
-      - severity: minor
-        article: mcp-protocol-update
-        locator: Stateless protocol, stateful applications | to be more than just a workable substitute
-          for session state. It's often a more powerful one. | 1
-        category: ai_phrasing
-        note: '"In practice, we''ve found this pattern (the model threading an identifier
-
-          from one tool call to the next) to be more than just a workable substitute
-
-          for session state. It''s often a more powerful one." This is the empty "not
-
-          just X but Y" split across a full stop, and the second sentence carries no
-
-          content the first does not already imply. It also lands one beat away from
-
-          the house antithesis tic. The claim that follows ("The model can compose
-
-          handles across tools, reason about them, and hand them off between steps")
-
-          is the actual argument and is strong enough to run without the setup.
-
-          Capped at minor and no replacement offered: the sentences are the authors''
-
-          and the fix touches their claim strength.'
-      - severity: minor
-        article: mcp-protocol-update
-        locator: Extensions become first-class | with a new Extensions Track in the SEP process to carry
-          them from experimental to official | 1
-        category: jargon
-        note: 'SEP is never expanded and appears four times, twice in load-bearing
-
-          positions: "a new Extensions Track in the SEP process", "removing any of
-
-          them will require a separate SEP", "Three governance SEPs are designed so
-
-          that future revisions can evolve the protocol", "a Standards Track SEP can
-
-          no longer reach Final status". An engineer who does not follow this
-
-          working group reaches the closing section, which is entirely about the SEP
-
-          machinery, still guessing. The repair is an editor gloss at first mention
-
-          rather than a change to the authors'' sentences; I have not supplied the
-
-          expansion because getting it right is the fact-checker''s call, not mine.'
-      - severity: minor
-        article: mcp-protocol-update
-        locator: How the protocol evolves from here | the conformance suite that the new SDK tier system
-          scores official SDKs against | 1
-        category: orphan_referent
-        note: '"the new SDK tier system" arrives with a definite article and "new", both
-
-          of which promise a prior mention. The piece has none: SDKs appear once
-
-          before this, as "SDK maintainers" in the following paragraph, and no tier
-
-          system is described anywhere. The reader is told a governance rule turns
-
-          on a mechanism they have not been shown.'
-      scores:
-        structure: 4
-        flow: 4
-        sentence_craft: 4
-        house_style: 5
-        voice_consistency: 4
-      notes: 'This is a well-ordered spec update and it reads fast. The opening is the best
-
-        thing in it: a concrete deployment that gets simpler, stated before any
-
-        protocol vocabulary, and it earns the second paragraph cleanly. The argument''s
-
-        steps are recoverable from one read (sessions removed, what replaces them
-
-        mid-call, how to keep application state anyway, what the new traffic gives
-
-        operators, extensions formalized, what you must change, how change is governed
-
-        from here), and the transitions do their work where the piece jumps, "A
-
-        stateless protocol still needs a way for servers to ask the client for
-
-        something mid-call" being the clearest. House style is clean throughout: no em
-
-        dashes, sentence-case headings, no narrator scaffolding, first person that
-
-        stays consistent with a two-author byline. The weakness is rhythm rather than
-
-        reasoning. The back three sections all run the same count-and-list shape and
-
-        all close on "And", which flattens changes of very different weight into one
-
-        cadence, and two passages restate what has already landed, once at the end of
-
-        the first section and once inside the stateful-applications paragraph. Trim
-
-        those and vary two section openings and the piece is ready.'
-      call:
-        role: line_judge
-        prompt_path: prompts/line-review.md
-        prompt_sha256: 262f28e51956608760ae5dbdde255ef7a5780f459e73cb3542d7ae6aae6ac8b4
-        backend: agent
-        model: null
-        argv:
-        - mag
-        - produce
-        - rerun-004-the-systems-around-the-model
-        - --backend
-        - agent
-        - --submit
-        - mcp-protocol-update/r1-line
-        - --brief-sha256
-        - 517662fee50f199e4369e25c1915aba373d95a7119dc5f05aba8f9cfbcafc266
-        duration_seconds: 0.0
-        output_sha256: 39f415cf919c985900b2282801e045ff3672146297ee594e88e5a6e2bcafe62a
-  notes: '## Step 1: claim ladder
+    ### Step 1: claim ladder
 
 
     **Central claim.** The `2026-07-28` release candidate spends one deliberate round of breaking changes
@@ -383,7 +217,7 @@ rounds:
     1. The practical effect on a production deployment is immediate: a server that needed sticky sessions,
     a shared session store, and deep packet inspection at the gateway now runs behind a plain round-robin
     load balancer, routes on `Mcp-Method`, and lets clients cache `tools/list` for as long as `ttlMs`
-    permits. (Source lede plus the before/after diagram.)
+    permits.
 
     2. MCP is now stateless at the protocol layer. Six SEPs get there, completing the plan in "The Future
     of MCP Transports" (December).
@@ -397,58 +231,46 @@ rounds:
     layer.
 
     5. Server-initiated requests only while the server is actively processing a client request (SEP-2260).
-    Claim strength changed: previously recommended, now required. Rationale: no prompt out of nowhere,
-    and every elicitation traces to something the user or their agent started.
+    Claim strength changed: previously recommended, now required.
 
     6. Multi Round-Trip Requests (SEP-2322) replace the held-open SSE stream with `InputRequiredResult`
-    plus `inputResponses` and an echoed `requestState`; any instance can pick up the retry because everything
-    it needs is in the payload.
+    plus `inputResponses` and an echoed `requestState`; any instance can pick up the retry.
 
     7. Stateless protocol does not mean stateless application: explicit handles (`basket_id`, `browser_id`)
     minted by a tool and threaded back by the model. Author''s judgment: often more powerful than session
-    state, because the model can compose handles, reason about them, and hand them off.
+    state.
 
-    8. Three smaller operational changes. `Mcp-Method`/`Mcp-Name` routing without body inspection, and
-    servers reject header/body disagreement (SEP-2243). `ttlMs` and `cacheScope` modeled on `Cache-Control`,
-    so a long-lived SSE stream is no longer the only way to learn a list changed (SEP-2549). W3C Trace
-    Context key names fixed, several SDKs already did this, result is one span tree in an OpenTelemetry-compatible
-    backend (SEP-414).
+    8. Three smaller operational changes: `Mcp-Method`/`Mcp-Name` routing without body inspection with
+    servers rejecting header/body disagreement (SEP-2243); `ttlMs` and `cacheScope` modeled on `Cache-Control`
+    (SEP-2549); W3C Trace Context key names fixed (SEP-414).
 
     9. Extensions get a formal process (SEP-2133): reverse-DNS IDs, `extensions` capability map, `ext-*`
-    repositories with delegated maintainers, independent versioning, a new Extensions Track from experimental
-    to official.
+    repositories with delegated maintainers, independent versioning, a new Extensions Track.
 
     10. MCP Apps (SEP-1865): sandboxed iframe, templates declared ahead so hosts can prefetch, cache,
-    and security-review them, UI talks back over the same JSON-RPC base protocol so UI actions share the
-    audit and consent path of a direct tool call.
+    and security-review them, UI actions share the audit and consent path of a direct tool call.
 
-    11. Tasks demoted from experimental core feature to extension because production use surfaced enough
-    redesign; task handle returned from `tools/call`, driven by `tasks/get`, `tasks/update`, `tasks/cancel`;
-    creation is server-directed; `tasks/list` removed because it can''t be scoped safely without sessions;
-    shippers of the experimental API must migrate.
+    11. Tasks demoted from experimental core feature to extension; task handle from `tools/call`, driven
+    by `tasks/get`, `tasks/update`, `tasks/cancel`; creation server-directed; `tasks/list` removed; shippers
+    must migrate.
 
-    12. Six SEPs harden authorization toward real OAuth 2.0 and OpenID Connect deployments: `iss` validation
-    per RFC 9207 against mix-up attacks that MCP''s single-client, many-server pattern makes more prevalent
-    (SEP-2468); `application_type` in Dynamic Client Registration, fixing the rejected localhost redirect
-    URI (SEP-837); credential binding to the issuer (SEP-2352); refresh tokens (SEP-2207); scope accumulation
-    on step-up (SEP-2350); the `.well-known` suffix (SEP-2351).
+    12. Six SEPs harden authorization: `iss` validation per RFC 9207 (SEP-2468); `application_type` in
+    Dynamic Client Registration (SEP-837); credential binding to the issuer (SEP-2352); refresh tokens
+    (SEP-2207); scope accumulation on step-up (SEP-2350); the `.well-known` suffix (SEP-2351).
 
     13. Roots, Sampling, and Logging deprecated with replacements (SEP-2577). Annotation-only: they keep
     working in this release and in every spec version published within a year of it, and removal needs
     a separate SEP.
 
-    14. Full JSON Schema 2020-12 for tool schemas (SEP-2106): composition, conditionals, references, unrestricted
-    output schemas, `structuredContent` as any JSON value, no auto-dereferencing of external `$ref`, bounded
-    depth and validation time. Separately, a missing resource returns `-32602 Invalid Params` instead
-    of the MCP-custom `-32002` (SEP-2164).
+    14. Full JSON Schema 2020-12 for tool schemas (SEP-2106). Separately, a missing resource returns `-32602
+    Invalid Params` instead of `-32002` (SEP-2164).
 
-    15. Governance: Active, Deprecated, Removed lifecycle with at least twelve months before the earliest
-    possible removal; extensions as the opt-in path to stability; a Standards Track SEP cannot reach Final
-    without a matching conformance-suite scenario (SEP-2484), the suite the SDK tier system scores official
-    SDKs against.
+    15. Governance: Active, Deprecated, Removed lifecycle with at least twelve months before earliest
+    removal; extensions as the opt-in path to stability; a Standards Track SEP cannot reach Final without
+    a matching conformance-suite scenario (SEP-2484).
 
-    16. Timeline: RC locked May 21, 2026; final July 28, 2026; ten-week window for validation; Tier 1
-    SDKs expected to ship support inside it.
+    16. Timeline: RC locked May 21, 2026; final July 28, 2026; ten-week window; Tier 1 SDKs expected to
+    ship support inside it.
 
 
     **Qualifications, limits, admissions.**
@@ -457,141 +279,85 @@ rounds:
     - "This release contains breaking changes. We don''t intend for that to be the norm." The hinge of
     the whole argument, kept verbatim.
 
-    - Statelessness is claimed "at the protocol layer" only. That qualifier appears twice in the manuscript
-    on purpose. Dropping either instance hardens the claim.
+    - Statelessness is claimed "at the protocol layer" only. See the round 2 note on where that qualifier
+    now lives.
 
     - "In practice, we''ve found" and "often a more powerful one" are hedged first-person judgments, not
-    measurements. Kept hedged.
+    measurements. Still hedged.
 
     - Deprecations are annotation-only, with a one-year floor and a separate SEP required for removal.
 
     - Rejecting responses that omit `iss` is a future expectation, not a requirement of this release.
-    The manuscript keeps "in a future version" and "should begin supplying it now".
 
     - "our expectation is that implementers ... will be able to adopt future revisions" is an expectation,
     not a promise. It is the last sentence of the piece for that reason.
 
     - Tasks moved to an extension because production use surfaced redesign: an admission that the core-feature
-    version was wrong, and it carries a migration cost for anyone who shipped against it. Both kept.
+    version was wrong, carrying a migration cost. Both kept.
 
 
-    ## Step 2: voice signature (carried verbatim)
+    ### Step 2: voice signature
 
 
-    1. "This release contains breaking changes. We don''t intend for that to be the norm."
+    1. "This release contains breaking changes. We don''t intend for that to be the norm." Verbatim, still.
 
     2. "In practice, we''ve found this pattern (the model threading an identifier from one tool call to
     the next) to be more than just a workable substitute for session state. It''s often a more powerful
-    one."
+    one." Round 2 cleared an `ai_phrasing` finding on this one; see above for exactly what was kept.
 
-    3. "If your client matches on the literal `-32002` value, update it."
-
-
-    Also carried word for word because they are voice rather than content: "The protocol no longer manages
-    that state for you, but it doesn''t prevent you from managing it yourself", "Three smaller changes
-    make the resulting traffic easier to operate", and "a user is never prompted out of nowhere" (demoted
-    to a subordinate clause, wording untouched).
+    3. "If your client matches on the literal `-32002` value, update it." Verbatim, still, and still the
+    last sentence of its section.
 
 
-    Note for the next reviser: voice sentence 2 sits close to the banned "not merely X but Y" antithesis.
-    It is the source author''s own retained sentence, which `docs/WRITING_RULES.md` explicitly allows
-    ("the ban is on writing it yourself"). If a line editor flags it, quote it more visibly rather than
-    paraphrasing. It is the only first-person judgment in the piece, and paraphrase would turn a maintainer''s
-    opinion into the magazine''s.
+    "A user is never prompted out of nowhere" survives as a subordinate clause, wording untouched. "Three
+    smaller changes make the resulting traffic easier to operate" and "The protocol no longer manages
+    that state for you, but it doesn''t prevent you from managing it yourself" were both carried in round
+    1 and both went in round 2, the first to the cadence finding and the second to the duplication finding.
 
 
-    ## Step 3: shape, and what was dropped
+    ### Step 3 dropped list, round 1, still in force except where round 2 restored
 
 
-    **Shape.** The edition-004 version organised by release-note category (Extensions / Authorization
-    / Deprecations), which is the source''s table of contents, not its argument. The argument here is
-    that one break is being spent deliberately, on a foundation, next to the machinery built to avoid
-    repeating it. So the spine is: what a deployment looks like now (opener), then why, mechanically (handshake
-    and session gone), then what you lose and what replaces it (explicit handles), then what ordinary
-    infrastructure gains (routable, cacheable, traceable), then where change goes from now on (extensions),
-    then the bill you actually pay (what you have to change now), then why this is meant to be the last
-    break (evolves from here). Sections five and six still carry release-note material, but each is subordinated
-    to a claim instead of to a chapter title, and each ends on the obligation it creates for the reader
-    rather than on a summary.
+    1. *Second and third examples.* Five of the six authorization SEPs. **Round 2 restored all five.**
+    Also still dropped as repetition or chrome: the "Several SDKs and tools were already doing this" aside,
+    the diagram captions, the "open an issue / contributor Discord" pointers, the draft-spec and changelog
+    pointers, "and many other changes", and the thank-you to the Working Groups.
+
+    2. *Supporting evidence before its claim.* Every SEP identifier, and the "six SEPs" count in both
+    places. Also: Tasks method names and server-directed creation, `inputResponses`, MCP Apps prefetch
+    and cache, the full trace path, "gateways" in the routing list, the elicitation rationale, the Tier
+    1 SDK expectation, and "completing the plan we laid out in The Future of MCP Transports in December".
+    Round 2 restored one item from this group: "servers reject requests where the headers and the body
+    disagree", which was needed to give the routing sentence a second beat once the count was cut.
+
+    3. *Whole claims.* Full JSON Schema 2020-12 (SEP-2106). Still the first thing to restore if the budget
+    grows.
+
+    4. *Qualifications and the authors'' own conclusions.* Nothing dropped in either round.
 
 
-    Four of the six headings are the author''s own words. "Extensions become first-class" and "What you
-    have to change now" are lightly adapted: the first from the source''s own "Extensions Become First-Class",
-    the second built out of the source''s imperatives ("should begin supplying it now", "update it", "will
-    need to migrate"). Neither asserts a framing the author did not offer.
+    ### Budget and mechanical checks
 
 
-    **Dropped, in the prompt''s cut order. Stopped as soon as the piece fit (999 body words).**
+    First body block is a paragraph. Seven `##` headings, no H1. No U+2014 anywhere. One three-item list
+    (the deprecation replacements) and it is not the last thing in its section. Six of the seven headings
+    are the authors'' own words, recased; only "What you have to change now" is built from the source''s
+    imperatives ("should begin supplying it now", "update it", "will need to migrate"), and round 2 shrank
+    what it covers, so reverting it to the source''s "Roots, Sampling, and Logging are deprecated" is
+    now cheap and would make all seven headings the authors''.
 
 
-    1. *Second and third examples of a point the first carried.* Five of the six authorization SEPs: `application_type`
-    in Dynamic Client Registration (SEP-837), credential binding to the issuer (SEP-2352), refresh tokens
-    (SEP-2207), scope accumulation on step-up (SEP-2350), the `.well-known` suffix (SEP-2351). The `iss`
-    change carries the section''s point (align with how OAuth and OpenID Connect are actually deployed)
-    and is the one with an action attached. `application_type` was the hardest of these to lose: it is
-    the most concretely developer-visible authorization fix in the release, and it is the first thing
-    to restore if this piece ever gets a page back. Also dropped as repetition or chrome: the "Several
-    SDKs and tools were already doing this" aside, the diagram captions, the "open an issue / ask in the
-    contributor Discord" pointers, the draft-spec and changelog pointers, "and many other changes", and
-    the thank-you to the Working Groups.
-
-    2. *Supporting evidence, before its claim.* Every SEP identifier, and the "six SEPs" count in both
-    places it appears. This is the piece''s main structural bet: a wall of SEP-XXXX is precisely what
-    makes a release note read as a changelog, and no claim in the manuscript changes when the identifier
-    is absent. The ladder above keeps all of them so a reviser can re-attach any one cheaply. Also cut
-    as evidence for claims that survive without it: the Tasks method names and the server-directed creation
-    detail (the claim that the lifecycle was reshaped survives), `inputResponses` (the `requestState`
-    echo carries the mechanism), MCP Apps prefetch and cache (security review carries the point), the
-    full trace path from host application through SDK and server to downstream (the single span tree carries
-    it), "gateways" in the routing list, the elicitation rationale "every elicitation traces back to something
-    they (or their agent) started", the "long-lived SSE stream is no longer the only way to learn that
-    a list changed" clause, the Tier 1 SDK expectation, and "completing the plan we laid out in The Future
-    of MCP Transports in December".
-
-    3. *Whole claims, least load-bearing first.* Full JSON Schema 2020-12 for tool schemas (SEP-2106)
-    went whole: composition, conditionals, `$ref`/`$defs`, unrestricted output schemas, `structuredContent`,
-    and the guidance not to auto-dereference external `$ref` URIs. It is a real capability change, but
-    it hangs off nothing in the argument, and the error-code change from the same source section (which
-    does create an obligation) says what needed saying about that part of the release. This is the largest
-    single omission and the second thing to restore if the budget grows.
-
-    4. *Qualifications and the author''s own conclusions.* Nothing dropped.
+    ### Unclear instructions
 
 
-    **Code.** All four fenced blocks in the source were dropped whole rather than trimmed. The prompt
-    allows character-for-character reproduction or nothing, and the pdftotext extraction has wrapped and
-    re-indented them (the `_meta` line in the `2026-07-28` example is truncated mid-token, and several
-    header lines are split by the PDF''s column artefacts), so no block could be reproduced faithfully.
-    Inline identifiers carry the same information. Do not reconstruct these from the extraction; take
-    a clean copy from the spec if a future revision wants them.
-
-
-    **Duplication watch.** Two near-misses. First, the opener keeps only the load-balancer half of the
-    source''s "practical effect" sentence. The `Mcp-Method` routing and `ttlMs` caching halves were removed
-    from it so that "Routable, cacheable, traceable" can deliver them once. If anyone lengthens the opener,
-    read that section first. Second, "published within a year of it" (deprecations) and "at least twelve
-    months between deprecation and the earliest possible removal" (governance) are the same fact in two
-    units. Both survive because the first is what a maintainer needs at the point of decision and the
-    second is the policy itself, but the "under the lifecycle policy" tail was trimmed off the first so
-    the policy is only spelled out once.
-
-
-    **Budget.** 999 body words, 53-word opener, first body block is a paragraph, six `##` headings, no
-    H1, no U+2014, one three-item list (the deprecation replacements, licensed because the reader acts
-    on them) and it is not the last thing in its section.
-
-
-    **Unclear instructions.** Three.
-
-
-    - The prompt''s budget says "roughly 700 to 1,100 body words"; the commission says 700 to 1,000. I
-    wrote to the narrower one, which is what cost the JSON Schema claim above.
+    - The prompt''s budget says "roughly 700 to 1,100 body words"; the commission says 700 to 1,000. Round
+    1 wrote to the narrower one, which cost the JSON Schema claim. Round 2 wrote to the prompt''s band,
+    which is what paid for the Authorization section. If the commission''s ceiling is the real one, the
+    `.well-known`/step-up/refresh-token sentence is the first cut.
 
     - The prompt bans "framing the author did not offer" but requires headings that name what a section
     argues, while steps 3 and 4 require a shape other than the source''s order. Any heading spanning two
-    source sections is therefore a judgment call. The two adapted headings are flagged above so a reviser
-    can revert them cheaply.
+    source sections is a judgment call; the one adapted heading is flagged above.
 
-    - "Nothing appears twice" is unclear about deliberate repetition of a qualifier. "At the protocol
-    layer" appears twice because dropping either instance would overstate the claim. I read the rule as
-    a ban on repeated examples and sentences, not on repeated hedges.'
+    - "Nothing appears twice" is unclear about deliberate repetition of a qualifier. Read as a ban on
+    repeated examples and sentences, not on repeated hedges.'

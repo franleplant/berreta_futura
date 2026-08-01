@@ -23,6 +23,7 @@ from tempfile import TemporaryDirectory
 import yaml
 
 from magazine import Magazine
+from magazine.errors import MagazineError
 from magazine.cli import main
 from magazine.produce import (
     MAX_ROUNDS,
@@ -32,9 +33,11 @@ from magazine.produce import (
     ProductionGates,
 )
 from magazine.produce_prompts import (
+    ANCHOR_MARKER,
     SCRATCH_MARKER,
     LineReviewInput,
     ProduceError,
+    split_reply,
     split_scratch,
 )
 from magazine.production_record import piece_record_path
@@ -97,8 +100,14 @@ EDITORIAL_FRONTMATTER = (
 )
 
 
-def draft(piece_id: str, round_number: int, *, headings: tuple[str, ...] = ()) -> str:
-    """One writer reply: a manuscript, the marker, then working notes."""
+def draft(
+    piece_id: str,
+    round_number: int,
+    *,
+    headings: tuple[str, ...] = (),
+    anchors: dict[str, str] | None = None,
+) -> str:
+    """One writer reply: a manuscript, the two markers, then working notes."""
 
     body: list[str] = []
     if piece_id == "editorial":
@@ -110,6 +119,9 @@ def draft(piece_id: str, round_number: int, *, headings: tuple[str, ...] = ()) -
     body.extend([f"A draft of {piece_id}, round {round_number}.", ""])
     for heading in headings:
         body.extend([f"## {heading}", "", "Something about it.", ""])
+    if anchors:
+        body.append(ANCHOR_MARKER)
+        body.extend(f"{figure_id}: {anchor}" for figure_id, anchor in anchors.items())
     body.extend(
         [
             SCRATCH_MARKER,
@@ -306,6 +318,64 @@ def build_project(root: Path, *, body: str = EXTRACTION_BODY) -> Magazine:
         "The original article.\n", encoding="utf-8"
     )
     return Magazine(root)
+
+
+def add_article_opener(root: Path) -> None:
+    """Give the fixture article the illustrated opener the limit belongs to.
+
+    The constraint exists for exactly this composition -- an edition whose
+    format is ``illustrated_paper_spots_v1`` and an article with its own
+    opener art -- so a test of the budget has to build one rather than assert
+    against a piece the rule does not govern.
+    """
+
+    from PIL import Image
+
+    edition_dir = root / "editions" / "issue-001"
+    opener = edition_dir / "art" / "article-opener.png"
+    opener.parent.mkdir(parents=True, exist_ok=True)
+    Image.new("RGB", (1600, 900), (70, 110, 150)).save(opener)
+    manifest_path = edition_dir / "edition.yaml"
+    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    manifest["format"] = {"article_opener": "illustrated_paper_spots_v1"}
+    manifest["articles"][0]["opener_art"] = {
+        "path": "editions/issue-001/art/article-opener.png",
+        "alt_text": "A boy and robot inspect the evidence.",
+        "credit": "Original illustration by the editors.",
+    }
+    # The format demands a declared art direction, so the fixture declares one.
+    manifest["art_direction_path"] = "editions/issue-001/art/illustrations.yaml"
+    (edition_dir / "art" / "illustrations.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "direction": {
+                    "name": "Measured diagrams",
+                    "visual_language": "Simple editorial shapes.",
+                    "palette": "Black, cream, and orange.",
+                    "constraints": ["No text"],
+                    "avoid": ["Decoration"],
+                },
+                "assets": [
+                    {
+                        "id": "article-opener",
+                        "role": "article_opener",
+                        "article_id": "article",
+                        "art_path": "editions/issue-001/art/article-opener.png",
+                        "subject": "A boy and robot inspect the evidence.",
+                        "composition": "A wide workshop scene.",
+                        "alt_text": "A boy and robot inspect the evidence.",
+                        "credit": "Original illustration by the editors.",
+                    }
+                ],
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+    manifest_path.write_text(
+        yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+    )
 
 
 def production(
@@ -1108,7 +1178,17 @@ class FigureAnchorTests(unittest.TestCase):
         )
         self.command = ScriptedCommand()
 
-    def test_the_writer_is_told_which_headings_the_figures_need(self):
+    def anchor(self) -> str:
+        edition = yaml.safe_load(
+            (self.root / "editions" / "issue-001" / "edition.yaml").read_text(
+                encoding="utf-8"
+            )
+        )
+        return edition["articles"][0]["figures"][0]["anchor"]
+
+    def test_the_writer_is_told_which_figures_need_a_place_not_which_headings(self):
+        """The argument owns the headings; the brief owns the list of figures."""
+
         self.command.script[("writer", "article")] = [
             draft("article", 1, headings=("The kill chain",))
         ]
@@ -1116,8 +1196,96 @@ class FigureAnchorTests(unittest.TestCase):
         production(self.magazine, self.command).run("issue-001", articles=["article"])
 
         brief = self.command.briefs("writer", "article")[0]
-        self.assertIn("Headings you must keep, character for character", brief)
-        self.assertIn("`## The kill chain` (figure `diagram`)", brief)
+        self.assertIn("Figures this piece has to leave a place for", brief)
+        self.assertIn("- `diagram` -- The source diagram.", brief)
+        self.assertIn("<!-- FIGURE ANCHORS -->", brief)
+        # The old instruction is gone: the writer is no longer told to preserve
+        # a heading, and the current anchor is deliberately absent, so that
+        # reconciling the manifest cannot invalidate this very brief.
+        self.assertNotIn("Headings you must keep", brief)
+        self.assertNotIn("The kill chain", brief)
+
+    def test_a_declared_anchor_moves_the_manifest_instead_of_costing_a_round(self):
+        self.command.script[("writer", "article")] = [
+            draft(
+                "article",
+                1,
+                headings=("A different heading",),
+                anchors={"diagram": "A different heading"},
+            )
+        ]
+
+        result = production(
+            self.magazine, self.command, gates=_AnchorOnlyGates()
+        ).run("issue-001", articles=["article"])
+
+        self.assertEqual(result.outcomes[0].status, "passed")
+        self.assertEqual(result.outcomes[0].rounds, 1)
+        self.assertEqual(self.anchor(), "A different heading")
+        record = yaml.safe_load(
+            piece_record_path(
+                self.magazine.editions_dir, "issue-001", "article"
+            ).read_text(encoding="utf-8")
+        )
+        self.assertEqual(record["rounds"][0]["anchors_reconciled"], ["A different heading"])
+
+    def test_a_reconciled_piece_stays_settled_on_the_next_invocation(self):
+        """The fingerprint follows the manifest, or the piece redrafts for ever."""
+
+        self.command.script[("writer", "article")] = [
+            draft(
+                "article",
+                1,
+                headings=("A different heading",),
+                anchors={"diagram": "A different heading"},
+            )
+        ]
+        production(self.magazine, self.command, gates=_AnchorOnlyGates()).run(
+            "issue-001", articles=["article"]
+        )
+
+        second = production(
+            Magazine(self.root), ScriptedCommand(), gates=_AnchorOnlyGates()
+        ).run("issue-001", articles=["article"])
+
+        self.assertEqual(second.outcomes[0].status, "settled")
+
+    def test_a_declaration_naming_no_real_heading_is_refused_not_applied(self):
+        self.command.script[("writer", "article")] = [
+            draft(
+                "article",
+                1,
+                headings=("A different heading",),
+                anchors={"diagram": "A heading nobody wrote"},
+            ),
+            draft("article", 2, headings=("The kill chain",)),
+        ]
+
+        result = production(
+            self.magazine, self.command, gates=_AnchorOnlyGates()
+        ).run("issue-001", articles=["article"])
+
+        self.assertEqual(result.outcomes[0].status, "passed")
+        self.assertEqual(result.outcomes[0].rounds, 2)
+        self.assertEqual(self.anchor(), "The kill chain")
+
+    def test_a_figure_whose_heading_survived_is_never_relocated(self):
+        """A writer does not get to move a figure that was never in danger."""
+
+        self.command.script[("writer", "article")] = [
+            draft(
+                "article",
+                1,
+                headings=("The kill chain", "Somewhere else"),
+                anchors={"diagram": "Somewhere else"},
+            )
+        ]
+
+        production(self.magazine, self.command, gates=_AnchorOnlyGates()).run(
+            "issue-001", articles=["article"]
+        )
+
+        self.assertEqual(self.anchor(), "The kill chain")
 
     def test_a_rewrite_that_strands_a_figure_fails_the_gate_and_says_so(self):
         """The gate is the real one: no injected pass can hide a lost anchor."""
@@ -1464,3 +1632,447 @@ class CliTests(ProduceFixture):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ReplyProtocolTests(unittest.TestCase):
+    """The three blocks of a writer's reply, and what a missing one means."""
+
+    def test_the_anchor_block_is_read_and_kept_out_of_the_manuscript(self):
+        manuscript, anchors, notes = split_reply(
+            "The prose.\n"
+            f"{ANCHOR_MARKER}\n"
+            "- `diagram`: ## The new heading\n"
+            "other: Another heading\n"
+            f"{SCRATCH_MARKER}\n"
+            "the notes\n"
+        )
+
+        self.assertEqual(manuscript, "The prose.")
+        self.assertEqual(
+            anchors, {"diagram": "The new heading", "other": "Another heading"}
+        )
+        self.assertEqual(notes, "the notes")
+
+    def test_an_anchor_block_below_the_scratch_marker_is_notes(self):
+        """Below the marker a writer is thinking, not instructing the manifest."""
+
+        manuscript, anchors, notes = split_reply(
+            f"The prose.\n{SCRATCH_MARKER}\n{ANCHOR_MARKER}\ndiagram: Somewhere\n"
+        )
+
+        self.assertEqual(manuscript, "The prose.")
+        self.assertEqual(anchors, {})
+        self.assertIn("diagram: Somewhere", notes)
+
+    def test_a_reply_with_neither_marker_is_all_manuscript(self):
+        self.assertEqual(split_reply("Just prose.\n"), ("Just prose.", {}, ""))
+
+    def test_split_scratch_still_answers_the_two_questions_it_always_did(self):
+        manuscript, notes = split_scratch(
+            f"The prose.\n{ANCHOR_MARKER}\ndiagram: A heading\n{SCRATCH_MARKER}\nnotes\n"
+        )
+
+        self.assertEqual(manuscript, "The prose.")
+        self.assertEqual(notes, "notes")
+
+
+class WorkIdentityTests(ProduceFixture):
+    """A reply survives a reworded brief and dies when the question moves."""
+
+    def _identity(self, **overrides):
+        from magazine.produce_prompts import (
+            WriterBrief,
+            load_prompt,
+            writer_identity,
+        )
+
+        prompt = load_prompt(self.root, "prompts/faithful-edit.md")
+        piece = Production(
+            self.magazine, runner=resolve_text_runner(
+                RunnerConfig.load(self.root), command=self.command
+            )
+        )._select(
+            Production(
+                self.magazine,
+                runner=resolve_text_runner(
+                    RunnerConfig.load(self.root), command=self.command
+                ),
+            )._load_edition("issue-001"),
+            ["article"],
+        )[0]
+        brief = WriterBrief(
+            piece=piece,
+            edition_id="issue-001",
+            edition_title="Issue",
+            round_number=1,
+            **overrides,
+        )
+        return writer_identity(prompt, brief), prompt, brief
+
+    def test_rewording_a_brief_does_not_change_what_it_asks(self):
+        """The identity is over the content, so formatting is free to move."""
+
+        from magazine.produce_prompts import compose_writer_prompt, writer_identity
+
+        identity, prompt, brief = self._identity()
+        reworded = replace_prompt_text(prompt, prompt.text + "\n\nAn added sentence.\n")
+
+        # Same prompt *file* digest, different composed bytes.
+        self.assertNotEqual(
+            compose_writer_prompt(prompt, brief),
+            compose_writer_prompt(reworded, brief),
+        )
+        self.assertEqual(identity, writer_identity(reworded, brief))
+
+    def test_a_moved_manuscript_does_change_what_it_asks(self):
+        from magazine.produce_prompts import writer_identity
+
+        identity, prompt, _ = self._identity()
+        moved, _, brief = self._identity(previous_manuscript="a different draft")
+
+        self.assertNotEqual(identity, moved)
+        self.assertEqual(moved, writer_identity(prompt, brief))
+
+    def test_a_revised_prompt_file_does_change_what_it_asks(self):
+        from magazine.produce_prompts import writer_identity
+
+        identity, prompt, brief = self._identity()
+        revised = PromptFileLike(prompt.path, "0" * 64, prompt.text)
+
+        self.assertNotEqual(identity, writer_identity(revised, brief))
+
+
+def replace_prompt_text(prompt, text):
+    """The same prompt file, composed differently: digest and path unchanged."""
+
+    from magazine.produce_prompts import PromptFile
+
+    return PromptFile(path=prompt.path, sha256=prompt.sha256, text=text)
+
+
+def PromptFileLike(path, sha256, text):
+    from magazine.produce_prompts import PromptFile
+
+    return PromptFile(path=path, sha256=sha256, text=text)
+
+
+class FiledFindingTests(ProduceFixture):
+    """A finding filed from outside the loop reaches the next brief."""
+
+    def file_one(self, note: str = "The deprecation claim is wrong.", **kwargs):
+        return self.magazine.file_finding(
+            "issue-001", "article", note=note, **kwargs
+        )
+
+    def test_a_filed_finding_unsettles_an_otherwise_settled_piece(self):
+        self.run_produce()
+        settled = production(self.magazine, ScriptedCommand(), gates=self.gates).run(
+            "issue-001", articles=["article"]
+        )
+        self.assertEqual([outcome.status for outcome in settled.outcomes], ["settled"])
+
+        self.file_one()
+        plan = production(self.magazine, ScriptedCommand(), gates=self.gates).plan(
+            "issue-001", articles=["article"]
+        )
+
+        self.assertFalse(plan.pieces[0].settled)
+        self.assertEqual(plan.pieces[0].filed_findings, 1)
+        self.assertIn("1 filed finding", plan.pieces[0].action)
+
+    def test_the_next_brief_carries_the_finding_and_the_draft_it_names(self):
+        self.run_produce()
+        self.file_one(
+            note="The deprecation claim is wrong.",
+            locator="paragraph twelve",
+            filed_by="edition review",
+        )
+
+        command = ScriptedCommand()
+        production(self.magazine, command, gates=self.gates).run(
+            "issue-001", articles=["article"]
+        )
+
+        brief = command.briefs("writer", "article")[0]
+        self.assertIn("Findings you must clear", brief)
+        self.assertIn("The deprecation claim is wrong.", brief)
+        self.assertIn("(from the edition review)", brief)
+        self.assertIn("paragraph twelve", brief)
+        # Round one is a revision here, so the draft under repair travels too.
+        self.assertIn("The draft under revision", brief)
+        self.assertIn("A draft of article, round 1.", brief)
+
+    def test_a_passing_round_marks_the_finding_addressed_and_never_deletes_it(self):
+        self.run_produce()
+        self.file_one()
+
+        production(self.magazine, ScriptedCommand(), gates=self.gates).run(
+            "issue-001", articles=["article"]
+        )
+
+        rows = self.magazine.filed_findings("issue-001")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["status"], "addressed")
+        self.assertEqual(rows[0]["addressed_in_round"], 1)
+        self.assertEqual(rows[0]["note"], "The deprecation claim is wrong.")
+
+    def test_filing_against_a_piece_the_edition_does_not_carry_is_refused(self):
+        with self.assertRaises(MagazineError) as caught:
+            self.magazine.file_finding("issue-001", "not-a-piece", note="Wrong.")
+
+        self.assertIn("has no piece 'not-a-piece'", str(caught.exception))
+
+    def test_the_cli_files_and_lists(self):
+        out = io.StringIO()
+        with redirect_stdout(out):
+            self.assertEqual(
+                main(
+                    [
+                        "--root", str(self.root), "finding", "file", "issue-001",
+                        "article", "--note", "A false editor's note.",
+                        "--severity", "blocking", "--filed-by", "edition review",
+                    ]
+                ),
+                0,
+            )
+            self.assertEqual(
+                main(["--root", str(self.root), "finding", "list", "issue-001"]), 0
+            )
+
+        printed = out.getvalue()
+        self.assertIn("filed: article ->", printed)
+        self.assertIn("open: article [blocking]", printed)
+        self.assertIn("1 open, 1 filed", printed)
+
+
+class FootnoteGateTests(ProduceFixture):
+    """CommonMark has no footnotes, so a marker would print as characters."""
+
+    def test_validate_refuses_a_manuscript_carrying_footnote_syntax(self):
+        (self.root / "editions" / "issue-001" / "articles" / "article.md").write_text(
+            "The original article.[^1]\n\n[^1]: The note.\n", encoding="utf-8"
+        )
+
+        with self.assertRaises(MagazineError) as caught:
+            self.magazine.validate("issue-001")
+
+        message = str(caught.exception)
+        self.assertIn("footnote syntax that would be typeset literally", message)
+        self.assertIn("[^1]", message)
+        self.assertIn("articles/article.md", message)
+
+    def test_a_marker_inside_code_is_left_alone(self):
+        (self.root / "editions" / "issue-001" / "articles" / "article.md").write_text(
+            "The original article. Write `[^1]` and nothing happens.\n",
+            encoding="utf-8",
+        )
+
+        self.magazine.validate("issue-001")
+
+    def test_the_gate_names_the_piece_so_the_writer_hears_it_next_round(self):
+        gates = DefaultProductionGates(self.magazine)
+        (self.root / "editions" / "issue-001" / "articles" / "article.md").write_text(
+            "The original article.[^2]\n", encoding="utf-8"
+        )
+        piece = production(self.magazine, self.command)._select(
+            production(self.magazine, self.command)._load_edition("issue-001"),
+            ["article"],
+        )[0]
+
+        failures = [gate for gate in gates.check_piece(piece, ()) if not gate.ok]
+
+        self.assertEqual([gate.name for gate in failures], ["footnotes"])
+        self.assertIn("[^2]", failures[0].detail)
+
+
+class EditionGateCacheTests(ProduceFixture):
+    """validate and fit are minutes each, and a pure function of the tree."""
+
+    def counted(self):
+        """Real gates, with the two expensive calls counted rather than faked."""
+
+        gates = DefaultProductionGates(self.magazine)
+        calls: list[str] = []
+        magazine = self.magazine
+
+        class Counting:
+            root = magazine.root
+            primary_language = magazine.primary_language
+            editions_dir = magazine.editions_dir
+            sources_dir = magazine.sources_dir
+
+            def validate(self, edition_id):
+                calls.append("validate")
+                return magazine.validate(edition_id)
+
+            def fit(self, edition_id, language=None):
+                calls.append("fit")
+                return magazine.fit(edition_id, language=language)
+
+        gates.magazine = Counting()
+        return gates, calls
+
+    def test_a_second_call_over_an_unchanged_tree_runs_neither_check(self):
+        gates, calls = self.counted()
+
+        gates.check_edition("issue-001")
+        first = list(calls)
+        gates.check_edition("issue-001")
+
+        self.assertEqual(first, ["validate", "fit"])
+        self.assertEqual(calls, first)
+
+    def test_the_same_verdict_comes_back_from_the_memo(self):
+        gates, _ = self.counted()
+
+        first = gates.check_edition("issue-001")
+        second = gates.check_edition("issue-001")
+
+        self.assertEqual(
+            [(gate.name, gate.ok, gate.detail) for gate in first],
+            [(gate.name, gate.ok, gate.detail) for gate in second],
+        )
+
+    def test_a_changed_manuscript_re_runs_both_checks(self):
+        """The memo is keyed on content, so gates stay a function of the tree."""
+
+        gates, calls = self.counted()
+        gates.check_edition("issue-001")
+        calls.clear()
+
+        (self.root / "editions" / "issue-001" / "articles" / "article.md").write_text(
+            "The original article. Now with an added sentence.\n", encoding="utf-8"
+        )
+        gates.check_edition("issue-001")
+
+        self.assertEqual(calls, ["validate", "fit"])
+
+    def test_a_production_record_written_between_calls_is_not_a_change(self):
+        """Every round writes one; if it invalidated the memo the memo is useless."""
+
+        gates, calls = self.counted()
+        gates.check_edition("issue-001")
+        calls.clear()
+
+        record = piece_record_path(self.magazine.editions_dir, "issue-001", "article")
+        record.parent.mkdir(parents=True, exist_ok=True)
+        record.write_text("schema_version: 1\nstatus: drafting\n", encoding="utf-8")
+        gates.check_edition("issue-001")
+
+        self.assertEqual(calls, [])
+
+
+class OpenerIntroBudgetTests(unittest.TestCase):
+    """The opening-paragraph limit, derived rather than guessed."""
+
+    SAMPLE = (
+        "The kill chain opened with the benchmark the agent was being scored on, "
+        "and closed four and a half days later inside production infrastructure."
+    )
+
+    def budget(self, **overrides):
+        from magazine.weasyprint_adapter import illustrated_opener_intro_budget
+
+        return illustrated_opener_intro_budget(
+            **{
+                "title": "A Short Title",
+                "byline": "by Author",
+                "author_note": "",
+                "sample": self.SAMPLE,
+                **overrides,
+            }
+        )
+
+    def test_the_budget_is_stated_in_lines_and_characters(self):
+        budget = self.budget()
+
+        self.assertGreater(budget.lines, 0)
+        self.assertGreater(budget.characters, 0)
+        self.assertEqual(budget.measure_points, 348.0)
+        self.assertEqual(budget.size_points, 9.6)
+
+    def test_a_two_line_title_leaves_less_room_for_the_paragraph(self):
+        """The limit is per article because the title is what eats the page."""
+
+        short = self.budget()
+        long = self.budget(
+            title="A Considerably Longer Title That Needs Two Whole Lines To Set"
+        )
+
+        self.assertLess(long.lines, short.lines)
+
+    def test_the_predicted_limit_agrees_with_the_gate_that_enforces_it(self):
+        """One arithmetic, or the number taught is not the number enforced."""
+
+        from magazine.weasyprint_adapter import (
+            _ILLUSTRATED_OPENER_COMPACT,
+            _ILLUSTRATED_OPENER_PAGE_HEIGHT_POINTS,
+            _ILLUSTRATED_OPENER_PANGO_RESERVE_POINTS,
+            _fitted_display,
+            _opener_stack_height,
+        )
+
+        budget = self.budget()
+        size, lines = _fitted_display(
+            "A Short Title", 348.0, 64.0, maximum=30.0, minimum=22.0,
+            maximum_lines=2, leading_ratio=0.96,
+        )
+        ceiling = (
+            _ILLUSTRATED_OPENER_PAGE_HEIGHT_POINTS
+            - _ILLUSTRATED_OPENER_PANGO_RESERVE_POINTS
+        )
+
+        def height(standfirst_lines: int) -> float:
+            return _opener_stack_height(
+                title_size=size,
+                title_lines=len(lines),
+                byline_text="by Author",
+                note_text="",
+                standfirst_lines=standfirst_lines,
+                density=_ILLUSTRATED_OPENER_COMPACT,
+            )
+
+        # The predicted limit is exactly the largest count the gate accepts.
+        self.assertLessEqual(height(budget.lines), ceiling)
+        self.assertGreater(height(budget.lines + 1), ceiling)
+
+    def test_fits_answers_the_real_question_rather_than_the_estimate(self):
+        budget = self.budget()
+
+        self.assertTrue(budget.fits("A short opening paragraph."))
+        self.assertFalse(budget.fits(" ".join([self.SAMPLE] * 12)))
+
+
+class OpenerBudgetBriefTests(unittest.TestCase):
+    """An illustrated piece is told its number; every other piece is not."""
+
+    def setUp(self):
+        self.temporary = TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.magazine = build_project(self.root)
+        self.command = ScriptedCommand()
+
+    def brief(self) -> str:
+        production(self.magazine, self.command, gates=PassingGates()).run(
+            "issue-001", articles=["article"]
+        )
+        return self.command.briefs("writer", "article")[0]
+
+    def test_a_piece_with_no_illustrated_opener_is_told_nothing(self):
+        brief = self.brief()
+
+        # The prompt file mentions the budget in general; the assignment must
+        # not claim one for a piece the constraint does not govern.
+        self.assertNotIn("- Opening paragraph budget:", brief)
+        self.assertNotIn("The opening paragraph has a hard length limit", brief)
+
+    def test_an_illustrated_piece_carries_its_measured_limit(self):
+        add_article_opener(self.root)
+
+        brief = self.brief()
+
+        self.assertIn("- Opening paragraph budget:", brief)
+        self.assertIn("The opening paragraph has a hard length limit", brief)
+        self.assertIn("typeset line(s)", brief)
+        self.assertIn("the build refuses the edition", brief)

@@ -3,17 +3,17 @@ edition_id: rerun-004-the-systems-around-the-model
 piece_id: pragmatic-leverage
 content_mode: faithful_edit
 status: drafting
-produced_at: '2026-08-01T17:56:38+00:00'
-inputs_sha256: 8e60cace5a40bbaff73983b2acad9388eed74e65859ff1a56f288a8029f43bb0
-manuscript_sha256: 35020e2818cd012893fafd23ee2544eb8902ef656c5149023b2221db64c994cc
+produced_at: '2026-08-01T19:24:30+00:00'
+inputs_sha256: 5502b1566cc139572ecde6c6aeb05d32961349a3addd420e525066c3e02550e7
+manuscript_sha256: 014cfe65f19bad5965f5b00bf8818e63a9b3b7e3cbe611a0f35bbde24438a794
 rounds:
 - round: 1
   result: changes_required
-  manuscript_sha256: 35020e2818cd012893fafd23ee2544eb8902ef656c5149023b2221db64c994cc
+  manuscript_sha256: 014cfe65f19bad5965f5b00bf8818e63a9b3b7e3cbe611a0f35bbde24438a794
   writer:
     role: writer
     prompt_path: prompts/faithful-edit.md
-    prompt_sha256: df82bb35d8316b788bc3fcf5a2272c5557ab242f77efc36aca51cc76940bb66e
+    prompt_sha256: 4bfde927141290210add43e4f23da73335d0ec38960f2634389e52e461db83d2
     backend: agent
     model: null
     argv:
@@ -24,427 +24,258 @@ rounds:
     - agent
     - --submit
     - pragmatic-leverage/r1-writer
-    - --brief-sha256
-    - dfe56b803412e63e5933738bbd189d42fd631b1075b1210556b86c9345feaf75
+    - --work-sha256
+    - e0c28835d0c5a8ae8b95fa335e754376d7698f6c31cb2cc95080f78ed5d167ad
     duration_seconds: 0.0
-    output_sha256: 65cd0b88ab7f5b22a166ebfd774fc32f4b4c1a7aa6ad635bfa9dc693714995a1
-  gate_failures: []
+    output_sha256: 99b4a3a7f71b00c58412dd1b73603f5d566b1930abe9d88ba776eb7a52db243f
+  gate_failures:
+  - 'fit: Article pragmatic-leverage''s opening paragraph cannot fit its illustrated opener page at compact
+    density; shorten that paragraph rather than splitting the opener'
   anchors_reconciled:
   - Seeking leverage
   - The 80/20 rule in AI coding leverage
-  judges:
-    evidence:
-      result: approved
-      findings: []
-      scores:
-        claim_support: 5
-        qualification_survival: 5
-        quote_accuracy: 5
-        attribution: 5
-      notes: 'I read the complete pinned extraction of
+  judges: {}
+  notes: '## Round 2 notes. Read these first; the round 1 notes follow.
 
-        pragmatic-leverage-in-the-software-factory-09879736 before the manuscript,
 
-        then enumerated every checkable assertion: the framing sentence and its
+    **The governing constraint of this round.** The round 1 fact-check passed with zero findings because
+    the manuscript was word for word the author''s. That is the thing this piece has, and it is easy to
+    lose while clearing line findings, because four of the seven findings can only be "fixed" by rewriting
+    his sentences. So round 2 was built on one rule: **every repair is editor-owned text or editor-owned
+    formatting, and no sentence of Dex Horthy''s was reworded, merged, split, or reordered.** Three findings
+    are cleared that way, one is cleared with a single punctuation mark, and three are declined with reasons
+    below. If a round 3 clears the declined three by editing the author, it will trade a minor line finding
+    for a major fact-check finding.
 
-        cross-reference to "Why Software Factories Fail part 2: Turning the lights
 
-        back on"; both section headings; and every number in the piece (25-50% of
+    ### Finding 1, opening. Cleared: cut plus a labeled standfirst.
 
-        ship time spent writing code, 2-4 hours of coding down to 10-20 minutes,
 
-        "2-3x faster", the ~50% fully-mergeable / 50% rework baseline, 10 years of
+    The author''s first paragraph is gone from the body and the reprint now begins where the line editor
+    named as the earliest repair point, "Even before AI, only 25–50% of the time to ship a feature was
+    writing the code itself."
 
-        experience, 100 repos, an afternoon of spec writing, the residual 10% chance
 
-        of a significant redo, rework chance going to zero when you write every line
+    The information in that paragraph is not lost; it is restated as editorial context in the standfirst,
+    in the editor''s voice and visibly labeled, which is what `prompts/faithful-edit.md` permits for a
+    necessary addition. This is also why the cut is not a fact-check problem: the paragraph is publishing
+    chrome for a blog the reader is not holding, and every substantive thing it said (standalone publication,
+    addendum to a series, didn''t fit the main post, referenced in part 2) survives above the first heading.
 
-        yourself, the 50%-likely button style example, 6 hours of planning versus 80%
 
-        of expected pain in the first 10 minutes, and the 50kft-to-10kft zoom). Each
+    Why the standfirst sits before `## Seeking leverage` rather than anywhere else: the format section
+    requires the body to open on a paragraph so the illustrated opener can set it, and the first heading
+    is a pinned figure anchor. The standfirst is the only thing that can occupy that slot once the author''s
+    opener is cut. A standfirst is the normal magazine furniture for that position anyway.
 
-        one has a directly corresponding passage in the extraction; on a
 
-        word-by-word comparison the manuscript is identical to the source apart from
+    **What the standfirst deliberately does not say.** It calls the series "a recent series of his" rather
+    than naming it *Why Software Factories Fail*. The source says "the recent series" in one sentence
+    and names "Why Software Factories Fail part 2" in another; that they are the same series is an inference,
+    well supported and almost certainly right, but an inference. Naming it would be the one manufactured
+    claim in an otherwise clean piece. The italicized part-2 title is quoted from the source exactly,
+    still with no link, because the source gives none.
 
-        front matter, one heading recased ("Seeking Leverage" -> "Seeking leverage"),
 
-        three apostrophe copyedits ("Lets" -> "Let''s" twice, "its" -> "it''s"), a dash
+    ### Finding 5, jargon. Cleared inside the same standfirst.
 
-        changed to a comma in "leverage - and it requires being pragmatic", the
 
-        capitalization of the closing "good luck.", and italics on the
+    The gloss is two clauses, both derived from sentences on the page rather than from the series:
 
-        cross-referenced post title. None of these touch meaning, so
 
-        content_mode: faithful_edit is satisfied. Both display quotations are
+    - "a factory is the setup you drop a prompt into and hope to get a fully-mergeable result back from"
+    is read straight off "if you yolo a two-sentence prompt into your factory, your chance of getting
+    a fully-mergeable result is ~50%".
 
-        verbatim, including the "expected pain = P(you''ll have to change it) x how
+    - the levels clause lists the three level-words the author actually uses ("Product", technical details,
+    50kft to 10kft) and says they are phases of planning one piece of work, which is his own "multiple
+    phases of planning, zooming in from 50kft view all the way to the 10kft view".
 
-        painful the change is" formula and the blurring caveat that the two variables
 
-        are "obviously ... two separate variables". Byline "Dex Horthy" matches the
+    Nothing in the gloss comes from outside the extraction. If a fact-checker challenges any of it, the
+    honest fallback is to shorten the gloss, not to source it from the series.
 
-        extraction''s "dex / @dexhorthy". The reverse pass found no dropped hedge: the
 
-        source''s qualifications survive intact, including "There''s no perfect process
+    ### Finding 2, house_style. Cleared: attribution label plus one formatting change.
 
-        for this", the low-expected-pain button example, and the closing pragmatism
 
-        caveat; the manuscript reaches no thesis the source does not reach and adds
+    Two defects at one site, both editor-owned.
 
-        no sentence of its own. What I could not check: the manuscript carries no
 
-        title, deck, figure caption, or pull quote, so any such furniture added
+    1. **`**note**` was unattributable.** It is now **Author''s note.** The marker is the author''s own;
+    expanding a bare lowercase marker into a readable label is labeling, not writing, and it now reads
+    unambiguously against the **Editor''s note.** at the top of the piece. The two labels do work for
+    each other: with both present, a reader can tell at a glance which voice each block is in.
 
-        downstream is outside this audit, as is the accuracy of the source''s own
+    2. **The sentence was severed mid-clause by a display quote.** "For this example I''m gonna blur"
+    / blockquote / "into a single percentage number but obviously they''re two separate variables" is
+    one sentence, and on a rendered A5 page the reader has to reassemble it across a pulled-out block.
+    The quoted phrases are now inline, inside the sentence, with their quotation marks intact. Not one
+    word moved, and the internal quotation marks are the author''s own. One comma was added before "but
+    obviously", which is a punctuation normalization on a sentence that is now longer on the page.
 
-        numbers, which are the author''s estimates and unverifiable from the
 
-        extraction alone.'
-      call:
-        role: evidence_judge
-        prompt_path: prompts/evidence-review.md
-        prompt_sha256: 2d368985eba3011b23c2f03fa926da4791a03975bd5ee4403ed6d8d19503d264
-        backend: agent
-        model: null
-        argv:
-        - mag
-        - produce
-        - rerun-004-the-systems-around-the-model
-        - --backend
-        - agent
-        - --submit
-        - pragmatic-leverage/r1-evidence
-        - --brief-sha256
-        - d857d94d5afd0affb1336389fa3b64c2d1669e674bab4bf620800966e29bf325
-        duration_seconds: 0.0
-        output_sha256: 2a084ee5f517c03ea6464a6aaff213b49bed7b8cf40eeb333eeaf3c377e70b24
-    line:
-      result: changes_required
-      findings:
-      - severity: major
-        article: pragmatic-leverage
-        locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
-        repair_from: Seeking leverage | Even before AI, only 25–50% of the time to ship a feature was
-          writing the code itself. | 1
-        category: opening
-        note: 'The first thing a magazine reader meets is publishing logistics for a blog
+    The payoff is that `expected pain = P(you''ll have to change it) × how painful the change is` is the
+    only display block in the piece and gets the emphasis back. That formula is the definition everything
+    after it runs on; it must stay a display block.
 
-          they are not reading, and all three of its referents are missing from the
 
-          page. "This one is a bit of an addendum / side-quest to the recent series.
+    ### Finding 6, dead_words. Half cleared.
 
-          It didn''t fit cleanly into the main post so I''m publishing it standalone.
 
-          It is referenced briefly in *Why Software Factories Fail part 2: Turning
+    The comma splice is gone: "your chance of getting a fully-mergeable result is ~50%; the chance you
+    have to rework it is 50%." A semicolon is print typography and is explicitly in scope for this mode.
 
-          the lights back on*." There is no recent series in this edition, no main
 
-          post, and no part 1. The paragraph also de-sells the piece before it
+    The other half, that the second clause is the arithmetic complement of the first, is **declined**.
+    Removing it would delete an author''s clause on a stylistic judgment, on the sentence that sets up
+    the entire model, and it is defensible as the author''s own emphasis: he is naming the rework probability
+    because rework is the quantity the rest of the piece tracks. The splice was what made the restatement
+    read as a second, separate figure; with the semicolon, the second clause reads as the restatement
+    it is.
 
-          starts: it says the material did not fit anywhere else. What follows is
 
-          strong and self-contained, and "Even before AI, only 25-50% of the time to
+    ### Finding 3, repeated_cadence. Declined, and this is the right call.
 
-          ship a feature was writing the code itself" is a real opening line that
 
-          needs no runway. Retention and placement are the edition''s call, not the
+    Six instances of "If you X, (then) Y" in 495 words is a real observation, and the reviewer capped
+    it at minor and said why: "the repair requires rewording the author''s own sentences." In `faithful_edit`
+    that is not a repair, it is the failure mode the mode exists to prevent. `docs/WRITING_RULES.md` is
+    explicit that it "governs only the text you write yourself" and that a source sentence is never rewritten
+    for using a banned construction; the same logic covers a repeated sentence shape. The conditional-addressed-to-you
+    cadence is also this author''s register, and edition 004 already shipped one piece damaged by an editor
+    deciding a sentence of his needed improving.
 
-          author''s wording, so this is repairable as a cut plus a labeled editor
 
-          standfirst.'
-        suggestion: '**Editor''s note.** Published standalone as an addendum to the author''s Why Software
-          Factories Fail series, and referenced in part 2, Turning the lights back on.'
-      - severity: major
-        article: pragmatic-leverage
-        locator: The 80/20 rule in AI coding leverage | **note** For this example I'm gonna blur | 1
-        category: house_style
-        note: 'Two problems at one site. First, "**note**" is unlabeled editorial
+    If a future editor genuinely cannot live with it, the honest route is a mode conversion, not a quiet
+    rewrite.
 
-          apparatus: a bold lowercase marker that a reader cannot attribute. If it
 
-          is the author''s aside it should read as one in his voice; if it is an
+    ### Finding 4, ending. Declined.
 
-          editor addition, house style requires it visibly labeled. As it stands the
 
-          reader guesses. Second, the sentence it introduces is broken in half by a
+    "Good luck." stays. `prompts/faithful-edit.md` names it in its hard rules as one of the two examples
+    of why the mode exists ("''they are selling bullshit'' and ''Good luck.'' are the reason this mode
+    exists"), and `docs/WRITING_RULES.md` quotes it under "Openings and endings" as a model close. Cutting
+    it to satisfy a minor line finding would put the manuscript in direct conflict with both documents.
+    It is also the fix that edition 004 got wrong in the other direction: that version welded an invented
+    antithesis close on ahead of the sign-off, which is how the piece acquired a banned tic. Nothing goes
+    before "Good luck." here.
 
-          display quote: "For this example I''m gonna blur" / blockquote / "into a
 
-          single percentage number but obviously they''re two separate variables."
+    The capitalization is inherited from round 1 and is still the one call that could go either way; the
+    author wrote "good luck." lowercase, plausibly as X-post style. Restoring the lowercase costs nothing
+    and breaks nothing.
 
-          On a rendered A5 page the reader hits a pulled-out block mid-clause and
 
-          has to reassemble the sentence across it. The block quote is also doing
+    ### Finding 7, orphan_referent. Declined, with a partial mitigation.
 
-          two different jobs in six lines, once as an interrupted definition and
 
-          once as the "expected pain" formula, so the formula loses the emphasis it
+    "our combined ''expected pain''" and "This is what we mean by leverage" are the author''s pronouns
+    and there is nothing in the extraction that names a company, a team, or a co-author. Any gloss would
+    have to invent one. The standfirst mitigates it as far as honesty allows by establishing that the
+    piece belongs to a series with continuing vocabulary, which makes the "we" read as the series rather
+    than as an unnamed employer. That is not a full repair and should not be reported as one.
 
-          has earned. Formatting is editor-owned, and the repair below preserves the
 
-          author''s wording exactly.'
-        suggestion: For this example I'm gonna blur "chance you'll have to change something" weighted
-          by "how painful the change will be" into a single percentage number, but obviously they're two
-          separate variables.
-      - severity: minor
-        article: pragmatic-leverage
-        locator: Seeking leverage | If you're only using AI to write the code, then you're taking the
-          2–4 hours of coding time down to 10–20 minutes | 1
-        category: repeated_cadence
-        note: 'The piece runs on one sentence shape, "If you X, (then) Y", six times in
+    ### Length
 
-          495 words. "If you''re only using AI to write the code, then you''re taking
 
-          the 2-4 hours of coding time down to 10-20 minutes". "But if you use AI to
+    The manuscript is roughly 560 words against a seven-page budget, up from 495. The standfirst added
+    about 95 and the cut opener removed about 42. Round 1''s warning still stands and matters more now
+    that an addition exists: **do not add prose to reach the budget.** There is nothing left in the extraction
+    to restore, and the two labeled blocks in this piece are the maximum editorial apparatus it can carry
+    before the reader starts hearing the magazine instead of the author.
 
-          help you plan and align, then you actually get closer to 2-3x faster." "If
 
-          the model is 50% likely to get a button style wrong, but the fix is one
+    ---
 
-          cheap prompt, then our combined "expected pain" is low." "If you draw this
 
-          out, there''s an inverse relationship between effort invested up front and
+    ## Round 1 notes, carried forward and corrected where round 2 changed them
 
-          expected pain." "if you''ve done some work at the "Product" level and have
 
-          not answered all the open questions yet, it''s possible you may need to end
-
-          it where you are". "If you''re doing multiple phases of planning, zooming
-
-          in from 50kft view all the way to the 10kft view, you want to do a little
-
-          bit of steering at each phase". Every step of the argument is a
-
-          conditional addressed to "you", so the escalation from yolo prompt to
-
-          hand-written spec to writing every line lands with the same weight each
-
-          time. Capped at minor: the repair requires rewording the author''s own
-
-          sentences.'
-      - severity: minor
-        article: pragmatic-leverage
-        locator: The 80/20 rule in AI coding leverage | Good luck. | 1
-        repair_from: The 80/20 rule in AI coding leverage | This is what we mean by leverage, and it requires
-          being pragmatic. | 1
-        category: ending
-        note: 'The piece stops on a blog sign-off. The paragraph before it does the
-
-          closing work ("This is what we mean by leverage, and it requires being
-
-          pragmatic... you want to do a little bit of steering at each phase to
-
-          ensure you are eliminating as much expected pain as possible"), and then
-
-          "Good luck." adds a beat that belongs to a comment thread rather than to a
-
-          printed page, where it reads as the author walking away from the argument
-
-          he has just made. Capped at minor and no replacement offered: the line is
-
-          the author''s.'
-      - severity: minor
-        article: pragmatic-leverage
-        locator: The 80/20 rule in AI coding leverage | if you yolo a two-sentence prompt into your factory
-          | 1
-        category: jargon
-        note: '"your factory" is the load-bearing noun of the whole example and is never
-
-          defined here. It is series vocabulary arriving without the series, and the
-
-          opening paragraph is the only place the word "factory" is otherwise
-
-          visible, inside a post title. The same holds for the planning vocabulary
-
-          later: "some work at the "Product" level", "zoom down a level to the
-
-          technical details", "zooming in from 50kft view all the way to the 10kft
-
-          view". A reader who has not read the series can follow the probability
-
-          argument but cannot picture the thing being planned. The repair is an
-
-          editor gloss on first use rather than a change to the author''s sentences.'
-      - severity: minor
-        article: pragmatic-leverage
-        locator: The 80/20 rule in AI coding leverage | your chance of getting a fully-mergeable result
-          is ~50%, the chance you have to rework it is 50% | 1
-        category: dead_words
-        note: 'The second clause is the arithmetic complement of the first and adds
-
-          nothing: if the chance of a mergeable result is 50%, the chance of rework
-
-          is 50% by definition. The two are also joined by a comma splice, which
-
-          makes the restatement look like a second, separate figure and stalls the
-
-          reader on the sentence that sets up the entire model.'
-      - severity: minor
-        article: pragmatic-leverage
-        locator: The 80/20 rule in AI coding leverage | This is what we mean by leverage | 1
-        category: orphan_referent
-        note: 'The byline is one author and the piece opens in the first person singular:
-
-          "so I''m publishing it standalone", "For this example I''m gonna blur". Then
-
-          a "we" appears twice with no antecedent, "our combined "expected pain" is
-
-          low" and "This is what we mean by leverage". Nothing in the piece
-
-          introduces a company or a team, so the reader cannot tell whether the
-
-          pronoun widened to include them or to include colleagues they have not met.'
-      scores:
-        structure: 3
-        flow: 3
-        sentence_craft: 3
-        house_style: 2
-        voice_consistency: 3
-      notes: 'The core of this is genuinely good and takes about two minutes to read: the
-
-        cost breakdown, the three-point escalation from yolo prompt to hand-written
-
-        spec to writing every line, the expected-pain formula, and the warning against
-
-        spending six hours to remove pain you could have removed in ten. Those steps
-
-        are restatable in order from one read, and the formula earns its display. What
-
-        surrounds them is blog furniture that has not been converted for a printed
-
-        page. It opens on which post this did not fit into, it closes on "Good luck.",
-
-        it asks the reader to "draw this out" and to picture "the far end" of an axis
-
-        the page never shows, and it leans on vocabulary the series carried but this
-
-        extract does not: your factory, the "Product" level, 50kft. The bold "note"
-
-        marker and the sentence severed by a block quote are the most visible
-
-        production defects and the cheapest to fix. Underneath, six "If you X, then Y"
-
-        sentences give the argument one dynamic where it wants three. Against a
-
-        seven-page budget this runs 495 words, so there is room for a labeled editor
-
-        standfirst to supply the missing context without crowding anything out.'
-      call:
-        role: line_judge
-        prompt_path: prompts/line-review.md
-        prompt_sha256: 262f28e51956608760ae5dbdde255ef7a5780f459e73cb3542d7ae6aae6ac8b4
-        backend: agent
-        model: null
-        argv:
-        - mag
-        - produce
-        - rerun-004-the-systems-around-the-model
-        - --backend
-        - agent
-        - --submit
-        - pragmatic-leverage/r1-line
-        - --brief-sha256
-        - 86cfba9102f325928d26a4cebc678ee52a2300718036e417c94be92f9b9ca6a7
-        duration_seconds: 0.0
-        output_sha256: e16da78e694faa507e45220cbb6152d814b678123cac56e3eec46dbfa703c3bc
-  notes: '## Working notes
-
-
-    **Scope of the edit.** The extraction is short: 16 body paragraphs including two display quotes. Every
-    one of them is in the manuscript, in source order, with no paragraph merged, split, or reordered.
-    I wrote no prose of my own, so there is no editor''s note anywhere in the piece and `docs/WRITING_RULES.md`
-    has nothing in this manuscript to govern.
-
-
-    **On length.** The brief allows up to about 1,100 words and flags the 440-word shipped version as
-    thin. The manuscript here is ~470 words, and that is the whole source. The shipped version was not
-    thin because it trimmed the author; it was thin because the source is a standalone addendum to a longer
-    series, and it then papered over the shortfall with an invented close. Under `prompts/faithful-edit.md`
-    the fix is to keep everything the author wrote and stop where he stops, not to reach the budget. Do
-    not let a future "expand to budget" note tempt an addition here: there is nothing left in the extraction
-    to restore, and anything added would be manufactured.
-
-
-    **What the shipped version got wrong, and where.** `editions/004-the-systems-around-the-model/articles/pragmatic-leverage.md`
-    closed on "The goal is not maximal specification. The goal is to eliminate as much expected pain as
-    possible." That sentence is not in the extraction. It is an editor-built antithesis close (banned
-    tic 1) welded onto the author''s own last paragraph, which already ends "eliminating as much expected
-    pain as possible." The defect was made at the moment someone decided the piece needed a summarizing
-    beat before "Good luck."; it surfaces as a banned construction. The author''s real ending is the leverage
-    paragraph plus the sign-off, and that is what is here.
+    **Scope of the edit.** The extraction is 16 body paragraphs including two display quotes. All of the
+    author''s prose is still present, in source order, with no paragraph merged, split, or reordered,
+    **except** the opening paragraph, which round 2 cut under finding 1 and replaced with an editor''s
+    standfirst. One display quote is now inline (finding 2). Those are the only structural differences
+    from the source.
 
 
     **Chrome removed.**
 
-    - The `dex` / `@dexhorthy` handle block at the top of the extraction. The byline and author note live
-    in the edition.yaml row.
+    - The `dex` / `@dexhorthy` handle block. Byline and author note live in the `edition.yaml` row.
 
-    - The H1 `# Pragmatic Leverage in the Software Factory`. Title lives in edition.yaml; the format section
-    forbids an H1 and requires the body to open on a paragraph.
+    - The H1 `# Pragmatic Leverage in the Software Factory`. Title lives in `edition.yaml`; the format
+    section forbids an H1.
 
-    - Nothing else. There was no navigation, advertising, or subscription furniture in this extraction;
-    the transcription had already dropped X interface chrome, engagement counters, and the timestamp.
+    - The opening logistics paragraph, as of round 2, per finding 1.
+
+    - Nothing else. There was no navigation, advertising, or subscription furniture in the extraction.
 
 
-    **Load-bearing sentences I judged untouchable.**
-
-    - "This one is a bit of an addendum / side-quest to the recent series." It sets the piece''s status
-    and, at 42 words, the paragraph also happens to satisfy the 40–60 word opener constraint exactly as
-    the author wrote it. No trimming was needed to make the opener fit, which is lucky; if a future constraint
-    tightens, trim nothing here without checking whether the paragraph can be kept whole.
+    **Load-bearing sentences still judged untouchable.**
 
     - "Even before AI, only 25–50% of the time to ship a feature was writing the code itself." The whole
-    argument rests on this fraction.
+    argument rests on this fraction, and as of round 2 it is also the piece''s opening line.
 
-    - The three-point ladder: yolo prompt at ~50%, hand-written spec at ~10%, write every line yourself
-    at zero. Removing any rung breaks the curve that the next paragraphs describe.
+    - The three-rung ladder: yolo prompt at ~50%, hand-written spec at ~10%, write every line yourself
+    at zero. Removing any rung breaks the curve the next paragraphs describe.
 
-    - The `**note**` aside and both display quotes. The note is where the author admits he is collapsing
-    two variables into one number, and the formula `expected pain = P(you''ll have to change it) × how
-    painful the change is` is the definition the rest of the piece uses. A previous pass appears to have
-    treated this as an aside; it is the piece''s only definition and must survive.
+    - The author''s note and the formula. The note is where he admits he is collapsing two variables into
+    one number, and the formula is the piece''s only definition.
 
-    - "There''s no perfect process for this." The author''s own hedge. Deleting it would make the argument
-    more confident than he made it.
+    - "There''s no perfect process for this." His own hedge. Deleting it makes the argument more confident
+    than he made it.
 
-    - "good luck." The sign-off is named in `prompts/faithful-edit.md` as a reason the mode exists.
+    - "Good luck."
 
 
-    **Typography changes, all of them.**
+    **Every typography change in the file, complete list.**
 
     - Numeric ranges to en dashes: `25-50%` → `25–50%`, `2-4 hours` → `2–4 hours`, `10-20 minutes` → `10–20
-    minutes`, `2-3x` → `2–3x`. No em dash (U+2014) appears anywhere in the file.
+    minutes`, `2-3x` → `2–3x`. No U+2014 appears anywhere.
 
     - Missing apostrophes repaired: `Lets assume` → `Let''s assume`, `Now lets say` → `Now let''s say`,
-    `its possible` → `it''s possible`. These read as typing slips in an X post, not as style. `Nothing''s`,
-    `you''ll`, `won''t`, `didn''t`, `I''m gonna`, `yolo`, `50kft`, `10kft` are all left alone.
+    `its possible` → `it''s possible`. Typing slips in an X post, not style. `Nothing''s`, `you''ll`,
+    `won''t`, `didn''t`, `I''m gonna`, `yolo`, `50kft`, `10kft` are all left alone.
 
-    - Sentence-initial capital on the sign-off: `good luck.` → `Good luck.` The lowercase is plausibly
-    deliberate X-post style, so this is the one call in the piece that could go either way. I capitalized
-    it because the shipped version did, because the brief names "Good luck." as what that version got
-    right, and because `docs/WRITING_RULES.md` quotes it capitalized as a model ending. If a reviewer
-    prefers the author''s lowercase, restoring it costs nothing and breaks nothing.
+    - `good luck.` → `Good luck.` See finding 4 above.
 
-    - The reference to the sibling post is italicized as a title: `Why Software Factories Fail part 2:
-    Turning the lights back on`. The source gives no link and I did not invent one.
+    - The part-2 reference is italicized as a title, now inside the standfirst. No link invented.
 
-    - One spaced hyphen became a comma: "This is what we mean by leverage - and it requires being pragmatic."
-    A spaced hyphen sets badly in print; the house rule offers a comma among the em dash alternatives,
-    and no word changed. This is the only punctuation mark whose *kind* I changed inside a sentence.
+    - One spaced hyphen became a comma: "This is what we mean by leverage, and it requires being pragmatic."
+    A spaced hyphen sets badly in print and the house rule offers a comma. No word changed.
+
+    - Round 2 additions: comma splice → semicolon in the ~50% sentence (finding 6); one comma added before
+    "but obviously" in the author''s note (finding 2).
 
 
-    **Headings.** The source''s `## Seeking Leverage` was recased to `## Seeking leverage` to match the
-    exact spelling the figure anchors require. `## The 80/20 rule in AI coding leverage` matched the source
-    already. Both appear exactly once, both are the author''s own headings, and no heading was added or
-    removed. Figure captions were not written here: both figures carry their captions in the edition.yaml
-    row.
+    **Every sentence in this file that the author did not write.** Four, all in the standfirst, plus two
+    labels. The standfirst sentences are listed here so a fact-checker can find them without diffing:
+    "Dex Horthy published this standalone."; "It is an addendum to a recent series of his that didn''t
+    fit cleanly into the main post, and it is referenced briefly in *Why Software Factories Fail part
+    2: Turning the lights back on*."; "The series'' vocabulary comes with it."; and the factory/levels
+    gloss sentence. The labels are "**Editor''s note.**" and "**Author''s note.**". Nothing else in the
+    manuscript is mine.
 
 
-    **Unclear instructions.** One tension worth recording. The brief''s budget note ("if the source supports
-    more, keep more of the author rather than trimming to match") reads as an instruction to lengthen,
-    while faithful-edit forbids adding prose; they only reconcile because this source has nothing withheld.
-    If a future brief pairs a length target with this mode on a source that has genuinely been cut down,
-    the mode conversion in step 5 of the prompt is about a source being too *long*, and there is no stated
-    escape hatch for one that is too short. Assume the source wins.'
+    **Headings.** The source''s `## Seeking Leverage` is recased to `## Seeking leverage` to match the
+    figure anchor exactly. `## The 80/20 rule in AI coding leverage` matched already. Both appear exactly
+    once, both are the author''s own, none added or removed. Figure captions are not written here; both
+    figures carry their captions in the `edition.yaml` row.
+
+
+    **What edition 004 got wrong, kept on the record.** `editions/004-the-systems-around-the-model/articles/pragmatic-leverage.md`
+    closed on "The goal is not maximal specification. The goal is to eliminate as much expected pain as
+    possible." That sentence is not in the extraction. It is an editor-built antithesis close (banned
+    tic 1) welded onto the author''s own last paragraph, which already ends "eliminating as much expected
+    pain as possible." The defect was made when someone decided the piece needed a summarizing beat before
+    the sign-off. Both rounds of this rerun have refused that beat.
+
+
+    **Unclear instructions.** One tension, unchanged. The brief''s budget note reads as an instruction
+    to lengthen, while `faithful_edit` forbids adding prose. They reconcile only because this source has
+    nothing withheld. Step 5 of the prompt handles a source that is too *long* and offers no escape hatch
+    for one that is too short; assume the source wins. Round 2''s standfirst is not a counterexample:
+    it was added to clear a major finding, not to reach a word count, and it would have been written at
+    the same length against any budget.'

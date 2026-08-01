@@ -74,6 +74,7 @@ from .production_record import (
     AGENT_DIRNAME,
     PRODUCTION_DIRNAME,
     load_piece_record,
+    pieces_with_open_findings,
 )
 from .records import load_records
 from .release import load_release_state, sync_release_state
@@ -138,7 +139,12 @@ ACTION_KINDS = {
 # code or design templates; any change to probe-relevant rendering or
 # validation code must bump this schema, which wholesale-invalidates every
 # persisted workflow cache on load.
-_WORKFLOW_CACHE_SCHEMA = 2
+#
+# 3 narrowed the closure: editions/<id>/production/ is excluded, because
+# neither probe reads it and including it made the memo useless to `mag
+# produce`, whose every round writes a record there.  See
+# _probe_closure_paths.
+_WORKFLOW_CACHE_SCHEMA = 3
 # run only ever reuses a checkpoint prefix strictly below the dispatched
 # checkpoint's index, so every reused checkpoint was complete (the dispatched
 # one was the first blocked). The floor names the first checkpoint whose
@@ -412,12 +418,7 @@ class Workflow:
         reuse: tuple[Checkpoint, ...],
     ) -> WorkflowReport:
         cache = _WorkflowCache.load(
-            _project_paths(self.root)["output"]
-            / ".build"
-            / "workflow-cache"
-            / f"{edition_id}.json",
-            edition_id,
-            self.root,
+            probe_cache_path(self.root, edition_id), edition_id, self.root
         )
         snapshot = _Snapshot(self.root, edition_id, cache=cache)
         checkpoints: list[Checkpoint] = []
@@ -727,6 +728,15 @@ def _probe_closure_paths(root: Path, snapshot: _Snapshot) -> list[Path]:
     project root already raise inside _current_build_input_paths, which
     degrades the probe to uncacheable. Nothing under output/ belongs here, so
     builds never invalidate probes and the cache never observes itself.
+
+    editions/<id>/production/ is excluded for the same reason output/ is: it
+    is a place probes write about rather than read from. Neither probe reaches
+    it -- validate loads the manifest, the manuscripts, the sources and the
+    review bench, and fit paginates them -- while every produce round writes a
+    piece record and every agent invocation writes a brief there. Including it
+    made the memo miss on exactly the invocations it exists to make free. A
+    manuscript *declared* under production/ would still be covered: declared
+    inputs are added below by path, not by base.
     """
 
     paths = snapshot.paths
@@ -735,9 +745,14 @@ def _probe_closure_paths(root: Path, snapshot: _Snapshot) -> list[Path]:
         for path in (root / "magazine.toml", paths["release_state"])
         if path.is_file()
     ]
+    excluded = (paths["editions"] / snapshot.edition_id / PRODUCTION_DIRNAME).resolve()
     for base in (paths["editions"] / snapshot.edition_id, paths["sources"]):
         if base.is_dir():
-            closure.extend(path for path in sorted(base.rglob("*")) if path.is_file())
+            closure.extend(
+                path
+                for path in sorted(base.rglob("*"))
+                if path.is_file() and not path.resolve().is_relative_to(excluded)
+            )
     if snapshot.edition is None:
         raise ValidationError("Edition is unavailable for the probe closure")
     declared: set[str] = set()
@@ -795,6 +810,82 @@ def _probe_cache_key(
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
+def probe_cache_path(root: Path, edition_id: str) -> Path:
+    return (
+        _project_paths(root)["output"] / ".build" / "workflow-cache" / f"{edition_id}.json"
+    )
+
+
+class ProbeMemo:
+    """Content-keyed memo for one edition's deterministic whole-edition checks.
+
+    ``Workflow.status`` and ``mag produce`` run the same two arithmetic checks
+    -- ``validate`` and ``fit`` -- over the same tree, from different entry
+    points, and both run them many times per edition.  Produce is the worse
+    offender: an agent-driven edition is dozens of invocations, and each one
+    replayed both checks over an unchanged tree before it could report that it
+    had nothing to do.
+
+    So the memo is exposed here rather than reimplemented there.  "Which files
+    a probe reads" then has exactly one definition, which matters more than the
+    sharing does: a second, under-inclusive copy of that list would serve a
+    stale verdict, and a stale verdict is the one failure a cache of a gate
+    must never have.  The key is a digest of every file in that closure, so a
+    hit means the tree is byte-identical to the tree the stored answer was
+    computed from, and gates stay a pure function of the tree.
+
+    A memo is bound to the tree as it stood when it was constructed.  Callers
+    that change the tree -- installing a manuscript, say -- must build a new
+    one; reusing this across a write is the way to serve the stale verdict the
+    key exists to prevent.
+
+    Every operation degrades to a miss.  A memo that cannot compute its key --
+    an edition that will not load, an unreadable file -- answers ``None`` for
+    ever and the caller simply runs the check.
+    """
+
+    def __init__(self, root: Path, edition_id: str) -> None:
+        self.root = root.resolve()
+        self.edition_id = edition_id
+        self._cache = _WorkflowCache.load(
+            probe_cache_path(self.root, edition_id), edition_id, self.root
+        )
+        try:
+            snapshot = _Snapshot(self.root, edition_id, cache=self._cache)
+            self._key: str | None = _probe_cache_key(
+                "edition-gates",
+                self.root,
+                snapshot,
+                self._cache,
+                adapter="magazine.produce",
+            )
+        except (OSError, ValidationError, ValueError):
+            self._key = None
+
+    def get(self, kind: str) -> dict[str, Any] | None:
+        """The stored answer for ``kind`` over this exact tree, or ``None``."""
+
+        if self._key is None:
+            return None
+        entry = self._cache.probe(kind)
+        if not isinstance(entry, dict) or entry.get("key") != self._key:
+            return None
+        value = entry.get("value")
+        return value if isinstance(value, dict) else None
+
+    def set(self, kind: str, value: Mapping[str, Any]) -> None:
+        """Store one answer against this tree.  Unserializable values are dropped."""
+
+        if self._key is None:
+            return
+        try:
+            payload = json.loads(json.dumps(dict(value)))
+        except (TypeError, ValueError):
+            return
+        self._cache.set_probe(kind, {"key": self._key, "value": payload})
+        self._cache.save()
+
+
 class _Snapshot:
     """Read-only implementation behind the public workflow report."""
 
@@ -845,6 +936,26 @@ class _Snapshot:
             return None, tuple(exc.errors)
 
     def _lifecycle(self) -> str:
+        """Which of the four states this edition id is in.
+
+        ``workspace`` is the one this report was missing.  Regenerating a
+        shipped issue means producing into a sibling directory that is
+        deliberately *not* in the release ledger -- ``mag produce`` says so in
+        as many words when it refuses a released id -- and until now the
+        report read that absence as "somebody typed an id wrong" and stopped
+        at the very first checkpoint.  Every checkpoint after it was therefore
+        unreachable for the one kind of edition an operator most needs a
+        report on, because a rerun is where things go wrong.
+
+        The two are told apart by the manifest.  An id with an
+        ``edition.yaml`` behind it is a workspace somebody staged; an id with
+        nothing behind it is the typo, or the edition nobody has opened yet,
+        and it still blocks on ``mag collect``.  That is the same test produce
+        uses to decide whether it may draft into an id at all, and the two
+        must agree: a report that refused to describe what produce is willing
+        to write is worse than no report.
+        """
+
         if self.release_state is None:
             return "unknown"
         if self.edition_id in self.release_state.collecting_edition_ids:
@@ -854,7 +965,22 @@ class _Snapshot:
             for row in self.release_state.released_editions
         ):
             return "released"
+        if self.manifest_path.is_file():
+            return "workspace"
         return "unassigned"
+
+    @property
+    def is_authored(self) -> bool:
+        """Whether this edition still owes the full evidence chain.
+
+        True for a collecting edition and for a sibling workspace, false for a
+        released one.  A rerun is written by the same pipeline against the
+        same sources as the issue it regenerates, so it owes committed
+        extractions and current pins exactly as a collecting edition does --
+        produce refuses to draft from an unextracted source either way.
+        """
+
+        return self.lifecycle in {"collecting", "workspace"}
 
     def _queued_source_ids(self) -> tuple[str, ...]:
         if self.release_state is None or self.lifecycle != "collecting":
@@ -917,6 +1043,17 @@ class _Snapshot:
                     "with its intended issue number."
                 ),
                 f"uv run --locked mag collect {self.edition_id} --issue-number <number>",
+            )
+        if self.lifecycle == "workspace":
+            # A workspace owns no queue: its sources belong to the issue it
+            # regenerates, which is assigned to that issue in the ledger.
+            # Asking it to reconcile intake would push it into the queue the
+            # whole point of a rerun is to stay out of.
+            return _complete(
+                "assignment",
+                "Edition is a sibling workspace: it has a manifest and is "
+                "deliberately outside the release ledger.",
+                details,
             )
         manifest_sources = set(_string_list(self.manifest, "sources"))
         unassigned = sorted(
@@ -1043,7 +1180,7 @@ class _Snapshot:
         # articles are unpinned, instead of collapsing into one opaque error.
         pin_rows: dict[str, dict[str, Any]] = {}
         pin_errors: list[str] = []
-        require_extractions = self.lifecycle == "collecting"
+        require_extractions = self.is_authored
         for index, row in enumerate(self.article_rows, start=1):
             article_id = str(row.get("id") or f"article-{index}")
             source_tuple = _row_source_ids(row) or ()
@@ -1147,11 +1284,13 @@ class _Snapshot:
             elif status == "escalated":
                 escalated.append(piece_id)
         ready = self._agent_ready()
+        filed = pieces_with_open_findings(self.paths["editions"], self.edition_id)
         details: dict[str, Any] = {
             "pieces": pieces,
             "undrafted_pieces": sorted(undrafted),
             "escalated_pieces": sorted(escalated),
             "agent_ready": ready,
+            "filed_findings": dict(sorted(filed.items())),
         }
         produce = f"uv run --locked mag produce {self.edition_id}"
         if evidence.status != "complete":
@@ -1180,6 +1319,23 @@ class _Snapshot:
                     "record and repair the piece by hand; a fourth round spends "
                     "a call to learn nothing."
                 ),
+            )
+        if filed:
+            # A filed finding is a standing instruction that the piece's next
+            # drafting round must carry.  Reporting it here is what makes it
+            # part of the loop rather than a note in somebody's head: the
+            # checkpoint stays blocked until a round has been through it.
+            return _blocked(
+                "production",
+                f"{sum(filed.values())} filed finding(s) await a drafting round.",
+                details,
+                "authorial",
+                (
+                    "Run the pipeline again for the named pieces; each one's "
+                    "next writer brief carries its filed findings alongside "
+                    "the judges'. Do not hand a writer the finding directly."
+                ),
+                f"{produce} --articles " + ",".join(sorted(filed)),
             )
         if undrafted:
             return _blocked(
@@ -2011,6 +2167,19 @@ class _Snapshot:
             return _complete(
                 "release",
                 "Edition is already released.",
+                details,
+            )
+        if self.lifecycle == "workspace":
+            # Not blocked and not complete: a sibling workspace is built to be
+            # compared against the issue it regenerates, not shipped, and
+            # there is no next action that would make shipping it right.
+            # Saying "blocked" would put a release instruction in front of an
+            # operator who must not follow it.
+            return Checkpoint(
+                "release",
+                "not_applicable",
+                "A sibling workspace is regenerated for comparison and is never "
+                "released; adopt its prose into a collecting edition instead.",
                 details,
             )
         if release_ready:
