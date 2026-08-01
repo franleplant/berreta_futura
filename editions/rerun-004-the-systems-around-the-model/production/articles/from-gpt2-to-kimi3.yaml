@@ -2,10 +2,10 @@ schema_version: 1
 edition_id: rerun-004-the-systems-around-the-model
 piece_id: from-gpt2-to-kimi3
 content_mode: faithful_synthesis
-status: drafting
-produced_at: '2026-08-01T20:15:38+00:00'
+status: passed
+produced_at: '2026-08-01T20:48:39+00:00'
 inputs_sha256: 0ab0eab64d9ceae9ecfce4d476e30d4cdbcb679029800f925fdf353cf6c9b89a
-manuscript_sha256: 90d1f7ee64902efadf7d63627cdd513058fcb2998d48dd3da18fc587db81a515
+manuscript_sha256: 670c0340033bc79eae878a46b2bd2da44b59a9d7e35ebb7de950c08c59c3afdc
 rounds:
 - round: 1
   result: changes_required
@@ -498,7 +498,290 @@ rounds:
   anchors_reconciled:
   - GPT-2 and the cache
   - From linear attention to DeltaNet
-  judges: {}
+  judges:
+    evidence:
+      result: approved
+      findings: []
+      scores:
+        claim_support: 5
+        qualification_survival: 5
+        quote_accuracy: 5
+        attribution: 5
+      notes: 'Read the extraction in full first, then checked every assertion, including
+
+        the editor''s note. The split and glossed passage is the part I worked
+
+        hardest, and each gloss traces to the extraction rather than to outside
+
+        knowledge. Prefill: the source states "The practical problem is prefill"
+
+        and its code comments define the two regimes - "# at prefill, q,k,v have
+
+        shapes b,h,t,d" against "# at decode, shape is b, h, 1, d", with prefill
+
+        being the branch where past_kv is None and decode the branch that runs
+
+        "after appending the generated token to the input" - which is exactly the
+
+        manuscript''s "the pass over a whole input sequence before the first token
+
+        comes out". Attention inside a block: "Inside a block I do real attention
+
+        (the masked QK-transpose times V)" is verbatim, and the expansion
+
+        "comparing every query against every key, masked so no token sees the ones
+
+        after it" is the source''s own shown code, attn=(q_c@k_c.transpose(-1,-2))
+
+        .tril() labelled "#masked attention", alongside the GPT-2 causal_mask built
+
+        with torch.triu(..., diagonal=1) and filled with -inf. Matmul: the source
+
+        writes "read it back with one matmul" and elsewhere "the path to a parallel
+
+        matrix multiplication", so "one matrix multiply against the running state"
+
+        is its own phrasing, and o_prev=q_c@S is commented "#this is everything up
+
+        to this block". FLOPs: the source''s own pairing supplies the gloss - "C=1 is
+
+        the cheapest option in pure FLOP terms, but not necessarily in wall-clock
+
+        time. A GPU can complete more arithmetic faster when the work maps
+
+        efficiently onto its matrix-multiply hardware" - and the FLOP figures it
+
+        gives (2Ld-squared fixed, 2LCd growing, 2L-squared-d at C=L) are operation
+
+        counts. The wall-clock hedge on C=1 survives the split intact, as does "not
+
+        necessarily". Numbers all match: 22,580, 124M against 2.8 trillion, GPT-2
+
+        2019 and KimiK3 2026, 23 four-layer macrocycles, three KDA layers and a
+
+        fourth MLA, 898 experts with two shared and 16 of 896 routed, AttnRes every
+
+        12 decoder layers, eight blocks, roughly 2% inference latency, 1.25x compute
+
+        advantage, up to 6x decode throughput, about seven hours, the 2020 paper
+
+        date. The quoted line "the cost per time-step for transformers scales with
+
+        the square of the current sequence length" is verbatim, and the manuscript''s
+
+        reading of the source''s ambiguous "then I saw that it was released in 2020"
+
+        as the paper rather than FlashAttention is forced by the sentence that
+
+        follows it in the extraction, "At the time ... FlashAttention did not exist".
+
+        The editor''s note checks out: the post is timestamped "3:22 PM - Jul 27,
+
+        2026", the source calls itself a worklog, and linear attention, Parallelizing
+
+        Linear Transformers with Delta Rule, Mamba-2 and Kimi Linear are all named
+
+        section subjects. Reverse pass: the fidelity trade-off keeps "although the
+
+        practical accuracy loss depends on the architecture and workload"; the
+
+        interference limitation, the delta rule''s inability to decay memory
+
+        generally, and the source''s own closing conclusion about eviction policy and
+
+        learned selection all survive. What I could not check: nothing material. The
+
+        condensation drops whole sections (Gated MLA, SiTU and its almost-3x
+
+        slowdown, the Schlag quotation, tensor-core chunk sizes of 64 or 128), but
+
+        each dropped hedge attaches to a claim the manuscript does not make.'
+      call:
+        role: evidence_judge
+        prompt_path: prompts/evidence-review.md
+        prompt_sha256: 2d368985eba3011b23c2f03fa926da4791a03975bd5ee4403ed6d8d19503d264
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - from-gpt2-to-kimi3/r2-evidence
+        - --work-sha256
+        - b2622d9cdd7f4c539d9676e54d201bbba9ef2025133268f17154448638f5602f
+        duration_seconds: 0.0
+        output_sha256: da655e3ebee3b9104da8296bfa5ba15cfe99260f21c09710bfba1f0d30ab6b45
+    line:
+      result: changes_required
+      findings:
+      - severity: major
+        article: from-gpt2-to-kimi3
+        locator: From linear attention to DeltaNet | Within a block that means comparing every query against
+          every key, masked so no token sees the ones after it; everything before the block arrives as
+          one matrix multiply against the running state. | 1
+        category: duplication
+        note: 'The blocked algorithm is explained twice, in consecutive sentences, in
+
+          the same order and the same register.
+
+
+          First: "Inside a block I do real attention (the masked QKᵀ times V), and
+
+          across blocks I fold everything into the state and read it back with one
+
+          matmul."
+
+
+          Then: "Within a block that means comparing every query against every key,
+
+          masked so no token sees the ones after it; everything before the block
+
+          arrives as one matrix multiply against the running state."
+
+
+          Both sentences carry the same two halves in the same sequence: inside a
+
+          block, real attention; across blocks, one matrix multiply against the
+
+          state. The only thing the second adds is why the mask is there, and "read
+
+          it back with one matmul" against "arrives as one matrix multiply against
+
+          the running state" is not notation followed by its gloss, it is the same
+
+          plain sentence written out again. This is the longest paragraph in the
+
+          piece and the one carrying its hardest idea, so the reader who has just
+
+          worked through the first sentence reads the second one twice trying to
+
+          find the new claim in it.
+
+
+          The repair is a cut, not a rewrite, which keeps it inside what the mode
+
+          allows: one sentence goes and the mask clause moves into the survivor.'
+        suggestion: Inside a block I do real attention, comparing every query against every key, masked
+          so no token sees the ones after it (the masked QKᵀ times V); everything before the block arrives
+          as one matrix multiply against the running state.
+      - severity: minor
+        article: from-gpt2-to-kimi3
+        locator: From linear attention to DeltaNet | The paper's O(N²) framing threw me off until I checked
+          its date. | 1
+        category: orphan_referent
+        note: '"The paper" has no antecedent in the body. Four papers are named in the
+
+          editor''s note and none of them is named again after it, so at this
+
+          sentence the reader has to pick one out of that list and hope. The
+
+          paragraph does eventually say "the paper itself was released in 2020",
+
+          which fixes the date but not the identity, and the same gap opens again
+
+          two paragraphs later at "The authors therefore rewrite the delta updates
+
+          as a first-order linear recurrence."
+
+
+          The aside itself is worth keeping. Being thrown off by a stale framing
+
+          and then checking the date is the worklog doing what a worklog is for,
+
+          and the closing sentence about FlashAttention not existing yet earns the
+
+          detour. It only needs the noun.'
+        suggestion: The linear attention paper's O(N²) framing threw me off until I checked its date.
+      - severity: minor
+        article: from-gpt2-to-kimi3
+        locator: From linear attention to DeltaNet | the growing set of K and V vectors folds into a fixed
+          D×D state | 1
+        category: jargon
+        note: 'N gets defined and D does not. The cache section says the KV cache "grows
+
+          in O(N) with the sequence length", so N is anchored before it is used
+
+          anywhere else. D arrives cold in "a fixed D×D state", returns in "it is
+
+          added to the same D×D matrix", and then carries a load-bearing sentence:
+
+          "The regime that makes linear attention attractive, N much larger than D,
+
+          is where the interference shows." That sentence is the point of the
+
+          section, and it asks the reader to compare a defined quantity against an
+
+          undefined one. Everything else in the piece is glossed at first use,
+
+          including prefill, FLOPs, KDA, MLA and AttnRes, so this is the one
+
+          exception rather than a house of them.'
+        suggestion: the growing set of K and V vectors folds into a fixed state of size D by D, where
+          D is the feature dimension and does not depend on how long the sequence gets
+      scores:
+        structure: 4
+        flow: 4
+        sentence_craft: 4
+        house_style: 5
+        voice_consistency: 4
+      notes: 'This is a hard piece to make readable and it is readable. The opening is the
+
+        best in the batch: a bare number, then what the number is, then the question
+
+        the rest of the article answers, and no announcement of intent anywhere. The
+
+        question is genuinely open when it is asked and genuinely closed by "So, not
+
+        just scale", which is what makes the last section land instead of stop. The
+
+        chronology holds. Each section leaves a specific deficit behind and the next
+
+        one is the answer to it: the cache grows with the sequence, so fold it into a
+
+        fixed state; folding loses recoverability, so subtract before you write;
+
+        subtracting will not parallelize, so re-parameterize it; the delta rule
+
+        cannot forget in bulk, so gate it; and gating still discards, so keep real
+
+        attention in every fourth layer and reach back through depth as well. I could
+
+        restate that from one read. The glossing discipline is the reason a manager
+
+        can stay in the room for the KimiK3 section: prefill, FLOPs, KDA, MLA and
+
+        AttnRes are all defined the moment they appear, and the AttnRes paragraph
+
+        explains the additive-residual problem before naming the fix. Two soft spots
+
+        remain. The paragraph that does the most work also says its central move
+
+        twice in a row, which is the one place the seams in a condensation show, and
+
+        the papers ali is reading are named once in the editor''s note and then
+
+        referred to as "the paper" and "the authors" for the rest of the piece.'
+      call:
+        role: line_judge
+        prompt_path: prompts/line-review.md
+        prompt_sha256: 262f28e51956608760ae5dbdde255ef7a5780f459e73cb3542d7ae6aae6ac8b4
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - from-gpt2-to-kimi3/r2-line
+        - --work-sha256
+        - 71854894693552544a00392a5181e4182ed9587a924f8047e606744bc231b7bb
+        duration_seconds: 0.0
+        output_sha256: ee8c5fa16f83f4063c8dbaf43c460718a8f157ec9cff1cf0c2ff43fe0e848608
   notes: "## Read this first if you are revising again\n\nRound 3 of this piece. Round 2's fidelity was\
     \ clean (fact-check returned zero findings) and I\ndid not disturb a single factual sentence that\
     \ scored. Every change below is prose. If you\nare revising again, the safest rule is the one I followed:\
@@ -642,3 +925,294 @@ rounds:
     \nThe Format block mandates `source_ids` as a list; the shipped 004 article files carry\n`source_id`\
     \ (singular). I followed the prompt, as round 2 did. `mag fit` accepts the list form,\nso this is\
     \ a consistency question rather than a build break."
+- round: 3
+  result: approved
+  manuscript_sha256: 670c0340033bc79eae878a46b2bd2da44b59a9d7e35ebb7de950c08c59c3afdc
+  writer:
+    role: writer
+    prompt_path: prompts/faithful-synthesis.md
+    prompt_sha256: 56f083c8f2bb39a6dcfd6d35f153aedeaedbe7825dc06909c5ef4196a27da277
+    backend: agent
+    model: null
+    argv:
+    - mag
+    - produce
+    - rerun-004-the-systems-around-the-model
+    - --backend
+    - agent
+    - --submit
+    - from-gpt2-to-kimi3/r3-writer
+    - --work-sha256
+    - 4f5ea276de89506efef62bc73eeeee844dc1e632b054a2ea09b6d7dfac739fba
+    duration_seconds: 0.0
+    output_sha256: 3468878e0c0a4741693218e0cb72b0bf69d2d87ada543f327de2dd2694893978
+  gate_failures: []
+  anchors_reconciled:
+  - GPT-2 and the cache
+  - From linear attention to DeltaNet
+  judges:
+    evidence:
+      result: approved
+      findings: []
+      scores:
+        claim_support: 5
+        qualification_survival: 4
+        quote_accuracy: 5
+        attribution: 5
+      notes: 'Read the single pinned extraction in full, then checked the manuscript claim by
+
+        claim, weighting the chunked-attention paragraph where the duplicated sentence was
+
+        cut and a clause folded into the survivor. The fold is clean. The surviving
+
+        sentence, "Set it to 1 and you have regular linear attention, the cheapest in pure
+
+        FLOP terms but not necessarily in wall-clock time, because a GPU completes more
+
+        arithmetic faster when the work maps onto its matrix-multiply hardware", carries
+
+        exactly the two source statements it now spans: "while C=1 gives regular linear
+
+        attention" and "C=1 is the cheapest option in pure FLOP terms, but not necessarily
+
+        in wall-clock time. A GPU can complete more arithmetic faster when the work maps
+
+        efficiently onto its matrix-multiply hardware." The "not necessarily in wall-clock
+
+        time" hedge, which is the load-bearing part, survives intact, and the appositive
+
+        attaches the cost claim to C=1, which is what the source attaches it to. The
+
+        adjacent sentence, "Set C to the whole sequence and you are back to standard
+
+        attention", still matches "Setting C=N recovers standard O(N^2) attention", so the
+
+        two poles of the C trade-off are not confused by the merge. The other merged pair
+
+        in the piece, "KDA layers must inevitably discard information; MLA retrieves from
+
+        the token context, AttnRes from earlier depth-wise representations", drops only the
+
+        clause "operate with constant-size state", which the manuscript has already stated
+
+        as "KDA supplies constant-state recurrent memory" one paragraph earlier; the claim
+
+        is unchanged. Every number reconciles with the extraction: 22,580, 124M against 2.8
+
+        trillion, 27 July 2026 from the post timestamp, the 2020 date on the linear
+
+        attention paper, seven hours, 23 four-layer macrocycles with three KDA and one MLA,
+
+        898 experts with two shared and 16 of the remaining 896, AttnRes every 12 decoder
+
+        layers giving eight blocks, roughly 2% added inference latency, 1.25x compute
+
+        advantage, and 6x decode throughput. The one passage presented as verbatim, "the
+
+        cost per time-step for transformers scales with the square of the current sequence
+
+        length", matches the extraction exactly. The editor''s note checks out: worklog,
+
+        date, first person, and the four named papers all appear in the source, in the
+
+        order the source walks them. What I could not check directly: the glosses the
+
+        writer added for the reader, "the pass over a whole input sequence before the first
+
+        token comes out" for prefill and "every query against every key, masked so no token
+
+        sees the ones after it" for the masked QK-transpose-times-V, are not stated in
+
+        those words, though both follow from the source''s code and commentary and neither
+
+        strengthens a claim. Qualification survival is a 4 rather than a 5 only because
+
+        "cannot efficiently clear multiple associations" reads in the manuscript as "cannot
+
+        clear several associations" and the GPU sentence loses "can" and "efficiently"; in
+
+        both cases the source states the stronger form elsewhere ("has no way to make the
+
+        rest of the facts decay"), so neither is a finding.'
+      call:
+        role: evidence_judge
+        prompt_path: prompts/evidence-review.md
+        prompt_sha256: 2d368985eba3011b23c2f03fa926da4791a03975bd5ee4403ed6d8d19503d264
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - from-gpt2-to-kimi3/r3-evidence
+        - --work-sha256
+        - 2b1e3a4376fc52d1ef5aac9ff4a453040f9cb72edbd31826daffa09939ef9188
+        duration_seconds: 0.0
+        output_sha256: a0e72ee4915c247d72f8aefc43a15428a10317810da4a54c8da24586dc830141
+    line:
+      result: approved
+      findings:
+      - severity: minor
+        article: from-gpt2-to-kimi3
+        locator: KimiK3 | learned selection is what supplies one | 1
+        category: dead_words
+        note: 'The closing paragraph''s load-bearing sentence is the one place I had to
+
+          read twice: "A fixed-capacity associative memory needs an eviction
+
+          policy, since a purely additive linear operation eventually adds
+
+          interference once at capacity, and learned selection is what supplies
+
+          one." Three clauses, and the "one" at the end reaches back past the
+
+          whole middle clause to "an eviction policy". The cleft "is what supplies
+
+          one" is also carrying no weight that "supplies one" would not carry. It
+
+          resolves on a second pass, so this is one loose sentence rather than a
+
+          broken ending, and the next two sentences land the piece cleanly. Author
+
+          voice, so capped at minor and no replacement offered.'
+      scores:
+        structure: 5
+        flow: 4
+        sentence_craft: 4
+        house_style: 5
+        voice_consistency: 5
+      notes: 'The duplication is gone and the fold reads. The hardest algorithm, the blocked formulation
+        and its extension to the delta updates, is now stated exactly once and built in the right order:
+        the problem ("the obvious implementation walks the tokens one at a time and never collapses into
+        a single matrix multiply"), the way out for purely additive attention (blocks of C, real attention
+        inside, state across), the two boundary cases that calibrate C, and then the honest admission
+        that the trick does not carry over to the delta updates without the re-parameterization. Nothing
+        in that sequence is restated later; the only repeated phrasing anywhere in the manuscript is the
+        paper title, cited once in the editor''s note and once where the authors are credited, which is
+        correct. The folded clause is visible as a fold: "the cheapest in pure FLOP terms but not necessarily
+        in wall-clock time, because a GPU completes more arithmetic faster when the work maps onto its
+        matrix-multiply hardware" is a long tail on an already long sentence and it is the last thing
+        in the paragraph, but the caveat is the one a reader needs to avoid concluding that C=1 is free,
+        and putting it anywhere else would have cost more than it saved. Elsewhere the piece is unusually
+        disciplined about its own vocabulary: FLOPs, the masked QK-transpose product, KDA, MLA and AttnRes
+        are all glossed at first use, the editor''s note is labeled and does the necessary work of warning
+        that the first person is the author''s, and the opening number question ("But is it just... scale?")
+        is answered by the first three words of the close. Two things to watch rather than fix. The O(N-squared)
+        digression in "From linear attention to DeltaNet" is the one paragraph that interrupts a mechanism
+        to discuss a paper''s dating, and it sits between the mechanism and its fidelity trade-off, so
+        a seven-minute reader will skim it; it earns its place because the piece is explicitly a walk
+        forward through the papers as they arrived, but it is the spot where attention drops. And the
+        KimiK3 paragraph packs eleven numbers into six sentences, which is the subject''s fault more than
+        the prose''s, but it is the densest page in the issue.'
+      call:
+        role: line_judge
+        prompt_path: prompts/line-review.md
+        prompt_sha256: 262f28e51956608760ae5dbdde255ef7a5780f459e73cb3542d7ae6aae6ac8b4
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - from-gpt2-to-kimi3/r3-line
+        - --work-sha256
+        - 15c9f18abd15c2a37d631765fa9c2d2d4f3f2825ce5fb1557ea1e4132476d550
+        duration_seconds: 0.0
+        output_sha256: d22820dac96b1a1bd911c8e1f05edc442ae01ad1c235c1a0dec136854a85c0c6
+  notes: "## Read this first if you are revising again\n\nRound 4. Rounds 2 and 3 were both clean on fidelity\
+    \ (zero fact-check findings), and I disturbed no\nfactual sentence, no number and no hedge. This round\
+    \ is three local repairs inside the same two\nparagraphs that have carried every finding since round\
+    \ 2: the block-parallelism paragraph and the\nO(N²) aside. Nothing else moved.\n\n**Budget: measured.**\
+    \ 1,196 body words. `uv run --locked mag fit\nrerun-004-the-systems-around-the-model --language en`\
+    \ says p20-p25, 6/7 pages, OK, whole edition\n`fit: every page budget holds` at 44 pages. Plain `mag\
+    \ fit` currently errors before pagination\nbecause the `es` translations are stale, so use `--language\
+    \ en`. The piece is about 100 words over\nthe prompt's \"roughly 700 to 1,100\" and it paginates a\
+    \ page under budget, because it carries no\ncode blocks. If a later round is told to cut on word count\
+    \ rather than pagination, cut the MoE\ndetail first (898 experts, two shared, 16 of 896, compressed\
+    \ latent space, 45 words): it is the\nlargest block no finding is holding in place. The opening paragraph\
+    \ is unchanged and sets as 3\nlines against a 9-line budget.\n\n## How the round-3 findings were cleared\n\
+    \n1. **[major] duplication, the blocked algorithm stated twice.** Cut, as the finding asked, not\n\
+    \   rewritten. The second sentence is gone whole. Its one contribution, the reason the mask is\n \
+    \  there, moved inside the surviving sentence's existing parenthesis:\n\n   > Inside a block I do\
+    \ real attention (the masked QKᵀ times V: every query against every key,\n   > masked so no token\
+    \ sees the ones after it), and across blocks I fold everything into the\n   > state and read it back\
+    \ with one matmul.\n\n   **I declined the suggested line.** It kept \"everything before the block\
+    \ arrives as one matrix\n   multiply against the running state\" in place of \"across blocks I fold\
+    \ everything into the state\n   and read it back with one matmul\", which would have deleted the author's\
+    \ sentence and kept the\n   synthesis's paraphrase of it. This sentence is voice-signature 2 and the\
+    \ densest thing in the\n   piece; the version that survives is his. The colon inside the parenthesis\
+    \ is doing the work the\n   deleted sentence used to do: notation first, then the plain-English unpacking,\
+    \ in one breath.\n\n   The round-2 notes argued that the gloss had to come *after* the voice sentence\
+    \ so the voice\n   kept the punch. That reasoning is what produced the duplication: a full restatement\
+    \ is not a\n   gloss. The rule to carry forward is that a gloss may name the thing the notation means,\
+    \ but as\n   soon as it repeats both halves of the sentence in the same order it is a second telling.\n\
+    \n   Net saving 25 words, which paid for the two minor repairs below.\n\n2. **[minor] orphan_referent,\
+    \ \"the paper\".** Took the suggestion at the first site: \"The linear\n   attention paper's O(N²)\
+    \ framing threw me off until I checked its date.\" The finding also names\n   the second site two\
+    \ paragraphs later, so \"The authors therefore rewrite\" is now \"The authors of\n   Parallelizing\
+    \ Linear Transformers with Delta Rule therefore rewrite\". Both names come from the\n   editor's note,\
+    \ which is the only place the four papers are listed, so the note is now\n   load-bearing for two\
+    \ referents rather than one. **Do not cut the editor's note as furniture.**\n\n3. **[minor] jargon,\
+    \ D undefined.** \"so the growing set of K and V vectors folds into a fixed D×D\n   state, where D\
+    \ is the head dimension and does not grow with the sequence.\" I kept the D×D\n   notation rather\
+    \ than spelling it \"of size D by D\", because the same notation returns one\n   paragraph later (\"\
+    added to the same D×D matrix\") and the reader should meet one spelling. \"Head\n   dimension\" rather\
+    \ than the suggestion's \"feature dimension\": the extraction's own code comment\n   reads `# L: sequence\
+    \ length, d: head dimension`, so this gloss is sourced rather than supplied.\n\n## Claim ladder\n\n\
+    Unchanged in substance from rounds 2 and 3; the full ladder is in the round-2 notes carried in the\n\
+    brief and nothing in the argument moved. **Hedges kept, none hardened:** \"can reduce accuracy\" /\n\
+    \"the practical loss depends on the architecture and workload\"; \"the cheapest in pure FLOP terms\n\
+    ... but not necessarily in wall-clock time\"; \"about seven hours\"; \"drew attention for one central\n\
+    claim\" and \"The authors presented it as\" and \"up to 6x\"; \"At first glance ... appear modest\"\
+    ;\n\"roughly 2%\"; \"can destabilize training\"; \"must inevitably discard information\"; \"does not\n\
+    directly apply\"; \"without some mathematical re-parameterization\".\n\n## Voice signature (verbatim,\
+    \ do not paraphrase)\n\n1. \"It took me about seven hours to develop a working understanding of it.\"\
+    \n2. \"Inside a block I do real attention (the masked QKᵀ times V), and across blocks I fold\n   everything\
+    \ into the state and read it back with one matmul.\" Now carries an inserted gloss\n   inside the\
+    \ parenthesis; the clause structure and every other word are the author's.\n3. \"That's what FlashAttention\
+    \ fixes...\" (the ellipsis is the beat; it is the whole joke)\n\nAlso carried: \"Twenty-two thousand\
+    \ five hundred and eighty.\", \"But is it just... scale?\", \"Scaling\nlaws remain relevant, but capacity\
+    \ must be added in the right place and in a form the system can\nuse.\", and the closing eviction-policy\
+    \ pair. Person is preserved both ways: \"I\" for the author's\nown struggle, \"we\" for author and\
+    \ reader walking the architecture.\n\n## What the piece is resting on\n\n- **The editor's note.**\
+    \ Antecedent for \"the linear attention paper\" and now for the delta-rule\n  paper's authors. Removing\
+    \ it re-orphans both.\n- **The three-paragraph shape of the block material** (prefill problem, block\
+    \ construction,\n  non-application to the delta rule). Compressing it back to two paragraphs reintroduces\
+    \ round-1's\n  qualification_loss and round-2's density finding.\n- **\"That block trick does not\
+    \ directly apply to the delta updates.\"** is the whole of round 1's\n  qualification repair. Anything\
+    \ that merges that paragraph into the one above loses it.\n- **The Schlag quotation is still the best\
+    \ thing left on the floor,** and there is measured room\n  for it. Left out for the fourth round running\
+    \ because it would be the third statement of\n  interference-at-capacity in three consecutive paragraphs.\
+    \ If a reviser restores it, cut the\n  \"regime that makes linear attention attractive\" sentence\
+    \ in the same move and name Schlag in the\n  editor's note.\n- **The closing line is an assertion\
+    \ by design.** \"The best selective-read mechanism we have is\n  still attention\" is the author's\
+    \ own claim from the extraction's last paragraph.\n- Flat fallbacks if a fact-checker ever queries\
+    \ the three connectives that are mine and not the\n  source's: \"one built-in inefficiency\" → \"\
+    GPT-2 is a decoder-only architecture, and decoder-only\n  generation is inefficient.\"; \"buys a better\
+    \ way to decide what to throw away\" → \"Every step\n  since GPT-2 spends its new capacity on learned\
+    \ selection.\"; \"until I checked its date\" → \"The\n  paper's O(N²) framing threw me off. I was\
+    \ reading it against the wrong year.\"\n\n## What was dropped, in the prompt's cut order\n\nUnchanged\
+    \ from rounds 2 and 3, plus this round's duplicate sentence. For the record:\n\n1. *Repeat examples.*\
+    \ The three-step decomposition of attention; the \"read back with the same key\"\n   worked example;\
+    \ the second sequential-prefill loop; the Schlag quotation; and now the second\n   statement of the\
+    \ blocked algorithm.\n2. *Evidence before claims.* The FLOP algebra (2Ld², 2LCd, 2L²d); C = 64 or\
+    \ 128 and UMMA; the\n   explicit reparameterized recurrence; the AttnRes formulas; GPT-2's config\
+    \ numbers; the SiTU\n   3x-slower unfused path; \"two ND reads and two 1D writes to HBM\".\n3. *Whole\
+    \ claims.* \"Q is also a learned pointer\" and the Wq/Wk explanation; gated MLA's mechanism;\n   the\
+    \ conventional-MoE router explanation; MLA query LoRA and output gating; the shared-expert\n   down/up\
+    \ projection; beta as a named per-token write strength; the @chloey3k credit; all X\n   chrome.\n\
+    4. *Qualifications and conclusions.* Nothing, in any round.\n\n**Code.** Every fenced block dropped\
+    \ whole, same reason as every previous round: `extracted.md` is\npdftotext output and every Python\
+    \ block is truncated at the right margin (`float('-i`,\n`# re-asse`, `k.size`). Character-for-character\
+    \ reproduction here means shipping broken code. A\nreviser who wants code must re-extract from the\
+    \ PDF.\n\n## Unresolved, for whoever owns the pipeline\n\nThe Format block mandates `source_ids` as\
+    \ a list; the shipped 004 article files carry `source_id`\n(singular). I followed the prompt, as rounds\
+    \ 2 and 3 did. `mag fit` accepts the list form. Also\nnote that `mag fit` without `--language en`\
+    \ now fails on stale `es` translations for every article\nin this edition; that is an edition-level\
+    \ problem, not this piece's."

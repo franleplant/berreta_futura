@@ -13,23 +13,23 @@ A better model would not have caught this. What was missing was the layer that d
 
 ## Thermometer, thermostat
 
-A company running agents in production changed no model, no prompts and no human nudges across successive versions, only the evals, and the scores moved across every dimension. Afterwards they said the evals should have been in the system on day one, not month nine.
+A company running agents in production changed no model, no prompts and no human nudges across successive versions, only the evals, and the scores moved across every dimension. Afterwards they said the evals should have been in the system on day one, and theirs had taken until month nine.
 
 A thermometer tells you the room is cold. A thermostat turns the heat on. Almost everyone building with AI owns a thermometer at best: a dashboard, or a feeling that things seem worse than last week. Eval engineering is the wiring that runs from the reading to the furnace.
 
-This arrived in a fixed order. One agent in a loop came first, so it could try, look at what came back, and try again. Then many agents laid out as a graph, so work that never depended on each other ran side by side instead of standing in line. Loops, then graphs, then evals. What the evals add is a return arrow: the verdict goes back into the graph and changes what runs next.
+The stack underneath it arrived in a fixed order. One agent in a loop came first, so it could try, look at what came back, and try again. Then many agents laid out as a graph, so work that never depended on each other stopped standing in line and ran side by side. Loops, then graphs, then evals. What the evals add is a return arrow: the verdict goes back into the graph and changes what runs next.
 
 The graph was the last upgrade that made you faster. The judge decides whether that speed was worth having: twenty agents reporting to one frozen judge is twenty times as many places for a wrong answer to look finished. It is also the only part of the system that gets more valuable every week you run it. The model is a rental; every failure you feed the examiner stays there permanently, and installing it costs almost nothing. You already own the engine: in a blind test, a coding agent on a subscription you pay for anyway beat two dedicated evaluation platforms at recovering an expert's hand-marked failures.
 
 ## What a score is allowed to do
 
-A number in a report has no path back to the run it measured. "A score that never changes behavior is analytics. An eval that changes the next edge is engineering." That is a 21-year-old founder in Tokyo with 258 followers; his post on it got two likes. His wiring is six rules, each doing something structural to the run in progress: a hallucination quarantines the branch it came from, a verified completion ends the run. All six are routing decisions the graph executes, and the eval steers the run mid-flight, one edge at a time.
+A number in a report has no path back to the run it measured. "A score that never changes behavior is analytics. An eval that changes the next edge is engineering." That is a 21-year-old founder in Tokyo with 258 followers; his post on it got two likes. An edge is one hop from one agent to the next. His wiring is six rules, each doing something structural to the run in progress: a hallucination quarantines the branch it came from, a verified completion ends the run. All six are routing decisions the graph executes, and the eval steers the run mid-flight, one edge at a time.
 
 The examiner issuing those verdicts needs hygiene of its own. Judge from another family, because a model recognizes its own writing and grades it kinder once it does. Never score on response length, keyword hits, citation count or exact phrasing: reward the shape and the agent learns the shape. Pin the judge's version, or a month of scores becomes unreadable. Even then, optimize against a judge long enough and the agent learns to look right rather than be right.
 
 ## Where the tests come from
 
-Tests you invent from imagination protect you from failures you already imagined. The ones that cost money are sitting in your logs right now, wearing a timestamp. Pull 25 complete traces, no more. The trace tells you what your agent did, never what it should have done, so the answer key comes from tests, records, policy or a person. Attribution is where beginners lose a week: the same lookup twice with identical arguments is your loop, and a 429 is somebody else's limit, yours only if the agent was supposed to recover from it.
+Tests you invent from imagination protect you from failures you already imagined. The ones that cost money are sitting in your logs right now, wearing a timestamp. Pull 25 complete traces, no more. Never treat the recorded answer as truth: a trace records what your agent did, and the answer key has to come from tests, records, policy or a person. Attribution is where beginners lose a week: the same lookup twice with identical arguments is your loop, and a 429 is somebody else's limit, yours only if the agent was supposed to recover from it.
 
 ## The gate that merges itself
 
@@ -41,6 +41,6 @@ The constraint is the product. A team ran 285 iterations of a self-improving cod
 
 ## An afternoon of work
 
-Three measurements, not twelve: faithfulness, tool parameter accuracy, response quality. Faithfulness is the one the travel agent failed while every other number looked fine. Grade the path and not only the answer: a correct result reached through a broken sequence passes when the final response is all you score.
+A suite that is too slow or too vague never gets run. Start with three measurements: faithfulness, tool parameter accuracy, response quality. Faithfulness is the one the travel agent failed while every other number looked fine. Score the whole path, because grading only the final response is how an agent reaches a correct answer through a broken sequence with nobody noticing.
 
 The model was never the interesting part. It is identical for everyone, and it will be replaced twice before the end of the year. Most people will go back to scrolling outputs on a Friday and deciding it feels about right. The ones who go first spend one afternoon wiring the thermostat, and then spend the next year with an agent that cannot break the same thing twice.

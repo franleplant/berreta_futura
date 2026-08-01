@@ -2,8 +2,8 @@ schema_version: 1
 edition_id: rerun-004-the-systems-around-the-model
 piece_id: mcp-protocol-update
 content_mode: faithful_synthesis
-status: drafting
-produced_at: '2026-08-01T20:15:50+00:00'
+status: passed
+produced_at: '2026-08-01T20:29:10+00:00'
 inputs_sha256: 3262d19b2b298f00fa4afd842dcfb24e6b9c41b9477eb63cb68447f1b35f6fbc
 manuscript_sha256: 71e8cd2d3a067f2457dd7daf15bf1efb86fb1ea98e7fc56adc4fba53baa9bad3
 rounds:
@@ -773,7 +773,7 @@ rounds:
     - "Nothing appears twice" is unclear about deliberate repetition of a qualifier. Read as a ban on
     repeated examples and sentences, not on repeated hedges.'
 - round: 2
-  result: changes_required
+  result: approved
   manuscript_sha256: 71e8cd2d3a067f2457dd7daf15bf1efb86fb1ea98e7fc56adc4fba53baa9bad3
   writer:
     role: writer
@@ -795,7 +795,268 @@ rounds:
     output_sha256: 748ae6a3fe7d6806de9b4b3b0fbd2c917eeea98fda0bec7e889ae6eff93653e6
   gate_failures: []
   anchors_reconciled: []
-  judges: {}
+  judges:
+    evidence:
+      result: approved
+      findings: []
+      scores:
+        claim_support: 5
+        qualification_survival: 4
+        quote_accuracy: 5
+        attribution: 5
+      notes: 'Checked every assertion against the complete
+
+        `the-2026-07-28-mcp-specification-release-candida-1a1752b8` extraction, with
+
+        clause-by-clause attention to the two sections that changed since round 1. The
+
+        restored "Tool schemas are now full JSON Schema 2020-12" section verifies
+
+        clause by clause against "Tool inputSchema and outputSchema are lifted to full
+
+        JSON Schema 2020-12 (SEP-2106). Input schemas keep the type: \"object\" root
+
+        constraint but now allow composition (oneOf, anyOf, allOf), conditionals, and
+
+        references ($ref, $defs). Output schemas are unrestricted, and
+
+        structuredContent can now be any JSON value rather than only an object.
+
+        Implementations must not auto-dereference external $ref URIs": the version
+
+        string, the root constraint, the unrestricted output schemas, the
+
+        structuredContent widening and the must-not on external `$ref` all match, and
+
+        the dropped composition examples are permitted omission. The relocated error
+
+        code paragraph is also correct and sits where the source puts it, under the
+
+        schema heading and introduced by "Separately": both `-32002` and `-32602
+
+        Invalid Params` match the extraction digit for digit, and the direction of the
+
+        change (MCP-custom to JSON-RPC standard) is not reversed. The deprecation
+
+        section it left behind still carries the annotation-only guarantee verbatim in
+
+        substance, "the methods, types, and capability flags keep working in this
+
+        release and in every specification version published within a year of it, and
+
+        removing any of them will require a separate SEP", and all three replacements
+
+        in the table are correctly paired with Roots, Sampling and Logging. Also
+
+        verified: the lede''s round-robin claim and "largest revision of the protocol
+
+        since launch"; the removed handshake and `Mcp-Session-Id`; `server/discover`;
+
+        the server-initiated request restriction with its recommended-now-required
+
+        framing; `InputRequiredResult` and the echoed `requestState`; the
+
+        explicit-handle pattern with `basket_id` and `browser_id` and the "often a
+
+        more powerful" wording, which keeps the source''s hedge; `Mcp-Method` and
+
+        `Mcp-Name`; `ttlMs` and `cacheScope`; the three W3C Trace Context key names;
+
+        the extensions framework, MCP Apps and the Tasks graduation including the
+
+        removal of `tasks/list` and the migration warning; the full authorization
+
+        block including RFC 9207, `iss`, `issuer`, `.well-known` and
+
+        `application_type` defaulting to "web"; and the governance and timeline
+
+        paragraphs including May 21, 2026, July 28, 2026 and the ten-week window.
+
+        Every identifier, version, date and error code in the manuscript appears
+
+        verbatim in the extraction. Two omissions were weighed and cleared: the schema
+
+        section drops "and should bound schema depth and validation time", and the
+
+        lifecycle sentence drops "with at least twelve months between deprecation and
+
+        the earliest possible removal". Neither strengthens the claim that remains,
+
+        and the year-long window is still stated in the preceding sentence. The
+
+        first-person voice and byline match the source''s two lead maintainers. What I
+
+        could not check: nothing outside the extraction was used, and the extraction is
+
+        complete for the single declared source.'
+      call:
+        role: evidence_judge
+        prompt_path: prompts/evidence-review.md
+        prompt_sha256: 2d368985eba3011b23c2f03fa926da4791a03975bd5ee4403ed6d8d19503d264
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - mcp-protocol-update/r2-evidence
+        - --work-sha256
+        - 1f7cf61fe3656fe0e1481c706c731893ff1d4b2046a2d05e54e059924fb66455
+        duration_seconds: 0.0
+        output_sha256: c5e83db34959594a9493487706269b3b55a2381bc908b992b480d6a54df34a9c
+    line:
+      result: approved
+      findings:
+      - severity: minor
+        article: mcp-protocol-update
+        locator: Stateless protocol, stateful applications | In practice, we've found that pattern often
+          a more powerful substitute for session state | 1
+        category: dead_words
+        note: 'The sentence does not parse on first pass. "we''ve found that pattern often
+
+          a more powerful substitute" is missing its copula, so "that pattern" first
+
+          reads as the start of a "found that ..." clause and the reader has to
+
+          restart at "often" to recover the object-complement reading. It is the
+
+          first sentence of the paragraph that makes the piece''s one genuinely
+
+          opinionated claim, so the stumble lands in a bad place. "often" is also
+
+          doing hedging work that "a more powerful substitute" already carries.'
+        suggestion: In practice, we've found that pattern a more powerful substitute for session state.
+      - severity: minor
+        article: mcp-protocol-update
+        locator: Extensions become first-class | They are now identified by reverse-DNS IDs | 1
+        category: passive
+        note: 'Fifty-five words and four coordinate predicates under one subject, and the
+
+          coordination changes voice halfway: "They are now identified by reverse-DNS
+
+          IDs, negotiated through an `extensions` map on client and server
+
+          capabilities, live in their own `ext-*` repositories with delegated
+
+          maintainers, and version independently of the specification, with a new
+
+          Extensions Track in the Specification Enhancement Proposal (SEP) process to
+
+          carry them from experimental to official." Items one and two are passive
+
+          participles hanging off "are", items three and four are active verbs
+
+          hanging off "They", and at "live" I had to go back to re-anchor the
+
+          subject. The trailing "with a new Extensions Track ..." clause then adds a
+
+          fifth idea after the list has already closed. This is the densest sentence
+
+          in the piece and it is where my attention dropped.'
+      - severity: minor
+        article: mcp-protocol-update
+        locator: How the protocol evolves from here | Our expectation is that implementers who target
+          | 1
+        category: dead_words
+        note: 'The last line of the piece opens on a nominalization. "Our expectation is
+
+          that implementers who target `2026-07-28` will not have to rewrite their
+
+          transport or lifecycle code" spends four words arriving at a verb the
+
+          sentence already had. The sentence is the reassurance the whole release
+
+          note is building toward, so it should be the tightest one here rather than
+
+          the slackest.'
+        suggestion: We expect implementers who target `2026-07-28` will not have to rewrite their transport
+          or lifecycle code to adopt what comes after it.
+      scores:
+        structure: 4
+        flow: 3
+        sentence_craft: 3
+        house_style: 5
+        voice_consistency: 4
+      notes: 'The opening is the best thing here and it now earns the whole piece: a
+
+        deployment that needed sticky sessions, a shared session store, and deep
+
+        packet inspection can run behind a plain round-robin load balancer. That is
+
+        concrete, it is a consequence rather than an announcement, and the reader
+
+        knows in one sentence why the release matters to them. Better, it sets two
+
+        debts and pays both: statelessness is explained under the first heading, and
+
+        the deep packet inspection is retired three sections later by the `Mcp-Method`
+
+        and `Mcp-Name` headers. The argument''s steps restate cleanly from one read:
+
+        the session is gone, your application can still be stateful, standard HTTP
+
+        infrastructure can now see what it needs, extensions get a process, auth
+
+        hardens, schemas open up, deprecations are annotations only, and here is the
+
+        timeline. No duplication: statelessness is stated four times but each time
+
+        doing different work (hook, mechanism, corollary, knock-on for Tasks), and no
+
+        example, number, or explanation repeats. No orphan referents; "they arrived
+
+        from opposite directions" delivers both directions, "Each has a listed
+
+        replacement" delivers three for three, and SEP is expanded before its bare
+
+        uses. No em dash, no curly quotes, sentence-case headings, no narrator
+
+        scaffolding, and the authorial "we" is consistent. The antithesis close that
+
+        this piece carried last edition is gone, and the ending is now a real answer
+
+        to "should I adopt this now" rather than a rhetorical flourish. What holds it
+
+        back is density. Three or four sentences in the back half run past fifty words
+
+        with four or five ideas stacked into them, the extensions one worst, and the
+
+        MCP Apps sentence and the "identified by reverse-DNS IDs" sentence sit in the
+
+        same paragraph. Nothing there is wrong, and every clause is carrying content,
+
+        which is why none of it rises above minor, but a reader on a seven-minute
+
+        budget will slow down for that section in a way they do not for any other. The
+
+        section headed "Load balancers can now route without reading the body" also
+
+        covers caching and trace propagation; the three do share a theme, metadata
+
+        moved where standard HTTP infrastructure can act on it, but the heading names
+
+        only the first of them.'
+      call:
+        role: line_judge
+        prompt_path: prompts/line-review.md
+        prompt_sha256: 262f28e51956608760ae5dbdde255ef7a5780f459e73cb3542d7ae6aae6ac8b4
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - mcp-protocol-update/r2-line
+        - --work-sha256
+        - ac520c3906366d4a6cd0e483773eab9efca00beadfd3da3f7d3c57bdc9dd5e6b
+        duration_seconds: 0.0
+        output_sha256: f5d28101bb8dcaeffdc5301b128453c1cb3f5067fe9a99018bee0c8d76e53ff0
   notes: "## Round 3 notes. Read these first; rounds 1 and 2 are below.\n\nThe claim ladder and voice\
     \ signature are unchanged from round 1 and are reproduced\nat the bottom. They are still the map of\
     \ this piece. What follows is only what\nround 3 changed.\n\n### The one structural change: the error\

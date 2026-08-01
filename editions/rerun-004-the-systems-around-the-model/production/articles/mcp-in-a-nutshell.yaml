@@ -2,8 +2,8 @@ schema_version: 1
 edition_id: rerun-004-the-systems-around-the-model
 piece_id: mcp-in-a-nutshell
 content_mode: in_a_nutshell
-status: drafting
-produced_at: '2026-08-01T20:15:46+00:00'
+status: passed
+produced_at: '2026-08-01T20:29:06+00:00'
 inputs_sha256: 35ded601fb061b672f74573dca32c45a11717d6e9aef137992bfddacbced3bb4
 manuscript_sha256: 1c3fb05fe4cdb22b7561106eca61106599ed9fa80cbae69a5837f817427b9f0a
 rounds:
@@ -500,7 +500,7 @@ rounds:
     \ verified from here. This\ndraft is close to round 1's body length, which rendered within the seven-page\n\
     budget, so `mag fit` should be run rather than trusted."
 - round: 2
-  result: changes_required
+  result: approved
   manuscript_sha256: 1c3fb05fe4cdb22b7561106eca61106599ed9fa80cbae69a5837f817427b9f0a
   writer:
     role: writer
@@ -522,7 +522,225 @@ rounds:
     output_sha256: b71b453657dd777c1f0a0ecf284916a247bec5493e314a30bbf209dd884f27af
   gate_failures: []
   anchors_reconciled: []
-  judges: {}
+  judges:
+    evidence:
+      result: approved
+      findings: []
+      scores:
+        claim_support: 4
+        qualification_survival: 4
+        quote_accuracy: 5
+        attribution: 5
+      notes: 'Checked every assertion in the manuscript against the complete
+
+        `architecture-overview-ce5cb1d1` extraction, with extra weight on the two
+
+        passages that changed since round 1. The new sentence "Collecting input is the
+
+        client''s own offer back, and the specification calls it elicitation" is
+
+        supported: the extraction lists Elicitation under "MCP also defines primitives
+
+        that clients can expose" and defines primitives as what "clients and servers
+
+        can offer each other", so calling it the client''s own offer is the source''s
+
+        own framing, and the discovery example''s `"elicitation": {}` client capability
+
+        supports the preceding "the client says up front whether it can collect input
+
+        at all". The rewritten deprecation passage still says deprecated and not
+
+        removed, matching "Deprecated: The following client primitives are deprecated
+
+        as of protocol version 2026-07-28" for Sampling and Logging; the replacement
+
+        advice ("call a language-model provider directly", "log to standard error or
+
+        through OpenTelemetry") tracks "New implementations should integrate directly
+
+        with LLM provider APIs" and "should log to stderr (stdio transport) or use
+
+        OpenTelemetry". The characterisation of sampling as lending the host''s model to
+
+        a server that wants "a completion written without carrying a model of its own"
+
+        matches the source''s model-independence rationale. Also verified: the one
+
+        client per server structure and the Visual Studio Code / filesystem example;
+
+        the three server primitives and the database schema/few-shot illustration; the
+
+        stateless `_meta` claims; mandatory `server/discover` versus optional calling,
+
+        the version-rejection fallback and the cacheable discovery response; the
+
+        tool-listing fields, unified registry, interception and content array; opt-in
+
+        subscription, no-reply notification, best-effort delivery and residual polling;
+
+        stdio versus Streamable HTTP, the Sentry example, optional event stream,
+
+        bearer tokens and API keys with OAuth preferred; the scope limitation that MCP
+
+        "does not dictate how AI applications use LLMs or manage the provided
+
+        context"; and the Tasks extension durable handle. Every version string,
+
+        method name and field name in the manuscript appears verbatim in the
+
+        extraction. Three places sit at the edge without crossing it, and I record them
+
+        rather than file them. "Deprecated is all it did. Both methods are still in the
+
+        protocol and both still work" is an inference from a deprecation notice the
+
+        extraction never pairs with a removal, and the extraction does still document
+
+        both methods as client features, so the inference holds; it is also the
+
+        reading the sibling piece takes, so there is no contradiction to flag.
+
+        "Notifications are opt-in" drops the source''s narrower "Change notifications
+
+        are opt-in", but the sentence sits inside a paragraph about a tool-list change
+
+        notice and the next clause names the subscription mechanism, so the scope is
+
+        clear in context. "Nothing waits on the connection while that work runs" is an
+
+        elaboration on the durable-handle sentence rather than a restatement of it.
+
+        What I could not check: nothing outside the extraction was consulted, and the
+
+        extraction is complete for the single declared source, so no assertion was left
+
+        unverifiable.'
+      call:
+        role: evidence_judge
+        prompt_path: prompts/evidence-review.md
+        prompt_sha256: 2d368985eba3011b23c2f03fa926da4791a03975bd5ee4403ed6d8d19503d264
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - mcp-in-a-nutshell/r2-evidence
+        - --work-sha256
+        - 0127666695c44e4eb3625deeffdc27883588db9afcd2d88ae0dbc264a1f38538
+        duration_seconds: 0.0
+        output_sha256: bb95b61b4450da1d6b9bf745cd22175ec1f0d9f88e4ff537c0d2270008e13570
+    line:
+      result: approved
+      findings:
+      - severity: minor
+        article: mcp-in-a-nutshell
+        locator: What the protocol declines to decide | Collecting input is not the only offer a client
+          makes | 1
+        repair_from: What the protocol declines to decide | The same restraint governs how it changes
+          | 1
+        category: missing_transition
+        note: 'The one place I had to go back a line. "The same restraint governs how it
+
+          changes" tells me the subject is now how the protocol evolves. The next
+
+          sentence, "Collecting input is not the only offer a client makes", reaches
+
+          back three sections to elicitation and starts enumerating client offers,
+
+          and I did not learn why those two offers were being listed until two
+
+          sentences later at "The 2026-07-28 version deprecated both of those". So
+
+          the paragraph''s real topic sentence is its fourth sentence, and the reader
+
+          holds the sampling and logging descriptions without a slot to put them in.
+
+          Nothing else in the piece makes the reader wait like this. Repairing it at
+
+          the pivot rather than at the topic sentence is enough: signal that an
+
+          example is coming and the two descriptions land as examples.'
+        suggestion: Take the other two offers a client makes.
+      scores:
+        structure: 5
+        flow: 4
+        sentence_craft: 5
+        house_style: 5
+        voice_consistency: 5
+      notes: 'This clears the explainer checks it was sent back for. The mental model is
+
+        the second paragraph, "The picture to keep in your head has two halves and one
+
+        wire", and it is complete by word 137, so a reader who stops at the first
+
+        heading can already explain MCP to a colleague: two ends, one wire, one fixed
+
+        message format, each end declaring what it can do. Every heading states an
+
+        idea rather than mirroring a table of contents ("The host keeps one client per
+
+        server", "Every request introduces itself", "What the protocol declines to
+
+        decide"), and no heading, section subject, or list item is a method or field
+
+        name. `server/discover`, `_meta`, tools, resources and prompts all arrive
+
+        after the plain-English description they name, which is the right order. One
+
+        running example carries the whole piece: Visual Studio Code and the team
+
+        database server, introduced under the first heading, given its three
+
+        primitives under the second, and walked end to end under "One morning on one
+
+        connection". That last section reuses the example rather than repeating an
+
+        explanation, which is the requirement working, not the duplication defect from
+
+        last edition. Sentry appears once, as the contrast case for transport, and the
+
+        database schema appears once. No orphan referents: the three kinds of thing a
+
+        server offers are all three delivered, and "The same restraint" and "one piece
+
+        of it" both resolve. No em dash, no curly quotes, sentence-case headings
+
+        throughout, no narrator scaffolding. No sentence shape repeats to a tic; the
+
+        short pivots ("Traffic is not all one way", "Deprecated is all it did",
+
+        "Growth happens sideways instead") are varied enough to read as rhythm. The
+
+        close, "A server that remembers nothing about you between requests is a server
+
+        you can hang up on and call back", lands on its own and echoes the
+
+        statelessness section without summarizing it. The single transition snag above
+
+        is the only place the piece asks for a second pass.'
+      call:
+        role: line_judge
+        prompt_path: prompts/line-review.md
+        prompt_sha256: 262f28e51956608760ae5dbdde255ef7a5780f459e73cb3542d7ae6aae6ac8b4
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - mcp-in-a-nutshell/r2-line
+        - --work-sha256
+        - d4afa9d0a0d83a8c197dd4b006ab5ffaf94f9b616b7737808a4686e825dd4682
+        duration_seconds: 0.0
+        output_sha256: d193d7862fc7b10d7f763caeb6a93242764c84d3f1c3388a40a81f2ba4467bd2
   notes: "```yaml\ncomprehension_questions:\n- What does MCP standardize, and what does it deliberately\
     \ leave alone?\n- Who are the three participants, and why is there one client per server?\n- What\
     \ are the three kinds of thing a server can offer, and what is each for?\n- How does either side find\

@@ -2,10 +2,10 @@ schema_version: 1
 edition_id: rerun-004-the-systems-around-the-model
 piece_id: factory-systems-problem
 content_mode: faithful_edit
-status: drafting
-produced_at: '2026-08-01T20:15:42+00:00'
+status: passed
+produced_at: '2026-08-01T20:48:45+00:00'
 inputs_sha256: 4a5df7542bcdd1c0a577dac20bf3a57fd9384037b8201799fc4c77cf503dec6a
-manuscript_sha256: dcb646aa777dc163333ee689c5b04b78b74b10855d2c09f751c470c9a27c9daa
+manuscript_sha256: c95e0e817833c44a8698badf0ea832c05fc95998305d0dc19a83193c1244df3e
 rounds:
 - round: 1
   result: changes_required
@@ -497,7 +497,282 @@ rounds:
     output_sha256: bf1ba5dc0417988a06edbed2fadd9a57a1f98dd704bb93f5e3de9d09731bec4e
   gate_failures: []
   anchors_reconciled: []
-  judges: {}
+  judges:
+    evidence:
+      result: changes_required
+      findings:
+      - severity: blocking
+        article: factory-systems-problem
+        locator: '- | all from 29 July 2026 | 1'
+        category: invented_claim
+        note: 'The editor''s note dates all three posts: "Three posts, all from 29 July
+
+          2026, printed in the order Huntley posted them." No date appears anywhere
+
+          in the three pinned extractions. The extractions carry post text only:
+
+          "software factories are super real but we need to be realistic...", "i
+
+          must stress that factories is not a token or llm problem...", and "second
+
+          hot take, as it seems the first hot take landed...". There is no
+
+          timestamp, no month, no year, and nothing from which 29 July 2026 could
+
+          be derived. A reader takes away a specific publication date that the
+
+          evidence does not carry.'
+      - severity: major
+        article: factory-systems-problem
+        locator: '- | printed in the order Huntley posted them | 1'
+        category: invented_claim
+        note: 'The note asserts that print order equals posting order. The extractions
+
+          contain no ordering information. The only sequencing signal anywhere is
+
+          the third post''s opening, "second hot take, as it seems the first hot
+
+          take landed", which establishes that some earlier hot take existed but
+
+          not which of the other two posts it was, nor that the token/llm post
+
+          preceded the service-bus post, nor that the software-factories post came
+
+          first. The claim may well be true; it cannot be checked against the
+
+          extraction, which the prompt treats as a finding rather than a pass.'
+      - severity: major
+        article: factory-systems-problem
+        locator: 'Where the problem lives | The third post takes that systems-engineering claim to one
+          system: the service bus. | 1'
+        category: unreached_conclusion
+        note: 'This editor''s note tells the reader that the service-bus post is Huntley
+
+          applying his systems-engineering thesis. The service-bus extraction never
+
+          mentions systems engineering, factories, or the preceding post. Its own
+
+          framing is "second hot take, as it seems the first hot take landed", and
+
+          its subject is prior art: "service busses are a solved problem and
+
+          there''s deep prior art in the spooky land of enterprise". The connective
+
+          intent - that post three is post two carried into one system - is the
+
+          magazine''s, not the source''s, and it also silently re-asserts the
+
+          unverified ordering flagged above ("The third post"). Note that the round
+
+          1 claim about what the "second hot take" counts from was deleted rather
+
+          than replaced in the body; nothing was invented at that site. The
+
+          replacement risk landed here instead, one paragraph earlier.'
+      scores:
+        claim_support: 3
+        qualification_survival: 5
+        quote_accuracy: 5
+        attribution: 4
+      notes: 'Checked all three extractions in full against every sentence of the
+
+        manuscript. The author prose is clean: the opening paragraph, "The stack
+
+        under the factory", "Where the problem lives", and "Steal from what already
+
+        works" reproduce the extracted text verbatim, including "<10 people",
+
+        "last six months", "last two years", the hedge "(but it is a piece of the
+
+        puzzle)", and the tool names mass transit, nservicebus, wcf, n8n,
+
+        @temporalio, @dotnet. The three numbered side-notes fold correctly: [1]
+
+        "almost lights out" into the first sentence as a parenthetical, [2] the
+
+        sandboxing/monorepo/ci-cd list onto "non-agent topics", and [3] the homelab
+
+        paragraph standing alone as the first post''s closing paragraph, which is
+
+        indeed the longest of the three. The third post''s own [1] side-note on wcf
+
+        is likewise folded accurately, though the editor''s note describes folding
+
+        only for the first post. The three section headings are editorial but none
+
+        is stronger than the text beneath it. What I could not check: any
+
+        publication date, the posting order of the three posts, and whether Huntley
+
+        intended the service-bus post as a continuation of the token/llm post - the
+
+        extractions contain no metadata of any kind, which is the basis of all three
+
+        findings above.'
+      call:
+        role: evidence_judge
+        prompt_path: prompts/evidence-review.md
+        prompt_sha256: 2d368985eba3011b23c2f03fa926da4791a03975bd5ee4403ed6d8d19503d264
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - factory-systems-problem/r2-evidence
+        - --work-sha256
+        - e01c61e29cdbd006f289e18f0c5d64e9f455443a5c8fd7fc0aa4caf20ada7335
+        duration_seconds: 0.0
+        output_sha256: 3bcf836b810ec44db056123e2ac12b124c58d306c40efa7e79fdd98f759875e8
+    line:
+      result: changes_required
+      findings:
+      - severity: major
+        article: factory-systems-problem
+        locator: 'Where the problem lives | The third post takes that systems-engineering claim to one
+          system: the service bus. | 1'
+        category: orphan_referent
+        note: 'Two ordinal series, three lines apart, counting different things and
+
+          never reconciled. The editor''s note says "The third post takes that
+
+          systems-engineering claim to one system: the service bus." A heading
+
+          intervenes, and then Huntley says "second hot take, as it seems the first
+
+          hot take landed." The reader stops and tries to make third and second be
+
+          the same number.
+
+
+          The clause "as it seems the first hot take landed" is real progress on
+
+          the old defect: the lede is plainly a hot take, so a reader can now map
+
+          "the first hot take" onto "they are selling bullshit" and carry on. What
+
+          undoes it is the new editor''s note directly above, which teaches the
+
+          reader to count posts one sentence before Huntley asks them to count hot
+
+          takes. Nothing in the piece says the two counts are different series, and
+
+          no hot take is ever labeled as one.
+
+
+          The repair is entirely in editor-owned text and does not touch Huntley''s
+
+          sentence: let the note carry both numbers, or drop the ordinal from the
+
+          note.'
+        suggestion: '**Editor''s note.** In his third post of the day, and his second hot take, that systems-engineering
+          claim lands on one system: the service bus.'
+      - severity: minor
+        article: factory-systems-problem
+        locator: '- | except the longest, which stands as that post''s closing paragraph | 1'
+        category: orphan_referent
+        note: 'The opening note points at a paragraph the reader cannot find. It
+
+          promises three posts "printed in the order Huntley posted them" and then
+
+          singles out a folded side-note that "stands as that post''s closing
+
+          paragraph", but the manuscript marks no boundary between the first post
+
+          and the second. Two of the three seams are invisible, the third gets its
+
+          own note, and the reader has no way to know that the first post ends at
+
+          the homelab paragraph. Either mark the seam or drop the clause: the
+
+          disclosure that the side-notes were folded in is the part that earns its
+
+          place, and the exception is the part that cannot be checked.'
+        suggestion: The numbered side-notes he hung on the first post are folded into the sentences they
+          mark, except the longest, which is printed whole.
+      - severity: minor
+        article: factory-systems-problem
+        locator: 'Where the problem lives | one system: the service bus | 1'
+        category: jargon
+        note: '"Service bus" carries the whole third section and the last line of the
+
+          piece, and it is never glossed. The editor''s note is the first place it
+
+          appears and the natural place to fix it, so this costs Huntley nothing. A
+
+          backend engineer will supply the meaning; the manager the house writes for
+
+          will get as far as "a queue thing" and then miss what the closing line is
+
+          actually about, because the punchline turns on a service bus being the
+
+          predictable part of the system. Four words in the note carry the rest of
+
+          the section, including mass transit, nservicebus and wcf.'
+        suggestion: 'one system: the service bus, the layer that routes work between services and is supposed
+          to behave the same way every time.'
+      scores:
+        structure: 4
+        flow: 3
+        sentence_craft: 4
+        house_style: 4
+        voice_consistency: 4
+      notes: 'The three posts hold together as one read, which is the hard part of this
+
+        mode and is largely done. The lede is the right opening: it is concrete, it
+
+        is rude, and "they are selling bullshit" earns the next paragraph without any
+
+        help. From there the order is recoverable in one pass. Factories are real but
+
+        uncracked, here is the stack you have to build and why you should build it at
+
+        home, the problem is systems and culture rather than tokens, and the
+
+        enterprise already solved the last piece so go steal it. The close, "don''t
+
+        make the entire service bus non-deterministic", lands and does not summarize.
+
+        All three headings are doing work. "Where the problem lives" is the best of
+
+        them, and it converts a sentence that would otherwise arrive from nowhere
+
+        into the pivot the piece needs. "Steal from what already works" says the idea
+
+        rather than naming the tools, which is right. Huntley''s lowercase, his
+
+        parentheticals, his "ugh. blog post time." all survive intact, and the editor
+
+        prose stays clearly outside the voice. What is left is apparatus, not prose.
+
+        The notes assert a structure of three posts that the page never shows, and
+
+        the newest of them starts a second numbering the reader cannot square with
+
+        Huntley''s own. That is one stumble in seven minutes, and it is in text the
+
+        editor owns outright.'
+      call:
+        role: line_judge
+        prompt_path: prompts/line-review.md
+        prompt_sha256: 262f28e51956608760ae5dbdde255ef7a5780f459e73cb3542d7ae6aae6ac8b4
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - factory-systems-problem/r2-line
+        - --work-sha256
+        - f8ba3b216e2df8cc4d2703d1b3177bbcc7dbd29739402ba7250cfa6a80dae5d8
+        duration_seconds: 0.0
+        output_sha256: e65f7a9135fea67c154a22374c718059f0e7e6954bbe0a90d9bd073cd8aae91e
   notes: '## Read this first
 
 
@@ -813,3 +1088,317 @@ rounds:
     has to be revalidated whenever the apparatus changes. That is what produced finding 3, and it is a
     one-line addition to the working-notes section: if you change how source annotations are handled,
     reread every note that mentions them.'
+- round: 3
+  result: approved
+  manuscript_sha256: c95e0e817833c44a8698badf0ea832c05fc95998305d0dc19a83193c1244df3e
+  writer:
+    role: writer
+    prompt_path: prompts/faithful-edit.md
+    prompt_sha256: 4bfde927141290210add43e4f23da73335d0ec38960f2634389e52e461db83d2
+    backend: agent
+    model: null
+    argv:
+    - mag
+    - produce
+    - rerun-004-the-systems-around-the-model
+    - --backend
+    - agent
+    - --submit
+    - factory-systems-problem/r3-writer
+    - --work-sha256
+    - 1b3d5d99ef892b8d6944d117c3e2d3d8ebe98288b4aa026e3a18c23eb08ed992
+    duration_seconds: 0.0
+    output_sha256: 2205eb1e47974fd1cc29afba1071cbebf032500c5f098033bba86db1d5b61a49
+  gate_failures: []
+  anchors_reconciled: []
+  judges:
+    evidence:
+      result: approved
+      findings: []
+      scores:
+        claim_support: 5
+        qualification_survival: 5
+        quote_accuracy: 5
+        attribution: 5
+      notes: 'Read all three pinned extractions in full, then checked the manuscript sentence by
+
+        sentence, including the frontmatter, the section headings and the surviving
+
+        editor''s note. The prior blocking finding is cleared: no publication date, no
+
+        posting order and no claim about when or in what sequence the three posts appeared
+
+        survives anywhere in the manuscript, and the deletion introduced nothing new. The
+
+        one remaining editor''s note makes four checkable claims and all four hold. "Three
+
+        separate posts by Huntley" matches the three declared source_ids and the byline
+
+        supplied as an input, and is consistent with the extractions'' own internal
+
+        evidence ("blog post time" in the second, "second hot take, as it seems the first
+
+        hot take landed" in the third). "Printed here as one piece" describes the artifact
+
+        in front of the reader. "The numbered side-notes he hung on his own sentences are
+
+        folded into them" is true of three of the four notes: [1] "almost lights out" folds
+
+        into the opening sentence as a parenthetical, [2] the sandboxing/monorepo list
+
+        folds in after a colon, and the wcf note "lots of bad memories here, not great tech
+
+        impl but the theory / education is generally on point" folds into the third post''s
+
+        sentence as a parenthetical, all three verbatim. "Except the longest, which is set
+
+        as a paragraph of its own" is also true: note [3], the homelab paragraph, is by a
+
+        wide margin the longest of the four and is the one set as a standalone paragraph.
+
+        As faithful_edit, the author prose is verbatim against the extractions throughout,
+
+        with no substitutions, no reordered clauses and no added connective claims; the
+
+        headings "The stack under the factory", "Where the problem lives" and "Steal from
+
+        what already works" are editorial labels that stay at or below the strength of the
+
+        text underneath them. On the reverse pass every hedge in the sources survives:
+
+        "we need to be realistic", "(and realistically failing)", "it isn''t cracked but
+
+        it''s a puzzle that''s being solved daily", "(but it is a piece of the puzzle)", and
+
+        the parenthetical qualifying wcf. Nothing in the manuscript lacks a supporting
+
+        passage, and there is nothing I was unable to check.'
+      call:
+        role: evidence_judge
+        prompt_path: prompts/evidence-review.md
+        prompt_sha256: 2d368985eba3011b23c2f03fa926da4791a03975bd5ee4403ed6d8d19503d264
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - factory-systems-problem/r3-evidence
+        - --work-sha256
+        - 48428716fec77aa4765a7854da9e9590fea8841caa138f85619f2796f6df6232
+        duration_seconds: 0.0
+        output_sha256: 8e24d8b37b4502cc94b5cb729d72e02ba37de1d53843ef7a813df950389d63c2
+    line:
+      result: approved
+      findings: []
+      scores:
+        structure: 4
+        flow: 4
+        sentence_craft: 3
+        house_style: 5
+        voice_consistency: 5
+      notes: 'The orphan is closed. Reading straight through, "second hot take, as it seems the first
+        hot take landed" now has a first hot take sitting immediately above it: "Where the problem lives"
+        is a single short section whose whole content is a take ("i must stress that factories is not
+        a token or llm problem"), and it ends on "ugh. blog post time.", which tells the reader a post
+        was written before the next one says the earlier one landed. Nothing intervenes between the two,
+        so the count the author asks for and the count the page supports are the same count, and I did
+        not have to go back a paragraph to find the referent. This is the sentence edition 004 shipped
+        broken, so I looked at it twice; it works here because the deletion removed the thing that was
+        interrupting it, not because the sentence changed. Of the two editor-authored elements that remain,
+        both hold up. The three headings are sentence case, state ideas rather than naming sources, and
+        each covers its whole section including the homelab paragraph, which "The stack under the factory"
+        earns through "learning the entire damn stack". The surviving note is visibly labeled and sits
+        at a clean break after the opening rant rather than inside it. No em dash anywhere, no narrator
+        scaffolding, and the author''s lowercase register is unbroken by the editorial capitalization,
+        which actually helps the headings and the note read as ours. Two residuals for the file rather
+        than for another round. The surviving note still says "Three separate posts", so a reader who
+        is counting posts has to notice that the hot takes are numbered against a different series than
+        the posts are; at 200 words and two headings of distance the priming has worn off, but if any
+        future note moves closer to that sentence the defect comes straight back. And the note''s last
+        clause, "except the longest, which is set as a paragraph of its own", points at a paragraph the
+        reader has no way to identify, which is harmless as provenance disclosure but promises a locatable
+        thing and does not deliver one. On the reading experience itself: the piece is four short bursts
+        and it is over quickly, which suits it, but the ending arrives on "don''t make the entire service
+        bus non-deterministic" with the force of a punchline rather than a conclusion. That is the author''s
+        own last line and not ours to move. sentence_craft at 3 reflects the source register, which is
+        a social post kept deliberately raw, not an editing failure.'
+      call:
+        role: line_judge
+        prompt_path: prompts/line-review.md
+        prompt_sha256: 262f28e51956608760ae5dbdde255ef7a5780f459e73cb3542d7ae6aae6ac8b4
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - factory-systems-problem/r3-line
+        - --work-sha256
+        - af58f7e91f99343e9e431ce23ceae02b1d37f4d7ab0f70fc900a0b2bdbb9700e
+        duration_seconds: 0.0
+        output_sha256: 6f6762d0ccb034408be7ba6fc9dd6c09fc0d69678eb4c66c7f4cd19f539890f9
+  notes: "## Read this first\n\nThree things will bite the next reviser, and none of them is visible from\
+    \ the findings.\n\n1. **This publication cannot render footnotes.** `src/magazine/publication_document.py`\
+    \ builds its parser as `MarkdownIt(\"commonmark\")` with no plugins, so `[^1]` markers print as literal\
+    \ text and the definitions come out as paragraphs beginning `[^1]:`. A round was spent discovering\
+    \ this; the markers are now refused by a deterministic gate and Huntley's `[n]` annotations are resolved\
+    \ inline for good. **Do not reintroduce footnote syntax in any form.** The only devices available\
+    \ are parentheses, a run-in after a colon, or a paragraph of their own, which is what the manuscript\
+    \ uses.\n2. **The one remaining editor's note is the only place in the piece that describes the piece.**\
+    \ Any change to how the `[n]` annotations are handled has to change that note in the same edit. A\
+    \ previous round left the note describing apparatus that had already been removed, and that was a\
+    \ major finding.\n3. **The fact-checker's evidence base is the three `extracted.md` files and nothing\
+    \ else.** Everything true that lives in `record.yaml` is, for this contract, unverifiable. See \"\
+    The date and the order\" below before you write a word about when or in what sequence these posts\
+    \ appeared.\n\n## What round 3 changed\n\nSix findings. The whole delta is one note rewritten and\
+    \ one note deleted. **Not one character of Huntley's text changed**, and not one heading changed:\
+    \ the three headings cleared findings 4 and 5 last round and were untouched this round. Editor-authored\
+    \ text is now 37 words in one note, label included, plus 17 words of headings.\n\n### Findings 1 and\
+    \ 2, the date and the posting order (blocking, major)\n\nBoth clauses are gone. The note now reads:\n\
+    \n> **Editor's note.** Three separate posts by Huntley, printed here as one piece. The numbered side-notes\
+    \ he hung on his own sentences are folded into them, except the longest, which is set as a paragraph\
+    \ of its own.\n\nEvery clause is checkable against something a judge holds: three pinned sources,\
+    \ three posts; \"printed here as one piece\" is self-evident on the page; the disposition of the annotations\
+    \ is checkable against the manuscript itself.\n\n**The date and the order.** They are not wrong, they\
+    \ are out of contract. `library/sources/<id>/record.yaml` carries `publication_date: 2026-07-29` for\
+    \ all three, and the X status ids (2082525589416923314, 2082526705160478906, 2082576563439312982)\
+    \ are monotonic in time, so the print order is the posting order and the same 1-2-3 as `source_ids`\
+    \ in `edition.yaml`. My predecessor established this properly and printed the date because \"the date\
+    \ is a field a checker can read\". **That reasoning is the defect.** The checker cannot read it: the\
+    \ pinned evidence for a `faithful_edit` fact-check is `extracted.md`, and the three captures contain\
+    \ no timestamp, no month and no year. A researched claim the evidence base cannot reach is indistinguishable,\
+    \ to the judge and therefore to the reader, from an invented one.\n\nSo: **do not put the date or\
+    \ the posting order back into the note, however well you have sourced it.** If a future round wants\
+    \ them printed, the fix is upstream — pin `record.yaml` into the evidence sent to the fact-checker,\
+    \ or quote the date from a source that carries it — not a better-worded note. The information is preserved\
+    \ here, in scratch, precisely so nobody has to rediscover it and nobody is tempted to print it.\n\n\
+    The prompt's hard rule \"keep each post's text intact and in a declared order\" is still honoured:\
+    \ the declaration is the `source_ids` list in the frontmatter, which is in print order and is machine-checkable.\
+    \ The note no longer claims that order is chronological, because the note cannot.\n\n### Finding 3,\
+    \ the bridge that reached a conclusion the source never draws (major)\n\nDeleted, not rewritten. The\
+    \ note said \"The third post takes that systems-engineering claim to one system: the service bus.\"\
+    \ The service-bus capture never mentions systems engineering, factories, or the post before it; the\
+    \ connection is the magazine's. It also smuggled the ordering claim back in through \"The third\"\
+    .\n\n**There is no rewrite of this note that survives.** Anything that links post 3 to post 2 asserts\
+    \ a link the third capture does not make; anything that says \"third\" re-asserts the order. A hedge\
+    \ (\"appears to take\", \"reads as\") is the editor speculating inside a labeled note that the reader\
+    \ takes as established, which is the same defect wearing a coat. The two posts sit next to each other\
+    \ and adjacency is allowed to suggest what the magazine may not assert. Post 2 has a heading and no\
+    \ note in front of it for the same reason, and post 3 now matches it.\n\n### Finding 4, the two ordinal\
+    \ series (major)\n\nCleared by the same deletion. The line editor's diagnosis was exact: \"as it seems\
+    \ the first hot take landed\" is Huntley's own repair of the old dangling ordinal — the lede is plainly\
+    \ a hot take, so the reader maps \"the first hot take\" onto \"they are selling bullshit\" and carries\
+    \ on — and what broke it was the new note teaching the reader to count *posts* three lines above he\
+    \ asks them to count *hot takes*. Removing the note removes the second series. **That clause of Huntley's\
+    \ is load-bearing; it is also his, so it was never at risk from an editor, but note here that it is\
+    \ doing the work an editor must not do again.**\n\nI declined the suggested line (\"In his third post\
+    \ of the day, and his second hot take, ...\"). It reconciles the two counts, but it reinstates the\
+    \ ordinal, the day, and the post-to-post link — three cleared findings to clear one.\n\nThe surviving\
+    \ note says \"Three separate posts\" (a cardinal, in the first thing the reader meets) and never counts\
+    \ them off. The line editor's finding pinned the orphan on the new note, not on this one, which sits\
+    \ two pages earlier and was in the failing draft unchanged.\n\n### Finding 5, the invisible seam (minor)\n\
+    \n\"which stands as that post's closing paragraph\" is gone. The manuscript marks no boundary between\
+    \ post 1 and post 2, so the reader could not find the paragraph the note pointed at. It now says \"\
+    which is set as a paragraph of its own\", which describes something the reader can see on the page\
+    \ without knowing where any post ends.\n\nI also widened \"he hung on the first post\" to \"he hung\
+    \ on his own sentences\". The old wording was inaccurate: post 3 carries a `[1]` annotation (\"lots\
+    \ of bad memories here...\") that is folded the same way, which the round 2 fact-checker noticed in\
+    \ passing without filing it. Full disposition of all four, for verification:\n\n| source marker |\
+    \ sits at | disposition |\n|---|---|---|\n| post 1 `[1]` \"almost lights out.\" | \"software factories\"\
+    \ | parenthetical at the marker; trailing full stop dropped |\n| post 1 `[2]` the stack list | \"\
+    non-agent topics\" | run-in after a colon replacing the full stop |\n| post 1 `[3]` the homelab exhortation\
+    \ | \"innovators\" | own paragraph, last in the section (the longest, 60 words) |\n| post 3 `[1]`\
+    \ \"lots of bad memories here...\" | \"wcf\" | parenthetical at the marker |\n\n`[3]` is the one that\
+    \ did not go to its marker: 60 words of second-person career advice cannot sit as a parenthetical\
+    \ inside \"the innovators are toying around\". It is also physically last in the capture, so leaving\
+    \ it last is the least movement available.\n\n### Finding 6, \"service bus\" unglossed (minor, deliberately\
+    \ not cleared)\n\n**Declined, and this is the call most likely to be reversed by someone who has not\
+    \ read the precedent.** The suggested gloss is \"the layer that routes work between services and is\
+    \ supposed to behave the same way every time\". Nothing in the three captures says a service bus routes\
+    \ work between services. The captures say service busses are \"a solved problem\" with \"deep prior\
+    \ art\", name four implementations, and say don't make one non-deterministic. A gloss is a claim,\
+    \ and an editor-supplied definition inside a labeled note is exactly the shape of defect this piece\
+    \ was penalised for one round ago: **the n8n gloss (\"the visual workflow-automation tool\") was struck\
+    \ as an invented claim by this same evidence judge, for this same reason, in the round before last.**\
+    \ Trading a minor jargon finding for a repeat of a cleared evidence finding is a bad trade, and the\
+    \ note that would have carried the gloss is the note findings 3 and 4 required me to delete.\n\nThe\
+    \ route to a glossed service bus is a fourth source that defines one, not an editor who knows what\
+    \ it is. Same standing answer as n8n: an unglossed proper noun costs the reader a moment; an invented\
+    \ descriptor costs the magazine its label.\n\n### Finding 8 from round 2, the collapsing conditional\
+    \ (still not cleared, on purpose)\n\nLeft exactly as Huntley wrote it, including the full stop that\
+    \ severs \"they are selling bullshit\" from its protasis. Restating the warning because it is the\
+    \ most likely thing to get \"fixed\" by accident: **changing that full stop to a comma would repair\
+    \ the grammar and would also be the single most defensible-looking rewrite in the piece, which is\
+    \ what makes it dangerous.** It is not an extraction error; the capture is a verbatim DOM export and\
+    \ his posts read this way. Do not fix it without asking him; if house style ever forces it, the change\
+    \ is one character and it must be disclosed.\n\n## The delta against the captures\n\nUnchanged from\
+    \ last round, because no author text was touched. Every word of all three posts is on the page, in\
+    \ source order, with no transitions written in his voice. The entire difference between the manuscript's\
+    \ author text and the captures is punctuation at the two annotations set as parentheses and the one\
+    \ set as a run-in:\n\n- opening parenthesis before \"almost\", and the full stop after \"lights out\"\
+    \ dropped (a parenthetical inside a sentence cannot carry one);\n- full stop after \"non-agent topics\"\
+    \ became a colon, so the stack list runs in;\n- opening parenthesis before \"lots\", and the full\
+    \ stop after \"generally on point\" dropped, same reason as the first.\n\nThe check that proves it:\
+    \ diff the manuscript's author text against the three `extracted.md` files as whitespace-token multisets\
+    \ with the `[n]` markers and the frontmatter removed. **363 tokens each side**, and the only tokens\
+    \ that differ are `(almost` / `almost`, `out)` / `out.`, `topics:` / `topics.`, `(lots` / `lots`,\
+    \ `point)` / `point.` Rerun it after any edit to the author text; it is ten lines of Python and it\
+    \ is the only cheap proof this mode is still being honoured.\n\nKept deliberately:\n\n- **Lowercase\
+    \ throughout the author's text.** All three posts are all-lowercase. The heading and the note are\
+    \ sentence case, which makes editorial apparatus separable from author text at a glance.\n- **`@dotnet`\
+    \ and `@temporalio` as handles.** A line editor once called them platform residue and they are, but\
+    \ they are how he names .NET and Temporal. Swapping them changes his wording and should be logged\
+    \ as a wording change if house style demands it.\n- **Verbatim:** \"they are selling bullshit\", \"\
+    the spooky land of enterprise\", \"ugh. blog post time.\", \"the entire damn stack\", \"rn\", \"ie.\"\
+    , \"wanna\", \"<10\", \"who's-who\", the \"!\" in \"(ie. they are likely startups created in last\
+    \ six months!)\", \"not great tech impl\", and the spaced slash in \"theory / education\".\n- **Curly\
+    \ apostrophes (U+2019)** exactly as in the extractions, so a word-for-word diff stays clean.\n- **No\
+    \ chrome to remove.** All three extractions are clean DOM transcriptions.\n- **No U+2014 anywhere**\
+    \ (banned tic 7), no antithesis close, no summarising final paragraph, no narrator scaffolding in\
+    \ the note.\n\nWhy the editor's word count is the point of this piece's whole history: the shipped\
+    \ edition-004 version was a paraphrase wearing the `FAITHFUL EDIT` label, and its most-praised line,\
+    \ \"WCF gives me bad memories,\" was written by an editor in Huntley's person; the source says \"\
+    lots of bad memories here\" inside an annotation. It passed review because it sounded like him. **If\
+    \ a later reviser finds a fluent connective sentence in Huntley's voice anywhere in this piece, someone\
+    \ put it there and it is not his.**\n\n## Length and fit\n\nManuscript body is 417 words: 363 of Huntley,\
+    \ 37 words of editor's note, 17 words of headings. The opener paragraph measures **7 of 7 typeset\
+    \ lines, 479 characters** — it fits, with no slack:\n\n    printf '%s' \"<paragraph>\" | \\\n    \
+    \  uv run --locked mag fit rerun-004-the-systems-around-the-model --opener factory-systems-problem\n\
+    \nIt is post 1's first three sentences, breaking at the full stop after \"they are selling bullshit.\"\
+    \ **It is at the ceiling, so if anything upstream changes the title, the byline or the credit block,\
+    \ remeasure before assuming it still passes**; the only legal shortening is to break the opener one\
+    \ sentence earlier, at \"practices and pieces.\", which splits a paragraph of his.\n\n`faithful_edit`\
+    \ cannot fill a 7-page slot from 363 words of source, and the brief's page budget is not an instruction\
+    \ to write more. The routes are (1) capture more Huntley on this subject — in particular the blog\
+    \ post promised by \"ugh. blog post time.\" and whatever the first hot take turns out to be — then\
+    \ run `faithful_synthesis`; (2) an `original_editorial` that quotes these three and does the developing\
+    \ in the magazine's voice; or (3) ship at ~417 words and give the pages to something else. Recommendation\
+    \ is (1) if capture is possible, (3) if not. Never padding.\n\nRoute (1) is also the only real fix\
+    \ for the silences this round enforced. The three canonical URLs are near-consecutive status ids on\
+    \ one account on one afternoon: anything on `x.com/GeoffreyHuntley` between 2082525589416923314 and\
+    \ 2082576563439312982 is a candidate for the first hot take, and anything after 2082576563439312982\
+    \ is a candidate for the promised blog post.\n\n## Prompt and docs gaps worth fixing upstream\n\n\
+    1. **The evidence base for a `faithful_edit` fact-check should include `record.yaml`, or the prompt\
+    \ should tell the writer it does not.** Two rounds have now been spent on a writer correctly researching\
+    \ publication metadata and then printing something the judge structurally cannot verify. That is the\
+    \ single highest-value fix on this list.\n2. `faithful-edit.md` says both \"never reorder the argument\"\
+    \ and \"keep each post's text intact and in a declared order\". Across posts these pull opposite ways.\
+    \ It should say: within-post order is frozen; across-post order is publication order when it is recoverable\
+    \ *and verifiable*, and otherwise the editor's, declared in the frontmatter rather than asserted to\
+    \ the reader.\n3. The prompt has a page ceiling and no floor. Add: if the combined captures cannot\
+    \ fill the assigned budget, the piece is under-sourced, and the remedy is more sources or a different\
+    \ mode, never padding.\n4. `docs/DESIGN_SYSTEM.md` should state outright that the opener paragraph\
+    \ has no word window. A plausible-sounding 40-60 word rule was invented in an earlier round and moved\
+    \ the whole article into the wrong order before anyone checked it.\n5. `docs/DESIGN_SYSTEM.md` should\
+    \ also record that the renderer's markdown is `MarkdownIt(\"commonmark\")`, so footnotes, strikethrough\
+    \ and tables are unavailable to every article.\n6. Nothing in the prompts tells a writer that an editor's\
+    \ note describing the manuscript's apparatus has to be revalidated whenever the apparatus changes,\
+    \ and nothing tells a writer that a gloss is a claim. Both produced findings in this piece's history;\
+    \ both are one line each in the working-notes section."
