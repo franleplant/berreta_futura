@@ -39,6 +39,7 @@ from magazine.produce_prompts import (
 )
 from magazine.production_record import piece_record_path
 from magazine.runner import CommandResult, RunnerConfig, resolve_text_runner
+from magazine.staging_marker import is_staging_marker
 
 from test_manifest import (
     add_curated_figure,
@@ -1204,6 +1205,52 @@ class RealGateTests(ProduceFixture):
         second = self.command.briefs("writer", "article")[1]
         self.assertIn("code_blocks", second)
         self.assertIn("does not appear in any pinned source extraction", second)
+
+    def test_a_fully_staged_edition_is_still_produce_s_input(self):
+        """Every piece a marker is the first run, not a state to refuse.
+
+        ``validate`` now refuses a staged piece, and produce reaches validate
+        through its own edition gate.  That has to stay a reported pre-existing
+        failure rather than a stop: the gate names pieces this writer cannot
+        clear, and produce is the command that clears them.
+        """
+
+        edition_dir = self.root / "editions" / "issue-001"
+        (edition_dir / "articles" / "article.md").write_text(
+            "---\nsource_ids:\n- source-one\ncontent_mode: faithful_edit\n"
+            "label: EDITORIAL WORK REQUIRED\nstage_status: todo\n---\n\n"
+            "TODO(editor): Replace this staging marker with a source-faithful "
+            "manuscript. No source prose was generated.\n",
+            encoding="utf-8",
+        )
+        (edition_dir / "editorial.md").write_text(
+            "---\ntitle: Untitled editorial\nbyline: The Editors\n"
+            "label: EDITORIAL WORK REQUIRED\nstage_status: todo\n---\n\n"
+            "TODO(editor): Replace this staging marker with a source-faithful "
+            "manuscript. No source prose was generated.\n",
+            encoding="utf-8",
+        )
+
+        result = production(
+            self.magazine, self.command, gates=DefaultProductionGates(self.magazine)
+        ).run("issue-001")
+
+        self.assertEqual(
+            [(outcome.piece_id, outcome.status) for outcome in result.outcomes],
+            [("article", "passed"), ("editorial", "passed")],
+        )
+        self.assertTrue(
+            any(
+                "pre-existing gate failure (validate)" in action
+                and "staging markers" in action
+                for action in result.human_actions
+            ),
+            result.human_actions,
+        )
+        self.assertFalse(is_staging_marker(edition_dir / "articles" / "article.md"))
+        self.assertFalse(is_staging_marker(edition_dir / "editorial.md"))
+        # And the edition it hands back validates, which is the whole point.
+        self.assertEqual(self.magazine.validate("issue-001").id, "issue-001")
 
 
 class TranslationDriftTests(unittest.TestCase):

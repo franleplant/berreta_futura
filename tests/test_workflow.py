@@ -1478,6 +1478,43 @@ def test_production_blocks_on_a_staging_marker_and_names_produce(tmp_path: Path)
     assert not report.release_ready
 
 
+def test_production_blocks_on_the_editorial_marker_that_reached_the_page(
+    tmp_path: Path,
+):
+    """The shape that got through: a marker whose body is a real paragraph.
+
+    ``rerun-004``'s editorial carried a title, a byline and a paragraph, so it
+    typeset like any short opening note.  Status has to name it as undrafted
+    for the same reason ``validate`` now refuses it -- the frontmatter says so.
+    """
+
+    _make_project(tmp_path, extraction=True, complete_art=True)
+    (tmp_path / "editions" / EDITION_ID / "editorial.md").write_text(
+        "---\n"
+        "label: EDITORIAL WORK REQUIRED\n"
+        "title: Untitled editorial\n"
+        "byline: The Editors\n"
+        "stage_status: todo\n"
+        "---\n\n"
+        "TODO(editor): Replace this staging marker with a source-faithful "
+        "manuscript. No source prose was generated.\n",
+        encoding="utf-8",
+    )
+
+    report = Workflow(tmp_path, adapter=GuardAdapter()).status(EDITION_ID)
+
+    production = report.checkpoint("production")
+    assert report.next_checkpoint.id == "production"
+    assert production.details["undrafted_pieces"] == ["editorial"]
+    assert production.details["pieces"]["editorial"]["staging_marker"]
+    assert not production.details["pieces"]["article"]["staging_marker"]
+    assert production.next_action.classification == "authorial"
+    assert production.next_action.command == (
+        f"uv run --locked mag produce {EDITION_ID}"
+    )
+    assert not report.release_ready
+
+
 def test_production_blocks_on_an_outstanding_agent_ready_set(tmp_path: Path):
     """The front door names the loop, so a driver never has to invent one."""
 

@@ -3,6 +3,12 @@
 The module's public seam is :func:`parse_publication_document`.  Adapters get a
 stable, presentation-neutral document tree and do not need to know about YAML
 frontmatter or markdown-it-py's token stream.
+
+:func:`split_frontmatter` is the narrower seam for the callers that must read a
+manuscript's metadata even when its body will not parse -- a staged slot whose
+body is still an HTML comment has frontmatter worth reading and no document to
+build from.  Every caller reads frontmatter through one of the two, so the rules
+for what counts as frontmatter are stated once.
 """
 
 from __future__ import annotations
@@ -120,7 +126,7 @@ def parse_publication_document(markdown: str) -> PublicationDocument:
     closing YAML delimiter at the start of the file.  An unclosed ``---`` remains
     Markdown content rather than silently deleting reader-visible text.
     """
-    metadata, body = _split_frontmatter(markdown)
+    metadata, body = split_frontmatter(markdown)
     tokens = _MARKDOWN.parse(body)
     blocks, next_index = _parse_blocks(tokens)
     if next_index != len(tokens):  # Defensive: _parse_blocks must consume all input.
@@ -128,7 +134,15 @@ def parse_publication_document(markdown: str) -> PublicationDocument:
     return PublicationDocument(metadata=metadata, blocks=blocks)
 
 
-def _split_frontmatter(markdown: str) -> tuple[Mapping[str, object], str]:
+def split_frontmatter(markdown: str) -> tuple[Mapping[str, object], str]:
+    """Separate a manuscript's frozen YAML frontmatter from its Markdown body.
+
+    Frontmatter is removed only when an opening delimiter is paired with a
+    closing one at the start of the file; an unclosed ``---`` is content.  The
+    body is returned unparsed, so a caller can read metadata off a file whose
+    body :func:`parse_publication_document` would reject.
+    """
+
     lines = markdown.splitlines(keepends=True)
     if not lines or lines[0].rstrip("\r\n") != "---":
         return MappingProxyType({}), markdown

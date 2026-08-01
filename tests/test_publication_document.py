@@ -157,7 +157,15 @@ def test_parser_refuses_to_drop_unsupported_block_semantics():
 
 def test_existing_edition_manuscripts_parse_through_the_public_interface():
     root = Path(__file__).resolve().parents[1]
-    manuscripts = sorted((root / "editions").glob("**/*.md"))
+    # `production/` is the produce loop's working area: agent briefs and the
+    # replies they are answered with. Those are transcripts of authoring, not
+    # reader-visible prose, and they legitimately carry Markdown the renderer
+    # refuses. Only manuscripts have to parse.
+    manuscripts = sorted(
+        path
+        for path in (root / "editions").glob("**/*.md")
+        if "production" not in path.relative_to(root / "editions").parts
+    )
 
     assert manuscripts
     for manuscript in manuscripts:
