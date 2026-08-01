@@ -3,9 +3,9 @@ edition_id: rerun-004-the-systems-around-the-model
 piece_id: mcp-in-a-nutshell
 content_mode: in_a_nutshell
 status: drafting
-produced_at: '2026-08-01T19:24:31+00:00'
+produced_at: '2026-08-01T20:15:46+00:00'
 inputs_sha256: 35ded601fb061b672f74573dca32c45a11717d6e9aef137992bfddacbced3bb4
-manuscript_sha256: 80521b3d1d09202f50245f1e86b79aaff7a8c07f0a56ca3fe8f28e327f97cbfb
+manuscript_sha256: 1c3fb05fe4cdb22b7561106eca61106599ed9fa80cbae69a5837f817427b9f0a
 rounds:
 - round: 1
   result: changes_required
@@ -28,11 +28,390 @@ rounds:
     - fd7690f9f687c85e35aeac1c9652517b60c667dd5f1e96c1f5fed032f5f0e35a
     duration_seconds: 0.0
     output_sha256: db8333a84aa6501c5874be7eb9ddb6f9625f7d1c127ed98c5c2be8f8b7198ecd
-  gate_failures:
-  - 'fit: Article pragmatic-leverage''s opening paragraph cannot fit its illustrated opener page at compact
-    density; shorten that paragraph rather than splitting the opener'
+  gate_failures: []
   anchors_reconciled: []
-  judges: {}
+  judges:
+    evidence:
+      result: approved
+      findings: []
+      scores:
+        claim_support: 5
+        qualification_survival: 5
+        quote_accuracy: 5
+        attribution: 5
+      notes: 'Checked every assertion against the single pinned architecture-overview
+
+        extraction. The participant model is right: host as the AI application that
+
+        coordinates and manages clients, one client per server each holding a
+
+        dedicated connection, Visual Studio Code as the worked example, a second
+
+        client instantiated for the local filesystem server. The three server
+
+        primitives map onto the extraction''s database example exactly, tools for
+
+        actions, a resource for the schema, a prompt carrying few-shot examples, and
+
+        "primitives" is glossed as what the two sides can offer each other, which is
+
+        the extraction''s own wording. Elicitation is described as the extraction has
+
+        it, servers requesting more information or confirmation of an action, with
+
+        the client declaring the elicitation capability. Statelessness is accurate:
+
+        protocol version, request-relevant capabilities and, unless configured
+
+        otherwise, client identity riding in _meta; server/discover mandatory for
+
+        servers but optional for clients; version rejection listing the versions the
+
+        server does support; the discovery response typically cacheable. The morning
+
+        walkthrough tracks the example steps, tool-list fields (name, description,
+
+        input schema), the unified registry, the application intercepting and routing
+
+        the call, the content array with text as one of several types, opt-in change
+
+        notifications via a long-lived subscriptions/listen stream, no reply expected,
+
+        and best-effort delivery that can be lost across a reconnect, so clients
+
+        should still poll. The transport paragraph is correct: stdio for local
+
+        processes with no network overhead, Streamable HTTP posts for the Sentry
+
+        server running on Sentry''s own platform, optional event stream, bearer tokens
+
+        or API keys with OAuth recommended, local typically one client and remote
+
+        typically many, and "server" saying nothing about where the program runs. The
+
+        deprecation passage was checked closely. The extraction says the client
+
+        primitives Sampling and Logging "are deprecated as of protocol version
+
+        2026-07-28" and continues to describe both in the present tense with their
+
+        live methods and with "new implementations should" guidance. The manuscript
+
+        says the version deprecated two client-side abilities, that a server can
+
+        still borrow the host''s model for a completion and still send log lines for
+
+        debugging, that both methods remain in the protocol, and that what changed is
+
+        the advice for new code. That states deprecation and does not imply removal,
+
+        which is what the extraction supports. The Tasks extension sentence matches
+
+        the extraction''s durable handle for long-running requests with later polling
+
+        and retrieval. Scope restraint ("does not dictate how AI applications use
+
+        LLMs or manage the provided context") survives. The closing image about a
+
+        server you can hang up on and call back is a restatement of statelessness,
+
+        not a new claim. Nothing required checking outside the extraction.'
+      call:
+        role: evidence_judge
+        prompt_path: prompts/evidence-review.md
+        prompt_sha256: 2d368985eba3011b23c2f03fa926da4791a03975bd5ee4403ed6d8d19503d264
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - mcp-in-a-nutshell/r1-evidence
+        - --work-sha256
+        - ca2ca28c0d178c6d7ef3acbdba9887e794b9d1ada43c6c7b78569dc434fd7ac6
+        duration_seconds: 0.0
+        output_sha256: 494e189949ebe7c1d82e1428644393438d6bb55979d3b199979360fc96dc62e7
+    line:
+      result: changes_required
+      findings:
+      - severity: major
+        article: mcp-in-a-nutshell
+        locator: What the protocol declines to decide | The 2026-07-28 version deprecated two | 1
+        category: orphan_referent
+        note: '"The 2026-07-28 version deprecated two of the abilities a client can
+
+          offer." The reader has no list of abilities a client can offer. The
+
+          explainer has built one very clear picture in which servers offer things,
+
+          three of them, named and worked through, and the client''s only declared
+
+          ability is the one mentioned in passing, that "the client says up front
+
+          whether it can collect input at all". So "two of the abilities" points at
+
+          a set the page never made, and the two are never named here either. The
+
+          next sentence then makes it worse by flipping the direction: "A server can
+
+          still borrow the host''s model for a completion, and can still send log
+
+          lines to the client for debugging." Those are servers doing things, and
+
+          one of them, a server borrowing the host''s model, directly contradicts the
+
+          mental model the piece opened with, where the AI application "owns the
+
+          model" and the server owns "some corner of the outside world". The single
+
+          idea a reader was given to hold is broken in the last section, in a
+
+          sentence about a deprecation, with no acknowledgement that it is being
+
+          broken. Either name the two and own the fact that traffic runs both ways
+
+          here, or cut the paragraph.'
+        suggestion: 'The 2026-07-28 version deprecated two things a client used to offer a server: the
+          loan of the host''s model for a completion, and a channel for the server''s log lines.'
+      - severity: major
+        article: mcp-in-a-nutshell
+        locator: What the protocol declines to decide | It loses nothing by going away, because nothing
+          was being held for it. | 1
+        repair_from: What the protocol declines to decide | Growth happens sideways instead. | 1
+        category: ending
+        note: 'The last line of the piece is the one a reader carries out, and this one
+
+          has no subject. "It loses nothing by going away, because nothing was being
+
+          held for it." What loses nothing? The nearest nouns are an extension, a
+
+          durable handle, a client, a result and a request, and none of them is
+
+          what the sentence means, which is the connection. The reader has to
+
+          reverse-engineer the subject from the sentence after it, "A server that
+
+          remembers nothing about you between requests is a server you can hang up
+
+          on and call back", which is the good line and would land cleanly on its
+
+          own. The paragraph also arrives with no transition from the one above it:
+
+          "Growth happens sideways instead. An extension lets a server hand back a
+
+          durable handle for slow work" is about async work, and then the piece
+
+          simply changes subject to statelessness for its final two sentences. Name
+
+          the subject and the close works.'
+        suggestion: A connection loses nothing by going away, because nothing was being held for it.
+      - severity: major
+        article: mcp-in-a-nutshell
+        locator: What a server is allowed to offer | And it can supply a worked template for talking to
+          it | 1
+        category: repeated_cadence
+        note: 'Two shapes, one rhythm. The first is three consecutive sentences of
+
+          identical build: "It can do something on request, running a query or
+
+          taking any other action with an effect in the world. It can hand over
+
+          material to read, the schema for instance, which is context and nothing
+
+          more. And it can supply a worked template for talking to it, few-shot
+
+          examples showing a model how to drive those queries." The second is the
+
+          three-item list, which is the piece''s default unit of thought and appears
+
+          six times: "Rows in a database, the schema that explains them, the
+
+          contents of a file, whatever an API would say if asked"; "owns the model,
+
+          the conversation, and every decision about what to do with what it
+
+          learns"; "names these three tools, resources and prompts"; "The protocol
+
+          version the client speaks, the capabilities relevant to that request and,
+
+          unless configured otherwise, who the client is"; "a unique name to call it
+
+          by, a description of what it does and when to use it, and a schema for its
+
+          arguments"; "Connecting, framing and authorizing belong to that outer
+
+          layer". Three of those name real triples the protocol actually has and are
+
+          fine. The other three are the tic, and the accumulation flattens the
+
+          difference, so tools/resources/prompts, which the reader must remember,
+
+          sounds exactly like connecting/framing/authorizing, which is decoration.
+
+          Breaking the anaphora at its third beat is the cheapest place to start.'
+        suggestion: Last, it can supply a worked template for talking to it, few-shot examples showing
+          a model how to drive those queries.
+      - severity: major
+        article: mcp-in-a-nutshell
+        locator: The host keeps one client per server | Each client holds a connection dedicated to one
+          server and nothing else. | 1
+        category: duplication
+        note: 'The second paragraph of the section restates the first. "It builds a small
+
+          component, a client, whose only job is to hold one connection to that one
+
+          server and pull context back for the host. Connect a second server, say
+
+          the filesystem server on the same laptop, and the host builds a second
+
+          client, one to one." Then, immediately: "Each client holds a connection
+
+          dedicated to one server and nothing else. The host is the only place those
+
+          connections meet, and managing them is its job." "whose only job is to
+
+          hold one connection to that one server" and "holds a connection dedicated
+
+          to one server and nothing else" are the same sentence twice, and "the AI
+
+          application that coordinates connections" in the paragraph above is
+
+          already "managing them is its job". One clause in those two sentences is
+
+          new, that the host is where the connections converge, and it is worth
+
+          keeping. The rest is the seam of two source chunks and costs the reader a
+
+          re-read to confirm nothing was added.'
+        suggestion: The host is the only place those connections meet, and managing them is its job.
+      - severity: minor
+        article: mcp-in-a-nutshell
+        locator: One morning on one connection | Connecting, framing and authorizing belong to that outer
+          layer | 1
+        category: orphan_referent
+        note: '"that outer layer" is a definite reference to something the piece has not
+
+          introduced. The word "layer" appears nowhere before this sentence. The
+
+          paragraph has been talking about standard input and output, HTTP posts,
+
+          event streams and bearer tokens, so a reader can reconstruct that the
+
+          outer layer means the transport, but it costs a beat at the sentence that
+
+          is trying to land the piece''s cleanest distinction, between what the
+
+          protocol is and what carries it. One noun fixes it.'
+        suggestion: Connecting, framing and authorizing belong to the transport around the protocol, and
+          the protocol proper never looks at it.
+      - severity: minor
+        article: mcp-in-a-nutshell
+        locator: What a server is allowed to offer | names these three tools, resources and prompts |
+          1
+        category: house_style
+        note: '"The specification names these three tools, resources and prompts, and
+
+          groups them as primitives, meaning what the two sides can offer each
+
+          other." Without a colon the sentence first parses as "names these three
+
+          tools", and the reader gets as far as "resources and prompts" before
+
+          backing up. This is the one sentence in the piece that hands over the
+
+          three words a reader is meant to repeat to a colleague, so it is the worst
+
+          possible place to make them read twice. The tail is overloaded too: the
+
+          same sentence names the three, gives their collective name, and defines
+
+          that name, which is three jobs after a stumble.'
+        suggestion: 'The specification names these three: tools, resources and prompts. It groups them
+          as primitives, meaning what the two sides can offer each other.'
+      - severity: minor
+        article: mcp-in-a-nutshell
+        locator: One morning on one connection | array of content, plain text here, though the format
+          carries other types too | 1
+        category: dead_words
+        note: '"The result comes back as an array of content, plain text here, though the
+
+          format carries other types too, and goes into the conversation as material
+
+          for the next turn." Subject and its second verb are separated by two
+
+          stacked asides, and the middle one is a hedge about formats the piece
+
+          never uses and does not need. This is the payoff sentence of the running
+
+          example, the moment the tool call becomes something the model can read,
+
+          and it is the slowest sentence in the section.'
+        suggestion: The result comes back as an array of content, plain text here, and goes into the conversation
+          as material for the next turn.
+      scores:
+        structure: 4
+        flow: 3
+        sentence_craft: 3
+        house_style: 4
+        voice_consistency: 4
+      notes: 'The explainer checks pass, and they pass well. The passage that lets a reader
+
+        explain MCP to a colleague is the second paragraph, "The picture to keep in
+
+        your head has two halves and one wire", and it closes at word 139, inside the
+
+        first 150 and nowhere near the end. Every heading states an idea rather than
+
+        mirroring a specification''s contents: "The host keeps one client per server",
+
+        "Every request introduces itself", "What the protocol declines to decide". One
+
+        running example, Visual Studio Code in front of a team''s database, is
+
+        introduced in the first section, supplies the three primitives in the second,
+
+        and runs the whole of "One morning on one connection", with the Sentry server
+
+        used once as a contrast rather than as a second example. No method or field
+
+        name is a section''s subject, and there is not a bulleted list in the piece;
+
+        `server/discover` and `_meta` appear inside sentences that explain what they
+
+        are for. So the hard part of an explainer is done. What is left is assembly
+
+        and sentence work. The one-client-per-server rule is stated twice in
+
+        consecutive paragraphs, the piece thinks in threes often enough that the
+
+        triples that matter sound like the ones that do not, and the last section
+
+        breaks its own picture by having a server borrow the host''s model, in a
+
+        sentence about deprecations, with no warning. Then the close arrives without a
+
+        subject, one word short of landing a genuinely good final image.'
+      call:
+        role: line_judge
+        prompt_path: prompts/line-review.md
+        prompt_sha256: 262f28e51956608760ae5dbdde255ef7a5780f459e73cb3542d7ae6aae6ac8b4
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - mcp-in-a-nutshell/r1-line
+        - --work-sha256
+        - 5ee7c4c8b5759ef694d481448baf7c8314ab77b3f8be921ec60fa32bae260772
+        duration_seconds: 0.0
+        output_sha256: 724511b01d8dc102fa605a19951308cd43eff0fa2499348a0ca66c169d05e7a8
   notes: "```yaml\ncomprehension_questions:\n- What does MCP standardize, and what does it deliberately\
     \ leave alone?\n- Who are the three participants, and why is there one client per server?\n- What\
     \ are the three kinds of thing a server can offer, and what is each for?\n- How does either side find\
@@ -120,3 +499,127 @@ rounds:
     \ hard rule 5 forbids it and the extraction\ndoes not support it. Also still true: length cannot be\
     \ verified from here. This\ndraft is close to round 1's body length, which rendered within the seven-page\n\
     budget, so `mag fit` should be run rather than trusted."
+- round: 2
+  result: changes_required
+  manuscript_sha256: 1c3fb05fe4cdb22b7561106eca61106599ed9fa80cbae69a5837f817427b9f0a
+  writer:
+    role: writer
+    prompt_path: prompts/in-a-nutshell.md
+    prompt_sha256: ba81ba374de19a57d0f0bf4532561d560a19b9172c6aaaa099fa881905502424
+    backend: agent
+    model: null
+    argv:
+    - mag
+    - produce
+    - rerun-004-the-systems-around-the-model
+    - --backend
+    - agent
+    - --submit
+    - mcp-in-a-nutshell/r2-writer
+    - --work-sha256
+    - b5c4a97f204753593bbdab889cfc37384028677474bc475dcd6fdfb735641a8d
+    duration_seconds: 0.0
+    output_sha256: b71b453657dd777c1f0a0ecf284916a247bec5493e314a30bbf209dd884f27af
+  gate_failures: []
+  anchors_reconciled: []
+  judges: {}
+  notes: "```yaml\ncomprehension_questions:\n- What does MCP standardize, and what does it deliberately\
+    \ leave alone?\n- Who are the three participants, and why is there one client per server?\n- What\
+    \ are the three kinds of thing a server can offer, and what is each for?\n- How does either side find\
+    \ out what the other supports, and is asking mandatory?\n- Why does the choice of transport not change\
+    \ the protocol messages?\n- What follows from MCP being stateless, for requests and for change notifications?\n\
+    ```\n\nThe six questions are unchanged from round 2. They were never the problem and the novice judge\
+    \ has already been handed them.\n\n## What round 3 changed, finding by finding\n\n**1. orphan_referent,\
+    \ \"two of the abilities a client can offer\" (major).** This\nwas the repair the whole round turned\
+    \ on, and it is worth understanding why the\nround-2 sentence failed, because the obvious patch reopens\
+    \ the blocking\ndeprecation finding from round 1.\n\nThe piece builds exactly one menu, the server's,\
+    \ and works it three ways. The\nclient's side of the wire is present in round 2 only as a subordinate\
+    \ clause\n(\"the client says up front whether it can collect input at all\"), so \"two of the\nabilities\
+    \ a client can offer\" pointed at a set that was never made, and then\nnamed neither of them. The\
+    \ next sentence made the direction flip invisible: \"A\nserver can still borrow the host's model for\
+    \ a completion\" has the server as\nsubject, which reads as the server owning a model, and the mental\
+    \ model in\nparagraph two says the AI application owns the model.\n\nThe fix was made two sections\
+    \ earlier, not in the deprecation paragraph. The\nelicitation paragraph now ends \"Collecting input\
+    \ is the client's own offer back,\nand the specification calls it elicitation.\" That single word\
+    \ \"offer\" opens a\nclient-side menu the reader can then be told has more on it. The deprecation\n\
+    paragraph opens \"Collecting input is not the only offer a client makes\", names\nboth, and keeps\
+    \ the client as the grammatical subject of both: the client\n**lends** the host's model, the client\
+    \ **takes** log lines. Lending presupposes\nowning, so the sentence now reinforces the mental model\
+    \ instead of breaking it.\n\n**Do not reverse those subjects back to the server.** \"A server can\
+    \ borrow the\nhost's model\" is the same sentence semantically and it is the one that broke the\n\
+    piece.\n\n**Keep the three deprecation signals separate**, inherited from round 1 and still\nload-bearing:\
+    \ (a) \"The 2026-07-28 version deprecated both of those\"; (b)\n\"Deprecated is all it did. Both methods\
+    \ are still in the protocol and both still\nwork\"; (c) the advice is scoped to new code. The sibling\
+    \ piece in this issue,\n`mcp-protocol-update`, says the same thing in the authors' own words\n(\"\
+    annotation-only deprecations\", \"keep working ... within a year\"). If either\npiece drifts toward\
+    \ removal the issue contradicts itself across two pages. That\npiece is the reference because its\
+    \ source states the policy; this one only has\nthe word \"deprecated\".\n\nNote the present tense\
+    \ throughout. An earlier attempt at this paragraph ran \"The\nclient's side of the menu used to be\
+    \ longer\", which is a removal claim wearing\npast tense. Everything about these two abilities is\
+    \ present tense on purpose.\n\n**2. ending, \"It loses nothing by going away\" (major).** The orphaned\
+    \ subject was\nthe connection. Named it, and built a bridge that earns the jump from the\ndurable-handle\
+    \ extension to statelessness: \"Nothing waits on the connection while\nthat work runs, so the connection\
+    \ can go away and cost nobody anything.\" The\nkicker survives word for word for the third round and\
+    \ is now its own one-sentence\nparagraph, which is the only change to it.\n\nI declined the reviewer's\
+    \ line (\"A connection loses nothing by going away\") only\nbecause it clears the referent without\
+    \ clearing the second half of the finding,\nthe missing transition from the async extension. My sentence\
+    \ does both.\n\n**3. repeated_cadence, three \"It can\" beats plus six triples (major).** Two\nseparate\
+    \ repairs.\n\nThe anaphora in \"What a server is allowed to offer\" now runs \"It can take an\naction\
+    \ on request\", \"Then there is material to read\", \"Last comes a worked\ntemplate\". Three different\
+    \ sentence engines. The reviewer's suggestion only broke\nthe third beat; breaking the second as well\
+    \ is what stops the paragraph sounding\nlike a list.\n\nThe triple count went from six to three, and\
+    \ the three that remain are all real\nprotocol triples:\n- tools, resources and prompts (must stay,\
+    \ it is what the reader repeats)\n- the tool-list entry fields (name, description, schema)\n- nothing\
+    \ else\n\nCut or reduced to pairs: the opener's four-item sweep is now three prepositional\nphrases\
+    \ joined by \"or ... or\", which reads as a sweep rather than an inventory;\n\"owns the model, the\
+    \ conversation, and every decision\" lost its middle item;\nthe `_meta` bundle is now two sentences\
+    \ instead of a three-item list;\n\"Connecting, framing and authorizing\" is now \"Making the connection\
+    \ and proving\nwho you are\". **If a later round needs words back, do not restore any of these as\n\
+    triples.** The accumulation is what flattened tools/resources/prompts into\nsounding like decoration.\n\
+    \n**4. duplication, the one-client-per-server section (major).** Round 2 said the\nsame thing in two\
+    \ paragraphs. The section is one paragraph now. Two things went:\nthe second statement of the dedicated\
+    \ connection, and the appositive \"the AI\napplication that coordinates connections\", which pre-stated\
+    \ \"managing them is its\njob\" four sentences early. The appositive is replaced by \"the specification\
+    \ calls\nVisual Studio Code the host, the AI application at that end of the wire\", which\ndoes the\
+    \ term-introduction job (concept first, term second) without the\nduplication. The only new clause\
+    \ from round 2, that the host is where the\nconnections converge, is kept as the section's last sentence.\n\
+    \n**5. orphan_referent, \"that outer layer\" (minor).** \"Layer\" appeared nowhere else\nin the piece,\
+    \ so the noun is gone rather than glossed: \"belong to the transport\nunderneath, and the protocol\
+    \ proper never looks down there\". This also killed a\ntriple, see finding 3.\n\n**6. house_style,\
+    \ the garden path (minor).** Took the suggestion, both halves. The\ncolon stops the misparse and the\
+    \ second sentence carries the collective name and\nits definition, which is one job per sentence at\
+    \ the exact point the reader is\nbeing handed three words to memorize.\n\n**7. dead_words, the result\
+    \ sentence (minor).** Took the suggestion. Losing\n\"though the format carries other types too\" does\
+    \ not reopen round 2's\ninvented_claim finding on this sentence, because that finding was about the\n\
+    typicality claim \"text in the ordinary case\"; \"plain text here\" scopes the claim\nto this one\
+    \ call and asserts nothing about what is typical.\n\n## Colon count\n\nOne in the whole manuscript,\
+    \ \"The specification names these three:\", and it is\nthere because finding 6 asked for it. Round\
+    \ 1 shipped ten instances of\nassertion-colon-expansion, and the house ban on the em dash pushes that\n\
+    construction hard every time you revise. Count colons before delivering.\n\n## What the piece rests\
+    \ on, unchanged and still load-bearing\n\n- **Mental model at word 59**, \"two halves and one wire\"\
+    . Round 1 landed it at 62,\n  round 2 at 61. The 150-word rule is what forces the whole structure.\
+    \ Any rewrite\n  of the opening paragraph must keep the count under about 70, and the opening\n  paragraph\
+    \ also has a hard 702-character limit because it is set on the\n  illustrated opener page.\n- **Five\
+    \ headings, five claims about the world.** None is a source section name.\n  The source's contents\
+    \ run Scope, Participants, Layers, Data layer, Transport\n  layer, Statelessness and discovery, Primitives,\
+    \ Notifications, Example, and\n  mirroring them is the exact failure the anti-exemplar was written\
+    \ against.\n- **One running example.** Visual Studio Code plus the database server, in every\n  section.\
+    \ The filesystem server is one beat in section one. Sentry is one clause\n  in the walkthrough and\
+    \ is the piece's single permitted second example, present\n  only to draw the remote contrast. The\
+    \ source's weather tool and its San\n  Francisco call stay out: importing them creates a second running\
+    \ example.\n- **Two method names survive**, `server/discover` and `_meta`, both inside\n  sentences,\
+    \ neither a section subject.\n\n## Inherited and still unresolved\n\nThe source tells no history,\
+    \ so the problem is stated structurally in the opening\nparagraph. Hard rule 5 forbids reconstructing\
+    \ a before-state of bespoke\nconnectors and the extraction does not support one. An earlier draft\
+    \ of the\nopener had \"and do that the same way tomorrow for a different tool\", which is\nthat history\
+    \ in disguise; it was cut for that reason.\n\nLength still cannot be verified from here. This draft\
+    \ is 1,110 body words against\nround 2's 1,101, which was itself close to round 1's body length, and\
+    \ round 1\nrendered inside the seven-page budget. The repairs above cost about thirty-five\nwords\
+    \ and I took them back out of the discovery paragraph, the `_meta` bundle and\nthe walkthrough, none\
+    \ of which lost a claim. Run\n`mag fit rerun-004-the-systems-around-the-model` rather than trusting\
+    \ any of\nthis. If it overruns, the cheapest cut is the cacheability sentence in \"Every\nrequest\
+    \ introduces itself\"; the most expensive would be anything in the\ndeprecation paragraph, which is\
+    \ now three rounds of repair deep.\n\nFrontmatter follows the manifest, not the prompt template: `source_ids`\
+    \ as a\none-entry list, `content_mode: in_a_nutshell`. The prompt's own template shows a\nsingular\
+    \ `source_id` and it is wrong; a manual downstream correction was\noverwritten by the pipeline in\
+    \ round 1, so it has to be right in the reply."

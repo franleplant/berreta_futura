@@ -304,14 +304,21 @@ class Piece:
     key_ideas: tuple[str, ...] = ()
     has_opener_art: bool = True
     opener_intro_lines: int = 0
-    opener_intro_characters: int = 0
+    opener_intro_safe_characters: int = 0
     """The illustrated opener's opening-paragraph budget, measured.
 
-    Zero means the piece has no illustrated opener and no such constraint.
-    Non-zero is a hard limit the build enforces and previously stated nowhere:
+    Zero ``opener_intro_lines`` means the piece has no illustrated opener and
+    no such constraint.  Non-zero is the hard limit the build enforces:
     see :func:`~magazine.weasyprint_adapter.illustrated_opener_intro_budget`.
-    ``characters`` is an estimate of the same measurement in a countable unit,
-    and is zero when there was no prose sample to derive it from.
+
+    ``opener_intro_safe_characters`` is a length a writer can count towards
+    while drafting, deliberately *below* the line limit rather than at it, and
+    zero when there was no prose sample to derive it from.  It is not a second
+    rule and must never be briefed as one: the line count is what the gate
+    reads, and a paragraph over the character floor may still be perfectly
+    legal.  The floor exists because the figure that used to sit here was the
+    other kind of wrong -- an optimistic estimate a writer could stay under and
+    still overrun.
     """
 
     @property
@@ -425,14 +432,15 @@ def compose_writer_prompt(prompt: PromptFile, brief: WriterBrief) -> str:
         parts.append(f"- Byline: {piece.byline}")
     parts.append(f"- Page budget: {piece.max_pages} rendered A5 reader page(s)")
     if piece.opener_intro_lines:
-        about = (
-            f", about {piece.opener_intro_characters} characters"
-            if piece.opener_intro_characters
+        floor = (
+            f"; write to about {piece.opener_intro_safe_characters} characters "
+            "and you are safe"
+            if piece.opener_intro_safe_characters
             else ""
         )
         parts.append(
             f"- Opening paragraph budget: {piece.opener_intro_lines} typeset "
-            f"line(s){about}"
+            f"line(s){floor}"
         )
     if piece.key_ideas:
         parts.append("- Key ideas box (editor furniture, do not restate verbatim):")
@@ -447,18 +455,42 @@ def compose_writer_prompt(prompt: PromptFile, brief: WriterBrief) -> str:
             "This piece opens on an illustrated page that sets the art, the "
             "label, the title, the credit block and your first paragraph "
             f"together. The paragraph gets what is left: {piece.opener_intro_lines} "
-            "typeset line(s)"
-            + (
-                f", which is roughly {piece.opener_intro_characters} characters "
-                "of prose like your source's"
-                if piece.opener_intro_characters
-                else ""
+            "typeset line(s), measured for this article's own title and byline "
+            "rather than as a rule of thumb. That line count is the whole "
+            "limit and the only thing checked. A first paragraph over it does "
+            "not wrap to the next page: the build refuses the edition, and the "
+            "piece costs a round. Write a shorter opening paragraph and put "
+            "the rest in the second one."
+        )
+        parts.append("")
+        if piece.opener_intro_safe_characters:
+            parts.append(
+                "Lines are hard to feel while drafting, so here is a length to "
+                f"aim at: {piece.opener_intro_safe_characters} characters. That "
+                "is a floor, not the limit -- it is set low enough that prose "
+                "of this length has always fitted, so under it you need not "
+                "think about the constraint again. It is not a second rule, "
+                "and going over it is not a failure; it only means the line "
+                "count is no longer guaranteed and is worth checking. Do not "
+                "count characters to decide whether something fits."
             )
-            + ". The number is measured for this article's own title and "
-            "byline, so it is not a rule of thumb. A first paragraph over it "
-            "does not wrap to the next page: the build refuses the edition, "
-            "and the piece costs a round. Write a shorter opening paragraph "
-            "and put the rest in the second one."
+            parts.append("")
+        parts.append(
+            "To check a candidate paragraph exactly, without a build and "
+            "without a model call, pipe it to the gate's own arithmetic:"
+        )
+        parts.append("")
+        parts.append(
+            "```\n"
+            "printf '%s' \"<your opening paragraph>\" | \\\n"
+            f"  uv run --locked mag fit {brief.edition_id} --opener {piece.id}\n"
+            "```"
+        )
+        parts.append("")
+        parts.append(
+            "It prints the line count it would set as, and the lines "
+            "themselves so you can see which one overflowed. Use it rather "
+            "than reproducing the wrapping by hand."
         )
         parts.append("")
 

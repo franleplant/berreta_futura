@@ -3,9 +3,9 @@ edition_id: rerun-004-the-systems-around-the-model
 piece_id: factory-systems-problem
 content_mode: faithful_edit
 status: drafting
-produced_at: '2026-08-01T19:24:31+00:00'
+produced_at: '2026-08-01T20:15:42+00:00'
 inputs_sha256: 4a5df7542bcdd1c0a577dac20bf3a57fd9384037b8201799fc4c77cf503dec6a
-manuscript_sha256: 300644471a712a7142067d4b9c0a92509a878e4e7b848d1543106239475210fb
+manuscript_sha256: dcb646aa777dc163333ee689c5b04b78b74b10855d2c09f751c470c9a27c9daa
 rounds:
 - round: 1
   result: changes_required
@@ -28,11 +28,302 @@ rounds:
     - 8cd6b41e7d53f88622f3241060ae48849085146b8349e8d3cfe7bfbd0f196b7e
     duration_seconds: 0.0
     output_sha256: cac60b8be9c2712bb4964928d3386cee37ca7720d95132fd3f89675c1ce8d461
-  gate_failures:
-  - 'fit: Article pragmatic-leverage''s opening paragraph cannot fit its illustrated opener page at compact
-    density; shorten that paragraph rather than splitting the opener'
+  gate_failures: []
   anchors_reconciled: []
-  judges: {}
+  judges:
+    evidence:
+      result: changes_required
+      findings:
+      - severity: major
+        article: factory-systems-problem
+        locator: Factories are not a token or llm problem | Its "second" counts from an earlier post the
+          captures do not identify. | 1
+        category: invented_claim
+        note: 'The third extraction says only "second hot take, as it seems the first hot
+
+          take landed." Nothing in any of the three captures says which post that
+
+          first hot take was. The note converts that silence into a positive
+
+          assertion, that the referent sits outside the captured set, and the two
+
+          captures printed immediately above it are the obvious candidates: all three
+
+          records carry publication_date 2026-07-29, and their status ids
+
+          (2082525589416923314, 2082526705160478906, 2082576563439312982) place them
+
+          in exactly the printed order. So the reader is told to look for an absent
+
+          post while two same-day predecessors by the same author sit on the page.
+
+          The note also contradicts itself: its first sentence reads the third post as
+
+          "that systems-engineering claim worked out on one system", which is the
+
+          reading in which the first hot take is the captured second post.'
+      - severity: minor
+        article: factory-systems-problem
+        locator: Factories are not a token or llm problem | the visual workflow-automation tool n8n |
+          1
+        category: invented_claim
+        note: 'No extraction describes n8n. The third capture names it once, in "n8n was a
+
+          silly idea", and sets it against service busses; it never says what n8n is.
+
+          "visual workflow-automation tool" is a descriptor supplied from outside the
+
+          pinned sources, in a labeled editor addition where the reader will take it
+
+          as established by the material.'
+      scores:
+        claim_support: 4
+        qualification_survival: 5
+        quote_accuracy: 5
+        attribution: 5
+      notes: 'The author''s prose is clean. Under faithful_edit I compared all three sections
+
+        against the three extractions sentence by sentence, and the body is verbatim,
+
+        including the lowercase, the "(and realistically failing)" parenthesis, the
+
+        "circa <10 people in the who''s-who" figure, the "last six months" and "last two
+
+        years" spans, and the @dotnet, mass transit, nservicebus, wcf and @temporalio
+
+        names. The parenthetical hedge "(but it is a piece of the puzzle)" survives in
+
+        the second section.
+
+
+        Both editor''s notes were audited claim by claim. The first note holds on every
+
+        count. "Three posts from 29 July 2026" is correct: each of
+
+        software-factories-are-super-real-but-the-factor-ab8ad3ab,
+
+        factories-are-not-a-token-or-llm-problem-ba5fabbf and
+
+        do-not-make-the-service-bus-non-deterministic-3a92442c carries
+
+        publication_date ''2026-07-29'' in its record, so this is not an undated capture
+
+        set. "In the order Huntley posted them" is correct on the status ids, and
+
+        Geoffrey Huntley is the recorded author of all three. The side-note claim is
+
+        correct too: of the first post''s three numbered notes, [1] "almost lights out"
+
+        is set at "software factories" and [2] the sandboxing-to-devex list is set at
+
+        "non-agent topics", while [3], which is by a wide margin the longest, stands as
+
+        the homelab paragraph directly above the note. The third post''s own note on wcf
+
+        is likewise set at the word it marks, which the note does not claim but does
+
+        not contradict.
+
+
+        The second editor''s note is where the two findings sit. What I could not check:
+
+        nothing in the pinned material establishes which post Huntley meant by "the
+
+        first hot take", which is precisely why the note should not assert it, and the
+
+        extractions carry no description of n8n, Temporal, MassTransit, NServiceBus or
+
+        WCF beyond the names.'
+      call:
+        role: evidence_judge
+        prompt_path: prompts/evidence-review.md
+        prompt_sha256: 2d368985eba3011b23c2f03fa926da4791a03975bd5ee4403ed6d8d19503d264
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - factory-systems-problem/r1-evidence
+        - --work-sha256
+        - a5dad05d27177c13714bdc1b77486ee6bd89f12bf8aa1b2ee5549c839aa6affd
+        duration_seconds: 0.0
+        output_sha256: b92ea94f21004381412bc8f290182f2d043ee4965f77dbfeb4c3bc38aa8415ca
+    line:
+      result: changes_required
+      findings:
+      - severity: major
+        article: factory-systems-problem
+        locator: '- | The numbered side-notes he hung on the first are set at the words they mark | 1'
+        category: orphan_referent
+        note: 'The editor''s note sends the reader to apparatus the piece does not
+
+          contain. There are no numbered side-notes anywhere in the manuscript, no
+
+          markers at any word, and nothing distinguishes "the longest, which stands
+
+          as the paragraph above" from the two ordinary paragraphs beside it. I went
+
+          back up the page looking for numbers before concluding there were none.
+
+          This is editor-authored text and fully actionable. Either the side-notes
+
+          are set and marked, or the note stops promising them and simply says what
+
+          became of them.'
+        suggestion: Three posts from 29 July 2026, in the order Huntley posted them. The numbered side-notes
+          he hung on the first are dropped, except the longest, which stands here as the third paragraph.
+      - severity: major
+        article: factory-systems-problem
+        locator: Don't make the entire service bus non-deterministic | don't make the entire service bus
+          non-deterministic. | 1
+        category: duplication
+        note: 'The piece''s last sentence is its own section heading, word for word. The
+
+          heading reads "## Don''t make the entire service bus non-deterministic";
+
+          four paragraphs later the closing line reads "don''t make the entire
+
+          service bus non-deterministic." Huntley''s sign-off is his and stays, but
+
+          the heading is the editor''s and it spends the ending before the reader
+
+          reaches it, so the piece lands on a sentence already read. Retitle the
+
+          section and the close snaps back.'
+        suggestion: Steal from the service buses that already work
+      - severity: major
+        article: factory-systems-problem
+        locator: Factories are not a token or llm problem | i must stress that factories is not a token
+          or llm problem | 1
+        category: duplication
+        note: 'Same defect, one section earlier. The heading "## Factories are not a
+
+          token or llm problem" sits directly on top of "i must stress that
+
+          factories is not a token or llm problem", so the reader''s first act in the
+
+          section is to read the same clause twice. The heading is editor-owned;
+
+          let it say what the post adds rather than repeat its opening.'
+        suggestion: A systems and culture problem
+      - severity: major
+        article: factory-systems-problem
+        locator: Factories are not a token or llm problem | The last post is that systems-engineering
+          claim worked out on one system | 1
+        repair_from: '- | Three posts from 29 July 2026, in the order Huntley posted them. | 1'
+        category: missing_transition
+        note: 'This note is the only bridge from the second post to the third, and it
+
+          does not parse. The colon promises one system and then two things follow:
+
+          "one system: the service bus, and the visual workflow-automation tool
+
+          n8n." The second sentence then explains a word the reader has not met
+
+          yet, since "second hot take" is still one heading away. The instinct is
+
+          right, and pre-empting the orphaned "second" is the right call, but as
+
+          written the reader has to reread the note and then reread it again after
+
+          the post. Editor-authored, so fully actionable. The whole apparatus is
+
+          set up in the first note, which is where a consistent scheme for these
+
+          bridges would start.'
+        suggestion: The third post works that claim out on one case, the service bus, against the visual
+          workflow-automation tool n8n. Huntley numbers it a second hot take; the first is an earlier
+          post the captures do not identify.
+      - severity: minor
+        article: factory-systems-problem
+        locator: '- | software factories (almost lights out) are super real but we need to be realistic.
+          | 1'
+        category: house_style
+        note: 'Two of the three posts carry a heading and the first does not, so the
+
+          reader meets three paragraphs of unheaded text, then an editor''s note
+
+          explaining a structure they have already half-read, then the first
+
+          heading. Opening cold on Huntley''s voice is right; the asymmetry in the
+
+          apparatus is not.'
+        suggestion: The factory part is not cracked yet
+      - severity: minor
+        article: factory-systems-problem
+        locator: '- | if someone is selling you a factory rn and they aren''t in the super small cohort
+          | 1'
+        category: dead_words
+        note: 'The one place in the piece a reader will go back a line. The conditional
+
+          opens, forks twice ("or circa <10 people in the who''s-who, who have been
+
+          trying (and realistically failing) over the last two years"), takes a full
+
+          stop, and only then reaches its consequence in a new sentence: "they are
+
+          selling bullshit." The punchline still lands, which is why this caps at
+
+          minor and stays. It is Huntley''s own sentence, his rhythm, and changing it
+
+          is review-required, so no replacement is offered. Noting it only so the
+
+          reviser knows it was seen and left rather than missed.'
+      scores:
+        structure: 2
+        flow: 3
+        sentence_craft: 3
+        house_style: 3
+        voice_consistency: 4
+      notes: 'Huntley''s three posts survive intact and sound like one angry man on one
+
+        afternoon, which is the whole point of running them together, and the lowercase
+
+        hammering carries the reader through four hundred words without effort. What
+
+        fails is the editorial apparatus wrapped around them. Both headings repeat the
+
+        sentence directly beneath them, and the second does it at the close, so the
+
+        piece stops on a line the reader has already had. The first editor''s note
+
+        promises numbered side-notes that are not in the manuscript. The second note,
+
+        which is carrying real weight because it is the bridge between two posts and
+
+        the fix for the orphaned "second hot take" that shipped naked in edition 004,
+
+        does not parse. Every one of those is editor-owned and therefore cheap to
+
+        repair; none of them requires touching a word of the author''s. The good news
+
+        is that the harder editorial calls were made well: the n8n gloss, the honest
+
+        admission that the first hot take is unidentifiable, and the decision to let
+
+        the profanity and the lowercase stand.'
+      call:
+        role: line_judge
+        prompt_path: prompts/line-review.md
+        prompt_sha256: 262f28e51956608760ae5dbdde255ef7a5780f459e73cb3542d7ae6aae6ac8b4
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - factory-systems-problem/r1-line
+        - --work-sha256
+        - 78ea1a2e461a9ca8212a417c278bc5d3b44af50cf69f94ef2fdecad90b65cee0
+        duration_seconds: 0.0
+        output_sha256: e49531d54c989516c44cf69a90c94825352e186213f1da9bd20aa4daa507a47d
   notes: "## What changed, in one line\n\nThe predecessor's reading order was wrong and the two editor's\
     \ notes were built\non top of the wrongness. The order is recoverable from the repo, it is 1-2-3,\n\
     and once it is 1-2-3 most of the apparatus stops being needed.\n\n## The order: it is in `library/sources/`,\
@@ -183,3 +474,342 @@ rounds:
     )`, so footnotes,\n   strikethrough and tables are not available to any article. Worth either\n  \
     \ documenting that in `DESIGN_SYSTEM.md` or adding `mdit-py-plugins`. Right now\n   the only way to\
     \ find out is to ship broken markup."
+- round: 2
+  result: changes_required
+  manuscript_sha256: dcb646aa777dc163333ee689c5b04b78b74b10855d2c09f751c470c9a27c9daa
+  writer:
+    role: writer
+    prompt_path: prompts/faithful-edit.md
+    prompt_sha256: 4bfde927141290210add43e4f23da73335d0ec38960f2634389e52e461db83d2
+    backend: agent
+    model: null
+    argv:
+    - mag
+    - produce
+    - rerun-004-the-systems-around-the-model
+    - --backend
+    - agent
+    - --submit
+    - factory-systems-problem/r2-writer
+    - --work-sha256
+    - 9e8d5db8b792ca01c0244c99b009d259489a012fdb8c7a521f21261d8c202767
+    duration_seconds: 0.0
+    output_sha256: bf1ba5dc0417988a06edbed2fadd9a57a1f98dd704bb93f5e3de9d09731bec4e
+  gate_failures: []
+  anchors_reconciled: []
+  judges: {}
+  notes: '## Read this first
+
+
+    Two things in this piece will bite the next reviser, and both are invisible from the findings:
+
+
+    1. **This publication cannot render footnotes.** `src/magazine/publication_document.py` builds its
+    parser as `MarkdownIt("commonmark")` with no plugins, so `[^1]` markers print as literal text and
+    the definitions come out as paragraphs beginning `[^1]:`. A round has already been spent discovering
+    this, the markers are now refused by a deterministic gate, and Huntley''s `[n]` annotations are resolved
+    inline for good. **Do not reintroduce footnote syntax in any form.** If a later round wants the annotations
+    visibly separated from his sentences again, the only available devices are parentheses, a run-in after
+    a colon, or a paragraph of their own, which is exactly what is in the manuscript above.
+
+    2. **The last round''s first editor''s note described apparatus that no longer existed.** It told
+    the reader the side-notes were "set at the words they mark", which was true of the draft written *before*
+    the footnotes were resolved inline, and nobody updated the note when the thing it described was removed.
+    That is finding 3, and it is the cheapest kind of defect to reintroduce: the note is the only place
+    in the piece that describes the piece, so **any change to how the `[n]` annotations are handled has
+    to change that note in the same edit.**
+
+
+    ## What round 3 changed
+
+
+    Six findings, five of them on editor-authored text and one (finding 8) explicitly left alone. Huntley''s
+    prose was clean and stays untouched. The whole delta this round is two notes, three headings, and
+    where the first note sits.
+
+
+    ### Finding 1, the invented antecedent (major)
+
+
+    Deleted, not rewritten. The old note said the "second" in "second hot take" counts from an earlier
+    post the captures do not identify. Nothing in the three captures identifies the first hot take, so
+    that sentence turned silence into a positive claim about the world, and it pointed the reader away
+    from two same-day posts by the same author printed on the page above it.
+
+
+    The tempting repair is to name post 2 as the first hot take. **Do not.** It is plausible (the status
+    ids put post 1 at 17:56 and post 2 at 18:00 UTC, post 3 at 21:18, so both precede it) but it is not
+    established, and swapping an unprovable negative for an unprovable positive is the same defect with
+    the sign flipped. Nor is a hedge the answer: "possibly one of the posts above" is still the editor
+    speculating in a labeled note the reader will read as established.
+
+
+    So the piece now says only what is established, and it says it once, in the first note: three posts,
+    one day, printed in the order he posted them. A reader who meets "second hot take" two pages later
+    has the two predecessors in hand and can draw their own line. **The referent is not orphaned; it is
+    unasserted.** If a later reviser is told it reads as an orphan, the fix is more capture, not more
+    note.
+
+
+    **Where the order comes from, since a fact-checker reading only `extracted.md` will not find it.**
+    It is in `library/sources/<id>/record.yaml`, fields `publication_date` and `canonical_url`:
+
+
+    | post | `publication_date` | status id |
+
+    |---|---|---|
+
+    | software-factories-are-super-real-but-the-factor-ab8ad3ab | 2026-07-29 | 2082525589416923314 |
+
+    | factories-are-not-a-token-or-llm-problem-ba5fabbf | 2026-07-29 | 2082526705160478906 |
+
+    | do-not-make-the-service-bus-non-deterministic-3a92442c | 2026-07-29 | 2082576563439312982 |
+
+
+    X status ids are monotonic in time, so the ids alone fix the order, and it is the same 1-2-3 as the
+    `source_ids` list in `edition.yaml`. Decoded as snowflakes (`(id >> 22) + 1288834974657` ms) they
+    give the clock times quoted above. **The date is printed in the note; the clock times are not**, because
+    the date is a field a checker can read and the times are a derivation a checker would have to trust.
+
+
+    ### Finding 2, the n8n gloss (minor)
+
+
+    "the visual workflow-automation tool" is gone. No capture says what n8n is; the third post names it
+    once and sets it against service busses, and that is all the pinned material supports. A previous
+    round added the gloss to clear an older finding that n8n went unexplained, which is how an unsourced
+    descriptor ends up inside a labeled editor addition where a reader takes it as established.
+
+
+    Both of those findings cannot be satisfied at once from these three captures, and evidence beats comfort:
+    **an unglossed proper noun costs the reader a moment, an invented descriptor costs the magazine its
+    label.** If someone wants n8n explained, the route is a fourth source that explains it, not an editor
+    who knows what it is.
+
+
+    ### Finding 3, the side-notes that were not there (major)
+
+
+    The note now describes what the manuscript actually does: the annotations are folded into the sentences
+    they mark, except the longest, which stands as post 1''s closing paragraph. Verify against the manuscript,
+    all four:
+
+
+    | source marker | sits at | disposition in the manuscript |
+
+    |---|---|---|
+
+    | post 1 `[1]` "almost lights out." | "software factories", first two words | parenthetical at the
+    marker; trailing full stop dropped |
+
+    | post 1 `[2]` the stack list | "non-agent topics" | run-in after a colon replacing the full stop
+    |
+
+    | post 1 `[3]` the homelab exhortation | "innovators" | own paragraph, last in the section |
+
+    | post 3 `[1]` "lots of bad memories here..." | "wcf" | parenthetical at the marker |
+
+
+    I declined the reviewer''s suggested line ("The numbered side-notes he hung on the first are dropped,
+    except the longest"). Nothing was dropped; every word of all four annotations is on the page. Telling
+    a reader they were dropped would be a second false statement about the apparatus, cleared finding
+    and all. "Folded into the sentences they mark" is accurate for three of the four and for the exception
+    the note names its exception.
+
+
+    `[3]` is the one that did not go to its marker. It is 60 words of second-person career advice and
+    cannot sit as a parenthetical inside "the innovators are toying around". It is also physically last
+    in the capture, so leaving it last is the least movement available.
+
+
+    ### Findings 4 and 5, headings that repeat the line beneath them (major, both)
+
+
+    All three headings are new. The rule I applied: **a heading here may not reuse a phrase from the sentence
+    under it, and may not reuse the post''s closing line at all.** The old scheme broke both, and the
+    second break was the worse one, because the piece''s last sentence had already been read as a heading
+    four paragraphs earlier.
+
+
+    | section | heading | what is directly beneath | overlap |
+
+    |---|---|---|---|
+
+    | post 1, continued | The stack under the factory | "it isn’t cracked but it’s a puzzle that’s being
+    solved daily." | none |
+
+    | post 2 | Where the problem lives | "i must stress that factories is not a token or llm problem."
+    | none |
+
+    | post 3 | Steal from what already works | "second hot take, as it seems the first hot take landed."
+    | none |
+
+
+    I declined both suggested headings. "A systems and culture problem" for post 2 is the post''s own
+    second sentence ("it’s a systems engineering and corporate culture problem") moved up two lines, which
+    is finding 5 again one sentence later. "Steal from the service buses that already work" for post 3
+    is good, but "service bus" is the subject of the closing sentence and of the paragraph beneath, so
+    I kept the verb he uses ("if you wanna steal ideas") and dropped the noun.
+
+
+    "The stack under the factory" is the one to argue with if anyone wants to. It is the most interpretive
+    of the three: he never says the non-agent topics sit *under* the factory, though he does say building
+    the factory entails solving them. It survived because every less interpretive candidate reused a word
+    from the section ("practices and pieces", "abstractions", "best practices", "non-agent", "homelab",
+    "the entire damn stack"), and reusing one is the defect this round is clearing.
+
+
+    ### Finding 6, the bridge that did not parse (major)
+
+
+    The old note put a colon after "one system" and then listed two things. It also explained "second
+    hot take" before the reader had met it, and carried the invented antecedent from finding 1. It is
+    now one sentence, one thing after the colon, no forward reference: "The third post takes that systems-engineering
+    claim to one system: the service bus."
+
+
+    **The consistent scheme the finding asked for**, and the thing to preserve if these notes ever grow:
+    an editor''s note sits immediately before the heading of the section it introduces, never after it,
+    and it is about provenance or structure only. Note 1 introduces the set (three posts, one day, an
+    order, what happened to the annotations). Note 2 introduces the change of altitude from the general
+    claim to one system. A section that needs no bridge gets no note, which is why post 2 has a heading
+    and no note in front of it.
+
+
+    That also relocates note 1. It used to sit after post 1''s three paragraphs, so it explained a structure
+    the reader had already half-read (finding 7). It now sits directly under the opener paragraph, which
+    is the first thing on the page after the illustrated opener, so the apparatus is explained before
+    it is used.
+
+
+    ### Finding 7, the unheaded first post (minor)
+
+
+    Post 1 now carries a heading like the other two. It cannot go first, because the mode requires the
+    body to open on a paragraph so the illustrated opener can set it, so the heading sits after the opener
+    paragraph and the note, and covers the remainder of post 1. The reader''s sequence is now: cold open
+    in his voice, one note that explains the apparatus, then three headed sections.
+
+
+    ### Finding 8, the collapsing conditional (minor, deliberately not cleared)
+
+
+    Left exactly as Huntley wrote it, including the full stop that severs "they are selling bullshit"
+    from its protasis. The finding itself declines to propose wording and says it is worth a query to
+    him rather than a silent repair. Restating my predecessor''s warning because it is the most likely
+    thing to get "fixed" by accident: **changing that full stop to a comma would repair the grammar and
+    would also be the single most defensible-looking rewrite in the piece, which is what makes it dangerous.**
+    It is not an extraction error; the capture is a verbatim DOM export and his posts read this way. Do
+    not fix it in a later pass without asking him. If house style ever forces it, the change is one character
+    and it must be disclosed.
+
+
+    ## The delta against the captures
+
+
+    Every word of all three posts is on the page, in source order, with no transitions written in his
+    voice. The entire difference between the manuscript''s author text and the captures is punctuation
+    at the two annotations set as parentheses and the one set as a run-in:
+
+
+    - opening parenthesis before "almost", and the full stop after "lights out" dropped (a parenthetical
+    inside a sentence cannot carry one);
+
+    - full stop after "non-agent topics" became a colon, so the stack list runs in;
+
+    - opening parenthesis before "lots", and the full stop after "generally on point" dropped, same reason
+    as the first.
+
+
+    I diffed the manuscript''s author text against the three `extracted.md` files as whitespace-token
+    multisets with the `[n]` markers and the record frontmatter removed: **363 tokens each side**, and
+    the only tokens that differ are `(almost` / `almost`, `out)` / `out.`, `topics:` / `topics.`, `(lots`
+    / `lots`, `point)` / `point.` Rerun that diff after any edit to the author text; it takes ten lines
+    of Python and it is the only cheap proof this mode is still being honoured.
+
+
+    Editor-authored text is 57 words in two labeled notes plus 17 words of headings, and none of it is
+    about factories, service buses, or what Huntley thinks. **That count is the point of this piece''s
+    whole history.** The shipped edition-004 version was a paraphrase wearing the `FAITHFUL EDIT` label,
+    and its most-praised line, "WCF gives me bad memories," was written by an editor in Huntley''s person;
+    the source says "lots of bad memories here" inside an annotation. It passed review because it sounded
+    like him. If a later reviser finds a fluent connective sentence in Huntley''s voice anywhere in this
+    piece, someone put it there and it is not his.
+
+
+    Kept deliberately:
+
+
+    - **Lowercase throughout the author''s text.** All three posts are all-lowercase. Headings and notes
+    are sentence case, which makes editorial apparatus separable from author text at a glance.
+
+    - **`@dotnet` and `@temporalio` as handles.** A line editor once called them platform residue and
+    they are, but they are how he names .NET and Temporal. Swapping them changes his wording, and if house
+    style demands the swap it should be logged as a wording change.
+
+    - **Verbatim:** "they are selling bullshit", "the spooky land of enterprise", "ugh. blog post time.",
+    "the entire damn stack", "rn", "ie.", "wanna", "<10", "who’s-who", the "!" in "(ie. they are likely
+    startups created in last six months!)", "not great tech impl", and the spaced slash in "theory / education".
+
+    - **Curly apostrophes (U+2019)** exactly as in the extractions, so a word-for-word diff stays clean.
+
+    - **No chrome to remove.** All three extractions are clean DOM transcriptions: no nav, no subscribe
+    prompts, no social furniture.
+
+    - **No U+2014 anywhere** (banned tic 7), no antithesis close, no summarising final paragraph, and
+    no narrator scaffolding in either note; both notes take the post as their subject, not the author
+    as a narrator.
+
+
+    ## Length, and the standing recommendation
+
+
+    Manuscript body is 437 words: 363 of Huntley across three posts, 57 words of editor''s notes, and
+    17 words of headings. The opener paragraph is 479 characters against a 553-character budget, and it
+    is post 1''s first three sentences, breaking at the full stop after "they are selling bullshit." That
+    is the ceiling this mode has for these captures, and the brief''s 7-page budget is far above it.
+
+
+    `faithful_edit` cannot fill a 7-page slot from 363 words of source. The routes are (1) capture more
+    Huntley on this subject, in particular the blog post promised by "ugh. blog post time." and whatever
+    the first hot take turns out to be, then run `faithful_synthesis`; (2) an `original_editorial` that
+    quotes these three and does the developing in the magazine''s voice; or (3) ship at ~440 words and
+    give the pages to something else. Recommendation is (1) if capture is possible, (3) if not. Never
+    padding.
+
+
+    Route (1) also happens to be the only real fix for finding 1. The three canonical URLs are near-consecutive
+    status ids on one account on one afternoon: anything on `x.com/GeoffreyHuntley` between 2082525589416923314
+    and 2082576563439312982 is a candidate for the first hot take, and anything after 2082576563439312982
+    is a candidate for the promised blog post. If a capture lands, the first editor''s note can name the
+    antecedent and the note stops being an exercise in saying less.
+
+
+    ## Prompt and docs gaps worth fixing upstream
+
+
+    1. `faithful-edit.md` says both "never reorder the argument" and "keep each post''s text intact and
+    in a declared order." Across posts these pull opposite ways. It should say: within-post order is frozen;
+    across-post order is publication order when it is recoverable, and only the editor''s choice when
+    it is not.
+
+    2. The prompt should say where publication order lives: `library/sources/<id>/record.yaml`, fields
+    `publication_date` and `canonical_url`. A writer working only from `extracted.md` will keep concluding
+    the dates do not exist.
+
+    3. The prompt has a page ceiling and no floor. Add: if the combined captures cannot fill the assigned
+    budget, the piece is under-sourced, and the remedy is more sources or a different mode, never padding.
+
+    4. `docs/DESIGN_SYSTEM.md` should state outright that the opener paragraph has no word window. A plausible-sounding
+    40-60 word rule was invented in an earlier round and moved the whole article into the wrong order
+    before anyone checked it. There is no floor and no ceiling; what the doc actually says is "Empty paper
+    below a short intro is intentional."
+
+    5. `docs/DESIGN_SYSTEM.md` should also record that the renderer''s markdown is `MarkdownIt("commonmark")`,
+    so footnotes, strikethrough and tables are unavailable to every article. Right now the only way to
+    find out is to ship broken markup, and this piece nearly did.
+
+    6. Nothing in the prompts tells a writer that an editor''s note describing the manuscript''s apparatus
+    has to be revalidated whenever the apparatus changes. That is what produced finding 3, and it is a
+    one-line addition to the working-notes section: if you change how source annotations are handled,
+    reread every note that mentions them.'

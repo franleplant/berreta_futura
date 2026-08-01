@@ -362,6 +362,15 @@ def parser() -> argparse.ArgumentParser:
     )
     fit.add_argument("edition_id")
     fit.add_argument("--language", help="Measure one configured language (default: all)")
+    fit.add_argument(
+        "--opener",
+        metavar="ARTICLE_ID",
+        help=(
+            "Instead of paginating: read a candidate opening paragraph on "
+            "stdin and report the typeset lines it would set as against the "
+            "article's illustrated-opener budget"
+        ),
+    )
     measure = actions.add_parser(
         "measure",
         help="Full pagination measurement as JSON, for agents and scripts",
@@ -995,8 +1004,20 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "fit":
             # A breach is the command's answer, not a failure to answer, so it
             # exits 1 where a MagazineError below exits 2.
-            table, ok = magazine.fit(args.edition_id, language=args.language)
-            print(table)
+            if args.opener is not None:
+                if args.language is not None:
+                    raise MagazineError(
+                        "--opener checks one authored paragraph against one "
+                        "article's opener budget, which is a property of the "
+                        "manuscript rather than of a language overlay; drop "
+                        "--language"
+                    )
+                report, ok = magazine.opener_fit(
+                    args.edition_id, args.opener, sys.stdin.read()
+                )
+            else:
+                report, ok = magazine.fit(args.edition_id, language=args.language)
+            print(report)
             if not ok:
                 return 1
         elif args.command == "measure":

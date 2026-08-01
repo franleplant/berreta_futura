@@ -5,7 +5,7 @@ content_mode: faithful_edit
 label: FAITHFUL EDIT
 ---
 
-**Editor's note.** Dex Horthy published this standalone. It is an addendum to a recent series of his that didn't fit cleanly into the main post, and it is referenced briefly in *Why Software Factories Fail part 2: Turning the lights back on*. The series' vocabulary comes with it. A factory is the setup you drop a prompt into and hope to get a fully-mergeable result back from; the levels, the "Product" level, the technical details under it, the 50,000-foot view zooming in to 10,000 feet, are successive phases of planning one piece of work.
+**Editor's note.** This is an addendum to a series of Dex Horthy's, published on its own because it did not fit the series itself, and mentioned briefly in *Why Software Factories Fail part 2: Turning the lights back on*. In his terms, a factory is the setup you drop a prompt into and hope to get a fully-mergeable result back from, and the levels are phases of planning one piece of work.
 
 ## Seeking leverage
 

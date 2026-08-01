@@ -13,6 +13,7 @@ before anything is executed.
 
 import hashlib
 import io
+import re
 import shutil
 import threading
 import unittest
@@ -81,6 +82,65 @@ WRAPPED_SOURCE = (
     "more than the incident: it is the volume, at machine speed, that makes\n"
     "familiar and unremarkable weaknesses so expensive to defend against.\n"
 )
+
+
+# Prose to measure an opener budget against, and to cut candidate paragraphs
+# out of.  Long enough that its word-length distribution is a real one, and
+# deliberately mixed: the short Anglo-Saxon words that pack a line tightly, and
+# the polysyllables and hyphenated compounds that end one early.  A fixture of
+# uniformly short words would let an optimistic estimate pass.
+OPENER_PROSE = (
+    "The infrastructure that surrounds a model has become the interesting "
+    "part of the problem, and the reason is unglamorous: the model is bought "
+    "and the surroundings are built. Retrieval, evaluation, orchestration, "
+    "observability and the unromantic business of retrying a failed call all "
+    "sit outside the weights, and all of them are where a deployment actually "
+    "succeeds or quietly stops working.\n\n"
+    "Consider evaluation. A team that cannot say whether last week's change "
+    "helped is not engineering, it is redecorating, and the instrumentation "
+    "that answers the question is neither cheap nor interesting to build. It "
+    "is nonetheless the difference between a system that improves and one "
+    "that merely changes. The same is true of retrieval: the embedding model "
+    "is a commodity and the chunking strategy is not.\n\n"
+    "What follows from this is a reallocation of attention rather than a new "
+    "technology. The organisations doing well are not the ones with "
+    "privileged access to capability; they are the ones that treated "
+    "reliability, measurement and unremarkable operational discipline as "
+    "first-class engineering concerns rather than as overhead to be minimised "
+    "once the demonstration worked.\n\n"
+    "None of this is a counsel of despair about models. Capability keeps "
+    "arriving, and arriving faster than the surrounding systems can absorb "
+    "it, which is precisely the argument: the bottleneck moved. A team that "
+    "spends another quarter waiting for a better model, when its own "
+    "evaluation harness cannot detect a regression, is optimising the half of "
+    "the problem somebody else is already solving for it.\n"
+)
+
+
+def prose_windows(sample: str, limit: int, *, step: int = 3) -> list[str]:
+    """Every ``limit``-character paragraph that can be cut from ``sample``.
+
+    Cut at word boundaries, from a sliding start, and only where the sample
+    had enough words left to reach within a word of the limit -- a short tail
+    would pass trivially and prove nothing.  Sliding the start is the point:
+    the same prose broken in a different place wraps differently, and that
+    difference is exactly what a character count cannot see.
+    """
+
+    words = " ".join(sample.split()).split()
+    windows: list[str] = []
+    for start in range(0, max(len(words) - 4, 1), step):
+        chunk: list[str] = []
+        total = 0
+        for word in words[start:]:
+            length = len(word) + (1 if chunk else 0)
+            if total + length > limit:
+                break
+            chunk.append(word)
+            total += length
+        if total >= limit - 12:
+            windows.append(" ".join(chunk))
+    return windows
 
 
 def reflow(text: str) -> str:
@@ -2213,7 +2273,7 @@ class OpenerIntroBudgetTests(unittest.TestCase):
         budget = self.budget()
 
         self.assertGreater(budget.lines, 0)
-        self.assertGreater(budget.characters, 0)
+        self.assertGreater(budget.safe_characters, 0)
         self.assertEqual(budget.measure_points, 348.0)
         self.assertEqual(budget.size_points, 9.6)
 
@@ -2268,6 +2328,50 @@ class OpenerIntroBudgetTests(unittest.TestCase):
         self.assertTrue(budget.fits("A short opening paragraph."))
         self.assertFalse(budget.fits(" ".join([self.SAMPLE] * 12)))
 
+    def test_the_character_figure_sits_below_the_packed_estimate(self):
+        """Conservative by construction, and pinned so it stays that way.
+
+        The figure this replaced was the rail over the sample's mean glyph
+        advance -- what a line would hold if greedy wrapping ever filled one to
+        the last point.  Recomputing that here and requiring the stated floor
+        to be strictly under it is what stops the optimistic number coming
+        back as a simplification.
+        """
+
+        from magazine.weasyprint_adapter import _plain, _string_width
+
+        budget = self.budget(sample=OPENER_PROSE)
+        text = _plain(" ".join(OPENER_PROSE.split()))
+        packed = budget.lines * int(
+            348.0 // (_string_width(text, "serif", 9.6) / len(text))
+        )
+
+        self.assertGreater(budget.safe_characters, 0)
+        self.assertLess(budget.safe_characters, packed)
+
+    def test_prose_at_the_stated_floor_fits_wherever_it_is_cut(self):
+        """The floor is a promise, and one paragraph is not evidence of it.
+
+        Where a paragraph wraps depends on where its word boundaries fall, so a
+        single specimen at the stated length proves only that that specimen
+        fitted.  Every word offset of a body of real prose is cut to the stated
+        count instead, and every one of them has to clear the line limit.
+        """
+
+        budget = self.budget(sample=OPENER_PROSE)
+
+        checked = 0
+        for candidate in prose_windows(OPENER_PROSE, budget.safe_characters):
+            checked += 1
+            self.assertTrue(
+                budget.fits(candidate),
+                f"{len(candidate)} characters, the stated floor being "
+                f"{budget.safe_characters}, wrapped to "
+                f"{len(budget.wrapped(candidate))} lines of {budget.lines}: "
+                f"{candidate}",
+            )
+        self.assertGreater(checked, 40)
+
 
 class OpenerBudgetBriefTests(unittest.TestCase):
     """An illustrated piece is told its number; every other piece is not."""
@@ -2302,3 +2406,178 @@ class OpenerBudgetBriefTests(unittest.TestCase):
         self.assertIn("The opening paragraph has a hard length limit", brief)
         self.assertIn("typeset line(s)", brief)
         self.assertIn("the build refuses the edition", brief)
+
+    def test_the_brief_names_the_check_rather_than_the_arithmetic(self):
+        """A writer near the edge must have somewhere to ask."""
+
+        add_article_opener(self.root)
+
+        brief = self.brief()
+
+        self.assertIn("uv run --locked mag fit issue-001 --opener article", brief)
+
+
+class OpenerBudgetPromiseTests(unittest.TestCase):
+    """Whatever the brief says, prose of that length has to clear the gate.
+
+    The brief is the only place these numbers are ever read, so this reads
+    them there -- out of the composed text, by the same parse a writer would
+    do -- rather than from the dataclass that produced them.  A wording change
+    that dropped the floor, or a refactor that quoted a different number in
+    the assignment than the one measured, both fail here.
+    """
+
+    def setUp(self):
+        self.temporary = TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.magazine = build_project(self.root, body=OPENER_PROSE)
+        add_article_opener(self.root)
+        self.command = ScriptedCommand()
+
+    def stated(self) -> tuple[int, int]:
+        """The two numbers the assignment states, read back out of the brief."""
+
+        production(self.magazine, self.command, gates=PassingGates()).run(
+            "issue-001", articles=["article"]
+        )
+        brief = self.command.briefs("writer", "article")[0]
+        stated = re.search(
+            r"- Opening paragraph budget: (\d+) typeset line\(s\); "
+            r"write to about (\d+) characters",
+            brief,
+        )
+        self.assertIsNotNone(stated, brief)
+        return int(stated.group(1)), int(stated.group(2))
+
+    def test_the_stated_floor_is_one_the_gate_accepts(self):
+        from magazine.weasyprint_adapter import _wrap
+
+        lines, characters = self.stated()
+
+        self.assertGreater(characters, 0)
+        checked = 0
+        for candidate in prose_windows(OPENER_PROSE, characters):
+            checked += 1
+            wrapped = _wrap(candidate, "serif", 9.6, 348.0)
+            self.assertLessEqual(
+                len(wrapped),
+                lines,
+                f"the brief offers {characters} characters against {lines} "
+                f"line(s); {len(candidate)} characters set as {len(wrapped)} "
+                f"lines: {candidate}",
+            )
+        self.assertGreater(checked, 40)
+
+    def test_the_floor_is_worth_stating(self):
+        """A safe number nobody can write to would be no better than none.
+
+        The point of quoting characters at all is that lines are hard to feel
+        while drafting, so the useful half of the bargain is pinned as well as
+        the safe half.  Fifty characters a line is the tripwire: the bound that
+        would be a theorem -- widest glyph in the face, longest word deducted
+        -- lands near thirty, which is safe, useless, and the reason that bound
+        was not taken.  The measured floor runs around sixty-five, so this
+        fails a collapse without failing on ordinary variation between samples.
+        """
+
+        lines, characters = self.stated()
+
+        self.assertGreaterEqual(characters, lines * 50)
+
+
+class OpenerFitCommandTests(unittest.TestCase):
+    """``mag fit --opener``: the check the brief tells a writer to run.
+
+    The whole reason it exists is that the arithmetic had to be reproduced by
+    hand once, so these run it the way a writer would -- through the command
+    line, with the paragraph on standard input -- rather than through the
+    dataclass underneath.
+    """
+
+    def setUp(self):
+        self.temporary = TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        build_project(self.root, body=OPENER_PROSE)
+
+    def run_check(self, intro: str, *argv: str) -> tuple[int, str]:
+        from unittest.mock import patch
+
+        out = io.StringIO()
+        with redirect_stdout(out), redirect_stderr(io.StringIO()):
+            with patch("sys.stdin", io.StringIO(intro)):
+                code = main(["--root", str(self.root), "fit", "issue-001", *argv])
+        return code, out.getvalue()
+
+    def budget(self):
+        from magazine.produce import load_producible_edition, opener_intro_budget
+
+        magazine = Magazine(self.root)
+        edition = load_producible_edition(magazine, "issue-001")
+        return opener_intro_budget(magazine, edition, edition.articles[0])
+
+    def test_a_paragraph_within_the_budget_is_reported_and_exits_zero(self):
+        add_article_opener(self.root)
+        budget = self.budget()
+
+        code, output = self.run_check(
+            prose_windows(OPENER_PROSE, budget.safe_characters)[0],
+            "--opener",
+            "article",
+        )
+
+        self.assertEqual(code, 0, output)
+        self.assertIn(f"of {budget.lines} typeset line(s)", output)
+        self.assertIn("fits", output)
+        # The lines themselves, so a writer can see where the prose sat.
+        self.assertIn("   1  The infrastructure", output)
+
+    def test_an_overlong_paragraph_exits_one_and_shows_the_overflow(self):
+        add_article_opener(self.root)
+        budget = self.budget()
+        overlong = " ".join(OPENER_PROSE.split())
+
+        code, output = self.run_check(overlong, "--opener", "article")
+
+        self.assertEqual(code, 1)
+        self.assertIn("OVER", output)
+        self.assertIn(f"Cut to {budget.lines} line(s)", output)
+        # A breach is the command's answer, so it must not read as a crash.
+        self.assertIn(f"{len(overlong)} character(s)", output)
+
+    def test_the_floor_the_brief_quotes_is_the_floor_the_check_quotes(self):
+        """One number, or the advice and the answer can disagree."""
+
+        add_article_opener(self.root)
+        budget = self.budget()
+
+        _, output = self.run_check("A short opening.", "--opener", "article")
+
+        self.assertIn(
+            f"a paragraph of {budget.safe_characters} character(s) or fewer", output
+        )
+
+    def test_a_piece_the_constraint_does_not_govern_is_refused(self):
+        """Not `fits`: there is no budget to be inside of."""
+
+        code, output = self.run_check("A short opening.", "--opener", "article")
+
+        self.assertEqual(code, 2, output)
+
+    def test_an_empty_paragraph_is_refused_rather_than_passed(self):
+        add_article_opener(self.root)
+
+        code, _ = self.run_check("   \n", "--opener", "article")
+
+        self.assertEqual(code, 2)
+
+    def test_the_edition_wide_verdict_is_untouched(self):
+        """``--opener`` is a second question, not a replacement for the first."""
+
+        out = io.StringIO()
+        with redirect_stdout(out), redirect_stderr(io.StringIO()):
+            code = main(["--root", str(self.root), "fit", "issue-001"])
+
+        self.assertEqual(code, 0, out.getvalue())
+        self.assertIn("every page budget holds", out.getvalue())

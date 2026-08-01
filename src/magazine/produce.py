@@ -1658,30 +1658,7 @@ class Production:
         )
 
     def _load_edition(self, edition_id: str) -> Edition:
-        from .manifest import load_edition
-        from .records import load_records
-
-        records = {
-            record.id: record for record in load_records(self.magazine.sources_dir)
-        }
-        return load_edition(
-            self.root,
-            edition_id,
-            set(records),
-            publication_name=self.magazine.publication_name,
-            source_records=records,
-            # Art is not produce's business: it must never generate one, and a
-            # missing opener is reported as a human action rather than as a
-            # reason the writer cannot draft.
-            allow_missing_art=True,
-            # A stranded figure anchor is the one validation error produce is
-            # *for*: the anchor gate names the figure, the heading it wanted and
-            # the headings the draft has, and hands that to the next round.
-            # Refusing to load the edition would turn the repairable case into
-            # an unloadable one, which is what a resumed or agent-driven run --
-            # one that re-reads the tree between rounds -- would hit first.
-            allow_unanchored_figures=True,
-        )
+        return load_producible_edition(self.magazine, edition_id)
 
     def _select(
         self, edition: Edition, articles: Sequence[str] | None
@@ -1704,7 +1681,7 @@ class Production:
         return [piece for piece in pieces if piece.id in set(wanted)]
 
     def _article_piece(self, edition: Edition, article: Any) -> Piece:
-        budget = _opener_intro_budget(edition, article, self._extractions_for_quietly(article))
+        budget = opener_intro_budget(self.magazine, edition, article)
         return Piece(
             id=article.id,
             kind="article",
@@ -1722,7 +1699,7 @@ class Production:
             key_ideas=tuple(article.key_ideas),
             has_opener_art=article.opener_art is not None,
             opener_intro_lines=budget.lines if budget else 0,
-            opener_intro_characters=budget.characters if budget else 0,
+            opener_intro_safe_characters=budget.safe_characters if budget else 0,
         )
 
     def _editorial_piece(self, edition: Edition) -> Piece:
@@ -1754,24 +1731,6 @@ class Production:
             for article in edition.articles
             if article.manuscript.is_file()
         )
-
-    def _extractions_for_quietly(self, article: Any) -> str:
-        """This article's source prose, for measuring characters per line.
-
-        Quietly, because a missing extraction is a refusal the drafting path
-        already makes with a much better message; failing to state a character
-        estimate is not worth pre-empting it here.
-        """
-
-        bodies: list[str] = []
-        for source_id in getattr(article, "source_ids", ()) or ():
-            try:
-                extraction = load_extraction(self.magazine.sources_dir, source_id)
-            except MagazineError:
-                continue
-            if extraction is not None:
-                bodies.append(extraction.body)
-        return "\n".join(bodies)
 
     def _extractions(self, piece: Piece) -> tuple[Extraction, ...]:
         return self._extractions_for(piece.source_ids)
@@ -2007,6 +1966,136 @@ def _issue_furniture(edition: Edition) -> dict[str, Any]:
             for article in edition.articles
         ],
     }
+
+
+def load_producible_edition(magazine: Any, edition_id: str) -> Edition:
+    """Load an edition the way produce needs it: mid-draft, not finished.
+
+    Module level rather than a :class:`Production` method because the two
+    callers that are not a produce run -- the opener fit check among them --
+    need the same tolerances and must not have to build a runner to get them.
+    """
+
+    from .manifest import load_edition
+    from .records import load_records
+
+    records = {record.id: record for record in load_records(magazine.sources_dir)}
+    return load_edition(
+        magazine.root,
+        edition_id,
+        set(records),
+        publication_name=magazine.publication_name,
+        source_records=records,
+        # Art is not produce's business: it must never generate one, and a
+        # missing opener is reported as a human action rather than as a
+        # reason the writer cannot draft.
+        allow_missing_art=True,
+        # A stranded figure anchor is the one validation error produce is
+        # *for*: the anchor gate names the figure, the heading it wanted and
+        # the headings the draft has, and hands that to the next round.
+        # Refusing to load the edition would turn the repairable case into
+        # an unloadable one, which is what a resumed or agent-driven run --
+        # one that re-reads the tree between rounds -- would hit first.
+        allow_unanchored_figures=True,
+    )
+
+
+def opener_fit(
+    magazine: Any, edition_id: str, article_id: str, intro: str
+) -> tuple[str, bool]:
+    """Answer, for one candidate opening paragraph, the question the gate asks.
+
+    The writer's own check, and the reason it exists: the arithmetic was
+    reachable only by importing the typesetter and reproducing the folding by
+    hand, so the first writer to need it did exactly that -- after the round it
+    had already lost.  This is the same arithmetic through the front door.
+
+    Returns the report to print and whether the paragraph fits, so the caller
+    can make the verdict an exit code.  It refuses loudly rather than guessing
+    when the piece is not one the constraint governs, because a cheerful
+    ``fits`` for an article with no illustrated opener is the answer to a
+    question nobody asked.
+    """
+
+    edition = load_producible_edition(magazine, edition_id)
+    articles = {article.id: article for article in edition.articles}
+    article = articles.get(article_id)
+    if article is None:
+        raise ProduceError(
+            f"{edition_id} has no article {article_id!r}; it carries "
+            + ", ".join(sorted(articles))
+        )
+    budget = opener_intro_budget(magazine, edition, article)
+    if budget is None:
+        raise ProduceError(
+            f"{article_id} has no illustrated opener, so its first paragraph "
+            "has no length limit to check: it flows onto the following page "
+            "like any other paragraph"
+        )
+    text = " ".join(intro.split())
+    if not text:
+        raise ProduceError(
+            "The opening paragraph to check is read from standard input, and "
+            f"nothing arrived. Pipe it in: printf '%s' \"...\" | mag fit "
+            f"{edition_id} --opener {article_id}"
+        )
+    lines = budget.wrapped(text)
+    ok = len(lines) <= budget.lines
+    report = [
+        f"{article_id}: {len(lines)} of {budget.lines} typeset line(s), "
+        f"{len(text)} character(s) -- {'fits' if ok else 'OVER'}",
+    ]
+    if budget.safe_characters:
+        report.append(
+            f"a paragraph of {budget.safe_characters} character(s) or fewer "
+            "always fits; past that this check is the only answer"
+        )
+    report.append("")
+    report.extend(
+        f"  {number:>2}  {line}" for number, line in enumerate(lines, start=1)
+    )
+    if not ok:
+        report.append("")
+        report.append(
+            f"Cut to {budget.lines} line(s). The build refuses an edition whose "
+            "opener paragraph overruns; it does not reflow onto page two."
+        )
+    return "\n".join(report), ok
+
+
+def opener_intro_budget(magazine: Any, edition: Edition, article: Any):
+    """This article's opening-paragraph budget, exactly as its brief states it.
+
+    One function so that one number exists.  The brief a writer is given and
+    the check a writer runs against a candidate paragraph (``mag fit --opener``,
+    :meth:`~magazine.compiler.Magazine.opener_fit`) both come through here, and
+    both therefore see the same sample and quote the same floor.  Splitting
+    them would let the advice drift from the answer, which is the failure this
+    whole area already had once.
+    """
+
+    return _opener_intro_budget(
+        edition, article, _source_prose_quietly(magazine, article)
+    )
+
+
+def _source_prose_quietly(magazine: Any, article: Any) -> str:
+    """This article's source prose, for measuring characters per line.
+
+    Quietly, because a missing extraction is a refusal the drafting path
+    already makes with a much better message; failing to state a character
+    floor is not worth pre-empting it here.
+    """
+
+    bodies: list[str] = []
+    for source_id in getattr(article, "source_ids", ()) or ():
+        try:
+            extraction = load_extraction(magazine.sources_dir, source_id)
+        except MagazineError:
+            continue
+        if extraction is not None:
+            bodies.append(extraction.body)
+    return "\n".join(bodies)
 
 
 def _opener_intro_budget(edition: Edition, article: Any, sample: str):

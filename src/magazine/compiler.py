@@ -1357,6 +1357,21 @@ class Magazine:
         measurement = self.measure(edition_id, language=language)
         return fit_table(measurement), measurement.ok
 
+    def opener_fit(
+        self, edition_id: str, article_id: str, intro: str
+    ) -> tuple[str, bool]:
+        """Does this candidate opening paragraph fit its illustrated opener?
+
+        The same verdict shape as :meth:`fit` -- a report and whether it holds
+        -- for the one budget a writer can breach without rendering anything.
+        It costs no pagination: the answer is font arithmetic over one
+        paragraph, so it is meant to be asked repeatedly while drafting.
+        """
+
+        from .produce import opener_fit
+
+        return opener_fit(self, edition_id, article_id, intro)
+
     def web(
         self,
         edition_id: str,
