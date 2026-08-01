@@ -1,0 +1,151 @@
+schema_version: 1
+edition_id: rerun-004-the-systems-around-the-model
+piece_id: editorial
+content_mode: original_editorial
+status: drafting
+produced_at: '2026-08-01T21:01:58+00:00'
+inputs_sha256: 14fdfdbf8e46ee22f95d2def3ce21b5de21e3f6226137ca6974cd87e2c68f5b7
+manuscript_sha256: d66061fd6afea62eb83f76c401a6ff0f836977a01567edb18407272bed5b47f2
+rounds:
+- round: 1
+  result: changes_required
+  manuscript_sha256: d66061fd6afea62eb83f76c401a6ff0f836977a01567edb18407272bed5b47f2
+  writer:
+    role: writer
+    prompt_path: prompts/opening-editorial.md
+    prompt_sha256: 00d59d8f99e2872d88d0ccf0c527a04ed9445edea31cc173fc6aea9f3af191b3
+    backend: agent
+    model: null
+    argv:
+    - mag
+    - produce
+    - rerun-004-the-systems-around-the-model
+    - --backend
+    - agent
+    - --submit
+    - editorial/r1-writer
+    - --work-sha256
+    - e68b7c399de510aa6c05ec5448f7c93be88a886e5aaf816b31681ab4173b3bbc
+    duration_seconds: 0.0
+    output_sha256: d5e40e417f4aa54664983d6883f5d68d9b573875e7d5108ad1e617c035cca808
+  gate_failures: []
+  anchors_reconciled: []
+  judges: {}
+  notes: "## 1. Concept graph\n\nBuilt fresh from the seven settled texts in this brief. I was told an\
+    \ earlier\ndraft, written from the pre-revision pieces, landed on \"the two halves of the\nstack disagree\
+    \ about who decides what gets forgotten.\" I did not start from it.\nWhere it resurfaces below I have\
+    \ said so and said what the revisions did to it.\n\n### a. Central claim of each piece (claim, not\
+    \ subject)\n\n- `frontier-lab-agent-intrusion` — Machine-speed offense did not invent a new\n  weakness;\
+    \ it changed the price of an ordinary one, and the defender's new\n  problem is that the one path\
+    \ that worked was hidden inside the thousands that\n  did not.\n- `eval-engineering` — Since everyone\
+    \ rents the same model, the only difference\n  left between two teams is whether a verdict about correctness\
+    \ is wired back\n  into the run as a routing decision, and nobody can sell you that layer\n  because\
+    \ it encodes your own definition of correct.\n- `pragmatic-leverage` — Leverage is knowing when to\
+    \ stop paying for certainty:\n  expected pain falls fast and then barely, and there is no perfect\
+    \ process for\n  telling you where the curve flattens.\n- `from-gpt2-to-kimi3` — It is not just scale,\
+    \ because a fixed-capacity\n  associative memory needs an eviction policy, and every step since GPT-2\
+    \ buys\n  a better learned way to decide what to throw away.\n- `factory-systems-problem` — The factory\
+    \ is a systems-engineering and culture\n  problem, and the fix is to keep the substrate deterministic\
+    \ prior art and let\n  the agent be one job the bus invokes.\n- `mcp-in-a-nutshell` — The protocol\
+    \ lasts because it decides very little:\n  remembering nothing between requests is what makes a connection\
+    \ something you\n  can hang up on and call back.\n- `mcp-protocol-update` — Deleting the session does\
+    \ not delete the state, it\n  relocates it into explicit handles the model passes as ordinary arguments,\n\
+    \  and deprecation here is annotation only, so nothing is actually removed.\n\n### b. Tensions\n\n\
+    - **T1. Sample or reconstruct.** Eval says the failures that matter are already\n  in your logs and\
+    \ the way to use them is to pull twenty-five complete traces\n  and no more. The intrusion needed\
+    \ roughly 17,600 recovered actions, and doing\n  it by hand was impractical: the truth was only visible\
+    \ in the whole. One says\n  the pile is a resource you sample. The other says sampling would have\
+    \ missed\n  it.\n- **T2. Who holds state, given that the holder forgets.** The protocol update\n \
+    \ pushes state out of the transport and into handles the model carries and\n  reasons about, and calls\
+    \ that more powerful. The architecture piece says the\n  model's memory is fixed-capacity and must\
+    \ overwrite, and that the whole\n  history of the field is better policies for what to discard. The\
+    \ layer being\n  handed the state is the one architecturally guaranteed to drop things.\n- **T3. Where\
+    \ trust comes from.** Eval: actuarial, a track record with a price\n  on it. The intrusion: they rotated\
+    \ every credential including on clusters the\n  agent never touched, which discards the track record\
+    \ entirely. Huntley: trust\n  is in the solved deterministic substrate, not in the agent. Horthy:\
+    \ trust is\n  bought up front with specification. Four incompatible answers.\n- **T4. Determinism\
+    \ as the safe default.** Huntley says do not make the service\n  bus non-deterministic; eval's merge\
+    \ gate agrees, three of its four signals\n  being history and deterministic checks with exactly one\
+    \ touching the model.\n  The intrusion cuts against both: the correlation was correct and the\n  deterministic\
+    \ severity threshold under it rated the signal too low to page.\n  A deterministic wrapper is only\
+    \ as good as the number a human put in it.\n- **T5. What a system is allowed to forget.** MCP's answer\
+    \ is almost nothing,\n  slowly, with a process: annotation-only deprecation, a year of support,\n\
+    \  a separate SEP to remove. KimiK3's answer is constantly, and the deciding is\n  the intelligence.\
+    \ (This is the earlier draft's thesis, still present as a\n  tension. It weakened: the explainer now\
+    \ teaches deprecation rather than\n  removal, so the protocol side no longer *decides* what to forget\
+    \ at all, it\n  declines to. A disagreement needs two parties with a policy, and one of them\n  stopped\
+    \ having one.)\n\n### c. Throughlines (written so they could be false)\n\n- **TH1. The model is interchangeable\
+    \ and the surrounding decisions are not.**\n  Eval says it outright, Huntley says it is not a token\
+    \ or LLM problem, Horthy's\n  percentages never mention which model. Falsified twice inside this same\n\
+    \  edition: KimiK3 is an argument that the model is where the interesting\n  decisions are, and the\
+    \ intrusion investigation only moved when the team stood\n  up a specific self-hosted model after\
+    \ two others refused the work.\n- **TH2. Cheap repeated attempts are how good outcomes get found.**\
+    \ Loops\n  before graphs; the factory retries; the agent tried many paths that failed.\n  Could be\
+    \ false, and the intrusion is where it is false: cheap repeated\n  attempts are also how a successful\
+    \ attack hides.\n- **TH3. A decision belongs at a boundary where it can be re-decided cheaply.**\n\
+    \  Stateless requests, per-edge eval routing, independently versioned\n  extensions, AttnRes re-retrieving\
+    \ earlier layers. Could be false: the shared\n  connector credential was a boundary re-decided cheaply\
+    \ per ephemeral client,\n  and that is exactly why it yielded cluster-admin in one second.\n- **TH4.\
+    \ Someone who is not the model has to define correct, and it is\n  expensive.** Eval's answer key\
+    \ from tests, records, policy or a person;\n  Horthy's spec; Huntley's culture; the conformance suite\
+    \ gating a Standards\n  Track SEP.\n\n### d. The emergent claim (thesis)\n\nEvery layer beneath the\
+    \ model has spent its recent effort driving the price of\na wrong attempt toward zero, and that discount\
+    \ did not remove the cost, it\nmoved it from making an attempt to reading one; the discard pile is\
+    \ now the\nonly place the answer is, it grows at machine speed, and no layer has been\ngiven the job\
+    \ of reading it.\n\nThe throughline it argues with is **TH2**, with **TH3** as the mechanism: the\n\
+    edition assumes cheap retries are the engine of progress, and the thesis says\nthe cheapness is real\
+    \ while the accounting is not.\n\n## 2. Rejection test, applied honestly\n\n- *Could one article alone\
+    \ have produced it?* `eval-engineering` is the closest\n  and it is not close enough. It says the\
+    \ failures worth having are already in\n  your logs; it never says failure has been made cheap to\
+    \ produce, and it has\n  no view of the protocol, the architecture, or the planning curve doing the\n\
+    \  same thing. The claim needs at least four pieces to stand: the sandbox and\n  connection that cost\
+    \ nothing to abandon, the plan you stop refining, the\n  memory that must discard, and the campaign\
+    \ whose noise was the defense.\n  Passes.\n- *Is it a category name?* \"The systems around the model\"\
+    \ is a category name.\n  \"Everything is feedback loops\" is a category name. This one has a verb,\
+    \ an\n  accusation, and an unassigned bill, and a reader can disagree with it by\n  saying the pile\
+    \ is worthless and should be deleted. Passes.\n- *Is it a claim the sources make?* No. Each source\
+    \ is pleased about its own\n  discount. None of them looks at the residue as a shared, unowned cost.\n\
+    - *Weakest point, for the reviser.* The word \"nobody\" in \"nobody has been\n  assigned the pile\"\
+    \ is doing rhetorical work the edition supports only\n  negatively: no piece assigns the reading,\
+    \ which is not the same as proof that\n  no one has. The manuscript softens this to \"the most disciplined\
+    \ answer in\n  circulation is to ration it,\" which is a fair reading of the\n  twenty-five-trace\
+    \ rule and keeps the claim inside the edition.\n\n## 3. Did the concept graph change what I wrote?\n\
+    \nYes, twice, and both times at (b).\n\nThe first draft direction out of (a) alone was \"the stack\
+    \ keeps relocating\nstate and memory upward,\" which is a category name and was rejected before\n\
+    drafting. The second came from T1 (sample or reconstruct) sitting next to T5\n(what may be forgotten),\
+    \ which is where the *volume* of discarded work became\nthe subject rather than the *authority* over\
+    \ it.\n\n**Do I land where the earlier draft landed? No.** The earlier thesis was a\ndisagreement\
+    \ about who decides what gets forgotten. Three revisions moved me\noff it: the explainer teaching\
+    \ deprecation rather than removal takes the\nprotocol out of the forgetting business, so the two halves\
+    \ no longer disagree\nso much as talk past each other; the intrusion piece's scoped blast radius (the\n\
+    reference solutions in five datasets, no shipped change) makes its lasting\npoint about the noise\
+    \ of the campaign rather than its damage, which pushes the\n17,600 actions to the front; and the eval\
+    \ piece with its own graph definition\nrestored now insists that a verdict is a routing decision on\
+    \ an edge, which is\nabout what happens to a branch that failed. Forgetting is still in the graph\
+    \ as\nT5. It is no longer the load-bearing edge.\n\n## 4. Decisions the piece rests on, and what I\
+    \ cut\n\n- **Cold open on `DryRun=True`.** Chosen because it is mid-article in the kill\n  chain,\
+    \ is not that piece's lede, first example, or figure, and is the one\n  place in the edition where\
+    \ somebody deliberately prices their own mistakes,\n  which is the whole argument in one detail. It\
+    \ also sets up the last line. If\n  a reviser moves the open, the close goes with it.\n- **Zero sources\
+    \ named.** The target, and it held. Two facts carry attribution\n  weight without a name: the ~17,600\
+    \ actions and the twenty-five-trace rule.\n- **Paragraph two is the tour risk.** Three clauses, one\
+    \ each for a disposable\n  sandbox, a droppable connection, and an abandoned plan. They are *mechanisms*\n\
+    \  instantiating one claim, not summaries of three articles, and none of them\n  states any article's\
+    \ thesis. If a line editor reads it as a tour, the fix is\n  to cut to two clauses rather than to\
+    \ reattribute them.\n- **Cuts.** A fourth clause in that list (retried loops) went, because retry\
+    \ is\n  the eval piece's own machinery and four clauses started to scan as an\n  inventory. A paragraph\
+    \ contrasting the actuarial view of trust (T3) with the\n  rotate-everything response was cut for\
+    \ length; it is the best unused material\n  in the graph and is where a longer version should grow.\n\
+    - **Wording watched for banned tics.** \"The cost survives the discount. It only\n  changes hands.\"\
+    \ was rewritten from \"Cheapness does not delete a cost. It\n  moves it,\" which is the antithesis\
+    \ figure in disguise. \"That is a budget for\n  attention\" was rewritten from \"That is a budget,\
+    \ not a plan,\" same reason.\n  The list in paragraph two is the piece's only three-item list and\
+    \ is not the\n  last sentence.\n- **The close.** \"The intruder had a policy for its own mistakes.\
+    \ Almost\n  nothing it walked through did.\" Delete-and-reread: the piece loses its\n  recommendation\
+    \ and its turn, and ends on a flat statement of the thesis.\n  \"Almost\" is load-bearing and honest:\
+    \ CI execution policies did block the pull\n  request, so one thing it walked through did have a policy.\n\
+    - **Budget.** 204 body words against a 210 target, one A5 page, five\n  paragraphs. `mag fit <edition>\
+    \ --opener editorial` does **not** accept the\n  editorial: `--opener` takes an article id and the\
+    \ command errors with\n  \"rerun-004-the-systems-around-the-model has no article 'editorial'\". No\n\
+    \  measured opening-paragraph budget exists for this piece; the opener's first\n  paragraph is 30\
+    \ words and was kept short on judgment alone."

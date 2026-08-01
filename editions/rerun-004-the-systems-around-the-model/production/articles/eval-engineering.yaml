@@ -2,10 +2,10 @@ schema_version: 1
 edition_id: rerun-004-the-systems-around-the-model
 piece_id: eval-engineering
 content_mode: faithful_synthesis
-status: drafting
-produced_at: '2026-08-01T20:15:30+00:00'
+status: passed
+produced_at: '2026-08-01T20:48:26+00:00'
 inputs_sha256: 692984f81ceef2be9d98d121dda05cb7b212fb9373e94a39ee14d6774203fb8f
-manuscript_sha256: 19ee27415b8595ea40c21ca322f397ba688e2119c25110b7939668f905bb8a29
+manuscript_sha256: 19e3e3f9ea0aeb2397090c323df0bd5af4859bb94dcad93db033fb959d69a3ac
 rounds:
 - round: 1
   result: changes_required
@@ -527,7 +527,237 @@ rounds:
   anchors_reconciled:
   - Thermometer, thermostat
   - What a score is allowed to do
-  judges: {}
+  judges:
+    evidence:
+      result: approved
+      findings: []
+      scores:
+        claim_support: 5
+        qualification_survival: 5
+        quote_accuracy: 5
+        attribution: 5
+      notes: 'Read the pinned extraction in full, then walked every assertion in the
+
+        manuscript back to it. Both structural changes in this draft check out. The
+
+        definition of the graph - "Then many agents laid out as a graph, so work that
+
+        never depended on each other ran side by side instead of standing in line" -
+
+        is the source''s own sentence, reproduced word for word, and it now sits ahead
+
+        of the first load-bearing use of the term ("the verdict goes back into the
+
+        graph and changes what runs next"), which the source states after it; the
+
+        reordering carries no wording change. The section heading "Where the tests
+
+        come from" is likewise the source''s own subheading, and the section it heads
+
+        holds exactly the material that sits under it in the source: imagination
+
+        tests, 25 complete traces, the answer key, attribution. Every number matches:
+
+        100 real sessions, 83.9% response quality, 32.3% faithfulness, 25 traces,
+
+        twenty agents, 19 of every 20 pull requests, around 1,500 pull requests in 90
+
+        days, 285 iterations, 1,094 merged pull requests, zero regressions, 38 green
+
+        tests, a 21-year-old founder in Tokyo, 258 followers, two likes. Both passages
+
+        presented as verbatim are verbatim: "A score that never changes behavior is
+
+        analytics. An eval that changes the next edge is engineering." and "I don''t
+
+        trust them at all. I also don''t trust my ability to code review their work.
+
+        But I do trust my ability to constrain their work." The blind-test claim is
+
+        correctly scoped - the coding agent (84.6% recall) landed above two of the
+
+        three dedicated platforms (LangSmith 79.5%, Arize AX 74.4%) and the manuscript
+
+        claims exactly two, not a win over the field, matching the source''s own "landed
+
+        above two dedicated evaluation platforms" while Braintrust Loop at 87.2%
+
+        remains the winner. Reverse pass: the hedges that matter survive - the frozen
+
+        judge multiplying places for a wrong answer to look finished, the judge-family
+
+        and version-pin rules, "optimize against a judge long enough and the agent
+
+        learns to look right rather than be right", the trace never telling you what
+
+        the agent should have done, and the source''s own counterargument against its
+
+        case (38 green tests beside a completely broken product, converge on the spec
+
+        rather than the score). The source''s closing conclusion is carried intact. The
+
+        condensation drops whole passages - the install commands, the Harbor folder
+
+        layout, the four dataset types, the five first evals, the shadow-rollout
+
+        settings, the fleet-wide statistics - but nothing dropped is a hedge, a
+
+        counterargument or a conclusion. What I could not check: nothing material; the
+
+        extraction has OCR damage around the page furniture ("bove the threshold",
+
+        the truncated "anyone ever looked"), but each damaged line is legible enough
+
+        to confirm the manuscript''s corresponding sentence.'
+      call:
+        role: evidence_judge
+        prompt_path: prompts/evidence-review.md
+        prompt_sha256: 2d368985eba3011b23c2f03fa926da4791a03975bd5ee4403ed6d8d19503d264
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - eval-engineering/r2-evidence
+        - --work-sha256
+        - 4b67aa9625814093a58cc758e10c6bbd4bcd10f87426e153b739f877bf42bb80
+        duration_seconds: 0.0
+        output_sha256: 28bcabaa936af617825bd13c49bffb81206ec7ba7685210c40036ad1e650f7c0
+    line:
+      result: changes_required
+      findings:
+      - severity: major
+        article: eval-engineering
+        locator: An afternoon of work | Three measurements, not twelve | 1
+        category: repeated_cadence
+        note: 'One sentence shape carries the piece: the terse corrective pair, "X, not
+
+          Y" and its variants. Seven instances, spread across every section:
+
+          "on day one, not month nine"; "ran side by side instead of standing in
+
+          line"; "The trace tells you what your agent did, never what it should
+
+          have done"; "the agent learns to look right rather than be right";
+
+          "Three measurements, not twelve"; "Grade the path and not only the
+
+          answer"; "The loop has to converge on the spec rather than on the score."
+
+          Individually each is a good line. Stacked, they turn into a pulse, and
+
+          the reader starts hearing the shape instead of the point. The
+
+          accumulation is an assembly problem rather than a wording one: the
+
+          compressions that produced the tersest of them ("Three measurements, not
+
+          twelve", "on day one, not month nine") are the synthesis''s own, so
+
+          breaking two or three of them costs the author nothing. The close is
+
+          clean, which is the one place the house tic usually lands, so this is
+
+          about the body.'
+        suggestion: 'Three measurements carry almost all of it: faithfulness, tool parameter accuracy,
+          response quality.'
+      - severity: minor
+        article: eval-engineering
+        locator: Thermometer, thermostat | This arrived in a fixed order. | 1
+        category: orphan_referent
+        note: '"This" has no antecedent. The sentence before it is "Eval engineering is
+
+          the wiring that runs from the reading to the furnace", and eval
+
+          engineering is not the thing that arrived in a fixed order: the loops,
+
+          graphs, evals stack is, and the piece has not named that stack yet. The
+
+          reader has to finish the paragraph and reach back. A noun in place of
+
+          "This" fixes it.'
+        suggestion: The stack underneath it arrived in a fixed order.
+      - severity: minor
+        article: eval-engineering
+        locator: What a score is allowed to do | one edge at a time | 1
+        category: jargon
+        note: '"Edge" does three jobs here and is never glossed: "An eval that changes
+
+          the next edge is engineering", "All six are routing decisions the graph
+
+          executes", "the eval steers the run mid-flight, one edge at a time". The
+
+          graph itself is introduced properly earlier, which is the harder half of
+
+          the job, but a manager who accepted "many agents laid out as a graph" as
+
+          a picture will not automatically know that an edge is the hop from one
+
+          agent to the next. Four words at the first use carry the rest.'
+        suggestion: An edge is one hop from one agent to the next, and the eval decides which one runs.
+      scores:
+        structure: 4
+        flow: 4
+        sentence_craft: 3
+        house_style: 3
+        voice_consistency: 4
+      notes: 'This reads well and it reads in order. The opening is genuinely cold: the
+
+        invented exchange rate, then 83.9% against 32.3%, then the sentence that
+
+        makes the piece ("Nobody caught it, because the writing was the only part
+
+        anyone ever looked at"). Nothing in the first three paragraphs is spent
+
+        announcing itself. The argument''s steps come back after one read: the model
+
+        is the same for everyone, so the difference is the layer that judges output;
+
+        the judge only counts if its verdict routes the run; the tests come from
+
+        logs; the payoff is a merge gate that does not need you. The graph is
+
+        defined before the verdicts start moving through it, which is what makes the
+
+        middle sections legible, and the section that now holds routing plus judge
+
+        hygiene holds together on one pivot sentence rather than three topics
+
+        sharing a heading. The callbacks are doing real work: the travel agent
+
+        returns at exactly the moment faithfulness is named, "the same company that
+
+        changed nothing but its evals" returns with a second number rather than a
+
+        restatement, and the thermostat comes back in the last line without being
+
+        explained again. The ending lands. What is left is a monotony problem, not a
+
+        clarity one: the piece has one favourite sentence shape and uses it seven
+
+        times, and by the last section the reader can hear it coming.'
+      call:
+        role: line_judge
+        prompt_path: prompts/line-review.md
+        prompt_sha256: 262f28e51956608760ae5dbdde255ef7a5780f459e73cb3542d7ae6aae6ac8b4
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - eval-engineering/r2-line
+        - --work-sha256
+        - 85935e7f6a435ac58dc00f05d206cd0720b2a5993cfbb2e80c573aa6a2cec81e
+        duration_seconds: 0.0
+        output_sha256: 5629fdddbaecf969d7e38ba27d851755adfbcc131e23e84041ba267a85731625
   notes: '## What round 3 changed, and why
 
 
@@ -841,3 +1071,290 @@ rounds:
     - Claim strength preserved at every hedge: "give or take", "about a third of the time", "around 1,500",
     "the same way an insurer does". The gain-from-evals-alone claim is reported as the company''s, not
     verified.'
+- round: 3
+  result: approved
+  manuscript_sha256: 19e3e3f9ea0aeb2397090c323df0bd5af4859bb94dcad93db033fb959d69a3ac
+  writer:
+    role: writer
+    prompt_path: prompts/faithful-synthesis.md
+    prompt_sha256: 56f083c8f2bb39a6dcfd6d35f153aedeaedbe7825dc06909c5ef4196a27da277
+    backend: agent
+    model: null
+    argv:
+    - mag
+    - produce
+    - rerun-004-the-systems-around-the-model
+    - --backend
+    - agent
+    - --submit
+    - eval-engineering/r3-writer
+    - --work-sha256
+    - 3036d440db43ea31ebaf87cbc0fdf001fede9753827421ee3f8542f8fed0494a
+    duration_seconds: 0.0
+    output_sha256: 31e643de83f83234a57a8b88e9cf879100e6290be7e1e7d2e952db698929bde5
+  gate_failures: []
+  anchors_reconciled:
+  - Thermometer, thermostat
+  - What a score is allowed to do
+  judges:
+    evidence:
+      result: approved
+      findings: []
+      scores:
+        claim_support: 5
+        qualification_survival: 4
+        quote_accuracy: 5
+        attribution: 5
+      notes: 'Checked every assertion in the manuscript against the single pinned extraction,
+
+        with particular weight on the five places where a source "X, not Y" construction
+
+        was broken apart, since those are where a restoration could drift. All five hold.
+
+        "the evals should have been in the system on day one, and theirs had taken until
+
+        month nine" unpacks "on day one, not month nine" without adding anything the
+
+        source does not imply about the company''s own timeline. "work that never depended
+
+        on each other stopped standing in line and ran side by side" only reverses the
+
+        clause order of "ran side by side instead of standing in line". "Start with three
+
+        measurements: faithfulness, tool parameter accuracy, response quality" replaces
+
+        "not twelve" with the source''s own three labels, spelled exactly as the source
+
+        spells them. "Never treat the recorded answer as truth: a trace records what your
+
+        agent did, and the answer key has to come from tests, records, policy or a person"
+
+        drops "never what it should have done" but keeps the rule and restores the
+
+        source''s own answer-key sentence; the list loses "known state" and shortens
+
+        "source records" to "records", which is permitted omission of list items rather
+
+        than a change of rule. "Score the whole path, because grading only the final
+
+        response is how an agent reaches a correct answer through a broken sequence with
+
+        nobody noticing" restores the source sentence verbatim in place of "never only the
+
+        answer it landed on". Both passages presented as verbatim quotation match the
+
+        extraction exactly: the analytics/engineering line and the four-sentence trust
+
+        quote from the operator with 1,500 pull requests. Every number reconciles: 100
+
+        sessions, 83.9%, 32.3%, 258 followers, two likes, 21-year-old, six rules, four
+
+        signals, three of four, 25 traces, 429, 19 of 20, 1,500 in 90 days, 285
+
+        iterations, 1,094 pull requests, 38 green tests, three measurements. The blind-test
+
+        sentence is accurate: Codex at 84.6% recall sits above LangSmith at 79.5% and Arize
+
+        AX at 74.4%, which is the source''s own "landed above two dedicated evaluation
+
+        platforms". On the reverse pass the surviving hedges are intact, including "look
+
+        right rather than be right", "converge on the spec rather than on the score", and
+
+        the "yours only if the agent was supposed to recover from it" condition on the 429.
+
+        What I could not check against the extraction: nothing material. The gloss "An edge
+
+        is one hop from one agent to the next" is not stated in those words, but it follows
+
+        from the source''s graph-of-agents framing and its six routing verdicts, and it
+
+        makes no claim a reader could be misled by. Compressions that trim scope without
+
+        changing it, such as "twenty agents reporting to one frozen judge" for "twenty
+
+        agents running at once" and the four-item version of the source''s six-item
+
+        do-not-reward list, are the only reason qualification survival is not a 5; none of
+
+        them rises to a finding.'
+      call:
+        role: evidence_judge
+        prompt_path: prompts/evidence-review.md
+        prompt_sha256: 2d368985eba3011b23c2f03fa926da4791a03975bd5ee4403ed6d8d19503d264
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - eval-engineering/r3-evidence
+        - --work-sha256
+        - ccfafd5365bb7760c69605b30578b47c2793e2dccd7eced3d4505950b0e5bdc1
+        duration_seconds: 0.0
+        output_sha256: 5b6e1d40f2c753e29a481679c8d59b53f082340e73aa9741e288d050cf406395
+    line:
+      result: approved
+      findings: []
+      scores:
+        structure: 5
+        flow: 4
+        sentence_craft: 5
+        house_style: 5
+        voice_consistency: 5
+      notes: 'The cadence problem is gone, not merely disguised. Reading for the appositive-negation shape,
+        the manuscript now carries zero instances of "X, not Y" and no sentence that closes on "It is
+        not X. It is Y." The nearest survivors are two "rather than" clauses ("the agent learns to look
+        right rather than be right", "converge on the spec rather than on the score"), which is under
+        the three-instance threshold and reads as ordinary contrast rather than a tic. Nothing else has
+        risen to take the shape''s place: the piece leans on short copular assertions ("An edge is one
+        hop from one agent to the next", "Trust in an agent is an actuarial calculation", "The constraint
+        is the product"), but those are the plainest sentence in English rather than a signature, and
+        they are spaced across five sections. End to end the argument is recoverable in one read: an agent
+        that writes well and grounds badly, a number nobody was looking at, the missing layer that acts
+        on the verdict, what a verdict is allowed to do, where tests come from, what the gate does with
+        them, and how to start. The thermometer/thermostat image is planted in section one and cashed
+        in the last sentence, and the travel agent comes back exactly once, on faithfulness, which is
+        the right place. Two things worth watching rather than fixing. First, the piece still ends on
+        a two-camp contrast ("Most people will go back to scrolling outputs on a Friday and deciding it
+        feels about right. The ones who go first spend one afternoon wiring the thermostat"): it is not
+        the banned antithesis, since there is no negation and the last clause is affirmative, but it is
+        a cousin of the house tic and the edition should not run several pieces that close this way. Second,
+        the judge-hygiene paragraph in "What a score is allowed to do" is the densest passage in the piece,
+        four rules delivered as consecutive imperatives with consequence clauses, and it is the one place
+        my attention had to slow down; a paragraph break or one connective would buy the reader a beat
+        without touching a sentence. Minor looseness elsewhere that I would not spend a round on: "the
+        one line in the stack nobody can sell you" invites a momentary reading of "line" as line of code,
+        and "one frozen judge" uses "frozen" two paragraphs before "Pin the judge''s version" explains
+        what pinning means.'
+      call:
+        role: line_judge
+        prompt_path: prompts/line-review.md
+        prompt_sha256: 262f28e51956608760ae5dbdde255ef7a5780f459e73cb3542d7ae6aae6ac8b4
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - eval-engineering/r3-line
+        - --work-sha256
+        - f42deaa10d976d58a69fc3efc82d95cbed588da10b0e5ca55091d65a2ff088cc
+        duration_seconds: 0.0
+        output_sha256: 192fccdca78800d2dfc88ad785ab84037a953e4da1b47abe89dc3e1d6a8ae7b1
+  notes: "## Read this first if you are revising again\n\nRound 4. Rounds 2 and 3 are both clean on fidelity\
+    \ (the fact-check returned zero findings on the\ndraft I inherited), and I changed no factual sentence,\
+    \ no number and no hedge. Every change this\nround is sentence shape. The claim ladder, the cut list\
+    \ and the \"what the piece is resting on\"\nnotes below are inherited and still the record of what\
+    \ this piece is made of.\n\n**Do not re-litigate code fences.** This extraction is OCR output; every\
+    \ code region is truncated\nat the right margin or column-padded, so no fenced block can match the\
+    \ pinned bytes. That\nconstraint has survived three rounds.\n\n**Budget: measured, not estimated.**\
+    \ 1,160 body words (whitespace tokens in non-heading\nparagraphs). `uv run --locked mag fit rerun-004-the-systems-around-the-model\
+    \ --language en` says\np10-p15, 6/7 pages, OK, whole edition `fit: every page budget holds` at 44\
+    \ pages. Note the `es`\ntranslations are stale, so plain `mag fit` errors out before pagination; `--language\
+    \ en` is the\ncheck that works today. Opening paragraph is unchanged and sets as 5 lines against a\
+    \ 9-line\nbudget.\n\n## How the round-3 findings were cleared\n\n### Finding 1, the repeated corrective\
+    \ pair (major)\n\nSeven instances of \"X, not Y\" and its variants. I broke five and kept two, rather\
+    \ than deleting\ncontent anywhere. What each one became:\n\n| instance | disposition |\n|---|---|\n\
+    | \"on day one, not month nine\" | **Reshaped.** \"Afterwards they said the evals should have been\
+    \ in the system on day one, and theirs had taken until month nine.\" Both numbers survive and the\
+    \ whole claim stays inside the reported speech, so it is still their conclusion and not ours. |\n\
+    | \"ran side by side instead of standing in line\" | **Reversed.** \"stopped standing in line and\
+    \ ran side by side.\" Both halves of the image survive; the corrective order does not. This paragraph\
+    \ is the piece's only definition of the graph (round-2 finding 3) and must not be cut. |\n| \"The\
+    \ trace tells you what your agent did, never what it should have done\" | **Reshaped to the source's\
+    \ own rule 1.** \"Never treat the recorded answer as truth: a trace records what your agent did, and\
+    \ the answer key has to come from tests, records, policy or a person.\" The source's list item reads\
+    \ \"Never treat the recorded answer as truth: the trace tells you what your agent did, never what\
+    \ it should have done\", so this is the author's own framing of the same claim with the pair dropped.\
+    \ |\n| \"Three measurements, not twelve\" | **Reshaped, and the reason restored.** \"A suite that\
+    \ is too slow or too vague never gets run. Start with three measurements: faithfulness, tool parameter\
+    \ accuracy, response quality.\" The restored first sentence is the source's own, and it carries the\
+    \ anti-sprawl point that \"not twelve\" was carrying. Cost 11 words; `fit` absorbed them. |\n| \"\
+    Grade the path and not only the answer\" | **Reshaped.** \"Score the whole path, because grading only\
+    \ the final response is how an agent reaches a correct answer through a broken sequence with nobody\
+    \ noticing.\" The second half is the source verbatim; the corrective opener is gone. |\n| \"the agent\
+    \ learns to look right rather than be right\" | **Kept.** The author's own line and the piece's main\
+    \ caveat, which a manager must be able to restate after one read. |\n| \"the loop has to converge\
+    \ on the spec rather than on the score\" | **Kept.** The author's own conclusion from the 285-iteration\
+    \ counterexample, and the only place the counterexample is resolved. |\n\nTwo survivors, both the\
+    \ author's own wording, separated by three paragraphs and a section break,\nneither of them the close.\
+    \ **If a later line editor counts them as a pair, the answer is that\nthese two are the ones the author\
+    \ wrote and the other five were the synthesis's compressions.**\nReshaping either of these costs a\
+    \ claim: the first is the caveat, the second is the resolution of\nthe counterexample. If one has\
+    \ to go anyway, take the second and fold \"spec\" into the sentence in\nfront of it; do not touch\
+    \ \"look right rather than be right\".\n\nI did not take the suggested line (\"Three measurements\
+    \ carry almost all of it\"), because \"carry\nalmost all of it\" is a strength claim the author never\
+    \ makes about the three defaults; the source\ncalls them \"a working default for any agent that calls\
+    \ tools\". Restoring the source's own\ntoo-slow-or-too-vague sentence gets the same shape change without\
+    \ inventing a claim.\n\n### Finding 2, \"This arrived in a fixed order\" (minor)\n\nTook the suggestion:\
+    \ \"The stack underneath it arrived in a fixed order.\" The antecedent is now a\nnoun and the loops/graphs/evals\
+    \ stack is named before it is walked.\n\n### Finding 3, \"edge\" unglossed (minor)\n\n\"An edge is\
+    \ one hop from one agent to the next.\" One sentence, placed immediately after the Tokyo\nattribution,\
+    \ which is the first position available after the quotation that contains the term's\nfirst use. I\
+    \ did not use the second half of the suggested line (\"and the eval decides which one\nruns\"), because\
+    \ the next two sentences already say that in the author's words and it would have\nbeen the third\
+    \ statement of routing in one paragraph.\n\n## Claim ladder (inherited, unchanged)\n\n**Central claim.**\
+    \ Everyone rents the same model now, so what separates two teams is the examiner\nthey build around\
+    \ it: the layer that judges whether an answer was right and then changes what the\nsystem does next.\
+    \ It costs almost nothing, nobody can sell it to you because it encodes your own\ndefinition of correct,\
+    \ and it appreciates every week you run it.\n\n**Main caveat a reader must be able to state after\
+    \ one read.** The examiner can be gamed and can\nbe wrong about the whole product: optimize against\
+    \ a judge long enough and the agent learns to\nlook right rather than be right, and 38 green tests\
+    \ coexisted with a completely broken product.\n\n**Supporting claims in the order the argument needs\
+    \ them.**\n\n1. Quality and truth are different measurements and only one is usually watched. Travel\
+    \ agent\n   invents an exchange rate, a week's temperature, museum hours; the search tool came back\
+    \ empty.\n   Over 100 real sessions: response quality 83.9%, faithfulness 32.3%.\n2. A better model\
+    \ would not have caught it. The missing layer decides whether an answer was right\n   and does something\
+    \ with the verdict; nobody can sell it to you.\n3. The rented brain is the same everywhere (\"give\
+    \ or take\"), which widened the gap between teams.\n4. Evals alone move the product: no model, prompt\
+    \ or human-nudge changes across versions, scores\n   moved on every dimension; the team's own conclusion\
+    \ was day one against month nine.\n5. Thermometer against thermostat; the return arrow is the whole\
+    \ difference.\n6. Loops, then graphs, then evals, in that order. The graph made you fast; the judge\
+    \ decides\n   whether the speed was worth having. Twenty parallel agents on one frozen judge multiplies\n\
+    \   exposure.\n7. The examiner appreciates; the model is a rental.\n8. You already own the eval engine\
+    \ (blind test, coding agent above two dedicated platforms).\n9. A number in a report has no path back\
+    \ to the run it measured; the Tokyo founder's line; six\n   verdict-to-action rules, each a routing\
+    \ decision executed mid-flight.\n10. Judge hygiene: another family, no shape-rewarding, pin the version.\n\
+    11. Tests come from logs: 25 traces, the trace is not truth, attribution.\n12. The merge gate: four\
+    \ signals, one confidence score, three of four deterministic or historical.\n13. Trust is actuarial;\
+    \ 19 of 20 merge unattended; the 1,500-pull-request practitioner; the\n    constraint is the product.\n\
+    14. The counterexample: 285 iterations, 1,094 merges, zero regressions, 38 green tests over a\n  \
+    \  broken product; converge on the spec.\n15. This week: three measurements; score the whole path.\n\
+    16. The model will be replaced twice before the end of the year; the examiner survives.\n\n## What\
+    \ is cut, and why (inherited)\n\nDropped in earlier rounds: the \"not a skim, open a terminal beside\
+    \ it\" preamble and both\nX/Telegram promotion blocks; every install command and the `evalkit` phase\
+    \ list; the\ntwo-repositories detail and the open-skills portability list; the leaderboard's four\
+    \ rows, reduced\nto the single comparison the author calls the interesting one; the vendor unbundling;\
+    \ the Harbor\nfolder tree, the four-line write-up template and the verifier self-test; the interview\
+    \ step; the\naggregate merge statistics and the two-person-shop economics; the dataset taxonomy, the\
+    \ sizing\nnumbers and the five first evals; the source's closing three-line recap, which would have\
+    \ ended\nthe piece on a list; \"Specific, clean, useful-sounding.\"; \"Same brain. Different examiner.\
+    \ Better\nproduct.\" (see the round-2 notes: if it ever comes back it must come back verbatim, and\
+    \ it costs a\ntriad); the Friday image in the thermostat paragraph, which survives once, in the close;\
+    \ four\neditorial frames; the shadow-mode-and-2%-deviation sentence.\n\nNothing was dropped this round.\
+    \ The five reshapes cost about 20 words net and `fit` did not move.\n\nNumbers kept: 83.9, 32.3, 100\
+    \ sessions, 25 traces, 429, 19 of 20, 1,500, 90 days, 285, 1,094, 38.\nDropped: 87.2, 84.6, 82.8,\
+    \ 79.5, 74.4, 91.0, 39, $200, 300 to 800, 5 minutes, 4 hours, 1% to 5%,\nand (this round, with the\
+    \ shadow-mode sentence) 2%.\n\n## What the piece is resting on\n\n- **The two pinned headings are\
+    \ `## Thermometer, thermostat` and `## What a score is allowed to\n  do`,** reproduced character for\
+    \ character; the FIGURE ANCHORS block above restates them.\n  Renaming either strands its figure and\
+    \ the renderer refuses the build. `## Where the tests come\n  from`, `## The gate that merges itself`\
+    \ and `## An afternoon of work` are free.\n- The `eval-routing` figure enumerates all six verdict-to-action\
+    \ pairs in its caption, so the\n  prose names only two on purpose. If that figure is removed or re-anchored,\
+    \ grow one or two of\n  the missing actions back.\n- The graph definition in the loops/graphs/evals\
+    \ paragraph is the only place a manager learns what\n  \"edge\" and \"routing\" will mean. Do not\
+    \ cut it for budget.\n- The dollar figure is gone from the body even though it is in the source's\
+    \ title; the argument\n  survives on \"a couple of hundred a month\".\n- Claim strength preserved\
+    \ at every hedge: \"give or take\", \"about a third of the time\", \"around\n  1,500\", \"the way\
+    \ an insurer does\". The gain-from-evals-alone claim is reported as the company's,\n  not verified.\n\
+    - If a later round has to cut for length, cut in this order: the Attribution sentence in \"Where the\n\
+    \  tests come from\" (35 words, a practitioner detail); the blind-test sentence closing\n  \"Thermometer,\
+    \ thermostat\". Do not reach for the caveats, the graph definition, the quotation\n  marks or the\
+    \ post-positioned attributions."

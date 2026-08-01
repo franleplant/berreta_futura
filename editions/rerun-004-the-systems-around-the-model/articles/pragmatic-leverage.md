@@ -5,7 +5,7 @@ content_mode: faithful_edit
 label: FAITHFUL EDIT
 ---
 
-**Editor's note.** This is an addendum to a series of Dex Horthy's, published on its own because it did not fit the series itself, and mentioned briefly in *Why Software Factories Fail part 2: Turning the lights back on*. In his terms, a factory is the setup you drop a prompt into and hope to get a fully-mergeable result back from, and the levels are phases of planning one piece of work.
+**Editor's note.** This is an addendum to a series of Dex Horthy's, published on its own and mentioned briefly in *Why Software Factories Fail part 2: Turning the lights back on*. In his terms, a factory is the setup you drop a prompt into and hope to get a fully-mergeable result back from, and the levels are phases of planning one piece of work.
 
 ## Seeking leverage
 

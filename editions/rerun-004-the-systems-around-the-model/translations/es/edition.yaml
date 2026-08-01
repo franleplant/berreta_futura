@@ -17,7 +17,7 @@ closing_plate_titles:
 - The Useful Boundary
 editorial:
   path: manuscript/editorial.md
-  source_sha256: afa3aeba35312de4989b3c16a3b1bd40b00de05f38409048b738ef5e843694c9
+  source_sha256: d66061fd6afea62eb83f76c401a6ff0f836977a01567edb18407272bed5b47f2
 articles:
 - id: frontier-lab-agent-intrusion
   title: Anatomy of a Frontier Lab Agent Intrusion
@@ -26,7 +26,7 @@ articles:
   author_note: Hugo Larcher, Adrien Carreira, raphael g, and Christophe Rannou are contributors publishing through
     Hugging Face.
   manuscript: articles/frontier-lab-agent-intrusion.md
-  source_sha256: ae1224e021293e364b48a2eba94ff5658df7da4ab0a3fbef8d316d2d54c547af
+  source_sha256: 88845887a4b1c81d8d677fb6086d42855faa7b74219fe4fd9978de115d88fd79
   figures:
   - id: campaign-timeline
     caption: The recovered campaign compresses into a 4.5-day timeline of foothold, command and control, lateral
@@ -43,7 +43,7 @@ articles:
   display_emphasis: Eval
   author_note: Argona is the publishing name of @Argona0x, an AI-focused X account.
   manuscript: articles/eval-engineering.md
-  source_sha256: 5398c09cf2a9b211a53059809a8db04e00b915813dbb7e893870021ee4666daf
+  source_sha256: 19e3e3f9ea0aeb2397090c323df0bd5af4859bb94dcad93db033fb959d69a3ac
   figures:
   - id: eval-engine
     caption: Evaluation becomes engineering when production traces, failure labels, and repeatable graders form
@@ -67,7 +67,7 @@ articles:
   display_emphasis: Leverage
   author_note: Dex Horthy is the founder of HumanLayer, a YC-backed developer-tools company.
   manuscript: articles/pragmatic-leverage.md
-  source_sha256: 35020e2818cd012893fafd23ee2544eb8902ef656c5149023b2221db64c994cc
+  source_sha256: 5406f40e9aa11d55dfe2105ba025f01a93721bf6664283561a2ac04899388305
   figures:
   - id: delivery-time
     caption: Coding is only one fraction of feature delivery; alignment, review, rework, testing, and verification
@@ -90,7 +90,7 @@ articles:
   display_emphasis: KimiK3
   author_note: ali works on inference at Baseten and studies engineering at the University of Waterloo.
   manuscript: articles/from-gpt2-to-kimi3.md
-  source_sha256: 873dd47411ec024d43e4e5fae7def5b52adc230ae92e484fc781dc5103249a69
+  source_sha256: 670c0340033bc79eae878a46b2bd2da44b59a9d7e35ebb7de950c08c59c3afdc
   figures:
   - id: gpt2-baseline
     caption: 'GPT-2 supplies the recognizable baseline: token and position embeddings, transformer blocks, normalization,
@@ -113,18 +113,18 @@ articles:
   display_emphasis: Systems
   author_note: Geoffrey Huntley is the creator of the Ralph loop.
   manuscript: articles/factory-systems-problem.md
-  source_sha256: 502a86d64024936caf31c5587ef107c5862523d5cb4d057511132ea4b1e03fc7
+  source_sha256: c95e0e817833c44a8698badf0ea832c05fc95998305d0dc19a83193c1244df3e
 - id: mcp-in-a-nutshell
   title: MCP in a Nutshell
   short_title: MCP in a Nutshell
   display_emphasis: MCP
   manuscript: articles/mcp-in-a-nutshell.md
-  source_sha256: 11521f09e41519ab1b74c2764ad640a7e14c7cfde470a23dedb26d056dcde0a8
+  source_sha256: 1c3fb05fe4cdb22b7561106eca61106599ed9fa80cbae69a5837f817427b9f0a
 - id: mcp-protocol-update
   title: The MCP Protocol Update
   short_title: MCP Protocol Update
   display_emphasis: Protocol
   author_note: David Soria Parra and Den Delimarsky are lead maintainers of the Model Context Protocol.
   manuscript: articles/mcp-protocol-update.md
-  source_sha256: 37c5c490184b4ace57be5381eb801101f9188c7d63f39200d6bda3b8588a8b39
+  source_sha256: 71e8cd2d3a067f2457dd7daf15bf1efb86fb1ea98e7fc56adc4fba53baa9bad3
 sections: []
