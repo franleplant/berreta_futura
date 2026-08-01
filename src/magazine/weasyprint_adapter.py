@@ -326,6 +326,11 @@ _MODULE_EPSILON = 1e-9
 # though it stands on the first page rather than the last, is an absolute box
 # whose geometry says nothing about where the article's prose ended.
 _OUT_OF_FLOW_CODA_CLASSES = frozenset({"article-tail", "source-code"})
+# What closes an article, in flow or out of it.  A deferred landscape plate
+# belongs to the article's prose and must surface ahead of any of these; the
+# key-ideas box is in flow and the tail ornament is not, but a plate printed
+# after either would read as belonging to the coda rather than to the argument.
+_ARTICLE_CODA_CLASSES = frozenset({"article-tail", "key-ideas"})
 # ``render.py``'s own INK and the sheet, written as the percentages those tuples
 # are, exactly as the stylesheet writes them, so the code's ink is the
 # publication's and not a colour invented for a barcode.  ONE INK, deliberately:
@@ -697,8 +702,8 @@ _UNBINDABLE_CLASSES = frozenset(
     {
         "author-note", "byline", "content-label", "contents-kicker", "end-mark",
         "entry-author", "entry-folio", "entry-label", "entry-title", "folio-name",
-        "issue-number", "label-primary", "label-secondary", "provenance",
-        "publication-name", "running-head", "subtitle",
+        "issue-number", "key-ideas-label", "label-primary", "label-secondary",
+        "provenance", "publication-name", "running-head", "subtitle",
     }
 )
 # Subtrees the reading flow does not include at all: opener chrome, the contents
@@ -1816,9 +1821,11 @@ def _rewrite_article_plates(article: Element) -> None:
     for child in article:
         layout = child.get("data-layout", "") if child.tag == "figure" else ""
         if layout not in _LANDSCAPE_PLATE_LAYOUTS:
-            # A heading releases a deferred plate, and so does the tail ornament:
-            # the plate belongs to the article's prose, ahead of its coda.
-            releases = child.tag in _PLATE_ANCHOR_TAGS or "article-tail" in _element_classes(child)
+            # A heading releases a deferred plate, and so does the article's
+            # coda: the plate belongs to the article's prose, ahead of it.
+            releases = child.tag in _PLATE_ANCHOR_TAGS or bool(
+                _element_classes(child) & _ARTICLE_CODA_CLASSES
+            )
             if releases and deferred is not None:
                 ordered.append(deferred)
                 deferred = None

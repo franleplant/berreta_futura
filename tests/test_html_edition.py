@@ -56,8 +56,8 @@ def _edition(tmp_path: Path, *, locale: str = "en", manuscript: str | None = Non
     article = Article(
         id="article<&>", title="Article <&>", short_title="Article", display_emphasis="",
         opener_variant="edge_medallion", author="Author <&>", author_note="Note <&>",
-        source_ids=("source-one", "source-two"), manuscript=article_path,
-        fidelity=tmp_path / "fidelity.yaml", content_mode="faithful_synthesis",
+        source_ids=("source-one", "source-two"), source_pins=(),
+        manuscript=article_path, content_mode="faithful_synthesis",
         figures=(opener, figure), tail_art=tail_path,
         source_url="https://example.test/source?a=1&b=2",
     )

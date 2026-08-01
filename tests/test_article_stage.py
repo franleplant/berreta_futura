@@ -16,7 +16,6 @@ from magazine.article_stage import (
     stage_article,
 )
 from magazine.errors import ValidationError
-from magazine.fidelity import fidelity_report
 
 
 class ArticleStageTests(unittest.TestCase):
@@ -41,6 +40,9 @@ class ArticleStageTests(unittest.TestCase):
         )
 
     def test_single_source_plan_and_stage_create_exact_safe_skeletons(self):
+        """Staging writes two things and invents no prose: a TODO-only
+        manuscript, and the article row that pins the exact extraction body the
+        author is expected to work from."""
         brief = self.brief("source-one")
         manifest_path = self.root / "editions" / "issue-a" / "edition.yaml"
         before = manifest_path.read_bytes()
@@ -52,32 +54,20 @@ class ArticleStageTests(unittest.TestCase):
         self.assertTrue(dry_run.dry_run)
         self.assertEqual(manifest_path.read_bytes(), before)
         self.assertFalse(plan.created[0].exists())
+        # Exactly two changes: the manuscript slot and the manifest row.
+        self.assertEqual(
+            [(change.action, change.purpose) for change in plan.changes],
+            [("create", "manuscript"), ("update", "edition manifest")],
+        )
 
         report = stage_article(self.root, brief)
 
         self.assertTrue(report.changed)
         manuscript = self.root / "editions" / "issue-a" / "articles" / "article-one.md"
-        ledger_path = (
-            self.root / "editions" / "issue-a" / "fidelity" / "article-one.yaml"
-        )
         manuscript_text = manuscript.read_text(encoding="utf-8")
         self.assertIn("TODO(editor)", manuscript_text)
         self.assertIn("No source prose was generated", manuscript_text)
         self.assertNotIn("Substantive source body", manuscript_text)
-        ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
-        self.assertEqual(ledger["source_ids"], ["source-one"])
-        self.assertEqual(
-            ledger["source_body_sha256"],
-            hashlib.sha256(b"Substantive source body.\n").hexdigest(),
-        )
-        self.assertEqual(
-            ledger["paragraphs"][0]["status"],
-            "todo_editorial_mapping_required",
-        )
-        self.assertNotIn("source", ledger["paragraphs"][0])
-        self.assertNotIn("edited", ledger["paragraphs"][0])
-        with self.assertRaisesRegex(ValidationError, "invalid status"):
-            fidelity_report(ledger_path, manuscript)
         manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
         self.assertEqual(manifest["sources"], ["source-one"])
         self.assertEqual(
@@ -92,12 +82,17 @@ class ArticleStageTests(unittest.TestCase):
                 "author_note": "Example Author is an engineer at Example Company.",
                 "content_mode": "faithful_edit",
                 "source_ids": ["source-one"],
+                # One source pins as a bare digest of the extraction body.
+                "source_body_sha256": hashlib.sha256(
+                    b"Substantive source body.\n"
+                ).hexdigest(),
                 "manuscript": "editions/issue-a/articles/article-one.md",
-                "fidelity": "editions/issue-a/fidelity/article-one.yaml",
             },
         )
 
-    def test_multi_source_ledger_uses_ordered_mapping_and_shared_profile(self):
+    def test_multi_source_row_pins_each_body_by_id_in_declared_order(self):
+        """Several sources pin as a mapping keyed by source id, in the brief's
+        declared order, so no source can hide behind another's hash."""
         _add_source(
             self.root,
             "source-two",
@@ -107,46 +102,59 @@ class ArticleStageTests(unittest.TestCase):
 
         stage_article(self.root, self.brief("source-two", "source-one"))
 
-        ledger = yaml.safe_load(
+        manifest = yaml.safe_load(
             (
-                self.root
-                / "editions"
-                / "issue-a"
-                / "fidelity"
-                / "article-one.yaml"
+                self.root / "editions" / "issue-a" / "edition.yaml"
             ).read_text(encoding="utf-8")
         )
-        self.assertEqual(ledger["source_ids"], ["source-two", "source-one"])
+        row = manifest["articles"][0]
+        self.assertEqual(row["source_ids"], ["source-two", "source-one"])
         self.assertEqual(
-            list(ledger["source_body_sha256"]),
+            list(row["source_body_sha256"]),
             ["source-two", "source-one"],
         )
         self.assertEqual(
-            ledger["source_body_sha256"]["source-two"],
-            hashlib.sha256(b"A second source body.\n").hexdigest(),
+            row["source_body_sha256"],
+            {
+                "source-two": hashlib.sha256(b"A second source body.\n").hexdigest(),
+                "source-one": hashlib.sha256(b"Substantive source body.\n").hexdigest(),
+            },
         )
 
     def test_second_run_keeps_existing_editorial_work_without_overwriting(self):
         brief = self.brief("source-one")
         first = stage_article(self.root, brief)
         manuscript = first.created[0]
-        ledger = first.created[1]
         manuscript.write_text("Human-authored manuscript.\n", encoding="utf-8")
-        ledger.write_text("human: ledger work\n", encoding="utf-8")
 
         second = stage_article(self.root, brief)
 
         self.assertFalse(second.changed)
         self.assertEqual(manuscript.read_text(encoding="utf-8"), "Human-authored manuscript.\n")
-        self.assertEqual(ledger.read_text(encoding="utf-8"), "human: ledger work\n")
         self.assertEqual(
             second.kept,
             (
                 manuscript,
-                ledger,
                 self.root / "editions" / "issue-a" / "edition.yaml",
             ),
         )
+
+    def test_re_staging_refuses_when_the_manuscript_has_gone_missing(self):
+        """A row without its manuscript is a broken stage, not a fresh one:
+        re-running must say so rather than quietly re-create the TODO skeleton
+        and leave the editor believing the article was never written."""
+        brief = self.brief("source-one")
+        stage_article(self.root, brief)
+        manuscript = self.root / "editions" / "issue-a" / "articles" / "article-one.md"
+        manuscript.unlink()
+        manifest = self.root / "editions" / "issue-a" / "edition.yaml"
+        before = manifest.read_bytes()
+
+        with self.assertRaisesRegex(ValidationError, "is missing its manuscript"):
+            stage_article(self.root, brief)
+
+        self.assertFalse(manuscript.exists())
+        self.assertEqual(manifest.read_bytes(), before)
 
     def test_untracked_existing_article_file_is_never_overwritten(self):
         manuscript = self.root / "editions" / "issue-a" / "articles" / "article-one.md"
@@ -162,13 +170,21 @@ class ArticleStageTests(unittest.TestCase):
         self.assertEqual(manifest.read_bytes(), before)
 
     def test_failed_second_install_rolls_back_every_file_and_manifest(self):
+        """The batch is all or nothing: the manuscript installs first, so a
+        failure installing the manifest must undo it rather than leave a
+        manuscript no edition row points at."""
         brief = self.brief("source-one")
         manifest = self.root / "editions" / "issue-a" / "edition.yaml"
         before = manifest.read_bytes()
         real_link = os.link
+        injected = False
 
-        def fail_ledger(source, destination, *, follow_symlinks=False):
-            if Path(destination).name == "article-one.yaml":
+        def fail_manifest(source, destination, *, follow_symlinks=False):
+            # Only the install fails; the rollback relink of the manifest
+            # backup must be allowed through.
+            nonlocal injected
+            if Path(destination).name == "edition.yaml" and not injected:
+                injected = True
                 raise OSError("injected replacement failure")
             return real_link(
                 source,
@@ -176,15 +192,13 @@ class ArticleStageTests(unittest.TestCase):
                 follow_symlinks=follow_symlinks,
             )
 
-        with patch("magazine.article_stage.os.link", side_effect=fail_ledger):
+        with patch("magazine.article_stage.os.link", side_effect=fail_manifest):
             with self.assertRaisesRegex(ValidationError, "Cannot stage article atomically"):
                 stage_article(self.root, brief)
 
+        self.assertTrue(injected)
         self.assertFalse(
             (self.root / "editions" / "issue-a" / "articles" / "article-one.md").exists()
-        )
-        self.assertFalse(
-            (self.root / "editions" / "issue-a" / "fidelity" / "article-one.yaml").exists()
         )
         self.assertEqual(manifest.read_bytes(), before)
 
@@ -301,9 +315,6 @@ class ArticleStageTests(unittest.TestCase):
         self.assertFalse(
             (self.root / "editions" / "issue-a" / "articles" / "article-one.md").exists()
         )
-        self.assertFalse(
-            (self.root / "editions" / "issue-a" / "fidelity" / "article-one.yaml").exists()
-        )
 
     def test_destination_created_inside_exclusive_install_is_never_overwritten(self):
         manuscript = (
@@ -327,9 +338,6 @@ class ArticleStageTests(unittest.TestCase):
                 stage_article(self.root, self.brief("source-one"))
 
         self.assertEqual(manuscript.read_bytes(), b"CONCURRENT EDIT")
-        self.assertFalse(
-            (self.root / "editions" / "issue-a" / "fidelity" / "article-one.yaml").exists()
-        )
         manifest = yaml.safe_load(
             (
                 self.root / "editions" / "issue-a" / "edition.yaml"

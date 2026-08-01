@@ -24,8 +24,11 @@ articles:
     author_note: Original Author is the founder of Example Company.
     source_ids:
       - example-source-id
+    # The SHA-256 of each source's committed extraction body. One source pins a
+    # bare digest; several pin a mapping keyed by source id. `mag article` writes
+    # this, and `mag pin <edition>` refreshes it after an extraction changes.
+    source_body_sha256: 0000000000000000000000000000000000000000000000000000000000000000
     manuscript: editions/issue-001/articles/example-article.md
-    fidelity: editions/issue-001/fidelity/example-article.yaml
     opener_art:
       path: editions/issue-001/art/article-openers/example-article.png
       alt_text: A boy and a friendly robot connect a document to a database and tools.
@@ -34,5 +37,28 @@ articles:
     # tail_art_path: editions/issue-001/art/article-tails/example-article.png
     # Curate zero to three source-verified figures. The anchor must be __opener__
     # or exactly match a ## heading in the manuscript. Supported layouts are
-    # evidence_band, evidence_band_prose, and column_plate.
+    # evidence_band, evidence_band_prose, and column_plate. Rewriting an article
+    # changes its headings, so refresh every anchor with it.
     figures: []
+    # An article may close with a key-ideas box or with tail art, never both.
+    # Editor voice, one claim per line, ninety words across the whole box. These
+    # are the claims a reader must retain to use the thing, not a summary.
+    # key_ideas:
+    #   - One host can drive several servers without merging them.
+    #   - A server states what it can do; the host decides when to do it.
+# An explainer bundle. Set content_mode: in_a_nutshell on the article, which is
+# also what marks it as the edition's explainer, and give it an editor byline
+# rather than a captured source author. The try-it exercise must run exactly as
+# written. Sections render, pin, and translate generically; kinds are
+# glossary, try_it, cheat_sheet, original_editorial, source_introduction,
+# original_synthesis, source_record, and production_note.
+# sections:
+#   - kind: try_it
+#     title: Try It in Fifteen Minutes
+#     path: editions/issue-001/sections/try-it.md
+#   - kind: glossary
+#     title: Glossary
+#     path: editions/issue-001/sections/glossary.md
+#   - kind: cheat_sheet
+#     title: Cheat Sheet
+#     path: editions/issue-001/sections/cheat-sheet.md

@@ -6,8 +6,8 @@ full build writes into ``edition-manifest.json`` for the same bytes, because
 measurement reuses the adapter's own pagination path rather than
 approximating it.  Second, timing: a budget breach is a *report* from
 ``measure`` and an exit code from ``fit``, never an exception, because the
-seam exists to deliver the build's verdict before the ledger, translation and
-pins that a refusing build would waste.
+seam exists to deliver the build's verdict before the source pins, translation
+and review work that a refusing build would waste.
 """
 
 from __future__ import annotations

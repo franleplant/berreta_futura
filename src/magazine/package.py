@@ -60,7 +60,6 @@ def package_release(
     reader_pdf: Path,
     destination: Path,
     manifest: dict[str, Any],
-    fidelity_markdown: str,
     *,
     cover_art: Path | None = None,
     cover_art_size_points: tuple[float, float] | None = None,
@@ -129,8 +128,6 @@ def package_release(
         ),
         encoding="utf-8",
     )
-    fidelity = destination / "fidelity.md"
-    fidelity.write_text(fidelity_markdown, encoding="utf-8")
     studio = destination / "studio" / "README.md"
     studio.parent.mkdir(parents=True, exist_ok=True)
     studio.write_text(_studio_note(language), encoding="utf-8")
@@ -163,7 +160,6 @@ def package_release(
             interior_booklet,
             cover_booklet,
             instructions,
-            fidelity,
             studio,
             preflight,
             edition_manifest,

@@ -8,7 +8,7 @@ import tempfile
 import tomllib
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 
 from PIL import Image, ImageDraw
 
@@ -35,8 +35,34 @@ from .evidence_review import (
     require_approved_evidence_review,
     write_evidence_review,
 )
-from .extraction import verify_ledger_source_extractions
-from .fidelity import fidelity_report
+from .edition_review import (
+    create_edition_review,
+    current_edition_bindings,
+    edition_review_path,
+    edition_review_status as _edition_review_status,
+    load_edition_review,
+    write_edition_review,
+)
+from .learning_review import (
+    create_learning_review,
+    current_learning_bindings,
+    learning_review_path,
+    learning_review_status as _learning_review_status,
+    load_learning_review,
+    write_learning_review,
+)
+from .line_review import (
+    create_line_review,
+    current_line_bindings,
+    line_review_path,
+    line_review_status as _line_review_status,
+    load_line_review,
+    rebind_articles as rebind_line_articles,
+    write_line_review,
+)
+from .scores import scores_are_current, scores_path, write_scores
+from .code_blocks import verify_manuscript_code_blocks
+from .extraction import verify_source_extractions
 from .io import load_structured
 from .illustration import (
     load_illustration_plan,
@@ -64,7 +90,9 @@ from .release import (
     rename_collecting_edition,
     sync_release_state,
 )
+from .produce import MAX_ROUNDS, Production, ProductionGates, ProduceResult
 from .render_engine import engine_name, reader_renderer
+from .runner import CommandRunner, RunnerConfig, resolve_text_runner
 from .render_review import (
     check_recorded_review_embeddable,
     create_render_review,
@@ -524,6 +552,55 @@ class Magazine:
 
     workflow_advance = workflow_run
 
+    def produce(
+        self,
+        edition_id: str,
+        *,
+        articles: Iterable[str] | None = None,
+        dry_run: bool = False,
+        max_rounds: int = MAX_ROUNDS,
+        reviewer: str | None = None,
+        backend: str | None = None,
+        command: CommandRunner | None = None,
+        gates: ProductionGates | None = None,
+    ) -> ProduceResult:
+        """Draft and judge an edition's pieces as a pipeline.
+
+        ``workflow_run`` stops at the first authorial checkpoint on purpose:
+        it is the clerical half of the machine.  This is the other half, and
+        the ordering that used to live in an operating agent's head -- writer,
+        deterministic gates, the two per-piece judges in parallel, revision on
+        findings *and* the writer's own notes, then the whole-issue judges --
+        lives in :mod:`magazine.produce` instead.
+
+        The text backend is resolved **before** anything else happens, so a
+        missing binary or a bad ``[runner]`` table aborts the command rather
+        than half an edition.  ``backend`` overrides ``[runner] text_backend``
+        for this call only -- the file on disk is never rewritten, so a run
+        that borrows the other backend cannot leave the configured default
+        changed behind it.  ``command`` is the injection point the test suite
+        uses; no test ever reaches a real model.  No path through here resolves
+        an image runner: produce reuses registered art and reports a missing
+        opener as a human action, and the override cannot reach the image
+        backend even in principle.
+        """
+
+        config = RunnerConfig.load(self.root).with_text_backend(backend)
+        runner = resolve_text_runner(config, command=command)
+        production = Production(
+            self,
+            runner=runner,
+            model=config.text_model,
+            gates=gates,
+            max_rounds=max_rounds,
+            reviewer=reviewer,
+        )
+        return production.run(
+            edition_id,
+            articles=None if articles is None else list(articles),
+            dry_run=dry_run,
+        )
+
     def stage_article(
         self,
         brief: ArticleBrief | dict[str, Any] | Path,
@@ -888,20 +965,25 @@ class Magazine:
         # extraction chain. Released editions' source pins predate committed
         # extractions and are verified opportunistically.
         require_extractions = edition_id in release_state.collecting_edition_ids
+        manifest_path = self.editions_dir / edition.id / "edition.yaml"
+        errors: list[str] = []
         for article in edition.articles:
-            ledger_mode = str(load_structured(article.fidelity).get("content_mode", "faithful_edit"))
-            if ledger_mode != article.content_mode:
-                raise ValidationError(
-                    f"Article {article.id} content_mode {article.content_mode!r} does not match "
-                    f"its fidelity ledger {ledger_mode!r}"
+            label = f"{manifest_path}: article {article.id}"
+            try:
+                extractions = verify_source_extractions(
+                    label,
+                    article.source_pins,
+                    self.sources_dir,
+                    require_extractions=require_extractions,
                 )
-            fidelity_report(article.fidelity, source_author=article.author)
-            verify_ledger_source_extractions(
-                article.fidelity,
-                self.sources_dir,
-                require_extractions=require_extractions,
-                article_source_ids=article.source_ids,
-            )
+                # Whether the manuscript *says* what the source says is the
+                # fact-checker's judgment.  Whether its code is the source's
+                # code, line for line, is arithmetic, and stays here.
+                verify_manuscript_code_blocks(article.manuscript, extractions)
+            except ValidationError as exc:
+                errors.extend(exc.errors)
+        if errors:
+            raise ValidationError(errors)
         editions = {edition.language: edition}
         for language in self.languages:
             if language == edition.language:
@@ -1115,8 +1197,8 @@ class Magazine:
         of them, English first, exactly as a build renders them.
 
         Loading mirrors ``cover_proof`` rather than ``build``: measurement is
-        a layout question, so it must be askable *before* the fidelity
-        ledgers, extractions and media triage that gate a build are finished
+        a layout question, so it must be askable *before* the source
+        extractions, pins and media triage that gate a build are finished
         -- learning the page count only after all of that is the failure mode
         this method exists to remove.
 
@@ -1168,7 +1250,7 @@ class Magazine:
 
         Loading mirrors ``cover_proof`` and ``measure`` rather than ``build``:
         a browsable proof is a reading question, so it must be askable before
-        the ledgers and pins that gate a build are finished.  The output is
+        the extractions and pins that gate a build are finished.  The output is
         deliberately not part of a build, a package, or a release, and no
         render review binds to it -- it is a private screen profile, not a
         production artifact.
@@ -1257,7 +1339,7 @@ class Magazine:
 
         The digests this rewrites are all *derived* facts -- the overlay's
         base-copy hash, each article's source hash, figure caption and credit
-        pins, ledger extraction-body pins -- so refreshing them is clerical,
+        pins, each article's extraction-body pins -- so refreshing them is clerical,
         not editorial.  It is deliberately a separate, explicit command:
         ``validate`` never repins silently, because a stale pin is sometimes
         the only thing telling a reviewer that an input changed under an
@@ -1298,7 +1380,6 @@ class Magazine:
         destination = self.output_dir / edition.id
         review_path = self.editions_dir / edition.id / "reviews" / "render.yaml"
         recorded_review = load_render_review(review_path, edition_id=edition.id)
-        reports = [fidelity_report(article.fidelity) for article in edition.articles]
         source_records = {record.id: record for record in load_records(self.sources_dir)}
         declared_source_ids = edition.raw.get("sources", [])
         used_source_ids = sorted(
@@ -1329,20 +1410,6 @@ class Magazine:
                     layout,
                     cover_art_size_points=cover.cover_art_size_points,
                 )
-            if reports:
-                heading = "# Informe de fidelidad" if language == "es" else "# Fidelity report"
-                intro = (
-                    "\n\nLa traducción se deriva de la edición inglesa validada; el informe conserva "
-                    "la trazabilidad de esa edición respecto de las fuentes."
-                    if language == "es"
-                    else ""
-                )
-                fidelity_md = heading + intro + "\n\n" + "\n\n".join(
-                    report.as_markdown(article.title, language=language)
-                    for article, report in zip(variant.articles, reports, strict=True)
-                ) + "\n"
-            else:
-                fidelity_md = _section_fidelity_report(self.root, variant)
             build_manifest = {
                 "schema_version": 1,
                 "compiler": "magazine-compiler/0.1.0",
@@ -1391,10 +1458,6 @@ class Magazine:
                         self.editions_dir / edition.id / "translations" / language / "edition.yaml",
                         self.root,
                     ) if language != self.primary_language else None,
-                    "fidelity_status": _optional_file_entry(
-                        self.editions_dir / edition.id / "fidelity" / "source-edition-status.yaml",
-                        self.root,
-                    ),
                     "sections": [
                         {"kind": section.kind, **_file_entry(section.path, self.root)}
                         for section in variant.sections
@@ -1403,7 +1466,6 @@ class Magazine:
                         {
                             "id": article.id,
                             "manuscript": _file_entry(article.manuscript, self.root),
-                            "fidelity": _file_entry(article.fidelity, self.root),
                             **(
                                 {
                                     "opener_art": {
@@ -1488,7 +1550,6 @@ class Magazine:
                 working_pdf,
                 language_destination,
                 build_manifest,
-                fidelity_md,
                 cover_art=variant.cover_art,
                 cover_art_size_points=layout.cover_art_size_points,
                 figure_placements=layout.figure_placements,
@@ -1620,17 +1681,18 @@ class Magazine:
         *,
         reviewer: str,
         result: str,
-        findings: list[str] | tuple[str, ...] = (),
+        findings: Iterable[Any] = (),
+        scores: Mapping[str, Mapping[str, int]] | None = None,
         notes: str = "",
         reviewed_at: str | None = None,
         articles: Iterable[str] | None = None,
     ) -> Path:
         """Bind an independent evidence audit to the exact bytes it compared.
 
-        The record pins every manuscript, fidelity ledger, and extraction body
-        the audit covered.  Recording requires a committed extraction for every
-        ledger source: an audit cannot have compared a manuscript against
-        evidence that does not exist.
+        The record pins every manuscript and extraction body the audit
+        covered.  Recording requires a committed extraction for every source
+        the article declares: an audit cannot have compared a manuscript
+        against evidence that does not exist.
 
         ``articles`` narrows a re-record to the articles actually re-audited:
         only those are re-bound from current disk state, and every other
@@ -1660,6 +1722,7 @@ class Magazine:
             result=result,
             bindings=bindings,
             findings=findings,
+            scores=scores,
             notes=notes,
             reviewed_at=reviewed_at,
         )
@@ -1704,6 +1767,237 @@ class Magazine:
         ):
             status["status"] = "not_required"
         return status
+
+    def _review_edition(self, edition_id: str) -> tuple[Edition, ReleaseState]:
+        """Load an edition and the release ledger for a review seam.
+
+        Every review status method needs the same two things and reports the
+        same way when it cannot have them, so the loading lives once here and
+        every caller keeps the resilient ``unavailable`` shape.
+        """
+
+        release_state = self._require_release_state()
+        records = load_records(self.sources_dir)
+        edition = load_edition(
+            self.root,
+            edition_id,
+            {record.id for record in records},
+            publication_name=self.publication_name,
+            source_records={record.id: record for record in records},
+        )
+        return edition, release_state
+
+    def _release_scoped_status(
+        self, status: dict[str, Any], edition_id: str, release_state: ReleaseState
+    ) -> dict[str, Any]:
+        """Only a collecting edition can still be released, so only it owes a
+        review; a released edition's missing record is ``not_required``."""
+
+        if (
+            edition_id not in release_state.collecting_edition_ids
+            and status.get("status") == "required_before_release"
+        ):
+            status["status"] = "not_required"
+        return status
+
+    def record_line_review(
+        self,
+        edition_id: str,
+        *,
+        reviewer: str,
+        result: str,
+        findings: Iterable[Any] = (),
+        scores: Mapping[str, Mapping[str, int]] | None = None,
+        notes: str = "",
+        reviewed_at: str | None = None,
+        articles: Iterable[str] | None = None,
+    ) -> Path:
+        """Bind a line-editing verdict to the exact manuscripts it read.
+
+        The line editor is forbidden from opening the source, so the record
+        binds the manuscript SHA-256 and nothing else -- including for the
+        opening editorial, which is line-read like any other piece under the
+        article id ``editorial``.  ``articles`` narrows a re-record to the
+        pieces actually re-read, exactly as it does for an evidence audit.
+        """
+
+        edition = self.validate(edition_id)
+        bindings = current_line_bindings(edition)
+        if articles is not None:
+            bindings = rebind_line_articles(
+                load_line_review(
+                    line_review_path(self.editions_dir, edition_id),
+                    edition_id=edition_id,
+                ),
+                bindings=bindings,
+                article_ids=articles,
+            )
+        record = create_line_review(
+            edition_id=edition_id,
+            reviewer=reviewer,
+            result=result,
+            bindings=bindings,
+            findings=findings,
+            scores=scores,
+            notes=notes,
+            reviewed_at=reviewed_at,
+        )
+        return write_line_review(
+            line_review_path(self.editions_dir, edition_id), record
+        )
+
+    def line_review_status(self, edition_id: str) -> dict[str, Any]:
+        """Hash-bound line review status, resilient enough for diagnosis."""
+
+        try:
+            edition, release_state = self._review_edition(edition_id)
+            bindings = current_line_bindings(edition)
+            record = load_line_review(
+                line_review_path(self.editions_dir, edition_id),
+                edition_id=edition_id,
+            )
+        except ValidationError as exc:
+            return {"status": "unavailable", "errors": list(exc.errors)}
+        return self._release_scoped_status(
+            _line_review_status(record, edition_id=edition_id, bindings=bindings),
+            edition_id,
+            release_state,
+        )
+
+    def record_edition_review(
+        self,
+        edition_id: str,
+        *,
+        reviewer: str,
+        result: str,
+        findings: Iterable[Any] = (),
+        scores: Mapping[str, int] | None = None,
+        notes: str = "",
+        reviewed_at: str | None = None,
+    ) -> Path:
+        """Bind the managing editor's whole-issue verdict to the whole issue.
+
+        Coherence is a function of every piece at once, so the record binds the
+        editorial, ``edition.yaml``, and every manuscript, and there is no
+        partial re-record: one manuscript moving really does invalidate a
+        judgement about running order and through-line.
+        """
+
+        edition = self.validate(edition_id)
+        record = create_edition_review(
+            edition_id=edition_id,
+            reviewer=reviewer,
+            result=result,
+            bindings=current_edition_bindings(
+                edition,
+                manifest_path=self.editions_dir / edition_id / "edition.yaml",
+            ),
+            findings=findings,
+            scores=scores,
+            notes=notes,
+            reviewed_at=reviewed_at,
+        )
+        return write_edition_review(
+            edition_review_path(self.editions_dir, edition_id), record
+        )
+
+    def edition_review_status(self, edition_id: str) -> dict[str, Any]:
+        """Hash-bound whole-issue review status, resilient enough for diagnosis."""
+
+        try:
+            edition, release_state = self._review_edition(edition_id)
+            bindings = current_edition_bindings(
+                edition,
+                manifest_path=self.editions_dir / edition_id / "edition.yaml",
+            )
+            record = load_edition_review(
+                edition_review_path(self.editions_dir, edition_id),
+                edition_id=edition_id,
+            )
+        except ValidationError as exc:
+            return {"status": "unavailable", "errors": list(exc.errors)}
+        return self._release_scoped_status(
+            _edition_review_status(record, edition_id=edition_id, bindings=bindings),
+            edition_id,
+            release_state,
+        )
+
+    def record_learning_review(
+        self,
+        edition_id: str,
+        *,
+        reviewer: str,
+        result: str,
+        findings: Iterable[Any] = (),
+        scores: Mapping[str, int] | None = None,
+        comprehension: Iterable[Any] = (),
+        manager_takeaways: Iterable[Any] = (),
+        notes: str = "",
+        reviewed_at: str | None = None,
+        explainer_ids: Iterable[str] | None = None,
+    ) -> Path:
+        """Bind the reader personas' verdict to what the personas actually read.
+
+        The three readers judge the editor-authored furniture and the explainer,
+        never the article bodies, so the record binds a furniture projection and
+        the explainer manuscripts and nothing else: a typo fixed in some
+        feature's third paragraph must not invalidate a comprehension run.
+        """
+
+        edition = self.validate(edition_id)
+        record = create_learning_review(
+            edition_id=edition_id,
+            reviewer=reviewer,
+            result=result,
+            bindings=current_learning_bindings(edition, explainer_ids=explainer_ids),
+            findings=findings,
+            scores=scores,
+            comprehension=comprehension,
+            manager_takeaways=manager_takeaways,
+            notes=notes,
+            reviewed_at=reviewed_at,
+        )
+        return write_learning_review(
+            learning_review_path(self.editions_dir, edition_id), record
+        )
+
+    def learning_review_status(self, edition_id: str) -> dict[str, Any]:
+        """Hash-bound reader-persona review status, resilient enough for diagnosis."""
+
+        try:
+            edition, release_state = self._review_edition(edition_id)
+            bindings = current_learning_bindings(edition)
+            record = load_learning_review(
+                learning_review_path(self.editions_dir, edition_id),
+                edition_id=edition_id,
+            )
+        except ValidationError as exc:
+            return {"status": "unavailable", "errors": list(exc.errors)}
+        return self._release_scoped_status(
+            _learning_review_status(record, edition_id=edition_id, bindings=bindings),
+            edition_id,
+            release_state,
+        )
+
+    def write_scores(self) -> Path:
+        """Regenerate ``editions/scores.yaml`` from the committed review records.
+
+        Derived exactly like ``sources.md``: never hand-edited, always
+        reproducible from the records it summarizes.  It is the cross-edition
+        metric surface, and it is read by people rather than by code -- nothing
+        in this package consults a score to decide anything.
+        """
+
+        return write_scores(self.editions_dir, root=self.root)
+
+    def scores_are_current(self) -> bool:
+        """Whether ``editions/scores.yaml`` matches what the records would produce."""
+
+        return scores_are_current(self.editions_dir, root=self.root)
+
+    @property
+    def scores_path(self) -> Path:
+        return scores_path(self.editions_dir)
 
     def render_review_status(self, edition_id: str) -> dict[str, Any]:
         destination = self.output_dir / edition_id
@@ -1765,8 +2059,8 @@ class Magazine:
             publication_date=edition.publication_date,
             next_edition_id=next_edition_id,
         )
-        # The evidence audit binds to manuscripts, ledgers, and extraction
-        # bodies rather than built artifacts, so it can refuse before the
+        # The evidence audit binds to manuscripts and extraction bodies
+        # rather than built artifacts, so it can refuse before the
         # expensive render, mirroring require_approved_reports after it.
         require_approved_evidence_review(
             load_evidence_review(
@@ -2425,25 +2719,3 @@ def _write_full_cover_comparison(
             temporary_path.unlink()
 
 
-def _section_fidelity_report(root: Path, edition: Edition) -> str:
-    path = root / "editions" / edition.id / "fidelity" / "source-edition-status.yaml"
-    if not path.is_file():
-        return "# Fidelity report\n\nNo faithful source article is present in this edition.\n"
-    status = load_structured(path)
-    lines = [
-        "# Fidelity report",
-        "",
-        f"- Source: `{status.get('source_id', 'unknown')}`",
-        f"- Content mode: `{status.get('content_mode', 'unknown')}`",
-        f"- Status: **{status.get('status', 'unknown')}**",
-    ]
-    blockers = status.get("blockers", [])
-    if blockers:
-        lines.extend(["", "## Blockers", "", *[f"- {item}" for item in blockers]])
-    metrics = status.get("metrics", {})
-    if metrics:
-        lines.extend(["", "## Metrics", ""])
-        lines.extend(f"- {key.replace('_', ' ').title()}: {value if value is not None else 'not yet measured'}" for key, value in metrics.items())
-    if status.get("note"):
-        lines.extend(["", status["note"]])
-    return "\n".join(lines) + "\n"

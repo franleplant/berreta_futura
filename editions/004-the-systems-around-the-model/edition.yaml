@@ -47,7 +47,7 @@ articles:
   source_ids:
   - anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
   manuscript: editions/004-the-systems-around-the-model/articles/frontier-lab-agent-intrusion.md
-  fidelity: editions/004-the-systems-around-the-model/fidelity/frontier-lab-agent-intrusion.yaml
+  source_body_sha256: 70ae2dbdd1e3cf5bd8d2dde5ceb6036b1854b5f2393ed62c00f925247f40e8a0
   opener_art:
     path: editions/004-the-systems-around-the-model/art/article-openers/frontier-lab-agent-intrusion.png
     alt_text: A bespectacled boy and friendly helper robot trace a red signal through layered workshop
@@ -79,7 +79,7 @@ articles:
   source_ids:
   - eval-engineering-the-step-that-turns-a-200-model-9f6f868f
   manuscript: editions/004-the-systems-around-the-model/articles/eval-engineering.md
-  fidelity: editions/004-the-systems-around-the-model/fidelity/eval-engineering.yaml
+  source_body_sha256: 53649c4c91e0f22f26899b33938dfb5abb5675ab4867b37823d7dd9547b0fcd6
   opener_art:
     path: editions/004-the-systems-around-the-model/art/article-openers/eval-engineering.png
     alt_text: A boy and helper robot test colorful model outputs on a looping tray system while one failed
@@ -124,7 +124,7 @@ articles:
   source_ids:
   - pragmatic-leverage-in-the-software-factory-09879736
   manuscript: editions/004-the-systems-around-the-model/articles/pragmatic-leverage.md
-  fidelity: editions/004-the-systems-around-the-model/fidelity/pragmatic-leverage.yaml
+  source_body_sha256: db9f336036f94d88a8a180abf98f9e77489523ece8b739a9b462d4b829ea4dd1
   opener_art:
     path: editions/004-the-systems-around-the-model/art/article-openers/pragmatic-leverage.png
     alt_text: A boy and helper robot follow a small blueprint to build one sturdy stool as a huge pile
@@ -168,7 +168,7 @@ articles:
   source_ids:
   - 22580-from-gpt2-to-kimi3-explained-8f01b0fe
   manuscript: editions/004-the-systems-around-the-model/articles/from-gpt2-to-kimi3.md
-  fidelity: editions/004-the-systems-around-the-model/fidelity/from-gpt2-to-kimi3.yaml
+  source_body_sha256: f69c8b4a3825d7c13a5f06dd7a95c96ce7bf961a44ae602c4ff2bd2aee8a4e1f
   opener_art:
     path: editions/004-the-systems-around-the-model/art/article-openers/from-gpt2-to-kimi3.png
     alt_text: A boy and tool robot compare a sprawling coral attention ribbon with a compact teal memory
@@ -215,7 +215,10 @@ articles:
   - factories-are-not-a-token-or-llm-problem-ba5fabbf
   - do-not-make-the-service-bus-non-deterministic-3a92442c
   manuscript: editions/004-the-systems-around-the-model/articles/factory-systems-problem.md
-  fidelity: editions/004-the-systems-around-the-model/fidelity/factory-systems-problem.yaml
+  source_body_sha256:
+    software-factories-are-super-real-but-the-factor-ab8ad3ab: c1e72b77c8e16a6f7aed9b385d237243f16afad51f21d28837711ed3d94e96f3
+    factories-are-not-a-token-or-llm-problem-ba5fabbf: d07d492137bf2c4389e165188601024f7e79e711cfc592adc9f1590d11abcac3
+    do-not-make-the-service-bus-non-deterministic-3a92442c: c858605a35e5ef473b309c2fe984cb94fb9d9a48fedac29b3a0a042a9dfd0e08
   opener_art:
     path: editions/004-the-systems-around-the-model/art/article-openers/factory-systems-problem.png
     alt_text: A boy and tool robot inspect a layered software factory with sandbox, build press, identity
@@ -233,7 +236,7 @@ articles:
   source_ids:
   - architecture-overview-ce5cb1d1
   manuscript: editions/004-the-systems-around-the-model/articles/mcp-in-a-nutshell.md
-  fidelity: editions/004-the-systems-around-the-model/fidelity/mcp-in-a-nutshell.yaml
+  source_body_sha256: 74744013db1438ad8802651d8fb8d2d8df14a02b51f198fc4588c6783964cc4a
   opener_art:
     path: editions/004-the-systems-around-the-model/art/article-openers/mcp-in-a-nutshell.png
     alt_text: A boy and compact helper robot connect a host box to document, database, and tool endpoints
@@ -251,7 +254,7 @@ articles:
   source_ids:
   - the-2026-07-28-mcp-specification-release-candida-1a1752b8
   manuscript: editions/004-the-systems-around-the-model/articles/mcp-protocol-update.md
-  fidelity: editions/004-the-systems-around-the-model/fidelity/mcp-protocol-update.yaml
+  source_body_sha256: 987de8e4b9e000fe802d99ddbf71be645a08cf0a9b86c7bd2d585f695fc71e2d
   opener_art:
     path: editions/004-the-systems-around-the-model/art/article-openers/mcp-protocol-update.png
     alt_text: A boy and tool robot update a three-connector workshop, using an orange adapter after an

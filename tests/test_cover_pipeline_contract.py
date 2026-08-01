@@ -13,7 +13,7 @@ from magazine.cover_art_candidates import COVER_ART_VARIANTS
 from test_manifest import (
     add_extraction,
     make_project,
-    pin_ledger_source_hash,
+    pin_article_source_hash,
     set_open_edition,
 )
 
@@ -56,7 +56,7 @@ def _make_collecting_project(root: Path) -> None:
         / "cover-candidates.yaml"
     ).unlink()
     set_open_edition(root, "issue-001", issue_number=1)
-    pin_ledger_source_hash(root, add_extraction(root))
+    pin_article_source_hash(root, add_extraction(root))
 
 
 def _add_illustration_plan(root: Path) -> None:

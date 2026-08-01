@@ -1,16 +1,18 @@
 # Magazine Compiler
 
 Magazine Compiler turns captured internet sources into a private, print-ready
-anthology. It is deliberately a **faithful-edit** system, not a summarizer: source
-language remains intact unless a paragraph-level edit record says otherwise.
-Articles are capped at seven rendered A5 pages. Over-budget sources become
-explicitly credited, source-mapped faithful syntheses rather than silently
+anthology. It is deliberately a **faithful-edit** system, not a summarizer:
+source language stays as the author wrote it, and every claim in a manuscript is
+audited back to a committed extraction by an adversarial fact-checker before the
+edition can ship. Articles are capped at seven rendered A5 pages. Over-budget
+sources become explicitly credited faithful syntheses rather than silently
 truncated reprints.
 The opening editorial requires a title and is capped at a single rendered A5
-page, including its label, title, and byline. It uses the Orwell-based method
-in `docs/WRITING_RULES.md` to develop an original unifying idea or emergent
-narrative across the issue. It never summarizes the articles one by one or
-acts as a prose table of contents.
+page, including its label, title, and byline. It develops an original unifying
+idea or emergent narrative across the issue, and never summarizes the articles
+one by one or acts as a prose table of contents. The Orwell-based method in
+`docs/WRITING_RULES.md` is the house writing method for every artifact the
+magazine publishes, not the editorial alone.
 
 The publication compiled by this repository is **BERRETA FUTURA**. Its name is
 configured once under `[publication]` in `magazine.toml`; edition manifests own
@@ -91,7 +93,8 @@ uv run --locked mag article stage article-brief.yaml
 ```
 
 The real stage is one integration transaction. It creates the source-linked
-manuscript slot and fidelity skeleton, updates the edition manifest, and
+manuscript slot, writes the article's manifest row with its `source_ids` and the
+exact `source_body_sha256` of each extraction, and
 immediately reconciles every configured non-English overlay so its placeholder
 and advisory backlog is visible. It writes no article prose and no
 translation. If any overlay staging step fails, the edition is restored to its
@@ -146,8 +149,8 @@ article pagination and booklet imposition.
 
 `fit` is the fast measurement loop, the same idea for page budgets. The
 seven-page article cap and the declared editorial cap used to be enforceable
-only deep inside a full build, so an author finished a manuscript, its ledger,
-its translation, and every hash pin before learning the piece did not fit.
+only deep inside a full build, so an author finished a manuscript, its
+translation, and every hash pin before learning the piece did not fit.
 `mag fit` paginates the reader with the adapter's own front half — the same
 HTML compilation, stylesheet, and measure-then-settle passes a build runs —
 then stops before paint: no PDF, no rasters, no package. It prints a verdict
@@ -203,10 +206,9 @@ library/sources/<source-id>/raw/<sha>/     immutable committed raw capture
 library/sources/<source-id>/media/<sha>.json deterministic generated media inventory
 library/sources/<source-id>/extracted.md  faithful extraction of the source body from one raw bundle
 library/release-state.yaml                open-edition and released-edition assignments
-editions/<edition-id>/edition.yaml        edition manifest
-editions/<edition-id>/editorial.md        original opening editorial
+editions/<edition-id>/edition.yaml        edition manifest, incl. per-article source_ids and pins
+editions/<edition-id>/manuscript/editorial.md  original opening editorial
 editions/<edition-id>/articles/*.md       edited source manuscripts
-editions/<edition-id>/fidelity/*.yaml     paragraph-level edit ledger
 editions/<edition-id>/reviews/*.yaml      hash-bound render and evidence review records
 editions/<edition-id>/translations/es/    hash-pinned Spanish edition overlay and manuscripts
 output/<edition-id>/                      generated release package
@@ -234,21 +236,22 @@ It must identify the author through a role, notable company, founder or creator
 status, career history, first-hand experience, or a publishing identity. It
 must never describe, explain, or summarize the captured article.
 
-`extracted.md` is the verifiable source side of the fidelity chain. Its YAML
+`extracted.md` is the verifiable source side of the evidence chain. Its YAML
 frontmatter names the source id, the committed raw bundle it was transcribed
 from, and the extraction method; its body is the source's substantive text,
-reproduced verbatim (interface chrome and navigation may be omitted). A
-fidelity ledger's `source_body_sha256` is the SHA-256 of the UTF-8 bytes of
-that body — everything after the frontmatter's closing `---` line. Single-source
-ledgers declare one hex digest; multi-source ledgers declare a mapping keyed by
-source id. Whenever a source has an extraction and a ledger pins it, validation
-requires the hashes to match. Every source of the open (unreleased) edition
-must have an extraction and a matching pin; released editions predate committed
-extractions, so their recorded pins are kept but skipped.
+reproduced verbatim (interface chrome and navigation may be omitted). An article
+row's `source_body_sha256` in `edition.yaml` is the SHA-256 of the UTF-8 bytes of
+that body, everything after the frontmatter's closing `---` line. A single-source
+article declares one hex digest; a multi-source article declares a mapping keyed
+by source id, so no source hides behind another's hash. Whenever a source has an
+extraction and an article pins it, validation requires the hashes to match. Every
+source of the open (unreleased) edition must have an extraction and a matching
+pin; released editions predate committed extractions, so their recorded pins are
+kept but skipped.
 
-Every such pin — a ledger's extraction-body hashes, a translation overlay's
+Every such pin (an article's extraction-body hashes, a translation overlay's
 base copy and per-file source hashes, a localized figure's caption and credit
-pins — is a pure function of files already in the repository, so it is
+pins) is a pure function of files already in the repository, so it is
 recomputed by command rather than by hand: `mag pin <edition-id>` refreshes
 every derivable pin in the edition's authored files and reports each digest it
 moved. The rewrite is a targeted textual substitution — only the digest
@@ -311,7 +314,7 @@ while `mag sources` and `mag queue` reconcile otherwise unassigned records into
 the intake edition. A batch of submitted links never creates an edition
 implicitly.
 
-`library/release-state.yaml` is the authoritative ledger. A source appears in
+`library/release-state.yaml` is the authoritative assignment record. A source appears in
 exactly one collecting or released edition. Once the PDF and web preview look
 right, the human finishing step is one command:
 
@@ -402,8 +405,9 @@ rejection reasons. A build fails if any capture has not been curated.
 
 ## Edition manifests
 
-See `templates/edition.yaml`. An article points at both a manuscript and a
-fidelity ledger. It may supply a concise `author_note`, rendered below the
+See `templates/edition.yaml`. An article row points at its manuscript and
+declares its `source_ids` and their extraction pins. It may supply a concise
+`author_note`, rendered below the
 byline, containing identity or relevant CV context: current role, notable
 company, founder status, or first-hand experience that establishes why the
 author is worth hearing. It must not summarize the article. Omit it for
@@ -453,25 +457,33 @@ Placement is semantic: `__opener__` or an exact `##` heading,
 never a fragile page number. Spanish preserves figure identity and layout while
 providing a hash-pinned localized caption, alt text, and heading anchor.
 
-The fidelity ledger records every substantive source paragraph as one of:
-
-- `retained`
-- `boilerplate_removed`
-- `substantive_cut`
-- `modified`
-- `editorial_addition`
-
 The renderer enforces a hard seven-page budget per article. A long source uses
-`faithful_synthesis`, which maps the complete source to a materially shorter
-manuscript while preserving its argument, evidence, qualifications, conclusion,
-and grammatical point of view. The byline and mode label carry attribution;
+`faithful_synthesis`, which condenses it to a materially shorter manuscript
+while preserving its argument, evidence, qualifications, conclusion, and
+grammatical point of view. The byline and mode label carry attribution;
 synthesized prose remains in the source author's voice instead of narrating what
 the author “argues” or “explains.” Short pieces remain `faithful_edit`.
+`prompts/faithful-synthesis.md` governs what an over-budget piece loses, and in
+what order.
 
-`modified` entries preserve both source and edited text. Editorial additions
-must be visually labelled in the manuscript. The generated fidelity report
-provides word counts and retention percentages; it is evidence for review, not
-an automatic claim that an edit is acceptable.
+Nothing tracks a manuscript paragraph by paragraph. Faithfulness is established
+by reading: `prompts/evidence-review.md` audits every manuscript claim against
+the committed extractions, and its verdict is recorded and hash-bound (see
+Release archive, below). Editorial additions must still be visually labelled in
+the manuscript.
+
+The one deterministic content check that survives is
+`src/magazine/code_blocks.py`, run during validation: every fenced code block in
+a manuscript must appear as a contiguous run of normalized lines inside one of
+the article's pinned source extractions. Tabs expand to four columns and
+trailing whitespace and the fence's own edge blank lines are ignored; every
+other character, the indentation depth, and every line break are substantive,
+because all three change what code means. Lines are matched wherever they sit in
+the extraction, not against the extraction's own fences, so a source may present
+its code fenced, indented, or inline in a transcript. A failure names the
+manuscript, the block, and the first line that diverges from the closest run
+found in any extraction. An article with no committed extractions, which is the
+released-edition state, is skipped rather than failed.
 
 ## PDF outputs
 
@@ -507,7 +519,6 @@ home/booklet-a4.pdf
 home/booklet-a4-interior.pdf
 home/booklet-a4-cover.pdf
 home/printing-instructions.md
-fidelity.md
 preflight.json
 render-critic.json
 render-review/reader-contact-sheet-01.png
@@ -549,7 +560,7 @@ and an `article-stub-last-page` item when an article's final page carries
 fewer than five lines of running text, prompting a human to re-cut the break.
 The editorial page cap is read from the package's own `edition-manifest.json`,
 clamped to the publication ceiling, rather than hardcoded. And when the build
-manifest declares `layout.tail_arts`, the critic reconciles the ledger: every
+manifest declares `layout.tail_arts`, the critic reconciles that record: every
 tail ornament an article declared but the typesetter did not print becomes a
 `tail-art-dropped` review prompt. The report and review images are included in
 `SHA256SUMS`.
@@ -618,8 +629,8 @@ directory:
 
 That directory is **the authoritative copy** of what was printed. It holds
 `reader.pdf`, the A4 impositions under `home/`, and the build's own
-`edition-manifest.json`, `render-critic.json`, `preflight.json`, `fidelity.md`
-and `SHA256SUMS`; the `render-review/` rasters are excluded because every build
+`edition-manifest.json`, `render-critic.json`, `preflight.json`, and
+`SHA256SUMS`; the `render-review/` rasters are excluded because every build
 regenerates them. Verify an archived edition with `shasum -c SHA256SUMS` inside
 its directory — the raster lines are expected to report missing files. Each
 edition directory carries a README recording its renderer, what changed, and how
@@ -650,8 +661,8 @@ changes-required review state.
 
 The evidence review is the render review's editorial sibling: the adversarial
 manuscript-versus-source audit defined by `prompts/evidence-review.md`,
-recorded rather than merely performed. After auditing every article against its
-fidelity ledger and the committed source extractions:
+recorded rather than merely performed. After auditing every article against the
+committed extractions of every source its `edition.yaml` row declares:
 
 ```sh
 uv run --locked mag review record <edition-id> --kind evidence \
@@ -660,8 +671,10 @@ uv run --locked mag review record <edition-id> --kind evidence \
 ```
 
 The decision is written to `editions/<edition-id>/reviews/evidence.yaml`,
-binding per article the SHA-256 of the manuscript, of the fidelity ledger, and
-of every extraction body it was audited against. Staleness is derived per
+binding per article the SHA-256 of the manuscript and, for every source, both
+the extraction body and the whole `extracted.md` file, so rewriting the
+provenance frontmatter after approval is as visible as rewriting the body.
+Staleness is derived per
 article: `mag review status` reports, for each article, whether its bound
 hashes still match disk and when it was last audited, and one drifted article
 makes the whole record `stale` (naming the drifted articles and inputs). After
@@ -677,8 +690,9 @@ rendering.
 Issue 001 lives at `editions/001-the-work-left-to-us/`. It captures an X post as
 the original discovery lead and combines four substantive works by Arvind
 Narayanan, Unmesh Joshi, Satya Nadella, and Demis Hassabis. It is a private
-faithful-edit edition with paragraph-level fidelity ledgers, an original opening
-editorial, and a generated A5/A4 print package. Public faithful republication
+faithful-edit edition with an original opening editorial and a generated A5/A4
+print package. It predates committed extractions, so its recorded source pins
+are kept but not verified. Public faithful republication
 remains blocked while source rights are unknown.
 
 ```sh
@@ -694,7 +708,7 @@ uv run --locked pytest
 uv run --locked mag --help
 ```
 
-The metadata, validation, fidelity, catalog, and packaging modules use only the
+The metadata, validation, catalog, and packaging modules use only the
 standard library plus PyYAML. WeasyPrint, ReportLab and pypdf are imported only
 by their PDF paths — and the two reader engines only by the one that is
 selected — making non-rendering operations easy to test in constrained

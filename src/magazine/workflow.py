@@ -37,6 +37,12 @@ from .cover_art_candidates import (
     scaffold_cover_art_candidates,
     validate_cover_art_candidates,
 )
+from .edition_review import (
+    current_edition_bindings,
+    edition_review_path,
+    edition_review_status,
+    load_edition_review,
+)
 from .errors import ValidationError
 from .evidence_review import (
     current_evidence_bindings,
@@ -44,7 +50,23 @@ from .evidence_review import (
     evidence_review_status,
     load_evidence_review,
 )
-from .extraction import load_extraction, verify_ledger_source_extractions
+from .learning_review import (
+    current_learning_bindings,
+    learning_review_path,
+    learning_review_status,
+    load_learning_review,
+)
+from .line_review import (
+    current_line_bindings,
+    line_review_path,
+    line_review_status,
+    load_line_review,
+)
+from .extraction import (
+    load_extraction,
+    normalize_source_pins,
+    verify_source_extractions,
+)
 from .illustration import load_illustration_plan, validate_illustration_plan
 from .io import load_structured
 from .manifest import Edition, load_edition, load_translation
@@ -70,8 +92,28 @@ CHECKPOINT_ORDER = (
     "validation",
     "build",
     "evidence_review",
+    "line_review",
+    "edition_review",
+    "learning_review",
     "render_review",
     "release",
+)
+# The four editorial judges sit together after the build, beside the evidence
+# audit that has always lived there.  None of them reads a rendered artifact --
+# they read authored text -- so their position expresses the bench's grouping
+# rather than a data dependency, and it keeps the deterministic prefix that
+# ``run`` can dispatch exactly where it was.
+#
+# ADVISORY ROLLOUT.  The three new prose gates are recorded and reported but
+# deliberately kept out of release readiness while their thresholds are
+# calibrated against edition 004: they never reach "blocked", so they never
+# become the report's next checkpoint and never stall `mag finish`.  Emptying
+# this set is the whole of the flip on this side -- the checkpoints then block
+# as human-review like every other gate -- and it must be made in the same
+# change that wires require_approved_line_review, require_approved_edition_review
+# and require_approved_learning_review into Magazine.release.
+_ADVISORY_REVIEW_CHECKPOINTS = frozenset(
+    {"line_review", "edition_review", "learning_review"}
 )
 CHECKPOINT_STATUSES = {"complete", "blocked", "not_applicable"}
 ACTION_CLASSIFICATIONS = {"deterministic", "authorial", "human-review"}
@@ -85,7 +127,7 @@ ACTION_KINDS = {
 # code or design templates; any change to probe-relevant rendering or
 # validation code must bump this schema, which wholesale-invalidates every
 # persisted workflow cache on load.
-_WORKFLOW_CACHE_SCHEMA = 1
+_WORKFLOW_CACHE_SCHEMA = 2
 # run only ever reuses a checkpoint prefix strictly below the dispatched
 # checkpoint's index, so every reused checkpoint was complete (the dispatched
 # one was the first blocked). The floor names the first checkpoint whose
@@ -426,18 +468,21 @@ class Workflow:
 
         build = take(8, lambda: snapshot.build_checkpoint(validation))
         evidence_review = take(9, lambda: snapshot.evidence_review_checkpoint(build))
-        take(10, lambda: snapshot.render_review_checkpoint(build, evidence_review))
+        take(10, lambda: snapshot.line_review_checkpoint(build))
+        take(11, lambda: snapshot.edition_review_checkpoint(build))
+        take(12, lambda: snapshot.learning_review_checkpoint(build))
+        take(13, lambda: snapshot.render_review_checkpoint(build, evidence_review))
 
         release_ready = (
             snapshot.lifecycle == "collecting"
             and all(
                 checkpoint.status == "complete"
                 for checkpoint in checkpoints
-                if checkpoint.id not in {"release"}
+                if checkpoint.id not in {"release"} | _ADVISORY_REVIEW_CHECKPOINTS
             )
         )
         take(
-            11,
+            14,
             lambda: snapshot.release_checkpoint(
                 checkpoints,
                 release_ready=release_ready,
@@ -981,72 +1026,75 @@ class _Snapshot:
                 "file_sha256": extraction.file_sha256 if extraction else None,
             }
 
-        ledger_rows: dict[str, dict[str, Any]] = {}
-        ledger_errors: list[str] = []
+        # The article rows are read raw rather than through the loaded edition
+        # so a manifest this checkpoint could not load still reports which
+        # articles are unpinned, instead of collapsing into one opaque error.
+        pin_rows: dict[str, dict[str, Any]] = {}
+        pin_errors: list[str] = []
         require_extractions = self.lifecycle == "collecting"
         for index, row in enumerate(self.article_rows, start=1):
             article_id = str(row.get("id") or f"article-{index}")
-            ledger_path = _declared_path(self.root, self.edition_dir, row.get("fidelity"))
             source_tuple = _row_source_ids(row) or ()
+            label = f"{_relative(self.root, self.manifest_path)}: article {article_id}"
             entry: dict[str, Any] = {
-                "path": _relative(self.root, ledger_path),
-                "status": "missing",
+                "path": _relative(self.root, self.manifest_path),
+                "status": "incomplete",
                 "source_ids": list(source_tuple),
             }
-            if ledger_path is None or not ledger_path.is_file():
-                ledger_rows[article_id] = entry
-                continue
             try:
-                verify_ledger_source_extractions(
-                    ledger_path,
+                pins = normalize_source_pins(
+                    label, source_tuple, row.get("source_body_sha256")
+                )
+                verify_source_extractions(
+                    label,
+                    pins,
                     self.paths["sources"],
                     require_extractions=require_extractions,
-                    article_source_ids=source_tuple,
                 )
             except ValidationError as exc:
                 entry["status"] = "invalid"
                 entry["errors"] = list(exc.errors)
-                ledger_errors.extend(exc.errors)
+                pin_errors.extend(exc.errors)
             else:
                 entry["status"] = "complete"
-            ledger_rows[article_id] = entry
+            pin_rows[article_id] = entry
         missing_extractions = sorted(
             source_id
             for source_id, row in extraction_rows.items()
             if row["status"] != "complete"
         )
-        incomplete_ledgers = sorted(
+        unpinned_articles = sorted(
             article_id
-            for article_id, row in ledger_rows.items()
+            for article_id, row in pin_rows.items()
             if row["status"] != "complete"
         )
         details = {
             "extractions": extraction_rows,
-            "ledgers": ledger_rows,
+            "source_pins": pin_rows,
             "missing_or_invalid_extractions": missing_extractions,
-            "missing_or_invalid_ledgers": incomplete_ledgers,
-            "errors": extraction_errors + ledger_errors,
+            "unpinned_or_invalid_articles": unpinned_articles,
+            "errors": extraction_errors + pin_errors,
         }
         if coverage.status != "complete":
             return _waiting_checkpoint("evidence", (coverage,), details=details)
-        if require_extractions and (missing_extractions or incomplete_ledgers):
+        if require_extractions and (missing_extractions or unpinned_articles):
             return _blocked(
                 "evidence",
                 (
                     f"{len(missing_extractions)} extraction(s) and "
-                    f"{len(incomplete_ledgers)} fidelity ledger(s) need work."
+                    f"{len(unpinned_articles)} article source pin(s) need work."
                 ),
                 details,
                 "authorial",
                 (
                     "Create each named extracted.md from its committed raw bundle, then "
-                    "author or repair each fidelity ledger and refresh its derivable pins "
-                    f"with `uv run --locked mag pin {self.edition_id}`."
+                    "refresh each article's derivable source_body_sha256 pins with "
+                    f"`uv run --locked mag pin {self.edition_id}`."
                 ),
             )
         return _complete(
             "evidence",
-            "Source extractions and article fidelity ledgers are complete.",
+            "Source extractions and article source pins are complete.",
             details,
         )
 
@@ -1578,8 +1626,8 @@ class _Snapshot:
                 details,
                 "human-review",
                 (
-                    "Audit each manuscript against its fidelity ledger and committed "
-                    "extractions, then record the exact reviewed article bindings."
+                    "Audit each manuscript against its committed source extractions, "
+                    "then record the exact reviewed article bindings."
                 ),
                 (
                     f"uv run --locked mag review record {self.edition_id} "
@@ -1590,6 +1638,145 @@ class _Snapshot:
             "evidence_review",
             "The hash-bound evidence review is approved and current.",
             details,
+        )
+
+    def _review_bench_details(
+        self, read: Callable[[Edition], dict[str, Any]]
+    ) -> dict[str, Any]:
+        """One editorial judge's status, or why it could not be computed.
+
+        Status is a diagnostic surface: an edition that will not load reports
+        its errors here instead of aborting the whole report, exactly as the
+        evidence review checkpoint has always done.
+        """
+
+        if self.edition is None:
+            return {"status": "unavailable", "errors": list(self.edition_errors)}
+        try:
+            return read(self.edition)
+        except ValidationError as exc:
+            return {"status": "unavailable", "errors": list(exc.errors)}
+
+    def _review_bench_checkpoint(
+        self,
+        checkpoint_id: str,
+        build: Checkpoint,
+        details: dict[str, Any],
+        *,
+        kind: str,
+        subject: str,
+        instruction: str,
+    ) -> Checkpoint:
+        """Turn one judge's status into a checkpoint, honouring the rollout.
+
+        A checkpoint named in ``_ADVISORY_REVIEW_CHECKPOINTS`` never reaches
+        "blocked": it reports what it found, carries the recording command in
+        its details so the operator can act on it, and stays out of release
+        readiness.  That is the whole shape of the advisory rollout -- the
+        verdicts are being collected and calibrated before anything refuses to
+        ship without them.
+        """
+
+        command = f"uv run --locked mag review record {self.edition_id} --kind {kind}"
+        if build.status != "complete":
+            return _waiting_checkpoint(checkpoint_id, (build,), details=details)
+        if self.lifecycle == "released" and details.get("status") == "required_before_release":
+            return _complete(
+                checkpoint_id,
+                f"No {kind} review is required retroactively for this released edition.",
+                details,
+            )
+        if details.get("status") == "approved":
+            return _complete(
+                checkpoint_id,
+                f"The hash-bound {subject} is approved and current.",
+                details,
+            )
+        summary = f"{subject.capitalize()} status is {details.get('status', 'unavailable')}."
+        if checkpoint_id in _ADVISORY_REVIEW_CHECKPOINTS:
+            return Checkpoint(
+                checkpoint_id,
+                "not_applicable",
+                f"{summary} Advisory while the bench is calibrated: it does not "
+                "block release.",
+                {**details, "advisory": True, "instruction": instruction, "command": command},
+            )
+        return _blocked(
+            checkpoint_id, summary, details, "human-review", instruction, command
+        )
+
+    def line_review_checkpoint(self, build: Checkpoint) -> Checkpoint:
+        details = self._review_bench_details(
+            lambda edition: line_review_status(
+                load_line_review(
+                    line_review_path(self.paths["editions"], self.edition_id),
+                    edition_id=self.edition_id,
+                ),
+                edition_id=self.edition_id,
+                bindings=current_line_bindings(edition),
+            )
+        )
+        return self._review_bench_checkpoint(
+            "line_review",
+            build,
+            details,
+            kind="line",
+            subject="line review",
+            instruction=(
+                "Read every piece, and the opening editorial, for how it reads "
+                "rather than whether it is true, then record the verdict against "
+                "the exact manuscripts read."
+            ),
+        )
+
+    def edition_review_checkpoint(self, build: Checkpoint) -> Checkpoint:
+        details = self._review_bench_details(
+            lambda edition: edition_review_status(
+                load_edition_review(
+                    edition_review_path(self.paths["editions"], self.edition_id),
+                    edition_id=self.edition_id,
+                ),
+                edition_id=self.edition_id,
+                bindings=current_edition_bindings(
+                    edition, manifest_path=self.manifest_path
+                ),
+            )
+        )
+        return self._review_bench_checkpoint(
+            "edition_review",
+            build,
+            details,
+            kind="edition",
+            subject="whole-issue review",
+            instruction=(
+                "Judge the issue rather than the pieces -- through-line, running "
+                "order, cover promise, redundancy -- then record the verdict "
+                "against the whole assembled issue."
+            ),
+        )
+
+    def learning_review_checkpoint(self, build: Checkpoint) -> Checkpoint:
+        details = self._review_bench_details(
+            lambda edition: learning_review_status(
+                load_learning_review(
+                    learning_review_path(self.paths["editions"], self.edition_id),
+                    edition_id=self.edition_id,
+                ),
+                edition_id=self.edition_id,
+                bindings=current_learning_bindings(edition),
+            )
+        )
+        return self._review_bench_checkpoint(
+            "learning_review",
+            build,
+            details,
+            kind="learning",
+            subject="reader-persona review",
+            instruction=(
+                "Run the three reader personas over the editor-authored furniture "
+                "and the explainer, then record their verdict with the "
+                "comprehension and manager-takeaway blocks."
+            ),
         )
 
     def render_review_checkpoint(
@@ -2079,15 +2266,10 @@ def _current_build_input_paths(
         inputs.update(plan.direction.reference_paths)
     add(variant.editorial.path if variant.editorial else None)
     add(variant.cover_art)
-    fidelity_status = (
-        paths["editions"] / base.id / "fidelity" / "source-edition-status.yaml"
-    )
-    add(fidelity_status if fidelity_status.is_file() else None)
     for section in variant.sections:
         add(section.path)
     for article in variant.articles:
         add(article.manuscript)
-        add(article.fidelity)
         add(article.opener_art.path if article.opener_art else None)
         add(article.tail_art)
     for plate in variant.closing_plates:
@@ -2123,7 +2305,6 @@ def _build_input_shape_errors(
         "editorial",
         "cover_art",
         "translation_manifest",
-        "fidelity_status",
         "sections",
         "articles",
         "closing_plates",
@@ -2148,7 +2329,6 @@ def _build_input_shape_errors(
         "editorial",
         "cover_art",
         "translation_manifest",
-        "fidelity_status",
     ):
         value = inputs.get(key)
         if value is not None and not isinstance(value, dict):

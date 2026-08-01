@@ -9,8 +9,8 @@ the two views here:
 
 :func:`visible_blocks`
     flattens a document into ``(kind, text)`` pairs in reading order -- the
-    fidelity ledger's view, where what matters is every reader-visible word
-    and which blocks are code.  List markers and thematic breaks are structure,
+    content view, where what matters is every reader-visible word and which
+    blocks are code.  List markers and thematic breaks are structure,
     not words: the reader draws them as furniture, so they contribute no text.
 
 :func:`block_signature`

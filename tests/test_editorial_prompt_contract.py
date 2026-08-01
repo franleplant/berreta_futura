@@ -25,7 +25,16 @@ def test_editorial_policy_and_writing_method_assign_the_same_default() -> None:
     normalized_rules = " ".join(rules.lower().split())
 
     assert "`docs/WRITING_RULES.md`" in policy
-    assert "opening editorials and social posts use it by default." in normalized_rules
+    # The writing method is no longer an opt-in default for two piece kinds: it
+    # governs everything the magazine publishes, and a mode's prompt may only
+    # add to it.  The scope sentence is pinned so a later narrowing of it has to
+    # be a deliberate edit here too.
+    assert (
+        "it applies to everything the magazine publishes: source articles in "
+        "every content mode, in-a-nutshell explainers, opening editorials, "
+        "captions, and social posts."
+    ) in normalized_rules
+    assert "none may suspend these." in normalized_rules
     assert "must not summarize the articles one by one" in normalized_policy
     assert "prose table of contents" in normalized_policy
     assert "a human must approve" in normalized_policy

@@ -828,6 +828,30 @@ figure[data-figure-id] .credit {
   margin-top: 0.2rem;
 }
 
+/* Key ideas: the article's one closing object, and the only furniture between
+ * the last paragraph and the end mark.  It reads as a box rather than as more
+ * prose -- a signal-orange rule above it, the kicker in the chrome face, the
+ * claims on the reading face -- because a reader scanning back for what to
+ * keep should find its edge without reading for it.  An article may carry this
+ * or the tail ornament, never both, so nothing sits under it but the sign-off. */
+.key-ideas {
+  border-top: 2px solid var(--orange);
+  margin: 2.4rem 0 0;
+  padding-top: 1rem;
+}
+.key-ideas-label {
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--violet);
+  margin: 0 0 0.8rem;
+}
+.key-ideas ul {
+  margin: 0;
+}
+
 /* ---- Article furniture ---------------------------------------------------
  * The end mark keeps its signal-orange tick -- the one place the design
  * system spends orange inside the magazine -- and it is the whole sign-off:

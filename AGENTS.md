@@ -8,12 +8,14 @@ This repository builds private-first, source-faithful magazine editions.
 - Treat `sources.md` as generated output. Human annotations belong in source records.
 - Never replace a source article with an unlabeled or generic AI summary. New magazine-authored arguments use `original_synthesis`; length-driven condensation uses attributed, source-mapped `faithful_synthesis`.
 - Write `faithful_synthesis` in the source author's existing grammatical person and point of view. The byline and mode label provide attribution; do not add “the author argues/says/explains” narration unless those are the source's exact words. Prefer retained wording and light edits, summarizing only where the page budget requires it.
-- Source articles may occupy at most seven A5 pages in the rendered reader. If a faithful edit exceeds the cap, use the explicit `faithful_synthesis` mode and preserve the argument, evidence, qualifications, and conclusion through source-to-edited fidelity mappings.
+- Source articles may occupy at most seven A5 pages in the rendered reader. If a faithful edit exceeds the cap, use the explicit `faithful_synthesis` mode and preserve the argument, evidence, qualifications, and conclusion. `prompts/faithful-synthesis.md` owns the order in which an over-budget piece loses material; the claim-level fact-checker, not a bookkeeping artifact, is what proves the result still represents its source.
 - The opening editorial must declare and visibly render a title, and may occupy at most one A5 reader page including its label, title, and byline.
 - AI proposes editorial patches; deterministic validation and human decisions advance workflow state.
+- Drafting and judging run through `uv run --locked mag produce <edition-id>`, never by hand-driving the prompts. The pipeline owns the order: one writer call per piece over the complete source extraction, then the deterministic gates, then the fact-checker and the line editor in parallel, then at most three revision rounds carrying both the findings and the previous draft's working notes, then the learning personas and the managing editor. It reuses registered art and never generates an image. `--dry-run` prints the plan without calling a model, `--articles` narrows the run, and a piece whose inputs, prompt, and manuscript are unchanged and whose judges approved is skipped. Every call leaves an execution record under `editions/<edition-id>/production/` naming the prompt file and its SHA-256, the backend, model, argv, duration, round, and resulting manuscript digest; those records are provenance and never gate a release.
 - Label original editor text so it cannot be mistaken for a source author's words.
-- Never author the Unicode em dash character U+2014 in repository prose, code comments, prompts, UI copy, or social copy. Use a period, comma, colon, semicolon, or parentheses instead. Preserve U+2014 only inside immutable raw evidence or an exact source quotation where changing it would break fidelity.
-- Keep the reusable Orwell-based writing method in `docs/WRITING_RULES.md`. Apply it to opening editorials and to social posts through `docs/SOCIAL_WRITING.md`. Do not apply it to other artifact types unless the user asks.
+- Never author the Unicode em dash character U+2014 in repository prose, code comments, prompts, UI copy, or social copy. Use a period, comma, colon, semicolon, or parentheses instead. Preserve U+2014 only inside immutable raw evidence or an exact source quotation where changing it would misquote the author.
+- Every fenced code block in a manuscript must appear as a contiguous run of lines inside one of the article's committed source extractions. `src/magazine/code_blocks.py` enforces this during validation and it is the only deterministic content check left on a manuscript; reproduce a block character for character from the extraction or drop it whole.
+- Keep the reusable Orwell-based writing method in `docs/WRITING_RULES.md`. It is the house method for every artifact the magazine publishes: source articles in all content modes, explainers, opening editorials, captions, and social posts through `docs/SOCIAL_WRITING.md`. Editor-written text follows it directly; in `faithful_edit` and `faithful_synthesis` it governs only the editor's own sentences, never the source author's voice.
 - An opening editorial develops a distinct unifying idea, set of ideas, or emergent narrative across the edition. It must not summarize the articles one by one or become a prose table of contents.
 - Social drafts must be concise, direct, source-linked, and approved by a human before publication.
 - A source is not captured until its raw evidence bundle is committed under `library/sources/<source-id>/raw/<bundle-sha256>/`. Archive before queueing; never rely on a live URL as the durable copy.
@@ -27,7 +29,7 @@ This repository builds private-first, source-faithful magazine editions.
 - Use UV for every Python operation. Never use `pip`, bare `python`, `python -m venv`, an activated virtualenv, or an ad-hoc dependency directory.
 - Generate every language listed in `publication.languages` on every validation, build, and release. English remains the source edition; Spanish translations use educated castellano with restrained Argentine preferences, fall back to Spain Spanish, avoid slang and generic Latin American regionalisms, preserve Markdown block structure, and pin the exact English input hashes.
 - Never compute or hand-edit a SHA-256 pin. After changing any English input, refresh the derivable pins with `uv run --locked mag pin <edition-id>` and stage each configured overlay with `uv run --locked mag translate <edition-id> <language>`; translate the placeholder and advisory rows it reports before validating. `mag validate` reports staleness (with the expected digest) but never repins.
-- Check page budgets with `uv run --locked mag fit <edition-id>` before authoring the translation or fidelity ledger for a new article, and again after every manuscript edit. Use `uv run --locked mag measure <edition-id>` when you need spans, caps, last-page lines, or the per-paragraph rag table as JSON. Never run a full build, or reach into the renderer with ad-hoc scripts, just to ask whether a piece fits.
+- Check page budgets with `uv run --locked mag fit <edition-id>` before authoring the translation for a new article, and again after every manuscript edit. Use `uv run --locked mag measure <edition-id>` when you need spans, caps, last-page lines, or the per-paragraph rag table as JSON. Never run a full build, or reach into the renderer with ad-hoc scripts, just to ask whether a piece fits.
 - Run project tools as `uv run --locked <command>`, synchronize with `uv sync --locked`, and change dependencies with `uv add`, `uv remove`, or `uv lock`.
 - Commit `pyproject.toml`, `.python-version`, and `uv.lock` whenever their state changes. UV's internal environment must never be managed manually.
 
@@ -36,7 +38,7 @@ This repository builds private-first, source-faithful magazine editions.
 - Commit each verified source-intake batch, edition checkpoint, or compiler change as a coherent unit.
 - Inspect the staged diff and run the proportionate validation before committing.
 - Keep legacy `vault/`, `output/`, temporary files, credentials, and browser-session data out of Git. Source-local `library/sources/*/raw/` bundles are canonical and must be committed.
-- Commit structured records, edition briefs, fidelity ledgers, templates, tests, and deterministic source code.
+- Commit structured records, edition briefs, manuscripts, source extractions, templates, tests, and deterministic source code.
 
 ## Verification
 
@@ -73,13 +75,14 @@ rebuild-and-compare proof is explicitly wanted. `mag finish` and `mag release` m
 missing, stale, or changes-required review.
 
 Every source of every collecting edition needs a committed
-`library/sources/<source-id>/extracted.md`, and its fidelity ledgers must pin
-`source_body_sha256` to the extraction body. Before release, perform the
-adversarial manuscript-versus-source audit (`prompts/evidence-review.md`) and
-record it with `uv run --locked mag review record <edition-id> --kind evidence`;
-`mag finish` and `mag release` reject a missing, stale, or changes-required evidence review.
+`library/sources/<source-id>/extracted.md`, and each article's `edition.yaml`
+row must pin `source_body_sha256` to the extraction body of every source it
+declares in `source_ids`. Before release, perform the adversarial
+manuscript-versus-source audit (`prompts/evidence-review.md`) and record it with
+`uv run --locked mag review record <edition-id> --kind evidence`; `mag finish`
+and `mag release` reject a missing, stale, or changes-required evidence review.
 Evidence staleness is derived per article: when `mag review status` names
-drifted articles, re-audit those articles against their ledgers and
-extractions, then re-record with `--articles <id,id>` naming exactly the
-articles whose audit was actually repeated; never name an article you did not
-re-audit. Every other article keeps its recorded binding and `reviewed_at`.
+drifted articles, re-audit those articles against their extractions, then
+re-record with `--articles <id,id>` naming exactly the articles whose audit was
+actually repeated; never name an article you did not re-audit. Every other
+article keeps its recorded binding and `reviewed_at`.

@@ -1,4 +1,4 @@
-"""Source-side extraction artifacts and their fidelity-ledger bindings.
+"""Source-side extraction artifacts and the article rows that pin them.
 
 ``library/sources/<source-id>/extracted.md`` is the durable, human-readable
 faithful extraction of a source's substantive text.  Its YAML frontmatter names
@@ -10,17 +10,20 @@ The body convention is byte-exact: the file is read as raw bytes, decoded as
 strict UTF-8, must open with a ``---`` line, and the body is every byte after
 the first ``\\n---\\n`` that closes the frontmatter.  A BOM or any carriage
 return anywhere in the file is rejected outright -- silent newline
-normalization would make the pinned hashes irreproducible with ``shasum``.  A
-fidelity ledger's ``source_body_sha256`` pins the SHA-256 of the UTF-8
-encoding of exactly those body bytes, so the ledger, the extraction, and the
-raw bundle form one verifiable chain from manuscript back to captured
-evidence.
+normalization would make the pinned hashes irreproducible with ``shasum``.  An
+article row's ``source_body_sha256`` in ``edition.yaml`` pins the SHA-256 of
+the UTF-8 encoding of exactly those body bytes, so the article, the
+extraction, and the raw bundle form one verifiable chain from manuscript back
+to captured evidence.
 
-Ledgers over a single source declare ``source_body_sha256`` as one hex digest
-(the shape editions 001 and 002 already use).  A multi-source ledger declares a
-mapping from source id to hex digest.  Released editions predate committed
-extractions, so their pins are recorded but unverifiable and are skipped; the
-open (unreleased) edition is held to the full requirement.
+The pin lives beside the ``source_ids`` it covers, in the same article row, so
+the two declarations cannot drift apart: an article that adds a source without
+pinning it is a single row that fails to validate, not two files that quietly
+disagree.  An article over a single source declares ``source_body_sha256`` as
+one hex digest; an article over several declares a mapping from source id to
+hex digest, so no source can hide behind another's hash.  Released editions
+predate committed extractions, so their pins are recorded but unverifiable and
+are skipped; the open (collecting) edition is held to the full requirement.
 """
 
 from __future__ import annotations
@@ -29,12 +32,10 @@ import hashlib
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 import yaml
 
 from .errors import ValidationError
-from .io import load_structured
 
 EXTRACTION_FILENAME = "extracted.md"
 
@@ -55,6 +56,21 @@ class Extraction:
     @property
     def body_sha256(self) -> str:
         return hashlib.sha256(self.body.encode("utf-8")).hexdigest()
+
+
+@dataclass(frozen=True)
+class SourcePin:
+    """One article source and the extraction body digest the article pins it to.
+
+    ``body_sha256`` is ``None`` when the article declares the source but no
+    digest for it.  That is the released-edition shape -- those editions
+    predate committed extractions and have nothing to pin -- and an ordinary
+    intermediate state while an author is adding a source.  The open edition
+    refuses it; every other caller treats it as "nothing to compare".
+    """
+
+    source_id: str
+    body_sha256: str | None
 
 
 def extraction_path(sources_dir: Path, source_id: str) -> Path:
@@ -124,166 +140,118 @@ def load_extraction(sources_dir: Path, source_id: str) -> Extraction | None:
     )
 
 
-def ledger_source_ids(ledger_path: Path, data: dict[str, Any]) -> tuple[str, ...]:
-    """The sources a fidelity ledger covers, in the ledger's declared order.
+def normalize_source_pins(
+    label: str, source_ids: tuple[str, ...], declared: object
+) -> tuple[SourcePin, ...]:
+    """Read one article row's ``source_body_sha256`` as one pin per source.
 
-    A ledger with neither key is an ordinary released-edition state and yields
-    an empty tuple (the open edition catches it against the article's own
-    declaration).  A *present* but mistyped or empty declaration is always an
-    error: a ledger must never verify vacuously because its coverage was
+    A bare hex digest is the single-source shape; an article over several
+    sources must key each pin by source id, because a lone digest could only
+    ever prove one of them.  A missing key yields an unpinned row -- legal for
+    a released edition, refused for the open one by
+    :func:`verify_source_extractions`.  A *present* but mistyped declaration is
+    always an error: an article must never verify vacuously because its pin was
     spelled wrongly.
     """
 
-    if "source_ids" in data:
-        declared = data["source_ids"]
-        if (
-            not isinstance(declared, list)
-            or not declared
-            or any(not str(item or "").strip() for item in declared)
-        ):
-            raise ValidationError(
-                f"{ledger_path}: source_ids must be a non-empty list of source ids, "
-                f"got {declared!r}"
-            )
-        return tuple(str(item) for item in declared)
-    if "source_id" in data:
-        single = data["source_id"]
-        if not isinstance(single, str) or not single.strip():
-            raise ValidationError(
-                f"{ledger_path}: source_id must be a non-empty source id, got {single!r}"
-            )
-        return (single,)
-    return ()
-
-
-def declared_source_hashes(
-    ledger_path: Path, data: dict[str, Any], source_ids: tuple[str, ...]
-) -> dict[str, str | None]:
-    """Normalize a ledger's ``source_body_sha256`` to one pin per source.
-
-    A bare hex digest is the single-source shape editions 001 and 002 use; a
-    multi-source ledger must key each pin by source id so no source can hide
-    behind another's hash.
-    """
-
-    declared = data.get("source_body_sha256")
     if declared is None:
-        return {source_id: None for source_id in source_ids}
+        return tuple(SourcePin(source_id, None) for source_id in source_ids)
     if isinstance(declared, str):
         if len(source_ids) != 1:
             raise ValidationError(
-                f"{ledger_path}: source_body_sha256 must be a mapping keyed by source id "
-                f"when the ledger covers {len(source_ids)} sources"
+                f"{label}: source_body_sha256 must be a mapping keyed by source id "
+                f"when the article covers {len(source_ids)} sources"
             )
-        _require_hex(ledger_path, source_ids[0], declared)
-        return {source_ids[0]: declared}
+        _require_hex(label, source_ids[0], declared)
+        return (SourcePin(source_ids[0], declared),)
     if isinstance(declared, dict):
         unknown = sorted(set(str(key) for key in declared) - set(source_ids))
         if unknown:
             raise ValidationError(
-                f"{ledger_path}: source_body_sha256 names sources the ledger does not cover: "
-                + ", ".join(unknown)
+                f"{label}: source_body_sha256 names sources the article does not "
+                "declare in source_ids: " + ", ".join(unknown)
             )
         for source_id, value in declared.items():
-            _require_hex(ledger_path, str(source_id), str(value or ""))
-        return {
-            source_id: str(declared[source_id]) if source_id in declared else None
+            _require_hex(label, str(source_id), str(value or ""))
+        return tuple(
+            SourcePin(source_id, str(declared[source_id]) if source_id in declared else None)
             for source_id in source_ids
-        }
+        )
     raise ValidationError(
-        f"{ledger_path}: source_body_sha256 must be a hex digest or a mapping keyed by source id"
+        f"{label}: source_body_sha256 must be a hex digest or a mapping keyed by source id"
     )
 
 
-def _require_hex(ledger_path: Path, source_id: str, value: str) -> None:
+def _require_hex(label: str, source_id: str, value: str) -> None:
     if not _HEX_SHA256.match(value):
         raise ValidationError(
-            f"{ledger_path}: source_body_sha256 for {source_id} must be a 64-character "
+            f"{label}: source_body_sha256 for {source_id} must be a 64-character "
             f"lowercase hex SHA-256, got {value!r}"
         )
 
 
-def verify_ledger_source_extractions(
-    ledger_path: Path,
+def verify_source_extractions(
+    label: str,
+    pins: tuple[SourcePin, ...],
     sources_dir: Path,
     *,
     require_extractions: bool,
-    article_source_ids: tuple[str, ...] | None = None,
-) -> None:
-    """Verify a ledger's source-side pins against committed extractions.
+) -> tuple[Extraction, ...]:
+    """Verify an article's source pins against the committed extractions.
 
     Whenever a source has both an extraction and a declared pin, the pin must
-    match the extraction body -- that rule is unconditional.  When
-    ``require_extractions`` is true (the article belongs to the open,
-    unreleased edition) every covered source must additionally have an
-    extraction and a matching pin, and, when ``article_source_ids`` is given,
-    the ledger's declared sources must equal the article's ``source_ids`` in
-    ``edition.yaml`` exactly -- neither side may cover a source the other does
-    not, or a manuscript could cite evidence its ledger never audits (or vice
-    versa).  Released editions predate committed extractions; their recorded
-    pins have nothing to verify against and are skipped, keeping their
-    validation exactly as it was (edition 001's ``narayanan-what-will-be-left``
-    ledger already diverges from its article, so the equality rule is scoped
-    to the open edition by design).
+    match the extraction body -- that rule is unconditional, and it is the one
+    that detects republishing a source whose text moved underneath the
+    manuscript.  When ``require_extractions`` is true (the article belongs to
+    the open, collecting edition) every declared source must additionally have
+    an extraction *and* a matching pin.  Released editions predate committed
+    extractions; their recorded pins have nothing to verify against and are
+    skipped, keeping their validation exactly as it was.
+
+    Returns every extraction that was found, in the article's declared source
+    order, so a caller that needs the source text (the code-fence check) does
+    not load it a second time.  A found-but-unpinned extraction is included:
+    the open edition has already refused that state by the time this returns,
+    and for a released edition the text is still the committed source text,
+    which is worth handing to a caller that only wants to read it.
     """
 
-    data = load_structured(ledger_path)
-    source_ids = ledger_source_ids(ledger_path, data)
-    if require_extractions:
-        if article_source_ids is not None:
-            missing = [item for item in article_source_ids if item not in source_ids]
-            extra = [item for item in source_ids if item not in article_source_ids]
-            if missing or extra:
-                parts = []
-                if missing:
-                    parts.append(
-                        "declared by the article but absent from the ledger: "
-                        + ", ".join(missing)
-                    )
-                if extra:
-                    parts.append(
-                        "declared by the ledger but absent from the article: "
-                        + ", ".join(extra)
-                    )
-                raise ValidationError(
-                    f"{ledger_path}: the open edition requires the ledger's source_ids "
-                    "to equal the article's source_ids in edition.yaml; "
-                    + "; ".join(parts)
-                )
-        if not source_ids:
-            raise ValidationError(
-                f"{ledger_path}: the open edition requires the ledger to declare the "
-                "source_ids it covers"
-            )
-    declared = declared_source_hashes(ledger_path, data, source_ids)
     errors: list[str] = []
-    for source_id in source_ids:
+    found: list[Extraction] = []
+    if require_extractions and not pins:
+        raise ValidationError(
+            f"{label}: the open edition requires the article to declare the "
+            "source_ids it is written from"
+        )
+    for pin in pins:
         try:
-            extraction = load_extraction(sources_dir, source_id)
+            extraction = load_extraction(sources_dir, pin.source_id)
         except ValidationError as exc:
             errors.extend(exc.errors)
             continue
-        pinned = declared.get(source_id)
         if extraction is None:
             if require_extractions:
                 errors.append(
-                    f"{ledger_path}: source {source_id} has no committed extraction; the open "
-                    f"edition requires library/sources/{source_id}/{EXTRACTION_FILENAME} "
-                    "so the ledger's source side is verifiable"
+                    f"{label}: source {pin.source_id} has no committed extraction; the "
+                    f"open edition requires library/sources/{pin.source_id}/"
+                    f"{EXTRACTION_FILENAME} so the article's source side is verifiable"
                 )
             continue
-        if pinned is None:
+        found.append(extraction)
+        if pin.body_sha256 is None:
             if require_extractions:
                 errors.append(
-                    f"{ledger_path}: declares no source_body_sha256 for {source_id}; pin the "
-                    f"extraction body hash {extraction.body_sha256}"
+                    f"{label}: declares no source_body_sha256 for {pin.source_id}; pin "
+                    f"the extraction body hash {extraction.body_sha256}"
                 )
             continue
-        if pinned != extraction.body_sha256:
+        if pin.body_sha256 != extraction.body_sha256:
             errors.append(
-                f"{ledger_path}: source_body_sha256 for {source_id} is {pinned}, but the "
-                f"extraction body of {extraction.path} hashes to {extraction.body_sha256}; "
-                "the ledger no longer matches the committed extraction"
+                f"{label}: source_body_sha256 for {pin.source_id} is {pin.body_sha256}, "
+                f"but the extraction body of {extraction.path} hashes to "
+                f"{extraction.body_sha256}; the article no longer matches the "
+                "committed extraction"
             )
     if errors:
         raise ValidationError(errors)
+    return tuple(found)

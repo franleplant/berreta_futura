@@ -18,6 +18,7 @@ from magazine.workflow import (
     _probe_cache_key,
     ProbeResult,
     Workflow,
+    _WORKFLOW_CACHE_SCHEMA,
 )
 from magazine.translate_stage import stage_translation
 
@@ -205,21 +206,6 @@ def _make_project(
         "Source evidence.",
         encoding="utf-8",
     )
-    _write_yaml(
-        edition_dir / "fidelity" / "article.yaml",
-        {
-            "schema_version": 1,
-            "source_ids": [SOURCE_ID],
-            "source_body_sha256": body_sha,
-            "paragraphs": [
-                {
-                    "status": "retained",
-                    "source": "Source evidence.",
-                    "edited": "Source evidence.",
-                }
-            ],
-        },
-    )
     (edition_dir / "editorial.md").write_text(
         "---\n"
         "title: Opening Note\n"
@@ -250,8 +236,12 @@ def _make_project(
                 "opener_variant": "edge_medallion",
                 "author": "Author",
                 "source_ids": [SOURCE_ID],
+                # The article row is the only place a source pin lives now;
+                # the extraction it pins is written above only when the
+                # fixture asks for one, so an unextracted source still leaves
+                # the evidence checkpoint with a pin to complain about.
+                "source_body_sha256": body_sha,
                 "manuscript": f"editions/{EDITION_ID}/articles/article.md",
-                "fidelity": f"editions/{EDITION_ID}/fidelity/article.yaml",
             }
         ],
     }
@@ -371,7 +361,6 @@ def _write_build(root: Path) -> None:
         (root / "editions" / EDITION_ID / "edition.yaml").read_text(encoding="utf-8")
     )
     manuscript = root / "editions" / EDITION_ID / "articles" / "article.md"
-    ledger = root / "editions" / EDITION_ID / "fidelity" / "article.yaml"
     editorial = root / "editions" / EDITION_ID / "editorial.md"
     illustration_plan = (
         root / "editions" / EDITION_ID / "art" / "illustrations.yaml"
@@ -416,13 +405,11 @@ def _write_build(root: Path) -> None:
                     "editorial": _file_entry(root, editorial),
                     "cover_art": _file_entry(root, cover_art),
                     "translation_manifest": None,
-                    "fidelity_status": None,
                     "sections": [],
                     "articles": [
                         {
                             "id": "article",
                             "manuscript": _file_entry(root, manuscript),
-                            "fidelity": _file_entry(root, ledger),
                             "opener_art": (
                                 _file_entry(root, opener_art)
                                 if opener_art is not None
@@ -468,14 +455,13 @@ def _write_reviews(root: Path) -> None:
     edition_dir = root / "editions" / EDITION_ID
     source_dir = root / "library" / "sources" / SOURCE_ID
     manuscript = edition_dir / "articles" / "article.md"
-    ledger = edition_dir / "fidelity" / "article.yaml"
     extraction = source_dir / "extracted.md"
     extraction_text = extraction.read_text(encoding="utf-8")
     body = extraction_text.partition("\n---\n")[2]
     _write_yaml(
         edition_dir / "reviews" / "evidence.yaml",
         {
-            "schema_version": 1,
+            "schema_version": 2,
             "edition_id": EDITION_ID,
             "reviewer": "Evidence reviewer",
             "reviewed_at": "2026-07-29T12:00:00+00:00",
@@ -487,7 +473,6 @@ def _write_reviews(root: Path) -> None:
                     "manuscript_sha256": hashlib.sha256(
                         manuscript.read_bytes()
                     ).hexdigest(),
-                    "ledger_sha256": hashlib.sha256(ledger.read_bytes()).hexdigest(),
                     "source_extractions": {
                         SOURCE_ID: {
                             "body_sha256": hashlib.sha256(
@@ -544,7 +529,12 @@ def test_status_reports_the_whole_ordered_workflow_and_precise_blockers(
         "fit",
         "validation",
         "build",
+        # The editorial bench sits together after the build: the evidence
+        # audit, then the three prose judges, then the visual decision.
         "evidence_review",
+        "line_review",
+        "edition_review",
+        "learning_review",
         "render_review",
         "release",
     ]
@@ -552,7 +542,7 @@ def test_status_reports_the_whole_ordered_workflow_and_precise_blockers(
     evidence = report.checkpoint("evidence")
     assert evidence.next_action.classification == "authorial"
     assert evidence.details["missing_or_invalid_extractions"] == [SOURCE_ID]
-    assert evidence.details["missing_or_invalid_ledgers"] == ["article"]
+    assert evidence.details["unpinned_or_invalid_articles"] == ["article"]
     assert all(
         checkpoint.next_action is not None
         and checkpoint.next_action.classification
@@ -564,6 +554,74 @@ def test_status_reports_the_whole_ordered_workflow_and_precise_blockers(
     assert payload["schema_version"] == 1
     assert payload["next_checkpoint"] == "evidence"
     assert json.loads(report.to_json()) == payload
+
+
+def test_evidence_reads_raw_article_rows_so_an_unloadable_manifest_still_reports(
+    tmp_path: Path,
+):
+    """Per-article pin status must survive a manifest that will not load.
+
+    The pins live in edition.yaml itself, so it is tempting to read them off
+    the loaded Edition. The checkpoint reads the raw rows instead: an author
+    whose manifest is broken for an unrelated reason still needs to see which
+    articles are pinned and which are not, rather than one opaque load error
+    standing in for every article at once.
+    """
+
+    _make_project(tmp_path, extraction=True)
+    manifest_path = tmp_path / "editions" / EDITION_ID / "edition.yaml"
+    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    manifest["articles"][0]["manuscript"] = (
+        f"editions/{EDITION_ID}/articles/does-not-exist.md"
+    )
+    _write_yaml(manifest_path, manifest)
+
+    report = Workflow(tmp_path, adapter=GuardAdapter()).status(EDITION_ID)
+
+    evidence = report.checkpoint("evidence")
+    assert evidence.status == "complete"
+    assert evidence.summary == "Source extractions and article source pins are complete."
+    assert evidence.details["unpinned_or_invalid_articles"] == []
+    assert evidence.details["source_pins"] == {
+        "article": {
+            "path": f"editions/{EDITION_ID}/edition.yaml",
+            "status": "complete",
+            "source_ids": [SOURCE_ID],
+        }
+    }
+
+
+def test_evidence_reports_the_offending_article_for_a_pin_that_does_not_match(
+    tmp_path: Path,
+):
+    """A pin that no longer matches its extraction is that article's problem.
+
+    The whole point of moving the pin into the article row is that it names
+    the source it verifies, so a stale pin must be reported against the
+    article and the source id, not as an edition-wide failure.
+    """
+
+    _make_project(tmp_path, extraction=True)
+    manifest_path = tmp_path / "editions" / EDITION_ID / "edition.yaml"
+    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    manifest["articles"][0]["source_body_sha256"] = "0" * 64
+    _write_yaml(manifest_path, manifest)
+
+    report = Workflow(tmp_path, adapter=GuardAdapter()).status(EDITION_ID)
+
+    evidence = report.checkpoint("evidence")
+    assert evidence.status == "blocked"
+    assert evidence.summary == "0 extraction(s) and 1 article source pin(s) need work."
+    assert evidence.next_action.classification == "authorial"
+    assert evidence.details["unpinned_or_invalid_articles"] == ["article"]
+    row = evidence.details["source_pins"]["article"]
+    assert row["status"] == "invalid"
+    assert len(row["errors"]) == 1
+    assert row["errors"][0].startswith(
+        f"editions/{EDITION_ID}/edition.yaml: article article: "
+        f"source_body_sha256 for {SOURCE_ID} is {'0' * 64}"
+    )
+    assert evidence.details["errors"] == row["errors"]
 
 
 def test_assignment_advances_only_target_manifest_sources_and_preserves_other_queues(
@@ -1077,9 +1135,50 @@ def test_corrupt_cache_file_degrades_to_full_recompute(tmp_path: Path):
     assert adapter.fit_calls == fit_calls + 1
     assert adapter.validate_calls == validate_calls + 1
     restored = json.loads(_cache_path(tmp_path).read_text(encoding="utf-8"))
-    assert restored["schema_version"] == 1
+    assert restored["schema_version"] == _WORKFLOW_CACHE_SCHEMA
     assert restored["edition_id"] == EDITION_ID
     assert set(restored["probes"]) == {"fit", "validate"}
+
+
+def test_cache_written_under_a_superseded_schema_is_discarded_not_trusted(
+    tmp_path: Path,
+):
+    """A schema bump must invalidate every persisted probe verdict.
+
+    The schema exists because the probe closure itself can change shape --
+    version 2 dropped the per-article fidelity ledgers from the declared build
+    inputs -- so a cache written under an older schema keyed its probe entries
+    over a different inventory. Reusing it would serve a verdict computed from
+    files the current closure no longer reads. The stale file must be ignored
+    wholesale, hashes as well as probes, and rewritten at the current schema.
+    """
+
+    _make_project(tmp_path, extraction=True, complete_art=True)
+    adapter = CountingBuildAdapter()
+    Workflow(tmp_path, adapter=adapter).run(EDITION_ID)
+    baseline = Workflow(tmp_path, adapter=adapter).status(EDITION_ID).to_json()
+    cached = json.loads(_cache_path(tmp_path).read_text(encoding="utf-8"))
+    assert cached["schema_version"] == _WORKFLOW_CACHE_SCHEMA
+    cached["schema_version"] = _WORKFLOW_CACHE_SCHEMA - 1
+    _cache_path(tmp_path).write_text(json.dumps(cached), encoding="utf-8")
+    fit_calls = adapter.fit_calls
+    validate_calls = adapter.validate_calls
+    hashed: list[str] = []
+
+    def counting_hash(path: Path) -> str:
+        hashed.append(path.name)
+        return _hash_path_bytes(path)
+
+    with patch("magazine.workflow._hash_path_bytes", counting_hash):
+        report = Workflow(tmp_path, adapter=adapter).status(EDITION_ID)
+
+    assert report.to_json() == baseline
+    assert adapter.fit_calls == fit_calls + 1
+    assert adapter.validate_calls == validate_calls + 1
+    # Not one memoized hash survived the bump either.
+    assert hashed
+    rewritten = json.loads(_cache_path(tmp_path).read_text(encoding="utf-8"))
+    assert rewritten["schema_version"] == _WORKFLOW_CACHE_SCHEMA
 
 
 def test_probe_cache_tracks_declared_inputs_outside_the_edition_directory(
@@ -1127,7 +1226,7 @@ def test_build_manifest_requires_the_complete_current_input_inventory(
     _write_build(tmp_path)
     path = tmp_path / "output" / EDITION_ID / "edition-manifest.json"
     built = json.loads(path.read_text(encoding="utf-8"))
-    del built["inputs"]["articles"][0]["fidelity"]
+    del built["inputs"]["articles"][0]["tail_art"]
     path.write_text(json.dumps(built), encoding="utf-8")
 
     build = Workflow(tmp_path, adapter=BuildAdapter()).status(
@@ -1136,7 +1235,7 @@ def test_build_manifest_requires_the_complete_current_input_inventory(
 
     assert build.status == "blocked"
     assert build.details["languages"]["en"]["stale_inputs"] == [
-        f"missing input binding: editions/{EDITION_ID}/fidelity/article.yaml"
+        f"missing input binding: editions/{EDITION_ID}/art/article-tail.png"
     ]
 
 
@@ -1161,8 +1260,8 @@ def test_build_manifest_rejects_malformed_hashes_and_escaping_paths(
     path = tmp_path / "output" / EDITION_ID / "edition-manifest.json"
     built = json.loads(path.read_text(encoding="utf-8"))
     built["inputs"]["articles"][0]["manuscript"]["sha256"] = "not-a-sha"
-    built["inputs"]["articles"][0]["fidelity"] = {
-        "path": "../outside.yaml",
+    built["inputs"]["articles"][0]["tail_art"] = {
+        "path": "../outside.png",
         "sha256": "0" * 64,
     }
     path.write_text(json.dumps(built), encoding="utf-8")
@@ -1177,9 +1276,9 @@ def test_build_manifest_rejects_malformed_hashes_and_escaping_paths(
         f"input has invalid sha256: editions/{EDITION_ID}/articles/article.md"
         in stale
     )
-    assert "input escapes project root: ../outside.yaml" in stale
+    assert "input escapes project root: ../outside.png" in stale
     assert (
-        f"missing input binding: editions/{EDITION_ID}/fidelity/article.yaml"
+        f"missing input binding: editions/{EDITION_ID}/art/article-tail.png"
         in stale
     )
 
@@ -1222,7 +1321,6 @@ def test_translated_build_requires_its_current_translation_manifest_binding(
         f"editions/{EDITION_ID}/art/cover-candidate-wildcard.png",
         f"editions/{EDITION_ID}/articles/article.md",
         f"editions/{EDITION_ID}/editorial.md",
-        f"editions/{EDITION_ID}/fidelity/article.yaml",
         f"editions/{EDITION_ID}/art/article-tail.png",
         f"library/sources/{SOURCE_ID}/record.yaml",
         f"editions/{EDITION_ID}/translations/es/edition.yaml",
@@ -1242,6 +1340,78 @@ def test_translated_build_requires_its_current_translation_manifest_binding(
         f"missing input binding: editions/{EDITION_ID}/translations/es/edition.yaml"
         in drift
     )
+
+
+def test_the_prose_bench_reports_without_blocking_during_the_advisory_rollout(
+    tmp_path: Path,
+):
+    """The three new judges are collected and calibrated before they refuse.
+
+    An edition with no line, edition or learning record must still reach
+    ``release_ready``: their thresholds are being calibrated against edition
+    004, and a gate switched on before its threshold is known teaches the
+    operator to route around it.  So each checkpoint reports what it found --
+    including the exact recording command in its details -- without ever
+    reaching ``blocked`` and without ever becoming the report's next
+    checkpoint.  Emptying ``_ADVISORY_REVIEW_CHECKPOINTS`` is the flip.
+    """
+
+    _make_project(tmp_path, extraction=True, complete_art=True)
+    _write_build(tmp_path)
+    _write_reviews(tmp_path)
+
+    report = Workflow(tmp_path, adapter=BuildAdapter()).status(EDITION_ID)
+
+    for checkpoint_id, kind in (
+        ("line_review", "line"),
+        ("edition_review", "edition"),
+        ("learning_review", "learning"),
+    ):
+        checkpoint = report.checkpoint(checkpoint_id)
+        assert checkpoint.status == "not_applicable", checkpoint_id
+        assert checkpoint.next_action is None
+        assert checkpoint.details["advisory"] is True
+        assert checkpoint.details["status"] == "required_before_release"
+        assert checkpoint.details["command"] == (
+            f"uv run --locked mag review record {EDITION_ID} --kind {kind}"
+        )
+    assert report.release_ready
+    assert report.next_checkpoint.id == "release"
+
+
+def test_an_approved_line_review_completes_its_checkpoint(tmp_path: Path):
+    _make_project(tmp_path, extraction=True, complete_art=True)
+    _write_build(tmp_path)
+    _write_reviews(tmp_path)
+    edition_dir = tmp_path / "editions" / EDITION_ID
+    _write_yaml(
+        edition_dir / "reviews" / "line.yaml",
+        {
+            "schema_version": 1,
+            "edition_id": EDITION_ID,
+            "reviewer": "Line editor",
+            "reviewed_at": "2026-07-29T14:00:00+00:00",
+            "result": "approved",
+            "findings": [],
+            "articles": {
+                article_id: {
+                    "reviewed_at": "2026-07-29T14:00:00+00:00",
+                    "manuscript_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                }
+                for article_id, path in (
+                    ("article", edition_dir / "articles" / "article.md"),
+                    ("editorial", edition_dir / "editorial.md"),
+                )
+            },
+        },
+    )
+
+    report = Workflow(tmp_path, adapter=BuildAdapter()).status(EDITION_ID)
+
+    checkpoint = report.checkpoint("line_review")
+    assert checkpoint.status == "complete"
+    assert checkpoint.details["articles"]["editorial"]["status"] == "current"
+    assert report.release_ready
 
 
 def test_release_readiness_requires_current_evidence_and_render_decisions(

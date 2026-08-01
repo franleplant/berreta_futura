@@ -491,9 +491,20 @@ def _resolve_asset(
     return review, asset, path
 
 
-def _semantic_headings(path: Path) -> set[str]:
+def semantic_headings(path: Path) -> set[str]:
+    """Every ``##`` heading a figure anchor may name.
+
+    Public because ``produce`` reconciles anchors against a manuscript it has
+    just rewritten, and it has to ask the same question this module answers
+    when it validates one.  A second, subtly different heading scanner would
+    let produce approve an anchor that validation then refuses.
+    """
+
     return {
         line[3:].strip()
         for line in path.read_text(encoding="utf-8").splitlines()
         if line.startswith("## ") and line[3:].strip()
     }
+
+
+_semantic_headings = semantic_headings

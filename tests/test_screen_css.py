@@ -136,8 +136,8 @@ def _edition(tmp_path: Path) -> Edition:
     article = Article(
         id="article-one", title="Article one", short_title="Article", display_emphasis="",
         opener_variant="edge_medallion", author="An Author", author_note="Writes here.",
-        source_ids=("source-one", "source-two"), manuscript=article_path,
-        fidelity=tmp_path / "fidelity.yaml", content_mode="faithful_synthesis",
+        source_ids=("source-one", "source-two"), source_pins=(),
+        manuscript=article_path, content_mode="faithful_synthesis",
         figures=(opener, figure), tail_art=tail_path,
         source_url="https://example.test/source",
         opener_art=ArticleOpenerArt(
@@ -175,10 +175,21 @@ def test_every_selector_the_screen_sheet_styles_is_emitted_vocabulary(tmp_path: 
     assert styled_classes and styled_data_attributes  # The extraction itself works.
 
     illustrated = _edition(tmp_path)
+    # The legacy opener also carries the other closing object: an article may
+    # declare key ideas or tail art, never both, so one variant has to be the
+    # one that closes on the box if the sheet is to be held to it at all.
     legacy = replace(
         illustrated,
         articles=(
-            replace(illustrated.articles[0], opener_art=None),
+            replace(
+                illustrated.articles[0],
+                opener_art=None,
+                tail_art=None,
+                key_ideas=(
+                    "One host can drive several servers without merging them.",
+                    "A server states what it can do; the host decides when.",
+                ),
+            ),
         ),
         raw={"subtitle": "A subtitle"},
     )

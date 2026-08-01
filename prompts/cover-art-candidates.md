@@ -53,7 +53,7 @@ This is not a collage template. It has no required subject or motif. Humans and
 hands may appear when the concept needs them, but must never be requested by
 default. Likewise, do not repeat string, knots, diagrams, paper scraps, or any
 other feature merely because a previous edition used it. Reuse the level of art
-direction, material conviction, and compositional intent—not the objects.
+direction, material conviction, and compositional intent, not the objects.
 
 ## `wildcard`
 

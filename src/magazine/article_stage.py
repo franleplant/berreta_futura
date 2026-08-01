@@ -2,17 +2,18 @@
 
 This module owns the clerical seam between durable source capture and human
 editorial work. It validates a versioned brief, derives provenance and author
-metadata from source records, and prepares three artifacts together:
+metadata from source records, and prepares two artifacts together:
 
 * a manuscript containing only an explicit, non-reader TODO;
-* a fidelity ledger with exact extraction-body pins and no invented prose;
-* the matching article row and source declarations in ``edition.yaml``.
+* the matching article row in ``edition.yaml``, carrying the article's
+  ``source_ids``, the exact ``source_body_sha256`` pin of each source's
+  committed extraction body, and the edition's source declarations.
 
 Planning is read-only. Staging commits the complete plan as one batch and
 rolls completed replacements back if a later replacement fails. Existing
 article work is never overwritten. A second run for an already staged,
 compatible article is a no-op even after an editor has begun filling in the
-manuscript and ledger.
+manuscript.
 """
 
 from __future__ import annotations
@@ -34,17 +35,13 @@ from yaml.nodes import MappingNode, SequenceNode
 from .errors import ValidationError
 from .extraction import Extraction, load_extraction
 from .io import dump_yaml, load_structured
+from .manifest import CONTENT_MODES, EDITOR_VOICE_CONTENT_MODES
 from .records import SourceRecord, load_records
 from .release import load_release_state
 
 ARTICLE_BRIEF_SCHEMA_VERSION = 1
-CONTENT_MODES = {
-    "faithful_edit",
-    "faithful_synthesis",
-    "selected_extracts",
-    "original_synthesis",
-}
 OPENER_VARIANTS = {"edge_medallion", "split_axis", "stepped_title"}
+EDITOR_BYLINE_MAX_LENGTH = 80
 _SAFE_ID = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 _LOCK_DIRECTORY = Path(gettempdir()) / "magazine-article-stage-locks"
 
@@ -81,6 +78,16 @@ class ArticleBrief:
     opener_variant: str = "edge_medallion"
     display_emphasis: str = ""
     minimum_reader_pages: int = 1
+    editor_byline: str = ""
+    """Who signs a piece written in the magazine's own voice.
+
+    Staging derives an article's byline from the identity its sources captured,
+    which is the right answer for every mode that republishes an author -- and
+    no answer at all for an explainer the editors wrote.  The brief states it
+    outright instead, and the mode decides which of the two applies: required
+    for an editor-voice mode, refused for the rest so a byline can never
+    silently override a captured one.
+    """
     schema_version: int = ARTICLE_BRIEF_SCHEMA_VERSION
 
     @classmethod
@@ -106,6 +113,7 @@ class ArticleBrief:
             minimum_reader_pages=_as_int(
                 data.get("minimum_reader_pages"), default=1
             ),
+            editor_byline=str(data.get("editor_byline") or "").strip(),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -120,6 +128,7 @@ class ArticleBrief:
             "content_mode": self.content_mode,
             "minimum_reader_pages": self.minimum_reader_pages,
             "source_ids": list(self.source_ids),
+            **({"editor_byline": self.editor_byline} if self.editor_byline else {}),
         }
 
 
@@ -245,7 +254,14 @@ def plan_article_stage(root: Path, brief: ArticleBrief | Mapping[str, Any]) -> A
             extractions.append(extraction)
     if errors:
         raise ValidationError(errors)
-    author, author_note = _consistent_author_profile(selected_records)
+    # An editor-voice piece is signed by the brief, not by the sources: the
+    # explainer is still grounded in a pinned extraction, but the Teacher wrote
+    # it, and there is no author biography to carry across.
+    author, author_note = (
+        (brief.editor_byline, "")
+        if brief.content_mode in EDITOR_VOICE_CONTENT_MODES
+        else _consistent_author_profile(selected_records)
+    )
 
     edition_dir = _safe_repo_path(
         root,
@@ -284,18 +300,12 @@ def plan_article_stage(root: Path, brief: ArticleBrief | Mapping[str, Any]) -> A
         edition_dir / "articles" / f"{brief.id}.md",
         label="Article manuscript destination",
     )
-    ledger_path = _safe_repo_path(
-        root,
-        edition_dir / "fidelity" / f"{brief.id}.yaml",
-        label="Fidelity ledger destination",
-    )
     _assert_safe_destination(root, manuscript_path, "Article manuscript destination")
-    _assert_safe_destination(root, ledger_path, "Fidelity ledger destination")
     article_row = _article_row(
         root,
         brief,
         manuscript_path,
-        ledger_path,
+        extractions,
         author,
         author_note,
     )
@@ -333,14 +343,12 @@ def plan_article_stage(root: Path, brief: ArticleBrief | Mapping[str, Any]) -> A
         )
 
     manuscript_bytes = _manuscript_skeleton(brief).encode("utf-8")
-    ledger_bytes = _ledger_skeleton(brief, extractions, author).encode("utf-8")
     if existing_row is not None:
         _validate_existing_stage(
             manifest_path,
             existing_row,
             article_row,
             manuscript_path,
-            ledger_path,
         )
         return ArticleStagePlan(
             brief.edition_id,
@@ -348,16 +356,13 @@ def plan_article_stage(root: Path, brief: ArticleBrief | Mapping[str, Any]) -> A
             article_row,
             (
                 ArticleStageChange(manuscript_path, "keep", "manuscript"),
-                ArticleStageChange(ledger_path, "keep", "fidelity ledger"),
                 ArticleStageChange(manifest_path, "keep", "edition manifest"),
             ),
             (),
             (),
         )
 
-    collisions = [
-        path for path in (manuscript_path, ledger_path) if path.exists()
-    ]
+    collisions = [path for path in (manuscript_path,) if path.exists()]
     if collisions:
         raise ValidationError(
             [
@@ -379,7 +384,6 @@ def plan_article_stage(root: Path, brief: ArticleBrief | Mapping[str, Any]) -> A
     )
     updates = (
         (manuscript_path, manuscript_bytes),
-        (ledger_path, ledger_bytes),
         (manifest_path, manifest_bytes),
     )
     dependency_paths = [
@@ -388,7 +392,6 @@ def plan_article_stage(root: Path, brief: ArticleBrief | Mapping[str, Any]) -> A
         *(_source_record_path(sources_dir, source_id) for source_id in brief.source_ids),
         *(extraction.path for extraction in extractions),
         manuscript_path,
-        ledger_path,
     ]
     return ArticleStagePlan(
         brief.edition_id,
@@ -396,7 +399,6 @@ def plan_article_stage(root: Path, brief: ArticleBrief | Mapping[str, Any]) -> A
         article_row,
         (
             ArticleStageChange(manuscript_path, "create", "manuscript"),
-            ArticleStageChange(ledger_path, "create", "fidelity ledger"),
             ArticleStageChange(manifest_path, "update", "edition manifest"),
         ),
         updates,
@@ -484,6 +486,27 @@ def _validate_brief(brief: ArticleBrief) -> None:
             "Article staging cannot infer an editor byline for original_synthesis; "
             "use an explicit editor-authoring workflow"
         )
+    elif brief.content_mode in EDITOR_VOICE_CONTENT_MODES and not brief.editor_byline:
+        errors.append(
+            f"Article brief content_mode {brief.content_mode} is written in the "
+            "magazine's own voice and requires an explicit editor_byline"
+        )
+    elif (
+        brief.content_mode not in EDITOR_VOICE_CONTENT_MODES
+        and brief.editor_byline
+    ):
+        errors.append(
+            f"Article brief content_mode {brief.content_mode} republishes its source "
+            "author, so it must omit editor_byline"
+        )
+    if brief.editor_byline and (
+        "\n" in brief.editor_byline
+        or len(brief.editor_byline) > EDITOR_BYLINE_MAX_LENGTH
+    ):
+        errors.append(
+            "Article brief editor_byline must be one line of at most "
+            f"{EDITOR_BYLINE_MAX_LENGTH} characters"
+        )
     if brief.opener_variant not in OPENER_VARIANTS:
         errors.append(f"Article brief has invalid opener_variant: {brief.opener_variant}")
     if not 1 <= brief.minimum_reader_pages <= 7:
@@ -524,10 +547,18 @@ def _article_row(
     root: Path,
     brief: ArticleBrief,
     manuscript: Path,
-    ledger: Path,
+    extractions: list[Extraction],
     author: str,
     author_note: str,
 ) -> dict[str, Any]:
+    """The ``edition.yaml`` row for one staged article, pins included.
+
+    The row is the article's whole provenance declaration: which sources it is
+    written from, and the exact extraction-body digest of each.  Staging is the
+    only moment at which those two facts are known together and free -- the
+    extractions have just been loaded to prove they exist -- so the pins are
+    written here rather than left for the author to compute by hand.
+    """
     row: dict[str, Any] = {
         "id": brief.id,
         "title": brief.title,
@@ -547,8 +578,8 @@ def _article_row(
         {
             "content_mode": brief.content_mode,
             "source_ids": list(brief.source_ids),
+            "source_body_sha256": _source_body_sha256(brief, extractions),
             "manuscript": manuscript.relative_to(root).as_posix(),
-            "fidelity": ledger.relative_to(root).as_posix(),
         }
     )
     if brief.minimum_reader_pages != 1:
@@ -572,41 +603,19 @@ def _manuscript_skeleton(brief: ArticleBrief) -> str:
     )
 
 
-def _ledger_skeleton(
-    brief: ArticleBrief,
-    extractions: list[Extraction],
-    author: str,
-) -> str:
-    hashes = {
-        extraction.source_id: extraction.body_sha256
-        for extraction in extractions
-    }
-    source_body_sha256: str | dict[str, str]
+def _source_body_sha256(
+    brief: ArticleBrief, extractions: list[Extraction]
+) -> str | dict[str, str]:
+    """The article's extraction-body pins, in the shape validation reads.
+
+    One source pins as a bare digest; several pin as a mapping keyed by source
+    id, so no source can hide behind another's hash.
+    """
+
+    hashes = {extraction.source_id: extraction.body_sha256 for extraction in extractions}
     if len(brief.source_ids) == 1:
-        source_body_sha256 = hashes[brief.source_ids[0]]
-    else:
-        source_body_sha256 = {
-            source_id: hashes[source_id] for source_id in brief.source_ids
-        }
-    data = {
-        "schema_version": 1,
-        "source_ids": list(brief.source_ids),
-        "source_body_sha256": source_body_sha256,
-        "source_author": author,
-        "content_mode": brief.content_mode,
-        "stage_status": "todo_editorial_mapping_required",
-        "paragraphs": [
-            {
-                "id": "TODO",
-                "status": "todo_editorial_mapping_required",
-                "note": (
-                    "Replace this non-source marker with audited source-to-edited "
-                    "mappings before validation."
-                ),
-            }
-        ],
-    }
-    return dump_yaml(data)
+        return hashes[brief.source_ids[0]]
+    return {source_id: hashes[source_id] for source_id in brief.source_ids}
 
 
 def _validate_existing_stage(
@@ -614,19 +623,24 @@ def _validate_existing_stage(
     existing: Mapping[str, Any],
     expected: Mapping[str, Any],
     manuscript_path: Path,
-    ledger_path: Path,
 ) -> None:
     errors: list[str] = []
     for key, value in expected.items():
         if existing.get(key) != value:
+            # The pin is derived, not authored, so a disagreement there is
+            # almost always "the extraction moved since this was staged" rather
+            # than a typo -- and the fix is a refresh, not a hand edit.
+            detail = (
+                "; the committed extraction has changed since it was staged, so "
+                f"refresh it with `mag pin {manifest_path.parent.name}`"
+                if key == "source_body_sha256"
+                else ""
+            )
             errors.append(
                 f"{manifest_path}: existing article {expected['id']} has "
-                f"incompatible {key}"
+                f"incompatible {key}{detail}"
             )
-    for path, purpose in (
-        (manuscript_path, "manuscript"),
-        (ledger_path, "fidelity ledger"),
-    ):
+    for path, purpose in ((manuscript_path, "manuscript"),):
         if not path.is_file():
             errors.append(
                 f"{manifest_path}: existing article {expected['id']} is missing "

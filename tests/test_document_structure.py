@@ -4,8 +4,9 @@ Edition 003's primary source vocabulary includes ordered lists, nested
 bullets, and thematic breaks -- constructs the old hand-rolled gate scanners
 folded silently into paragraphs while the reader printed real ``<ol>``,
 nested ``<ul>`` and ``<hr>`` markup.  These tests pin the agreement: for one
-parsed document, the fidelity view (:func:`visible_blocks`), the translation
-view (:func:`block_signature`) and the semantic HTML the renderer emits all
+parsed document, the content view (:func:`visible_blocks`, which the
+code-fence check in :mod:`magazine.code_blocks` reads), the translation view
+(:func:`block_signature`) and the semantic HTML the renderer emits all
 describe the same structure.
 """
 
