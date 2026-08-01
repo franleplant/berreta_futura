@@ -8,6 +8,7 @@ Every piece is explicitly one of:
 - `faithful_synthesis`: a compact adaptation in the source author's voice that preserves the source's argument, evidence, qualifications, and conclusions;
 - `selected_extracts`: attributed passages with editorial framing;
 - `original_synthesis`: a new source-grounded article;
+- `in_a_nutshell`: the magazine's own explainer, teaching one source's principles to a reader who has never met the topic (`prompts/in-a-nutshell.md`);
 - `original_editorial`: the magazine's own voice.
 
 The default for source articles is `faithful_edit`. The opening editorial is `original_editorial` and may be opinionated, interpretive, and stylistically distinct.
@@ -32,13 +33,13 @@ must approve the argument and final prose.
 
 Every rendered source article, including its title and credit, has a hard maximum of seven A5 reader pages. The deterministic renderer measures the real pagination and refuses an over-budget build.
 
-The opening editorial must declare a non-empty title in its frontmatter. Its label, title, and byline are rendered on the opener and its title appears in the contents. The current standard is that the complete editorial fits a single A5 reader page: the editorial is the reader's front door, and a door that turns is not one. The budget is per-edition — `format.max_editorial_pages` in the edition manifest — because edition 001 shipped a two-page editorial and its frozen artifact must keep rebuilding; two A5 pages remain the publication's hard ceiling, which no edition may raise. Editions from 003 on declare `max_editorial_pages: 1`; editions 001 and 002 keep the older `2`. The renderer measures the real span in every language and refuses an over-budget or untitled build.
+The opening editorial must declare a non-empty title in its frontmatter. Its label, title, and byline are rendered on the opener and its title appears in the contents. The current standard is that the complete editorial fits a single A5 reader page: the editorial is the reader's front door, and a door that turns is not one. The budget is per-edition (`format.max_editorial_pages` in the edition manifest) because edition 001 shipped a two-page editorial and its frozen artifact must keep rebuilding; two A5 pages remain the publication's hard ceiling, which no edition may raise. Editions from 003 on declare `max_editorial_pages: 1`; editions 001 and 002 keep the older `2`. The renderer measures the real span in every language and refuses an over-budget or untitled build.
 
 An over-budget `faithful_edit` is converted to `faithful_synthesis`. The synthesis must retain the source's central argument, important evidence and examples, uncertainty, counterarguments, and conclusion. It must not introduce a new thesis or flatten disagreement into generic summary language. The byline and mode label provide attribution and disclose that the text is condensed rather than verbatim.
 
 Synthesis prose stays in the source's grammatical person and point of view. If the source author speaks in the first person, the synthesis does too; if the source is impersonal or already uses third person, preserve that choice. Do not wrap adapted prose in magazine-narrator scaffolding such as “Narayanan argues” or “Joshi explains.” Exact source wording may remain unchanged. Prefer retained passages and light edits, and summarize only where length requires it.
 
-Every synthesis maps the complete substantive source into edited ledger entries, reports source and output word counts, and passes manuscript-integrity validation. Short articles remain `faithful_edit`; synthesis is a length remedy, not the default editorial voice.
+A synthesis is verified by reading, not by bookkeeping: the claim-level fact-checker (`prompts/evidence-review.md`) reads the manuscript against the committed extraction claim by claim and reports invented claims, dropped qualifications, reversed claim strength, and missing counterarguments. Deciding what a shorter piece must lose is the writer's job and is governed by the cut order in `prompts/faithful-synthesis.md`: repeated examples first, a claim's supporting evidence before the claim, and qualifications and the source's own conclusions last and almost never. Short articles remain `faithful_edit`; synthesis is a length remedy, not the default editorial voice.
 
 ## Automatically permitted faithful edits
 
@@ -71,43 +72,45 @@ extraction covers each documentation file in a stable, declared order with
 visible file boundaries.
 
 The extraction body is everything after the frontmatter's closing `---` line,
-and `source_body_sha256` in a fidelity ledger is the SHA-256 of the UTF-8
-bytes of exactly that body. Extraction files are byte-exact: LF newlines only,
-no BOM — a carriage return anywhere in the file fails validation rather than
-being silently normalized. A ledger over one source declares a single digest;
-a ledger synthesizing several sources declares a mapping from source id to
-digest. Validation fails whenever a pinned hash does not match the committed
+and an article row's `source_body_sha256` in `edition.yaml` is the SHA-256 of
+the UTF-8 bytes of exactly that body. Extraction files are byte-exact: LF
+newlines only, no BOM: a carriage return anywhere in the file fails validation
+rather than being silently normalized. An article over one source declares a
+single digest; an article synthesizing several declares a mapping from source
+id to digest, so no source can hide behind another's hash. Validation fails whenever a pinned hash does not match the committed
 extraction. Every source of the open (unreleased) edition must carry an
-extraction and a matching pin before the edition can validate, and each open
-edition ledger's `source_ids` must equal its article's `source_ids` in
-`edition.yaml` exactly, so neither declaration can cover a source the other
-omits. Editions released before extractions existed keep their recorded pins
-unverified (and their recorded coverage as it was).
+extraction and a matching pin before the edition can validate, and the edition's
+queued sources must equal the union of its articles' `source_ids`, so no source
+can be queued and then quietly left unrepresented. Editions released before
+extractions existed keep their recorded pins unverified.
 
 The evidence review (`prompts/evidence-review.md`) is recorded with
 `mag review record --kind evidence` to
 `editions/<edition-id>/reviews/evidence.yaml`. The record binds the reviewer's
-decision to the exact manuscript, ledger, and extraction bytes audited — for
-each source both the extraction body and the whole `extracted.md` file,
-provenance frontmatter included, across every source the article or its ledger
-declares; any later change to those inputs makes the decision stale, and
-`mag finish` and the lower-level `mag release` command refuse a missing, stale,
-or changes-required evidence review.
+decision to the exact bytes audited: per article, the manuscript, and for every
+source the article's `edition.yaml` row declares, both the extraction body and
+the whole `extracted.md` file, provenance frontmatter included. Any later change
+to those inputs makes that article's decision stale, and `mag finish` and the
+lower-level `mag release` command refuse a missing, stale, or changes-required
+evidence review.
 
-## Fidelity report
+## The one deterministic content check
 
-Each faithful article reports:
-
-- substantive source word count;
-- retained source words;
-- words classified as boilerplate;
-- words removed through substantive cuts;
-- modified sentences;
-- reordered paragraphs;
-- unlabeled additions, which must be zero;
-- labeled editor notes.
-
-The review artifact includes a paragraph-level source/manuscript diff and a reason for every substantive deletion or modification.
+No artifact tracks a manuscript paragraph by paragraph any more. Whether a
+manuscript says what its source says is judged by the fact-checker; whether its
+code is the source's code is
+arithmetic, and `src/magazine/code_blocks.py` does it during validation. Every
+fenced code block in a manuscript must appear as a contiguous run of lines
+inside one of the article's committed source extractions. Normalization is
+narrow on purpose: tabs expand to four columns, trailing whitespace and the
+fence's own leading and trailing blank lines go, and everything else is
+substantive, because indentation depth, line breaks, and every character change
+what code means. The block is matched against the extraction's lines wherever
+they sit, not against the extraction's own fences, since a source may present
+code in a fence, as an indented block, or inline in a transcript. A failure
+names the manuscript, the block, and the first line that diverges from the
+closest run found in any extraction. An article with no committed extractions,
+which is the released-edition state, is skipped rather than failed.
 
 ## Translation editions
 

@@ -317,6 +317,7 @@ def _render_article(
                 lines.extend(_indent((figure_html,), 2))
                 assets.append(asset)
 
+    lines.extend(_indent(_render_key_ideas(edition, article), 2))
     lines.extend(
         _indent(
             (
@@ -432,6 +433,7 @@ def _render_illustrated_article(
                 lines.extend(_indent((figure_html,), 2))
                 assets.append(asset)
 
+    lines.extend(_indent(_render_key_ideas(edition, article), 2))
     lines.extend(
         _indent(
             (
@@ -466,6 +468,28 @@ def _render_illustrated_article(
         )
     lines.append("</article>")
     return "\n".join(lines), tuple(assets)
+
+
+def _render_key_ideas(edition: Edition, article: Article) -> tuple[str, ...]:
+    """The article's closing key-ideas box, or nothing.
+
+    An ``aside`` and not a ``section``: the lines are editorial furniture about
+    the article, not a further part of it, and the distinction is load-bearing
+    for the print adapter, which addresses the edition's real sections by tag.
+    The kicker is a labelled paragraph rather than a heading for the same
+    reason a content label is -- a heading here would enter the article's own
+    heading sequence, which is what ``edition.yaml``'s figure anchors are
+    matched against.
+    """
+    if not article.key_ideas:
+        return ()
+    items = "".join(f"<li>{_text(idea)}</li>" for idea in article.key_ideas)
+    return (
+        f'<aside class="key-ideas" data-key-ideas="{len(article.key_ideas)}" '
+        f'data-article-id="{_attr(article.id)}">'
+        f'<p class="key-ideas-label">{_text(_ui(edition, "key_ideas"))}</p>'
+        f"<ul>{items}</ul></aside>",
+    )
 
 
 def _render_source_link(article: Article) -> tuple[str, ...]:
@@ -759,10 +783,15 @@ def _ui(edition: Edition, key: str) -> str:
         "faithful_synthesis": "FAITHFUL SYNTHESIS",
         "selected_extracts": "SELECTED EXTRACTS",
         "original_synthesis": "ORIGINAL SYNTHESIS",
+        "in_a_nutshell": "IN A NUTSHELL",
         "original_editorial": "ORIGINAL EDITORIAL",
         "source_introduction": "THE SOURCE",
         "source_record": "SOURCE RECORD",
         "production_note": "PRODUCTION NOTE",
+        "glossary": "GLOSSARY",
+        "try_it": "TRY IT",
+        "cheat_sheet": "CHEAT SHEET",
+        "key_ideas": "KEY IDEAS",
     }
     spanish = {
         "issue": "Número",
@@ -778,10 +807,15 @@ def _ui(edition: Edition, key: str) -> str:
         "faithful_synthesis": "SÍNTESIS FIEL",
         "selected_extracts": "EXTRACTOS SELECCIONADOS",
         "original_synthesis": "SÍNTESIS ORIGINAL",
+        "in_a_nutshell": "EN POCAS PALABRAS",
         "original_editorial": "EDITORIAL ORIGINAL",
         "source_introduction": "LA FUENTE",
         "source_record": "REGISTRO DE FUENTE",
         "production_note": "NOTA DE PRODUCCIÓN",
+        "glossary": "GLOSARIO",
+        "try_it": "PRUÉBALO",
+        "cheat_sheet": "HOJA DE REFERENCIA",
+        "key_ideas": "IDEAS CLAVE",
     }
     values = spanish if edition.language == "es" else english
     return values.get(key, key.replace("_", " ").replace("-", " ").upper())

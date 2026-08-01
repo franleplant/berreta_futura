@@ -10,7 +10,7 @@ from typing import Iterable
 
 from .errors import DependencyError, ValidationError
 from .image_contrast import prepare_print_image
-from .manifest import Edition
+from .manifest import CONTENT_MODES, SECTION_KINDS, Edition
 from .reader_layout import (
     FigurePlacement,
     FrameUsage,
@@ -46,6 +46,10 @@ READING_MEASURE = 325.0
 FOLIO_BASELINE = 19.5
 ARTICLE_TAIL_ORNAMENT_MIN_HEIGHT = 118.0
 ARTICLE_TAIL_ORNAMENT_MAX_HEIGHT = 214.0
+# The key-ideas box opens on a rule and a tracked kicker; the two constants are
+# the air above the rule and the drop from the rule to the first claim.
+KEY_IDEAS_SPACE_BEFORE = 12.0
+KEY_IDEAS_LABEL_SPACE = 17.0
 RUNNING_HEADER_BASELINE_INSET = 20.0
 HEADING_SPACE_BEFORE = {
     "h1": 18.0,
@@ -138,11 +142,16 @@ UI_COPY = {
         "faithful_edit": "Faithful edit",
         "selected_extracts": "Selected extracts",
         "content_original_synthesis": "Original synthesis",
+        "in_a_nutshell": "In a nutshell",
         "original_editorial": "ORIGINAL EDITORIAL",
         "source_introduction": "THE SOURCE",
         "original_synthesis": "READING MAP",
         "source_record": "SOURCE RECORD",
         "production_note": "PRODUCTION NOTE",
+        "glossary": "GLOSSARY",
+        "try_it": "TRY IT",
+        "cheat_sheet": "CHEAT SHEET",
+        "key_ideas": "KEY IDEAS",
         "back_text_default": "An independent anthology of writing worth keeping.",
         "opening_sentence": "Opening sentence / Original editorial",
         "issue_statement": "Issue statement / The editors",
@@ -163,11 +172,16 @@ UI_COPY = {
         "faithful_edit": "Edición fiel",
         "selected_extracts": "Extractos seleccionados",
         "content_original_synthesis": "Síntesis original",
+        "in_a_nutshell": "En pocas palabras",
         "original_editorial": "EDITORIAL ORIGINAL",
         "source_introduction": "LA FUENTE",
         "original_synthesis": "MAPA DE LECTURA",
         "source_record": "REGISTRO DE FUENTE",
         "production_note": "NOTA DE PRODUCCIÓN",
+        "glossary": "GLOSARIO",
+        "try_it": "PRUÉBALO",
+        "cheat_sheet": "HOJA DE REFERENCIA",
+        "key_ideas": "IDEAS CLAVE",
         "back_text_default": "Una antología independiente de textos que vale la pena conservar.",
         "opening_sentence": "Frase inicial / Editorial original",
         "issue_statement": "Declaración del número / La redacción",
@@ -252,24 +266,13 @@ def _cover_date(value: str) -> str:
 
 
 def _section_label(edition: Edition, kind: str) -> str:
-    if kind in {
-        "original_editorial",
-        "source_introduction",
-        "original_synthesis",
-        "source_record",
-        "production_note",
-    }:
+    if kind in SECTION_KINDS:
         return _ui(edition, kind)
     return kind.replace("_", " ").upper()
 
 
 def _content_mode_label(edition: Edition, mode: str) -> str:
-    if mode not in {
-        "faithful_edit",
-        "faithful_synthesis",
-        "selected_extracts",
-        "original_synthesis",
-    }:
+    if mode not in CONTENT_MODES:
         raise ValidationError(f"Unsupported article content mode: {mode}")
     key = "content_original_synthesis" if mode == "original_synthesis" else mode
     return _ui(edition, key)
@@ -1961,6 +1964,31 @@ class _Typesetter:
         # space immediately after the credit instead of wasting a new page.
         self._set_reading_frame(top=self.y if opener_has_figure else 238)
 
+    def _article_key_ideas(self, key_ideas: tuple[str, ...]) -> None:
+        """Set the article's closing box: what a reader keeps in order to use it.
+
+        In flow and at the article's foot, so it is read last and paid for in
+        the article's own page budget.  It is the *only* closing object an
+        article may carry -- the manifest refuses key ideas beside tail art --
+        so nothing here has to negotiate with the ornament for the same paper.
+        """
+        if not key_ideas:
+            return
+        label = _ui(self.edition, "key_ideas")
+        needed = KEY_IDEAS_LABEL_SPACE + self.reading_leading
+        if self.y - needed < self.frame_bottom:
+            self._advance_frame()
+        self.y -= KEY_IDEAS_SPACE_BEFORE
+        self.pdf.setStrokeColorRGB(*SIGNAL_ORANGE)
+        self.pdf.setLineWidth(1.1)
+        self.pdf.line(
+            self.frame_left, self.y + 6, self.frame_left + self.column_width, self.y + 6
+        )
+        self._tracked_label(label, self.frame_left, self.y - 4, self.column_width, color=VIOLET)
+        self.y -= KEY_IDEAS_LABEL_SPACE
+        for idea in key_ideas:
+            self.block("bullet", idea)
+
     def _article_endmark(self, article_index: int, tail_art: Path | None) -> None:
         baseline = max(self.frame_bottom + 5, self.y - 1)
         self.pdf.setStrokeColorRGB(*SIGNAL_ORANGE)
@@ -2081,6 +2109,7 @@ class _Typesetter:
                     figures=getattr(article, "figures", ()),
                     article_id=article.id,
                 )
+                self._article_key_ideas(getattr(article, "key_ideas", ()))
                 self._article_endmark(article_index, article.tail_art)
                 page_count = self.page - start_page + 1
                 self._finish_article()

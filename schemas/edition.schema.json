@@ -3,7 +3,18 @@
   "$id": "edition.schema.json",
   "title": "Magazine edition",
   "type": "object",
-  "required": ["id", "issue_number", "title", "publication_date", "editorial", "cover", "articles"],
+  "required": ["id", "issue_number", "title", "publication_date", "cover"],
+  "anyOf": [
+    {
+      "description": "The ordinary edition: an opening editorial and at least one article, with back matter optional.",
+      "required": ["editorial", "articles"]
+    },
+    {
+      "description": "A sections-only edition, which carries no editorial and no articles at all.",
+      "required": ["sections"],
+      "properties": {"sections": {"minItems": 1}}
+    }
+  ],
   "properties": {
     "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
     "issue_number": {"type": ["string", "integer"]},
@@ -26,12 +37,52 @@
         "back_text": {"type": "string"}
       }
     },
+    "sections": {
+      "description": "Edition-level pieces that are not articles: front matter, back matter, and the auxiliary learning material an 'In a Nutshell' bundle ships with. Positional -- a translation overlay mirrors this list index for index and must preserve each kind.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "path"],
+        "properties": {
+          "kind": {
+            "enum": [
+              "original_editorial",
+              "source_introduction",
+              "original_synthesis",
+              "source_record",
+              "production_note",
+              "glossary",
+              "try_it",
+              "cheat_sheet"
+            ]
+          },
+          "title": {"type": "string", "minLength": 1},
+          "path": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      }
+    },
     "articles": {
       "type": "array",
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["id", "title", "short_title", "opener_variant", "author", "author_note", "source_ids", "manuscript", "fidelity"],
+        "required": ["id", "title", "short_title", "opener_variant", "author", "source_ids", "manuscript"],
+        "not": {
+          "description": "An article closes with one object, never two: key ideas and tail art are mutually exclusive.",
+          "required": ["key_ideas", "tail_art_path"]
+        },
+        "allOf": [
+          {
+            "if": {
+              "description": "An editor-voice piece is signed by the magazine, and the self-explanatory house byline takes no biography; every other mode republishes a captured author and must carry theirs.",
+              "required": ["content_mode"],
+              "properties": {"content_mode": {"enum": ["original_synthesis", "in_a_nutshell"]}}
+            },
+            "then": true,
+            "else": {"required": ["author_note"]}
+          }
+        ],
         "properties": {
           "id": {"type": "string"},
           "title": {"type": "string"},
@@ -40,9 +91,37 @@
           "opener_variant": {"type": "string", "enum": ["edge_medallion", "split_axis", "stepped_title"]},
           "author": {"type": "string"},
           "author_note": {"type": "string", "minLength": 1, "maxLength": 160},
+          "content_mode": {
+            "description": "The article's relationship to its sources. 'in_a_nutshell' is the teaching explainer, written in the magazine's own voice over a pinned extraction, and is the marker that identifies the explainer of an 'In a Nutshell' bundle -- no separate field names it. Absent means 'faithful_edit'.",
+            "enum": [
+              "faithful_edit",
+              "faithful_synthesis",
+              "selected_extracts",
+              "original_synthesis",
+              "in_a_nutshell"
+            ]
+          },
+          "key_ideas": {
+            "description": "The claims a reader must retain to use the thing, in editor voice: short single lines totalling at most 90 words. Rendered as the article's closing box, so an article carrying it must not also declare tail_art_path.",
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "minLength": 1, "pattern": "^[^\\n]+$"}
+          },
+          "tail_art_path": {"type": "string", "minLength": 1},
+          "minimum_reader_pages": {"type": "integer", "minimum": 1, "maximum": 7},
           "source_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+          "source_body_sha256": {
+            "description": "SHA-256 of each source's committed extraction body: one hex digest for a single-source article, otherwise a mapping keyed by source id. Optional here because released editions predate committed extractions; the collecting edition must pin every source it declares, and validation enforces that.",
+            "oneOf": [
+              {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              {
+                "type": "object",
+                "minProperties": 1,
+                "additionalProperties": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+              }
+            ]
+          },
           "manuscript": {"type": "string"},
-          "fidelity": {"type": "string"},
           "opener_art": {
             "type": "object",
             "required": ["path", "alt_text", "credit"],

@@ -2,13 +2,13 @@
 
 The render review binds an independent visual decision to the exact PDFs under
 review.  The evidence review is its editorial sibling: an independent audit of
-each manuscript against its fidelity ledger and the committed source
-extractions (see ``prompts/evidence-review.md``), bound to the exact bytes it
-audited.  The record pins, per article, the SHA-256 of the manuscript, of the
-fidelity ledger, and -- for every source the article or its ledger declares --
-of the extraction body *and* the whole ``extracted.md`` file, so rewriting the
-provenance frontmatter (``raw_bundle``, ``extraction_method``) after approval
-is as staleness-visible as rewriting the body.
+each manuscript against the committed source extractions (see
+``prompts/evidence-review.md``), bound to the exact bytes it audited.  The
+record pins, per article, the SHA-256 of the manuscript and -- for every source
+the article declares in ``edition.yaml`` -- of the extraction body *and* the
+whole ``extracted.md`` file, so rewriting the provenance frontmatter
+(``raw_bundle``, ``extraction_method``) after approval is as staleness-visible
+as rewriting the body.
 
 Staleness is derived *per article*: each recorded article row is compared
 against the same article's current bindings, and the overall status derives
@@ -21,32 +21,72 @@ evidence --articles a,b`` re-binds only the named articles from disk and
 preserves every other article's recorded binding and ``reviewed_at`` byte for
 byte (see :func:`rebind_articles`).
 
-The schema stays at version 1: per-article ``reviewed_at`` is an additive,
-optional key beside the bound hashes, so records written before it existed
-(edition 003's among them) load unchanged and report the record-level
-timestamp for every article.
+Version 2 records bind those two things and nothing else.  Version 1 records
+additionally bound the SHA-256 of a per-article fidelity ledger, a file that no
+longer exists; they still load, and their ledger binding is simply ignored
+rather than treated as drift.  Re-blessing every shipped edition would have
+been a worse answer than reading the old records for the part of them that is
+still true -- the manuscript and extraction bindings, which are the audit's
+actual subject.  Per-article ``reviewed_at`` is likewise additive and optional,
+so records written before it existed report the record-level timestamp for
+every article.
+
+Version 3 changes what a *finding* is.  Versions 1 and 2 stored a finding as a
+string, because the only findings anyone wrote were sentences typed into
+``--finding``.  The fact-checker prompt emits something richer -- a severity,
+the article, a locator naming the exact sentence, a category, and a note -- and
+the old recorder flattened a mapping through ``str(item).strip()`` into a line
+of Python repr nothing could read back.  :mod:`magazine.review_findings` now
+owns the shape, and a version 3 record stores structured findings and plain
+strings side by side.  Version 3 also adds an advisory ``scores`` map to each
+article row: the fact-checker reads one article at a time, so its 1-5
+dimensions belong to the article rather than the record, and a partial
+re-record must leave every other article's scores exactly where they were.
+Scores gate nothing anywhere in this package -- a gated score invites generous
+scoring, which would cost more than the measurement is worth.
+
+Versions 1 and 2 still load unchanged.  A string finding is as valid at version
+3 as it ever was, so the shipped records need no rewrite and no re-audit; the
+bump exists so that "a version 2 record" continues to name exactly one shape.
 """
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Iterable
+from typing import TYPE_CHECKING, Any, Iterable, Mapping
 
 from .errors import ValidationError
-from .extraction import EXTRACTION_FILENAME, ledger_source_ids, load_extraction
+from .extraction import EXTRACTION_FILENAME, load_extraction
 from .io import load_structured
 from .render_review import REVIEW_RESULTS, sha256, write_render_review
+from .review_findings import (
+    finding_errors,
+    normalize_article_scores,
+    normalize_findings,
+    score_errors,
+)
 
 if TYPE_CHECKING:
     from .manifest import Edition
 
 _HEX_DIGITS = set("0123456789abcdef")
 
+EVIDENCE_REVIEW_SCHEMA_VERSION = 3
+
+_REVIEW_LABEL = "Evidence review"
+
+# Version 1 recorded a third binding, ``ledger_sha256``, over the per-article
+# fidelity ledger.  Loading still accepts those records; nothing reads that key.
+# Versions 1 and 2 stored findings as strings only; version 3 stores structured
+# findings and advisory per-article scores.  All three load.
+_SUPPORTED_SCHEMA_VERSIONS = (1, 2, 3)
+
 # The keys of an article row that *bind*.  Rows also carry audit metadata --
-# the per-article ``reviewed_at`` -- which must never participate in staleness:
-# when an article was last audited says nothing about whether its bytes moved.
-_ARTICLE_BINDING_KEYS = ("manuscript_sha256", "ledger_sha256", "source_extractions")
+# the per-article ``reviewed_at``, and the advisory ``scores`` -- which must
+# never participate in staleness: when an article was last audited, and how a
+# judge rated it, say nothing about whether its bytes moved.
+_ARTICLE_BINDING_KEYS = ("manuscript_sha256", "source_extractions")
 
 
 def evidence_review_path(editions_dir: Path, edition_id: str) -> Path:
@@ -63,20 +103,16 @@ def current_evidence_bindings(
     lenient form serves status and gate checks, where a missing extraction
     simply cannot match the recorded hash and surfaces as staleness.
 
-    The covered sources are the union of the article's ``source_ids`` in
-    ``edition.yaml`` and the ledger's declared sources, so neither declaration
-    can smuggle a source out of the audit.
+    The covered sources are the article's ``source_ids`` in ``edition.yaml``,
+    which is now the single place an article declares what it was written from
+    -- and the same list its ``source_body_sha256`` pins, so the audit cannot
+    cover a different set of sources than validation does.
     """
 
     bindings: dict[str, dict[str, Any]] = {}
     errors: list[str] = []
     for article in edition.articles:
-        covered = dict.fromkeys(
-            (
-                *article.source_ids,
-                *ledger_source_ids(article.fidelity, load_structured(article.fidelity)),
-            )
-        )
+        covered = dict.fromkeys(article.source_ids)
         source_extractions: dict[str, dict[str, str]] = {}
         for source_id in covered:
             extraction = load_extraction(sources_dir, source_id)
@@ -94,7 +130,6 @@ def current_evidence_bindings(
             }
         bindings[article.id] = {
             "manuscript_sha256": sha256(article.manuscript),
-            "ledger_sha256": sha256(article.fidelity),
             "source_extractions": source_extractions,
         }
     if errors:
@@ -107,8 +142,11 @@ def load_evidence_review(path: Path, *, edition_id: str) -> dict[str, Any] | Non
         return None
     data = load_structured(path)
     errors: list[str] = []
-    if data.get("schema_version") != 1:
-        errors.append("Evidence review schema_version must be 1")
+    if data.get("schema_version") not in _SUPPORTED_SCHEMA_VERSIONS:
+        errors.append(
+            "Evidence review schema_version must be "
+            + _supported_versions_phrase()
+        )
     if data.get("edition_id") != edition_id:
         errors.append(
             f"Evidence review edition_id {data.get('edition_id')!r} does not match {edition_id!r}"
@@ -119,8 +157,7 @@ def load_evidence_review(path: Path, *, edition_id: str) -> dict[str, Any] | Non
         if not str(data.get(key) or "").strip():
             errors.append(f"Evidence review requires {key}")
     findings = data.get("findings", [])
-    if not isinstance(findings, list) or any(not str(item).strip() for item in findings):
-        errors.append("Evidence review findings must be a list of non-empty strings")
+    errors.extend(finding_errors(findings, label=_REVIEW_LABEL))
     if data.get("result") == "changes_required" and not findings:
         errors.append("A changes_required evidence review needs at least one finding")
     articles = data.get("articles")
@@ -131,9 +168,10 @@ def load_evidence_review(path: Path, *, edition_id: str) -> dict[str, Any] | Non
         if not isinstance(row, dict):
             errors.append(f"Evidence review article {article_id} must be a mapping")
             continue
-        for key in ("manuscript_sha256", "ledger_sha256"):
-            if not _is_sha256(row.get(key)):
-                errors.append(f"Evidence review article {article_id} has invalid {key}")
+        if not _is_sha256(row.get("manuscript_sha256")):
+            errors.append(
+                f"Evidence review article {article_id} has invalid manuscript_sha256"
+            )
         # Per-article ``reviewed_at`` postdates edition 003's record, so its
         # absence is legal (the record-level timestamp stands in); an empty
         # value is not.
@@ -142,6 +180,13 @@ def load_evidence_review(path: Path, *, edition_id: str) -> dict[str, Any] | Non
                 f"Evidence review article {article_id} reviewed_at must be a "
                 "non-empty string when present"
             )
+        # Advisory only, and additive: a version 1 or 2 row has no scores, and
+        # a version 3 row need not have any either.
+        errors.extend(
+            score_errors(
+                row.get("scores"), label=f"{_REVIEW_LABEL} article {article_id}"
+            )
+        )
         extractions = row.get("source_extractions")
         if not isinstance(extractions, dict) or not extractions:
             errors.append(
@@ -168,6 +213,13 @@ def _is_sha256(value: Any) -> bool:
     return len(text) == 64 and set(text) <= _HEX_DIGITS
 
 
+def _supported_versions_phrase() -> str:
+    versions = [str(version) for version in _SUPPORTED_SCHEMA_VERSIONS]
+    if len(versions) < 3:
+        return " or ".join(versions)
+    return ", ".join(versions[:-1]) + f", or {versions[-1]}"
+
+
 def _recorded_binding(row: dict[str, Any]) -> dict[str, Any]:
     """The comparable slice of a recorded article row: hashes, not metadata."""
 
@@ -177,17 +229,17 @@ def _recorded_binding(row: dict[str, Any]) -> dict[str, Any]:
 def article_drift(recorded: dict[str, Any], current: dict[str, Any]) -> list[str]:
     """Name exactly which of one article's bound inputs no longer match disk.
 
-    The names are for the human deciding what to re-audit: ``manuscript`` and
-    ``ledger`` for the article's own files, ``extraction:<source-id>`` for any
-    extraction whose body or file hash moved (or that appeared or vanished
-    from the covered set).
+    The names are for the human deciding what to re-audit: ``manuscript`` for
+    the article's own file, ``extraction:<source-id>`` for any extraction whose
+    body or file hash moved (or that appeared or vanished from the covered
+    set).  A version 1 record's ``ledger_sha256`` is not compared: the file it
+    bound no longer exists, and reporting its absence as drift would demand a
+    re-audit of shipped editions that nothing has actually invalidated.
     """
 
     drift: list[str] = []
     if recorded.get("manuscript_sha256") != current.get("manuscript_sha256"):
         drift.append("manuscript")
-    if recorded.get("ledger_sha256") != current.get("ledger_sha256"):
-        drift.append("ledger")
     recorded_extractions = recorded.get("source_extractions") or {}
     current_extractions = current.get("source_extractions") or {}
     for source_id in sorted(set(recorded_extractions) | set(current_extractions)):
@@ -255,6 +307,11 @@ def evidence_review_status(
         entry: dict[str, Any] = {
             "reviewed_at": row.get("reviewed_at") or fallback_reviewed_at
         }
+        # Scores travel out with the row because status is how the CLI exposes
+        # them.  They are reported, never read: nothing downstream branches on
+        # a score, here or anywhere else.
+        if isinstance(row.get("scores"), dict) and row["scores"]:
+            entry["scores"] = dict(row["scores"])
         if current is None:
             entry["status"] = "removed"
             any_drift = True
@@ -282,13 +339,14 @@ def create_evidence_review(
     reviewer: str,
     result: str,
     bindings: dict[str, dict[str, Any]],
-    findings: list[str] | tuple[str, ...] = (),
+    findings: Iterable[Any] = (),
+    scores: Mapping[str, Mapping[str, int]] | None = None,
     notes: str = "",
     reviewed_at: str | None = None,
 ) -> dict[str, Any]:
     reviewer = reviewer.strip()
     result = result.strip()
-    clean_findings = [str(item).strip() for item in findings if str(item).strip()]
+    clean_findings = normalize_findings(findings, label=_REVIEW_LABEL)
     if not reviewer:
         raise ValidationError("Evidence review requires a reviewer")
     if result not in REVIEW_RESULTS:
@@ -297,16 +355,29 @@ def create_evidence_review(
         raise ValidationError("A changes_required evidence review needs at least one finding")
     if not bindings:
         raise ValidationError("Evidence review requires at least one article to audit")
+    # The fact-checker verifies one article against its sources, so its 1-5
+    # dimensions are a fact about that article.  Scores named here overwrite a
+    # preserved row's; scores omitted leave whatever the row carried in place,
+    # which is what a partial re-audit of another article should do.
+    parsed_scores = normalize_article_scores(
+        scores, label=_REVIEW_LABEL, article_ids=bindings
+    )
     timestamp = reviewed_at or datetime.now(timezone.utc).replace(microsecond=0).isoformat()
     # Every article row records when *it* was audited.  Rows arriving without
     # a stamp were audited now (a full record, or the re-bound articles of a
     # partial one); rows that already carry one are preserved bindings whose
     # audit history must survive the re-record (see rebind_articles).
-    articles = {
-        article_id: {"reviewed_at": timestamp, **row} for article_id, row in bindings.items()
-    }
+    articles: dict[str, dict[str, Any]] = {}
+    for article_id, row in bindings.items():
+        entry: dict[str, Any] = {"reviewed_at": timestamp, **row}
+        row_scores = parsed_scores.get(article_id) or entry.get("scores")
+        if row_scores:
+            entry["scores"] = dict(row_scores)
+        else:
+            entry.pop("scores", None)
+        articles[article_id] = entry
     return {
-        "schema_version": 1,
+        "schema_version": EVIDENCE_REVIEW_SCHEMA_VERSION,
         "edition_id": edition_id,
         "reviewer": reviewer,
         "reviewed_at": timestamp,
@@ -365,8 +436,15 @@ def rebind_articles(
             merged[article_id] = dict(current)
         elif isinstance(recorded.get(article_id), dict):
             row = recorded[article_id]
-            preserved = {"reviewed_at": row.get("reviewed_at") or fallback_reviewed_at}
+            preserved: dict[str, Any] = {
+                "reviewed_at": row.get("reviewed_at") or fallback_reviewed_at
+            }
             preserved.update(_recorded_binding(row))
+            # An untouched article's advisory scores are as much recorded
+            # history as its timestamp: the judge rated that manuscript, and
+            # re-auditing a sibling did not change the rating.
+            if isinstance(row.get("scores"), dict) and row["scores"]:
+                preserved["scores"] = dict(row["scores"])
             merged[article_id] = preserved
         else:
             unbound.append(article_id)

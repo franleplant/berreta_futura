@@ -6,8 +6,9 @@ Two properties carry the seam and are pinned here.  First, placement:
 language in configuration order, exactly where the other per-language proofs
 (``cover-proof/<language>``) taught readers of this tree to look.  Second,
 independence: the command loads like ``measure`` and ``cover_proof`` -- not
-like ``build`` -- so a browsable proof is askable before ledgers and pins are
-finished, and its output never joins a package or a release.
+like ``build`` -- so a browsable proof is askable before the article source
+pins and reviews are finished, and its output never joins a package or a
+release.
 """
 
 from __future__ import annotations

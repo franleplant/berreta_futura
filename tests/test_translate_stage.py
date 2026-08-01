@@ -35,7 +35,7 @@ from test_manifest import (
     add_spanish_translation,
     load_edition_with_records,
     make_project,
-    pin_ledger_source_hash,
+    pin_article_source_hash,
 )
 
 REPOSITORY = Path(__file__).resolve().parent.parent
@@ -51,20 +51,15 @@ def tree_digest(root: Path) -> dict[str, str]:
 
 
 def add_second_article(root: Path) -> None:
-    """A second English article, ledger pinned so the pin refresher can run."""
+    """A second English article, row-pinned the way ``mag article`` writes one.
+
+    Provenance lives in the article row now, so a second article is a second
+    row carrying its own ``source_ids`` and ``source_body_sha256`` -- no second
+    file.  The pin is the true digest of the fixture source's extraction body;
+    a test about staleness overwrites it with ``pin_article_source_hash``.
+    """
     edition_dir = root / "editions" / "issue-001"
     (edition_dir / "articles" / "second.md").write_text("A second article.", encoding="utf-8")
-    (edition_dir / "fidelity" / "second.yaml").write_text(
-        yaml.safe_dump({
-            "schema_version": 1,
-            "source_ids": ["source-one"],
-            "source_body_sha256": hashlib.sha256(b"The original article.\n").hexdigest(),
-            "paragraphs": [
-                {"status": "retained", "source": "A second article.", "edited": "A second article."}
-            ],
-        }),
-        encoding="utf-8",
-    )
     manifest_path = edition_dir / "edition.yaml"
     manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
     manifest["articles"].append({
@@ -75,8 +70,8 @@ def add_second_article(root: Path) -> None:
         "author": "Author",
         "author_note": "Author is principal engineer at Example Company.",
         "source_ids": ["source-one"],
+        "source_body_sha256": hashlib.sha256(b"The original article.\n").hexdigest(),
         "manuscript": "editions/issue-001/articles/second.md",
-        "fidelity": "editions/issue-001/fidelity/second.yaml",
     })
     manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
 
@@ -188,7 +183,7 @@ class TranslateStageTests(unittest.TestCase):
 
     def test_reconcile_repairs_pins_adds_placeholder_figures_and_advises(self):
         make_project(self.root)
-        pin_ledger_source_hash(self.root, add_extraction(self.root))
+        pin_article_source_hash(self.root, add_extraction(self.root))
         add_spanish_translation(self.root)
         # The everyday staleness event: the English manuscript is revised and
         # a figure is added, and the Spanish overlay knows about neither.
@@ -250,7 +245,7 @@ class TranslateStageTests(unittest.TestCase):
 
     def test_a_dropped_article_is_reported_with_its_localized_prose(self):
         make_project(self.root)
-        pin_ledger_source_hash(self.root, add_extraction(self.root))
+        pin_article_source_hash(self.root, add_extraction(self.root))
         add_spanish_translation(self.root)
         add_second_article(self.root)
         first = stage_translation(self.root, "issue-001", "es")
@@ -281,13 +276,15 @@ class TranslateStageTests(unittest.TestCase):
         self.assertEqual(report.validation_errors, ())
 
     def test_out_of_scope_staleness_is_reported_even_when_the_overlay_is_current(self):
-        # A stale ledger pin used to surface only when the overlay itself
+        # A stale source pin used to surface only when the overlay itself
         # coincidentally needed a refresh; the staleness is state, so it must
-        # be reported on every run -- read-only, never rewritten.
+        # be reported on every run -- read-only, never rewritten.  The pin now
+        # lives in the base manifest, which is out of scope in exactly the way
+        # a fidelity ledger used to be: named in the notes, never written.
         make_project(self.root)
-        pin_ledger_source_hash(self.root, add_extraction(self.root))
+        pin_article_source_hash(self.root, add_extraction(self.root))
         add_spanish_translation(self.root)
-        pin_ledger_source_hash(self.root, "0" * 64)
+        pin_article_source_hash(self.root, "0" * 64)
         before = tree_digest(self.root)
 
         report = stage_translation(self.root, "issue-001", "es")
@@ -296,36 +293,45 @@ class TranslateStageTests(unittest.TestCase):
         self.assertEqual(tree_digest(self.root), before)
         self.assertTrue(
             any(
-                "source_body_sha256[source-one]" in note and "fidelity" in note
+                "articles[article].source_body_sha256[source-one]" in note
+                and str(self.root / "editions" / "issue-001" / "edition.yaml") in note
                 for note in report.notes
             ),
             report.notes,
         )
 
-    def test_stale_read_only_ledgers_are_reported_never_rewritten(self):
-        # The old edition-wide refresh prepared every ledger too; with two
-        # stale ledgers and the second unwritable, its write loop could
-        # rewrite the first and then die, leaving an out-of-scope file
-        # silently changed.  Scoped staging never opens a ledger for writing,
-        # so both keep their stale bytes and both are named in the notes.
+    def test_a_read_only_base_manifest_is_reported_never_rewritten(self):
+        # The old edition-wide refresh prepared every fidelity ledger too, so
+        # a run could rewrite one out-of-scope file and then die on the next.
+        # Every article's source pin now lives in the base manifest, so the
+        # whole hazard is concentrated in that one file, and the fixture is
+        # built so an unscoped refresh could not survive it: two rows stale,
+        # and the file itself read-only.  Staging must nonetheless finish, name
+        # both stale pins by row, and leave the manifest byte for byte as it
+        # found it -- because it is not staging's file to open for writing.
         make_project(self.root)
-        pin_ledger_source_hash(self.root, add_extraction(self.root))
+        pin_article_source_hash(self.root, add_extraction(self.root))
         add_spanish_translation(self.root)
         add_second_article(self.root)
-        pin_ledger_source_hash(self.root, "0" * 64)
-        pin_ledger_source_hash(self.root, "0" * 64, article="second")
-        fidelity = self.root / "editions" / "issue-001" / "fidelity"
-        (fidelity / "second.yaml").chmod(0o444)
-        self.addCleanup((fidelity / "second.yaml").chmod, 0o644)
-        first_before = (fidelity / "article.yaml").read_bytes()
-        second_before = (fidelity / "second.yaml").read_bytes()
+        pin_article_source_hash(self.root, "0" * 64)
+        pin_article_source_hash(self.root, "0" * 64, article="second")
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest_before = manifest_path.read_bytes()
+        manifest_path.chmod(0o444)
+        self.addCleanup(manifest_path.chmod, 0o644)
 
         report = stage_translation(self.root, "issue-001", "es")
 
-        self.assertEqual((fidelity / "article.yaml").read_bytes(), first_before)
-        self.assertEqual((fidelity / "second.yaml").read_bytes(), second_before)
+        self.assertEqual(manifest_path.read_bytes(), manifest_before)
         stale_notes = [note for note in report.notes if "source_body_sha256" in note]
         self.assertEqual(len(stale_notes), 2, report.notes)
+        for pointer in (
+            "articles[article].source_body_sha256[source-one]",
+            "articles[second].source_body_sha256[source-one]",
+        ):
+            self.assertTrue(
+                any(pointer in note for note in stale_notes), (pointer, stale_notes)
+            )
         # The staged overlay still got its own work done in full.
         self.assertEqual(
             [row["id"] for row in self.overlay_data()["articles"]],
@@ -342,7 +348,7 @@ class TranslateStageTests(unittest.TestCase):
         # tree is byte-for-byte as found -- not left with a half-written
         # overlay and an exception that discarded the explanation.
         make_project(self.root)
-        pin_ledger_source_hash(self.root, add_extraction(self.root))
+        pin_article_source_hash(self.root, add_extraction(self.root))
         add_spanish_translation(self.root)
         english = self.root / "editions" / "issue-001" / "articles" / "article.md"
         english.write_text("The original article, revised.", encoding="utf-8")
@@ -366,7 +372,7 @@ class TranslateStageTests(unittest.TestCase):
         # new row, so neither language could be staged -- the module's whole
         # purpose defeated.  Scoped to its own overlay, each stages in turn.
         make_project(self.root)
-        pin_ledger_source_hash(self.root, add_extraction(self.root))
+        pin_article_source_hash(self.root, add_extraction(self.root))
         add_spanish_translation(self.root)
         fr_dir = self.root / "editions" / "issue-001" / "translations" / "fr"
         shutil.copytree(self.overlay_dir(), fr_dir)

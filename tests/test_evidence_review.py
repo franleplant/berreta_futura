@@ -7,6 +7,7 @@ import yaml
 from magazine import Magazine, ValidationError
 from magazine.cli import parser
 from magazine.evidence_review import (
+    EVIDENCE_REVIEW_SCHEMA_VERSION,
     create_evidence_review,
     current_evidence_bindings,
     evidence_review_status,
@@ -20,15 +21,17 @@ from test_manifest import (
     add_source,
     load_edition_with_records,
     make_project,
-    pin_ledger_source_hash,
+    pin_article_source_hash,
     set_open_edition,
 )
 
 
+# A version 2 article binding: the manuscript, and every declared source's
+# extraction body *and* whole-file hash.  Version 1 rows additionally carried a
+# ``ledger_sha256``; the tests that still need one add it explicitly.
 BINDINGS = {
     "article": {
         "manuscript_sha256": "1" * 64,
-        "ledger_sha256": "2" * 64,
         "source_extractions": {
             "source-one": {"body_sha256": "3" * 64, "file_sha256": "4" * 64}
         },
@@ -44,20 +47,6 @@ def add_second_article(root: Path) -> None:
     (edition_dir / "articles" / "second.md").write_text(
         "Second source body.", encoding="utf-8"
     )
-    ledger = {
-        "schema_version": 1,
-        "source_ids": ["source-two"],
-        "paragraphs": [
-            {
-                "status": "retained",
-                "source": "Second source body.",
-                "edited": "Second source body.",
-            }
-        ],
-    }
-    (edition_dir / "fidelity" / "second.yaml").write_text(
-        yaml.safe_dump(ledger), encoding="utf-8"
-    )
     manifest_path = edition_dir / "edition.yaml"
     manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
     manifest["articles"].append(
@@ -70,7 +59,6 @@ def add_second_article(root: Path) -> None:
             "author_note": "Author is chief architect at Example Company.",
             "source_ids": ["source-two"],
             "manuscript": "editions/issue-001/articles/second.md",
-            "fidelity": "editions/issue-001/fidelity/second.yaml",
         }
     )
     manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
@@ -88,18 +76,36 @@ def make_record(**overrides) -> dict:
     return record
 
 
+def as_version_1(record: dict, *, ledger_sha256: str = "2" * 64) -> dict:
+    """The same record as the shipped editions wrote it: schema 1, with a
+    ``ledger_sha256`` binding over a fidelity ledger that no longer exists."""
+    record = dict(record)
+    record["schema_version"] = 1
+    record["articles"] = {
+        article_id: {**row, "ledger_sha256": ledger_sha256}
+        for article_id, row in record["articles"].items()
+    }
+    return record
+
+
 class EvidenceRecordTests(unittest.TestCase):
     def setUp(self):
         self.temporary = TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
 
-    def test_record_roundtrip_binds_manuscript_ledger_and_extraction_hashes(self):
+    def test_record_roundtrip_binds_manuscript_and_extraction_hashes(self):
         path = write_evidence_review(self.root / "reviews" / "evidence.yaml", make_record())
 
         loaded = load_evidence_review(path, edition_id="issue-001")
         status = evidence_review_status(loaded, edition_id="issue-001", bindings=BINDINGS)
 
+        # New records are written at version 3: the manuscript and the source
+        # extractions are still the whole of what an evidence audit compares,
+        # but a version 3 record may also carry structured findings and
+        # advisory per-article scores (see the module docstring).
+        self.assertEqual(EVIDENCE_REVIEW_SCHEMA_VERSION, 3)
+        self.assertEqual(loaded["schema_version"], 3)
         self.assertEqual(status["status"], "approved")
         self.assertEqual(status["reviewer"], "Independent auditor")
         # A full record stamps every article with the record's own timestamp
@@ -125,13 +131,9 @@ class EvidenceRecordTests(unittest.TestCase):
 
     def test_any_changed_bound_hash_makes_the_record_stale(self):
         record = make_record()
-        for key, value in (
-            ("manuscript_sha256", "f" * 64),
-            ("ledger_sha256", "f" * 64),
-        ):
-            current = {"article": {**BINDINGS["article"], key: value}}
-            status = evidence_review_status(record, edition_id="issue-001", bindings=current)
-            self.assertEqual(status["status"], "stale", key)
+        current = {"article": {**BINDINGS["article"], "manuscript_sha256": "f" * 64}}
+        status = evidence_review_status(record, edition_id="issue-001", bindings=current)
+        self.assertEqual(status["status"], "stale")
 
         for changed in (
             {"body_sha256": "f" * 64, "file_sha256": "4" * 64},
@@ -148,6 +150,26 @@ class EvidenceRecordTests(unittest.TestCase):
             status = evidence_review_status(record, edition_id="issue-001", bindings=current)
             self.assertEqual(status["status"], "stale", changed)
 
+    def test_a_version_1_ledger_binding_is_ignored_rather_than_drift(self):
+        """Editions 003 and 004 shipped version 1 records that also bound a
+        fidelity ledger.  That file is gone, but nothing the audit actually
+        compared has moved, so the record must still read as approved: deleting
+        a file the record merely referenced cannot retroactively invalidate an
+        audit of manuscripts and extractions that are byte-for-byte unchanged."""
+        path = write_evidence_review(
+            self.root / "reviews" / "evidence.yaml", as_version_1(make_record())
+        )
+
+        loaded = load_evidence_review(path, edition_id="issue-001")
+        status = evidence_review_status(loaded, edition_id="issue-001", bindings=BINDINGS)
+
+        self.assertEqual(loaded["schema_version"], 1)
+        self.assertEqual(status["status"], "approved")
+        self.assertEqual(
+            status["articles"]["article"],
+            {"status": "current", "reviewed_at": "2026-07-26T10:00:00+00:00"},
+        )
+
     def test_status_names_each_drifted_article_and_bound_input(self):
         """Staleness is per article: one drifted manuscript stales the record,
         but the untouched sibling still reports current."""
@@ -155,7 +177,6 @@ class EvidenceRecordTests(unittest.TestCase):
         record["articles"]["second"] = {
             "reviewed_at": "2026-07-26T10:00:00+00:00",
             "manuscript_sha256": "5" * 64,
-            "ledger_sha256": "6" * 64,
             "source_extractions": {
                 "source-two": {"body_sha256": "7" * 64, "file_sha256": "8" * 64}
             },
@@ -164,7 +185,6 @@ class EvidenceRecordTests(unittest.TestCase):
             "article": dict(BINDINGS["article"]),
             "second": {
                 "manuscript_sha256": "f" * 64,
-                "ledger_sha256": "6" * 64,
                 "source_extractions": {
                     "source-two": {"body_sha256": "7" * 64, "file_sha256": "f" * 64}
                 },
@@ -188,7 +208,6 @@ class EvidenceRecordTests(unittest.TestCase):
             "article": dict(BINDINGS["article"]),
             "late-arrival": {
                 "manuscript_sha256": "a" * 64,
-                "ledger_sha256": "b" * 64,
                 "source_extractions": {
                     "source-two": {"body_sha256": "c" * 64, "file_sha256": "d" * 64}
                 },
@@ -206,7 +225,7 @@ class EvidenceRecordTests(unittest.TestCase):
         """Edition 003's record predates per-article stamps: rows carry only the
         bound hashes, load under schema_version 1, and report the record-level
         timestamp per article."""
-        record = make_record()
+        record = as_version_1(make_record())
         record["articles"] = {
             article_id: {
                 key: value for key, value in row.items() if key != "reviewed_at"
@@ -223,6 +242,16 @@ class EvidenceRecordTests(unittest.TestCase):
             status["articles"]["article"],
             {"status": "current", "reviewed_at": "2026-07-26T10:00:00+00:00"},
         )
+
+    def test_load_rejects_an_unsupported_schema_version(self):
+        """Only 1, 2 and 3 load: a future shape must not be read as if its keys
+        meant what version 3's mean."""
+        path = write_evidence_review(
+            self.root / "reviews" / "evidence.yaml", make_record(schema_version=4)
+        )
+
+        with self.assertRaisesRegex(ValidationError, "schema_version must be 1, 2, or 3"):
+            load_evidence_review(path, edition_id="issue-001")
 
     def test_load_rejects_a_blank_per_article_reviewed_at(self):
         record = make_record()
@@ -243,7 +272,7 @@ class EvidenceRecordTests(unittest.TestCase):
 
     def test_load_rejects_a_record_missing_extraction_bindings(self):
         record = make_record()
-        record["articles"] = {"article": {"manuscript_sha256": "1" * 64, "ledger_sha256": "2" * 64}}
+        record["articles"] = {"article": {"manuscript_sha256": "1" * 64}}
         path = write_evidence_review(self.root / "reviews" / "evidence.yaml", record)
 
         with self.assertRaisesRegex(ValidationError, "source_extractions"):
@@ -254,7 +283,6 @@ class EvidenceRecordTests(unittest.TestCase):
         record["articles"] = {
             "article": {
                 "manuscript_sha256": "1" * 64,
-                "ledger_sha256": "2" * 64,
                 "source_extractions": {"source-one": "3" * 64},
             }
         }
@@ -281,6 +309,226 @@ class EvidenceRecordTests(unittest.TestCase):
                 rejected, edition_id="issue-001", bindings=BINDINGS
             )
 
+    def test_gate_lets_a_version_1_record_release_an_unchanged_edition(self):
+        """The release gate reads the shipped records too: a version 1 record
+        whose bound manuscripts and extractions still match must not block a
+        re-release behind an audit nothing has invalidated."""
+        require_approved_evidence_review(
+            as_version_1(make_record()), edition_id="issue-001", bindings=BINDINGS
+        )
+
+
+class EvidenceStructuredFindingTests(unittest.TestCase):
+    """Version 3's findings: what the fact-checker prompt actually emits.
+
+    Versions 1 and 2 coerced every finding through ``str(item).strip()``, so a
+    mapping survived the truthiness check and was written out as a line of
+    Python repr.  A structured finding must now round-trip as a mapping, and a
+    sentence typed into ``--finding`` must keep working beside it.
+    """
+
+    FINDING = {
+        "severity": "blocking",
+        "article": "eval-engineering",
+        "locator": "Cost and latency | cuts eval cost by 40% | 1",
+        "category": "number_or_name_error",
+        "note": "The source says roughly a third in our two pilot teams.",
+    }
+
+    def setUp(self):
+        self.temporary = TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+
+    def test_a_structured_finding_survives_the_record_as_a_mapping(self):
+        record = make_record(result="changes_required")
+        record = create_evidence_review(
+            edition_id="issue-001",
+            reviewer="Independent auditor",
+            result="changes_required",
+            bindings=BINDINGS,
+            findings=[self.FINDING, "  A sentence a human typed.  "],
+            reviewed_at="2026-07-26T10:00:00+00:00",
+        )
+        path = write_evidence_review(self.root / "reviews" / "evidence.yaml", record)
+
+        # Read the file back as YAML, not the in-memory dict: the old recorder
+        # looked fine in memory and only lost the finding on the way to disk.
+        on_disk = yaml.safe_load(path.read_text(encoding="utf-8"))
+        self.assertEqual(on_disk["findings"][0], self.FINDING)
+        self.assertEqual(on_disk["findings"][1], "A sentence a human typed.")
+
+        loaded = load_evidence_review(path, edition_id="issue-001")
+        self.assertEqual(loaded["findings"][0], self.FINDING)
+        status = evidence_review_status(loaded, edition_id="issue-001", bindings=BINDINGS)
+        self.assertEqual(status["findings"][0]["category"], "number_or_name_error")
+
+    def test_repair_from_is_stored_beside_the_locator(self):
+        """``locator`` says where a defect becomes visible; ``repair_from`` says
+        where it could be repaired.  A structural finding carries both, and the
+        record must keep them as two distinct fields in a stable order: a
+        reviser handed only the locator patches the symptom."""
+        finding = {
+            "severity": "major",
+            "article": "eval-engineering",
+            "locator": "Where the score goes | It is not a scoring problem. | 1",
+            "repair_from": "- | This piece is about scoring. | 1",
+            "category": "argument_order",
+            "note": "The frame promised in the opening is contradicted here.",
+        }
+        record = create_evidence_review(
+            edition_id="issue-001",
+            reviewer="Independent auditor",
+            result="changes_required",
+            bindings=BINDINGS,
+            findings=[finding],
+            reviewed_at="2026-07-26T10:00:00+00:00",
+        )
+        path = write_evidence_review(self.root / "reviews" / "evidence.yaml", record)
+
+        stored = load_evidence_review(path, edition_id="issue-001")["findings"][0]
+
+        self.assertEqual(stored, finding)
+        self.assertEqual(
+            list(stored),
+            ["severity", "article", "locator", "repair_from", "category", "note"],
+        )
+
+    def test_a_structured_finding_needs_a_severity_and_a_note(self):
+        for missing in ("severity", "note"):
+            finding = {key: value for key, value in self.FINDING.items() if key != missing}
+            with self.assertRaisesRegex(ValidationError, f"requires a non-empty {missing}"):
+                create_evidence_review(
+                    edition_id="issue-001",
+                    reviewer="Independent auditor",
+                    result="changes_required",
+                    bindings=BINDINGS,
+                    findings=[finding],
+                )
+
+    def test_an_unknown_severity_is_refused(self):
+        with self.assertRaisesRegex(ValidationError, "severity must be"):
+            create_evidence_review(
+                edition_id="issue-001",
+                reviewer="Independent auditor",
+                result="changes_required",
+                bindings=BINDINGS,
+                findings=[{**self.FINDING, "severity": "catastrophic"}],
+            )
+
+    def test_a_version_2_string_finding_still_loads(self):
+        """Editions 003 and 004 recorded findings as sentences.  A structured
+        recorder that could no longer read them would demand a re-audit of
+        every shipped edition to fix a shape nothing depends on."""
+        record = make_record(result="changes_required", findings=["Unlogged omission in §2"])
+        record["schema_version"] = 2
+        path = write_evidence_review(self.root / "reviews" / "evidence.yaml", record)
+
+        loaded = load_evidence_review(path, edition_id="issue-001")
+
+        self.assertEqual(loaded["findings"], ["Unlogged omission in §2"])
+
+
+class EvidenceScoreTests(unittest.TestCase):
+    """Advisory scores: stored, exposed, and load-bearing on nothing."""
+
+    def setUp(self):
+        self.temporary = TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+
+    def test_scores_land_in_the_article_row_and_come_back_out_of_status(self):
+        record = create_evidence_review(
+            edition_id="issue-001",
+            reviewer="Independent auditor",
+            result="approved",
+            bindings=BINDINGS,
+            scores={"article": {"claim_support": 3, "quote_accuracy": 5}},
+            reviewed_at="2026-07-26T10:00:00+00:00",
+        )
+        path = write_evidence_review(self.root / "reviews" / "evidence.yaml", record)
+
+        loaded = load_evidence_review(path, edition_id="issue-001")
+        self.assertEqual(
+            loaded["articles"]["article"]["scores"],
+            {"claim_support": 3, "quote_accuracy": 5},
+        )
+        status = evidence_review_status(loaded, edition_id="issue-001", bindings=BINDINGS)
+        self.assertEqual(
+            status["articles"]["article"]["scores"],
+            {"claim_support": 3, "quote_accuracy": 5},
+        )
+
+    def test_a_score_never_stales_a_record(self):
+        """The load-bearing property of an advisory score: it is not a binding.
+        Re-scoring the same unchanged manuscript must leave the audit approved,
+        and nothing anywhere may read a score to decide anything."""
+        record = create_evidence_review(
+            edition_id="issue-001",
+            reviewer="Independent auditor",
+            result="approved",
+            bindings=BINDINGS,
+            scores={"article": {"claim_support": 1}},
+            reviewed_at="2026-07-26T10:00:00+00:00",
+        )
+
+        status = evidence_review_status(record, edition_id="issue-001", bindings=BINDINGS)
+
+        self.assertEqual(status["status"], "approved")
+        require_approved_evidence_review(
+            record, edition_id="issue-001", bindings=BINDINGS
+        )
+
+    def test_out_of_range_and_non_integer_scores_are_refused(self):
+        for bad in ({"claim_support": 0}, {"claim_support": 6}, {"claim_support": "4"},
+                    {"claim_support": True}):
+            with self.assertRaisesRegex(ValidationError, "must be an integer 1-5"):
+                create_evidence_review(
+                    edition_id="issue-001",
+                    reviewer="Independent auditor",
+                    result="approved",
+                    bindings=BINDINGS,
+                    scores={"article": bad},
+                )
+
+    def test_scores_for_an_unbound_article_are_refused(self):
+        with self.assertRaisesRegex(ValidationError, "which this record does not bind"):
+            create_evidence_review(
+                edition_id="issue-001",
+                reviewer="Independent auditor",
+                result="approved",
+                bindings=BINDINGS,
+                scores={"phantom": {"claim_support": 4}},
+            )
+
+    def test_a_partial_re_record_preserves_an_untouched_article_score(self):
+        record = create_evidence_review(
+            edition_id="issue-001",
+            reviewer="Independent auditor",
+            result="approved",
+            bindings=BINDINGS,
+            scores={"article": {"claim_support": 3}},
+            reviewed_at="2026-07-26T10:00:00+00:00",
+        )
+        current = {
+            "article": {**BINDINGS["article"], "manuscript_sha256": "f" * 64},
+            "second": {
+                "manuscript_sha256": "b" * 64,
+                "source_extractions": {
+                    "source-two": {"body_sha256": "d" * 64, "file_sha256": "e" * 64}
+                },
+            },
+        }
+        record["articles"]["second"] = {
+            "reviewed_at": "2026-07-26T10:00:00+00:00",
+            **current["second"],
+        }
+
+        merged = rebind_articles(record, bindings=current, article_ids=["second"])
+
+        self.assertEqual(merged["article"]["scores"], {"claim_support": 3})
+        self.assertNotIn("scores", merged["second"])
+
 
 class RebindArticlesTests(unittest.TestCase):
     """The partial re-record merge, as a pure function of record and disk."""
@@ -288,14 +536,12 @@ class RebindArticlesTests(unittest.TestCase):
     CURRENT = {
         "article": {
             "manuscript_sha256": "a" * 64,
-            "ledger_sha256": "2" * 64,
             "source_extractions": {
                 "source-one": {"body_sha256": "3" * 64, "file_sha256": "4" * 64}
             },
         },
         "second": {
             "manuscript_sha256": "b" * 64,
-            "ledger_sha256": "c" * 64,
             "source_extractions": {
                 "source-two": {"body_sha256": "d" * 64, "file_sha256": "e" * 64}
             },
@@ -316,6 +562,27 @@ class RebindArticlesTests(unittest.TestCase):
         # and the audit timestamp it was recorded under.
         self.assertEqual(merged["article"]["manuscript_sha256"], "1" * 64)
         self.assertEqual(merged["article"]["reviewed_at"], "2026-07-26T10:00:00+00:00")
+
+    def test_preserving_a_version_1_row_drops_its_stale_ledger_binding(self):
+        """A re-record rewrites the whole file at version 2, so a preserved
+        version 1 row is carried forward as the two bindings that still mean
+        something.  Copying ``ledger_sha256`` into a version 2 record would
+        re-assert a binding over a deleted file; the row's ``reviewed_at`` is
+        real audit history and must survive."""
+        record = as_version_1(make_record())
+
+        merged = rebind_articles(
+            record, bindings=self.CURRENT, article_ids=["second"]
+        )
+
+        self.assertEqual(
+            merged["article"],
+            {
+                "reviewed_at": "2026-07-26T10:00:00+00:00",
+                **BINDINGS["article"],
+            },
+        )
+        self.assertNotIn("ledger_sha256", merged["article"])
 
     def test_articles_that_left_the_edition_fall_out_of_the_merge(self):
         record = make_record()
@@ -428,7 +695,7 @@ class EvidenceReviewCompilerTests(unittest.TestCase):
             )
 
     def test_recorded_review_goes_stale_when_any_audited_input_changes(self):
-        pin_ledger_source_hash(self.root, add_extraction(self.root))
+        pin_article_source_hash(self.root, add_extraction(self.root))
         magazine = Magazine(self.root)
 
         path = magazine.record_evidence_review(
@@ -446,7 +713,7 @@ class EvidenceReviewCompilerTests(unittest.TestCase):
 
     def test_rewriting_extraction_frontmatter_after_approval_is_stale(self):
         """Provenance is bound, not just the body: same body, new frontmatter."""
-        pin_ledger_source_hash(self.root, add_extraction(self.root))
+        pin_article_source_hash(self.root, add_extraction(self.root))
         magazine = Magazine(self.root)
         magazine.record_evidence_review(
             "issue-001", reviewer="Independent auditor", result="approved"
@@ -462,12 +729,38 @@ class EvidenceReviewCompilerTests(unittest.TestCase):
             encoding="utf-8",
         )
 
-        # The ledger pin (body bytes) still matches; only the record notices.
+        # The article row's source_body_sha256 pin (body bytes) still matches;
+        # only the record's whole-file binding notices.
         self.assertEqual(magazine.evidence_review_status("issue-001")["status"], "stale")
 
-    def test_bindings_cover_article_sources_the_ledger_omits(self):
-        """The reviewer's false pass: article [a, b], ledger [a] — the record
-        must bind both, or b could change under an approved audit."""
+    def test_a_shipped_version_1_record_on_disk_still_reports_approved(self):
+        """The end-to-end form of the version 1 rule, against the status
+        command a release actually consults: rewrite an approved record into
+        the shape editions 003 and 004 shipped and nothing may change."""
+        pin_article_source_hash(self.root, add_extraction(self.root))
+        magazine = Magazine(self.root)
+        path = magazine.record_evidence_review(
+            "issue-001", reviewer="Independent auditor", result="approved"
+        )
+        path.write_text(
+            yaml.safe_dump(
+                as_version_1(yaml.safe_load(path.read_text(encoding="utf-8"))),
+                sort_keys=False,
+            ),
+            encoding="utf-8",
+        )
+
+        status = magazine.evidence_review_status("issue-001")
+
+        self.assertEqual(status["status"], "approved")
+        self.assertEqual(status["articles"]["article"]["status"], "current")
+
+    def test_bindings_cover_every_source_the_article_declares(self):
+        """The reviewer's false pass: an article over [a, b] whose record binds
+        only a would leave b free to change under an approved audit.  The
+        covered set is the article row's ``source_ids`` -- the same list its
+        ``source_body_sha256`` pins -- so the audit and validation can never
+        disagree about which sources an article was written from."""
         add_source(self.root, "source-two", body="Second source body.\n")
         manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
         manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
@@ -486,8 +779,12 @@ class EvidenceReviewCompilerTests(unittest.TestCase):
         self.assertEqual(set(extractions), {"source-one", "source-two"})
         for source_id, entry in extractions.items():
             self.assertEqual(set(entry), {"body_sha256", "file_sha256"}, source_id)
+        self.assertNotIn("ledger_sha256", bindings["article"])
 
-    def test_open_edition_record_binds_every_reconciled_source(self):
+    def test_open_edition_record_binds_every_declared_source(self):
+        """Recording against the open edition is the strict path: every source
+        the article declares must already have a committed extraction, and all
+        of them land in the record."""
         add_source(self.root, "source-two", body="Second source body.\n")
         manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
         manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
@@ -495,11 +792,7 @@ class EvidenceReviewCompilerTests(unittest.TestCase):
         manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
         one = add_extraction(self.root)
         two = add_extraction(self.root, source_id="source-two", body="Second source body.\n")
-        ledger_path = self.root / "editions" / "issue-001" / "fidelity" / "article.yaml"
-        ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
-        ledger["source_ids"] = ["source-one", "source-two"]
-        ledger["source_body_sha256"] = {"source-one": one, "source-two": two}
-        ledger_path.write_text(yaml.safe_dump(ledger), encoding="utf-8")
+        pin_article_source_hash(self.root, {"source-one": one, "source-two": two})
         set_open_edition(self.root, "issue-001")
         magazine = Magazine(self.root)
 
@@ -517,8 +810,8 @@ class EvidenceReviewCompilerTests(unittest.TestCase):
         """One drifted article is re-audited alone: the sibling's binding and
         audit timestamp ride through the re-record untouched."""
         add_second_article(self.root)
-        pin_ledger_source_hash(self.root, add_extraction(self.root))
-        pin_ledger_source_hash(
+        pin_article_source_hash(self.root, add_extraction(self.root))
+        pin_article_source_hash(
             self.root,
             add_extraction(self.root, source_id="source-two", body="Second source body.\n"),
             article="second",
@@ -569,7 +862,7 @@ class EvidenceReviewCompilerTests(unittest.TestCase):
         )
 
     def test_partial_record_requires_an_existing_record(self):
-        pin_ledger_source_hash(self.root, add_extraction(self.root))
+        pin_article_source_hash(self.root, add_extraction(self.root))
         magazine = Magazine(self.root)
 
         with self.assertRaisesRegex(ValidationError, "amends an existing record"):

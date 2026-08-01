@@ -9,7 +9,21 @@ from typing import Any
 
 from .compiler import Magazine
 from .errors import MagazineError
+from .io import load_structured
+from .produce import MAX_ROUNDS as PRODUCE_MAX_ROUNDS
 from .render_engine import DEFAULT_ENGINE, ENGINES
+from .runner import TEXT_BACKENDS
+
+
+# The whole review bench, in the order the pieces are judged: the machine and
+# human render decision, then the four editorial judges.  ``render`` stays the
+# default because it is the one review that predates ``--kind``.
+REVIEW_KINDS = ("render", "evidence", "line", "edition", "learning")
+# Kinds whose record carries a per-article ``articles`` mapping, so a re-record
+# can be narrowed with ``--articles``.  The whole-issue kinds cannot: an
+# edition-level verdict about running order or a persona's comprehension run is
+# not divisible by article.
+PER_ARTICLE_REVIEW_KINDS = ("evidence", "line")
 
 
 def parser() -> argparse.ArgumentParser:
@@ -60,6 +74,18 @@ def parser() -> argparse.ArgumentParser:
         ),
     )
     actions.add_parser("sources", help="Regenerate sources.md")
+    scores = actions.add_parser(
+        "scores",
+        help="Regenerate editions/scores.yaml from the committed review records",
+    )
+    scores.add_argument(
+        "--check",
+        action="store_true",
+        help=(
+            "Do not write; exit non-zero when the committed records would produce "
+            "a different rollup than the one on disk"
+        ),
+    )
     actions.add_parser(
         "media-index",
         help="Regenerate deterministic media inventories for all raw captures",
@@ -87,6 +113,57 @@ def parser() -> argparse.ArgumentParser:
     run.add_argument("edition_id")
     run.add_argument("--json", action="store_true", help="Emit stable JSON")
 
+    produce = actions.add_parser(
+        "produce",
+        help=(
+            "Draft and judge an edition's pieces: writer, deterministic gates, "
+            "fact-checker and line editor in parallel, revision on their "
+            "findings, then the learning personas and the managing editor"
+        ),
+    )
+    produce.add_argument("edition_id")
+    produce.add_argument(
+        "--articles",
+        nargs="+",
+        metavar="ID",
+        help=(
+            "Produce only these pieces (article ids, plus `editorial`). Accepts "
+            "repeated ids or one comma-separated list. Omit for every piece."
+        ),
+    )
+    produce.add_argument(
+        "--max-rounds",
+        type=int,
+        default=PRODUCE_MAX_ROUNDS,
+        help=(
+            f"Revision rounds a piece gets before it escalates to a human "
+            f"(default {PRODUCE_MAX_ROUNDS})"
+        ),
+    )
+    produce.add_argument(
+        "--reviewer",
+        help="Reviewer name bound into the review records (default names the backend)",
+    )
+    produce.add_argument(
+        "--backend",
+        choices=TEXT_BACKENDS,
+        help=(
+            "Run the writer and the judges through this text backend instead of "
+            "[runner] text_backend, for this invocation only; magazine.toml is "
+            "not rewritten. Illustration is never a backend choice and is not "
+            "affected."
+        ),
+    )
+    produce.add_argument(
+        "--dry-run",
+        action="store_true",
+        help=(
+            "Print the plan and exit. Resolves the model backend so a missing "
+            "one still fails loudly, but calls no model and writes nothing."
+        ),
+    )
+    produce.add_argument("--json", action="store_true", help="Emit stable JSON")
+
     article = actions.add_parser(
         "article",
         help="Stage source-backed article work from a versioned brief",
@@ -94,7 +171,7 @@ def parser() -> argparse.ArgumentParser:
     article_actions = article.add_subparsers(dest="article_command", required=True)
     article_stage = article_actions.add_parser(
         "stage",
-        help="Create a manuscript slot, fidelity skeleton, and translation placeholders",
+        help="Create a manuscript slot, source pins, and translation placeholders",
     )
     article_stage.add_argument("brief", type=Path)
     article_stage.add_argument("--dry-run", action="store_true")
@@ -170,7 +247,7 @@ def parser() -> argparse.ArgumentParser:
     interior_sheet.add_argument("edition_id")
     interior_sheet.add_argument("--dry-run", action="store_true")
 
-    validate = actions.add_parser("validate", help="Validate an edition and its fidelity ledgers")
+    validate = actions.add_parser("validate", help="Validate an edition against its pinned sources")
     validate.add_argument("edition_id")
     build = actions.add_parser("build", help="Render, impose, and package an edition")
     build.add_argument("edition_id")
@@ -293,12 +370,15 @@ def parser() -> argparse.ArgumentParser:
     review_record.add_argument("edition_id")
     review_record.add_argument(
         "--kind",
-        choices=("render", "evidence"),
+        choices=REVIEW_KINDS,
         default="render",
         help=(
             "render binds a visual decision to the current PDFs (default); evidence "
-            "binds a manuscript-versus-source audit to the manuscripts, fidelity "
-            "ledgers, and extraction bodies it compared"
+            "binds a manuscript-versus-source audit to the manuscripts and "
+            "extraction bodies it compared; line binds a per-piece reading verdict "
+            "to the manuscripts alone; edition binds a whole-issue verdict to the "
+            "editorial, edition.yaml and every manuscript; learning binds the reader "
+            "personas' verdict to the editor-authored furniture and the explainer"
         ),
     )
     review_record.add_argument("--reviewer", required=True)
@@ -308,12 +388,23 @@ def parser() -> argparse.ArgumentParser:
     review_record.add_argument("--finding", action="append", default=[])
     review_record.add_argument("--notes", default="")
     review_record.add_argument(
+        "--verdict",
+        type=Path,
+        help=(
+            "Path to the judge's YAML verdict document, as the review prompts emit "
+            "it. Supplies the structured findings, the advisory scores, and (for a "
+            "learning review) the comprehension and manager_takeaways blocks; "
+            "--finding and --notes still work and are merged in. A result named in "
+            "the document must agree with --result."
+        ),
+    )
+    review_record.add_argument(
         "--articles",
         help=(
-            "Evidence only: comma-separated article ids whose audit was actually "
-            "repeated. Only they are re-bound from current disk state; every other "
-            "article keeps the existing record's binding and reviewed_at. Omit to "
-            "record the full audit."
+            "Evidence and line only: comma-separated article ids whose review was "
+            "actually repeated. Only they are re-bound from current disk state; "
+            "every other article keeps the existing record's binding, reviewed_at "
+            "and scores. Omit to record the full review."
         ),
     )
     review_record.add_argument(
@@ -411,6 +502,126 @@ def _cover_images(values: list[str]) -> dict[str, Path]:
     return images
 
 
+def _load_verdict(path: Path | None, *, kind: str, result: str) -> dict[str, Any]:
+    """Read a judge's YAML verdict document, the shape the prompts emit.
+
+    The four editorial prompts each end with "return one YAML document and
+    nothing else", so the operator's job is to hand that document to the
+    recorder rather than to retype its findings as ``--finding`` strings.  The
+    document supplies the structured findings, the advisory scores, and the
+    learning review's ``comprehension`` and ``manager_takeaways`` blocks.
+
+    ``--result`` stays required on the command line and stays authoritative:
+    recording a verdict is a human act, and a document whose own ``result``
+    disagrees with what the operator typed is a mismatch worth refusing rather
+    than a preference worth resolving.
+    """
+
+    if path is None:
+        return {}
+    data = load_structured(path)
+    declared = str(data.get("result") or "").strip()
+    if declared and declared != result:
+        raise MagazineError(
+            f"{path} records result {declared!r} but --result says {result!r}; "
+            "record the verdict the judge actually returned"
+        )
+    unknown = sorted(
+        set(data)
+        - {
+            "result",
+            "findings",
+            "scores",
+            "notes",
+            "comprehension",
+            "manager_takeaways",
+        }
+    )
+    if unknown:
+        raise MagazineError(
+            f"{path} carries keys a {kind} review does not record: "
+            + ", ".join(unknown)
+        )
+    return data
+
+
+def _article_scores(
+    scores: Any, *, articles: list[str] | None
+) -> dict[str, Any] | None:
+    """Resolve a per-article kind's ``scores`` block to article -> dimensions.
+
+    The line editor and the fact-checker each read one piece at a time, so
+    their prompts emit a flat dimension map for the piece in front of them.
+    That map is unambiguous only when the recording names exactly one article,
+    which ``--articles`` does.  A verdict covering several pieces at once must
+    say so itself, by nesting the maps under article ids.
+    """
+
+    if not scores:
+        return None
+    if not isinstance(scores, dict):
+        raise MagazineError("A verdict's scores must be a mapping")
+    if all(isinstance(value, dict) for value in scores.values()):
+        return scores
+    if any(isinstance(value, dict) for value in scores.values()):
+        raise MagazineError(
+            "A verdict's scores must be either one flat dimension map or one map "
+            "per article id, not a mixture"
+        )
+    if articles and len(articles) == 1:
+        return {articles[0]: scores}
+    raise MagazineError(
+        "A flat scores map belongs to one article; name it with `--articles "
+        "<id>`, or nest the scores under article ids in the verdict document"
+    )
+
+
+def _produce_articles(values: list[str] | None) -> list[str] | None:
+    """Accept ``--articles a b`` and ``--articles a,b`` alike.
+
+    The review bench spells this flag as one comma-separated string and the
+    rest of the CLI spells list flags as repeats.  A human should not have to
+    remember which command took which, so produce takes both.
+    """
+
+    if values is None:
+        return None
+    names = [
+        item.strip()
+        for value in values
+        for item in str(value).split(",")
+        if item.strip()
+    ]
+    if not names:
+        raise MagazineError("--articles needs at least one piece id")
+    return names
+
+
+def _produce_lines(result: Any) -> list[str]:
+    lines = [
+        f"{result.plan.edition_id}: {result.plan.backend}"
+        + (f"/{result.plan.model}" if result.plan.model else "")
+        + f", max {result.plan.max_rounds} round(s)"
+    ]
+    if result.dry_run:
+        lines.append("dry run: no model was called and nothing was written")
+        for piece in result.plan.pieces:
+            lines.append(
+                f"plan: {piece.piece_id} ({piece.content_mode}) {piece.action} "
+                f"[{piece.prompt_path}@{piece.prompt_sha256[:12]}]"
+            )
+    for outcome in result.outcomes:
+        lines.append(
+            f"{outcome.status}: {outcome.piece_id} after {outcome.rounds} round(s) "
+            f"-> {outcome.record}"
+        )
+    for kind, path in result.recorded.items():
+        lines.append(f"recorded: {kind} -> {path}")
+    for action in result.human_actions:
+        lines.append(f"human: {action}")
+    return lines
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
@@ -434,6 +645,16 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(record.to_dict(), ensure_ascii=False, indent=2))
         elif args.command == "sources":
             print(magazine.write_sources())
+        elif args.command == "scores":
+            if args.check:
+                if magazine.scores_are_current():
+                    print(f"current: {magazine.scores_path}")
+                    return 0
+                raise MagazineError(
+                    f"{magazine.scores_path} does not match the committed review "
+                    "records; regenerate it with `mag scores`"
+                )
+            print(magazine.write_scores())
         elif args.command == "media-index":
             for path in magazine.index_media():
                 print(path)
@@ -479,6 +700,24 @@ def main(argv: list[str] | None = None) -> int:
                         f"({checkpoint.next_action.classification})"
                     )
                     print(checkpoint.next_action.instruction)
+        elif args.command == "produce":
+            result = magazine.produce(
+                args.edition_id,
+                articles=_produce_articles(args.articles),
+                dry_run=args.dry_run,
+                max_rounds=args.max_rounds,
+                reviewer=args.reviewer,
+                backend=args.backend,
+            )
+            if args.json:
+                _print_json(result.to_dict(), root=magazine.root)
+            else:
+                for line in _produce_lines(result):
+                    print(line)
+            # An escalation is the command's answer, not a failure to answer,
+            # so it exits 1 the way an over-budget `mag fit` does.
+            if result.escalated:
+                return 1
         elif args.command == "article" and args.article_command == "stage":
             result = magazine.stage_article(args.brief, dry_run=args.dry_run)
             _print_json(result, root=magazine.root)
@@ -681,41 +920,90 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "review" and args.review_command == "status":
             status = magazine.render_review_status(args.edition_id)
             status["evidence"] = magazine.evidence_review_status(args.edition_id)
+            status["line"] = magazine.line_review_status(args.edition_id)
+            status["edition"] = magazine.edition_review_status(args.edition_id)
+            status["learning"] = magazine.learning_review_status(args.edition_id)
             print(json.dumps(status, ensure_ascii=False, indent=2))
         elif args.command == "review" and args.review_command == "record":
-            if args.kind == "evidence":
+            if args.kind != "render":
                 if args.engine:
                     raise MagazineError(
-                        "--engine applies only to render reviews; an evidence review "
-                        "binds to manuscripts and extractions, not rendered PDFs"
+                        f"--engine applies only to render reviews; a {args.kind} review "
+                        "binds to authored text, not rendered PDFs"
                     )
                 if args.rebuild:
                     raise MagazineError(
-                        "--rebuild applies only to render reviews; an evidence review "
+                        f"--rebuild applies only to render reviews; a {args.kind} review "
                         "touches no package"
                     )
+                # ``is not None`` rather than truthiness: even an empty
+                # ``--articles ""`` expresses the intent to narrow and must be
+                # refused by a kind that cannot narrow, not silently ignored.
+                if (
+                    args.articles is not None
+                    and args.kind not in PER_ARTICLE_REVIEW_KINDS
+                ):
+                    raise MagazineError(
+                        "--articles applies only to evidence reviews and line "
+                        f"reviews; a {args.kind} review binds the whole issue at "
+                        "once, not individual articles"
+                    )
+                verdict = _load_verdict(args.verdict, kind=args.kind, result=args.result)
+                findings = [*verdict.get("findings", []), *args.finding]
+                notes = args.notes or str(verdict.get("notes") or "")
                 articles = None
                 if args.articles is not None:
                     articles = [
                         item.strip() for item in args.articles.split(",") if item.strip()
                     ]
-                path = magazine.record_evidence_review(
-                    args.edition_id,
-                    reviewer=args.reviewer,
-                    result=args.result,
-                    findings=args.finding,
-                    notes=args.notes,
-                    articles=articles,
-                )
+                if args.kind in PER_ARTICLE_REVIEW_KINDS:
+                    scores = _article_scores(verdict.get("scores"), articles=articles)
+                    recorder = (
+                        magazine.record_evidence_review
+                        if args.kind == "evidence"
+                        else magazine.record_line_review
+                    )
+                    path = recorder(
+                        args.edition_id,
+                        reviewer=args.reviewer,
+                        result=args.result,
+                        findings=findings,
+                        scores=scores,
+                        notes=notes,
+                        articles=articles,
+                    )
+                elif args.kind == "edition":
+                    path = magazine.record_edition_review(
+                        args.edition_id,
+                        reviewer=args.reviewer,
+                        result=args.result,
+                        findings=findings,
+                        scores=verdict.get("scores"),
+                        notes=notes,
+                    )
+                else:
+                    path = magazine.record_learning_review(
+                        args.edition_id,
+                        reviewer=args.reviewer,
+                        result=args.result,
+                        findings=findings,
+                        scores=verdict.get("scores"),
+                        comprehension=verdict.get("comprehension") or (),
+                        manager_takeaways=verdict.get("manager_takeaways") or (),
+                        notes=notes,
+                    )
                 print(f"recorded: {path}")
             else:
-                # ``is not None`` mirrors the evidence branch: even an empty
-                # ``--articles ""`` expresses the intent to narrow and must be
-                # refused, not silently ignored.
                 if args.articles is not None:
                     raise MagazineError(
-                        "--articles applies only to evidence reviews; a render review "
-                        "binds whole-language PDFs, not individual articles"
+                        "--articles applies only to evidence reviews and line "
+                        "reviews; a render review binds whole-language PDFs, not "
+                        "individual articles"
+                    )
+                if args.verdict is not None:
+                    raise MagazineError(
+                        "--verdict carries an editorial judge's findings and scores; "
+                        "a render review records a visual decision with --finding"
                     )
                 path, output_dir = magazine.record_render_review(
                     args.edition_id,

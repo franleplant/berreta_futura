@@ -10,6 +10,7 @@ from PIL import Image
 
 from magazine import Magazine, ValidationError
 from magazine.capture import archive_snapshot
+from magazine.extraction import SourcePin
 from magazine.manifest import _edition_copy_sha256, load_edition, load_translation
 from magazine.media_schema import caption_sha256, credit_sha256
 from magazine.records import SourceRecord, load_records
@@ -54,7 +55,6 @@ def make_project(
     archived.write(root / "library" / "sources")
     edition_dir = root / "editions" / "issue-001"
     (edition_dir / "articles").mkdir(parents=True)
-    (edition_dir / "fidelity").mkdir()
     (edition_dir / "editorial.md").write_text(
         "---\ntitle: A Test Editorial\nbyline: The editors\nlabel: ORIGINAL EDITORIAL\n---\n\nAn argument.",
         encoding="utf-8",
@@ -94,8 +94,6 @@ def make_project(
         ),
         encoding="utf-8",
     )
-    ledger = {"schema_version": 1, "source_ids": [source_id], "paragraphs": [{"status": "retained", "source": "The original article.", "edited": "The original article."}]}
-    (edition_dir / "fidelity" / "article.yaml").write_text(yaml.safe_dump(ledger), encoding="utf-8")
     manifest = {
         "id": "issue-001", "issue_number": "001", "title": "Issue", "publication_date": "2026-07-15",
         "editorial": "editions/issue-001/editorial.md", "cover": {"headline": "Issue"},
@@ -103,7 +101,7 @@ def make_project(
         "articles": [{"id": "article", "title": "Article", "short_title": "Article",
                       "opener_variant": "edge_medallion", "author": "Author",
                       "author_note": "Author is chief architect at Example Company.", "source_ids": [source_id],
-                      "manuscript": "editions/issue-001/articles/article.md", "fidelity": "editions/issue-001/fidelity/article.yaml"}],
+                      "manuscript": "editions/issue-001/articles/article.md"}],
     }
     (edition_dir / "edition.yaml").write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
 
@@ -173,11 +171,28 @@ def add_extraction(
     return hashlib.sha256(body.encode("utf-8")).hexdigest()
 
 
-def pin_ledger_source_hash(root: Path, body_sha256: str, *, article: str = "article") -> None:
-    ledger_path = root / "editions" / "issue-001" / "fidelity" / f"{article}.yaml"
-    ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
-    ledger["source_body_sha256"] = body_sha256
-    ledger_path.write_text(yaml.safe_dump(ledger), encoding="utf-8")
+def pin_article_source_hash(
+    root: Path,
+    body_sha256: str | dict[str, str],
+    *,
+    article: str = "article",
+) -> None:
+    """Write one article row's ``source_body_sha256`` in ``edition.yaml``.
+
+    The pin lives in the article row now, so pinning is a manifest edit rather
+    than a second file -- which is the whole point of the re-homing: one place
+    declares which sources an article uses and what their extraction bodies
+    hashed to when it was written.
+    """
+    manifest_path = root / "editions" / "issue-001" / "edition.yaml"
+    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    for row in manifest["articles"]:
+        if row["id"] == article:
+            row["source_body_sha256"] = body_sha256
+            break
+    else:
+        raise AssertionError(f"no article row {article!r} to pin")
+    manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
 
 
 def add_spanish_translation(root: Path, *, engine: str | None = None) -> None:
@@ -506,6 +521,137 @@ class ManifestTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "unknown sources"):
             Magazine(self.root).validate("issue-001")
 
+    def test_an_empty_or_mistyped_source_ids_declaration_is_an_error(self):
+        """A wrongly spelled declaration must never verify vacuously.
+
+        ``source_ids`` is the only place an article says what it was written
+        from, so a row whose list cannot be read has no provenance to check --
+        it must fail loudly rather than validate against nothing.
+        """
+        make_project(self.root)
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        original = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        for declared in ("source-one", [], [""], [7], {"source-one": True}):
+            with self.subTest(declared=declared):
+                manifest = copy.deepcopy(original)
+                manifest["articles"][0]["source_ids"] = declared
+                manifest_path.write_text(
+                    yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+                )
+                with self.assertRaises(ValidationError) as caught:
+                    Magazine(self.root).validate("issue-001")
+                self.assertIn("source_ids", str(caught.exception))
+
+    def test_an_article_row_requires_a_manuscript_and_never_a_fidelity_ledger(self):
+        """The ledger was a required article key and is not one any more.
+
+        What an article row cannot omit is the manuscript: the ledger was
+        deleted outright, so a row that never mentions one is the normal shape,
+        not a row awaiting a file.
+        """
+        make_project(self.root)
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        self.assertNotIn("fidelity", manifest["articles"][0])
+
+        Magazine(self.root).validate("issue-001")
+
+        manifest["articles"][0].pop("manuscript")
+        manifest_path.write_text(
+            yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+        )
+        with self.assertRaisesRegex(ValidationError, "Article article missing: manuscript"):
+            Magazine(self.root).validate("issue-001")
+
+    def test_load_edition_reads_an_unpinned_article_row_as_one_empty_pin_per_source(self):
+        """Released editions predate committed extractions, so an article row
+        with no ``source_body_sha256`` is a legal shape and still yields one
+        pin slot per declared source rather than an empty tuple."""
+        make_project(self.root)
+
+        edition = Magazine(self.root).validate("issue-001")
+
+        self.assertEqual(
+            edition.articles[0].source_pins, (SourcePin("source-one", None),)
+        )
+
+    def test_load_edition_normalizes_the_single_source_pin_shape(self):
+        make_project(self.root)
+        body_sha256 = add_extraction(self.root)
+        pin_article_source_hash(self.root, body_sha256)
+
+        edition = Magazine(self.root).validate("issue-001")
+
+        self.assertEqual(
+            edition.articles[0].source_pins, (SourcePin("source-one", body_sha256),)
+        )
+
+    def test_load_edition_normalizes_the_multi_source_pin_mapping(self):
+        """One pin per ``source_ids`` entry, in the row's declared order, so no
+        source can hide behind another's hash."""
+        make_project(self.root)
+        add_source(self.root, "source-two")
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        manifest["articles"][0]["source_ids"] = ["source-two", "source-one"]
+        manifest_path.write_text(
+            yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+        )
+        one_sha256 = add_extraction(self.root)
+        two_sha256 = add_extraction(
+            self.root, source_id="source-two", body="Another article.\n"
+        )
+        pin_article_source_hash(
+            self.root, {"source-one": one_sha256, "source-two": two_sha256}
+        )
+
+        edition = Magazine(self.root).validate("issue-001")
+
+        self.assertEqual(
+            edition.articles[0].source_pins,
+            (SourcePin("source-two", two_sha256), SourcePin("source-one", one_sha256)),
+        )
+
+    def test_validate_rejects_a_malformed_source_pin_naming_the_article(self):
+        """A malformed pin fails the manifest, not some later stage, and the
+        error names the article row an author has to open."""
+        make_project(self.root)
+        pin_article_source_hash(self.root, "not-a-hash")
+
+        with self.assertRaisesRegex(
+            ValidationError,
+            r"Article article: source_body_sha256 for source-one must be a 64-character",
+        ):
+            Magazine(self.root).validate("issue-001")
+
+    def test_validate_rejects_a_bare_digest_for_a_multi_source_article(self):
+        make_project(self.root)
+        add_source(self.root, "source-two")
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        manifest["articles"][0]["source_ids"] = ["source-one", "source-two"]
+        manifest_path.write_text(
+            yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+        )
+        pin_article_source_hash(self.root, add_extraction(self.root))
+
+        with self.assertRaisesRegex(
+            ValidationError,
+            r"Article article: source_body_sha256 must be a mapping keyed by source id",
+        ):
+            Magazine(self.root).validate("issue-001")
+
+    def test_validate_rejects_a_pin_for_a_source_the_article_does_not_declare(self):
+        make_project(self.root)
+        pin_article_source_hash(
+            self.root, {"source-one": add_extraction(self.root), "source-two": "0" * 64}
+        )
+
+        with self.assertRaisesRegex(
+            ValidationError, "does not declare in source_ids: source-two"
+        ):
+            Magazine(self.root).validate("issue-001")
+
     def test_validate_allows_an_article_to_omit_author_note(self):
         make_project(self.root)
         manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
@@ -658,6 +804,61 @@ class ManifestTests(unittest.TestCase):
                 allow_missing_art=True,
             )
 
+    def test_illustrated_article_opener_exempts_the_house_byline(self):
+        """An editor-voiced piece signs itself and has no biography to print.
+
+        The house byline already refuses an ``author_note``, so requiring one
+        here would leave ``in_a_nutshell`` and ``original_synthesis`` unusable
+        in an illustrated edition -- no value of the field would validate.
+        """
+
+        make_project(self.root)
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        manifest["format"] = {"article_opener": "illustrated_paper_spots_v1"}
+        manifest["art_direction_path"] = "art/illustrations.yaml"
+        manifest["articles"][0].pop("author_note")
+        manifest["articles"][0]["author"] = "The editors"
+        manifest["articles"][0]["content_mode"] = "in_a_nutshell"
+        manifest["articles"][0]["opener_art"] = {
+            "path": "art/article-opener.png",
+            "alt_text": "A boy and robot connect two systems.",
+            "credit": "Original illustration.",
+        }
+        manifest_path.write_text(
+            yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+        )
+
+        edition = load_edition(
+            self.root, "issue-001", {"source-one"}, allow_missing_art=True
+        )
+
+        self.assertEqual(edition.articles[0].author, "The editors")
+        self.assertEqual(edition.articles[0].author_note, "")
+
+    def test_illustrated_article_opener_still_refuses_a_house_biography(self):
+        make_project(self.root)
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        manifest["format"] = {"article_opener": "illustrated_paper_spots_v1"}
+        manifest["art_direction_path"] = "art/illustrations.yaml"
+        manifest["articles"][0]["author"] = "The editors"
+        manifest["articles"][0]["content_mode"] = "in_a_nutshell"
+        manifest["articles"][0]["author_note"] = "The editors explain the source."
+        manifest["articles"][0]["opener_art"] = {
+            "path": "art/article-opener.png",
+            "alt_text": "A boy and robot connect two systems.",
+            "credit": "Original illustration.",
+        }
+        manifest_path.write_text(
+            yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+        )
+
+        with self.assertRaisesRegex(ValidationError, "must omit author_note"):
+            load_edition(
+                self.root, "issue-001", {"source-one"}, allow_missing_art=True
+            )
+
     def test_illustrated_article_opener_requires_complete_art_mapping(self):
         make_project(self.root)
         manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
@@ -786,37 +987,65 @@ class ManifestTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "Release state not found"):
             Magazine(self.root).validate("issue-001")
 
-    def test_open_edition_validate_fails_when_ledger_and_article_sources_diverge(self):
-        """The reviewer's false pass: article declares [a, b], ledger declares
-        [a]; the ledger's own list used to be the whole coverage universe."""
+    def test_open_edition_requires_an_extraction_and_pin_for_every_declared_source(self):
+        """The reviewer's false pass, made structurally impossible.
+
+        An article used to declare its sources twice -- once in ``source_ids``
+        and once in its ledger -- and only the ledger's shorter list was
+        verified, so article [a, b] with ledger [a] passed.  There is one list
+        now, and it is the one the open edition holds to account: adding a
+        source to the row immediately owes that source an extraction and a pin.
+        """
         make_project(self.root)
         add_source(self.root, "source-two")
         manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
         manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
         manifest["articles"][0]["source_ids"] = ["source-one", "source-two"]
         manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
-        pin_ledger_source_hash(self.root, add_extraction(self.root))
+        pin_article_source_hash(self.root, {"source-one": add_extraction(self.root)})
         set_open_edition(self.root, "issue-001")
 
         with self.assertRaisesRegex(
             ValidationError,
-            r"article\.yaml.*absent from the ledger: source-two",
+            r"edition\.yaml: article article: source source-two has no committed extraction",
         ):
             Magazine(self.root).validate("issue-001")
 
-        # Only the open edition reconciles; pointing the release ledger at
-        # another edition restores today's released-edition behavior.
+        # Only the open edition is held to the full chain; pointing the release
+        # ledger at another edition restores released-edition behavior, where
+        # pins are verified opportunistically.
         set_open_edition(self.root, "999-unreleased", issue_number=999)
         Magazine(self.root).validate("issue-001")
 
-    def test_validate_rejects_article_and_ledger_content_mode_mismatch(self):
+    def test_open_edition_requires_a_pin_for_a_source_it_already_extracted(self):
+        """An extraction without a pin proves nothing about *this* article: it
+        records that the source was captured, not which capture was written
+        from.  The error carries the digest to paste in."""
         make_project(self.root)
-        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
-        manifest = yaml.safe_load(manifest_path.read_text())
-        manifest["articles"][0]["content_mode"] = "faithful_synthesis"
-        manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+        body_sha256 = add_extraction(self.root)
+        set_open_edition(self.root, "issue-001")
 
-        with self.assertRaisesRegex(ValidationError, "does not match its fidelity ledger"):
+        with self.assertRaisesRegex(
+            ValidationError,
+            rf"declares no source_body_sha256 for source-one; pin the extraction "
+            rf"body hash {body_sha256}",
+        ):
+            Magazine(self.root).validate("issue-001")
+
+        pin_article_source_hash(self.root, body_sha256)
+        Magazine(self.root).validate("issue-001")
+
+    def test_validate_rejects_a_pin_that_no_longer_matches_the_extraction(self):
+        """Unconditional, released editions included: a pin and an extraction
+        that both exist must agree, or the source moved underneath the
+        manuscript after it was written."""
+        make_project(self.root)
+        add_extraction(self.root)
+        pin_article_source_hash(self.root, "0" * 64)
+
+        with self.assertRaisesRegex(
+            ValidationError, "no longer matches the committed extraction"
+        ):
             Magazine(self.root).validate("issue-001")
 
     def test_validate_requires_editorial_title_metadata(self):
@@ -910,6 +1139,72 @@ class ManifestTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValidationError, "author cannot be blank"):
             Magazine(self.root).validate("issue-001")
+
+    def test_translation_carries_the_base_article_source_pins_through_unchanged(self):
+        """A translation renders the same article from the same sources.
+
+        Provenance belongs to the article, not to the language, so the overlay
+        neither re-derives nor re-pins it -- and it re-emits the pin into the
+        translated raw manifest in the shape ``edition.yaml`` authors it, so a
+        consumer reading the localized manifest sees the same declaration.
+        """
+        make_project(self.root)
+        body_sha256 = add_extraction(self.root)
+        pin_article_source_hash(self.root, body_sha256)
+        add_spanish_translation(self.root)
+        base = Magazine(self.root).validate("issue-001")
+
+        localized = load_translation(self.root.resolve(), base, "es")
+
+        self.assertEqual(
+            localized.articles[0].source_pins, (SourcePin("source-one", body_sha256),)
+        )
+        self.assertEqual(
+            localized.articles[0].source_pins, base.articles[0].source_pins
+        )
+        row = localized.raw["articles"][0]
+        self.assertEqual(row["source_ids"], ["source-one"])
+        self.assertEqual(row["source_body_sha256"], body_sha256)
+
+    def test_translation_re_emits_multi_source_pins_as_a_mapping(self):
+        make_project(self.root)
+        add_source(self.root, "source-two")
+        manifest_path = self.root / "editions" / "issue-001" / "edition.yaml"
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        manifest["articles"][0]["source_ids"] = ["source-one", "source-two"]
+        manifest_path.write_text(
+            yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+        )
+        one_sha256 = add_extraction(self.root)
+        two_sha256 = add_extraction(
+            self.root, source_id="source-two", body="Another article.\n"
+        )
+        pin_article_source_hash(
+            self.root, {"source-one": one_sha256, "source-two": two_sha256}
+        )
+        add_spanish_translation(self.root)
+        base = Magazine(self.root).validate("issue-001")
+
+        localized = load_translation(self.root.resolve(), base, "es")
+
+        self.assertEqual(
+            localized.raw["articles"][0]["source_body_sha256"],
+            {"source-one": one_sha256, "source-two": two_sha256},
+        )
+
+    def test_translation_of_an_unpinned_article_emits_no_source_pin(self):
+        """A released edition has nothing to pin, and the overlay must not
+        invent a digest to fill the key."""
+        make_project(self.root)
+        add_spanish_translation(self.root)
+        base = Magazine(self.root).validate("issue-001")
+
+        localized = load_translation(self.root.resolve(), base, "es")
+
+        self.assertEqual(
+            localized.articles[0].source_pins, (SourcePin("source-one", None),)
+        )
+        self.assertIsNone(localized.raw["articles"][0]["source_body_sha256"])
 
     def test_validate_rejects_translation_after_english_source_changes(self):
         make_project(self.root)
@@ -1047,20 +1342,6 @@ class ManifestTests(unittest.TestCase):
         make_project(self.root)
         article = self.root / "editions" / "issue-001" / "articles" / "article.md"
         article.write_text(self.STRUCTURED_ARTICLE, encoding="utf-8")
-        ledger = self.root / "editions" / "issue-001" / "fidelity" / "article.yaml"
-        ledger.write_text(yaml.safe_dump({
-            "schema_version": 1,
-            "source_ids": ["source-one"],
-            "paragraphs": [
-                {"status": "retained", "source": "The original article."},
-                {"kind": "ordered", "status": "retained", "source": "First point"},
-                {"kind": "ordered", "status": "retained", "source": "Second point"},
-                {"kind": "bullet", "status": "retained", "source": "Outer point"},
-                {"kind": "bullet", "status": "retained", "source": "Inner point"},
-                {"kind": "quote", "status": "retained", "source": "A quoted claim."},
-                {"kind": "quote", "status": "retained", "source": "Its continuation."},
-            ],
-        }), encoding="utf-8")
         add_spanish_translation(self.root)
         return self.root / "editions" / "issue-001" / "translations" / "es" / "articles" / "article.md"
 

@@ -20,7 +20,7 @@ The concrete publishing seam is now:
 ```python
 mag.workflow_status(edition_id)       # read-only, complete checkpoint report
 mag.workflow_run(edition_id)          # conservative deterministic advancement
-mag.stage_article(versioned_brief)    # source, ledger, manifest, translation unit
+mag.stage_article(versioned_brief)    # source, manuscript, manifest, translation unit
 mag.cover_studio_*()                  # immutable rounds and explicit selection
 mag.illustration_studio_*()           # explicit inventory and asset registration
 ```
@@ -33,9 +33,10 @@ review, or release. Repeating it is safe.
 
 Article staging owns the first post-capture transaction. A schema-versioned
 brief names one collecting edition, one article identity, and one or more
-queued source ids. The article staging module prepares the manuscript TODO,
-exact extraction pins, fidelity skeleton, and manifest row without inventing
-source text. The publishing module then reconciles every configured
+queued source ids. The article staging module prepares the manuscript TODO and
+the manifest row, which carries the article's `source_ids` and the exact
+`source_body_sha256` of each source's extraction, without inventing source
+text. The publishing module then reconciles every configured
 non-source-language overlay. Those writes are exposed as one transaction: an
 overlay refusal conditionally restores only files this invocation changed.
 Unrelated concurrent files are preserved. A concurrently edited touched file
@@ -47,8 +48,10 @@ append-only candidate rounds, computed asset hashes, prompt evidence, all-round
 localized full-cover proofs, comparison sheets, and an explicit atomic
 selection. The Illustration Studio owns article openers plus an explicit subset
 of article tails and closing plates, prompt packages, validated asset
-registration, and review sheets. Neither studio invokes image generation.
-Their revisions support
+registration, and review sheets. Neither studio generates images itself: the
+studios prepare and seal, and a produce phase may execute a model through the
+single seam in `magazine.runner`: text via `codex exec` (default) or
+`claude -p`, images via `codex exec` and nothing else. Their revisions support
 optimistic concurrency so a stale caller refuses instead of replacing newer
 work.
 
@@ -75,8 +78,10 @@ lead URL
   -> assignment to the selected intake edition
   -> provenance-linked source bundle
   -> versioned article brief
-  -> transactional manuscript, fidelity, manifest, and translation staging
+  -> transactional manuscript, manifest, and translation staging
   -> faithful manuscript + editorial patches
+  -> line-exact code-block check against the pinned extractions
+  -> claim-level fact-check, line, learning, and edition reviews
   -> seven-page article-budget check (faithful synthesis when over budget)
   -> emergent-narrative editorial drafted under docs/WRITING_RULES.md
   -> titled one-page editorial-budget check (per-edition, two-page ceiling)
@@ -97,14 +102,15 @@ lead URL
 - Several editions may collect concurrently, but one explicit intake target receives new sources by default; intake batches never create collections implicitly.
 - Release first reconciles all source records, then requires exact equality between the target edition's queue and rendered articles' `source_ids`; sources queued to other collecting editions are unaffected.
 - Release state advances only after validation and a complete deterministic build succeed.
-- The edition manifest is replaced before the authoritative ledger, and both are restored if either replacement fails.
+- The edition manifest is replaced before the authoritative release state, and both are restored if either replacement fails.
+- Every fenced code block in a manuscript is a contiguous run of lines from one of the article's pinned source extractions. This is the only deterministic content check on a manuscript; everything else about faithfulness is judged at claim level by the fact-checker.
 - Release preserves private distribution and rights restrictions; it records production completion, not public reprint permission.
 - Refetching changed content creates a revision rather than mutating history.
 - Every factual claim, quotation, figure, and caption resolves to captured evidence.
 - AI output is draft material and cannot approve itself.
 - An approval names the exact revision and digest it approves.
 - Any manuscript, art, template, font, profile, or tool change invalidates downstream approvals.
-- Packaging never invokes AI. It consumes sealed artifacts only.
+- Building, packaging and release never invoke AI. They consume sealed artifacts only. Only the produce/studio phase may execute a model, and only through `magazine.runner`.
 - Each browser proof is rasterized from the same one-page outer-cover PDF
   inserted into the reader; proof and production faces cannot be separate
   implementations.
@@ -112,6 +118,52 @@ lead URL
   artwork placement, trim behavior, and comparison evidence for both outer
   faces are local to the cover compiler and its authored design contract.
 - Release output is promoted atomically after validation.
+
+## Review bench
+
+Five hash-bound review kinds sit between the build and release. Each is written
+only by `mag review record --kind <kind>`, and each binds the exact bytes its
+judge read, so any later edit to those bytes marks the record stale rather than
+silently carrying an approval forward:
+
+- **render** binds the reader and imposed-booklet PDFs per language, with each
+  package's machine `visual_review` block.
+- **evidence** binds, per article, the manuscript and the source extractions it
+  was audited against. Staleness is derived per article and a re-record may
+  name only the articles re-read.
+- **line** binds the manuscripts and nothing else, the opening editorial
+  included under the article id `editorial`; the line editor is forbidden to
+  open a source, so no source hash belongs in the record. It rebinds per
+  article like the evidence audit.
+- **edition** binds the editorial, every manuscript, and a canonical projection
+  of `edition.yaml` with the edition's filesystem identity removed: the `id`,
+  the release `status`, and the `editions/<id>/` and `output/<id>/` prefixes
+  inside its paths. Issue coherence is a function of all those bytes at once,
+  so there is no partial rebind. The projection is not a narrowing of what the
+  managing editor judges; it exists because `mag finish` rewrites an edition's
+  identity when it gives a collection its stable id, which would otherwise
+  stale every issue verdict for no editorial reason.
+- **learning** binds a projection of the editor-authored furniture — edition
+  and cover copy, per-article titles, display copy, author notes, key ideas,
+  figure captions and alt text, closing-plate titles — plus the manuscript of
+  each explainer, an article declaring `content_mode: in_a_nutshell`. It binds
+  neither the whole manifest nor the feature manuscripts, and that is the
+  reason the kind exists separately: the three reader personas read the
+  furniture and the explainer, so a body typo in a feature's third paragraph
+  moves nothing they were shown. Staling their verdict on it would teach the
+  bench that staleness is noise, and a staleness signal people learn to ignore
+  is worse than none. The projection is an explicit list of keys rather than a
+  heuristic, so extending it is a schema-version bump.
+
+Line, edition, and learning are **advisory**. They are recorded and reported by
+`mag review status` and the workflow report, and excluded from `release_ready`:
+they never reach `blocked`, never become the report's next checkpoint, and
+never stall `mag finish`. Their `require_approved_*` functions are written and
+tested but deliberately unreferenced by release while the judges' thresholds
+are calibrated. Flipping them to blocking is one deliberate change made in one
+commit: empty `_ADVISORY_REVIEW_CHECKPOINTS` in `workflow.py` and wire
+`require_approved_line_review`, `require_approved_edition_review`, and
+`require_approved_learning_review` into `Magazine.release`.
 
 ## Canonical and generated material
 
@@ -124,25 +176,24 @@ Canonical authored material:
 - cover direction and selected artwork;
 - article-opener art declarations and committed opener images;
 - `design/covers/canto-vivo/design.toml` and approved cover references;
-- hash-bound independent render-review decisions;
+- hash-bound independent review records (render, evidence, line, edition, learning);
 - decisions tied to revisions.
 
 Generated material:
 
 - `sources.md`;
-- fidelity reports and source/manuscript diffs;
 - review PDFs and page images;
 - render-critic reports and numbered visual-review contact sheets;
 - build locks, preflight reports, checksums, and packages.
 
 ## Dependency strategy
 
-- In-process logic: hashing, manifests, workflow state, citation resolution, fidelity metrics, and packaging plans.
+- In-process logic: hashing, manifests, workflow state, citation resolution, code-block verification, and packaging plans.
 - Local-substitutable dependencies: filesystem, ReportLab, pypdf, FontTools,
   resvg, Poppler, clocks, and process execution.
 - True external dependencies: websites, authenticated browsers, Codex/model execution, image generation, and printing studios.
 
-Production and recorded/fixture adapters justify seams for web retrieval and AI execution. The initial typesetter has one implementation and therefore remains an internal implementation rather than a speculative public seam.
+Production and recorded/fixture adapters justify seams for web retrieval and AI execution. The AI execution seam is now real rather than speculative: `magazine.runner` resolves the configured `[runner]` backend, proves its binary is installed before any work starts, and executes it behind an injectable `CommandRunner` so tests never reach a model. The initial typesetter has one implementation and therefore remains an internal implementation rather than a speculative public seam.
 
 ## AI execution
 

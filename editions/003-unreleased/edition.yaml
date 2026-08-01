@@ -50,7 +50,10 @@ articles:
   - why-software-factories-fail-turning-the-lights-b-1312d1ad
   - why-software-factories-fail-benchmarking-the-new-f1d9c04a
   manuscript: editions/003-unreleased/articles/why-software-factories-fail.md
-  fidelity: editions/003-unreleased/fidelity/why-software-factories-fail.yaml
+  source_body_sha256:
+    why-software-factories-fail-f53679d7: d33fdc4b32b52fc15f7182bdcd5745446577528e319f95736b29305f233b1299
+    why-software-factories-fail-turning-the-lights-b-1312d1ad: e2b15724ecd99d724de29cd01cb5920ff35ead723a0da2e53629304307524939
+    why-software-factories-fail-benchmarking-the-new-f1d9c04a: 7c991f53c7a43737e5549b24b4cca4b36b899d43721955e3ebc59285fa4e4aba
   tail_art_path: editions/003-unreleased/art/article-tails/software-factories-manga-v1.png
   figures:
   - id: lights-on-factory
@@ -95,7 +98,7 @@ articles:
   source_ids:
   - why-harness-engineering-is-so-hard-fe732038
   manuscript: editions/003-unreleased/articles/why-harness-engineering-is-so-hard.md
-  fidelity: editions/003-unreleased/fidelity/why-harness-engineering-is-so-hard.yaml
+  source_body_sha256: 5a0878b6c7b53a39fff08674e8d2f4542ef72d3a9bee3eb347c11dbe5fc9c248
   tail_art_path: editions/003-unreleased/art/article-tails/harness-engineering-manga-v1.png
   figures:
   - id: nondeterminism-testing
@@ -140,7 +143,7 @@ articles:
   source_ids:
   - loop-engineering-f0ddfd76
   manuscript: editions/003-unreleased/articles/loop-engineering-above-the-harness.md
-  fidelity: editions/003-unreleased/fidelity/loop-engineering-above-the-harness.yaml
+  source_body_sha256: 624d44585e591681ee548b14eab033af3804c66e68cae256d1b3e626203c86f0
   tail_art_path: editions/003-unreleased/art/article-tails/loop-engineering-manga-v1.png
 - id: new-rules-of-context-engineering
   title: The New Rules of Context Engineering
@@ -153,7 +156,7 @@ articles:
   source_ids:
   - the-new-rules-of-context-engineering-for-claude--aa1b1ea8
   manuscript: editions/003-unreleased/articles/new-rules-of-context-engineering.md
-  fidelity: editions/003-unreleased/fidelity/new-rules-of-context-engineering.yaml
+  source_body_sha256: aaeea1ef2ec0a1645ec0eae72d75b920dc73b91bd30dc736cf5eecd6624902a9
   tail_art_path: editions/003-unreleased/art/article-tails/context-engineering-manga-v1.png
   figures:
   - id: assembled-context-conflicts
@@ -182,7 +185,9 @@ articles:
   - open-weights-and-american-ai-leadership-7aa6038f
   - open-weight-models-are-essential-to-a-healthy-ai-e7845a41
   manuscript: editions/003-unreleased/articles/open-weights-and-american-ai-leadership.md
-  fidelity: editions/003-unreleased/fidelity/open-weights-and-american-ai-leadership.yaml
+  source_body_sha256:
+    open-weights-and-american-ai-leadership-7aa6038f: ffdf007cce5434f26b3e23c8698a0c64665bd4afb5e04027715243b827981aaf
+    open-weight-models-are-essential-to-a-healthy-ai-e7845a41: 902ebece437a6156bb3e620db9dc7cd84c102a146c1f272f552add00a9591ec8
   tail_art_path: editions/003-unreleased/art/article-tails/open-weights-manga-v1.png
 - id: buzz-multiplayer-agent-layer
   title: Beyond the Slack Killer
@@ -199,7 +204,13 @@ articles:
   - buzz-is-the-first-proper-multiplayer-agent-harne-49c061ac
   - buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e
   manuscript: editions/003-unreleased/articles/buzz-multiplayer-agent-layer.md
-  fidelity: editions/003-unreleased/fidelity/buzz-multiplayer-agent-layer.yaml
+  source_body_sha256:
+    why-we-re-buzzing-1c82f338: 26a04a251c2d135a029bcade698e8fb7d784e10351360f0e988d24fad10b5450
+    buzz-your-people-your-agents-your-project-all-in-833eef43: 0fdcd9f5c79945eebf28a0f1446757423c7181166b484354ecf74bb3b0aa4131
+    buzz-a-workspace-where-humans-and-agents-build-t-59122470: 6b1bb345a5f9a8b0524e46d04b5b9e9ea86ede2a16c8bd1320e94f86f5c9b00c
+    the-most-interesting-thing-about-buzz-is-shared--f0fc7406: a11b6a921c893e7c2a54128c90b3c146c941ed4466fb1557636116b92c079b78
+    buzz-is-the-first-proper-multiplayer-agent-harne-49c061ac: d46d7f0fed3d08a860e819d6bb8d9f10edf6993e30c9a9e3c50d048ddd4e20ad
+    buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e: 969620843a5427f9dd485273a5cdd63f5b553ffa639a3753266c0dce0713e4b8
   tail_art_path: editions/003-unreleased/art/article-tails/buzz-multiplayer-manga-v1.png
 rights:
   faithful_source_reprint: private_only_while_rights_unknown

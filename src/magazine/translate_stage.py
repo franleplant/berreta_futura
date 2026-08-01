@@ -34,7 +34,7 @@ half of that work and refuses, loudly, to do the creative half:
 * **Nothing outside ``translations/<language>/`` is touched.**  The staging
   writes are confined to the overlay directory by construction, and the pin
   refresh is scoped the same way (``refresh_pins``'s ``within``), so a
-  fidelity ledger or sibling language is never read for rewriting, never
+  base manifest or sibling language is never read for rewriting, never
   required to be refreshable, and never written.  Their staleness is still
   the author's to know: it is recomputed read-only and reported as a note on
   every run, whether or not this overlay needed anything itself.  Review
@@ -55,7 +55,7 @@ from typing import Any
 import yaml
 
 from .errors import ValidationError
-from .extraction import ledger_source_ids, load_extraction
+from .extraction import load_extraction
 from .io import load_structured
 from .manifest import (
     Article,
@@ -385,6 +385,8 @@ def _article_row(
         row["display_emphasis"] = article.display_emphasis
     if article.author_note:
         row["author_note"] = article.author_note
+    if article.key_ideas:
+        row["key_ideas"] = list(article.key_ideas)
     row["manuscript"] = rel
     row["source_sha256"] = _sha256(article.manuscript)
     if article.figures:
@@ -680,6 +682,13 @@ def _repair_article_row(
         placeholders["author_note"] = article.author_note
     elif "author_note" in row:
         editor.delete_key(path, "author_note")
+    # Key ideas are localized copy like any other, so a base article that grew
+    # them gains an English placeholder here and one that lost them has the
+    # stale localized lines removed rather than left to fail validation.
+    if article.key_ideas:
+        placeholders["key_ideas"] = list(article.key_ideas)
+    elif "key_ideas" in row:
+        editor.delete_key(path, "key_ideas")
     for key, english in placeholders.items():
         if not row.get(key):
             editor.set_key(path, key, english)
@@ -925,7 +934,7 @@ def _refresh_overlay_pins(
     """Refresh this overlay's pins via ``pin.refresh_pins`` -- and only this one's.
 
     The refresher is handed the overlay directory as its ``within`` scope, so
-    a fidelity ledger or sibling language is never read for rewriting, never
+    the base manifest or a sibling language is never read for rewriting, never
     required to be refreshable, and never written; that is what lets two
     half-staged languages be staged one at a time instead of deadlocking on
     each other's missing rows.  The refresher's verify-then-write contract
@@ -951,16 +960,16 @@ def _out_of_scope_notes(
 ) -> list[str]:
     """Name every stale pin the stage saw but must not fix.
 
-    Staging's writes stop at the overlay boundary, so a stale fidelity
-    ledger or sibling overlay is never rewritten here -- but silence would
-    let it rot.  Each out-of-scope pin is recomputed with the same canonical
+    Staging's writes stop at the overlay boundary, so a stale base-manifest
+    source pin or sibling overlay is never rewritten here -- but silence
+    would let it rot.  Each out-of-scope pin is recomputed with the same canonical
     hashers the refresher uses and compared purely in memory; every
     disagreement becomes a note pointing at the tool allowed to fix it.
     """
     notes: list[str] = []
     overlay_dir = overlay_dir.resolve()
     for article in base.articles:
-        notes.extend(_stale_ledger_pins(sources_dir, article))
+        notes.extend(_stale_source_pins(sources_dir, edition_dir, article))
     for sibling in sorted((edition_dir / "translations").glob("*/edition.yaml")):
         if sibling.resolve().is_relative_to(overlay_dir):
             continue
@@ -968,40 +977,30 @@ def _out_of_scope_notes(
     return notes
 
 
-def _stale_ledger_pins(sources_dir: Path, article: Article) -> list[str]:
-    """One ledger's disagreeing body pins, judged without writing anything.
+def _stale_source_pins(
+    sources_dir: Path, edition_dir: Path, article: Article
+) -> list[str]:
+    """One article row's disagreeing body pins, judged without writing anything.
 
-    A ledger without the pin key (the released-edition shape) and a source
-    without a committed extraction both have nothing to compare, and a
-    malformed ledger or extraction is validation's to reject; none of them
-    may turn a staging run into a raise, so every unanswerable case here
-    simply yields no note.
+    An unpinned source (the released-edition shape) and a source without a
+    committed extraction both have nothing to compare, and a malformed
+    extraction is validation's to reject; none of them may turn a staging run
+    into a raise, so every unanswerable case here simply yields no note.
     """
-    try:
-        data = load_structured(article.fidelity)
-        source_ids = ledger_source_ids(article.fidelity, data)
-    except ValidationError:
-        return []
-    declared = data.get("source_body_sha256")
-    if isinstance(declared, str) and len(source_ids) == 1:
-        declared = {source_ids[0]: declared}
-    if not isinstance(declared, dict):
-        return []
     notes: list[str] = []
-    for source_id in source_ids:
-        pin = declared.get(source_id)
-        if not isinstance(pin, str):
+    for pin in article.source_pins:
+        if pin.body_sha256 is None:
             continue
         try:
-            extraction = load_extraction(sources_dir, source_id)
+            extraction = load_extraction(sources_dir, pin.source_id)
         except ValidationError:
             continue
-        if extraction is not None and pin != extraction.body_sha256:
+        if extraction is not None and pin.body_sha256 != extraction.body_sha256:
             notes.append(
-                f"Out of scope, left stale: {article.fidelity} "
-                f"source_body_sha256[{source_id}] no longer matches the committed "
-                "extraction; staging touches only its own language -- run "
-                "`mag pin` to repair it"
+                f"Out of scope, left stale: {edition_dir / 'edition.yaml'} "
+                f"articles[{article.id}].source_body_sha256[{pin.source_id}] no longer "
+                "matches the committed extraction; staging touches only its own "
+                "language -- run `mag pin` to repair it"
             )
     return notes
 
@@ -1103,6 +1102,8 @@ def _untranslated_fields(
                 flag(overlay_path, f"{pointer}.{key}", english)
         if article.display_emphasis and row.get("display_emphasis") == article.display_emphasis:
             flag(overlay_path, f"{pointer}.display_emphasis", article.display_emphasis)
+        if article.key_ideas and row.get("key_ideas") == list(article.key_ideas):
+            flag(overlay_path, f"{pointer}.key_ideas", article.key_ideas[0])
         manuscript = overlay_dir / str(row.get("manuscript") or "")
         if manuscript.is_file() and manuscript.read_bytes() == article.manuscript.read_bytes():
             flag(

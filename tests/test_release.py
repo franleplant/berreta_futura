@@ -20,7 +20,7 @@ from magazine.release import (
     sync_release_state,
 )
 from magazine.render_review import create_render_review, load_render_review, write_render_review
-from test_manifest import add_extraction, make_project, pin_ledger_source_hash
+from test_manifest import add_extraction, make_project, pin_article_source_hash
 
 
 class ReleaseStateTests(unittest.TestCase):
@@ -221,9 +221,9 @@ class ReleaseStateTests(unittest.TestCase):
             "released_editions": [],
         }, sort_keys=False), encoding="utf-8")
         # issue-001 is now the open edition, so validation requires committed
-        # extractions with matching ledger pins, and release requires a fresh
-        # approved evidence review bound to them.
-        pin_ledger_source_hash(self.root, add_extraction(self.root))
+        # extractions with matching article source pins, and release requires a
+        # fresh approved evidence review bound to them.
+        pin_article_source_hash(self.root, add_extraction(self.root))
         magazine = Magazine(self.root)
         magazine.record_evidence_review(
             "issue-001", reviewer="Evidence auditor", result="approved"

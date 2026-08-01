@@ -238,7 +238,31 @@ class ReaderEngineContract:
                     2,
                     f"{label} text must be optically centered in the orange tab",
                 )
-            self.assertIn("render-critic.json", (result.output_dir / "SHA256SUMS").read_text())
+            # The package inventory, stated in full.  A checksum list is a
+            # claim about what a release contains, so an artifact silently
+            # appearing or disappearing from it is exactly the change worth
+            # failing on -- ``fidelity.md`` left this list when the ledger was
+            # deleted, and nothing was asserting that either way.  The contact
+            # sheets are excluded because how many the critic renders is a
+            # function of the page count, not of the package's shape.
+            inventory = {
+                line.split("  ", 1)[1]
+                for line in (result.output_dir / "SHA256SUMS").read_text().splitlines()
+            }
+            self.assertEqual(
+                {name for name in inventory if not name.startswith("render-review/")},
+                {
+                    "edition-manifest.json",
+                    "home/booklet-a4-cover.pdf",
+                    "home/booklet-a4-interior.pdf",
+                    "home/booklet-a4.pdf",
+                    "home/printing-instructions.md",
+                    "preflight.json",
+                    "reader.pdf",
+                    "render-critic.json",
+                    "studio/README.md",
+                },
+            )
             pages = page_texts(result.reader_pdf)
             self.assertGreaterEqual(len(PdfReader(str(result.reader_pdf)).pages), 8)
             self.assertEqual(len(pages), len(PdfReader(str(result.reader_pdf)).pages))
@@ -264,6 +288,12 @@ class ReaderEngineContract:
                 manifest["inputs"]["articles"][0],
                 "legacy package manifests must retain their historical shape",
             )
+            # The fidelity ledger is gone, so the manifest no longer claims a
+            # per-article ledger file or an edition-wide fidelity status.  A
+            # package that still named them would be pointing at files nothing
+            # writes.
+            self.assertNotIn("fidelity", manifest["inputs"]["articles"][0])
+            self.assertNotIn("fidelity_status", manifest["inputs"])
             self.assertEqual(manifest["layout"]["maximum_article_pages"], self.MAX_ARTICLE_PAGES)
             self.assertLessEqual(
                 manifest["layout"]["article_pages"]["article"], self.MAX_ARTICLE_PAGES
@@ -328,18 +358,6 @@ class ReaderEngineContract:
             paragraphs = [f"Substantive source paragraph {index} with enough words to occupy space." for index in range(420)]
             (edition_dir / "articles" / "article.md").write_text(
                 "\n\n".join(paragraphs) + "\n", encoding="utf-8"
-            )
-            ledger = {
-                "schema_version": 1,
-                "source_ids": ["source-one"],
-                "content_mode": "faithful_edit",
-                "paragraphs": [
-                    {"id": f"p{index}", "kind": "p", "status": "retained", "source": text}
-                    for index, text in enumerate(paragraphs)
-                ],
-            }
-            (edition_dir / "fidelity" / "article.yaml").write_text(
-                yaml.safe_dump(ledger), encoding="utf-8"
             )
 
             self.assert_build_refuses(
@@ -436,18 +454,6 @@ class DefaultEngineTests(ReaderEngineContract, unittest.TestCase):
             ]
             (edition_dir / "articles" / "article.md").write_text(
                 "\n\n".join(paragraphs) + "\n", encoding="utf-8"
-            )
-            ledger = {
-                "schema_version": 1,
-                "source_ids": ["source-one"],
-                "content_mode": "faithful_edit",
-                "paragraphs": [
-                    {"id": f"p{index}", "kind": "p", "status": "retained", "source": text}
-                    for index, text in enumerate(paragraphs)
-                ],
-            }
-            (edition_dir / "fidelity" / "article.yaml").write_text(
-                yaml.safe_dump(ledger), encoding="utf-8"
             )
             manifest_path = edition_dir / "edition.yaml"
             manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
@@ -575,23 +581,24 @@ class DefaultEngineTests(ReaderEngineContract, unittest.TestCase):
                 f"a reader page fell back to a host font: {sorted(fonts)}",
             )
 
-    def test_sections_edition_packages_explicit_blocked_fidelity_status(self):
+    def test_an_edition_of_sections_alone_still_builds_a_whole_package(self):
+        """An edition with no editorial and no articles is still an edition.
+
+        This case used to be asserted through ``output/<ed>/fidelity.md``: with
+        no article ledgers to summarise, the compiler fell back to reporting
+        the edition-wide ``fidelity/source-edition-status.yaml``, and the test
+        read that report back.  Both the report and the status file are gone
+        with the ledger, so those assertions are gone with them -- but the
+        build path they happened to exercise is not covered anywhere else, and
+        "the article loop is empty" is precisely the shape that breaks when the
+        loop is rewritten.  So the fixture stays and the claim moves to what a
+        reader can check: the section prints, and the package is complete.
+        """
         with TemporaryDirectory() as temporary:
             tmp_path = Path(temporary)
             self.project(tmp_path)
             edition_dir = tmp_path / "editions" / "issue-001"
             (edition_dir / "section.md").write_text("A source-safe section.", encoding="utf-8")
-            fidelity_dir = edition_dir / "fidelity"
-            (fidelity_dir / "source-edition-status.yaml").write_text(
-                yaml.safe_dump({
-                    "source_id": "source-one",
-                    "content_mode": "faithful_edit",
-                    "status": "blocked",
-                    "blockers": ["rights_status_unknown"],
-                    "metrics": {"unlabeled_additions": 0},
-                }),
-                encoding="utf-8",
-            )
             manifest_path = edition_dir / "edition.yaml"
             manifest = yaml.safe_load(manifest_path.read_text())
             manifest.pop("editorial")
@@ -602,9 +609,17 @@ class DefaultEngineTests(ReaderEngineContract, unittest.TestCase):
 
             result = Magazine(tmp_path).build("issue-001")
 
-            report = (result.output_dir / "fidelity.md").read_text()
-            self.assertIn("Status: **blocked**", report)
-            self.assertIn("rights_status_unknown", report)
+            self.assertIn("A source-safe section.", reader_prose(result.reader_pdf))
+            self.assertTrue(result.booklet_pdf.is_file())
+            self.assertTrue((result.output_dir / "SHA256SUMS").is_file())
+            build_manifest = json.loads(
+                (result.output_dir / "edition-manifest.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(build_manifest["inputs"]["articles"], [])
+            self.assertEqual(
+                [row["kind"] for row in build_manifest["inputs"]["sections"]],
+                ["production_note"],
+            )
 
     def test_articles_edition_can_append_backmatter_sections(self):
         with TemporaryDirectory() as temporary:
@@ -658,16 +673,6 @@ class DefaultEngineTests(ReaderEngineContract, unittest.TestCase):
                 f"Before code.\n\n```java\n{code}\n```\n\nAfter code.\n",
                 encoding="utf-8",
             )
-            ledger = {
-                "schema_version": 1,
-                "source_ids": ["source-one"],
-                "paragraphs": [
-                    {"id": "before", "kind": "p", "status": "retained", "source": "Before code."},
-                    {"id": "sample", "kind": "code", "status": "retained", "source": code},
-                    {"id": "after", "kind": "p", "status": "retained", "source": "After code."},
-                ],
-            }
-            (edition_dir / "fidelity" / "article.yaml").write_text(yaml.safe_dump(ledger), encoding="utf-8")
 
             result = Magazine(tmp_path).build("issue-001")
 

@@ -32,3 +32,25 @@ heading_font = "SourceSerif4-Display-Semibold"
 # render.py and in assets/weasyprint-a5.css. Do not mistake them for `engine`.
 body_size = 9.55
 leading = 12.55
+
+[runner]
+# Which coding-agent CLI the produce phase executes. Read only by
+# src/magazine/runner.py; build, package and release never invoke a model.
+#
+# Text may be either backend. "codex" (the default when this key is absent)
+# runs `codex exec` with the prompt on stdin; "claude" runs `claude -p`.
+# Anything else fails at load.
+text_backend = "codex"
+# Images are NOT a choice. Illustration work always runs through `codex exec`;
+# this key exists only so writing anything else here is a loud refusal rather
+# than a line the compiler ignores while running Codex anyway.
+image_backend = "codex"
+# Wall-clock ceiling for one model invocation, in seconds.
+timeout_seconds = 900
+# `codex exec --sandbox`: read-only, workspace-write, or danger-full-access.
+# Produce work writes drafts and art into the tree, so workspace-write.
+codex_sandbox = "workspace-write"
+# Absent model keys mean "whatever the CLI itself defaults to". Set text_model
+# and/or image_model to pin one. codex_binary / claude_binary override which
+# executable runs without changing which backend it is -- for installs that are
+# not on a service's PATH.

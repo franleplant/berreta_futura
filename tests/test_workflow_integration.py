@@ -173,15 +173,7 @@ def _seed_empty_overlays(root: Path, *languages: str) -> None:
         / "articles"
         / "source-one-article.md"
     )
-    ledger = (
-        root
-        / "editions"
-        / EDITION_ID
-        / "fidelity"
-        / "source-one-article.yaml"
-    )
     article.unlink()
-    ledger.unlink()
     for language in languages:
         overlay_dir = (
             root / "editions" / EDITION_ID / "translations" / language
@@ -197,7 +189,6 @@ def _seed_empty_overlays(root: Path, *languages: str) -> None:
         translated.unlink()
         translated.parent.rmdir()
     article.parent.rmdir()
-    ledger.parent.rmdir()
 
 
 def _add_second_source(root: Path) -> None:

@@ -28,6 +28,35 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def projection_sha256(projection: Any) -> str:
+    """One hash over a *projection* of authored data rather than over a file.
+
+    Two review kinds bind a projection instead of bytes: the learning record
+    hashes the editor-authored furniture, and the edition record hashes the
+    manifest with its filesystem identity removed.  What they need in common is
+    not the projection -- those differ, deliberately and by kind -- but the
+    canonicalization, so it lives here beside :func:`sha256` with the rest of
+    the mechanics every kind shares.
+
+    ``sort_keys=True`` makes the hash independent of mapping order,
+    ``separators`` without spaces independent of the serializer's whitespace
+    habits, and ``ensure_ascii=False`` keeps a Spanish deck hashing as the
+    characters an editor typed rather than as escape sequences.  Values YAML
+    parses into something JSON cannot hold -- an unquoted date, most often --
+    canonicalize to their string form, which is what a projection over a
+    hand-edited manifest has to survive.
+    """
+
+    encoded = json.dumps(
+        projection,
+        sort_keys=True,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        default=str,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def _read_json(path: Path) -> Any:
     """Parse a package artifact, refusing corruption as a validation error.
 

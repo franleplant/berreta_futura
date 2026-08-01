@@ -11,12 +11,83 @@ import yaml
 
 from .document_structure import block_signature
 from .errors import ValidationError
+from .extraction import SourcePin, normalize_source_pins
 from .io import load_structured, safe_project_path
 from .media_schema import Figure, localize_figures, resolve_figures
 from .publication_document import DocumentParseError, Paragraph, parse_publication_document
 
 if TYPE_CHECKING:
     from .records import SourceRecord
+
+
+CONTENT_MODES: frozenset[str] = frozenset(
+    {
+        "faithful_edit",
+        "faithful_synthesis",
+        "selected_extracts",
+        "original_synthesis",
+        "in_a_nutshell",
+    }
+)
+"""Every relationship an article may declare to the sources it was built from.
+
+``in_a_nutshell`` is the teaching explainer: the magazine's own Teacher voice
+grounded in a pinned extraction.  It is deliberately *not* a synthesis mode --
+a faithful synthesis of a specification is nearly obliged to walk the
+specification, which is exactly the failure the section exists to prevent --
+and it is deliberately not ``original_synthesis`` either, because the piece is
+still pinned to a source and still carries the bundle's semantics.
+"""
+
+EDITOR_VOICE_CONTENT_MODES: frozenset[str] = frozenset(
+    {"original_synthesis", "in_a_nutshell"}
+)
+"""Modes whose byline is an editor's, not the captured source author's.
+
+The byline check below matches an article's byline against the identity its
+primary source record captured.  For these two the magazine is the writer, so
+the check would demand the editors rename themselves after the author they are
+explaining, and staging cannot infer the byline from the source at all.
+"""
+
+HOUSE_BYLINES: frozenset[str] = frozenset(
+    {"editors", "the editors", "editorial team", "the editorial team"}
+)
+"""Bylines that are the magazine signing its own work.
+
+They are self-explanatory, so an article carrying one may not also carry an
+``author_note``: there is no third party to introduce.  Every rule that asks
+after an author biography reads this set, so the two halves -- "must omit" and
+"must supply" -- cannot drift into a pair no byline can satisfy.
+"""
+
+SECTION_KINDS: tuple[str, ...] = (
+    "original_editorial",
+    "source_introduction",
+    "original_synthesis",
+    "source_record",
+    "production_note",
+    "glossary",
+    "try_it",
+    "cheat_sheet",
+)
+"""The edition-level pieces that are not articles, in no particular order.
+
+Adding a kind is four edits and no new machinery: this tuple, the default title
+in :func:`_section_title`, and the localized kicker in the two renderers'
+label vocabularies (``render.UI_COPY`` and ``html_edition._ui``).  Rendering,
+pinning, packaging and translation reconciliation all iterate sections
+generically and need no change at all.
+"""
+
+KEY_IDEAS_WORD_BUDGET = 90
+"""The hard ceiling on an article's key-ideas box, counted across all its lines.
+
+A closing box is paid for in reader pages, and the budget is what keeps a
+whole edition's teaching furniture inside about three added pages.  It is
+measured here, off ``edition.yaml``, so an over-long box is refused before
+anything is laid out.
+"""
 
 
 @dataclass(frozen=True)
@@ -36,8 +107,16 @@ class Article:
     author: str
     author_note: str
     source_ids: tuple[str, ...]
+    source_pins: tuple[SourcePin, ...]
+    """One ``source_body_sha256`` pin per entry of ``source_ids``, in order.
+
+    The pin lives in the article row because it is a fact about *this article's
+    relationship to its sources*: which committed extraction bodies the
+    manuscript was written from.  Keeping it beside ``source_ids`` is what
+    makes "the source text moved after we republished it" a detectable event.
+    A pin may be ``None`` -- see :class:`magazine.extraction.SourcePin`.
+    """
     manuscript: Path
-    fidelity: Path
     content_mode: str
     figures: tuple[Figure, ...] = ()
     minimum_reader_pages: int = 1
@@ -57,6 +136,19 @@ class Article:
     error.
     """
     opener_art: ArticleOpenerArt | None = None
+    key_ideas: tuple[str, ...] = ()
+    """The claims a reader must retain to *use* the piece, in editor voice.
+
+    Not a summary and not the manuscript's own words: the lines are authored in
+    ``edition.yaml`` rather than in manuscript frontmatter precisely because
+    they are editorial furniture -- they flow through translation
+    reconciliation like any other localized copy, and their
+    :data:`KEY_IDEAS_WORD_BUDGET` can be measured before a single page is laid
+    out.
+
+    An article closes with one object, never two, so an article carrying key
+    ideas may not also declare ``tail_art_path``; validation refuses the pair.
+    """
 
 
 @dataclass(frozen=True)
@@ -174,7 +266,6 @@ def load_edition(
                 "author",
                 "source_ids",
                 "manuscript",
-                "fidelity",
             )
             if not row.get(key)
         ]
@@ -201,12 +292,8 @@ def load_edition(
             errors.append(
                 f"{label} author_note must be a single line of at most 160 characters"
             )
-        if author_note and str(row["author"]).strip().casefold() in {
-            "editors",
-            "the editors",
-            "editorial team",
-            "the editorial team",
-        }:
+        house_byline = str(row["author"]).strip().casefold() in HOUSE_BYLINES
+        if author_note and house_byline:
             errors.append(
                 f"{label} must omit author_note for the self-explanatory house byline "
                 f"{row['author']!r}"
@@ -219,8 +306,12 @@ def load_edition(
         if unknown:
             errors.append(f"{label} references unknown sources: {', '.join(unknown)}")
         try:
+            source_pins = normalize_source_pins(label, source_ids, row.get("source_body_sha256"))
+        except ValidationError as exc:
+            errors.extend(exc.errors)
+            source_pins = ()
+        try:
             manuscript = _edition_path(root, manifest_path.parent, row["manuscript"])
-            fidelity = _edition_path(root, manifest_path.parent, row["fidelity"])
             tail_art = (
                 _edition_path(
                     root,
@@ -236,7 +327,13 @@ def load_edition(
             continue
         opener_art = None
         if illustrated_article_openers:
-            if not author_note:
+            # The illustrated opener sets a biography under the byline, so a
+            # republished author owes one.  The house byline is the exception
+            # and has to be: the rule just above refuses an author_note for it,
+            # so demanding one here would make an editor-voiced piece --
+            # `original_synthesis`, `in_a_nutshell` -- impossible to declare in
+            # an illustrated edition at all.
+            if not author_note and not house_byline:
                 errors.append(
                     f"{label} requires author_note for "
                     "format.article_opener illustrated_paper_spots_v1"
@@ -292,13 +389,23 @@ def load_edition(
                         f"{label} first manuscript block must be a paragraph for "
                         "format.article_opener illustrated_paper_spots_v1"
                     )
+        try:
+            key_ideas = _key_ideas(label, row.get("key_ideas"))
+        except ValidationError as exc:
+            errors.extend(exc.errors)
+            key_ideas = ()
+        if key_ideas and tail_art is not None:
+            errors.append(
+                f"{label} declares both key_ideas and tail_art_path; an article "
+                "closes with one object, not two -- drop whichever the piece needs less"
+            )
         content_mode = str(row.get("content_mode", "faithful_edit"))
-        if content_mode not in {"faithful_edit", "faithful_synthesis", "selected_extracts", "original_synthesis"}:
+        if content_mode not in CONTENT_MODES:
             errors.append(f"{label} has invalid content_mode: {content_mode}")
         if (
             source_records is not None
             and source_ids
-            and content_mode != "original_synthesis"
+            and content_mode not in EDITOR_VOICE_CONTENT_MODES
         ):
             primary_record = source_records.get(source_ids[0])
             if primary_record is not None and primary_record.schema_version >= 2:
@@ -360,14 +467,15 @@ def load_edition(
                 row["author"],
                 author_note,
                 source_ids,
+                source_pins,
                 manuscript,
-                fidelity,
                 content_mode,
                 figures,
                 minimum_reader_pages,
                 tail_art,
                 _primary_source_url(source_ids, source_records),
                 opener_art,
+                key_ideas,
             )
         )
     edition_dir = manifest_path.parent
@@ -390,6 +498,12 @@ def load_edition(
             continue
         if str(row["kind"]).strip().casefold() == "colophon":
             errors.append("Colophon sections are no longer supported")
+            continue
+        if str(row["kind"]) not in SECTION_KINDS:
+            errors.append(
+                f"Section {index + 1} has unknown kind {row['kind']!r}; the known "
+                "kinds are " + ", ".join(SECTION_KINDS)
+            )
             continue
         try:
             path = _edition_path(root, edition_dir, row["path"])
@@ -608,6 +722,32 @@ def load_translation(
                 f"Translation {language!r} article {article.id} short_title must occur "
                 "in its localized title"
             )
+        # Key ideas are localized copy, so the overlay carries its own lines --
+        # same count, same budget -- rather than inheriting the English ones.
+        key_ideas: tuple[str, ...] = ()
+        if article.key_ideas or row.get("key_ideas") is not None:
+            try:
+                key_ideas = _key_ideas(
+                    f"Translation {language!r} article {article.id}",
+                    row.get("key_ideas"),
+                )
+            except ValidationError as exc:
+                errors.extend(exc.errors)
+            if not article.key_ideas:
+                errors.append(
+                    f"Translation {language!r} article {article.id} must omit key_ideas "
+                    "because the source article omits them"
+                )
+            elif not key_ideas:
+                errors.append(
+                    f"Translation {language!r} article {article.id} requires key_ideas "
+                    "because the source article has them"
+                )
+            elif len(key_ideas) != len(article.key_ideas):
+                errors.append(
+                    f"Translation {language!r} article {article.id} must translate all "
+                    f"{len(article.key_ideas)} key_ideas lines, not {len(key_ideas)}"
+                )
         try:
             manuscript = _edition_path(root, translation_dir, row["manuscript"])
             _validate_translation_file(
@@ -641,8 +781,8 @@ def load_translation(
                 author,
                 author_note,
                 article.source_ids,
+                article.source_pins,
                 manuscript,
-                article.fidelity,
                 article.content_mode,
                 figures,
                 article.minimum_reader_pages,
@@ -652,6 +792,7 @@ def load_translation(
                 # not copy, and is never localized.
                 article.source_url,
                 article.opener_art,
+                key_ideas,
             )
         )
 
@@ -741,13 +882,14 @@ def load_translation(
                     "author_note": article.author_note,
                     "content_mode": article.content_mode,
                     "source_ids": list(article.source_ids),
+                    "source_body_sha256": _source_body_sha256_row(article),
                     "manuscript": article.manuscript.relative_to(root).as_posix(),
-                    "fidelity": article.fidelity.relative_to(root).as_posix(),
                     "tail_art_path": (
                         article.tail_art.relative_to(root).as_posix()
                         if article.tail_art
                         else None
                     ),
+                    **({"key_ideas": list(article.key_ideas)} if article.key_ideas else {}),
                     **(
                         {
                             "opener_art": {
@@ -836,6 +978,11 @@ def _edition_copy_sha256(edition: Edition) -> str:
                 "author": article.author,
                 "author_note": article.author_note,
                 "tail_art_sha256": _sha256(article.tail_art) if article.tail_art else None,
+                # Conditional, like ``opener_art``: an article that carries no
+                # key ideas hashes exactly as it did before the field existed,
+                # so no released edition's translation goes stale for a feature
+                # it does not use.
+                **({"key_ideas": list(article.key_ideas)} if article.key_ideas else {}),
                 **(
                     {
                         "opener_art": {
@@ -935,6 +1082,22 @@ def _markdown_invariants(path: Path) -> tuple[list[str], list[str], list[str]]:
     return links, inline, fenced
 
 
+def _source_body_sha256_row(article: Article) -> str | dict[str, str] | None:
+    """An article's pins back in the shape ``edition.yaml`` authors them in.
+
+    A translation overlay renders the same article from the same sources, so
+    its emitted manifest carries the base article's pins unchanged -- the
+    provenance is the article's, not the language's.
+    """
+
+    pinned = {pin.source_id: pin.body_sha256 for pin in article.source_pins if pin.body_sha256}
+    if not pinned:
+        return None
+    if len(article.source_pins) == 1:
+        return next(iter(pinned.values()))
+    return pinned
+
+
 def _primary_source_url(
     source_ids: tuple[str, ...], records: Mapping[str, "SourceRecord"] | None
 ) -> str | None:
@@ -980,6 +1143,38 @@ def _edition_path(
     return relative
 
 
+def _key_ideas(label: str, value: object) -> tuple[str, ...]:
+    """The article's key-ideas lines, checked against the budget they are paid in.
+
+    Absent is the ordinary case and returns nothing.  Present means a non-empty
+    list of single-line claims whose words, counted together, fit
+    :data:`KEY_IDEAS_WORD_BUDGET` -- the box is one closing object and is
+    measured as one, not line by line.
+    """
+    if value is None:
+        return ()
+    if (
+        not isinstance(value, list)
+        or not value
+        or any(
+            not isinstance(item, str) or not item.strip() or "\n" in item
+            for item in value
+        )
+    ):
+        raise ValidationError(
+            f"{label} key_ideas must be a non-empty list of single-line strings"
+        )
+    ideas = tuple(item.strip() for item in value)
+    words = sum(len(idea.split()) for idea in ideas)
+    if words > KEY_IDEAS_WORD_BUDGET:
+        raise ValidationError(
+            f"{label} key_ideas run to {words} words; the budget is "
+            f"{KEY_IDEAS_WORD_BUDGET}. State the claims a reader needs to use the "
+            "thing, not a summary of the piece"
+        )
+    return ideas
+
+
 def _section_title(kind: str) -> str:
     return {
         "original_editorial": "Editorial",
@@ -987,6 +1182,9 @@ def _section_title(kind: str) -> str:
         "original_synthesis": "Reading Map",
         "source_record": "Source Record",
         "production_note": "Production Note",
+        "glossary": "Glossary",
+        "try_it": "Try It in Fifteen Minutes",
+        "cheat_sheet": "Cheat Sheet",
     }.get(str(kind), str(kind).replace("_", " ").title())
 
 

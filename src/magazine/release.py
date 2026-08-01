@@ -26,10 +26,18 @@ _EDITION_TEXT_SUFFIXES = {
     ".yaml",
     ".yml",
 }
+# Files whose own body names the edition, so the stable-id rename has to rewrite
+# the id inside them and not merely the paths around them.  Every review record
+# belongs here: each one carries an ``edition_id`` its loader compares against
+# the edition being read, so a record left behind at the old id would load as a
+# mismatch and read as stale forever after `mag finish`.
 _EDITION_IDENTITY_FILES = {
     Path("edition.yaml"),
     Path("reviews/evidence.yaml"),
     Path("reviews/render.yaml"),
+    Path("reviews/line.yaml"),
+    Path("reviews/edition.yaml"),
+    Path("reviews/learning.yaml"),
 }
 
 

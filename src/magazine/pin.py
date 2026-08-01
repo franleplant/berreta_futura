@@ -4,11 +4,12 @@ An edition's authored files carry a small economy of SHA-256 pins.  A
 translation overlay pins the base edition's copy (``base_copy_sha256``), each
 translated file's English source (``source_sha256``), and each localized
 figure's base caption and credit (``source_caption_sha256`` /
-``source_credit_sha256``).  A fidelity ledger pins the committed extraction
-body of every source it covers (``source_body_sha256``).  Every one of those
-digests is a pure function of files already in the repository, yet until now
-each was computed by hand -- eighteen shasum invocations per Spanish overlay --
-so a routine base-copy edit meant an afternoon of ritual.
+``source_credit_sha256``).  Each article row in ``edition.yaml`` pins the
+committed extraction body of every source it is written from
+(``source_body_sha256``).  Every one of those digests is a pure function of
+files already in the repository, yet until now each was computed by hand --
+eighteen shasum invocations per Spanish overlay -- so a routine base-copy edit
+meant an afternoon of ritual.
 
 ``refresh_pins`` recomputes every such pin for one edition and rewrites the
 stale ones in place. Three rules keep it honest:
@@ -16,16 +17,16 @@ stale ones in place. Three rules keep it honest:
 * **Existing pins are changed surgically.** These files are hand-authored;
   their comments, key order, quoting, and line wrapping are the author's.
   Ordinary refreshes therefore replace exactly the digest. The structural
-  collecting-ledger repair replaces only the derived top-level field in YAML;
-  JSON ledgers retain JSON form.
+  collecting-edition repair replaces only the one article row entry it derives,
+  leaving that row's other keys, comments and blank lines where they were.
 
-* **It repairs only derivable state.** A collecting edition's fidelity-ledger
-  pin structure is wholly determined by source ids and committed extractions,
-  so missing or malformed ``source_body_sha256`` structure is repaired by
-  machine. Released editions retain the historical rule that pin keys must
-  already exist. Anything under ``editions/<id>/reviews/`` is a signed record
-  of what a reviewer actually saw and is refused outright: review records are
-  recorded only via ``mag review record``.
+* **It repairs only derivable state.** A collecting edition's article-row pin
+  structure is wholly determined by that row's ``source_ids`` and the committed
+  extractions, so missing or malformed ``source_body_sha256`` structure is
+  repaired by machine. Released editions retain the historical rule that pin
+  keys must already exist. Anything under ``editions/<id>/reviews/`` is a
+  signed record of what a reviewer actually saw and is refused outright: review
+  records are recorded only via ``mag review record``.
 
 * **Verify everything, then write everything.**  A textual match can be a
   mirage -- a comment can carry a pin's digest while the real pin hides in a
@@ -61,7 +62,7 @@ from tempfile import gettempdir, mkstemp
 import yaml
 
 from .errors import ValidationError
-from .extraction import EXTRACTION_FILENAME, ledger_source_ids, load_extraction
+from .extraction import EXTRACTION_FILENAME, load_extraction
 from .io import load_structured
 from .manifest import Article, Edition, _edition_copy_sha256, load_edition
 from .media_schema import caption_sha256, credit_sha256
@@ -128,7 +129,7 @@ def refresh_pins(
     """Recompute every derivable pin in the edition's authored files.
 
     Covers, for the named edition: the ``source_body_sha256`` pins of every
-    article's fidelity ledger (recomputed from the committed
+    article row in ``edition.yaml`` (recomputed from the committed
     ``library/sources/<id>/extracted.md`` bodies), and, for every non-source
     language overlay under ``translations/``, the ``base_copy_sha256``, the
     editorial's and each article's and section's ``source_sha256``, and each
@@ -142,8 +143,8 @@ def refresh_pins(
     default, ``None``, sweeps the whole edition.
 
     Stale pins are rewritten in place by textual substitution and reported as
-    ``PinChange`` rows; correct pins are left byte-for-byte alone. Collecting
-    fidelity ledgers also have missing or malformed ``source_body_sha256``
+    ``PinChange`` rows; correct pins are left byte-for-byte alone. A collecting
+    edition's article rows also have missing or malformed ``source_body_sha256``
     structure repaired from committed extractions. Raises ``ValidationError``
     when a released-edition pin key it expects is missing, when a target file
     lives under ``reviews/``, when a rewritten file does not re-parse to its
@@ -189,7 +190,7 @@ def _refresh_pins_locked(
         label="Configured release state",
     )
     release_state = load_release_state(release_state_path)
-    repair_ledger_structure = edition_id in release_state.collecting_edition_ids
+    repair_pin_structure = edition_id in release_state.collecting_edition_ids
 
     dependency_snapshot = _snapshot_pin_dependencies(
         root,
@@ -197,15 +198,6 @@ def _refresh_pins_locked(
         sources_dir,
         release_state_path,
     )
-    records = {record.id: record for record in load_records(sources_dir)}
-    base = load_edition(
-        root,
-        edition_id,
-        set(records),
-        publication_name=config["publication_name"],
-        source_records=records,
-    )
-
     # The scope test is by directory ancestry, resolved on both sides, so a
     # caller may name the overlay directory and cover whatever lives in it.
     scope = None if within is None else tuple(Path(path).resolve() for path in within)
@@ -221,15 +213,32 @@ def _refresh_pins_locked(
     # first one changed while the report explaining the change was discarded.
     files: list[_PinnedFile] = []
     files.extend(
-        _refresh_ledgers(
-            base,
+        _refresh_source_pins(
+            edition_dir / "edition.yaml",
             sources_dir,
             reviews_dir,
             in_scope,
-            repair_derived_structure=repair_ledger_structure,
+            repair_derived_structure=repair_pin_structure,
         )
     )
-    files.extend(_refresh_overlays(base, edition_dir, reviews_dir, in_scope))
+    # The source pins are read from the manifest's raw rows, deliberately, and
+    # the fully validated edition is loaded only when an overlay actually needs
+    # it.  A malformed ``source_body_sha256`` is exactly the state this refresh
+    # exists to repair, and ``load_edition`` refuses it -- so loading the
+    # edition first would let a broken pin veto its own repair.  The overlay
+    # half has no such tension: it hashes the base edition's copy and files, so
+    # it genuinely cannot proceed until the base edition loads.
+    overlays = sorted((edition_dir / "translations").glob("*/edition.yaml"))
+    if any(in_scope(overlay) for overlay in overlays):
+        records = {record.id: record for record in load_records(sources_dir)}
+        base = load_edition(
+            root,
+            edition_id,
+            set(records),
+            publication_name=config["publication_name"],
+            source_records=records,
+        )
+        files.extend(_refresh_overlays(base, edition_dir, reviews_dir, in_scope))
     for file in files:
         file.verify()
     changed_files = [file for file in files if file.changes]
@@ -295,7 +304,14 @@ class _PinnedFile:
         ] = []
 
     def pin(
-        self, key: str, old: object, new: str, label: str, read: Callable[[dict], object]
+        self,
+        key: str,
+        old: object,
+        new: str,
+        label: str,
+        read: Callable[[dict], object],
+        *,
+        article_id: str | None = None,
     ) -> None:
         """Move one pin from ``old`` to ``new``, or verify it already there.
 
@@ -306,6 +322,13 @@ class _PinnedFile:
         ``read`` navigates a re-parsed document back to this pin's value; it
         is how ``verify`` later proves the substitution landed on the parsed
         pin and not on some other text that happened to spell the same bytes.
+
+        ``article_id`` narrows the textual search to that article's row.  Every
+        article's source pins now live in one ``edition.yaml``, so two articles
+        written from the same source carry the same digest under the same key
+        -- and an unscoped search would find both and refuse to move either,
+        exactly when a re-extraction makes the refresh necessary.  Uniqueness is
+        a property of one row, so the search is too.
         """
         if not isinstance(old, str) or not old.strip():
             raise ValidationError(
@@ -327,57 +350,69 @@ class _PinnedFile:
             + re.escape(old)
             + r"(?![0-9a-f])"
         )
-        matches = list(pattern.finditer(self.text))
+        if article_id is None:
+            begin, end, scope = 0, len(self.text), ""
+        else:
+            begin, end = _article_row_span(self.path, self.text, article_id)
+            scope = f" within article {article_id}"
+        segment = self.text[begin:end]
+        matches = list(pattern.finditer(segment))
         if not matches:
             raise ValidationError(
                 f"{self.path}: cannot find the authored text of {label} "
-                f"(key {key!r} with digest {old}); refresh only rewrites pins it "
-                "can locate verbatim"
+                f"(key {key!r} with digest {old}){scope}; refresh only rewrites pins "
+                "it can locate verbatim"
             )
         if len(matches) > 1:
             raise ValidationError(
                 f"{self.path}: {label} (key {key!r} with digest {old}) appears "
-                f"{len(matches)} times; refresh cannot tell which one is meant"
+                f"{len(matches)} times{scope}; refresh cannot tell which one is meant"
             )
-        self.text = pattern.sub(lambda m: f"{m.group(0)[: -len(old)]}{new}", self.text, count=1)
+        replaced = pattern.sub(
+            lambda m: f"{m.group(0)[: -len(old)]}{new}", segment, count=1
+        )
+        self.text = self.text[:begin] + replaced + self.text[end:]
         self.changes.append(PinChange(self.path, label, old, new))
         self._checks.append((label, new, read))
 
-    def set_top_level(
+    def set_article_entry(
         self,
+        article_id: str,
         key: str,
         value: object,
         label: str,
         read: Callable[[dict], object],
     ) -> None:
-        """Insert or reshape one fully derivable top-level field.
+        """Insert or reshape one fully derivable entry of one article row.
 
-        This is reserved for collecting-edition fidelity ledgers. JSON input
-        keeps JSON form. YAML input replaces only the named top-level entry,
-        or inserts it immediately before ``paragraphs`` when absent.
+        This is reserved for a collecting edition's ``source_body_sha256``,
+        whose shape is wholly determined by the row's ``source_ids`` and the
+        committed extractions.  Only the named entry of the named row is
+        rewritten: every other key, comment and blank line in ``edition.yaml``
+        -- including the rest of that row -- is left exactly as authored.
         """
 
         try:
             parsed = yaml.safe_load(self.text)
         except yaml.YAMLError as exc:
             raise ValidationError(
-                f"{self.path}: cannot parse ledger for {label} repair: {exc}"
+                f"{self.path}: cannot parse the edition manifest for {label} repair: {exc}"
             ) from exc
-        if not isinstance(parsed, dict):
-            raise ValidationError(f"{self.path}: fidelity ledger must be a mapping")
-        old = parsed.get(key, "<missing>")
+        row = _parsed_row(_parsed_value(parsed, "articles"), article_id)
+        if not isinstance(row, dict):
+            raise ValidationError(
+                f"{self.path}: no article row {article_id!r} to repair"
+            )
+        old = row.get(key, "<missing>")
         if old == value:
             return
-        if self.text.lstrip().startswith("{"):
-            parsed[key] = value
-            self.text = json.dumps(parsed, indent=2, ensure_ascii=False) + "\n"
-        else:
-            self.text = _replace_top_level_yaml_entry(
-                self.path,
-                self.text,
-                key,
-                value,
-            )
+        self.text = _replace_article_yaml_entry(
+            self.path,
+            self.text,
+            article_id,
+            key,
+            value,
+        )
         self.changes.append(
             PinChange(
                 self.path,
@@ -403,12 +438,8 @@ class _PinnedFile:
         if not self.changes:
             return
         try:
-            data = (
-                json.loads(self.text)
-                if self.path.suffix == ".json"
-                else yaml.safe_load(self.text)
-            )
-        except (json.JSONDecodeError, yaml.YAMLError) as exc:
+            data = yaml.safe_load(self.text)
+        except yaml.YAMLError as exc:
             raise ValidationError(
                 f"{self.path}: the refreshed text no longer parses ({exc}); nothing "
                 "was written -- fix the file's spelling by hand and refresh again"
@@ -457,11 +488,11 @@ class _PinnedFile:
         return self.changes
 
 
-def _ledger_pin_shape_matches(
+def _source_pin_shape_matches(
     declared: object,
     source_ids: tuple[str, ...],
 ) -> bool:
-    """Whether a collecting ledger already uses its canonical pin shape."""
+    """Whether a collecting article row already uses its canonical pin shape."""
 
     if len(source_ids) == 1:
         return isinstance(declared, str) and bool(declared.strip())
@@ -476,13 +507,28 @@ def _ledger_pin_shape_matches(
     )
 
 
-def _replace_top_level_yaml_entry(
+# Where a repaired pin is inserted when the row never had one: immediately
+# before whichever of these keys comes first.  ``source_body_sha256`` belongs
+# beside the ``source_ids`` it pins, so the row reads as one provenance block.
+_PIN_INSERTION_ANCHORS = ("manuscript", "figures", "tail_art_path", "opener_art")
+
+
+def _replace_article_yaml_entry(
     path: Path,
     text: str,
+    article_id: str,
     key: str,
     value: object,
 ) -> str:
-    """Replace or insert one YAML root key while retaining unrelated text."""
+    """Replace or insert one key of one article row, retaining unrelated text.
+
+    The row is located through ``yaml.compose`` rather than by pattern, so the
+    edit lands on the parsed node and not on some other text that happens to
+    spell the same words; the caller's ``verify`` then re-parses the result and
+    proves it.  Comments and blank lines inside the replaced entry survive,
+    for the same reason the surgical digest substitution exists: these files
+    are hand-authored and the author's annotations are not the tool's to drop.
+    """
 
     try:
         root_node = yaml.compose(text)
@@ -490,9 +536,8 @@ def _replace_top_level_yaml_entry(
         raise ValidationError(
             f"{path}: cannot locate {key} for structural repair: {exc}"
         ) from exc
-    if not isinstance(root_node, yaml.MappingNode):
-        raise ValidationError(f"{path}: fidelity ledger must be a mapping")
-    pairs = list(root_node.value)
+    row_node = _article_row_node(path, root_node, article_id)
+    pairs = list(row_node.value)
     matching = [
         (index, key_node)
         for index, (key_node, _) in enumerate(pairs)
@@ -500,41 +545,104 @@ def _replace_top_level_yaml_entry(
     ]
     if len(matching) > 1:
         raise ValidationError(
-            f"{path}: {key} appears more than once; structural repair is ambiguous"
+            f"{path}: article {article_id} declares {key} more than once; "
+            "structural repair is ambiguous"
         )
+    indent = " " * pairs[0][0].start_mark.column
     lines = text.splitlines(keepends=True)
-    replacement = yaml.safe_dump(
-        {key: value},
-        sort_keys=False,
-        allow_unicode=True,
-        width=100,
-    ).splitlines(keepends=True)
+    row_end = min(row_node.end_mark.line, len(lines))
+    replacement = [
+        f"{indent}{line}" if line.strip() else line
+        for line in yaml.safe_dump(
+            {key: value},
+            sort_keys=False,
+            allow_unicode=True,
+            width=100,
+        ).splitlines(keepends=True)
+    ]
     if matching:
         index, key_node = matching[0]
+        if index == 0:
+            raise ValidationError(
+                f"{path}: article {article_id} opens with {key}; structural repair "
+                "cannot rewrite a row's first key without disturbing the row itself"
+            )
         start = key_node.start_mark.line
-        end = (
-            pairs[index + 1][0].start_mark.line
-            if index + 1 < len(pairs)
-            else len(lines)
-        )
+        end = pairs[index + 1][0].start_mark.line if index + 1 < len(pairs) else row_end
         preserved = [
             line
             for line in lines[start + 1 : end]
             if not line.strip() or line.lstrip().startswith("#")
         ]
         return "".join(lines[:start] + replacement + preserved + lines[end:])
-    paragraphs = next(
+    anchors = {
+        getattr(key_node, "value", None): key_node.start_mark.line
+        for key_node, _ in pairs[1:]
+    }
+    insertion = min(
+        (anchors[name] for name in _PIN_INSERTION_ANCHORS if name in anchors),
+        default=row_end,
+    )
+    return "".join(lines[:insertion] + replacement + lines[insertion:])
+
+
+def _article_row_span(path: Path, text: str, article_id: str) -> tuple[int, int]:
+    """The character span one article row occupies in the manifest text.
+
+    Derived from the composed node, so it is the parser's idea of where the row
+    begins and ends, not a pattern's.  Recomputed per call because each pin
+    substitution changes the text beneath it.
+    """
+
+    try:
+        root_node = yaml.compose(text)
+    except yaml.YAMLError as exc:
+        raise ValidationError(
+            f"{path}: cannot locate article {article_id} to refresh its pins: {exc}"
+        ) from exc
+    row = _article_row_node(path, root_node, article_id)
+    lines = text.splitlines(keepends=True)
+    offsets = [0]
+    for line in lines:
+        offsets.append(offsets[-1] + len(line))
+    start = offsets[min(row.start_mark.line, len(lines))]
+    end = offsets[min(row.end_mark.line, len(lines))]
+    return start, end
+
+
+def _article_row_node(
+    path: Path, root_node: object, article_id: str
+) -> yaml.MappingNode:
+    """The composed node of one article row, or a refusal naming the file."""
+
+    if not isinstance(root_node, yaml.MappingNode):
+        raise ValidationError(f"{path}: edition manifest must be a mapping")
+    articles = next(
         (
-            key_node
-            for key_node, _ in pairs
-            if getattr(key_node, "value", None) == "paragraphs"
+            value_node
+            for key_node, value_node in root_node.value
+            if getattr(key_node, "value", None) == "articles"
         ),
         None,
     )
-    insertion = paragraphs.start_mark.line if paragraphs is not None else len(lines)
-    if insertion == len(lines) and text and not text.endswith("\n"):
-        replacement.insert(0, "\n")
-    return "".join(lines[:insertion] + replacement + lines[insertion:])
+    if not isinstance(articles, yaml.SequenceNode):
+        raise ValidationError(f"{path}: edition manifest articles must be a list")
+    for item in articles.value:
+        if not isinstance(item, yaml.MappingNode) or not item.value:
+            continue
+        declared = next(
+            (
+                getattr(value_node, "value", None)
+                for key_node, value_node in item.value
+                if getattr(key_node, "value", None) == "id"
+            ),
+            None,
+        )
+        if declared == article_id:
+            return item
+    raise ValidationError(
+        f"{path}: no article row {article_id!r} to repair"
+    )
 
 
 def _pin_value_display(value: object) -> str:
@@ -543,55 +651,84 @@ def _pin_value_display(value: object) -> str:
     return json.dumps(value, sort_keys=True, ensure_ascii=False)
 
 
-def _refresh_ledgers(
-    base: Edition,
+def _refreshable_row(manifest_path: Path, row: object) -> tuple[str, tuple[str, ...]]:
+    """One article row's id and declared sources, or a refusal naming the row.
+
+    The rows are read raw rather than from a loaded ``Edition`` -- see
+    ``_refresh_pins_locked`` -- so the two fields the refresh derives from have
+    to be checked here.  Anything else wrong with the row is validation's to
+    say; this only refuses what would make the recomputation guesswork.
+    """
+
+    if not isinstance(row, dict) or not str(row.get("id") or "").strip():
+        raise ValidationError(
+            f"{manifest_path}: every article row needs an id before its "
+            "source_body_sha256 can be refreshed"
+        )
+    article_id = str(row["id"])
+    source_ids = row.get("source_ids")
+    if (
+        not isinstance(source_ids, list)
+        or not source_ids
+        or any(not str(item or "").strip() for item in source_ids)
+    ):
+        raise ValidationError(
+            f"{manifest_path}: article {article_id} declares no source_ids, so there "
+            "is no source_body_sha256 to refresh"
+        )
+    return article_id, tuple(str(item) for item in source_ids)
+
+
+def _refresh_source_pins(
+    manifest_path: Path,
     sources_dir: Path,
     reviews_dir: Path,
     in_scope: Callable[[Path], bool],
     *,
     repair_derived_structure: bool,
 ) -> list[_PinnedFile]:
-    """Prepare every fidelity ledger's re-pin against the extraction bodies.
+    """Prepare ``edition.yaml``'s article pins against the extraction bodies.
 
     The expected digest is ``Extraction.body_sha256`` -- the same byte-exact
     body hash ``extraction.py`` verifies -- never a rehash invented here.  A
-    covered source without a committed extraction is an error: there is
-    nothing true to pin to.  A ledger outside the caller's scope is skipped
+    declared source without a committed extraction is an error: there is
+    nothing true to pin to.  The manifest outside the caller's scope is skipped
     before it is even read -- out of scope means not this refresh's business,
-    stale or not.  Nothing is written here; the caller verifies the whole
-    batch and only then commits it to disk. When
-    ``repair_derived_structure`` is true, missing or incorrectly shaped pin
-    structure is repaired from those same extractions.
+    stale or not.  Nothing is written here; the caller verifies the whole batch
+    and only then commits it to disk.  When ``repair_derived_structure`` is
+    true, missing or incorrectly shaped pin structure is repaired from those
+    same extractions.
+
+    One file carries every article's pins now, so this returns at most one
+    ``_PinnedFile`` -- and a single atomic rewrite moves them all, instead of
+    one rewrite per article.  The rows are read raw, not from a loaded
+    ``Edition``, so a manifest whose pin is malformed can still have that pin
+    repaired rather than being refused by the very validation the repair exists
+    to satisfy.
     """
-    files: list[_PinnedFile] = []
-    for article in base.articles:
-        ledger_path = article.fidelity
-        if not in_scope(ledger_path):
-            continue
-        data = load_structured(ledger_path)
-        source_ids = ledger_source_ids(ledger_path, data)
-        if not source_ids:
-            raise ValidationError(
-                f"{ledger_path}: the ledger declares no source_ids, so there is no "
-                "source_body_sha256 to refresh"
-            )
-        declared = data.get("source_body_sha256")
+    if not in_scope(manifest_path):
+        return []
+    data = load_structured(manifest_path)
+    file = _PinnedFile(manifest_path, reviews_dir)
+    for row in data.get("articles") or []:
+        article_id, source_ids = _refreshable_row(manifest_path, row)
+        declared = row.get("source_body_sha256")
         if declared is None and not repair_derived_structure:
             raise ValidationError(
-                f"{ledger_path}: has no source_body_sha256 key; add it by hand first "
-                "-- refresh never inserts keys"
+                f"{manifest_path}: article {article_id} has no source_body_sha256 key; "
+                "add it by hand first -- refresh never inserts keys"
             )
         extractions = {}
         for source_id in source_ids:
             extraction = load_extraction(sources_dir, source_id)
             if extraction is None:
                 raise ValidationError(
-                    f"{ledger_path}: source {source_id} has no committed extraction at "
-                    f"library/sources/{source_id}/{EXTRACTION_FILENAME}, so its "
-                    "source_body_sha256 cannot be recomputed"
+                    f"{manifest_path}: article {article_id} source {source_id} has no "
+                    f"committed extraction at library/sources/{source_id}/"
+                    f"{EXTRACTION_FILENAME}, so its source_body_sha256 cannot be "
+                    "recomputed"
                 )
             extractions[source_id] = extraction
-        file = _PinnedFile(ledger_path, reviews_dir)
         expected: str | dict[str, str]
         if len(source_ids) == 1:
             expected = extractions[source_ids[0]].body_sha256
@@ -600,53 +737,64 @@ def _refresh_ledgers(
                 source_id: extractions[source_id].body_sha256
                 for source_id in source_ids
             }
-        if repair_derived_structure and not _ledger_pin_shape_matches(
+        if repair_derived_structure and not _source_pin_shape_matches(
             declared, source_ids
         ):
-            file.set_top_level(
+            file.set_article_entry(
+                article_id,
                 "source_body_sha256",
                 expected,
-                "source_body_sha256",
-                lambda refreshed: refreshed.get("source_body_sha256"),
+                f"articles[{article_id}].source_body_sha256",
+                lambda refreshed, aid=article_id: _parsed_value(
+                    _parsed_row(refreshed.get("articles"), aid), "source_body_sha256"
+                ),
             )
-            files.append(file)
             continue
         for source_id in source_ids:
             extraction = extractions[source_id]
             if isinstance(declared, str):
                 # The single-digest shape only ever covers one source; a
-                # multi-source ledger spelled this way is a validation problem,
+                # multi-source article spelled this way is a validation problem,
                 # not one a refresh should paper over.
                 if len(source_ids) != 1:
                     raise ValidationError(
-                        f"{ledger_path}: source_body_sha256 is a single digest but the "
-                        f"ledger covers {len(source_ids)} sources; key each pin by "
-                        "source id before refreshing"
+                        f"{manifest_path}: article {article_id} source_body_sha256 is a "
+                        f"single digest but the article covers {len(source_ids)} "
+                        "sources; key each pin by source id before refreshing"
                     )
                 file.pin(
                     "source_body_sha256",
                     declared,
                     extraction.body_sha256,
-                    "source_body_sha256",
-                    lambda data: data.get("source_body_sha256"),
+                    f"articles[{article_id}].source_body_sha256",
+                    lambda refreshed, aid=article_id: _parsed_value(
+                        _parsed_row(refreshed.get("articles"), aid),
+                        "source_body_sha256",
+                    ),
+                    article_id=article_id,
                 )
             elif isinstance(declared, dict):
                 file.pin(
                     source_id,
                     declared.get(source_id),
                     extraction.body_sha256,
-                    f"source_body_sha256[{source_id}]",
-                    lambda data, sid=source_id: _parsed_value(
-                        data.get("source_body_sha256"), sid
+                    f"articles[{article_id}].source_body_sha256[{source_id}]",
+                    lambda refreshed, aid=article_id, sid=source_id: _parsed_value(
+                        _parsed_value(
+                            _parsed_row(refreshed.get("articles"), aid),
+                            "source_body_sha256",
+                        ),
+                        sid,
                     ),
+                    article_id=article_id,
                 )
             else:
                 raise ValidationError(
-                    f"{ledger_path}: source_body_sha256 must be a hex digest or a "
-                    f"mapping keyed by source id, got {type(declared).__name__}"
+                    f"{manifest_path}: article {article_id} source_body_sha256 must be a "
+                    f"hex digest or a mapping keyed by source id, got "
+                    f"{type(declared).__name__}"
                 )
-        files.append(file)
-    return files
+    return [file]
 
 
 def _refresh_overlays(

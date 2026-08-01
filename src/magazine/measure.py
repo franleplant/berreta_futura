@@ -3,7 +3,7 @@
 The page budgets -- seven rendered A5 pages per source article, the declared
 editorial cap -- used to be checkable only by running a whole build: the caps
 are enforced deep inside ``render_a5_weasyprint`` after the complete HTML
-document is laid out, so an author finished a manuscript, a fidelity ledger, a
+document is laid out, so an author finished a manuscript, a
 translation and every hash pin before learning the piece does not fit, and the
 English package was fully rastered before Spanish was measured at all.  During
 layout rework the same gap grew six throwaway ``tmp/`` scripts that reached
