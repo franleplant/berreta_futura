@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 from unittest.mock import patch
 
@@ -13,6 +14,8 @@ from magazine.workflow import (
     _build_input_drift,
     Checkpoint,
     DefaultWorkflowAdapter,
+    _hash_path_bytes,
+    _probe_cache_key,
     ProbeResult,
     Workflow,
 )
@@ -75,6 +78,25 @@ class ReleasedSpyAdapter(BuildAdapter):
     ) -> tuple[str, ...]:
         self.advanced.append(checkpoint.id)
         return ("This must never run for a released edition.",)
+
+
+class CountingBuildAdapter(BuildAdapter):
+    def __init__(self) -> None:
+        super().__init__()
+        self.fit_calls = 0
+        self.validate_calls = 0
+
+    def fit(self, root: Path, edition_id: str) -> ProbeResult:
+        self.fit_calls += 1
+        return super().fit(root, edition_id)
+
+    def validate(self, root: Path, edition_id: str) -> ProbeResult:
+        self.validate_calls += 1
+        return super().validate(root, edition_id)
+
+
+def _cache_path(root: Path) -> Path:
+    return root / "output" / ".build" / "workflow-cache" / f"{EDITION_ID}.json"
 
 
 def _write_yaml(path: Path, data: dict) -> None:
@@ -901,6 +923,201 @@ def test_injected_adapter_builds_once_then_status_detects_input_drift(
     assert build.details["languages"]["en"]["stale_inputs"] == [
         f"changed input: editions/{EDITION_ID}/articles/article.md"
     ]
+
+
+def test_run_reuses_probe_checkpoints_after_build_and_second_status_runs_no_probes(
+    tmp_path: Path,
+):
+    _make_project(tmp_path, extraction=True, complete_art=True)
+    adapter = CountingBuildAdapter()
+    keyed: list[str] = []
+
+    def counting_key(kind: str, *args, **kwargs) -> str:
+        keyed.append(kind)
+        return _probe_cache_key(kind, *args, **kwargs)
+
+    with patch("magazine.workflow._probe_cache_key", counting_key):
+        result = Workflow(tmp_path, adapter=adapter).run(EDITION_ID)
+
+    assert adapter.advanced == ["build"]
+    assert result.report.checkpoint("fit").status == "complete"
+    assert result.report.checkpoint("validation").status == "complete"
+    assert result.report.checkpoint("build").status == "complete"
+    assert adapter.fit_calls == 1
+    assert adapter.validate_calls == 1
+    # The post-build iteration reused checkpoints 0-7 (L1), so it computed no
+    # probe keys at all; only the first status keyed fit and validate.
+    assert keyed == ["fit", "validate"]
+
+    fresh = Workflow(tmp_path, adapter=adapter).status(EDITION_ID)
+
+    assert adapter.fit_calls == 1
+    assert adapter.validate_calls == 1
+    assert fresh.to_dict() == result.report.to_dict()
+    assert fresh.to_json() == result.report.to_json()
+    # Details keep the adapter's raw insertion order on both the miss report
+    # and the persisted-hit report, including nested dicts.
+    for report in (result.report, fresh):
+        details = report.checkpoint("fit").details
+        assert list(details) == ["ok", "languages"]
+        assert list(details["languages"]["en"]["articles"][0]) == [
+            "id",
+            "pages",
+            "cap",
+        ]
+
+
+def test_second_status_hashes_nothing_and_one_manuscript_edit_invalidates_exactly_one_entry(
+    tmp_path: Path,
+):
+    _make_project(tmp_path, extraction=True, complete_art=True)
+    adapter = CountingBuildAdapter()
+    Workflow(tmp_path, adapter=adapter).run(EDITION_ID)
+    before = json.loads(_cache_path(tmp_path).read_text(encoding="utf-8"))
+    fit_calls = adapter.fit_calls
+    validate_calls = adapter.validate_calls
+    project_root = tmp_path.resolve()
+    hashed: list[str] = []
+
+    def counting_hash(path: Path) -> str:
+        hashed.append(path.resolve().relative_to(project_root).as_posix())
+        return _hash_path_bytes(path)
+
+    with patch("magazine.workflow._hash_path_bytes", counting_hash):
+        Workflow(tmp_path, adapter=adapter).status(EDITION_ID)
+
+        assert hashed == []
+        assert adapter.fit_calls == fit_calls
+        assert adapter.validate_calls == validate_calls
+
+        manuscript = (
+            tmp_path / "editions" / EDITION_ID / "articles" / "article.md"
+        )
+        manuscript.write_text("Source evidence, revised.", encoding="utf-8")
+        stat = manuscript.stat()
+        os.utime(
+            manuscript,
+            ns=(stat.st_atime_ns, stat.st_mtime_ns + 1_000_000_000),
+        )
+
+        drifted = Workflow(tmp_path, adapter=adapter).status(EDITION_ID)
+
+    manuscript_relative = f"editions/{EDITION_ID}/articles/article.md"
+    assert hashed == [manuscript_relative]
+    assert adapter.fit_calls == fit_calls + 1
+    assert adapter.validate_calls == validate_calls + 1
+    build = drifted.checkpoint("build")
+    assert build.status == "blocked"
+    assert build.details["languages"]["en"]["stale_inputs"] == [
+        f"changed input: {manuscript_relative}"
+    ]
+    after = json.loads(_cache_path(tmp_path).read_text(encoding="utf-8"))
+    assert (
+        after["hashes"][manuscript_relative]["sha256"]
+        != before["hashes"][manuscript_relative]["sha256"]
+    )
+    assert {
+        key: value
+        for key, value in after["hashes"].items()
+        if key != manuscript_relative
+    } == {
+        key: value
+        for key, value in before["hashes"].items()
+        if key != manuscript_relative
+    }
+
+
+def test_report_is_identical_with_and_without_the_workflow_cache_file(
+    tmp_path: Path,
+):
+    _make_project(tmp_path, extraction=True, complete_art=True)
+    adapter = CountingBuildAdapter()
+    _write_build(tmp_path)
+    package_dir = tmp_path / "output" / EDITION_ID
+
+    def package_files() -> list[str]:
+        return sorted(
+            path.relative_to(package_dir).as_posix()
+            for path in package_dir.rglob("*")
+            if path.is_file()
+        )
+
+    # Baseline before any workflow call, so a cache file wrongly placed under
+    # the package dir cannot hide inside it.
+    baseline_files = package_files()
+    Workflow(tmp_path, adapter=adapter).run(EDITION_ID)
+
+    assert package_files() == baseline_files
+
+    cached = Workflow(tmp_path, adapter=adapter).status(EDITION_ID).to_json()
+    fit_calls = adapter.fit_calls
+    validate_calls = adapter.validate_calls
+    _cache_path(tmp_path).unlink()
+
+    fresh = Workflow(tmp_path, adapter=adapter).status(EDITION_ID).to_json()
+
+    assert fresh == cached
+    assert adapter.fit_calls == fit_calls + 1
+    assert adapter.validate_calls == validate_calls + 1
+    assert package_files() == baseline_files
+
+
+def test_corrupt_cache_file_degrades_to_full_recompute(tmp_path: Path):
+    _make_project(tmp_path, extraction=True, complete_art=True)
+    adapter = CountingBuildAdapter()
+    Workflow(tmp_path, adapter=adapter).run(EDITION_ID)
+    baseline = Workflow(tmp_path, adapter=adapter).status(EDITION_ID).to_json()
+    _cache_path(tmp_path).write_bytes(b"{not json")
+    fit_calls = adapter.fit_calls
+    validate_calls = adapter.validate_calls
+
+    report = Workflow(tmp_path, adapter=adapter).status(EDITION_ID)
+
+    assert report.to_json() == baseline
+    assert adapter.fit_calls == fit_calls + 1
+    assert adapter.validate_calls == validate_calls + 1
+    restored = json.loads(_cache_path(tmp_path).read_text(encoding="utf-8"))
+    assert restored["schema_version"] == 1
+    assert restored["edition_id"] == EDITION_ID
+    assert set(restored["probes"]) == {"fit", "validate"}
+
+
+def test_probe_cache_tracks_declared_inputs_outside_the_edition_directory(
+    tmp_path: Path,
+):
+    _make_project(tmp_path, extraction=True, complete_art=True)
+    adapter = CountingBuildAdapter()
+    Workflow(tmp_path, adapter=adapter).run(EDITION_ID)
+
+    # Re-point the manuscript at a shared file outside editions/<id>/ and
+    # sources/, with identical bytes so the authoring checkpoints stay
+    # complete and the probes keep running.
+    manuscript = tmp_path / "editions" / EDITION_ID / "articles" / "article.md"
+    shared = tmp_path / "shared" / "article.md"
+    shared.parent.mkdir()
+    shared.write_bytes(manuscript.read_bytes())
+    manifest_path = tmp_path / "editions" / EDITION_ID / "edition.yaml"
+    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    manifest["articles"][0]["manuscript"] = "../../shared/article.md"
+    _write_yaml(manifest_path, manifest)
+    Workflow(tmp_path, adapter=adapter).status(EDITION_ID)
+    fit_calls = adapter.fit_calls
+    validate_calls = adapter.validate_calls
+
+    steady = Workflow(tmp_path, adapter=adapter).status(EDITION_ID)
+
+    assert steady.checkpoint("fit").status == "complete"
+    assert adapter.fit_calls == fit_calls
+    assert adapter.validate_calls == validate_calls
+
+    shared.write_text("Source evidence, revised elsewhere.", encoding="utf-8")
+    stat = shared.stat()
+    os.utime(shared, ns=(stat.st_atime_ns, stat.st_mtime_ns + 1_000_000_000))
+
+    Workflow(tmp_path, adapter=adapter).status(EDITION_ID)
+
+    assert adapter.fit_calls == fit_calls + 1
+    assert adapter.validate_calls == validate_calls + 1
 
 
 def test_build_manifest_requires_the_complete_current_input_inventory(
