@@ -39,6 +39,7 @@ from typing import Any, Mapping
 
 from .errors import ValidationError
 from .html_edition import render_html_edition
+from .line_review import EDITORIAL_ARTICLE_ID
 from .manifest import Edition
 from .reader_layout import declared_editorial_page_cap
 from . import weasyprint_adapter as adapter
@@ -167,6 +168,49 @@ class LanguageMeasurement:
     paragraphs: tuple[ParagraphMeasurement, ...]
 
     @property
+    def attributed_breaches(self) -> tuple[tuple[str, str], ...]:
+        """Every broken budget, paired with the id of the piece that owns it.
+
+        A page budget is never broken by the edition in general: some one
+        piece's prose runs long or short, and that piece's writer is the only
+        person who can clear it.  Saying so here, where the measurement still
+        knows which article a row came from, is what lets a caller route a
+        breach to one writer instead of reading the sentence back to find out
+        whose it was.  The editorial's id is
+        :data:`~magazine.line_review.EDITORIAL_ARTICLE_ID`, the same name every
+        other per-piece mapping in the package gives it.
+        """
+
+        found: list[tuple[str, str]] = []
+        for article in self.articles:
+            if article.over:
+                found.append(
+                    (
+                        article.id,
+                        f"{self.language}: article {article.id} spans "
+                        f"{article.pages} pages (maximum {article.cap})",
+                    )
+                )
+            if article.under_minimum:
+                found.append(
+                    (
+                        article.id,
+                        f"{self.language}: article {article.id} spans "
+                        f"{article.pages} pages (editorial minimum "
+                        f"{article.minimum})",
+                    )
+                )
+        if self.editorial is not None and self.editorial.over:
+            found.append(
+                (
+                    EDITORIAL_ARTICLE_ID,
+                    f"{self.language}: editorial spans {self.editorial.pages} "
+                    f"pages (maximum {self.editorial.cap})",
+                )
+            )
+        return tuple(found)
+
+    @property
     def breaches(self) -> tuple[str, ...]:
         """Every budget this language's pages break, in the build's own terms.
 
@@ -175,24 +219,7 @@ class LanguageMeasurement:
         ranks and fixes instead of the first one encountered.
         """
 
-        found: list[str] = []
-        for article in self.articles:
-            if article.over:
-                found.append(
-                    f"{self.language}: article {article.id} spans {article.pages} pages "
-                    f"(maximum {article.cap})"
-                )
-            if article.under_minimum:
-                found.append(
-                    f"{self.language}: article {article.id} spans {article.pages} pages "
-                    f"(editorial minimum {article.minimum})"
-                )
-        if self.editorial is not None and self.editorial.over:
-            found.append(
-                f"{self.language}: editorial spans {self.editorial.pages} pages "
-                f"(maximum {self.editorial.cap})"
-            )
-        return tuple(found)
+        return tuple(detail for _, detail in self.attributed_breaches)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -214,6 +241,16 @@ class EditionMeasurement:
     edition_id: str
     engine: str
     languages: tuple[LanguageMeasurement, ...]
+
+    @property
+    def attributed_breaches(self) -> tuple[tuple[str, str], ...]:
+        """Every language's broken budgets, each with the piece id that owns it."""
+
+        return tuple(
+            breach
+            for language in self.languages
+            for breach in language.attributed_breaches
+        )
 
     @property
     def breaches(self) -> tuple[str, ...]:

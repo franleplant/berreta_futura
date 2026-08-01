@@ -27,6 +27,7 @@ from magazine.errors import MagazineError
 from magazine.cli import main
 from magazine.produce import (
     MAX_ROUNDS,
+    Breach,
     DefaultProductionGates,
     GateResult,
     Production,
@@ -1411,6 +1412,10 @@ class RealGateTests(ProduceFixture):
             any(
                 "pre-existing gate failure (validate)" in action
                 and "staging markers" in action
+                # And it reads as the expected state it is: every piece the
+                # baseline complains about is one this run is drafting, so an
+                # operator is not sent looking for a fault.
+                and "expected and cleared by this run" in action
                 for action in result.human_actions
             ),
             result.human_actions,
@@ -1419,6 +1424,223 @@ class RealGateTests(ProduceFixture):
         self.assertFalse(is_staging_marker(edition_dir / "editorial.md"))
         # And the edition it hands back validates, which is the whole point.
         self.assertEqual(self.magazine.validate("issue-001").id, "issue-001")
+
+
+class _ScriptedEditionGates:
+    """Edition-wide gates a test can script call by call.
+
+    The first call is produce's baseline, taken before any model runs; every
+    call after it is one round's re-check.  ``rounds`` is popped one per call
+    and ``settled`` answers every call past its end, so a test can say both
+    "this breach is new" and "this breach never clears".  Per-piece gates
+    always pass: what is under test here is where an edition-wide complaint
+    ends up, not whether a piece has its own.
+    """
+
+    def __init__(self, *rounds: GateResult | None, settled: GateResult | None = None):
+        self.rounds = list(rounds)
+        self.settled = settled
+        self.calls: list[str] = []
+
+    def check_piece(self, piece, extractions) -> tuple[GateResult, ...]:
+        return (GateResult("scripted", True),)
+
+    def check_edition(self, edition_id: str) -> tuple[GateResult, ...]:
+        self.calls.append(edition_id)
+        gate = self.rounds.pop(0) if self.rounds else self.settled
+        return (gate or GateResult("fit", True),)
+
+
+class GateAttributionTests(ProduceFixture):
+    """An edition-wide gate fails the piece it is about, and nobody else.
+
+    ``fit`` and ``validate`` measure the whole issue, so one article a page
+    over budget fails the gate for every piece in the round.  Sending that back
+    to all of them costs a model call each and hands every writer but one an
+    instruction it has no power to carry out: shorten a paragraph in an article
+    it cannot edit.
+    """
+
+    OVERLONG = "en: article article spans 8 pages (maximum 7)"
+    EDITION_WIDE = "issue-001: the closing plate roll has a gap at plate 2"
+
+    def test_one_article_s_breach_reaches_only_that_article(self):
+        gates = _ScriptedEditionGates(
+            None,
+            GateResult(
+                "fit",
+                False,
+                self.OVERLONG,
+                (Breach("article", self.OVERLONG),),
+            ),
+        )
+
+        result = self.run_produce(gates=gates)
+
+        self.assertEqual(
+            [(outcome.piece_id, outcome.status, outcome.rounds) for outcome in result.outcomes],
+            [("article", "passed", 2), ("editorial", "passed", 1)],
+        )
+        # The article hears it, in its own record and in its own next brief.
+        self.assertEqual(
+            self.record("article")["rounds"][0]["gate_failures"],
+            [f"fit: {self.OVERLONG}"],
+        )
+        briefs = self.command.briefs("writer", "article")
+        self.assertEqual(len(briefs), 2)
+        self.assertIn(self.OVERLONG, briefs[1])
+        # The editorial does not: it was drafted once, cleanly, and was never
+        # asked to shorten somebody else's article.
+        editorial = self.command.briefs("writer", "editorial")
+        self.assertEqual(len(editorial), 1)
+        self.assertNotIn(self.OVERLONG, editorial[0])
+        self.assertEqual(
+            [round_["gate_failures"] for round_ in self.record("editorial")["rounds"]],
+            [[]],
+        )
+
+    def test_a_breach_that_belongs_to_the_edition_fails_nobody(self):
+        """No writer can close a gap in the plate roll from a drafting round."""
+
+        gates = _ScriptedEditionGates(
+            None, settled=GateResult("validate", False, self.EDITION_WIDE)
+        )
+
+        result = self.run_produce(gates=gates)
+
+        self.assertEqual(
+            [(outcome.piece_id, outcome.status, outcome.rounds) for outcome in result.outcomes],
+            [("article", "passed", 1), ("editorial", "passed", 1)],
+        )
+        for piece_id in ("article", "editorial"):
+            self.assertEqual(
+                [
+                    round_["gate_failures"]
+                    for round_ in self.record(piece_id)["rounds"]
+                ],
+                [[]],
+                piece_id,
+            )
+            self.assertEqual(len(self.command.briefs("writer", piece_id)), 1)
+        # Reported once, to the human, the way a stale overlay is.
+        self.assertEqual(
+            [
+                action
+                for action in result.human_actions
+                if self.EDITION_WIDE in action
+            ],
+            [
+                "validate fails for issue-001 as a whole, and no single piece's "
+                f"rewrite can clear it: {self.EDITION_WIDE}"
+            ],
+        )
+
+    def test_a_piece_with_a_breach_of_its_own_still_fails(self):
+        """Routing, not leniency: the piece named still spends its rounds."""
+
+        gates = _ScriptedEditionGates(
+            None,
+            settled=GateResult(
+                "fit", False, self.OVERLONG, (Breach("article", self.OVERLONG),)
+            ),
+        )
+
+        result = self.run_produce(gates=gates, max_rounds=1)
+
+        self.assertEqual(
+            [(outcome.piece_id, outcome.status) for outcome in result.outcomes],
+            [("article", "escalated")],
+        )
+        self.assertEqual(
+            self.record("article")["rounds"][0]["gate_failures"],
+            [f"fit: {self.OVERLONG}"],
+        )
+        self.assertEqual(self.record("article")["status"], "escalated")
+
+    def test_an_unattributed_report_is_read_line_by_line(self):
+        """``validate`` raises sentences, so its owner is the piece it names.
+
+        One message, three complaints, two owners and one that is nobody's:
+        each line goes where it belongs and no line goes anywhere else.
+        """
+
+        detail = "\n".join(
+            (
+                self.EDITION_WIDE,
+                "article: editions/issue-001/articles/article.md has no byline",
+                "editorial: editions/issue-001/editorial.md has no byline",
+            )
+        )
+        failing = GateResult("validate", False, detail)
+        # Baseline, then the first round of each piece; each piece's second
+        # round finds the gate clear, so both pass and both records can be
+        # read.
+        gates = _ScriptedEditionGates(None, failing, None, failing)
+
+        self.run_produce(gates=gates)
+
+        for piece_id in ("article", "editorial"):
+            failures = self.record(piece_id)["rounds"][0]["gate_failures"]
+            self.assertEqual(
+                failures, [f"validate: {piece_id}: {self.line_for(piece_id)}"]
+            )
+            self.assertNotIn(self.EDITION_WIDE, "".join(failures))
+
+    def test_a_pre_existing_failure_this_run_will_clear_reads_as_expected(self):
+        """The state produce exists to clear is not a fault to report as one."""
+
+        detail = "\n".join(
+            (
+                "issue-001: 2 piece(s) are still unwritten staging markers",
+                "article: editions/issue-001/articles/article.md is a staging marker",
+                "editorial: editions/issue-001/editorial.md is a staging marker",
+            )
+        )
+        gates = _ScriptedEditionGates(GateResult("validate", False, detail))
+
+        result = self.run_produce(gates=gates)
+
+        self.assertIn(
+            "pre-existing gate failure (validate), expected and cleared by this "
+            "run, which is drafting every piece it names: issue-001: 2 piece(s) "
+            "are still unwritten staging markers",
+            result.human_actions,
+        )
+
+    def test_a_pre_existing_failure_about_a_piece_this_run_skips_is_a_fault(self):
+        """A run that is not going to clear it must not call it expected."""
+
+        detail = "editorial: editions/issue-001/editorial.md is a staging marker"
+        gates = _ScriptedEditionGates(GateResult("validate", False, detail))
+
+        result = self.run_produce(gates=gates, articles=["article"])
+
+        self.assertIn(
+            f"pre-existing gate failure (validate): {detail}", result.human_actions
+        )
+
+    def test_an_inherited_edition_wide_breach_is_reported_once(self):
+        """It was there before the run; saying it again each round is noise."""
+
+        gates = _ScriptedEditionGates(
+            settled=GateResult("validate", False, self.EDITION_WIDE)
+        )
+
+        result = self.run_produce(gates=gates)
+
+        self.assertEqual(
+            [action for action in result.human_actions if self.EDITION_WIDE in action],
+            [f"pre-existing gate failure (validate): {self.EDITION_WIDE}"],
+        )
+
+    @staticmethod
+    def line_for(piece_id: str) -> str:
+        path = (
+            "editions/issue-001/articles/article.md"
+            if piece_id == "article"
+            else "editions/issue-001/editorial.md"
+        )
+        return f"{path} has no byline"
 
 
 class TranslationDriftTests(unittest.TestCase):
@@ -1905,9 +2127,13 @@ class EditionGateCacheTests(ProduceFixture):
                 calls.append("validate")
                 return magazine.validate(edition_id)
 
-            def fit(self, edition_id, language=None):
+            def measure(self, edition_id, language=None):
+                # The fit gate reads the measurement rather than the printed
+                # table, because the measurement knows which article each
+                # breach belongs to.  It is still the one expensive call the
+                # fit gate makes, and still what is counted here.
                 calls.append("fit")
-                return magazine.fit(edition_id, language=language)
+                return magazine.measure(edition_id, language=language)
 
         gates.magazine = Counting()
         return gates, calls
