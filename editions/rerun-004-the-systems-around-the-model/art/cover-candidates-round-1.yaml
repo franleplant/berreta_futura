@@ -1,0 +1,32 @@
+schema_version: 2
+round: 1
+selection_status: pending_editor_choice
+editorial_reading: >-
+  A capable model becomes useful, legible, and safe only through the protocols,
+  evaluations, architectures, memory, boundaries, and human judgment around it.
+variants:
+  synthetic:
+    art_path: art/cover-candidate-synthetic.png
+    asset_sha256: 833562913cd1eadf853f8c4e6affcccb12b69989a3090f797cd156a5121c65a0
+    generation_method: imagegen
+    direction: >-
+      A crisp retro-futurist systems map. A luminous model core sits inside
+      concentric protocol sockets, evaluation gates, memory loops, architecture
+      modules, human checkpoints, and security barriers, rendered as flat
+      geometric editorial forms in the issue palette.
+  art_directed:
+    art_path: art/cover-candidate-art-directed.png
+    asset_sha256: 75b023988a07105ff026499e63a652b061bc536d84be277f50b30dd4291d1f08
+    generation_method: imagegen
+    direction: >-
+      A tactile analog risograph and monotype collage. Hand-cut systems,
+      looping ribbons, plugs, scaffolds, and adjusting hands surround a small
+      intelligence seed on warm fibrous paper with visible ink misregistration.
+  wildcard:
+    art_path: art/cover-candidate-wildcard.png
+    asset_sha256: b4c7f8caf2c370ba5f97b66fb3a6d8da73cb41666d9d07d0453e43ef7315cdbb
+    generation_method: imagegen
+    direction: >-
+      A high-key fabricated tabletop installation photographed in a studio.
+      Ceramic sockets, patch cables, evaluation dials, memory spools, gates,
+      mirrors, and one tuning hand dominate a tiny glowing core.

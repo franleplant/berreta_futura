@@ -1,0 +1,551 @@
+schema_version: 1
+edition_id: rerun-004-the-systems-around-the-model
+piece_id: mcp-in-a-nutshell
+content_mode: in_a_nutshell
+status: drafting
+produced_at: '2026-08-01T17:56:44+00:00'
+inputs_sha256: cc830791a97c304e9206542e60120890708a472c82ad4c32d804229f18848904
+manuscript_sha256: 11521f09e41519ab1b74c2764ad640a7e14c7cfde470a23dedb26d056dcde0a8
+rounds:
+- round: 1
+  result: changes_required
+  manuscript_sha256: 11521f09e41519ab1b74c2764ad640a7e14c7cfde470a23dedb26d056dcde0a8
+  writer:
+    role: writer
+    prompt_path: prompts/in-a-nutshell.md
+    prompt_sha256: 069dd5ac87ce9b95d35dbfb462ed0e9dc9900bd4de513a88141b9ac63d24f2e7
+    backend: agent
+    model: null
+    argv:
+    - mag
+    - produce
+    - rerun-004-the-systems-around-the-model
+    - --backend
+    - agent
+    - --submit
+    - mcp-in-a-nutshell/r1-writer
+    - --brief-sha256
+    - c5ee1287c95798480d658b3b1af88643682dae94b3a0f0e6d8527e396503ff7f
+    duration_seconds: 0.0
+    output_sha256: aeb07529d7eb70a94bf020e64c5542567b374147a5623b8095a2aed5110aaf78
+  gate_failures: []
+  anchors_reconciled: []
+  judges:
+    evidence:
+      result: changes_required
+      findings:
+      - severity: major
+        article: mcp-in-a-nutshell
+        locator: What the protocol declines to decide | both went out with the 2026-07-28 version | 1
+        repair_from: What the protocol declines to decide | The agreement is small enough to retire parts
+          of itself. | 1
+        category: qualification_loss
+        note: 'The source deprecates; the manuscript removes. The extraction says
+
+          "Sampling is deprecated as of protocol version 2026-07-28" and, under
+
+          Primitives, "Deprecated: The following client primitives are deprecated
+
+          as of protocol version 2026-07-28" for both Sampling and Logging. It
+
+          nowhere says either primitive was withdrawn from the protocol. The
+
+          manuscript writes "A server used to be able to borrow the host''s model
+
+          for a completion, and to push log lines at the client; both went out with
+
+          the 2026-07-28 version", and the preceding sentence frames the whole move
+
+          as the protocol being "small enough to retire parts of itself". A reader
+
+          comes away believing sampling and logging no longer exist in 2026-07-28,
+
+          whereas the source describes them as present but discouraged, with the
+
+          "New implementations should..." advice the manuscript correctly relays
+
+          applying to new code rather than to a removal. The defect is structural:
+
+          the retirement framing is set up one sentence earlier, so the repair
+
+          starts there.'
+      - severity: minor
+        article: mcp-in-a-nutshell
+        locator: The host keeps one client per server | The fussiness buys separation | 1
+        category: invented_claim
+        note: 'No passage supports capabilities or a version agreement being held per
+
+          connection, and the source''s design point runs the other way: "MCP is a
+
+          stateless protocol. Every request carries the protocol version and the
+
+          capabilities relevant to that request in its _meta field, so the server
+
+          can process each request on its own." The source states one client per
+
+          server ("Each MCP client maintains a dedicated connection with its
+
+          corresponding MCP server") but offers no rationale for it; "The fussiness
+
+          buys separation" and the per-connection capability and version state are
+
+          the manuscript''s own. The loose reading, that each client-server pairing
+
+          declares its own capabilities and settles its own version, survives, and
+
+          the manuscript states the statelessness correctly two sections later,
+
+          which is why this is minor rather than a contradiction of the source.'
+      - severity: minor
+        article: mcp-in-a-nutshell
+        locator: One morning on one connection | text in the ordinary case | 1
+        category: invented_claim
+        note: 'The source makes no claim about which content type is typical. It says
+
+          only "In this example, \"type\": \"text\" indicates plain text content,
+
+          but MCP supports various content types for different use cases." The
+
+          manuscript promotes one example to the ordinary case. The second half of
+
+          the clause is well grounded; only the typicality claim is unsupported.'
+      scores:
+        claim_support: 4
+        qualification_survival: 4
+        quote_accuracy: 5
+        attribution: 5
+      notes: 'I checked every assertion in the manuscript against the single pinned
+
+        extraction: the host/client/server definitions and the one-client-per-server
+
+        rule, the Visual Studio Code and Sentry examples, the STDIO-serves-one versus
+
+        Streamable-HTTP-serves-many split, the "regardless of where it runs" point,
+
+        the three server primitives and the database server that exposes all three,
+
+        elicitation and the client capability that gates it, statelessness and the
+
+        _meta contents, server/discover being mandatory for servers and optional for
+
+        clients, the version-rejection fallback, the cacheable discovery response,
+
+        the tool list fields, the unified registry, the intercept-and-route execution
+
+        path, the content array, opt-in subscriptions via a long-lived stream, the
+
+        no-reply notification and re-list cycle, best-effort delivery with polling as
+
+        backstop, both transports with bearer tokens, API keys and OAuth, the
+
+        inner/outer layer split, the "does not dictate how AI applications use LLMs"
+
+        scope limit, and the Tasks extension. All check out except the three findings
+
+        above. Numbers, names and versions are clean: 2026-07-28, server/discover,
+
+        _meta, Sentry, Visual Studio Code, OpenTelemetry, and the three primitive
+
+        names all match the extraction. Nothing is presented as verbatim quotation,
+
+        so quote accuracy is untested rather than strong. Furniture is sound: the
+
+        label, all five headings and the closing aphorism stay within what the
+
+        extraction supports. The reverse pass found the source''s own hedges largely
+
+        intact ("typically" for the serve-one/serve-many split, discovery being
+
+        optional and its answer cacheable, identity sent "unless configured not to",
+
+        best-effort delivery); the one hedge lost is the deprecation. Two source
+
+        asides are dropped without harm under the omission rule, since the piece
+
+        narrates one morning on one connection rather than the general case: the
+
+        progressive tool discovery note for clients federating many servers, and the
+
+        server acknowledging only the subset of a subscription filter it will honor.
+
+        Two things I could not check. The extraction is a rendered documentation page
+
+        whose JSON response bodies are missing (only the request payloads survive),
+
+        so the tool list response fields, the discovery response''s supportedVersions
+
+        and server capabilities, and the content array shape are verifiable only
+
+        through the surrounding prose, which was sufficient for every claim the
+
+        manuscript makes about them. Separately, the pipeline handed me conflicting
+
+        content_mode values, in_a_nutshell in the article header and
+
+        original_synthesis in the manuscript frontmatter; I judged truth-grounding
+
+        against the extraction under either reading, which is the part both modes
+
+        share, but the wording bar is nominally unsettled. That is a metadata
+
+        discrepancy for the operator, not a defect in the piece.'
+      call:
+        role: evidence_judge
+        prompt_path: prompts/evidence-review.md
+        prompt_sha256: 2d368985eba3011b23c2f03fa926da4791a03975bd5ee4403ed6d8d19503d264
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - mcp-in-a-nutshell/r1-evidence
+        - --brief-sha256
+        - 63f23fe35af9de5022630d6289499915c1bde14931bf6f2a2f5c0d7c8569c15f
+        duration_seconds: 0.0
+        output_sha256: a2a3ddf0be9f81d94e8ea3370497b946d4a543dc8b525fb1469fc040d858dc4f
+    line:
+      result: changes_required
+      findings:
+      - severity: major
+        article: mcp-in-a-nutshell
+        locator: One morning on one connection | Nothing in that morning depended on where the server
+          ran | 1
+        category: duplication
+        note: 'The local-versus-remote transport point is made twice, in nearly the same
+
+          terms. First in "The host keeps one client per server": "A server on your
+
+          machine, talking over standard input and output, normally serves that one
+
+          client; a server a vendor runs, such as the one Sentry operates on its own
+
+          platform, typically serves many at once. The word "server" says nothing
+
+          about where the program runs." Then again as the closing paragraph of "One
+
+          morning on one connection": "Nothing in that morning depended on where the
+
+          server ran. The messages are the same either way: a local server exchanges
+
+          them over standard input and output with no network in the way, a remote
+
+          one over HTTP posts..." Both make the same claim (location is irrelevant)
+
+          and both name standard input and output for the local case. Only the
+
+          remote details (HTTP posts, event stream, bearer tokens, OAuth) are new,
+
+          and they arrive stacked as three trailing modifiers on one 60-word
+
+          sentence, which is where I had to go back a paragraph.'
+        suggestion: 'The remote case adds only what the local one lacks: HTTP posts, an optional event
+          stream for anything that arrives in pieces, and bearer tokens or API keys, obtained through
+          OAuth by preference.'
+      - severity: major
+        article: mcp-in-a-nutshell
+        locator: 'The host keeps one client per server | Visual Studio Code is the host: the AI application
+          that coordinates connections. | 1'
+        category: repeated_cadence
+        note: 'One sentence shape carries the whole piece: assertion, colon, expansion.
+
+          Ten instances. "The useful material sits outside: the rows in a database,
+
+          the schema that explains them". "Visual Studio Code is the host: the AI
+
+          application that coordinates connections." "The fussiness buys separation:
+
+          each connection carries its own capabilities". "It can do something on
+
+          request: run a query". "and calls them primitives: what the two sides can
+
+          offer each other." "each request arrives carrying what is needed to judge
+
+          it: the protocol version the client speaks". "and its capabilities: which
+
+          primitives it can handle". "The exchange prevents guesswork: each end
+
+          learns what the other can handle". "gets an entry for each one: a unique
+
+          name to call it by". "The messages are the same either way: a local server
+
+          exchanges them over standard input and output". The house ban on the em
+
+          dash pushes work onto the colon, but at this density the reader hears the
+
+          same beat in every paragraph and the second half of each sentence stops
+
+          registering as new information.'
+        suggestion: Each request arrives carrying what is needed to judge it. The protocol version the
+          client speaks, the capabilities relevant to that request and, unless configured otherwise, who
+          the client is.
+      - severity: minor
+        article: mcp-in-a-nutshell
+        locator: What a server is allowed to offer | Your database server has three kinds of thing to
+          give away, and the difference | 1
+        category: ai_phrasing
+        note: '"Your database server has three kinds of thing to give away, and the
+
+          difference is worth memorizing." The clause is the "it''s worth noting"
+
+          construction: it instructs the reader to find the next sentences important
+
+          instead of making them important. It also miscounts, offering "the
+
+          difference" singular between three things.'
+        suggestion: Your database server has three kinds of thing to give away.
+      - severity: minor
+        article: mcp-in-a-nutshell
+        locator: What a server is allowed to offer | The specification calls the three tools, resources
+          and | 1
+        category: dead_words
+        note: 'A garden path. "The specification calls the three tools, resources and
+
+          prompts" parses first as "calls the three tools" before the reader
+
+          backtracks and re-reads "the three" as the three kinds just listed. The
+
+          sentence then does a second job in the same breath ("and calls them
+
+          primitives"), so the reader is reconstructing two definitions at once.'
+        suggestion: 'The specification calls these three tools, resources and prompts, and groups them
+          as primitives: what the two sides can offer each other.'
+      - severity: minor
+        article: mcp-in-a-nutshell
+        locator: Every request introduces itself | It rides in a `_meta` field on every request. | 1
+        category: dead_words
+        note: '"It" follows a three-item list ("the protocol version the client speaks,
+
+          the capabilities relevant to that request and, unless configured
+
+          otherwise, who the client is") and has to be read as the bundle rather
+
+          than the last item, which costs a re-read. "on every request" then repeats
+
+          "each request arrives carrying" from two sentences earlier.'
+        suggestion: All of it rides in a `_meta` field.
+      - severity: minor
+        article: mcp-in-a-nutshell
+        locator: What the protocol declines to decide | A server that remembers nothing about you between
+          requests is a server you can | 1
+        repair_from: What the protocol declines to decide | MCP covers the exchange of context and stops
+          there. | 1
+        category: ending
+        note: 'The kicker is good, but it closes a section it does not belong to. "What
+
+          the protocol declines to decide" is about scope, retired features and the
+
+          durable-handle extension; the sentence immediately before it is "an
+
+          extension lets a server hand back a durable handle for slow work, so the
+
+          client can collect the result later instead of holding a request open."
+
+          The final line then jumps back to statelessness, which was settled two
+
+          sections earlier under "Every request introduces itself". It reads as a
+
+          line stitched on rather than one the section arrives at.'
+        suggestion: 'That is the shape of a protocol that stays small: it drops what it does not need,
+          and a server that remembers nothing about you between requests is a server you can hang up on
+          and call back.'
+      - severity: minor
+        article: mcp-in-a-nutshell
+        locator: '- | content_mode: original_synthesis | 1'
+        category: house_style
+        note: 'The front matter declares "content_mode: original_synthesis" while the
+
+          label reads "IN A NUTSHELL" and the piece is commissioned and reviewed as
+
+          the edition''s explainer. Editor-owned metadata contradicting the
+
+          editor-owned label.'
+        suggestion: 'content_mode: in_a_nutshell'
+      scores:
+        structure: 4
+        flow: 3
+        sentence_craft: 3
+        house_style: 4
+        voice_consistency: 4
+      notes: 'The explainer checks pass, and that is the real news given edition 004. The
+
+        mental model ("The picture to keep in your head has two halves and one wire")
+
+        lands at word 62 and is complete by word 140, inside the 150-word window and
+
+        nowhere near the close. Every heading states an idea rather than mirroring a
+
+        table of contents, no method or field name is a section''s subject or a list
+
+        item (`_meta` and `server/discover` both sit inside sentences about something
+
+        else), and the Visual Studio Code plus database server example is genuinely
+
+        carried from the first section through to "One morning on one connection"
+
+        rather than restarted. Sentry appears once. What holds the piece back is
+
+        texture rather than architecture: the transport paragraph at the end of "One
+
+        morning" replays a point already made in section one, and the colon-expansion
+
+        sentence runs ten times, so by the fourth section the prose has a metronome
+
+        under it. Cut the duplicated closing paragraph, break up three or four of the
+
+        colons, and re-seat the last line on the section it closes, and this reads
+
+        cleanly at speed.'
+      call:
+        role: line_judge
+        prompt_path: prompts/line-review.md
+        prompt_sha256: 262f28e51956608760ae5dbdde255ef7a5780f459e73cb3542d7ae6aae6ac8b4
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - mcp-in-a-nutshell/r1-line
+        - --brief-sha256
+        - 80307095fae269d943b1e4e9eec9e6482fb6d129c041bb6dd4a31e31d24b2ef0
+        duration_seconds: 0.0
+        output_sha256: e2bb9bb9bdf8d9731fbb63e29e22a4ed48a918d58ce4a56796ced79e4d6a743d
+  notes: "## 1. Pre-writing, as the prompt required\n\n**Q1. What did people do before this existed, and\
+    \ what broke?**\nThe extraction does not answer this. There is no history, no prior art, no\naccount\
+    \ of bespoke connectors, no combinatorial framing. The nearest material is\nthe scope note (\"MCP\
+    \ focuses solely on the protocol for context exchange\") and\nthe data-layer note that the primitives\
+    \ are \"the ways developers can share\ncontext from MCP servers to MCP clients.\" So I answered in\
+    \ the only form the\nsource supports: the problem is structural, not historical. A model works on\n\
+    what is placed in front of it, the material worth placing there lives outside\nthe application, and\
+    \ somebody has to define the handover. Anything sharper would\nhave been my own knowledge, which hard\
+    \ rule 5 forbids.\n\n**Q2. The mental model, in two or three plain sentences.**\nTwo halves and one\
+    \ wire. The AI application owns the model, the conversation and\nevery decision about what to do with\
+    \ context; the server owns a corner of the\noutside world and publishes it as a self-describing menu.\
+    \ Neither side knows how\nthe other is built, so both announce their capabilities on every request\
+    \ instead\nof assuming.\n\n**Q3. The single concrete scenario that carries the piece.**\nVisual Studio\
+    \ Code as the host, connected to a server that fronts a database.\nBoth halves are in the source:\
+    \ VS Code is the source's named example of a host,\nand a local database server is named in the participants\
+    \ diagram, with the\nsource's own worked example of what such a server exposes (query tools, a schema\n\
+    resource, a few-shot prompt). It is the only candidate that reaches every\nconcept: participants,\
+    \ one client per server, all three server primitives,\ndiscovery, a tool call and a tool-list change.\
+    \ The filesystem server appears\nonce, to show a second client being built. Sentry appears once, for\
+    \ the contrast\nthe primary example cannot draw: a remote server serving many clients. The\nsource's\
+    \ weather tool and its San Francisco call were left out on purpose,\nbecause importing them would\
+    \ have created the second running example the prompt\nbans; the walkthrough uses the database server's\
+    \ own tools instead.\n\n**Q4. Six things the reader must be able to answer at the end.**\n1. What\
+    \ does MCP standardize, and what does it leave alone? (Context exchange\n   only; not model choice,\
+    \ not context management.)\n2. Who are the participants? (Host = the AI application; one client per\
+    \ server,\n   each holding a dedicated connection; server = the program serving context,\n   wherever\
+    \ it runs.)\n3. What can a server offer? (Actions, readable context, interaction templates:\n   tools,\
+    \ resources, prompts.)\n4. How does either side find out what the other supports? (Version and\n \
+    \  capabilities in `_meta` on every request; `server/discover` mandatory to\n   implement, optional\
+    \ to send, answer usually cacheable.)\n5. Why does the transport not change the protocol? (Same messages\
+    \ over stdio\n   locally or HTTP remotely; connection, framing and auth live in the outer\n   layer.)\n\
+    6. What follows from statelessness? (Every request self-contained; change\n   notifications opt-in\
+    \ and best effort, so clients still poll.)\n\nRunning example fixed: **VS Code plus the database server.**\
+    \ Every section\nreturns to it.\n\n## 2. Assessment of the prompt contract\n\n**Clear and load-bearing.**\n\
+    - \"The mental model appears within the first 150 words.\" The single most useful\n  instruction.\
+    \ It forced the structure: the problem paragraph had to be short\n  and the who-owns-what passage\
+    \ had to lead. It lands at word 62 here.\n- \"Never mirror the source's own table of contents,\" with\
+    \ a worked example of a\n  good heading. Concrete enough to act on. I checked my headings against\
+    \ the\n  source's contents (Scope, Participants, Layers, Data layer, Transport layer,\n  Statelessness\
+    \ and discovery, Primitives, Notifications, Example) and none\n  survives; layers and transports are\
+    \ folded into the walkthrough, where they\n  answer a question the scene has already raised.\n- \"\
+    No enumeration of method names... a method name appears only where the reader\n  needs to recognize\
+    \ it in the wild, inside a sentence.\" Sharp and testable. Two\n  survive (`server/discover`, `_meta`),\
+    \ both inside sentences, neither as a\n  section subject. The source's JSON-RPC blocks, roughly half\
+    \ its length, drop\n  out.\n- \"One running example throughout. A second example only to draw a contrast\
+    \ the\n  first cannot, and only once.\" This is what kills the duplicate-example\n  failure, because\
+    \ it makes the writer name the example before drafting.\n- \"Concept first, term second, in the same\
+    \ sentence.\" Easy to apply and it\n  visibly changes the prose.\n- The anti-exemplar section. Naming\
+    \ the failure and its symptoms was more useful\n  than any positive instruction.\n\n**Vague, unhelpful\
+    \ or missing.**\n- Procedure question 1 assumes a source with a history. This one has none. The\n\
+    \  prompt offers no fallback, so it pushes the writer toward inventing a\n  before-state that hard\
+    \ rule 5 then forbids. Two rules collide and the\n  collision is invisible until you are drafting.\
+    \ It needs a clause: if the source\n  does not describe the prior state, state the problem structurally\
+    \ and do not\n  reconstruct history.\n- Length is stated in three disagreeing ways: my brief said\
+    \ 700 to 1,100, the\n  prompt says roughly 800 to 1,100 body words, and both say seven A5 pages hard\n\
+    \  maximum. Word counts do not map cleanly onto pagination and the writer cannot\n  run the renderer.\
+    \ My first draft came in at 1,220 and had to be cut on a rule\n  I could not verify.\n- Step 3 prescribes\
+    \ five sections in a fixed order, which is close to a template\n  and sits awkwardly beside the ban\
+    \ on mirroring a table of contents. It is a\n  good order, but a piece that follows it literally has\
+    \ a predictable shape. I\n  merged parts of (c) and (d) and put the transport material inside the\n\
+    \  walkthrough; the prompt does not say whether that is allowed.\n- \"Every claim must be traceable\
+    \ to the source\" is right but silent on obvious\n  inferences. I dropped several useful sentences\
+    \ the source implies but never\n  states, for instance that a server written once works under any\
+    \ host.\n- Nothing is said about deprecated features. A newcomer meets sampling and\n  logging only\
+    \ as tombstones. I gave them two clauses because the deprecation\n  shows where the seam is, but that\
+    \ was my call.\n- The frontmatter block shows `source_id` singular with a note about\n  `source_ids`,\
+    \ while the live `edition.yaml` row for this article uses the\n  plural with one entry. A writer copying\
+    \ the prompt literally produces\n  frontmatter that does not match the manifest. I followed the prompt.\n\
+    - The prompt does not say whether the piece may name the source (\"the\n  specification calls these...\"\
+    ). In `original_synthesis` this reads as\n  attribution rather than the narrator scaffolding banned\
+    \ by tic 6, but it is a\n  judgment call the contract should make for the writer.\n- The six comprehension\
+    \ answers are generated by the writer and then never used\n  as a checklist against the finished draft,\
+    \ even though the novice judge writes\n  its own six. Making the writer verify the draft against its\
+    \ own six would\n  close that loop.\n\n**Invented because the prompt did not say:** the number of\
+    \ sections and their\nboundaries; that the boundary section could absorb the deprecations; that the\n\
+    closing line should stand alone; and the decision to leave the source's weather\ntool out entirely.\
+    \ I also dropped a sentence listing what ships under the MCP\nname (specification, SDKs, Inspector,\
+    \ reference servers) purely to make budget,\nwhich is orientation a novice would have valued.\n\n\
+    Manuscript body: 1,099 words including headings, 1,065 of prose. The first\ndraft was 1,220 and had\
+    \ to be cut by hand against a limit I cannot measure.\n\n## 3. After reading the shipped version\n\
+    \nRead only after the draft above was finished. It is 1,042 words to my 1,099, so\nlength is not the\
+    \ difference; what the words do is.\n\n**Concrete differences.**\n- Headings. Shipped: \"Host, client,\
+    \ server\", \"Two layers\", \"The three server\n  primitives\", \"A request from discovery to action\"\
+    , \"Practical uses\", \"Client\n  features and notifications\", \"The useful boundary\". Four of the\
+    \ seven are the\n  source's own section names or near-paraphrases, and \"Host, client, server\" is\n\
+    \  the source's bullet list promoted to a heading. Mine are five claims about the\n  world, none naming\
+    \ a spec section.\n- Where the teaching sits. The shipped piece does state the boundary in its\n \
+    \ first paragraph, which is better than the diagnosis suggested, but the\n  ownership model itself\
+    \ (\"The host owns intelligence and orchestration. Each\n  client owns one protocol relationship.\
+    \ Each server owns a bounded set of\n  context and actions\") is the final section, 91 words. Mine\
+    \ opens on it, at\n  word 62, and the rest of the piece spends it.\n- Method and identifier names.\
+    \ Shipped: `tools/call`, `tools/list`,\n  `resources/list`, `prompts/list`, `server/discover`, `_meta`,\
+    \ plus invented\n  identifiers `query_database`, `diagnose_slow_query`, `weather_current`,\n  `location`,\
+    \ `units` and a literal argument object. One sentence enumerates\n  three list methods in a row. Mine\
+    \ names two, both inside sentences.\n- Examples. Shipped uses four: VS Code with the filesystem and\
+    \ Sentry servers, a\n  database server, a weather tool, and then a \"Practical uses\" section that\n\
+    \  repeats the first two almost verbatim (\"A coding host such as Visual Studio\n  Code can connect\
+    \ to a local filesystem server and a remote Sentry server. Each\n  connection gets its own MCP client\"\
+    \ against the earlier \"Suppose Visual Studio\n  Code connects to a local filesystem server and a\
+    \ remote Sentry server... The\n  connections remain separate\"). The stdio-versus-Sentry contrast\
+    \ also appears\n  twice. Mine has one example, with the filesystem server as a single beat and\n \
+    \ Sentry as a single contrast.\n- Accuracy against the source. The shipped piece invents tool and\
+    \ prompt names\n  the source never gives, adds \"The server validates the input\", and opens its\n\
+    \  walkthrough with \"First, the client asks the server what protocol versions and\n  capabilities\
+    \ it supports through `server/discover`\", which contradicts the\n  source's statement that calling\
+    \ discovery is optional. It omits statelessness\n  as a named idea, the best-effort caveat on notifications,\
+    \ the advice to keep\n  polling, cacheability, and the deprecations.\n- Ending. Shipped closes on\
+    \ \"Tool builders can publish stable typed primitives\n  while AI applications compete on how well\
+    \ they use them\", which restates the\n  separation argument rather than landing. It also opens its\
+    \ last section on\n  \"MCP is often described as a connector standard. The architecture is more\n\
+    \  precise than that\", a cousin of the banned antithesis without being the banned\n  form itself.\
+    \ Mine closes on statelessness and does not summarize.\n- Mode. The shipped article is `faithful_synthesis`\
+    \ labelled FAITHFUL SYNTHESIS,\n  with the protocol project itself as author. The new prompt makes\
+    \ the piece\n  `original_synthesis` under an editor byline. That change is upstream of every\n  other\
+    \ difference: a faithful synthesis of a specification is close to\n  obligated to walk the specification,\
+    \ which is most of why the shipped piece\n  reads as a spec dump.\n\n**Did the new prompt prevent\
+    \ the four documented failures?**\n1. Headings mirroring the specification: prevented. The rule is\
+    \ explicit, comes\n   with a worked example, and the anti-exemplar names the offending headings.\n\
+    2. Reciting method names: prevented, and this is the sharpest rule in the\n   contract because it\
+    \ says exactly where a method name may appear. It would\n   also have caught the invented `query_database`\
+    \ and `diagnose_slow_query`,\n   which are a fidelity problem the rule catches as a side effect.\n\
+    3. The duplicated example: prevented for a single writer, because fixing the\n   running example is\
+    \ step 2 and precedes drafting. But the documented cause was\n   two source chunks processed independently,\
+    \ and the shipped duplication is\n   visibly a whole redundant \"Practical uses\" section rather than\
+    \ a slip. This\n   prompt has no defence against chunked processing; it assumes one writer\n   holding\
+    \ the whole extraction. If the pipeline still chunks, the rule is a\n   hope rather than a mechanism.\n\
+    4. The mental model arriving last: prevented, and the 150-word rule is the\n   reason. A soft instruction\
+    \ to lead with the model would not have survived the\n   pull of the source's own order.\n\n**Verdict.**\
+    \ Sufficient for the four failures it was written against, and three\nof the four are prevented by\
+    \ mechanism rather than exhortation. Two gaps: the\nmissing history in this source, where two of the\
+    \ prompt's own rules pull in\nopposite directions with no guidance, and the assumption that failure\
+    \ 3 was a\nwriting failure when the evidence says it was a pipeline failure."

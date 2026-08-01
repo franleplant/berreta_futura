@@ -1,0 +1,12 @@
+schema_version: 1
+edition_id: rerun-004-the-systems-around-the-model
+item: factory-systems-problem/r1-writer
+piece_id: factory-systems-problem
+role: writer
+round: 1
+returns: manuscript
+prompt_path: prompts/faithful-edit.md
+prompt_sha256: df82bb35d8316b788bc3fcf5a2272c5557ab242f77efc36aca51cc76940bb66e
+brief_sha256: 5ae14ea1ee38e3017a2fadca7692ee60cddb26cff28e081fd20fdc7677da2040
+brief: editions/rerun-004-the-systems-around-the-model/production/agent/factory-systems-problem/r1-writer/brief.md
+reply: editions/rerun-004-the-systems-around-the-model/production/agent/factory-systems-problem/r1-writer/reply.md

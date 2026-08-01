@@ -1,0 +1,12 @@
+schema_version: 1
+edition_id: rerun-004-the-systems-around-the-model
+item: eval-engineering/r1-writer
+piece_id: eval-engineering
+role: writer
+round: 1
+returns: manuscript
+prompt_path: prompts/faithful-synthesis.md
+prompt_sha256: ed62c00d30c4ffd23ee725b0ece2cdcdec561dd0fd428d0f905ef00510ec2745
+brief_sha256: 59ab258b83c30d87f7b9d43b38685fa9d64b4d0737bc7cda7a3a5fccd9ae4b26
+brief: editions/rerun-004-the-systems-around-the-model/production/agent/eval-engineering/r1-writer/brief.md
+reply: editions/rerun-004-the-systems-around-the-model/production/agent/eval-engineering/r1-writer/reply.md

@@ -1,0 +1,178 @@
+schema_version: 1
+edition_id: rerun-004-the-systems-around-the-model
+backend: agent
+state: awaiting_work
+ready:
+- item: eval-engineering/r2-evidence
+  piece_id: eval-engineering
+  role: evidence
+  round: 2
+  returns: verdict
+  prompt_path: prompts/evidence-review.md
+  prompt_sha256: 2d368985eba3011b23c2f03fa926da4791a03975bd5ee4403ed6d8d19503d264
+  brief_sha256: 2b1e51d4f9f1f19cb9a64265828c3b844273160ce769c67fc53b0ebfa0091782
+  brief: editions/rerun-004-the-systems-around-the-model/production/agent/eval-engineering/r2-evidence/brief.md
+  reply: editions/rerun-004-the-systems-around-the-model/production/agent/eval-engineering/r2-evidence/reply.md
+- item: eval-engineering/r2-line
+  piece_id: eval-engineering
+  role: line
+  round: 2
+  returns: verdict
+  prompt_path: prompts/line-review.md
+  prompt_sha256: 262f28e51956608760ae5dbdde255ef7a5780f459e73cb3542d7ae6aae6ac8b4
+  brief_sha256: c575f4b4efd291a5baa5206d525dce3f30272227fd0c3be8438179da6906da3c
+  brief: editions/rerun-004-the-systems-around-the-model/production/agent/eval-engineering/r2-line/brief.md
+  reply: editions/rerun-004-the-systems-around-the-model/production/agent/eval-engineering/r2-line/reply.md
+- item: factory-systems-problem/r2-writer
+  piece_id: factory-systems-problem
+  role: writer
+  round: 2
+  returns: manuscript
+  prompt_path: prompts/faithful-edit.md
+  prompt_sha256: df82bb35d8316b788bc3fcf5a2272c5557ab242f77efc36aca51cc76940bb66e
+  brief_sha256: 25d093aa8a7afff8bc788bb2b2efb834c3decb66f3a0c08776e8e4341294384b
+  brief: editions/rerun-004-the-systems-around-the-model/production/agent/factory-systems-problem/r2-writer/brief.md
+  reply: editions/rerun-004-the-systems-around-the-model/production/agent/factory-systems-problem/r2-writer/reply.md
+- item: from-gpt2-to-kimi3/r2-writer
+  piece_id: from-gpt2-to-kimi3
+  role: writer
+  round: 2
+  returns: manuscript
+  prompt_path: prompts/faithful-synthesis.md
+  prompt_sha256: ed62c00d30c4ffd23ee725b0ece2cdcdec561dd0fd428d0f905ef00510ec2745
+  brief_sha256: 86174f611c0bdbef265e4e29a94ace8e57ca8ed4a896c866a94f408e74d491a7
+  brief: editions/rerun-004-the-systems-around-the-model/production/agent/from-gpt2-to-kimi3/r2-writer/brief.md
+  reply: editions/rerun-004-the-systems-around-the-model/production/agent/from-gpt2-to-kimi3/r2-writer/reply.md
+- item: frontier-lab-agent-intrusion/r2-writer
+  piece_id: frontier-lab-agent-intrusion
+  role: writer
+  round: 2
+  returns: manuscript
+  prompt_path: prompts/faithful-synthesis.md
+  prompt_sha256: ed62c00d30c4ffd23ee725b0ece2cdcdec561dd0fd428d0f905ef00510ec2745
+  brief_sha256: 4ea71c89162c8cbfbaa09485f4430bc9bb77e5d7d028aa2fef7a39634d4a0a05
+  brief: editions/rerun-004-the-systems-around-the-model/production/agent/frontier-lab-agent-intrusion/r2-writer/brief.md
+  reply: editions/rerun-004-the-systems-around-the-model/production/agent/frontier-lab-agent-intrusion/r2-writer/reply.md
+- item: mcp-in-a-nutshell/r2-writer
+  piece_id: mcp-in-a-nutshell
+  role: writer
+  round: 2
+  returns: manuscript
+  prompt_path: prompts/in-a-nutshell.md
+  prompt_sha256: 069dd5ac87ce9b95d35dbfb462ed0e9dc9900bd4de513a88141b9ac63d24f2e7
+  brief_sha256: c635f6c637e413a502af1a0c366edcb5f9a346ad7bf3efa0b8749fc36a09ed40
+  brief: editions/rerun-004-the-systems-around-the-model/production/agent/mcp-in-a-nutshell/r2-writer/brief.md
+  reply: editions/rerun-004-the-systems-around-the-model/production/agent/mcp-in-a-nutshell/r2-writer/reply.md
+- item: mcp-protocol-update/r2-writer
+  piece_id: mcp-protocol-update
+  role: writer
+  round: 2
+  returns: manuscript
+  prompt_path: prompts/faithful-synthesis.md
+  prompt_sha256: ed62c00d30c4ffd23ee725b0ece2cdcdec561dd0fd428d0f905ef00510ec2745
+  brief_sha256: c28073a6cd288430d8e512e3e37eda87f1c9ee18d70854d5325dd2f798c4ae2a
+  brief: editions/rerun-004-the-systems-around-the-model/production/agent/mcp-protocol-update/r2-writer/brief.md
+  reply: editions/rerun-004-the-systems-around-the-model/production/agent/mcp-protocol-update/r2-writer/reply.md
+- item: pragmatic-leverage/r2-writer
+  piece_id: pragmatic-leverage
+  role: writer
+  round: 2
+  returns: manuscript
+  prompt_path: prompts/faithful-edit.md
+  prompt_sha256: df82bb35d8316b788bc3fcf5a2272c5557ab242f77efc36aca51cc76940bb66e
+  brief_sha256: 3bfa323f2100d8696cd030f39c39e46a554f3b4a3f543b575151cb2e3857f22f
+  brief: editions/rerun-004-the-systems-around-the-model/production/agent/pragmatic-leverage/r2-writer/brief.md
+  reply: editions/rerun-004-the-systems-around-the-model/production/agent/pragmatic-leverage/r2-writer/reply.md
+pieces:
+- piece_id: frontier-lab-agent-intrusion
+  status: parked
+  rounds: 1
+  record: editions/rerun-004-the-systems-around-the-model/production/articles/frontier-lab-agent-intrusion.yaml
+  findings: []
+- piece_id: eval-engineering
+  status: parked
+  rounds: 1
+  record: editions/rerun-004-the-systems-around-the-model/production/articles/eval-engineering.yaml
+  findings: []
+- piece_id: pragmatic-leverage
+  status: parked
+  rounds: 1
+  record: editions/rerun-004-the-systems-around-the-model/production/articles/pragmatic-leverage.yaml
+  findings: []
+- piece_id: from-gpt2-to-kimi3
+  status: parked
+  rounds: 1
+  record: editions/rerun-004-the-systems-around-the-model/production/articles/from-gpt2-to-kimi3.yaml
+  findings: []
+- piece_id: factory-systems-problem
+  status: parked
+  rounds: 1
+  record: editions/rerun-004-the-systems-around-the-model/production/articles/factory-systems-problem.yaml
+  findings: []
+- piece_id: mcp-in-a-nutshell
+  status: parked
+  rounds: 1
+  record: editions/rerun-004-the-systems-around-the-model/production/articles/mcp-in-a-nutshell.yaml
+  findings: []
+- piece_id: mcp-protocol-update
+  status: parked
+  rounds: 1
+  record: editions/rerun-004-the-systems-around-the-model/production/articles/mcp-protocol-update.yaml
+  findings: []
+- piece_id: editorial
+  status: waiting
+  rounds: 0
+  record: editions/rerun-004-the-systems-around-the-model/production/articles/editorial.yaml
+  findings: []
+recorded: {}
+human_actions:
+- 'pre-existing gate failure (validate): /Users/franguijarro/code/magazine/editions/rerun-004-the-systems-around-the-model/articles/eval-engineering.md:
+  code block 1 does not appear in any pinned source extraction (eval-engineering-the-step-that-turns-a-200-model-9f6f868f);
+  its first line is ''low context recall    → reject the handoff''. Code in the magazine is copied and
+  run by readers, so every fenced block must be the source''s own lines, character for character.'
+- 'language overlays are stale after this rewrite; restage them with `mag translate rerun-004-the-systems-around-the-model
+  <language>`: Translation ''es'' article eval-engineering is stale: source_sha256 is ''18d38683b42277d623e9f4f56cff67ced760e24bb223acd84d480337276656be'',
+  but eval-engineering.md hashes to 5398c09cf2a9b211a53059809a8db04e00b915813dbb7e893870021ee4666daf;
+  the translation no longer matches its English source
+
+  Translation ''es'' article eval-engineering does not preserve the source Markdown block structure (18
+  source blocks, 5 translated blocks)'
+- 'language overlays are stale after this rewrite; restage them with `mag translate rerun-004-the-systems-around-the-model
+  <language>`: Translation ''es'' article factory-systems-problem is stale: source_sha256 is ''0b84e8747b390c861af1a9cef4f7327fe3b1fd0902c655f8128033bfebe6539f'',
+  but factory-systems-problem.md hashes to 502a86d64024936caf31c5587ef107c5862523d5cb4d057511132ea4b1e03fc7;
+  the translation no longer matches its English source
+
+  Translation ''es'' article factory-systems-problem does not preserve the source Markdown block structure
+  (13 source blocks, 1 translated blocks)'
+- 'language overlays are stale after this rewrite; restage them with `mag translate rerun-004-the-systems-around-the-model
+  <language>`: Translation ''es'' article from-gpt2-to-kimi3 is stale: source_sha256 is ''551c6ee3f78d2dca9d7e48d65642abdce4924af7b287de492799be5350aa92be'',
+  but from-gpt2-to-kimi3.md hashes to 873dd47411ec024d43e4e5fae7def5b52adc230ae92e484fc781dc5103249a69;
+  the translation no longer matches its English source
+
+  Translation ''es'' article from-gpt2-to-kimi3 does not preserve the source Markdown block structure
+  (19 source blocks, 5 translated blocks)'
+- 'language overlays are stale after this rewrite; restage them with `mag translate rerun-004-the-systems-around-the-model
+  <language>`: Translation ''es'' article mcp-in-a-nutshell is stale: source_sha256 is ''282d3c3831f3241e71240c59020917413ebc9c2eefc2b10072f64144f87c470b'',
+  but mcp-in-a-nutshell.md hashes to 11521f09e41519ab1b74c2764ad640a7e14c7cfde470a23dedb26d056dcde0a8;
+  the translation no longer matches its English source
+
+  Translation ''es'' article mcp-in-a-nutshell does not preserve the source Markdown block structure (20
+  source blocks, 1 translated blocks)
+
+  Translation ''es'' article mcp-in-a-nutshell does not preserve inline code identifiers and order'
+- 'language overlays are stale after this rewrite; restage them with `mag translate rerun-004-the-systems-around-the-model
+  <language>`: Translation ''es'' article mcp-protocol-update is stale: source_sha256 is ''1cc889599f32b348b784a6b1d60ec8721f3f5676a5f80270778d612f4b04ca27'',
+  but mcp-protocol-update.md hashes to 37c5c490184b4ace57be5381eb801101f9188c7d63f39200d6bda3b8588a8b39;
+  the translation no longer matches its English source
+
+  Translation ''es'' article mcp-protocol-update does not preserve the source Markdown block structure
+  (19 source blocks, 1 translated blocks)
+
+  Translation ''es'' article mcp-protocol-update does not preserve inline code identifiers and order'
+- 'language overlays are stale after this rewrite; restage them with `mag translate rerun-004-the-systems-around-the-model
+  <language>`: Translation ''es'' article pragmatic-leverage is stale: source_sha256 is ''f2290b5ae25eefb5da2b8500c4236708889b44758cb09bafa758ba33e4338769'',
+  but pragmatic-leverage.md hashes to 35020e2818cd012893fafd23ee2544eb8902ef656c5149023b2221db64c994cc;
+  the translation no longer matches its English source
+
+  Translation ''es'' article pragmatic-leverage does not preserve the source Markdown block structure
+  (18 source blocks, 5 translated blocks)'

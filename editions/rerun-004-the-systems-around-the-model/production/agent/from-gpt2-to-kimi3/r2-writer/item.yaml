@@ -1,0 +1,12 @@
+schema_version: 1
+edition_id: rerun-004-the-systems-around-the-model
+item: from-gpt2-to-kimi3/r2-writer
+piece_id: from-gpt2-to-kimi3
+role: writer
+round: 2
+returns: manuscript
+prompt_path: prompts/faithful-synthesis.md
+prompt_sha256: ed62c00d30c4ffd23ee725b0ece2cdcdec561dd0fd428d0f905ef00510ec2745
+brief_sha256: 86174f611c0bdbef265e4e29a94ace8e57ca8ed4a896c866a94f408e74d491a7
+brief: editions/rerun-004-the-systems-around-the-model/production/agent/from-gpt2-to-kimi3/r2-writer/brief.md
+reply: editions/rerun-004-the-systems-around-the-model/production/agent/from-gpt2-to-kimi3/r2-writer/reply.md

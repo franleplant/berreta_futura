@@ -1,0 +1,12 @@
+schema_version: 1
+edition_id: rerun-004-the-systems-around-the-model
+item: factory-systems-problem/r1-evidence
+piece_id: factory-systems-problem
+role: evidence
+round: 1
+returns: verdict
+prompt_path: prompts/evidence-review.md
+prompt_sha256: 2d368985eba3011b23c2f03fa926da4791a03975bd5ee4403ed6d8d19503d264
+brief_sha256: e907f4b9106fff66321ff5a24abb46889205d0a727e587a72464bb45fc52067a
+brief: editions/rerun-004-the-systems-around-the-model/production/agent/factory-systems-problem/r1-evidence/brief.md
+reply: editions/rerun-004-the-systems-around-the-model/production/agent/factory-systems-problem/r1-evidence/reply.md
