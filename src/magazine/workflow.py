@@ -18,11 +18,14 @@ cycles.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
+from tempfile import mkstemp
 import tomllib
 from typing import Any, Mapping, Protocol
 
@@ -77,6 +80,29 @@ ACTION_KINDS = {
     "stage_translations",
     "scaffold_cover",
     "build",
+}
+# Probe closures cover authored inputs only, never the magazine package's own
+# code or design templates; any change to probe-relevant rendering or
+# validation code must bump this schema, which wholesale-invalidates every
+# persisted workflow cache on load.
+_WORKFLOW_CACHE_SCHEMA = 1
+# run only ever reuses a checkpoint prefix strictly below the dispatched
+# checkpoint's index, so every reused checkpoint was complete (the dispatched
+# one was the first blocked). The floor names the first checkpoint whose
+# inputs the dispatched action may write: reconcile_assignment rewrites
+# release-state.yaml, which the _Snapshot constructor consumes, so nothing is
+# reusable; stage_translations' overlays are first read by the translations
+# checkpoint; scaffold_cover's record is first read by the cover checkpoint;
+# build writes only under output/, first read by the build checkpoint. Given
+# a deterministic adapter a fresh status would recompute identical frozen
+# Checkpoint objects, so report.to_json() and the seen-digest semantics stay
+# byte-identical. Reused Checkpoint objects are frozen; never mutate their
+# nested details.
+_ACTION_FLOOR = {
+    "reconcile_assignment": 0,
+    "stage_translations": CHECKPOINT_ORDER.index("translations"),
+    "scaffold_cover": CHECKPOINT_ORDER.index("cover"),
+    "build": CHECKPOINT_ORDER.index("build"),
 }
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _PREFLIGHT_READY_RESULTS = {"ready", "home_ready_studio_blocked"}
@@ -321,62 +347,86 @@ class Workflow:
         self.adapter = adapter or DefaultWorkflowAdapter()
 
     def status(self, edition_id: str) -> WorkflowReport:
-        """Inspect an edition without writing files or advancing workflow state."""
+        """Inspect an edition without writing authored files or advancing
+        workflow state (may refresh a derived cache under output/.build/)."""
 
-        edition_id = _clean_edition_id(edition_id)
-        snapshot = _Snapshot(self.root, edition_id)
+        return self._status(_clean_edition_id(edition_id), reuse=())
+
+    def _status(
+        self,
+        edition_id: str,
+        *,
+        reuse: tuple[Checkpoint, ...],
+    ) -> WorkflowReport:
+        cache = _WorkflowCache.load(
+            _project_paths(self.root)["output"]
+            / ".build"
+            / "workflow-cache"
+            / f"{edition_id}.json",
+            edition_id,
+            self.root,
+        )
+        snapshot = _Snapshot(self.root, edition_id, cache=cache)
         checkpoints: list[Checkpoint] = []
 
-        assignment = snapshot.assignment_checkpoint()
-        checkpoints.append(assignment)
-        coverage = snapshot.coverage_checkpoint(assignment)
-        checkpoints.append(coverage)
-        evidence = snapshot.evidence_checkpoint(coverage)
-        checkpoints.append(evidence)
-        translations = snapshot.translations_checkpoint(evidence)
-        checkpoints.append(translations)
-        cover = snapshot.cover_checkpoint(translations)
-        checkpoints.append(cover)
-        illustrations = snapshot.illustrations_checkpoint(cover)
-        checkpoints.append(illustrations)
+        def take(index: int, compute: Callable[[], Checkpoint]) -> Checkpoint:
+            checkpoint = reuse[index] if index < len(reuse) else compute()
+            checkpoints.append(checkpoint)
+            return checkpoint
 
-        if _all_complete(checkpoints):
-            fit_probe = self.adapter.fit(self.root, edition_id)
-            fit = _probe_checkpoint(
-                "fit",
-                fit_probe,
-                failed_classification="authorial",
-                instruction=(
-                    "Revise the manuscripts or declared page minima named by the measurement, "
-                    "then run the fit check again."
-                ),
-                command=f"uv run --locked mag fit {edition_id}",
-            )
-        else:
-            fit = _waiting_checkpoint("fit", checkpoints)
-        checkpoints.append(fit)
+        assignment = take(0, snapshot.assignment_checkpoint)
+        coverage = take(1, lambda: snapshot.coverage_checkpoint(assignment))
+        evidence = take(2, lambda: snapshot.evidence_checkpoint(coverage))
+        translations = take(3, lambda: snapshot.translations_checkpoint(evidence))
+        cover = take(4, lambda: snapshot.cover_checkpoint(translations))
+        take(5, lambda: snapshot.illustrations_checkpoint(cover))
 
-        if _all_complete(checkpoints):
-            validation_probe = self.adapter.validate(self.root, edition_id)
-            validation = _probe_checkpoint(
-                "validation",
-                validation_probe,
-                failed_classification="authorial",
-                instruction=(
-                    "Correct every reported validation error, then validate the edition again."
-                ),
-                command=f"uv run --locked mag validate {edition_id}",
-            )
-        else:
-            validation = _waiting_checkpoint("validation", checkpoints)
-        checkpoints.append(validation)
+        def fit_checkpoint() -> Checkpoint:
+            if _all_complete(checkpoints):
+                fit_probe = self._cached_probe(
+                    "fit",
+                    snapshot,
+                    cache,
+                    lambda: self.adapter.fit(self.root, edition_id),
+                )
+                return _probe_checkpoint(
+                    "fit",
+                    fit_probe,
+                    failed_classification="authorial",
+                    instruction=(
+                        "Revise the manuscripts or declared page minima named by the measurement, "
+                        "then run the fit check again."
+                    ),
+                    command=f"uv run --locked mag fit {edition_id}",
+                )
+            return _waiting_checkpoint("fit", checkpoints)
 
-        build = snapshot.build_checkpoint(validation)
-        checkpoints.append(build)
-        evidence_review = snapshot.evidence_review_checkpoint(build)
-        checkpoints.append(evidence_review)
-        render_review = snapshot.render_review_checkpoint(build, evidence_review)
-        checkpoints.append(render_review)
+        take(6, fit_checkpoint)
+
+        def validation_checkpoint() -> Checkpoint:
+            if _all_complete(checkpoints):
+                validation_probe = self._cached_probe(
+                    "validate",
+                    snapshot,
+                    cache,
+                    lambda: self.adapter.validate(self.root, edition_id),
+                )
+                return _probe_checkpoint(
+                    "validation",
+                    validation_probe,
+                    failed_classification="authorial",
+                    instruction=(
+                        "Correct every reported validation error, then validate the edition again."
+                    ),
+                    command=f"uv run --locked mag validate {edition_id}",
+                )
+            return _waiting_checkpoint("validation", checkpoints)
+
+        validation = take(7, validation_checkpoint)
+
+        build = take(8, lambda: snapshot.build_checkpoint(validation))
+        evidence_review = take(9, lambda: snapshot.evidence_review_checkpoint(build))
+        take(10, lambda: snapshot.render_review_checkpoint(build, evidence_review))
 
         release_ready = (
             snapshot.lifecycle == "collecting"
@@ -386,17 +436,62 @@ class Workflow:
                 if checkpoint.id not in {"release"}
             )
         )
-        release = snapshot.release_checkpoint(
-            checkpoints,
-            release_ready=release_ready,
+        take(
+            11,
+            lambda: snapshot.release_checkpoint(
+                checkpoints,
+                release_ready=release_ready,
+            ),
         )
-        checkpoints.append(release)
+        cache.save()
         return WorkflowReport(
             edition_id=edition_id,
             lifecycle=snapshot.lifecycle,
             release_ready=release_ready,
             checkpoints=tuple(checkpoints),
         )
+
+    def _cached_probe(
+        self,
+        kind: str,
+        snapshot: _Snapshot,
+        cache: _WorkflowCache,
+        run_probe: Callable[[], ProbeResult],
+    ) -> ProbeResult:
+        try:
+            key = _probe_cache_key(
+                kind,
+                self.root,
+                snapshot,
+                cache,
+                adapter=f"{type(self.adapter).__module__}.{type(self.adapter).__qualname__}",
+            )
+        except (OSError, ValidationError, ValueError):
+            return run_probe()
+        entry = cache.probe(kind)
+        if (
+            isinstance(entry, dict)
+            and entry.get("key") == key
+            and isinstance(entry.get("ok"), bool)
+            and isinstance(entry.get("summary"), str)
+            and isinstance(entry.get("details"), dict)
+        ):
+            return ProbeResult(entry["ok"], entry["summary"], entry["details"])
+        # Adapter exceptions propagate; nothing is cached for them.
+        probe = run_probe()
+        try:
+            # Normalization is only the tuple->list JSON round trip; key
+            # insertion order is preserved end to end, so hit and miss reports
+            # serialize byte-identically to the adapter's raw details.
+            # Unserializable details skip caching.
+            details = json.loads(json.dumps(probe.details))
+        except (TypeError, ValueError):
+            return probe
+        cache.set_probe(
+            kind,
+            {"key": key, "ok": probe.ok, "summary": probe.summary, "details": details},
+        )
+        return ProbeResult(probe.ok, probe.summary, details)
 
     def run(self, edition_id: str) -> AdvanceResult:
         """Safely advance deterministic work and stop before judgment or release.
@@ -410,8 +505,10 @@ class Workflow:
         edition_id = _clean_edition_id(edition_id)
         actions: list[str] = []
         seen: set[str] = set()
+        reuse: tuple[Checkpoint, ...] = ()
         for _ in range(len(CHECKPOINT_ORDER) + 1):
-            report = self.status(edition_id)
+            report = self._status(edition_id, reuse=reuse)
+            reuse = ()
             if report.lifecycle == "released":
                 return AdvanceResult(report, tuple(actions))
             checkpoint = report.next_checkpoint
@@ -434,17 +531,226 @@ class Workflow:
             if not performed:
                 return AdvanceResult(report, tuple(actions))
             actions.extend(performed)
+            floor = _ACTION_FLOOR.get(checkpoint.next_action.action, 0)
+            # Defensive rail: never reuse the dispatched checkpoint or later.
+            floor = min(floor, CHECKPOINT_ORDER.index(checkpoint.id))
+            reuse = report.checkpoints[:floor]
         raise ValidationError(
             f"Workflow run exceeded the checkpoint limit for {edition_id}"
         )
 
 
+def _hash_path_bytes(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+class _WorkflowCache:
+    """Derived hash and probe memo persisted under output/.build.
+
+    The cache supplies previously computed content hashes and probe results
+    keyed by content, never verdicts, so it is unobservable in reports. Every
+    load or save failure degrades silently to a miss; mag finish renames,
+    rollback deletions, and torn concurrent writes are therefore
+    indistinguishable from no cache.
+    """
+
+    def __init__(self, path: Path, edition_id: str, root: Path):
+        self.path = path
+        self.edition_id = edition_id
+        self.root = root
+        self._hashes: dict[str, Any] = {}
+        self._probes: dict[str, Any] = {}
+        self._memo: dict[str, str] = {}
+        self._dirty = False
+
+    @classmethod
+    def load(cls, path: Path, edition_id: str, root: Path) -> _WorkflowCache:
+        cache = cls(path, edition_id, root)
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return cache
+        if (
+            not isinstance(data, dict)
+            or data.get("schema_version") != _WORKFLOW_CACHE_SCHEMA
+            or data.get("edition_id") != edition_id
+        ):
+            return cache
+        if isinstance(data.get("hashes"), dict):
+            cache._hashes = dict(data["hashes"])
+        if isinstance(data.get("probes"), dict):
+            cache._probes = dict(data["probes"])
+        return cache
+
+    def hash_file(self, path: Path) -> str:
+        relative = path.relative_to(self.root).as_posix()
+        memoized = self._memo.get(relative)
+        if memoized is not None:
+            return memoized
+        try:
+            stat = os.stat(path)
+        except OSError:
+            stat = None
+        digest: str | None = None
+        entry = self._hashes.get(relative)
+        if (
+            stat is not None
+            and isinstance(entry, dict)
+            and isinstance(entry.get("size"), int)
+            and isinstance(entry.get("mtime_ns"), int)
+            and isinstance(entry.get("sha256"), str)
+            and entry["size"] == stat.st_size
+            and entry["mtime_ns"] == stat.st_mtime_ns
+            and _SHA256.fullmatch(entry["sha256"])
+        ):
+            digest = entry["sha256"]
+        if digest is None:
+            # A same-size in-place rewrite within one mtime tick is invisible
+            # here; the repository's own editing tools always bump mtime.
+            digest = _hash_path_bytes(path)
+            if stat is not None:
+                self._hashes[relative] = {
+                    "size": stat.st_size,
+                    "mtime_ns": stat.st_mtime_ns,
+                    "sha256": digest,
+                }
+                self._dirty = True
+        self._memo[relative] = digest
+        return digest
+
+    def probe(self, kind: str) -> Any:
+        return self._probes.get(kind)
+
+    def set_probe(self, kind: str, entry: dict[str, Any]) -> None:
+        self._probes[kind] = entry
+        self._dirty = True
+
+    def save(self) -> None:
+        if not self._dirty:
+            return
+        payload = (
+            json.dumps(
+                {
+                    "schema_version": _WORKFLOW_CACHE_SCHEMA,
+                    "edition_id": self.edition_id,
+                    "hashes": self._hashes,
+                    "probes": self._probes,
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+            + "\n"
+        )
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            descriptor, name = mkstemp(
+                prefix=f".{self.path.name}.",
+                suffix=".tmp",
+                dir=self.path.parent,
+            )
+            try:
+                with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+                    handle.write(payload)
+                os.replace(name, self.path)
+            except OSError:
+                Path(name).unlink(missing_ok=True)
+                raise
+        except OSError:
+            return
+        self._dirty = False
+
+
+def _probe_closure_paths(root: Path, snapshot: _Snapshot) -> list[Path]:
+    """Every file either probe can read, over-approximated on purpose.
+
+    Over-inclusion only causes cache misses; under-inclusion would serve a
+    stale verdict. The superset spans the fixed bases below plus every
+    manifest-declared build input, so declared files outside editions/<id>/
+    and sources/ still invalidate the cache; declared paths outside the
+    project root already raise inside _current_build_input_paths, which
+    degrades the probe to uncacheable. Nothing under output/ belongs here, so
+    builds never invalidate probes and the cache never observes itself.
+    """
+
+    paths = snapshot.paths
+    closure = [
+        path
+        for path in (root / "magazine.toml", paths["release_state"])
+        if path.is_file()
+    ]
+    for base in (paths["editions"] / snapshot.edition_id, paths["sources"]):
+        if base.is_dir():
+            closure.extend(path for path in sorted(base.rglob("*")) if path.is_file())
+    if snapshot.edition is None:
+        raise ValidationError("Edition is unavailable for the probe closure")
+    declared: set[str] = set()
+    for language in snapshot.languages:
+        variant = (
+            snapshot.edition
+            if language == snapshot.primary_language
+            else load_translation(root, snapshot.edition, language)
+        )
+        declared.update(
+            _current_build_input_paths(
+                root,
+                paths,
+                snapshot.edition,
+                variant,
+                language=language,
+                primary_language=snapshot.primary_language,
+            )
+        )
+    closure.extend(
+        path
+        for relative in sorted(declared)
+        if (path := root / relative).is_file()
+    )
+    return closure
+
+
+def _probe_cache_key(
+    kind: str,
+    root: Path,
+    snapshot: _Snapshot,
+    cache: _WorkflowCache,
+    *,
+    adapter: str,
+) -> str:
+    inventory = []
+    seen: set[str] = set()
+    for path in _probe_closure_paths(root, snapshot):
+        relative = path.resolve().relative_to(root).as_posix()
+        if relative in seen:
+            continue
+        seen.add(relative)
+        inventory.append([relative, cache.hash_file(path)])
+    payload = json.dumps(
+        {
+            "schema": _WORKFLOW_CACHE_SCHEMA,
+            "probe": kind,
+            "edition_id": snapshot.edition_id,
+            "adapter": adapter,
+            "inventory": sorted(inventory),
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
 class _Snapshot:
     """Read-only implementation behind the public workflow report."""
 
-    def __init__(self, root: Path, edition_id: str):
+    def __init__(
+        self,
+        root: Path,
+        edition_id: str,
+        *,
+        cache: _WorkflowCache | None = None,
+    ):
         self.root = root
         self.edition_id = edition_id
+        self._cache = cache
         self.paths = _project_paths(root)
         self.edition_dir = self.paths["editions"] / edition_id
         self.manifest_path = self.edition_dir / "edition.yaml"
@@ -1154,6 +1460,9 @@ class _Snapshot:
                                 expected_inputs=expected_inputs,
                                 language=language,
                                 primary_language=self.primary_language,
+                                hash_file=(
+                                    self._cache.hash_file if self._cache else None
+                                ),
                             )
                         )
                 except ValidationError as exc:
@@ -1678,6 +1987,7 @@ def _build_input_drift(
     expected_inputs: set[str],
     language: str,
     primary_language: str,
+    hash_file: Callable[[Path], str] | None = None,
 ) -> list[str]:
     drift: list[str] = []
     if build_manifest.get("schema_version") != 1:
@@ -1727,7 +2037,9 @@ def _build_input_drift(
         if not path.is_file():
             drift.append(f"missing input: {path_value}")
             continue
-        actual = hashlib.sha256(path.read_bytes()).hexdigest()
+        # The cache seam supplies actual, never the verdict; the comparison
+        # against the manifest-expected digest always runs.
+        actual = hash_file(path) if hash_file is not None else _hash_path_bytes(path)
         if actual != expected:
             drift.append(f"changed input: {path_value}")
     drift.extend(
