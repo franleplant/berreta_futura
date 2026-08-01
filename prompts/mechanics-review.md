@@ -25,8 +25,10 @@ A rule cannot tell a typo from a convention, so establish the piece's own
 convention before you file anything. Read the whole body and count. If every
 sentence opens lowercase that is the writer's style and none is a finding; if
 most open capitalised and a handful do not, those few are typos and you quote
-each. Headings, captions, labels, decks and editor's notes are the editors' own
-text and always capitalise, whatever the body does. Reason the same way about a
+each. Headings, captions, labels and decks are the editors' own text and always
+capitalise, whatever the body does. If you find a labeled editor's note or
+author's note inside an article, that is itself a finding at `major`: the
+magazine does not print editorial apparatus in the prose. Reason the same way about a
 missing article, a fragment or unconventional punctuation, and say in the note
 which way you read it.
 

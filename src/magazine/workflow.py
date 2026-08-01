@@ -70,6 +70,7 @@ from .extraction import (
 from .illustration import load_illustration_plan, validate_illustration_plan
 from .io import load_structured
 from .manifest import Edition, load_edition, load_translation
+from .produce_graph import resolve_production_graph
 from .production_record import (
     AGENT_DIRNAME,
     PRODUCTION_DIRNAME,
@@ -1350,9 +1351,39 @@ class _Snapshot:
                 ),
                 produce,
             )
+        # Last, and the reason this checkpoint stopped being trustworthy: every
+        # branch above asks about a piece, and the pipeline's final stage is
+        # about the *issue*.  An edition whose pieces were all drafted, none
+        # escalated, none staged and none filed against reported complete here
+        # while the managing editor and the reader personas had never run -- and
+        # so did every command downstream that trusted this checkpoint.  The
+        # graph knows the difference; ask it before saying the word.
+        graph = resolve_production_graph(
+            self.root, self.paths["editions"], self.edition_id
+        )
+        details["graph"] = graph.to_dict()
+        if not graph.complete:
+            unreached = graph.unreached
+            return _blocked(
+                "production",
+                f"{len(unreached)} production graph node(s) have not been reached: "
+                + ", ".join(node.id for node in unreached)
+                + ".",
+                details,
+                "authorial",
+                (
+                    "Advance the pipeline until it reports the graph complete; "
+                    "it owns the order, the gates, the judges and the two "
+                    "whole-issue judgments that no per-piece pass can stand in "
+                    "for. Run it with `--graph` to see every node and what is "
+                    "blocking it."
+                ),
+                produce,
+            )
         return _complete(
             "production",
-            f"{len(pieces)} piece(s) are drafted and none are escalated.",
+            f"{len(pieces)} piece(s) are drafted and the production graph is "
+            "complete.",
             details,
         )
 

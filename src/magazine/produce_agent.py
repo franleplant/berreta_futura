@@ -89,6 +89,13 @@ from .produce import (
     WorkItem,
     WorkParked,
 )
+from .produce_graph import (
+    ESCALATED,
+    INCONSISTENT,
+    resolve_production_graph,
+    role_order,
+    work_contracts,
+)
 from .produce_prompts import (
     ProduceError,
     PromptFile,
@@ -119,25 +126,17 @@ MANUSCRIPT = "manuscript"
 VERDICT = "verdict"
 TAKEAWAYS = "manager_takeaways"
 
-WORK_CONTRACTS: Mapping[str, str] = {
-    "writer": MANUSCRIPT,
-    "evidence": VERDICT,
-    "line": VERDICT,
-    "learning": VERDICT,
-    "edition": VERDICT,
-    "manager_run_a": TAKEAWAYS,
-}
+# Both maps below are *derived* from the declared graph rather than restated.
+# They were restated, and a second list of roles is a second place for a new
+# judge lens to be forgotten -- which matters now, because the two piece judges
+# are about to become several narrower ones.  Declaring a node in
+# ``produce_graph`` is what makes its brief answerable and gives it a place in
+# the report; there is no second edit.
+WORK_CONTRACTS: Mapping[str, str] = work_contracts()
 
-# Report order for a ready set.  The pipeline composes the two piece judges on
-# two threads, so their insertion order is scheduling; this is not.
-_ROLE_RANK = {
-    "writer": 0,
-    "evidence": 1,
-    "line": 2,
-    "manager_run_a": 3,
-    "learning": 4,
-    "edition": 5,
-}
+# Report order for a ready set.  The pipeline composes the piece judges on
+# several threads, so their insertion order is scheduling; this is not.
+_ROLE_RANK = role_order()
 
 _ITEM_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*$")
 
@@ -502,6 +501,16 @@ class AgentSession:
         if dry_run:
             return result, {}
         ready = self._materialise(edition_id, runner)
+        # Re-read the graph now that this replay's briefs are on disk.  The one
+        # the pipeline attached was resolved before ``_materialise`` ran, and on
+        # an edition's very first advance that is a moment when nothing under
+        # ``production/`` exists yet -- which reads as an edition that predates
+        # the pipeline, and so as vacuously complete.  Resolving after the write
+        # asks the question of the tree the next command will actually see.
+        graph = resolve_production_graph(
+            self.magazine.root, editions_dir, edition_id
+        )
+        result = replace(result, graph=graph)
         actions = list(result.human_actions)
         actions.extend(
             f"the reply for {key} was not applied: {reason}"
@@ -509,9 +518,8 @@ class AgentSession:
         )
         actions.extend(_unreached_actions(runner))
         actions.extend(self._escalation_actions(edition_id, result))
-        result = replace(
-            result, ready=ready, human_actions=tuple(actions)
-        )
+        actions.extend(_graph_actions(result, ready))
+        result = replace(result, ready=ready, human_actions=tuple(actions))
         _write_ready(editions_dir, edition_id, result, root=self.magazine.root)
         return result, dict(runner.rejected)
 
@@ -572,6 +580,44 @@ class AgentSession:
         return actions
 
 
+def _graph_actions(
+    result: ProduceResult, ready: Sequence[ReadyItem]
+) -> list[str]:
+    """Say what the graph knows that the ready set cannot express.
+
+    Two things, and both were invisible on the run this exists because of.  A
+    node in :data:`~magazine.produce_graph.INCONSISTENT` is finished work the
+    records do not carry, and no amount of re-running notices it, because the
+    pipeline asks for answers it thinks it is missing and this one it thinks it
+    has.  And an edition with no emittable briefs that is still short of
+    complete is stalled: the loop has nothing left to hand a worker and is not
+    done, which is the one combination a driver must never read as success.
+    """
+
+    graph = result.graph
+    if graph is None or graph.complete:
+        return []
+    actions = [
+        f"{node.id}: {node.detail}"
+        for node in graph.nodes
+        if node.state == INCONSISTENT
+    ]
+    if not ready and not result.escalated:
+        blocking = ", ".join(
+            node.id
+            for node in graph.unreached
+            if node.state not in {ESCALATED}
+        )
+        actions.append(
+            "the production graph is incomplete and this run emitted no brief, "
+            "so nothing a worker can answer will advance it. Unreached: "
+            + (blocking or "none")
+            + ". Resolve the nodes above by hand; the edition is not finished "
+            "and must not be built."
+        )
+    return actions
+
+
 def _unreached_actions(runner: CooperativeRunner) -> list[str]:
     """Name the finished work this replay walked past, and never delete it.
 
@@ -628,13 +674,38 @@ def _write_ready(
     Re-emitting an unchanged ready set must leave the tree byte-identical -- so
     that a driver which crashed and restarted cannot tell, and neither can a
     diff, that it ran twice.
+
+    ``state`` is read off the production graph and never off the size of the
+    ready set.  It used to be the latter, and the two are not the same question:
+    an edition whose editorial was unjudged and whose managing editor had never
+    run reported ``awaiting_work`` for one outstanding writer brief, which is
+    what "one small thing left" looks like.  ``complete`` here now means what it
+    says -- every declared node accepting -- and an edition that has run out of
+    emittable work without getting there is ``stalled``, which is a different
+    word on purpose.
     """
 
-    state = "complete"
-    if result.escalated:
+    graph = result.graph
+    if graph is not None and graph.complete:
+        state = "complete"
+    elif result.escalated:
         state = "escalated"
     elif result.ready:
         state = "awaiting_work"
+    elif graph is None:
+        state = "complete"
+    else:
+        # No brief to emit, no escalation, and the graph is still short of its
+        # accepting states.  Nothing a worker can pick up will move it, so
+        # naming it as ordinary progress would be the exact lie that shipped an
+        # unjudged editorial.
+        state = "stalled"
+    payload_graph: dict[str, Any] = {}
+    if graph is not None:
+        payload_graph = {
+            "complete": graph.complete,
+            "unreached": [node.id for node in graph.unreached],
+        }
     return write_render_review(
         ready_path(editions_dir, edition_id),
         {
@@ -642,6 +713,7 @@ def _write_ready(
             "edition_id": edition_id,
             "backend": AGENT_BACKEND,
             "state": state,
+            "graph": payload_graph,
             "ready": [item.to_dict() for item in result.ready],
             "pieces": [
                 {**outcome.to_dict(), "record": _relative(root, Path(outcome.record))}

@@ -104,7 +104,9 @@ disposition: editor_decision  # a human chooses the remedy
 `editor_decision` means the sentence is the source author's own retained text in
 `faithful_edit` or `faithful_synthesis`, where `docs/EDITORIAL_POLICY.md` makes
 changing wording review-required. The human picks between a silent repair,
-`[sic]`, an editor's note, leaving it, or not printing the piece. The severity is
+`[sic]`, leaving it, or not printing the piece. An editor's note is not on that
+list: the magazine does not print editorial apparatus inside an article, and a
+note is how a piece keeps its defect while appearing to answer one. The severity is
 whatever the defect deserves. An `editor_decision` finding still blocks the
 release until a human dispositions it, is never dropped, never softened, and
 never counted as clean.
