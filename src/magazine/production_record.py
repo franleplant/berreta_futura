@@ -56,6 +56,14 @@ PRODUCTION_RECORD_SCHEMA_VERSION = 1
 
 PRODUCTION_DIRNAME = "production"
 
+AGENT_DIRNAME = "agent"
+"""Where the cooperative backend keeps its work queue, beside the records.
+
+Named here rather than in :mod:`magazine.produce_agent` so that a reader of the
+production directory finds both halves in one place, and so that the workflow
+report can look for an outstanding ready set without importing the pipeline.
+"""
+
 # Terminal and non-terminal states one piece's record may sit in.  ``drafting``
 # is what a crashed or interrupted run leaves behind, and it is deliberately
 # distinguishable from ``escalated``: one means "nobody decided", the other

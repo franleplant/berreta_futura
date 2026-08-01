@@ -198,6 +198,7 @@ def load_edition(
     publication_name: str = "Magazine",
     source_records: Mapping[str, "SourceRecord"] | None = None,
     allow_missing_art: bool = False,
+    allow_unanchored_figures: bool = False,
 ) -> Edition:
     manifest_path = root / "editions" / edition_id / "edition.yaml"
     if not manifest_path.is_file():
@@ -453,6 +454,7 @@ def load_edition(
                 manuscript=manuscript,
                 rows=row.get("figures"),
                 records=source_records,
+                allow_unanchored=allow_unanchored_figures,
             )
         except ValidationError as exc:
             errors.extend(exc.errors)

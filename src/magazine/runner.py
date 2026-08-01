@@ -15,6 +15,12 @@ Two backends, asymmetric on purpose.
 single invocation with :meth:`RunnerConfig.with_text_backend`, which is what
 ``mag produce --backend`` calls.
 
+A third text backend, ``agent``, is named by the same key and resolved nowhere:
+it executes no process, so :func:`resolve_text_runner` refuses it by name and
+points at the cooperative driver in :mod:`magazine.produce_agent` instead.  It
+is listed in :data:`TEXT_BACKENDS` so that ``text_backend = "agent"`` and
+``--backend agent`` are validated exactly like the two that do shell out.
+
 **Image** runs through ``codex exec`` and nothing else.  ``[runner]
 image_backend`` exists only so a configuration that tries to name another
 backend is *refused* rather than silently ignored; there is no value of it that
@@ -70,7 +76,19 @@ class RunnerError(MagazineError):
 DEFAULT_TEXT_BACKEND = "codex"
 """The text backend.  ``[runner] text_backend`` absent means this."""
 
-TEXT_BACKENDS: tuple[str, ...] = ("claude", "codex")
+AGENT_BACKEND = "agent"
+"""The cooperative backend: the pipeline emits briefs and ingests answers.
+
+It is a text backend in every sense that matters to ``mag produce`` -- it is
+named by the same key, it answers the same calls, and the pipeline that uses it
+is the same pipeline -- but it executes nothing, so it resolves to no binary and
+never reaches this module's process plumbing.  A Python process cannot spawn a
+Claude Code subagent, and a fleet driver cannot be shelled out to; inverting the
+call is the only way that case is coverable at all.  See
+:mod:`magazine.produce_agent`.
+"""
+
+TEXT_BACKENDS: tuple[str, ...] = (AGENT_BACKEND, "claude", "codex")
 """Every backend ``[runner] text_backend`` may name."""
 
 IMAGE_BACKEND = "codex"
@@ -489,6 +507,16 @@ def resolve_text_runner(
     """
 
     backend = config.text_backend
+    if backend == AGENT_BACKEND:
+        # Reached only by a caller that resolved a runner without checking the
+        # backend first.  ``Magazine.produce`` branches before here, because
+        # there is no process to resolve: the agent backend's "binary" is
+        # whoever is reading the emitted briefs.
+        raise RunnerError(
+            f"The {AGENT_BACKEND!r} text backend runs no process: it emits briefs "
+            "and ingests answers. Drive it with `mag produce <edition-id> "
+            "--backend agent`, which needs no executable on PATH."
+        )
     if backend == "codex":
         binary_name, argv_tail, final_flag = (
             config.codex_binary,

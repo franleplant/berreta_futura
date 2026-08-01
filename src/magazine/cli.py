@@ -150,9 +150,26 @@ def parser() -> argparse.ArgumentParser:
         help=(
             "Run the writer and the judges through this text backend instead of "
             "[runner] text_backend, for this invocation only; magazine.toml is "
-            "not rewritten. Illustration is never a backend choice and is not "
+            "not rewritten. `agent` calls no model: it writes every ready brief "
+            "under editions/<id>/production/agent/ and ingests the replies left "
+            "beside them. Illustration is never a backend choice and is not "
             "affected."
         ),
+    )
+    produce.add_argument(
+        "--submit",
+        metavar="ITEM",
+        help=(
+            "Ingest one finished work item, named as the ready set spells it "
+            "(`article/r1-writer`), then advance and report the next ready set. "
+            "The text is read from --reply, or from stdin. Agent backend only."
+        ),
+    )
+    produce.add_argument(
+        "--reply",
+        type=Path,
+        metavar="PATH",
+        help="File holding the text for --submit (default: stdin)",
     )
     produce.add_argument(
         "--dry-run",
@@ -597,6 +614,31 @@ def _produce_articles(values: list[str] | None) -> list[str] | None:
     return names
 
 
+def _produce_submission(args: Any) -> tuple[str, str] | None:
+    """Read the text for ``--submit`` from ``--reply`` or from stdin.
+
+    Stdin is the default because that is how a driver already pipes a subagent's
+    answer, and ``--reply`` is for the human who wrote the file first. Refusing
+    an empty submission here keeps a mistyped redirect from being ingested as a
+    blank manuscript.
+    """
+
+    if args.submit is None:
+        if args.reply is not None:
+            raise MagazineError("--reply names the text for --submit; pass both")
+        return None
+    if args.reply is not None:
+        text = Path(args.reply).read_text(encoding="utf-8")
+    else:
+        text = sys.stdin.read()
+    if not text.strip():
+        raise MagazineError(
+            f"--submit {args.submit} was given no text; supply it with --reply "
+            "PATH or on stdin"
+        )
+    return str(args.submit), text
+
+
 def _produce_lines(result: Any) -> list[str]:
     lines = [
         f"{result.plan.edition_id}: {result.plan.backend}"
@@ -617,6 +659,16 @@ def _produce_lines(result: Any) -> list[str]:
         )
     for kind, path in result.recorded.items():
         lines.append(f"recorded: {kind} -> {path}")
+    for item in result.ready:
+        lines.append(
+            f"ready: {item.key} ({item.returns}) read {item.brief_path}, "
+            f"write {item.reply_path}"
+        )
+    if result.ready:
+        lines.append(
+            f"next: answer the {len(result.ready)} brief(s) above, then run "
+            "produce again"
+        )
     for action in result.human_actions:
         lines.append(f"human: {action}")
     return lines
@@ -708,6 +760,7 @@ def main(argv: list[str] | None = None) -> int:
                 max_rounds=args.max_rounds,
                 reviewer=args.reviewer,
                 backend=args.backend,
+                submit=_produce_submission(args),
             )
             if args.json:
                 _print_json(result.to_dict(), root=magazine.root)

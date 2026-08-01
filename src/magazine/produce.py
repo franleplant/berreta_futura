@@ -45,6 +45,16 @@ The seams are the same two this package already uses elsewhere: a
 model, and a :class:`ProductionGates` adapter is injected the way
 ``workflow.WorkflowAdapter`` is, so a test can exercise the state machine
 without paginating an edition for every round.
+
+**Who makes the call is not this module's business.**  Every model call goes
+through one dispatch function, which is handed a :class:`WorkItem` naming the
+piece, the role and the round.  An autonomous backend ignores the name and
+shells out.  A cooperative backend (:mod:`magazine.produce_agent`) uses it to
+look the answer up, and, when there is no answer yet, raises :class:`WorkParked`
+so this pipeline can move on to work that *is* answerable and report the whole
+set at once.  Nothing else about the order, the gates, the round budget, the
+escalation or the records changes between the two: that is the point of putting
+the seam here rather than around here.
 """
 
 from __future__ import annotations
@@ -63,6 +73,7 @@ from .learning_review import explainer_article_ids, furniture_projection
 from .line_review import EDITORIAL_ARTICLE_ID
 from .manifest import Edition
 from .media_schema import semantic_headings
+from .publication_document import DocumentParseError
 from .produce_prompts import (
     JUDGE_PROMPTS,
     EditionReviewInput,
@@ -94,6 +105,7 @@ from .production_record import (
     accumulated_findings,
     inputs_fingerprint,
     is_settled,
+    issue_record_path,
     load_piece_record,
     piece_record_path,
     text_sha256,
@@ -124,9 +136,109 @@ DEFAULT_ARTICLE_PAGES = 7
 # They run concurrently; this tuple decides only how the report reads.
 PIECE_JUDGES = ("evidence", "line")
 
+ISSUE_PIECE_ID = "issue"
+"""The ``piece_id`` under which the two whole-issue judgments are named.
+
+They belong to no single piece, and the production records already spell that
+``production/issue/``; work items spell it the same way.
+"""
+
+
+# ---------------------------------------------------------------------------
+# Naming one model call.
+
+
+@dataclass(frozen=True)
+class WorkItem:
+    """One model call the pipeline wants made, named so a worker can be told.
+
+    The autonomous backends never need this: they are handed a prompt and hand
+    back an answer, and the identity of the call lives only in the stack frame
+    that made it.  A cooperative backend has no stack frame to live in -- the
+    answer arrives in a later process -- so the call needs a name that survives
+    a crash, is stable across a replay, and is short enough for a human to type.
+    """
+
+    piece_id: str
+    role: str
+    round_number: int = 0
+
+    @property
+    def key(self) -> str:
+        """The name a driver uses, and the path under ``production/agent/``."""
+
+        role = self.role.replace("_", "-")
+        if self.round_number:
+            return f"{self.piece_id}/r{self.round_number}-{role}"
+        return f"{self.piece_id}/{role}"
+
+
+class WorkParked(Exception):
+    """Signal that a cooperative backend cannot answer this call yet.
+
+    Deliberately not a :class:`~magazine.errors.MagazineError`: it is control
+    flow, not a failure, and the handlers that turn a ``MagazineError`` into a
+    reported problem must not see it.  The pipeline catches it at exactly two
+    places -- around one piece, and around the whole-issue judgments -- and each
+    one turns it into "this unit is waiting" rather than "this run is over", so
+    the remaining independent units still get their briefs composed.
+    """
+
+    def __init__(self, item: WorkItem) -> None:
+        super().__init__(f"work item {item.key} has no answer yet")
+        self.item = item
+
+
+@dataclass(frozen=True)
+class ReadyItem:
+    """One brief a worker may pick up right now, with everything it needs.
+
+    ``prompt`` is the whole composed brief, byte for byte what an autonomous
+    backend would have been sent, so a worker needs nothing else.
+    ``brief_sha256`` is what makes a late answer refusable: it covers the
+    manuscript, the findings, and the notes the brief embeds, so a reply written
+    against a brief the pipeline has since recomposed cannot be applied.
+    """
+
+    item: WorkItem
+    prompt: str
+    brief_sha256: str
+    prompt_path: str
+    prompt_sha256: str
+    returns: str
+    brief_path: str = ""
+    reply_path: str = ""
+
+    @property
+    def key(self) -> str:
+        return self.item.key
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "item": self.item.key,
+            "piece_id": self.item.piece_id,
+            "role": self.item.role,
+            "round": self.item.round_number,
+            "returns": self.returns,
+            "prompt_path": self.prompt_path,
+            "prompt_sha256": self.prompt_sha256,
+            "brief_sha256": self.brief_sha256,
+            "brief": self.brief_path,
+            "reply": self.reply_path,
+        }
+
 
 # ---------------------------------------------------------------------------
 # Deterministic gates.
+
+
+# What a gate is allowed to raise and still be *a failing gate* rather than a
+# crashed run.  ``DocumentParseError`` is here because it is what a manuscript
+# that is still a staging marker produces: an HTML comment is a block the
+# publication parser refuses, so the very first produce run of a freshly staged
+# edition -- the one this pipeline exists to serve -- would otherwise abort with
+# a traceback instead of reporting a gate.
+_GATE_FAILURES = (MagazineError, DocumentParseError)
 
 
 @dataclass(frozen=True)
@@ -231,7 +343,7 @@ def _fit_gate(magazine: "Magazine", edition_id: str) -> GateResult:
 
     try:
         table, ok = magazine.fit(edition_id, language=magazine.primary_language)
-    except MagazineError as error:
+    except _GATE_FAILURES as error:
         return GateResult("fit", False, str(error))
     return GateResult("fit", ok, "" if ok else table)
 
@@ -241,7 +353,7 @@ def _guarded(name: str, action) -> GateResult:
         action()
     except ValidationError as error:
         return GateResult(name, False, "\n".join(error.errors))
-    except MagazineError as error:
+    except _GATE_FAILURES as error:
         return GateResult(name, False, str(error))
     return GateResult(name, True)
 
@@ -361,6 +473,8 @@ class ProduceResult:
     issue_reviews: Mapping[str, Any] = field(default_factory=dict)
     recorded: Mapping[str, str] = field(default_factory=dict)
     human_actions: tuple[str, ...] = ()
+    ready: tuple[ReadyItem, ...] = ()
+    """Briefs a worker may answer now.  Always empty under an autonomous run."""
 
     @property
     def escalated(self) -> tuple[str, ...]:
@@ -374,6 +488,7 @@ class ProduceResult:
         return {
             "plan": self.plan.to_dict(),
             "dry_run": self.dry_run,
+            "ready": [item.to_dict() for item in self.ready],
             "outcomes": [outcome.to_dict() for outcome in self.outcomes],
             "issue_reviews": {
                 kind: verdict.to_dict() if hasattr(verdict, "to_dict") else verdict
@@ -419,6 +534,12 @@ class Production:
         self.gates: ProductionGates = gates or DefaultProductionGates(magazine)
         self.max_rounds = max_rounds
         self.reviewer = reviewer or f"mag produce ({runner.backend})"
+        # One indirection for every model call in this module.  A runner that
+        # wants to know *which* call it is being asked for exposes ``request``;
+        # the two autonomous ones do not, and take the identical path they
+        # always took.
+        request = getattr(runner, "request", None)
+        self._dispatch = request if request is not None else _direct_dispatch(runner)
         self._prompts: dict[str, PromptFile] = {}
         # Failures a human must clear that no revision round could.  Collected
         # as a set because the same overlay goes stale on every round of every
@@ -494,28 +615,66 @@ class Production:
 
         outcomes: list[PieceOutcome] = []
         produced: list[str] = []
+        # Every piece that is *now* approved, whether this invocation drafted it
+        # or found it already settled.  The bench binds the edition as it stands
+        # on disk, not as this process happened to witness it, and a run that
+        # resumed -- or, under the agent backend, one of a dozen invocations that
+        # each carried one piece -- would otherwise offer the recorder a subset
+        # and be told there is no record to amend.
+        finished: list[str] = []
+        # Pieces whose work is out with a worker.  Empty for the whole of an
+        # autonomous run, which is why every branch that consults it below is
+        # dead code under ``codex`` and ``claude``.
+        parked: list[str] = []
         for row in plan.pieces:
             piece = pieces[row.piece_id]
+            record_path = str(
+                piece_record_path(self.magazine.editions_dir, edition_id, piece.id)
+            )
             if row.settled:
+                finished.append(piece.id)
                 outcomes.append(
                     PieceOutcome(
                         piece_id=piece.id,
                         status="settled",
                         rounds=0,
-                        record=str(
-                            piece_record_path(
-                                self.magazine.editions_dir, edition_id, piece.id
-                            )
-                        ),
+                        record=record_path,
                     )
                 )
                 continue
-            outcome = self._produce_piece(
-                edition_id, edition, piece, row, baseline
-            )
+            if parked and _grounded_in_the_other_pieces(piece):
+                # The editorial reads the pieces, so drafting it while one of
+                # them is still out would ground it in text that is about to
+                # change.  A sequential run gets this from the order alone; a
+                # fan-out has to be told.
+                outcomes.append(
+                    PieceOutcome(
+                        piece_id=piece.id,
+                        status="waiting",
+                        rounds=0,
+                        record=record_path,
+                    )
+                )
+                continue
+            try:
+                outcome = self._produce_piece(
+                    edition_id, edition, piece, row, baseline
+                )
+            except WorkParked as signal:
+                parked.append(piece.id)
+                outcomes.append(
+                    PieceOutcome(
+                        piece_id=piece.id,
+                        status="parked",
+                        rounds=max(signal.item.round_number - 1, 0),
+                        record=record_path,
+                    )
+                )
+                continue
             outcomes.append(outcome)
             if outcome.status == "passed":
                 produced.append(piece.id)
+                finished.append(piece.id)
             else:
                 # A piece that could not be settled makes every judgment
                 # downstream of it meaningless: the learning personas and the
@@ -533,13 +692,21 @@ class Production:
 
         issue_reviews: dict[str, Any] = {}
         recorded: dict[str, str] = {}
-        if produced:
+        issue_due = produced or not self._issue_records_present(edition_id)
+        if finished and not parked and issue_due:
+            # The learning personas and the managing editor read the finished
+            # issue.  With a piece still out, there is no finished issue, and
+            # nothing may be recorded against one.
             edition = self._load_edition(edition_id)
-            issue_reviews = self._judge_issue(edition_id, edition)
-            recorded, actions = self._record_bench(
-                edition_id, edition, produced, issue_reviews
-            )
-            human_actions.extend(actions)
+            try:
+                issue_reviews = self._judge_issue(edition_id, edition)
+            except WorkParked:
+                parked.append(ISSUE_PIECE_ID)
+            else:
+                recorded, actions = self._record_bench(
+                    edition_id, edition, finished, issue_reviews
+                )
+                human_actions.extend(actions)
         return ProduceResult(
             plan=plan,
             dry_run=False,
@@ -587,7 +754,12 @@ class Production:
                 peer_manuscripts=self._peers(edition, piece),
             )
             text = compose_writer_prompt(prompt, brief)
-            generated = self.runner.generate(text, cwd=self.root)
+            generated = self._dispatch(
+                WorkItem(piece.id, "writer", round_number),
+                prompt,
+                text,
+                cwd=self.root,
+            )
             manuscript, notes = split_scratch(generated.text)
             if not manuscript.strip():
                 raise ProduceError(
@@ -635,7 +807,9 @@ class Production:
                 gate_failures = tuple(failures)
                 continue
 
-            verdicts = self._judge_piece(piece, extractions, manuscript, edition)
+            verdicts = self._judge_piece(
+                piece, extractions, manuscript, edition, round_number=round_number
+            )
             round_record.judges = {
                 name: verdict.to_dict() for name, verdict in verdicts.items()
             }
@@ -696,6 +870,8 @@ class Production:
         extractions: Sequence[Extraction],
         manuscript: str,
         edition: Edition,
+        *,
+        round_number: int,
     ) -> dict[str, "Verdict"]:
         """Run the fact-checker and the line editor over one piece, together.
 
@@ -737,8 +913,36 @@ class Production:
             ("evidence", evidence_prompt, evidence_text),
             ("line", line_prompt, line_text),
         )
-        results = ordered_map(lambda job: self._verdict(*job), jobs, workers=2)
+        # Both jobs run whatever either does, so under a cooperative backend
+        # both briefs are composed and offered even though the first one to
+        # find no answer is the one whose signal escapes.  That is what makes
+        # the fact-checker and the line editor a *pair* a driver can fan out.
+        results = ordered_map(
+            lambda job: self._verdict(
+                *job, piece_id=piece.id, round_number=round_number
+            ),
+            jobs,
+            workers=2,
+        )
         return {name: verdict for (name, _, _), verdict in zip(jobs, results)}
+
+    def _issue_records_present(self, edition_id: str) -> bool:
+        """Whether both whole-issue judgments have already been made.
+
+        A run that produced nothing new has nothing to re-judge, which is why
+        the whole-issue personas are normally skipped in that case: they are the
+        most expensive calls in the pipeline and re-running them over unchanged
+        text buys nothing.  But "produced nothing new" is also what the *last*
+        invocation of an agent-driven loop looks like -- every piece settled two
+        invocations ago and only the manager's runs are left -- so the skip has
+        to be conditioned on the judgments actually existing rather than on this
+        process having drafted something.
+        """
+
+        return all(
+            issue_record_path(self.magazine.editions_dir, edition_id, kind).is_file()
+            for kind in ("learning", "edition")
+        )
 
     def _judge_issue(self, edition_id: str, edition: Edition) -> dict[str, Any]:
         """The learning personas, then the managing editor.
@@ -751,7 +955,9 @@ class Production:
 
         learning_prompt = self._prompt(JUDGE_PROMPTS["learning"])
         furniture = furniture_projection(edition)
-        run_a = self.runner.generate(
+        run_a = self._dispatch(
+            WorkItem(ISSUE_PIECE_ID, "manager_run_a"),
+            learning_prompt,
             compose_manager_run_a(
                 learning_prompt,
                 ManagerRunAInput(edition_id=edition_id, furniture=furniture),
@@ -790,6 +996,7 @@ class Production:
                     extractions=tuple(extractions),
                 ),
             ),
+            piece_id=ISSUE_PIECE_ID,
         )
         _require_unrevised_takeaways(takeaways, learning_verdict.document)
         write_issue_record(
@@ -834,6 +1041,7 @@ class Production:
                     ),
                 ),
             ),
+            piece_id=ISSUE_PIECE_ID,
         )
         write_issue_record(
             self.magazine.editions_dir,
@@ -843,8 +1051,18 @@ class Production:
         )
         return {"learning": learning_verdict, "edition": edition_verdict}
 
-    def _verdict(self, name: str, prompt: PromptFile, text: str) -> "Verdict":
-        generated = self.runner.generate(text, cwd=self.root)
+    def _verdict(
+        self,
+        name: str,
+        prompt: PromptFile,
+        text: str,
+        *,
+        piece_id: str,
+        round_number: int = 0,
+    ) -> "Verdict":
+        generated = self._dispatch(
+            WorkItem(piece_id, name, round_number), prompt, text, cwd=self.root
+        )
         document = parse_verdict(generated.text, label=f"{name} judge")
         result = str(document.get("result") or "").strip()
         if result not in REVIEW_RESULTS:
@@ -932,7 +1150,7 @@ class Production:
         self,
         edition_id: str,
         edition: Edition,
-        produced: Sequence[str],
+        finished: Sequence[str],
         issue_reviews: Mapping[str, Any],
     ) -> tuple[dict[str, str], list[str]]:
         """Bind each judge's verdict through the bench's own recorder.
@@ -950,8 +1168,8 @@ class Production:
         recorded: dict[str, str] = {}
         actions: list[str] = []
         article_ids = {article.id for article in edition.articles}
-        produced_articles = [item for item in produced if item in article_ids]
-        produced_pieces = list(produced)
+        produced_articles = [item for item in finished if item in article_ids]
+        produced_pieces = list(finished)
 
         for kind, ids, loader, path_of, recorder in (
             (
@@ -1152,6 +1370,13 @@ class Production:
             # missing opener is reported as a human action rather than as a
             # reason the writer cannot draft.
             allow_missing_art=True,
+            # A stranded figure anchor is the one validation error produce is
+            # *for*: the anchor gate names the figure, the heading it wanted and
+            # the headings the draft has, and hands that to the next round.
+            # Refusing to load the edition would turn the repairable case into
+            # an unloadable one, which is what a resumed or agent-driven run --
+            # one that re-reads the tree between rounds -- would hit first.
+            allow_unanchored_figures=True,
         )
 
     def _select(
@@ -1317,6 +1542,31 @@ class Verdict:
 
 # ---------------------------------------------------------------------------
 # Helpers.
+
+
+def _direct_dispatch(runner: ModelRunner):
+    """Call a runner that neither knows nor cares which item it is answering.
+
+    This is the whole of what the two autonomous backends see of the work-item
+    machinery: the name is composed, handed to this function, and dropped.
+    """
+
+    def call(item: WorkItem, prompt: PromptFile, text: str, *, cwd: Path):
+        return runner.generate(text, cwd=cwd)
+
+    return call
+
+
+def _grounded_in_the_other_pieces(piece: Piece) -> bool:
+    """Whether this piece may only be drafted once every other one is settled.
+
+    One piece answers yes.  The editorial is written from the articles, and
+    ``_select`` already puts it last for that reason; this states the same
+    constraint in the form a fan-out can check, because a fan-out has no order
+    to inherit it from.
+    """
+
+    return piece.kind == "editorial"
 
 
 def _takeaways_block(takeaways: Any) -> str:

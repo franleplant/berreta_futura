@@ -12,6 +12,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from magazine.runner import (
+    AGENT_BACKEND,
     CODEX_SANDBOX_MODES,
     DEFAULT_TEXT_BACKEND,
     DEFAULT_TIMEOUT_SECONDS,
@@ -194,9 +195,23 @@ class TextBackendOverrideTests(unittest.TestCase):
             with self.subTest(backend=backend):
                 config = codex_config().with_text_backend(backend)
                 self.assertEqual(config.text_backend, backend)
+                if backend == AGENT_BACKEND:
+                    # Named like the others and resolved like none of them: the
+                    # cooperative backend runs no process, so there is nothing
+                    # here to hand a binary back.
+                    continue
                 self.assertEqual(
                     resolve_text_runner(config, command=FakeCommand()).backend, backend
                 )
+
+    def test_the_agent_backend_is_selectable_but_resolves_no_process(self):
+        config = codex_config().with_text_backend(AGENT_BACKEND)
+
+        with self.assertRaises(RunnerError) as caught:
+            resolve_text_runner(config, command=FakeCommand())
+
+        self.assertIn("runs no process", str(caught.exception))
+        self.assertIn("--backend agent", str(caught.exception))
 
     def test_the_override_reaches_the_text_argv(self):
         command = FakeCommand()
