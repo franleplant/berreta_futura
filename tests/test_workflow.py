@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import shutil
 from pathlib import Path
 from unittest.mock import patch
 
@@ -1578,3 +1579,128 @@ def test_production_blocks_on_an_escalated_piece_and_asks_for_a_human(
     assert production.status == "blocked"
     assert production.next_action.classification == "human-review"
     assert production.details["escalated_pieces"] == ["article"]
+
+
+# ---------------------------------------------------------------------------
+# A sibling workspace: a regeneration of a shipped issue, outside the ledger.
+
+
+def _make_workspace(root: Path) -> str:
+    """Turn the fixture's collecting edition into a released one plus a rerun.
+
+    The shape a regeneration actually has: the shipped issue in the ledger,
+    and a sibling directory carrying the same manifest that is deliberately in
+    neither the collecting nor the released list.
+    """
+
+    workspace = f"rerun-{EDITION_ID}"
+    _write_yaml(
+        root / "library" / "release-state.yaml",
+        {
+            "schema_version": 2,
+            "intake_edition_id": "issue-002",
+            "collecting_editions": [
+                {
+                    "id": "issue-002",
+                    "issue_number": 2,
+                    "status": "collecting",
+                    "source_ids": [],
+                }
+            ],
+            "released_editions": [
+                {
+                    "id": EDITION_ID,
+                    "issue_number": 1,
+                    "status": "released",
+                    "source_ids": [SOURCE_ID],
+                }
+            ],
+        },
+    )
+    source = root / "editions" / EDITION_ID
+    target = root / "editions" / workspace
+    shutil.copytree(source, target)
+    manifest = yaml.safe_load((target / "edition.yaml").read_text(encoding="utf-8"))
+    manifest["id"] = workspace
+    _write_yaml(target / "edition.yaml", manifest)
+    return workspace
+
+
+def test_a_sibling_workspace_is_reported_rather_than_stopped_at_assignment(
+    tmp_path: Path,
+):
+    """A rerun is a legitimate edition to inspect, and the report says so."""
+
+    _make_project(tmp_path, extraction=True, complete_art=True)
+    workspace = _make_workspace(tmp_path)
+
+    report = Workflow(tmp_path, adapter=BuildAdapter()).status(workspace)
+
+    assert report.lifecycle == "workspace"
+    assignment = report.checkpoint("assignment")
+    assert assignment.status == "complete"
+    assert "sibling workspace" in assignment.summary
+    # The whole point: the report now reaches the checkpoints that matter for
+    # a regeneration instead of stopping at the front door.
+    assert report.checkpoint("production").status in {"complete", "blocked"}
+    assert report.checkpoint("evidence").status == "complete"
+
+
+def test_a_workspace_is_never_release_ready_and_release_is_not_applicable(
+    tmp_path: Path,
+):
+    _make_project(tmp_path, extraction=True, complete_art=True)
+    workspace = _make_workspace(tmp_path)
+
+    report = Workflow(tmp_path, adapter=BuildAdapter()).status(workspace)
+
+    assert report.release_ready is False
+    release = report.checkpoint("release")
+    assert release.status == "not_applicable"
+    assert release.next_action is None
+    assert "never released" in release.summary
+
+
+def test_a_workspace_still_owes_its_extractions_like_a_collecting_edition(
+    tmp_path: Path,
+):
+    """A rerun is drafted from the same sources and must pin them the same way."""
+
+    _make_project(tmp_path, extraction=False)
+    workspace = _make_workspace(tmp_path)
+
+    report = Workflow(tmp_path, adapter=GuardAdapter()).status(workspace)
+
+    evidence = report.checkpoint("evidence")
+    assert evidence.status == "blocked"
+    assert evidence.details["missing_or_invalid_extractions"] == [SOURCE_ID]
+
+
+def test_an_id_with_no_manifest_is_still_the_typo_it_always_was(tmp_path: Path):
+    _make_project(tmp_path, extraction=True)
+
+    report = Workflow(tmp_path, adapter=GuardAdapter()).status("no-such-edition")
+
+    assert report.lifecycle == "unassigned"
+    assignment = report.checkpoint("assignment")
+    assert assignment.status == "blocked"
+    assert "mag collect" in (assignment.next_action.command or "")
+
+
+def test_production_records_do_not_invalidate_the_probe_cache(tmp_path: Path):
+    """Produce writes there every round; neither probe ever reads it."""
+
+    _make_project(tmp_path, extraction=True, complete_art=True)
+    adapter = CountingBuildAdapter()
+    Workflow(tmp_path, adapter=adapter).run(EDITION_ID)
+    fit_calls, validate_calls = adapter.fit_calls, adapter.validate_calls
+
+    record = (
+        tmp_path / "editions" / EDITION_ID / "production" / "articles" / "article.yaml"
+    )
+    record.parent.mkdir(parents=True, exist_ok=True)
+    record.write_text("schema_version: 1\nstatus: passed\n", encoding="utf-8")
+
+    Workflow(tmp_path, adapter=adapter).status(EDITION_ID)
+
+    assert (adapter.fit_calls, adapter.validate_calls) == (fit_calls, validate_calls)

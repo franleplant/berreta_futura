@@ -271,9 +271,13 @@ class ParallelJudgeTests(AgentFixture):
         )
         self.assertEqual(descriptor["item"], "article/r1-writer")
         self.assertEqual(descriptor["prompt_path"], "prompts/faithful-edit.md")
-        self.assertEqual(
-            descriptor["brief_sha256"], hashlib.sha256(brief.encode()).hexdigest()
+        # The digest binds the *question*, not the composed bytes: see
+        # produce_prompts.work_identity. Reformatting a brief must not void an
+        # answer, so it deliberately is not the hash of the file beside it.
+        self.assertNotEqual(
+            descriptor["work_sha256"], hashlib.sha256(brief.encode()).hexdigest()
         )
+        self.assertNotIn("brief_sha256", descriptor)
 
 
 # ---------------------------------------------------------------------------
@@ -367,7 +371,7 @@ class IngestTests(AgentFixture):
             self.session().submit("issue-001", "article/r1-line", verdict("approved"))
 
         self.assertIn("was not applied", str(raised.exception))
-        self.assertIn("recomposed", str(raised.exception))
+        self.assertIn("the question it answers has changed", str(raised.exception))
 
     def test_a_moved_prompt_voids_the_draft_written_against_the_old_one(self):
         self.fleet.work(self.advance())
@@ -378,9 +382,48 @@ class IngestTests(AgentFixture):
 
         self.assertEqual(self.keys(result), ["article/r1-writer"])
         self.assertTrue(
-            any("recomposed" in action for action in result.human_actions),
+            any(
+                "the question it answers has changed" in action
+                for action in result.human_actions
+            ),
             result.human_actions,
         )
+
+    def test_touching_a_prompt_without_changing_it_voids_nothing(self):
+        """Identity is content, so a rewrite of the same bytes is a no-op."""
+
+        self.fleet.work(self.advance())
+        prompt = self.root / "prompts" / "faithful-edit.md"
+        prompt.write_bytes(prompt.read_bytes())
+
+        result = self.advance()
+
+        self.assertNotIn("article/r1-writer", self.keys(result))
+        self.assertFalse(
+            [
+                action
+                for action in result.human_actions
+                if "was not applied" in action
+            ]
+        )
+
+    def test_a_stranded_later_reply_is_named_rather_than_left_silent(self):
+        """An earlier refusal orphans everything after it; say how much."""
+
+        self.fleet.work(self.advance())
+        self.fleet.work(self.advance())
+        prompt = self.root / "prompts" / "faithful-edit.md"
+        prompt.write_bytes(prompt.read_bytes() + b"\nOne more rule.\n")
+
+        result = self.advance()
+
+        stranded = [
+            action
+            for action in result.human_actions
+            if "were not reached this run" in action
+        ]
+        self.assertTrue(stranded, result.human_actions)
+        self.assertIn("Nothing was deleted", stranded[0])
 
     def test_a_verdict_that_is_not_the_bench_s_contract_is_refused(self):
         self.fleet.work(self.advance())
@@ -527,7 +570,7 @@ class EndToEndTests(AgentFixture):
         self.assertEqual(writer["prompt_path"], "prompts/faithful-edit.md")
         self.assertIn("--submit", writer["argv"])
         self.assertIn("article/r1-writer", writer["argv"])
-        self.assertIn("--brief-sha256", writer["argv"])
+        self.assertIn("--work-sha256", writer["argv"])
         self.assertEqual(len(writer["prompt_sha256"]), 64)
 
     def test_the_ready_file_answers_where_this_edition_is(self):

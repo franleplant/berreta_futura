@@ -30,11 +30,20 @@ boundaries live here as types rather than as sentences in a prompt file:
   says so in those words, and nothing in this package ever reads a finding's
   ``suggestion`` to decide whether a revision passed.
 
-Writers answer with the manuscript, then :data:`SCRATCH_MARKER`, then their
-working notes.  :func:`split_scratch` is the only way this package reads a
-writer's reply, so the notes cannot reach a manuscript file by accident, and
-:func:`compose_writer_prompt` is the only thing that ever puts them back in
-front of a model.
+Writers answer in up to three blocks: the manuscript, then an optional
+:data:`ANCHOR_MARKER` block saying which heading each registered figure now
+sits under, then :data:`SCRATCH_MARKER` and their working notes.
+:func:`split_reply` is the only way this package reads a writer's reply, so
+neither the notes nor the anchor declaration can reach a manuscript file by
+accident, and :func:`compose_writer_prompt` is the only thing that ever puts
+the notes back in front of a model.
+
+One more boundary lives here, and it is about time rather than context.
+:func:`work_identity` decides when a stored answer is still an answer to the
+question it was asked.  It digests the prompt file and the content of the
+call and deliberately not the wording of the brief, so that rewording this
+module cannot discard a fleet's finished work -- which it once did, for a
+whole edition, in one commit.
 """
 
 from __future__ import annotations
@@ -63,6 +72,21 @@ SCRATCH_MARKER = "<!-- SCRATCH: not part of the manuscript -->"
 Everything below it is the concept graph or claim ladder that produced the
 draft.  It is handed to the next round's reviser and to nothing else: not to
 the manuscript file, not to a judge, not to the rendered page.
+"""
+
+ANCHOR_MARKER = "<!-- FIGURE ANCHORS -->"
+"""The line that opens a writer's declaration of where each figure now sits.
+
+A figure is pinned to an exact heading string in ``edition.yaml``, and
+rewriting a piece rewrites its headings, so every rewrite used to strand its
+figures -- and the pipeline's answer was to tell the writer to keep headings it
+had just decided were wrong.  That is backwards: the argument decides the
+headings, and the figures follow.  So a writer that renames a heading says
+where each figure goes instead, in ``figure-id: heading`` lines under this
+marker, and :func:`~magazine.produce.Production._reconcile_anchors` moves the
+manifest to match.  The block is optional: a draft that kept every anchored
+heading needs no declaration, and one that stranded a figure without declaring
+a new home still fails the anchor gate by name.
 """
 
 # Which prompt file drafts which content mode.  ``original_editorial`` is not a
@@ -171,18 +195,100 @@ def writer_prompt_path(content_mode: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# What a call *is*, as opposed to how it is worded.
+
+
+def work_identity(role: str, payload: Mapping[str, Any]) -> str:
+    """Digest the substance of one model call, never its phrasing.
+
+    This is the value a cooperative worker's answer is bound to, and getting
+    it wrong is expensive in a way that is easy to miss.  It used to be the
+    SHA-256 of the composed brief text, which meant every stored answer in an
+    edition was void the moment anyone reworded a heading in this module.
+    That is not a theoretical cost: a refactor landed mid-run and a dozen
+    completed, judged model calls became unreachable through the front door,
+    because a formatting change is indistinguishable from a changed question
+    when the only evidence is the rendered bytes.
+
+    So the two are separated.  A call's identity is the *prompt file* it runs
+    (by path and digest, so a revised prompt is a different question), the
+    piece and round it names, and the content it was handed -- manuscripts,
+    findings, notes and source bodies, each by digest.  How this module chose
+    to lay that out on the page is provenance: the composed brief is still
+    written to disk beside the item, and the execution record still pins the
+    prompt digest, but neither the wording of a section heading nor the order
+    of two sentences can now discard somebody's finished work.
+
+    What still voids an answer is exactly what should: the manuscript moved,
+    a source was recaptured, a judge filed a finding the writer has not seen,
+    the prompt file itself was revised.  In each of those the draft on disk
+    answers a question nobody is asking any more.
+    """
+
+    encoded = json.dumps(
+        {"role": role, **dict(payload)},
+        sort_keys=True,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        default=str,
+    )
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def _digest(text: str | None) -> str | None:
+    if text is None:
+        return None
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _body_digests(extractions: Sequence[Extraction]) -> dict[str, str]:
+    return {item.source_id: item.body_sha256 for item in extractions}
+
+
+def _text_digests(pairs: Sequence[tuple[str, str]]) -> dict[str, str | None]:
+    return {name: _digest(text) for name, text in pairs}
+
+
+# ---------------------------------------------------------------------------
 # The unit of authorship.
+
+
+@dataclass(frozen=True)
+class FigureSlot:
+    """One registered figure and the heading it currently sits under.
+
+    The caption travels with the id because the writer is being asked where
+    the figure belongs, and "where does `diagram-2` go" is unanswerable
+    without knowing what it shows.
+    """
+
+    id: str
+    anchor: str
+    caption: str = ""
+
+    @property
+    def is_opener(self) -> bool:
+        return self.anchor == OPENER_ANCHOR
+
+
+OPENER_ANCHOR = "__opener__"
+"""The anchor of a figure that hangs off the piece rather than off a heading.
+
+No rewrite can strand it, so it is never the writer's problem and never the
+anchor gate's.
+"""
 
 
 @dataclass(frozen=True)
 class Piece:
     """One thing the pipeline drafts and judges, article or editorial.
 
-    ``figure_anchors`` is why this dataclass exists at all rather than the
-    pipeline passing an ``Article`` around: an anchor is an exact heading
-    string in the manuscript, and rewriting the manuscript is precisely what
-    produce does.  Carrying the anchors beside the piece keeps the constraint
-    in front of the writer and in front of the gate that checks it.
+    ``figures`` is why this dataclass exists at all rather than the pipeline
+    passing an ``Article`` around: an anchor is an exact heading string in the
+    manuscript, and rewriting the manuscript is precisely what produce does.
+    Carrying the figures beside the piece keeps the obligation in front of the
+    writer, in front of the gate that checks it, and in front of the
+    reconciliation that moves the manifest to match the draft.
     """
 
     id: str
@@ -193,22 +299,38 @@ class Piece:
     manuscript: Path
     edition_id: str = ""
     source_ids: tuple[str, ...] = ()
-    figure_anchors: tuple[tuple[str, str], ...] = ()
+    figures: tuple[FigureSlot, ...] = ()
     max_pages: int = 7
     key_ideas: tuple[str, ...] = ()
     has_opener_art: bool = True
+    opener_intro_lines: int = 0
+    opener_intro_characters: int = 0
+    """The illustrated opener's opening-paragraph budget, measured.
+
+    Zero means the piece has no illustrated opener and no such constraint.
+    Non-zero is a hard limit the build enforces and previously stated nowhere:
+    see :func:`~magazine.weasyprint_adapter.illustrated_opener_intro_budget`.
+    ``characters`` is an estimate of the same measurement in a countable unit,
+    and is zero when there was no prose sample to derive it from.
+    """
+
+    @property
+    def anchored_figures(self) -> tuple[FigureSlot, ...]:
+        """The figures a rewrite can strand: everything but the opener."""
+
+        return tuple(figure for figure in self.figures if not figure.is_opener)
+
+    @property
+    def figure_anchors(self) -> tuple[tuple[str, str], ...]:
+        """Every figure as ``(id, anchor)``, opener included."""
+
+        return tuple((figure.id, figure.anchor) for figure in self.figures)
 
     @property
     def anchors(self) -> tuple[str, ...]:
-        """Every heading a figure is pinned to, ``__opener__`` excluded.
+        """Every heading a figure is pinned to, ``__opener__`` excluded."""
 
-        An opener figure hangs off the piece rather than off a heading, so no
-        rewrite can strand it and it is not the writer's problem.
-        """
-
-        return tuple(
-            anchor for _, anchor in self.figure_anchors if anchor != "__opener__"
-        )
+        return tuple(figure.anchor for figure in self.anchored_figures)
 
 
 # ---------------------------------------------------------------------------
@@ -239,6 +361,44 @@ class WriterBrief:
     peer_manuscripts: tuple[tuple[str, str], ...] = ()
 
 
+def writer_identity(prompt: PromptFile, brief: WriterBrief) -> str:
+    """Everything a drafting call is a function of, and nothing about layout.
+
+    The figures appear by id and caption but *not* by anchor, because the
+    brief no longer tells the writer where a figure currently sits: the
+    argument decides the headings and the writer declares where the figures
+    land.  Folding the anchor in here would mean that reconciling the manifest
+    to a draft voided the very reply that produced it, and the loop would
+    re-emit the same brief for ever.
+    """
+
+    piece = brief.piece
+    return work_identity(
+        "writer",
+        {
+            "prompt_path": prompt.path,
+            "prompt_sha256": prompt.sha256,
+            "piece": piece.id,
+            "content_mode": piece.content_mode,
+            "round": brief.round_number,
+            "edition": brief.edition_id,
+            "title": piece.title,
+            "byline": piece.byline,
+            "max_pages": piece.max_pages,
+            "key_ideas": list(piece.key_ideas),
+            "figures": [
+                [figure.id, figure.caption] for figure in piece.anchored_figures
+            ],
+            "extractions": _body_digests(brief.extractions),
+            "peers": _text_digests(brief.peer_manuscripts),
+            "previous_manuscript": _digest(brief.previous_manuscript),
+            "previous_notes": _digest(brief.previous_notes),
+            "findings": [dict(finding) for finding in brief.findings],
+            "gate_failures": list(brief.gate_failures),
+        },
+    )
+
+
 def compose_writer_prompt(prompt: PromptFile, brief: WriterBrief) -> str:
     """Assemble one drafting call: the prompt file, then the whole assignment.
 
@@ -264,26 +424,69 @@ def compose_writer_prompt(prompt: PromptFile, brief: WriterBrief) -> str:
     if piece.byline:
         parts.append(f"- Byline: {piece.byline}")
     parts.append(f"- Page budget: {piece.max_pages} rendered A5 reader page(s)")
+    if piece.opener_intro_lines:
+        about = (
+            f", about {piece.opener_intro_characters} characters"
+            if piece.opener_intro_characters
+            else ""
+        )
+        parts.append(
+            f"- Opening paragraph budget: {piece.opener_intro_lines} typeset "
+            f"line(s){about}"
+        )
     if piece.key_ideas:
         parts.append("- Key ideas box (editor furniture, do not restate verbatim):")
         parts.extend(f"  - {line}" for line in piece.key_ideas)
     parts.append("")
 
-    if piece.anchors:
-        parts.append("## Headings you must keep, character for character")
+    if piece.opener_intro_lines:
+        parts.append("")
+        parts.append("## The opening paragraph has a hard length limit")
         parts.append("")
         parts.append(
-            "`edition.yaml` pins a registered figure to each of these headings. "
-            "The renderer refuses an anchor that does not match exactly one "
-            "heading, so a rewrite that renames one strands its figure. Reuse "
-            "each heading exactly as written, in a place where it still makes "
-            "sense."
+            "This piece opens on an illustrated page that sets the art, the "
+            "label, the title, the credit block and your first paragraph "
+            f"together. The paragraph gets what is left: {piece.opener_intro_lines} "
+            "typeset line(s)"
+            + (
+                f", which is roughly {piece.opener_intro_characters} characters "
+                "of prose like your source's"
+                if piece.opener_intro_characters
+                else ""
+            )
+            + ". The number is measured for this article's own title and "
+            "byline, so it is not a rule of thumb. A first paragraph over it "
+            "does not wrap to the next page: the build refuses the edition, "
+            "and the piece costs a round. Write a shorter opening paragraph "
+            "and put the rest in the second one."
         )
         parts.append("")
-        for figure_id, anchor in piece.figure_anchors:
-            if anchor == "__opener__":
-                continue
-            parts.append(f"- `## {anchor}` (figure `{figure_id}`)")
+
+    if piece.anchored_figures:
+        parts.append("## Figures this piece has to leave a place for")
+        parts.append("")
+        parts.append(
+            "`edition.yaml` pins each of these registered figures to one exact "
+            "`##` heading, and the renderer refuses an anchor that does not "
+            "match exactly one heading in the manuscript. The figures are "
+            "fixed; the headings are yours. Write the piece the argument "
+            "wants, then say where each figure sits."
+        )
+        parts.append("")
+        for figure in piece.anchored_figures:
+            caption = f" -- {figure.caption}" if figure.caption else ""
+            parts.append(f"- `{figure.id}`{caption}")
+        parts.append("")
+        parts.append(
+            "After the manuscript, emit a line containing exactly "
+            f"`{ANCHOR_MARKER}` and then one `figure-id: heading` line for "
+            "every figure above, naming a `##` heading your draft actually "
+            "carries, spelled character for character. The manifest is moved "
+            "to match. Omit the block only if you are certain every figure's "
+            "current heading survived your draft unchanged; a figure left "
+            "with nowhere to sit fails a deterministic gate and costs the "
+            "piece a round."
+        )
         parts.append("")
 
     if brief.extractions:
@@ -320,16 +523,34 @@ def compose_writer_prompt(prompt: PromptFile, brief: WriterBrief) -> str:
             parts.append(_fence(text))
             parts.append("")
 
-    if brief.round_number > 1:
+    # Round one is normally a fresh draft, but a finding filed from outside the
+    # loop makes it a revision: there is a manuscript on disk, somebody has
+    # said what is wrong with it, and a writer handed the complaint without the
+    # text would rebuild from nothing and lose everything the piece got right.
+    if brief.round_number > 1 or brief.findings or brief.gate_failures:
         parts.extend(_revision_block(brief))
 
     parts.append("## Output contract")
     parts.append("")
     parts.append(
         "Return the complete manuscript first: the frontmatter the prompt "
-        "specifies, then the body, and nothing before it. Then a line "
-        "containing exactly:"
+        "specifies, then the body, and nothing before it."
     )
+    parts.append("")
+    if piece.anchored_figures:
+        parts.append(
+            "Then, where your draft renamed any heading a figure is pinned to, "
+            "a line containing exactly:"
+        )
+        parts.append("")
+        parts.append(f"    {ANCHOR_MARKER}")
+        parts.append("")
+        parts.append(
+            "and one `figure-id: heading` line per figure. Then a line "
+            "containing exactly:"
+        )
+    else:
+        parts.append("Then a line containing exactly:")
     parts.append("")
     parts.append(f"    {SCRATCH_MARKER}")
     parts.append("")
@@ -347,13 +568,18 @@ def compose_writer_prompt(prompt: PromptFile, brief: WriterBrief) -> str:
 
 
 def _revision_block(brief: WriterBrief) -> list[str]:
+    opening = (
+        "A previous round of this piece was judged and did not pass."
+        if brief.round_number > 1
+        else "This piece has already been drafted, and a defect has been filed "
+        "against the draft on disk."
+    )
     parts: list[str] = [
         f"## Round {brief.round_number}: revise the draft below",
         "",
-        "A previous round of this piece was judged and did not pass. Your job "
-        "is to produce the whole manuscript again, with every defect below "
-        "gone. Rewrite as much as the repair needs; you are not patching "
-        "sentences.",
+        opening + " Your job is to produce the whole manuscript again, with "
+        "every defect below gone. Rewrite as much as the repair needs; you are "
+        "not patching sentences.",
         "",
     ]
     if brief.previous_notes:
@@ -435,26 +661,83 @@ def _finding_lines(index: int, finding: Mapping[str, Any]) -> list[str]:
     return lines
 
 
-def split_scratch(reply: str) -> tuple[str, str]:
-    """Split a writer's reply into the manuscript and its working notes.
+def split_reply(reply: str) -> tuple[str, dict[str, str], str]:
+    """Split a writer's reply into manuscript, figure anchors, working notes.
 
-    The marker may be indented or surrounded by blank lines; anything from the
-    first marker line onward is notes.  A reply with no marker is all
-    manuscript and no notes, which is a legal (if unhelpful) answer: the next
-    round then revises on findings alone, which is worse but not broken.
+    The reply is at most three blocks in a fixed order: the manuscript, then
+    the optional anchor declaration under :data:`ANCHOR_MARKER`, then the
+    optional working notes under :data:`SCRATCH_MARKER`.  Either marker may be
+    indented or surrounded by blank lines, and either may be absent -- a reply
+    with neither is all manuscript, which is a legal (if unhelpful) answer.
 
-    The manuscript side is additionally swept for stray markers, because a
-    model that emits two of them would otherwise smuggle the second block onto
-    the page.
+    An anchor marker that appears *below* the scratch marker is notes, not a
+    declaration: everything under the scratch marker is the writer talking to
+    the next writer, and a pipeline that reached into that text to move a
+    figure would be acting on a thought rather than on a statement.
     """
 
     lines = reply.splitlines()
-    for index, line in enumerate(lines):
-        if line.strip() == SCRATCH_MARKER:
-            manuscript = "\n".join(lines[:index]).rstrip()
-            notes = "\n".join(lines[index + 1 :]).strip()
-            return _strip_fence(manuscript), notes
-    return _strip_fence(reply.rstrip()), ""
+    anchor_at = _marker_line(lines, ANCHOR_MARKER)
+    scratch_at = _marker_line(lines, SCRATCH_MARKER)
+    if anchor_at is not None and scratch_at is not None and anchor_at > scratch_at:
+        anchor_at = None
+    body_end = len(lines) if scratch_at is None else scratch_at
+    manuscript_end = body_end if anchor_at is None else anchor_at
+    manuscript = _strip_fence("\n".join(lines[:manuscript_end]).rstrip())
+    anchors = (
+        {} if anchor_at is None else _parse_anchor_lines(lines[anchor_at + 1 : body_end])
+    )
+    notes = "" if scratch_at is None else "\n".join(lines[scratch_at + 1 :]).strip()
+    return manuscript, anchors, notes
+
+
+def split_scratch(reply: str) -> tuple[str, str]:
+    """The manuscript and the working notes, for callers with no figures.
+
+    A thin reading of :func:`split_reply`, kept because the two contract checks
+    the agent backend makes on a reply -- that a manuscript survives the split,
+    and that only one scratch marker does -- care about the manuscript boundary
+    and nothing else.
+    """
+
+    manuscript, _, notes = split_reply(reply)
+    return manuscript, notes
+
+
+def _marker_line(lines: Sequence[str], marker: str) -> int | None:
+    return next(
+        (index for index, line in enumerate(lines) if line.strip() == marker), None
+    )
+
+
+def _parse_anchor_lines(lines: Sequence[str]) -> dict[str, str]:
+    """Read ``figure-id: heading`` lines as forgivingly as is still unambiguous.
+
+    Models reliably decorate a list: a leading dash, backticks around the id,
+    a ``##`` in front of the heading, the whole thing in a fence.  None of
+    those change what was said, so all of them are stripped.  A line with no
+    colon says nothing this can act on and is dropped rather than guessed at:
+    the anchor gate still has the last word, so a dropped line costs a named
+    gate failure rather than a figure quietly moved to the wrong place.
+    """
+
+    declared: dict[str, str] = {}
+    for line in lines:
+        text = line.strip()
+        if not text or text.startswith("```"):
+            continue
+        if text.startswith("- ") or text.startswith("* "):
+            text = text[2:].strip()
+        figure_id, separator, heading = text.partition(":")
+        if not separator:
+            continue
+        figure_id = figure_id.strip().strip("`").strip()
+        heading = heading.strip().strip("`").strip()
+        if heading.startswith("## "):
+            heading = heading[3:].strip()
+        if figure_id and heading:
+            declared[figure_id] = heading
+    return declared
 
 
 def contains_scratch(text: str) -> bool:
@@ -496,6 +779,37 @@ class LineReviewInput:
     byline: str
     max_pages: int
     manuscript: str
+
+
+def evidence_identity(prompt: PromptFile, item: EvidenceReviewInput) -> str:
+    return work_identity(
+        "evidence",
+        {
+            "prompt_path": prompt.path,
+            "prompt_sha256": prompt.sha256,
+            "piece": item.piece_id,
+            "content_mode": item.content_mode,
+            "byline": item.byline,
+            "manuscript": _digest(item.manuscript),
+            "extractions": _body_digests(item.extractions),
+            "peers": _text_digests(item.peer_manuscripts),
+        },
+    )
+
+
+def line_identity(prompt: PromptFile, item: LineReviewInput) -> str:
+    return work_identity(
+        "line",
+        {
+            "prompt_path": prompt.path,
+            "prompt_sha256": prompt.sha256,
+            "piece": item.piece_id,
+            "content_mode": item.content_mode,
+            "byline": item.byline,
+            "max_pages": item.max_pages,
+            "manuscript": _digest(item.manuscript),
+        },
+    )
 
 
 def compose_evidence_prompt(prompt: PromptFile, item: EvidenceReviewInput) -> str:
@@ -634,6 +948,52 @@ class EditionReviewInput:
     manifest: Mapping[str, Any]
     editorial: str | None
     articles: tuple[tuple[str, str, str], ...] = field(default=())
+
+
+def manager_run_a_identity(prompt: PromptFile, item: ManagerRunAInput) -> str:
+    return work_identity(
+        "manager_run_a",
+        {
+            "prompt_path": prompt.path,
+            "prompt_sha256": prompt.sha256,
+            "edition": item.edition_id,
+            "furniture": _digest(_yaml_block(item.furniture)),
+        },
+    )
+
+
+def learning_identity(prompt: PromptFile, item: LearningReviewInput) -> str:
+    return work_identity(
+        "learning",
+        {
+            "prompt_path": prompt.path,
+            "prompt_sha256": prompt.sha256,
+            "edition": item.edition_id,
+            "furniture": _digest(_yaml_block(item.furniture)),
+            "manager_takeaways": _digest(item.manager_takeaways),
+            "explainers": _text_digests(item.explainers),
+            "articles": _text_digests(item.articles),
+            "extractions": _body_digests(item.extractions),
+            "writer_questions": list(item.writer_questions),
+        },
+    )
+
+
+def edition_identity(prompt: PromptFile, item: EditionReviewInput) -> str:
+    return work_identity(
+        "edition",
+        {
+            "prompt_path": prompt.path,
+            "prompt_sha256": prompt.sha256,
+            "edition": item.edition_id,
+            "manifest": _digest(_yaml_block(item.manifest)),
+            "editorial": _digest(item.editorial),
+            "articles": {
+                article_id: [content_mode, _digest(text)]
+                for article_id, content_mode, text in item.articles
+            },
+        },
+    )
 
 
 def compose_manager_run_a(prompt: PromptFile, item: ManagerRunAInput) -> str:

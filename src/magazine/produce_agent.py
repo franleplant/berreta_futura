@@ -30,10 +30,22 @@ real state machine and can never drift from it.
 Each invocation replays the pipeline from the answers on disk, which is what
 makes the loop crash-proof and idempotent: a driver that dies mid-fleet and
 re-emits gets the same set back, not a second copy of it.  It is also what makes
-staleness free.  A brief is identified by the SHA-256 of its own composed text,
-so a reply written against a manuscript, a finding or a set of notes that the
-pipeline has since recomposed no longer matches the brief it answers, and is set
-aside rather than applied.
+staleness free.  A work item is identified by
+:func:`~magazine.produce_prompts.work_identity` -- a digest of the prompt file
+and of the content the call was handed, each part by digest -- so a reply
+written against a manuscript, a finding or a set of notes that has since moved
+no longer matches the question it answered, and is set aside rather than
+applied.
+
+That identity deliberately excludes how a brief is *worded*.  It used to be the
+digest of the composed text, and the consequence was found the hard way: a
+refactor of the prompt composer landed while an edition was in flight, every
+stored answer stopped matching at once, and a dozen completed and judged model
+calls became unreachable through the front door.  Rewording a section heading
+is not a change of question, and it must not cost a round.  Editing the prompt
+*files* still does, correctly -- a revised prompt is a different instruction --
+and so does editing this pipeline's own identity functions, which is the one
+refactor to keep away from a running edition.
 
 The layout under ``editions/<edition-id>/production/agent/``::
 
@@ -212,14 +224,14 @@ def validate_reply(returns: str, text: str, *, item_key: str) -> None:
 
 @dataclass(frozen=True)
 class StoredReply:
-    """One answer sitting on disk, and the brief digest it was written against.
+    """One answer sitting on disk, and the work digest it was written against.
 
     The contract it has to satisfy is not stored beside it: that comes from the
     item's role, which the pipeline knows and a stale ``item.yaml`` might not.
     """
 
     text: str
-    brief_sha256: str
+    work_sha256: str
 
 
 def load_replies(editions_dir: Path, edition_id: str) -> dict[str, StoredReply]:
@@ -245,11 +257,16 @@ def load_replies(editions_dir: Path, edition_id: str) -> dict[str, StoredReply]:
         if not isinstance(data, Mapping):
             continue
         key = str(data.get("item") or "")
-        digest = str(data.get("brief_sha256") or "")
+        # ``brief_sha256`` is the superseded spelling, when the digest was
+        # over the composed brief's bytes.  It is still read so that an item
+        # written by an older build is *refused by name* rather than skipped
+        # as unparseable: a driver whose in-flight work stops being applied
+        # deserves the sentence explaining why.
+        digest = str(data.get("work_sha256") or data.get("brief_sha256") or "")
         if not key or not digest:
             continue
         replies[key] = StoredReply(
-            text=reply.read_text(encoding="utf-8"), brief_sha256=digest
+            text=reply.read_text(encoding="utf-8"), work_sha256=digest
         )
     return replies
 
@@ -276,6 +293,10 @@ class CooperativeRunner:
         self.replies = dict(replies)
         self.pending: dict[str, ReadyItem] = {}
         self.rejected: dict[str, str] = {}
+        # Stored answers this replay actually consumed.  Everything on disk
+        # that is neither here nor pending is work the run never reached, and
+        # a driver is told so rather than left to notice a missing directory.
+        self.answered: set[str] = set()
         # The two piece judges are composed on two threads, so every mutation
         # below is shared state.  Both briefs must survive; only one signal
         # escapes ``ordered_map``, and losing the sibling's brief would halve
@@ -283,21 +304,31 @@ class CooperativeRunner:
         self._lock = threading.Lock()
 
     def request(
-        self, item: WorkItem, prompt: PromptFile, text: str, *, cwd: Path | None = None
+        self,
+        item: WorkItem,
+        prompt: PromptFile,
+        text: str,
+        *,
+        identity: str,
+        cwd: Path | None = None,
     ) -> GenerationResult:
-        digest = text_sha256(text)
+        # ``identity`` rather than a digest of ``text``: a reply is bound to
+        # the question it answered, not to the wording the question happened
+        # to be asked in.  See ``produce_prompts.work_identity``.
+        digest = identity
         returns = WORK_CONTRACTS.get(item.role, VERDICT)
         with self._lock:
             stored = self.replies.get(item.key)
             rejection = self._rejection(item, stored, digest)
             if stored is not None and rejection is None:
+                self.answered.add(item.key)
                 return _answered(self.edition_id, item, stored.text, digest)
             if rejection is not None:
                 self.rejected[item.key] = rejection
             self.pending[item.key] = ReadyItem(
                 item=item,
                 prompt=text,
-                brief_sha256=digest,
+                work_sha256=digest,
                 prompt_path=prompt.path,
                 prompt_sha256=prompt.sha256,
                 returns=returns,
@@ -311,10 +342,12 @@ class CooperativeRunner:
 
         if stored is None:
             return None
-        if stored.brief_sha256 != digest:
+        if stored.work_sha256 != digest:
             return (
-                "the brief it answers has been recomposed since (its inputs "
-                "moved), so the reply is void; a fresh brief has been written"
+                "the question it answers has changed since it was asked -- the "
+                "manuscript, a source, a finding or the prompt file moved -- so "
+                "the reply is void; a fresh brief has been written and the old "
+                "answer is kept beside it as reply.superseded.md"
             )
         try:
             validate_reply(
@@ -347,7 +380,7 @@ def _answered(
             AGENT_BACKEND,
             "--submit",
             item.key,
-            "--brief-sha256",
+            "--work-sha256",
             digest,
         ),
         stderr="",
@@ -474,6 +507,7 @@ class AgentSession:
             f"the reply for {key} was not applied: {reason}"
             for key, reason in sorted(runner.rejected.items())
         )
+        actions.extend(_unreached_actions(runner))
         actions.extend(self._escalation_actions(edition_id, result))
         result = replace(
             result, ready=ready, human_actions=tuple(actions)
@@ -536,6 +570,36 @@ class AgentSession:
                 "from round one."
             )
         return actions
+
+
+def _unreached_actions(runner: CooperativeRunner) -> list[str]:
+    """Name the finished work this replay walked past, and never delete it.
+
+    An earlier round's answer being refused strands every answer after it: the
+    pipeline replays from round one, stops where the refusal is, and the
+    later rounds' replies are simply never asked for.  They are still on disk
+    and they are still hours of somebody's work, so silence here reads as
+    "the pipeline lost my drafts" -- which, from the driver's chair, is
+    indistinguishable from the truth.
+
+    This is the loud half of the bargain.  The quiet half is
+    ``produce_prompts.work_identity``, which stops a reworded brief from
+    voiding anything in the first place; when something genuinely does move,
+    the count of what went unreached is the number an operator needs to decide
+    whether to re-run or to recover by hand.
+    """
+
+    unreached = sorted(set(runner.replies) - runner.answered - set(runner.pending))
+    if not unreached:
+        return []
+    return [
+        f"{len(unreached)} stored repl(y/ies) were not reached this run and are "
+        "still on disk: "
+        + ", ".join(unreached)
+        + ". They answer rounds the pipeline stopped short of, normally because "
+        "an earlier round's answer was refused. Nothing was deleted; clearing "
+        "the earlier refusal makes them reachable again."
+    ]
 
 
 def _rank(item: ReadyItem) -> tuple[str, int, int, str]:

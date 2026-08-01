@@ -61,6 +61,15 @@ The title, byline, and `source_body_sha256` pins live in the article's
 with a paragraph, never a heading, so the illustrated opener can set it. Use
 `##` for section headings; no H1.
 
+That first paragraph is set on the illustrated opener page itself, beside the
+art, the title and the credit block, and it is the only elastic thing on that
+page. It does not wrap onto page two: a first paragraph too long for the space
+left over makes the build refuse the edition outright. The exact limit depends
+on how many lines this article's title and byline take, so it is measured per
+article and stated in the assignment below as an "Opening paragraph budget";
+aim under it and put the rest of the thought in your second paragraph. When no
+budget is stated the piece has no illustrated opener and no such limit.
+
 ## Working notes
 
 End your reply with a line containing exactly:

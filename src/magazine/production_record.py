@@ -226,6 +226,160 @@ def write_issue_record(
     )
 
 
+# ---------------------------------------------------------------------------
+# Findings filed from outside the loop.
+
+
+FILED_FINDINGS_FILENAME = "findings.yaml"
+
+FILED_STATUSES = ("open", "addressed")
+
+
+def filed_findings_path(editions_dir: Path, edition_id: str) -> Path:
+    return production_dir(editions_dir, edition_id) / FILED_FINDINGS_FILENAME
+
+
+def load_filed_findings(editions_dir: Path, edition_id: str) -> list[dict[str, Any]]:
+    """Every finding filed against this edition, in the order they were filed.
+
+    Unreadable or malformed files yield nothing, for the same reason a corrupt
+    piece record does: this is a queue of instructions, and a queue that cannot
+    be parsed must cost a lost instruction rather than a refusal to produce.
+    """
+
+    path = filed_findings_path(editions_dir, edition_id)
+    if not path.is_file():
+        return []
+    try:
+        data = load_structured(path)
+    except Exception:
+        return []
+    if not isinstance(data, Mapping):
+        return []
+    rows = data.get("findings")
+    if not isinstance(rows, Sequence) or isinstance(rows, (str, bytes)):
+        return []
+    return [dict(row) for row in rows if isinstance(row, Mapping)]
+
+
+def open_filed_findings(
+    editions_dir: Path, edition_id: str, piece_id: str
+) -> list[dict[str, Any]]:
+    """The findings this piece still owes a drafting round.
+
+    Stripped of their bookkeeping keys, so what comes back is a finding in the
+    shape every judge already emits and every brief already renders.  ``judge``
+    is set to who filed it, because a reviser reading "from the edition review"
+    treats it differently from "from the line editor", and should.
+    """
+
+    open_rows: list[dict[str, Any]] = []
+    for row in load_filed_findings(editions_dir, edition_id):
+        if str(row.get("piece") or "") != piece_id:
+            continue
+        if str(row.get("status") or "open") != "open":
+            continue
+        finding = {
+            key: value
+            for key, value in row.items()
+            if key not in {"piece", "status", "filed_at", "filed_by", "addressed_in_round"}
+        }
+        finding["judge"] = str(row.get("filed_by") or "filed finding")
+        open_rows.append(finding)
+    return open_rows
+
+
+def pieces_with_open_findings(editions_dir: Path, edition_id: str) -> dict[str, int]:
+    """How many open filed findings each piece is carrying."""
+
+    counts: dict[str, int] = {}
+    for row in load_filed_findings(editions_dir, edition_id):
+        if str(row.get("status") or "open") != "open":
+            continue
+        piece = str(row.get("piece") or "")
+        if piece:
+            counts[piece] = counts.get(piece, 0) + 1
+    return counts
+
+
+def write_filed_findings(
+    editions_dir: Path, edition_id: str, rows: Sequence[Mapping[str, Any]]
+) -> Path:
+    return write_render_review(
+        filed_findings_path(editions_dir, edition_id),
+        {
+            "schema_version": PRODUCTION_RECORD_SCHEMA_VERSION,
+            "edition_id": edition_id,
+            "findings": [dict(row) for row in rows],
+        },
+    )
+
+
+def file_finding(
+    editions_dir: Path,
+    edition_id: str,
+    piece_id: str,
+    finding: Mapping[str, Any],
+    *,
+    filed_by: str,
+    filed_at: str,
+) -> Path:
+    """Append one finding a human wants the piece's next brief to carry.
+
+    The loop's findings all come from inside it: a judge reads a draft and the
+    next round is handed what it said.  Real editions also produce findings
+    from outside -- an edition-level review, a reader, the owner noticing a
+    wrong claim -- and until now there was nowhere to put one.  They were
+    pasted into an agent prompt by hand, which is precisely the improvised
+    orchestration the pipeline exists to replace, and which leaves no record
+    that the instruction was ever given.
+
+    A filed finding is stored in the same shape a judge's is, so the brief
+    renders it through the same code and a reviser cannot tell the difference
+    in kind.  Two keys are added: ``piece``, because a filed finding is
+    addressed rather than discovered, and ``status``, because it has to
+    survive until a round has actually seen it.
+    """
+
+    rows = load_filed_findings(editions_dir, edition_id)
+    rows.append(
+        {
+            "piece": piece_id,
+            "status": "open",
+            "filed_by": filed_by,
+            "filed_at": filed_at,
+            **{key: value for key, value in finding.items()},
+        }
+    )
+    return write_filed_findings(editions_dir, edition_id, rows)
+
+
+def close_filed_findings(
+    editions_dir: Path, edition_id: str, piece_id: str, *, round_number: int
+) -> None:
+    """Mark this piece's open findings as addressed by a round that passed.
+
+    "Addressed" is the honest word.  It records that the finding was in front
+    of the writer for a round whose judges then approved the result; it does
+    not claim that a judge verified this particular defect, because no judge
+    was told to look for it.  A filer who wants proof re-reads the piece and
+    files again -- which now costs one command rather than an improvised prompt.
+    """
+
+    rows = load_filed_findings(editions_dir, edition_id)
+    changed = False
+    for row in rows:
+        if str(row.get("piece") or "") != piece_id:
+            continue
+        if str(row.get("status") or "open") != "open":
+            continue
+        row["status"] = "addressed"
+        row["addressed_in_round"] = round_number
+        changed = True
+    if changed:
+        write_filed_findings(editions_dir, edition_id, rows)
+
+
 def inputs_fingerprint(
     *,
     content_mode: str,

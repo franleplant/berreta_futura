@@ -5,7 +5,7 @@ content_mode: faithful_edit
 label: FAITHFUL EDIT
 ---
 
-This one is a bit of an addendum / side-quest to the recent series. It didn't fit cleanly into the main post so I'm publishing it standalone. It is referenced briefly in *Why Software Factories Fail part 2: Turning the lights back on*.
+**Editor's note.** Dex Horthy published this standalone. It is an addendum to a recent series of his that didn't fit cleanly into the main post, and it is referenced briefly in *Why Software Factories Fail part 2: Turning the lights back on*. The series' vocabulary comes with it. A factory is the setup you drop a prompt into and hope to get a fully-mergeable result back from; the levels, the "Product" level, the technical details under it, the 50,000-foot view zooming in to 10,000 feet, are successive phases of planning one piece of work.
 
 ## Seeking leverage
 
@@ -17,17 +17,13 @@ But if you use AI to help you plan and align, then you actually get closer to 2â
 
 ## The 80/20 rule in AI coding leverage
 
-Let's assume if you yolo a two-sentence prompt into your factory, your chance of getting a fully-mergeable result is ~50%, the chance you have to rework it is 50%.
+Let's assume if you yolo a two-sentence prompt into your factory, your chance of getting a fully-mergeable result is ~50%; the chance you have to rework it is 50%.
 
 Now let's say you are a principal engineer with 10 years of experience. You have the whole codebase across 100 repos downloaded into your head. So you spend an afternoon writing a perfectly detailed spec by hand. Now your odds are better, but you probably still have about a 10% chance that you'll have to redo *something* significant.
 
 And at the far end: write every line yourself. Nothing's left for the agent to get wrong, so the rework chance goes to zero.
 
-**note** For this example I'm gonna blur
-
-> "chance you'll have to change something" weighted by "how painful the change will be"
-
-into a single percentage number but obviously they're two separate variables. If the model is 50% likely to get a button style wrong, but the fix is one cheap prompt, then our combined "expected pain" is low.
+**Author's note.** For this example I'm gonna blur "chance you'll have to change something" weighted by "how painful the change will be" into a single percentage number, but obviously they're two separate variables. If the model is 50% likely to get a button style wrong, but the fix is one cheap prompt, then our combined "expected pain" is low.
 
 > expected pain = P(you'll have to change it) Ã— how painful the change is
 

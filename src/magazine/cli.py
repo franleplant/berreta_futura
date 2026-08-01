@@ -13,6 +13,7 @@ from .io import load_structured
 from .produce import MAX_ROUNDS as PRODUCE_MAX_ROUNDS
 from .render_engine import DEFAULT_ENGINE, ENGINES
 from .runner import TEXT_BACKENDS
+from .review_findings import FINDING_SEVERITIES
 
 
 # The whole review bench, in the order the pieces are judged: the machine and
@@ -180,6 +181,65 @@ def parser() -> argparse.ArgumentParser:
         ),
     )
     produce.add_argument("--json", action="store_true", help="Emit stable JSON")
+
+    finding = actions.add_parser(
+        "finding",
+        help=(
+            "File a finding against one piece so its next writer brief carries "
+            "it, or list what is outstanding"
+        ),
+    )
+    finding_actions = finding.add_subparsers(dest="finding_command", required=True)
+    finding_file = finding_actions.add_parser(
+        "file",
+        help=(
+            "Record a defect found outside the produce loop -- an edition "
+            "review, a reader, your own re-reading -- against one piece"
+        ),
+    )
+    finding_file.add_argument("edition_id")
+    finding_file.add_argument(
+        "piece_id",
+        help="Article id, or `editorial` for the opening editorial",
+    )
+    finding_file.add_argument(
+        "--note",
+        required=True,
+        help="What is wrong, in the words the writer needs to fix it",
+    )
+    finding_file.add_argument(
+        "--severity",
+        default="major",
+        choices=FINDING_SEVERITIES,
+        help="How the reviser should triage it (default major)",
+    )
+    finding_file.add_argument(
+        "--category",
+        default="editorial",
+        help="What kind of defect it is, in the judges' vocabulary",
+    )
+    finding_file.add_argument(
+        "--locator", help="Where the defect shows: the sentence or paragraph"
+    )
+    finding_file.add_argument(
+        "--repair-from",
+        dest="repair_from",
+        help="The earliest point at which it could be fixed, when that differs",
+    )
+    finding_file.add_argument(
+        "--suggestion", help="Advisory only; the writer is judged on the defect"
+    )
+    finding_file.add_argument(
+        "--filed-by",
+        dest="filed_by",
+        default="filed finding",
+        help="Who found it, named in the brief (default: filed finding)",
+    )
+    finding_list = finding_actions.add_parser(
+        "list", help="Every finding filed against an edition, open first"
+    )
+    finding_list.add_argument("edition_id")
+    finding_list.add_argument("--json", action="store_true", help="Emit stable JSON")
 
     article = actions.add_parser(
         "article",
@@ -771,6 +831,38 @@ def main(argv: list[str] | None = None) -> int:
             # so it exits 1 the way an over-budget `mag fit` does.
             if result.escalated:
                 return 1
+        elif args.command == "finding" and args.finding_command == "file":
+            path = magazine.file_finding(
+                args.edition_id,
+                args.piece_id,
+                severity=args.severity,
+                category=args.category,
+                note=args.note,
+                locator=args.locator,
+                repair_from=args.repair_from,
+                suggestion=args.suggestion,
+                filed_by=args.filed_by,
+            )
+            print(
+                f"filed: {args.piece_id} -> {path}\n"
+                f"next: uv run --locked mag produce {args.edition_id} "
+                f"--articles {args.piece_id}"
+            )
+        elif args.command == "finding" and args.finding_command == "list":
+            rows = magazine.filed_findings(args.edition_id)
+            if args.json:
+                _print_json(rows, root=magazine.root)
+            else:
+                for row in rows:
+                    print(
+                        f"{row.get('status')}: {row.get('piece')} "
+                        f"[{row.get('severity')}] {row.get('category')} "
+                        f"({row.get('filed_by')}) {row.get('note')}"
+                    )
+                print(
+                    f"{sum(1 for row in rows if row.get('status') == 'open')} open, "
+                    f"{len(rows)} filed"
+                )
         elif args.command == "article" and args.article_command == "stage":
             result = magazine.stage_article(args.brief, dry_run=args.dry_run)
             _print_json(result, root=magazine.root)

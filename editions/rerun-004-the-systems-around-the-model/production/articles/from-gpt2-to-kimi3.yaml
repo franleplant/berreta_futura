@@ -3,17 +3,17 @@ edition_id: rerun-004-the-systems-around-the-model
 piece_id: from-gpt2-to-kimi3
 content_mode: faithful_synthesis
 status: drafting
-produced_at: '2026-08-01T17:56:40+00:00'
-inputs_sha256: dfd2c70a8ee00f97afc4c8d808a178f18897c1a24a484c2199cfaa80cefc7490
-manuscript_sha256: 873dd47411ec024d43e4e5fae7def5b52adc230ae92e484fc781dc5103249a69
+produced_at: '2026-08-01T19:24:30+00:00'
+inputs_sha256: 0ab0eab64d9ceae9ecfce4d476e30d4cdbcb679029800f925fdf353cf6c9b89a
+manuscript_sha256: dd7a837848c0738aea0091c19d5f30d7fe83faa4c13befe1c115c80e48a1df18
 rounds:
 - round: 1
   result: changes_required
-  manuscript_sha256: 873dd47411ec024d43e4e5fae7def5b52adc230ae92e484fc781dc5103249a69
+  manuscript_sha256: dd7a837848c0738aea0091c19d5f30d7fe83faa4c13befe1c115c80e48a1df18
   writer:
     role: writer
     prompt_path: prompts/faithful-synthesis.md
-    prompt_sha256: ed62c00d30c4ffd23ee725b0ece2cdcdec561dd0fd428d0f905ef00510ec2745
+    prompt_sha256: 56f083c8f2bb39a6dcfd6d35f153aedeaedbe7825dc06909c5ef4196a27da277
     backend: agent
     model: null
     argv:
@@ -24,789 +24,168 @@ rounds:
     - agent
     - --submit
     - from-gpt2-to-kimi3/r1-writer
-    - --brief-sha256
-    - 27edc4ebb433bcd0d7394566a83cb08fb6909c13cd6edff550fce2366746b745
+    - --work-sha256
+    - 7bc5e471f13084da134f6e7b618cf9bd7240f53e058add10745f01ca2eb15b67
     duration_seconds: 0.0
-    output_sha256: 1f15c9d7ff94bd34e78881d9bbce07afe93bc2e96cf5503e4d94d0b00a22066c
-  gate_failures: []
+    output_sha256: 01862b641a14f537452823546c4b8df015e0f02a946dde828f208dcdfd95e084
+  gate_failures:
+  - 'fit: Article pragmatic-leverage''s opening paragraph cannot fit its illustrated opener page at compact
+    density; shorten that paragraph rather than splitting the opener'
   anchors_reconciled:
   - GPT-2 and the cache
   - From linear attention to DeltaNet
-  judges:
-    evidence:
-      result: changes_required
-      findings:
-      - severity: major
-        article: from-gpt2-to-kimi3
-        locator: From linear attention to DeltaNet | The answer is chunks of size C. | 1
-        category: qualification_loss
-        note: 'The manuscript states the delta-rule prefill problem and then answers it
-
-          directly: "The problem is prefill: the delta rule needs a correction at
-
-          every key vector, so the path to a parallel matrix multiplication is not
-
-          obvious. The answer is chunks of size C. Inside a block I do real
-
-          attention (the masked QK-transpose times V), and across blocks I fold
-
-          everything into the state and read it back with one matmul."
-
-
-          The source raises an explicit counterpoint against exactly that move and
-
-          the manuscript drops it: "The underlying issue is simple: the chunking
-
-          method used for purely additive attention does not directly apply to the
-
-          delta updates" and "We need every single state in order to compute the
-
-          information that needs to be subtracted out. We can''t parallelize it the
-
-          same way without some mathematical re-parameterization. The authors
-
-          therefore rewrite the delta updates". The source then gives the
-
-          reparameterized form (S_t = S_{t-1}(I - beta_t k_t k_t-transpose) +
-
-          beta_t v_t k_t-transpose) and a chunked delta kernel whose intra-chunk
-
-          term uses corrected values u_i, not v_i.
-
-
-          The two sentences the manuscript keeps ("Inside a block I do real
-
-          attention... C=N recovers standard O(N^2) attention and C=1 gives regular
-
-          linear attention") are, in the source, a description of chunked purely
-
-          additive linear attention, offered before the delta extension and then
-
-          explicitly disclaimed for it. As condensed, the reader comes away
-
-          believing plain chunked attention is sufficient for the delta rule, which
-
-          is the one thing the source says it is not. Scope of the claim is
-
-          distorted, not merely abbreviated.'
-      - severity: major
-        article: from-gpt2-to-kimi3
-        locator: Gated DeltaNet and Kimi Linear | a drop-in architectural replacement with better quality
-          and up to 6x higher decode throughput | 1
-        category: attribution_error
-        note: 'The source attributes this to the Kimi Linear authors: "Kimi Linear drew
-
-          attention for one central claim: under controlled comparisons, it
-
-          outperformed full attention. The authors presented it as a drop-in
-
-          architectural replacement with better quality and up to 6x higher decode
-
-          throughput."
-
-
-          The manuscript deletes "The authors presented it as" and welds the
-
-          remainder onto the preceding clause as an appositive: "under controlled
-
-          comparisons, it outperformed full attention, a drop-in architectural
-
-          replacement with better quality and up to 6x higher decode throughput."
-
-          The drop-in status, the quality claim and the 6x decode figure now read
-
-          as the article''s own assertions of fact rather than as the paper''s
-
-          self-presentation. The numbers are correct; the attribution hedge that
-
-          governed them is gone.'
-      - severity: minor
-        article: from-gpt2-to-kimi3
-        locator: From linear attention to DeltaNet | then I saw that it was released in 2020. | 1
-        category: qualification_loss
-        note: 'The source follows its own aside with a defense of the paper it just
-
-          corrected: "At the time, training commonly materialized the full NxN
-
-          attention matrix, FlashAttention did not exist, and reference
-
-          autoregressive implementations often recomputed the token history without
-
-          a KV cache."
-
-
-          The manuscript keeps the flat correction ("It''s not true that...") and
-
-          the retraction marker ("then I saw that it was released in 2020") but
-
-          drops the sentence that explains why the paper''s O(N-squared) framing was
-
-          accurate for its moment. The self-correction survives implicitly through
-
-          the retained date, which is why this is minor rather than major, but the
-
-          criticism now reads harder than the source lets it stand.'
-      scores:
-        claim_support: 4
-        qualification_survival: 3
-        quote_accuracy: 5
-        attribution: 3
-      notes: 'I read the pinned extraction of 22580-from-gpt2-to-kimi3-explained-8f01b0fe
-
-        in full, then listed every checkable assertion in the manuscript including
-
-        the untitled opener, the four section headings, and the closing thesis. Every
-
-        number, date, version and benchmark checks out against the extraction:
-
-        22,580; 124M against 2.8 trillion (2.8e12/1.24e8 = 22,580.6, consistent);
-
-        seven years; 2019 and 2026; N-1 cached tokens; ELU+1; the DxD state; Flash
-
-        Attention released in 2020; seven hours; C=N and C=1; 6x decode throughput;
-
-        23 four-layer macrocycles with three KDA layers and a fourth MLA layer; every
-
-        12 decoder layers; eight AttnRes blocks (92 layers / 12 rounds to 8,
-
-        matching the source''s own count); roughly 2% inference latency; 1.25x compute
-
-        advantage; the Mamba-2 attribution for gated decay. The one span presented as
-
-        verbatim, "the cost per time-step for transformers scales with the square of
-
-        the current sequence length", matches the extraction character for character.
-
-        The byline ali matches the post''s author. The closing conclusion (fixed-
-
-        capacity associative memory needs an eviction policy; learned selection is
-
-        necessary; attention is the most effective selective-read mechanism) is the
-
-        source''s own and is carried intact, as is "Scaling laws remain relevant, but
-
-        capacity must be added in the right place". Dropped material I judged
-
-        permissible condensation rather than finding: the code listings, the Schlag
-
-        quotation, the C=64/128 tensor-core aside, the three-step attention contract,
-
-        the MoE expert counts (898/896/16), the SiTU kernel-cost discussion, MLA query
-
-        LoRA and output gating, and the softmax normalization detail in the AttnRes
-
-        weights. The manuscript''s "It cannot clear several associations" drops the
-
-        source''s "efficiently", but the source independently states the Delta rule
-
-        "has no way to make the rest of the facts decay", so the absolute reading is
-
-        grounded and I did not flag it. What I could not check: nothing in the
-
-        manuscript falls outside the extraction''s coverage, so there are no
-
-        uncheckable assertions; the extraction itself is a screen-scraped post with
-
-        interleaved "Don''t miss what''s happening" chrome and several figures rendered
-
-        only as gaps, so any claim resting on an image would have been unverifiable,
-
-        but the manuscript makes none.'
-      call:
-        role: evidence_judge
-        prompt_path: prompts/evidence-review.md
-        prompt_sha256: 2d368985eba3011b23c2f03fa926da4791a03975bd5ee4403ed6d8d19503d264
-        backend: agent
-        model: null
-        argv:
-        - mag
-        - produce
-        - rerun-004-the-systems-around-the-model
-        - --backend
-        - agent
-        - --submit
-        - from-gpt2-to-kimi3/r1-evidence
-        - --brief-sha256
-        - 70027a4fff3f4e7e26fdbdf0b5dced5ef2540f4965f098fab2d9adec801771cf
-        duration_seconds: 0.0
-        output_sha256: 384ad04525871aea0380f5e6283770be2599bba2eb8a6f62354ba2954e0a1b09
-    line:
-      result: changes_required
-      findings:
-      - severity: major
-        article: from-gpt2-to-kimi3
-        locator: '- | We scaled up by a factor of 22,580 in seven years. | 1'
-        category: duplication
-        note: 'The headline number is spent twice in three sentences. First: "Twenty-two
-
-          thousand five hundred and eighty. That''s how many GPT-2 models from 2019
-
-          fit inside KimiK3 from 2026, 124 million parameters against 2.8
-
-          trillion." Then immediately: "We scaled up by a factor of 22,580 in seven
-
-          years." The third sentence restates the first two in digits and adds only
-
-          the span, which the reader has already computed from "2019" and "2026" in
-
-          the sentence above it. The two-sentence version is the stronger opener
-
-          and the restatement blunts it, because the reader who just absorbed a
-
-          spelled-out number is made to absorb it again as numerals before the
-
-          piece has moved anywhere.'
-        suggestion: Cut the sentence and run "124 million parameters against 2.8 trillion" straight into
-          "But is it just... scale?"
-      - severity: major
-        article: from-gpt2-to-kimi3
-        locator: From linear attention to DeltaNet | The paper's O(N²) framing threw me off. | 1
-        category: orphan_referent
-        note: 'Three referents point at a document this article does not contain. "The
-
-          paper''s O(N²) framing threw me off." introduces a paper the piece has
-
-          never mentioned; the reader looks back for it and finds nothing.
-
-          "That''s what Flash Attention fixes... then I saw that it was released in
-
-          2020." depends on a moment of reading that the article does not stage,
-
-          so "then I saw" is a beat in a story the reader is not in. Worst is
-
-          "Parallelizing that is the most difficult section of the post.", which
-
-          hands the reader the table of contents of a different document: this is
-
-          not a post, it has no section by that name, and the sentence measures
-
-          difficulty against a structure that is not on the page. Each is also the
-
-          point at which the narrator switches to first person for the first time,
-
-          so the reader is absorbing an unexplained "I" and an unexplained "the
-
-          paper" in the same sentence.'
-        suggestion: 'Name the source once on first reference: "Kimi''s own writeup frames the cost as
-          O(N²), which threw me off."'
-      - severity: major
-        article: from-gpt2-to-kimi3
-        locator: 'GPT-2 and the cache | GPT-2 is a decoder-only architecture, and its inefficiency is
-          this: | 1'
-        category: repeated_cadence
-        note: 'One sentence shape carries most of the piece''s explanatory weight:
-
-          abstract label, colon, gloss. Six instances. "GPT-2 is a decoder-only
-
-          architecture, and its inefficiency is this: the model computes
-
-          representations..."; "That addition is also the source of the efficiency
-
-          gain: updating additively rather than by concatenation..."; "The problem
-
-          is prefill: the delta rule needs a correction at every key vector..."
-
-          "That is the Mamba-2 contribution: decay the previous cache..."; "Kimi
-
-          Linear drew attention for one central claim: under controlled
-
-          comparisons..."; "That capacity has a specific mathematical purpose: the
-
-          per-channel scale gives finer control over memory decay." Three of the
-
-          six open on a bare demonstrative ("That is", "That addition is", "That
-
-          capacity has"), which is the version that tires fastest, because the
-
-          reader has to resolve "that" before the colon pays out. The last one is
-
-          also empty: the sentence before it already said the gating is per-channel
-
-          rather than scalar, so "the per-channel scale gives finer control over
-
-          memory decay" announces a purpose and then restates the mechanism as if
-
-          it were the purpose.'
-        suggestion: 'Recast at least four as plain subject-verb: "Prefill is the problem. The delta rule
-          needs a correction at every key vector, so the path to a parallel matrix multiplication is not
-          obvious."'
-      - severity: major
-        article: from-gpt2-to-kimi3
-        locator: 'Kimi K3 | At first glance the remaining changes appear modest: more scale, gated MLA,
-          latent-space MoE, SiTU activations, and blockwise attention residuals every 12 layers. | 1'
-        category: jargon
-        note: 'Five terms, four of them never defined anywhere in the piece, presented
-
-          to the reader as "modest". Gated MLA is a modifier on an expansion given
-
-          one sentence earlier and survives; latent-space MoE, SiTU activations and
-
-          blockwise attention residuals arrive cold, and only the last is picked up
-
-          by the paragraph that follows. The engineering manager the magazine
-
-          writes for reaches this sentence having followed the argument cleanly
-
-          through caches, linear attention, the delta rule and gating, and is
-
-          stopped by a list that tells them these things are unremarkable while
-
-          giving them no way to judge that. The problem is the enumeration, not the
-
-          density: elsewhere the piece defines what it uses.'
-        suggestion: 'Keep only the item the section explains: "At first glance the remaining changes appear
-          modest, until the last of them: blockwise attention residuals every 12 layers."'
-      - severity: major
-        article: from-gpt2-to-kimi3
-        locator: Kimi K3 | Each architectural step changes what the model stores, how it updates that
-          state, or how it retrieves information that a fixed-size state cannot preserve. | 1
-        repair_from: '- | But is it just... scale? Here is how much, or how little, actually changed.
-          | 1'
-        category: ending
-        note: 'The close summarises instead of landing, and it never answers the
-
-          question the opening asked. The opening promises "But is it just...
-
-          scale? Here is how much, or how little, actually changed", which sets up
-
-          a verdict. The final paragraph delivers a taxonomy: store, update,
-
-          retrieve; then an eviction-policy restatement; then "Learned selection,
-
-          like gating, routing, or decay, is necessary."; then "Attention is the
-
-          most effective selective-read mechanism." Two abstract three-item lists
-
-          inside four sentences, one of them the penultimate line. Nothing here is
-
-          new to a reader who has read the preceding four sections, which is the
-
-          definition of a closing paragraph that restates what the reader just
-
-          read. The last line is the interesting one, because after a whole piece
-
-          about replacing full attention it says attention wins anyway, but it
-
-          arrives as a flat assertion at the end of a summary rather than as the
-
-          answer to "is it just scale?" The frame is set in the opening, so that is
-
-          where the repair starts.'
-        suggestion: 'Cut the paragraph to its reversal and answer the opening: "So not just scale. Every
-          step since GPT-2 is an argument about what to throw away, and the winner of that argument is
-          still attention."'
-      - severity: minor
-        article: from-gpt2-to-kimi3
-        locator: Kimi K3 | The KimiK3 language backbone looks similar to Kimi Linear | 1
-        category: house_style
-        note: 'The model''s name is spelled two ways and the notation is set two ways.
-
-          The heading reads "Kimi K3" while the body under it reads "The KimiK3
-
-          language backbone", and the opening also uses "KimiK3". Separately, "This
-
-          makes the product re-associable, so the growing set of K and V vectors
-
-          can be folded into a fixed D×D state" later becomes "it is added to the
-
-          same D by D matrix". Both are the same object described two ways within
-
-          a few hundred words, and on the page a reader briefly wonders whether
-
-          they are different things. Editor-owned copy-fitting, so fully
-
-          actionable.'
-        suggestion: Settle on "Kimi K3" and "D x D" throughout, heading and body alike.
-      - severity: minor
-        article: from-gpt2-to-kimi3
-        locator: From linear attention to DeltaNet | Old information is removed and new information is
-          written in its place. | 1
-        category: passive
-        note: 'Two passives in one short sentence with the actor named in the sentence
-
-          immediately before it. The paragraph has just walked through the delta
-
-          rule''s update as a sequence of things the update does ("asks what the
-
-          current key retrieves", "subtracts that", "multiplies the key",
-
-          "adds the result back"), all active, all with the rule as subject, and
-
-          then the summary line drops the subject. The sentence is the payoff of
-
-          the paragraph and it is the one that goes limp.'
-        suggestion: The rule removes the old information and writes the new information in its place.
-      - severity: minor
-        article: from-gpt2-to-kimi3
-        locator: Kimi K3 | for roughly 2% inference latency and a 1.25x compute advantage | 1
-        category: dead_words
-        note: 'The clause does not parse on one read. "KimiK3 runs it at block
-
-          boundaries every 12 decoder layers, eight blocks in all, for roughly 2%
-
-          inference latency and a 1.25x compute advantage." Two percent of what,
-
-          and added or total? A cost paid and an advantage gained are set in the
-
-          same list joined by "and", so the reader cannot tell which side of the
-
-          ledger each sits on until they work it out. This is the one place a
-
-          reader has to stop and reconstruct the sentence rather than the idea.'
-        suggestion: for roughly 2% added inference latency, against a 1.25x compute advantage
-      scores:
-        structure: 3
-        flow: 2
-        sentence_craft: 2
-        house_style: 3
-        voice_consistency: 2
-      notes: 'The spine is genuinely good and I could restate it after one read: the KV
-
-        cache grows without bound, linear attention trades it for a fixed state,
-
-        the fixed state interferes, the delta rule restores recoverability, gating
-
-        adds the ability to forget, per-channel gating makes forgetting selective,
-
-        and K3 alternates that against periodic full attention while doing the same
-
-        trick down the depth axis. Four sections, each one earning the next. What
-
-        works against it is the surface. The prose keeps reaching for the same
-
-        device, an abstract noun and a colon, until the explanations start sounding
-
-        interchangeable, and the voice cannot decide whether it is a narrator or an
-
-        exposition. Most of the piece is impersonal technical prose; then a first
-
-        person appears twice to report hours spent and confusion felt, pointing at a
-
-        paper and a post the reader cannot see. That is where I went back a
-
-        paragraph, and it is also what breaks the "one writer''s continuous prose"
-
-        test: the reading-diary asides and the synthesised exposition are audibly
-
-        different hands. The opener is close to right and spoils itself with a third
-
-        sentence that repeats the second; the close then abandons the question the
-
-        opener asked and summarises instead. Density is mostly earned, with one
-
-        exception: a five-item list of undefined acronyms called "modest" in the
-
-        section where the manager reader is most likely to be lost. No U+2014
-
-        anywhere and the headings are sentence-case, so house style is otherwise
-
-        clean.'
-      call:
-        role: line_judge
-        prompt_path: prompts/line-review.md
-        prompt_sha256: 262f28e51956608760ae5dbdde255ef7a5780f459e73cb3542d7ae6aae6ac8b4
-        backend: agent
-        model: null
-        argv:
-        - mag
-        - produce
-        - rerun-004-the-systems-around-the-model
-        - --backend
-        - agent
-        - --submit
-        - from-gpt2-to-kimi3/r1-line
-        - --brief-sha256
-        - 6427bcd99b1d3b6b62913f9d1a0081bcf7827bd05ba87a176493ed805824fec6
-        duration_seconds: 0.0
-        output_sha256: c804f7259a6f7fc39d740675527974a8bd4bd38fd3cd412b2a5e43c9c2763171
-  notes: '## Step 1: claim ladder
-
-
-    **Central claim.** The jump from GPT-2 to KimiK3 is not scale alone: each architectural step changes
-    what the model stores, how it updates that state, or how it retrieves information a fixed-size state
-    cannot preserve, because a fixed-capacity associative memory needs an eviction policy and learned
-    selection supplies it.
-
-
-    **Supporting claims, in argument order, with their evidence.**
-
-
-    1. Scale contrast. 22,580 GPT-2 models fit inside KimiK3; 124M parameters (about 50k tokens, 12 blocks,
-    12 heads, embedding dim 768) against 2.8T; a factor of 22,580 in seven years, 2019 to 2026.
-
-    2. GPT-2 is decoder-only; the LM head maps the final hidden-state matrix to vocabulary logits; only
-    the final position''s logits are used per decode step. Evidence: the source''s stated inefficiency,
-    that representations are computed for every position and consumed for one.
-
-    3. The KV cache removes the recomputation. Evidence: it retains vectors for the previous N-1 tokens,
-    grows O(N), can become a memory-bandwidth bottleneck, and each decode step does two ND reads and two
-    1D writes to HBM.
-
-    4. Linear attention folds the growing K/V set into a fixed D×D state. Evidence: softmax applies its
-    nonlinearity after q·k, coupling every query to every key; a feature map such as ELU+1 applied to
-    q and k separately makes the product re-associable.
-
-    5. Author''s correction to the linear-attention paper: the O(N²)-per-step framing is wrong, Flash
-    Attention fixes that, released 2020. Evidence/context: at the time training materialized the full
-    N×N matrix, FlashAttention did not exist, and reference autoregressive implementations often recomputed
-    history without a KV cache.
-
-    6. Linear attention trades fidelity. Evidence: the feature map is a less expressive approximation
-    of the softmax kernel.
-
-    7. A finite cache interferes. Evidence: token i-1 gets no slot of its own, it is added to the same
-    D by D matrix; the additive update is simultaneously the efficiency gain and the interference source;
-    the N >> D regime that makes linear attention attractive exposes the limit; Schlag''s Fast Weight
-    Programmers quote.
-
-    8. DeltaNet restores recoverability. Evidence: read the cache at the current key, subtract, scale
-    by the key, write back; Q is a learned pointer, Wq and Wk read the same residual stream.
-
-    9. DeltaNet can be parallelized by chunking. Evidence: first-order linear recurrence with generalized
-    Householder transition matrices; chunks of size C; within-block real attention plus across-block state
-    folding; C=N recovers O(N²) attention, C=1 is regular linear attention.
-
-    10. Gated DeltaNet adds general forgetting. Evidence: the delta rule can only forget where it has
-    a replacement; Mamba-2 decays the previous cache then adds the new at full strength; uniform decay
-    ignores varying importance; alpha=1 is pure delta, alpha=0 clears memory.
-
-    11. Kimi Linear adds fine-grained gating. Evidence: per-channel decay instead of one scalar; MLA interleaving;
-    MoE replacing the MLP; the claim of beating full attention under controlled comparisons with up to
-    6x decode throughput.
-
-    12. KimiK3 is Kimi Linear plus scale and four smaller changes, of which AttnRes is the substantive
-    one. Evidence: 23 four-layer macrocycles, 3 KDA + 1 MLA; equal-weighted residual sum gives no selective
-    access and destabilizes training via ever-larger layer outputs; AttnRes weights each term by a query-key
-    dot product; block boundaries every 12 layers, eight blocks, roughly 2% latency, 1.25x compute advantage.
-
-    13. Conclusion: AttnRes and MLA attack the same limit from different directions (context vs depth);
-    a fixed-capacity memory needs an eviction policy; learned selection is necessary; attention is the
-    most effective selective-read mechanism.
-
-
-    **Qualifications, hedges and admissions (all load-bearing, none hardened).**
-
-    - "how much, or how little, has actually changed" (kept in the opener).
-
-    - "the practical accuracy loss depends on the architecture and workload" (kept).
-
-    - "C=1 is the cheapest option in pure FLOP terms, but not necessarily in wall-clock time" (kept).
-
-    - "It took me about seven hours" (kept).
-
-    - "Kimi Linear drew attention for one central claim" and "The authors presented it as" (kept: attribution
-    to the paper''s authors, not the source author''s own endorsement).
-
-    - "At first glance, the changes from Kimi Linear appear modest" (kept).
-
-    - "roughly 2%" (kept as "roughly").
-
-    - "may benefit from different weightings", "can destabilize training", "must inevitably discard information"
-    (kept).
-
-    - Dropped hedges: "possibly the most important part of the block_attn_res function" (its subject,
-    the code, is gone).
-
-
-    ## Step 2: voice signature (carried verbatim)
-
-
-    1. "The paper''s O(N²) framing threw me off." plus "That''s what Flash Attention fixes... then I saw
-    that it was released in 2020."
-
-    2. "It took me about seven hours to develop a working understanding of it."
-
-    3. "Inside a block I do real attention (the masked QKᵀ times V), and across blocks I fold everything
-    into the state and read it back with one matmul."
-
-
-    Also carried verbatim for voice: "Twenty-two thousand five hundred and eighty.", "But is it just...
-    scale?", "We scaled up by a factor of 22,580 in seven years.", "There is a trade-off.", "Old information
-    is removed and new information is written in its place.", "Scaling laws remain relevant, but capacity
-    must be added in the right place and in a form the system can use.", and the whole closing pair beginning
-    "A fixed-capacity associative memory needs an eviction policy".
-
-
-    Person is preserved throughout: the source alternates "I" for the author''s own struggle and "we"
-    for the reader-and-author walking the architecture. Both survive ("we want to store", "we scaled up",
-    "I do real attention").
-
-
-    ## Step 3: shape and cuts
-
-
-    **Cut order applied, in the prompt''s order.**
-
-
-    The first draft came in at 1,317 body words against a 1,000-word ceiling. Everything below was removed
-    in four passes, in the prompt''s order, and the passes stopped the moment the piece fit (996 words).
-
-
-    1. *Second and third examples of a point already carried.* Dropped the three-step decomposition of
-    attention (non-negative scores, divide by the sum, weighted average of values) because the trade-off
-    paragraph already carries "less expressive feature map"; dropped the "read back with the same key"
-    worked example (k @ (k.T @ v) = squared norm of k times v) because the delta-rule paragraph already
-    states what the read returns; dropped the second sequential-prefill loop, which restates the first.
-    **Dropped the Schlag quotation** ("endlessly adding new associations to a memory of finite size ...
-    inevitably will reach a limit"), which was the third statement of interference-at-capacity inside
-    one paragraph. This was the most painful cut and the first thing to restore if the budget ever loosens:
-    it is the only outside voice in the source and the author flags it as "eloquently put".
-
-    2. *Supporting evidence before the claim.* Dropped the FLOP algebra (2Ld² fixed, 2LCd growing, 2L²d
-    at C=L) but kept its conclusion, that C=N is standard attention and C=1 is linear attention; dropped
-    C often being 64 or 128 and the UMMA reference; dropped the "generalized Householder transition matrices"
-    formulation and the reparameterized recurrence S_t = S_{t-1}(I − β_t k_t k_tᵀ) + β_t v_t k_tᵀ, keeping
-    only the chunking they enable; dropped the AttnRes formulas; dropped the 898/2 shared/896/16 expert
-    counts and the near-3x-slower unfused SiTU path with its offsetting latent-space FLOP halving; dropped
-    the GPT-2 config numbers (50304 vocab, 12/12/768) and the language-model-head walkthrough, because
-    the argument is unchanged by them and the opener already carries 124M; dropped the FlashAttention-era
-    context (full N×N matrices, no KV cache in reference implementations) that explains why the linear-attention
-    paper framed cost as it did, keeping the author''s correction itself; dropped "two ND reads and two
-    1D writes to HBM", keeping the memory-bandwidth bottleneck it evidences.
-
-    3. *Whole claims, least load-bearing first.* Dropped "Q is also a learned pointer" with the Wq/Wk
-    residual-stream explanation. Dropped gated MLA''s mechanism (element-wise multiplication with a gate
-    projected from the input), the conventional-MoE router explanation, MLA query LoRA and output gating
-    as separate topics, and the shared-expert down/up projection; all four are named in the K3 change
-    list but never explained, and the source itself defers MLA and MoE to "later sections". Dropped beta
-    as a named per-token write strength, keeping its effect in prose. Dropped the mention of MLA-interleaving
-    and MoE from the **Kimi Linear** paragraph specifically, because the Kimi K3 paragraph states both
-    and the piece must not say anything twice. Dropped the @chloey3k credit and all X chrome, reply counts,
-    and view counts.
-
-    4. *Qualifications and the author''s conclusions.* Nothing cut here. Every hedge listed in step 1
-    survives, and both closing paragraphs of the source survive, merged into one. One near-miss to watch:
-    an intermediate revision dropped "Scaling laws remain relevant, but" to save four words, which would
-    have been a pass-4 cut made during pass 3. It was restored and the words found elsewhere.
-
-
-    **Code.** Every fenced block was dropped whole. The extraction is pdftotext output and every Python
-    block is truncated at the right margin (`q, k, v = self.c_attn(x).split(self.n_embd, dim=2)` runs
-    off, `float(''-i`, `# re-asse`, `k.size`). The prompt allows only character-for-character reproduction
-    or a whole drop, and character-for-character here means shipping visibly broken code. Dropping all
-    of it also freed most of the budget, which is what made a 900-word version of a very long source possible.
-    A future reviser wanting code must re-extract from the PDF, not from `extracted.md`.
-
-
-    **Enumerations.** Three lists in the source. The three attention steps became prose and then were
-    cut (fate: conclusion alone). The three Kimi Linear changes became prose inside the Kimi Linear paragraph,
-    because they are moves in the argument, not things to scan. The six-item KimiK3 change list stayed
-    a list only in the sense of an inline series inside a sentence, trimmed to five items and used to
-    set up AttnRes as the one the piece then explains.
-
-
-    **Numbers kept and why.** 22,580 / 124M / 2.8T: the thesis contrast, kept exactly. N-1, O(N), two
-    ND reads and two 1D writes: the cache''s cost, which is the reason for everything after it. 6x decode
-    throughput: the size of Kimi Linear''s claim, which is the claim. 23 macrocycles, 3+1 layers, every
-    12 layers, eight blocks: the shape of K3, and the 12/8 pair is the reason AttnRes is affordable. 2%
-    latency and 1.25x compute: the AttnRes trade, useless without both halves. Everything else went.
-
-
-    **Structure decision.** The source is chronological and so is this, because the argument is chronological:
-    each system fixes a limit named in the previous paragraph. The through-line I held to is the cache.
-    GPT-2 creates it, linear attention bounds it, DeltaNet edits it, Gated DeltaNet clears it, Kimi Linear
-    makes clearing per-channel, and AttnRes runs the same selection along depth instead of along context.
-    Every section transition is a limitation, never a topic change. If a reviser needs to cut further,
-    the Gated DeltaNet / Kimi Linear section merges most cleanly, since both are "the decay got finer".
-
-
-    **Choices this piece rests on.** (a) The opener is the source''s own opener, nearly verbatim, with
-    the 124M/2.8T figures pulled forward so the GPT-2 section need not restate them. The author repeats
-    22,580 twice (spelled, then in digits) and I kept the repetition because it is his. If a reviser restores
-    the parameter count later in the piece, the opener''s arithmetic becomes a duplicate. (b) "Here is
-    how much, or how little, actually changed" is the weakest line in the manuscript. It is the author''s
-    phrase, but it edges toward the banned self-announcing opener, and it is there partly because the
-    paragraph had to reach 40 words for the illustrated opener page. If someone finds a fourth concrete
-    sentence, use it. (c) The four figure-free numbers the piece rests on are 6x decode throughput, 2%
-    latency, 1.25x compute, and eight AttnRes blocks; a fact-checker will find all four in the extraction,
-    but 6x and 2% carry "up to" and "roughly" and must keep them. (d) Section headings use the source''s
-    own words (Gated Delta Net, KDA/Kimi Linear, Kimi K3), merged where two source sections argue one
-    thing; the two figure-anchored headings were given. (e) "The last of those reaches the residual stream"
-    is my connective into AttnRes. It is a pointer, not a judgment, but it is the sentence a fact-checker
-    is most likely to query, and "AttnRes changes the residual stream" is the flat fallback.
-
-
-    ## Honest comparison against the shipped version
-
-
-    Read after this draft was finished. Shipped: 844 body words, 37-word opener, six sections. Mine: 996
-    body words, 49-word opener, four sections.
-
-
-    **Where the shipped version is plainly better.**
-
-
-    1. *The opener.* "That is how many 124-million-parameter GPT-2 models fit inside a 2.8-trillion-parameter
-    KimiK3" is one clean sentence that carries both figures as adjectives and never has to repeat the
-    number. Mine needs three sentences and says 22,580 twice. The audit is right, and I could not beat
-    it without copying it.
-
-    2. *Sentence economy.* Almost every shipped sentence is short and does one thing. Mine has two 45-word
-    sentences (the interference paragraph and the AttnRes residual sentence) that a line editor will flag.
-
-    3. *Room.* At 844 words it explains the MoE (898 experts, two shared, latent space) and gated MLA,
-    which I cut. A reader finishes the shipped piece knowing more about KimiK3''s feed-forward path.
-
-
-    **Where this draft is better, and it is not close.**
-
-
-    1. *Voice.* The shipped piece contains zero instances of I, me, my, we, or our. The source is a first-person
-    worklog by someone who says a paper''s framing threw him off and that one section cost him seven hours.
-    None of that survives; every sentence in the shipped piece could have been written by anyone about
-    anything. That is a direct failure of the prompt''s voice rule and of `docs/WRITING_RULES.md` ("Every
-    piece carries the voice of whoever is credited on it"), and it is why the piece reads so smooth: the
-    awkward, human parts are gone, which the prompt names as the definition of a failed synthesis.
-
-    2. *Added framing.* The shipped piece asserts at least five things the author never says: the roadmap
-    sentence "This progression follows the pressure created by sequence length, memory bandwidth, recurrent
-    state, selective retrieval, and sparse capacity"; "This is more than an optimization"; "The important
-    shift is division of labor"; "It is a hybrid architecture rather than a declaration that one mechanism
-    replaces every other one"; and the closing "the more interesting story is how its components divide
-    the work that one uniform transformer block once tried to do alone". Division of labor is the shipped
-    piece''s own thesis, not the author''s.
-
-    3. *The author''s conclusion is missing.* The source ends on a general claim: a fixed-capacity associative
-    memory needs an eviction policy, learned selection is necessary, attention is the most effective selective-read
-    mechanism. The shipped version replaces it with the division-of-labor thesis. Under the cut order,
-    the author''s conclusions go last and almost never; here they went first.
-
-    4. *Hedges stripped.* Gone: "up to 6x higher decode throughput", "under controlled comparisons", "the
-    practical accuracy loss depends on the architecture and workload", "roughly 2%", "at first glance
-    the changes appear modest". The entire Kimi Linear claim, that it outperformed full attention, is
-    absent; the shipped Kimi Linear section describes the architecture and never states its result. And
-    C=1/C=N, which the source gives as exact identities ("recovers", "gives"), are softened to "resembles"
-    and "approaches".
-
-    5. *One fidelity inversion.* The shipped line "Full softmax attention also compares every query with
-    every key, so long contexts remain expensive even when generation is cached" reinstates roughly the
-    per-step cost framing that the author explicitly corrects and calls not true. The correction is absent
-    and the corrected claim is present.
-
-    6. *Banned tics.* Three antithesis constructions ("The progression from GPT-2 to KimiK3 is not a straight
-    replacement of attention", "It does not make the recurrence free", "rather than a declaration that..."),
-    plus "## What changed", which the audit called an earned recap and which rule 2 calls a closing that
-    restates what the reader just read. It is one clause per preceding section.
-
-
-    **Verdict.** As an explainer written by the magazine, the shipped version is the better-made object,
-    and its opener is better than mine. As a faithful synthesis, which is what the label promises and
-    what a fact-checker will grade, it is not close: the shipped piece drops the author, his conclusion,
-    and his hedges, and substitutes a thesis he did not offer. I would ship mine and steal nothing from
-    the shipped version except the lesson that its opener carries two figures in one sentence and mine
-    does not.
-
-
-    ## Unclear prompt instruction
-
-
-    The Format block specifies `label: FAITHFUL SYNTHESIS`, but the placeholder at `editions/rerun-004-.../articles/from-gpt2-to-kimi3.md`
-    carries `label: EDITORIAL WORK REQUIRED` and the shipped 004 file carries `source_id` (singular) rather
-    than the `source_ids` list the prompt mandates. I followed the prompt: `source_ids` as a list, `content_mode:
-    faithful_synthesis`, `label: FAITHFUL SYNTHESIS`, no `stage_status`. If the renderer reads `source_id`
-    from the article rather than from `edition.yaml`, the shipped 004 file and this prompt disagree and
-    someone should settle it.
-
-
-    Second, the budget: the prompt''s own ceiling is "roughly 700 to 1,100 body words" for seven A5 pages,
-    while this assignment specifies 700 to 1,000. I targeted the tighter number.'
+  judges: {}
+  notes: "## Budget: measured, not estimated\n\n1,089 body words. I copied the repo to a scratch directory,\
+    \ wrote this manuscript into\n`editions/rerun-004-.../articles/from-gpt2-to-kimi3.md` *in the copy*,\
+    \ and ran `mag fit`\nagainst it: **p19-p24, 6/7 pages, OK**, whole edition still `fit: every page\
+    \ budget holds`.\nNothing was written into the real repo except this reply.\n\nDo this before you\
+    \ cut anything. Round 1's notes agonised over 996 vs 1,000 words and cut\nthe Schlag quotation to\
+    \ get there; the actual constraint had almost a full page of slack.\nThe prompt's \"roughly 700 to\
+    \ 1,100\" is not the binding number, pagination is, and this\npiece paginates short because it carries\
+    \ no code blocks. The recipe:\n\n    cp -R <repo> /tmp/scratch/repo\n    # write the manuscript into\
+    \ the copy's articles/ path\n    PYTHONPATH=/tmp/scratch/repo/src <repo>/.venv/bin/python -m magazine\
+    \ fit \\\n        rerun-004-the-systems-around-the-model --language en\n\n`fit` also proves the two\
+    \ pinned figure anchors resolved. A renamed heading fails there,\nso a green `fit` is the anchor check\
+    \ as well as the budget check.\n\n## Step 1: claim ladder\n\n**Central claim.** The jump from GPT-2\
+    \ to KimiK3 is not scale alone: each architectural\nstep changes what the model stores, how it updates\
+    \ that state, or how it retrieves what a\nfixed-size state cannot preserve, because a fixed-capacity\
+    \ associative memory needs an\neviction policy and learned selection supplies it.\n\n**Supporting\
+    \ claims, in argument order, with evidence.**\n\n1. Scale contrast: 22,580 GPT-2 models fit inside\
+    \ KimiK3; 124M against 2.8T; 2019 to 2026.\n2. GPT-2 is decoder-only and computes representations\
+    \ for every position while decoding\n   consumes one. Without a cache the projections are recomputed\
+    \ each step.\n3. The KV cache fixes that, retains N-1 tokens' vectors, grows O(N), and can become\
+    \ a\n   memory-bandwidth bottleneck.\n4. Linear attention folds the growing K/V set into a fixed D×D\
+    \ state, because a feature\n   map applied separately to q and k makes the product re-associable.\n\
+    5. The author's correction to the linear-attention paper's O(N²)-per-step framing, plus\n   his own\
+    \ defence of it: full N×N matrices, no FlashAttention, no KV cache in reference\n   implementations\
+    \ at the time.\n6. Linear attention trades fidelity: the feature map is a less expressive approximation\
+    \ of\n   the softmax kernel, with the loss depending on architecture and workload.\n7. A finite cache\
+    \ interferes. Token i-1 gets no slot; the additive update is both the\n   efficiency and the interference;\
+    \ N >> D is where it shows.\n8. DeltaNet restores recoverability: read at the current key, subtract,\
+    \ scale, write back.\n9. **Chunking parallelizes purely additive linear attention, and explicitly\
+    \ does not carry\n   over to the delta rule.** Every state is needed to compute what must be subtracted,\
+    \ so\n   the authors reparameterize into a first-order linear recurrence, and only that form\n   lets\
+    \ a chunk compute all C deltas at once.\n10. Gated DeltaNet adds general forgetting: the delta rule\
+    \ forgets only where it has a\n    replacement; Mamba-2 decays then adds at full strength; uniform\
+    \ decay ignores varying\n    importance; alpha=1 is pure delta, alpha=0 clears memory.\n11. Kimi Linear\
+    \ adds per-channel gating. Its headline result is *the authors' own\n    presentation*: better quality\
+    \ and up to 6x decode throughput, under controlled\n    comparisons, as a drop-in replacement.\n12.\
+    \ KimiK3 = Kimi Linear plus scale, latent MoE, and AttnRes. 23 four-layer macrocycles,\n    3 KDA\
+    \ + 1 MLA; 898 experts, 2 shared, 16 of 896 routed; equal-weighted residual sum\n    gives no selective\
+    \ access and destabilizes training; AttnRes weights each term by a\n    query-key dot product; every\
+    \ 12 layers, eight blocks, ~2% latency, 1.25x compute.\n13. Conclusion: AttnRes and MLA attack one\
+    \ limit from two directions (context vs depth);\n    fixed-capacity memory needs an eviction policy;\
+    \ learned selection supplies it;\n    attention is the most effective selective-read mechanism.\n\n\
+    **Hedges kept, none hardened.** \"can reduce fidelity\" / \"depends on the architecture and\nworkload\"\
+    ; \"the cheapest in pure FLOP terms but not necessarily in wall-clock time\"; \"about\nseven hours\"\
+    ; \"drew attention for one central claim\" and \"The authors presented it as\" and\n\"up to 6x\";\
+    \ \"At first glance ... appear modest\"; \"roughly 2%\"; \"can destabilize training\";\n\"must inevitably\
+    \ discard information\"; \"does not directly apply\"; \"without some\nmathematical re-parameterization\"\
+    .\n\n## Step 2: voice signature (verbatim, do not paraphrase)\n\n1. \"The paper's O(N²) framing threw\
+    \ me off.\" + \"That's what Flash Attention fixes... then\n   I saw that it was released in 2020.\"\
+    \n2. \"It took me about seven hours to develop a working understanding of it.\"\n3. \"Inside a block\
+    \ I do real attention (the masked QKᵀ times V), and across blocks I fold\n   everything into the state\
+    \ and read it back with one matmul.\"\n\nAlso carried: \"Twenty-two thousand five hundred and eighty.\"\
+    , \"But is it just... scale?\",\n\"There is a trade-off.\", \"Scaling laws remain relevant, but capacity\
+    \ must be added in the\nright place and in a form the system can use.\", and the closing eviction-policy\
+    \ pair.\nPerson is preserved both ways: \"I\" for the author's own struggle, \"we\" for author and\n\
+    reader walking the architecture.\n\n## How each round-1 finding was cleared\n\n1. **[major] qualification_loss,\
+    \ chunking answers the delta problem.** This was the real\n   defect and it was made in round 1's\
+    \ claim ladder, not in its prose: item 9 read\n   \"DeltaNet can be parallelized by chunking\", which\
+    \ is the source's *additive* result\n   promoted into the delta section. The manuscript could not\
+    \ be honest while the ladder\n   was wrong. Rewritten as two paragraphs that keep the order the source\
+    \ uses: chunking\n   works for purely additive linear attention (with C=N / C=1 as its identities,\
+    \ which is\n   where the source states them), then a flat paragraph saying it does **not** directly\n\
+    \   apply to the delta updates, why (every state is needed to compute the subtraction), and\n   what\
+    \ the authors do instead. The reparameterized recurrence is named as a first-order\n   linear recurrence;\
+    \ \"generalized Householder transition matrices\" is dropped as jargon\n   that buys nothing at this\
+    \ length, and the load-bearing part, that a rewrite was\n   *necessary*, survives. Do not re-merge\
+    \ these two paragraphs.\n2. **[major] attribution_error.** \"The authors presented it as\" restored\
+    \ as its own\n   sentence, and the appositive weld undone. The 6x, the quality claim and \"drop-in\"\
+    \ now\n   all sit inside the attributed sentence.\n3. **[minor] qualification_loss, FlashAttention\
+    \ era.** The defending sentence is restored\n   after the correction. Trimmed \"reference autoregressive\
+    \ implementations\" to \"reference\n   implementations\" only.\n4. **[major] duplication, 22,580 twice.**\
+    \ \"We scaled up by a factor of 22,580 in seven\n   years.\" is cut. The opener is now three sentences,\
+    \ 29 words. Round 1's note claimed the\n   opener had to reach 40 words for the illustrated opener\
+    \ page: that is not true, there is\n   no minimum in `weasyprint_adapter._illustrated_opener_*`, only\
+    \ an overflow guard, and\n   29 words paginates fine. The weak line round 1 added to pad it (\"Here\
+    \ is how much, or\n   how little, actually changed\") is gone with it.\n5. **[major] orphan_referent.**\
+    \ Fixed by supplying context, not by deleting the \"I\". A\n   labeled `**Editor's note.**` sits as\
+    \ paragraph two, exactly the pattern\n   `factory-systems-problem.md` already ships in this edition,\
+    \ and it names the worklog,\n   its date, and the papers in order. That gives \"the paper\" an antecedent\
+    \ in the\n   linear-attention section, gives \"the authors\" one in the delta-parallelization\n  \
+    \ paragraph, and stages the reading so \"then I saw that it was released in 2020\" is a\n   beat in\
+    \ a story the reader is now inside. Every fact in the note is in the extraction\n   (\"In this worklog,\
+    \ I'll walk through\", \"3:22 PM · Jul 27, 2026\", \"Eloquently put by\n   Schlag's paper (Fast Weight\
+    \ Programmers)\", the source's own section titles). It names\n   no paper the source does not name;\
+    \ the linear-attention paper has no title in the\n   extraction, so it is called \"linear attention\"\
+    \ and nothing more. The reviewer's\n   suggested line, \"Kimi's own writeup frames the cost as O(N²)\"\
+    , would have invented an\n   attribution, so it was declined. The third referent, \"the most difficult\
+    \ section of the\n   post\", is not repairable by context because it points at a table of contents;\
+    \ it became\n   \"Parallelizing that was the hardest part\", and voice signature 2 follows it intact.\n\
+    \   Because Schlag is now named in the note, the body says plain \"DeltaNet addresses this\n   loss\
+    \ of recoverability\" so the name is not spent twice.\n6. **[major] repeated_cadence.** Six label-colon-gloss\
+    \ sentences down to one\n   (\"Mamba-2 supplies the other half:\"), which is the one where the colon\
+    \ introduces a\n   procedure rather than a gloss. All three bare-demonstrative openings are gone.\
+    \ The\n   empty one the finding singled out (\"That capacity has a specific mathematical purpose:\n\
+    \   the per-channel scale gives finer control over memory decay\") was deleted outright\n   rather\
+    \ than recast, because it restated the sentence above it; the paragraph now goes\n   straight from\
+    \ per-channel gating to the scaling-laws conclusion.\n7. **[major] jargon.** The five-item K3 list\
+    \ is gone. Gated MLA, SiTU and MLA query LoRA\n   are dropped whole rather than named-and-unexplained.\
+    \ Latent MoE is kept but *explained*\n   (898, two shared, 16 of 896, compressed latent space) because\
+    \ the parent review asked\n   for it and the measured budget allowed it. The transition is now\n \
+    \  \"...appear modest, until the last of them, blockwise attention residuals\", so the only\n   term\
+    \ left in the sentence is the one the next paragraph defines.\n8. **[major] ending.** The close now\
+    \ answers the opening question in its first three words\n   and ends on the reversal instead of a\
+    \ taxonomy. The store/update/retrieve triple is cut,\n   so the piece contains zero three-item abstract\
+    \ lists (rule 3 allows one; I spent none).\n   \"learned selection is what supplies one\" keeps the\
+    \ author's second closing claim without\n   its \"gating, routing, or decay\" enumeration, which would\
+    \ have been the banned list.\n9. **[minor] house_style.** \"KimiK3\" everywhere, heading included,\
+    \ matching the\n   `edition.yaml` title and `display_emphasis`. \"D×D\" everywhere; \"D by D\" is\
+    \ gone.\n10. **[minor] passive.** \"The rule removes the old information and writes the new in its\n\
+    \    place.\" The remaining passives in the piece are the source's own and sit where the\n    actor\
+    \ is genuinely the architecture.\n11. **[minor] dead_words.** \"for roughly 2% added inference latency\
+    \ against a 1.25x\n    compute advantage\" separates cost from gain.\n\n## What was dropped, in the\
+    \ prompt's cut order\n\n1. *Repeat examples.* The three-step decomposition of attention; the \"read\
+    \ back with the\n   same key\" worked example; the second sequential-prefill loop; the Schlag quotation.\n\
+    2. *Evidence before claims.* The FLOP algebra (2Ld², 2LCd, 2L²d); C = 64 or 128 and UMMA;\n   the\
+    \ explicit reparameterized recurrence; the AttnRes formulas; GPT-2's config numbers;\n   the SiTU\
+    \ 3x-slower unfused path; \"two ND reads and two 1D writes to HBM\".\n3. *Whole claims.* \"Q is also\
+    \ a learned pointer\" and the Wq/Wk explanation; gated MLA's\n   mechanism; the conventional-MoE router\
+    \ explanation; MLA query LoRA and output gating;\n   the shared-expert down/up projection; beta as\
+    \ a named per-token write strength; the\n   @chloey3k credit; all X chrome.\n4. *Qualifications and\
+    \ conclusions.* Nothing.\n\n**Code.** Every fenced block dropped whole, same reason as round 1: `extracted.md`\
+    \ is\npdftotext output and every Python block is truncated at the right margin (`float('-i`,\n`# re-asse`,\
+    \ `k.size`). Character-for-character reproduction here means shipping broken\ncode. A reviser who\
+    \ wants code must re-extract from the PDF.\n\n**Enumerations.** Three in the source. The three attention\
+    \ steps: conclusion alone. The\nthree Kimi Linear changes: prose, and only the gating one survives,\
+    \ because MLA\ninterleaving and MoE are stated in the KimiK3 section and nothing may appear twice.\
+    \ The\nsix-item KimiK3 change list: reduced to the single item the next paragraph explains.\n\n##\
+    \ What this piece is resting on\n\n- **The editor's note is load-bearing and must not be cut as \"\
+    editor furniture\".** Three\n  separate orphan referents depend on it. If a later round wants it gone,\
+    \ the referents\n  have to be resolved inline first, and inline resolution costs more words than the\
+    \ note\n  and damages the verbatim voice sentences.\n- **The two-paragraph delta-parallelization split.**\
+    \ Anything that compresses it back into\n  one paragraph will reintroduce finding 1. The sentence\
+    \ \"That chunking does not directly\n  apply to the delta updates.\" is the whole repair.\n- **The\
+    \ Schlag quotation is still the best thing left on the floor**, and unlike round 1\n  there is now\
+    \ measured room for it: the piece is at 6/7 pages. I left it out anyway\n  because it would be the\
+    \ third statement of interference-at-capacity in three consecutive\n  paragraphs, and duplication\
+    \ is what the line editor is already grading hardest. If a\n  reviser restores it, cut the \"regime\
+    \ that makes linear attention attractive\" sentence in\n  the same move.\n- **The closing line is\
+    \ an assertion, by design.** \"The best selective-read mechanism we\n  have is still attention\" is\
+    \ the author's own claim, and it lands because the whole piece\n  has been about replacing attention.\
+    \ A fact-checker will find it as \"attention is the most\n  effective selective-read mechanism\" in\
+    \ the last paragraph of the extraction.\n- **\"one built-in inefficiency\"** in the GPT-2 opener is\
+    \ my connective; the source says\n  \"This is an inefficiency of decoder-only generation\". Flat fallback\
+    \ if queried:\n  \"GPT-2 is a decoder-only architecture, and decoder-only generation is inefficient.\"\
+    \n- **\"buys a better way to decide what to throw away\"** in the close compresses the source's\n\
+    \  eviction-policy claim into the author's own frame. It is the second most likely\n  fact-check query\
+    \ after the line above. Flat fallback: \"Every step since GPT-2 spends its\n  new capacity on learned\
+    \ selection.\"\n\n## Note on the shipped version\n\nRound 1's comparison stands and I did not re-litigate\
+    \ it. Two things were taken from it:\nthe MoE detail it had room for and this draft now carries, and\
+    \ the lesson that its opener\ncarries both figures inside one sentence. Nothing else. Its ending is\
+    \ invented (a\ndivision-of-labor thesis the author never offers) and its hedges are stripped, so it\
+    \ is not\na model for the close.\n\n## Unresolved, for whoever owns the pipeline\n\nThe Format block\
+    \ mandates `source_ids` as a list; the shipped 004 article files carry\n`source_id` (singular). I\
+    \ followed the prompt. `mag fit` accepts the list form, so this is\na consistency question rather\
+    \ than a build break, but the two conventions coexist in the\nrepo right now."

@@ -22,6 +22,19 @@ half of that work and refuses, loudly, to do the creative half:
   parser's own marks; the author's comments, ordering, and wrapping survive.
   Only brand-new files are generated whole.
 
+* **A placeholder that has gone stale is re-mirrored; a translation never is.**
+  A localized manuscript whose bytes still hash to its row's recorded
+  ``source_sha256`` is the English copy a previous staging run wrote, and when
+  the English has moved since it is copied again.  This is what a rewrite
+  needs: produce rewrites the English, and the overlay is left holding the
+  *previous* English, which the structural gate then rejects for a divergence
+  no translator caused.  Anything whose bytes differ from that pin is somebody's
+  translation and is left exactly as found, with an advisory naming it.  For
+  the same reason a figure's ``anchor`` -- the one localized field that must
+  match a heading rather than read well -- follows the base while the localized
+  manuscript is still the English one, so a figure the writer moved does not
+  have to be moved again by hand in every overlay.
+
 * **Pins are refreshed through ``pin.refresh_pins``**, the one tool whose
   contract is "whatever validation expects, write that" -- never through a
   second hashing implementation.  Before refreshing, each recorded pin is
@@ -442,19 +455,50 @@ def _copy_placeholder(
         )
 
 
-def _ensure_file(source: Path, target: Path, writer: _OverlayWriter) -> None:
-    """Restore a declared file that is missing; an existing one is the point.
+def _mirror_placeholder(
+    source: Path,
+    target: Path,
+    recorded_sha256: Any,
+    writer: _OverlayWriter,
+    notes: list[str],
+) -> None:
+    """Keep a declared overlay file present, and re-mirror a stale placeholder.
 
-    Used for rows that were already in the overlay: their file being present
-    (and translated) is the expected state and merits no note, but a dangling
-    declaration is repaired with an English placeholder so the overlay loads.
-    A target that resolves outside the overlay is left to validation to name.
+    Three states, three answers.
+
+    A *missing* file is restored with an English placeholder so the overlay
+    loads at all; a dangling declaration is not the translator's to repair.
+
+    A file whose bytes still hash to the row's recorded ``source_sha256`` is
+    the English copy a previous staging run wrote, and that pin says which
+    English it copied.  When the English has moved since, the copy is
+    re-mirrored from the current English.  This is the case a rewrite creates
+    every single time: produce rewrites the English, the overlay is left
+    holding a copy of the *previous* English -- often a staging marker, which
+    is one block where the new manuscript is nineteen -- and the structural
+    translation gate then rejects the overlay for a divergence no translator
+    caused and none can fix without hand-copying the file.  Mirroring it here
+    is what makes one ``mag translate`` after a rewrite sufficient.
+
+    Anything else is somebody's translation.  It is never touched: its pin
+    goes stale visibly, the advisory names it, and re-translating it is a
+    translator's job rather than a stager's.
     """
+
     try:
         if not target.is_file():
             writer.write(target, source.read_bytes())
+            return
+        pinned = recorded_sha256 if isinstance(recorded_sha256, str) else ""
+        if not pinned or _sha256(source) == pinned or _sha256(target) != pinned:
+            return
+        writer.write(target, source.read_bytes(), overwrite=True)
     except ValidationError:
-        pass
+        return
+    notes.append(
+        f"Re-mirrored {target} from {source}: it was still an untranslated copy "
+        "of the English, and the English has changed since it was copied"
+    )
 
 
 def _mirrored_rel(edition_dir: Path, path: Path, *, prefix: str = "") -> str:
@@ -586,7 +630,9 @@ def _reconcile_editorial(
     if not row.get("path"):
         editor.set_key(("editorial",), "path", _mirrored_rel(edition_dir, base.editorial.path))
     target = overlay_dir / str(editor.data["editorial"]["path"])
-    _ensure_file(base.editorial.path, target, writer)
+    _mirror_placeholder(
+        base.editorial.path, target, row.get("source_sha256"), writer, notes
+    )
     if "source_sha256" not in row:
         editor.set_key(("editorial",), "source_sha256", expected)
 
@@ -654,7 +700,15 @@ def _reconcile_articles(
         _repair_article_row(
             edition_dir, overlay_dir, article, editor, index, writer, notes
         )
-        _reconcile_figures(article, editor, index, dropped)
+        _reconcile_figures(
+            article,
+            editor,
+            index,
+            dropped,
+            mirrors_english=_mirrors_english(
+                overlay_dir, editor.data["articles"][index], article
+            ),
+        )
 
 
 def _repair_article_row(
@@ -698,13 +752,36 @@ def _repair_article_row(
             "manuscript",
             _mirrored_rel(edition_dir, article.manuscript, prefix="articles"),
         )
-    _ensure_file(
+    _mirror_placeholder(
         article.manuscript,
         overlay_dir / str(editor.data["articles"][index]["manuscript"]),
+        row.get("source_sha256"),
         writer,
+        notes,
     )
     if "source_sha256" not in row:
         editor.set_key(path, "source_sha256", _sha256(article.manuscript))
+
+
+def _mirrors_english(overlay_dir: Path, row: Any, article: Article) -> bool:
+    """Whether this row's localized manuscript is still the English file.
+
+    Byte equality, which is the same placeholder test
+    :func:`_untranslated_fields` reports on -- staging fills prose with
+    English, so an English-equal file is untranslated until proven otherwise.
+    It is asked here because a figure anchor names a heading *in the localized
+    manuscript*: while that manuscript is the English one, the localized
+    anchor must be the English anchor or it names no heading at all.
+    """
+
+    manuscript = overlay_dir / str((row or {}).get("manuscript") or "")
+    try:
+        return (
+            manuscript.is_file()
+            and manuscript.read_bytes() == article.manuscript.read_bytes()
+        )
+    except OSError:
+        return False
 
 
 def _reconcile_figures(
@@ -712,6 +789,8 @@ def _reconcile_figures(
     editor: _OverlayEditor,
     index: int,
     dropped: list[DroppedContent],
+    *,
+    mirrors_english: bool = False,
 ) -> None:
     row = editor.data["articles"][index]
     path = ("articles", index)
@@ -777,6 +856,20 @@ def _reconcile_figures(
         for key, digest in pins.items():
             if key not in item:
                 editor.set_key(path + ("figures", item_index), key, digest)
+        # The anchor is the one localized field that is not free prose: it has
+        # to match a heading in the localized manuscript exactly.  While that
+        # manuscript is still the English file, the base's anchor is the only
+        # value that can match, so it is followed automatically -- which is
+        # what stops a rewrite that moved a figure from having to be repeated
+        # by hand in every overlay, and forgotten in one of them.  A genuinely
+        # translated manuscript's anchor belongs to its translator and is left
+        # exactly as found.
+        if "anchor" not in item:
+            editor.set_key(path + ("figures", item_index), "anchor", figure.anchor)
+        elif mirrors_english and item.get("anchor") != figure.anchor:
+            editor.replace_key(
+                path + ("figures", item_index), "anchor", figure.anchor
+            )
 
 
 def _reconcile_sections(
@@ -1159,6 +1252,53 @@ def _structural_validation(root: Path, base: Edition, language: str) -> tuple[st
 
 
 # ---------------------------------------------------------------------------
+# Editing a manifest's figure anchors, wherever the manifest lives.
+
+
+def set_figure_anchors(
+    manifest_path: Path, article_id: str, anchors: dict[str, str]
+) -> bool:
+    """Point one article's named figures at new heading anchors, in place.
+
+    Shared with ``mag produce``, which rewrites manuscripts for a living and
+    therefore has to move the anchors that name their headings.  It is here
+    rather than reimplemented there because a manifest is hand-authored: the
+    edit has to be the same targeted line splice the overlays get, so the
+    author's comments, key order and wrapping survive everywhere the edit does
+    not land, and a file spelled in a way the splice cannot handle raises
+    before anything reaches disk.  A second YAML writer would be a second way
+    to lose a comment.
+
+    Returns whether the file changed.  Figures the mapping does not name, and
+    figures already carrying the wanted anchor, are left exactly as found.
+    """
+
+    editor = _OverlayEditor(manifest_path)
+    rows = editor.data.get("articles")
+    if not isinstance(rows, list):
+        return False
+    for index, row in enumerate(rows):
+        if not isinstance(row, dict) or str(row.get("id")) != article_id:
+            continue
+        figures = row.get("figures")
+        if not isinstance(figures, list):
+            continue
+        for position, item in enumerate(figures):
+            if not isinstance(item, dict):
+                continue
+            wanted = anchors.get(str(item.get("id")))
+            if wanted is None or item.get("anchor") == wanted:
+                continue
+            editor.replace_key(
+                ("articles", index, "figures", position), "anchor", wanted
+            )
+    if not editor.dirty:
+        return False
+    manifest_path.write_text(editor.text, encoding="utf-8")
+    return True
+
+
+# ---------------------------------------------------------------------------
 # The textual editor: splices located by the parser's own marks.
 
 
@@ -1208,6 +1348,29 @@ class _OverlayEditor:
         indent = node.start_mark.column if node.value else self._mapping_indent(path)
         line = _block_end(node)
         self._splice(line, line, _render({key: value}, indent))
+        container[key] = value
+        self._verify()
+
+    def replace_key(self, path: tuple, key: str, value: Any) -> None:
+        """Rewrite an existing key's value in place; the key must be there.
+
+        Used only where the overlay's value is *derived* from the base rather
+        than authored -- a figure anchor under an untranslated manuscript --
+        so nothing a translator wrote is ever overwritten by this.  Like every
+        other operation it re-parses and compares afterwards, so an overlay
+        spelled in a way the splice cannot handle (the key first in a list
+        item, say) raises before anything reaches disk instead of quietly
+        corrupting the file.
+        """
+
+        container = self._container(path)
+        if key not in container:
+            raise ValidationError(
+                f"{self.path}: no key {key!r} at {path!r} to replace"
+            )
+        if container[key] == value:
+            return
+        self._replace_entry(path, key, value)
         container[key] = value
         self._verify()
 
