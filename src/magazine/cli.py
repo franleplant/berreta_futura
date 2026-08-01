@@ -173,6 +173,16 @@ def parser() -> argparse.ArgumentParser:
         help="File holding the text for --submit (default: stdin)",
     )
     produce.add_argument(
+        "--graph",
+        action="store_true",
+        help=(
+            "Print the production graph -- every declared node, its state, and "
+            "what is blocking anything unreached -- and exit. Reads the files "
+            "on disk, calls no model and writes nothing. Exits non-zero when "
+            "the graph is incomplete."
+        ),
+    )
+    produce.add_argument(
         "--dry-run",
         action="store_true",
         help=(
@@ -740,6 +750,75 @@ def _produce_lines(result: Any) -> list[str]:
         )
     for action in result.human_actions:
         lines.append(f"human: {action}")
+    lines.extend(_completion_lines(result))
+    return lines
+
+
+def _produce_exit_code(result: Any) -> int:
+    """Zero when the graph advanced or finished; one when it stopped short.
+
+    The distinction a driving loop reads without parsing anything, and the one
+    the incident turned on.  A run that emitted briefs has *advanced*: there is
+    outstanding work, it is named, and answering it is the loop.  A run that
+    finished the graph is done.  Everything else is a run that stopped -- no
+    brief to hand a worker, and nodes still unreached -- which is the state the
+    operator read as "all pieces passed, nothing alarming" and built a PDF from.
+
+    An escalation and an inconsistency exit one whatever else is outstanding:
+    neither is cleared by answering another brief, so a loop that treats them
+    as progress will spin.
+    """
+
+    if result.dry_run:
+        return 0
+    if result.escalated:
+        return 1
+    graph = getattr(result, "graph", None)
+    if graph is not None and graph.inconsistent:
+        return 1
+    if result.complete:
+        return 0
+    return 1 if not result.ready else 0
+
+
+def _completion_lines(result: Any) -> list[str]:
+    """State, on every exit, whether the graph is complete or where it stopped.
+
+    Last, and unconditional.  The run this exists because of ended with eight
+    cheerful ``settled:`` lines and nothing else, and the operator read that as
+    an edition that was finished -- correctly, because every line printed was
+    true and the one fact that mattered was not a line at all.  A produce run
+    now cannot end without answering the only question its caller has.
+    """
+
+    graph = getattr(result, "graph", None)
+    if result.dry_run:
+        return ["graph: not evaluated; this was a dry run"]
+    if graph is None:
+        return []
+    if graph.complete:
+        return [
+            "COMPLETE: every declared production node has reached an accepting "
+            "state; this edition may be built."
+        ]
+    if graph.legacy:
+        return [
+            "graph: this edition carries no production records and predates "
+            "`mag produce`; its graph does not apply."
+        ]
+    unreached = graph.unreached
+    lines = [
+        f"INCOMPLETE: the production graph stopped with {len(unreached)} "
+        f"node(s) unreached. This edition is NOT finished and must not be built."
+    ]
+    lines.extend(
+        f"  unreached: {node.id} ({node.state}) -- "
+        + (node.detail or node.spec.accepting)
+        for node in unreached
+    )
+    lines.append(
+        f"  see `mag produce {graph.edition_id} --graph` for the whole traversal"
+    )
     return lines
 
 
@@ -821,6 +900,17 @@ def main(argv: list[str] | None = None) -> int:
                         f"({checkpoint.next_action.classification})"
                     )
                     print(checkpoint.next_action.instruction)
+        elif args.command == "produce" and args.graph:
+            # Deliberately before the runner is resolved: asking where an
+            # edition stands must never depend on a model backend being
+            # configured, and must never be able to move the edition.
+            graph = magazine.production_graph(args.edition_id)
+            if args.json:
+                _print_json(graph.to_dict(), root=magazine.root)
+            else:
+                for line in graph.render():
+                    print(line)
+            return 0 if graph.complete else 1
         elif args.command == "produce":
             result = magazine.produce(
                 args.edition_id,
@@ -836,10 +926,7 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 for line in _produce_lines(result):
                     print(line)
-            # An escalation is the command's answer, not a failure to answer,
-            # so it exits 1 the way an over-budget `mag fit` does.
-            if result.escalated:
-                return 1
+            return _produce_exit_code(result)
         elif args.command == "finding" and args.finding_command == "file":
             path = magazine.file_finding(
                 args.edition_id,

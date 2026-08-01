@@ -94,6 +94,11 @@ from .release import (
 )
 from .produce import MAX_ROUNDS, Production, ProductionGates, ProduceResult
 from .produce_agent import AgentSession
+from .produce_graph import (
+    ProductionGraph,
+    require_complete_production_graph,
+    resolve_production_graph,
+)
 from .produce_prompts import ProduceError
 from .render_engine import engine_name, reader_renderer
 from .runner import AGENT_BACKEND, CommandRunner, RunnerConfig, resolve_text_runner
@@ -558,6 +563,17 @@ class Magazine:
         return Workflow(self.root).run(edition_id)
 
     workflow_advance = workflow_run
+
+    def production_graph(self, edition_id: str) -> ProductionGraph:
+        """Where this edition stands in the produce pipeline's declared graph.
+
+        A read, and only a read: no model, no runner, nothing written.  It is
+        the one question ``mag produce --graph``, ``mag build`` and the workflow
+        report all ask, and they ask it here so that they cannot answer it
+        differently.
+        """
+
+        return resolve_production_graph(self.root, self.editions_dir, edition_id)
 
     def produce(
         self,
@@ -1512,10 +1528,29 @@ class Magazine:
         written back to configuration, so the next build reverts to the
         configured renderer.
         """
+        # Before the renderer is even built: an edition whose production graph
+        # is unfinished must not become an artifact, because an artifact is
+        # what an operator reads as "done".  That is exactly how an editorial
+        # that no judge had approved, in an issue the managing editor had never
+        # read, reached reader page four of a PDF somebody then called finished.
+        #
+        # Here rather than in ``validate``, deliberately.  ``validate`` is the
+        # shared chokepoint the staging-marker refusal lives at -- but it is
+        # also the gate ``mag produce`` runs against the edition after *every*
+        # drafting round (see ``DefaultProductionGates.check_edition``), and a
+        # predicate that is false by construction for the whole of production
+        # cannot live somewhere production has to pass through.  It would fail
+        # every round, be attributed to no piece, and be reported as a
+        # pre-existing advisory until an operator learned to skim it: the exact
+        # failure mode this check exists to end.  Build is the first command
+        # whose output nobody re-enters the pipeline with, so it is the first
+        # one that can hold the line.  ``release`` and ``finish`` reach it
+        # through here.
         renderer = reader_renderer(
             self.render_engine if engine is None else engine,
             design=self.render_design,
         )
+        require_complete_production_graph(self.root, self.editions_dir, edition_id)
         editions = self._validate_languages(edition_id)
         edition = editions[self.primary_language]
         destination = self.output_dir / edition.id

@@ -58,7 +58,7 @@ A synthesis is verified by reading, not by bookkeeping: the claim-level fact-che
 - adding transitions in the source author's apparent voice;
 - changing the source's tone, uncertainty, or claim strength.
 
-Editor additions must be visibly labeled as an introduction, editor's note, annotation, caption, sidebar, or afterword.
+Editor additions must be visibly labeled, and the magazine does not print editorial apparatus inside an article. Editor text belongs in the furniture around a piece: the opening editorial, a standfirst, a figure caption, a section of its own. It does not belong in labeled notes interrupting the prose. A note is how a piece keeps a defect while appearing to answer one, and it puts the editor's voice where the reader came for the author's. Where a reprint lacks context the original page supplied, restore the referent inside the author's own sentence if the extraction supports it, or leave it alone.
 
 ## Source extractions and the evidence review
 

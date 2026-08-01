@@ -56,8 +56,10 @@ the reason the mode exists, and an antithesis the author wrote is not a finding.
 Monotony is different. Six identical constructions in 495 words is a reading
 defect whoever caused it, and so is a paragraph of dead sentences. File it at
 its honest severity with `disposition: editor_decision`, because the remedies
-are an editor's and not a writer's: cut the passage, add an editor's note, or
-decide the piece does not belong in the issue. Never lower a severity because
+are an editor's and not a writer's: cut the passage, run the piece shorter, or
+decide it does not belong in the issue. Do not propose an editor's note. The
+magazine does not print editorial apparatus inside an article, and a note is
+how a piece keeps a defect while looking like it addressed one. Never lower a severity because
 the author wrote it, and never report a piece clean because everything left in
 it is the author's.
 

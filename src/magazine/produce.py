@@ -93,6 +93,12 @@ from .line_review import EDITORIAL_ARTICLE_ID
 from .manifest import Edition
 from .media_schema import semantic_headings
 from .publication_document import DocumentParseError
+from .produce_graph import (
+    ISSUE_PIECE_ID,
+    PIECE_JUDGE_LENSES,
+    ProductionGraph,
+    resolve_production_graph,
+)
 from .produce_prompts import (
     JUDGE_PROMPTS,
     EditionReviewInput,
@@ -161,16 +167,18 @@ fourth round spends a model call to learn nothing.
 DEFAULT_EDITORIAL_PAGES = 1
 DEFAULT_ARTICLE_PAGES = 7
 
-# The two judges that read one piece, in the order their findings are reported.
-# They run concurrently; this tuple decides only how the report reads.
-PIECE_JUDGES = ("evidence", "line")
+# The judges that read one piece, in the order their findings are reported.
+# They run concurrently; this tuple decides only how the report reads.  It is
+# the graph's declaration rather than a second copy of it: the node set, the
+# completion predicate, the work contracts and this ordering must name the same
+# lenses, and the narrower single-concern lenses that replace these two will be
+# declared once, in :data:`~magazine.produce_graph.PIECE_JUDGE_LENSES`.
+PIECE_JUDGES = PIECE_JUDGE_LENSES
 
-ISSUE_PIECE_ID = "issue"
-"""The ``piece_id`` under which the two whole-issue judgments are named.
-
-They belong to no single piece, and the production records already spell that
-``production/issue/``; work items spell it the same way.
-"""
+# Re-exported: ``ISSUE_PIECE_ID`` is the scope name the whole-issue judgments,
+# their records and their work items all share, and it is declared with the
+# graph that requires them.
+__all_issue_scope__ = ISSUE_PIECE_ID
 
 
 # ---------------------------------------------------------------------------
@@ -619,6 +627,17 @@ class ProduceResult:
     ready: tuple[ReadyItem, ...] = ()
     """Briefs a worker may answer now.  Always empty under an autonomous run."""
 
+    graph: ProductionGraph | None = None
+    """Where the declared traversal stands, read off disk after this run.
+
+    Attached on every non-dry exit, including the ones that give up early, so
+    that no path out of :meth:`Production.run` can report an edition without
+    also reporting how much of the pipeline has actually happened to it.  That
+    is the whole of the lesson from the run that stopped with the managing
+    editor unrun and said nothing: an incomplete traversal was not a value
+    anything held, so no report could print it and no check could refuse it.
+    """
+
     @property
     def escalated(self) -> tuple[str, ...]:
         return tuple(
@@ -627,10 +646,31 @@ class ProduceResult:
             if outcome.status == "escalated"
         )
 
+    @property
+    def complete(self) -> bool:
+        """Whether every declared node reached an accepting terminal state.
+
+        A dry run is never complete: it deliberately did nothing, and answering
+        "yes, finished" to a command that was asked not to act would be the
+        most misleading true sentence in the pipeline.
+        """
+
+        return bool(self.graph and self.graph.complete) and not self.dry_run
+
+    @property
+    def unreached(self) -> tuple[str, ...]:
+        """The declared nodes this edition has still not reached, by id."""
+
+        if self.graph is None:
+            return ()
+        return tuple(node.id for node in self.graph.unreached)
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "plan": self.plan.to_dict(),
             "dry_run": self.dry_run,
+            "complete": self.complete,
+            "graph": self.graph.to_dict() if self.graph is not None else None,
             "ready": [item.to_dict() for item in self.ready],
             "outcomes": [outcome.to_dict() for outcome in self.outcomes],
             "issue_reviews": {
@@ -773,6 +813,11 @@ class Production:
         # autonomous run, which is why every branch that consults it below is
         # dead code under ``codex`` and ``claude``.
         parked: list[str] = []
+        # Set when a piece exhausted its rounds.  Drafting stops -- the pieces
+        # after it read the ones before -- but the run no longer *returns* from
+        # inside the loop, because a return there was a second exit that could
+        # not be made to report the graph.  One exit, one report.
+        stopped_on_escalation = False
         for row in plan.pieces:
             piece = pieces[row.piece_id]
             record_path = str(
@@ -807,13 +852,23 @@ class Production:
                 outcome = self._produce_piece(
                     edition_id, edition, piece, row, baseline
                 )
-            except WorkParked as signal:
+            except WorkParked:
                 parked.append(piece.id)
                 outcomes.append(
                     PieceOutcome(
                         piece_id=piece.id,
                         status="parked",
-                        rounds=max(signal.item.round_number - 1, 0),
+                        # Counted from the record on disk, never from the work
+                        # item that happened to park.  The item's round number
+                        # is where *this replay* stopped asking, which is one
+                        # for a piece whose writer reply was voided -- and that
+                        # reported `parked, 0 round(s)` for the editorial while
+                        # its record carried a completed round one and two
+                        # answered judges.  The record is the history; a replay
+                        # is not.
+                        rounds=_recorded_rounds(
+                            self.magazine.editions_dir, edition_id, piece.id
+                        ),
                         record=record_path,
                     )
                 )
@@ -830,17 +885,13 @@ class Production:
                     f"{piece.id} exhausted {outcome.rounds} round(s) and needs a "
                     f"human; see {outcome.record}"
                 )
-                return ProduceResult(
-                    plan=plan,
-                    dry_run=False,
-                    outcomes=tuple(outcomes),
-                    human_actions=tuple(human_actions + sorted(self._advisories)),
-                )
+                stopped_on_escalation = True
+                break
 
         issue_reviews: dict[str, Any] = {}
         recorded: dict[str, str] = {}
         issue_due = produced or not self._issue_records_present(edition_id)
-        if finished and not parked and issue_due:
+        if finished and not parked and not stopped_on_escalation and issue_due:
             # The learning personas and the managing editor read the finished
             # issue.  With a piece still out, there is no finished issue, and
             # nothing may be recorded against one.
@@ -848,7 +899,24 @@ class Production:
             try:
                 issue_reviews = self._judge_issue(edition_id, edition)
             except WorkParked:
+                # The whole-issue stage is out with a worker.  Reported as an
+                # outcome of its own rather than pushed onto a local list and
+                # dropped, which is what used to happen: the stage that never
+                # ran left no trace in the result, so the report could not
+                # mention it and the operator could not miss it.
                 parked.append(ISSUE_PIECE_ID)
+                outcomes.append(
+                    PieceOutcome(
+                        piece_id=ISSUE_PIECE_ID,
+                        status="parked",
+                        rounds=0,
+                        record=str(
+                            issue_record_path(
+                                self.magazine.editions_dir, edition_id, "edition"
+                            )
+                        ),
+                    )
+                )
             else:
                 recorded, actions = self._record_bench(
                     edition_id, edition, finished, issue_reviews
@@ -861,6 +929,18 @@ class Production:
             issue_reviews=issue_reviews,
             recorded=recorded,
             human_actions=tuple(human_actions + sorted(self._advisories)),
+            # Read back off disk, after every write this run made.  A graph
+            # assembled from what this process witnessed would agree with this
+            # process by construction, and the state that matters is the one
+            # the next command will see.
+            graph=self._graph(edition_id),
+        )
+
+    def _graph(self, edition_id: str) -> ProductionGraph:
+        """Where the declared traversal stands, according to the files on disk."""
+
+        return resolve_production_graph(
+            self.root, self.magazine.editions_dir, edition_id
         )
 
     # -- one piece --------------------------------------------------------
@@ -1870,6 +1950,22 @@ def _last_round_notes(editions_dir: Path, edition_id: str, piece_id: str) -> str
     last = rounds[-1]
     notes = str(last.get("notes") or "") if isinstance(last, Mapping) else ""
     return notes or None
+
+
+def _recorded_rounds(editions_dir: Path, edition_id: str, piece_id: str) -> int:
+    """How many rounds this piece's record actually carries.
+
+    The honest count of what happened to a piece, as opposed to how far one
+    replay got before it parked.  Reporting the latter is how a piece with a
+    completed round and two answered judges was announced as ``parked`` after
+    ``0 round(s)``.
+    """
+
+    record = load_piece_record(editions_dir, edition_id, piece_id) or {}
+    rounds = record.get("rounds") or ()
+    if isinstance(rounds, Sequence) and not isinstance(rounds, (str, bytes)):
+        return len(rounds)
+    return 0
 
 
 def _grounded_in_the_other_pieces(piece: Piece) -> bool:
