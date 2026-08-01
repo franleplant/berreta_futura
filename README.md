@@ -244,6 +244,18 @@ question no longer requires a throwaway script into the renderer's privates.
 Both take `--language` to narrow to one configured language; `mag measure
 --json PATH` writes the dump to a file instead of stdout.
 
+`mag fit <edition-id> --opener <article-id>` asks the one budget question that
+is not about pages. An article with an illustrated opener sets its first
+paragraph on the opener page beside the art and the title, and a paragraph too
+long for the space left over makes the build refuse the edition rather than
+reflow onto page two. The check reads a candidate paragraph on standard input,
+wraps it with the gate's own arithmetic (no pagination, no HTML, a few
+milliseconds) and prints the lines it would set as against the article's
+measured allowance, exiting nonzero when it overruns. The writer brief states
+the same allowance in lines, alongside a character figure that is deliberately
+a floor rather than the edge: the line count is what the build enforces, and
+this is how to ask about anything near it.
+
 `capture` requires a raw file or directory supplied by the caller. It copies the
 bundle into content-addressed, source-local storage before it writes the source
 record or queues the source. New CLI captures also require an author identity.

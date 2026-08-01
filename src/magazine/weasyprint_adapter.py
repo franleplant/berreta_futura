@@ -1916,26 +1916,53 @@ class OpenerIntroBudget:
 
     ``lines`` is the honest limit: whole rendered lines of the compact
     standfirst face across the opener rail, for *this* article's title and
-    credit block, which are what consume the rest of the page.
-    ``characters`` is that limit expressed in a unit an author can count while
-    writing.  It is derived, not chosen: the mean glyph advance of a supplied
-    sample of the piece's own prose, at the same face and size the page sets.
-    It is therefore an estimate of the same measurement rather than a second
-    rule -- :meth:`fits` answers the real question exactly.
+    credit block, which are what consume the rest of the page.  It is the only
+    number the gate reads.
+
+    ``safe_characters`` is a *floor*, not the limit, and the name says so
+    because the field it replaced did not.  That field held ``lines`` times the
+    rail divided by the sample's mean glyph advance -- the count a line would
+    hold if lines could be filled to the last point.  They cannot: a line ends
+    where the next whole word stopped fitting, so every line but the last is
+    short by up to a word.  The estimate therefore ran *above* what real prose
+    achieves, and a writer who stayed under it still overran.  One did: a 538
+    character standfirst against a stated 546 wrapped to eight lines of seven
+    and cost the piece a round.  Measured over this publication's own
+    manuscripts the old figure came out at about 77 characters a line, above
+    even the best-packed paragraph in the corpus, and it exceeded what actually
+    fitted in 33 of 38 manuscripts.
+
+    The floor deducts a long word from the measure before dividing, which is
+    the raggedness the estimate ignored (see :func:`_safe_characters_per_line`).
+    It is not a theorem -- no character count can be, since a paragraph of
+    ``W``s sets twice as wide as one of ``i``s, and the bound that *is* a
+    theorem lands near 30 characters a line against a real 74 and would be
+    worse than useless.  It is a floor with evidence: across every manuscript
+    and translation this repository holds, no window of prose at the stated
+    count ever exceeded the stated line count, at five, seven or nine lines.
+    Being under it means fitting; being over it means asking :meth:`fits`,
+    which answers the real question exactly and is reachable from the command
+    line as ``mag fit <edition> --opener <article-id>``.
     """
 
     lines: int
-    characters: int
+    safe_characters: int
     measure_points: float
     size_points: float
 
     def fits(self, intro: str) -> bool:
         """Whether this opening paragraph fits, by the gate's own arithmetic."""
 
-        return (
-            len(_wrap(intro, "serif", self.size_points, self.measure_points))
-            <= self.lines
-        )
+        return len(self.wrapped(intro)) <= self.lines
+
+    def wrapped(self, intro: str) -> list[str]:
+        """The lines this opening paragraph would set as, gate arithmetic.
+
+        The count is the verdict; the lines themselves are why, and a writer
+        shortening a paragraph by hand wants to see which one overflowed.
+        """
+
+        return _wrap(intro, "serif", self.size_points, self.measure_points)
 
 
 def illustrated_opener_intro_budget(
@@ -1992,28 +2019,60 @@ def illustrated_opener_intro_budget(
     lines = max(int(room // density["standfirst_leading"]), 0)
     return OpenerIntroBudget(
         lines=lines,
-        characters=lines * _characters_per_line(sample, size),
+        safe_characters=lines * _safe_characters_per_line(sample, size),
         measure_points=_ILLUSTRATED_OPENER_RAIL_POINTS,
         size_points=size,
     )
 
 
-def _characters_per_line(sample: str, size: float) -> int:
-    """How many characters of ``sample``-like prose one rail line holds.
+def _safe_characters_per_line(sample: str, size: float) -> int:
+    """A count of ``sample``-like prose one rail line is sure to hold.
 
-    Measured, not assumed: the mean advance of the sample's own characters in
-    the face and size the page sets.  An empty or unmeasurable sample yields
-    zero, and the caller states the limit in lines alone rather than quoting a
-    character count it cannot stand behind.
+    Sure, not expected.  The obvious figure -- the rail divided by the sample's
+    mean glyph advance -- is the count a *perfectly packed* line would hold,
+    and greedy wrapping never packs one perfectly: a line ends where the next
+    whole word stopped fitting, so it gives back the slack that word needed.
+    Quoting the packed figure to a writer is quoting a number their prose
+    cannot reach, which is how a standfirst measured comfortably under the
+    stated budget still wrapped one line long.
+
+    So the slack is deducted before dividing, and deducted at a long word
+    rather than an average one: the rail less the sample's 90th-percentile word
+    width, over the sample's own mean advance.  Both statistics come from the
+    piece's own prose folded exactly as the typesetter folds it, so a source
+    written in long compounds is given a smaller count than one written in
+    short words, which is the whole reason the mean advance was not enough.
+
+    The 90th percentile is where the evidence put it.  Against the largest
+    count that in fact fitted, measured by wrapping every window of every
+    manuscript and translation in this repository, the median word width still
+    ran over on 10 of 38 and the 75th percentile left no margin at all on the
+    worst of them; the 90th cleared all 38 and gave up around seven characters
+    a line for it.  Deducting the *longest* possible word instead, or dividing
+    by the widest glyph in the face rather than the mean, is what a proof would
+    need and lands near half the usable count -- a floor too low to write to.
+    :meth:`OpenerIntroBudget.fits` remains the exact answer for anything near
+    the edge.
+
+    An empty or unmeasurable sample, or a sample whose long word is wider than
+    the rail, yields zero, and the caller states the limit in lines alone
+    rather than quoting a count it cannot stand behind.
     """
 
-    text = " ".join(sample.split())
-    if not text:
+    text = _plain(" ".join(sample.split()))
+    words = text.split()
+    if not text or not words:
         return 0
     width = _string_width(text, "serif", size)
     if width <= 0:
         return 0
-    return int(_ILLUSTRATED_OPENER_RAIL_POINTS // (width / len(text)))
+    long_word = sorted(_string_width(word, "serif", size) for word in words)[
+        int(len(words) * 0.9)
+    ]
+    usable = _ILLUSTRATED_OPENER_RAIL_POINTS - long_word
+    if usable <= 0:
+        return 0
+    return int(usable // (width / len(text)))
 
 
 def _illustrated_opener_height(

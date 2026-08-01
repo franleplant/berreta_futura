@@ -3,9 +3,9 @@ edition_id: rerun-004-the-systems-around-the-model
 piece_id: from-gpt2-to-kimi3
 content_mode: faithful_synthesis
 status: drafting
-produced_at: '2026-08-01T19:24:30+00:00'
+produced_at: '2026-08-01T20:15:38+00:00'
 inputs_sha256: 0ab0eab64d9ceae9ecfce4d476e30d4cdbcb679029800f925fdf353cf6c9b89a
-manuscript_sha256: dd7a837848c0738aea0091c19d5f30d7fe83faa4c13befe1c115c80e48a1df18
+manuscript_sha256: 90d1f7ee64902efadf7d63627cdd513058fcb2998d48dd3da18fc587db81a515
 rounds:
 - round: 1
   result: changes_required
@@ -28,13 +28,297 @@ rounds:
     - 7bc5e471f13084da134f6e7b618cf9bd7240f53e058add10745f01ca2eb15b67
     duration_seconds: 0.0
     output_sha256: 01862b641a14f537452823546c4b8df015e0f02a946dde828f208dcdfd95e084
-  gate_failures:
-  - 'fit: Article pragmatic-leverage''s opening paragraph cannot fit its illustrated opener page at compact
-    density; shorten that paragraph rather than splitting the opener'
+  gate_failures: []
   anchors_reconciled:
   - GPT-2 and the cache
   - From linear attention to DeltaNet
-  judges: {}
+  judges:
+    evidence:
+      result: approved
+      findings: []
+      scores:
+        claim_support: 5
+        qualification_survival: 5
+        quote_accuracy: 5
+        attribution: 5
+      notes: 'Checked every figure against the pinned extraction: 22,580, 124 million against
+
+        2.8 trillion, GPT-2 in 2019 and KimiK3 in 2026, the previous N-1 tokens and O(N)
+
+        cache growth, ELU+1 and the fixed D by D state, FlashAttention released in 2020
+
+        as the source states it, about seven hours on the parallelization section, C=N
+
+        recovering O(N-squared) attention and C=1 regular linear attention, up to 6x
+
+        decode throughput, 23 four-layer macrocycles with three KDA layers and a fourth
+
+        MLA, 898 experts with two shared and 16 of the remaining 896 routed, AttnRes
+
+        every 12 decoder layers giving eight blocks, roughly 2% added inference latency
+
+        against a 1.25x compute advantage. All match. The one passage carried as a
+
+        verbatim quotation, "the cost per time-step for transformers scales with the
+
+        square of the current sequence length", is exact. The editor''s note checks out:
+
+        the capture is timestamped 3:22 PM, Jul 27, 2026, and the record for
+
+        22580-from-gpt2-to-kimi3-explained-8f01b0fe carries publication_date
+
+        2026-07-27; Schlag is the extraction''s own attribution for Fast Weight
+
+        Programmers; Parallelizing Linear Transformers with Delta Rule, Mamba-2 and
+
+        Kimi Linear are all named there; the first person below the note is the
+
+        source''s own.
+
+
+        On the chunking point specifically: this draft handles it correctly. It scopes
+
+        the chunked formulation to "purely additive linear attention", then opens the
+
+        next paragraph with "That chunking does not directly apply to the delta
+
+        updates", keeps the source''s reason ("We need every single state in order to
+
+        compute the information that needs to be subtracted out"), keeps the
+
+        requirement for "some mathematical re-parameterization", and credits the
+
+        authors with rewriting the delta updates as a first-order linear recurrence
+
+        before the chunked code can compute all C deltas at once. The extraction
+
+        supports naming that reparameterized form a first-order linear recurrence. No
+
+        reversal of the source survives anywhere in that section.
+
+
+        Reverse pass: the fidelity hedge on the feature map ("although the practical
+
+        accuracy loss depends on the architecture and workload") survives; the Kimi
+
+        Linear outperformance claim stays attributed to the authors and to controlled
+
+        comparisons rather than asserted; C=1 stays cheapest in FLOPs but not
+
+        necessarily wall-clock; the closing thesis is the source''s own, that this is
+
+        not scale alone but a fixed-capacity memory needing an eviction policy. One
+
+        hedge did change wording: the source says the delta rule "cannot efficiently
+
+        clear multiple associations", the manuscript says "cannot clear several
+
+        associations". I did not raise it, because the same extraction states the
+
+        unhedged form three sentences later, that the delta rule "has no way to make
+
+        the rest of the facts decay". Omissions are of the allowed kind: the code
+
+        listings, the Schlag block quote, Gated MLA, SiTU and the 3x unfused-activation
+
+        slowdown, MLA query LoRA, the cumulative-decay prefix-sum aside.'
+      call:
+        role: evidence_judge
+        prompt_path: prompts/evidence-review.md
+        prompt_sha256: 2d368985eba3011b23c2f03fa926da4791a03975bd5ee4403ed6d8d19503d264
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - from-gpt2-to-kimi3/r1-evidence
+        - --work-sha256
+        - b8112dafb7e736851c7fd8c898c6685fb16bfbe782e0c82e1adf015d9c789ed8
+        duration_seconds: 0.0
+        output_sha256: eb3a6575bba6f34cb905cb06e2ab541e3870f8d1ab844be04dd0c2223c994ef4
+    line:
+      result: changes_required
+      findings:
+      - severity: major
+        article: from-gpt2-to-kimi3
+        locator: From linear attention to DeltaNet | then I saw that it was released in 2020 | 1
+        repair_from: From linear attention to DeltaNet | framing threw me off | 1
+        category: argument_order
+        note: 'The paragraph argues with itself and the reader cannot recover where it
+
+          lands. It opens by flatly rejecting the paper''s framing, "It''s not true
+
+          that ''the cost per time-step for transformers scales with the square of
+
+          the current sequence length''", and ends by granting every condition that
+
+          made the framing reasonable: "At the time, training commonly materialized
+
+          the full N x N attention matrix, FlashAttention did not exist, and
+
+          reference implementations often recomputed the token history without a KV
+
+          cache." So is the paper wrong or was the objection anachronistic? A
+
+          pronoun decides it and the pronoun is ambiguous. In "then I saw that it
+
+          was released in 2020", the nearest antecedent is Flash Attention, and read
+
+          that way the sentence says the fix predates the complaint, which reverses
+
+          the point. The date only works if "it" is the paper. Naming the subject
+
+          resolves the whole paragraph, and the retraction should be signalled at
+
+          the first sentence rather than sprung at the last.'
+        suggestion: then I saw the paper itself was from 2020, two years before FlashAttention existed.
+      - severity: major
+        article: from-gpt2-to-kimi3
+        locator: From linear attention to DeltaNet | Chunks of size C work for purely additive linear
+          attention. | 1
+        category: jargon
+        note: 'This is where my attention dropped, and the author says himself it took
+
+          seven hours to understand, so the compression here needed the most care
+
+          and got the least. Two problems compound. The unit changes name mid-idea:
+
+          "Chunks of size C work for purely additive linear attention. Inside a
+
+          block I do real attention", and nothing tells the reader that a chunk and
+
+          a block are the same object, so a first-time reader spends a beat looking
+
+          for a second level of division that does not exist. On top of that the
+
+          paragraph leans on prefill, "real attention", the masked QK-transpose
+
+          times V, matmul, and "pure FLOP terms", none of which the piece defines,
+
+          inside six consecutive sentences. Elsewhere the piece is disciplined about
+
+          this, so the contrast is stark: the KV cache, linear attention, and the
+
+          delta rule all get a plain-English sentence before they are used.'
+        suggestion: Blocks of size C work for purely additive linear attention.
+      - severity: minor
+        article: from-gpt2-to-kimi3
+        locator: From linear attention to DeltaNet | That's what Flash Attention fixes | 1
+        category: house_style
+        note: 'Spelled two ways four lines apart: "That''s what Flash Attention fixes"
+
+          and then "FlashAttention did not exist". A reader who does not already
+
+          know the name will wonder whether these are two things.'
+        suggestion: That's what FlashAttention fixes
+      - severity: minor
+        article: from-gpt2-to-kimi3
+        locator: KimiK3 | KDA supplies constant-state recurrent memory | 1
+        category: house_style
+        note: 'Three abbreviations are used that the piece never introduces as
+
+          abbreviations. KDA and MLA arrive one sentence after "Kimi Delta
+
+          Attention" and "Multi-head Latent Attention", and AttnRes arrives two
+
+          sentences after "blockwise attention residuals". Each is inferable, and
+
+          each costs the reader an inference in the densest section of the piece,
+
+          where they are already carrying 23 macrocycles, 898 experts, and a router
+
+          picking 16 of 896. Mark them once at the expansion and all three are free
+
+          thereafter.'
+        suggestion: Kimi Delta Attention (KDA) supplies constant-state recurrent memory
+      - severity: minor
+        article: from-gpt2-to-kimi3
+        locator: '- | Schlag''s Fast Weight Programmers | 1'
+        category: orphan_referent
+        note: 'The editor''s note lays out the reading path as five named papers: "linear
+
+          attention, Schlag''s Fast Weight Programmers, Parallelizing Linear
+
+          Transformers with Delta Rule, Mamba-2 and Kimi Linear." Four of them turn
+
+          up in the body and are worked through. Fast Weight Programmers never
+
+          appears again, so a reader following the note''s map waits for a stop that
+
+          is not on the line. The note is editor-owned, so this is fully actionable.'
+        suggestion: linear attention, Parallelizing Linear Transformers with Delta Rule, Mamba-2 and Kimi
+          Linear
+      - severity: minor
+        article: from-gpt2-to-kimi3
+        locator: From linear attention to DeltaNet | There is a trade-off. | 1
+        category: dead_words
+        note: 'An expletive opener in a piece that otherwise opens its paragraphs on
+
+          something concrete: "Prefill is the problem.", "A finite cache must
+
+          overwrite or combine with information already stored.", "The delta rule
+
+          can forget only an association for which it has a specific replacement."
+
+          Four words announcing that a sentence is coming.'
+        suggestion: The trade-off is fidelity.
+      scores:
+        structure: 4
+        flow: 3
+        sentence_craft: 4
+        house_style: 3
+        voice_consistency: 4
+      notes: 'The best-built of the three on structure. The opening number is concrete and
+
+        the question it ends on, "But is it just... scale?", is a real question that
+
+        the last paragraph answers with "So, not just scale." Between them the chain
+
+        is recoverable in one read: cache, fixed state, interference, delete-then-write,
+
+        parallelising it, decay and gating, then the K3 assembly. The close earns its
+
+        line, "The best selective-read mechanism we have is still attention", and it
+
+        is neither a summary nor an antithesis. The first person is warm and specific
+
+        where it appears (the seven hours, the framing that threw him off) and never
+
+        slips into narrator scaffolding. Two things hurt it. The O(N-squared)
+
+        paragraph is genuinely unreadable at speed because the paragraph reverses
+
+        itself on an ambiguous pronoun, and the chunking paragraph, the hardest
+
+        material in the piece, is also the least glossed and the one place the
+
+        terminology drifts. Everything else is small: two abbreviation habits, one
+
+        paper promised and not delivered, one limp opener. No em dashes, no repeated
+
+        sentence shape, no duplication.'
+      call:
+        role: line_judge
+        prompt_path: prompts/line-review.md
+        prompt_sha256: 262f28e51956608760ae5dbdde255ef7a5780f459e73cb3542d7ae6aae6ac8b4
+        backend: agent
+        model: null
+        argv:
+        - mag
+        - produce
+        - rerun-004-the-systems-around-the-model
+        - --backend
+        - agent
+        - --submit
+        - from-gpt2-to-kimi3/r1-line
+        - --work-sha256
+        - edd4075180574a1000412baa0cdd6933419cd0a940ac51b593106634d26807d2
+        duration_seconds: 0.0
+        output_sha256: 58e848e632e1118426e62bc82c8817ece88010371a5577b05a58ef9e7c097ade
   notes: "## Budget: measured, not estimated\n\n1,089 body words. I copied the repo to a scratch directory,\
     \ wrote this manuscript into\n`editions/rerun-004-.../articles/from-gpt2-to-kimi3.md` *in the copy*,\
     \ and ran `mag fit`\nagainst it: **p19-p24, 6/7 pages, OK**, whole edition still `fit: every page\
@@ -189,3 +473,172 @@ rounds:
     \ mandates `source_ids` as a list; the shipped 004 article files carry\n`source_id` (singular). I\
     \ followed the prompt. `mag fit` accepts the list form, so this is\na consistency question rather\
     \ than a build break, but the two conventions coexist in the\nrepo right now."
+- round: 2
+  result: changes_required
+  manuscript_sha256: 90d1f7ee64902efadf7d63627cdd513058fcb2998d48dd3da18fc587db81a515
+  writer:
+    role: writer
+    prompt_path: prompts/faithful-synthesis.md
+    prompt_sha256: 56f083c8f2bb39a6dcfd6d35f153aedeaedbe7825dc06909c5ef4196a27da277
+    backend: agent
+    model: null
+    argv:
+    - mag
+    - produce
+    - rerun-004-the-systems-around-the-model
+    - --backend
+    - agent
+    - --submit
+    - from-gpt2-to-kimi3/r2-writer
+    - --work-sha256
+    - 3b091c264bcdb2627a6631de9528b24675032b773bcfae147845039473021b20
+    duration_seconds: 0.0
+    output_sha256: 556c0fdbf3d258854308cfda79d2f7f7eb9d9fedece913870ba247f4d233d13f
+  gate_failures: []
+  anchors_reconciled:
+  - GPT-2 and the cache
+  - From linear attention to DeltaNet
+  judges: {}
+  notes: "## Read this first if you are revising again\n\nRound 3 of this piece. Round 2's fidelity was\
+    \ clean (fact-check returned zero findings) and I\ndid not disturb a single factual sentence that\
+    \ scored. Every change below is prose. If you\nare revising again, the safest rule is the one I followed:\
+    \ the six round-2 findings were all\nin three places (the O(N²) paragraph, the block-parallelism paragraph,\
+    \ and the KimiK3\nabbreviations), and nothing outside those places needed to move.\n\n## Budget: measured,\
+    \ not estimated\n\n**1,212 body words, and `mag fit` says p19-p24, 6/7 pages, OK, whole edition still\
+    \ `fit: every\npage budget holds` at 40 pages.** That is about 120 words over the prompt's \"roughly\
+    \ 700 to\n1,100\" and it is deliberate. Round 2 was 1,089 and paginated to the same 6/7, so the extra\n\
+    words cost the piece nothing on the only constraint the renderer enforces, and all of them\nwent into\
+    \ the four glosses the jargon finding demanded plus the two-paragraph split it needed.\nCutting back\
+    \ under 1,100 would mean taking them straight back out. If a later round is told to\ncut on word count\
+    \ rather than on pagination, cut the MoE detail (898 experts, two shared, 16 of\n896, compressed latent\
+    \ space, 45 words) first: it is the largest block in the piece that no\nfinding is holding in place,\
+    \ and it was restored in round 2 only because there was room.\n\nThe recipe, unchanged from round\
+    \ 2:\n\n    cp -R <repo> /tmp/scratch/repo\n    # write the manuscript into the copy's articles/ path\n\
+    \    PYTHONPATH=/tmp/scratch/repo/src <repo>/.venv/bin/python -m magazine fit \\\n        rerun-004-the-systems-around-the-model\
+    \ --language en\n\n`fit` is the binding constraint, not the prompt's \"roughly 700 to 1,100\". This\
+    \ piece paginates\nshort because it carries no code blocks. `fit` also proves the two pinned figure\
+    \ anchors\nresolved, so a green `fit` is the anchor check as well as the budget check.\n\n## Claim\
+    \ ladder\n\nUnchanged in substance from round 2. The full ladder is in the round-2 notes carried in\
+    \ the\nbrief and I am not restating it, because nothing in the argument moved this round. Three\n\
+    entries changed presentation only:\n\n- **5 (the O(N²) correction).** Same two claims, same order\
+    \ in the source, but the paragraph\n  now announces at its first clause that the date is what resolves\
+    \ it, and the pronoun that\n  used to carry the whole reversal is replaced by the noun. See below.\n\
+    - **9 (block parallelism, and its non-application to the delta rule).** Same two-paragraph\n  split,\
+    \ same load-bearing sentence, but the unit is called a block everywhere and four terms\n  are now\
+    \ glossed. See below.\n- **12 (KimiK3).** KDA, MLA and AttnRes are now marked at their expansions.\n\
+    \n**Hedges kept, none hardened,** and this is the list to check against if you rewrite anything:\n\
+    \"can reduce accuracy\" / \"the practical loss depends on the architecture and workload\"; \"the\n\
+    cheapest in pure FLOP terms ... but not necessarily in wall-clock time\"; \"about seven hours\";\n\
+    \"drew attention for one central claim\" and \"The authors presented it as\" and \"up to 6x\"; \"\
+    At\nfirst glance ... appear modest\"; \"roughly 2%\"; \"can destabilize training\"; \"must inevitably\n\
+    discard information\"; \"does not directly apply\"; \"without some mathematical\nre-parameterization\"\
+    .\n\n## Voice signature (verbatim, do not paraphrase)\n\n1. \"It took me about seven hours to develop\
+    \ a working understanding of it.\"\n2. \"Inside a block I do real attention (the masked QKᵀ times\
+    \ V), and across blocks I fold\n   everything into the state and read it back with one matmul.\"\n\
+    3. \"That's what FlashAttention fixes...\" (the ellipsis is the beat; it is the whole joke)\n\n**Changed\
+    \ from round 2:** \"The paper's O(N²) framing threw me off.\" + \"then I saw that it was\nreleased\
+    \ in 2020.\" is no longer selected as a protected verbatim pair. It could not be. The\nmajor finding\
+    \ against it was that \"it\" is ambiguous and the sentence reverses the paragraph\nwhen read with\
+    \ its nearest antecedent, so protecting it verbatim would have meant declining an\nobligation. The\
+    \ step-2 rule protects sentences the writer selects; the fix is to stop selecting\nthis one, not to\
+    \ override the finding. Both clauses survive nearly intact anyway, with \"it\"\nreplaced by \"the\
+    \ paper itself\".\n\nAlso carried: \"Twenty-two thousand five hundred and eighty.\", \"But is it just...\
+    \ scale?\",\n\"Scaling laws remain relevant, but capacity must be added in the right place and in\
+    \ a form the\nsystem can use.\", and the closing eviction-policy pair. Person is preserved both ways:\
+    \ \"I\" for\nthe author's own struggle, \"we\" for author and reader walking the architecture.\n\n\
+    **Lost from round 2's carried list:** \"There is a trade-off.\" A finding called it an expletive\n\
+    opener in a piece that otherwise opens paragraphs on something concrete, and it is. It is now\n\"\
+    The trade-off is fidelity.\", which is the reviewer's suggested line. The rest of the paragraph\n\
+    is untouched, so the hedge chain survives.\n\n## How each round-2 finding was cleared\n\n1. **[major]\
+    \ argument_order, the O(N²) paragraph.** Two separate defects were tangled here and\n   both had to\
+    \ go. The ambiguous pronoun: \"then I saw that it was released in 2020\" now reads\n   \"then I saw\
+    \ the paper itself was released in 2020\". The self-reversal: the retraction is now\n   signalled\
+    \ in the paragraph's first sentence, \"The paper's O(N²) framing threw me off until I\n   checked\
+    \ its date\", so a reader knows before the objection arrives that the objection is\n   going to be\
+    \ withdrawn, and the closing \"At the time...\" sentence reads as the resolution\n   instead of an\
+    \ unexplained concession.\n   **I declined half the suggested line.** The suggestion was \"then I\
+    \ saw the paper itself was\n   from 2020, two years before FlashAttention existed.\" The first half\
+    \ is exactly right and I\n   took it. The second half states FlashAttention's release date, and the\
+    \ extraction never\n   gives one: it says only that FlashAttention did not exist at the time of the\
+    \ paper. \"Two\n   years before\" would be a fact from my own knowledge in a piece that is currently\
+    \ clean on\n   fidelity, which is a bad trade for four words of clarity I get anyway from the sentence\
+    \ that\n   follows. If a later reviewer re-raises this, the answer is the same: the date gap is not\
+    \ in\n   the source.\n2. **[major] jargon, the block-parallelism paragraph.** Two problems, per the\
+    \ finding, and I\n   fixed both plus a third.\n   - *The rename.* The unit is called a **block** everywhere\
+    \ now, including in the sentence\n     that used to introduce it as a chunk and in the paragraph after\
+    \ (\"That block trick does\n     not directly apply to the delta updates\"). I took the suggestion's\
+    \ noun because the\n     protected verbatim sentence already says \"block\", so \"chunk\" was the\
+    \ loser either way. The\n     source itself uses both words and this is the writer's call, not a fidelity\
+    \ question.\n   - *The density.* The old paragraph ran the problem and the solution together across\
+    \ six\n     sentences. It is now two paragraphs: what prefill is and why the delta rule resists a\n\
+    \     matrix multiply, then the block construction. Four terms got a gloss in the author's own\n \
+    \    register rather than a parenthetical definition: prefill (\"the pass that has to work\n     through\
+    \ a whole input sequence before the first token comes out\"), \"real attention\"\n     (\"comparing\
+    \ every query against every key, masked so no token sees the ones after it\"),\n     matmul (set up\
+    \ one paragraph earlier by \"never collapses into a single matrix multiply\",\n     so the abbreviation\
+    \ is already read by the time it lands), and FLOPs (\"arithmetic\n     operations\", in parentheses\
+    \ at first use, which is what licenses the later \"in pure FLOP\n     terms\" and the KimiK3 section's\
+    \ \"nearly halves their FLOPs\").\n   - *The third problem the finding did not name.* The verbatim\
+    \ sentence is the densest thing\n     in the piece and it used to arrive with no landing. The gloss\
+    \ now comes **after** it, as\n     two plain sentences unpacking the two halves in the same order\
+    \ the sentence states them,\n     so the voice keeps the punch and the reader still gets the mechanism.\
+    \ Do not move the\n     gloss in front of it: that turns the voice sentence into a restatement and\
+    \ trips the\n     nothing-appears-twice rule.\n   - *Kept from the round-2 repair:* the two-paragraph\
+    \ split at \"That block trick does not\n     directly apply to the delta updates.\" That sentence\
+    \ is still the whole of round 1's major\n     qualification_loss repair. Anything that merges those\
+    \ paragraphs reintroduces it.\n3. **[minor] house_style, Flash Attention / FlashAttention.** One spelling,\
+    \ \"FlashAttention\",\n   both times. Took the suggestion.\n4. **[minor] house_style, unmarked abbreviations.**\
+    \ \"Kimi Delta Attention (KDA)\", \"Multi-head\n   Latent Attention (MLA)\", \"blockwise attention\
+    \ residuals (AttnRes)\". Each is marked at its\n   first appearance, which is also its expansion,\
+    \ and used bare after.\n5. **[minor] orphan_referent, Fast Weight Programmers.** Took the suggestion:\
+    \ the editor's note\n   now lists four papers and all four are worked through in the body. Considered\
+    \ and rejected\n   the alternative of naming Schlag in the DeltaNet paragraph instead, because the\
+    \ extraction\n   attributes the *quotation* to Schlag's paper and titles the section \"DeltaNet (Fast\
+    \ Weight\n   Programmers)\", but does not say in so many words that DeltaNet is that paper's contribution.\n\
+    \   The quotation is not in this draft, so there is nothing left for the name to attach to\n   without\
+    \ an inference the fact-checker would be right to query. Cutting it from the note is\n   free; asserting\
+    \ it in the body is not.\n6. **[minor] dead_words, \"There is a trade-off.\"** See voice signature.\n\
+    \n## What the piece is still resting on\n\n- **The editor's note is load-bearing and must not be cut\
+    \ as \"editor furniture\".** It is the\n  antecedent for \"the paper\" in the linear-attention section\
+    \ and for \"the authors\" in the\n  delta-parallelization paragraph. Round 1's orphan_referent finding\
+    \ was cleared by this note.\n  If a later round wants it gone, resolve both referents inline first;\
+    \ inline resolution costs\n  more words than the note and damages the verbatim voice sentences.\n\
+    - **The two-paragraph delta-parallelization split.** See finding 2 above.\n- **The three-paragraph\
+    \ shape of the block material** (problem, construction, non-application)\n  is what cleared finding\
+    \ 2. Compressing it back to two paragraphs to buy words will put the\n  density straight back.\n-\
+    \ **The Schlag quotation is still the best thing left on the floor**, and there is measured\n  room\
+    \ for it. I left it out for the third round running because it would be the third\n  statement of\
+    \ interference-at-capacity in three consecutive paragraphs, and because restoring\n  it would re-orphan\
+    \ the name I just removed from the editor's note. If a reviser restores it,\n  restore the note's\
+    \ mention in the same move and cut the \"regime that makes linear attention\n  attractive\" sentence.\n\
+    - **The closing line is an assertion, by design.** \"The best selective-read mechanism we have\n \
+    \ is still attention\" is the author's own claim, in the last paragraph of the extraction as\n  \"\
+    attention is the most effective selective-read mechanism\".\n- **\"one built-in inefficiency\"** in\
+    \ the GPT-2 opener is a connective, not the source's phrase;\n  the source says \"This is an inefficiency\
+    \ of decoder-only generation\". Flat fallback if\n  queried: \"GPT-2 is a decoder-only architecture,\
+    \ and decoder-only generation is inefficient.\"\n- **\"buys a better way to decide what to throw away\"\
+    ** in the close compresses the source's\n  eviction-policy claim into the author's own frame. Flat\
+    \ fallback: \"Every step since GPT-2\n  spends its new capacity on learned selection.\"\n- **\"until\
+    \ I checked its date\"** is my connective and the one new sentence-part in this draft\n  that a fact-checker\
+    \ could query. It asserts nothing the source does not: the source's own\n  paragraph moves from objection\
+    \ to date to \"At the time...\". Flat fallback: \"The paper's O(N²)\n  framing threw me off. I was\
+    \ reading it against the wrong year.\"\n\n## What was dropped, in the prompt's cut order\n\nUnchanged\
+    \ from round 2, plus nothing new. For the record:\n\n1. *Repeat examples.* The three-step decomposition\
+    \ of attention; the \"read back with the same\n   key\" worked example; the second sequential-prefill\
+    \ loop; the Schlag quotation.\n2. *Evidence before claims.* The FLOP algebra (2Ld², 2LCd, 2L²d); C\
+    \ = 64 or 128 and UMMA; the\n   explicit reparameterized recurrence; the AttnRes formulas; GPT-2's\
+    \ config numbers; the SiTU\n   3x-slower unfused path; \"two ND reads and two 1D writes to HBM\".\n\
+    3. *Whole claims.* \"Q is also a learned pointer\" and the Wq/Wk explanation; gated MLA's\n   mechanism;\
+    \ the conventional-MoE router explanation; MLA query LoRA and output gating; the\n   shared-expert\
+    \ down/up projection; beta as a named per-token write strength; the @chloey3k\n   credit; all X chrome.\n\
+    4. *Qualifications and conclusions.* Nothing, this round or last.\n\n**Code.** Every fenced block\
+    \ dropped whole, same reason as rounds 1 and 2: `extracted.md` is\npdftotext output and every Python\
+    \ block is truncated at the right margin (`float('-i`,\n`# re-asse`, `k.size`). Character-for-character\
+    \ reproduction here means shipping broken code. A\nreviser who wants code must re-extract from the\
+    \ PDF.\n\n**Enumerations.** Three in the source. The three attention steps: conclusion alone. The\
+    \ three\nKimi Linear changes: prose, and only the gating one survives, because MLA interleaving and\
+    \ MoE\nare stated in the KimiK3 section and nothing may appear twice. The six-item KimiK3 change list:\n\
+    reduced to the single item the next paragraph explains.\n\n## Unresolved, for whoever owns the pipeline\n\
+    \nThe Format block mandates `source_ids` as a list; the shipped 004 article files carry\n`source_id`\
+    \ (singular). I followed the prompt, as round 2 did. `mag fit` accepts the list form,\nso this is\
+    \ a consistency question rather than a build break."
