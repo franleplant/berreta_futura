@@ -1,0 +1,12 @@
+schema_version: 1
+edition_id: rerun-004-the-systems-around-the-model
+item: mcp-in-a-nutshell/r1-evidence
+piece_id: mcp-in-a-nutshell
+role: evidence
+round: 1
+returns: verdict
+prompt_path: prompts/evidence-review.md
+prompt_sha256: 2d368985eba3011b23c2f03fa926da4791a03975bd5ee4403ed6d8d19503d264
+brief_sha256: 63f23fe35af9de5022630d6289499915c1bde14931bf6f2a2f5c0d7c8569c15f
+brief: editions/rerun-004-the-systems-around-the-model/production/agent/mcp-in-a-nutshell/r1-evidence/brief.md
+reply: editions/rerun-004-the-systems-around-the-model/production/agent/mcp-in-a-nutshell/r1-evidence/reply.md

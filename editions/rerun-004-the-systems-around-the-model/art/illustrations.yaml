@@ -1,0 +1,199 @@
+schema_version: 1
+direction:
+  name: Story-Led Boy and Robot, Gentle Print Color
+  visual_language: >-
+    Original family-friendly children's science-comedy manga with simple
+    charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, quiet print grain, and one
+    playful visual idea per illustration. The recurring cast is exactly one
+    curious school-age boy with round glasses and one compact non-animal helper
+    robot. Use broad period and production cues only. Never reproduce a
+    franchise character, costume, face, silhouette, composition, or gadget.
+  palette: >-
+    Scene-led gentle historical magazine color at low to medium saturation:
+    softened cyan and cobalt, brick coral, muted green, dusty lavender, small
+    warm-ochre accents, warm off-white breathing room, and charcoal ink. The
+    setting chooses the background. Never impose one yellow paper field.
+  constraints:
+  - Entirely wordless editorial storytelling
+  - Exactly one recurring boy and one recurring non-animal robot
+  - Background color and setting arise from the article subject
+  - At least three distinct non-neutral colors
+  - Strong silhouettes and expressions that remain legible at A5 size
+  - Print-friendly contrast with minimal hatching and restrained halftone
+  - Slight pigment variation, subtle paper tooth, and quiet print grain
+  - Article tails keep every essential action inside the safe horizontal crop
+  - Multi-panel structure is reserved for an asset brief that explicitly requires a functional sequence
+  avoid:
+  - Direct copies of Doraemon, Nobita, or any recognizable franchise character
+  - Blue robotic cats, signature franchise gadgets, copied costumes, or copied faces
+  - Uniform yellow, mustard, beige, sepia, cream-paper, or bright cyan backgrounds
+  - Extra humans, extra robots, or robot-faced background appliances
+  - Decorative montages, contact sheets, or filler patterns
+  - Dense technical realism, steampunk clutter, or excessive crosshatching
+  - Modern glossy anime rendering, painterly concept art, neon cyberpunk, or photorealism
+  - Decorative pseudo-writing, interface glyphs, captions, labels, or speech balloons
+assets:
+- id: opener-frontier-lab-agent-intrusion
+  role: article_opener
+  article_id: frontier-lab-agent-intrusion
+  art_path: editions/rerun-004-the-systems-around-the-model/art/article-openers/frontier-lab-agent-intrusion.png
+  subject: >-
+    The recurring pair spot and calmly contain a mischievous abstract red
+    signal crossing layered security gates.
+  composition: >-
+    Boy at left, layered gates across the center, robot and transparent
+    containment box at right; the complete trace remains inside the wide crop.
+  alt_text: A bespectacled boy and friendly helper robot trace a red signal through layered workshop gates and contain it in a clear box.
+  credit: Original illustration by the editors with Codex image generation.
+- id: opener-eval-engineering
+  role: article_opener
+  article_id: eval-engineering
+  art_path: editions/rerun-004-the-systems-around-the-model/art/article-openers/eval-engineering.png
+  subject: >-
+    The pair operate a physical evaluation loop with stamp, reroute, reject,
+    and empty human-review stations.
+  composition: >-
+    The full test loop spans the foreground, the pair work at center, an empty
+    review desk sits at right, and a failed sample springs back for another pass.
+  alt_text: A boy and helper robot test colorful model outputs on a looping tray system while one failed sample springs back for another pass.
+  credit: Original illustration by the editors with Codex image generation.
+- id: opener-pragmatic-leverage
+  role: article_opener
+  article_id: pragmatic-leverage
+  art_path: editions/rerun-004-the-systems-around-the-model/art/article-openers/pragmatic-leverage.png
+  subject: >-
+    A modest plan guides one useful factory task while the cost of rushed
+    rework becomes a comic background cascade.
+  composition: >-
+    Blueprint and boy at left, robot and completed stool at center, large
+    harmless redo pile at right; the contrast reads instantly in the wide crop.
+  alt_text: A boy and helper robot follow a small blueprint to build one sturdy stool as a huge pile of rushed redo boxes topples harmlessly nearby.
+  credit: Original illustration by the editors with Codex image generation.
+- id: opener-from-gpt2-to-kimi3
+  role: article_opener
+  article_id: from-gpt2-to-kimi3
+  art_path: editions/rerun-004-the-systems-around-the-model/art/article-openers/from-gpt2-to-kimi3.png
+  subject: >-
+    The boy and robot compare a long tangled attention ribbon with a compact
+    recurrent memory spool, then delight as the compact device handles it.
+  composition: >-
+    Tangled long-context rig at left, delighted boy at center, robot with the
+    compact spool and successful sequence device at right.
+  alt_text: A boy and tool robot compare a sprawling coral attention ribbon with a compact teal memory spool as a small sequence machine lights up.
+  credit: Original illustration by the editors with Codex image generation.
+- id: opener-factory-systems-problem
+  role: article_opener
+  article_id: factory-systems-problem
+  art_path: editions/rerun-004-the-systems-around-the-model/art/article-openers/factory-systems-problem.png
+  subject: >-
+    The pair inspect a layered software factory in which one small model module
+    moves through sandboxing, source control, reproducible build, identity, and
+    human approval.
+  composition: >-
+    Cast at left, a clean factory path across the center, and a branching track
+    above; the tiny model cubes remain subordinate to the whole system.
+  alt_text: A boy and tool robot inspect a layered software factory with sandbox, build press, identity vault, approval gate, and a small model module moving through the system.
+  credit: Original illustration by the editors with Codex image generation.
+- id: opener-mcp-in-a-nutshell
+  role: article_opener
+  article_id: mcp-in-a-nutshell
+  art_path: editions/rerun-004-the-systems-around-the-model/art/article-openers/mcp-in-a-nutshell.png
+  subject: >-
+    The boy and robot test a compact connector box that routes three colored
+    cables to document, database, and tool endpoints.
+  composition: >-
+    The cast works at left and the three bounded endpoints stack at right, with
+    the connector paths clear and playful inside the wide crop.
+  alt_text: A boy and compact helper robot connect a host box to document, database, and tool endpoints in a cheerful workshop.
+  credit: Original illustration by the editors with Codex image generation.
+- id: opener-mcp-protocol-update
+  role: article_opener
+  article_id: mcp-protocol-update
+  art_path: editions/rerun-004-the-systems-around-the-model/art/article-openers/mcp-protocol-update.png
+  subject: >-
+    The pair swap a calendar-like specification module into their connector
+    workshop and check compatibility through a clean approval gate.
+  composition: >-
+    Boy with the new module at left, robot and mismatched plug plus adapter at
+    center, and three routes with an approval control across the lower middle.
+  alt_text: A boy and tool robot update a three-connector workshop, using an orange adapter after an old plug refuses a new socket beside an open approval gate.
+  credit: Original illustration by the editors with Codex image generation.
+- id: factory-systems-problem
+  role: article_tail
+  article_id: factory-systems-problem
+  art_path: editions/rerun-004-the-systems-around-the-model/art/article-tails/factory-systems-problem.png
+  subject: >-
+    The engineer and helper robot inspect a software factory whose small model
+    module rides inside a much larger system of sandboxing, source control,
+    reproducible builds, delivery gates, identity controls, and human approval.
+  composition: >-
+    One wide self-contained factory cutaway with the essential characters,
+    conveyor, bounded agent process, and control gates inside the safe central
+    crop. The machinery remains legible as one deterministic system.
+  alt_text: >-
+    A manga engineer and helper robot inspect a layered software factory with a
+    conveyor, sandbox, build machinery, identity vault, and human approval lever.
+  credit: Original illustration by the editors with Codex image generation.
+- id: mcp-four-vignettes
+  role: article_tail
+  article_id: mcp-in-a-nutshell
+  art_path: editions/rerun-004-the-systems-around-the-model/art/article-tails/mcp-four-vignettes.png
+  subject: >-
+    Four left-to-right vignettes explain MCP as host, separate clients and
+    bounded servers, tool discovery, then a call and structured return through
+    a human approval gate.
+  composition: >-
+    Four equal vertical panels in Western reading order. All essential action,
+    arrows, and icons remain inside the central horizontal half so a shallow
+    article-tail crop preserves the full explanation.
+  alt_text: >-
+    Four manga vignettes show an application connecting through separate
+    clients to bounded servers, discovering tools, and receiving an approved
+    structured result.
+  credit: Original illustration by the editors with Codex image generation.
+- id: closing-signal-gates
+  role: closing_plate
+  plate_index: 1
+  art_path: editions/rerun-004-the-systems-around-the-model/art/closing-signal-gates-manga.png
+  subject: >-
+    The engineer and helper robot guide a bright signal parcel through shield,
+    inspection, and human approval gates.
+  composition: >-
+    A vertical conveyor rises through three large readable gates with the
+    recurring characters entering at the lower edge and the useful signal
+    emerging at the top.
+  alt_text: >-
+    A manga scene shows a bright signal passing through security, inspection,
+    and human approval gates.
+  credit: Original illustration by the editors with Codex image generation.
+- id: closing-memory-rings
+  role: closing_plate
+  plate_index: 2
+  art_path: editions/rerun-004-the-systems-around-the-model/art/closing-memory-rings-manga.png
+  subject: >-
+    The characters compare a compact glowing memory ribbon with a retrieval
+    cabinet that fetches one precise resource.
+  composition: >-
+    A balanced vertical choice places the memory spool at left, the retrieval
+    cabinet at right, and the engineer between them connecting the result to a
+    small host.
+  alt_text: >-
+    A manga scene contrasts a compact memory ribbon with a cabinet retrieving a
+    precise resource.
+  credit: Original illustration by the editors with Codex image generation.
+- id: closing-useful-boundary
+  role: closing_plate
+  plate_index: 3
+  art_path: editions/rerun-004-the-systems-around-the-model/art/closing-protocol-exchange-manga.png
+  subject: >-
+    Separate clients connect one host to document, database, and workshop
+    servers while boundaries prevent an unsafe tangle.
+  composition: >-
+    A playful vertical cutaway keeps the host and characters below three
+    bounded server rooms, with separate cables and an approval lever at the
+    sensitive doorway.
+  alt_text: >-
+    A manga cutaway shows separate clients connecting a host to three bounded
+    servers with a human approval control.
+  credit: Original illustration by the editors with Codex image generation.

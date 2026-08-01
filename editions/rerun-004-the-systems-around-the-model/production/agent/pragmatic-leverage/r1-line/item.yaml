@@ -1,0 +1,12 @@
+schema_version: 1
+edition_id: rerun-004-the-systems-around-the-model
+item: pragmatic-leverage/r1-line
+piece_id: pragmatic-leverage
+role: line
+round: 1
+returns: verdict
+prompt_path: prompts/line-review.md
+prompt_sha256: 262f28e51956608760ae5dbdde255ef7a5780f459e73cb3542d7ae6aae6ac8b4
+brief_sha256: 86cfba9102f325928d26a4cebc678ee52a2300718036e417c94be92f9b9ca6a7
+brief: editions/rerun-004-the-systems-around-the-model/production/agent/pragmatic-leverage/r1-line/brief.md
+reply: editions/rerun-004-the-systems-around-the-model/production/agent/pragmatic-leverage/r1-line/reply.md

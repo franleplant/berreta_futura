@@ -1,0 +1,12 @@
+schema_version: 1
+edition_id: rerun-004-the-systems-around-the-model
+item: mcp-protocol-update/r1-evidence
+piece_id: mcp-protocol-update
+role: evidence
+round: 1
+returns: verdict
+prompt_path: prompts/evidence-review.md
+prompt_sha256: 2d368985eba3011b23c2f03fa926da4791a03975bd5ee4403ed6d8d19503d264
+brief_sha256: ffeb1b7ebca9c2ea5a053f8b4add551077794b31cb9ce97d0bb3d406b883889e
+brief: editions/rerun-004-the-systems-around-the-model/production/agent/mcp-protocol-update/r1-evidence/brief.md
+reply: editions/rerun-004-the-systems-around-the-model/production/agent/mcp-protocol-update/r1-evidence/reply.md
