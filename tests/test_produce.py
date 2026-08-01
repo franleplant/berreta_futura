@@ -64,6 +64,33 @@ EXTRACTION_BODY = (
 )
 
 
+# The shape of a real extraction, which ``EXTRACTION_BODY`` is not: capture
+# hands back hard-wrapped prose, and a writer hands back a paragraph on one
+# long line.  Every sentence below is therefore in both the source and a
+# faithful manuscript, and not one source *line* is ever a manuscript line.
+WRAPPED_SOURCE = (
+    "The kill chain opened with the benchmark the agent was being scored on,\n"
+    "and closed four and a half days later inside production infrastructure.\n"
+    "\n"
+    "We are publishing this level of detail because the technique matters far\n"
+    "more than the incident: it is the volume, at machine speed, that makes\n"
+    "familiar and unremarkable weaknesses so expensive to defend against.\n"
+)
+
+
+def reflow(text: str) -> str:
+    """The same prose as a writer returns it: one line per paragraph."""
+
+    return (
+        "\n\n".join(
+            " ".join(paragraph.split())
+            for paragraph in text.split("\n\n")
+            if paragraph.strip()
+        )
+        + "\n"
+    )
+
+
 EDITORIAL_FRONTMATTER = (
     "---\ntitle: A Test Editorial\nbyline: The editors\nlabel: ORIGINAL EDITORIAL\n---\n"
 )
@@ -306,11 +333,18 @@ def snapshot(root: Path) -> dict[str, str]:
 
 
 class ProduceFixture(unittest.TestCase):
+    BODY = EXTRACTION_BODY
+    """The extraction the fixture project is built on.
+
+    A subclass overrides it when the *shape* of a source -- its line breaks,
+    its typography -- is the thing under test rather than the pipeline's order.
+    """
+
     def setUp(self):
         self.temporary = TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
-        self.magazine = build_project(self.root)
+        self.magazine = build_project(self.root, body=self.BODY)
         self.command = ScriptedCommand()
         self.gates = PassingGates()
 
@@ -487,6 +521,126 @@ class LineEditorBoundaryTests(ProduceFixture):
             manuscript=SOURCE_ONLY,
             label="line editor",
         )
+
+    def test_the_manuscript_is_exempt_however_either_side_is_wrapped(self):
+        """The bug that stopped the first live run before any judge ran.
+
+        A source line is a wrap fragment, not a unit of meaning.  Comparing
+        source lines against manuscript *lines* asked whether a hard-wrapped
+        source and a reflowed manuscript broke in the same places, which they
+        never do, so a faithful piece tripped a guard against text it was
+        supposed to carry.
+        """
+
+        from magazine.extraction import Extraction
+        from magazine.produce_prompts import assert_source_withheld
+
+        extraction = Extraction(
+            Path("x"), "source-one", "bundle", "test", WRAPPED_SOURCE, "0" * 64
+        )
+        manuscript = reflow(WRAPPED_SOURCE)
+        for description, variant in (
+            ("reflowed", manuscript),
+            ("curly-quoted", manuscript.replace("'", "’")),
+            ("tabbed and padded", manuscript.replace(" ", "\t   ", 1) + "   \n"),
+            ("re-cased", manuscript.replace("The kill chain", "The Kill Chain")),
+        ):
+            with self.subTest(description):
+                assert_source_withheld(
+                    f"a brief carrying\n\n{variant}\n",
+                    [extraction],
+                    manuscript=variant,
+                    label="line editor",
+                )
+
+    def test_a_leak_survives_re_wrapping_re_casing_and_re_quoting(self):
+        """The teeth the fold puts in, not the ones it takes out.
+
+        Folding both sides is what lets the manuscript be exempt; it also means
+        a leak cannot launder itself by re-wrapping, shouting, or curling its
+        apostrophes, all of which walked past the old raw ``in`` check.
+        """
+
+        from magazine.extraction import Extraction
+        from magazine.produce_prompts import assert_source_withheld
+
+        extraction = Extraction(
+            Path("x"), "source-one", "bundle", "test", WRAPPED_SOURCE, "0" * 64
+        )
+        leaked = reflow(WRAPPED_SOURCE)
+        for description, variant in (
+            ("verbatim", WRAPPED_SOURCE),
+            ("reflowed", leaked),
+            ("shouted", leaked.upper()),
+            ("curly-quoted", leaked.replace("'", "’")),
+            ("re-wrapped elsewhere", leaked.replace(" that ", "\n")),
+        ):
+            with self.subTest(description):
+                with self.assertRaises(ProduceError) as raised:
+                    assert_source_withheld(
+                        f"a brief that quotes the source\n\n{variant}\n",
+                        [extraction],
+                        manuscript="a manuscript that carries none of it",
+                        label="line editor",
+                    )
+                self.assertIn("forbidden the source", str(raised.exception))
+
+
+class LiveJudgeRoundTripTests(ProduceFixture):
+    """A round driven end to end over a realistically shaped source.
+
+    Every other test in this file runs on ``EXTRACTION_BODY``, whose three
+    short lines no fixture manuscript repeats, so the line editor's guard was
+    never asked the question round one of a real run asks it first.  It said
+    no, and the run died there -- which meant no judge had ever run, and every
+    step after the guard was untested against a live pipeline: a verdict
+    parsed, written into the round record, and carried into the next writer's
+    brief.  This class walks that path on a source that would have failed.
+    """
+
+    BODY = WRAPPED_SOURCE
+
+    def setUp(self):
+        super().setUp()
+        # A faithful manuscript: the source's own sentences, reflowed.
+        self.command.script[("writer", "article")] = [
+            f"{reflow(WRAPPED_SOURCE)}\n{SCRATCH_MARKER}\nthe claim ladder"
+        ]
+
+    def test_a_faithful_manuscript_reaches_both_judges(self):
+        result = self.run_produce(articles=["article"])
+
+        self.assertEqual(result.outcomes[0].status, "passed")
+        line_brief = self.command.briefs("line", "article")[0]
+        self.assertIn("it is the volume, at machine speed", line_brief)
+        self.assertIn("source extraction is deliberately withheld", line_brief)
+
+    def test_a_verdict_reaches_the_record_and_the_next_writer_s_brief(self):
+        self.command.script[("line", "article")] = [
+            changes("the kill chain is told twice"),
+            verdict("approved"),
+        ]
+
+        result = self.run_produce(articles=["article"])
+
+        outcome = result.outcomes[0]
+        self.assertEqual((outcome.status, outcome.rounds), ("passed", 2))
+        first, second = self.record("article")["rounds"]
+        # Parsed, and parsed into the record rather than merely counted.
+        self.assertEqual(first["result"], "changes_required")
+        self.assertEqual(set(first["judges"]), {"evidence", "line"})
+        self.assertEqual(first["judges"]["line"]["result"], "changes_required")
+        self.assertEqual(
+            [entry["note"] for entry in first["judges"]["line"]["findings"]],
+            ["the kill chain is told twice"],
+        )
+        self.assertEqual(first["judges"]["evidence"]["result"], "approved")
+        self.assertEqual(second["judges"]["line"]["result"], "approved")
+        # And carried forward: a finding the writer never sees is not a loop.
+        brief = self.command.briefs("writer", "article")[1]
+        self.assertIn("Findings you must clear", brief)
+        self.assertIn("[major] duplication (from the line)", brief)
+        self.assertIn("the kill chain is told twice", brief)
 
 
 class ParallelJudgeTests(ProduceFixture):

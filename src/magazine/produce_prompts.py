@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import unicodedata
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -85,7 +86,44 @@ JUDGE_PROMPTS: Mapping[str, str] = {
 
 # A source line has to be this long before its verbatim presence in a line
 # editor's prompt is evidence of a leak rather than a coincidence of English.
+# Measured on the folded form, which is the form the comparison happens in.
 _LEAK_LINE_LENGTH = 40
+
+# Typographic pairs that are the same prose to a reader and different bytes to
+# ``in``.  Writers hand back curly quotes for the straight ones a source used
+# (and the reverse), and a leak check that called those two different runs of
+# text would exempt nothing it should.
+_QUOTE_FOLDING = str.maketrans(
+    {
+        "‘": "'",
+        "’": "'",
+        "‚": "'",
+        "‛": "'",
+        "“": '"',
+        "”": '"',
+        "„": '"',
+        "‟": '"',
+        "´": "'",
+        "`": "'",
+    }
+)
+
+
+def _fold(text: str) -> str:
+    """The form in which two copies of the same prose compare equal.
+
+    Line breaks are the reason this exists.  Extractions arrive hard-wrapped
+    from the capture step and manuscripts carry a paragraph on one long line,
+    so the *same sentence* is one line in the source and a fragment of a much
+    longer line in the manuscript.  Collapsing every run of whitespace to a
+    single space makes the comparison indifferent to where either side wrapped;
+    NFKC folds non-breaking spaces and ligatures; the quote table folds the
+    typography; and case-folding costs nothing at forty characters, where two
+    runs that differ only in case are the same prose and not a coincidence.
+    """
+
+    folded = unicodedata.normalize("NFKC", text).translate(_QUOTE_FOLDING)
+    return " ".join(folded.split()).casefold()
 
 
 @dataclass(frozen=True)
@@ -522,22 +560,33 @@ def assert_source_withheld(
 
     The check cannot simply look for source sentences: a ``faithful_edit``
     manuscript *is* the source's sentences, and the manuscript is legitimately
-    in this prompt.  So the exempt set is exactly the lines the manuscript
-    already carries, and any other substantial source line found in the prompt
+    in this prompt.  So the exempt set is the prose the manuscript itself
+    carries, and any other substantial run of source prose found in the prompt
     is a leak by a route the type system did not close.
+
+    Both sides are compared through :func:`_fold`, and the manuscript is
+    compared as one folded body rather than as a set of lines.  A source line
+    is a wrap fragment, not a unit of meaning: the same sentence sits alone on
+    a source line and mid-paragraph in a manuscript, so line-for-line equality
+    exempted nothing real and every faithful piece tripped its own guard.
+    Folding cuts both ways -- a leak that re-wrapped or re-quoted the source no
+    longer slips past either.
     """
 
-    manuscript_lines = {line.strip() for line in manuscript.splitlines()}
+    folded_prompt = _fold(prompt)
+    folded_manuscript = _fold(manuscript)
     for extraction in extractions:
         for line in extraction.body.splitlines():
-            candidate = line.strip()
-            if len(candidate) < _LEAK_LINE_LENGTH or candidate in manuscript_lines:
+            candidate = _fold(line)
+            if len(candidate) < _LEAK_LINE_LENGTH:
                 continue
-            if candidate in prompt:
+            if candidate in folded_manuscript:
+                continue
+            if candidate in folded_prompt:
                 raise ProduceError(
                     f"{label} brief carries source text from "
                     f"{extraction.source_id} that the manuscript does not: "
-                    f"{candidate[:60]!r}. This role is forbidden the source."
+                    f"{line.strip()[:60]!r}. This role is forbidden the source."
                 )
 
 
