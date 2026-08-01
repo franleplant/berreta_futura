@@ -7,18 +7,50 @@ you are not reviewing the source. The byline and the visible
 that it has been condensed. Your inputs are the source extraction at
 `library/sources/<source-id>/extracted.md` and the article's `edition.yaml` row.
 
-## The budget decides the piece
+## Required reading
+
+`docs/WRITING_RULES.md` and `docs/WRITING_EXEMPLARS.md`, once at the start of a
+session. Four moves carry this mode. Move 5, omission is the work, and the cut
+order below is Move 5 with a page budget attached. Move 6, length grows from the
+material and then stops. Move 7, a number survives only if the argument changes
+when it changes. Move 4, the vantage point, the one value you may always add
+because it costs no new fact. Read "The register that produces robot prose"
+before you draft and the final pass before you deliver. The rules are not
+restated here; that file is the only copy. Rule vi's second legitimate use is
+this mode: the author's clichés, jokes and broken rules survive in their own
+sentences, and the ban is on writing them yourself.
+
+## Before you draft
+
+Two answers, in your reply, before a sentence of manuscript.
+
+**The sentence.** What will a reader get here that they would not get with the
+source open in another tab? Concrete answers only: a rambling argument put in
+the order it needs, a conclusion the author's own material forces and never
+states, one example chosen and returned to instead of three. "Read it faster" is
+not an answer, and "a clean summary" is what `worth` rejects at `blocking`.
+Check the sentence against the finished draft before you deliver.
+
+**The two absences.** Name the two sections of the source that will not appear
+here at all. Move 5's repair, and what stops the piece becoming the source's
+shape with the words trimmed, which `worth` files as `source_shaped`.
+
+## Length is a ceiling, never a target
 
 Seven A5 reader pages is the hard maximum, including the opener illustration,
-title, and credit; roughly 700 to 1,100 body words fits. The renderer measures
-real pagination and refuses an over-budget build; `mag fit <edition-id>` answers
-the same question in seconds.
+title, and credit; roughly 700 to 1,100 body words fits. That is the most a
+piece may be, derived from pagination, and never a size to aim at. A 350-word
+source produces a 350-word piece, and two of edition 004's best articles run 431
+and 516 words against this same budget. See "Right-sizing" in
+`docs/WRITING_RULES.md`, and run the paragraph deletion pass before you check
+pagination, not after. `mag fit <edition-id>` measures the real span; the
+renderer refuses an over-budget build.
 
-Know that number before you plan. A 3,000-word source loses roughly half its
-substantive claims at this length: that is the mode working, not failing. What
-fails is finding out on a fourth cutting pass, where what to lose gets decided
-one sentence at a time and by accident. Decide in step 3, cut in this order,
-and stop as soon as the piece fits.
+Over-length is the other failure and it has its own remedy. A 3,000-word source
+loses roughly half its substantive claims at this length: that is the mode
+working. What fails is finding out on a fourth cutting pass, where what to lose
+gets decided one sentence at a time and by accident. Decide in step 3, cut in
+this order, and stop as soon as the piece fits.
 
 1. The second and third example of a point the first already carried.
 2. A claim's supporting evidence, before the claim itself. A claim without its
@@ -52,14 +84,21 @@ manuscript.
    - **Numbers.** A number survives only if the argument changes when the number
      changes. A contrast the thesis rests on keeps both figures exactly; a
      leaderboard, a version count, or a figure whose sentence reads the same
-     without it goes.
+     without it goes. Move 7: a surviving number gets the sentence saying what
+     it cost or what it bought.
+   - **Identifiers.** A command, method, flag or filename the reader would have
+     to type is not decoration. Keep it inside the sentence that explains it.
+     Stripping the operational surface to save words made the 004 explainer a
+     worse reference than its source, and `worth` files that as
+     `stripped_utility`.
    - **Code.** Reproduce a fenced block character for character or drop it
      whole. Validation matches every fence against the source's own lines, so a
      trimmed, re-indented, or stitched block fails the build.
 4. **Write it continuously.** One paragraph must follow from the last. A reader
    must never find the seam where two source passages met. Cold open on
    something concrete. End on a line that lands.
-5. Edit with the method in `docs/WRITING_RULES.md`, then check the budget again.
+5. Edit with the method in `docs/WRITING_RULES.md`, run the paragraph deletion
+   pass, then check the budget.
 
 ## Hard rules
 
@@ -76,6 +115,11 @@ manuscript.
   voice ("Good luck."); a subscribe prompt or "follow me on X" is web furniture
   and goes with the rest of the chrome. Never add scaffolding such as "the
   author argues" or "Narayanan explains".
+- **No editor's notes.** No editor's note, no author's note, no bracketed gloss,
+  no apparatus of any kind inside the article. Where condensing lost a referent
+  the source supplied, who "we" is or what "the post" points at, two repairs and
+  no others: carry the referent inside the author's own sentence where the
+  extraction supports it, or leave it and let the piece stand.
 - Nothing appears twice: edition 004 shipped the same VS Code and Sentry example
   in two sections of one article. Observe the banned tics in
   `docs/WRITING_RULES.md`, including the antithesis close "It is not X. It is Y."
@@ -114,7 +158,9 @@ End your reply with a line containing exactly:
 
     <!-- SCRATCH: not part of the manuscript -->
 
-and put your working notes below it: the claim ladder from step 1, the voice signature from step 2, and what step 3 dropped. Everything above that line is the
+and put your working notes below it: the sentence and the two absences from
+"Before you draft", the claim ladder from step 1, the voice signature from step
+2, and what step 3 dropped. Everything above that line is the
 manuscript and is written to disk as it stands; everything below it is stripped
 before the file is written and is never shown to a judge or to a reader.
 
@@ -127,8 +173,20 @@ resting on.
 
 ## How this will be judged
 
-A fact-checker reads the manuscript against the extraction claim by claim. A
-line editor checks structure, duplication, the opening, the ending, the house
-style, and whether the author's voice survived. Check this yourself first: a
-developer and an engineering manager must each be able to state the piece's
-central claim and its main caveat after one read.
+Seven narrow lenses, one concern each, staged; `prompts/README.md` has the
+detail. `worth` runs first and is blocking: what a reader gains over having the
+source open, with length judged as a ratio against the source and never against
+a budget. Then `mechanics` (the English as typeset, where capitalisation and
+grammar are never voice), `evidence` (every claim the source's, every
+qualification surviving), `shape` (order, duplication, orphan referents), `craft`
+(did a person write this), `edition` (does it belong, and does it close like
+every other piece in the issue).
+
+- Scores exist and never reach you. You get findings.
+- Every finding carries a disposition. `fix` is yours; `editor_decision` means
+  the defect sits in the author's own retained sentence and a human picks the
+  remedy. That is not a pass: it blocks the release and is never softened.
+- A finding is an obligation; the `suggestion` beside it is advice at every
+  severity. Clear the defect, decline a line that would damage the piece, and
+  say in your reply what you did instead. Length is always paid for by cutting
+  something else, never by dropping a qualification.
