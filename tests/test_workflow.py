@@ -523,6 +523,8 @@ def test_status_reports_the_whole_ordered_workflow_and_precise_blockers(
         "assignment",
         "coverage",
         "evidence",
+        # Drafting, before everything that reads a manuscript.
+        "production",
         "translations",
         "cover",
         "illustrations",
@@ -1431,3 +1433,111 @@ def test_release_readiness_requires_current_evidence_and_render_decisions(
     assert report.next_checkpoint.next_action.command == (
         f"uv run --locked mag finish {EDITION_ID}"
     )
+
+
+def test_production_is_complete_for_prose_authored_before_the_pipeline(
+    tmp_path: Path,
+):
+    """The checkpoint asks whether the prose is there, not who wrote it.
+
+    Editions 001 to 004 were drafted before ``mag produce`` existed and carry no
+    production records at all. Reporting them blocked would make the report
+    useless on every edition the magazine has actually shipped.
+    """
+
+    _make_project(tmp_path, extraction=True, complete_art=True)
+
+    report = Workflow(tmp_path, adapter=BuildAdapter()).status(EDITION_ID)
+
+    production = report.checkpoint("production")
+    assert production.status == "complete"
+    assert production.details["undrafted_pieces"] == []
+    assert production.details["pieces"]["article"]["production_status"] == "none"
+
+
+def test_production_blocks_on_a_staging_marker_and_names_produce(tmp_path: Path):
+    _make_project(tmp_path, extraction=True, complete_art=True)
+    manuscript = tmp_path / "editions" / EDITION_ID / "articles" / "article.md"
+    manuscript.write_text(
+        "---\nstage_status: todo\nlabel: EDITORIAL WORK REQUIRED\n---\n\n"
+        "<!-- TODO(editor): Replace this staging marker. -->\n",
+        encoding="utf-8",
+    )
+
+    report = Workflow(tmp_path, adapter=GuardAdapter()).status(EDITION_ID)
+
+    assert report.next_checkpoint.id == "production"
+    assert report.next_checkpoint.next_action.classification == "authorial"
+    assert report.next_checkpoint.next_action.command == (
+        f"uv run --locked mag produce {EDITION_ID}"
+    )
+    assert "--backend agent" in report.next_checkpoint.next_action.instruction
+    assert report.checkpoint("production").details["undrafted_pieces"] == ["article"]
+    # Everything downstream reads a manuscript, so nothing downstream runs.
+    assert report.checkpoint("translations").status == "blocked"
+    assert not report.release_ready
+
+
+def test_production_blocks_on_an_outstanding_agent_ready_set(tmp_path: Path):
+    """The front door names the loop, so a driver never has to invent one."""
+
+    _make_project(tmp_path, extraction=True, complete_art=True)
+    _write_yaml(
+        tmp_path
+        / "editions"
+        / EDITION_ID
+        / "production"
+        / "agent"
+        / "ready.yaml",
+        {
+            "schema_version": 1,
+            "edition_id": EDITION_ID,
+            "backend": "agent",
+            "state": "awaiting_work",
+            "ready": [{"item": "article/r1-writer"}, {"item": "editorial/r1-writer"}],
+        },
+    )
+
+    report = Workflow(tmp_path, adapter=GuardAdapter()).status(EDITION_ID)
+
+    production = report.checkpoint("production")
+    assert report.next_checkpoint.id == "production"
+    assert production.details["agent_ready"] == [
+        "article/r1-writer",
+        "editorial/r1-writer",
+    ]
+    assert production.next_action.command == (
+        f"uv run --locked mag produce {EDITION_ID} --backend agent"
+    )
+    assert "hand-orchestrate" in production.next_action.instruction
+
+
+def test_production_blocks_on_an_escalated_piece_and_asks_for_a_human(
+    tmp_path: Path,
+):
+    _make_project(tmp_path, extraction=True, complete_art=True)
+    _write_yaml(
+        tmp_path
+        / "editions"
+        / EDITION_ID
+        / "production"
+        / "articles"
+        / "article.yaml",
+        {
+            "schema_version": 1,
+            "edition_id": EDITION_ID,
+            "piece_id": "article",
+            "content_mode": "faithful_edit",
+            "status": "escalated",
+            "inputs_sha256": "0" * 64,
+            "manuscript_sha256": "0" * 64,
+            "rounds": [],
+        },
+    )
+
+    report = Workflow(tmp_path, adapter=GuardAdapter()).status(EDITION_ID)
+
+    production = report.checkpoint("production")
+    assert production.status == "blocked"
+    assert production.next_action.classification == "human-review"
+    assert production.details["escalated_pieces"] == ["article"]

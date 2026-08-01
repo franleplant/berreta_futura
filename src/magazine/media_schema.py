@@ -173,8 +173,19 @@ def resolve_figures(
     manuscript: Path,
     rows: Any,
     records: Mapping[str, "SourceRecord"] | None,
+    allow_unanchored: bool = False,
 ) -> tuple[Figure, ...]:
-    """Resolve explicit edition selections against committed source inventories."""
+    """Resolve explicit edition selections against committed source inventories.
+
+    ``allow_unanchored`` keeps a figure whose anchor names a heading the current
+    manuscript does not carry.  It exists for one caller: the produce pipeline,
+    which rewrites manuscripts for a living and owns a gate that reports a
+    stranded anchor by name, with the headings the draft actually has.  Refusing
+    to load the edition at all would make that failure unrecoverable at exactly
+    the moment the pipeline is there to repair it.  Every other caller leaves it
+    false, so a stranded anchor is still a validation error everywhere a reader
+    could reach the page.
+    """
 
     if rows in (None, []):
         return ()
@@ -232,7 +243,7 @@ def resolve_figures(
             )
         if layout not in FIGURE_LAYOUTS:
             errors.append(f"{label} has invalid layout: {layout or '<missing>'}")
-        if anchor != "__opener__" and anchor not in headings:
+        if anchor != "__opener__" and anchor not in headings and not allow_unanchored:
             errors.append(f"{label} anchor does not match an article heading: {anchor!r}")
         resolved = _resolve_asset(root, source_id, asset_id, records, label, errors)
         if not resolved:

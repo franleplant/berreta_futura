@@ -69,6 +69,10 @@ uv run --locked mag status 004-unreleased --json
 uv run --locked mag run 004-unreleased --json
 ```
 
+The `production` checkpoint is where the prose is. It reports which pieces are
+still staging markers, which the pipeline escalated to a human, and which agent
+briefs are outstanding, and it names the command that clears each case.
+
 After capture and extraction, a versioned article brief is the first safe unit
 of editorial assembly:
 
@@ -104,6 +108,53 @@ concurrently edited touched files are preserved and reported while every other
 safe write is rolled back. Capture remains URL-by-URL because durable snapshot
 and author-evidence acquisition are explicit adapters; the brief begins only
 after those source bundles exist.
+
+## Drafting: `mag produce`
+
+`mag produce` owns the order of authorship: one writer call per piece over the
+complete source extraction, then the deterministic gates, then the fact-checker
+and the line editor in parallel, then at most three revision rounds carrying
+both the findings and the previous draft's working notes, then the learning
+personas and the managing editor. Every call leaves an execution record under
+`editions/<edition-id>/production/`.
+
+Two backends call a model themselves: `codex` (the default) and `claude`. The
+third, `agent`, calls nothing. It writes every brief that is ready right now and
+ingests the answers left beside them, which is the only shape that fits a driver
+that cannot be shelled out to: a Claude Code agent with a subagent fleet, or a
+person with a text editor. The loop is two commands:
+
+```sh
+# 1. Emit. Reports every ready brief, and writes each one to disk.
+uv run --locked mag produce 004-unreleased --backend agent --json
+
+# 2. Answer each brief by writing reply.md beside it, then run step 1 again.
+#    Repeat until `ready` is empty.
+uv run --locked mag produce 004-unreleased --backend agent --json
+```
+
+Each ready item names a `brief` to read and a `reply` to write, under
+`editions/<edition-id>/production/agent/<piece>/r<n>-<role>/`. The brief is
+self-contained: it is byte for byte what the autonomous backend would have sent.
+Writing the file is the whole protocol, so a fleet can fan out one subagent per
+item, and a human can answer one in an editor. `--submit` is the same write with
+the reply's contract checked first:
+
+```sh
+uv run --locked mag produce 004-unreleased --backend agent \
+  --submit article-id/r1-writer --reply /tmp/draft.md
+```
+
+The set is everything unblocked, not the next item: several writers are ready at
+once, and a draft's fact-checker and line editor become ready together. Nothing
+is remembered between invocations; each one replays the pipeline over the
+answers on disk, so a driver that crashes mid-fleet re-emits the same set rather
+than a second copy of it. A brief is keyed by the SHA-256 of its own text, so a
+reply written against a draft the pipeline has since recomposed is set aside as
+`reply.superseded.md` and the brief is reissued rather than silently applied.
+`editions/<id>/production/agent/ready.yaml` is the current state at a glance;
+deleting a piece's directory there discards its answers and redrafts it from
+round one, which is how an escalated piece is offered a fresh start.
 
 Creative work has separate studio commands:
 

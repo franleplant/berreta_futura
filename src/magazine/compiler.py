@@ -91,8 +91,10 @@ from .release import (
     sync_release_state,
 )
 from .produce import MAX_ROUNDS, Production, ProductionGates, ProduceResult
+from .produce_agent import AgentSession
+from .produce_prompts import ProduceError
 from .render_engine import engine_name, reader_renderer
-from .runner import CommandRunner, RunnerConfig, resolve_text_runner
+from .runner import AGENT_BACKEND, CommandRunner, RunnerConfig, resolve_text_runner
 from .render_review import (
     check_recorded_review_embeddable,
     create_render_review,
@@ -563,6 +565,7 @@ class Magazine:
         backend: str | None = None,
         command: CommandRunner | None = None,
         gates: ProductionGates | None = None,
+        submit: tuple[str, str] | None = None,
     ) -> ProduceResult:
         """Draft and judge an edition's pieces as a pipeline.
 
@@ -583,9 +586,40 @@ class Magazine:
         an image runner: produce reuses registered art and reports a missing
         opener as a human action, and the override cannot reach the image
         backend even in principle.
+
+        The third backend, ``agent``, runs the same pipeline without running a
+        process.  It emits every brief that is ready and ingests the answers a
+        driver leaves beside them, which is the only shape that fits a caller
+        who cannot be shelled out to: a Claude Code agent with a subagent fleet,
+        or a person with a text editor.  ``submit`` is one ``(item, text)`` pair
+        to ingest before advancing; it belongs to that backend alone and is
+        refused for the two that call a model themselves.
         """
 
         config = RunnerConfig.load(self.root).with_text_backend(backend)
+        if config.text_backend == AGENT_BACKEND:
+            session = AgentSession(
+                self,
+                gates=gates,
+                max_rounds=max_rounds,
+                reviewer=reviewer,
+            )
+            names = None if articles is None else list(articles)
+            if submit is not None:
+                if dry_run:
+                    raise ProduceError(
+                        "--dry-run prints the plan and writes nothing, so there "
+                        "is nothing for --submit to be ingested into"
+                    )
+                item_key, text = submit
+                return session.submit(edition_id, item_key, text, articles=names)
+            return session.advance(edition_id, articles=names, dry_run=dry_run)
+        if submit is not None:
+            raise ProduceError(
+                "--submit ingests a brief the pipeline emitted, which only the "
+                f"{AGENT_BACKEND!r} backend does; "
+                f"{config.text_backend!r} calls the model itself"
+            )
         runner = resolve_text_runner(config, command=command)
         production = Production(
             self,

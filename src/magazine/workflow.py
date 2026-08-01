@@ -57,6 +57,7 @@ from .learning_review import (
     load_learning_review,
 )
 from .line_review import (
+    EDITORIAL_ARTICLE_ID,
     current_line_bindings,
     line_review_path,
     line_review_status,
@@ -70,6 +71,11 @@ from .extraction import (
 from .illustration import load_illustration_plan, validate_illustration_plan
 from .io import load_structured
 from .manifest import Edition, load_edition, load_translation
+from .production_record import (
+    AGENT_DIRNAME,
+    PRODUCTION_DIRNAME,
+    load_piece_record,
+)
 from .records import load_records
 from .release import load_release_state, sync_release_state
 from .render_review import load_render_review, visual_review_status
@@ -85,6 +91,11 @@ CHECKPOINT_ORDER = (
     "assignment",
     "coverage",
     "evidence",
+    # Drafting sits here because everything after it reads a manuscript: the
+    # overlays pin one, the page budgets measure one, the judges read one.  It
+    # was the one checkpoint the report never had, which is how an edition could
+    # sail past the front door with staging markers where its prose belongs.
+    "production",
     "translations",
     "cover",
     "illustrations",
@@ -419,9 +430,10 @@ class Workflow:
         assignment = take(0, snapshot.assignment_checkpoint)
         coverage = take(1, lambda: snapshot.coverage_checkpoint(assignment))
         evidence = take(2, lambda: snapshot.evidence_checkpoint(coverage))
-        translations = take(3, lambda: snapshot.translations_checkpoint(evidence))
-        cover = take(4, lambda: snapshot.cover_checkpoint(translations))
-        take(5, lambda: snapshot.illustrations_checkpoint(cover))
+        production = take(3, lambda: snapshot.production_checkpoint(evidence))
+        translations = take(4, lambda: snapshot.translations_checkpoint(production))
+        cover = take(5, lambda: snapshot.cover_checkpoint(translations))
+        take(6, lambda: snapshot.illustrations_checkpoint(cover))
 
         def fit_checkpoint() -> Checkpoint:
             if _all_complete(checkpoints):
@@ -443,7 +455,7 @@ class Workflow:
                 )
             return _waiting_checkpoint("fit", checkpoints)
 
-        take(6, fit_checkpoint)
+        take(7, fit_checkpoint)
 
         def validation_checkpoint() -> Checkpoint:
             if _all_complete(checkpoints):
@@ -464,14 +476,14 @@ class Workflow:
                 )
             return _waiting_checkpoint("validation", checkpoints)
 
-        validation = take(7, validation_checkpoint)
+        validation = take(8, validation_checkpoint)
 
-        build = take(8, lambda: snapshot.build_checkpoint(validation))
-        evidence_review = take(9, lambda: snapshot.evidence_review_checkpoint(build))
-        take(10, lambda: snapshot.line_review_checkpoint(build))
-        take(11, lambda: snapshot.edition_review_checkpoint(build))
-        take(12, lambda: snapshot.learning_review_checkpoint(build))
-        take(13, lambda: snapshot.render_review_checkpoint(build, evidence_review))
+        build = take(9, lambda: snapshot.build_checkpoint(validation))
+        evidence_review = take(10, lambda: snapshot.evidence_review_checkpoint(build))
+        take(11, lambda: snapshot.line_review_checkpoint(build))
+        take(12, lambda: snapshot.edition_review_checkpoint(build))
+        take(13, lambda: snapshot.learning_review_checkpoint(build))
+        take(14, lambda: snapshot.render_review_checkpoint(build, evidence_review))
 
         release_ready = (
             snapshot.lifecycle == "collecting"
@@ -482,7 +494,7 @@ class Workflow:
             )
         )
         take(
-            14,
+            15,
             lambda: snapshot.release_checkpoint(
                 checkpoints,
                 release_ready=release_ready,
@@ -1098,7 +1110,154 @@ class _Snapshot:
             details,
         )
 
-    def translations_checkpoint(self, evidence: Checkpoint) -> Checkpoint:
+    def production_checkpoint(self, evidence: Checkpoint) -> Checkpoint:
+        """Whether every piece has been drafted and judged, and what is next.
+
+        Three states can block here, and they want three different next
+        actions.  A piece still carrying its staging marker has never been
+        drafted: run produce.  A piece the pipeline gave up on after its round
+        budget wants a human, not another round.  A ready set outstanding under
+        the agent backend wants whoever is driving the fleet to answer the
+        briefs and advance -- and naming that here is the whole reason this
+        checkpoint exists, because a driver that has to remember the loop is a
+        driver that will improvise one instead.
+
+        Editions authored before ``mag produce`` existed carry no production
+        records and no staging markers, and this reports them complete.  The
+        checkpoint asks whether the prose is there and settled, not whether this
+        particular machine wrote it.
+        """
+
+        pieces: dict[str, dict[str, Any]] = {}
+        undrafted: list[str] = []
+        escalated: list[str] = []
+        for piece_id, manuscript in self._manuscript_paths().items():
+            record = load_piece_record(self.paths["editions"], self.edition_id, piece_id)
+            status = str((record or {}).get("status") or "none")
+            staged = _is_staging_marker(manuscript)
+            pieces[piece_id] = {
+                "manuscript": _relative(self.root, manuscript),
+                "manuscript_present": manuscript.is_file(),
+                "staging_marker": staged,
+                "production_status": status,
+                "rounds": len((record or {}).get("rounds") or ()),
+            }
+            if staged or not manuscript.is_file():
+                undrafted.append(piece_id)
+            elif status == "escalated":
+                escalated.append(piece_id)
+        ready = self._agent_ready()
+        details: dict[str, Any] = {
+            "pieces": pieces,
+            "undrafted_pieces": sorted(undrafted),
+            "escalated_pieces": sorted(escalated),
+            "agent_ready": ready,
+        }
+        produce = f"uv run --locked mag produce {self.edition_id}"
+        if evidence.status != "complete":
+            return _waiting_checkpoint("production", (evidence,), details=details)
+        if ready:
+            return _blocked(
+                "production",
+                f"{len(ready)} agent brief(s) are waiting to be answered.",
+                details,
+                "authorial",
+                (
+                    "Answer each emitted brief by writing its reply.md, then "
+                    "advance the pipeline; it will report the next ready set. "
+                    "Do not hand-orchestrate writers around it."
+                ),
+                f"{produce} --backend agent",
+            )
+        if escalated:
+            return _blocked(
+                "production",
+                f"{len(escalated)} piece(s) exhausted their revision rounds.",
+                details,
+                "human-review",
+                (
+                    "Read the accumulated findings in each piece's production "
+                    "record and repair the piece by hand; a fourth round spends "
+                    "a call to learn nothing."
+                ),
+            )
+        if undrafted:
+            return _blocked(
+                "production",
+                f"{len(undrafted)} piece(s) have no manuscript yet.",
+                details,
+                "authorial",
+                (
+                    "Draft and judge the edition through the pipeline, which owns "
+                    "the order, the gates and the judges. Add `--backend agent` to "
+                    "drive it with a subagent fleet or by hand."
+                ),
+                produce,
+            )
+        return _complete(
+            "production",
+            f"{len(pieces)} piece(s) are drafted and none are escalated.",
+            details,
+        )
+
+    def _manuscript_paths(self) -> dict[str, Path]:
+        """Every piece the edition declares, read from the raw manifest.
+
+        Raw, like the evidence checkpoint's pins, so a manifest that will not
+        load for an unrelated reason still reports which pieces are undrafted
+        rather than collapsing into one opaque error.
+        """
+
+        paths: dict[str, Path] = {}
+        for index, row in enumerate(self.article_rows, start=1):
+            declared = str(row.get("manuscript") or "").strip()
+            if not declared:
+                continue
+            paths[str(row.get("id") or f"article-{index}")] = self._declared_file(
+                declared
+            )
+        editorial = str((self.manifest or {}).get("editorial") or "").strip()
+        if editorial:
+            paths[EDITORIAL_ARTICLE_ID] = self._declared_file(editorial)
+        return paths
+
+    def _declared_file(self, declared: str) -> Path:
+        """Resolve a manifest path the way the manifest loader does.
+
+        A path beginning ``editions/`` is project-relative; anything else is
+        relative to this edition's own directory, which is how a manuscript can
+        legitimately live outside ``editions/``.
+        """
+
+        path = Path(declared)
+        if path.parts and path.parts[0] == "editions":
+            return self.root / path
+        return self.edition_dir / path
+
+    def _agent_ready(self) -> list[str]:
+        """Work items the cooperative backend has emitted and not yet ingested."""
+
+        path = (
+            self.edition_dir
+            / PRODUCTION_DIRNAME
+            / AGENT_DIRNAME
+            / "ready.yaml"
+        )
+        if not path.is_file():
+            return []
+        try:
+            data = load_structured(path)
+        except Exception:
+            return []
+        if not isinstance(data, Mapping):
+            return []
+        return [
+            str(row.get("item"))
+            for row in data.get("ready") or ()
+            if isinstance(row, Mapping) and row.get("item")
+        ]
+
+    def translations_checkpoint(self, production: Checkpoint) -> Checkpoint:
         per_language: dict[str, Any] = {}
         clerical: list[str] = []
         authorial: list[str] = []
@@ -1187,8 +1346,8 @@ class _Snapshot:
             "clerical_languages": sorted(set(clerical)),
             "authorial_languages": sorted(set(authorial)),
         }
-        if evidence.status != "complete":
-            return _waiting_checkpoint("translations", (evidence,), details=details)
+        if production.status != "complete":
+            return _waiting_checkpoint("translations", (production,), details=details)
         if clerical:
             return _blocked(
                 "translations",
@@ -1982,6 +2141,25 @@ def _blocked(
         details,
         NextAction(classification, instruction, command, action),
     )
+
+
+def _is_staging_marker(manuscript: Path) -> bool:
+    """Whether this file is still the slot ``mag article stage`` created.
+
+    The staged skeleton declares ``stage_status: todo`` in its frontmatter and
+    says in a comment that no source prose was generated.  Reading that, rather
+    than guessing from length, is what lets the production checkpoint tell an
+    undrafted piece from a short one -- and lets it stay silent about the
+    editions that were written before this pipeline existed.
+    """
+
+    if not manuscript.is_file():
+        return False
+    try:
+        head = manuscript.read_text(encoding="utf-8")[:600]
+    except OSError:
+        return False
+    return "stage_status: todo" in head
 
 
 def _all_complete(checkpoints: tuple[Checkpoint, ...] | list[Checkpoint]) -> bool:

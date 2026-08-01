@@ -1,0 +1,605 @@
+"""The cooperative text backend: the pipeline emits briefs and ingests answers.
+
+``codex exec`` and ``claude -p`` are both *callable*: produce hands them a
+prompt and blocks until an answer comes back.  Two of the three ways this
+magazine actually gets written are not callable at all.  A Claude Code agent
+driving an edition has a subagent fleet, and no Python process can spawn one.  A
+human has a text editor.  Neither can be shelled out to, so under the autonomous
+model neither could be driven by the pipeline -- and when the autonomous backend
+hit a bug, the driving agent went around the pipeline and hand-fired writer
+subagents itself, which is exactly the ad-hoc orchestration ``mag produce``
+exists to abolish.
+
+So the call is inverted.  Under ``--backend agent`` a "model call" writes the
+composed brief to disk and reports it; a later invocation finds the answer
+beside it and carries on.  Everything above that seam is unchanged, and that is
+the entire point: the pipeline still owns the drafting order, the deterministic
+gates, which judge runs when, the round count, escalation at three rounds, the
+provenance records and the recorded verdicts.  The worker supplies text.
+
+**The whole ready set, not the next item.**  Emitting one brief at a time would
+serialise a fleet, so :meth:`AgentSession.advance` composes every brief that is
+unblocked *right now* and reports them together: several writers at once while
+their pieces are independent, and a piece's fact-checker and line editor
+together the moment its draft clears the gates.  The pipeline reaches that set
+by running normally and treating an unanswered call as a park rather than a
+failure (:class:`~magazine.produce.WorkParked`), so the set is derived from the
+real state machine and can never drift from it.
+
+**Everything is derived; nothing is remembered.**  There is no session cursor.
+Each invocation replays the pipeline from the answers on disk, which is what
+makes the loop crash-proof and idempotent: a driver that dies mid-fleet and
+re-emits gets the same set back, not a second copy of it.  It is also what makes
+staleness free.  A brief is identified by the SHA-256 of its own composed text,
+so a reply written against a manuscript, a finding or a set of notes that the
+pipeline has since recomposed no longer matches the brief it answers, and is set
+aside rather than applied.
+
+The layout under ``editions/<edition-id>/production/agent/``::
+
+    ready.yaml                       the current ready set, at a glance
+    <piece-id>/r<n>-<role>/
+        brief.md                     the complete composed prompt
+        item.yaml                    what it is, and the digest it answers
+        reply.md                     written by the worker
+    issue/<role>/                    the two whole-issue judgments
+
+One property this rests on and does not enforce: the deterministic gates must be
+a function of the tree, not of how many times they have been called.  The real
+ones (:class:`~magazine.produce.DefaultProductionGates`) are, since they are
+``validate`` and ``fit`` over the files on disk.  A gates adapter with a memory
+would answer differently on each replay and make the ready set wander.
+
+``reply.md`` is the whole protocol.  A driver may write it with a subagent, an
+editor, or ``cat >``; ``mag produce --submit`` is the same write with the
+contract checked first.  Nothing here is provenance -- that stays in the piece
+records beside it -- so an item directory may be deleted at any time, and
+deleting a piece's directory is how an escalated piece is offered a fresh start.
+"""
+
+from __future__ import annotations
+
+import re
+import threading
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, replace
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+from .errors import MagazineError
+from .io import load_structured
+from .produce import (
+    MAX_ROUNDS,
+    Production,
+    ProductionGates,
+    ProduceResult,
+    ReadyItem,
+    WorkItem,
+    WorkParked,
+)
+from .produce_prompts import (
+    ProduceError,
+    PromptFile,
+    contains_scratch,
+    parse_verdict,
+    split_scratch,
+)
+from .production_record import AGENT_DIRNAME, production_dir, text_sha256
+from .render_review import REVIEW_RESULTS, write_render_review
+from .review_findings import normalize_findings
+from .runner import AGENT_BACKEND, GenerationResult
+
+if TYPE_CHECKING:  # pragma: no cover - import cycle avoidance only
+    from .compiler import Magazine
+
+
+AGENT_SCHEMA_VERSION = 1
+
+READY_FILENAME = "ready.yaml"
+BRIEF_FILENAME = "brief.md"
+ITEM_FILENAME = "item.yaml"
+REPLY_FILENAME = "reply.md"
+
+# What each role's reply has to be for the pipeline to accept it.  These are the
+# two contracts the autonomous path already enforces, named here so a brief can
+# state its own on the way out and an ingest can check it on the way in.
+MANUSCRIPT = "manuscript"
+VERDICT = "verdict"
+TAKEAWAYS = "manager_takeaways"
+
+WORK_CONTRACTS: Mapping[str, str] = {
+    "writer": MANUSCRIPT,
+    "evidence": VERDICT,
+    "line": VERDICT,
+    "learning": VERDICT,
+    "edition": VERDICT,
+    "manager_run_a": TAKEAWAYS,
+}
+
+# Report order for a ready set.  The pipeline composes the two piece judges on
+# two threads, so their insertion order is scheduling; this is not.
+_ROLE_RANK = {
+    "writer": 0,
+    "evidence": 1,
+    "line": 2,
+    "manager_run_a": 3,
+    "learning": 4,
+    "edition": 5,
+}
+
+_ITEM_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*$")
+
+
+# ---------------------------------------------------------------------------
+# Where a work item lives.
+
+
+def agent_dir(editions_dir: Path, edition_id: str) -> Path:
+    return production_dir(editions_dir, edition_id) / AGENT_DIRNAME
+
+
+def item_dir(editions_dir: Path, edition_id: str, item_key: str) -> Path:
+    """The directory that holds one work item's brief and its reply.
+
+    The key *is* the path, so a driver that has been told ``article/r2-line``
+    can find the brief without consulting an index, and a human who is looking
+    at a directory knows what to type.
+    """
+
+    if not _ITEM_KEY.match(item_key):
+        raise ProduceError(
+            f"{item_key!r} is not a work item name; they are spelled "
+            "`<piece-id>/r<round>-<role>`, as in `article/r1-writer`, or "
+            "`issue/<role>` for a whole-issue judgment"
+        )
+    piece, _, leaf = item_key.partition("/")
+    return agent_dir(editions_dir, edition_id) / piece / leaf
+
+
+def ready_path(editions_dir: Path, edition_id: str) -> Path:
+    return agent_dir(editions_dir, edition_id) / READY_FILENAME
+
+
+# ---------------------------------------------------------------------------
+# Reading a reply.
+
+
+def validate_reply(returns: str, text: str, *, item_key: str) -> None:
+    """Refuse a reply that the pipeline could not have used.
+
+    Deliberately the same two checks the autonomous path makes on a model's
+    answer, in the same words, because the point of the agent backend is that
+    the work is identical and only the courier changed.  Checking here as well
+    means a worker learns its reply is unusable while it still has the context
+    to fix it, rather than three items later.
+    """
+
+    if not text.strip():
+        raise ProduceError(f"The reply for {item_key} is empty")
+    if returns == MANUSCRIPT:
+        manuscript, _ = split_scratch(text)
+        if not manuscript.strip():
+            raise ProduceError(
+                f"The reply for {item_key} carries no manuscript: its whole text "
+                "sat below the scratch marker"
+            )
+        if contains_scratch(manuscript):
+            raise ProduceError(
+                f"The reply for {item_key} carries more than one scratch marker; "
+                "the manuscript boundary is ambiguous"
+            )
+        return
+    document = parse_verdict(text, label=f"reply for {item_key}")
+    if returns == TAKEAWAYS:
+        takeaways = document.get("manager_takeaways")
+        if not isinstance(takeaways, Sequence) or isinstance(takeaways, (str, bytes)):
+            raise ProduceError(
+                f"The reply for {item_key} must carry a `manager_takeaways` list; "
+                "run A writes the takeaways and nothing else"
+            )
+        return
+    result = str(document.get("result") or "").strip()
+    if result not in REVIEW_RESULTS:
+        raise ProduceError(
+            f"The reply for {item_key} returned result {result!r}; the prompt "
+            "allows " + " or ".join(sorted(REVIEW_RESULTS))
+        )
+    try:
+        normalize_findings(document.get("findings") or (), label=f"reply for {item_key}")
+    except MagazineError as error:
+        raise ProduceError(str(error)) from error
+
+
+@dataclass(frozen=True)
+class StoredReply:
+    """One answer sitting on disk, and the brief digest it was written against.
+
+    The contract it has to satisfy is not stored beside it: that comes from the
+    item's role, which the pipeline knows and a stale ``item.yaml`` might not.
+    """
+
+    text: str
+    brief_sha256: str
+
+
+def load_replies(editions_dir: Path, edition_id: str) -> dict[str, StoredReply]:
+    """Every answer a worker has left, keyed by work item.
+
+    An item directory with no ``reply.md`` is simply outstanding.  One whose
+    ``item.yaml`` will not parse is skipped rather than raised on: this is a
+    work queue, and a corrupted queue entry must cost a re-emit, never the run.
+    """
+
+    root = agent_dir(editions_dir, edition_id)
+    if not root.is_dir():
+        return {}
+    replies: dict[str, StoredReply] = {}
+    for descriptor in sorted(root.glob(f"*/*/{ITEM_FILENAME}")):
+        reply = descriptor.parent / REPLY_FILENAME
+        if not reply.is_file():
+            continue
+        try:
+            data = load_structured(descriptor)
+        except Exception:
+            continue
+        if not isinstance(data, Mapping):
+            continue
+        key = str(data.get("item") or "")
+        digest = str(data.get("brief_sha256") or "")
+        if not key or not digest:
+            continue
+        replies[key] = StoredReply(
+            text=reply.read_text(encoding="utf-8"), brief_sha256=digest
+        )
+    return replies
+
+
+# ---------------------------------------------------------------------------
+# The runner that answers from disk, or parks.
+
+
+class CooperativeRunner:
+    """A text runner that never runs anything.
+
+    It satisfies the small surface :class:`~magazine.produce.Production` asks of
+    a runner -- ``kind``, ``backend``, and a way to make one call -- and answers
+    that call from the replies already on disk.  When there is no usable answer
+    it records the brief and raises :class:`~magazine.produce.WorkParked`, which
+    the pipeline reads as "this unit is waiting" rather than "this run failed".
+    """
+
+    kind = "text"
+    backend = AGENT_BACKEND
+
+    def __init__(self, edition_id: str, replies: Mapping[str, StoredReply]) -> None:
+        self.edition_id = edition_id
+        self.replies = dict(replies)
+        self.pending: dict[str, ReadyItem] = {}
+        self.rejected: dict[str, str] = {}
+        # The two piece judges are composed on two threads, so every mutation
+        # below is shared state.  Both briefs must survive; only one signal
+        # escapes ``ordered_map``, and losing the sibling's brief would halve
+        # every ready set.
+        self._lock = threading.Lock()
+
+    def request(
+        self, item: WorkItem, prompt: PromptFile, text: str, *, cwd: Path | None = None
+    ) -> GenerationResult:
+        digest = text_sha256(text)
+        returns = WORK_CONTRACTS.get(item.role, VERDICT)
+        with self._lock:
+            stored = self.replies.get(item.key)
+            rejection = self._rejection(item, stored, digest)
+            if stored is not None and rejection is None:
+                return _answered(self.edition_id, item, stored.text, digest)
+            if rejection is not None:
+                self.rejected[item.key] = rejection
+            self.pending[item.key] = ReadyItem(
+                item=item,
+                prompt=text,
+                brief_sha256=digest,
+                prompt_path=prompt.path,
+                prompt_sha256=prompt.sha256,
+                returns=returns,
+            )
+        raise WorkParked(item)
+
+    def _rejection(
+        self, item: WorkItem, stored: StoredReply | None, digest: str
+    ) -> str | None:
+        """Why this answer cannot be applied, or ``None`` when it can."""
+
+        if stored is None:
+            return None
+        if stored.brief_sha256 != digest:
+            return (
+                "the brief it answers has been recomposed since (its inputs "
+                "moved), so the reply is void; a fresh brief has been written"
+            )
+        try:
+            validate_reply(
+                WORK_CONTRACTS.get(item.role, VERDICT), stored.text, item_key=item.key
+            )
+        except ProduceError as error:
+            return str(error)
+        return None
+
+
+def _answered(
+    edition_id: str, item: WorkItem, text: str, digest: str
+) -> GenerationResult:
+    """Dress a worker's reply as the generation result the records expect.
+
+    ``argv`` is the honest answer to "how was this produced": the command a
+    driver ran, naming the item and the exact brief the text answers.  The
+    duration is zero because the pipeline spent none; how long the worker took
+    is not a fact this process has.
+    """
+
+    return GenerationResult(
+        text=text,
+        backend=AGENT_BACKEND,
+        argv=(
+            "mag",
+            "produce",
+            edition_id,
+            "--backend",
+            AGENT_BACKEND,
+            "--submit",
+            item.key,
+            "--brief-sha256",
+            digest,
+        ),
+        stderr="",
+        duration_seconds=0.0,
+    )
+
+
+# ---------------------------------------------------------------------------
+# The driver's surface.
+
+
+class AgentSession:
+    """Emit the ready briefs, ingest the finished ones, report where we are.
+
+    One object, two verbs, and no state of its own: both verbs replay the
+    pipeline over whatever is on disk.  :meth:`advance` is the loop
+    (``emit -> work -> emit``); :meth:`submit` is the same thing with one reply
+    written first and its contract checked eagerly, so a worker that answered
+    the wrong shape is told immediately instead of discovering it later.
+    """
+
+    def __init__(
+        self,
+        magazine: "Magazine",
+        *,
+        model: str | None = None,
+        gates: ProductionGates | None = None,
+        max_rounds: int = MAX_ROUNDS,
+        reviewer: str | None = None,
+    ) -> None:
+        self.magazine = magazine
+        self.model = model
+        self.gates = gates
+        self.max_rounds = max_rounds
+        self.reviewer = reviewer
+
+    # -- the loop ---------------------------------------------------------
+
+    def advance(
+        self,
+        edition_id: str,
+        *,
+        articles: Sequence[str] | None = None,
+        dry_run: bool = False,
+    ) -> ProduceResult:
+        """Apply every finished reply, then report every brief now ready."""
+
+        result, _ = self._advance(edition_id, articles=articles, dry_run=dry_run)
+        return result
+
+    def submit(
+        self,
+        edition_id: str,
+        item_key: str,
+        text: str,
+        *,
+        articles: Sequence[str] | None = None,
+    ) -> ProduceResult:
+        """Take one worker's finished text and advance the pipeline on it."""
+
+        directory = item_dir(self.magazine.editions_dir, edition_id, item_key)
+        descriptor = directory / ITEM_FILENAME
+        if not descriptor.is_file():
+            raise ProduceError(
+                f"{edition_id} has no work item named {item_key!r}. Run "
+                f"`mag produce {edition_id} --backend agent` to see the briefs "
+                "that are ready; only an emitted item can be answered."
+            )
+        data = load_structured(descriptor)
+        returns = str((data or {}).get("returns") or VERDICT)
+        validate_reply(returns, text, item_key=item_key)
+        _write_text(directory / REPLY_FILENAME, text)
+
+        result, rejected = self._advance(edition_id, articles=articles)
+        reason = rejected.get(item_key)
+        if reason is not None:
+            raise ProduceError(f"The reply for {item_key} was not applied: {reason}")
+        return result
+
+    # -- one replay -------------------------------------------------------
+
+    def _advance(
+        self,
+        edition_id: str,
+        *,
+        articles: Sequence[str] | None = None,
+        dry_run: bool = False,
+    ) -> tuple[ProduceResult, dict[str, str]]:
+        editions_dir = self.magazine.editions_dir
+        replies = load_replies(editions_dir, edition_id)
+        runner = CooperativeRunner(edition_id, replies)
+        production = Production(
+            self.magazine,
+            runner=runner,
+            model=self.model,
+            gates=self.gates,
+            max_rounds=self.max_rounds,
+            reviewer=self.reviewer,
+        )
+        try:
+            result = production.run(edition_id, articles=articles, dry_run=dry_run)
+        except ProduceError as error:
+            # A reply whose shape was fine but whose *content* the pipeline
+            # refuses -- a run B that improved run A's claims is the standing
+            # example -- would otherwise wedge every later invocation with the
+            # same message and no way out named.  The refusal stands; the way
+            # out goes with it.  Only when there are stored answers to blame:
+            # a missing prompt file or an unextracted source raises the same
+            # type and has nothing to do with the queue.
+            if not replies:
+                raise
+            raise ProduceError(
+                f"{error} A stored answer produced this, and replaying the same "
+                "answers will produce it again: rewrite the reply the message "
+                "names, or delete its directory under "
+                f"{_relative(self.magazine.root, agent_dir(editions_dir, edition_id))} "
+                "to have the brief reissued."
+            ) from error
+        if dry_run:
+            return result, {}
+        ready = self._materialise(edition_id, runner)
+        actions = list(result.human_actions)
+        actions.extend(
+            f"the reply for {key} was not applied: {reason}"
+            for key, reason in sorted(runner.rejected.items())
+        )
+        actions.extend(self._escalation_actions(edition_id, result))
+        result = replace(
+            result, ready=ready, human_actions=tuple(actions)
+        )
+        _write_ready(editions_dir, edition_id, result, root=self.magazine.root)
+        return result, dict(runner.rejected)
+
+    def _materialise(
+        self, edition_id: str, runner: CooperativeRunner
+    ) -> tuple[ReadyItem, ...]:
+        """Write every ready brief to disk, and set aside every void reply.
+
+        A reply that cannot be applied is renamed rather than deleted.  It is
+        somebody's work, it is often most of the answer the fresh brief wants,
+        and a pipeline that silently destroyed it would be a pipeline nobody
+        left a fleet running against.
+        """
+
+        editions_dir = self.magazine.editions_dir
+        root = self.magazine.root
+        ready: list[ReadyItem] = []
+        for key in sorted(runner.pending, key=lambda name: _rank(runner.pending[name])):
+            item = runner.pending[key]
+            directory = item_dir(editions_dir, edition_id, key)
+            directory.mkdir(parents=True, exist_ok=True)
+            if key in runner.rejected:
+                superseded = directory / REPLY_FILENAME
+                if superseded.is_file():
+                    superseded.replace(directory / "reply.superseded.md")
+            brief = directory / BRIEF_FILENAME
+            reply = directory / REPLY_FILENAME
+            item = replace(
+                item,
+                brief_path=_relative(root, brief),
+                reply_path=_relative(root, reply),
+            )
+            _write_text(brief, item.prompt)
+            write_render_review(directory / ITEM_FILENAME, _descriptor(edition_id, item))
+            ready.append(item)
+        return tuple(ready)
+
+    def _escalation_actions(
+        self, edition_id: str, result: ProduceResult
+    ) -> list[str]:
+        """Tell a driver how an escalated piece is offered a fresh start.
+
+        Under an autonomous backend a re-run asks the model again and gets a
+        different answer.  A replay of stored replies is deterministic and would
+        re-escalate for ever, so the way out has to be named: discard the piece's
+        answers and the pipeline drafts it from round one again.
+        """
+
+        actions: list[str] = []
+        for piece_id in result.escalated:
+            directory = agent_dir(self.magazine.editions_dir, edition_id) / piece_id
+            actions.append(
+                f"{piece_id} escalated on stored answers, and a replay of the same "
+                f"answers escalates again. Fix the manuscript by hand, or delete "
+                f"{_relative(self.magazine.root, directory)} to redraft the piece "
+                "from round one."
+            )
+        return actions
+
+
+def _rank(item: ReadyItem) -> tuple[str, int, int, str]:
+    return (
+        item.item.piece_id,
+        item.item.round_number,
+        _ROLE_RANK.get(item.item.role, 99),
+        item.item.role,
+    )
+
+
+def _descriptor(edition_id: str, item: ReadyItem) -> dict[str, Any]:
+    return {
+        "schema_version": AGENT_SCHEMA_VERSION,
+        "edition_id": edition_id,
+        **item.to_dict(),
+    }
+
+
+def _write_ready(
+    editions_dir: Path, edition_id: str, result: ProduceResult, *, root: Path
+) -> Path:
+    """One file that answers "where is this edition" without running anything.
+
+    Deliberately carries no timestamp, and every path in it is project-relative.
+    Re-emitting an unchanged ready set must leave the tree byte-identical -- so
+    that a driver which crashed and restarted cannot tell, and neither can a
+    diff, that it ran twice.
+    """
+
+    state = "complete"
+    if result.escalated:
+        state = "escalated"
+    elif result.ready:
+        state = "awaiting_work"
+    return write_render_review(
+        ready_path(editions_dir, edition_id),
+        {
+            "schema_version": AGENT_SCHEMA_VERSION,
+            "edition_id": edition_id,
+            "backend": AGENT_BACKEND,
+            "state": state,
+            "ready": [item.to_dict() for item in result.ready],
+            "pieces": [
+                {**outcome.to_dict(), "record": _relative(root, Path(outcome.record))}
+                for outcome in result.outcomes
+            ],
+            "recorded": {
+                kind: _relative(root, Path(path))
+                for kind, path in result.recorded.items()
+            },
+            "human_actions": list(result.human_actions),
+        },
+    )
+
+
+def _write_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    body = text if text.endswith("\n") else text + "\n"
+    path.write_text(body, encoding="utf-8")
+
+
+def _relative(root: Path, path: Path) -> str:
+    try:
+        return path.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return path.as_posix()
