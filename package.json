@@ -17,6 +17,7 @@
     "verify:engine": "npm run typecheck && npm run test:engine && npm run build:viewer"
   },
   "dependencies": {
+    "@resvg/resvg-js": "2.6.2",
     "@xyflow/react": "12.11.2",
     "better-sqlite3": "13.0.1",
     "elkjs": "0.12.0",

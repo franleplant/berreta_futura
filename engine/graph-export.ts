@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { deflateSync } from "node:zlib";
 
+import { Resvg } from "@resvg/resvg-js";
 import ELK from "elkjs/lib/elk.bundled.js";
 
 import {
@@ -17,8 +17,32 @@ import {
   translationMachine,
 } from "./machines/index.ts";
 
+type ElkPoint = { readonly x: number; readonly y: number };
 type ElkNode = { readonly id: string; readonly x?: number; readonly y?: number };
-type ElkResult = { readonly children?: readonly ElkNode[]; readonly width?: number; readonly height?: number };
+type ElkLabel = {
+  readonly id?: string;
+  readonly text?: string;
+  readonly x?: number;
+  readonly y?: number;
+  readonly width?: number;
+  readonly height?: number;
+};
+type ElkEdgeSection = {
+  readonly startPoint: ElkPoint;
+  readonly endPoint: ElkPoint;
+  readonly bendPoints?: readonly ElkPoint[];
+};
+type ElkEdge = {
+  readonly id: string;
+  readonly labels?: readonly ElkLabel[];
+  readonly sections?: readonly ElkEdgeSection[];
+};
+type ElkResult = {
+  readonly children?: readonly ElkNode[];
+  readonly edges?: readonly ElkEdge[];
+  readonly width?: number;
+  readonly height?: number;
+};
 type ElkConstructor = new () => { layout(graph: unknown): Promise<ElkResult> };
 type MachineConfig = {
   readonly id?: string;
@@ -34,6 +58,13 @@ type Transition = string | { readonly target?: string };
 type GraphNode = { readonly id: string; readonly label: string; readonly machine: string; readonly final: boolean };
 type GraphEdge = { readonly source: string; readonly target: string; readonly label: string };
 type PositionedNode = GraphNode & { readonly x: number; readonly y: number };
+type PositionedEdge = GraphEdge & {
+  readonly labelBox: { readonly x: number; readonly y: number; readonly width: number; readonly height: number };
+  readonly sections: readonly (readonly ElkPoint[])[];
+};
+
+const machinePadding = { x: 30, y: 28 } as const;
+const eventLabelHeight = 18;
 
 const elk = new (ELK as unknown as ElkConstructor)();
 
@@ -70,12 +101,16 @@ export async function exportMachineTopology(): Promise<MachineTopologyExport> {
   const width = Math.max(...projections.map((projection) => projection.width), 920);
   let cursor = 70;
   const nodes: PositionedNode[] = [];
-  const edges: GraphEdge[] = [];
+  const edges: PositionedEdge[] = [];
   const groups: Array<{ readonly name: string; readonly y: number; readonly height: number }> = [];
   for (const projection of projections) {
     groups.push({ name: projection.name, y: cursor, height: projection.height });
     nodes.push(...projection.nodes.map((node) => ({ ...node, y: node.y + cursor })));
-    edges.push(...projection.edges);
+    edges.push(...projection.edges.map((edge) => ({
+      ...edge,
+      labelBox: { ...edge.labelBox, y: edge.labelBox.y + cursor },
+      sections: edge.sections.map((section) => section.map((point) => ({ ...point, y: point.y + cursor }))),
+    })));
     cursor += projection.height + 86;
   }
   const height = cursor;
@@ -90,7 +125,7 @@ export async function exportMachineTopology(): Promise<MachineTopologyExport> {
     })),
   }, null, 2) + "\n";
   const html = renderHtml(svg, json);
-  return { html, svg, png: rasterOverview(width, height, groups, nodes), json };
+  return { html, svg, png: rasterizeSvg(svg, width), json };
 }
 
 export async function writeMachineTopology(destination: string): Promise<MachineTopologyExport> {
@@ -111,7 +146,7 @@ async function layoutMachine(name: string, config: MachineConfig): Promise<{
   readonly width: number;
   readonly height: number;
   readonly nodes: readonly PositionedNode[];
-  readonly edges: readonly GraphEdge[];
+  readonly edges: readonly PositionedEdge[];
 }> {
   const states = config.states ?? {};
   const nodes = Object.entries(states).map(([state, definition]) => ({
@@ -126,22 +161,66 @@ async function layoutMachine(name: string, config: MachineConfig): Promise<{
     layoutOptions: {
       "elk.algorithm": "layered",
       "elk.direction": "RIGHT",
-      "elk.layered.spacing.nodeNodeBetweenLayers": "72",
-      "elk.spacing.nodeNode": "28",
+      "elk.edgeRouting": "ORTHOGONAL",
+      "elk.edgeLabels.inline": "false",
+      "elk.layered.edgeLabels.sideSelection": "SMART_UP",
+      "elk.layered.edgeLabels.centerLabelPlacementStrategy": "SPACE_EFFICIENT_LAYER",
+      "elk.layered.spacing.nodeNodeBetweenLayers": "140",
+      "elk.layered.spacing.edgeEdgeBetweenLayers": "18",
+      "elk.layered.spacing.edgeNodeBetweenLayers": "24",
+      "elk.spacing.nodeNode": "58",
+      "elk.spacing.edgeEdge": "14",
+      "elk.spacing.edgeNode": "20",
+      "elk.spacing.edgeLabel": "10",
+      "elk.spacing.labelLabel": "14",
     },
     children: nodes.map((node) => ({ id: node.id, width: Math.max(128, node.label.length * 8 + 36), height: 44 })),
-    edges: edges.map((edge, index) => ({ id: `${name}:edge:${index}`, sources: [edge.source], targets: [edge.target] })),
+    edges: edges.map((edge, index) => ({
+      id: `${name}:edge:${index}`,
+      sources: [edge.source],
+      targets: [edge.target],
+      labels: [{
+        id: `${name}:edge:${index}:label`,
+        text: edge.label,
+        width: eventWidth(edge.label),
+        height: eventLabelHeight,
+        layoutOptions: { "elk.edgeLabels.placement": "CENTER" },
+      }],
+    })),
   });
   const positions = new Map((result.children ?? []).map((node) => [node.id, node]));
+  const routedEdges = new Map((result.edges ?? []).map((edge) => [edge.id, edge]));
   return {
     name,
-    width: result.width ?? 0,
-    height: Math.max(result.height ?? 0, 64),
+    width: (result.width ?? 0) + machinePadding.x * 2,
+    height: Math.max((result.height ?? 0) + machinePadding.y * 2, 64),
     nodes: nodes.map((node) => {
       const position = positions.get(node.id);
-      return { ...node, x: (position?.x ?? 0) + 30, y: (position?.y ?? 0) + 28 };
+      return { ...node, x: (position?.x ?? 0) + machinePadding.x, y: (position?.y ?? 0) + machinePadding.y };
     }),
-    edges,
+    edges: edges.map((edge, index) => positionEdge(name, index, edge, routedEdges.get(`${name}:edge:${index}`))),
+  };
+}
+
+function positionEdge(name: string, index: number, edge: GraphEdge, routed: ElkEdge | undefined): PositionedEdge {
+  const label = routed?.labels?.[0];
+  if (label?.x === undefined || label.y === undefined || label.width === undefined || label.height === undefined) {
+    throw new Error(`ELK did not position the label for ${name} transition ${index} (${edge.label})`);
+  }
+  const sections = routed?.sections;
+  if (sections === undefined || sections.length === 0) {
+    throw new Error(`ELK did not route ${name} transition ${index} (${edge.label})`);
+  }
+  return {
+    ...edge,
+    labelBox: {
+      x: label.x + machinePadding.x,
+      y: label.y + machinePadding.y,
+      width: label.width,
+      height: label.height,
+    },
+    sections: sections.map((section) => [section.startPoint, ...(section.bendPoints ?? []), section.endPoint]
+      .map((point) => ({ x: point.x + machinePadding.x, y: point.y + machinePadding.y }))),
   };
 }
 
@@ -172,70 +251,45 @@ function renderSvg(
   height: number,
   groups: readonly { readonly name: string; readonly y: number; readonly height: number }[],
   nodes: readonly PositionedNode[],
-  edges: readonly GraphEdge[],
+  edges: readonly PositionedEdge[],
 ): string {
-  const byId = new Map(nodes.map((node) => [node.id, node]));
   const groupSvg = groups.map((group) => `<g><rect class="group" x="12" y="${group.y - 26}" width="${width - 24}" height="${group.height + 50}" rx="12"/><text class="machine" x="28" y="${group.y - 6}">${escapeXml(group.name)}</text></g>`).join("");
-  const edgeSvg = edges.map((edge) => {
-    const source = byId.get(edge.source);
-    const target = byId.get(edge.target);
-    if (source === undefined || target === undefined) return "";
-    const x1 = source.x + nodeWidth(source.label);
-    const y1 = source.y + 22;
-    const x2 = target.x;
-    const y2 = target.y + 22;
-    const middle = (x1 + x2) / 2;
-    return `<path class="edge" d="M ${x1} ${y1} C ${middle} ${y1}, ${middle} ${y2}, ${x2} ${y2}" marker-end="url(#arrow)"/><text class="event" x="${middle}" y="${Math.min(y1, y2) - 5}">${escapeXml(edge.label)}</text>`;
+  const edgePathSvg = edges.flatMap((edge) => edge.sections
+    .map((section) => `<path class="edge" d="${polylinePath(section)}" marker-end="url(#arrow)"/>`)).join("");
+  const edgeLabelSvg = edges.map((edge) => {
+    const { x, y, width: labelWidth, height: labelHeight } = edge.labelBox;
+    return `<g class="transition-label" data-event="${escapeXml(edge.label)}"><rect class="event-bg" x="${x - 5}" y="${y - 3}" width="${labelWidth + 10}" height="${labelHeight + 6}" rx="4"/><text class="event" x="${x + labelWidth / 2}" y="${y + 13}">${escapeXml(edge.label)}</text></g>`;
   }).join("");
   const nodeSvg = nodes.map((node) => `<g data-machine="${escapeXml(node.machine)}" data-state="${escapeXml(node.label)}"><rect class="node ${node.final ? "final" : ""}" x="${node.x}" y="${node.y}" width="${nodeWidth(node.label)}" height="44" rx="7"/><text class="state" x="${node.x + 14}" y="${node.y + 27}">${escapeXml(node.label)}</text></g>`).join("");
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="title description">
 <title id="title">Magazine XState machine topology</title><desc id="description">Generated from the implemented XState machine configs.</desc>
-<style>text{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.group{fill:#f7f7fb;stroke:#b8bdd4;stroke-width:1.2}.machine{font-size:18px;font-weight:700;fill:#1e2450}.node{fill:#fff;stroke:#4a5aa7;stroke-width:1.4}.node.final{fill:#e7f8ed;stroke:#27854d}.state{font-size:13px;fill:#1b2040}.edge{fill:none;stroke:#6975aa;stroke-width:1.15}.event{font-size:10px;fill:#5a638d;text-anchor:middle;paint-order:stroke;stroke:#f7f7fb;stroke-width:4px;stroke-linejoin:round}</style>
-<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#6975aa"/></marker></defs>${groupSvg}${edgeSvg}${nodeSvg}</svg>`;
+<style>text{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.group{fill:#f7f7fb;stroke:#b8bdd4;stroke-width:1.2}.machine{font-size:18px;font-weight:700;fill:#1e2450}.node{fill:#fff;stroke:#4a5aa7;stroke-width:1.4}.node.final{fill:#e7f8ed;stroke:#27854d}.state{font-size:13px;fill:#1b2040}.edge{fill:none;stroke:#6975aa;stroke-width:1.15}.event-bg{fill:#eef1ff;stroke:#c9d0f0;stroke-width:1}.event{font-size:11px;font-weight:600;fill:#46517f;text-anchor:middle}</style>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#6975aa"/></marker></defs>${groupSvg}${edgePathSvg}${nodeSvg}${edgeLabelSvg}</svg>`;
 }
 
 function renderHtml(svg: string, json: string): string {
   return `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Magazine XState topology</title><style>body{margin:0;background:#eceef7;color:#171a31;font:16px system-ui,sans-serif}header{padding:1rem 1.5rem;background:#171a31;color:#fff}p{max-width:75ch}main{overflow:auto;padding:1rem}svg{display:block;background:#fff;box-shadow:0 2px 20px #0002}.toolbar{position:fixed;right:1rem;top:1rem}button{padding:.5rem .75rem}</style><header><h1>Magazine XState topology</h1><p>This diagram is generated directly from the live machine configs. Hover a state to inspect its owning machine; use the SVG for scalable review and the PNG for a portable fallback.</p></header><div class="toolbar"><button onclick="document.documentElement.requestFullscreen?.()">Fullscreen</button></div><main>${svg}</main><script type="application/json" id="machine-topology">${escapeScript(json)}</script></html>`;
 }
 
-function rasterOverview(width: number, height: number, groups: readonly { readonly y: number; readonly height: number }[], nodes: readonly PositionedNode[]): Uint8Array {
-  const scale = Math.min(1, 1800 / width, 5000 / height);
-  const pixelWidth = Math.max(1, Math.ceil(width * scale));
-  const pixelHeight = Math.max(1, Math.ceil(height * scale));
-  const bytes = new Uint8Array(pixelWidth * pixelHeight * 4);
-  for (let index = 0; index < bytes.length; index += 4) bytes.set([247, 248, 253, 255], index);
-  for (const group of groups) fill(bytes, pixelWidth, pixelHeight, 8, Math.floor((group.y - 25) * scale), pixelWidth - 16, Math.ceil((group.height + 50) * scale), [229, 232, 246, 255]);
-  for (const node of nodes) fill(bytes, pixelWidth, pixelHeight, Math.floor(node.x * scale), Math.floor(node.y * scale), Math.max(2, Math.ceil(nodeWidth(node.label) * scale)), Math.max(2, Math.ceil(44 * scale)), node.final ? [191, 235, 204, 255] : [112, 132, 205, 255]);
-  return png(pixelWidth, pixelHeight, bytes);
+function rasterizeSvg(svg: string, width: number): Uint8Array {
+  const renderer = new Resvg(svg, {
+    fitTo: { mode: "width", value: Math.ceil(width) },
+    font: {
+      defaultFontFamily: "monospace",
+      loadSystemFonts: true,
+    },
+  });
+  return renderer.render().asPng();
 }
 
-function fill(bytes: Uint8Array, width: number, height: number, x: number, y: number, boxWidth: number, boxHeight: number, color: readonly number[]): void {
-  for (let row = Math.max(0, y); row < Math.min(height, y + boxHeight); row += 1) for (let column = Math.max(0, x); column < Math.min(width, x + boxWidth); column += 1) bytes.set(color, (row * width + column) * 4);
-}
-
-function png(width: number, height: number, rgba: Uint8Array): Uint8Array {
-  const scanlines = new Uint8Array(height * (width * 4 + 1));
-  for (let row = 0; row < height; row += 1) scanlines[row * (width * 4 + 1)] = 0;
-  for (let row = 0; row < height; row += 1) scanlines.set(rgba.subarray(row * width * 4, (row + 1) * width * 4), row * (width * 4 + 1) + 1);
-  const signature = Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10]);
-  return concat([signature, pngChunk("IHDR", Uint8Array.from([width >>> 24, width >>> 16, width >>> 8, width, height >>> 24, height >>> 16, height >>> 8, height, 8, 6, 0, 0, 0])), pngChunk("IDAT", deflateSync(scanlines)), pngChunk("IEND", new Uint8Array())]);
-}
-
-function pngChunk(type: string, data: Uint8Array): Uint8Array {
-  const typeBytes = new TextEncoder().encode(type);
-  const length = data.length;
-  const chunk = new Uint8Array(length + 12);
-  chunk.set([length >>> 24, length >>> 16, length >>> 8, length], 0);
-  chunk.set(typeBytes, 4); chunk.set(data, 8);
-  const checksum = crc32(chunk.subarray(4, 8 + length));
-  chunk.set([checksum >>> 24, checksum >>> 16, checksum >>> 8, checksum], 8 + length);
-  return chunk;
-}
-
-function crc32(bytes: Uint8Array): number { let value = 0xffffffff; for (const byte of bytes) { value ^= byte; for (let bit = 0; bit < 8; bit += 1) value = (value >>> 1) ^ (value & 1 ? 0xedb88320 : 0); } return (value ^ 0xffffffff) >>> 0; }
-function concat(parts: readonly Uint8Array[]): Uint8Array { const length = parts.reduce((total, part) => total + part.length, 0); const output = new Uint8Array(length); let offset = 0; for (const part of parts) { output.set(part, offset); offset += part.length; } return output; }
 function nodeWidth(label: string): number { return Math.max(128, label.length * 8 + 36); }
+function eventWidth(label: string): number { return Math.max(46, label.length * 7 + 12); }
+function polylinePath(points: readonly ElkPoint[]): string {
+  const [first, ...rest] = points;
+  if (first === undefined) throw new Error("Cannot render an empty ELK edge section");
+  return `M ${first.x} ${first.y}${rest.map((point) => ` L ${point.x} ${point.y}`).join("")}`;
+}
 function escapeXml(value: string): string { return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;"); }
 function escapeScript(value: string): string { return value.replaceAll("</", "<\\/"); }
 
