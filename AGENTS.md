@@ -1,95 +1,154 @@
 # Magazine project guidance
 
-This repository builds private-first, source-faithful magazine editions.
+This repository builds private-first, source-faithful magazine editions. The
+TypeScript and XState execution engine is the only workflow authority.
 
-## Non-negotiable rules
+## Execution authority
 
-- Preserve provenance from the submitted lead to every underlying primary source.
-- Treat `sources.md` as generated output. Human annotations belong in source records.
-- Never replace a source article with an unlabeled or generic AI summary. New magazine-authored arguments use `original_synthesis`; length-driven condensation uses attributed, source-mapped `faithful_synthesis`.
-- Write `faithful_synthesis` in the source author's existing grammatical person and point of view. The byline and mode label provide attribution; do not add “the author argues/says/explains” narration unless those are the source's exact words. Prefer retained wording and light edits, summarizing only where the page budget requires it.
-- Source articles may occupy at most seven A5 pages in the rendered reader. If a faithful edit exceeds the cap, use the explicit `faithful_synthesis` mode and preserve the argument, evidence, qualifications, and conclusion. `prompts/faithful-synthesis.md` owns the order in which an over-budget piece loses material; the claim-level fact-checker, not a bookkeeping artifact, is what proves the result still represents its source.
-- The opening editorial must declare and visibly render a title, and may occupy at most one A5 reader page including its label, title, and byline.
-- AI proposes editorial patches; deterministic validation and human decisions advance workflow state.
-- Drafting and judging run through `uv run --locked mag produce <edition-id>`, never by hand-driving the prompts. The pipeline owns the order: one writer call per piece over the complete source extraction, then the deterministic gates, then the fact-checker and the line editor in parallel, then at most three revision rounds carrying both the findings and the previous draft's working notes, then the learning personas and the managing editor. It reuses registered art and never generates an image. `--dry-run` prints the plan without calling a model, `--articles` narrows the run, and a piece whose inputs, prompt, and manuscript are unchanged and whose judges approved is skipped. Every call leaves an execution record under `editions/<edition-id>/production/` naming the prompt file and its SHA-256, the backend, model, argv, duration, round, and resulting manuscript digest; those records are provenance and never gate a release.
-- An agent driving an edition produces it with the cooperative backend and never hand-orchestrates writers. `uv run --locked mag produce <edition-id> --backend agent` writes every brief that is ready right now under `editions/<edition-id>/production/agent/<piece>/r<n>-<role>/brief.md` and reports the set; answer each one by writing `reply.md` beside it (or `--submit <item>`), then run the same command again to ingest and get the next set. Fan out one subagent per ready brief: several writers are ready at once, and a draft's fact-checker and line editor are ready together. The pipeline still owns the order, the gates, the round budget, escalation at three rounds, and every recorded verdict. If the backend breaks, fix the backend; firing writer subagents around it reintroduces exactly the improvised orchestration `mag produce` exists to abolish.
-- Do not refactor the produce pipeline while a run is in flight, for the same reason you would not migrate a schema under a running job. A cooperative run's finished work lives on disk as replies bound to the identity of the question each answered: the prompt file's digest plus the digests of the manuscript, sources, findings and notes the call was handed. Rewording a brief is free and cannot void anything. Editing a file under `prompts/`, or editing the identity functions in `src/magazine/produce_prompts.py`, changes the question and voids every stored answer for the affected role, which on a seven-piece edition is a dozen model calls of completed, judged work. Nothing is deleted (a voided reply is kept as `reply.superseded.md`, and produce names every stored reply the replay did not reach), but recovery is by hand. Finish the edition first.
-- Never answer a piece's `evidence` and `line` briefs from the same worker, even sequentially. The line editor is denied the source on purpose, and a worker that has just fact-checked against the source cannot unsee it. Measured on this pipeline: a judge that ran both passes in order caught itself failing to flag an undefined term because the source had defined it, and wrote its first suggested repair in wording only the source could have supplied. Contamination surfaces as findings that are never made, so it leaves no trace to review.
-- One brief, one worker, one piece. Do not batch briefs into a worker to save calls, across roles or across pieces. A judge given three manuscripts reads each of them worse, which is the same attention-splitting failure that made one broad judge miss twelve lowercase sentence openings and a subject-verb error in a single article. Small, self-contained, narrowly targeted workers judge better and they parallelise; a brief already carries everything its worker needs, including the rubric and the output contract, so fan out one worker per brief and let the pipeline's staging control cost. A worker that has to open repo files to understand its task was handed an incomplete brief, and that is a bug in the brief.
-- Label original editor text so it cannot be mistaken for a source author's words.
-- Never author the Unicode em dash character U+2014 in repository prose, code comments, prompts, UI copy, or social copy. Use a period, comma, colon, semicolon, or parentheses instead. Preserve U+2014 only inside immutable raw evidence or an exact source quotation where changing it would misquote the author.
-- File a defect found outside the produce loop with `uv run --locked mag finding file <edition-id> <piece-id> --note "..."`, never by pasting it into a writer's prompt. The finding is stored beside the production records, the piece stops counting as settled, its next writer brief carries it alongside the judges' findings and the draft it complains about, and a round that passes marks it addressed. `mag finding list <edition-id>` shows what is outstanding, and `mag status` blocks the production checkpoint while anything is open. Pasting a finding into an agent prompt leaves no record that the instruction was ever given and is the improvised orchestration the loop exists to replace.
-- Never write CommonMark footnote syntax (`[^1]`) in a manuscript. This publication renders CommonMark with no footnote extension, so a marker is typeset literally on the page; validation refuses it by name and produce reports it as a per-piece gate. Fold the note into its sentence or into a parenthetical. Supporting real footnotes would need a document-tree node, every adapter taught to place it, and a page design nobody has made.
-- An article with an illustrated opener has a hard limit on its *first paragraph*: it is set on the opener page beside the art and the title, it does not wrap to the next page, and the build refuses the edition when it will not fit. The limit depends on how many lines that article's title and byline take, so it is measured per article and stated in the generated writer brief as "Opening paragraph budget". It does not vary by `opener_variant`, which no layout code reads. The limit is a count of typeset lines and nothing else; the character figure beside it is a floor, low enough that prose of that length always fits, and not the real edge. Test a candidate paragraph with `printf '%s' "..." | uv run --locked mag fit <edition-id> --opener <article-id>`, which prints the lines it would set as and exits 1 when it overruns. Never reproduce the wrapping by hand, and never treat the character figure as the thing being enforced.
-- Every fenced code block in a manuscript must appear as a contiguous run of lines inside one of the article's committed source extractions. `src/magazine/code_blocks.py` enforces this during validation and it is the only deterministic content check left on a manuscript; reproduce a block character for character from the extraction or drop it whole.
-- Keep the reusable Orwell-based writing method in `docs/WRITING_RULES.md`. It is the house method for every artifact the magazine publishes: source articles in all content modes, explainers, opening editorials, captions, and social posts through `docs/SOCIAL_WRITING.md`. Editor-written text follows it directly; in `faithful_edit` and `faithful_synthesis` it governs only the editor's own sentences, never the source author's voice.
-- An opening editorial develops a distinct unifying idea, set of ideas, or emergent narrative across the edition. It must not summarize the articles one by one or become a prose table of contents.
-- Social drafts must be concise, direct, source-linked, and approved by a human before publication.
-- A source is not captured until its raw evidence bundle is committed under `library/sources/<source-id>/raw/<bundle-sha256>/`. Archive before queueing; never rely on a live URL as the durable copy.
-- Raw bundles may contain page responses, rendered text, images, or sanitized browser exports. Never commit cookies, credentials, authorization headers, browser profiles, or session data.
-- Never claim an edition is press-ready without a named printer profile and a passing preflight.
-- Cover art contains no baked-in masthead or cover lines. Layout code owns all typography.
-- Keep the inside front cover (reader page 2) and inside back cover (the penultimate reader page) completely blank; the imposed inside-cover sheet side must therefore also be blank.
-- Treat intake batches as transport only. Every unreleased source belongs to exactly one collecting edition; several editions may collect concurrently, with one explicit intake target.
-- Never create a collecting edition merely because the user sends another group of links. Open or select one only through `uv run --locked mag collect <edition-id> --issue-number <number>` or an equally explicit human decision.
-- Finish a human-approved collecting edition only with `uv run --locked mag finish <edition-id>`. That command owns its stable id, web and print generation, release transaction, and next collection. `mag release` is the lower-level compatibility seam. Every source record must be queued and represented in a rendered article's `source_ids`; a top-level manifest declaration alone cannot silently postpone material.
-- Use UV for every Python operation. Never use `pip`, bare `python`, `python -m venv`, an activated virtualenv, or an ad-hoc dependency directory.
-- Generate every language listed in `publication.languages` on every validation, build, and release. English remains the source edition; Spanish translations use educated castellano with restrained Argentine preferences, fall back to Spain Spanish, avoid slang and generic Latin American regionalisms, preserve Markdown block structure, and pin the exact English input hashes.
-- Never compute or hand-edit a SHA-256 pin. After changing any English input, refresh the derivable pins with `uv run --locked mag pin <edition-id>` and stage each configured overlay with `uv run --locked mag translate <edition-id> <language>`; translate the placeholder and advisory rows it reports before validating. `mag validate` reports staleness (with the expected digest) but never repins.
-- Check page budgets with `uv run --locked mag fit <edition-id>` before authoring the translation for a new article, and again after every manuscript edit. Use `uv run --locked mag measure <edition-id>` when you need spans, caps, last-page lines, or the per-paragraph rag table as JSON. Never run a full build, or reach into the renderer with ad-hoc scripts, just to ask whether a piece fits.
-- Run project tools as `uv run --locked <command>`, synchronize with `uv sync --locked`, and change dependencies with `uv add`, `uv remove`, or `uv lock`.
-- Commit `pyproject.toml`, `.python-version`, and `uv.lock` whenever their state changes. UV's internal environment must never be managed manually.
+- Run edition and article work through `engine/` and its public `RunEngine`
+  interface. Use `npm run engine -- ...` from the CLI.
+- XState owns lifecycle and joins. `RunEngine` owns durable runs, immutable
+  artifacts, attempts, leases, fencing, events, decisions, and release state.
+- Do not infer workflow state from paths, output presence, hashes, or mutable
+  files. Do not send events directly to in-memory actors or query SQLite from
+  callers.
+- Results enter through `RunEngine.answer`. Retries enter through
+  `RunEngine.retry`. Frozen input changes create successor runs through
+  `RunEngine.fork`. New collection leads enter through `RunEngine.submitLead`.
+- A human decision must answer the exact active offer, name the immutable inputs
+  it approves, and create the role's decision artifact. Stale and duplicate
+  answers never advance a run.
+- A released or sealed run is immutable. Revisions create new artifact IDs and
+  preserve the old graph.
 
-## Git checkpoints
+## Legacy Python
 
-- Commit each verified source-intake batch, edition checkpoint, or compiler change as a coherent unit.
-- Inspect the staged diff and run the proportionate validation before committing.
-- Keep legacy `vault/`, `output/`, temporary files, credentials, and browser-session data out of Git. Source-local `library/sources/*/raw/` bundles are canonical and must be committed.
-- Commit structured records, edition briefs, manuscripts, source extractions, templates, tests, and deterministic source code.
+- The Python implementation remains in the repository only because its removal
+  has not been authorized yet. It is not a workflow authority, compatibility
+  target, parity oracle, or place for new orchestration.
+- Do not run the Python test suite for routine development or verification. Do
+  not add Python workflow code or Python workflow tests.
+- The existing typesetter and source archive may remain temporarily behind the
+  versioned TypeScript adapter interfaces. Only the TypeScript worker may invoke
+  those seams. Callers must not use `mag produce`, `mag status`, `mag finish`,
+  `mag release`, or another legacy command to advance an XState run.
+- Do not delete the retained Python implementation until a human explicitly
+  requests its removal.
+
+## Editorial and provenance rules
+
+- Preserve provenance from every submitted lead through durable raw evidence,
+  extraction, manuscript, judgments, render artifacts, and release.
+- A source is not captured merely because a URL exists. Its raw evidence must be
+  committed as immutable artifacts before the source can become ready. Never
+  store cookies, credentials, authorization headers, browser profiles, or
+  session data.
+- Treat `sources.md` as generated output. Human annotations belong in source
+  records or immutable annotation artifacts.
+- Never replace a source article with an unlabeled generic summary. New
+  magazine-authored arguments use `original_synthesis`. Length-driven
+  condensation uses attributed, source-mapped `faithful_synthesis`.
+- Write `faithful_synthesis` in the source author's grammatical person and point
+  of view. Do not add framing such as "the author argues" unless it appears in
+  the source. Preserve the argument, evidence, qualifications, and conclusion.
+- Label magazine-authored text so it cannot be mistaken for a source author's
+  words. Faithful modes require source-author attribution. Original synthesis
+  requires magazine attribution.
+- Source articles may occupy at most seven A5 reader pages. Layout feedback must
+  come from the production measurement interface, including actual opener fit,
+  not character counts or hand-reproduced wrapping.
+- The opening editorial must visibly render a title and fit on one A5 reader
+  page including its label, title, and byline. It develops a unifying idea or
+  narrative and must not become an article-by-article summary.
+- Every fenced code block in a manuscript must be a contiguous exact run from a
+  committed source extraction. Drop a block whole if it cannot be preserved.
+- Never use CommonMark footnote syntax such as `[^1]` in a manuscript.
+- `docs/WRITING_RULES.md` is the house method for editor-authored prose. In a
+  faithful mode it governs editor additions, never a source author's voice.
+- Social copy must be concise, direct, source-linked, and human-approved.
+
+## Work and authority isolation
+
+- One offer is one role, one actor, and one piece. Do not batch briefs across
+  roles or pieces.
+- Writers receive every assigned source extraction and the complete revision
+  context. Evidence reviewers are source-aware. Mechanics, shape, and craft
+  reviewers are source-blind.
+- Never let one worker identity perform both source-aware evidence review and a
+  source-blind review for the same manuscript revision.
+- Each writer revision carries the previous manuscript, working notes, findings,
+  and human rulings. Iteration budgets are explicit inputs. Exhaustion is an
+  editor state, not an implicit retry loop.
+- Edition-level findings route to named article or editorial actors as durable
+  events. Any dependent editorial, translation, render, or approval artifact is
+  stale when its input artifact changes.
+- AI and deterministic workers propose artifacts or findings. Only declared
+  machine transitions and explicit human decisions advance authority state.
+
+## Art, languages, render, and release
+
+- Image generation and human art selection are separate work offers. Rendering
+  may consume only registered selected art and must never generate an image.
+- Cover art contains no baked-in masthead or cover lines. Layout owns all
+  typography.
+- Keep the inside front cover and inside back cover blank, including their
+  imposed sheet sides.
+- Generate every configured language before assembly. English is the source
+  edition. Spanish uses educated castellano with restrained Argentine
+  preferences, avoids slang and generic regionalisms, and preserves Markdown
+  structure.
+- `measureArticle` and `measureEdition` are different renderer operations. The
+  first gives per-draft feedback. The second gates full-issue render and booklet
+  assembly.
+- Machine inspection and independent visual review must reference the exact
+  current render artifact IDs. A new render cannot inherit an old approval.
+- Never label an edition press-ready without a named printer profile, passing
+  per-language preflight artifacts, and explicit studio readiness.
+- Release approval names the exact publication and source artifacts. Release is
+  atomic, and a source identity may belong to only one released edition.
+- Never regenerate Edition 4 images during tests. Reuse only its selected,
+  committed art artifacts.
+
+## Repository prose and files
+
+- Never author Unicode U+2014 in repository prose, code comments, prompts, UI
+  copy, or social copy. Use normal punctuation. Preserve it only in immutable
+  raw evidence or an exact quotation.
+- Keep temporary runs, databases, artifact stores, output, credentials, and
+  browser-session data out of Git.
+- Do not hand-edit generated hashes or operational records. Runtime identity is
+  generated immutable IDs, not content digests.
+- Commit structured inputs, prompts, source records, manuscripts, machine code,
+  contracts, tests, and normalized sealed run exports as coherent checkpoints.
 
 ## Verification
 
-Synchronize the locked dependencies and run verification through UV:
+Use the pinned Node toolchain and lockfile:
 
 ```sh
-uv sync --locked
-uv run --locked pytest
+npm ci
+npm run typecheck
+npm run test:engine
+npm run build:viewer
 ```
 
-Every build must pass the built-in render critic for every configured language.
-It rasterizes the reader and imposed booklet, writes `render-critic.json`, and
-generates numbered contact sheets and 144-DPI individual rasters under
-`render-review/`; its structural errors block packaging and release.
+`npm run verify:engine` runs the same TypeScript checks. Routine verification
+must not invoke Python or UV. The retained Edition 4 bridge integration is an
+explicit, opt-in seam check and is not part of routine verification.
 
-After each meaningful layout change and before delivery, spawn an independent
-render-critic subagent. Give it every reader and booklet contact sheet plus any
-explicitly locked design decisions. It must inspect every sheet, then reopen
-every relevant crop from its exact path at original resolution rather than
-judging a resized preview. It must turn locked geometry into explicit
-pass/fail observations. For the illustrated opener, this includes confirming
-that the orange rectangle begins down and right of the black frame, leaving
-white at the top-right and bottom-left corners before the shadow begins. It
-must identify page-specific visual defects and avoid changing locked elements.
-Fix confirmed defects, rebuild all languages, and repeat until the machine
-report passes and the independent critic has no remaining actionable findings.
-Then record the decision only through
-`uv run --locked mag review record <edition-id>` with the reviewer and result
-flags; do not hand-edit the canonical review record.
-Recording binds the decision to the PDFs exactly as they sit on disk and
-rewrites only the packaged reports in place; it does not rebuild, so record
-against the packages you actually inspected; pass `--rebuild` only when the
-rebuild-and-compare proof is explicitly wanted. `mag finish` and `mag release` must reject a
-missing, stale, or changes-required review.
+Tests should cross the public `RunEngine` interface. A narrowly labeled schema
+migration test may use internal helpers, but workflow behavior must not depend
+on direct database access.
 
-Every source of every collecting edition needs a committed
-`library/sources/<source-id>/extracted.md`, and each article's `edition.yaml`
-row must pin `source_body_sha256` to the extraction body of every source it
-declares in `source_ids`. Before release, perform the adversarial
-manuscript-versus-source audit (`prompts/evidence-review.md`) and record it with
-`uv run --locked mag review record <edition-id> --kind evidence`; `mag finish`
-and `mag release` reject a missing, stale, or changes-required evidence review.
-Evidence staleness is derived per article: when `mag review status` names
-drifted articles, re-audit those articles against their extractions, then
-re-record with `--articles <id,id>` naming exactly the articles whose audit was
-actually repeated; never name an article you did not re-audit. Every other
-article keeps its recorded binding and `reviewed_at`.
+After a meaningful layout change, use an independent render critic to inspect
+every language's exact reader and booklet artifacts at original resolution.
+Record the decision through the active visual-review offer. Do not hand-edit a
+review record or approve a resized preview.
+
+## Git checkpoints
+
+- Work on the branch requested by the user. Inspect the staged diff and run
+  proportionate Node verification before committing.
+- Preserve unrelated user changes and all immutable source evidence.
+- Commit each verified engine, edition, or source-intake checkpoint as a
+  coherent unit.

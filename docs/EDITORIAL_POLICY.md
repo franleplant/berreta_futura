@@ -31,15 +31,30 @@ must approve the argument and final prose.
 
 ## Print-length budget
 
-Every rendered source article, including its title and credit, has a hard maximum of seven A5 reader pages. The deterministic renderer measures the real pagination and refuses an over-budget build.
+Every rendered source article, including its title and credit, has a hard maximum
+of seven A5 reader pages. `measureArticle` reports the actual opener fit and
+page count from the production layout interface; character counts and
+hand-reproduced wrapping are not substitutes.
 
-The opening editorial must declare a non-empty title in its frontmatter. Its label, title, and byline are rendered on the opener and its title appears in the contents. The current standard is that the complete editorial fits a single A5 reader page: the editorial is the reader's front door, and a door that turns is not one. The budget is per-edition (`format.max_editorial_pages` in the edition manifest) because edition 001 shipped a two-page editorial and its frozen artifact must keep rebuilding; two A5 pages remain the publication's hard ceiling, which no edition may raise. Editions from 003 on declare `max_editorial_pages: 1`; editions 001 and 002 keep the older `2`. The renderer measures the real span in every language and refuses an over-budget or untitled build.
+The opening editorial must have a visible title, label, and byline, and must fit
+on one A5 reader page in every configured language. The editorial is the
+reader's front door, not a multi-page introduction. Historical rendered editions
+remain immutable records; their old layout settings do not relax this policy for
+new work.
 
 An over-budget `faithful_edit` is converted to `faithful_synthesis`. The synthesis must retain the source's central argument, important evidence and examples, uncertainty, counterarguments, and conclusion. It must not introduce a new thesis or flatten disagreement into generic summary language. The byline and mode label provide attribution and disclose that the text is condensed rather than verbatim.
 
 Synthesis prose stays in the source's grammatical person and point of view. If the source author speaks in the first person, the synthesis does too; if the source is impersonal or already uses third person, preserve that choice. Do not wrap adapted prose in magazine-narrator scaffolding such as “Narayanan argues” or “Joshi explains.” Exact source wording may remain unchanged. Prefer retained passages and light edits, and summarize only where length requires it.
 
-A synthesis is verified by reading, not by bookkeeping: the claim-level fact-checker (`prompts/evidence-review.md`) reads the manuscript against the committed extraction claim by claim and reports invented claims, dropped qualifications, reversed claim strength, and missing counterarguments. Deciding what a shorter piece must lose is the writer's job and is governed by the cut order in `prompts/faithful-synthesis.md`: repeated examples first, a claim's supporting evidence before the claim, and qualifications and the source's own conclusions last and almost never. Short articles remain `faithful_edit`; synthesis is a length remedy, not the default editorial voice.
+A synthesis is verified by reading, not by bookkeeping: the source-aware evidence
+review reads the manuscript against its committed extraction claim by claim and
+reports invented claims, dropped qualifications, reversed claim strength, and
+missing counterarguments. Deciding what a shorter piece must lose is the
+writer's job and is governed by the cut order in `prompts/faithful-synthesis.md`:
+repeated examples first, a claim's supporting evidence before the claim, and
+qualifications and the source's own conclusions last and almost never. Short
+articles remain `faithful_edit`; synthesis is a length remedy, not the default
+editorial voice.
 
 ## Automatically permitted faithful edits
 
@@ -62,75 +77,59 @@ Editor additions must be visibly labeled, and the magazine does not print editor
 
 ## Source extractions and the evidence review
 
-`library/sources/<source-id>/extracted.md` is the canonical faithful
-extraction of a source: its substantive text reproduced verbatim from one
-committed raw bundle, in source order, with no summarization, no editorial
-voice, and no invented headings. Interface chrome and navigation may be
-omitted, and the frontmatter must name the source id, the raw bundle the text
-was transcribed from, and the extraction method. For repository captures the
-extraction covers each documentation file in a stable, declared order with
-visible file boundaries.
+Each source revision is represented by immutable artifacts for its submitted
+lead, durable raw evidence bundle, faithful extraction, media, metadata, and
+human source decision. An extraction reproduces the source's substantive text
+in source order with no summarization, editorial voice, or invented headings.
+Interface chrome and navigation may be omitted. A repository extraction covers
+each declared source file in stable order with visible file boundaries.
 
-The extraction body is everything after the frontmatter's closing `---` line,
-and an article row's `source_body_sha256` in `edition.yaml` is the SHA-256 of
-the UTF-8 bytes of exactly that body. Extraction files are byte-exact: LF
-newlines only, no BOM: a carriage return anywhere in the file fails validation
-rather than being silently normalized. An article over one source declares a
-single digest; an article synthesizing several declares a mapping from source
-id to digest, so no source can hide behind another's hash. Validation fails whenever a pinned hash does not match the committed
-extraction. Every source of the open (unreleased) edition must carry an
-extraction and a matching pin before the edition can validate, and the edition's
-queued sources must equal the union of its articles' `source_ids`, so no source
-can be queued and then quietly left unrepresented. Editions released before
-extractions existed keep their recorded pins unverified.
+The artifact graph, not a mutable manifest pin, binds an article to the exact
+source revisions it uses. Every source-backed article receives all of its
+assigned extraction artifact IDs. The source-aware evidence reviewer receives
+those same artifacts and the exact manuscript revision. Its finding or approval
+is an immutable judgment artifact whose parents name every input it audited.
 
-The evidence review (`prompts/evidence-review.md`) is recorded with
-`mag review record --kind evidence` to
-`editions/<edition-id>/reviews/evidence.yaml`. The record binds the reviewer's
-decision to the exact bytes audited: per article, the manuscript, and for every
-source the article's `edition.yaml` row declares, both the extraction body and
-the whole `extracted.md` file, provenance frontmatter included. Any later change
-to those inputs makes that article's decision stale, and `mag finish` and the
-lower-level `mag release` command refuse a missing, stale, or changes-required
-evidence review.
+Changing a source, extraction, assignment, manuscript, prompt, content mode, or
+attribution creates a new artifact and successor work. The earlier judgment
+remains in history but cannot approve the new input graph. Edition review,
+translation, render, and release consume only current approving decisions.
 
-## The one deterministic content check
+## Exact source code
 
-No artifact tracks a manuscript paragraph by paragraph any more. Whether a
-manuscript says what its source says is judged by the fact-checker; whether its
-code is the source's code is
-arithmetic, and `src/magazine/code_blocks.py` does it during validation. Every
-fenced code block in a manuscript must appear as a contiguous run of lines
-inside one of the article's committed source extractions. Normalization is
-narrow on purpose: tabs expand to four columns, trailing whitespace and the
-fence's own leading and trailing blank lines go, and everything else is
-substantive, because indentation depth, line breaks, and every character change
-what code means. The block is matched against the extraction's lines wherever
-they sit, not against the extraction's own fences, since a source may present
-code in a fence, as an indented block, or inline in a transcript. A failure
-names the manuscript, the block, and the first line that diverges from the
-closest run found in any extraction. An article with no committed extractions,
-which is the released-edition state, is skipped rather than failed.
+Whether prose represents its sources is a source-aware editorial judgment.
+Source code has a narrower rule: every fenced code block in a manuscript must
+be a contiguous exact run from one of that article's assigned extraction
+artifacts. Preserve indentation, line breaks, and characters. If the block
+cannot be reproduced exactly, drop it whole. A contract failure names the
+manuscript, block, and source revision and cannot be converted into approval by
+the worker that produced the manuscript.
 
 ## Translation editions
 
 English is the source edition. A Spanish edition is a faithful translation of
 the already edited English magazine, not a second opportunity to summarize,
 expand, strengthen, or soften the source. It preserves paragraph order,
-headings, examples, qualifications, links, code, and attribution. The compiler
-pins every translated manuscript to the SHA-256 of its English counterpart and
-rejects translations whose ordered Markdown block structure diverges.
+headings, examples, qualifications, links, code, and attribution. Every
+translation offer names the exact current English artifact ID; a changed
+English revision makes the prior translation historical rather than current.
 
 Spanish uses educated castellano with restrained Argentine preferences and no
 slang. Spain Spanish is the default fallback. Generic Latin American, Mexican,
 Caribbean, and other unrelated regional variants are excluded from the house
-style. Both languages obey the same editorial and seven-page article budgets --
-the editorial's one page has to hold in Spanish too, which is what makes
-compression part of the translation rather than an afterthought -- and generate
-equivalent reader, home-booklet, and preflight packages.
+style. Both languages obey the same editorial and seven-page article budgets;
+the editorial's one page must hold in Spanish too, which makes compression part
+of translation rather than an afterthought. The engine creates translation,
+measurement, render, and preflight artifacts for every configured language
+before assembly.
 
 ## Rights and distribution
 
-The workspace defaults to `private`. Complete third-party captures are committed in source-local, content-addressed raw bundles so link loss cannot erase the editorial evidence. The repository must remain private while those captures lack a public redistribution basis; credentials and browser-session data are never part of a bundle.
+The workspace defaults to `private`. Complete third-party captures are retained
+as immutable raw-evidence artifacts so link loss cannot erase the editorial
+evidence. A checksum may protect a captured bundle at that integrity boundary,
+but it never identifies workflow state. The repository must remain private while
+those captures lack a public redistribution basis; credentials and browser-session
+data are never part of a bundle.
 
 Rights status is explicit: `unknown`, `private_reference`, `licensed`, `permission`, `public_domain`, or `author_owned`. Public packaging of a faithful reprint is blocked unless its status permits republication. The workflow records and surfaces rights decisions; it does not invent them.
