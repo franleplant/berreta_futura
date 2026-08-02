@@ -93,6 +93,13 @@ translated-language fit executors. `render_inspection` reads committed
 are explicit command adapters; their commands receive the complete materialized
 work package on stdin and must return one `WorkAnswer` JSON object on stdout.
 
+TODO: Make generated-PDF QA and visual verification first-class graph behavior:
+generate raster pages and contact sheets from the exact reader and booklet
+ArtifactIds; model machine critic and preflight state; offer independent human
+visual review over those exact artifacts and original-resolution pages; route
+findings to rerender or revision; and block release until the current render set
+is approved.
+
 ```json
 {
   "schemaVersion": 1,
@@ -133,3 +140,32 @@ accepting filesystem paths.
 
 Edition 4 is an integration fixture. It stages only selected, committed art and
 source media as immutable artifacts. Image generation is disabled for that fixture.
+
+## Machine topology export
+
+```sh
+npm run graph:export -- output/machine-topology
+```
+
+The exporter reads the implemented XState `machine.config` objects and uses the
+same ELK layered layout dependency as the run viewer. It writes standalone
+HTML, SVG, PNG overview, and JSON topology files. The export has no maintained
+parallel transition list, so a state or transition change appears on the next
+export automatically. `engine/test/graph-export.test.ts` verifies every
+top-level Edition 4 lifecycle machine and key render-approval states.
+
+## Edition 4 durable exercise
+
+```sh
+npm run edition4:durable
+```
+
+The command writes its SQLite run, artifact store, staged fixture, and renderer
+workspace below ignored `runs/edition4-durable/`. It advances the source,
+planning, article measurement and judgment, editorial, translation proof,
+registered-art, renderer, visual-review, and release offers through public
+`RunEngine` claims and answers. The final edition measurement and render offers
+run through the versioned Python renderer adapter and reuse the committed Edition
+4 English, Spanish, and selected-art artifacts. Those committed content artifacts
+are intentionally initial revisions in this integration fixture, so the frozen
+renderer profile can name every staged layout input before the run begins.
