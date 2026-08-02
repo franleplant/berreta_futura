@@ -31,12 +31,24 @@ import {
   type WorkEngine,
 } from "../executors/index.ts";
 import type { RendererAdapter } from "../renderer-adapter/index.ts";
-import { SqliteRunEngine } from "../run-engine/index.ts";
+import { SqliteRunEngine, type RunEngineClock } from "../run-engine/index.ts";
 import type { SourceAdapter } from "../source-adapter/index.ts";
 import { prepareArticleSources } from "./approved-source-fixture.ts";
 
 function id(value: string): ArtifactId {
   return value as ArtifactId;
+}
+
+class ManualClock implements RunEngineClock {
+  private milliseconds = Date.now();
+
+  now(): Date {
+    return new Date(this.milliseconds);
+  }
+
+  advance(milliseconds: number): void {
+    this.milliseconds += milliseconds;
+  }
 }
 
 function seed(
@@ -137,12 +149,14 @@ async function withEngine(
   prefix: string,
   workLeaseMs: number,
   implementation: (engine: SqliteRunEngine, runId: RunId) => Promise<void>,
+  options: { readonly clock?: RunEngineClock } = {},
 ): Promise<void> {
   const temporary = await mkdtemp(join(tmpdir(), `${prefix}-`));
   const engine = new SqliteRunEngine({
     databasePath: join(temporary, "runs.sqlite"),
     artifactDirectory: join(temporary, "artifacts"),
     workLeaseMs,
+    ...(options.clock === undefined ? {} : { clock: options.clock }),
   });
   try {
     const started = await engine.start(await prepareArticleSources(engine, articleSpec(prefix), prefix));
@@ -281,7 +295,8 @@ test("caller cancellation reaches the executor and commits a canceled attempt", 
 });
 
 test("an expired worker claim is reclaimed and the old answer stays fenced", async () => {
-  await withEngine("worker-death", 15, async (engine, runId) => {
+  const clock = new ManualClock();
+  await withEngine("worker-death", 10_000, async (engine, runId) => {
     const initial = await engine.inspect(runId);
     const offer = initial.offers.find((candidate) => candidate.role === "measure_article");
     assert.ok(offer);
@@ -290,7 +305,12 @@ test("an expired worker claim is reclaimed and the old answer stays fenced", asy
       authority: "tool",
       capabilities: ["subprocess"],
     });
-    await delay(35);
+    assert.equal(
+      (await engine.inspect(runId)).attempts.find((attempt) => attempt.id === oldClaim.attemptId)?.status,
+      "active",
+    );
+    clock.advance(10_001);
+    assert.ok(clock.now().getTime() > Date.parse(oldClaim.leaseExpiresAt));
     const replacement = measurementExecutor(
       "after-death",
       async (candidate) => measurementAnswer(candidate, "new-worker"),
@@ -300,9 +320,24 @@ test("an expired worker claim is reclaimed and the old answer stays fenced", asy
       runId,
       [replacement],
       new AbortController().signal,
-      { heartbeatIntervalMs: 5, attemptTimeoutMs: 100 },
+      {
+        heartbeatIntervalMs: 100,
+        attemptTimeoutMs: 5_000,
+        now: () => clock.now(),
+      },
     );
     assert.equal(result.answered.length, 1, JSON.stringify(result));
+    const reclaimed = await engine.inspect(runId);
+    assert.equal(
+      reclaimed.attempts.find((attempt) => attempt.id === oldClaim.attemptId)?.status,
+      "timed_out",
+    );
+    assert.equal(
+      reclaimed.attempts.some(
+        (attempt) => attempt.worker.principalId === "after-death" && attempt.status === "answered",
+      ),
+      true,
+    );
     const afterLate = await engine.answer(oldClaim, measurementAnswer(offer, "old-worker"));
     assert.equal(
       afterLate.attempts.find((attempt) => attempt.id === oldClaim.attemptId)?.status,
@@ -317,7 +352,7 @@ test("an expired worker claim is reclaimed and the old answer stays fenced", asy
       afterLate.actors[0]?.context.manuscriptArtifact,
       initial.actors[0]?.context.manuscriptArtifact,
     );
-  });
+  }, { clock });
 });
 
 test("configured resolver follows frozen per-role model policy and rejects ambiguity", async () => {

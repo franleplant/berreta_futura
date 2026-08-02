@@ -36,6 +36,10 @@ import {
   type EditionMachineContext,
   type EditionMachineInput,
 } from "../machines/edition-machine.ts";
+import {
+  completionRelationship,
+  type OrchestrationSpawnId,
+} from "../machines/orchestration.ts";
 import type {
   EditionReviewRunSpec,
   MachineEffect,
@@ -734,8 +738,11 @@ function childSpawned(
   childKey: string,
   machine: SpawnActorEffect["machine"],
 ): MachineTransitionResult {
+  const relationship = completionRelationship("edition", machine);
+  assert.ok(relationship);
   return editionTransition(result.snapshot, {
     type: "CHILD_SPAWNED",
+    relationship: relationship.id as OrchestrationSpawnId,
     childActorId: actorId(`actor-${childKey}`),
     childKey,
     machine,
@@ -749,8 +756,14 @@ function childStatus(
   outputs: readonly ArtifactId[],
   childResult: JsonObject,
 ): MachineTransitionResult {
+  const context = result.snapshot.context as EditionMachineContext;
+  const machine = context.children[childKey]?.machine;
+  assert.ok(machine);
+  const relationship = completionRelationship("edition", machine);
+  assert.ok(relationship);
   return editionTransition(result.snapshot, {
     type: "CHILD_STATUS",
+    relationship: relationship.id as OrchestrationSpawnId,
     childActorId: actorId(`actor-${childKey}`),
     childKey,
     status,

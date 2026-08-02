@@ -50,6 +50,11 @@ import {
   transitionSnapshotFor,
 } from "./machine-driver.ts";
 import {
+  completionRelationship,
+  orchestrationRoute,
+  orchestrationSpawn,
+} from "../machines/orchestration.ts";
+import {
   insertArtifactRecords,
   type ArtifactDisposition,
   type ArtifactRecord,
@@ -2206,6 +2211,18 @@ export class SqliteRunEngine implements RunEngine {
     if (parent.run_id !== runId) {
       throw new RunEngineError("SPAWN_RUN_MISMATCH", "Cannot spawn an actor into another run");
     }
+    const relationship = orchestrationSpawn(effect.relationship);
+    if (
+      relationship === undefined ||
+      relationship.owner !== parent.machine_name ||
+      relationship.child !== effect.machine ||
+      relationship.child !== child.machine
+    ) {
+      throw new RunEngineError(
+        "ORCHESTRATION_SPAWN_INVALID",
+        `Actor ${parent.id} cannot use ${effect.relationship} to spawn ${child.machine}`,
+      );
+    }
     const machineVersion = currentMachineVersion(child.machine);
     ensureMachineVersion(this.db, child.machine, machineVersion, now);
     const initializationEventId = this.ids.next<EventId>("event");
@@ -2260,6 +2277,7 @@ export class SqliteRunEngine implements RunEngine {
       type: "CHILD_SPAWNED",
       payload: {
         type: "CHILD_SPAWNED",
+        relationship: relationship.id,
         childActorId: child.actorId,
         childKey: child.logicalKey,
         machine: child.machine,
@@ -2292,6 +2310,13 @@ export class SqliteRunEngine implements RunEngine {
     now: string,
     nowMs: number,
   ): void {
+    const sender = this.requireActor(effect.actorId);
+    if (sender.run_id !== runId) {
+      throw new RunEngineError(
+        "EVENT_SENDER_RUN_MISMATCH",
+        "Cannot send an actor event from another run",
+      );
+    }
     let targetActorId: ActorId;
     if ("actorId" in effect.target) {
       targetActorId = effect.target.actorId;
@@ -2315,6 +2340,18 @@ export class SqliteRunEngine implements RunEngine {
     const target = this.requireActor(targetActorId);
     if (target.run_id !== runId) {
       throw new RunEngineError("EVENT_TARGET_RUN_MISMATCH", "Cannot send across run boundaries");
+    }
+    const route = orchestrationRoute(effect.route);
+    if (
+      route === undefined ||
+      route.owner !== sender.machine_name ||
+      route.target !== target.machine_name ||
+      route.event !== effect.event.type
+    ) {
+      throw new RunEngineError(
+        "ORCHESTRATION_ROUTE_INVALID",
+        `Actor ${sender.id} cannot use ${effect.route} to send ${effect.event.type} to ${target.machine_name}`,
+      );
     }
     enqueueInbox(this.db, {
       id: this.ids.next<InboxId>("inbox"),
@@ -2694,6 +2731,14 @@ export class SqliteRunEngine implements RunEngine {
     if (actor.parent_actor_id === null) {
       return;
     }
+    const parent = this.requireActor(actor.parent_actor_id);
+    const relationship = completionRelationship(parent.machine_name, actor.machine_name);
+    if (relationship === undefined) {
+      throw new RunEngineError(
+        "ORCHESTRATION_COMPLETION_INVALID",
+        `Actor ${actor.id} cannot report ${status} from ${actor.machine_name} to ${parent.machine_name}`,
+      );
+    }
     enqueueInbox(this.db, {
       id: this.ids.next<InboxId>("inbox"),
       runId,
@@ -2701,6 +2746,7 @@ export class SqliteRunEngine implements RunEngine {
       type: "CHILD_STATUS",
       payload: {
         type: "CHILD_STATUS",
+        relationship: relationship.id,
         childActorId: actor.id,
         childKey: actor.logical_key,
         status,

@@ -21,6 +21,7 @@ import type {
 } from "./contracts/index.ts";
 import { parseRunSpec } from "./contracts/index.ts";
 import { SqliteRunEngine } from "./run-engine/run-engine.ts";
+import { exportApprovedRender, type ApprovedRenderExportPlan } from "./run-engine/approved-render-export.ts";
 import { serveRunViewer } from "./view/server.ts";
 
 const HELP = `Usage:
@@ -37,6 +38,7 @@ const HELP = `Usage:
       [--heartbeat-ms NUMBER] [--timeout-ms NUMBER] [--concurrency NUMBER]
   npm run engine -- answer <run-id> <offer-id> <answer.json> [--principal ID]
   npm run engine -- seal <run-id> [--db PATH] [--artifacts PATH]
+  npm run engine -- export <approved-render-export.json> [--db PATH] [--artifacts PATH]
   npm run engine -- serve [--port NUMBER] [--db PATH] [--artifacts PATH]
 
 The article aliases "article run", "article inspect", "article continue",
@@ -211,6 +213,13 @@ async function main(argv: readonly string[]): Promise<number> {
       case "seal": {
         const artifactId = await engine.seal(asRunId(requiredArg(parsed.args, 0, "run ID")));
         writeJson({ artifactId });
+        return 0;
+      }
+      case "export": {
+        const plan = await readJson<ApprovedRenderExportPlan>(
+          requiredArg(parsed.args, 0, "approved render export path"),
+        );
+        writeJson(await exportApprovedRender(engine, plan));
         return 0;
       }
       default:
