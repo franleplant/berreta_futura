@@ -34,6 +34,15 @@ import {
   type ResolvedProductionPlan,
 } from "./production-plan.ts";
 import { humanDecisionOffer } from "./human-decision.ts";
+import {
+  editionOrchestration,
+  joinSettled,
+  routeOrchestratedEvent,
+  resolveDeclaredArtifacts,
+  spawnOrchestratedChild,
+  type OrchestrationJoinDeclaration,
+  type OrchestrationSpawnDeclaration,
+} from "./orchestration.ts";
 
 export const editionMachineVersion = "edition/2";
 
@@ -97,17 +106,11 @@ function effect(value: object): MachineEffect {
 
 function spawn(
   context: EditionMachineContext,
-  machine: Exclude<MachineKind, "edition">,
+  declaration: OrchestrationSpawnDeclaration,
   logicalKey: string,
   spec: MachineSpawnSpec,
 ): MachineEffect {
-  return effect({
-    type: "spawn_actor",
-    parentActorId: context.actorId,
-    machine,
-    logicalKey,
-    spec,
-  });
+  return spawnOrchestratedChild(declaration, context.actorId, logicalKey, spec);
 }
 
 function sourceKey(sourceId: string): string {
@@ -167,12 +170,13 @@ function outputsAfter(
 function allAcceptingAfter(
   context: EditionMachineContext,
   event: EditionMachineEvent,
+  join: OrchestrationJoinDeclaration,
   keys: readonly string[],
 ): boolean {
-  return keys.every((key) => {
-    const status = statusAfter(context, event, key);
-    return status === "accepting" || status === "done";
-  });
+  return joinSettled(
+    join,
+    keys.map((key) => statusAfter(context, event, key)),
+  );
 }
 
 function sourceKeys(context: EditionMachineContext): readonly string[] {
@@ -335,19 +339,14 @@ function dependencyArtifactsForArt(
   const articleArtifacts = (art.dependencies?.articleIds ?? []).map((articleId) =>
     context.children[articleKey(articleId)]?.outputs[0],
   );
-  if (articleArtifacts.some((artifactId) => artifactId === undefined)) {
-    return undefined;
-  }
   const currentEditorial = editorialArtifact ?? currentEditorialArtifact(context);
-  if (art.dependencies?.editorial === true && currentEditorial === undefined) {
-    return undefined;
-  }
-  return [
-    ...articleArtifacts.filter((value): value is ArtifactId => value !== undefined),
-    ...(art.dependencies?.editorial === true && currentEditorial !== undefined
-      ? [currentEditorial]
-      : []),
-  ];
+  return resolveDeclaredArtifacts(
+    editionOrchestration.joins.declaredContentToArt,
+    [
+      ...articleArtifacts,
+      ...(art.dependencies?.editorial === true ? [currentEditorial] : []),
+    ],
+  );
 }
 
 function reviewSpec(context: EditionMachineContext): EditionReviewRunSpec | undefined {
@@ -471,9 +470,19 @@ export const editionMachine = setup({
   guards: {
     noSources: ({ context }) => context.sources.length === 0,
     allSourcesReady: ({ context, event }) =>
-      allAcceptingAfter(context, event, sourceKeys(context)),
+      allAcceptingAfter(
+        context,
+        event,
+        editionOrchestration.joins.readySourcesToArticles,
+        sourceKeys(context),
+      ),
     allSourcesCurrentlyReady: ({ context }) =>
-      allAcceptingAfter(context, { type: "START" }, sourceKeys(context)),
+      allAcceptingAfter(
+        context,
+        { type: "START" },
+        editionOrchestration.joins.readySourcesToArticles,
+        sourceKeys(context),
+      ),
     hasPlanning: ({ context }) => context.planningArtifact !== undefined,
     hasValidPreplannedProduction: ({ context }) => {
       if (context.planningArtifact === undefined) {
@@ -499,14 +508,24 @@ export const editionMachine = setup({
     planAnswerCompleted: ({ event }) =>
       event.type === "WORK_COMPLETED" && event.slot === "plan_edition",
     allArticlesReady: ({ context, event }) =>
-      allAcceptingAfter(context, event, articleKeys(context)),
+      allAcceptingAfter(
+        context,
+        event,
+        editionOrchestration.joins.readyArticlesToEditorial,
+        articleKeys(context),
+      ),
     allArticlesCurrentlyReady: ({ context }) =>
-      articleKeys(context).every((key) => {
-        const status = context.children[key]?.status;
-        return status === "accepting" || status === "done";
-      }),
+      joinSettled(
+        editionOrchestration.joins.readyArticlesToEditorial,
+        articleKeys(context).map((key) => context.children[key]?.status),
+      ),
     editorialAndArtReady: ({ context, event }) =>
-      allAcceptingAfter(context, event, ["editorial", ...artKeys(context)]),
+      allAcceptingAfter(
+        context,
+        event,
+        editionOrchestration.joins.contentAndArtToEditionReview,
+        [...articleKeys(context), "editorial", ...artKeys(context)],
+      ),
     editorialCompletedWithDependentArt: ({ context, event }) =>
       event.type === "CHILD_STATUS" &&
       event.childKey === "editorial" &&
@@ -515,8 +534,10 @@ export const editionMachine = setup({
     reviewApproved: ({ context, event }) => {
       const key = reviewKey(context.reviewCycle);
       return (
-        (statusAfter(context, event, key) === "accepting" ||
-          statusAfter(context, event, key) === "done") &&
+        joinSettled(
+          editionOrchestration.joins.approvedReviewToLanguages,
+          [statusAfter(context, event, key)],
+        ) &&
         resultStatus(resultAfter(context, event, key)) === "approved"
       );
     },
@@ -524,11 +545,22 @@ export const editionMachine = setup({
       resultStatus(resultAfter(context, event, reviewKey(context.reviewCycle))) ===
       "revisions_routed",
     allTranslationsReady: ({ context, event }) =>
-      allAcceptingAfter(context, event, translationKeys(context)),
+      allAcceptingAfter(
+        context,
+        event,
+        editionOrchestration.joins.readyLanguagesToRender,
+        translationKeys(context),
+      ),
     noTranslations: ({ context }) => plannedTranslations(context).length === 0,
-    renderApproved: ({ context, event }) =>
-      statusAfter(context, event, renderKey(context.renderCycle)) === "accepting" &&
-      resultStatus(resultAfter(context, event, renderKey(context.renderCycle))) === "approved",
+    renderApproved: ({ context, event }) => {
+      const key = renderKey(context.renderCycle);
+      return (
+        joinSettled(
+          editionOrchestration.joins.approvedRenderToRelease,
+          [statusAfter(context, event, key)],
+        ) && resultStatus(resultAfter(context, event, key)) === "approved"
+      );
+    },
     releaseComplete: ({ context, event }) =>
       statusAfter(context, event, `release:${context.renderCycle}`) === "accepting" &&
       resultStatus(resultAfter(context, event, `release:${context.renderCycle}`)) === "released",
@@ -549,12 +581,22 @@ export const editionMachine = setup({
   actions: {
     spawnSources: emitEffects(({ context }) =>
       context.sources.map((source: EditionRunSpec["sources"][number]) =>
-        spawn(context, "source", sourceKey(source.sourceId), source),
+        spawn(
+          context,
+          editionOrchestration.spawns.sources,
+          sourceKey(source.sourceId),
+          source,
+        ),
       ),
     ),
     spawnReceivedSource: emitEffects(({ context, event }) =>
       event.type === "LEAD_RECEIVED"
-        ? [spawn(context, "source", sourceKey(event.source.sourceId), event.source)]
+        ? [spawn(
+            context,
+            editionOrchestration.spawns.sources,
+            sourceKey(event.source.sourceId),
+            event.source,
+          )]
         : [],
     ),
     rememberReceivedSource: assign(({ context, event }) => {
@@ -666,12 +708,19 @@ export const editionMachine = setup({
     }),
     spawnArticlesAndArt: emitEffects(({ context }) => [
       ...plannedArticles(context).map((article) =>
-        spawn(context, "article", articleKey(article.articleId), article),
+        spawn(
+          context,
+          editionOrchestration.spawns.articles,
+          articleKey(article.articleId),
+          article,
+        ),
       ),
       ...plannedArt(context).filter((art) => !hasDeclaredDependencies(art)).map((art) =>
         spawn(
           context,
-          art.role === "cover" ? "cover_art" : "interior_art",
+          art.role === "cover"
+            ? editionOrchestration.spawns.coverArt
+            : editionOrchestration.spawns.interiorArt,
           artKey(art.key),
           art,
         ),
@@ -698,30 +747,34 @@ export const editionMachine = setup({
           return [
             spawn(
               context,
-              art.role === "cover" ? "cover_art" : "interior_art",
+              art.role === "cover"
+                ? editionOrchestration.spawns.coverArt
+                : editionOrchestration.spawns.interiorArt,
               artKey(art.key),
               { ...art, dependencyArtifacts },
             ),
           ];
         }
         return [
-          effect({
-            type: "send_actor_event",
-            actorId: context.actorId,
-            target: { childKey: artKey(art.key) },
-            event: {
+          routeOrchestratedEvent(
+            art.role === "cover"
+              ? editionOrchestration.routes.editorialChangesToCoverArt
+              : editionOrchestration.routes.editorialChangesToInteriorArt,
+            context.actorId,
+            artKey(art.key),
+            {
               type: "REVISION_REQUESTED",
               dependencyArtifacts,
               reason: "Declared article or editorial dependencies changed",
             },
-          }),
+          ),
         ];
       });
     }),
     startEditorial: emitEffects(({ context }) => {
       if (context.children.editorial === undefined) {
         return [
-          spawn(context, "editorial", "editorial", {
+          spawn(context, editionOrchestration.spawns.editorial, "editorial", {
             ...context.spec.editorial,
             articleArtifacts: currentArticleArtifacts(context).map(
               (article) => article.artifactId,
@@ -730,11 +783,11 @@ export const editionMachine = setup({
         ];
       }
       return [
-        effect({
-          type: "send_actor_event",
-          actorId: context.actorId,
-          target: { childKey: "editorial" },
-          event: {
+        routeOrchestratedEvent(
+          editionOrchestration.routes.articleChangesToEditorial,
+          context.actorId,
+          "editorial",
+          {
             type: "REVISION_REQUESTED",
             articleArtifacts: currentArticleArtifacts(context).map(
               (article) => article.artifactId,
@@ -742,21 +795,26 @@ export const editionMachine = setup({
             findingArtifacts: context.routedFindingArtifacts,
             reason: "English articles changed after edition review",
           },
-        }),
+        ),
       ];
     }),
     startEditionReview: emitEffects(({ context }) => {
       const spec = reviewSpec(context);
       return spec === undefined
         ? []
-        : [spawn(context, "edition_review", reviewKey(context.reviewCycle), spec)];
+        : [spawn(
+            context,
+            editionOrchestration.spawns.editionReviews,
+            reviewKey(context.reviewCycle),
+            spec,
+          )];
     }),
     spawnTranslations: emitEffects(({ context }) =>
       plannedTranslations(context).map(
         (translation) =>
         spawn(
           context,
-          "translation",
+          editionOrchestration.spawns.translations,
           translationKey(translation.language, context.reviewCycle),
           {
             ...translation,
@@ -832,7 +890,7 @@ export const editionMachine = setup({
       ];
     }),
     spawnRender: emitEffects(({ context }) => [
-      spawn(context, "render", renderKey(context.renderCycle), {
+      spawn(context, editionOrchestration.spawns.renders, renderKey(context.renderCycle), {
         ...context.spec.render,
         renderManifestArtifact: generatedArtifactId(context, "render-manifest"),
       }),
@@ -923,15 +981,20 @@ export const editionMachine = setup({
         printerPreflightArtifacts,
         studioReady: renderResult.studioReady === true,
       };
-      return [spawn(context, "release", `release:${context.renderCycle}`, spec)];
+      return [spawn(
+        context,
+        editionOrchestration.spawns.releases,
+        `release:${context.renderCycle}`,
+        spec,
+      )];
     }),
     retryRelease: emitEffects(({ context }) => [
-      effect({
-        type: "send_actor_event",
-        actorId: context.actorId,
-        target: { childKey: `release:${context.renderCycle}` },
-        event: { type: "RETRY" },
-      }),
+      routeOrchestratedEvent(
+        editionOrchestration.routes.releaseRetry,
+        context.actorId,
+        `release:${context.renderCycle}`,
+        { type: "RETRY" },
+      ),
     ]),
     routeReviewFindings: emitEffects(({ context, event }) => {
       if (event.type !== "CHILD_STATUS") {
@@ -949,16 +1012,16 @@ export const editionMachine = setup({
       }
       const articleEffects = [...findingsByArticle.entries()].map(
         ([target, findingArtifacts]) =>
-          effect({
-            type: "send_actor_event",
-            actorId: context.actorId,
-            target: { childKey: articleKey(target) },
-            event: {
+          routeOrchestratedEvent(
+            editionOrchestration.routes.reviewFindingsToArticles,
+            context.actorId,
+            articleKey(target),
+            {
               type: "REVISION_REQUESTED",
               findingArtifacts,
               reason: "Edition review routed a finding",
             },
-          }),
+          ),
       );
       return articleEffects;
     }),

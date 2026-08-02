@@ -16,6 +16,12 @@ import {
   sourceMachine,
   translationMachine,
 } from "./machines/index.ts";
+import {
+  editionOrchestration,
+  runtimeOrchestrationEdges,
+  type RuntimeOrchestrationEdge,
+} from "./machines/orchestration.ts";
+import type { MachineKind } from "./machines/runtime.ts";
 
 type ElkPoint = { readonly x: number; readonly y: number };
 type ElkNode = { readonly id: string; readonly x?: number; readonly y?: number };
@@ -88,6 +94,8 @@ export type MachineTopologyExport = {
   readonly json: string;
 };
 
+export type MagazineOrchestrationExport = MachineTopologyExport;
+
 /**
  * Projects the actual XState machine configs. No parallel diagram definition
  * exists: states and transitions are read from the same machine objects the
@@ -130,15 +138,99 @@ export async function exportMachineTopology(): Promise<MachineTopologyExport> {
 
 export async function writeMachineTopology(destination: string): Promise<MachineTopologyExport> {
   const output = resolve(destination);
-  const topology = await exportMachineTopology();
+  const [topology, orchestration] = await Promise.all([
+    exportMachineTopology(),
+    exportMagazineOrchestration(),
+  ]);
   await mkdir(output, { recursive: true });
   await Promise.all([
     writeFile(resolve(output, "machine-topology.html"), topology.html),
     writeFile(resolve(output, "machine-topology.svg"), topology.svg),
     writeFile(resolve(output, "machine-topology.png"), topology.png),
     writeFile(resolve(output, "machine-topology.json"), topology.json),
+    writeFile(resolve(output, "magazine-orchestration.html"), orchestration.html),
+    writeFile(resolve(output, "magazine-orchestration.svg"), orchestration.svg),
+    writeFile(resolve(output, "magazine-orchestration.png"), orchestration.png),
+    writeFile(resolve(output, "magazine-orchestration.json"), orchestration.json),
   ]);
   return topology;
+}
+
+/**
+ * Renders the cross-machine lifecycle as a separate overview. Every edge is
+ * projected from a declaration consumed by EditionMachine or RunEngine.
+ */
+export async function exportMagazineOrchestration(): Promise<MagazineOrchestrationExport> {
+  const declaredEdges = runtimeOrchestrationEdges();
+  const nodeWidth = 250;
+  const nodeHeight = 82;
+  const labels = new Map(declaredEdges.map((edge) => [edge.id, overviewEdgeLabel(edge)]));
+  const result = await elk.layout({
+    id: "magazine-orchestration",
+    layoutOptions: {
+      "elk.algorithm": "layered",
+      "elk.direction": "RIGHT",
+      "elk.edgeRouting": "ORTHOGONAL",
+      "elk.edgeLabels.inline": "false",
+      "elk.layered.spacing.nodeNodeBetweenLayers": "230",
+      "elk.layered.spacing.edgeEdgeBetweenLayers": "28",
+      "elk.layered.spacing.edgeNodeBetweenLayers": "38",
+      "elk.spacing.nodeNode": "90",
+      "elk.spacing.edgeEdge": "20",
+      "elk.spacing.edgeNode": "32",
+      "elk.spacing.edgeLabel": "14",
+    },
+    children: editionOrchestration.machines.map((machine) => ({
+      id: machine.kind,
+      width: nodeWidth,
+      height: nodeHeight,
+      layoutOptions: machine.kind === "edition"
+        ? { "elk.layered.layering.layerConstraint": "FIRST" }
+        : undefined,
+    })),
+    edges: declaredEdges.map((edge) => ({
+      id: edge.id,
+      sources: [edge.source],
+      targets: [edge.target],
+      labels: [{
+        id: `${edge.id}:label`,
+        text: labels.get(edge.id),
+        width: Math.max(88, (labels.get(edge.id)?.length ?? 0) * 7 + 16),
+        height: eventLabelHeight,
+        layoutOptions: { "elk.edgeLabels.placement": "CENTER" },
+      }],
+    })),
+  });
+  const padding = 72;
+  const width = Math.ceil((result.width ?? 0) + padding * 2);
+  const height = Math.ceil((result.height ?? 0) + padding * 2);
+  const positions = new Map((result.children ?? []).map((node) => [node.id, node]));
+  const routed = new Map((result.edges ?? []).map((edge) => [edge.id, edge]));
+  const svg = renderOrchestrationSvg(
+    width,
+    height,
+    nodeWidth,
+    nodeHeight,
+    padding,
+    positions,
+    routed,
+    declaredEdges,
+    labels,
+  );
+  const json = JSON.stringify({
+    schemaVersion: 1,
+    description: "Connected overview projected from runtime-enforced orchestration declarations.",
+    lifecycleOwner: "edition",
+    machines: editionOrchestration.machines,
+    declarations: {
+      spawns: editionOrchestration.spawns,
+      routes: editionOrchestration.routes,
+      joins: editionOrchestration.joins,
+    },
+    edges: declaredEdges,
+  }, null, 2) + "\n";
+  const html = renderOrchestrationHtml(svg, json);
+  return { html, svg, png: rasterizeSvg(svg, width), json };
 }
 
 async function layoutMachine(name: string, config: MachineConfig): Promise<{
@@ -270,6 +362,73 @@ function renderSvg(
 
 function renderHtml(svg: string, json: string): string {
   return `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Magazine XState topology</title><style>body{margin:0;background:#eceef7;color:#171a31;font:16px system-ui,sans-serif}header{padding:1rem 1.5rem;background:#171a31;color:#fff}p{max-width:75ch}main{overflow:auto;padding:1rem}svg{display:block;background:#fff;box-shadow:0 2px 20px #0002}.toolbar{position:fixed;right:1rem;top:1rem}button{padding:.5rem .75rem}</style><header><h1>Magazine XState topology</h1><p>This diagram is generated directly from the live machine configs. Hover a state to inspect its owning machine; use the SVG for scalable review and the PNG for a portable fallback.</p></header><div class="toolbar"><button onclick="document.documentElement.requestFullscreen?.()">Fullscreen</button></div><main>${svg}</main><script type="application/json" id="machine-topology">${escapeScript(json)}</script></html>`;
+}
+
+function overviewEdgeLabel(edge: RuntimeOrchestrationEdge): string {
+  const name = edge.declarationId
+    .replace(/^edition\.(spawn|route|join)\./, "")
+    .replaceAll("_", " ");
+  return edge.kind === "completion"
+    ? `status: ${name}`
+    : edge.kind === "join"
+      ? `edition join: ${edge.label.split(" readiness:")[0]} to ${edge.target.replaceAll("_", " ")}`
+      : edge.kind === "route"
+        ? `edition route: ${name}`
+      : `${edge.kind}: ${name}`;
+}
+
+function renderOrchestrationSvg(
+  width: number,
+  height: number,
+  nodeWidth: number,
+  nodeHeight: number,
+  padding: number,
+  positions: ReadonlyMap<string, ElkNode>,
+  routed: ReadonlyMap<string, ElkEdge>,
+  edges: readonly RuntimeOrchestrationEdge[],
+  labels: ReadonlyMap<string, string>,
+): string {
+  const edgePaths = edges.map((edge) => {
+    const sections = routed.get(edge.id)?.sections;
+    if (sections === undefined || sections.length === 0) {
+      throw new Error(`ELK did not route orchestration edge ${edge.id}`);
+    }
+    return sections.map((section) => {
+      const points = [section.startPoint, ...(section.bendPoints ?? []), section.endPoint]
+        .map((point) => ({ x: point.x + padding, y: point.y + padding }));
+      return `<path class="edge ${edge.kind}" data-declaration="${escapeXml(edge.declarationId)}" d="${polylinePath(points)}" marker-end="url(#arrow-${edge.kind})"/>`;
+    }).join("");
+  }).join("");
+  const nodes = editionOrchestration.machines.map((machine) => {
+    const position = positions.get(machine.kind);
+    if (position?.x === undefined || position.y === undefined) {
+      throw new Error(`ELK did not position orchestration machine ${machine.kind}`);
+    }
+    const x = position.x + padding;
+    const y = position.y + padding;
+    const owner = machine.kind === "edition";
+    return `<g class="machine-node ${owner ? "owner" : "child"}" data-machine="${machine.kind}"><rect x="${x}" y="${y}" width="${nodeWidth}" height="${nodeHeight}" rx="12"/><text class="machine-title" x="${x + 18}" y="${y + 30}">${escapeXml(machine.label)}</text><text class="machine-kind" x="${x + 18}" y="${y + 55}">${escapeXml(owner ? "lifecycle owner and durable router" : machine.responsibility)}</text></g>`;
+  }).join("");
+  const edgeLabels = edges.map((edge) => {
+    const label = routed.get(edge.id)?.labels?.[0];
+    if (label?.x === undefined || label.y === undefined || label.width === undefined || label.height === undefined) {
+      throw new Error(`ELK did not position orchestration label ${edge.id}`);
+    }
+    const x = label.x + padding;
+    const y = label.y + padding;
+    const text = labels.get(edge.id) ?? edge.kind;
+    return `<g class="edge-label ${edge.kind}" data-edge="${escapeXml(edge.id)}"><title>${escapeXml(edge.label)}</title><rect x="${x - 5}" y="${y - 3}" width="${label.width + 10}" height="${label.height + 6}" rx="4"/><text x="${x + label.width / 2}" y="${y + 13}">${escapeXml(text)}</text></g>`;
+  }).join("");
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="orchestration-title orchestration-description">
+<title id="orchestration-title">Magazine runtime orchestration</title><desc id="orchestration-description">EditionMachine owns spawning, durable status return, joins, and feedback routes across all ten machines.</desc>
+<style>text{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.machine-node rect{fill:#fff;stroke:#52618f;stroke-width:1.6}.machine-node.owner rect{fill:#1d2755;stroke:#101735;stroke-width:2.6}.machine-title{font-size:16px;font-weight:750;fill:#1a2142}.owner .machine-title{fill:#fff}.machine-kind{font-size:9.5px;fill:#657092}.owner .machine-kind{fill:#cfd7ff}.edge{fill:none;stroke-width:1.65;opacity:.9}.edge.spawn{stroke:#355fcb}.edge.completion{stroke:#58708e}.edge.join{stroke:#17845d;stroke-dasharray:7 4}.edge.route{stroke:#bd4c65;stroke-width:2}.edge-label rect{fill:#fff;stroke-width:1}.edge-label text{font-size:10px;font-weight:650;text-anchor:middle}.edge-label.spawn rect{stroke:#9bb4ef}.edge-label.completion rect{stroke:#aeb9c8}.edge-label.join rect{stroke:#7ec8ac}.edge-label.route rect{stroke:#e5a2b1}</style>
+<defs>${(["spawn", "completion", "join", "route"] as const).map((kind) => `<marker id="arrow-${kind}" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="${kind === "spawn" ? "#355fcb" : kind === "completion" ? "#58708e" : kind === "join" ? "#17845d" : "#bd4c65"}"/></marker>`).join("")}</defs>
+<rect width="100%" height="100%" fill="#f5f7fc"/>${edgePaths}${nodes}${edgeLabels}</svg>`;
+}
+
+function renderOrchestrationHtml(svg: string, json: string): string {
+  return `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Magazine runtime orchestration</title><style>body{margin:0;background:#e9edf7;color:#171a31;font:16px system-ui,sans-serif}header{padding:1rem 1.5rem;background:#171a31;color:#fff}p{max-width:82ch}main{overflow:auto;padding:1rem}svg{display:block;background:#fff;box-shadow:0 2px 20px #0002}.legend{display:flex;gap:1rem;flex-wrap:wrap}.legend span{font:13px ui-monospace,monospace}</style><header><h1>Magazine runtime orchestration</h1><p>EditionMachine is the lifecycle owner. This connected overview is projected from the same typed declarations enforced by the runtime. The detailed state topology remains in the machine-topology files.</p><div class="legend"><span>blue: spawn</span><span>gray: child status</span><span>green: join or dependency</span><span>red: feedback route</span></div></header><main>${svg}</main><script type="application/json" id="magazine-orchestration">${escapeScript(json)}</script></html>`;
 }
 
 function rasterizeSvg(svg: string, width: number): Uint8Array {

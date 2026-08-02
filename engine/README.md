@@ -147,12 +147,19 @@ source media as immutable artifacts. Image generation is disabled for that fixtu
 npm run graph:export -- output/machine-topology
 ```
 
-The exporter reads the implemented XState `machine.config` objects and uses the
-same ELK layered layout dependency as the run viewer. It writes standalone
-HTML, SVG, PNG overview, and JSON topology files. The export has no maintained
-parallel transition list, so a state or transition change appears on the next
-export automatically. `engine/test/graph-export.test.ts` verifies every
-top-level Edition 4 lifecycle machine and key render-approval states.
+The exporter uses the same ELK layered layout dependency as the run viewer and
+writes two separate sets of standalone HTML, SVG, PNG, and JSON files. The
+`machine-topology.*` files project every state and transition directly from the
+implemented XState `machine.config` objects. The compact
+`magazine-orchestration.*` files show the ten machines as one connected system
+under EditionMachine, including spawn, durable child-status, join, dependency,
+and feedback-route edges.
+
+Cross-machine edges come from `machines/orchestration.ts`. EditionMachine and
+RunEngine consume and validate those typed declarations, and the overview only
+projects them. The graph test proves every endpoint and declaration is present,
+the JSON edges exactly match the runtime projection, and all ten machines are
+connected to the EditionMachine lifecycle owner.
 
 ## Edition 4 durable exercise
 

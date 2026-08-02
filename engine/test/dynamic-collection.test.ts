@@ -17,6 +17,7 @@ import type {
   WorkerIdentity,
   WorkOfferView,
 } from "../contracts/index.ts";
+import { InMemoryExecutor, runWorker } from "../executors/index.ts";
 import { RunEngineError, SqliteRunEngine } from "../run-engine/index.ts";
 
 function artifactId(value: string): ArtifactId {
@@ -657,6 +658,181 @@ test("dynamic collection survives restart and freezes accepted sources into plan
     );
     assert.equal(hasAncestor(forkView, replacementExtraction, archived.lead), true);
   } finally {
+    engine.close();
+    await rm(temporary, { recursive: true, force: true });
+  }
+});
+
+test("public worker loop advances the declared graph between human planning and visual review", async () => {
+  const temporary = await mkdtemp(join(tmpdir(), "mag-orchestration-worker-"));
+  const engine = new SqliteRunEngine({
+    databasePath: join(temporary, "runs.sqlite"),
+    artifactDirectory: join(temporary, "artifacts"),
+  });
+  const controller = new AbortController();
+  try {
+    const fixture = releaseEdition("worker-graph");
+    const started = await engine.start(fixture.spec);
+    const lead = preparedLead("worker-graph", "worker-source");
+    let view = await engine.submitLead(started.runId, lead.request);
+    view = await closeAndPlan(
+      engine,
+      view,
+      fixture,
+      "worker-source",
+      "worker-graph",
+    );
+    assert.equal(
+      view.offers.some((offer) => offer.status === "offered" && offer.role === "measure_article"),
+      true,
+    );
+
+    const renderArtifactIds = [
+      artifactId("worker-graph-reader"),
+      artifactId("worker-graph-web"),
+      artifactId("worker-graph-booklet"),
+      artifactId("worker-graph-package"),
+      artifactId("worker-graph-render-critic"),
+      artifactId("worker-graph-printer-preflight"),
+    ] as const;
+    const executor = (
+      role: string,
+      authority: WorkerIdentity["authority"],
+      capabilities: WorkerIdentity["capabilities"],
+      answer: (offer: WorkOfferView) => {
+        readonly result: JsonObject;
+        readonly artifacts: readonly AnswerArtifact[];
+      },
+    ) => new InMemoryExecutor(
+      `worker-graph-${role}`,
+      { principalId: `worker-graph-${role}`, authority, capabilities },
+      ({ offer }) => ({ contractVersion: offer.contractVersion, ...answer(offer) }),
+      (offer) => offer.role === role,
+    );
+    const worker = runWorker(
+      engine,
+      started.runId,
+      [
+        executor("measure_article", "tool", ["subprocess"], (offer) => ({
+          result: { fits: true, pageCount: 1, openerFits: true },
+          artifacts: [answerArtifact(
+            artifactId(`worker-graph-${offer.id}-measurement`),
+            "article_measurement",
+          )],
+        })),
+        executor("worth", "model", ["text_model", "source_access"], () => ({
+          result: { decision: "pass" },
+          artifacts: [],
+        })),
+        executor("evidence", "model", ["text_model", "source_access"], () => ({
+          result: { decision: "pass" },
+          artifacts: [],
+        })),
+        executor("craft", "model", ["text_model", "source_blind"], () => ({
+          result: { decision: "pass" },
+          artifacts: [],
+        })),
+        executor("edition_review", "model", ["text_model", "source_blind"], () => ({
+          result: { decision: "approved" },
+          artifacts: [answerArtifact(
+            artifactId("worker-graph-edition-review"),
+            "edition_review",
+          )],
+        })),
+        executor("measure_edition", "tool", ["subprocess"], () => ({
+          result: { fits: true },
+          artifacts: [answerArtifact(
+            artifactId("worker-graph-edition-measurement"),
+            "edition_measurement",
+          )],
+        })),
+        executor("render", "tool", ["subprocess"], () => ({
+          result: { renderedLanguages: ["en"] },
+          artifacts: [
+            answerArtifact(
+              renderArtifactIds[0],
+              "reader_pdf",
+              { fixture: "reader" },
+              { relativePath: "en/reader.pdf" },
+            ),
+            answerArtifact(
+              renderArtifactIds[1],
+              "web_output",
+              { fixture: "web" },
+              { relativePath: "en/web.html" },
+            ),
+            answerArtifact(
+              renderArtifactIds[2],
+              "booklet_pdf",
+              { fixture: "booklet" },
+              { relativePath: "en/booklet.pdf" },
+            ),
+            answerArtifact(
+              renderArtifactIds[3],
+              "package_artifact",
+              { fixture: "package" },
+              { relativePath: "en/package.zip" },
+            ),
+            answerArtifact(
+              renderArtifactIds[4],
+              "render_critic_report",
+              { fixture: "critic" },
+              { relativePath: "en/render-critic.json" },
+            ),
+            answerArtifact(
+              renderArtifactIds[5],
+              "printer_preflight",
+              { fixture: "preflight" },
+              { relativePath: "en/preflight.json" },
+            ),
+          ],
+        })),
+        executor("render_inspection", "tool", ["subprocess"], () => ({
+          result: {
+            result: "pass",
+            renderArtifactIds,
+            printerPreflightArtifactIds: [renderArtifactIds[5]],
+            studioReady: false,
+          },
+          artifacts: [answerArtifact(
+            artifactId("worker-graph-render-inspection"),
+            "render_inspection",
+          )],
+        })),
+      ],
+      controller.signal,
+      { pollIntervalMs: 5, heartbeatIntervalMs: 20, attemptTimeoutMs: 2_000 },
+    );
+
+    let reviewOffer: WorkOfferView | undefined;
+    for (let poll = 0; poll < 400 && reviewOffer === undefined; poll += 1) {
+      view = await engine.inspect(started.runId);
+      reviewOffer = view.offers.find(
+        (offer) => offer.status === "offered" && offer.role === "visual_review",
+      );
+      if (reviewOffer === undefined) {
+        await new Promise((resolvePromise) => setTimeout(resolvePromise, 5));
+      }
+    }
+    controller.abort();
+    const workerResult = await worker;
+    assert.ok(reviewOffer, "worker loop did not reach the next explicit human offer");
+    assert.deepEqual(reviewOffer.allowedWorkerCapabilities, ["human"]);
+    assert.equal(workerResult.failed.length, 0);
+    assert.equal(workerResult.answered.length, 8);
+    const machineNames = new Set(view.actors.map((actor) => actor.machine));
+    for (const machine of ["source", "article", "editorial", "edition_review", "render"]) {
+      assert.ok(machineNames.has(machine), machine);
+    }
+    const relationshipEvents = view.events.filter((event) =>
+      event.type === "CHILD_SPAWNED" || event.type === "CHILD_STATUS"
+    );
+    assert.ok(relationshipEvents.length > 0);
+    for (const event of relationshipEvents) {
+      assert.equal(typeof event.payload.relationship, "string");
+    }
+  } finally {
+    controller.abort();
     engine.close();
     await rm(temporary, { recursive: true, force: true });
   }

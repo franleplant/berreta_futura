@@ -30,6 +30,10 @@ import {
   type SnapshotStatus,
   type StateValue,
 } from "xstate";
+import type {
+  OrchestrationRouteId,
+  OrchestrationSpawnId,
+} from "./orchestration.ts";
 
 export const MACHINE_SEMANTIC_VERSION = "1.0.0" as const;
 export const DURABLE_EFFECT_ACTION = "durableEffect" as const;
@@ -93,6 +97,7 @@ export type CreateWorkOfferEffect = {
 
 export type SpawnActorEffect = {
   readonly type: "spawn_actor";
+  readonly relationship: OrchestrationSpawnId;
   readonly parentActorId: ActorId;
   readonly machine: Exclude<MachineKind, "edition">;
   readonly logicalKey: string;
@@ -101,6 +106,7 @@ export type SpawnActorEffect = {
 
 export type SendActorEventEffect = {
   readonly type: "send_actor_event";
+  readonly route: OrchestrationRouteId;
   readonly actorId: ActorId;
   readonly target:
     | { readonly actorId: ActorId }
@@ -182,6 +188,7 @@ export type WorkFailedEvent = {
 
 export type ChildSpawnedEvent = {
   readonly type: "CHILD_SPAWNED";
+  readonly relationship: OrchestrationSpawnId;
   readonly childActorId: ActorId;
   readonly childKey: string;
   readonly machine: Exclude<MachineKind, "edition">;
@@ -189,6 +196,7 @@ export type ChildSpawnedEvent = {
 
 export type ChildStatusEvent = {
   readonly type: "CHILD_STATUS";
+  readonly relationship: OrchestrationSpawnId;
   readonly childActorId: ActorId;
   readonly childKey: string;
   readonly status: "accepting" | "active" | "done" | "failed";
