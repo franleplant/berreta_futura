@@ -1,0 +1,197 @@
+schema_version: 1
+edition_id: rerun-004-the-systems-around-the-model
+piece_id: mcp-in-a-nutshell
+content_mode: in_a_nutshell
+status: drafting
+produced_at: '2026-08-02T13:53:52+00:00'
+inputs_sha256: 9893377d2d233930aef96b704697f586544d86b531e3b936fb64fb9f86ef916c
+manuscript_sha256: 9412568eefc563580d3aa53c8b9f2952b2491937815a1f6d9103b12c7ee383fc
+rounds:
+- round: 1
+  result: changes_required
+  manuscript_sha256: 9412568eefc563580d3aa53c8b9f2952b2491937815a1f6d9103b12c7ee383fc
+  writer:
+    role: writer
+    prompt_path: prompts/in-a-nutshell.md
+    prompt_sha256: 2f4a18ecea635bff24a90802aea770add2e868ec3083e60bb5d76a41948719b5
+    backend: agent
+    model: null
+    argv:
+    - mag
+    - produce
+    - rerun-004-the-systems-around-the-model
+    - --backend
+    - agent
+    - --submit
+    - mcp-in-a-nutshell/r1-writer
+    - --work-sha256
+    - f9995d9d862102350e424a0c7e0101c841ccae016cab7328670c996b64691ab3
+    duration_seconds: 0.0
+    output_sha256: 2c19b81e741f06debae5ec126937863cd4fae2dfaa296bc31e5a8581cf4bd97a
+  gate_failures:
+  - 'code_blocks: /Users/franguijarro/code/magazine/editions/rerun-004-the-systems-around-the-model/articles/mcp-in-a-nutshell.md:
+    code block 1 does not appear in any pinned source extraction (architecture-overview-ce5cb1d1); its
+    first line is ''comprehension_questions:''. Code in the magazine is copied and run by readers, so
+    every fenced block must be the source''s own lines, character for character.'
+  - 'validate: /Users/franguijarro/code/magazine/editions/rerun-004-the-systems-around-the-model/articles/mcp-in-a-nutshell.md:
+    code block 1 does not appear in any pinned source extraction (architecture-overview-ce5cb1d1); its
+    first line is ''comprehension_questions:''. Code in the magazine is copied and run by readers, so
+    every fenced block must be the source''s own lines, character for character.'
+  anchors_reconciled: []
+  judges: {}
+  notes: '## Before you draft
+
+
+    **The three things a reader gets here that the documentation does not give in seven minutes.**
+
+
+    1. Statelessness as the load-bearing decision, stated once and then used. The source says "MCP is
+    a stateless protocol" in one paragraph and never connects it to anything. This piece makes it the
+    spine: it is why `_meta` carries the version and capabilities on every request, why `server/discover`
+    is optional for clients, why the tool list ships with a caching hint, why subscriptions are opt-in
+    and their filters only partly honoured, and why notifications are best effort and you poll anyway.
+    Same facts, one cause.
+
+    2. A skip list. Three things a reader is told not to learn: the reverse-DNS `_meta` field names (SDK
+    territory), the whole transport chapter until they deploy remotely, and the two deprecated client
+    primitives. The documentation cannot tell you to ignore two thirds of itself.
+
+    3. The names, kept, plus the rule that bites: the string in `tools/call` must be the exact tool name
+    from `tools/list`, and tool names are deliberately long. A reader arrives at the docs able to search
+    five terms.
+
+
+    **The two absences.** (a) The entire Scope section: specification, SDKs, Inspector, reference server
+    implementations. Nothing in it changes what a reader does. (b) The "Understanding the Discovery Exchange"
+    field-by-field breakdown, including every `io.modelcontextprotocol/*` field name and the identity-exchange
+    rationale, replaced by one sentence saying the SDK writes that field. Also gone with less agonizing:
+    the four pseudo-code blocks, the four raw JSON payloads, the "Why Notifications Matter" list of four
+    reasons, and the Layers section as a subject of its own (it survives as one clause in the transport
+    paragraph, where it decides something).
+
+
+    **The identifiers kept.** Five essential: `_meta`, `server/discover`, `tools/list`, `tools/call`,
+    `subscriptions/listen`. Three supporting values appear inside the same sentences because the reader
+    types them too: `weather_current` (carries the exact-match rule), `toolsListChanged` (the filter value
+    that actually turns notifications on), and the `*/list` / `*/get` pattern (one sentence, so the reader
+    can derive `resources/list` and `prompts/list` without a table). Everything else in the API surface
+    is gone: no `resources/read`, no `elicitation/create`, no `notifications/tools/list_changed`, no `ttlMs`,
+    no `cacheScope`, no `UnsupportedProtocolVersionError`, no `inputSchema` as a bare term. Elicitation
+    is named as a concept only, on the judgment that a reader who has the word can find the method in
+    one search.
+
+
+    Checked against the finished draft: all three hold.
+
+
+    ## The reader''s model this was built around
+
+
+    An engineer who has heard of MCP, has not used it, and will decide this week whether it is worth an
+    afternoon. They need to be able to say to a colleague at lunch: it is a menu and a wire, the application
+    keeps one client per server, nothing is remembered between calls, and you get going with two method
+    names. They must also be able to sit down at the specification and search the right words.
+
+
+    ## Running example
+
+
+    **Chosen:** Visual Studio Code hosting a weather server, i.e. the source''s own host example joined
+    to the source''s own tool transcript. It is the only thread the source specifies end to end (tool
+    name, required and optional argument, argument values, content-array response, the tools-changed subscription),
+    so the walkthrough can be concrete without inventing a single field.
+
+
+    **Second example, used once and only once:** the filesystem server on the same laptop, to demonstrate
+    one-client-per-server, which one server cannot demonstrate. That is the whole of its budget and it
+    does not return.
+
+
+    **Rejected:** the Sentry server. The source names it as the remote example, but it has no tool names
+    in the source, so any walkthrough through it would have required inventing an API. The local/remote
+    contrast it exists to draw is made in the transport paragraph without naming it, which costs nothing.
+    Also rejected: the database server from the primitives section, for the same reason (no typed calls),
+    though its schema-and-few-shot-examples shape survives as the two sentences describing resources and
+    prompts.
+
+
+    ## Structure and why it is not the source''s
+
+
+    Source order: Scope, Participants, Layers, Data layer, Transport layer, Data Layer Protocol, Statelessness
+    and discovery, Primitives, Notifications, Example. This piece: problem and mental model (no source
+    section), participants merged with primitives, statelessness and discovery, one walkthrough that swallows
+    notifications, then the boundary carrying transport plus the deprecations plus extensions. Four headings,
+    all stating an idea. Transport is deliberately last because the judgment about it is "skip this",
+    and a section a reader is told to skip cannot sit at position three.
+
+
+    Sequence that must not be disturbed on revision: the mental model is in paragraph two, before the
+    words host, client, server, tools, resources, prompts and primitives exist in the piece; the walkthrough
+    precedes the boundary.
+
+
+    ## What the piece is resting on, for whoever revises it
+
+
+    - The opening claim that a model "cannot look anything up" rests on the source''s own line that tool
+    calls are what enable an LLM to access real-time data and act in the external world. If an evidence
+    finding lands there, the repair is to attribute the capability rather than the deficit, not to soften
+    the opener into abstraction.
+
+    - "The SDKs are there to abstract exactly this sort of concern away" is the source''s first paragraph,
+    applied to `_meta` specifically. That application is mine. It is the load-bearing sentence of skip-item
+    one, so if it is challenged, replace it with the source''s Python-SDK line (discovery happens while
+    the client connects) rather than deleting the judgment.
+
+    - "Every server must implement `server/discover`. No client has to send it." Both halves are in the
+    source, in two different sections, ~130 lines apart. Joining them is the point; do not let a reviser
+    split them back up.
+
+    - The caching hint is mentioned without its five-minute number, per the number rule: the claim does
+    not change if the ttl changes.
+
+    - The close ("a working client") is derived, not quoted: discovery is optional, `_meta` is SDK-filled,
+    and `tools/call` needs only the name from `tools/list`. It is the last skip-judgment as well as the
+    ending, which is why it is not a recap.
+
+    - Deliberately not written: any statement that MCP replaces N by M bespoke integrations. The source
+    tells no such history, and hard rule 5 outranks the temptation.
+
+    - The notification paragraph originally ended on "The notification saves you a poll. It does not replace
+    one." Cut as too close to the banned antithesis close; the flat "so a careful client keeps polling
+    after it subscribes" carries the same instruction.
+
+
+    ## The trim pass, so nobody puts it back
+
+
+    First draft ran 1,277 body words against a source of roughly 1,900. The shipped rerun of this piece
+    is 1,144 and is known to fit seven A5 pages, so that was the ceiling I cut to; the result is 1,146.
+    Nothing was cut to hit a number that the deletion pass had not already flagged, and these went:
+
+
+    - The opener''s fourth sentence, "Most of what the agreement says comes down to who has to remember
+    what." It said in advance what paragraph two says with the object in it. Restatement, and the strongest
+    candidate in the piece.
+
+    - The subscription-id tagging (the id in `_meta` that lets a client correlate notices with the subscription
+    that produced it). Real and useful with several open subscriptions, and nothing in a first afternoon
+    depends on it. The acknowledgment''s partial filter survived instead, because that one surprises people.
+
+    - `title` from the tool-listing fields, and the five-minute ttl value.
+
+    - The wet clauses: "meaning what each side can offer the other", "so no server ever asks a room with
+    nobody in it", "Nothing is fixed at build time".
+
+
+    Two things a length finding must not take. The `calculator_arithmetic` aside is 18 words and it is
+    the only place the piece explains why tool names look the way they do, which is the difference between
+    a reader who copies the string and one who retypes what they remember. The transport paragraph reads
+    like filler and is not: it is skip-judgment two, and cutting it leaves the piece with a skip list
+    of two.
+
+
+    If a later round needs room, take the elicitation paragraph whole (50 words). It is the one section
+    that does not touch the statelessness spine, and it is the cheapest complete thought in the piece
+    to lose.'

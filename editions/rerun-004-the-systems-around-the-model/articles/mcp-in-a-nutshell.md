@@ -5,42 +5,48 @@ content_mode: in_a_nutshell
 label: IN A NUTSHELL
 ---
 
-A model can only work with what is put in front of it, and the useful material sits outside. It is in your team's database, or in the files on your laptop, or behind an API nobody has asked yet. Something has to fetch it and hand it over, and the Model Context Protocol is an agreement about the handover.
+A language model cannot look anything up. Ask one for the weather in San Francisco this afternoon and it has no way to find out, so another program has to go and get it and hand it back in a form the model can act on. The Model Context Protocol is the agreement covering that handover: what the fetching program may offer, and how the two ends talk about it.
 
-The picture to keep in your head has two halves and one wire. On one side is the AI application, which owns the model and every decision about what to do with what it learns. On the other side is a program that owns some corner of the outside world and offers it as a short, self-describing menu. The wire carries messages in one fixed format, and each end states what it can do rather than assuming.
+Underneath are two programs and one wire. At one end is the AI application, which owns the model and every decision about what to do next. At the other is a small program that owns one corner of the outside world, a weather service here, and publishes a short menu of what it holds and what it can do. The wire carries requests and answers in one fixed format, JSON-RPC, and forgets each exchange as soon as it is answered. No session is held open on your behalf, and that one decision explains most of the rest.
 
-## The host keeps one client per server
+## One client per server, and a menu at the far end
 
-Picture Visual Studio Code with a server in front of your team's database. The specification calls it the host, the AI application at that end of the wire. It builds a small component, a client, whose only job is to hold one connection to that one server and pull context back. Connect a second server, say the filesystem server on the same laptop, and the host builds a second client, one to one. The host is the only place those connections meet, and managing them is its job.
+Picture Visual Studio Code with a weather server connected to it. The specification calls the editor the host, the AI application at that end of the wire. The editor builds a small component whose whole job is to hold that one connection and bring context back: the client. Connect a second server, the filesystem server on the same laptop say, and the editor builds a second client for it. One per server, and the host is the only place the connections meet.
 
-## What a server is allowed to offer
+The weather server has one thing to offer: an action someone can ask it to take, with an effect out in the world. Other servers have material to hand over and nothing more, the contents of a file or a row from a database. A third kind is a template for driving the other two, few-shot examples showing a model how to phrase a query. The specification names them tools, resources and prompts, and calls the three primitives. Learn the shape once and it covers all three: a `*/list` call to see what is there, a `*/get` to pull one back, and for tools a `tools/call` to run it. What a server offers can change between conversations.
 
-Your database server has three kinds of thing to give away. It can take an action on request, running a query or anything else with an effect in the world. Then there is material to read, the schema for instance, which is context and nothing more. Last comes a worked template for talking to it, few-shot examples that show a model how to drive those queries. The specification names these three: tools, resources and prompts. It groups them as primitives, meaning what the two sides can offer each other.
+Offers run both ways. A server about to do something it cannot undo can put a question back through the client to the person at the keyboard. The specification calls that elicitation, and a client that can collect input says so in the capabilities it attaches to every request.
 
-Traffic is not all one way. A server can put a question to the person at the far end, either because it needs information it lacks or because it wants an action confirmed first. The request travels back through the client to the user, which is why the client says up front whether it can collect input at all. Collecting input is the client's own offer back, and the specification calls it elicitation.
+## Nothing is remembered, so every request introduces itself
 
-## Every request introduces itself
+Each request has to arrive judgeable on its own. Every one carries the protocol version the client is speaking and the capabilities that bear on it, plus, unless the client has been configured to stay quiet about it, its own name and version. All of that rides in a field called `_meta`. You will probably never type its contents: the field names are long reverse-DNS strings and the SDKs exist to abstract that sort of thing away, which is why the specification points most developers at the data layer rather than at the plumbing under it.
 
-MCP is stateless. No session is held open on your behalf, so each request arrives carrying what is needed to judge it. Every one carries the protocol version the client speaks and the capabilities that matter for it. Unless configured otherwise, the client says who it is as well. All of it rides in a `_meta` field.
+Finding out what the other end supports is then just another request. A client that wants to know up front sends `server/discover` and gets back the versions the server accepts, which primitives it handles, and whether it will announce changes to them. Every server must implement that request. No client has to send it: a client can go straight to the request it wanted and handle a version rejection, which names the versions the server does accept. The answer is usually cacheable, so it is asked once and reused.
 
-Because nothing is remembered, learning what the other side supports is just another request. A client may open with `server/discover` and get back the versions the server accepts along with its capabilities, which primitives it can handle and whether it will report changes to them. Every server must implement that request. No client is obliged to send it. A client can instead send the request it wanted and handle a version rejection, which names the versions the server does accept. The discovery answer is usually cacheable, so it need not be asked again. Either way, neither end attempts an operation the other has never heard of.
+## From a cold start to a temperature
 
-## One morning on one connection
+Visual Studio Code starts, the client manager opens the connection, discovery reports that the server has tools and will announce changes to them, and the editor marks it ready. The client asks what those tools are with `tools/list`. Back comes an entry for each one: the name to call it by, a description of what it does and when to use it, a JSON Schema for its arguments, and a hint about how long the list may be cached. The editor folds the entries from every connected server into one registry, and that is what the model can reach this morning.
 
-Visual Studio Code starts. Its client manager opens the connection to the database server, discovery reports that the server offers tools and will announce changes to them, and the host marks the server ready.
+Mid-conversation the model picks the weather tool. The application intercepts the call, finds the client that owns that tool, and sends `tools/call`, where two things have to be right. The name must be the exact string from the listing, `weather_current`, longer than anyone would guess and deliberately so: the specification tells server authors to name a tool `calculator_arithmetic` rather than `calculate`. The arguments must match the schema, a required location, San Francisco, and an optional units, imperial here, which would otherwise default to metric. Back comes an array of content blocks, plain text this time, and into the conversation it goes as material for the next turn.
 
-The client asks for the tool list and gets an entry for each one, a unique name to call it by, a description of what it does and when to use it, and a schema for its arguments. The host folds those into one registry covering every server it has connected, and that is what the model can reach this morning. Mid-conversation the model picks one. The application intercepts the call, routes it to the client that owns that tool, and sends the exact name from the listing with arguments matching the declared schema. The result comes back as an array of content, plain text here, and goes into the conversation as material for the next turn.
+Then the tool list changes on the server. The editor hears about it only because it asked to. A client subscribes by opening a long-lived stream with `subscriptions/listen`, naming the events it wants, `toolsListChanged` here, and the server acknowledges with the subset of that filter it will honour. The notice, when it comes, has no id and expects no reply. The client re-lists the tools, and the registry changes while the conversation is still running. None of this is guaranteed: delivery is best effort, a notice can be lost across a reconnect, and a careful client keeps polling after it subscribes.
 
-Later the server's tool list changes. The client hears about it only because it asked to. Notifications are opt-in, and a client subscribes by opening a long-lived stream naming the event types it wants. The notice arrives with no reply expected, the client re-lists the tools, and the registry updates while the conversation is still running. Delivery is best effort and a notice can be lost across a reconnect, so a careful client keeps polling anyway.
+## What it will not decide for you
 
-Nothing in that morning depended on where the server ran. The database server sits on the same laptop, and its messages travel over standard input and output with no network in the way. A server a vendor runs, such as the one Sentry operates on its own platform, receives the same messages over HTTP posts. What it adds is only what the local case lacks. An optional event stream for anything arriving in pieces, and a bearer token or API key, obtained through OAuth by preference. The local server usually serves that one client and the remote one serves many, and the word "server" says nothing about where the program runs. Making the connection and proving who you are belong to the transport underneath, and the protocol proper never looks down there.
+MCP covers the exchange and stops there. It has nothing to say about which model you run or what you do with the context once it arrives.
 
-## What the protocol declines to decide
+Where the server runs is barely a decision either. One on your own machine speaks over standard input and output, with no network in the way. One a vendor operates takes HTTP posts, adds an optional event stream for answers arriving in pieces, and wants a bearer token or an API key, by preference obtained through OAuth. The messages are identical either way, which is the point of splitting the data layer from the transport under it. Until you deploy something remote, that is a chapter you can skip.
 
-MCP covers the exchange of context and stops there. It has nothing to say about which model you run, or what you do with the context once you have it.
+Two more you can skip outright. A server used to be able to borrow the host's model for a completion, and to send its log lines to the client for debugging. The specification calls those sampling and logging, and the 2026-07-28 version deprecated both: new code calls a model provider directly and logs to standard error or through OpenTelemetry. The protocol grows sideways instead, through extensions, one of which lets a server answer slow work with a durable handle the client comes back for, so nothing sits holding a request open.
 
-The same restraint governs how it changes. Collecting input is not the only offer a client makes. A client can also lend the host's model to a server that wants a completion written without carrying a model of its own, and it can take log lines from a server for debugging. The 2026-07-28 version deprecated both of those. Deprecated is all it did. Both methods are still in the protocol and both still work, and what changed is the advice for new code, which is to call a language-model provider directly and to log to standard error or through OpenTelemetry.
+A client that only ever sends `tools/list` and `tools/call` is a working client. The rest of the specification is what you read the week one of those two surprises you.
 
-Growth happens sideways instead. An extension lets a server hand back a durable handle for slow work, so the client can pick up the result later rather than hold a request open. Nothing waits on the connection while that work runs, so the connection can go away and cost nobody anything.
-
-A server that remembers nothing about you between requests is a server you can hang up on and call back.
+```yaml
+comprehension_questions:
+- What does MCP define, and what does it deliberately leave to the AI application?
+- One AI application is connected to three servers. How many clients exist, and who manages them?
+- Which request asks a server what protocol versions and capabilities it supports? Must every server implement it, and must every client send it?
+- Which two calls take a client from knowing nothing about a server to holding a result, and what must match exactly between them?
+- What must a client do to be told when a server's tool list changes, and why should it keep polling anyway?
+- Since no session is held open, what does every request have to carry, and in which field?
+```

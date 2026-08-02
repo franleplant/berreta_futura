@@ -61,7 +61,7 @@ articles:
     caption: The recovered campaign compresses into a 4.5-day timeline of foothold, command and control,
       lateral movement, credential use, and cleanup.
     alt_text: A campaign timeline shows event volume and phase activity across four and a half days.
-    anchor: The kill chain
+    anchor: From one pod to cluster-admin
     layout: evidence_band_prose
     criteria:
     - important
@@ -93,7 +93,7 @@ articles:
     caption: Evaluation becomes engineering when production traces, failure labels, and repeatable graders
       form one operating loop.
     alt_text: A source diagram presents the first stage of an evaluation-engineering workflow.
-    anchor: Thermometer, thermostat
+    anchor: Where the tests come from
     layout: compact_band
     criteria:
     - important

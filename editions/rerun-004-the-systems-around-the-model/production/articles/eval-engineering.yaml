@@ -1,0 +1,141 @@
+schema_version: 1
+edition_id: rerun-004-the-systems-around-the-model
+piece_id: eval-engineering
+content_mode: faithful_synthesis
+status: drafting
+produced_at: '2026-08-02T13:53:45+00:00'
+inputs_sha256: 032a67586179767c076e86ba324139af19a360d2c61c9a140616cf0d8dc081e1
+manuscript_sha256: 0c950cf0fcf2b7a793120876e2c4bcac2b7a94ac6b003f80e2e291e81d5d57b6
+rounds:
+- round: 1
+  result: changes_required
+  manuscript_sha256: 0c950cf0fcf2b7a793120876e2c4bcac2b7a94ac6b003f80e2e291e81d5d57b6
+  writer:
+    role: writer
+    prompt_path: prompts/faithful-synthesis.md
+    prompt_sha256: 1bbcd7a51079b8540ee72c83f3410be3505cbe5afff9b1799f2e174ad87edd6a
+    backend: agent
+    model: null
+    argv:
+    - mag
+    - produce
+    - rerun-004-the-systems-around-the-model
+    - --backend
+    - agent
+    - --submit
+    - eval-engineering/r1-writer
+    - --work-sha256
+    - e2f775e6a9e5bf2dc2886128491de68971015e22f7a4e1be01b712c67ce6a9a3
+    duration_seconds: 0.0
+    output_sha256: 91dc5b6ef08a2f9a9b6c1730eb47d4ba896a0545fb879737711d5633129d88a0
+  gate_failures: []
+  anchors_reconciled:
+  - Where the tests come from
+  - What a score is allowed to do
+  judges: {}
+  notes: "## The sentence\n\nA reader gets the operational half of a 3,560-word promotional thread with\
+    \ the\npromotion, the vendor leaderboard and the checklists gone: the failure, the\ntraces that catch\
+    \ it, the commands that install the harness, the verdict that\nreroutes the run, and the gate that\
+    \ merges without you, in the order the work\nhappens rather than the order the tooling installs. The\
+    \ reordering is the\neditorial claim. The source itself observes that \"almost everyone installs the\n\
+    first, then wonders where the material comes from\", and then puts its install\nstep two sections\
+    \ ahead of its traces step; this piece puts the material first\nand folds the install into it, so\
+    \ the reader never has the tooling without the\ntraces to feed it.\n\nChecked against the finished\
+    \ draft: yes, but it rests entirely on the third\nparagraph of \"Where the tests come from\" surviving.\
+    \ That paragraph is the only\nplace a reader can type anything. The previous shipped draft (1,198\
+    \ words) had\nno command, no filename and no folder in it, which is `worth`'s\n`stripped_utility`\
+    \ and is the single biggest change here. Do not cut it for\nlength. If length must come out, take\
+    \ it from the gate section.\n\n## The two absences\n\n1. **The blind test and the unbundling** (source\
+    \ \"Step 1\", first half). Gone\n   whole: the 100-trace / 39-failure benchmark, Braintrust 87.2%,\
+    \ Codex 84.6/82.8,\n   LangSmith 79.5%, Arize 74.4/91.0, and the four vendors shipping skills in four\n\
+    \   weeks (LangChain 22 July, Galileo, AWS under Apache 2.0, Arize). It is a\n   market snapshot with\
+    \ a shelf life of about a month, nothing a reader does on\n   Monday changes with it, and the claim\
+    \ it supports (the harness is nearly free\n   and installs in three lines) is asserted independently\
+    \ by the source and is\n   demonstrated here by the commands themselves. Cut order rule 2: the evidence\n\
+    \   went, the claim stayed.\n2. **The careful rollout and the shop economics** (source \"Step 4\"\
+    , second\n   half). Gone whole: shadow mode for at least 4 hours, the 2% deviation\n   threshold,\
+    \ 1-5% trace sampling, the two-person shop that starts quoting on\n   contracts it used to decline,\
+    \ and \"the model bill does not move\". This is\n   deployment procedure for a gate the reader has\
+    \ not built yet, and it arrives\n   three decisions after the one the section is making.\n\n## Claim\
+    \ ladder\n\nCentral claim: the layer that decides whether an answer was right and then does\nsomething\
+    \ with the verdict is what separates an agent that demos from one that\ngets paid; it costs almost\
+    \ nothing, and nobody can sell it to you because it\nencodes your own definition of correct.\n\nSupporting,\
+    \ in the order the argument needs:\n\n- The travel agent invented an exchange rate, a temperature\
+    \ and museum hours\n  because the search tool came back empty. Nobody caught it: the writing was the\n\
+    \  only part anyone looked at.\n- Measured over 100 real sessions: 83.9% response quality, 32.3% faithfulness.\n\
+    \  A better model would not have caught this.\n- The rented brain is identical for everyone (\"give\
+    \ or take\"), so the gap\n  between two teams is now wider than the gap between two models.\n- One\
+    \ company changed only the evals across successive versions and every score\n  moved; their own conclusion\
+    \ was day one, not month nine.\n- Thermometer against thermostat; the wiring from the reading to the\
+    \ furnace;\n  the verdict returns into the graph and changes what runs next.\n- Tests from imagination\
+    \ only cover imagined failures. 25 complete traces, no\n  more, chosen so good and bad sit next to\
+    \ each other (five kinds).\n- Attribution is the beginners' week: same lookup twice is your loop,\
+    \ a 429 is\n  someone else's limit *and only yours if recovery was expected*.\n- Never treat the recorded\
+    \ answer as truth; the answer key comes from tests,\n  records, policy or a person.\n- The harness:\
+    \ two repos, two jobs; `evalkit init`; the task folder; the rubric\n  and expected outcome hidden\
+    \ from the target, which is the only reason the\n  score means anything; `/evalkit.report` points\
+    \ at code locations.\n- A score with no path back to its run is analytics; six verdicts, six\n  structural\
+    \ actions on the run in progress.\n- Judge hygiene: another model family, never score the shape.\n\
+    - The gate: four signals, three of them history and deterministic checks,\n  exactly one touching\
+    \ the model; above threshold it self-merges, below it a\n  human gets the failing signal named.\n\n\
+    Qualifications, all retained: \"give or take\"; \"across 100 real sessions\"; a 429\nbecomes your\
+    \ eval only if recovery was expected; the trace records what the\nagent did, never what it should\
+    \ have done; optimize against a judge long enough\nand it learns to look right rather than be right;\
+    \ 38 green tests coexisted with\na completely broken product, so the loop has to converge on the spec\
+    \ rather than\non the score. The last one is the piece's counterweight to its own enthusiasm\nand\
+    \ must never be traded for length.\n\n## Voice signature (verbatim, do not paraphrase in revision)\n\
+    \n1. \"The agent wrote beautifully and told the truth about a third of the time.\"\n2. \"Tests you\
+    \ invent from imagination protect you from failures you already\n   imagined.\" / \"The ones that\
+    \ cost money are sitting in your logs right now,\n   wearing a timestamp.\"\n3. \"Attribution is where\
+    \ beginners lose a week.\"\n\nAlso kept as the author's: \"All of it invented.\", \"A thermometer\
+    \ tells you the\nroom is cold. A thermostat turns the heat on.\", \"a way no vendor would\", the\n\
+    1,500-pull-request quotation entire, and the sign-off imperatives. The sign-off\nis the close; the\
+    \ subscribe blocks and the Telegram and X links are chrome and\nwent with the rest of it.\n\n## What\
+    \ step 3 dropped, and why\n\nBeyond the two absences: the Claude Code plugin install (a second way\
+    \ to do the\nthing the three lines already do); the open-skills portability note (Codex,\nCursor,\
+    \ Windsurf, Goose); the six `evalkit` phase commands named individually,\nreduced to `evalkit init`\
+    \ and `/evalkit.report`, which is the one the source\nitself calls worth the whole setup; the four-line\
+    \ trace write-up template; the\n\"test the verifier on one right and one plausible-wrong result\"\
+    \ rule; the\nenvironment-leaks-the-answer rule; simulate-anything-that-costs-money; the\ninterview-beats-one-shot\
+    \ finding and the paste-in instruction block; the\none-line `Pass iff` rubric form; the split between\
+    \ judge-decided and\ncode-decided checks; the pin-the-judge-version rule; 19-of-20, three-quarters,\n\
+    one-in-five and the low-single-digit revert rate (all second illustrations of\nthe point the 1,500-PR\
+    \ quotation already carries); the whole of \"Step 5\" (three\nmeasurements, five code-change dimensions,\
+    \ four dataset types, 300-800 cases,\n500 in five minutes, the five first evals) except its first\
+    \ eval, the empty tool\nresult, which returns here as the travel agent's own failure made permanent.\n\
+    \nEnumerations: no list survives as a list. The five trace kinds are one sentence\nof five clauses,\
+    \ because they are moves in the argument rather than a checklist\nanyone scans. The six verdict-to-action\
+    \ rules are four sentences, kept complete\nbecause the reader acts on all six and the `eval-routing`\
+    \ figure sits beside\nthem. The judge-hygiene five became two. The four gate signals are one clause\n\
+    each, and they stay because the sentence after them (\"three of the four are\nhistory and deterministic\
+    \ checks, and exactly one touches the model at all\") is\nunreadable without knowing what the four\
+    \ are.\n\nNo fenced code block survives. This is deliberate and load-bearing: every code\nline in\
+    \ the extraction is truncated at the right margin by the capture (`npx\nskills add langchain-ai/langchain-skills\
+    \ --skill '*' --yes --g`, `uv tool\ninstall evalkit --from git+https://github.com/awslabs/Agen`),\
+    \ so reproducing a\nfence character for character, as the prompt requires, would print commands that\n\
+    cannot be run. Every identifier is carried inside the sentence that explains it\ninstead. If a future\
+    \ round wants the fences back, the extraction has to be\nrecaptured first.\n\n## Choices this piece\
+    \ is resting on\n\n- The five X-is-Y pronouncements of the previous draft are gone and none was\n\
+    \  replaced: \"The constraint is the product\", \"Trust in an agent is an actuarial\n  calculation\"\
+    , \"The model was never the interesting part\", \"The model is a\n  rental\", \"A number in a report\
+    \ has no path back\" (the last survives only as a\n  subordinate clause with a \"because\" in front\
+    \ of it). They were the author's\n  own, so the mode permitted them, but they are the house's definite-article\
+    \ tic\n  and the register the owner rejected. If a reviser wants a landing at the end\n  of a section,\
+    \ land it on the fact, not on the equation.\n- The 21-year-old founder keeps his line and loses his\
+    \ 258 followers and his two\n  likes. The counts changed nothing in the argument and read as credentialing.\n\
+    \  The attribution stays so the quotation is not orphaned.\n- The Friday-afternoon scroll appears\
+    \ once, in the close. The thermometer\n  paragraph says \"a dashboard or a feeling\" for the same\
+    \ reason: edition 004\n  shipped one example twice and it is the duplication finding to avoid.\n-\
+    \ The two figures moved. `eval-engine` now anchors \"Where the tests come from\"\n  rather than a\
+    \ thermostat section, because there is no longer a thermostat\n  section: that material is four sentences\
+    \ in the opening block, and the figure's\n  own caption is about traces, labels and graders forming\
+    \ a loop, which is what\n  that section argues. `eval-routing` stays with the six verdicts.\n- Length:\
+    \ 1,087 body words plus four headings against 3,560 in the source, 31%,\n  and 73 words under the\
+    \ previous draft. The saving over that draft is small in\n  words and large in what the words carry,\
+    \ because the words that went were the\n  vendor leaderboard, the rollout procedure and the save-card,\
+    \ and the words that\n  arrived were commands and filenames. Going materially below 1,000 from here\n\
+    \  costs either the install paragraph or the 38-green-tests warning, and the cut\n  order forbids\
+    \ trading both. If a later round is told to cut anyway, the order\n  is: the four named gate signals\
+    \ reduced to the claim about them (30 words),\n  then the judge-hygiene sentence (35), then the rented-brain\
+    \ sentence (44).\n  The opening paragraph was measured at 6 of its 9 permitted lines, 404\n  characters,\
+    \ so there is room there if a repair needs it."

@@ -5,7 +5,7 @@ content_mode: faithful_edit
 label: FAITHFUL EDIT
 ---
 
-**Editor's note.** This is an addendum to a series of Dex Horthy's, published on its own and mentioned briefly in *Why Software Factories Fail part 2: Turning the lights back on*. In his terms, a factory is the setup you drop a prompt into and hope to get a fully-mergeable result back from, and the levels are phases of planning one piece of work.
+This one is a bit of an addendum / side-quest to the recent series. It didn't fit cleanly into the main post so I'm publishing it standalone. It is referenced briefly in *Why Software Factories Fail part 2: Turning the lights back on*.
 
 ## Seeking leverage
 
@@ -23,7 +23,7 @@ Now let's say you are a principal engineer with 10 years of experience. You have
 
 And at the far end: write every line yourself. Nothing's left for the agent to get wrong, so the rework chance goes to zero.
 
-**Author's note.** For this example I'm gonna blur "chance you'll have to change something" weighted by "how painful the change will be" into a single percentage number, but obviously they're two separate variables. If the model is 50% likely to get a button style wrong, but the fix is one cheap prompt, then our combined "expected pain" is low.
+For this example I'm gonna blur "chance you'll have to change something" weighted by "how painful the change will be" into a single percentage number, but obviously they're two separate variables. If the model is 50% likely to get a button style wrong, but the fix is one cheap prompt, then our combined "expected pain" is low.
 
 > expected pain = P(you'll have to change it) × how painful the change is
 
