@@ -1,225 +1,205 @@
 # Architecture
 
-## Purpose
+The magazine workflow is one durable TypeScript execution graph. XState owns
+lifecycle and joins. `RunEngine` owns persistence, identity, work dispatch,
+artifact lineage, and release authority. The retained Python tree is legacy
+implementation and is not a second workflow.
 
-The project compiles unstable internet sources into private-first, source-faithful magazine editions. It separates acquisition, editorial judgment, and production so an approved manuscript can be rebuilt without fetching the web or invoking AI again.
+The governing design is
+[`meta/plans/graph-execution-model.md`](../meta/plans/graph-execution-model.md).
+This document describes the implementation boundary contributors use now.
 
-## External interface
+## Public boundary
 
-The publishing module exposes four conceptual operations:
+Callers interact with `RunEngine`; they do not send events to in-memory actors,
+query SQLite, inspect output directories for readiness, or copy run folders to
+restart work.
 
-1. `capture(inputs)` records and materializes source candidates.
-2. `run(edition)` advances an edition until the next unresolved checkpoint.
-3. `decide(checkpoint)` records an approval, rejection, or change request against an exact revision.
-4. `status(edition)` explains current state, warnings, and recoveries.
+The supported operations are:
 
-The CLI and conversational interface are adapters over this interface. Individual extractors, AI roles, renderers, and packaging steps are private implementation details.
+- `start(spec)` creates an article or edition run from immutable inputs.
+- `advance(runId)` consumes committed events and exposes the next work.
+- `claim(offerId, worker)` allocates a fenced attempt for one eligible worker.
+- `answer(claim, result)` validates and commits one result against its exact
+  active offer.
+- `fail(claim, failure)` records an attempt failure without granting a late
+  worker authority.
+- `retry(runId, actorId)` requests a declared recoverable transition.
+- `submitLead(runId, request)` atomically adds a lead while collection is open.
+- `fork(runId, changes)` creates a successor for changed frozen inputs.
+- `inspect(runId)` returns the declared topology, ordered events, work state,
+  decisions, and artifact graph.
+- `seal(runId)` exports a normalized immutable audit record for a terminal run.
 
-The concrete publishing seam is now:
+The CLI under `engine/cli.ts` is an adapter over those methods:
 
-```python
-mag.workflow_status(edition_id)       # read-only, complete checkpoint report
-mag.workflow_run(edition_id)          # conservative deterministic advancement
-mag.stage_article(versioned_brief)    # source, manuscript, manifest, translation unit
-mag.cover_studio_*()                  # immutable rounds and explicit selection
-mag.illustration_studio_*()           # explicit inventory and asset registration
+```sh
+npm run engine -- start run-spec.json
+npm run engine -- inspect <run-id>
+npm run engine -- continue <run-id>
+npm run engine -- submit-lead <run-id> lead.json
+npm run engine -- worker <run-id> worker-config.json
+npm run engine -- answer <run-id> <offer-id> answer.json --principal <id>
+npm run engine -- retry <run-id> <actor-id>
+npm run engine -- fork <run-id> changes.json
+npm run engine -- seal <run-id>
 ```
 
-`workflow_status` is the single source of recovery instructions. A checkpoint
-classifies its next action as deterministic, authorial, or human review.
-`workflow_run` dispatches only a finite allowlist of deterministic actions and
-stops when the remaining work requires prose, image generation, selection,
-review, or release. Repeating it is safe.
+## Machine hierarchy
 
-Article staging owns the first post-capture transaction. A schema-versioned
-brief names one collecting edition, one article identity, and one or more
-queued source ids. The article staging module prepares the manuscript TODO and
-the manifest row, which carries the article's `source_ids` and the exact
-`source_body_sha256` of each source's extraction, without inventing source
-text. The publishing module then reconciles every configured
-non-source-language overlay. Those writes are exposed as one transaction: an
-overlay refusal conditionally restores only files this invocation changed.
-Unrelated concurrent files are preserved. A concurrently edited touched file
-is also preserved and reported while every other safely restorable write rolls
-back.
-
-Creative studios are intentionally outside `run`. The Cover Studio owns
-append-only candidate rounds, computed asset hashes, prompt evidence, all-round
-localized full-cover proofs, comparison sheets, and an explicit atomic
-selection. The Illustration Studio owns article openers plus an explicit subset
-of article tails and closing plates, prompt packages, validated asset
-registration, and review sheets. Neither studio generates images itself: the
-studios prepare and seal, and a produce phase may execute a model through the
-single seam in `magazine.runner`: text via `codex exec` (default) or
-`claude -p`, images via `codex exec` and nothing else. Their revisions support
-optimistic concurrency so a stale caller refuses instead of replacing newer
-work.
-
-The CLI mirrors these boundaries:
+`EditionMachine` owns the complete issue:
 
 ```text
-mag status <edition> [--json]
-mag run <edition> [--json]
-mag article stage <brief> [--dry-run]
-mag cover-art <status|next-round|prompts|register|proof-plan|proof|compare|select>
-mag interior-art <status|scaffold|prompts|register|review-plan|review-sheet>
+EditionMachine
+  SourceMachine[]
+  ArticleMachine[]
+  EditorialMachine
+  EditionReviewMachine
+  TranslationMachine[]
+  CoverArtMachine
+  InteriorArtMachine
+  RenderMachine
+  ReleaseMachine
 ```
 
-Legacy focused commands remain compatibility adapters. In particular,
-`illustrate` retains its combined prompt-package behavior and `cover-proof`
-retains the canonical selected-cover fast proof.
+`ArticleMachine` is defined once. An edition starts it as a child actor, and
+ArticleLab starts the same machine as a root actor. Given the same run spec,
+answers, and policy, both placements must make the same transitions and produce
+the same artifact graph.
 
-## Artifact flow
+The edition actor alone owns cross-article joins, editorial dependencies,
+translation completion, registered art, render readiness, and release. A UI may
+draw a different layout, but it cannot rearrange runtime ownership.
 
-```text
-lead URL
-  -> immutable source snapshot
-  -> normalized source record
-  -> assignment to the selected intake edition
-  -> provenance-linked source bundle
-  -> versioned article brief
-  -> transactional manuscript, manifest, and translation staging
-  -> faithful manuscript + editorial patches
-  -> line-exact code-block check against the pinned extractions
-  -> claim-level fact-check, line, learning, and edition reviews
-  -> seven-page article-budget check (faithful synthesis when over budget)
-  -> emergent-narrative editorial drafted under docs/WRITING_RULES.md
-  -> titled one-page editorial-budget check (per-edition, two-page ceiling)
-  -> append-only cover rounds + full-cover comparisons + human selection
-  -> explicit opener and interior-art inventory + validated registered assets
-  -> approved content digest
-  -> canonical front/back SVGs -> one-page cover PDFs -> proof PNGs
-  -> deterministic interior layout
-  -> exact outer-cover PDF splice into reader pages 1 and N
-  -> proof digest
-  -> reader/home/studio packages
+## Durable execution
+
+XState transitions are pure. They return effects such as creating an offer,
+spawning an actor, or recording a decision. `RunEngine` commits the accepted
+event, new snapshot, effects, and active pointers in one short SQLite
+transaction before external work starts.
+
+SQLite runs in WAL mode and records runs, actors, ordered events, snapshots,
+iterations, offers, attempts, leases, artifacts, decisions, and outbox effects.
+The event journal is the audit history. A snapshot is only a resume optimization
+for the exact machine version.
+
+Coordinator and worker leases carry fencing tokens. A timed-out or replaced
+worker may finish computing, but it cannot commit over the active attempt. A
+committed outbox effect can be dispatched again after a crash without creating
+another authoritative result.
+
+Large artifacts use a two-part commit:
+
+1. Write and validate an attempt-specific temporary payload.
+2. Atomically rename it into the engine-owned immutable store.
+3. Commit its artifact row, lineage, and completion event with the active fence.
+
+A file without a committed artifact row has no workflow meaning and is eligible
+for orphan collection after its writer lease expires.
+
+## Identity and provenance
+
+Runtime identity uses generated IDs: run, actor, iteration, revision, offer,
+attempt, decision, and artifact IDs. Artifact bytes never change. A revision is
+a new artifact that may supersede an older one.
+
+Each offer names:
+
+- one run, actor, state, role, and optional iteration;
+- its exact ordered input artifact IDs;
+- a complete immutable task artifact;
+- an answer contract version;
+- the worker capabilities allowed to claim it.
+
+Each output records its exact parent artifacts and producing offer and attempt.
+This creates the path from lead, raw evidence, and extraction through manuscript,
+judgment, translation, art, render, approval, and release. Checksums may protect
+captured bundles and distributable packages, but never decide workflow state or
+reuse.
+
+A successor may reuse an ancestor answer only when the complete declared work
+identity matches by immutable ID. Equal bytes with a different artifact ID are
+different inputs. Changes to a prompt, model policy, editorial policy, source,
+renderer, or other frozen input create a successor run and invalidate dependent
+work through explicit lineage.
+
+## Source and editorial authority
+
+Collection accepts leads until an exact human close decision freezes the source
+set. Every accepted lead starts a `SourceMachine`. Closing collection prevents
+new sources but allows already-started capture, extraction, and review work to
+finish before planning.
+
+A source becomes ready only after durable raw evidence, extraction, metadata,
+and the required human source decision exist as immutable artifacts with valid
+lineage. A URL or mutable path is never sufficient evidence.
+
+Article work is staged. Deterministic measurement, worth, and mechanics finish
+before evidence and shape; teaching and craft follow only when applicable. An
+optional lens records `not_applicable` explicitly. A blocking decision may skip
+later stages. Each revision carries its parent manuscript, working notes,
+findings, human rulings, and explicit iteration budget.
+
+Writers receive every assigned source and policy artifact. Evidence reviewers
+are source-aware. Mechanics, shape, teaching, and craft reviewers are
+source-blind. One worker identity cannot perform evidence review and a
+source-blind review for the same manuscript revision.
+
+Human answers bind the exact active offer, approved input artifacts, advertised
+choices, and principal. They become immutable decision artifacts. A stale,
+duplicate, unauthorized, or out-of-contract answer cannot advance the machine.
+
+## Render and release
+
+Assembly joins current approved English content, every configured translation,
+registered selected art, publication metadata, and the printer profile.
+Rendering never generates an image.
+
+`measureArticle` is isolated per-draft feedback. `measureEdition` checks the full
+issue immediately before render. The renderer produces complete reader, web,
+booklet, package, critic, and preflight artifacts for every configured language.
+Independent visual review names the exact current render artifact IDs, so a new
+render cannot inherit an old approval.
+
+Release requires the exact approved render set and an explicit human decision.
+The release transaction records edition identity, package artifacts, publication
+state, and unique source assignment atomically. A released or sealed run cannot
+be mutated.
+
+## Executors and retained implementation
+
+Executors claim durable offers and answer only through `RunEngine`. Available
+adapters include in-memory tests, subprocess tools, text models, image models,
+human surfaces, source capture, layout measurement, rendering, and render
+inspection. The worker loop owns concurrency, heartbeat renewal, timeouts,
+process-group cancellation, and late-result fencing.
+
+The old Python orchestrator, checkpoints, fingerprints, production records, and
+reply directories are not read by the engine. A retained source archiver or
+typesetter may temporarily sit behind a versioned subprocess protocol. Such a
+deep adapter receives only immutable materialized inputs and a caller-owned
+destination; it cannot decide readiness or release state.
+
+## Viewer
+
+The loopback-only viewer consumes `RunEngine.inspect`. It shows declared actor
+topology, ordered events, offers and attempts, iterations, findings, decisions,
+artifact lineage, manuscript diffs, art at original resolution, and the exact
+render under review. Its human inbox claims and answers the same durable offers
+as the CLI. It is not a second execution path and has no generic filesystem
+route.
+
+## Verification
+
+Routine development is Node-only:
+
+```sh
+npm ci
+npm run typecheck
+npm run test:engine
+npm run build:viewer
 ```
 
-## Invariants
-
-- Raw snapshots are committed beside their source record and approved artifacts are immutable and content-addressed.
-- Every captured source is assigned exactly once: either to one collecting edition or to one released edition.
-- Several editions may collect concurrently, but one explicit intake target receives new sources by default; intake batches never create collections implicitly.
-- Release first reconciles all source records, then requires exact equality between the target edition's queue and rendered articles' `source_ids`; sources queued to other collecting editions are unaffected.
-- Release state advances only after validation and a complete deterministic build succeed.
-- The edition manifest is replaced before the authoritative release state, and both are restored if either replacement fails.
-- Every fenced code block in a manuscript is a contiguous run of lines from one of the article's pinned source extractions. Everything else about faithfulness is judged at claim level by the fact-checker.
-- A manuscript that is still the slot `mag article stage` wrote is not writing. Validation refuses it and names every unfinished piece at once, so build, packaging, release and every recorded review refuse with it. The marker is recognized structurally — `stage_status: todo` in frontmatter is authoritative, the printed `EDITORIAL WORK REQUIRED` label and a body that is only the staging TODO corroborate — and never from length, because a short editorial is still an editorial. `mag produce` reaches the same check through its edition gate, where a marker is a reported pre-existing failure rather than a stop: markers are produce's input.
-- Release preserves private distribution and rights restrictions; it records production completion, not public reprint permission.
-- Refetching changed content creates a revision rather than mutating history.
-- Every factual claim, quotation, figure, and caption resolves to captured evidence.
-- AI output is draft material and cannot approve itself.
-- An approval names the exact revision and digest it approves.
-- Any manuscript, art, template, font, profile, or tool change invalidates downstream approvals.
-- Building, packaging and release never invoke AI. They consume sealed artifacts only. Only the produce/studio phase may execute a model, and only through `magazine.runner`.
-- Each browser proof is rasterized from the same one-page outer-cover PDF
-  inserted into the reader; proof and production faces cannot be separate
-  implementations.
-- ReportLab owns interior pages only. Cover geometry, outlined typography,
-  artwork placement, trim behavior, and comparison evidence for both outer
-  faces are local to the cover compiler and its authored design contract.
-- Release output is promoted atomically after validation.
-
-## Review bench
-
-Five hash-bound review kinds sit between the build and release. Each is written
-only by `mag review record --kind <kind>`, and each binds the exact bytes its
-judge read, so any later edit to those bytes marks the record stale rather than
-silently carrying an approval forward:
-
-- **render** binds the reader and imposed-booklet PDFs per language, with each
-  package's machine `visual_review` block.
-- **evidence** binds, per article, the manuscript and the source extractions it
-  was audited against. Staleness is derived per article and a re-record may
-  name only the articles re-read.
-- **line** binds the manuscripts and nothing else, the opening editorial
-  included under the article id `editorial`; the line editor is forbidden to
-  open a source, so no source hash belongs in the record. It rebinds per
-  article like the evidence audit.
-- **edition** binds the editorial, every manuscript, and a canonical projection
-  of `edition.yaml` with the edition's filesystem identity removed: the `id`,
-  the release `status`, and the `editions/<id>/` and `output/<id>/` prefixes
-  inside its paths. Issue coherence is a function of all those bytes at once,
-  so there is no partial rebind. The projection is not a narrowing of what the
-  managing editor judges; it exists because `mag finish` rewrites an edition's
-  identity when it gives a collection its stable id, which would otherwise
-  stale every issue verdict for no editorial reason.
-- **learning** binds a projection of the editor-authored furniture — edition
-  and cover copy, per-article titles, display copy, author notes, key ideas,
-  figure captions and alt text, closing-plate titles — plus the manuscript of
-  each explainer, an article declaring `content_mode: in_a_nutshell`. It binds
-  neither the whole manifest nor the feature manuscripts, and that is the
-  reason the kind exists separately: the three reader personas read the
-  furniture and the explainer, so a body typo in a feature's third paragraph
-  moves nothing they were shown. Staling their verdict on it would teach the
-  bench that staleness is noise, and a staleness signal people learn to ignore
-  is worse than none. The projection is an explicit list of keys rather than a
-  heuristic, so extending it is a schema-version bump.
-
-Line, edition, and learning are **advisory**. They are recorded and reported by
-`mag review status` and the workflow report, and excluded from `release_ready`:
-they never reach `blocked`, never become the report's next checkpoint, and
-never stall `mag finish`. Their `require_approved_*` functions are written and
-tested but deliberately unreferenced by release while the judges' thresholds
-are calibrated. Flipping them to blocking is one deliberate change made in one
-commit: empty `_ADVISORY_REVIEW_CHECKPOINTS` in `workflow.py` and wire
-`require_approved_line_review`, `require_approved_edition_review`, and
-`require_approved_learning_review` into `Magazine.release`.
-
-## Canonical and generated material
-
-Canonical authored material:
-
-- immutable raw source bundles and their SHA-256 manifests;
-- structured source records and human notes;
-- edition manifests and briefs;
-- approved manuscripts and clearly labeled editor text;
-- cover direction and selected artwork;
-- article-opener art declarations and committed opener images;
-- `design/covers/canto-vivo/design.toml` and approved cover references;
-- hash-bound independent review records (render, evidence, line, edition, learning);
-- decisions tied to revisions.
-
-Generated material:
-
-- `sources.md`;
-- review PDFs and page images;
-- render-critic reports and numbered visual-review contact sheets;
-- build locks, preflight reports, checksums, and packages.
-
-## Dependency strategy
-
-- In-process logic: hashing, manifests, workflow state, citation resolution, code-block verification, and packaging plans.
-- Local-substitutable dependencies: filesystem, ReportLab, pypdf, FontTools,
-  resvg, Poppler, clocks, and process execution.
-- True external dependencies: websites, authenticated browsers, Codex/model execution, image generation, and printing studios.
-
-Production and recorded/fixture adapters justify seams for web retrieval and AI execution. The AI execution seam is now real rather than speculative: `magazine.runner` resolves the configured `[runner]` backend, proves its binary is installed before any work starts, and executes it behind an injectable `CommandRunner` so tests never reach a model. The initial typesetter has one implementation and therefore remains an internal implementation rather than a speculative public seam.
-
-## AI execution
-
-Editorial jobs receive immutable artifact references and schema-constrained tasks. Each run records source hashes, prompt and schema versions, model configuration, tool versions, timing, trace location, and output hash. Parallel agents write isolated results; the coordinator validates and merges them.
-
-Recommended roles are source researcher, article production editor, evidence checker, copy editor, editorial writer, art director, and visual proof reviewer. Faithful article production uses patch proposals rather than free rewriting. The editorial writer applies `docs/WRITING_RULES.md` to one original unifying idea, set of ideas, or emergent narrative across the edition, never to an article-by-article summary.
-
-## Output profiles
-
-- Reader: A5 pages, RGB, links, compact images.
-- Home: A5 pages imposed two-up on A4, duplex instructions, no required bleed, page count padded to a multiple of four.
-- Studio: printer-specific trim, bleed, output intent, PDF/X target, image limits, font rules, and binding geometry. This profile remains blocked until a printer contract exists.
-- Web: per-language, self-contained HTML directory for screens (`mag web`). Private profile: never part of a build or release package, and outside the hash-bound render review, which binds PDFs only.
-
-Print and web output share one renderer-neutral seam: `render_html_edition`
-produces the semantic edition both adapters consume. When
-`format.article_opener` is `illustrated_paper_spots_v1`, that seam emits one
-`article-opener` header containing the first-class art, inline provenance
-kicker, title, author and biography, source anchor, and first manuscript
-paragraph. The opener art is not a captured evidence figure. The source anchor
-retains the canonical URL as semantic text for provenance and accessibility.
-The PDF adapter replaces its visible presentation with a verified QR, while
-the web adapter presents it as a clickable QR, so neither finished output shows
-the URL or a `SOURCE` label. The print adapter also forces the remaining
-manuscript onto the next page. Page geometry and print policy stay in the
-WeasyPrint adapter; responsive screen policy stays in the web adapter; neither
-leaks into the seam. Editions without the format key keep the legacy semantic
-and adapter paths for reproducible historical builds.
+Tests exercise behavior through the public `RunEngine` interface. The retained
+legacy implementation and its test suite are not an acceptance oracle for the
+XState engine.

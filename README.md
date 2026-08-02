@@ -1,808 +1,106 @@
-# Magazine Compiler
+# Magazine execution engine
 
-Magazine Compiler turns captured internet sources into a private, print-ready
-anthology. It is deliberately a **faithful-edit** system, not a summarizer:
-source language stays as the author wrote it, and every claim in a manuscript is
-audited back to a committed extraction by an adversarial fact-checker before the
-edition can ship. Articles are capped at seven rendered A5 pages. Over-budget
-sources become explicitly credited faithful syntheses rather than silently
-truncated reprints.
-The opening editorial requires a title and is capped at a single rendered A5
-page, including its label, title, and byline. It develops an original unifying
-idea or emergent narrative across the issue, and never summarizes the articles
-one by one or acts as a prose table of contents. The Orwell-based method in
-`docs/WRITING_RULES.md` is the house writing method for every artifact the
-magazine publishes, not the editorial alone.
+This repository builds private-first, source-faithful magazine editions through
+one durable TypeScript and XState workflow.
 
-The publication compiled by this repository is **BERRETA FUTURA**. Its name is
-configured once under `[publication]` in `magazine.toml`; edition manifests own
-issue titles and cover copy, but do not duplicate or override the masthead.
-Every configured language is built together. English is the source edition and
-keeps its existing package paths; the Spanish package is emitted beneath `es/`.
+The root `EditionMachine` owns collection, source preparation, planning, English
+article and editorial work, art, edition review, translation, assembly, render,
+independent visual approval, and release. The same `ArticleMachine` also runs as
+a standalone root for fast prompt and model experiments.
 
-The external interface is intentionally small:
+`RunEngine` is the public execution boundary. SQLite stores ordered events,
+snapshots, offers, attempts, leases, human decisions, immutable artifact lineage,
+and atomic release state. Callers do not inspect run directories, reconstruct
+state, or send events to live actors.
 
-```python
-from pathlib import Path
-from magazine import Magazine
+## Setup and verification
 
-mag = Magazine(Path.cwd())
-record = mag.capture(
-    "https://example.com/article",
-    snapshot=Path("/tmp/article-browser-export"),
-    capture_method="authenticated_browser",
-    title="An article",
-)
-mag.write_sources()
-result = mag.build("issue-001")
-```
-
-The equivalent command line is:
+The Node, TypeScript, XState, SQLite, and viewer dependencies are pinned exactly.
 
 ```sh
-uv run --locked mag capture https://example.com/article \
-  --snapshot /tmp/article-browser-export \
-  --capture-method authenticated_browser \
-  --title "An article" \
-  --author "A. Writer" \
-  --author-note "A. Writer is chief architect at Example Company." \
-  --author-evidence https://example.com/author /tmp/author-profile-browser-export
-uv run --locked mag sources
-uv run --locked mag media-index
-uv run --locked mag validate issue-001
-uv run --locked mag fit issue-001
-uv run --locked mag cover-proof issue-001 --all-languages
-uv run --locked mag build issue-001
+npm ci
+npm run verify:engine
 ```
 
-## Fast edition workflow
-
-`mag status` is the read-only control plane. It reports every checkpoint, the
-first blocker, whether the next action is deterministic, authorial, or a human
-review, and the exact recovery command. `mag run` performs only the named
-deterministic work, then stops. It never writes prose, generates images,
-selects artwork, records a review, or releases an edition.
+Routine verification is Node-only. It type-checks the engine, runs the public
+engine tests, and builds the viewer. The retained Edition 4 bridge check is
+explicit and opt-in:
 
 ```sh
-uv run --locked mag status 004-unreleased
-uv run --locked mag status 004-unreleased --json
-uv run --locked mag run 004-unreleased --json
+npm run test:legacy-bridge
 ```
 
-The `production` checkpoint is where the prose is. It reports which pieces are
-still staging markers, which the pipeline escalated to a human, and which agent
-briefs are outstanding, and it names the command that clears each case.
+That integration reuses Edition 4's committed art and never generates images.
 
-After capture and extraction, a versioned article brief is the first safe unit
-of editorial assembly:
+## Durable CLI
 
-```yaml
-schema_version: 1
-edition_id: 004-unreleased
-id: systems-that-hold
-title: Systems That Hold
-short_title: Systems
-display_emphasis: Hold
-opener_variant: edge_medallion
-content_mode: faithful_edit
-minimum_reader_pages: 1
-source_ids:
-- source-one
-- source-two
-```
+Every command uses the same engine database and artifact repository. The default
+locations are under ignored `runs/` paths and may be overridden with `--db` and
+`--artifacts`.
 
 ```sh
-uv run --locked mag article stage article-brief.yaml --dry-run
-uv run --locked mag article stage article-brief.yaml
+# Start an article or edition from a strict immutable run specification.
+npm run engine -- start run-spec.json
+
+# Inspect or advance durable work.
+npm run engine -- inspect <run-id>
+npm run engine -- continue <run-id>
+
+# Add a source while an edition collection remains open.
+npm run engine -- submit-lead <run-id> lead.json
+
+# Run configured non-human executors.
+npm run engine -- worker <run-id> worker-config.json
+
+# Answer a human offer, retry an actor, or fork frozen inputs.
+npm run engine -- answer <run-id> <offer-id> answer.json --principal reviewer-id
+npm run engine -- retry <run-id> <actor-id>
+npm run engine -- fork <run-id> changes.json
+
+# Compare and promote settled article experiments.
+npm run engine -- compare <run-id-a> <run-id-b>
+npm run engine -- promote <run-id> promotion.json
+
+# Export an immutable terminal audit record.
+npm run engine -- seal <run-id>
 ```
 
-The real stage is one integration transaction. It creates the source-linked
-manuscript slot, writes the article's manifest row with its `source_ids` and the
-exact `source_body_sha256` of each extraction, and
-immediately reconciles every configured non-English overlay so its placeholder
-and advisory backlog is visible. It writes no article prose and no
-translation. If any overlay staging step fails, the edition is restored to its
-pre-command bytes for every file this invocation changed, provided its current
-bytes still match the staged result. Unrelated concurrent files are ignored;
-concurrently edited touched files are preserved and reported while every other
-safe write is rolled back. Capture remains URL-by-URL because durable snapshot
-and author-evidence acquisition are explicit adapters; the brief begins only
-after those source bundles exist.
+Provide an `--idempotency-key` when a caller may retry `start` or `fork` after
+losing a response. Equal specifications without the same explicit key create
+independent runs.
 
-## Drafting: `mag produce`
+## Viewer
 
-`mag produce` owns the order of authorship: one writer call per piece over the
-complete source extraction, then the deterministic gates, then the fact-checker
-and the line editor in parallel, then at most three revision rounds carrying
-both the findings and the previous draft's working notes, then the learning
-personas and the managing editor. Every call leaves an execution record under
-`editions/<edition-id>/production/`.
-
-Two backends call a model themselves: `codex` (the default) and `claude`. The
-third, `agent`, calls nothing. It writes every brief that is ready right now and
-ingests the answers left beside them, which is the only shape that fits a driver
-that cannot be shelled out to: a Claude Code agent with a subagent fleet, or a
-person with a text editor. The loop is two commands:
+Build and start the loopback-only viewer:
 
 ```sh
-# 1. Emit. Reports every ready brief, and writes each one to disk.
-uv run --locked mag produce 004-unreleased --backend agent --json
-
-# 2. Answer each brief by writing reply.md beside it, then run step 1 again.
-#    Repeat until `ready` is empty.
-uv run --locked mag produce 004-unreleased --backend agent --json
+npm run build:viewer
+npm run engine -- serve
 ```
 
-Each ready item names a `brief` to read and a `reply` to write, under
-`editions/<edition-id>/production/agent/<piece>/r<n>-<role>/`. The brief is
-self-contained: it is byte for byte what the autonomous backend would have sent.
-Writing the file is the whole protocol, so a fleet can fan out one subagent per
-item, and a human can answer one in an editor. `--submit` is the same write with
-the reply's contract checked first:
-
-```sh
-uv run --locked mag produce 004-unreleased --backend agent \
-  --submit article-id/r1-writer --reply /tmp/draft.md
-```
-
-The set is everything unblocked, not the next item: several writers are ready at
-once, and a draft's fact-checker and line editor become ready together. Nothing
-is remembered between invocations; each one replays the pipeline over the
-answers on disk, so a driver that crashes mid-fleet re-emits the same set rather
-than a second copy of it.
-
-A work item is keyed by what it *asks*, not by how the brief is worded: the
-prompt file's digest plus the digests of the manuscript, sources, findings and
-notes the call was handed. A reply written against a draft, a source or a
-prompt file that has since moved is set aside as `reply.superseded.md` and the
-brief is reissued rather than silently applied; a reply that would only have
-been voided by reformatting the brief is kept and used. That distinction is
-load-bearing. When the key was the digest of the composed text, a refactor of
-the prompt composer landing mid-run made a dozen completed, judged model calls
-unreachable through the front door in one commit. Editing the prompt files, or
-the identity functions in `src/magazine/produce_prompts.py`, is still a
-breaking change for a run in flight, and should be treated like a schema
-migration: finish the edition first. Produce also names every stored reply a
-replay did not reach, so nothing goes quietly.
-`editions/<id>/production/agent/ready.yaml` is the current state at a glance;
-deleting a piece's directory there discards its answers and redrafts it from
-round one, which is how an escalated piece is offered a fresh start.
-
-A defect found *outside* the loop -- an edition-level review, a reader, your own
-re-reading of a shipped piece -- is filed rather than improvised into somebody's
-prompt:
-
-```sh
-uv run --locked mag finding file 004-unreleased the-model-is-not-the-system \
-  --note "The deprecation claim about the retired endpoint is wrong." \
-  --locator "paragraph twelve" --filed-by "edition review"
-uv run --locked mag finding list 004-unreleased
-```
-
-The finding is stored beside the production records. The piece stops counting
-as settled, so the next `mag produce` redrafts it; its writer brief carries the
-finding in the same block the judges' findings appear in, together with the
-draft it complains about and that draft's working notes; and a round that then
-passes marks the finding addressed rather than deleting it. `mag status` blocks
-the production checkpoint while anything is open.
-
-Creative work has separate studio commands:
-
-```sh
-# Immutable cover rounds
-uv run --locked mag cover-art status 004-unreleased
-uv run --locked mag cover-art next-round 004-unreleased \
-  --editorial-reading "A precise statement of the issue's visual argument."
-uv run --locked mag cover-art prompts 004-unreleased 2
-uv run --locked mag cover-art register 004-unreleased 2 \
-  --image synthetic=/tmp/synthetic.png \
-  --image art_directed=/tmp/art-directed.png \
-  --image wildcard=/tmp/wildcard.png
-uv run --locked mag cover-art proof 004-unreleased
-uv run --locked mag cover-art select 004-unreleased 2 wildcard
-
-# Explicit interior illustration inventory
-uv run --locked mag interior-art status 004-unreleased
-uv run --locked mag interior-art scaffold illustration-brief.yaml
-uv run --locked mag interior-art prompts 004-unreleased
-uv run --locked mag interior-art register 004-unreleased tail-systems /tmp/tail.png
-uv run --locked mag interior-art review-sheet 004-unreleased
-```
-
-Cover rounds are append-only. Registration computes hashes from validated PNG
-bytes, `proof` renders every requested round, branch, and language through the
-production cover compiler, and writes one full-cover comparison sheet.
-Selection is a separate human decision. Interior art likewise requires an
-explicit versioned brief, validates each registered asset, and produces a
-review sheet without generating an image.
-
-The older focused commands remain supported. `mag illustrate` still emits its
-combined legacy prompt package, while `mag cover-proof`, `mag translate`,
-`mag fit`, `mag measure`, `mag validate`, and `mag build` keep their existing
-behavior. Humans finish an approved edition with `mag finish`; `mag release`
-remains the lower-level compatibility command. New automation should prefer
-`status`, conservative `run`, and the two studio surfaces.
-
-`cover-proof` is the fast design loop. It compiles only the cover and writes a
-self-contained SVG, the exact one-page PDF later used by the full build, a
-PDF-derived PNG, and visual comparison evidence. Its warm cached path avoids
-article pagination and booklet imposition.
-
-`fit` is the fast measurement loop, the same idea for page budgets. The
-seven-page article cap and the declared editorial cap used to be enforceable
-only deep inside a full build, so an author finished a manuscript, its
-translation, and every hash pin before learning the piece did not fit.
-`mag fit` paginates the reader with the adapter's own front half — the same
-HTML compilation, stylesheet, and measure-then-settle passes a build runs —
-then stops before paint: no PDF, no rasters, no package. It prints a verdict
-for every configured language in about four seconds instead of a forty-second
-build and exits nonzero on any budget breach. `mag measure` reports the full
-measurement as JSON for agents and scripts — the editorial span, every
-article's span against its cap, the last page's body-line count, end-mark and
-tail measurements, and a per-paragraph rag table — so judging a layout
-question no longer requires a throwaway script into the renderer's privates.
-Both take `--language` to narrow to one configured language; `mag measure
---json PATH` writes the dump to a file instead of stdout.
-
-`mag fit <edition-id> --opener <article-id>` asks the one budget question that
-is not about pages. An article with an illustrated opener sets its first
-paragraph on the opener page beside the art and the title, and a paragraph too
-long for the space left over makes the build refuse the edition rather than
-reflow onto page two. The check reads a candidate paragraph on standard input,
-wraps it with the gate's own arithmetic (no pagination, no HTML, a few
-milliseconds) and prints the lines it would set as against the article's
-measured allowance, exiting nonzero when it overruns. The writer brief states
-the same allowance in lines, alongside a character figure that is deliberately
-a floor rather than the edge: the line count is what the build enforces, and
-this is how to ask about anything near it.
-
-`capture` requires a raw file or directory supplied by the caller. It copies the
-bundle into content-addressed, source-local storage before it writes the source
-record or queues the source. New CLI captures also require an author identity.
-For a person or named group, `--author-note` contains edition-ready identity or
-CV context and at least one `--author-evidence URL SNAPSHOT` archives the
-official biography, employer page, or profile that supports it. Repeat
-`--author-evidence` when several primary profiles support a collective byline.
-Use `--institutional-author` instead when the organization byline is
-self-explanatory and should carry no biography.
-
-Author evidence is stored as a purpose-tagged immutable raw bundle. The
-schema-v2 source record pins the biography to its evidence URL and bundle ID;
-edition validation then requires the English byline and `author_note` to match
-the captured identity exactly. Article synopses remain separate metadata and
-cannot become biographies by flowing through the assembly path.
-
-The compiler never treats a live URL as the durable copy. Web or
-authenticated-browser acquisition remains an explicit adapter, so cookies,
-credentials, authorization headers, and browser profiles stay outside the
-repository.
-
-## Python toolchain
-
-UV owns the complete Python lifecycle for this repository. After cloning, run:
-
-```sh
-uv sync --locked
-```
-
-Run every project command through `uv run --locked`. Add, remove, and update
-dependencies with `uv add`, `uv remove`, and `uv lock`; commit both
-`pyproject.toml` and `uv.lock`. Do not use `pip`, invoke `python -m venv`,
-activate an environment, or create ad-hoc dependency directories. UV's internal
-project environment is an implementation detail and is never managed by hand.
-
-## Repository model
-
-```text
-library/sources/<source-id>/record.yaml    structured source record
-library/sources/<source-id>/raw/<sha>/     immutable committed raw capture
-library/sources/<source-id>/media/<sha>.json deterministic generated media inventory
-library/sources/<source-id>/extracted.md  faithful extraction of the source body from one raw bundle
-library/release-state.yaml                open-edition and released-edition assignments
-editions/<edition-id>/edition.yaml        edition manifest, incl. per-article source_ids and pins
-editions/<edition-id>/manuscript/editorial.md  original opening editorial
-editions/<edition-id>/articles/*.md       edited source manuscripts
-editions/<edition-id>/reviews/*.yaml      hash-bound render and evidence review records
-editions/<edition-id>/translations/es/    hash-pinned Spanish edition overlay and manuscripts
-output/<edition-id>/                      generated release package
-output/<edition-id>/es/                   Spanish reader, booklet, preflight, and package metadata
-output/<edition-id>/cover-proof/<lang>/   fast cover SVG/PDF/PNG and comparison evidence
-design/covers/canto-vivo/design.toml      canonical cover geometry and ink contract
-```
-
-`sources.md` is always generated from the source records. Never edit it by hand.
-
-New source records carry:
-
-```yaml
-schema_version: 2
-author: A. Writer
-author_profile:
-  note: A. Writer is chief architect at Example Company.
-  evidence:
-  - url: https://example.com/author
-    capture_id: <sha256 of the archived profile bundle>
-```
-
-The `note` is the canonical English author biography used by edition manifests.
-It must identify the author through a role, notable company, founder or creator
-status, career history, first-hand experience, or a publishing identity. It
-must never describe, explain, or summarize the captured article.
-
-`extracted.md` is the verifiable source side of the evidence chain. Its YAML
-frontmatter names the source id, the committed raw bundle it was transcribed
-from, and the extraction method; its body is the source's substantive text,
-reproduced verbatim (interface chrome and navigation may be omitted). An article
-row's `source_body_sha256` in `edition.yaml` is the SHA-256 of the UTF-8 bytes of
-that body, everything after the frontmatter's closing `---` line. A single-source
-article declares one hex digest; a multi-source article declares a mapping keyed
-by source id, so no source hides behind another's hash. Whenever a source has an
-extraction and an article pins it, validation requires the hashes to match. Every
-source of the open (unreleased) edition must have an extraction and a matching
-pin; released editions predate committed extractions, so their recorded pins are
-kept but skipped.
-
-Every such pin (an article's extraction-body hashes, a translation overlay's
-base copy and per-file source hashes, a localized figure's caption and credit
-pins) is a pure function of files already in the repository, so it is
-recomputed by command rather than by hand: `mag pin <edition-id>` refreshes
-every derivable pin in the edition's authored files and reports each digest it
-moved. The rewrite is a targeted textual substitution — only the digest
-changes, the author's comments, key order, and wrapping survive — and the
-whole batch is verified by re-parsing before anything reaches disk. It never
-invents a missing pin key, and it refuses anything under `reviews/` outright:
-review records are written only by `mag review record`. Repinning is always
-this explicit command; `mag validate` reports staleness but never repins,
-though every staleness error now states both the pinned and the expected
-digest, so the fix is a decision rather than an investigation.
-
-## Language editions
-
-`publication.language` selects the source edition and `publication.languages`
-declares every required output. A build fails if any configured translation is
-missing, stale, or structurally incomplete. The source English `reader.pdf` and
-`home/booklet-a4.pdf` remain at the package root. Spanish generates the same
-permutations under `output/<edition-id>/es/`.
-
-Each translation overlay records the exact SHA-256 of its English editorial,
-articles, and backmatter. It must preserve the ordered Markdown block structure
-of the English manuscript, including headings, paragraphs, lists, quotations,
-and code. Changing an English input therefore makes the translation stale and
-blocks validation until it is reviewed and updated.
-
-`mag translate <edition-id> <language>` does the clerical half of that update,
-and refuses, loudly, to do the creative half. A missing overlay is scaffolded
-whole: structure mirrored from the English edition, every derivable pin
-computed with the canonical hashers validation uses, and every localized prose
-field filled with its English text as a placeholder — each one named in the
-report as untranslated backlog, so nothing English can ship as Spanish
-silently. An existing overlay is reconciled, not regenerated: new English
-articles, figures, and plates gain placeholder rows with correct pins; missing
-pin keys are repaired in place; rows whose English counterpart vanished are
-dropped with their localized prose quoted in the report, because deleting a
-translation someone wrote is a fact the author must see; and every changed
-English input becomes a re-translation advisory. Staging writes only inside
-its own overlay, never overwrites an existing translation, and is a no-op on a
-finished one — what remains after staging is exactly the prose.
-
-The Spanish house register is educated castellano with a restrained Argentine
-inclination where it reads naturally, without slang or lunfardo. Where no clear
-Argentine preference applies, use Spain Spanish; do not fall back to generic
-Latin American, Mexican, Caribbean, or other regional variants.
-
-## Collecting editions
-
-The repository may have several collecting editions, with exactly one selected
-as the intake target. This lets production continue on one edition while new
-leads accumulate in the next without pretending the earlier edition is
-released. Opening a collection is explicit:
-
-```sh
-uv run --locked mag collect 004-unreleased --issue-number 4
-```
-
-New captures are queued to the intake edition by default. `mag capture
---edition <edition-id>` can deliberately target another collecting edition,
-while `mag sources` and `mag queue` reconcile otherwise unassigned records into
-the intake edition. A batch of submitted links never creates an edition
-implicitly.
-
-`library/release-state.yaml` is the authoritative assignment record. A source appears in
-exactly one collecting or released edition. Once the PDF and web preview look
-right, the human finishing step is one command:
-
-```sh
-uv run --locked mag finish <edition-id>
-```
-
-`mag finish` derives a permanent id from the issue number and title, writes the
-web edition, rebuilds every configured print language, freezes the approved
-packages, and opens the next empty collection. It prints only the finished id,
-the reader PDF, and the next collection id.
-
-The checks inside that command protect four things the printed proof cannot
-show by itself: every submitted source is represented, edited source material
-still maps to its evidence, every language is current, and the bytes being
-frozen are the reviewed PDFs. If any check fails, the collection keeps its
-working identity and remains editable. The lower-level `mag release` command is
-retained for compatibility and specialized automation.
-
-The transition is all-or-nothing. Other collecting editions and their queues
-are unchanged; if none remains, finishing opens an empty incremented edition
-such as `002-unreleased`. Rights and distribution fields are preserved
-unchanged; finishing does not turn a private reprint into a publicly cleared
-one.
-
-The stable id is normally automatic. Use `--as 004-short-name` only when the
-derived name is not the intended archive identity. Use
-`--next-edition-id 005-a-working-title` only when the next collection has not
-already been opened and needs an intentional identifier. Sources assigned to
-the finished edition are never requeued.
-
-## Source records
-
-The capture command creates a record like:
-
-```yaml
-id: an-article-a1b2c3d4
-url: https://example.com/article
-canonical_url: https://example.com/article
-title: An article
-author: Example Author
-captured_at: 2026-07-15T12:00:00Z
-content_mode: faithful_edit
-tags: []
-primary_material: []
-raw_captures:
-  - id: 0f4c...c93a
-    path: raw/0f4c...c93a/manifest.json
-    method: authenticated_browser
-    artifact_count: 3
-rights:
-  status: unknown
-  intended_use: private_reference
-  public_reprint_allowed: false
-```
-
-Tracking parameters and URL fragments are removed during canonicalization. A
-stable suffix derived from the canonical URL prevents slug collisions. Every
-raw manifest records each artifact's repository-relative path, byte count, and
-SHA-256. The bundle directory name hashes that ordered inventory. Validation,
-build, and release fail if an artifact is missing or has changed.
-
-Every capture also produces a bundle-keyed media inventory, including explicit
-zero-image results. Raster candidates record their hash, MIME type, dimensions,
-aspect ratio, color mode, ICC-profile presence, alpha, and animation state.
-Duplicate hashes and local HTML or captured-manifest references are audited;
-missing local images or stale inventories fail validation. `mag media-index`
-rebuilds these derived inventories for existing immutable captures without
-changing anything under `raw/`.
-
-Authenticated browser captures that expose embedded media must archive each
-observed asset separately and include a `media-manifest.json` beside the capture.
-Each manifest entry uses a safe `relative_url` and may preserve its original
-HTTP(S) `source_url`, positive `source_position`, semantic `role` (`diagram`,
-`figure`, `photo`, `title_card`, `decorative`, or `duplicate`), heading, title,
-description, and alt text. The inventory validates and carries this context into
-automatic curation. Title cards, decorative assets, and duplicate bytes are
-rejected deterministically; source-referenced print-resolution diagrams remain
-eligible even when the browser export itself is a full-page screenshot.
-
-Automatic media decisions live in a bundle-keyed curation audit and are pinned
-in `record.yaml`; exhaustive inventories remain generated output. The curator
-extracts substantive inline SVG diagrams into generated PNG derivatives without
-changing immutable raw evidence, rejects screenshots, decorative vectors,
-low-resolution assets, and context-free images, then selects only the strongest
-zero to three candidates. Every decision records its score, rationale, and
-rejection reasons. A build fails if any capture has not been curated.
-
-## Edition manifests
-
-See `templates/edition.yaml`. An article row points at its manuscript and
-declares its `source_ids` and their extraction pins. It may supply a concise
-`author_note`, rendered below the
-byline, containing identity or relevant CV context: current role, notable
-company, founder status, or first-hand experience that establishes why the
-author is worth hearing. It must not summarize the article. Omit it for
-self-explanatory house or institutional bylines such as `The Editors`.
-Each language overlay provides a localized note when the English article has
-one and omits it when English does. An overlay may localize the `author` byline
-itself when it is a description rather than a proper name; absent, the base
-author is used. Paths are
-repository-relative and cannot escape the project. The compiler validates
-required fields, source references, duplicate IDs, and file existence before
-layout.
-
-New editions declare the permanent article-opener format and one first-class
-opener image per article:
-
-```yaml
-format:
-  article_opener: illustrated_paper_spots_v1
-
-articles:
-  - id: an-article
-    opener_art:
-      path: editions/005-unreleased/art/article-openers/an-article.png
-      alt_text: The recurring boy and robot explore the article's central idea.
-      credit: Illustration by BERRETA FUTURA.
-```
-
-The declaration is all-or-nothing. Every article must have exactly one matching
-`article_opener` entry in the edition's illustration plan, with the same path,
-alt text, and credit. Validation checks the committed image, landscape
-orientation, role-specific minimum resolution, and deterministic inventory
-before layout. Older editions without `format.article_opener` continue through
-the legacy opener path.
-
-Both PDF and web consume the same semantic opener: large landscape boy-and-robot
-art, inline provenance kicker, Source Serif title, author and biography, an
-unlabeled source anchor, and the first manuscript paragraph. The PDF sets that
-anchor as a scannable QR and starts the rest of the manuscript on the next
-page. The web keeps the same square clickable and makes the composition
-responsive without changing its editorial order.
-
-An article may select at most three curated figures. Each selection records why
-it is important, useful, beautiful, or cool; resolves to a hash-verified source
-asset; and uses a full-width `evidence_band`, an `evidence_band_prose` with a
-centered readable measure below the image, or a single-column `column_plate`.
-Placement is semantic: `__opener__` or an exact `##` heading,
-never a fragile page number. Spanish preserves figure identity and layout while
-providing a hash-pinned localized caption, alt text, and heading anchor.
-
-The renderer enforces a hard seven-page budget per article. A long source uses
-`faithful_synthesis`, which condenses it to a materially shorter manuscript
-while preserving its argument, evidence, qualifications, conclusion, and
-grammatical point of view. The byline and mode label carry attribution;
-synthesized prose remains in the source author's voice instead of narrating what
-the author “argues” or “explains.” Short pieces remain `faithful_edit`.
-`prompts/faithful-synthesis.md` governs what an over-budget piece loses, and in
-what order.
-
-Nothing tracks a manuscript paragraph by paragraph. Faithfulness is established
-by reading: `prompts/evidence-review.md` audits every manuscript claim against
-the committed extractions, and its verdict is recorded and hash-bound (see
-Release archive, below). Editorial additions must still be visually labelled in
-the manuscript.
-
-The one deterministic content check that survives is
-`src/magazine/code_blocks.py`, run during validation: every fenced code block in
-a manuscript must appear as a contiguous run of normalized lines inside one of
-the article's pinned source extractions. Tabs expand to four columns and
-trailing whitespace and the fence's own edge blank lines are ignored; every
-other character, the indentation depth, and every line break are substantive,
-because all three change what code means. Lines are matched wherever they sit in
-the extraction, not against the extraction's own fences, so a source may present
-its code fenced, indented, or inline in a transcript. A failure names the
-manuscript, the block, and the first line that diverges from the closest run
-found in any extraction. An article with no committed extractions, which is the
-released-edition state, is skipped rather than failed.
-
-## PDF outputs
-
-The A5 reader PDF is produced deterministically by the renderer named in
-`[render] engine` — WeasyPrint by default, or `"reportlab"` for the legacy
-typesetter. The two are no longer interchangeable: WeasyPrint kerns, ligates,
-may break inside a hyphenated token, sets real quotation marks instead of ASCII
-ones, and binds a paragraph's last two words rather than stranding the final one
-on a line of its own; ReportLab does none of those, so selecting it changes the
-publication rather than rolling it back.
-`mag build --engine <name>` overrides the key for a single build without
-changing configuration; see `docs/RENDERER_MIGRATION.md`.
-The home booklet
-is imposed onto landscape A4 with `pypdf` and padded to a multiple of four pages.
-Reader page 2 is an otherwise empty inside front cover, the penultimate reader
-page is an otherwise empty inside back cover, and the designed back cover remains
-the final page. Both inside covers, and their shared A4 booklet side after
-ordinary imposition, remain completely blank.
-
-Three A4 saddle-stitch impositions of the same block ship together, all folded by
-one rule and all short-edge duplex. `home/booklet-a4.pdf` is the unchanged
-all-in-one for a single-stock print. `home/booklet-a4-interior.pdf` is reader
-pages 3 to N-2 — the magazine without the cover and without the blank inside
-covers — as its own signature. `home/booklet-a4-cover.pdf` is the outer wrap
-alone, one sheet carrying the back cover beside the front cover on its outer side
-and both blank inside covers on its inner side, so the wrap can go on heavier
-stock the way a bindery prints it. `home/printing-instructions.md` states the
-sheet count and stock for each. The package contains:
-
-```text
-reader.pdf
-home/booklet-a4.pdf
-home/booklet-a4-interior.pdf
-home/booklet-a4-cover.pdf
-home/printing-instructions.md
-preflight.json
-render-critic.json
-render-review/reader-contact-sheet-01.png
-render-review/booklet-contact-sheet-01.png
-edition-manifest.json
-SHA256SUMS
-```
-
-`preflight.json` validates page geometry, signature length, the sheet size and
-sheet count of all three booklets, cover and figure resolution, figure geometry,
-and studio blockers. Rights metadata remains part of source provenance but does
-not gate preflight, builds, or releases. Curated figures require captions, credits, non-colliding placement,
-and at least 300 effective PPI. The renderer embeds
-the standard PDF fonts by default. A professional print profile is included as
-a specification, but PDF/X conversion, trim bleed, and the printer ICC output
-intent remain explicit studio preflight steps.
-
-Every language also passes through the render critic before packaging. It
-rasterizes every reader page with Poppler, blocks unintended blank pages, orphan display
-punctuation, inefficient contents pagination, placeholder cover copy, invalid
-signature length, and breached editorial or article page caps. It also checks each
-imposed document against its declared plan: the all-in-one booklet and the cover
-wrap side by side with their rasters, and the interior structurally — side count,
-A4 landscape geometry, and exact left/right reader-page pairing — since its pages
-are already judged in the reader pass. It records
-per-page ink geometry in `render-critic.json` and produces numbered contact
-sheets plus 144-DPI individual page and booklet-side rasters for the required
-final visual review. The critic also verifies each imposed left/right page pair
-against the declared saddle-stitch, short-edge-duplex plan, including the
-inside-cover side, which must be blank. Sparse pages are
-review prompts, not automatic failures, because deliberate openers and closing
-plates may use whitespace. Because pale ornaments barely register as ink, each
-page row also records a presence ratio and bounding box, its running-text line
-count, and its largest all-paper rectangle inside the live area; on those
-measurements the critic raises a `whitespace-void` review item for a void at
-least 96 pt tall spanning at least ninety percent of the measure (a trailing
-void on an article's last page is the article simply ending, and is excused)
-and an `article-stub-last-page` item when an article's final page carries
-fewer than five lines of running text, prompting a human to re-cut the break.
-The editorial page cap is read from the package's own `edition-manifest.json`,
-clamped to the publication ceiling, rather than hardcoded. And when the build
-manifest declares `layout.tail_arts`, the critic reconciles that record: every
-tail ornament an article declared but the typesetter did not print becomes a
-`tail-art-dropped` review prompt. The report and review images are included in
-`SHA256SUMS`.
-
-Edition-owned illustration directions are compiled separately from the build:
-
-```sh
-uv run --locked mag illustrate <edition-id>
-```
-
-New illustrated editions should begin with `templates/illustrations.yaml`. Its
-`direction_preset` points to
-`art-directions/playful-science-vignettes.yaml`, the publication's reusable
-default: original Doraemon-era children's science-manga energy, one wordless
-narrative vignette, the recurring boy and robot, friendly rounded figures and
-gadgets, simple black ink, muted grainy color, and no mandatory yellow
-background. Wide single scenes are required for article openers and are the
-default for article tails; square scenes are preferred when a standalone
-placement supports them; portrait scenes are secondary and reserved for
-vertical ideas or closing plates. The preset explicitly forbids recognizable
-franchise characters and copied signature gadgets. It also names the approved
-square and wide prototypes under `art-directions/references/`; their hashes travel with
-the prompt package and build manifest so future generations use the same visual
-anchors rather than relying on prose alone.
-
-The command validates the committed article-opener, article-tail, and
-closing-plate inventory, then writes exact authoring prompts and a hash-bound
-selection manifest under `output/<edition-id>/illustration-prompts/`. Image
-generation and candidate selection happen at author time; `mag build` only
-consumes the committed PNGs.
-
-## Web edition
-
-`mag web <edition-id>` writes a browsable web edition for every configured
-language to `output/<edition-id>/web/<language>/index.html`, printing one
-`<language>: <index path>` line per language written; `--language` narrows to
-one. The directory is self-contained — the semantic HTML with the screen
-stylesheet injected, the bundled OFL faces and their licenses, and every
-content image copied under a sanitized asset name — so `index.html` opens
-directly from the filesystem or from any static server (`python -m
-http.server` in the output directory). Repeated runs are byte-identical.
-
-The web edition is a private screen profile, not a publication step. It is
-not part of `mag build`, never enters a release package, and is outside the
-hash-bound render review, which binds PDFs only. While captured sources lack
-a public redistribution basis, web output must not be published; it lives
-under `output/`, which stays out of Git.
-
-For `illustrated_paper_spots_v1`, each article page retains the print opener on
-pure white: bordered landscape art with its signal-orange offset, cobalt
-kicker, Source Serif title, short orange tick, left-hand author block,
-right-hand QR, one gray rule, and cobalt drop cap. The QR is the canonical
-source anchor and remains clickable. Responsive rules preserve the landscape
-art and scannable square while preventing horizontal overflow on phone screens.
-
-## Release archive
-
-`output/` is generated scratch and is not version-controlled, so an edition's
-as-printed deliverables are preserved by hand in a sibling repository-external
-directory:
-
-```text
-../magazine-releases-archive/<edition-id>/       English reader, booklets, and machine records
-../magazine-releases-archive/<edition-id>/es/    the same set for Spanish
-```
-
-That directory is **the authoritative copy** of what was printed. It holds
-`reader.pdf`, the A4 impositions under `home/`, and the build's own
-`edition-manifest.json`, `render-critic.json`, `preflight.json`, and
-`SHA256SUMS`; the `render-review/` rasters are excluded because every build
-regenerates them. Verify an archived edition with `shasum -c SHA256SUMS` inside
-its directory — the raster lines are expected to report missing files. Each
-edition directory carries a README recording its renderer, what changed, and how
-it verified, and the archive root indexes every edition. Editions 001 and 002
-were set by ReportLab and are not reproducible from the current renderer.
-
-Independent visual judgment is recorded by the compiler rather than inferred
-from agent instructions. After inspecting every generated language package:
-
-```sh
-uv run --locked mag review status <edition-id>
-uv run --locked mag review record <edition-id> \
-  --reviewer "Independent critic" \
-  --result approved \
-  --notes "All reader pages and booklet sides inspected."
-uv run --locked mag finish <edition-id>
-```
-
-`mag review record` writes the canonical decision to
-`editions/<edition-id>/reviews/render.yaml`, binding it to the SHA-256 hashes of
-every configured reader and booklet exactly as they sit on disk, then rewrites
-each package's `render-critic.json` `visual_review` block (and its `SHA256SUMS`
-line) in place so the reports expose the decision without re-typesetting
-anything; `--rebuild` restores the old rebuild-and-compare proof. Any
-subsequent PDF change makes the review `stale`. A `changes_required` decision
-must include at least one `--finding`. `mag finish` refuses missing, stale, or
-changes-required review state.
-
-The evidence review is the render review's editorial sibling: the adversarial
-manuscript-versus-source audit defined by `prompts/evidence-review.md`,
-recorded rather than merely performed. After auditing every article against the
-committed extractions of every source its `edition.yaml` row declares:
-
-```sh
-uv run --locked mag review record <edition-id> --kind evidence \
-  --reviewer "Independent auditor" \
-  --result approved
-```
-
-The decision is written to `editions/<edition-id>/reviews/evidence.yaml`,
-binding per article the SHA-256 of the manuscript and, for every source, both
-the extraction body and the whole `extracted.md` file, so rewriting the
-provenance frontmatter after approval is as visible as rewriting the body.
-Staleness is derived per
-article: `mag review status` reports, for each article, whether its bound
-hashes still match disk and when it was last audited, and one drifted article
-makes the whole record `stale` (naming the drifted articles and inputs). After
-re-auditing only what changed, `--articles <id,id>` re-binds just those
-articles from current disk state and preserves every other article's recorded
-binding and `reviewed_at`, so one changed manuscript no longer costs a
-full-edition re-audit. `mag review status` reports both kinds, and `mag
-release` refuses a missing, stale, or changes-required evidence review before
-rendering.
-
-## First edition
-
-Issue 001 lives at `editions/001-the-work-left-to-us/`. It captures an X post as
-the original discovery lead and combines four substantive works by Arvind
-Narayanan, Unmesh Joshi, Satya Nadella, and Demis Hassabis. It is a private
-faithful-edit edition with an original opening editorial and a generated A5/A4
-print package. It predates committed extractions, so its recorded source pins
-are kept but not verified. Public faithful republication
-remains blocked while source rights are unknown.
-
-```sh
-uv run --locked mag sources
-uv run --locked mag validate 001-the-work-left-to-us
-uv run --locked mag build 001-the-work-left-to-us
-```
-
-## Development
-
-```sh
-uv run --locked pytest
-uv run --locked mag --help
-```
-
-The metadata, validation, catalog, and packaging modules use only the
-standard library plus PyYAML. WeasyPrint, ReportLab and pypdf are imported only
-by their PDF paths — and the two reader engines only by the one that is
-selected — making non-rendering operations easy to test in constrained
-environments.
+The viewer renders the declared actor topology, ordered events, offers,
+iterations, decisions, and artifact lineage from `RunEngine.inspect`. Its human
+inbox claims and answers exact durable offers. It has no filesystem browser or
+second execution path.
+
+## Architecture
+
+- `engine/machines/` owns XState lifecycle and joins.
+- `engine/run-engine/` owns persistence, fencing, artifacts, provenance, replay,
+  and public projections.
+- `engine/task-composer/` owns complete role inputs and source isolation.
+- `engine/executors/` owns workers, leases, subprocess transport, and model
+  policy routing.
+- `engine/renderer-adapter/` and `engine/source-adapter/` define temporary deep
+  implementation seams.
+- `engine/article-lab/` owns repeated article experiments, comparison, and
+  promotion.
+- `engine/view/` is a read projection plus revision-safe human inbox.
+
+The retained Python tree is legacy implementation, not workflow authority. It
+stays only until its removal is explicitly requested. New orchestration,
+contracts, tests, and contributor workflows belong in the TypeScript engine.
+
+See [engine/README.md](engine/README.md) for worker configuration and adapter
+details, and [meta/plans/graph-execution-model.md](meta/plans/graph-execution-model.md)
+for the design model.

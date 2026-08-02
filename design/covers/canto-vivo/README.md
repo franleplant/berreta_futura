@@ -6,23 +6,17 @@ Source Serif fonts, and the edition artwork to materialize self-contained SVGs.
 Every visible letter is converted to SVG paths; neither face has a system-font
 or network dependency.
 
-Run the fast design loop with:
+Cover-art, selection, proof, and review work is issued by `RunEngine` as
+durable offers. Use `npm run engine -- ...` to start, inspect, answer, or run
+the worker for that work. Do not use the retained `mag` proof commands or proof
+directories to advance an edition.
 
-```sh
-uv run --locked mag cover-proof 002-unreleased
-uv run --locked mag cover-proof 002-unreleased --all-languages
-uv run --locked mag back-cover-proof 002-unreleased
-uv run --locked mag back-cover-proof 002-unreleased --all-languages
-```
+A proof result is an immutable selected-art or render artifact. The active
+visual-review offer must name its exact render artifacts; a later render cannot
+inherit the old decision. Rendering consumes registered selected art and never
+generates it.
 
-Each proof directory contains the materialized `cover.svg`, the exact one-page
-`cover.pdf` used in production, `cover.png` rasterized from that PDF, visual
-comparison images, and `proof.json`. A full build splices the front and back
-PDFs into the reader's outer pages in one operation; ReportLab owns interiors
-and blank cover placeholders only. Home-booklet imposition consumes that final
-reader, so it cannot drift from either proof.
-
-The front and back reference directories freeze the previously approved English
-and Spanish faces for migration comparison. A deliberate redesign may differ,
-but a reference must never be updated until an independent visual review
-approves the new result.
+The front and back reference directories freeze legacy comparison material. They
+are not current workflow state and must not be updated through an old build or
+proof command. A deliberate redesign requires a new selected-art artifact and
+an independent review of the exact current render.

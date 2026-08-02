@@ -8,14 +8,12 @@ Edition 4 material. Each direction keeps the same reading sequence:
 3. QR, author, and short biography;
 4. opening article text.
 
-Run from the repository root:
+This is a frozen browser prototype, not a production rendering or editorial
+workflow. It must not be used to approve an opener, edit Edition 4, or advance
+an engine run. The current process creates art, measurement, render, and review
+artifacts through `RunEngine`.
 
-```sh
-uv run --locked python -m http.server 8000
-```
-
-Open `http://localhost:8000/prototypes/article-opening-prototype/?variant=A`.
-Use the floating switcher or the left and right arrow keys to compare:
+The retained variants are:
 
 - A, quiet ink rules;
 - B, muted cobalt and brick-coral accents;

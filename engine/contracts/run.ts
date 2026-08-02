@@ -1,0 +1,258 @@
+import type { ArtifactSeed } from "./artifact.ts";
+import type {
+  ActorId,
+  ArtifactId,
+  DecisionId,
+  EventId,
+  RunId,
+  WorkOfferId,
+} from "./ids.ts";
+import type { JsonObject, JsonValue } from "./json.ts";
+import type {
+  ProductionDependency,
+  SourceAssignmentPolicy,
+} from "./production-plan.ts";
+import type { WorkOfferView } from "./work.ts";
+
+export const ARTICLE_LENSES = [
+  "worth",
+  "mechanics",
+  "evidence",
+  "shape",
+  "teaching",
+  "craft",
+] as const;
+
+export type JudgeLens = (typeof ARTICLE_LENSES)[number];
+
+export type ModelChoice = {
+  readonly adapter: string;
+  readonly model: string;
+  readonly reasoningEffort?: string;
+  readonly settings?: JsonObject;
+};
+
+export type ModelPolicy = {
+  readonly default: ModelChoice;
+  readonly roles?: Readonly<Record<string, ModelChoice>>;
+};
+
+export type ArticlePolicy = {
+  readonly maxIterations: number;
+  readonly maximumReaderPages: number;
+  readonly teaching: "applicable" | "not_applicable";
+  readonly enabledLenses: readonly JudgeLens[];
+  readonly blockingLenses: readonly JudgeLens[];
+};
+
+export type ArticleContentMode =
+  | "faithful_edit"
+  | "faithful_synthesis"
+  | "original_synthesis";
+
+export type ArticleAttribution =
+  | {
+      readonly kind: "source_author";
+      readonly byline: string;
+      readonly sourceAuthors: readonly string[];
+      readonly sourceIds: readonly string[];
+    }
+  | {
+      readonly kind: "magazine";
+      readonly byline: string;
+    };
+
+export type ArticleRunSpec = {
+  readonly articleId: string;
+  readonly contentMode: ArticleContentMode;
+  readonly attribution: ArticleAttribution;
+  readonly editionContext?: ArtifactId;
+  readonly articleBrief: ArtifactId;
+  readonly sources: readonly ArtifactId[];
+  /** Human source-review decisions, ordered to match `sources` when supplied. */
+  readonly sourceApprovalArtifacts: readonly ArtifactId[];
+  readonly writerPrompt: ArtifactId;
+  /** Immutable writer policy records, supplied in this exact order when present. */
+  readonly contentModeArtifact?: ArtifactId;
+  readonly attributionArtifact?: ArtifactId;
+  readonly editorialPolicyArtifact?: ArtifactId;
+  readonly modelPolicyArtifact?: ArtifactId;
+  readonly judgePrompts: Readonly<Partial<Record<JudgeLens, ArtifactId>>>;
+  readonly writingRules: ArtifactId;
+  readonly measurementProfileArtifact?: ArtifactId;
+  readonly measurementInputArtifacts?: readonly ArtifactId[];
+  readonly initialManuscript?: ArtifactId;
+  readonly policy: ArticlePolicy;
+  readonly modelPolicy: ModelPolicy;
+};
+
+export type SourceRunSpec = {
+  readonly sourceId: string;
+  readonly leadArtifact: ArtifactId;
+  readonly captureProfileArtifact?: ArtifactId;
+  readonly captureInputArtifacts?: readonly ArtifactId[];
+  readonly rawBundleArtifact?: ArtifactId;
+  readonly rawEvidenceArtifacts?: readonly ArtifactId[];
+  readonly extractionArtifact?: ArtifactId;
+  readonly metadataArtifact?: ArtifactId;
+  /** Immutable human source-review decision that approved this prepared source. */
+  readonly approvalArtifact?: ArtifactId;
+};
+
+export type SubmitLeadRequest = {
+  readonly source: SourceRunSpec;
+  readonly artifacts: readonly ArtifactSeed[];
+};
+
+export type EditorialRunSpec = {
+  readonly editorialId: string;
+  readonly briefArtifact: ArtifactId;
+  readonly writingRules: ArtifactId;
+  readonly articleArtifacts?: readonly ArtifactId[];
+  readonly initialManuscript?: ArtifactId;
+  readonly modelPolicy: ModelPolicy;
+};
+
+export type TranslationRunSpec = {
+  readonly language: string;
+  readonly sourceLanguage: string;
+  readonly englishArtifacts: readonly ArtifactId[];
+  readonly promptArtifact: ArtifactId;
+  readonly measurementProfileArtifact?: ArtifactId;
+  readonly measurementInputArtifacts?: readonly ArtifactId[];
+  readonly initialTranslationArtifacts?: readonly ArtifactId[];
+  readonly maximumReaderPages: number;
+  readonly modelPolicy: ModelPolicy;
+};
+
+export type RegisteredArtSpec = {
+  readonly key: string;
+  readonly role: "cover" | "interior";
+  readonly artifactId?: ArtifactId;
+  readonly briefArtifact: ArtifactId;
+  readonly required: boolean;
+  readonly dependencies?: ProductionDependency;
+  readonly dependencyArtifacts?: readonly ArtifactId[];
+};
+
+export type RenderRunSpec = {
+  readonly renderManifestArtifact: ArtifactId;
+  readonly rendererContractVersion: string;
+  readonly printerProfileArtifact?: ArtifactId;
+  readonly configuredLanguages: readonly string[];
+  readonly studioPolicy:
+    | "not_applicable"
+    | "home_ready_studio_blocked"
+    | "require_ready_preflight";
+};
+
+export type ReleaseRunSpec = {
+  readonly publicationArtifact: ArtifactId;
+  readonly sourceArtifacts: readonly ArtifactId[];
+  readonly dryRun: boolean;
+  readonly target: "press" | "private" | "web";
+  readonly printerProfileArtifact?: ArtifactId;
+  readonly printerPreflightArtifacts?: readonly ArtifactId[];
+  readonly studioReady?: boolean;
+};
+
+export type EditionRunSpec = {
+  readonly editionId: string;
+  readonly editionBrief: ArtifactId;
+  readonly planningArtifact?: ArtifactId;
+  readonly sourceAssignmentPolicy?: SourceAssignmentPolicy;
+  readonly sources: readonly SourceRunSpec[];
+  readonly articles: readonly ArticleRunSpec[];
+  readonly editorial: EditorialRunSpec;
+  readonly translations: readonly TranslationRunSpec[];
+  readonly art: readonly RegisteredArtSpec[];
+  readonly render: RenderRunSpec;
+  readonly release: ReleaseRunSpec;
+  readonly modelPolicy: ModelPolicy;
+};
+
+type BaseRunSpec = {
+  readonly schemaVersion: 1;
+  readonly artifacts: readonly ArtifactSeed[];
+  readonly metadata?: JsonObject;
+};
+
+export type ArticleRootRunSpec = BaseRunSpec & {
+  readonly kind: "article";
+  readonly article: ArticleRunSpec;
+};
+
+export type EditionRootRunSpec = BaseRunSpec & {
+  readonly kind: "edition";
+  readonly edition: EditionRunSpec;
+};
+
+export type RunSpec = ArticleRootRunSpec | EditionRootRunSpec;
+
+export type RunInputChange =
+  | { readonly kind: "replace_artifact"; readonly from: ArtifactId; readonly to: ArtifactSeed }
+  | { readonly kind: "replace_spec"; readonly path: string; readonly value: JsonValue };
+
+export type ArticlePromotionRequest = {
+  readonly reviewer: string;
+  readonly rationale: string;
+  readonly comparedRunIds: readonly RunId[];
+};
+
+export type ArticlePromotionView = {
+  readonly id: string;
+  readonly runId: RunId;
+  readonly selectedArtifactId: ArtifactId;
+  readonly policyArtifactId: ArtifactId;
+  readonly reviewer: string;
+  readonly rationale: string;
+  readonly comparedRunIds: readonly RunId[];
+  readonly createdAt: string;
+};
+
+export type RunStatus =
+  | "awaiting_editor"
+  | "complete"
+  | "escalated"
+  | "failed"
+  | "running"
+  | "waiting";
+
+export type RunOutcome =
+  | { readonly status: "running"; readonly runId: RunId }
+  | { readonly status: "waiting"; readonly runId: RunId; readonly offers: readonly WorkOfferView[] }
+  | { readonly status: "awaiting_editor"; readonly runId: RunId; readonly offers: readonly WorkOfferView[] }
+  | { readonly status: "complete"; readonly runId: RunId; readonly outputs: readonly ArtifactId[] }
+  | { readonly status: "escalated"; readonly runId: RunId; readonly actors: readonly ActorId[] }
+  | { readonly status: "failed"; readonly runId: RunId; readonly failures: readonly FailureView[] };
+
+export type FailureView = {
+  readonly actorId?: ActorId;
+  readonly message: string;
+  readonly classification: string;
+};
+
+export type EventView = {
+  readonly id: EventId;
+  readonly sequence: number;
+  readonly actorId: ActorId;
+  readonly type: string;
+  readonly payload: JsonObject;
+  readonly previousState?: string;
+  readonly nextState: string;
+  readonly causationEventId?: EventId;
+  readonly recordedAt: string;
+};
+
+export type DecisionView = {
+  readonly id: DecisionId;
+  readonly actorId: ActorId;
+  readonly offerId?: WorkOfferId;
+  readonly subjectArtifactId?: ArtifactId;
+  readonly principalId: string;
+  readonly choice: string;
+  readonly authority: string;
+  readonly artifactId?: ArtifactId;
+  readonly details: JsonObject;
+  readonly createdAt: string;
+};
