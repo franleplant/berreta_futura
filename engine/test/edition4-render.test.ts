@@ -81,6 +81,24 @@ test(
         );
         assert.equal(
           firstResult.files.filter(
+            (file) => file.kind === "booklet_pdf" && file.path === `${language}/home/booklet-a4.pdf`,
+          ).length,
+          1,
+        );
+        assert.equal(
+          firstResult.files.filter(
+            (file) => file.kind === "web_output" && file.path === `${language}/web-output.zip`,
+          ).length,
+          1,
+        );
+        assert.equal(
+          firstResult.files.filter(
+            (file) => file.kind === "package_artifact" && file.path === `${language}/package.zip`,
+          ).length,
+          1,
+        );
+        assert.equal(
+          firstResult.files.filter(
             (file) =>
               file.kind === "render_critic_report" &&
               file.path === `${language}/render-critic.json`,
@@ -106,6 +124,10 @@ test(
         );
         assert.equal(packagedManifest.includes(projectRoot), false);
         assert.equal(packagedManifest.includes(artifactRoot), false);
+        assert.equal(
+          (await readFile(join(first, language, "web", "index.html"), "utf8")).includes("<html"),
+          true,
+        );
       }
 
       assert.equal(

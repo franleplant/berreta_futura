@@ -12,6 +12,7 @@ import json
 import shutil
 import sys
 import tempfile
+import zipfile
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +25,7 @@ from .package import package_release
 from .reader_layout import RenderLayout, declared_editorial_page_cap
 from .records import load_records
 from .render_engine import reader_renderer
+from .web_edition import write_web_edition
 
 
 CONTRACT_VERSION = "magazine-renderer/1"
@@ -252,7 +254,7 @@ def _file_kind(path: Path) -> tuple[str, str]:
     if suffix == ".pdf":
         if path.name == "reader.pdf":
             return "reader_pdf", "application/pdf"
-        if path.name == "booklet.pdf":
+        if path.name == "booklet.pdf" or path.name == "booklet-a4.pdf":
             return "booklet_pdf", "application/pdf"
         return "render_pdf", "application/pdf"
     if suffix == ".png":
@@ -266,6 +268,28 @@ def _file_kind(path: Path) -> tuple[str, str]:
     if suffix == ".md":
         return "render_instructions", "text/markdown"
     return "render_file", "text/plain"
+
+
+def _archive_tree(root: Path, destination: Path) -> Path:
+    """Create a deterministic, self-contained ZIP from a renderer-owned tree."""
+    with zipfile.ZipFile(destination, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for path in sorted(root.rglob("*"), key=lambda candidate: candidate.as_posix()):
+            if not path.is_file() or path == destination:
+                continue
+            relative = path.relative_to(root).as_posix()
+            info = zipfile.ZipInfo(relative, date_time=(1980, 1, 1, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.external_attr = 0o100644 << 16
+            archive.writestr(info, path.read_bytes())
+    return destination
+
+
+def _web_source_urls(stage_root: Path) -> dict[str, str]:
+    return {
+        record.id: record.canonical_url
+        for record in load_records(stage_root / "library" / "sources")
+        if record.canonical_url
+    }
 
 
 def _render(
@@ -318,6 +342,26 @@ def _render(
                 edition_id=variant.id,
                 recorded_review=None,
             )
+            # The deep renderer already owns the materialized Edition objects.
+            # Web production is therefore a rendering operation, not a legacy
+            # workflow transition. Keep each language package self-contained
+            # and make sibling-language navigation resolve from web/.
+            write_web_edition(
+                variant,
+                package_destination / "web",
+                source_urls=_web_source_urls(stage_root),
+                alternates={
+                    other: f"../../{other}/web/"
+                    for other in request["languages"]
+                    if other != language
+                },
+            )
+            web_archive = _archive_tree(
+                package_destination / "web", package_destination / "web-output.zip"
+            )
+            package_archive = _archive_tree(
+                package_destination, package_destination / "package.zip"
+            )
             report = json.loads(
                 (package_destination / "render-critic.json").read_text(encoding="utf-8")
             )
@@ -333,6 +377,20 @@ def _render(
                         "kind": kind,
                     }
                 )
+            files.extend(
+                [
+                    {
+                        "path": web_archive.relative_to(destination).as_posix(),
+                        "mediaType": "application/zip",
+                        "kind": "web_output",
+                    },
+                    {
+                        "path": package_archive.relative_to(destination).as_posix(),
+                        "mediaType": "application/zip",
+                        "kind": "package_artifact",
+                    },
+                ]
+            )
     return {
         "schemaVersion": 1,
         "rendererContractVersion": CONTRACT_VERSION,

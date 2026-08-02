@@ -8,6 +8,8 @@
   },
   "scripts": {
     "engine": "node engine/cli.ts",
+    "edition4:durable": "node engine/edition4-driver.ts",
+    "graph:export": "node engine/graph-export.ts",
     "typecheck": "tsc --noEmit",
     "test:engine": "node --test --test-skip-pattern='released edition 4 renders' engine/test/*.test.ts",
     "test:legacy-bridge": "node --test engine/test/edition4-render.test.ts",

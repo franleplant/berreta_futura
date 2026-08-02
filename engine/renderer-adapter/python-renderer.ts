@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 
 import { z } from "zod";
 
-import { runSubprocess } from "../executors/subprocess.ts";
+import { SubprocessExecutionError, runSubprocess } from "../executors/subprocess.ts";
 import type { RendererAdapter, RenderResult } from "./protocol.ts";
 
 const resultSchema = z.object({
@@ -43,22 +43,35 @@ export class PythonRendererAdapter implements RendererAdapter {
     destination: string,
     signal: AbortSignal,
   ): Promise<RenderResult> {
-    const result = await runSubprocess(
-      {
-        executable: "uv",
-        args: [
-          "run",
-          "--locked",
-          "mag-render-adapter",
-          resolve(manifestPath),
-          resolve(destination),
-        ],
-        cwd: this.projectRoot,
-        timeoutMs: this.timeoutMs,
-        stdin: "",
-      },
-      signal,
-    );
+    let result;
+    try {
+      result = await runSubprocess(
+        {
+          executable: "uv",
+          args: [
+            "run",
+            "--locked",
+            "mag-render-adapter",
+            resolve(manifestPath),
+            resolve(destination),
+          ],
+          cwd: this.projectRoot,
+          timeoutMs: this.timeoutMs,
+          stdin: "",
+        },
+        signal,
+      );
+    } catch (error) {
+      if (error instanceof SubprocessExecutionError && error.stderr.trim()) {
+        throw new SubprocessExecutionError(
+          `${error.message}: ${error.stderr.trim()}`,
+          error.classification,
+          error.exitCode,
+          error.stderr,
+        );
+      }
+      throw error;
+    }
     const parsed = resultSchema.safeParse(JSON.parse(result.stdout));
     if (!parsed.success) {
       throw new Error(`renderer result violated its contract: ${parsed.error.message}`);
