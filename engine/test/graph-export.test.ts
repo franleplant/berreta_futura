@@ -24,7 +24,14 @@ test("machine topology export is generated from the actual XState configs", asyn
     assert.match(svg, /awaiting_visual_review/);
     assert.match(json, /"always"/);
     assert.match(html, /generated directly from the live machine configs/);
+    const topology = JSON.parse(json) as { machines: Array<{ transitions: unknown[] }> };
+    const transitionCount = topology.machines.reduce((count, machine) => count + machine.transitions.length, 0);
+    assert.equal([...svg.matchAll(/<g class="transition-label"/g)].length, transitionCount);
+    assert.ok(svg.indexOf('<g class="transition-label"') > svg.lastIndexOf('<path class="edge"'));
     assert.deepEqual([...png.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+    assert.ok(png.readUInt32BE(16) >= 2_500);
+    assert.ok(png.readUInt32BE(20) >= 3_500);
+    assert.ok(png.byteLength > 200_000);
   } finally {
     await rm(output, { recursive: true, force: true });
   }
