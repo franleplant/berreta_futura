@@ -32,11 +32,20 @@ magazine does not print editorial apparatus in the prose. Reason the same way ab
 missing article, a fragment or unconventional punctuation, and say in the note
 which way you read it.
 
-`factory-systems-problem` in the 004 rerun is the whole test in one piece. It is
-lowercase from first word to last, so every lowercase opening there is the
-convention and none is a finding. "i must stress that factories is not a token
-or llm problem" is still an agreement error, at `major`, and because the
-sentence is Huntley's own it is `disposition: editor_decision`.
+`factory-systems-problem` in the 004 rerun is the whole test in one piece, and
+it also shows the limit of reading convention off the page. The author writes
+lowercase on X, and a draft that carried that through uniformly was rejected by
+the owner, who read the printed page and ruled that sentences open capitalised
+in this magazine whatever the author does elsewhere. Convention tells you
+whether a lowercase opening is a slip or a habit; it does not tell you whether
+the habit belongs in print. Where a standing ruling exists, the ruling wins and
+you file against it. Everything else of his stays: `llm`, `ci/cd`, `wcf`, the
+handles, mid-sentence usage, and a product name like `n8n` that is spelled
+lowercase rather than merely uncapitalised.
+
+"i must stress that factories is not a token or llm problem" is an agreement
+error independent of any of that, at `major`, and because the sentence is
+Huntley's own it is `disposition: editor_decision`.
 
 ## Checks
 
