@@ -33,17 +33,39 @@ whole apparatus becomes unnecessary.
 Parallel states cover the lenses. Actors cover instances — one per article, one per
 edition, one for art. Guards cover the budget. None of this needs inventing.
 
-### Layer 2: staleness is a dependency question
+### Layer 2: change is an event, not a computation
 
-A state machine says *where you are*. It cannot say *what is still valid*. "Should
-this image be regenerated" is a question about whether inputs changed, and no state
-machine models it.
+**There is no hashing layer.** Earlier revisions had one and it was wrong.
 
-So each state that produces an artifact declares its inputs, and its output is valid
-while those inputs hash the same. That is the whole of layer 2 (§4).
+Hashing answers exactly one question — *did something change while I wasn't looking?*
+It is a substitute for not having observed the change. The current pipeline needs it
+because its state is files anyone may edit out of band, so every run must re-derive
+what moved. That is a consequence of derive-from-disk, not a requirement of the
+problem.
 
-**These are orthogonal, and conflating them is what went wrong before.** Lifecycle
-says what happens next; hashes say what survives. Neither substitutes for the other.
+A state machine observes. Change arrives as an event:
+
+```
+BRIEF_EDITED        → art actor leaves `registered`, regenerates
+SOURCE_RECAPTURED   → article actor returns to `drafting`
+DRAFT_PRODUCED      → judges rejudge
+```
+
+Nothing is detected, so nothing is hashed. An image is not regenerated because no
+event told it to — not because a digest matched.
+
+**Provenance is a written record, not a digest.** "Which prompt wrote this" is
+answered by recording the prompt path and version when the state runs. You do not
+need a hash to write down what you used.
+
+**The one real trade-off, to decide rather than discover.** If someone edits a
+manuscript in an editor and tells nothing, an event-driven machine will not notice.
+Three acceptable answers: don't care (the next transition uses whatever is on disk);
+watch the filesystem and synthesize an event; or require edits to go through a command
+that emits one. Pick one. None of them is hashing.
+
+A digest stays useful in exactly one narrow place — cheaply confirming a large binary
+on disk is the one that was registered — and even there it is optional.
 
 ### What follows
 
@@ -156,39 +178,48 @@ Instancing is addressing, not identity. It must invalidate nothing.
 
 ---
 
-## 4. Caching
+## 4. Runs
 
-One rule: a node's answer holds while its declared inputs hash the same.
-
-**The key, borrowed from Hamilton, which specifies it best:**
+**A run is a directory.** It holds the machine definition it used, the snapshot
+series, and every state's output.
 
 ```
-(node name, source hash excluding comments and docstrings, transitive input digests)
+runs/<run-id>/
+  machine.json        the definition this run executed
+  snapshots/          the actor states over time
+  out/                every state's output, art included
 ```
 
-Two things make this the right shape. Excluding comments and docstrings means
-reformatting a prompt costs nothing while rewriting one correctly invalidates — the
-distinction earlier revisions kept fumbling. And the key *is* the provenance record:
-it answers "which prompt revision, and which source bytes" by construction. One
-artifact, both jobs. No separate audit store.
+Three consequences, and they replace everything earlier revisions built.
 
-**Declare cache inputs by subtraction, an idiom worth taking from Prefect:** a
-policy composed as `source + inputs - manuscript` says plainly that art depends on
-everything except the text. Prefect stores these as plain files whose *filenames are
-the cache keys*, which is the whole mechanism and is worth copying directly.
+**A state is satisfied if its output is present in the run.** That is the only check.
+Not a hash, not a comparison — presence. If `out/art/opener-3.png` exists, the art
+state is done and transitions straight through.
 
-Images survive text revisions because their inputs *honestly exclude the
-manuscript* — keyed on the art brief, direction, and article identity. No special
-pleading, no second mechanism.
+**Seeding is how you skip work.** To run the machine with art already in hand, copy
+the images into the run's `out/` before starting. The machine finds them and moves on.
+No flags, no special mode, no "assume-generated" switch — the same rule that makes a
+completed state completed makes a seeded one seeded.
 
-The trap to avoid has a name. Kedro skips a step when its output *file exists*,
-without hashing inputs — so a changed image prompt with a stale PNG gets silently
-skipped. Existence is not sufficient. Existence plus matching input digests is.
+**Regeneration is deletion.** Copy the previous run's directory, remove whatever
+should be redone, start. Want everything but new art? Copy the run, delete `out/art/`.
+Want to keep the art and redraft the text? Delete the manuscripts instead. The whole
+re-run interface is `cp` and `rm`.
 
-Assets go in a content-addressed store so rejected variants stay cheap to keep,
-which is what makes human variant-picking pleasant. Note git already stores blobs
-by content, so this buys addressing and dedup, not smaller history. Repository
-growth needs LFS or a retention policy — an open question.
+**Upstream sources changing is not tracked, by decision.** If a source moved, start a
+new run. Nothing watches the filesystem, nothing detects drift, and the question of
+out-of-band edits does not arise.
+
+**Runs are comparable because the definition travels with them.** Tweak the machine,
+run again, and `machine.json` plus `out/` from each run can be diffed directly —
+including across definition changes, which is the case that matters when tuning.
+
+So the only backwards transitions inside a run are the ones driven by the machine's own
+outputs: a judge verdict, a gate failure. External change never moves an actor
+backwards, because external change means a new run.
+
+Repository growth from accumulated run directories needs a retention policy — still
+open.
 
 ---
 
@@ -241,14 +272,13 @@ Nothing in it wants to make the model call, so a waiting state advanced only by
 subprocess launched outside the machine. Get this wrong and every restore regenerates
 every image.
 
-*Hashing must not be reimplemented.* If TypeScript computes cache keys it must hash
-the same bytes identically to `pin.py`, whose own contract is that pins go through one
-tool and "never through a second hashing implementation." Two hashers of one contract
-is a bug class this codebase has already been bitten by. **Decision: TypeScript shells
-out to Python for every digest.** Layer 2 stays Python-owned.
+*Timers are in-memory.* Anything that must survive a restart — a scheduled retry, a
+deadline — cannot live in the machine alone. Keep the machine's own waits short and
+let the invoking process own anything longer.
 
-**What it does not give.** Layer 2 entirely — no input-keyed validity, no staleness.
-That is ours in any host, so it is not an argument against XState.
+**What it does not give.** The event vocabulary of §4, and the record of what each
+state used. Both are small and both are ours in any host, so neither argues against
+XState.
 
 **On the language boundary.** Nodes already shell out to `codex` and `claude`. A
 Python script is not a new kind of node, so the orchestrator need not share a language
@@ -340,38 +370,73 @@ to run locally. n8n-shaped platforms are excluded by choice.
 
 ## 6. Phases
 
-**Phase 1 — the engine.** Nodes, edges, instances, the done-rule. Small nodes from
-the start. Prove it by running one article's graph, then fifty in parallel, then two
-editions at once. Instancing must invalidate no stored answer.
+**Phase 1 — the machine.** The article lifecycle as an XState machine: parallel states
+for the lenses, a transition for the loop, a guard for the budget, one actor per
+article and per edition. Node bodies are subprocesses — Python, `codex`, `claude` —
+launched outside the machine, never as `invoke`. Snapshots persisted as JSON.
 
-**Phase 2 — art as its own instance.** Honest input declarations, the content store,
-the cross-instance edge into render, the human variant node. Prove it by revising
-text and generating zero images, and by changing the art brief and generating
-exactly one.
+Prove it by running one article, then fifty in parallel, then two editions at once.
 
-**Phase 3 — render terminal.** `fit`, `build`, `render`, `package` as nodes.
+**Phase 2 — events.** The event vocabulary that moves actors backwards: brief edited,
+source recaptured, finding filed. Decide the out-of-band-edit policy. Prove it by
+revising text and generating zero images, then editing the art brief and generating
+exactly one — because an event said so, not because anything was compared.
+
+**Phase 3 — art and render.** Art as its own actor with the human variant state, the
+edge into render, and `fit`/`build`/`render`/`package` as terminal states.
 
 One prerequisite: `require_complete_production_graph` refuses a build until every
 node is accepting, so making `build` a node would make it gate itself. Readiness
 must become target-relative — "complete up to here" — before this phase.
 
 **Phase 4 — the view.** React Flow over a FastAPI endpoint with SSE for live updates,
-layout by dagre or ELK (React Flow's free layouting guide has working code for both;
-only the Pro *examples* are gated). Measured estimate: **3–6 developer-days**. A
-Graphviz version is 1.5–3 days, but its layouts are unstable — a colour-only change
-keeps positions byte-identical while adding one node moved five of six, which makes it
-poor for watching something live.
+layout by **ELK, not dagre** — dagre throws on container-incident edges, which is
+exactly our shape when the text and art subgraphs join into render. Keep elkjs as a
+separate artifact rather than bundling it, since it is EPL-licensed. React Flow's free
+layouting guide has working code; only the Pro *examples* are gated. Estimate, from a working prototype rather than a
+guess: **3–4 person-days**, plus half a day to route the loop's back-edge through ELK.
+A Graphviz version is faster but its layouts jump — a colour change keeps positions
+byte-identical while adding one node moved five of six — which is bad for watching
+something live.
 
-Steal four things rather than inventing them:
+**Argo Workflows is the blueprint.** It is the one engine whose UI answers "watch one
+instance of a looping graph" outright — the DAG is its *default* view, not a secondary
+tab. We are not adopting it, because it costs a Kubernetes cluster to orchestrate a
+single-machine Python pipeline, but every pattern below is verified shipping behaviour
+rather than invention:
 
-- **Argo's inline artifact panel** — click a node, see the PNG, mime type chosen from
-  the file extension. The closest existing thing to art variants on a node.
-- **ComfyUI's lazy artifact pattern** — emit `{node_id, artifact_url}` and let the
-  browser fetch. Never put bytes in the log. This is why its thumbnails are cheap and
-  everyone else's are absent.
-- **Node-RED's per-node status triple** — colour, shape, short text. Its 20-character
-  limit is too tight for us, but the primitive is right.
-- **Temporal's indexed search attributes** — for picking one instance out of thousands.
+- **Store the definition inside the run.** This is what gives you pending nodes and
+  iteration history from one artifact.
+- **Retry as a parent with attempt children**, each attempt a real node. Our rounds
+  are exactly this shape.
+- **Self-reported `N/M` progress** — the state writes its own "2/3". No inference.
+- **Suspend with a generated form.** A waiting state emits its own options and the UI
+  renders them as a dropdown. That is precisely what art variant selection needs: the
+  actor offers three variants, the human clicks one.
+- **Artifacts as elements on the graph** — click a node, see the PNG. A directory
+  artifact even renders its `index.html`, so a per-round provenance page with embedded
+  images can live on the node.
+- **Collapse fan-out above three siblings.** A three-round loop stays fully drawn;
+  forty parallel articles collapse. Correct default for both our shapes.
+
+Plus, from elsewhere: **ComfyUI's lazy artifact URLs** — emit `{node_id, url}` and let
+the browser fetch, never bytes in the log; **Node-RED's per-node status triple** of
+colour, shape and short text; and **Temporal's indexed attributes** for picking one
+instance out of thousands.
+
+**Why the record stays ours, stated once.** Every engine surveyed either deletes
+history on a short default clock — Temporal 3 days, Restate 24 hours, n8n 14, Windmill
+capped at 30 on the open-source build — or puts bulk export behind a paid tier. More
+decisively, none can answer *"which runs used this passage of this source"*. That is a
+content-level question about what went into a piece, and it is the exact question the
+edition-4 fabricated quote made expensive. No tool expresses it; it only works if we
+own the index. So provenance is a record we write, in git, regardless of what runs the
+graph.
+
+**No interchange standard buys a free viewer.** OpenLineage cannot express loops,
+blocked states or human waits. OpenTelemetry spans are exported on *end*, so anything
+in flight is invisible — fatal for watching a run. BPMN can be drawn but not cheaply
+authored. This was worth checking and the answer is no.
 
 **Porting the live magazine pipeline onto the engine is the step after this
 refactor**, not part of it.
