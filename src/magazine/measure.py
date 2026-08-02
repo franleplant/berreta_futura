@@ -39,7 +39,7 @@ from typing import Any, Mapping
 
 from .errors import ValidationError
 from .html_edition import render_html_edition
-from .line_review import EDITORIAL_ARTICLE_ID
+from .piece_review import EDITORIAL_ARTICLE_ID
 from .manifest import Edition
 from .reader_layout import declared_editorial_page_cap
 from . import weasyprint_adapter as adapter
@@ -177,7 +177,7 @@ class LanguageMeasurement:
         knows which article a row came from, is what lets a caller route a
         breach to one writer instead of reading the sentence back to find out
         whose it was.  The editorial's id is
-        :data:`~magazine.line_review.EDITORIAL_ARTICLE_ID`, the same name every
+        :data:`~magazine.piece_review.EDITORIAL_ARTICLE_ID`, the same name every
         other per-piece mapping in the package gives it.
         """
 

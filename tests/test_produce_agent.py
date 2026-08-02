@@ -22,6 +22,13 @@ import yaml
 from magazine import Magazine
 from magazine.cli import main
 from magazine.produce import MAX_ROUNDS
+from magazine.produce_graph import (
+    BENCH_REVIEW_KINDS,
+    EDITION_JUDGE_KIND,
+    PIECE_JUDGE_LENSES,
+    lens_applies,
+)
+from magazine.produce_graph import BENCH_REVIEW_KINDS, EDITION_JUDGE_KIND
 from magazine.produce_agent import (
     AgentSession,
     agent_dir,
@@ -34,14 +41,15 @@ from magazine.runner import AGENT_BACKEND, TEXT_BACKENDS, RunnerConfig, RunnerEr
 
 from test_manifest import add_extraction, add_source, make_project, pin_article_source_hash
 from test_produce import (
+    ARTICLE_LENSES,
     EXTRACTION_BODY,
-    MANAGER_RUN_A,
-    LEARNING_RUN_B,
     SOURCE_ONLY,
     PassingGates,
+    blocks,
     build_project,
     changes,
     draft,
+    finding,
     snapshot,
     verdict,
 )
@@ -123,10 +131,6 @@ class Fleet:
             return scripted.pop(0) if len(scripted) > 1 else scripted[0]
         if role == "writer":
             return draft(piece, item.item.round_number)
-        if role == "manager_run_a":
-            return MANAGER_RUN_A
-        if role == "learning":
-            return LEARNING_RUN_B
         return verdict("approved")
 
     def brief(self, item_key: str) -> str:
@@ -168,8 +172,14 @@ class AgentFixture(unittest.TestCase):
     def keys(self, result) -> list[str]:
         return [item.key for item in result.ready]
 
-    def drive(self, *, rounds: int = 12, max_rounds: int = MAX_ROUNDS, **kwargs):
-        """Run the whole loop the way a driver would, and return the last report."""
+    def drive(self, *, rounds: int = 40, max_rounds: int = MAX_ROUNDS, **kwargs):
+        """Run the whole loop the way a driver would, and return the last report.
+
+        The ceiling is generous because a round is no longer two calls wide.
+        Seven lenses run in three stages and a stage is emitted only once the
+        one above it left the piece alive, so one piece's round one is four
+        emit/ingest cycles rather than two.
+        """
 
         result = self.advance(max_rounds=max_rounds, **kwargs)
         for _ in range(rounds):
@@ -240,17 +250,67 @@ class ReadySetTests(AgentFixture):
 
 
 class ParallelJudgeTests(AgentFixture):
-    def test_both_piece_judges_are_ready_at_the_same_time(self):
+    def test_a_whole_stage_of_lenses_is_ready_at_the_same_time(self):
+        """One stage is the fan-out unit, and a stage is more than one call.
+
+        Emitting a lens at a time would serialise a fleet over what the
+        pipeline itself runs concurrently.  Stage 1 is ``worth`` and
+        ``mechanics``; the pair arrives together, in the graph's declared report
+        order rather than in whichever order the two threads composed them.
+        """
+
         first = self.advance()
         self.fleet.work(first)
 
         second = self.advance()
 
         self.assertEqual(
-            self.keys(second), ["article/r1-evidence", "article/r1-line"]
+            self.keys(second), ["article/r1-worth", "article/r1-mechanics"]
         )
         self.assertEqual(
             [item.returns for item in second.ready], ["verdict", "verdict"]
+        )
+
+    def test_a_stage_a_blocking_finding_skipped_is_never_emitted_as_work(self):
+        """A skip that still hands a worker the brief has saved nobody anything.
+
+        Under the autonomous backend a skipped stage is a call not made; under
+        this one it is a brief not written, and the two have to be the same
+        decision or a fleet pays for judgment the pipeline had already decided
+        was worthless.
+        """
+
+        self.fleet.script[("worth", "article")] = [
+            blocks("a paraphrase with every identifier stripped")
+        ]
+
+        self.drive(articles=["article"], max_rounds=1)
+
+        self.assertIn("article/r1-worth", self.fleet.briefs)
+        self.assertIn("article/r1-mechanics", self.fleet.briefs)
+        for skipped in ("evidence", "shape", "craft", "teaching"):
+            self.assertNotIn(f"article/r1-{skipped}", self.fleet.briefs, skipped)
+
+    def test_the_stages_are_emitted_in_order_and_never_all_at_once(self):
+        """A stage the pipeline would have skipped must not be paid for early."""
+
+        seen: list[list[str]] = []
+        result = self.advance()
+        for _ in range(12):
+            if not result.ready:
+                break
+            seen.append(self.keys(result))
+            self.fleet.work(result)
+            result = self.advance()
+
+        self.assertEqual(
+            seen[:4],
+            [
+                ["article/r1-writer"],
+                ["article/r1-worth", "article/r1-mechanics"],
+                ["article/r1-evidence", "article/r1-shape"],
+                ["article/r1-craft"],
+            ],
         )
 
     def test_a_brief_carries_everything_the_worker_needs(self):
@@ -294,7 +354,7 @@ class IngestTests(AgentFixture):
 
         self.assertEqual(self.keys(first), ["article/r1-writer"])
         self.assertEqual(
-            self.keys(result), ["article/r1-evidence", "article/r1-line"]
+            self.keys(result), ["article/r1-worth", "article/r1-mechanics"]
         )
         self.assertIn("A draft of article, round 1.", self.manuscript())
         self.assertEqual(self.record("article")["rounds"][0]["round"], 1)
@@ -310,7 +370,7 @@ class IngestTests(AgentFixture):
         result = self.advance()
 
         self.assertEqual(
-            self.keys(result), ["article/r1-evidence", "article/r1-line"]
+            self.keys(result), ["article/r1-worth", "article/r1-mechanics"]
         )
 
     def test_an_unknown_item_is_refused_by_name(self):
@@ -343,9 +403,9 @@ class IngestTests(AgentFixture):
 
         self.fleet.work(self.advance())
         judged = self.advance()
-        line = [item for item in judged.ready if item.key == "article/r1-line"][0]
+        line = [item for item in judged.ready if item.key == "article/r1-mechanics"][0]
         stale_brief = (self.root / line.brief_path).read_text(encoding="utf-8")
-        # The line editor is still reading while the writer is re-run.
+        # The mechanics lens is still reading while the writer is re-run.
         self.redraft(draft("article", 1, headings=("A section the judge never saw",)))
         (self.root / line.reply_path).write_text(verdict("approved"), encoding="utf-8")
 
@@ -360,7 +420,7 @@ class IngestTests(AgentFixture):
         self.assertFalse((directory / "reply.md").exists())
         reissued = (directory / "brief.md").read_text(encoding="utf-8")
         self.assertNotEqual(reissued, stale_brief)
-        self.assertIn("article/r1-line", self.keys(result))
+        self.assertIn("article/r1-mechanics", self.keys(result))
 
     def test_submitting_a_verdict_on_a_superseded_draft_raises(self):
         self.fleet.work(self.advance())
@@ -368,7 +428,7 @@ class IngestTests(AgentFixture):
         self.redraft(draft("article", 1, headings=("A section the judge never saw",)))
 
         with self.assertRaises(ProduceError) as raised:
-            self.session().submit("issue-001", "article/r1-line", verdict("approved"))
+            self.session().submit("issue-001", "article/r1-mechanics", verdict("approved"))
 
         self.assertIn("was not applied", str(raised.exception))
         self.assertIn("the question it answers has changed", str(raised.exception))
@@ -431,14 +491,14 @@ class IngestTests(AgentFixture):
 
         with self.assertRaises(ProduceError) as raised:
             self.session().submit(
-                "issue-001", "article/r1-line", "It reads pretty well to me.\n"
+                "issue-001", "article/r1-mechanics", "It reads pretty well to me.\n"
             )
-        self.assertIn("article/r1-line", str(raised.exception))
+        self.assertIn("article/r1-mechanics", str(raised.exception))
         self.assertIn("the one YAML mapping its prompt requires", str(raised.exception))
 
         with self.assertRaises(ProduceError) as raised:
             self.session().submit(
-                "issue-001", "article/r1-line", "result: looks_fine\nfindings: []\n"
+                "issue-001", "article/r1-mechanics", "result: looks_fine\nfindings: []\n"
             )
         self.assertIn("returned result 'looks_fine'", str(raised.exception))
         self.assertIn("approved or changes_required", str(raised.exception))
@@ -449,7 +509,7 @@ class IngestTests(AgentFixture):
 
         with self.assertRaises(ProduceError) as raised:
             self.session().submit(
-                "issue-001", "article/r1-line", "result: approved\n  findings: ]\n"
+                "issue-001", "article/r1-mechanics", "result: approved\n  findings: ]\n"
             )
 
         self.assertIn("did not return parseable YAML", str(raised.exception))
@@ -479,7 +539,7 @@ class IngestTests(AgentFixture):
         with self.assertRaises(ProduceError) as raised:
             self.session().submit(
                 "issue-001",
-                "article/r1-line",
+                "article/r1-mechanics",
                 yaml.safe_dump(
                     {
                         "result": "changes_required",
@@ -489,26 +549,70 @@ class IngestTests(AgentFixture):
                 ),
             )
 
-        self.assertIn("article/r1-line", str(raised.exception))
+        self.assertIn("article/r1-mechanics", str(raised.exception))
+
+    def test_a_finding_with_no_disposition_is_refused_on_this_path_too(self):
+        """The field that replaced the severity cap is checked at the door.
+
+        A worker learns its reply is unusable while it still has the context to
+        fix it, rather than three items later -- and, more to the point, a
+        disposition-less finding never reaches a record, because a parser that
+        drops the field is a severity cap by omission.
+        """
+
+        self.fleet.work(self.advance())
+        self.advance()
+        routed = finding("it repeats")
+        unrouted = {key: value for key, value in routed.items()
+                    if key != "disposition"}
+
+        with self.assertRaises(ProduceError) as raised:
+            self.session().submit(
+                "issue-001",
+                "article/r1-mechanics",
+                yaml.safe_dump(
+                    {"result": "changes_required", "findings": [unrouted]},
+                    sort_keys=False,
+                ),
+            )
+
+        self.assertIn("disposition", str(raised.exception))
+        # The routed twin of the same finding is accepted, so the refusal is
+        # about the missing field and not about the rest of the shape.
+        self.session().submit(
+            "issue-001",
+            "article/r1-mechanics",
+            yaml.safe_dump(
+                {"result": "changes_required", "findings": [routed]},
+                sort_keys=False,
+            ),
+        )
 
     def test_a_stored_answer_the_pipeline_refuses_names_the_way_out(self):
-        """A run B that improved run A's claims wedges a deterministic replay."""
+        """A reply the pipeline refuses on content wedges a deterministic replay.
 
-        revised = yaml.safe_load(LEARNING_RUN_B)
-        revised["manager_takeaways"][0]["claims"] = [
-            "Claim one.",
-            "A better claim the body happens to support.",
-            "Claim three.",
-        ]
-        self.fleet.script[("learning", "issue")] = [
-            yaml.safe_dump(revised, sort_keys=False)
+        A shape check at the door cannot catch every unusable answer: a lens
+        that files a ``blocking`` finding under an approving verdict is
+        well-formed and is refused two stages later, because the staging skipped
+        stages it had no reason to skip and an unrun lens is absent rather than
+        approving.  Under an autonomous backend a re-run asks again and gets a
+        different answer; a replay of stored replies produces the same refusal
+        for ever, so the refusal has to carry the way out.
+        """
+
+        self.fleet.script[("worth", "article")] = [
+            verdict(
+                "approved",
+                findings=[finding("blocking, under an approval",
+                                  severity="blocking")],
+            )
         ]
 
         with self.assertRaises(ProduceError) as raised:
             self.drive()
 
         message = str(raised.exception)
-        self.assertIn("rewrote run A", message)
+        self.assertIn("an unrun lens is absent, never approving", message)
         self.assertIn("editions/issue-001/production/agent", message)
         self.assertIn("brief reissued", message)
 
@@ -540,27 +644,30 @@ class EndToEndTests(AgentFixture):
             [(outcome.piece_id, outcome.status) for outcome in result.outcomes],
             [("article", "settled"), ("editorial", "settled")],
         )
-        self.assertEqual(self.recorded, {"evidence", "line", "learning", "edition"})
-        for kind in ("evidence", "line", "learning", "edition"):
+        # Every bench kind but ``teaching``, which binds explainers and this
+        # edition carries none.
+        self.assertEqual(
+            self.recorded, set(BENCH_REVIEW_KINDS) - {"teaching"}
+        )
+        for kind in self.recorded:
             self.assertTrue(
                 (
                     self.root / "editions" / "issue-001" / "reviews" / f"{kind}.yaml"
                 ).is_file(),
                 kind,
             )
-        # The roles ran in the pipeline's order, not the driver's.
+        # The roles ran in the pipeline's order, not the driver's: the writer,
+        # then stage 1, and the whole-issue lens last of all and once.
         self.assertEqual(
             self.fleet.seen[:3],
-            [("writer", "article"), ("evidence", "article"), ("line", "article")],
+            [("writer", "article"), ("worth", "article"), ("mechanics", "article")],
         )
+        self.assertEqual(self.fleet.seen[-1:], [(EDITION_JUDGE_KIND, "issue")])
         self.assertEqual(
-            self.fleet.seen[-3:],
-            [
-                ("manager_run_a", "issue"),
-                ("learning", "issue"),
-                ("edition", "issue"),
-            ],
+            [role for role, _ in self.fleet.seen].count(EDITION_JUDGE_KIND), 1
         )
+        for retired in ("line", "learning", "manager_run_a"):
+            self.assertNotIn(retired, [role for role, _ in self.fleet.seen])
 
     def test_the_provenance_record_names_the_agent_and_the_brief_it_answered(self):
         self.drive()
@@ -584,15 +691,27 @@ class EndToEndTests(AgentFixture):
         self.assertEqual(state["state"], "awaiting_work")
         self.assertEqual([row["item"] for row in state["ready"]], self.keys(first))
 
-        self.drive()
+        result = self.drive()
 
         state = yaml.safe_load(
             ready_path(self.magazine.editions_dir, "issue-001").read_text(
                 encoding="utf-8"
             )
         )
-        self.assertEqual(state["state"], "complete")
         self.assertEqual(state["ready"], [])
+        # Every piece settled, every brief answered, nothing owed: the driver is
+        # told ``complete``.  It used to be told ``stalled`` -- honest about the
+        # graph and wrong about the edition -- because ``issue/bench`` demanded a
+        # ``teaching`` record that an edition with no explainer can never
+        # produce.  ``stalled`` is the one word a driver must never see on a
+        # finished edition, since it means "nothing a worker can pick up will
+        # move this", and here that was true and the conclusion was false.
+        self.assertEqual(state["state"], "complete")
+        self.assertEqual(state["graph"]["unreached"], [])
+        self.assertTrue(state["graph"]["complete"])
+        self.assertEqual(
+            {outcome.status for outcome in result.outcomes}, {"settled"}
+        )
 
     def test_a_settled_edition_emits_nothing_and_costs_no_work(self):
         self.drive()
@@ -630,13 +749,13 @@ class ResumeTests(AgentFixture):
 
         self.assertEqual(
             self.keys(result),
-            ["article/r1-writer", "second/r1-evidence", "second/r1-line"],
+            ["article/r1-writer", "second/r1-worth", "second/r1-mechanics"],
         )
 
 
 class EscalationTests(AgentFixture):
     def test_three_rounds_then_escalation_with_every_finding_accumulated(self):
-        self.fleet.script[("line", "article")] = [changes("round one repeats")]
+        self.fleet.script[("craft", "article")] = [changes("round one repeats")]
 
         result = self.drive(articles=["article"])
 
@@ -648,12 +767,12 @@ class EscalationTests(AgentFixture):
         notes = [finding["note"] for finding in record["escalation"]["findings"]]
         self.assertEqual(notes.count("round one repeats"), MAX_ROUNDS)
         self.assertFalse(
-            any(role == "manager_run_a" for role, _ in self.fleet.seen),
-            "an unfinished issue must not reach the whole-issue judges",
+            any(role == EDITION_JUDGE_KIND for role, _ in self.fleet.seen),
+            "an unfinished issue must not reach the whole-issue lens",
         )
 
     def test_the_escalation_names_how_a_driver_offers_the_piece_a_fresh_start(self):
-        self.fleet.script[("line", "article")] = [changes("round one repeats")]
+        self.fleet.script[("craft", "article")] = [changes("round one repeats")]
 
         result = self.drive(articles=["article"])
 
@@ -666,7 +785,7 @@ class EscalationTests(AgentFixture):
         )
 
     def test_discarding_a_piece_s_answers_redrafts_it_from_round_one(self):
-        self.fleet.script[("line", "article")] = [changes("round one repeats")]
+        self.fleet.script[("craft", "article")] = [changes("round one repeats")]
         self.drive(articles=["article"])
         import shutil
 
@@ -682,31 +801,44 @@ class EscalationTests(AgentFixture):
 
 
 class BoundaryTests(AgentFixture):
-    def test_the_line_editor_s_brief_never_carries_the_source(self):
-        self.fleet.work(self.advance())
-        self.advance()
+    def test_every_blind_lens_brief_is_written_without_the_source(self):
+        """Structural on the autonomous path; the brief on disk proves it here.
 
-        line = self.fleet.brief  # populated by the next work() call
-        self.fleet.work(self.advance())
-        self.assertNotIn(SOURCE_ONLY, line("article/r1-line"))
-        self.assertIn(SOURCE_ONLY, line("article/r1-evidence"))
-        self.assertIn(
-            "source extraction is deliberately withheld", line("article/r1-line")
-        )
+        This is the one place the guarantee can be read rather than reasoned
+        about: the brief a worker will open is a file, and the source sentence
+        is either in it or it is not.
+        """
 
-    def test_the_manager_s_two_runs_stay_two_briefs_and_run_a_is_starved(self):
         self.drive()
 
-        run_a = self.fleet.brief("issue/manager-run-a")
-        run_b = self.fleet.brief("issue/learning")
-        self.assertIn("Marcus, run A only", run_a)
-        self.assertNotIn("A draft of article, round 1.", run_a)
-        self.assertNotIn(SOURCE_ONLY, run_a)
-        self.assertIn("A draft of article, round 1.", run_b)
-        self.assertIn("Pilot the thing this quarter.", run_b)
+        for lens in PIECE_JUDGE_LENSES:
+            if not lens_applies(
+                lens, piece_id="article", content_mode="faithful_edit"
+            ):
+                continue
+            with self.subTest(lens=lens.kind):
+                brief = self.fleet.brief(f"article/r1-{lens.kind}")
+                if lens.reads_source:
+                    self.assertIn(SOURCE_ONLY, brief)
+                else:
+                    self.assertNotIn(SOURCE_ONLY, brief)
+                    self.assertIn(
+                        "source extraction is deliberately withheld", brief
+                    )
+
+    def test_the_issue_lens_gets_one_brief_carrying_every_piece(self):
+        self.drive()
+
+        brief = self.fleet.brief(f"issue/{EDITION_JUDGE_KIND}")
+        self.assertIn("A draft of article, round 1.", brief)
+        self.assertIn("A draft of editorial, round 1.", brief)
+        self.assertNotIn(SOURCE_ONLY, brief)
+        # And no whole-issue reader persona survives to be briefed.
+        self.assertNotIn("issue/manager-run-a", self.fleet.briefs)
+        self.assertNotIn("issue/learning", self.fleet.briefs)
 
     def test_scratch_notes_reach_the_next_writer_and_nothing_else(self):
-        self.fleet.script[("line", "article")] = [
+        self.fleet.script[("craft", "article")] = [
             changes("the second example repeats the first"),
             verdict("approved"),
         ]
@@ -715,7 +847,7 @@ class BoundaryTests(AgentFixture):
 
         self.assertNotIn("concept graph", self.manuscript())
         self.assertNotIn(SCRATCH_MARKER, self.manuscript())
-        for role in ("evidence", "line"):
+        for role in ARTICLE_LENSES:
             self.assertNotIn("concept graph", self.fleet.brief(f"article/r1-{role}"))
         second = self.fleet.brief("article/r2-writer")
         self.assertIn("concept graph for article round 1", second)
@@ -726,8 +858,9 @@ class BoundaryTests(AgentFixture):
 
         self.drive(articles=["article"])
 
-        self.assertNotIn("article/r1-evidence", self.fleet.briefs)
-        self.assertIn("article/r2-evidence", self.fleet.briefs)
+        for lens in ARTICLE_LENSES:
+            self.assertNotIn(f"article/r1-{lens}", self.fleet.briefs, lens)
+            self.assertIn(f"article/r2-{lens}", self.fleet.briefs, lens)
         self.assertIn(
             "the fence is not the source's", self.fleet.brief("article/r2-writer")
         )
@@ -842,16 +975,24 @@ class FigureAnchorTests(unittest.TestCase):
             draft("article", 2, headings=("The kill chain",)),
         ]
         result = session.advance("issue-001", articles=["article"])
-        for _ in range(8):
+        for _ in range(20):
             if not result.ready:
                 break
             fleet.work(result)
             result = session.advance("issue-001", articles=["article"])
 
+        # One more, to reach the steady state.  A subset run stops as soon as
+        # its own pieces are done -- it must not go on to the whole-issue
+        # judgments, which read an issue this run has not finished -- so the
+        # advance that clears the last brief reports the piece as ``passed``,
+        # and the one after it reports the settled piece it now finds.
+        result = session.advance("issue-001", articles=["article"])
+
         self.assertEqual(result.outcomes[0].status, "settled")
         # Round one stranded the figure, so no judge was ever paid for it.
-        self.assertNotIn("article/r1-evidence", fleet.briefs)
-        self.assertIn("article/r2-evidence", fleet.briefs)
+        for lens in ARTICLE_LENSES:
+            self.assertNotIn(f"article/r1-{lens}", fleet.briefs, lens)
+            self.assertIn(f"article/r2-{lens}", fleet.briefs, lens)
         self.assertIn(
             "figure 'diagram' is anchored to the heading 'The kill chain'",
             fleet.brief("article/r2-writer"),
@@ -937,8 +1078,8 @@ class CliTests(AgentFixture):
         )
 
         self.assertEqual(code, 0, output)
-        self.assertIn("ready: article/r1-evidence", output)
-        self.assertIn("ready: article/r1-line", output)
+        self.assertIn("ready: article/r1-worth", output)
+        self.assertIn("ready: article/r1-mechanics", output)
 
     def test_a_reply_file_is_accepted_instead_of_stdin(self):
         self.run_cli(["produce", "issue-001", "--backend", "agent"])
@@ -959,7 +1100,7 @@ class CliTests(AgentFixture):
         )
 
         self.assertEqual(code, 0, output)
-        self.assertIn("ready: article/r1-evidence", output)
+        self.assertIn("ready: article/r1-worth", output)
 
     def test_the_json_report_carries_the_ready_set_a_driver_scripts_on(self):
         import json

@@ -10,8 +10,11 @@ from unittest.mock import patch
 from PIL import Image
 import yaml
 
+from magazine.produce_graph import BENCH_REVIEW_KINDS, PIECE_JUDGE_LENSES
 from magazine.workflow import (
     AdvanceResult,
+    _ADVISORY_REVIEW_CHECKPOINTS,
+    BENCH_CHECKPOINT_IDS,
     _build_input_drift,
     Checkpoint,
     DefaultWorkflowAdapter,
@@ -532,12 +535,18 @@ def test_status_reports_the_whole_ordered_workflow_and_precise_blockers(
         "fit",
         "validation",
         "build",
-        # The editorial bench sits together after the build: the evidence
-        # audit, then the three prose judges, then the visual decision.
+        # The whole bench sits together after the build, in repair order: the
+        # six per-piece lenses as a writer should work through them, then the
+        # whole-issue verdict, then the visual decision.  The order is the lens
+        # table's, not the cheapest running order -- fixing a worth finding
+        # deletes the text a craft finding points at.
+        "worth_review",
         "evidence_review",
-        "line_review",
+        "shape_review",
+        "teaching_review",
+        "craft_review",
+        "mechanics_review",
         "edition_review",
-        "learning_review",
         "render_review",
         "release",
     ]
@@ -1345,18 +1354,48 @@ def test_translated_build_requires_its_current_translation_manifest_binding(
     )
 
 
+def test_the_advisory_rollout_is_derived_from_the_lens_table_not_from_a_name():
+    """Which lens gates is declared once, in ``JudgeLens.gates_release``.
+
+    This set used to be spelled ``!= _review_checkpoint_id("evidence")``, which
+    is the same defect as the hardcoded bench table ``produce_graph`` used to
+    carry: the day a second lens is trusted enough to gate, the person flipping
+    it edits the lens declaration and has no reason to open this file.  The
+    checkpoint that stayed advisory would then quietly keep waiving itself out
+    of ``release_ready``.  So the two must be provably the same statement.
+
+    ``edition`` has no ``JudgeLens`` row at all -- it is not a per-piece lens --
+    and is advisory for the same reason the other five are: nothing in
+    ``Magazine.release`` calls ``require_approved_edition_review`` yet.
+    """
+
+    gating = {lens.kind for lens in PIECE_JUDGE_LENSES if lens.gates_release}
+
+    assert gating == {"evidence"}
+    assert _ADVISORY_REVIEW_CHECKPOINTS == {
+        f"{kind}_review" for kind in BENCH_REVIEW_KINDS if kind not in gating
+    }
+    # Every bench checkpoint is either gating or advisory, and none is both.
+    assert _ADVISORY_REVIEW_CHECKPOINTS < set(BENCH_CHECKPOINT_IDS)
+    assert set(BENCH_CHECKPOINT_IDS) - _ADVISORY_REVIEW_CHECKPOINTS == {
+        "evidence_review"
+    }
+
+
 def test_the_prose_bench_reports_without_blocking_during_the_advisory_rollout(
     tmp_path: Path,
 ):
-    """The three new judges are collected and calibrated before they refuse.
+    """The six new judges are collected and calibrated before they refuse.
 
-    An edition with no line, edition or learning record must still reach
-    ``release_ready``: their thresholds are being calibrated against edition
-    004, and a gate switched on before its threshold is known teaches the
-    operator to route around it.  So each checkpoint reports what it found --
-    including the exact recording command in its details -- without ever
-    reaching ``blocked`` and without ever becoming the report's next
-    checkpoint.  Emptying ``_ADVISORY_REVIEW_CHECKPOINTS`` is the flip.
+    An edition with no worth, shape, teaching, craft, mechanics or edition
+    record must still reach ``release_ready``: their thresholds are being
+    calibrated against edition 004, and a gate switched on before its threshold
+    is known teaches the operator to route around it.  So each checkpoint
+    reports what it found -- including the exact recording command in its
+    details -- without ever reaching ``blocked`` and without ever becoming the
+    report's next checkpoint.  Emptying ``_ADVISORY_REVIEW_CHECKPOINTS`` is the
+    flip, and ``evidence`` is deliberately not in it: it is the one bench gate
+    ``Magazine.release`` has always enforced.
     """
 
     _make_project(tmp_path, extraction=True, complete_art=True)
@@ -1365,43 +1404,78 @@ def test_the_prose_bench_reports_without_blocking_during_the_advisory_rollout(
 
     report = Workflow(tmp_path, adapter=BuildAdapter()).status(EDITION_ID)
 
-    for checkpoint_id, kind in (
-        ("line_review", "line"),
-        ("edition_review", "edition"),
-        ("learning_review", "learning"),
-    ):
+    for kind in ("worth", "shape", "craft", "mechanics", "edition"):
+        checkpoint_id = f"{kind}_review"
         checkpoint = report.checkpoint(checkpoint_id)
         assert checkpoint.status == "not_applicable", checkpoint_id
-        assert checkpoint.next_action is None
-        assert checkpoint.details["advisory"] is True
-        assert checkpoint.details["status"] == "required_before_release"
+        assert checkpoint.next_action is None, checkpoint_id
+        assert checkpoint.details["advisory"] is True, checkpoint_id
+        assert checkpoint.details["status"] == "required_before_release", checkpoint_id
         assert checkpoint.details["command"] == (
             f"uv run --locked mag review record {EDITION_ID} --kind {kind}"
-        )
+        ), checkpoint_id
+
+    # `teaching` is a different kind of "not owed" and the report has to be
+    # able to tell the two apart.  The five above are owed and deferred: the
+    # record is genuinely missing, the rollout is holding the gate open while
+    # the threshold is calibrated, and `details["status"]` still says
+    # `required_before_release` so the deferral is visible.  This fixture
+    # declares no `in_a_nutshell` piece, so the teaching lens has nothing to
+    # read at all -- it is `complete` on its own merits, before the rollout is
+    # consulted, and carries no `advisory` flag because nothing is being
+    # deferred.  Collapsing the two would mean that flipping the rollout off
+    # blocked every explainer-less edition behind a recording command that
+    # cannot succeed.
+    teaching = report.checkpoint("teaching_review")
+    assert teaching.status == "complete"
+    assert teaching.next_action is None
+    assert "advisory" not in teaching.details
+    assert teaching.details["status"] == "not_applicable"
+    assert "does not read anything in this edition" in teaching.summary
+    # The one lens outside the rollout is the one that gates, and it is the
+    # only bench checkpoint this fixture has actually recorded.
+    assert "evidence_review" not in {
+        checkpoint.id
+        for checkpoint in report.checkpoints
+        if checkpoint.details.get("advisory")
+    }
     assert report.release_ready
     assert report.next_checkpoint.id == "release"
 
 
-def test_an_approved_line_review_completes_its_checkpoint(tmp_path: Path):
-    _make_project(tmp_path, extraction=True, complete_art=True)
-    _write_build(tmp_path)
-    _write_reviews(tmp_path)
-    edition_dir = tmp_path / "editions" / EDITION_ID
+def _write_piece_review(
+    root: Path,
+    kind: str,
+    *,
+    result: str = "approved",
+    findings: list[dict] | None = None,
+    reviewer: str = "A reader",
+) -> None:
+    """One per-piece lens's record, bound to the fixture's current bytes.
+
+    Every source-blind per-piece lens binds the same thing -- each piece's
+    manuscript hash and nothing else -- so one writer serves ``shape``,
+    ``craft`` and ``mechanics``.  The bindings are computed from disk so the
+    record is current by construction: a test about findings must never fail
+    because it hardcoded a hash.
+    """
+
+    edition_dir = root / "editions" / EDITION_ID
     _write_yaml(
-        edition_dir / "reviews" / "line.yaml",
+        edition_dir / "reviews" / f"{kind}.yaml",
         {
             "schema_version": 1,
             "edition_id": EDITION_ID,
-            "reviewer": "Line editor",
+            "reviewer": reviewer,
             "reviewed_at": "2026-07-29T14:00:00+00:00",
-            "result": "approved",
-            "findings": [],
+            "result": result,
+            "findings": findings or [],
             "articles": {
-                article_id: {
+                piece_id: {
                     "reviewed_at": "2026-07-29T14:00:00+00:00",
                     "manuscript_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
                 }
-                for article_id, path in (
+                for piece_id, path in (
                     ("article", edition_dir / "articles" / "article.md"),
                     ("editorial", edition_dir / "editorial.md"),
                 )
@@ -1409,12 +1483,128 @@ def test_an_approved_line_review_completes_its_checkpoint(tmp_path: Path):
         },
     )
 
+
+def test_an_approved_craft_review_completes_its_checkpoint(tmp_path: Path):
+    """A recorded, current, clean lens leaves the advisory rollout behind.
+
+    ``craft`` is the direct descendant of the retired ``line`` judge and, like
+    it, binds every piece including the editorial.  An approved record whose
+    bound bytes still match must report ``complete`` rather than the advisory
+    ``not_applicable``: the rollout defers an unrecorded lens, it does not
+    replace a verdict that exists.
+    """
+
+    _make_project(tmp_path, extraction=True, complete_art=True)
+    _write_build(tmp_path)
+    _write_reviews(tmp_path)
+    _write_piece_review(tmp_path, "craft")
+
     report = Workflow(tmp_path, adapter=BuildAdapter()).status(EDITION_ID)
 
-    checkpoint = report.checkpoint("line_review")
+    checkpoint = report.checkpoint("craft_review")
     assert checkpoint.status == "complete"
     assert checkpoint.details["articles"]["editorial"]["status"] == "current"
+    assert checkpoint.details["editor_decisions"] == 0
+    assert "advisory" not in checkpoint.details
     assert report.release_ready
+
+
+def test_an_editor_decision_blocks_an_approved_advisory_lens_and_release(
+    tmp_path: Path,
+):
+    """The whole point of ``disposition``, at the checkpoint that reports it.
+
+    The bench that failed capped a finding on the source author's retained
+    sentences at ``minor`` and then certified the piece clean *because*
+    everything left was uncapped-able.  ``disposition: editor_decision``
+    replaced that cap with routing, and routing is worth nothing unless the
+    finding actually stops something.  So all three of the ways it could be
+    swallowed are asserted here at once: the lens said ``approved``, nothing has
+    drifted, and the lens is in the advisory rollout -- and the checkpoint is
+    still ``blocked``, still asks a human rather than a writer, and still keeps
+    the edition out of ``release_ready``.  An advisory ``not_applicable`` over
+    an outstanding ruling would be precisely the "counted as clean" the field
+    exists to prevent.
+    """
+
+    _make_project(tmp_path, extraction=True, complete_art=True)
+    _write_build(tmp_path)
+    _write_reviews(tmp_path)
+    _write_piece_review(
+        tmp_path,
+        "craft",
+        result="approved",
+        findings=[
+            {
+                "severity": "minor",
+                "article": "article",
+                "locator": "- | Source evidence. | 1",
+                "category": "register",
+                "disposition": "editor_decision",
+                "note": "The source author's own sentence, retained verbatim.",
+            }
+        ],
+    )
+
+    report = Workflow(tmp_path, adapter=BuildAdapter()).status(EDITION_ID)
+
+    checkpoint = report.checkpoint("craft_review")
+    assert checkpoint.status == "blocked"
+    assert checkpoint.details["status"] == "approved"
+    assert checkpoint.details["editor_decisions"] == 1
+    # The advisory branch must not have been reached at all: a checkpoint that
+    # got there would be `not_applicable` and would carry `advisory: True`.
+    assert "advisory" not in checkpoint.details
+    assert checkpoint.next_action.classification == "human-review"
+    assert "editor_decision" in checkpoint.next_action.instruction
+    assert "approved" in checkpoint.summary
+    assert not report.release_ready
+    assert report.next_checkpoint.id == "craft_review"
+
+
+def test_the_advisory_waiver_is_withdrawn_per_lens_not_for_the_whole_bench(
+    tmp_path: Path,
+):
+    """A sibling lens's approval must not launder another lens's ruling.
+
+    The waiver in ``_waived_by_advisory_rollout`` is asked of one checkpoint at
+    a time, and it has to be: an outstanding ``editor_decision`` on ``mechanics``
+    says nothing about ``shape``, and a waiver computed for the bench as a whole
+    would either stall a calibrating lens that found nothing or -- far worse --
+    let a clean sibling carry an unresolved ruling into ``release_ready``.
+    """
+
+    _make_project(tmp_path, extraction=True, complete_art=True)
+    _write_build(tmp_path)
+    _write_reviews(tmp_path)
+    _write_piece_review(
+        tmp_path,
+        "mechanics",
+        findings=[
+            {
+                "severity": "major",
+                "article": "editorial",
+                "locator": "- | A short editorial. | 1",
+                "category": "agreement",
+                "disposition": "editor_decision",
+                "note": "Subject-verb disagreement inside retained wording.",
+            }
+        ],
+    )
+    _write_piece_review(tmp_path, "shape")
+
+    report = Workflow(tmp_path, adapter=BuildAdapter()).status(EDITION_ID)
+
+    assert report.checkpoint("shape_review").status == "complete"
+    mechanics = report.checkpoint("mechanics_review")
+    assert mechanics.status == "blocked"
+    assert mechanics.details["editor_decisions"] == 1
+    # Still advisory, still unrecorded, and still waived -- the withdrawal is
+    # this checkpoint's, not the rollout's.
+    craft = report.checkpoint("craft_review")
+    assert craft.status == "not_applicable"
+    assert craft.details["advisory"] is True
+    assert not report.release_ready
 
 
 def test_release_readiness_requires_current_evidence_and_render_decisions(

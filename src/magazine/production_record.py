@@ -270,7 +270,7 @@ def open_filed_findings(
     Stripped of their bookkeeping keys, so what comes back is a finding in the
     shape every judge already emits and every brief already renders.  ``judge``
     is set to who filed it, because a reviser reading "from the edition review"
-    treats it differently from "from the line editor", and should.
+    treats it differently from "from the craft lens", and should.
     """
 
     open_rows: list[dict[str, Any]] = []

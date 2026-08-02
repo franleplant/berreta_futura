@@ -52,10 +52,19 @@ def per_article_record(
     result: str = "changes_required",
     articles: dict | None = None,
 ) -> dict:
+    """One per-piece lens's record: six of the seven kinds wear this shape.
+
+    Written once rather than per kind because the rollup's split is exactly
+    two-way -- scores on ``articles.<id>.scores`` for a lens that reads one
+    piece at a time, scores at the top of the record for the one lens that
+    reads the assembled issue -- and a fixture per lens would assert the same
+    branch six times.  The dimensions are ``prompts/craft-review.md``'s.
+    """
+
     return {
-        "schema_version": 3,
+        "schema_version": 1,
         "edition_id": edition_id,
-        "reviewer": "Line editor",
+        "reviewer": "Craft reviewer",
         "reviewed_at": TIMESTAMP,
         "result": result,
         "findings": [],
@@ -66,7 +75,7 @@ def per_article_record(
             "eval-engineering": {
                 "reviewed_at": TIMESTAMP,
                 "manuscript_sha256": MANUSCRIPT_SHA,
-                "scores": {"structure": 4, "flow": 3, "sentence_craft": 4},
+                "scores": {"voice": 4, "economy": 3, "sentence_variety": 4},
             }
         },
     }
@@ -75,6 +84,13 @@ def per_article_record(
 def whole_issue_record(
     edition_id: str, *, result: str = "approved", scores: object = None
 ) -> dict:
+    """The ``edition`` lens's record: the one kind that scores record-level.
+
+    It is now the only one.  ``learning`` used to share this shape and is
+    retired; its successor ``teaching`` reads the explainer piece by piece and
+    therefore stores its scores where every other per-piece lens does.
+    """
+
     return {
         "schema_version": 1,
         "edition_id": edition_id,
@@ -93,19 +109,19 @@ class CollectScoreRowsTest(unittest.TestCase):
     def test_per_article_record_yields_one_row_per_article_dimension(self) -> None:
         with TemporaryDirectory() as directory:
             editions = Path(directory) / "editions"
-            write_record(editions, "004-systems", "line", per_article_record("004-systems"))
+            write_record(editions, "004-systems", "craft", per_article_record("004-systems"))
             rows = collect_score_rows(editions)
             self.assertEqual(
                 [(row.article, row.dimension, row.score) for row in rows],
                 [
-                    ("eval-engineering", "flow", 3),
-                    ("eval-engineering", "sentence_craft", 4),
-                    ("eval-engineering", "structure", 4),
+                    ("eval-engineering", "economy", 3),
+                    ("eval-engineering", "sentence_variety", 4),
+                    ("eval-engineering", "voice", 4),
                 ],
             )
             for row in rows:
                 self.assertEqual(row.edition, "004-systems")
-                self.assertEqual(row.kind, "line")
+                self.assertEqual(row.kind, "craft")
                 self.assertEqual(row.round, 1)
                 self.assertEqual(row.result, "changes_required")
                 self.assertEqual(row.reviewed_at, TIMESTAMP)
@@ -118,7 +134,7 @@ class CollectScoreRowsTest(unittest.TestCase):
                 articles={
                     "opener": {
                         "manuscript_sha256": MANUSCRIPT_SHA,
-                        "scores": {"structure": 5},
+                        "scores": {"voice": 5},
                     }
                 },
             )
@@ -152,14 +168,23 @@ class CollectScoreRowsTest(unittest.TestCase):
     def test_many_editions_and_kinds_sort_deterministically(self) -> None:
         with TemporaryDirectory() as directory:
             editions = Path(directory) / "editions"
-            write_record(editions, "005-later", "line", per_article_record("005-later"))
+            write_record(editions, "005-later", "craft", per_article_record("005-later"))
             write_record(editions, "004-systems", "edition", whole_issue_record("004-systems"))
-            write_record(editions, "004-systems", "line", per_article_record("004-systems"))
+            write_record(editions, "004-systems", "craft", per_article_record("004-systems"))
             write_record(
                 editions,
                 "004-systems",
-                "learning",
-                whole_issue_record("004-systems", scores={"transfer": 3}),
+                "teaching",
+                per_article_record(
+                    "004-systems",
+                    articles={
+                        "mcp-in-a-nutshell": {
+                            "reviewed_at": TIMESTAMP,
+                            "manuscript_sha256": MANUSCRIPT_SHA,
+                            "scores": {"comprehension": 3},
+                        }
+                    },
+                ),
             )
             rows = collect_score_rows(editions)
             keys = [
@@ -170,10 +195,10 @@ class CollectScoreRowsTest(unittest.TestCase):
             self.assertEqual(
                 sorted({(row.edition, row.kind) for row in rows}),
                 [
+                    ("004-systems", "craft"),
                     ("004-systems", "edition"),
-                    ("004-systems", "learning"),
-                    ("004-systems", "line"),
-                    ("005-later", "line"),
+                    ("004-systems", "teaching"),
+                    ("005-later", "craft"),
                 ],
             )
             self.assertEqual(render_scores(rows), render_scores(collect_score_rows(editions)))
@@ -181,7 +206,7 @@ class CollectScoreRowsTest(unittest.TestCase):
     def test_render_is_byte_identical_across_regeneration(self) -> None:
         with TemporaryDirectory() as directory:
             editions = Path(directory) / "editions"
-            write_record(editions, "004-systems", "line", per_article_record("004-systems"))
+            write_record(editions, "004-systems", "craft", per_article_record("004-systems"))
             write_record(editions, "004-systems", "edition", whole_issue_record("004-systems"))
             self.assertEqual(
                 render_scores(collect_score_rows(editions)),
@@ -194,7 +219,7 @@ class CollectScoreRowsTest(unittest.TestCase):
             write_record(
                 editions,
                 "004-systems",
-                "line",
+                "craft",
                 per_article_record(
                     "004-systems",
                     articles={"opener": {"manuscript_sha256": MANUSCRIPT_SHA}},
@@ -276,7 +301,7 @@ class ResilienceTest(unittest.TestCase):
             lambda editions: write_record(
                 editions,
                 "004-systems",
-                "line",
+                "craft",
                 {**per_article_record("004-systems"), "articles": "eval-engineering"},
             )
         )
@@ -286,7 +311,7 @@ class ResilienceTest(unittest.TestCase):
             lambda editions: write_record(
                 editions,
                 "004-systems",
-                "line",
+                "craft",
                 per_article_record("004-systems", articles={"opener": "approved"}),
             )
         )
@@ -338,11 +363,20 @@ class ResilienceTest(unittest.TestCase):
             write_record(
                 editions,
                 "004-systems",
-                "learning",
-                whole_issue_record("004-systems", scores={"transfer": 5}),
+                "teaching",
+                per_article_record(
+                    "004-systems",
+                    articles={
+                        "mcp-in-a-nutshell": {
+                            "reviewed_at": TIMESTAMP,
+                            "manuscript_sha256": MANUSCRIPT_SHA,
+                            "scores": {"usability": 5},
+                        }
+                    },
+                ),
             )
             (row,) = collect_score_rows(editions)
-            self.assertEqual((row.kind, row.dimension, row.score), ("learning", "transfer", 5))
+            self.assertEqual((row.kind, row.dimension, row.score), ("teaching", "usability", 5))
 
 
 class RenderScoresTest(unittest.TestCase):
@@ -356,16 +390,17 @@ class RenderScoresTest(unittest.TestCase):
         self.assertEqual(document["rows"], [])
         self.assertEqual(
             document["generated_from"],
-            "editions/*/reviews/{evidence,line,edition,learning}.yaml",
+            "editions/*/reviews/"
+            "{worth,evidence,shape,teaching,craft,mechanics,edition}.yaml",
         )
 
     def test_rows_keep_a_fixed_key_order(self) -> None:
         row = ScoreRow(
             edition="004-systems",
-            kind="line",
+            kind="craft",
             article="eval-engineering",
             round=1,
-            dimension="structure",
+            dimension="voice",
             score=4,
             result="changes_required",
             reviewed_at=TIMESTAMP,
@@ -393,7 +428,7 @@ class RenderScoresTest(unittest.TestCase):
     def test_an_unapproved_pair_renders_a_null_rounds_to_approval(self) -> None:
         with TemporaryDirectory() as directory:
             editions = Path(directory) / "editions"
-            write_record(editions, "004-systems", "line", per_article_record("004-systems"))
+            write_record(editions, "004-systems", "craft", per_article_record("004-systems"))
             document = yaml.safe_load(render_scores(collect_score_rows(editions)))
             self.assertEqual(
                 {row["rounds_to_approval"] for row in document["rows"]}, {None}
@@ -404,7 +439,7 @@ class WriteScoresTest(unittest.TestCase):
     def test_writes_the_rollup_and_is_idempotent(self) -> None:
         with TemporaryDirectory() as directory:
             editions = Path(directory) / "editions"
-            write_record(editions, "004-systems", "line", per_article_record("004-systems"))
+            write_record(editions, "004-systems", "craft", per_article_record("004-systems"))
             path = write_scores(editions)
             self.assertEqual(path, scores_path(editions))
             self.assertEqual(path, editions / "scores.yaml")
@@ -423,7 +458,7 @@ class WriteScoresTest(unittest.TestCase):
     def test_scores_are_current_tracks_the_file_on_disk(self) -> None:
         with TemporaryDirectory() as directory:
             editions = Path(directory) / "editions"
-            write_record(editions, "004-systems", "line", per_article_record("004-systems"))
+            write_record(editions, "004-systems", "craft", per_article_record("004-systems"))
             self.assertFalse(scores_are_current(editions))
             path = write_scores(editions)
             self.assertTrue(scores_are_current(editions))
@@ -438,7 +473,7 @@ class WriteScoresTest(unittest.TestCase):
     def test_a_new_record_makes_the_rollup_stale(self) -> None:
         with TemporaryDirectory() as directory:
             editions = Path(directory) / "editions"
-            write_record(editions, "004-systems", "line", per_article_record("004-systems"))
+            write_record(editions, "004-systems", "craft", per_article_record("004-systems"))
             write_scores(editions)
             self.assertTrue(scores_are_current(editions))
             write_record(editions, "005-later", "edition", whole_issue_record("005-later"))
@@ -451,7 +486,7 @@ class RoundsWithoutGitTest(unittest.TestCase):
     def test_every_record_is_round_one(self) -> None:
         with TemporaryDirectory() as directory:
             editions = Path(directory) / "editions"
-            write_record(editions, "004-systems", "line", per_article_record("004-systems"))
+            write_record(editions, "004-systems", "craft", per_article_record("004-systems"))
             write_record(editions, "004-systems", "edition", whole_issue_record("004-systems"))
             rows = collect_score_rows(editions)
             self.assertTrue(rows)
@@ -466,14 +501,14 @@ class RoundsWithoutGitTest(unittest.TestCase):
             write_record(
                 editions,
                 "004-systems",
-                "line",
+                "craft",
                 per_article_record("004-systems", result="changes_required"),
             )
             by_kind = {}
             for row in collect_score_rows(editions):
                 by_kind.setdefault(row.kind, set()).add(row.rounds_to_approval)
             self.assertEqual(by_kind["edition"], {1})
-            self.assertEqual(by_kind["line"], {None})
+            self.assertEqual(by_kind["craft"], {None})
 
     def test_an_explicit_root_outside_any_repository_still_degrades(self) -> None:
         with TemporaryDirectory() as directory:
@@ -517,7 +552,7 @@ class RoundsWithGitTest(unittest.TestCase):
             write_record(
                 editions,
                 "004-systems",
-                "line",
+                "craft",
                 per_article_record(
                     "004-systems",
                     result="changes_required",
@@ -525,16 +560,16 @@ class RoundsWithGitTest(unittest.TestCase):
                         "eval-engineering": {
                             "reviewed_at": TIMESTAMP,
                             "manuscript_sha256": MANUSCRIPT_SHA,
-                            "scores": {"structure": 2},
+                            "scores": {"voice": 2},
                         }
                     },
                 ),
             )
-            commit(root, "First line review")
+            commit(root, "First craft review")
             write_record(
                 editions,
                 "004-systems",
-                "line",
+                "craft",
                 per_article_record(
                     "004-systems",
                     result="approved",
@@ -542,12 +577,12 @@ class RoundsWithGitTest(unittest.TestCase):
                         "eval-engineering": {
                             "reviewed_at": TIMESTAMP,
                             "manuscript_sha256": MANUSCRIPT_SHA,
-                            "scores": {"structure": 5},
+                            "scores": {"voice": 5},
                         }
                     },
                 ),
             )
-            commit(root, "Line review after revisions")
+            commit(root, "Craft review after revisions")
 
             rows = collect_score_rows(editions)
             self.assertEqual([row.round for row in rows], [1, 2])
@@ -616,10 +651,33 @@ class RoundsWithGitTest(unittest.TestCase):
 
 class ConstantsTest(unittest.TestCase):
     def test_the_per_article_kinds_are_scored_kinds(self) -> None:
+        """The rollup covers the whole bench, and splits it exactly one way.
+
+        Both tuples are derived from the lens table, and the literals are here
+        on purpose: the previous pair read ``evidence, line, edition,
+        learning``, and because a kind the rollup does not name simply produces
+        no rows, a stale tuple stops reporting a lens *silently*.  A literal
+        that has to be edited is the only thing that makes that failure loud.
+        """
+
         self.assertEqual(set(PER_ARTICLE_KINDS) - set(SCORED_REVIEW_KINDS), set())
-        self.assertEqual(PER_ARTICLE_KINDS, ("evidence", "line"))
-        self.assertEqual(SCORED_REVIEW_KINDS, ("evidence", "line", "edition", "learning"))
+        self.assertEqual(
+            PER_ARTICLE_KINDS,
+            ("worth", "evidence", "shape", "teaching", "craft", "mechanics"),
+        )
+        self.assertEqual(
+            SCORED_REVIEW_KINDS,
+            ("worth", "evidence", "shape", "teaching", "craft", "mechanics", "edition"),
+        )
+        # The one kind whose scores hang off the record rather than off a piece
+        # row, and therefore the one kind that needs a reserved article key.
+        self.assertEqual(
+            set(SCORED_REVIEW_KINDS) - set(PER_ARTICLE_KINDS), {"edition"}
+        )
         self.assertEqual(WHOLE_ISSUE_ARTICLE_ID, "edition")
+        # ``render`` is a decision about built artifacts, not a lens; it carries
+        # no scores and listing it would make every edition look short a record.
+        self.assertNotIn("render", SCORED_REVIEW_KINDS)
 
 
 if __name__ == "__main__":

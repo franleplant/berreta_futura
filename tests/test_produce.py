@@ -2,9 +2,17 @@
 
 Nothing here runs a model.  Every call goes through a scripted
 :class:`CommandRunner` that answers by role, which is also how the tests can
-assert the thing that actually matters about this pipeline: *what each role was
-shown*.  Six of the constraints in this file are context constraints, and a
-context constraint can only be tested by reading the prompt that was sent.
+assert the two things that actually matter about this pipeline: *which roles
+were asked at all*, and *what each of them was shown*.  Both are only visible
+in the calls the fake received -- a lens the staging skipped is a brief that was
+never composed, and a context constraint can only be tested by reading the
+prompt that was sent.
+
+Nothing here names the lens set either.  It is read off
+:data:`~magazine.produce_graph.PIECE_JUDGE_LENSES`, because a suite that listed
+the lenses would pass unchanged on the day a lens was declared and never
+dispatched, which is exactly the failure the single declaration exists to make
+impossible.
 
 ``[runner] codex_binary`` points at ``/bin/echo`` so backend resolution
 succeeds without Codex installed; the fake intercepts the invocation long
@@ -34,11 +42,20 @@ from magazine.produce import (
     Production,
     ProductionGates,
 )
+from magazine.produce_graph import (
+    BENCH_REVIEW_KINDS,
+    EDITION_JUDGE_KIND,
+    PIECE_JUDGE_KINDS,
+    PIECE_JUDGE_LENSES,
+    lens_applies,
+)
 from magazine.produce_prompts import (
     ANCHOR_MARKER,
+    HOUSE_STYLE_PATH,
+    JUDGE_PROMPTS,
     SCRATCH_MARKER,
-    LineReviewInput,
     ProduceError,
+    SourceBlindReviewInput,
     split_reply,
     split_scratch,
 )
@@ -193,61 +210,87 @@ def draft(
     return "\n".join(body) + "\n"
 
 
+REPO = Path(__file__).resolve().parents[1]
+
+
+def finding(
+    note: str,
+    *,
+    severity: str = "major",
+    category: str = "duplication",
+    disposition: str = "fix",
+    **extra,
+) -> dict:
+    """One authored finding, always carrying the field that replaced the cap.
+
+    ``disposition`` is required of every authored structured finding, on every
+    lens, because a parser that lets one through without it is back to the
+    severity ceiling that certified a piece clean while twelve lowercase
+    sentence openings sat inside it.  Every fake verdict in this suite goes
+    through here so that no fixture can quietly reintroduce that hole.
+    """
+
+    row = {
+        "severity": severity,
+        "category": category,
+        "locator": "- | a sentence | 1",
+        "repair_from": "- | an earlier sentence | 1",
+        "disposition": disposition,
+        "note": note,
+        "suggestion": "an advisory replacement line",
+    }
+    row.update(extra)
+    return row
+
+
 def verdict(result: str = "approved", **extra) -> str:
     document = {"result": result, "findings": [], "notes": "read it", **extra}
     return yaml.safe_dump(document, sort_keys=False)
 
 
-def changes(note: str, *, category: str = "duplication") -> str:
+def changes(
+    note: str,
+    *,
+    category: str = "duplication",
+    severity: str = "major",
+    disposition: str = "fix",
+) -> str:
     return verdict(
         "changes_required",
         findings=[
-            {
-                "severity": "major",
-                "category": category,
-                "locator": "- | a sentence | 1",
-                "repair_from": "- | an earlier sentence | 1",
-                "note": note,
-                "suggestion": "an advisory replacement line",
-            }
+            finding(
+                note,
+                severity=severity,
+                category=category,
+                disposition=disposition,
+            )
         ],
     )
 
 
-MANAGER_RUN_A = yaml.safe_dump(
-    {
-        "manager_takeaways": [
-            {
-                "article": "article",
-                "decision": "Pilot the thing this quarter.",
-                "claims": ["Claim one.", "Claim two.", "Claim three."],
-            }
-        ]
-    },
-    sort_keys=False,
-)
+def blocks(note: str, *, category: str = "thin_derivation") -> str:
+    """A verdict carrying a ``blocking`` finding: the thing that skips a stage.
 
-LEARNING_RUN_B = yaml.safe_dump(
-    {
-        "result": "approved",
-        "findings": [],
-        "scores": {"comprehension": 4},
-        "notes": "three readers",
-        "manager_takeaways": [
-            {
-                "article": "article",
-                "decision": "Pilot the thing this quarter.",
-                "claims": ["Claim one.", "Claim two.", "Claim three."],
-                "adjudication": [
-                    {"item": "decision", "verdict": "supported", "cite": "A draft of"},
-                    {"item": "claim-1", "verdict": "supported", "cite": "A draft of"},
-                    {"item": "claim-2", "verdict": "supported", "cite": "A draft of"},
-                    {"item": "claim-3", "verdict": "supported", "cite": "A draft of"},
-                ],
-            }
-        ],
-    },
-    sort_keys=False,
+    The staging skips are conditioned on severity, not on the result, so a
+    fixture that only said ``changes_required`` would exercise none of them.
+    """
+
+    return changes(note, category=category, severity="blocking")
+
+
+# Which lenses read which piece, taken from the declaration rather than typed
+# out again.  A test that listed them would pass unchanged the day a lens was
+# added and never dispatched, which is the failure the single tuple exists to
+# make impossible.
+ARTICLE_LENSES = tuple(
+    lens.kind
+    for lens in PIECE_JUDGE_LENSES
+    if lens_applies(lens, piece_id="article", content_mode="faithful_edit")
+)
+EDITORIAL_LENSES = tuple(
+    lens.kind
+    for lens in PIECE_JUDGE_LENSES
+    if lens_applies(lens, piece_id="editorial", content_mode="original_editorial")
 )
 
 
@@ -258,13 +301,21 @@ class ScriptedCommand:
     the same thing a human reading the transcript would key on.  Replies come
     from ``script[(role, piece_id)]``, consumed in order and repeating the last
     entry once exhausted, so a test scripts only the rounds it cares about.
+
+    The markers are read off the committed prompt files rather than typed here.
+    The bench went from two judges to seven in one edit to
+    :data:`~magazine.produce_graph.PIECE_JUDGE_LENSES`, and a hardcoded table of
+    headings in the fake would have been the one place that edit did not reach:
+    an unrecognised judge brief classifies as ``writer`` and the failure lands
+    somewhere else entirely.
     """
 
-    ROLES = (
-        ("# Fact-checker review prompt", "evidence"),
-        ("# Line editor review prompt", "line"),
-        ("# Managing editor review prompt", "edition"),
-        ("# Reader persona review prompt", "learning"),
+    ROLES = tuple(
+        (
+            (REPO / relative).read_text(encoding="utf-8").splitlines()[0].strip(),
+            kind,
+        )
+        for kind, relative in JUDGE_PROMPTS.items()
     )
 
     def __init__(self) -> None:
@@ -313,8 +364,6 @@ class ScriptedCommand:
     def _classify(self, prompt: str) -> tuple[str, str]:
         for marker, role in self.ROLES:
             if prompt.startswith(marker):
-                if role == "learning" and "# Marcus, run A only" in prompt:
-                    return "manager_run_a", "edition"
                 return role, self._piece(prompt)
         return "writer", self._piece(prompt)
 
@@ -329,10 +378,6 @@ class ScriptedCommand:
     def _default(role: str, piece: str, round_number: int) -> str:
         if role == "writer":
             return draft(piece, round_number)
-        if role == "manager_run_a":
-            return MANAGER_RUN_A
-        if role == "learning":
-            return LEARNING_RUN_B
         return verdict("approved")
 
 
@@ -356,15 +401,19 @@ class PassingGates:
         return (GateResult("validate", True), GateResult("fit", True))
 
 
-REPO = Path(__file__).resolve().parents[1]
-
-
 def build_project(root: Path, *, body: str = EXTRACTION_BODY) -> Magazine:
     make_project(root)
     # Produce composes its briefs from the project's own ``prompts/``, so the
     # fixture is a project with prompts in it.  Copying rather than pointing at
     # the repository's also lets a test move a prompt without touching it.
     shutil.copytree(REPO / "prompts", root / "prompts")
+    # ``craft`` and ``edition`` embed the house-style corpus in their briefs
+    # rather than citing its path, because under the cooperative backend the
+    # worker may have no repository to open.  It is loaded through the same
+    # prompt loader, so a fixture without it fails the way a missing prompt
+    # file does -- by name, halfway through a run.
+    (root / HOUSE_STYLE_PATH).parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(REPO / HOUSE_STYLE_PATH, root / HOUSE_STYLE_PATH)
     (root / "magazine.toml").write_text(
         '[publication]\nname = "Test Review"\n\n'
         f'[runner]\ncodex_binary = "{INSTALLED}"\ntext_model = "gpt-5-codex"\n',
@@ -379,6 +428,54 @@ def build_project(root: Path, *, body: str = EXTRACTION_BODY) -> Magazine:
         "The original article.\n", encoding="utf-8"
     )
     return Magazine(root)
+
+
+EXPLAINER_ONLY = "The explainer's source counted nineteen distinct call shapes."
+EXPLAINER_BODY = (
+    "An explainer source.\n"
+    f"{EXPLAINER_ONLY}\n"
+    "It goes on to describe the handshake in unhelpful detail.\n"
+)
+
+
+def add_explainer(root: Path, *, piece_id: str = "nutshell") -> None:
+    """Give the fixture edition the one piece ``teaching`` reads.
+
+    ``teaching`` covers explainers, which is a coverage of exactly one piece in
+    a real issue and of none at all in the default fixture.  An edition without
+    one is a legitimate edition -- the lens simply does not run -- but it is not
+    the edition the bench was designed around, so anything that has to see the
+    whole seven-lens traversal builds this instead.
+    """
+
+    from test_manifest import add_extraction, add_source
+
+    add_source(root, "source-explainer", body=EXPLAINER_BODY)
+    digest = add_extraction(root, source_id="source-explainer", body=EXPLAINER_BODY)
+    manifest_path = root / "editions" / "issue-001" / "edition.yaml"
+    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    manifest["articles"].append(
+        {
+            "id": piece_id,
+            "title": "A Protocol in a Nutshell",
+            "short_title": "Nutshell",
+            "opener_variant": "split_axis",
+            # The Teacher writes in the magazine's voice, so the byline is the
+            # editors' and there is no author biography to carry.
+            "author": "The editors",
+            "content_mode": "in_a_nutshell",
+            "source_ids": ["source-explainer"],
+            "source_body_sha256": digest,
+            "manuscript": f"editions/issue-001/articles/{piece_id}.md",
+            "key_ideas": ["The first idea.", "The second.", "The third."],
+        }
+    )
+    manifest_path.write_text(
+        yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+    )
+    (root / "editions" / "issue-001" / "articles" / f"{piece_id}.md").write_text(
+        "An explainer source.\n", encoding="utf-8"
+    )
 
 
 def add_article_opener(root: Path) -> None:
@@ -504,29 +601,53 @@ class HappyPathTests(ProduceFixture):
             [(outcome.piece_id, outcome.status) for outcome in result.outcomes],
             [("article", "passed"), ("editorial", "passed")],
         )
-        # The order is the contract: writer, then both piece judges, per piece;
-        # the editorial after the pieces it is grounded in; the manager's two
-        # runs and then the managing editor, once, at the end.  The two piece
-        # judges overlap, so their order relative to each other is scheduling
-        # and is deliberately not asserted.
+        # The order is the contract: writer, then every lens that reads that
+        # piece, per piece; the editorial after the pieces it is grounded in;
+        # and the one whole-issue lens, once, at the end.  Lenses inside a stage
+        # overlap, so their order relative to each other is scheduling and is
+        # deliberately not asserted -- but *which* of them ran is.
         roles = self.command.roles()
+        article, editorial = len(ARTICLE_LENSES), len(EDITORIAL_LENSES)
         self.assertEqual(roles[0], "writer")
-        self.assertEqual(sorted(roles[1:3]), ["evidence", "line"])
-        self.assertEqual(roles[3], "writer")
-        self.assertEqual(sorted(roles[4:6]), ["evidence", "line"])
-        self.assertEqual(roles[6:], ["manager_run_a", "learning", "edition"])
+        self.assertEqual(sorted(roles[1 : 1 + article]), sorted(ARTICLE_LENSES))
+        self.assertEqual(roles[1 + article], "writer")
         self.assertEqual(
-            [piece for _, piece, _ in self.command.calls][:6],
-            ["article"] * 3 + ["editorial"] * 3,
+            sorted(roles[2 + article : 2 + article + editorial]),
+            sorted(EDITORIAL_LENSES),
         )
-        self.assertEqual(set(result.recorded), {"evidence", "line", "learning", "edition"})
-        for kind in ("evidence", "line", "learning", "edition"):
+        self.assertEqual(roles[2 + article + editorial :], [EDITION_JUDGE_KIND])
+        self.assertEqual(
+            [piece for _, piece, _ in self.command.calls][: 2 + article + editorial],
+            ["article"] * (1 + article) + ["editorial"] * (1 + editorial),
+        )
+        # Every bench kind but ``teaching``: it binds explainers only, and this
+        # fixture carries no ``in_a_nutshell`` piece for it to read.
+        self.assertEqual(
+            set(result.recorded), set(BENCH_REVIEW_KINDS) - {"teaching"}
+        )
+        for kind in result.recorded:
             self.assertTrue(
                 (self.root / "editions" / "issue-001" / "reviews" / f"{kind}.yaml").is_file(),
                 kind,
             )
 
-    def test_the_gates_run_before_either_judge(self):
+    def test_the_retired_lenses_are_never_dispatched_again(self):
+        """``line`` and ``learning`` are gone, and gone means never called.
+
+        Both names survived in half a dozen tables after the design retired
+        them, and a name that is still dispatchable is a call somebody still
+        pays for.  Asserting on the roles the fake was actually asked for is the
+        only place that can be seen.
+        """
+
+        self.run_produce()
+
+        for retired in ("line", "learning", "manager_run_a"):
+            self.assertNotIn(retired, self.command.roles())
+        self.assertNotIn("line", PIECE_JUDGE_KINDS)
+        self.assertNotIn("learning", PIECE_JUDGE_KINDS)
+
+    def test_the_gates_run_before_any_judge(self):
         order: list[str] = []
         self.gates.check_piece = lambda piece, extractions: (
             order.append(f"gate:{piece.id}") or (GateResult("scripted", True),)
@@ -536,10 +657,10 @@ class HappyPathTests(ProduceFixture):
         self.run_produce()
 
         self.assertEqual(order[:2], ["writer:article", "gate:article"])
-        # The two judges overlap, so their order between themselves is not the
-        # contract; that they both follow the gate is.
+        # Stage 1's two lenses overlap, so their order between themselves is not
+        # the contract; that they both follow the gate is.
         self.assertEqual(
-            sorted(order[2:4]), ["evidence:article", "line:article"]
+            sorted(order[2:4]), ["mechanics:article", "worth:article"]
         )
 
     def test_the_editorial_is_drafted_from_the_articles_and_bound_as_editorial(self):
@@ -548,12 +669,14 @@ class HappyPathTests(ProduceFixture):
         brief = self.command.briefs("writer", "editorial")[0]
         self.assertIn("The edition's pieces, in running order", brief)
         self.assertIn("A draft of article, round 1.", brief)
-        line_record = yaml.safe_load(
-            (self.root / "editions" / "issue-001" / "reviews" / "line.yaml").read_text(
+        # ``craft`` is a whole-pieces lens, so its record binds the editorial as
+        # well as the articles.
+        craft_record = yaml.safe_load(
+            (self.root / "editions" / "issue-001" / "reviews" / "craft.yaml").read_text(
                 encoding="utf-8"
             )
         )
-        self.assertEqual(set(line_record["articles"]), {"article", "editorial"})
+        self.assertEqual(set(craft_record["articles"]), {"article", "editorial"})
 
 
 class SingleContextDraftingTests(ProduceFixture):
@@ -577,7 +700,7 @@ class ScratchMarkerTests(ProduceFixture):
         manuscript = self.manuscript()
         self.assertNotIn(SCRATCH_MARKER, manuscript)
         self.assertNotIn("concept graph", manuscript)
-        for role in ("evidence", "line"):
+        for role in ARTICLE_LENSES:
             brief = self.command.briefs(role, "article")[0]
             self.assertNotIn("concept graph", brief)
             self.assertNotIn(SCRATCH_MARKER, brief)
@@ -610,20 +733,44 @@ class ScratchMarkerTests(ProduceFixture):
         self.assertIn("no manuscript", str(raised.exception))
 
 
-class LineEditorBoundaryTests(ProduceFixture):
-    def test_the_line_editor_is_not_given_the_source(self):
+class SourceBlindBoundaryTests(ProduceFixture):
+    """Which lens may see the source is an assignment constraint, not a habit.
+
+    ``prompts/README.md`` states it as one: every check about the relationship
+    between manuscript and source belongs to a lens that reads both, and every
+    check answerable from the manuscript alone belongs to a lens that reads only
+    the manuscript.  The old broad judge was forbidden the source *and* asked
+    whether the headings mirrored the source's table of contents, and it duly
+    answered a question it could not see -- wrongly, and under an approval.
+    """
+
+    def test_a_blind_lens_is_not_given_the_source_and_a_reading_lens_is(self):
         self.run_produce(articles=["article"])
 
-        line_brief = self.command.briefs("line", "article")[0]
-        evidence_brief = self.command.briefs("evidence", "article")[0]
-        self.assertNotIn(SOURCE_ONLY, line_brief)
-        self.assertIn(SOURCE_ONLY, evidence_brief)
-        self.assertIn("source extraction is deliberately withheld", line_brief)
+        for lens in PIECE_JUDGE_LENSES:
+            if not lens_applies(
+                lens, piece_id="article", content_mode="faithful_edit"
+            ):
+                continue
+            with self.subTest(lens=lens.kind):
+                brief = self.command.briefs(lens.kind, "article")[0]
+                if lens.reads_source:
+                    self.assertIn(SOURCE_ONLY, brief)
+                else:
+                    self.assertNotIn(SOURCE_ONLY, brief)
+                    self.assertIn(
+                        "source extraction is deliberately withheld", brief
+                    )
 
     def test_the_input_type_has_nowhere_to_put_a_source(self):
-        """The prohibition is structural, not a sentence a caller may ignore."""
+        """The prohibition is structural, not a sentence a caller may ignore.
 
-        fields = set(LineReviewInput.__dataclass_fields__)
+        One type serves all three blind lenses precisely so that there is one
+        place, rather than three, where a future edit could add an
+        ``extractions`` field to a lens that must not have one.
+        """
+
+        fields = set(SourceBlindReviewInput.__dataclass_fields__)
         self.assertEqual(
             fields,
             {"piece_id", "content_mode", "byline", "max_pages", "manuscript"},
@@ -643,7 +790,7 @@ class LineEditorBoundaryTests(ProduceFixture):
                 f"a brief that quotes {SOURCE_ONLY} somehow",
                 [extraction],
                 manuscript="a manuscript that does not",
-                label="line editor",
+                label="craft lens",
             )
         # A faithful_edit manuscript is the source's sentences, and carrying it
         # is the whole point of the brief.  That must not read as a leak.
@@ -651,7 +798,7 @@ class LineEditorBoundaryTests(ProduceFixture):
             f"a brief carrying {SOURCE_ONLY}",
             [extraction],
             manuscript=SOURCE_ONLY,
-            label="line editor",
+            label="craft lens",
         )
 
     def test_the_manuscript_is_exempt_however_either_side_is_wrapped(self):
@@ -682,7 +829,7 @@ class LineEditorBoundaryTests(ProduceFixture):
                     f"a brief carrying\n\n{variant}\n",
                     [extraction],
                     manuscript=variant,
-                    label="line editor",
+                    label="craft lens",
                 )
 
     def test_a_leak_survives_re_wrapping_re_casing_and_re_quoting(self):
@@ -713,7 +860,7 @@ class LineEditorBoundaryTests(ProduceFixture):
                         f"a brief that quotes the source\n\n{variant}\n",
                         [extraction],
                         manuscript="a manuscript that carries none of it",
-                        label="line editor",
+                        label="craft lens",
                     )
                 self.assertIn("forbidden the source", str(raised.exception))
 
@@ -722,7 +869,7 @@ class LiveJudgeRoundTripTests(ProduceFixture):
     """A round driven end to end over a realistically shaped source.
 
     Every other test in this file runs on ``EXTRACTION_BODY``, whose three
-    short lines no fixture manuscript repeats, so the line editor's guard was
+    short lines no fixture manuscript repeats, so the blind lenses' guard was
     never asked the question round one of a real run asks it first.  It said
     no, and the run died there -- which meant no judge had ever run, and every
     step after the guard was untested against a live pipeline: a verdict
@@ -734,21 +881,27 @@ class LiveJudgeRoundTripTests(ProduceFixture):
 
     def setUp(self):
         super().setUp()
-        # A faithful manuscript: the source's own sentences, reflowed.
+        # A faithful manuscript: the source's own sentences, reflowed.  Round
+        # two returns a *different* one, because a reviser who hands back the
+        # bytes he was given has moved nothing, and the re-run rule then
+        # correctly carries every round-one verdict forward untouched -- see
+        # ``CarriedVerdictTests``.  A fixture that repeated its draft would
+        # therefore loop to escalation and prove nothing about revision.
         self.command.script[("writer", "article")] = [
-            f"{reflow(WRAPPED_SOURCE)}\n{SCRATCH_MARKER}\nthe claim ladder"
+            f"{reflow(WRAPPED_SOURCE)}\n{SCRATCH_MARKER}\nthe claim ladder",
+            f"{reflow(WRAPPED_SOURCE)}\nThe repair.\n{SCRATCH_MARKER}\nthe claim ladder",
         ]
 
-    def test_a_faithful_manuscript_reaches_both_judges(self):
+    def test_a_faithful_manuscript_reaches_every_lens(self):
         result = self.run_produce(articles=["article"])
 
         self.assertEqual(result.outcomes[0].status, "passed")
-        line_brief = self.command.briefs("line", "article")[0]
-        self.assertIn("it is the volume, at machine speed", line_brief)
-        self.assertIn("source extraction is deliberately withheld", line_brief)
+        shape_brief = self.command.briefs("shape", "article")[0]
+        self.assertIn("it is the volume, at machine speed", shape_brief)
+        self.assertIn("source extraction is deliberately withheld", shape_brief)
 
     def test_a_verdict_reaches_the_record_and_the_next_writer_s_brief(self):
-        self.command.script[("line", "article")] = [
+        self.command.script[("shape", "article")] = [
             changes("the kill chain is told twice"),
             verdict("approved"),
         ]
@@ -758,32 +911,33 @@ class LiveJudgeRoundTripTests(ProduceFixture):
         outcome = result.outcomes[0]
         self.assertEqual((outcome.status, outcome.rounds), ("passed", 2))
         first, second = self.record("article")["rounds"]
-        # Parsed, and parsed into the record rather than merely counted.
+        # Parsed, and parsed into the record rather than merely counted.  A
+        # ``major`` finding does not skip a stage, so every applicable lens ran.
         self.assertEqual(first["result"], "changes_required")
-        self.assertEqual(set(first["judges"]), {"evidence", "line"})
-        self.assertEqual(first["judges"]["line"]["result"], "changes_required")
+        self.assertEqual(set(first["judges"]), set(ARTICLE_LENSES))
+        self.assertEqual(first["judges"]["shape"]["result"], "changes_required")
         self.assertEqual(
-            [entry["note"] for entry in first["judges"]["line"]["findings"]],
+            [entry["note"] for entry in first["judges"]["shape"]["findings"]],
             ["the kill chain is told twice"],
         )
         self.assertEqual(first["judges"]["evidence"]["result"], "approved")
-        self.assertEqual(second["judges"]["line"]["result"], "approved")
+        self.assertEqual(second["judges"]["shape"]["result"], "approved")
         # And carried forward: a finding the writer never sees is not a loop.
         brief = self.command.briefs("writer", "article")[1]
-        self.assertIn("Findings you must clear", brief)
-        self.assertIn("[major] duplication (from the line)", brief)
+        self.assertIn("### Must fix", brief)
+        self.assertIn("[major] duplication (shape)", brief)
         self.assertIn("the kill chain is told twice", brief)
 
 
 class ParallelJudgeTests(ProduceFixture):
-    def test_the_fact_checker_and_line_editor_overlap(self):
+    def test_the_lenses_of_one_stage_overlap(self):
         """Proved by a barrier: a serial pipeline can never clear it."""
 
         barrier = threading.Barrier(2, timeout=10)
         reached: list[str] = []
 
         def hook(role, piece, prompt):
-            if role in ("evidence", "line"):
+            if role in ("evidence", "shape"):
                 reached.append(role)
                 barrier.wait()
 
@@ -791,21 +945,26 @@ class ParallelJudgeTests(ProduceFixture):
 
         self.run_produce(articles=["article"])
 
-        self.assertEqual(sorted(reached), ["evidence", "line"])
+        self.assertEqual(sorted(reached), ["evidence", "shape"])
 
     def test_results_come_back_in_a_fixed_order_whatever_the_schedule(self):
-        self.command.script[("evidence", "article")] = [changes("a fact moved")]
-        self.command.script[("line", "article")] = [changes("a sentence repeats")]
+        """Stage order, then repair order inside a stage; never thread order."""
 
-        self.run_produce(articles=["article"], )
+        self.command.script[("evidence", "article")] = [changes("a fact moved")]
+        self.command.script[("shape", "article")] = [changes("a sentence repeats")]
+
+        self.run_produce(articles=["article"])
 
         round_one = self.record("article")["rounds"][0]
-        self.assertEqual(list(round_one["judges"]), ["evidence", "line"])
+        self.assertEqual(
+            list(round_one["judges"]),
+            ["worth", "mechanics", "evidence", "shape", "craft"],
+        )
 
 
 class RevisionTests(ProduceFixture):
     def test_a_piece_that_fails_once_then_passes(self):
-        self.command.script[("line", "article")] = [
+        self.command.script[("craft", "article")] = [
             changes("the second example repeats the first"),
             verdict("approved"),
         ]
@@ -822,7 +981,7 @@ class RevisionTests(ProduceFixture):
         )
 
     def test_the_reviser_receives_the_findings_and_the_predecessor_s_notes(self):
-        self.command.script[("line", "article")] = [
+        self.command.script[("craft", "article")] = [
             changes("the second example repeats the first"),
             verdict("approved"),
         ]
@@ -838,7 +997,7 @@ class RevisionTests(ProduceFixture):
         self.assertIn("earliest repair point: - | an earlier sentence | 1", second)
 
     def test_a_suggestion_is_advisory_and_a_finding_is_not(self):
-        self.command.script[("line", "article")] = [
+        self.command.script[("craft", "article")] = [
             changes("the second example repeats the first"),
             verdict("approved"),
         ]
@@ -846,8 +1005,7 @@ class RevisionTests(ProduceFixture):
         self.run_produce(articles=["article"])
 
         second = self.command.briefs("writer", "article")[1]
-        self.assertIn("Every finding is an obligation", second)
-        self.assertIn("suggestion (advisory)", second)
+        self.assertIn("suggestion (advice, not the obligation)", second)
         self.assertIn(
             "judged on whether the defect survived, never on whether you", second
         )
@@ -856,7 +1014,7 @@ class RevisionTests(ProduceFixture):
         self.command.script[("evidence", "article")] = [
             changes("round one number is wrong", category="number_or_name_error")
         ]
-        self.command.script[("line", "article")] = [changes("round one repeats")]
+        self.command.script[("craft", "article")] = [changes("round one repeats")]
 
         result = self.run_produce(articles=["article"])
 
@@ -869,9 +1027,9 @@ class RevisionTests(ProduceFixture):
         notes = [finding["note"] for finding in record["escalation"]["findings"]]
         self.assertEqual(notes.count("round one number is wrong"), MAX_ROUNDS)
         self.assertEqual(notes.count("round one repeats"), MAX_ROUNDS)
-        # An escalated piece stops the run: the whole-issue judges read a
+        # An escalated piece stops the run: the whole-issue lens reads a
         # finished issue, and this one is not.
-        self.assertNotIn("manager_run_a", self.command.roles())
+        self.assertNotIn(EDITION_JUDGE_KIND, self.command.roles())
         self.assertTrue(
             any("needs a human" in action for action in result.human_actions)
         )
@@ -892,69 +1050,387 @@ class RevisionTests(ProduceFixture):
         )
 
 
-class ManagerBoundaryTests(ProduceFixture):
-    def test_run_a_sees_furniture_and_run_b_sees_the_body(self):
+class EditionLensBoundaryTests(ProduceFixture):
+    """The one lens that may see more than one piece, and what it is handed."""
+
+    def test_the_issue_lens_reads_every_piece_and_the_house_style(self):
         self.run_produce()
 
-        run_a = self.command.briefs("manager_run_a")[0]
-        run_b = self.command.briefs("learning")[0]
-        self.assertIn("Marcus, run A only", run_a)
-        self.assertIn("Article", run_a)  # the furniture projection's title
-        self.assertNotIn("A draft of article, round 1.", run_a)
-        self.assertNotIn(SOURCE_ONLY, run_a)
-        self.assertIn("A draft of article, round 1.", run_b)
-        # Run A's block, verbatim, in run B.
-        self.assertIn("Pilot the thing this quarter.", run_b)
-        self.assertIn("Claim two.", run_b)
-        self.assertIn("already written and closed", run_b)
-
-    def test_run_a_is_recorded_separately_from_run_b(self):
-        self.run_produce()
-
-        record = yaml.safe_load(
-            (
-                self.root
-                / "editions"
-                / "issue-001"
-                / "production"
-                / "issue"
-                / "learning.yaml"
-            ).read_text(encoding="utf-8")
+        brief = self.command.briefs(EDITION_JUDGE_KIND)[0]
+        self.assertIn("A draft of article, round 1.", brief)
+        self.assertIn("A draft of editorial, round 1.", brief)
+        self.assertIn("The house style corpus", brief)
+        self.assertIn(
+            (self.root / "docs" / "WRITING_RULES.md")
+            .read_text(encoding="utf-8")
+            .strip()
+            .splitlines()[0],
+            brief,
         )
-        self.assertEqual(record["manager_run_a"]["call"]["role"], "manager_run_a")
-        self.assertEqual(record["run_b"]["call"]["role"], "learning_judge")
+        # It judges the pieces against each other, never against their sources.
+        self.assertNotIn(SOURCE_ONLY, brief)
+
+    def test_it_runs_once_after_every_piece_and_never_per_piece(self):
+        self.run_produce()
+
+        self.assertEqual(len(self.command.briefs(EDITION_JUDGE_KIND)), 1)
+        roles = self.command.roles()
+        self.assertEqual(roles.index(EDITION_JUDGE_KIND), len(roles) - 1)
+
+
+class StagingTests(ProduceFixture):
+    """Which lenses run, and which are skipped, and why the two skips differ.
+
+    ``prompts/README.md`` gives the staging a cost rationale rather than a
+    tidiness one, and the rationale is what the two different skips encode.  A
+    ``worth`` blocking finding stops the piece: craft notes on a paragraph that
+    is about to be cut are wasted calls.  A blocking finding anywhere in stages
+    1 or 2 stops stage 3 only, because craft is the lens most sensitive to text
+    churn.  Mechanics blocking deliberately stops neither stage 2 nor the piece:
+    its repairs are local and do not move what evidence and shape read.
+
+    Every assertion here is on the briefs the fake runner was actually asked
+    for, because a skip that saved no call is not a skip.
+    """
+
+    def lenses_asked(self, piece_id: str = "article") -> list[str]:
+        return [
+            role
+            for role, piece, _ in self.command.calls
+            if piece == piece_id and role != "writer"
+        ]
+
+    def test_a_worth_blocking_finding_stops_stages_two_and_three(self):
+        self.command.script[("worth", "article")] = [
+            blocks("a 40% shorter paraphrase with every identifier stripped")
+        ]
+
+        self.run_produce(articles=["article"], max_rounds=1)
+
+        # Stage 1 in full -- mechanics is not conditioned on worth -- and then
+        # nothing.  Four calls a round, saved, for as long as the piece should
+        # not exist at this length.
+        self.assertEqual(sorted(self.lenses_asked()), ["mechanics", "worth"])
+        for skipped in ("evidence", "shape", "craft", "teaching"):
+            self.assertEqual(self.command.briefs(skipped, "article"), [], skipped)
+
+    def test_a_worth_blocked_round_never_passes_on_the_lenses_that_did_run(self):
+        """An unrun applicable lens is absent, and absent is never approving.
+
+        The failure this prevents is quiet and total: a worth-blocked piece
+        whose two stage-1 lenses both returned ``approved`` would pass with
+        evidence, shape and craft having never read it.
+        """
+
+        self.command.script[("worth", "article")] = [
+            verdict("approved", findings=[finding("blocking, under an approval",
+                                                  severity="blocking")])
+        ]
+
+        with self.assertRaises(ProduceError) as raised:
+            self.run_produce(articles=["article"], max_rounds=1)
+
+        message = str(raised.exception)
+        self.assertIn("did not run", message)
+        self.assertIn("an unrun lens is absent, never approving", message)
+        for skipped in ("craft", "evidence", "shape"):
+            self.assertIn(skipped, message)
+
+    def test_a_mechanics_blocking_finding_stops_stage_three_but_not_stage_two(self):
+        """Its repairs are local; they do not move what evidence and shape read."""
+
+        self.command.script[("mechanics", "article")] = [
+            blocks("a subject-verb error in the standfirst", category="agreement")
+        ]
+
+        self.run_produce(articles=["article"], max_rounds=1)
+
         self.assertEqual(
-            record["manager_run_a"]["manager_takeaways"][0]["claims"],
-            ["Claim one.", "Claim two.", "Claim three."],
+            sorted(self.lenses_asked()),
+            ["evidence", "mechanics", "shape", "worth"],
+        )
+        self.assertEqual(self.command.briefs("craft", "article"), [])
+
+    def test_stage_three_runs_when_stages_one_and_two_found_nothing_blocking(self):
+        """The skips have to be conditional, or they are just a shorter bench."""
+
+        self.command.script[("evidence", "article")] = [
+            changes("a qualification was dropped", category="unsupported_claim")
+        ]
+
+        self.run_produce(articles=["article"], max_rounds=1)
+
+        # ``changes_required`` at ``major`` is not ``blocking``: the piece is
+        # coming back, but nothing about it makes craft's reading worthless.
+        self.assertEqual(sorted(self.lenses_asked()), sorted(ARTICLE_LENSES))
+        self.assertEqual(len(self.command.briefs("craft", "article")), 1)
+
+    def test_the_skip_is_the_round_s_and_the_next_round_asks_again(self):
+        self.command.script[("worth", "article")] = [
+            blocks("the piece does not pay for its length"),
+            verdict("approved"),
+        ]
+
+        self.run_produce(articles=["article"], max_rounds=2)
+
+        self.assertEqual(len(self.command.briefs("worth", "article")), 2)
+        # Round one bought two calls; round two bought the whole bench.
+        self.assertEqual(len(self.command.briefs("craft", "article")), 1)
+        rounds = self.record("article")["rounds"]
+        self.assertEqual(set(rounds[0]["judges"]), {"worth", "mechanics"})
+        self.assertEqual(set(rounds[1]["judges"]), set(ARTICLE_LENSES))
+
+
+class LensCoverageTests(ProduceFixture):
+    """A lens that does not read a piece is never dispatched for it.
+
+    Coverage is declared on the lens and read through
+    :func:`~magazine.produce_graph.lens_applies`, so these assert the dispatch
+    the declaration produces rather than restating the table.
+    """
+
+    def judge(self, *, content_mode: str | None = None, piece_id: str = "article",
+              manuscript: str = "A draft of article, round 1.\n", carried=None):
+        """Run one piece through the bench, without the drafting loop around it.
+
+        Coverage is decided per piece from its ``content_mode``, so varying that
+        one field is the whole experiment; going through the manifest instead
+        would add an article, a source and an extraction to say the same thing,
+        and the explainer's full traversal is proved end to end in
+        ``test_produce_graph`` where the fixture carries one.  No model is
+        reachable either way: the injected :class:`ScriptedCommand` answers
+        every call.
+        """
+
+        from dataclasses import replace as _replace
+
+        run = production(self.magazine, self.command, gates=self.gates)
+        edition = run._load_edition("issue-001")
+        piece = run._select(edition, [piece_id])[0]
+        if content_mode is not None:
+            piece = _replace(piece, content_mode=content_mode)
+        return run._judge_piece(
+            piece,
+            run._extractions(piece),
+            manuscript,
+            edition,
+            round_number=1,
+            carried=carried or {},
         )
 
-    def test_a_run_b_that_improves_run_a_s_claims_is_refused(self):
-        revised = yaml.safe_load(LEARNING_RUN_B)
-        revised["manager_takeaways"][0]["claims"] = [
-            "Claim one.",
-            "A better claim the body happens to support.",
-            "Claim three.",
+    def test_worth_is_never_asked_about_the_editorial(self):
+        """It has no source of its own, so its worth question is the edition's.
+
+        ``prompts/README.md`` routes it to ``edition``'s
+        ``single_source_editorial`` and ``thin_derivation`` rather than leaving
+        a lens to answer a ratio against a source that does not exist.
+        """
+
+        self.run_produce()
+
+        self.assertEqual(self.command.briefs("worth", "editorial"), [])
+        self.assertEqual(len(self.command.briefs("worth", "article")), 1)
+        self.assertNotIn("worth", self.record("editorial")["rounds"][0]["judges"])
+
+    def test_teaching_is_asked_only_about_the_explainer(self):
+        verdicts = self.judge(content_mode="in_a_nutshell")
+
+        self.assertIn("teaching", verdicts)
+        self.assertEqual(len(self.command.briefs("teaching", "article")), 1)
+        # And the explainer's reader gets the furniture and the source, which is
+        # what a closed-book comprehension test is written from.
+        brief = self.command.briefs("teaching", "article")[0]
+        self.assertIn("The editor-authored furniture, in full", brief)
+        self.assertIn(SOURCE_ONLY, brief)
+
+    def test_teaching_is_not_asked_about_a_feature(self):
+        """A closed-book comprehension test of a feature measures nothing."""
+
+        verdicts = self.judge(content_mode="faithful_edit")
+
+        self.assertNotIn("teaching", verdicts)
+        self.assertEqual(self.command.briefs("teaching", "article"), [])
+        self.assertEqual(set(verdicts), set(ARTICLE_LENSES))
+
+
+class CarriedVerdictTests(ProduceFixture):
+    """A lens re-runs only when its own declared inputs moved.
+
+    The cache key is the lens's work identity -- the same digest the
+    cooperative backend binds a stored reply to -- so "this answer is still
+    current" means one thing whether it is asked of a reply on disk or of a
+    verdict in a record.
+    """
+
+    def judge(self, *, manuscript: str, carried=None):
+        run = production(self.magazine, self.command, gates=self.gates)
+        edition = run._load_edition("issue-001")
+        piece = run._select(edition, ["article"])[0]
+        return run._judge_piece(
+            piece,
+            run._extractions(piece),
+            manuscript,
+            edition,
+            round_number=1,
+            carried=carried or {},
+        )
+
+    def test_an_unmoved_lens_costs_no_model_call_at_all(self):
+        first = self.judge(manuscript="The draft, unchanged.\n")
+        calls = len(self.command.calls)
+        self.assertEqual(calls, len(ARTICLE_LENSES))
+
+        second = self.judge(manuscript="The draft, unchanged.\n", carried=first)
+
+        self.assertEqual(len(self.command.calls), calls)
+        self.assertEqual(set(second), set(ARTICLE_LENSES))
+        for kind in ARTICLE_LENSES:
+            self.assertIs(second[kind], first[kind], kind)
+
+    def test_every_carried_verdict_states_the_inputs_it_answered(self):
+        """Without the key there is nothing to compare, and everything re-runs."""
+
+        verdicts = self.judge(manuscript="The draft, unchanged.\n")
+
+        for kind, entry in verdicts.items():
+            with self.subTest(lens=kind):
+                self.assertEqual(len(entry.inputs_sha256), 64, kind)
+        self.assertEqual(
+            len({entry.inputs_sha256 for entry in verdicts.values()}),
+            len(verdicts),
+            "two lenses sharing an identity would carry each other's answers",
+        )
+
+    def test_a_moved_manuscript_re_runs_every_lens_that_reads_it(self):
+        first = self.judge(manuscript="The draft, unchanged.\n")
+        calls = len(self.command.calls)
+
+        self.judge(manuscript="The draft, revised.\n", carried=first)
+
+        self.assertEqual(len(self.command.calls), calls + len(ARTICLE_LENSES))
+
+    def test_the_re_run_key_reaches_the_round_record(self):
+        """Carry-forward has to survive a crash, so the key is written down."""
+
+        self.run_produce(articles=["article"])
+
+        judges = self.record("article")["rounds"][0]["judges"]
+        for kind in ARTICLE_LENSES:
+            self.assertEqual(len(judges[kind]["inputs_sha256"]), 64, kind)
+
+
+class RevisionBriefTests(ProduceFixture):
+    """Seven finding sets in, one document out, and what the writer may see.
+
+    Two rules from ``prompts/README.md`` are load-bearing here and neither is
+    visible anywhere else.  The obligations are split into three *labelled*
+    sections, because an ``editor_decision`` finding sent to a writer as a
+    "must fix" is an instruction to breach ``docs/EDITORIAL_POLICY.md``.  And
+    no score reaches the writer at all: the edition this bench was built to
+    catch scored fives across it, so a number a writer can see is a number a
+    writer can optimise.
+    """
+
+    MUST_FIX = "the same construction opens six sentences"
+    MINOR = "a dead word in the third paragraph"
+    EDITOR = "the author's own retained sentence has no main verb"
+
+    def brief(self) -> str:
+        self.command.script[("craft", "article")] = [
+            verdict(
+                "changes_required",
+                findings=[
+                    finding(
+                        self.MUST_FIX,
+                        category="repetition",
+                        locator="- | six sentences | 1",
+                    ),
+                    finding(
+                        self.MINOR,
+                        severity="minor",
+                        category="dead_words",
+                        locator="- | a dead word | 1",
+                    ),
+                    finding(
+                        self.EDITOR,
+                        category="agreement",
+                        disposition="editor_decision",
+                        locator="- | the retained sentence | 1",
+                    ),
+                ],
+                scores={"human_authorship": 5},
+            ),
+            verdict("approved"),
         ]
-        self.command.script[("learning", "edition")] = [
-            yaml.safe_dump(revised, sort_keys=False)
+        self.run_produce(articles=["article"])
+        return self.command.briefs("writer", "article")[1]
+
+    @staticmethod
+    def section(brief: str, title: str) -> str:
+        """One labelled section of the composed brief, up to the next one."""
+
+        head = f"### {title}"
+        assert head in brief, f"{title} is not a section of the brief"
+        rest = brief.split(head, 1)[1]
+        return rest.split("\n### ", 1)[0]
+
+    def test_the_brief_carries_the_three_labelled_sections(self):
+        brief = self.brief()
+
+        for title in ("Must fix", "Consider", "For the editor"):
+            self.assertIn(f"### {title}", brief)
+        self.assertIn(self.MUST_FIX, self.section(brief, "Must fix"))
+        self.assertIn(self.MINOR, self.section(brief, "Consider"))
+
+    def test_an_editor_decision_lands_with_the_editor_and_never_in_must_fix(self):
+        """Routing, not a severity ceiling: it is a major finding, printed as one.
+
+        The old bench capped a finding on the author's retained text at
+        ``minor`` and then reported the piece clean.  The finding now keeps its
+        true severity and changes *hands*, and a writer who fixed it would
+        breach the policy that put it there.
+        """
+
+        brief = self.brief()
+
+        editor = self.section(brief, "For the editor")
+        self.assertIn(self.EDITOR, editor)
+        self.assertIn("[major] agreement (craft)", editor)
+        self.assertNotIn(self.EDITOR, self.section(brief, "Must fix"))
+        self.assertNotIn(self.EDITOR, self.section(brief, "Consider"))
+        self.assertIn("NOT yours to fix", editor)
+        # Never dropped and never softened: it still counts as a major finding
+        # in the headline the brief opens with.
+        self.assertIn("craft: 0 blocking, 2 major", brief)
+
+    def test_no_score_reaches_the_writer(self):
+        brief = self.brief()
+
+        self.assertNotIn("human_authorship", brief)
+        # And the brief says why, so a writer does not go looking for one.
+        self.assertIn(
+            "Scores are not shown to you, deliberately", brief.replace("\n", " ")
+        )
+
+    def test_the_findings_are_ordered_by_repair_order_not_by_severity(self):
+        """Fixing a structural finding moves the text a craft finding points at."""
+
+        self.command.script[("shape", "article")] = [
+            changes("the argument arrives in the wrong order", category="ordering"),
+            verdict("approved"),
         ]
-
-        with self.assertRaises(ProduceError) as raised:
-            self.run_produce()
-
-        self.assertIn("rewrote run A", str(raised.exception))
-
-    def test_a_run_b_that_drops_run_a_s_block_is_refused(self):
-        dropped = yaml.safe_load(LEARNING_RUN_B)
-        dropped.pop("manager_takeaways")
-        self.command.script[("learning", "edition")] = [
-            yaml.safe_dump(dropped, sort_keys=False)
+        self.command.script[("mechanics", "article")] = [
+            changes("a lowercase sentence opening", category="capitalisation"),
+            verdict("approved"),
         ]
+        self.run_produce(articles=["article"])
 
-        with self.assertRaises(ProduceError) as raised:
-            self.run_produce()
-
-        self.assertIn("dropped run A's manager takeaways", str(raised.exception))
+        brief = self.command.briefs("writer", "article")[1]
+        self.assertLess(
+            brief.index("the argument arrives in the wrong order"),
+            brief.index("a lowercase sentence opening"),
+        )
+        self.assertIn("in **repair order**, not severity order", brief)
 
 
 class ProvenanceTests(ProduceFixture):
@@ -987,11 +1463,13 @@ class ProvenanceTests(ProduceFixture):
         self.run_produce(articles=["article"])
 
         judges = self.record("article")["rounds"][0]["judges"]
-        self.assertEqual(set(judges), {"evidence", "line"})
-        self.assertEqual(
-            judges["evidence"]["call"]["prompt_path"], "prompts/evidence-review.md"
-        )
-        self.assertEqual(judges["line"]["call"]["prompt_path"], "prompts/line-review.md")
+        self.assertEqual(set(judges), set(ARTICLE_LENSES))
+        for kind in ARTICLE_LENSES:
+            with self.subTest(lens=kind):
+                self.assertEqual(
+                    judges[kind]["call"]["prompt_path"], JUDGE_PROMPTS[kind]
+                )
+                self.assertEqual(judges[kind]["call"]["role"], f"{kind}_judge")
 
     def test_the_record_is_greppable_by_prompt_digest(self):
         self.run_produce(articles=["article"])
@@ -1078,17 +1556,19 @@ class SubsetAndSelectionTests(ProduceFixture):
 
         result = self.run_produce(articles=["article"])
 
-        # Evidence binds articles only, and ``article`` is all of them, so that
-        # record is whole and lands.  The line bench also binds the editorial,
-        # which this run did not read.
-        self.assertIn("evidence", result.recorded)
-        self.assertNotIn("line", result.recorded)
-        self.assertTrue(
-            any(
-                "no line review record exists to amend" in action
-                for action in result.human_actions
-            )
-        )
+        # ``evidence`` and ``worth`` bind articles only, and ``article`` is all
+        # of them, so those records are whole and land.  The whole-pieces lenses
+        # also bind the editorial, which this run did not read.
+        self.assertEqual(set(result.recorded), {"evidence", "worth"})
+        for kind in ("mechanics", "shape", "craft"):
+            with self.subTest(lens=kind):
+                self.assertTrue(
+                    any(
+                        f"no {kind} review record exists to amend" in action
+                        for action in result.human_actions
+                    ),
+                    result.human_actions,
+                )
 
 
 class RefusalTests(unittest.TestCase):
@@ -1857,31 +2337,100 @@ class CliTests(ProduceFixture):
     def test_a_full_run_reports_every_piece_and_every_record(self):
         code, output = self.run_cli_scripted(["produce", "issue-001"])
 
-        self.assertEqual(code, 0, output)
         self.assertIn("passed: article after 1 round(s)", output)
         self.assertIn("passed: editorial after 1 round(s)", output)
-        for kind in ("evidence", "line", "learning", "edition"):
+        for kind in set(BENCH_REVIEW_KINDS) - {"teaching"}:
             self.assertIn(f"recorded: {kind} ->", output)
+        # This fixture declares no explainer, so no teaching record is owed and
+        # none is written.  Every other lens records, the graph completes, and
+        # the run exits zero.  It exited one until ``issue/bench`` learned to
+        # ask which records an edition *owes* rather than which kinds exist --
+        # see ``test_an_edition_with_no_explainer_finishes_without_a_teaching_record``.
+        self.assertNotIn("recorded: teaching ->", output)
+        self.assertEqual(code, 0, output)
+        self.assertIn("COMPLETE", output)
+
+    def test_an_edition_with_no_explainer_finishes_without_a_teaching_record(self):
+        """Four surfaces have to agree that a lens with nothing to read is done.
+
+        ``teaching`` covers explainers, and an edition with no ``in_a_nutshell``
+        piece is an ordinary edition rather than an incomplete one.  Three
+        surfaces always got that right -- the judge nodes resolve
+        ``not_applicable``, ``_record_bench`` writes no record, and
+        ``piece_review.review_status`` reports ``not_applicable`` because the
+        alternative "is a demand no run could ever satisfy".  ``issue/bench``
+        was the fourth and it disagreed: it required a file on disk for every
+        kind in ``BENCH_REVIEW_KINDS``, so such an edition sat permanently one
+        node short, ``mag produce`` exited one for ever, ``ready.yaml`` called a
+        fully settled edition ``stalled``, and ``mag build`` refused it -- all
+        demanding a record the recorder would itself refuse to write, because
+        there is no explainer to bind.
+
+        The bench node now asks which records this edition *owes*
+        (``produce_graph.owed_bench_kinds``) rather than which kinds exist.
+        """
+
+        self.run_produce()
+
+        graph = self.magazine.production_graph("issue-001")
+        self.assertEqual([node.id for node in graph.unreached], [])
+        self.assertTrue(graph.complete)
+        bench = graph.node("issue/bench")
+        self.assertEqual(bench.state, "complete")
+        # The record genuinely is not there, and the node is complete anyway.
+        # Those two facts together are the whole point: absence is only a
+        # failure when something was owed.
+        self.assertFalse(
+            (self.root / "editions/issue-001/reviews/teaching.yaml").exists()
+        )
+        for piece_id in ("article", "editorial"):
+            node = graph.node(f"{piece_id}/judge.teaching")
+            self.assertEqual(node.state, "not_applicable", piece_id)
+
+    def test_an_edition_with_an_explainer_does_owe_a_teaching_record(self):
+        """The other half, or the fix above would just be the check deleted.
+
+        A gate that is satisfied by having nothing to check is not a gate. This
+        pins that the exemption is conditioned on the edition's pieces and not
+        on the kind: give the edition an explainer and the record is owed again.
+        """
+
+        from magazine.produce_graph import owed_bench_kinds
+
+        self.assertNotIn("teaching", owed_bench_kinds({"article": "faithful_edit"}))
+        self.assertIn(
+            "teaching",
+            owed_bench_kinds(
+                {"article": "faithful_edit", "explainer": "in_a_nutshell"}
+            ),
+        )
+        # And `edition` is owed whatever the pieces are: an issue is always an
+        # issue.
+        self.assertIn("edition", owed_bench_kinds({}))
 
     def test_a_full_run_serializes_to_json(self):
         import json
 
         code, output = self.run_cli_scripted(["produce", "issue-001", "--json"])
 
-        self.assertEqual(code, 0, output)
         payload = json.loads(output)
+        self.assertEqual(code, 0, output)
         self.assertEqual(payload["dry_run"], False)
+        self.assertTrue(payload["complete"], output)
+        self.assertEqual(payload["graph"]["unreached"], [])
         self.assertEqual(
             [row["status"] for row in payload["outcomes"]], ["passed", "passed"]
         )
-        self.assertEqual(payload["issue_reviews"]["learning"]["result"], "approved")
+        self.assertEqual(
+            payload["issue_reviews"][EDITION_JUDGE_KIND]["result"], "approved"
+        )
         self.assertEqual(
             payload["plan"]["pieces"][0]["manuscript"],
             "editions/issue-001/articles/article.md",
         )
 
     def test_an_escalation_exits_one(self):
-        self.command.script[("line", "article")] = [changes("it repeats")]
+        self.command.script[("craft", "article")] = [changes("it repeats")]
 
         code, output = self.run_cli_scripted(
             ["produce", "issue-001", "--articles", "article"]
@@ -2076,10 +2625,18 @@ class FiledFindingTests(ProduceFixture):
         )
 
         brief = command.briefs("writer", "article")[0]
-        self.assertIn("Findings you must clear", brief)
+        self.assertIn("### Must fix", brief)
         self.assertIn("The deprecation claim is wrong.", brief)
-        self.assertIn("(from the edition review)", brief)
         self.assertIn("paragraph twelve", brief)
+        # A hand-filed finding names no lens, so the composer sorts it into the
+        # last repair tier -- where an obligation nobody can place is least
+        # likely to send a writer at work a structural finding above it is
+        # about to discard.  It still prints under the name it was filed under:
+        # a reviser treats "from the edition review" differently from "from the
+        # craft lens", and a tier is not an attribution.  Printing the fallback
+        # tier as the author would replace a real attribution with a guess.
+        self.assertIn("(edition review)", brief)
+        self.assertNotIn(f"({PIECE_JUDGE_KINDS[-1]})", brief)
         # Round one is a revision here, so the draft under repair travels too.
         self.assertIn("The draft under revision", brief)
         self.assertIn("A draft of article, round 1.", brief)

@@ -12,19 +12,32 @@ from .errors import MagazineError
 from .io import load_structured
 from .produce import MAX_ROUNDS as PRODUCE_MAX_ROUNDS
 from .render_engine import DEFAULT_ENGINE, ENGINES
+from .review_bench import (
+    BENCH_REVIEW_KINDS,
+    EDITION_JUDGE_KIND,
+    PIECE_REVIEW_KINDS,
+)
 from .runner import TEXT_BACKENDS
-from .review_findings import FINDING_SEVERITIES
+from .review_findings import FINDING_DISPOSITIONS, FINDING_SEVERITIES, FIX
 
 
-# The whole review bench, in the order the pieces are judged: the machine and
-# human render decision, then the four editorial judges.  ``render`` stays the
-# default because it is the one review that predates ``--kind``.
-REVIEW_KINDS = ("render", "evidence", "line", "edition", "learning")
-# Kinds whose record carries a per-article ``articles`` mapping, so a re-record
-# can be narrowed with ``--articles``.  The whole-issue kinds cannot: an
-# edition-level verdict about running order or a persona's comprehension run is
-# not divisible by article.
-PER_ARTICLE_REVIEW_KINDS = ("evidence", "line")
+# The whole review bench, in the order the bench itself declares: the human
+# render decision, then the six per-piece lenses in repair order, then the
+# whole-issue verdict.  Derived rather than typed out, because a literal here is
+# what let ``line`` and ``learning`` stay selectable in ``--kind`` after the lens
+# table stopped naming them.  ``render`` is prepended rather than declared on the
+# bench: it binds built PDFs rather than authored text, and it stays the default
+# because it is the one review that predates ``--kind``.
+REVIEW_KINDS = ("render", *BENCH_REVIEW_KINDS)
+# Kinds whose record carries a per-piece ``articles`` mapping, so a re-record can
+# be narrowed with ``--articles``.  That is every per-piece lens and only those:
+# ``edition`` binds the whole issue at once and ``render`` binds whole-language
+# PDFs, and neither is divisible by piece.
+PER_ARTICLE_REVIEW_KINDS = tuple(PIECE_REVIEW_KINDS)
+# The whole of a judge's YAML verdict document.  One shape for all seven lenses,
+# because ``prompts/README.md`` requires one parser to serve the bench; see
+# :func:`_load_verdict`.
+VERDICT_KEYS = ("result", "findings", "scores", "notes")
 
 
 def parser() -> argparse.ArgumentParser:
@@ -118,8 +131,9 @@ def parser() -> argparse.ArgumentParser:
         "produce",
         help=(
             "Draft and judge an edition's pieces: writer, deterministic gates, "
-            "fact-checker and line editor in parallel, revision on their "
-            "findings, then the learning personas and the managing editor"
+            "then four staged rounds of narrow lenses -- worth and mechanics, "
+            "then evidence and shape, then teaching and craft, then the "
+            "managing editor's whole-issue verdict -- revising on their findings"
         ),
     )
     produce.add_argument("edition_id")
@@ -227,6 +241,19 @@ def parser() -> argparse.ArgumentParser:
         "--category",
         default="editorial",
         help="What kind of defect it is, in the judges' vocabulary",
+    )
+    finding_file.add_argument(
+        "--disposition",
+        default=FIX,
+        choices=FINDING_DISPOSITIONS,
+        help=(
+            "Who repairs it. `fix` (default) sends it to the writer's next "
+            "round. `editor_decision` says the text is the source author's own "
+            "in an author-voiced mode, so a human chooses the remedy -- a "
+            "silent repair, `[sic]`, leaving it, or not printing the piece -- "
+            "and the release is blocked until one does. Severity still "
+            "describes the defect; this only says whose it is."
+        ),
     )
     finding_file.add_argument(
         "--locator", help="Where the defect shows: the sentence or paragraph"
@@ -469,12 +496,14 @@ def parser() -> argparse.ArgumentParser:
         choices=REVIEW_KINDS,
         default="render",
         help=(
-            "render binds a visual decision to the current PDFs (default); evidence "
-            "binds a manuscript-versus-source audit to the manuscripts and "
-            "extraction bodies it compared; line binds a per-piece reading verdict "
-            "to the manuscripts alone; edition binds a whole-issue verdict to the "
-            "editorial, edition.yaml and every manuscript; learning binds the reader "
-            "personas' verdict to the editor-authored furniture and the explainer"
+            "Which lens's verdict is being bound. render: a visual decision on the "
+            "current PDFs (default). Then the six per-piece lenses, in the order a "
+            "writer should repair them -- worth: is this better than reading the "
+            "source; evidence: is every claim the source's; shape: is the piece in "
+            "the right order; teaching: can a novice use the explainer afterwards; "
+            "craft: did a person write this; mechanics: is the English correct as "
+            "typeset. edition: do these pieces belong between one set of covers, "
+            "bound to the editorial, edition.yaml and every manuscript at once."
         ),
     )
     review_record.add_argument("--reviewer", required=True)
@@ -488,19 +517,20 @@ def parser() -> argparse.ArgumentParser:
         type=Path,
         help=(
             "Path to the judge's YAML verdict document, as the review prompts emit "
-            "it. Supplies the structured findings, the advisory scores, and (for a "
-            "learning review) the comprehension and manager_takeaways blocks; "
-            "--finding and --notes still work and are merged in. A result named in "
-            "the document must agree with --result."
+            "it. Every lens returns the same four keys -- result, findings, scores, "
+            "notes -- and this supplies the structured findings and the advisory "
+            "scores; --finding and --notes still work and are merged in. A result "
+            "named in the document must agree with --result."
         ),
     )
     review_record.add_argument(
         "--articles",
         help=(
-            "Evidence and line only: comma-separated article ids whose review was "
-            "actually repeated. Only they are re-bound from current disk state; "
-            "every other article keeps the existing record's binding, reviewed_at "
-            "and scores. Omit to record the full review."
+            "Per-piece lenses only (" + ", ".join(PIECE_REVIEW_KINDS) + "): "
+            "comma-separated ids of the pieces whose review was actually repeated. "
+            "Only they are re-bound from current disk state; every other piece keeps "
+            "the existing record's binding, reviewed_at and scores. Omit to record "
+            "the full review."
         ),
     )
     review_record.add_argument(
@@ -601,11 +631,19 @@ def _cover_images(values: list[str]) -> dict[str, Path]:
 def _load_verdict(path: Path | None, *, kind: str, result: str) -> dict[str, Any]:
     """Read a judge's YAML verdict document, the shape the prompts emit.
 
-    The four editorial prompts each end with "return one YAML document and
-    nothing else", so the operator's job is to hand that document to the
-    recorder rather than to retype its findings as ``--finding`` strings.  The
-    document supplies the structured findings, the advisory scores, and the
-    learning review's ``comprehension`` and ``manager_takeaways`` blocks.
+    Every review prompt ends with "return one YAML document and nothing else",
+    so the operator's job is to hand that document to the recorder rather than
+    to retype its findings as ``--finding`` strings.
+
+    **One shape for all seven lenses.**  ``prompts/README.md`` requires a single
+    parser to serve the whole bench, so a verdict carries exactly ``result``,
+    ``findings``, ``scores`` and ``notes`` whichever lens returned it.  The old
+    learning review's ``comprehension`` and ``manager_takeaways`` blocks were
+    the exception that proved the cost: they were storage for two persona calls
+    that no longer happen, and a per-kind block is a second parser.  Nadia's six
+    questions and their outcomes go in ``notes`` now, so an unknown key is
+    refused rather than quietly dropped -- a verdict whose findings landed in a
+    key nothing reads would record as an approval with nothing in it.
 
     ``--result`` stays required on the command line and stays authoritative:
     recording a verdict is a human act, and a document whose own ``result``
@@ -622,21 +660,13 @@ def _load_verdict(path: Path | None, *, kind: str, result: str) -> dict[str, Any
             f"{path} records result {declared!r} but --result says {result!r}; "
             "record the verdict the judge actually returned"
         )
-    unknown = sorted(
-        set(data)
-        - {
-            "result",
-            "findings",
-            "scores",
-            "notes",
-            "comprehension",
-            "manager_takeaways",
-        }
-    )
+    unknown = sorted(set(data) - set(VERDICT_KEYS))
     if unknown:
         raise MagazineError(
             f"{path} carries keys a {kind} review does not record: "
             + ", ".join(unknown)
+            + "; every lens returns exactly "
+            + ", ".join(VERDICT_KEYS)
         )
     return data
 
@@ -644,13 +674,13 @@ def _load_verdict(path: Path | None, *, kind: str, result: str) -> dict[str, Any
 def _article_scores(
     scores: Any, *, articles: list[str] | None
 ) -> dict[str, Any] | None:
-    """Resolve a per-article kind's ``scores`` block to article -> dimensions.
+    """Resolve a per-piece kind's ``scores`` block to piece -> dimensions.
 
-    The line editor and the fact-checker each read one piece at a time, so
-    their prompts emit a flat dimension map for the piece in front of them.
-    That map is unambiguous only when the recording names exactly one article,
-    which ``--articles`` does.  A verdict covering several pieces at once must
-    say so itself, by nesting the maps under article ids.
+    Every per-piece lens reads one piece at a time, so its prompt emits a flat
+    dimension map for the piece in front of it.  That map is unambiguous only
+    when the recording names exactly one piece, which ``--articles`` does.  A
+    verdict covering several pieces at once must say so itself, by nesting the
+    maps under piece ids.
     """
 
     if not scores:
@@ -937,6 +967,7 @@ def main(argv: list[str] | None = None) -> int:
                 locator=args.locator,
                 repair_from=args.repair_from,
                 suggestion=args.suggestion,
+                disposition=args.disposition,
                 filed_by=args.filed_by,
             )
             print(
@@ -1171,11 +1202,18 @@ def main(argv: list[str] | None = None) -> int:
             ):
                 print(artifact.proof_json)
         elif args.command == "review" and args.review_command == "status":
+            # Every kind on the bench, derived from the bench.  The render
+            # status is the document the others are added to because it is the
+            # one that carries the edition id and the per-language rows; the
+            # rest are keyed by kind, in the bench's own order, so a lens added
+            # to the registry shows up here without this loop being edited.
             status = magazine.render_review_status(args.edition_id)
-            status["evidence"] = magazine.evidence_review_status(args.edition_id)
-            status["line"] = magazine.line_review_status(args.edition_id)
-            status["edition"] = magazine.edition_review_status(args.edition_id)
-            status["learning"] = magazine.learning_review_status(args.edition_id)
+            for kind in BENCH_REVIEW_KINDS:
+                status[kind] = (
+                    magazine.edition_review_status(args.edition_id)
+                    if kind == EDITION_JUDGE_KIND
+                    else magazine.piece_review_status(kind, args.edition_id)
+                )
             print(json.dumps(status, ensure_ascii=False, indent=2))
         elif args.command == "review" and args.review_command == "record":
             if args.kind != "render":
@@ -1197,9 +1235,10 @@ def main(argv: list[str] | None = None) -> int:
                     and args.kind not in PER_ARTICLE_REVIEW_KINDS
                 ):
                     raise MagazineError(
-                        "--articles applies only to evidence reviews and line "
-                        f"reviews; a {args.kind} review binds the whole issue at "
-                        "once, not individual articles"
+                        "--articles applies only to the per-piece lenses ("
+                        + ", ".join(PER_ARTICLE_REVIEW_KINDS)
+                        + f"); a {args.kind} review binds the whole issue at "
+                        "once, not individual pieces"
                     )
                 verdict = _load_verdict(args.verdict, kind=args.kind, result=args.result)
                 findings = [*verdict.get("findings", []), *args.finding]
@@ -1210,22 +1249,25 @@ def main(argv: list[str] | None = None) -> int:
                         item.strip() for item in args.articles.split(",") if item.strip()
                     ]
                 if args.kind in PER_ARTICLE_REVIEW_KINDS:
-                    scores = _article_scores(verdict.get("scores"), articles=articles)
-                    recorder = (
-                        magazine.record_evidence_review
-                        if args.kind == "evidence"
-                        else magazine.record_line_review
-                    )
-                    path = recorder(
+                    # One call for all six lenses: which bytes the kind binds
+                    # is the recorder's business, read off the registry, and a
+                    # branch here would be a seventh place to teach a new lens.
+                    path = magazine.record_piece_review(
+                        args.kind,
                         args.edition_id,
                         reviewer=args.reviewer,
                         result=args.result,
                         findings=findings,
-                        scores=scores,
+                        scores=_article_scores(
+                            verdict.get("scores"), articles=articles
+                        ),
                         notes=notes,
                         articles=articles,
                     )
-                elif args.kind == "edition":
+                else:
+                    # ``edition`` is the only other kind ``--kind`` accepts, and
+                    # its scores are one flat map for the issue rather than one
+                    # per piece, so it keeps its own recorder.
                     path = magazine.record_edition_review(
                         args.edition_id,
                         reviewer=args.reviewer,
@@ -1234,24 +1276,14 @@ def main(argv: list[str] | None = None) -> int:
                         scores=verdict.get("scores"),
                         notes=notes,
                     )
-                else:
-                    path = magazine.record_learning_review(
-                        args.edition_id,
-                        reviewer=args.reviewer,
-                        result=args.result,
-                        findings=findings,
-                        scores=verdict.get("scores"),
-                        comprehension=verdict.get("comprehension") or (),
-                        manager_takeaways=verdict.get("manager_takeaways") or (),
-                        notes=notes,
-                    )
                 print(f"recorded: {path}")
             else:
                 if args.articles is not None:
                     raise MagazineError(
-                        "--articles applies only to evidence reviews and line "
-                        "reviews; a render review binds whole-language PDFs, not "
-                        "individual articles"
+                        "--articles applies only to the per-piece lenses ("
+                        + ", ".join(PER_ARTICLE_REVIEW_KINDS)
+                        + "); a render review binds whole-language PDFs, not "
+                        "individual pieces"
                     )
                 if args.verdict is not None:
                     raise MagazineError(

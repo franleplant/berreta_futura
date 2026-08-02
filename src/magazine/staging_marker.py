@@ -56,7 +56,7 @@ from typing import Any, Mapping
 
 from .errors import ValidationError
 from .io import load_structured
-from .line_review import EDITORIAL_ARTICLE_ID
+from .piece_review import EDITORIAL_ARTICLE_ID
 from .publication_document import (
     DocumentParseError,
     Paragraph,
@@ -126,7 +126,7 @@ def declared_manuscript_paths(
     Raw, so a manifest that will not load for an unrelated reason still reports
     which pieces are undrafted rather than collapsing into one opaque error.
     The opening editorial has no article row of its own -- it is a path, not an
-    id -- so it joins under :data:`~magazine.line_review.EDITORIAL_ARTICLE_ID`.
+    id -- so it joins under :data:`~magazine.piece_review.EDITORIAL_ARTICLE_ID`.
     """
 
     paths: dict[str, Path] = {}

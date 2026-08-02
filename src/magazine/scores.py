@@ -1,21 +1,37 @@
 """The cross-edition score rollup: what the review bench has been saying, over time.
 
-Four of the five review kinds carry advisory 1-5 scores (``evidence`` and
-``line`` per article, ``edition`` and ``learning`` per issue; ``render`` carries
-none).  Nothing reads a score to decide anything -- ``review_findings`` argues
-that case, and this module is the consequence of it.  A score that gates invites
-generous scoring; a score that is only ever *looked at* can afford to be honest.
-So the scores have to be looked at somewhere, and ``editions/scores.yaml`` is
-that somewhere: one flat table of every score every judge has recorded, across
-every edition, regenerated from the records and never hand-edited.
+Every lens on the bench carries advisory 1-5 scores: the six per-piece lenses
+score each piece they read, the whole-issue ``edition`` lens scores the issue,
+and ``render`` -- which is a decision about artifacts rather than a lens -- carries
+none.
+
+**Nothing reads a score to decide anything, and that is the load-bearing fact
+about this file.**  ``prompts/README.md`` is explicit: "Scores never reach the
+writer.  They are advisory telemetry, and the failed edition scored fives, so a
+number a writer can see is a number a writer can optimise."  It is equally
+explicit that they never gate -- "Scores are integers 1 to 5, advisory, and never
+gate a release.  No finding is ever softened or dropped to protect one" -- and
+that they do not appear in the revision brief at all.  The bench that failed
+scored 5/4/5/5/5 on a piece that was a paraphrase of its source with every
+identifier removed, which is the whole case for making a rating telemetry
+instead of a verdict.  ``review_findings`` refuses to let a score become
+anything more; this module is the consequence.  So the scores have to be looked
+at *somewhere*, by an editor and never by a writer, and
+``editions/scores.yaml`` is that somewhere: one flat table of every score every
+lens has recorded, across every edition, regenerated from the records and never
+hand-edited.
 
 Three properties follow from "derived artifact", and each one is a deliberate
 departure from how the per-kind loaders behave:
 
-* **It reads records as raw data, not through their loaders.**  Importing
-  ``line_review`` here would make a reporting command depend on four validators
-  and inherit all four of their opinions.  The rollup wants one thing from a
-  record -- its scores -- and can read that off a plain mapping.
+* **It reads records as raw data, not through their loaders.**  Importing them
+  would make a reporting command depend on seven validators and inherit all
+  seven of their opinions -- and the count rises with the bench, which is
+  exactly what it did when four kinds became seven.  What this module imports is
+  the *list of kinds*, from the lens declaration in
+  :mod:`magazine.produce_graph`, so a new lens is rolled up without this file
+  being edited.  The rollup wants one thing from a record -- its scores -- and
+  can read that off a plain mapping.
 
 * **A bad record degrades the report; it never breaks the command.**  An
   unparseable file, a record that is not a mapping, a non-mapping ``scores``, a
@@ -49,18 +65,29 @@ from typing import Any, Iterable, Mapping
 import yaml
 
 from .io import dump_yaml
+from .produce_graph import BENCH_REVIEW_KINDS, PIECE_JUDGE_KINDS
 from .review_findings import SCORE_RANGE
 
 
 SCORES_SCHEMA_VERSION = 1
 
-# ``render`` is the fifth review kind and carries no scores at all; listing it
-# here would make every edition look like it is missing a record it never had.
-SCORED_REVIEW_KINDS = ("evidence", "line", "edition", "learning")
+# Every kind the bench requires before an edition ships, in repair order.
+# Derived rather than written out: this tuple named ``evidence``, ``line``,
+# ``edition`` and ``learning`` for as long as those were the kinds, and a literal
+# here is a rollup that silently stops reporting the day a lens is added or
+# retired -- silently, because a missing kind produces no rows rather than an
+# error.  ``render`` is deliberately absent and always was: it is a decision
+# about built artifacts rather than a lens, it carries no scores at all, and
+# listing it would make every edition look like it is missing a record it never
+# had.
+SCORED_REVIEW_KINDS = BENCH_REVIEW_KINDS
 
-# The two kinds whose judge reads one article at a time, and whose scores
-# therefore hang off an article row rather than off the record.
-PER_ARTICLE_KINDS = ("evidence", "line")
+# The kinds whose lens reads one piece at a time, and whose scores therefore
+# hang off a piece row rather than off the record.  The complement is
+# ``edition``, which has no per-article rows to hang anything off: it reads the
+# assembled issue and scores it once.  That record-level path is the one the
+# retired ``learning`` kind used, inherited unchanged.
+PER_ARTICLE_KINDS = PIECE_JUDGE_KINDS
 
 # The ``article`` value a whole-issue row carries.  The rollup is one flat table
 # with one shape of row, so an issue-level score needs *some* article key; using
@@ -137,7 +164,7 @@ def collect_score_rows(
     :data:`~magazine.review_findings.SCORE_RANGE` -- contributes no rows and is
     passed over without comment.  The rollup is a reporting surface derived
     from records that already have a validator each; its job when it meets a
-    broken one is to keep reporting the other twelve.
+    broken one is to keep reporting every other lens and every other edition.
 
     Rows come back sorted by ``(edition, kind, article, round, dimension)``, so
     the generated file is stable under regeneration.
@@ -222,7 +249,14 @@ def _rows_for_record(
     round_number: int,
     rounds_to_approval: int | None,
 ) -> list[ScoreRow]:
-    """Turn one round's record into its rows, dropping whatever does not parse."""
+    """Turn one round's record into its rows, dropping whatever does not parse.
+
+    Two record shapes, and the split is the bench's own.  A per-piece lens
+    stores its scores on ``articles.<id>.scores``, one row per piece it read; the
+    whole-issue lens stores them at the top of the record, because it read the
+    issue and there is no piece to attribute them to.  Both land in the same flat
+    table, the second under :data:`WHOLE_ISSUE_ARTICLE_ID`.
+    """
 
     result = _text_or_none(record.get("result"))
     record_reviewed_at = _text_or_none(record.get("reviewed_at"))

@@ -27,14 +27,10 @@ from .cover_art_candidates import (
 )
 from .errors import DependencyError, ValidationError
 from .evidence_review import (
-    create_evidence_review,
     current_evidence_bindings,
     evidence_review_path,
-    evidence_review_status as _evidence_review_status,
     load_evidence_review,
-    rebind_articles,
     require_approved_evidence_review,
-    write_evidence_review,
 )
 from .edition_review import (
     create_edition_review,
@@ -44,22 +40,27 @@ from .edition_review import (
     load_edition_review,
     write_edition_review,
 )
-from .learning_review import (
-    create_learning_review,
-    current_learning_bindings,
-    learning_review_path,
-    learning_review_status as _learning_review_status,
-    load_learning_review,
-    write_learning_review,
+# The per-piece bench is reached generically rather than one import block per
+# kind.  Six near-identical blocks was how this file carried two kinds; at seven
+# it would have been six copies of the same eight names, and the seventh lens
+# would have been added to five of them.  The aliases are underscored because
+# ``build`` and ``release`` bind a local ``review_path`` and ``finish`` binds a
+# local ``review_status``, and a module-level name three methods shadow is a
+# trap: the shadowing is invisible at the call site and the failure is a
+# ``Path`` where a function was expected.
+from .piece_review import (
+    PieceReviewKind,
+    create_review as _create_piece_review,
+    load_review as _load_piece_review,
+    rebind_articles as _rebind_piece_articles,
+    review_path as _piece_review_path,
+    review_status as _piece_review_status,
+    write_review as _write_piece_review,
 )
-from .line_review import (
-    create_line_review,
-    current_line_bindings,
-    line_review_path,
-    line_review_status as _line_review_status,
-    load_line_review,
-    rebind_articles as rebind_line_articles,
-    write_line_review,
+from .review_bench import (
+    PIECE_REVIEW_KINDS,
+    current_bindings_for,
+    piece_review_spec,
 )
 from .scores import scores_are_current, scores_path, write_scores
 from .code_blocks import verify_manuscript_code_blocks
@@ -114,7 +115,7 @@ from .render_review import (
     write_render_review,
 )
 from .production_record import file_finding, load_filed_findings
-from .review_findings import normalize_findings
+from .review_findings import FIX, normalize_findings
 from .staging_marker import declared_manuscript_paths, require_written_manuscripts
 from .workflow import Workflow
 
@@ -667,6 +668,7 @@ class Magazine:
         locator: str | None = None,
         repair_from: str | None = None,
         suggestion: str | None = None,
+        disposition: str = FIX,
         filed_by: str = "filed finding",
     ) -> Path:
         """File a defect against one piece so its next brief carries it.
@@ -675,6 +677,13 @@ class Magazine:
         written.  A finding filed against a typo'd id would sit in the queue
         for ever, blocking the production checkpoint for a piece that does not
         exist, and the person who typed it would have no reason to look.
+
+        ``disposition`` defaults to ``fix`` and the default is the safe
+        direction, not a convenience.  A human filing a defect is normally
+        asking the writer to clear it, and a wrong ``fix`` costs a round; a
+        wrong ``editor_decision`` would park a real defect behind a human
+        ruling nobody knows is owed, which is the failure the field exists to
+        prevent.  So the routing that hides work has to be typed out.
         """
 
         edition_dir = self.editions_dir / edition_id
@@ -695,6 +704,7 @@ class Magazine:
                 ("category", category),
                 ("locator", locator),
                 ("repair_from", repair_from),
+                ("disposition", disposition),
                 ("note", note),
                 ("suggestion", suggestion),
             )
@@ -1851,8 +1861,9 @@ class Magazine:
             )
         return path, destination
 
-    def record_evidence_review(
+    def record_piece_review(
         self,
+        kind: str,
         edition_id: str,
         *,
         reviewer: str,
@@ -1863,36 +1874,52 @@ class Magazine:
         reviewed_at: str | None = None,
         articles: Iterable[str] | None = None,
     ) -> Path:
-        """Bind an independent evidence audit to the exact bytes it compared.
+        """Bind one lens's verdict to the exact bytes that lens read.
 
-        The record pins every manuscript and extraction body the audit
-        covered.  Recording requires a committed extraction for every source
-        the article declares: an audit cannot have compared a manuscript
-        against evidence that does not exist.
+        Every per-piece kind on the bench records the same way and differs only
+        in what it binds, and what it binds is a property of the kind rather
+        than of the recording: ``mechanics`` binds manuscripts, ``worth`` and
+        ``evidence`` bind manuscripts and extractions, ``teaching`` binds those
+        plus the furniture projection.  :func:`~.review_bench.current_bindings_for`
+        is the one place that difference is written down, so this method needs
+        no branch on the kind at all -- which is the point.  When the bench went
+        from two lenses to seven, five copies of this method would have been
+        five places to forget the seventh.
 
-        ``articles`` narrows a re-record to the articles actually re-audited:
-        only those are re-bound from current disk state, and every other
-        article keeps the existing record's binding and per-article
-        ``reviewed_at``.  One changed article no longer costs a full-edition
-        re-audit -- edition 003's evidence record was re-recorded three times
-        in a day for exactly that reason.  Omitted, the record binds the whole
-        edition afresh, as it always has.
+        ``require_extractions=True`` is unconditional here because recording is
+        the moment the claim is made: a review cannot have read a manuscript
+        against an extraction that does not exist.  Kinds that bind no
+        extraction ignore it.
+
+        ``articles`` narrows a re-record to the pieces actually re-read: only
+        those are re-bound from current disk state, and every other piece keeps
+        the existing record's binding, its per-piece ``reviewed_at`` and its
+        scores.  One changed article no longer costs a full-edition re-read --
+        edition 003's evidence record was re-recorded three times in a day for
+        exactly that reason.  Omitted, the record binds every covered piece
+        afresh, as it always has.
+
+        The verdict is validated twice over on the way past: ``validate``
+        re-checks the edition, and the bindings are re-derived from disk rather
+        than taken from the caller, so a recorder cannot approve bytes that are
+        no longer there.
         """
 
+        spec = piece_review_spec(kind)
         edition = self.validate(edition_id)
-        bindings = current_evidence_bindings(
-            edition, self.sources_dir, require_extractions=True
+        bindings = current_bindings_for(
+            kind, edition, self.sources_dir, require_extractions=True
         )
+        path = _piece_review_path(self.editions_dir, edition_id, kind)
         if articles is not None:
-            bindings = rebind_articles(
-                load_evidence_review(
-                    evidence_review_path(self.editions_dir, edition_id),
-                    edition_id=edition_id,
-                ),
+            bindings = _rebind_piece_articles(
+                spec,
+                _load_piece_review(spec, path, edition_id=edition_id),
                 bindings=bindings,
                 article_ids=articles,
             )
-        record = create_evidence_review(
+        record = _create_piece_review(
+            spec,
             edition_id=edition_id,
             reviewer=reviewer,
             result=result,
@@ -1902,47 +1929,41 @@ class Magazine:
             notes=notes,
             reviewed_at=reviewed_at,
         )
-        return write_evidence_review(
-            evidence_review_path(self.editions_dir, edition_id), record
-        )
+        return _write_piece_review(path, record)
 
-    def evidence_review_status(self, edition_id: str) -> dict[str, Any]:
-        """Hash-bound evidence review status, resilient enough for diagnosis.
+    def piece_review_status(self, kind: str, edition_id: str) -> dict[str, Any]:
+        """Hash-bound status for one per-piece kind, resilient for diagnosis.
 
         Status is a diagnostic surface, so an edition that cannot even be
-        loaded reports its errors instead of aborting the whole command; the
-        release gate goes through :func:`require_approved_evidence_review`
-        with a fully validated edition instead.
+        loaded reports its errors instead of aborting the whole command -- which
+        matters most exactly when several kinds are being listed at once and one
+        broken record must not take the other six down with it.  The release
+        gate does not come through here: it goes through
+        :func:`~.evidence_review.require_approved_evidence_review` with a fully
+        validated edition, because a gate that degraded to ``unavailable``
+        would be a gate that opened.
         """
 
+        spec = piece_review_spec(kind)
         try:
-            release_state = self._require_release_state()
-            records = load_records(self.sources_dir)
-            edition = load_edition(
-                self.root,
-                edition_id,
-                {record.id for record in records},
-                publication_name=self.publication_name,
-                source_records={record.id: record for record in records},
+            edition, release_state = self._review_edition(edition_id)
+            bindings = current_bindings_for(
+                kind, edition, self.sources_dir, require_extractions=False
             )
-            bindings = current_evidence_bindings(
-                edition, self.sources_dir, require_extractions=False
-            )
-            record = load_evidence_review(
-                evidence_review_path(self.editions_dir, edition_id),
+            record = _load_piece_review(
+                spec,
+                _piece_review_path(self.editions_dir, edition_id, kind),
                 edition_id=edition_id,
             )
         except ValidationError as exc:
             return {"status": "unavailable", "errors": list(exc.errors)}
-        status = _evidence_review_status(record, edition_id=edition_id, bindings=bindings)
-        # Only collecting editions can still be released, so only they can owe
-        # an evidence review.
-        if (
-            edition_id not in release_state.collecting_edition_ids
-            and status["status"] == "required_before_release"
-        ):
-            status["status"] = "not_required"
-        return status
+        return self._release_scoped_status(
+            _piece_review_status(
+                spec, record, edition_id=edition_id, bindings=bindings
+            ),
+            edition_id,
+            release_state,
+        )
 
     def _review_edition(self, edition_id: str) -> tuple[Edition, ReleaseState]:
         """Load an edition and the release ledger for a review seam.
@@ -1975,70 +1996,6 @@ class Magazine:
         ):
             status["status"] = "not_required"
         return status
-
-    def record_line_review(
-        self,
-        edition_id: str,
-        *,
-        reviewer: str,
-        result: str,
-        findings: Iterable[Any] = (),
-        scores: Mapping[str, Mapping[str, int]] | None = None,
-        notes: str = "",
-        reviewed_at: str | None = None,
-        articles: Iterable[str] | None = None,
-    ) -> Path:
-        """Bind a line-editing verdict to the exact manuscripts it read.
-
-        The line editor is forbidden from opening the source, so the record
-        binds the manuscript SHA-256 and nothing else -- including for the
-        opening editorial, which is line-read like any other piece under the
-        article id ``editorial``.  ``articles`` narrows a re-record to the
-        pieces actually re-read, exactly as it does for an evidence audit.
-        """
-
-        edition = self.validate(edition_id)
-        bindings = current_line_bindings(edition)
-        if articles is not None:
-            bindings = rebind_line_articles(
-                load_line_review(
-                    line_review_path(self.editions_dir, edition_id),
-                    edition_id=edition_id,
-                ),
-                bindings=bindings,
-                article_ids=articles,
-            )
-        record = create_line_review(
-            edition_id=edition_id,
-            reviewer=reviewer,
-            result=result,
-            bindings=bindings,
-            findings=findings,
-            scores=scores,
-            notes=notes,
-            reviewed_at=reviewed_at,
-        )
-        return write_line_review(
-            line_review_path(self.editions_dir, edition_id), record
-        )
-
-    def line_review_status(self, edition_id: str) -> dict[str, Any]:
-        """Hash-bound line review status, resilient enough for diagnosis."""
-
-        try:
-            edition, release_state = self._review_edition(edition_id)
-            bindings = current_line_bindings(edition)
-            record = load_line_review(
-                line_review_path(self.editions_dir, edition_id),
-                edition_id=edition_id,
-            )
-        except ValidationError as exc:
-            return {"status": "unavailable", "errors": list(exc.errors)}
-        return self._release_scoped_status(
-            _line_review_status(record, edition_id=edition_id, bindings=bindings),
-            edition_id,
-            release_state,
-        )
 
     def record_edition_review(
         self,
@@ -2094,63 +2051,6 @@ class Magazine:
             return {"status": "unavailable", "errors": list(exc.errors)}
         return self._release_scoped_status(
             _edition_review_status(record, edition_id=edition_id, bindings=bindings),
-            edition_id,
-            release_state,
-        )
-
-    def record_learning_review(
-        self,
-        edition_id: str,
-        *,
-        reviewer: str,
-        result: str,
-        findings: Iterable[Any] = (),
-        scores: Mapping[str, int] | None = None,
-        comprehension: Iterable[Any] = (),
-        manager_takeaways: Iterable[Any] = (),
-        notes: str = "",
-        reviewed_at: str | None = None,
-        explainer_ids: Iterable[str] | None = None,
-    ) -> Path:
-        """Bind the reader personas' verdict to what the personas actually read.
-
-        The three readers judge the editor-authored furniture and the explainer,
-        never the article bodies, so the record binds a furniture projection and
-        the explainer manuscripts and nothing else: a typo fixed in some
-        feature's third paragraph must not invalidate a comprehension run.
-        """
-
-        edition = self.validate(edition_id)
-        record = create_learning_review(
-            edition_id=edition_id,
-            reviewer=reviewer,
-            result=result,
-            bindings=current_learning_bindings(edition, explainer_ids=explainer_ids),
-            findings=findings,
-            scores=scores,
-            comprehension=comprehension,
-            manager_takeaways=manager_takeaways,
-            notes=notes,
-            reviewed_at=reviewed_at,
-        )
-        return write_learning_review(
-            learning_review_path(self.editions_dir, edition_id), record
-        )
-
-    def learning_review_status(self, edition_id: str) -> dict[str, Any]:
-        """Hash-bound reader-persona review status, resilient enough for diagnosis."""
-
-        try:
-            edition, release_state = self._review_edition(edition_id)
-            bindings = current_learning_bindings(edition)
-            record = load_learning_review(
-                learning_review_path(self.editions_dir, edition_id),
-                edition_id=edition_id,
-            )
-        except ValidationError as exc:
-            return {"status": "unavailable", "errors": list(exc.errors)}
-        return self._release_scoped_status(
-            _learning_review_status(record, edition_id=edition_id, bindings=bindings),
             edition_id,
             release_state,
         )
@@ -2447,6 +2347,136 @@ class Magazine:
                         [f"Finish failed: {exc}", *rollback_errors]
                     ) from exc
             raise
+
+
+PIECE_REVIEW_METHODS: tuple[str, ...] = (
+    "record_worth_review",
+    "worth_review_status",
+    "record_evidence_review",
+    "evidence_review_status",
+    "record_shape_review",
+    "shape_review_status",
+    "record_teaching_review",
+    "teaching_review_status",
+    "record_craft_review",
+    "craft_review_status",
+    "record_mechanics_review",
+    "mechanics_review_status",
+)
+"""Every per-kind method :func:`_install_piece_review_methods` puts on ``Magazine``.
+
+Written out rather than derived, and deliberately so.  The methods themselves
+are generated -- twelve hand-written bodies that differ in one string is how
+``line_review`` and ``evidence_review`` drifted apart in the first place -- but a
+method nobody can grep for is a method nobody can find.  ``grep -rn
+record_craft_review src/`` has to land somewhere, and it lands here.  The tuple
+is checked against the registry at import, so it cannot quietly fall behind the
+bench it claims to list.
+"""
+
+
+def _piece_recorder(spec: PieceReviewKind) -> Any:
+    """One kind's ``record_<kind>_review``, closed over its spec.
+
+    A factory rather than a loop body so the closed-over kind is a closure cell
+    and not a defaulted parameter: a defaulted ``_kind=`` would show up in
+    ``help()`` and in the signature as something a caller could pass, and a
+    caller who passed it would record one lens's verdict into another lens's
+    file.
+    """
+
+    def recorder(
+        self: Magazine,
+        edition_id: str,
+        *,
+        reviewer: str,
+        result: str,
+        findings: Iterable[Any] = (),
+        scores: Mapping[str, Mapping[str, int]] | None = None,
+        notes: str = "",
+        reviewed_at: str | None = None,
+        articles: Iterable[str] | None = None,
+    ) -> Path:
+        return self.record_piece_review(
+            spec.kind,
+            edition_id,
+            reviewer=reviewer,
+            result=result,
+            findings=findings,
+            scores=scores,
+            notes=notes,
+            reviewed_at=reviewed_at,
+            articles=articles,
+        )
+
+    recorder.__name__ = f"record_{spec.kind}_review"
+    recorder.__doc__ = (
+        f"Bind the {spec.kind} lens's verdict to the exact bytes it read.\n"
+        "\n"
+        "        Delegates to :meth:`Magazine.record_piece_review`, which reads\n"
+        f"        what {spec.kind} binds off its registry entry.  ``articles``\n"
+        f"        narrows a re-record to the {spec.subject}s actually re-read."
+    )
+    return recorder
+
+
+def _piece_status_reader(spec: PieceReviewKind) -> Any:
+    """One kind's ``<kind>_review_status``, closed over its spec."""
+
+    def status(self: Magazine, edition_id: str) -> dict[str, Any]:
+        return self.piece_review_status(spec.kind, edition_id)
+
+    status.__name__ = f"{spec.kind}_review_status"
+    status.__doc__ = (
+        f"Hash-bound {spec.kind} {spec.reading} status, resilient for diagnosis.\n"
+        "\n"
+        "        Delegates to :meth:`Magazine.piece_review_status`."
+    )
+    return status
+
+
+def _install_piece_review_methods(cls: type) -> None:
+    """Give ``Magazine`` a named method per per-piece kind, over the generic pair.
+
+    Two audiences want different things from the same seam and both are right.
+    A caller iterating the bench -- ``mag review status``, the workflow's
+    checkpoints, the scores roll-up -- wants ``piece_review_status(kind, ...)``
+    and must not carry a table of method names.  A caller that knows which lens
+    it means -- ``produce`` recording the fact-checker's verdict, a test
+    asserting on one kind -- reads far better saying
+    ``record_evidence_review(...)``, and those call sites predate the seven-lens
+    bench and must keep working unchanged.
+
+    So the named methods stay, and they are *generated* from
+    :data:`~.review_bench.PIECE_REVIEW_KINDS` rather than written six times.
+    The alternative was twelve method bodies differing only in a literal kind
+    string, which is precisely the shape that let ``line`` and ``learning``
+    survive in five tables after the lens table stopped naming them.  Each
+    generated method gets its kind's own ``__name__``, ``__qualname__`` and
+    docstring, so ``help(Magazine.record_craft_review)`` and a traceback both
+    read as though it had been typed out.
+    """
+
+    installed: list[str] = []
+    for kind, spec in PIECE_REVIEW_KINDS.items():
+        recorder = _piece_recorder(spec)
+        status = _piece_status_reader(spec)
+        for method in (recorder, status):
+            method.__qualname__ = f"{cls.__name__}.{method.__name__}"
+            setattr(cls, method.__name__, method)
+            installed.append(method.__name__)
+    if tuple(installed) != PIECE_REVIEW_METHODS:
+        raise RuntimeError(
+            "Magazine was given the per-kind review methods "
+            + ", ".join(installed)
+            + " and compiler.PIECE_REVIEW_METHODS lists "
+            + ", ".join(PIECE_REVIEW_METHODS)
+            + "; the list exists so a generated method can still be found by "
+            "name, and a list that does not match the bench cannot do that"
+        )
+
+
+_install_piece_review_methods(Magazine)
 
 
 def _file_entry(path: Path, root: Path) -> dict[str, str]:

@@ -3,12 +3,12 @@
 ``produce.py`` owns the *order* of generation and judgment, and until now it
 owned it the way a program owns anything: in the shape of its statements.  The
 writer ran, then the gates, then the judges, then -- three nested conditions
-later -- the two whole-issue judgments.  Nothing outside that function could be
+later -- the whole-issue judgments.  Nothing outside that function could be
 asked what the order was, which meant nothing outside that function could
 notice when a step had not happened.
 
 It did not happen.  Edition ``rerun-004-the-systems-around-the-model`` reached
-seven settled articles; the managing editor and the reader personas never ran;
+seven settled articles; the whole-issue stage never ran;
 ``editions/rerun-004-the-systems-around-the-model/production/issue/`` was never
 created; and every surface the operator had -- the produce report, ``ready.yaml``
 and the workflow checkpoint alike -- said something that was locally true and
@@ -34,18 +34,26 @@ not that a condition was wrong; it was that "the whole-issue stage never ran"
 had no representation anywhere, so no code could act on it and no report could
 print it.
 
-**Nodes are cheap to add.**  The two per-piece judges are about to be replaced by
-several narrower single-concern lenses.  That change is one edit to
-:data:`PIECE_JUDGE_LENSES` here: the graph grows the nodes, the completion
-predicate requires them, the report prints them, and -- because
-:mod:`magazine.produce_agent` derives its work contracts and its report order
-from these same specs -- the cooperative backend learns their names without
-being told twice.
+**Nodes are cheap to add, and that claim has now been cashed.**  The two broad
+per-piece judges were replaced by six narrow single-concern lenses, and it was
+one edit to :data:`PIECE_JUDGE_LENSES` here: the graph grew the nodes, the
+completion predicate required them, the report printed them, the cooperative
+backend learned their names and their report order from the same specs
+(:mod:`magazine.produce_agent`), :mod:`magazine.review_bench` derived which
+review records the bench must carry, and the CLI derived its ``--kind`` values.
+
+Two places did *not* come along for free and both were fixed rather than worked
+around, because a seam that leaks is worse than no seam.  ``_BENCH_RECORDS`` was
+a hardcoded tuple of four ``(kind, path_function)`` pairs, and it still named
+``line`` and ``learning`` -- it is now :func:`bench_record_path`, derived.  The
+``bench`` node's accepting sentence spelled the four kinds out in prose, and now
+joins :data:`BENCH_REVIEW_KINDS`.  Both were second copies of this tuple wearing
+different clothes.
 
 **Two sources of truth, reconciled.**  A piece's production record and the
 cooperative backend's reply queue are both on disk and can disagree, and once
-did: the editorial's ``r1-evidence`` and ``r1-line`` replies both sat on disk
-saying approved while the record carried ``judges: {}``.  A voided writer reply
+did: two of the editorial's judge replies both sat on disk saying approved while
+the record carried ``judges: {}``.  A voided writer reply
 had stopped the replay at round one, so the pipeline never asked for the judge
 answers it already had, and nothing compared the two.  Resolution here reads the
 record as authoritative and the queue as evidence *about* the record, so an
@@ -62,10 +70,14 @@ from typing import Any
 
 from .edition_review import edition_review_path
 from .errors import MagazineError, ValidationError
-from .evidence_review import evidence_review_path
 from .io import load_structured
-from .learning_review import learning_review_path
-from .line_review import EDITORIAL_ARTICLE_ID, line_review_path
+from .piece_review import (
+    ARTICLES,
+    EDITORIAL_ARTICLE_ID,
+    EXPLAINERS,
+    PIECES,
+    review_path,
+)
 from .production_record import (
     AGENT_DIRNAME,
     issue_record_path,
@@ -128,7 +140,6 @@ TERMINAL_STATES = frozenset({COMPLETE, NOT_APPLICABLE, ESCALATED, INCONSISTENT})
 # reads its ``WORK_CONTRACTS`` off these rather than keeping a second list.
 MANUSCRIPT = "manuscript"
 VERDICT = "verdict"
-TAKEAWAYS = "manager_takeaways"
 
 ISSUE_PIECE_ID = "issue"
 """The scope name the whole-issue nodes are filed under.
@@ -164,36 +175,189 @@ class NodeSpec:
     """The work-item role an agentic node dispatches, empty for a programmatic one."""
     returns: str = ""
     """What the role's reply must be, empty for a programmatic node."""
+    lens: "JudgeLens | None" = None
+    """The lens this node runs, for a judge node; ``None`` for everything else.
+
+    Carried on the spec rather than looked up by name so that resolution can ask
+    a node which pieces it applies to without a second table to consult.
+    """
 
 
 EVERY_PIECE_SETTLED = "piece:settled"
 """Fan-in dependency: every declared piece's ``settled`` node, whatever they are."""
 
 
-PIECE_JUDGE_LENSES: tuple[str, ...] = ("evidence", "line")
-"""The judges that read one piece, in the order their findings are reported.
+@dataclass(frozen=True)
+class JudgeLens:
+    """One narrow single-concern reader, and everything derived from it.
 
-**This tuple is the seam.**  The two-judge stage is being replaced by several
-narrower single-concern lenses; that replacement is an edit to this tuple plus a
-prompt per lens, and nothing in the graph, the completion predicate, the report
-or the cooperative backend's contracts needs to be touched for the new set to be
-declared, required and reported.  They run concurrently, so the order here
-decides how a report reads and nothing else.
+    A lens is not just a name, and pretending it was is what made the previous
+    version of this tuple insufficient.  Four facts about a lens have downstream
+    consequences and every one of them used to be restated somewhere else:
+
+    ``stage``
+        Which of ``prompts/README.md``'s four stages it runs in.  The staging
+        exists to stop paying for judgment that is about to be invalidated:
+        craft notes on a paragraph ``worth`` is about to have cut are wasted
+        calls.  :func:`stage_order` turns this into the run plan.
+
+    ``covers``
+        Which pieces the lens is **dispatched for**, in
+        :mod:`magazine.piece_review`'s vocabulary.  ``worth`` does not run on
+        the editorial and ``teaching`` runs only on the explainer, so a node for
+        a piece outside a lens's coverage resolves ``not_applicable`` rather
+        than sitting unreached for ever.
+
+        This is dispatch coverage, and it is deliberately allowed to be *wider*
+        than what the lens's record binds.  Exactly one lens uses that latitude
+        and it is worth naming: ``evidence`` is dispatched for every piece
+        including the editorial -- ``prompts/evidence-review.md`` says the
+        editorial's sources are the edition's own article manuscripts -- but
+        ``EVIDENCE_REVIEW`` binds articles only, because the editorial declares
+        no ``source_ids`` and there is no extraction hash to pin it by.  Its
+        findings still travel, record-level, so the audit is not lost; only the
+        hash binding is narrower.  :mod:`magazine.review_bench` checks the
+        containment at import so the two tables can differ but never diverge
+        by accident.
+
+    ``gates_release``
+        Whether ``Magazine.release`` actually refuses on this lens today.  Only
+        ``evidence`` does.  The other six are recorded, reported and checkpointed
+        but not enforced, because their severities are still being calibrated
+        and gating a release on a judgment the bench does not yet trust would
+        block work over a measurement problem.  Declared here rather than as a
+        literal in the workflow report so that flipping one on is an edit to
+        this table and to nothing else.
+
+    ``reads_source``
+        Whether the lens may see an extraction *at all*.  Nothing branches on
+        this to decide what to send -- the brief types in
+        :mod:`magazine.produce_prompts` make a source structurally unreachable
+        for a blind lens -- but the graph states it so that the declaration and
+        the types can be checked against each other rather than merely
+        believed.
+
+    ``blocking_halts_piece``
+        Whether a ``blocking`` finding from this lens stops the piece for the
+        rest of the round.  True only for ``worth``: a piece that should not
+        exist at this length makes every downstream finding worthless.  A
+        mechanics blocking finding is local and does not move what the other
+        lenses read, so stage 2 still runs.
+    """
+
+    kind: str
+    stage: int
+    covers: str
+    reads_source: bool
+    blocking_halts_piece: bool = False
+    gates_release: bool = False
+
+    @property
+    def is_source_blind(self) -> bool:
+        return not self.reads_source
+
+
+PIECE_JUDGE_LENSES: tuple[JudgeLens, ...] = (
+    JudgeLens("worth", stage=1, covers=ARTICLES, reads_source=True,
+              blocking_halts_piece=True),
+    JudgeLens("evidence", stage=2, covers=PIECES, reads_source=True,
+              gates_release=True),
+    JudgeLens("shape", stage=2, covers=PIECES, reads_source=False),
+    JudgeLens("teaching", stage=3, covers=EXPLAINERS, reads_source=True),
+    JudgeLens("craft", stage=3, covers=PIECES, reads_source=False),
+    JudgeLens("mechanics", stage=1, covers=PIECES, reads_source=False),
+)
+"""The lenses that read one piece, in **repair order**.
+
+**This tuple is the seam.**  It went from two broad judges to seven narrow ones
+without any other table being edited: the graph grows the nodes, the completion
+predicate requires them, the report prints them, the cooperative backend derives
+its work contracts and its report order from them, the bench derives which review
+records must exist, and the CLI derives its ``--kind`` values.  Adding an eighth
+lens is a row here plus a prompt file.
+
+The order is the order the *work should be done in*, which
+``prompts/README.md`` sets out and which is deliberately neither severity order
+nor stage order:
+
+    worth -> evidence -> shape -> teaching -> craft -> mechanics
+
+Fixing a worth or shape finding deletes and moves the text that craft and
+mechanics findings point at, so any other order in a revision brief wastes the
+writer's work.  ``stage`` is a separate field precisely because the cheapest
+*running* order is not the repair order: mechanics is the cheapest call on the
+bench and its findings survive any later change, so it runs in stage 1 and is
+reported last.  Reading this tuple top to bottom gives a writer his worklist;
+reading it by ``stage`` gives the pipeline its schedule.  Conflating the two is
+what a single ordered list of names could not express.
 """
+
+PIECE_JUDGE_KINDS: tuple[str, ...] = tuple(
+    lens.kind for lens in PIECE_JUDGE_LENSES
+)
+"""Just the names, in repair order, for the many callers that want only those."""
+
+PIECE_JUDGE_LENSES_BY_KIND: Mapping[str, JudgeLens] = {
+    lens.kind: lens for lens in PIECE_JUDGE_LENSES
+}
+
+EDITION_JUDGE_KIND = "edition"
+"""The one whole-issue lens.  Stage 4, and the only lens that sees the pieces together."""
+
+BENCH_REVIEW_KINDS: tuple[str, ...] = (*PIECE_JUDGE_KINDS, EDITION_JUDGE_KIND)
+"""Every kind that must have a record on the bench before an edition can ship."""
+
+
+def stage_order() -> tuple[tuple[int, tuple[JudgeLens, ...]], ...]:
+    """The lenses grouped by stage, cheapest-and-blocking-first.
+
+    Derived rather than declared, so a lens whose ``stage`` is edited moves in
+    the run plan and nowhere else has to be told.  Within a stage the lenses are
+    independent and run concurrently; the order inside a group is repair order,
+    which decides only how a report reads.
+    """
+
+    stages = sorted({lens.stage for lens in PIECE_JUDGE_LENSES})
+    return tuple(
+        (stage, tuple(lens for lens in PIECE_JUDGE_LENSES if lens.stage == stage))
+        for stage in stages
+    )
+
+
+def lens_applies(lens: JudgeLens, *, piece_id: str, content_mode: str) -> bool:
+    """Whether this lens is asked about this piece at all.
+
+    The three coverages are ``prompts/README.md``'s, and each exclusion has a
+    reason that is not tidiness.  ``worth`` skips the editorial because the
+    editorial has no source of its own, so its worth question belongs to
+    ``edition``.  ``teaching`` runs only on the ``in_a_nutshell`` explainer
+    because a closed-book comprehension test of a feature article measures
+    nothing.  Everything else reads every piece.
+    """
+
+    from .teaching_review import EXPLAINER_CONTENT_MODE
+
+    if lens.covers == PIECES:
+        return True
+    if lens.covers == ARTICLES:
+        return piece_id != EDITORIAL_ARTICLE_ID
+    return content_mode == EXPLAINER_CONTENT_MODE
 
 
 def _judge_specs() -> tuple[NodeSpec, ...]:
     return tuple(
         NodeSpec(
-            id=f"judge.{lens}",
+            id=f"judge.{lens.kind}",
             kind=AGENTIC,
             scope=PIECE_SCOPE,
             consumes=("gates",),
             accepting=(
-                f"the piece's latest round carries an approved {lens} verdict"
+                f"the piece's latest round carries an approved {lens.kind} "
+                f"verdict, or the {lens.kind} lens does not read this piece"
             ),
-            role=lens,
+            role=lens.kind,
             returns=VERDICT,
+            lens=lens,
         )
         for lens in PIECE_JUDGE_LENSES
     )
@@ -224,7 +388,7 @@ PIECE_NODE_SPECS: tuple[NodeSpec, ...] = (
         id="settled",
         kind=PROGRAMMATIC,
         scope=PIECE_SCOPE,
-        consumes=("gates", *(f"judge.{lens}" for lens in PIECE_JUDGE_LENSES)),
+        consumes=("gates", *(f"judge.{kind}" for kind in PIECE_JUDGE_KINDS)),
         accepting=(
             "the record says passed and still binds the manuscript's current bytes"
         ),
@@ -233,34 +397,20 @@ PIECE_NODE_SPECS: tuple[NodeSpec, ...] = (
 
 
 EDITION_NODE_SPECS: tuple[NodeSpec, ...] = (
-    NodeSpec(
-        id="manager-run-a",
-        kind=AGENTIC,
-        scope=EDITION_SCOPE,
-        consumes=(EVERY_PIECE_SETTLED,),
-        accepting="the learning record carries run A's manager takeaways",
-        role="manager_run_a",
-        returns=TAKEAWAYS,
-    ),
-    NodeSpec(
-        id="learning",
-        kind=AGENTIC,
-        scope=EDITION_SCOPE,
-        consumes=("manager-run-a",),
-        accepting="the learning record carries an approved run B verdict",
-        role="learning",
-        returns=VERDICT,
-    ),
-    # The node the incident is about.  It is the only judge that reads the
-    # editorial against the whole issue, so it is declared as its own required
-    # node rather than as a tail of the learning call it happens to follow.
+    # Stage 4, and the node the edition-004 incident is about.  It is the only
+    # lens that reads the editorial against the whole issue, so it is declared
+    # as its own required node rather than as a tail of something else.  The
+    # two reader-persona nodes that used to precede it -- ``manager-run-a`` and
+    # ``learning`` -- are gone: ``prompts/README.md`` retired Marcus and Priya
+    # as lenses that bought one lens's worth of information for two extra calls
+    # each, and Nadia survives per piece as ``teaching``.
     NodeSpec(
         id="edition",
         kind=AGENTIC,
         scope=EDITION_SCOPE,
-        consumes=("learning",),
+        consumes=(EVERY_PIECE_SETTLED,),
         accepting="the managing editor's record carries an approved verdict",
-        role="edition",
+        role=EDITION_JUDGE_KIND,
         returns=VERDICT,
     ),
     NodeSpec(
@@ -269,25 +419,34 @@ EDITION_NODE_SPECS: tuple[NodeSpec, ...] = (
         scope=EDITION_SCOPE,
         consumes=("edition", EVERY_PIECE_SETTLED),
         accepting=(
-            "every judge's verdict is recorded on the review bench: the "
-            "evidence, line, learning and edition review records all exist"
+            "every lens's verdict is recorded on the review bench: the "
+            + ", ".join(BENCH_REVIEW_KINDS)
+            + " review records all exist"
         ),
     ),
 )
 
 
-def _validate_specs() -> None:
-    """Refuse a malformed declaration at import time.
+def validate_node_specs(
+    piece_specs: Sequence[NodeSpec], edition_specs: Sequence[NodeSpec]
+) -> None:
+    """Refuse a malformed declaration.
 
-    A graph that cannot be traversed is a programming error in this file, and
-    the moment to say so is before an edition is ever resolved against it.  The
-    checks are the three ways the table can be wrong: a value outside the
-    vocabulary, a dependency naming nothing, and an order that is not one.
+    A graph that cannot be traversed is a programming error in the table, and
+    the moment to say so is before an edition is ever resolved against it --
+    which is why the module calls this on itself at import.  The checks are the
+    ways the table can be wrong: a value outside the vocabulary, a node that
+    dispatches work nothing can answer, a dependency naming nothing, and an
+    order that is not one.
+
+    Takes the tables as arguments rather than reading the module's, so that the
+    suite can prove each refusal against a deliberately broken table instead of
+    trusting that this function would have caught it.
     """
 
     for specs, scope in (
-        (PIECE_NODE_SPECS, PIECE_SCOPE),
-        (EDITION_NODE_SPECS, EDITION_SCOPE),
+        (piece_specs, PIECE_SCOPE),
+        (edition_specs, EDITION_SCOPE),
     ):
         known: set[str] = set()
         for spec in specs:
@@ -331,15 +490,14 @@ def _validate_specs() -> None:
                         "cycle"
                     )
             known.add(spec.id)
-    settled = {spec.id for spec in PIECE_NODE_SPECS}
-    if "settled" not in settled:
+    if "settled" not in {spec.id for spec in piece_specs}:
         raise ProduceGraphError(
             "the piece scope must declare a `settled` node: it is what the "
             "whole-issue nodes fan in over"
         )
 
 
-_validate_specs()
+validate_node_specs(PIECE_NODE_SPECS, EDITION_NODE_SPECS)
 
 
 def work_contracts() -> dict[str, str]:
@@ -438,6 +596,18 @@ class ProductionGraph:
     problems: tuple[str, ...] = ()
     """Ways this edition cannot be traversed at all, as opposed to not yet having been."""
 
+    deferred: bool = False
+    """True when a better-placed check owns this edition's failure.
+
+    An edition with no readable ``edition.yaml`` has no piece list, so no graph
+    can be resolved -- but the manifest loader is about to say so far more
+    usefully than this module could, and
+    :func:`~magazine.staging_marker.require_written_manuscripts` already sets
+    the precedent for not pre-empting it: burying a specific error under a
+    general one costs an operator the diagnosis.  So the report still explains
+    why it cannot answer, and the refusal stands aside.
+    """
+
     @property
     def complete(self) -> bool:
         """Whether every declared node has reached an accepting terminal state."""
@@ -465,6 +635,8 @@ class ProductionGraph:
     def summary(self) -> str:
         """One line an operator can read without scrolling."""
 
+        if self.deferred:
+            return f"{self.edition_id}: production graph cannot be resolved yet"
         if self.problems:
             return f"{self.edition_id}: production graph is broken"
         if self.legacy:
@@ -536,16 +708,14 @@ def resolve_production_graph(
     manifest = _manifest(edition_dir)
     problems: list[str] = []
     if manifest is None:
-        # The manifest loader's complaint, not this module's -- but a graph
-        # cannot be resolved without one, and saying so beats reporting an
-        # edition with no nodes as vacuously complete.
         return ProductionGraph(
             edition_id=edition_id,
             nodes=(),
+            deferred=True,
             problems=(
                 f"editions/{edition_id}/edition.yaml is missing or unreadable, so "
                 "the pieces this edition declares are unknown and no production "
-                "graph can be resolved",
+                "graph can be resolved; whoever loads the edition will say why",
             ),
         )
     pieces = declared_manuscript_paths(root, edition_dir, manifest)
@@ -563,6 +733,7 @@ def resolve_production_graph(
     nodes: list[GraphNode] = []
     states: dict[str, str] = {}
 
+    content_modes = _declared_content_modes(manifest)
     for piece_id, manuscript in pieces.items():
         record = load_piece_record(editions_dir, edition_id, piece_id) or {}
         context = _PieceContext(
@@ -570,6 +741,7 @@ def resolve_production_graph(
             manuscript=manuscript,
             record=record,
             answered=answered,
+            content_mode=content_modes.get(piece_id, ""),
         )
         for spec in PIECE_NODE_SPECS:
             node_id = f"{piece_id}/{spec.id}"
@@ -597,6 +769,7 @@ def resolve_production_graph(
     issue = _IssueContext(
         editions_dir=editions_dir,
         edition_id=edition_id,
+        owed_bench_kinds=owed_bench_kinds(content_modes),
     )
     for spec in EDITION_NODE_SPECS:
         node_id = f"{ISSUE_PIECE_ID}/{spec.id}"
@@ -632,6 +805,28 @@ def resolve_production_graph(
     )
 
 
+def _declared_content_modes(manifest: Mapping[str, Any]) -> dict[str, str]:
+    """Each piece's declared ``content_mode``, read raw from the manifest.
+
+    Raw for the same reason :func:`declared_manuscript_paths` is: a manifest
+    that will not load for an unrelated reason must still resolve a graph, and
+    which lenses apply to a piece is exactly the sort of question an operator
+    asks *because* something is wrong.  The editorial has no article row, and
+    its mode is the one the pipeline gives it.
+    """
+
+    modes: dict[str, str] = {}
+    rows = manifest.get("articles")
+    for index, row in enumerate(rows if isinstance(rows, list) else (), start=1):
+        if not isinstance(row, Mapping):
+            continue
+        piece_id = str(row.get("id") or "").strip() or f"article-{index}"
+        modes[piece_id] = str(row.get("content_mode") or "").strip()
+    if manifest.get("editorial"):
+        modes[EDITORIAL_ARTICLE_ID] = "original_editorial"
+    return modes
+
+
 @dataclass(frozen=True)
 class _PieceContext:
     piece_id: str
@@ -639,6 +834,9 @@ class _PieceContext:
     record: Mapping[str, Any]
     answered: Mapping[str, int]
     """Work-item keys with a reply on disk, mapped to the round they answer."""
+
+    content_mode: str = ""
+    """What the manifest declares this piece is, for deciding which lenses apply."""
 
     @property
     def rounds(self) -> Sequence[Mapping[str, Any]]:
@@ -713,6 +911,18 @@ def _gates_state(piece: _PieceContext) -> tuple[str, str]:
 
 def _judge_state(spec: NodeSpec, piece: _PieceContext) -> tuple[str, str]:
     lens = spec.role
+    # A lens that does not read this piece is *accepting*, not unreached.  The
+    # distinction is the whole reason ``not_applicable`` is in the vocabulary:
+    # ``worth`` has nothing to say about the editorial and ``teaching`` has
+    # nothing to say about a feature, and a node that could never be reached
+    # would make every such edition permanently incomplete.
+    if spec.lens is not None and not lens_applies(
+        spec.lens, piece_id=piece.piece_id, content_mode=piece.content_mode
+    ):
+        return (
+            NOT_APPLICABLE,
+            f"the {lens} lens does not read this piece",
+        )
     last = piece.last_round
     if last is None:
         return READY, "no round to judge"
@@ -770,6 +980,26 @@ def _settled_state(piece: _PieceContext) -> tuple[str, str]:
 class _IssueContext:
     editions_dir: Path
     edition_id: str
+    owed_bench_kinds: tuple[str, ...] = BENCH_REVIEW_KINDS
+    """The bench records this particular edition actually owes.
+
+    Not :data:`BENCH_REVIEW_KINDS` unconditionally, which is what it was and
+    which was wrong in one case that matters.  ``teaching`` reads the
+    ``in_a_nutshell`` explainer; an edition that declares none is an ordinary
+    edition, ``_record_bench`` correctly writes no teaching record for it, and
+    :func:`_judge_state` correctly resolves every ``judge.teaching`` node
+    ``not_applicable``.  ``bench`` was the one surface that disagreed, so such
+    an edition sat permanently one node short: ``issue/bench`` stuck at ``ready``
+    reporting "1 review record(s) not written: teaching", ``mag produce``
+    exiting 1 for ever, ``ready.yaml`` calling a fully settled edition
+    ``stalled``, and ``mag build`` refusing it -- all demanding a record the
+    recorder would refuse to write, because there is no explainer to bind.
+
+    That is the same failure the whole ``not_applicable`` state exists to
+    prevent, arriving through the one node that was not asking the question per
+    piece.  Four surfaces now agree instead of three.
+    """
+
     _cache: dict[str, Any] = field(default_factory=dict)
 
     def record(self, kind: str) -> Mapping[str, Any] | None:
@@ -781,18 +1011,6 @@ class _IssueContext:
 
 
 def _edition_node_state(spec: NodeSpec, issue: _IssueContext) -> tuple[str, str]:
-    if spec.id == "manager-run-a":
-        record = issue.record("learning")
-        block = (record or {}).get("manager_run_a")
-        if isinstance(block, Mapping) and block.get("manager_takeaways") is not None:
-            return COMPLETE, "run A's takeaways are recorded"
-        return READY, "the managing editor has not written run A's takeaways"
-    if spec.id == "learning":
-        return _verdict_node(
-            issue.record("learning"),
-            ("run_b",),
-            "the reader personas have not read the issue",
-        )
     if spec.id == "edition":
         return _verdict_node(
             issue.record("edition"),
@@ -831,26 +1049,59 @@ def _verdict_node(
     )
 
 
-_BENCH_RECORDS = (
-    ("evidence", evidence_review_path),
-    ("line", line_review_path),
-    ("learning", learning_review_path),
-    ("edition", edition_review_path),
-)
+def bench_record_path(editions_dir: Path, edition_id: str, kind: str) -> Path:
+    """Where one bench kind's record lives.
+
+    Derived from the kind's name rather than from a table of functions, which
+    is what this used to be.  The table was a second place the lens set was
+    written down, and it named ``line`` and ``learning`` for as long as it took
+    somebody to notice -- which is the failure mode
+    :data:`PIECE_JUDGE_LENSES` exists to remove.  ``edition_review_path`` is the
+    one kind whose path is not derived, because it predates the convention and
+    its filename is part of committed records.
+    """
+
+    if kind == EDITION_JUDGE_KIND:
+        return edition_review_path(editions_dir, edition_id)
+    return review_path(editions_dir, edition_id, kind)
 
 
 def _bench_state(issue: _IssueContext) -> tuple[str, str]:
     missing = [
         kind
-        for kind, path_of in _BENCH_RECORDS
-        if not path_of(issue.editions_dir, issue.edition_id).is_file()
+        for kind in issue.owed_bench_kinds
+        if not bench_record_path(
+            issue.editions_dir, issue.edition_id, kind
+        ).is_file()
     ]
     if not missing:
-        return COMPLETE, "every judge's verdict is recorded on the bench"
+        return COMPLETE, "every lens that reads this edition has recorded a verdict"
     return (
         READY,
         f"{len(missing)} review record(s) not written: " + ", ".join(missing),
     )
+
+
+def owed_bench_kinds(content_modes: Mapping[str, str]) -> tuple[str, ...]:
+    """Which bench records this edition owes, given the pieces it declares.
+
+    A per-piece lens is owed a record when at least one declared piece is in
+    its coverage; ``edition`` is owed unconditionally, because an issue is
+    always an issue.  Asked of the manifest rather than of the record
+    directory, so "no teaching record" and "no explainer to teach about" stay
+    two different answers -- conflating them would let a missing record excuse
+    itself.
+    """
+
+    owed = [
+        lens.kind
+        for lens in PIECE_JUDGE_LENSES
+        if any(
+            lens_applies(lens, piece_id=piece_id, content_mode=content_mode)
+            for piece_id, content_mode in content_modes.items()
+        )
+    ]
+    return (*owed, EDITION_JUDGE_KIND)
 
 
 # ---------------------------------------------------------------------------
@@ -877,7 +1128,7 @@ def require_complete_production_graph(
     """
 
     graph = resolve_production_graph(root, editions_dir, edition_id)
-    if graph.complete:
+    if graph.complete or graph.deferred:
         return
     if graph.problems:
         raise ValidationError(
