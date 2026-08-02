@@ -172,15 +172,16 @@ article and stated in the assignment below as an "Opening paragraph budget";
 aim under it and put the rest of the thought in your second paragraph. When no
 budget is stated the piece has no illustrated opener and no such limit.
 
-Return step 1's six questions beside the manuscript as their own block, so the
-operator can hand the writer's model of comprehension to the `teaching` lens
-rather than letting it die with the draft:
+Return step 1's six questions so the operator can hand the writer's model of
+comprehension to the `teaching` lens rather than letting it die with the draft.
 
-```yaml
-comprehension_questions:
-- What boundary does the protocol define?
-- Which call lists the tools a server offers, and what comes back?
-```
+Put them **below the scratch marker, inside your working notes, and never as a
+fenced block in the manuscript**. Every fenced block in a manuscript must be a
+character-for-character run of lines from a pinned extraction, and your
+questions are not in the source, so a fence anywhere above the marker fails the
+gate before a single lens reads the piece. That is a wasted round, and it has
+already cost one. Plain lines under a `comprehension_questions:` heading in the
+notes are enough; the operator only needs to read them.
 
 ## Working notes
 
