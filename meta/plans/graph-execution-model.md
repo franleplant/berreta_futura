@@ -1,518 +1,1041 @@
-# Plan — a graph engine for the magazine
+# Graph execution model: the XState edition engine
 
-Status: **proposed**, not started. Revision 5, 2026-08-02, branch `writing-overhaul`.
+Status: **proposed**, not started. Revision 6, 2026-08-02.
 
-Revisions 1–4 designed backwards from the existing code and grew baroque. This one
-starts from the problem. It is much shorter, and that is the point.
+This revision supersedes revisions 1 through 5. It incorporates the adversarial
+review and the decisions that followed it:
 
-Sources archived in [`meta/docs/`](../docs/). Review history in [§8](#8-history).
+- One hierarchical state machine encompasses the complete edition lifecycle:
+  source collection, capture, extraction, article production, editorial, image
+  generation and selection, translation, issue review, rendering, visual review,
+  release, and publication.
+- `ArticleMachine` is a reusable child actor of `EditionMachine`. The exact same
+  machine can also run as the root of an article-only run for fast writing and
+  judging experiments.
+- XState owns control flow. A small `RunEngine` owns durable execution.
+- Runtime identity uses immutable IDs and database transactions, not pervasive
+  content hashes and not filesystem scans.
+- The old Python production orchestrator is replaced, not preserved, emulated,
+  shadowed, or treated as an acceptance oracle.
+- Useful deep Python modules, especially the renderer, may remain temporarily
+  behind a subprocess interface. Their old orchestration and record formats do not.
 
----
-
-## 1. The model — two orthogonal layers
-
-Earlier revisions had one model and it fought itself. There are two, and separating
-them is what makes the rest simple.
-
-### Layer 1: the lifecycle is a state machine
-
-Per article:
-
-```
-drafting → gated → judging (parallel: worth, mechanics, evidence, shape, teaching?, craft)
-                → deciding ─┬→ settled
-                            ├→ drafting          ← the loop is a transition
-                            └→ escalated
-```
-
-**A loop is a transition.** Not an instancing trick, not an unrolled generation.
-Revisions 1–4 spent their length inventing "round generations" and "attempt epochs"
-because they started from a DAG, and a DAG cannot loop. A state machine can, and the
-whole apparatus becomes unnecessary.
-
-Parallel states cover the lenses. Actors cover instances — one per article, one per
-edition, one for art. Guards cover the budget. None of this needs inventing.
-
-### Layer 2: change is an event, not a computation
-
-**There is no hashing layer.** Earlier revisions had one and it was wrong.
-
-Hashing answers exactly one question — *did something change while I wasn't looking?*
-It is a substitute for not having observed the change. The current pipeline needs it
-because its state is files anyone may edit out of band, so every run must re-derive
-what moved. That is a consequence of derive-from-disk, not a requirement of the
-problem.
-
-A state machine observes. Change arrives as an event:
-
-```
-BRIEF_EDITED        → art actor leaves `registered`, regenerates
-SOURCE_RECAPTURED   → article actor returns to `drafting`
-DRAFT_PRODUCED      → judges rejudge
-```
-
-Nothing is detected, so nothing is hashed. An image is not regenerated because no
-event told it to — not because a digest matched.
-
-**Provenance is a written record, not a digest.** "Which prompt wrote this" is
-answered by recording the prompt path and version when the state runs. You do not
-need a hash to write down what you used.
-
-**The one real trade-off, to decide rather than discover.** If someone edits a
-manuscript in an editor and tells nothing, an event-driven machine will not notice.
-Three acceptable answers: don't care (the next transition uses whatever is on disk);
-watch the filesystem and synthesize an event; or require edits to go through a command
-that emits one. Pick one. None of them is hashing.
-
-A digest stays useful in exactly one narrow place — cheaply confirming a large binary
-on disk is the one that was registered — and even there it is optional.
-
-### What follows
-
-**There are not two kinds of node.** Deterministic and agentic differ only in whether
-re-running is free. One kind, one cache rule.
-
-**Who answers is not the machine's business.** Three answerers — a local script, a
-model, a person. All three are "a state waiting for an event." That is dispatch.
-
-### What follows from it
-
-**There are not two kinds of node.** Deterministic and agentic differ only in a
-cache rule. Deterministic: re-run freely. Agentic: keep the first answer until an
-input changes. One kind of node, one field.
-
-**Who answers is not the graph's business.** Three answerers — this process, a
-model, a person. That is dispatch. The graph is indifferent.
-
-Argo Workflows proves this shape works at scale, and is worth imitating. It declares
-a node whose output is `supplied: {}` — a placeholder to be filled in later "through
-the CLI, API, etc." No pod is created and nothing of theirs stays alive; the answer
-arrives by an authenticated `set` followed by `resume`. One state machine therefore
-treats *a human typed it*, *an agent fleet returned it*, and *a model answered it* as
-the same event. That is the design, independently arrived at by a CNCF-graduated
-project.
-
-**A loop is not a construct.** A loop is instantiation driven by data. Round 2
-exists because round 1's decision said so. Per-article graphs, per-edition graphs,
-per-round graphs are all the same mechanism used three ways.
-
-**Running the graph is:** walk it, dispatch what is ready, exit. Re-invoke until
-nothing is pending. No daemon, no sandbox, no suspend/resume machinery.
-
-**Waiting is free.** A node awaiting a human or an outside agent is not a paused
-process. It is a node whose output does not exist yet. Nothing is held.
-
-**A gate that times out must fail, never default.** Argo's suspend node, on expiry,
-overrides the output with its default and marks the node *succeeded* — a human
-approval that nobody gave, recorded as given. We will not copy that. Our human nodes
-have no timeout, and if one is ever added it fails closed.
-
-### What this deletes
-
-Revisions 2–4 invented attempt epochs, round generations, substep state machines,
-head vectors, and an `INCONSISTENT` state. All of it was the old code's shape
-leaking into the design.
-
-| Was | Is |
-|---|---|
-| attempt epochs | instances |
-| round generations | instances |
-| substeps, partial fan-out, "first incomplete substep" | small nodes — one per piece × round × lens |
-| `INCONSISTENT` | doesn't arise; one store, one rule |
-| two cache economies | honest input declarations |
-
-Make the nodes small and the state machine disappears. A node is answered or it
-isn't.
+The design goal is a smaller system, not a TypeScript translation of the existing
+one.
 
 ---
 
-## 2. The graph
+## 1. Decisions
 
-Per article, per round:
+### 1.1 One edition machine
 
-```
-write → gates → worth, mechanics → evidence, shape → teaching?, craft → decide
-```
+There is one root `EditionMachine` for a complete issue. It owns every child actor
+and every join required to produce and release the edition.
 
-Barriers are edges, not machinery: `evidence` takes `worth`'s output as an input, so
-it cannot run first. A blocking verdict makes later lenses not-applicable for that
-round. `decide` emits pass, another round, or escalate.
-
-Per edition:
-
-```
-every article settled → editorial → judge.edition → render
-```
-
-The editorial is the only piece that reads its siblings (`_peers` returns `()` for
-everything else — verified). So regular articles are genuinely independent, and the
-editorial is a join.
-
-Art runs as its own instance, in parallel, at its own pace:
-
-```
-art brief → variants → [human picks] → registered ─┐
-                                                    ├→ render → [human reads PDF]
-text instances ─────────────────────────────────────┘
+```text
+edition created
+  -> collect and prepare sources
+  -> freeze edition plan
+  -> produce English content and art in parallel
+  -> judge the issue and route revisions
+  -> translate every configured language
+  -> join content and registered art
+  -> measure and render
+  -> visual review
+  -> release approval
+  -> released
 ```
 
-Two human nodes. Everything between capture and the PDF iterates alone.
+The view may draw this as one graph with nested actors. Runtime ownership follows
+the domain. It is never rearranged to accommodate a graph widget.
+
+### 1.2 One reusable article machine
+
+`ArticleMachine` is defined once.
+
+- `EditionMachine` starts one actor per planned article.
+- An article-only run starts the same machine as its root.
+- An article experiment can fork another article run while reusing immutable source
+  artifacts by ID.
+- A settled article experiment may seed a new edition run or an article actor that
+  has not started. It never mutates an active edition run behind the machine's back.
+
+This is the fast loop for improving article generation, feedback, and judging. It
+does not require source collection, images, editorial, translation, or rendering to
+run.
+
+### 1.3 Statechart and durable engine are separate modules
+
+XState answers:
+
+- Which states exist?
+- Which event may move an actor?
+- Which work can run concurrently?
+- Which results open another iteration?
+- Which child actors must join before the edition may advance?
+
+`RunEngine` answers:
+
+- Which run, actor visit, attempt, and work offer is this?
+- Which immutable artifacts were supplied?
+- Has this answer become stale?
+- Was state committed before a crash?
+- May another process claim this work?
+- What happened, in causal order?
+
+Neither module pretends to solve the other's problem.
+
+### 1.4 No pervasive hashing
+
+The engine does not hash files to discover state, invalidate work, resume a run, or
+decide whether output can be reused.
+
+Runtime identity uses generated IDs:
+
+- `RunId`
+- `ActorId`
+- `ArtifactId`
+- `RevisionId`
+- `AttemptId`
+- `WorkOfferId`
+- `DecisionId`
+
+Once an artifact receives an ID, its bytes never change. Editing creates a new
+artifact and a new revision. A work offer names the exact input artifact IDs it was
+created from. A late answer is rejected when its offer is no longer active.
+
+Checksums remain allowed only at integrity boundaries where they have a separate
+purpose, such as a captured raw bundle, a final distributable package, or optional
+large-binary corruption detection. A checksum never determines workflow state.
+
+### 1.5 The old orchestrator dies
+
+There is no migration layer for old production records, no dual writer, no parity
+suite against the old graph, and no requirement to preserve its deterministic
+checks.
+
+The replacement may retain useful domain text, prompt material, the source archive,
+and deep rendering modules. It does not retain the old scheduler, replay algorithm,
+fingerprints, checkpoint vocabulary, agent reply directory protocol, or workflow
+state derivation.
+
+As replacement slices land, the superseded orchestration code and tests are deleted.
+There is no final compatibility phase.
 
 ---
 
-## 3. Instances
+## 2. Machine hierarchy
 
-Addressed by `(edition, kind, subject)` where kind is `text` or `art`.
+```text
+EditionMachine
+  SourceMachine[]
+  ArticleMachine[]
+  EditorialMachine
+  EditionReviewMachine
+  TranslationMachine[]
+  CoverArtMachine
+  InteriorArtMachine
+    ImageAssetMachine[]
+  RenderMachine
+  ReleaseMachine
+```
 
-- **Per article.** Run one piece to test it, or fifty in parallel. Independent
-  because articles share no inputs.
-- **Per edition.** Two editions at once. State is already under
-  `editions/<id>/`, so this mostly works. Two things spoil it and must be fixed:
-  `pin.py` takes a *global* exclusive lock, and `release-state.yaml` is a single
-  cross-edition ledger. Narrow the lock; the ledger is genuinely shared and should
-  be the only thing that serializes.
-- **Cross-instance edges.** Art's output is an input to render. Today `consumes`
-  only names siblings, so this is the one piece of new expressiveness needed.
+Actors have stable IDs allocated by `RunEngine`. Output paths do not identify actors.
 
-Instancing is addressing, not identity. It must invalidate nothing.
+The edition actor is the only owner of cross-article joins, editorial dependencies,
+edition-level art, rendering, and release.
+
+### 2.1 Edition lifecycle
+
+```text
+created
+  -> collecting
+  -> planning
+  -> producing
+  -> translating
+  -> assembling
+  -> rendering
+  -> awaiting_visual_review
+  -> awaiting_release_approval
+  -> released
+
+Any non-recoverable state
+  -> failed
+
+Any unresolved human-authority or iteration-budget state
+  -> awaiting_editor
+```
+
+`producing` contains parallel content and art regions. They synchronize only at
+declared dependencies and at `assembling`.
+
+### 2.2 Collection and source preparation
+
+`collecting` accepts lead events until a human closes the collection.
+
+Each lead starts a `SourceMachine`:
+
+```text
+lead_received
+  -> capturing
+  -> extracting
+  -> awaiting_source_review
+  -> ready
+
+capture or extraction failure
+  -> source_failed
+```
+
+The source actor produces immutable artifacts for:
+
+- the submitted lead;
+- the durable raw evidence bundle;
+- extracted text and media;
+- source metadata and human annotations;
+- the provenance edge from the lead to the captured primary source.
+
+A source is not `ready` merely because a URL exists. The exact source revision used
+by an article is an `ArtifactId`, not a live path.
+
+`CLOSE_COLLECTION` is a human event. It freezes the source set for the run and moves
+the edition to `planning`. New external sources require a successor edition run.
+
+### 2.3 Planning
+
+Planning creates immutable edition inputs:
+
+- edition brief and thesis;
+- article specifications;
+- ordered source assignments for every article;
+- content modes and author/source attribution;
+- configured languages;
+- art direction and required image inventory;
+- iteration, cost, and concurrency policy;
+- renderer and release profile.
+
+The planning decision records who approved the assignments. Article actors cannot
+start without complete source assignments.
+
+Changing a planning input after production begins does not edit the current run. It
+forks a successor run with explicit changed inputs and retained ancestor artifacts.
+
+### 2.4 Producing English content and art
+
+The `producing` state has two parallel regions:
+
+```text
+content region                         art region
+--------------                         ----------
+ArticleMachine[]                       art direction ready
+  -> all features settled                -> CoverArtMachine
+  -> EditorialMachine                    -> InteriorArtMachine
+  -> EditionReviewMachine                -> all required art registered
+  -> English content approved
+```
+
+The regions exchange only declared artifact events. For example:
+
+- an article revision may publish an illustration brief artifact;
+- the editorial may publish the final editorial reading used by the cover actor;
+- an image selection publishes a registered image artifact;
+- no image generation is triggered by rendering.
+
+### 2.5 Edition review and revision routing
+
+After all feature articles and the editorial settle, `EditionReviewMachine` judges
+the issue as a whole.
+
+Its decision may:
+
+- approve the English issue;
+- route findings to one or more named articles;
+- route findings to the editorial;
+- request a human `editor_decision`;
+- escalate when the issue cannot be repaired automatically.
+
+Routing a finding to an article sends a durable event to that `ArticleMachine`. The
+article creates a new manuscript revision and re-enters its judging stages. Any
+editorial artifact that consumed the earlier article revision is no longer current,
+so `EditorialMachine` runs again. The edition review then runs against the new set of
+artifact IDs.
+
+Render is unreachable without a current approving edition decision.
+
+### 2.6 Translation
+
+Translation begins only after English content has a current approving edition
+decision.
+
+One `TranslationMachine` runs per configured non-English language. It consumes the
+exact English article, editorial, furniture, and caption artifact IDs.
+
+```text
+translation drafting
+  -> language review
+  -> per-piece language fit
+  -> language settled
+
+revision required
+  -> translation drafting
+```
+
+If approved English content changes, the old translation artifacts remain in history
+but are not current. New translation work consumes the new English artifact IDs.
+
+Every configured language must settle before assembly. A fit breach in Spanish routes
+to the Spanish translation actor, not to the English writer unless the editor makes an
+explicit cross-language decision.
+
+### 2.7 Assembly, render, and release
+
+Assembly joins:
+
+- current approved English content;
+- settled translations for every configured language;
+- registered cover art;
+- all required registered interior art;
+- current edition metadata and printer profile.
+
+Two different measurements exist and keep different names:
+
+- `measureArticle` gives per-draft article feedback inside `ArticleMachine`.
+- `measureEdition` checks full-issue pagination, language output, and booklet
+  imposition immediately before render.
+
+They are not interchangeable and do not share a state.
+
+`RenderMachine` calls one deep renderer interface. The current Python typesetter may
+implement that interface initially, but its workflow gates and canonical output
+assumptions do not cross the seam.
+
+```text
+assemble immutable render manifest
+  -> render all languages
+  -> build reader, web, booklet, and package artifacts
+  -> machine render inspection
+  -> awaiting independent visual review
+```
+
+Human visual approval references exact render artifact IDs. Any new render creates new
+IDs and therefore cannot inherit the old approval.
+
+`ReleaseMachine` requires an explicit human release decision that names the approved
+render set. Release atomically records source assignment, edition identity, package
+artifacts, and publication state. A released edition is final.
 
 ---
 
-## 4. Runs
+## 3. ArticleMachine
 
-**A run is a directory.** It holds the machine definition it used, the snapshot
-series, and every state's output.
+### 3.1 The statechart
 
+```text
+initializing
+  -> drafting
+  -> stage_1
+       parallel: measureArticle, worth, mechanics
+  -> stage_1_decision
+  -> stage_2
+       parallel: evidence, shape
+  -> stage_2_decision
+  -> stage_3
+       parallel: teaching?, craft
+  -> deciding
+       pass             -> settled
+       revise           -> drafting
+       editor_decision  -> awaiting_editor
+       budget_exhausted -> escalated
+       drop             -> dropped
 ```
+
+All lenses do not enter one parallel state. Each stage completes before the next stage
+is eligible. A blocking finding can skip later stages for that iteration.
+
+An optional lens produces an explicit `not_applicable` result. Absence never means
+both "not applicable" and "crashed."
+
+### 3.2 Inputs
+
+An article run starts from an immutable `ArticleRunSpec`:
+
+```ts
+type ArticleRunSpec = {
+  articleId: string;
+  editionContext?: ArtifactId;
+  articleBrief: ArtifactId;
+  sources: readonly ArtifactId[];
+  writerPrompt: ArtifactId;
+  judgePrompts: Readonly<Record<JudgeLens, ArtifactId>>;
+  writingRules: ArtifactId;
+  initialManuscript?: ArtifactId;
+  policy: ArticlePolicy;
+  modelPolicy: ModelPolicy;
+};
+```
+
+The standalone runner supplies the same spec that the edition parent supplies. The
+edition context is optional only when the article genuinely does not need it.
+
+### 3.3 Iterations are explicit
+
+A loop is a state transition. Every durable visit through that loop still has an
+explicit `IterationId`.
+
+An iteration records:
+
+- its parent manuscript revision;
+- the new manuscript artifact;
+- writer working notes;
+- carried findings and human rulings;
+- applicable lenses;
+- one attempt and result per lens;
+- the decision that settled, revised, escalated, or dropped it.
+
+The next iteration is allocated only from a committed `revise` decision. It is never
+inferred by counting files or directories.
+
+### 3.4 Role and context isolation
+
+Dispatch transport is generic. Task composition and worker assignment are not.
+
+The engine enforces:
+
+- one work offer concerns one role, one actor, and one article;
+- writer tasks receive every assigned source artifact and the complete revision
+  context;
+- source-aware evidence work receives sources;
+- source-blind work cannot receive sources;
+- the same worker identity cannot perform evidence and source-blind line or craft
+  review for the same article revision;
+- replies must satisfy the role's typed output contract;
+- a late or duplicate answer cannot replace the active answer.
+
+These are state and authority semantics, not editorial heuristics.
+
+### 3.5 Fit feedback
+
+`measureArticle` uses the production layout interface on an isolated article document.
+It reports actual layout facts, including opener fit and article page count.
+
+Before relying on it, tests must prove that the isolated measurement matches the same
+article placed in representative full editions, including left/right page parity,
+figures, code, and opener art.
+
+The measurement is feedback to the writer and decision actor. It is not replaced by a
+character-count gate.
+
+### 3.6 Human authority and escalation
+
+`awaiting_editor` records the exact finding, manuscript revision, available choices,
+and human offer ID. A human ruling is immutable and references that offer.
+
+An escalated article is never accepting. A human may:
+
+- provide a repair;
+- change the iteration budget;
+- provide an editorial ruling;
+- drop the article;
+- fork a successor article run with changed policy.
+
+The iteration budget is an explicit input, not a hidden constant.
+
+---
+
+## 4. Article-only experimentation
+
+The article path is the first executable vertical slice because it is where prompt,
+model, feedback, and judge design can be improved fastest.
+
+Conceptual command surface:
+
+```text
+mag article run <article-spec>
+mag article inspect <run-id>
+mag article continue <run-id>
+mag article fork <run-id> --change <named-input>
+mag article compare <run-id> <run-id> [...]
+mag article promote <run-id>
+```
+
+`continue` advances a waiting run after available answers have arrived. It does not
+scan the filesystem.
+
+`fork` creates a successor run. Unchanged immutable artifacts are referenced by ID.
+Changed inputs receive new artifact IDs. `RunEngine` computes which actor outputs are
+eligible for reuse from declared artifact dependencies and state-contract versions.
+No content digest is computed.
+
+`compare` presents:
+
+- final manuscripts;
+- revision histories;
+- judge findings and decisions;
+- human preferences;
+- model, prompt, cost, and latency metadata;
+- article layout measurements.
+
+It does not collapse quality into one deterministic score.
+
+`promote` marks one settled article artifact as a candidate input. A new edition run or
+an unstarted article actor can consume it. Promotion never rewrites an active actor's
+current artifact.
+
+### ArticleLab
+
+`ArticleLab` is a thin orchestration mode above `ArticleMachine`, not another article
+workflow. It starts several independent article runs with deliberate differences in:
+
+- writer prompt;
+- model or model settings;
+- revision budget;
+- judge prompt or stage policy;
+- supplied editor feedback.
+
+It compares outputs and records the human choice. The winning configuration becomes a
+new versioned policy artifact. The losing runs remain inspectable.
+
+---
+
+## 5. Durable RunEngine
+
+`RunEngine` is a deep module. XState, SQLite, locking, outbox dispatch, artifact
+storage, attempt fencing, replay, and snapshots remain inside it.
+
+### 5.1 External interface
+
+```ts
+type RunSpec = EditionRunSpec | ArticleRunSpec;
+
+type RunOutcome =
+  | { status: "running"; runId: RunId }
+  | { status: "waiting"; runId: RunId; offers: readonly WorkOfferView[] }
+  | { status: "awaiting_editor"; runId: RunId; offers: readonly WorkOfferView[] }
+  | { status: "complete"; runId: RunId; outputs: readonly ArtifactId[] }
+  | { status: "escalated"; runId: RunId; actors: readonly ActorId[] }
+  | { status: "failed"; runId: RunId; failures: readonly FailureView[] };
+
+interface RunEngine {
+  start(spec: RunSpec): Promise<RunOutcome>;
+  advance(runId: RunId): Promise<RunOutcome>;
+  answer(
+    offerId: WorkOfferId,
+    answer: WorkAnswer,
+    worker: WorkerIdentity,
+  ): Promise<RunOutcome>;
+  fork(runId: RunId, changes: readonly RunInputChange[]): Promise<RunOutcome>;
+  inspect(runId: RunId): Promise<RunView>;
+}
+```
+
+Callers do not read SQLite, mutate run directories, send directly to an in-memory
+actor, delete outputs, or reconstruct state.
+
+### 5.2 SQLite is operational truth
+
+One SQLite database in WAL mode stores small, transactional state:
+
+- runs and machine versions;
+- actor identities and current states;
+- ordered events;
+- iterations and attempts;
+- work offers and claims;
+- artifacts and artifact dependencies;
+- human and machine decisions;
+- outbox effects;
+- current XState snapshots.
+
+The engine never scans artifact files to infer progress.
+
+Each mutating operation runs under a short database transaction. The run has one
+active coordinator lease with a fencing token. Node claims also carry fencing tokens
+so a replaced coordinator or timed-out worker cannot commit late output.
+
+### 5.3 Pure statechart, durable effects
+
+XState does not directly launch long-running subprocesses or model calls.
+
+For each accepted event, `RunEngine`:
+
+1. acquires the run lease;
+2. loads the machine version and persisted control state;
+3. feeds the event into the statechart;
+4. collects pure effects such as `CREATE_WORK_OFFER` or `SPAWN_ARTICLE_ACTOR`;
+5. stores the event, new control state, effects, and active pointers atomically;
+6. commits;
+7. dispatches committed outbox work.
+
+If the process dies before commit, nothing happened. If it dies after commit, the
+outbox is still present and another process may dispatch it idempotently.
+
+No XState promise actor is left alive while a human or model works.
+
+### 5.4 Events and snapshots
+
+The ordered event journal is the history used by the viewer and audit tools. Events
+include causal IDs, actor IDs, previous and next state, and related offer, attempt,
+artifact, or decision IDs.
+
+The current XState snapshot is a resume optimization for the exact machine version.
+It is not the timeline and not the provenance record.
+
+A run cannot silently resume under another machine version. It requires an explicit
+state migration or a successor run.
+
+### 5.5 Work offers and attempts
+
+A `WorkOffer` contains:
+
+```ts
+type WorkOffer = {
+  id: WorkOfferId;
+  runId: RunId;
+  actorId: ActorId;
+  state: string;
+  iterationId?: IterationId;
+  role: WorkRole;
+  inputArtifacts: readonly ArtifactId[];
+  taskArtifact: ArtifactId;
+  contractVersion: string;
+  allowedWorkerCapabilities: readonly WorkerCapability[];
+};
+```
+
+The task artifact contains the complete prompt or human decision request. Rewording a
+UI wrapper does not alter it. Changing the actual task creates a new task artifact and
+offer.
+
+An executor atomically claims an offer and receives an `AttemptId`. Retries create new
+attempt IDs. Only the active attempt may commit an answer. A late answer is retained as
+a superseded artifact but cannot advance the machine.
+
+### 5.6 Artifact storage
+
+Small text and JSON artifacts may live in SQLite. Large binaries live under an engine
+owned artifact directory:
+
+```text
 runs/<run-id>/
-  machine.json        the definition this run executed
-  snapshots/          the actor states over time
-  out/                every state's output, art included
+  artifacts/<artifact-id>/payload
+  exports/
+  logs/
 ```
 
-Three consequences, and they replace everything earlier revisions built.
+The directory layout is an implementation detail of `RunEngine`.
 
-**A state is satisfied if its output is present in the run.** That is the only check.
-Not a hash, not a comparison — presence. If `out/art/opener-3.png` exists, the art
-state is done and transitions straight through.
+Large output commit protocol:
 
-**Seeding is how you skip work.** To run the machine with art already in hand, copy
-the images into the run's `out/` before starting. The machine finds them and moves on.
-No flags, no special mode, no "assume-generated" switch — the same rule that makes a
-completed state completed makes a seeded one seeded.
+1. write to an attempt-specific temporary path;
+2. flush and close;
+3. validate the output contract;
+4. atomically rename into the immutable artifact location;
+5. commit the artifact row and completion event using the active fencing token;
+6. leave an unreferenced file for garbage collection if the database commit loses a
+   race or fails.
 
-**Regeneration is deletion.** Copy the previous run's directory, remove whatever
-should be redone, start. Want everything but new art? Copy the run, delete `out/art/`.
-Want to keep the art and redraft the text? Delete the manuscripts instead. The whole
-re-run interface is `cp` and `rm`.
+Only a committed artifact row counts as output. File presence has no state meaning.
 
-**Upstream sources changing is not tracked, by decision.** If a source moved, start a
-new run. Nothing watches the filesystem, nothing detects drift, and the question of
-out-of-band edits does not arise.
+### 5.7 Artifact lineage without hashes
 
-**Runs are comparable because the definition travels with them.** Tweak the machine,
-run again, and `machine.json` plus `out/` from each run can be diffed directly —
-including across definition changes, which is the case that matters when tuning.
+Every artifact records:
 
-So the only backwards transitions inside a run are the ones driven by the machine's own
-outputs: a judge verdict, a gate failure. External change never moves an actor
-backwards, because external change means a new run.
+- its generated `ArtifactId`;
+- kind and schema version;
+- producing run, actor, attempt, and work offer;
+- exact parent artifact IDs;
+- source or human origin when it was not generated;
+- model, tool, command, and timing metadata where applicable;
+- whether it supersedes another artifact.
 
-Repository growth from accumulated run directories needs a retention policy — still
-open.
+This forms a provenance graph from lead to source to manuscript to judgment to render.
+No content digest is required because referenced artifacts are immutable.
 
----
+Prompt text is stored as an artifact, not merely a mutable path. Model configuration
+is stored as data. The machine has an explicit semantic version. Git revision may be
+recorded as diagnostic metadata but is not a cache key or work identity.
 
-## 5. Build or adopt
+### 5.8 External changes and successor runs
 
-Surveyed Python, JS and Rust (2026-08-02). All three say the same thing: **own the
-graph.**
+The event policy is unambiguous:
 
-**Why nothing fits.** Every product bundles the graph with a runner that insists on
-making the model call, plus a database, plus a UI. We want the graph, not the
-bundle. And the two things we most need, no engine in any language supplies:
-per-node caching keyed on declared inputs, and a provenance archive. Restate
-garbage-collects its journal when an invocation completes. Temporal's archival is
-experimental and its filesystem target's APIs don't work. So provenance and caching
-are ours regardless of what we adopt — which is most of the work.
+- Results, judge findings, human decisions, retries, and internal revision loops are
+  events within the active run.
+- A change to frozen source, planning, prompt, policy, renderer, or other starting
+  input creates a successor run through `fork`.
+- There is no filesystem watcher and no supported in-place edit of immutable artifacts.
+- A mutable working copy is not an artifact until it is submitted, at which point it
+  receives a new ID.
 
-**Language is settled.** The best answers to our hardest constraint are HTTP
-endpoints, not SDK calls, so the authoring language is irrelevant to it. Every
-candidate worth having ships Python, usually with more adoption than its JS twin.
-A Python-only renderer pins the final step. No boundary is justified.
+`fork` records the parent run and explicit input changes. Reuse is by reference to
+unchanged immutable artifact IDs. The engine computes downstream eligibility from
+declared dependencies. Callers never copy or delete run directories.
 
-**The pattern already has a name.** Luigi's `ExternalTask` is a task with an output
-and no run method: complete if and only if its target exists. A human or an agent
-writes the file and the next build proceeds. Nothing alive, no worker held, no
-timeout. Luigi reports what is pending and exits; you re-invoke it. That is exactly
-our `reply.md` protocol, and it confirms the suspend/resume machinery every engine
-sells is machinery we don't need.
+### 5.9 Sealing and repository provenance
 
-**Worth reading, not depending on:** `graph-flow`'s pause enum (three contributors,
-one of them an AI); Windmill's per-step cache; Sayiir's checkpoint-not-replay
-stance (twelve PyPI downloads a week).
+SQLite is operational truth while a run is active. When a run reaches a terminal
+checkpoint, the engine can export a normalized, append-only text record for Git:
 
-### XState as the host — assessed
+- run specification;
+- actor and event journal;
+- work offers and answers;
+- artifact metadata and lineage;
+- human decisions;
+- final output references.
 
-The proposal: express the machine in XState, own it in TypeScript, shell out to
-Python, Rust, `codex` or `claude` per node.
-
-**What it gets right.** A loop is a transition — the thing four revisions failed to
-express. Parallel states give the lens fan-out. Actors give per-article and
-per-edition instances with isolation. `getPersistedSnapshot()` returns plain JSON we
-own and can commit; restoring does **not** re-execute actions, so it is
-checkpoint-not-replay by construction. Zero infrastructure, MIT, ~5M installs a week.
-Nothing in it wants to make the model call, so a waiting state advanced only by
-`send()` is exactly our inverted call.
-
-**Two sharp edges, both real.**
-
-*Invoked promise actors re-execute on restore.* So an expensive node must never be an
-`invoke`. Model generative work as a state that waits for an external event, with the
-subprocess launched outside the machine. Get this wrong and every restore regenerates
-every image.
-
-*Timers are in-memory.* Anything that must survive a restart — a scheduled retry, a
-deadline — cannot live in the machine alone. Keep the machine's own waits short and
-let the invoking process own anything longer.
-
-**What it does not give.** The event vocabulary of §4, and the record of what each
-state used. Both are small and both are ours in any host, so neither argues against
-XState.
-
-**On the language boundary.** Nodes already shell out to `codex` and `claude`. A
-Python script is not a new kind of node, so the orchestrator need not share a language
-with the work. Earlier revisions said no boundary was justified; that answered a
-different question — whether to adopt a JS *engine* for its features. Using a small
-library as scaffolding while node bodies stay where they are is a different question,
-and the answer can be yes.
-
-### The view
-
-**One structural finding decides how to build it.** Tools that *infer* topology from
-emitted traces — Langfuse, Phoenix, Laminar, AgentOps, Inngest, Trigger.dev — can
-never show a pending node, because a node that has not run has emitted nothing to
-draw. Tools that *declare* topology — Argo, Kestra, Node-RED, ComfyUI — get pending
-for free and simply colour it in. **No single source gives both unrolled loop
-iterations and pending nodes.**
-
-So the view needs two inputs: a **declared topology** for the skeleton and pending
-state, plus a **run log** for iteration instances. XState supplies both from one
-place — the machine definition is the topology, the snapshot series is the log. That
-is a genuine argument for it.
-
-**Adopt for the view only.** React Flow (`@xyflow/react`) with elkjs or dagre for
-layout. Nothing in Python is close. A read-only JS sidecar over our own state, plus
-a small approval surface that lists parked nodes with a diff and an approve button.
-`langchain-ai/agent-inbox` is the reference shape. The seam: **Python owns execution
-and artifacts; JS owns looking at them and approving them.** The browser was always
-a separate process, so that boundary costs nothing.
-
-**No engine's UI is the answer, and the reason is structural.** Temporal and Restate
-were both surveyed at source level. Neither has a node-and-edge graph view in any
-version — Temporal's frontend has no graph-layout library among its dependencies at
-all. Neither has any concept of a loop iteration: both render a flat, index-ordered
-event list, so "why did round 2 open" means scrolling to the second entry of a type
-and reading the previous one's payload. Neither renders images — Temporal strips them
-from markdown deliberately, Restate shows payloads as text truncated at 1000
-characters. Neither lets you approve from the UI. Both default to discarding history
-within days. Restate's own UI repository carries **no licence file**, so embedding it
-is not legally available.
-
-They fail identically because **an event log is not a graph.** Their UIs reconstruct
-structure from a linear history and mostly can't. Our state is already nodes with
-declared inputs and outputs, so a view over it is a direct rendering, not a
-reconstruction. That is why building it is cheap and why theirs can't be borrowed.
-
-Worth stealing anyway: Temporal's indexed search attributes for finding one run among
-thousands, and Restate's approach of making the UI a thin client over a query API
-rather than a privileged component.
-
-**Revisit later, on evidence:** if durability genuinely hurts, Restate's Python SDK
-gives awakeables — a node parks durably and anyone resolves it with one `curl`. It
-is the cleanest inverted call anyone has built. It also means a daemon and a BUSL
-licence, and it does not solve caching or provenance. Not now.
-
-**The strongest adopt case, and why it still loses.** Argo Workflows has the best
-external-answer primitive of anything surveyed, real provenance in three tiers, and
-CNCF backing. But its memoization key is hand-built and stored in a Kubernetes
-ConfigMap capped at 1MB, and cross-instance dependencies are a naming convention it
-does not actually track. Those are precisely our two hardest requirements. Flyte 2
-and Windmill cover the same two only partially. So adopting the best option means
-taking on Kubernetes **and still writing the caching and the cross-instance edges
-ourselves.** That is the whole adopt case collapsing: we would buy infrastructure and
-keep the work.
-
-**The dissent, recorded.** The Python survey recommended adopting Prefect 3 as the
-host: it is the only tool that gives cycles, checkpoint-not-replay, and input-keyed
-caching together, for one process over a SQLite file. Its argument against building
-is that durable suspend/resume is a tar pit — a process dies mid-pause and you resume
-twice or lose the answer.
-
-That argument is sound about suspend/resume, and irrelevant here, because we do not
-suspend. A waiting node is an absent output, not a paused process, so there is no
-in-flight state to corrupt and no double-resume to guard against. Prefect's own
-objection points the same way: its pause is **flow-level only** — `suspend` on a task
-raises — so every out-of-band node would have to become a subflow, plus a registered
-deployment. We would restructure the graph around a mechanism we don't need.
-
-Worth knowing if that judgement turns out wrong: Prefect acquired Dagster Labs three
-weeks ago, so both products are mid-merger.
-
-**Dead ends, recorded:** Ray Workflows was *removed* from Ray, not deprecated, and
-the maintainers say they won't replace it. Temporal forbids file I/O in workflow
-code. Cloudflare Workflows can't host a Python renderer. Metaflow has no
-human-in-the-loop primitive at all. Covalent is abandoned — its documentation site
-is gone and it carries an unpatched pre-auth RCE in the dispatcher you are required
-to run locally. n8n-shaped platforms are excluded by choice.
+The export is generated from the database and is never read to resume a run. A sealed
+run does not mutate. Large binaries may use a separate retained artifact store, while
+the committed record keeps stable artifact IDs and locations.
 
 ---
 
-## 6. Phases
+## 6. Execution adapters
 
-**Phase 1 — the machine.** The article lifecycle as an XState machine: parallel states
-for the lenses, a transition for the loop, a guard for the budget, one actor per
-article and per edition. Node bodies are subprocesses — Python, `codex`, `claude` —
-launched outside the machine, never as `invoke`. Snapshots persisted as JSON.
+The executor seam is real because multiple adapters exist:
 
-Prove it by running one article, then fifty in parallel, then two editions at once.
+- local subprocess adapter for TypeScript, Python, and other commands;
+- text-model adapter for `codex`, `claude`, or another configured model runner;
+- image-model adapter;
+- human adapter exposed through CLI or web UI;
+- in-memory test adapter.
 
-**Phase 2 — events.** The event vocabulary that moves actors backwards: brief edited,
-source recaptured, finding filed. Decide the out-of-band-edit policy. Prove it by
-revising text and generating zero images, then editing the art brief and generating
-exactly one — because an event said so, not because anything was compared.
+All adapters consume `WorkOffer` and answer through `RunEngine.answer`. They never write
+active state directly.
 
-**Phase 3 — art and render.** Art as its own actor with the human variant state, the
-edge into render, and `fit`/`build`/`render`/`package` as terminal states.
+The subprocess adapter owns:
 
-One prerequisite: `require_complete_production_graph` refuses a build until every
-node is accepting, so making `build` a node would make it gate itself. Readiness
-must become target-relative — "complete up to here" — before this phase.
+- executable and argument construction;
+- stdin and structured input;
+- working directory and environment;
+- timeout and cancellation;
+- process-group termination;
+- stdout and stderr capture;
+- exit classification;
+- model/tool metadata;
+- temporary output paths.
 
-**Phase 4 — the view.** React Flow over a FastAPI endpoint with SSE for live updates,
-layout by **ELK, not dagre** — dagre throws on container-incident edges, which is
-exactly our shape when the text and art subgraphs join into render. Keep elkjs as a
-separate artifact rather than bundling it, since it is EPL-licensed. React Flow's free
-layouting guide has working code; only the Pro *examples* are gated. Estimate, from a working prototype rather than a
-guess: **3–4 person-days**, plus half a day to route the loop's back-edge through ELK.
-A Graphviz version is faster but its layouts jump — a colour change keeps positions
-byte-identical while adding one node moved five of six — which is bad for watching
-something live.
+The Python renderer sits behind one versioned JSON interface:
 
-**Argo Workflows is the blueprint.** It is the one engine whose UI answers "watch one
-instance of a looping graph" outright — the DAG is its *default* view, not a secondary
-tab. We are not adopting it, because it costs a Kubernetes cluster to orchestrate a
-single-machine Python pipeline, but every pattern below is verified shipping behaviour
-rather than invention:
+```text
+render(render-manifest.json, destination-directory)
+  -> render-result.json
+```
 
-- **Store the definition inside the run.** This is what gives you pending nodes and
-  iteration history from one artifact.
-- **Retry as a parent with attempt children**, each attempt a real node. Our rounds
-  are exactly this shape.
-- **Self-reported `N/M` progress** — the state writes its own "2/3". No inference.
-- **Suspend with a generated form.** A waiting state emits its own options and the UI
-  renders them as a dropdown. That is precisely what art variant selection needs: the
-  actor offers three variants, the human clicks one.
-- **Artifacts as elements on the graph** — click a node, see the PNG. A directory
-  artifact even renders its `index.html`, so a per-round provenance page with embedded
-  images can live on the node.
-- **Collapse fan-out above three siblings.** A three-round loop stays fully drawn;
-  forty parallel articles collapse. Correct default for both our shapes.
-
-Plus, from elsewhere: **ComfyUI's lazy artifact URLs** — emit `{node_id, url}` and let
-the browser fetch, never bytes in the log; **Node-RED's per-node status triple** of
-colour, shape and short text; and **Temporal's indexed attributes** for picking one
-instance out of thousands.
-
-**Why the record stays ours, stated once.** Every engine surveyed either deletes
-history on a short default clock — Temporal 3 days, Restate 24 hours, n8n 14, Windmill
-capped at 30 on the open-source build — or puts bulk export behind a paid tier. More
-decisively, none can answer *"which runs used this passage of this source"*. That is a
-content-level question about what went into a piece, and it is the exact question the
-edition-4 fabricated quote made expensive. No tool expresses it; it only works if we
-own the index. So provenance is a record we write, in git, regardless of what runs the
-graph.
-
-**No interchange standard buys a free viewer.** OpenLineage cannot express loops,
-blocked states or human waits. OpenTelemetry spans are exported on *end*, so anything
-in flight is invisible — fatal for watching a run. BPMN can be drawn but not cheaply
-authored. This was worth checking and the answer is no.
-
-**Porting the live magazine pipeline onto the engine is the step after this
-refactor**, not part of it.
+It receives immutable input artifacts and a caller-owned temporary destination. It
+does not read old production records, decide workflow readiness, or write a global
+canonical output directory.
 
 ---
 
-## 7. Open questions
+## 7. TypeScript and XState stack
 
-1. **Escalation.** A piece that can't pass in three rounds, with no human gate
-   before the PDF: raise the budget, ship it with findings attached to the PDF
-   review, or drop it?
-2. **Release.** Its own gate, or folded into reading the PDF?
-3. **Asset retention.** LFS, external store, or pruning?
-4. **Instance cap.** How many automatic rounds before a person must intervene?
+The engine and machines are TypeScript.
 
-Not open, though I previously wrote them as if they were: `prompts/README.md`
-already rules that issue findings route to named pieces and that `editor_decision`
-findings need a human. The code disagrees with the policy. That's a bug, not a
-choice.
+Initial choices:
 
----
+- XState v5, pinned to an exact version;
+- an exact Node LTS patch version, not a floating "current LTS" promise;
+- native TypeScript execution only if the pinned Node version supports every required
+  construct;
+- `tsc --noEmit` in verification, because Node execution does not type-check;
+- strict TypeScript with `noUncheckedIndexedAccess` and
+  `exactOptionalPropertyTypes`;
+- SQLite with one selected, pinned Node adapter;
+- `node:test` for tests;
+- React Flow and ELK for the later viewer;
+- a lockfile committed with every dependency change.
 
-## 8. History
+The machine definition uses `setup({ types, actors, actions, guards })`. State names,
+events, contexts, effects, and child actor inputs are typed centrally.
 
-**Three adversarial review rounds** (`codex exec`, model `gpt-5.6-sol`, effort
-`max`, read-only) against revisions 1–3. Blocking findings 12 → 13 → 4.
+The implementation is organized around deep modules:
 
-- Round 1 killed a conditional back-edge: `consumes` is a dependency relation, so a
-  back-edge makes the writer depend on the judgment that depends on it.
-- Round 2 killed unrolling every round as nodes: `ProductionGraph.complete` is
-  `all(node.accepting)`, and a failed verdict is non-accepting, so a passing round 2
-  could never complete.
-- Round 3 endorsed starting work but found four state-machine holes.
+```text
+engine/
+  machines/
+    edition-machine.ts
+    source-machine.ts
+    article-machine.ts
+    editorial-machine.ts
+    translation-machine.ts
+    art-machines.ts
+    render-machine.ts
+    release-machine.ts
+  run-engine/
+  task-composer/
+  executors/
+  renderer-adapter/
+  view/
+```
 
-**Then four fresh-context surveys** of the Python, JS and Rust ecosystems and of
-graph visualization.
-
-**What actually resolved it** was neither: dropping the assumption that the existing
-files, bench records, ledger and checkpoint sequence were requirements. They are
-accretion. Once they stopped constraining the design, the four state-machine holes
-round 3 found stopped existing, because the machinery they lived in was unnecessary.
-
----
-
-## 9. Bugs worth fixing regardless
-
-1. **Two settledness predicates disagree.** `is_settled` checks input fingerprint
-   and manuscript bytes; the graph's `_settled_state` checks only status and bytes —
-   `inputs_sha256` appears nowhere in `produce_graph.py`. The resolver can call a
-   piece settled after its sources drifted.
-2. **Peer order is in no identity.** The writer brief renders the edition's pieces
-   *in running order*, but `_text_digests` collapses them to an order-insensitive
-   map. Reordering unchanged articles reuses a stale editorial draft.
-3. **`writer_identity` omits rendered inputs** — opener line budget,
-   `edition_title`, `opener_intro_safe_characters`.
-4. **`_judge_issue` never persists its input identity**, so nothing proves which
-   pieces a verdict judged.
-5. **`_EDITION_IDENTITY_FILES` is stale** — lists retired `line` and `learning`
-   records, omits `worth`, `shape`, `teaching`, `craft`, `mechanics`. Renaming an
-   edition leaves `edition_id` unrewritten in five records whose loaders reject a
-   mismatch.
-6. **Issue findings contradict `prompts/README.md`**, as above.
+Storage layout, XState snapshots, and SQLite queries stay private to `run-engine`.
+Prompt assembly and context-isolation rules stay private to `task-composer`.
 
 ---
 
-## 10. Sources
+## 8. Viewer and human work
 
-| Doc | Why |
-|---|---|
-| [evaluator-optimizer-anthropic.md](../docs/evaluator-optimizer-anthropic.md) | The generate/judge/revise loop and its termination |
-| [building-effective-agents-anthropic.md](../docs/building-effective-agents-anthropic.md) | Where that sits among workflow patterns |
-| [evaluator-reflect-refine-aws.md](../docs/evaluator-reflect-refine-aws.md) | The same pattern as vendor guidance |
-| [langgraph-interrupts.md](../docs/langgraph-interrupts.md) | Human interrupts; interrupt only on irreversible actions |
-| [graph-flow-readme.md](../docs/graph-flow-readme.md) | Cleanest published pause/route enum |
-| [restate-what-is-durable-execution.md](../docs/restate-what-is-durable-execution.md) | Journaled steps, resume without re-running |
-| [restate-key-concepts.md](../docs/restate-key-concepts.md) | Awakeables, the later escape hatch |
-| [comfyui-execution-caching.md](../docs/comfyui-execution-caching.md) | Node cache keyed on declared inputs |
-| [rust-agent-ecosystem-2026.md](../docs/rust-agent-ecosystem-2026.md) | Rust graph layer still thin |
-| [temporal-rust-sdk-public-preview.md](../docs/temporal-rust-sdk-public-preview.md) | Rust SDK maturity |
+The viewer consumes two projections from `RunEngine.inspect`:
+
+- run-specific declared topology, including spawned actor instances;
+- ordered domain events and current work offers.
+
+It does not crawl run directories or treat raw XState snapshots as a log.
+
+The view must show:
+
+- the full edition hierarchy;
+- one article actor expanded through its iterations and judging stages;
+- pending, claimed, waiting, failed, superseded, and committed work;
+- causal edges between artifacts and decisions;
+- art variants at original resolution;
+- manuscript and prompt diffs;
+- why an iteration opened;
+- which findings remain unresolved;
+- which exact render a human is approving.
+
+Human actions use a revision-safe interface:
+
+```text
+answer(offerId, expected active offer, choice, reviewer identity)
+```
+
+Stale and duplicate submissions are rejected visibly. If the web surface is exposed
+beyond localhost, authentication and authorization are required. Private source and
+manuscript artifacts are never served by an unauthenticated generic file route.
+
+---
+
+## 9. What is deliberately not carried forward
+
+The rewrite does not port old behavior merely because it exists.
+
+Specifically excluded:
+
+- derive-state-from-disk scans;
+- content fingerprints as workflow state;
+- output presence as completion;
+- `cp` and `rm` as rerun operations;
+- generated round directories as the definition of current iteration;
+- old `settled`, `bench`, `INCONSISTENT`, checkpoint, and score vocabularies;
+- old cooperative reply-directory compatibility;
+- old production record schemas;
+- a blanket port of deterministic content validators;
+- a dual Python and TypeScript authority period;
+- differential parity with the old scheduler.
+
+The new engine retains only rules that can be justified as one of:
+
+- lifecycle state;
+- provenance;
+- source or role authority;
+- durable execution correctness;
+- explicit human decision;
+- actual page measurement or render success;
+- release integrity.
+
+Output-contract parsing and artifact commit validation remain because malformed or
+partial output is not a completed state. They are storage semantics, not editorial
+scoring.
+
+---
+
+## 10. Implementation phases
+
+### Phase 1: durable core and standalone ArticleMachine
+
+Build:
+
+- TypeScript workspace and pinned toolchain;
+- `RunEngine` with SQLite, events, snapshots, offers, attempts, artifacts, and leases;
+- executor interface with in-memory, subprocess, text-model, and human adapters;
+- typed task composer;
+- standalone `ArticleMachine` with staged judges, fit feedback, revision loop, human
+  decision, and escalation;
+- article inspect, continue, fork, and compare commands.
+
+Prove:
+
+- one article reaches a settled manuscript;
+- a blocking stage prevents later judges from running;
+- a revision carries findings and notes;
+- a stale or duplicate answer cannot advance the machine;
+- crash and restart at every commit point are safe;
+- two processes cannot execute the same attempt;
+- resume performs no full-file hash or filesystem state scan.
+
+Once this vertical slice owns article production, delete the superseded Python article
+orchestration and its implementation-coupled tests. Do not build a compatibility
+adapter.
+
+### Phase 2: ArticleLab and output optimization
+
+Build:
+
+- parallel article experiment runs;
+- named configuration differences;
+- manuscript, finding, cost, and latency comparison;
+- human preference recording;
+- promotion of a selected settled article artifact;
+- a fixed evaluation corpus for repeated prompt and model experiments.
+
+Use this phase to optimize the actual final prose before expanding orchestration.
+Quality is judged by focused model roles and humans, not a new deterministic score.
+
+### Phase 3: sources and EditionMachine content
+
+Build:
+
+- root `EditionMachine`;
+- dynamic `SourceMachine` and `ArticleMachine` actors;
+- collection-close and planning decisions;
+- source capture and extraction adapters;
+- article fan-out and join;
+- `EditorialMachine`;
+- edition review, named finding routing, dependent editorial revision, and human
+  `editor_decision` states.
+
+Delete the corresponding old source-to-production orchestration as each new path owns
+it.
+
+### Phase 4: images, translation, render, and release
+
+Build:
+
+- cover and interior-art actors;
+- image-model executor and human selection offers;
+- exact art registration by artifact ID;
+- per-language translation actors and language fit;
+- assembly join;
+- versioned renderer subprocess interface;
+- machine and independent visual review;
+- release approval and atomic release state.
+
+At the end of this phase, one `EditionMachine` run starts from leads and ends at a
+released edition.
+
+### Phase 5: viewer
+
+Build the React Flow projection and human inbox over `RunEngine.inspect` and
+`RunEngine.answer`. The engine must already work completely from the CLI; the view is
+not allowed to become a second execution path.
+
+---
+
+## 11. Verification
+
+Tests cross the `RunEngine` interface. Internal SQLite and XState details are not the
+public test surface.
+
+### 11.1 Statechart tests
+
+- every declared state is reachable or intentionally terminal;
+- article judge stages enter in order;
+- optional lenses finish explicitly;
+- edition review findings reach every named actor;
+- article revision reopens dependent editorial and edition review work;
+- render cannot run before every language and art dependency settles;
+- escalation, drop, and human-decision states are non-accepting where required.
+
+### 11.2 Durability tests
+
+- crash before and after every transaction and artifact rename;
+- duplicate `advance` from two processes;
+- duplicate, stale, malformed, and late answers;
+- worker timeout and process death;
+- old worker completing after retry;
+- interrupted parallel stage;
+- outbox committed before dispatch;
+- machine-version mismatch on resume;
+- explicit state migration or successor-run behavior;
+- orphan binary garbage collection without losing committed artifacts.
+
+### 11.3 Provenance and authority tests
+
+- lead to raw source to extraction to article lineage;
+- writer receives all and only assigned source artifacts;
+- source-blind roles cannot receive source artifacts;
+- evidence and source-blind review cannot share a worker for one revision;
+- every judgment references the manuscript revision it read;
+- every human decision references the exact offered choices;
+- every render references exact content, translation, and art artifacts;
+- a new render cannot inherit an old visual approval.
+
+### 11.4 Standalone and nested article equivalence
+
+Given the same `ArticleRunSpec`, worker answers, and policy, `ArticleMachine` must make
+the same transitions and produce the same artifact graph when:
+
+- run as the root of an article-only run;
+- run as a child actor of `EditionMachine`.
+
+This is behavioral equivalence of the new machine in its two supported contexts. It
+is not parity with the deleted Python orchestrator.
+
+### 11.5 Layout and release tests
+
+- isolated article measurement matches representative full-edition placement;
+- every configured language joins before render;
+- selected art artifacts are the ones in the rendered outputs;
+- visual review binds the exact render artifact IDs;
+- release is atomic and cannot assign one source to two released editions;
+- resume and inspection perform no content-hash invalidation scan.
+
+---
+
+## 12. Remaining product decisions
+
+These are policy inputs, not missing execution semantics:
+
+1. Default article iteration budget and who may increase it.
+2. Model concurrency and cost limits per run and across runs.
+3. Which article experiment comparison is mandatory before promotion.
+4. Human identities and permissions for collection close, editorial decisions, art
+   selection, visual approval, and release.
+5. Retention split between permanent audit artifacts and garbage-collectable large
+   binaries.
+6. Whether public publication is part of `ReleaseMachine` or a separate explicit
+   `PublishMachine` after private release.
+
+None of these changes the core architecture.
+
+---
+
+## 13. Superseded claims
+
+The following claims from revision 5 are explicitly withdrawn:
+
+- "A state is satisfied if its output is present."
+- "The whole rerun interface is `cp` and `rm`."
+- "Round number can be reconstructed by counting outputs."
+- "Snapshots are the run log."
+- "All lenses are one parallel state."
+- "Art belongs inside each article actor."
+- "Translations can be added cheaply after production render."
+- "The first machine can omit editorial and edition judgment."
+- "A prompt path and machine file SHA are sufficient provenance."
+- "Waiting work can be sent directly to an actor that holds no process."
+- "The old implementation should remain as a shadow or parity target."
+
+The surviving idea is narrower and stronger: loops are state transitions, XState is a
+good host for the hierarchy, and durable execution belongs in a separate deep module.
+
+---
+
+## 14. Research references
+
+Supporting surveys and archived notes remain under [`meta/docs/`](../docs/), including
+Argo, Restate, Temporal, Luigi, XState, graph viewers, and native TypeScript runtime
+research.
+
+Primary implementation references to pin when Phase 1 starts:
+
+- XState state machines, actors, parallel states, persistence, inspection, and graph
+  utilities;
+- Node native TypeScript execution and test runner;
+- the selected Node SQLite adapter and its transaction/WAL behavior;
+- React Flow and ELK for the viewer;
+- the existing renderer's callable layout and package interfaces, stripped of old
+  orchestration assumptions.
+
+This plan deliberately does not use workflow-engine product behavior as proof of its
+durability model. The proof is the `RunEngine` interface and its failure-injection test
+suite.
