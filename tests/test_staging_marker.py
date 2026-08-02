@@ -215,7 +215,7 @@ class RefusalTests(unittest.TestCase):
         self.stage_editorial()
 
         with self.assertRaises(ValidationError) as caught:
-            Magazine(self.root).record_line_review(
+            Magazine(self.root).record_craft_review(
                 "issue-001", reviewer="A Reader", result="approved"
             )
 

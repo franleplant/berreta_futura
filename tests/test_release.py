@@ -593,7 +593,9 @@ class ReleaseStateTests(unittest.TestCase):
         with patch.object(magazine, "build") as build:
             with self.assertRaisesRegex(
                 ValidationError,
-                r"(?s)Release requires a current approved evidence review.*"
+                # "audit" rather than "review": the shared per-piece spine
+                # names the act each lens performs, and evidence's is an audit.
+                r"(?s)Release requires a current approved evidence audit.*"
                 r"required_before_release",
             ):
                 magazine.release("issue-001")

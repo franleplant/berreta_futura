@@ -21,8 +21,8 @@ what the issue delivers -- none of those survive one manuscript being rewritten
 just because the other manuscripts did not change.  A rewritten piece can
 introduce the redundancy that was not there before, or blunt the argument the
 editorial claimed the issue makes.  So there is **no partial rebind here**.  The
-evidence and line records have ``--articles`` because an audit of article A
-against its sources is genuinely independent of article B; an issue verdict is
+per-piece records have ``--articles`` because an audit of article A against its
+sources is genuinely independent of article B; an issue verdict is
 not decomposable that way, and offering a way to re-read one piece and keep the
 issue-level verdict would be offering a way to launder a stale judgement.  The
 whole issue is re-read, or the verdict stays stale.
@@ -49,9 +49,9 @@ matters teaches the bench to ignore staleness, which is worse than having no
 signal; and once this kind gates release, it would have blocked every finish.
 
 The projection is subtractive rather than an allowlist, and that is the
-deliberate difference from the learning record's furniture projection (see
-``learning_review``).  A learning verdict covers a small, named set of strings
-three readers were shown, so listing them is the honest description.  An issue
+deliberate difference from the teaching record's furniture projection (see
+``teaching_review``).  A teaching verdict covers a small, named set of strings
+one reader was shown, so listing them is the honest description.  An issue
 verdict is a judgement about the assembled object, so *everything the manifest
 says about the issue is bound* -- the running order, the cover copy, the
 per-article titles and content modes, the sections, the rights block -- and the
@@ -91,6 +91,8 @@ from .render_review import (
     write_render_review,
 )
 from .review_findings import (
+    describe_finding,
+    editor_decision_findings,
     finding_errors,
     normalize_findings,
     normalize_scores,
@@ -102,12 +104,17 @@ if TYPE_CHECKING:
 
 _HEX_DIGITS = set("0123456789abcdef")
 
-EDITION_REVIEW_SCHEMA_VERSION = 1
+EDITION_REVIEW_SCHEMA_VERSION = 2
 
-# Only one shape has ever been written.  Older versions will be listed here
-# when there are any -- the tuple exists so that day is a one-line change and
-# the refusal message keeps naming every version that still loads.
-_SUPPORTED_SCHEMA_VERSIONS = (1,)
+# Version 1 predates ``disposition`` on a finding.  Version 2 adds it: severity
+# describes the defect and disposition says who repairs it, which is what
+# ``prompts/README.md`` uses to replace the severity cap.  Version 1 records
+# still load, and their findings are read exactly as written -- forcing a
+# re-read of a shipped issue to add a key its judge was never asked for would
+# cost more than the routing is worth on records nobody is going to act on
+# again.  New records carry it, because
+# :mod:`magazine.review_findings` requires it of anything being authored.
+_SUPPORTED_SCHEMA_VERSIONS = (1, 2)
 
 _LABEL = "Edition review"
 
@@ -317,17 +324,23 @@ def edition_review_status(
         "reviewed_at": None,
         "result": None,
         "findings": [],
+        "editor_decisions": 0,
         "scores": {},
         "drift": [],
     }
     if review is None:
         return base
+    findings = list(review.get("findings", []))
     base.update(
         {
             "reviewer": review.get("reviewer"),
             "reviewed_at": review.get("reviewed_at"),
             "result": review.get("result"),
-            "findings": list(review.get("findings", [])),
+            "findings": findings,
+            # Reported at every status, ``approved`` included, because that is
+            # the combination the field exists for: a lens that is happy with
+            # the issue and a defect it was forbidden to hand to a writer.
+            "editor_decisions": len(editor_decision_findings(findings)),
             "scores": dict(review.get("scores") or {}),
         }
     )
@@ -423,17 +436,34 @@ def require_approved_edition_review(
     """
 
     status = edition_review_status(review, edition_id=edition_id, bindings=bindings)
-    if status["status"] == "approved":
+    problems: list[str] = []
+    if status["status"] != "approved":
+        detail = f"edition review is {status['status']}"
+        if status["status"] == "stale" and review is not None and status["drift"]:
+            # The drift list is already the re-read worklist; naming it in the
+            # refusal saves the operator a second command.
+            detail += "; changed since the recorded read: " + ", ".join(status["drift"])
+        problems.append(detail)
+    # Checked separately from the verdict, and it has to be.  An
+    # ``editor_decision`` finding is a real defect the lens was forbidden to
+    # route to the writer, so it is entirely compatible with an approving
+    # result: the managing editor has said what is wrong and said it is not the
+    # writer's to fix.  Nothing inside the verdict stops the issue shipping with
+    # one outstanding, so this gate is the only thing that can.
+    outstanding = editor_decision_findings(status["findings"])
+    if outstanding:
+        problems.append(
+            f"{len(outstanding)} edition finding(s) are "
+            "`disposition: editor_decision` and are waiting on a human ruling; "
+            "they are never counted clean."
+        )
+        problems.extend(f"  {describe_finding(item)}" for item in outstanding)
+    if not problems:
         return
-    detail = f"edition review is {status['status']}"
-    if status["status"] == "stale" and review is not None and status["drift"]:
-        # The drift list is already the re-read worklist; naming it in the
-        # refusal saves the operator a second command.
-        detail += "; changed since the recorded read: " + ", ".join(status["drift"])
     raise ValidationError(
         [
             "Release requires a current approved edition review recorded with "
             "`mag review record --kind edition`.",
-            detail,
+            *problems,
         ]
     )

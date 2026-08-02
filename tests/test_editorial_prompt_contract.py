@@ -30,22 +30,31 @@ def test_editorial_policy_and_writing_method_assign_the_same_default() -> None:
     # add to it.  The scope sentence is pinned so a later narrowing of it has to
     # be a deliberate edit here too.
     assert (
-        "it applies to everything the magazine publishes: source articles in "
-        "every content mode, in-a-nutshell explainers, opening editorials, "
-        "captions, and social posts."
+        "it applies to everything we publish: source articles in every content "
+        "mode, in-a-nutshell explainers, opening editorials, captions, and "
+        "social posts."
     ) in normalized_rules
     assert "none may suspend these." in normalized_rules
     assert "must not summarize the articles one by one" in normalized_policy
     assert "prose table of contents" in normalized_policy
     assert "a human must approve" in normalized_policy
 
+    # The rewrite replaced the paraphrased six with Orwell's own wording, each
+    # its own section, because a paraphrase of a rule about paraphrase was the
+    # joke the old file did not get.  The headings are pinned rather than the
+    # paraphrases: `craft-review.md` and `edition-review.md` both cite this
+    # corpus by name, and a rule that quietly loses its section stops being
+    # citable.
     expected_rules = (
-        "avoid clichés and familiar figures of speech.",
-        "prefer short, common words.",
-        "cut every word that does no work.",
-        "use the active voice.",
-        "prefer plain english to jargon.",
-        "break any rule when breaking it makes the writing clearer.",
+        "never use a metaphor, simile or other figure of speech which you are "
+        "used to seeing in print.",
+        "never use a long word where a short one will do.",
+        "if it is possible to cut a word out, always cut it out.",
+        "never use the passive where you can use the active.",
+        "never use a foreign phrase, a scientific word or a jargon word if you "
+        "can think of an everyday english equivalent.",
+        "break any of these rules sooner than say anything outright barbarous.",
     )
-    for number, rule in enumerate(expected_rules, start=1):
-        assert f"{number}. {rule}" in normalized_rules
+    numerals = ("i", "ii", "iii", "iv", "v", "vi")
+    for numeral, rule in zip(numerals, expected_rules):
+        assert f'### {numeral}. "{rule}"' in normalized_rules

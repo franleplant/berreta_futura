@@ -72,6 +72,10 @@ STRUCTURED_FINDING = {
     "article": "editorial",
     "locator": "- | Elsewhere in this issue, Argona shows | 1",
     "category": "prose_table_of_contents",
+    # Required on every authored finding since version 2, and constant on this
+    # lens: ``prompts/edition-review.md`` says the arrangement of the issue is
+    # the editors' own, so there is never an author to route a finding around.
+    "disposition": "fix",
     "note": "The editorial introduces five pieces in sequence and stakes no claim.",
 }
 
@@ -89,8 +93,8 @@ class EditionRecordTests(unittest.TestCase):
         loaded = load_edition_review(path, edition_id="issue-001")
         status = edition_review_status(loaded, edition_id="issue-001", bindings=BINDINGS)
 
-        self.assertEqual(EDITION_REVIEW_SCHEMA_VERSION, 1)
-        self.assertEqual(loaded["schema_version"], 1)
+        self.assertEqual(EDITION_REVIEW_SCHEMA_VERSION, 2)
+        self.assertEqual(loaded["schema_version"], 2)
         self.assertEqual(loaded["editorial_sha256"], "a" * 64)
         self.assertEqual(loaded["manifest_sha256"], "b" * 64)
         self.assertEqual(
@@ -268,10 +272,44 @@ class EditionRecordTests(unittest.TestCase):
                     load_edition_review(path, edition_id="issue-001")
 
     def test_load_rejects_an_unsupported_schema_version(self):
-        path = write_edition_review(self.path, make_record(schema_version=2))
+        path = write_edition_review(self.path, make_record(schema_version=3))
 
-        with self.assertRaisesRegex(ValidationError, "schema_version must be 1"):
+        with self.assertRaisesRegex(ValidationError, "schema_version must be 1 or 2"):
             load_edition_review(path, edition_id="issue-001")
+
+    def test_a_version_one_record_still_loads_without_a_disposition(self):
+        """Version 1 predates ``disposition`` and must not be re-read to add it.
+
+        The field replaced the severity cap and is required of anything being
+        *authored*, but a record written before it existed answered a question
+        nobody asked it.  Refusing to load one would demand a re-read of a
+        shipped issue to supply a key its judge was never shown -- which is the
+        same bargain the evidence record already struck with its version 1
+        ledger binding, and the reason the bump is a bump rather than a break.
+        """
+
+        legacy = make_record(
+            schema_version=1,
+            result="changes_required",
+            findings=[
+                {
+                    "severity": "major",
+                    "article": "edition",
+                    "category": "uniformity",
+                    "note": "Filed before dispositions existed.",
+                }
+            ],
+        )
+        path = write_edition_review(self.path, legacy)
+
+        loaded = load_edition_review(path, edition_id="issue-001")
+
+        self.assertEqual(loaded["schema_version"], 1)
+        # Read back exactly as written: unrouted, not quietly defaulted to
+        # ``fix``.  Defaulting would launder an unclassified finding into the
+        # writer's pile, and the whole point of the field is that who repairs a
+        # defect is stated rather than assumed.
+        self.assertNotIn("disposition", loaded["findings"][0])
 
     def test_load_names_the_file_when_the_record_is_unparseable(self):
         """A hand-damaged record must refuse as a validation error naming the
@@ -331,6 +369,7 @@ class EditionFindingTests(unittest.TestCase):
             "severity": "major",
             "article": "edition",
             "category": "uniformity",
+            "disposition": "fix",
             "note": "Every piece closes on the same widening cadence.",
         }
         path = write_edition_review(
@@ -470,6 +509,93 @@ class EditionScoreTests(unittest.TestCase):
 
 
 class EditionGateTests(unittest.TestCase):
+    def test_an_approved_record_with_an_editor_decision_still_refuses(self):
+        """The combination the whole disposition field exists to catch.
+
+        An ``editor_decision`` finding is a real defect the lens found and was
+        forbidden to hand to a writer, so it is entirely compatible with an
+        approving verdict over unmoved bytes: the managing editor has said what
+        is wrong and said it is not the writer's to fix.  Nothing inside the
+        verdict stops the issue shipping with one outstanding, which is exactly
+        the shape of the old severity cap -- a defect that survives under a word
+        that means "clean".  The release gate is the only thing that can refuse
+        it, and it must refuse it *separately* from the approved/stale question
+        rather than folding the two together, or an approval would launder it.
+        """
+
+        record = create_edition_review(
+            edition_id="issue-001",
+            reviewer="Managing editor",
+            result="approved",
+            bindings=BINDINGS,
+            findings=[
+                {
+                    "severity": "minor",
+                    "article": "editorial",
+                    "locator": "- | a retained sentence of the source author's | 1",
+                    "category": "uniformity",
+                    "disposition": "editor_decision",
+                    "note": "The author's own phrasing; a human picks the remedy.",
+                }
+            ],
+            reviewed_at="2026-07-30T10:00:00+00:00",
+        )
+
+        status = edition_review_status(record, edition_id="issue-001", bindings=BINDINGS)
+        # Approved and current, and still carrying an unresolved ruling. Both
+        # facts are reported; neither is allowed to hide the other.
+        self.assertEqual(status["status"], "approved")
+        self.assertEqual(status["drift"], [])
+        self.assertEqual(status["editor_decisions"], 1)
+
+        with self.assertRaisesRegex(ValidationError, "editor_decision"):
+            require_approved_edition_review(
+                record, edition_id="issue-001", bindings=BINDINGS
+            )
+
+        # And the refusal names the finding rather than counting it, so an
+        # operator cannot clear the gate without having read what is in it.
+        try:
+            require_approved_edition_review(
+                record, edition_id="issue-001", bindings=BINDINGS
+            )
+        except ValidationError as error:
+            message = "\n".join(error.errors)
+        self.assertIn("uniformity", message)
+        self.assertIn("editorial", message)
+        self.assertIn("waiting on a human ruling", message)
+
+    def test_a_disposition_fix_finding_does_not_trip_the_editor_gate(self):
+        """The gate must not fire on ordinary findings, or it fires on every
+        record and gets switched off."""
+
+        record = create_edition_review(
+            edition_id="issue-001",
+            reviewer="Managing editor",
+            result="approved",
+            bindings=BINDINGS,
+            findings=[
+                {
+                    "severity": "minor",
+                    "article": "edition",
+                    "category": "uniformity",
+                    "disposition": "fix",
+                    "note": "A defect the writer clears.",
+                }
+            ],
+            reviewed_at="2026-07-30T10:00:00+00:00",
+        )
+
+        self.assertEqual(
+            edition_review_status(
+                record, edition_id="issue-001", bindings=BINDINGS
+            )["editor_decisions"],
+            0,
+        )
+        require_approved_edition_review(
+            record, edition_id="issue-001", bindings=BINDINGS
+        )
+
     def test_gate_refuses_missing_stale_and_changes_required_records(self):
         with self.assertRaisesRegex(ValidationError, "required_before_release"):
             require_approved_edition_review(None, edition_id="issue-001", bindings=BINDINGS)

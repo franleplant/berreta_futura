@@ -44,24 +44,6 @@ from .edition_review import (
     load_edition_review,
 )
 from .errors import ValidationError
-from .evidence_review import (
-    current_evidence_bindings,
-    evidence_review_path,
-    evidence_review_status,
-    load_evidence_review,
-)
-from .learning_review import (
-    current_learning_bindings,
-    learning_review_path,
-    learning_review_status,
-    load_learning_review,
-)
-from .line_review import (
-    current_line_bindings,
-    line_review_path,
-    line_review_status,
-    load_line_review,
-)
 from .extraction import (
     load_extraction,
     normalize_source_pins,
@@ -70,7 +52,8 @@ from .extraction import (
 from .illustration import load_illustration_plan, validate_illustration_plan
 from .io import load_structured
 from .manifest import Edition, load_edition, load_translation
-from .produce_graph import resolve_production_graph
+from .piece_review import load_review, review_path, review_status
+from .produce_graph import PIECE_JUDGE_LENSES, resolve_production_graph
 from .production_record import (
     AGENT_DIRNAME,
     PRODUCTION_DIRNAME,
@@ -80,6 +63,12 @@ from .production_record import (
 from .records import load_records
 from .release import load_release_state, sync_release_state
 from .render_review import load_render_review, visual_review_status
+from .review_bench import (
+    BENCH_REVIEW_KINDS,
+    EDITION_JUDGE_KIND,
+    current_bindings_for,
+    piece_review_spec,
+)
 from .staging_marker import declared_manuscript_paths, is_staging_marker
 from .translate_stage import (
     _pin_advisories,
@@ -88,6 +77,34 @@ from .translate_stage import (
     stage_translation,
 )
 
+
+def _review_checkpoint_id(kind: str) -> str:
+    """One lens's checkpoint id.  One rule, so no surface can invent a name."""
+
+    return f"{kind}_review"
+
+
+BENCH_CHECKPOINT_IDS: tuple[str, ...] = tuple(
+    _review_checkpoint_id(kind) for kind in BENCH_REVIEW_KINDS
+)
+"""One checkpoint per lens, in ``prompts/README.md``'s repair order.
+
+Derived, not written out, and the derivation is the fix for a real fault.  This
+tuple used to name ``evidence_review``, ``line_review``, ``edition_review`` and
+``learning_review`` literally, so when the bench went from four kinds to seven
+the workflow report was the surface that would silently have kept reporting two
+retired judges and none of the five new lenses -- and ``release_ready``, which
+is an ``all()`` over exactly these ids, would have called an edition ready on
+the strength of records nobody had recorded.  The lens table in
+:data:`~magazine.produce_graph.PIECE_JUDGE_LENSES` is the single edit point; an
+eighth lens appears here, in the report, and in the readiness predicate without
+this file being touched.
+
+The order is repair order (``worth -> evidence -> shape -> teaching -> craft ->
+mechanics``, then the whole-issue ``edition``) rather than the cheapest running
+order, because a report is read top to bottom by somebody deciding what to fix
+next, and fixing a worth finding deletes the text a craft finding points at.
+"""
 
 CHECKPOINT_ORDER = (
     "assignment",
@@ -104,30 +121,137 @@ CHECKPOINT_ORDER = (
     "fit",
     "validation",
     "build",
-    "evidence_review",
-    "line_review",
-    "edition_review",
-    "learning_review",
+    # The whole bench sits together after the build.  No lens reads a rendered
+    # artifact -- they read authored text -- so this position expresses the
+    # bench's grouping rather than a data dependency, and it keeps the
+    # deterministic prefix that ``run`` can dispatch exactly where it was.
+    *BENCH_CHECKPOINT_IDS,
     "render_review",
     "release",
 )
-# The four editorial judges sit together after the build, beside the evidence
-# audit that has always lived there.  None of them reads a rendered artifact --
-# they read authored text -- so their position expresses the bench's grouping
-# rather than a data dependency, and it keeps the deterministic prefix that
-# ``run`` can dispatch exactly where it was.
+
+# ADVISORY ROLLOUT.  Every lens except ``evidence`` is recorded and reported but
+# deliberately kept out of release readiness while its thresholds are calibrated:
+# an advisory checkpoint never reaches "blocked" on the strength of its own
+# verdict, so it never becomes the report's next checkpoint and never stalls
+# `mag finish`.  ``evidence`` is excluded from the rollout because it is the one
+# bench gate ``Magazine.release`` has always enforced through
+# ``require_approved_evidence_review``; the rest have no such wiring yet.
 #
-# ADVISORY ROLLOUT.  The three new prose gates are recorded and reported but
-# deliberately kept out of release readiness while their thresholds are
-# calibrated against edition 004: they never reach "blocked", so they never
-# become the report's next checkpoint and never stall `mag finish`.  Emptying
-# this set is the whole of the flip on this side -- the checkpoints then block
-# as human-review like every other gate -- and it must be made in the same
-# change that wires require_approved_line_review, require_approved_edition_review
-# and require_approved_learning_review into Magazine.release.
-_ADVISORY_REVIEW_CHECKPOINTS = frozenset(
-    {"line_review", "edition_review", "learning_review"}
+# Emptying this set is the whole of the flip on this side -- the checkpoints then
+# block as human-review like every other gate -- and it must be made in the same
+# change that wires the remaining ``require_approved_*`` calls into
+# ``Magazine.release``.
+#
+# The rollout defers a *threshold*, and nothing else.  It does not defer an
+# unresolved ``disposition: editor_decision`` finding: that is not a judgment
+# whose bar is still being calibrated, it is a defect the lens already found and
+# was forbidden to hand to a writer.  ``prompts/README.md`` says such a finding
+# "blocks release until a human rules on it, is never dropped, never softened,
+# and never counted as clean", so it blocks here too, advisory or not, and it is
+# subtracted from the readiness waiver in :func:`_waived_by_advisory_rollout`.
+#
+# Which lenses are advisory is *derived* from ``JudgeLens.gates_release`` rather
+# than from the one kind's name.  It was that name, and a literal there is the
+# same defect as the hardcoded bench table ``produce_graph`` used to carry: the
+# day a second lens is trusted enough to gate, the person who flips it will edit
+# the lens declaration and will have no reason to look in this file.  ``edition``
+# is not a per-piece lens and has no ``JudgeLens`` row, so it is advisory by the
+# same rule that makes the other five advisory -- nothing in ``release`` calls
+# ``require_approved_edition_review`` yet either.
+_GATING_REVIEW_KINDS = frozenset(
+    lens.kind for lens in PIECE_JUDGE_LENSES if lens.gates_release
 )
+
+_ADVISORY_REVIEW_CHECKPOINTS = frozenset(
+    _review_checkpoint_id(kind)
+    for kind in BENCH_REVIEW_KINDS
+    if kind not in _GATING_REVIEW_KINDS
+)
+
+# What an operator is actually being asked to do at each lens's checkpoint, in
+# that lens's own vocabulary.  One sentence each, deliberately: a checkpoint that
+# said "record the review" seven times would be seven copies of no information,
+# and the whole reason the bench went from two broad judges to seven narrow ones
+# is that a reader told to watch for seven things watches for none of them.
+#
+# ``subject`` is the noun a summary uses.  It is not always ``<kind> review``:
+# ``edition`` reads the assembled issue rather than an edition-shaped piece, and
+# "Whole-issue review status is stale" is the sentence that tells an operator
+# which record moved.
+_LENS_CHECKPOINTS: Mapping[str, tuple[str, str]] = {
+    "worth": (
+        "worth review",
+        "Read each article against its pinned source and name concretely what "
+        "our version gives a reader that the original does not -- a clean "
+        "summary is not an answer -- then record the verdict against the exact "
+        "manuscripts and extractions read.",
+    ),
+    "evidence": (
+        "evidence review",
+        "Audit each manuscript against its committed source extractions, "
+        "then record the exact reviewed article bindings.",
+    ),
+    "shape": (
+        "shape review",
+        "Read each piece for whether its argument arrives in the right order -- "
+        "one running example, no orphan referents, no duplication -- without "
+        "opening the source, then record the verdict against the exact "
+        "manuscripts read.",
+    ),
+    "teaching": (
+        "teaching review",
+        "Put a novice through the explainer closed-book: can she use it "
+        "afterwards, and does the editor-authored furniture teach what the body "
+        "teaches. Record the verdict against the explainer's manuscript, the "
+        "furniture projection and its pinned sources.",
+    ),
+    "craft": (
+        "craft review",
+        "Read each piece for whether a person wrote it -- register, idiom, dead "
+        "words, banned tics -- without opening the source, then record the "
+        "verdict against the exact manuscripts read.",
+    ),
+    "mechanics": (
+        "mechanics review",
+        "Establish each piece's own typographic convention, then read it for "
+        "correct English as typeset -- capitalisation, agreement, typography, "
+        "missing labels -- and record the verdict against the exact manuscripts "
+        "read.",
+    ),
+    EDITION_JUDGE_KIND: (
+        "whole-issue review",
+        "Judge the issue rather than the pieces -- through-line, running order, "
+        "cover promise, redundancy, the swap test -- then record the verdict "
+        "against the whole assembled issue.",
+    ),
+}
+
+# Proved at import rather than in a test that might not be run.  A lens with no
+# checkpoint prose would reach an operator as a checkpoint whose instruction is a
+# ``KeyError``, and prose for a lens the bench no longer carries is prose nothing
+# will ever print again -- which is how ``line`` and ``learning`` survived in this
+# file for as long as they did.
+if tuple(_LENS_CHECKPOINTS) != BENCH_REVIEW_KINDS:
+    raise RuntimeError(
+        "the workflow describes the "
+        + ", ".join(_LENS_CHECKPOINTS)
+        + " checkpoints and the bench carries "
+        + ", ".join(BENCH_REVIEW_KINDS)
+    )
+
+# What the operator does about a finding the lens was forbidden to route to the
+# writer.  The four remedies are ``prompts/README.md``'s, and the list is closed
+# on purpose: an editor's note is not among them, because the magazine does not
+# print editorial apparatus inside an article and a note is how a piece keeps its
+# defect while appearing to answer one.
+_EDITOR_DECISION_INSTRUCTION = (
+    "Rule on each `disposition: editor_decision` finding yourself -- a silent "
+    "repair, a `[sic]`, leaving the source author's wording as it stands, or "
+    "not printing the piece -- then re-record the review without it. It is "
+    "never the writer's to clear, and an approving verdict does not clear it."
+)
+
 CHECKPOINT_STATUSES = {"complete", "blocked", "not_applicable"}
 ACTION_CLASSIFICATIONS = {"deterministic", "authorial", "human-review"}
 ACTION_KINDS = {
@@ -481,22 +605,50 @@ class Workflow:
         validation = take(8, validation_checkpoint)
 
         build = take(9, lambda: snapshot.build_checkpoint(validation))
-        evidence_review = take(10, lambda: snapshot.evidence_review_checkpoint(build))
-        take(11, lambda: snapshot.line_review_checkpoint(build))
-        take(12, lambda: snapshot.edition_review_checkpoint(build))
-        take(13, lambda: snapshot.learning_review_checkpoint(build))
-        take(14, lambda: snapshot.render_review_checkpoint(build, evidence_review))
+
+        # The bench's positions are looked up rather than counted.  ``take``'s
+        # index is a positional index into CHECKPOINT_ORDER -- ``run`` reuses a
+        # prefix of the previous report by that index -- and the number of
+        # checkpoints between the build and the release is now whatever the lens
+        # table declares.  A literal here would have to be re-counted by hand
+        # every time a lens is added, which is exactly the class of edit this
+        # redesign removed everywhere else.
+        bench: dict[str, Checkpoint] = {}
+        for kind in BENCH_REVIEW_KINDS:
+            checkpoint_id = _review_checkpoint_id(kind)
+            bench[kind] = take(
+                CHECKPOINT_ORDER.index(checkpoint_id),
+                lambda kind=kind: snapshot.bench_checkpoint(kind, build),
+            )
+        take(
+            CHECKPOINT_ORDER.index("render_review"),
+            # The evidence audit, alone on the bench, is a prerequisite of the
+            # visual review: a contact sheet inspected against prose that has not
+            # been checked against its sources is an inspection of the wrong
+            # document.  Every other lens reports beside it, not before it.
+            #
+            # This names ``evidence`` for a different reason than
+            # ``_GATING_REVIEW_KINDS`` does, and the coincidence is worth
+            # resisting: that one says which lens ``release`` currently
+            # enforces and will grow as lenses are trusted, this one says which
+            # lens the *visual* review reads downstream of, and it would stay
+            # exactly this one if all seven gated tomorrow.  Deriving it from
+            # ``gates_release`` would make a threshold decision silently
+            # reorder the report.
+            lambda: snapshot.render_review_checkpoint(build, bench["evidence"]),
+        )
 
         release_ready = (
             snapshot.lifecycle == "collecting"
             and all(
                 checkpoint.status == "complete"
                 for checkpoint in checkpoints
-                if checkpoint.id not in {"release"} | _ADVISORY_REVIEW_CHECKPOINTS
+                if checkpoint.id != "release"
+                and not _waived_by_advisory_rollout(checkpoint)
             )
         )
         take(
-            15,
+            CHECKPOINT_ORDER.index("release"),
             lambda: snapshot.release_checkpoint(
                 checkpoints,
                 release_ready=release_ready,
@@ -1355,14 +1507,17 @@ class _Snapshot:
         # branch above asks about a piece, and the pipeline's final stage is
         # about the *issue*.  An edition whose pieces were all drafted, none
         # escalated, none staged and none filed against reported complete here
-        # while the managing editor and the reader personas had never run -- and
-        # so did every command downstream that trusted this checkpoint.  The
-        # graph knows the difference; ask it before saying the word.
+        # while the whole-issue lens had never run -- and so did every command
+        # downstream that trusted this checkpoint.  That lens is the only one
+        # that asks whether the opening editorial argues from the whole issue
+        # rather than leaning on one article, so the one question nobody asked
+        # was the one the shipped editorial would have failed.  The graph knows
+        # the difference; ask it before saying the word.
         graph = resolve_production_graph(
             self.root, self.paths["editions"], self.edition_id
         )
         details["graph"] = graph.to_dict()
-        if not graph.complete:
+        if not graph.complete and not graph.deferred:
             unreached = graph.unreached
             return _blocked(
                 "production",
@@ -1373,9 +1528,9 @@ class _Snapshot:
                 "authorial",
                 (
                     "Advance the pipeline until it reports the graph complete; "
-                    "it owns the order, the gates, the judges and the two "
-                    "whole-issue judgments that no per-piece pass can stand in "
-                    "for. Run it with `--graph` to see every node and what is "
+                    "it owns the order, the gates, the six per-piece lenses and "
+                    "the whole-issue judgment that no per-piece pass can stand "
+                    "in for. Run it with `--graph` to see every node and what is "
                     "blocking it."
                 ),
                 produce,
@@ -1913,65 +2068,72 @@ class _Snapshot:
             details,
         )
 
-    def evidence_review_checkpoint(self, build: Checkpoint) -> Checkpoint:
-        details: dict[str, Any]
-        if self.edition is None:
-            details = {"status": "unavailable", "errors": list(self.edition_errors)}
-        else:
-            try:
-                bindings = current_evidence_bindings(
-                    self.edition,
+    def bench_checkpoint(self, kind: str, build: Checkpoint) -> Checkpoint:
+        """One lens's checkpoint, whichever of the seven it is.
+
+        There used to be four of these methods, one per kind, differing in the
+        three loader names they called and in one sentence of prose.  Seven
+        copies was not an option, and the fourth copy was already a liability:
+        ``line_review_checkpoint`` and ``learning_review_checkpoint`` outlived
+        the kinds they reported by an entire redesign, and the only reason the
+        report did not print two retired judges is that this package stopped
+        importing.  What differs between lenses now is data
+        (:data:`_LENS_CHECKPOINTS`) and what is shared is code.
+
+        ``edition`` is the one branch, and it is a real difference rather than a
+        naming one: it is not a per-piece record at all.  It binds the manifest
+        projection and every manuscript at once, has no per-article rows, and
+        keeps its own loader.  :mod:`magazine.review_bench` declines to put it in
+        ``PIECE_REVIEW_KINDS`` for the same reason.
+        """
+
+        if kind == EDITION_JUDGE_KIND:
+            return self.edition_review_checkpoint(build)
+        return self.piece_review_checkpoint(kind, build)
+
+    def piece_review_checkpoint(self, kind: str, build: Checkpoint) -> Checkpoint:
+        """One per-piece lens's checkpoint, derived entirely from its spec.
+
+        The registry supplies the record shape, the path and the bindings, so
+        this method knows nothing about which lenses read a source: handing
+        ``current_bindings_for`` a sources directory a source-blind lens will
+        ignore is how that stays true.  ``require_extractions`` is false here
+        because status is a diagnostic surface -- a missing extraction must
+        surface as a stale row naming the source, not as an exception that takes
+        the whole report down.
+        """
+
+        spec = piece_review_spec(kind)
+        details = self._review_bench_details(
+            lambda edition: review_status(
+                spec,
+                load_review(
+                    spec,
+                    review_path(self.paths["editions"], self.edition_id, kind),
+                    edition_id=self.edition_id,
+                ),
+                edition_id=self.edition_id,
+                bindings=current_bindings_for(
+                    kind,
+                    edition,
                     self.paths["sources"],
                     require_extractions=False,
-                )
-                record = load_evidence_review(
-                    evidence_review_path(self.paths["editions"], self.edition_id),
-                    edition_id=self.edition_id,
-                )
-                details = evidence_review_status(
-                    record,
-                    edition_id=self.edition_id,
-                    bindings=bindings,
-                )
-            except ValidationError as exc:
-                details = {"status": "unavailable", "errors": list(exc.errors)}
-        if build.status != "complete":
-            return _waiting_checkpoint("evidence_review", (build,), details=details)
-        if self.lifecycle == "released" and details.get("status") == "required_before_release":
-            return _complete(
-                "evidence_review",
-                "No evidence review is required retroactively for this released edition.",
-                details,
-            )
-        if details.get("status") != "approved":
-            return _blocked(
-                "evidence_review",
-                f"Evidence review status is {details.get('status', 'unavailable')}.",
-                details,
-                "human-review",
-                (
-                    "Audit each manuscript against its committed source extractions, "
-                    "then record the exact reviewed article bindings."
-                ),
-                (
-                    f"uv run --locked mag review record {self.edition_id} "
-                    "--kind evidence"
                 ),
             )
-        return _complete(
-            "evidence_review",
-            "The hash-bound evidence review is approved and current.",
-            details,
         )
+        return self._review_bench_checkpoint(kind, build, details)
 
     def _review_bench_details(
         self, read: Callable[[Edition], dict[str, Any]]
     ) -> dict[str, Any]:
-        """One editorial judge's status, or why it could not be computed.
+        """One lens's status, or why it could not be computed.
 
         Status is a diagnostic surface: an edition that will not load reports
         its errors here instead of aborting the whole report, exactly as the
-        evidence review checkpoint has always done.
+        evidence audit has always done.  ``{"status": "unavailable"}`` is the
+        stub every caller downstream is written against, which is why it carries
+        no ``editor_decisions`` key -- a record nobody could read carries no
+        rulings anybody can be asked to make.
         """
 
         if self.edition is None:
@@ -1983,40 +2145,111 @@ class _Snapshot:
 
     def _review_bench_checkpoint(
         self,
-        checkpoint_id: str,
+        kind: str,
         build: Checkpoint,
         details: dict[str, Any],
-        *,
-        kind: str,
-        subject: str,
-        instruction: str,
     ) -> Checkpoint:
-        """Turn one judge's status into a checkpoint, honouring the rollout.
+        """Turn one lens's status into a checkpoint.
 
-        A checkpoint named in ``_ADVISORY_REVIEW_CHECKPOINTS`` never reaches
-        "blocked": it reports what it found, carries the recording command in
-        its details so the operator can act on it, and stays out of release
-        readiness.  That is the whole shape of the advisory rollout -- the
-        verdicts are being collected and calibrated before anything refuses to
-        ship without them.
+        Three rules, in this order, and the order is the argument.
+
+        **An unresolved ``editor_decision`` outranks the verdict.**  A lens that
+        finds a defect in the source author's own retained text may not hand it
+        to the writer -- ``docs/EDITORIAL_POLICY.md`` makes changing that wording
+        review-required -- so it files the finding and routes it to a human.
+        ``prompts/README.md`` is unambiguous about what follows: the finding
+        "blocks release until a human rules on it, is never dropped, never
+        softened, and never counted as clean".  So the count is checked before
+        the result is, and an ``approved`` record with outstanding rulings is
+        reported blocked rather than complete.  This is the whole point of the
+        disposition field.  The bench it replaced capped such findings at
+        ``minor`` and then certified the piece clean *because* everything left
+        was uncapped-able, which is how twelve broken sentence openings and a
+        subject-verb error shipped under a verdict of ``approved``.
+
+        **The advisory rollout defers a threshold, not a ruling.**  A checkpoint
+        in :data:`_ADVISORY_REVIEW_CHECKPOINTS` never reaches "blocked" on the
+        strength of its own verdict: it reports what it found, carries the
+        recording command in its details so the operator can act on it, and
+        stays out of release readiness while the lens is calibrated.  It does
+        not get to swallow an outstanding human ruling, because an advisory
+        ``not_applicable`` over one would be precisely the "counted as clean"
+        the finding exists to prevent.
+
+        **A released edition is not re-judged retroactively.**  An issue that
+        shipped before a lens existed reports complete rather than demanding a
+        record nobody can now honestly write.
+
+        **A lens that does not read this edition is not owed a record.**
+        ``teaching`` reads the ``in_a_nutshell`` explainer, and an edition that
+        declares none is an ordinary edition rather than an incomplete one, so
+        :func:`~magazine.piece_review.review_status` reports ``not_applicable``.
+        Handled explicitly and *before* the advisory rollout, because the
+        rollout was hiding it: while every lens but ``evidence`` is advisory the
+        checkpoint reads "Advisory while the bench is calibrated" and hands the
+        operator a ``--kind teaching`` command, and the day that lens is trusted
+        enough to gate, the same path would block every explainer-less edition
+        for ever behind a command that cannot succeed -- ``covered_piece_ids``
+        returns nothing and the recorder refuses with "requires at least one
+        explainer to read".  The graph already resolves such a node
+        ``not_applicable`` and the release gate already returns early on it;
+        this is the third surface agreeing with the other two.
+
+        An outstanding ruling is still checked first even here.  A lens can be
+        inapplicable *now* -- the explainer was pulled from the running order --
+        while a human ruling filed when it was applicable is still owed, and
+        "the piece left the issue" is not a resolution of a defect somebody
+        found in it.
         """
 
+        checkpoint_id = _review_checkpoint_id(kind)
+        subject, instruction = _LENS_CHECKPOINTS[kind]
         command = f"uv run --locked mag review record {self.edition_id} --kind {kind}"
+        status = str(details.get("status") or "unavailable")
         if build.status != "complete":
             return _waiting_checkpoint(checkpoint_id, (build,), details=details)
-        if self.lifecycle == "released" and details.get("status") == "required_before_release":
+        if self.lifecycle == "released" and status == "required_before_release":
             return _complete(
                 checkpoint_id,
                 f"No {kind} review is required retroactively for this released edition.",
                 details,
             )
-        if details.get("status") == "approved":
+        outstanding = _outstanding_editor_decisions(details)
+        if status == "not_applicable" and not outstanding:
+            return _complete(
+                checkpoint_id,
+                f"The {kind} lens does not read anything in this edition, so no "
+                f"{subject} is owed.",
+                details,
+            )
+        if outstanding:
+            # Named as its own sentence, with the count, because the operator
+            # reading this has to know that re-recording the lens will not clear
+            # it and that no writer round will either.  If the record is also
+            # stale or requesting changes, both facts print: the ruling is the
+            # obligation, the verdict is the context.
+            ruling = (
+                f"{outstanding} of its finding(s) carry "
+                "`disposition: editor_decision` and wait on a human ruling."
+            )
+            if status == "approved":
+                summary = f"The hash-bound {subject} is approved, but {ruling}"
+                guidance = _EDITOR_DECISION_INSTRUCTION
+            else:
+                summary = (
+                    f"{subject.capitalize()} status is {status}, and {ruling}"
+                )
+                guidance = f"{_EDITOR_DECISION_INSTRUCTION} {instruction}"
+            return _blocked(
+                checkpoint_id, summary, details, "human-review", guidance, command
+            )
+        if status == "approved":
             return _complete(
                 checkpoint_id,
                 f"The hash-bound {subject} is approved and current.",
                 details,
             )
-        summary = f"{subject.capitalize()} status is {details.get('status', 'unavailable')}."
+        summary = f"{subject.capitalize()} status is {status}."
         if checkpoint_id in _ADVISORY_REVIEW_CHECKPOINTS:
             return Checkpoint(
                 checkpoint_id,
@@ -2029,31 +2262,14 @@ class _Snapshot:
             checkpoint_id, summary, details, "human-review", instruction, command
         )
 
-    def line_review_checkpoint(self, build: Checkpoint) -> Checkpoint:
-        details = self._review_bench_details(
-            lambda edition: line_review_status(
-                load_line_review(
-                    line_review_path(self.paths["editions"], self.edition_id),
-                    edition_id=self.edition_id,
-                ),
-                edition_id=self.edition_id,
-                bindings=current_line_bindings(edition),
-            )
-        )
-        return self._review_bench_checkpoint(
-            "line_review",
-            build,
-            details,
-            kind="line",
-            subject="line review",
-            instruction=(
-                "Read every piece, and the opening editorial, for how it reads "
-                "rather than whether it is true, then record the verdict against "
-                "the exact manuscripts read."
-            ),
-        )
-
     def edition_review_checkpoint(self, build: Checkpoint) -> Checkpoint:
+        """The whole-issue lens, which keeps its own loader and its own bindings.
+
+        Everything downstream of ``details`` is the shared path; only the read is
+        special, because an edition record binds the manifest projection and
+        every manuscript at once rather than carrying per-piece rows.
+        """
+
         details = self._review_bench_details(
             lambda edition: edition_review_status(
                 load_edition_review(
@@ -2066,42 +2282,7 @@ class _Snapshot:
                 ),
             )
         )
-        return self._review_bench_checkpoint(
-            "edition_review",
-            build,
-            details,
-            kind="edition",
-            subject="whole-issue review",
-            instruction=(
-                "Judge the issue rather than the pieces -- through-line, running "
-                "order, cover promise, redundancy -- then record the verdict "
-                "against the whole assembled issue."
-            ),
-        )
-
-    def learning_review_checkpoint(self, build: Checkpoint) -> Checkpoint:
-        details = self._review_bench_details(
-            lambda edition: learning_review_status(
-                load_learning_review(
-                    learning_review_path(self.paths["editions"], self.edition_id),
-                    edition_id=self.edition_id,
-                ),
-                edition_id=self.edition_id,
-                bindings=current_learning_bindings(edition),
-            )
-        )
-        return self._review_bench_checkpoint(
-            "learning_review",
-            build,
-            details,
-            kind="learning",
-            subject="reader-persona review",
-            instruction=(
-                "Run the three reader personas over the editor-authored furniture "
-                "and the explainer, then record their verdict with the "
-                "comprehension and manager-takeaway blocks."
-            ),
-        )
+        return self._review_bench_checkpoint(EDITION_JUDGE_KIND, build, details)
 
     def render_review_checkpoint(
         self,
@@ -2323,6 +2504,42 @@ def _blocked(
 
 def _all_complete(checkpoints: tuple[Checkpoint, ...] | list[Checkpoint]) -> bool:
     return all(checkpoint.status == "complete" for checkpoint in checkpoints)
+
+
+def _outstanding_editor_decisions(details: Mapping[str, Any]) -> int:
+    """How many of this lens's findings are still waiting on a human ruling.
+
+    Read defensively out of the status mapping rather than trusted, because the
+    same key has to survive three different producers: the per-piece status in
+    :mod:`magazine.piece_review`, the whole-issue one in
+    :mod:`magazine.edition_review`, and the ``{"status": "unavailable"}`` stub a
+    checkpoint reports when the edition will not load.  Only a genuine positive
+    integer counts -- ``True`` is an ``int`` in Python and would otherwise block
+    an edition on the strength of one -- and anything else reads as zero, which
+    is the same answer the stub gives and is correct for it: a record nobody
+    could load carries no rulings anybody can be asked to make.
+    """
+
+    value = details.get("editor_decisions")
+    if isinstance(value, bool) or not isinstance(value, int):
+        return 0
+    return max(value, 0)
+
+
+def _waived_by_advisory_rollout(checkpoint: Checkpoint) -> bool:
+    """Whether release readiness may ignore this checkpoint's verdict.
+
+    Only bench checkpoints still in the advisory rollout, and only while they
+    carry no unresolved ``editor_decision`` finding.  The rollout exists so that
+    a lens whose threshold is uncalibrated cannot stall `mag finish`; it is not
+    a licence to ship over a defect a human has been asked to rule on and has
+    not.  ``prompts/README.md``: never dropped, never softened, never counted as
+    clean.
+    """
+
+    if checkpoint.id not in _ADVISORY_REVIEW_CHECKPOINTS:
+        return False
+    return not _outstanding_editor_decisions(checkpoint.details)
 
 
 def _clean_edition_id(edition_id: str) -> str:

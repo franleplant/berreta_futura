@@ -20,8 +20,9 @@ provenance records and the recorded verdicts.  The worker supplies text.
 **The whole ready set, not the next item.**  Emitting one brief at a time would
 serialise a fleet, so :meth:`AgentSession.advance` composes every brief that is
 unblocked *right now* and reports them together: several writers at once while
-their pieces are independent, and a piece's fact-checker and line editor
-together the moment its draft clears the gates.  The pipeline reaches that set
+their pieces are independent, and a whole stage of a piece's lenses together the
+moment its draft clears the gates.  A stage is two calls wide, so the fan-out is
+real and it is the unit a driver picks up.  The pipeline reaches that set
 by running normally and treating an unanswered call as a park rather than a
 failure (:class:`~magazine.produce.WorkParked`), so the set is derived from the
 real state machine and can never drift from it.
@@ -121,10 +122,12 @@ REPLY_FILENAME = "reply.md"
 
 # What each role's reply has to be for the pipeline to accept it.  These are the
 # two contracts the autonomous path already enforces, named here so a brief can
-# state its own on the way out and an ingest can check it on the way in.
+# state its own on the way out and an ingest can check it on the way in.  There
+# were three: ``manager_takeaways`` went with the manager persona that
+# ``prompts/README.md`` retired, and a contract nothing can dispatch is a
+# contract nothing can answer.
 MANUSCRIPT = "manuscript"
 VERDICT = "verdict"
-TAKEAWAYS = "manager_takeaways"
 
 # Both maps below are *derived* from the declared graph rather than restated.
 # They were restated, and a second list of roles is a second place for a new
@@ -201,14 +204,6 @@ def validate_reply(returns: str, text: str, *, item_key: str) -> None:
             )
         return
     document = parse_verdict(text, label=f"reply for {item_key}")
-    if returns == TAKEAWAYS:
-        takeaways = document.get("manager_takeaways")
-        if not isinstance(takeaways, Sequence) or isinstance(takeaways, (str, bytes)):
-            raise ProduceError(
-                f"The reply for {item_key} must carry a `manager_takeaways` list; "
-                "run A writes the takeaways and nothing else"
-            )
-        return
     result = str(document.get("result") or "").strip()
     if result not in REVIEW_RESULTS:
         raise ProduceError(
@@ -296,10 +291,10 @@ class CooperativeRunner:
         # that is neither here nor pending is work the run never reached, and
         # a driver is told so rather than left to notice a missing directory.
         self.answered: set[str] = set()
-        # The two piece judges are composed on two threads, so every mutation
-        # below is shared state.  Both briefs must survive; only one signal
-        # escapes ``ordered_map``, and losing the sibling's brief would halve
-        # every ready set.
+        # A stage's lenses are composed concurrently, so every mutation below
+        # is shared state.  Every brief in the stage must survive; only one
+        # signal escapes ``ordered_map``, and losing the siblings' briefs would
+        # halve every ready set.
         self._lock = threading.Lock()
 
     def request(

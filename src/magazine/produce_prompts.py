@@ -11,24 +11,35 @@ boundaries live here as types rather than as sentences in a prompt file:
   rule cannot detect what a chunked harness makes invisible.  There is no
   chunking function in this module to reach for.
 
-* **The line editor never sees the source.**  :class:`LineReviewInput` has no
-  field that could carry one, and :func:`compose_line_prompt` accepts nothing
-  else.  Because a ``faithful_edit`` manuscript legitimately *is* the source's
-  sentences, a content scan alone would be unsound, so
-  :func:`assert_source_withheld` checks the only thing that can honestly be
-  checked: no substantial source line that the manuscript does not already
-  carry may appear in the prompt.  The type is the guarantee; the scan catches
-  a future edit that routes source text in by another door.
+* **A source-blind lens never sees the source.**  ``mechanics``, ``shape`` and
+  ``craft`` take :class:`SourceBlindReviewInput`, which has no field that could
+  carry an extraction, and their composer accepts nothing else.  Because a
+  ``faithful_edit`` manuscript legitimately *is* the source's sentences, a
+  content scan alone would be unsound, so :func:`assert_source_withheld` checks
+  the only thing that can honestly be checked: no substantial source line that
+  the manuscript does not already carry may appear in the prompt.  The type is
+  the guarantee; the scan catches a future edit that routes source text in by
+  another door.
 
-* **The manager's run A is starved on purpose.**  :func:`compose_manager_run_a`
-  is handed the furniture projection and nothing else, and it is a separate
-  function from :func:`compose_learning_prompt` precisely so that no call site
-  can accidentally hand run A a body.  A single run cannot un-see the body,
-  which is the case where the persona rubber-stamps its own takeaways.
+* **One lens reads one piece.**  No per-piece composer here takes a collection.
+  Batching two articles into one judge call would split the attention that
+  splitting the bench into seven narrow lenses was meant to concentrate, and
+  there is no signature through which a call site could do it.  ``edition`` is
+  the single exception and it is the exception on purpose: whether these pieces
+  belong between one set of covers is not a question about one piece.
 
-* **A finding is an obligation; a suggestion is advice.**  The revision block
+* **A brief is complete on its own.**  Everything a worker needs is in the text
+  it is handed, including the rubric, the output contract and -- for ``craft``
+  and ``edition``, whose prompts cite it -- the whole of
+  :data:`HOUSE_STYLE_PATH` rather than its path.  Under the cooperative backend
+  the worker is often a subagent with no repository to open, so a brief that
+  refers to a file is a brief that cannot be answered.
+
+* **A finding is an obligation; a suggestion is advice.**  The revision brief
   says so in those words, and nothing in this package ever reads a finding's
-  ``suggestion`` to decide whether a revision passed.
+  ``suggestion`` to decide whether a revision passed.  Composing N lenses'
+  findings into that one document is :mod:`magazine.revision_brief`'s job, not
+  this module's; here it is only rendered.
 
 Writers answer in up to three blocks: the manuscript, then an optional
 :data:`ANCHOR_MARKER` block saying which heading each registered figure now
@@ -101,12 +112,31 @@ WRITER_PROMPTS: Mapping[str, str] = {
     "in_a_nutshell": "prompts/in-a-nutshell.md",
 }
 
+# One prompt file per lens.  The keys are exactly
+# ``produce_graph.BENCH_REVIEW_KINDS``, and the suite proves it: a lens declared
+# in the graph with no prompt here would be dispatched and then refused at load
+# time, halfway through a run, which is the most expensive moment to discover a
+# missing file.
 JUDGE_PROMPTS: Mapping[str, str] = {
+    "worth": "prompts/worth-review.md",
     "evidence": "prompts/evidence-review.md",
-    "line": "prompts/line-review.md",
-    "learning": "prompts/learning-review.md",
+    "shape": "prompts/shape-review.md",
+    "teaching": "prompts/teaching-review.md",
+    "craft": "prompts/craft-review.md",
+    "mechanics": "prompts/mechanics-review.md",
     "edition": "prompts/edition-review.md",
 }
+
+HOUSE_STYLE_PATH = "docs/WRITING_RULES.md"
+"""The corpus ``craft`` and ``edition`` are told to judge against.
+
+Embedded in those two briefs rather than cited by path.  A judge that has to
+open a repo file to understand its task has been handed an incomplete brief, and
+under the cooperative backend it may have no repo to open: the brief is the
+whole of what a worker gets.  Its digest goes into those lenses' work identities
+for the same reason a prompt file's does -- rewriting the house style is
+rewriting the question.
+"""
 
 # A source line has to be this long before its verbatim presence in a line
 # editor's prompt is evidence of a leak rather than a coincidence of English.
@@ -652,44 +682,58 @@ def _revision_block(brief: WriterBrief) -> list[str]:
     if brief.findings:
         parts.extend(
             [
-                "### Findings you must clear",
+                "## Findings",
                 "",
-                "Every finding is an obligation: the defect it names must be "
-                "gone from your draft. A `suggestion` is advisory. You are "
-                "judged on whether the defect survived, never on whether you "
-                "took the suggested line, so solve it however the piece is best "
-                "served.",
+                "Seven narrow lenses read this piece; what follows is their "
+                "findings composed into one worklist. Scores are not shown to "
+                "you, deliberately: they are advisory telemetry, the edition "
+                "this bench was built to catch scored fives across it, and a "
+                "number you can see is a number you can optimise.",
                 "",
             ]
         )
-        for index, finding in enumerate(brief.findings, start=1):
-            parts.extend(_finding_lines(index, finding))
-        parts.append("")
+        parts.extend(_composed_findings(brief))
     return parts
 
 
-def _finding_lines(index: int, finding: Mapping[str, Any]) -> list[str]:
-    severity = str(finding.get("severity") or "major")
-    category = str(finding.get("category") or "unspecified")
-    judge = str(finding.get("judge") or "").strip()
-    header = f"{index}. [{severity}] {category}"
-    if judge:
-        header += f" (from the {judge})"
-    lines = [header]
-    for key, label in (
-        ("locator", "where it shows"),
-        ("repair_from", "earliest repair point"),
-    ):
-        value = str(finding.get(key) or "").strip()
-        if value:
-            lines.append(f"   - {label}: {value}")
-    note = str(finding.get("note") or "").strip()
-    if note:
-        lines.append("   - note:")
-        lines.extend(f"     {line}" for line in note.splitlines())
-    suggestion = str(finding.get("suggestion") or "").strip()
-    if suggestion:
-        lines.append(f"   - suggestion (advisory): {suggestion}")
+def _composed_findings(brief: WriterBrief) -> list[str]:
+    """The revision brief, composed by the one module that knows the rules.
+
+    The findings arrive here flat, each tagged with the lens that filed it,
+    because that is the shape a production record stores and the shape a filed
+    finding arrives in from outside the loop.  Regrouping is cheap; the
+    ordering, merging, conflict detection and the three labelled sections are
+    not, and they are :mod:`magazine.revision_brief`'s, so that the rules
+    ``prompts/README.md`` states live in one testable place rather than inside a
+    prompt-formatting helper.
+
+    A finding whose ``judge`` is not one of the seven lenses is one a human
+    filed by hand with ``mag finding file``, and its tag is whoever filed it.
+    It sorts into the last repair tier, where an obligation nobody can place is
+    least likely to send a writer to do work that a structural finding above it
+    is about to discard -- but it still *prints* under the name it was filed
+    under, because "from the edition review" and "from the craft lens" mean
+    different things to a reviser and the tier is not an attribution.  See
+    :attr:`~magazine.revision_brief.BriefEntry.filed_by`.
+    """
+
+    from .produce_graph import PIECE_JUDGE_KINDS
+    from .revision_brief import compose
+
+    grouped: dict[str, list[Mapping[str, Any]]] = {}
+    for finding in brief.findings:
+        lens = str(finding.get("judge") or "").strip()
+        if lens not in PIECE_JUDGE_KINDS:
+            lens = PIECE_JUDGE_KINDS[-1]
+        grouped.setdefault(lens, []).append(finding)
+    composed = compose(
+        brief.piece.id,
+        [(kind, grouped[kind]) for kind in PIECE_JUDGE_KINDS if kind in grouped],
+        manuscript=brief.previous_manuscript or "",
+    )
+    lines = composed.render()
+    if lines:
+        lines.append("")
     return lines
 
 
@@ -779,12 +823,94 @@ def contains_scratch(text: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Judge briefs.
+# Judge briefs: one lens, one piece, and exactly the inputs its contract names.
+#
+# Three properties hold across every composer below, and each one is a property
+# of the *types* rather than of the prompt text, because a rule a harness can
+# violate is a rule that eventually gets violated.
+#
+# **One lens, one piece.**  No per-piece composer takes a collection of pieces.
+# There is no signature here through which two articles could reach one judge
+# call, so the attention-splitting that made the old broad judge miss twelve
+# lowercase sentence openings cannot be reintroduced by a call site.
+#
+# **A source-blind lens cannot be handed a source.**  ``mechanics``, ``shape``
+# and ``craft`` take :class:`SourceBlindReviewInput`, which has no field that
+# could hold an extraction, and their composers accept nothing else.  The prompt
+# files also say "you do not open the source", and that sentence is not what is
+# relied on.  :func:`assert_source_withheld` is the second line: it catches a
+# future edit that routes source text in through the manuscript or some other
+# door the type system did not close.
+#
+# **A brief is self-contained.**  Everything a worker needs arrives in the text,
+# including the rubric and the output contract -- and, for the two lenses whose
+# prompts cite it, the whole house-style corpus rather than its path.  Under the
+# cooperative backend the worker may be a subagent with no repository; a brief
+# that says "see docs/WRITING_RULES.md" is a brief that cannot be answered.
+
+
+@dataclass(frozen=True)
+class SourceBlindReviewInput:
+    """What a lens that may not see the source reads.  Note what is not here.
+
+    There is no source field, and there is no way to add one from a call site:
+    :func:`compose_source_blind_prompt` takes this type and nothing else.
+
+    Three lenses share it -- ``mechanics``, ``shape`` and ``craft`` -- and they
+    share it precisely because their input contract is identical: the piece as
+    it stands, body and furniture, with its ``content_mode`` and byline.  Giving
+    each of them a private near-identical dataclass would have been three places
+    for a future edit to add an ``extractions`` field to one of them, and one
+    type with no such field is a stronger guarantee than three types that
+    currently happen not to have one.
+
+    The blindness is not squeamishness.  ``prompts/README.md`` states it as an
+    assignment constraint: a judge who can see the source starts fact-checking
+    and stops reading for flow, so every check answerable from the manuscript
+    alone belongs to a lens that reads only the manuscript.  The corollary bit
+    the old bench -- ``line-review.md`` was forbidden the source *and* asked
+    whether the headings mirrored the source's table of contents, and it duly
+    answered a question it could not see, wrongly.  That check now lives on
+    ``worth``, which reads both.
+    """
+
+    piece_id: str
+    content_mode: str
+    byline: str
+    max_pages: int
+    manuscript: str
+
+
+@dataclass(frozen=True)
+class WorthReviewInput:
+    """What ``worth`` reads: one manuscript and its complete sources.
+
+    The only lens whose question is explicitly a ratio -- what does our version
+    give a reader that the original does not -- so it needs both sides in full.
+    It never runs on the editorial, which has no source of its own.
+    """
+
+    piece_id: str
+    content_mode: str
+    byline: str
+    title: str
+    manuscript: str
+    extractions: tuple[Extraction, ...] = ()
 
 
 @dataclass(frozen=True)
 class EvidenceReviewInput:
-    """What the fact-checker reads: the manuscript and its complete sources."""
+    """What the fact-checker reads: the manuscript and its complete sources.
+
+    ``peer_manuscripts`` is not a second piece being batched into this call.
+    ``prompts/evidence-review.md`` says it in as many words: *for the editorial
+    the sources are the edition's own article manuscripts*, because every
+    factual claim in an editorial must be supported by a piece in this issue.
+    So for the editorial, and only for the editorial, the peers *are* the
+    extraction -- there is no other truth to check it against.  Every other
+    piece is composed with this field empty, and :meth:`Production._peers`
+    returns nothing for them.
+    """
 
     piece_id: str
     content_mode: str
@@ -795,22 +921,105 @@ class EvidenceReviewInput:
 
 
 @dataclass(frozen=True)
-class LineReviewInput:
-    """What the line editor reads.  Note what is not here.
+class TeachingReviewInput:
+    """What the explainer's reader reads: the piece, its furniture, its source.
 
-    There is no source field, and there is no way to add one from a call site:
-    :func:`compose_line_prompt` takes this type and nothing else.  A line
-    editor who can see the source starts fact-checking and stops reading for
-    flow, and ``prompts/line-review.md`` forbids opening it -- but a
-    prohibition a harness could violate is a prohibition that eventually gets
-    violated, so the harness cannot.
+    The source is here because ``prompts/teaching-review.md`` opens the book at
+    step 1 and step 5 and closes it in between: the six questions are written
+    *from the source*, and an answer the reader knows from the source but the
+    piece does not carry is a failed question.  A lens that could not see the
+    source could only ask questions the piece had already answered, which
+    measures nothing.
+
+    ``furniture`` is the editor-authored projection -- deck, key ideas box,
+    diagram captions -- which this reader judges as hard as the body.
     """
 
     piece_id: str
     content_mode: str
     byline: str
-    max_pages: int
     manuscript: str
+    furniture: Mapping[str, Any] = field(default_factory=dict)
+    extractions: tuple[Extraction, ...] = ()
+
+
+@dataclass(frozen=True)
+class EditionReviewInput:
+    """The managing editor's brief: the issue, never its sources.
+
+    The one lens that sees more than one piece, and the only one that may: its
+    whole subject is whether these pieces belong between one set of covers.
+    """
+
+    edition_id: str
+    manifest: Mapping[str, Any]
+    editorial: str | None
+    articles: tuple[tuple[str, str, str], ...] = field(default=())
+    house_style: str = ""
+
+
+# ---------------------------------------------------------------------------
+# What each of those calls *is*, for the purpose of reusing a stored answer.
+
+
+def source_blind_identity(
+    role: str, prompt: PromptFile, item: SourceBlindReviewInput
+) -> str:
+    return work_identity(
+        role,
+        {
+            "prompt_path": prompt.path,
+            "prompt_sha256": prompt.sha256,
+            "piece": item.piece_id,
+            "content_mode": item.content_mode,
+            "byline": item.byline,
+            "max_pages": item.max_pages,
+            "manuscript": _digest(item.manuscript),
+        },
+    )
+
+
+def craft_identity(
+    prompt: PromptFile, item: SourceBlindReviewInput, *, house_style: str
+) -> str:
+    """``craft``'s identity, which folds in the corpus it judges against.
+
+    The one source-blind lens whose brief carries something besides the
+    manuscript.  Rewriting ``docs/WRITING_RULES.md`` changes what "did a person
+    write this" means, so a stored craft answer written against the old corpus
+    is an answer to a question nobody is asking any more -- exactly the case a
+    prompt-file digest already covers for every other lens.
+    """
+
+    return work_identity(
+        "craft",
+        {
+            "prompt_path": prompt.path,
+            "prompt_sha256": prompt.sha256,
+            "piece": item.piece_id,
+            "content_mode": item.content_mode,
+            "byline": item.byline,
+            "max_pages": item.max_pages,
+            "manuscript": _digest(item.manuscript),
+            "house_style": _digest(house_style),
+        },
+    )
+
+
+def worth_identity(prompt: PromptFile, item: WorthReviewInput) -> str:
+    return work_identity(
+        "worth",
+        {
+            "prompt_path": prompt.path,
+            "prompt_sha256": prompt.sha256,
+            "piece": item.piece_id,
+            "content_mode": item.content_mode,
+            "byline": item.byline,
+            "title": item.title,
+            "manuscript": _digest(item.manuscript),
+            "extractions": _body_digests(item.extractions),
+        },
+    )
 
 
 def evidence_identity(prompt: PromptFile, item: EvidenceReviewInput) -> str:
@@ -829,23 +1038,150 @@ def evidence_identity(prompt: PromptFile, item: EvidenceReviewInput) -> str:
     )
 
 
-def line_identity(prompt: PromptFile, item: LineReviewInput) -> str:
+def teaching_identity(prompt: PromptFile, item: TeachingReviewInput) -> str:
     return work_identity(
-        "line",
+        "teaching",
         {
             "prompt_path": prompt.path,
             "prompt_sha256": prompt.sha256,
             "piece": item.piece_id,
             "content_mode": item.content_mode,
             "byline": item.byline,
-            "max_pages": item.max_pages,
             "manuscript": _digest(item.manuscript),
+            "furniture": _digest(_yaml_block(item.furniture)),
+            "extractions": _body_digests(item.extractions),
         },
     )
 
 
+def edition_identity(prompt: PromptFile, item: EditionReviewInput) -> str:
+    return work_identity(
+        "edition",
+        {
+            "prompt_path": prompt.path,
+            "prompt_sha256": prompt.sha256,
+            "edition": item.edition_id,
+            "manifest": _digest(_yaml_block(item.manifest)),
+            "editorial": _digest(item.editorial),
+            "house_style": _digest(item.house_style),
+            "articles": {
+                article_id: [content_mode, _digest(text)]
+                for article_id, content_mode, text in item.articles
+            },
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# Composing each one.
+
+
+def _piece_header(
+    *,
+    piece_id: str,
+    content_mode: str,
+    byline: str,
+    title: str = "",
+    max_pages: int = 0,
+) -> list[str]:
+    """The one piece this call is about, named the same way for every lens.
+
+    One function so that a reader comparing two lenses' briefs is comparing
+    their *content* rather than two spellings of the same header, and so that
+    "which piece is this" cannot become a list by accident.
+    """
+
+    parts = [f"- Article id: `{piece_id}`"]
+    parts.append(f"- content_mode: `{content_mode}`")
+    if title:
+        parts.append(f"- Title: {title}")
+    if byline:
+        parts.append(f"- Byline: {byline}")
+    if max_pages:
+        parts.append(f"- Page budget: {max_pages} rendered A5 reader page(s)")
+    parts.append("")
+    return parts
+
+
+def compose_source_blind_prompt(
+    prompt: PromptFile,
+    item: SourceBlindReviewInput,
+    *,
+    kind: str,
+    house_style: str = "",
+) -> str:
+    """Assemble one blind lens's brief from a manuscript and nothing else.
+
+    ``house_style`` is the only thing that may join the manuscript here, and
+    only ``craft`` passes it: ``prompts/craft-review.md`` names the corpus as an
+    input and a worker cannot be assumed to have the repository.  It is prose
+    about how to write, not text from the piece's source, so it does not breach
+    the blindness -- and :func:`assert_source_withheld` still checks the whole
+    composed brief afterwards, corpus included, in case it ever quotes one.
+    """
+
+    parts = [prompt.text.rstrip(), "", "---", "", "# The piece under review", ""]
+    parts.extend(
+        _piece_header(
+            piece_id=item.piece_id,
+            content_mode=item.content_mode,
+            byline=item.byline,
+            max_pages=item.max_pages,
+        )
+    )
+    parts.append(
+        "The source extraction is deliberately withheld and is not available to "
+        "you by any route. Every question this lens asks is answerable from the "
+        "manuscript alone; anything that would need the source belongs to "
+        "`worth` or `evidence`, which read both. Do not speculate about the "
+        "relationship between this piece and whatever it was written from."
+    )
+    parts.append("")
+    parts.append("## Manuscript")
+    parts.append("")
+    parts.append(_fence(item.manuscript))
+    parts.append("")
+    if house_style:
+        parts.append("## The house style corpus (`docs/WRITING_RULES.md`), in full")
+        parts.append("")
+        parts.append(
+            "Reproduced here so this brief is complete on its own. Judge "
+            "against it; do not go looking for it."
+        )
+        parts.append("")
+        parts.append(_fence(house_style))
+        parts.append("")
+    parts.append(_yaml_only_contract(kind))
+    return "\n".join(parts)
+
+
+def compose_worth_prompt(prompt: PromptFile, item: WorthReviewInput) -> str:
+    parts = [prompt.text.rstrip(), "", "---", ""]
+    parts.append("# The article under review")
+    parts.append("")
+    parts.extend(
+        _piece_header(
+            piece_id=item.piece_id,
+            content_mode=item.content_mode,
+            byline=item.byline,
+            title=item.title,
+        )
+    )
+    parts.append("## Manuscript")
+    parts.append("")
+    parts.append(_fence(item.manuscript))
+    parts.append("")
+    for extraction in item.extractions:
+        parts.append(f"## Pinned extraction `{extraction.source_id}` (complete)")
+        parts.append("")
+        parts.append(_fence(extraction.body))
+        parts.append("")
+    parts.append(_yaml_only_contract("worth"))
+    return "\n".join(parts)
+
+
 def compose_evidence_prompt(prompt: PromptFile, item: EvidenceReviewInput) -> str:
-    parts = [prompt.text.rstrip(), "", "---", "", "# The article under audit", ""]
+    parts = [prompt.text.rstrip(), "", "---", "", "# The piece under audit", ""]
     parts.append(f"- Article id: `{item.piece_id}`")
     parts.append(f"- content_mode: `{item.content_mode}`")
     if item.byline:
@@ -861,7 +1197,13 @@ def compose_evidence_prompt(prompt: PromptFile, item: EvidenceReviewInput) -> st
         parts.append(_fence(extraction.body))
         parts.append("")
     if item.peer_manuscripts:
-        parts.append("## The edition's articles, which this piece is checked against")
+        parts.append("## This piece's sources: the edition's own articles")
+        parts.append("")
+        parts.append(
+            "The editorial declares no source of its own, so these are its "
+            "sources. Every factual claim in the manuscript above must be "
+            "supported by one of them, and a claim that is not is a finding."
+        )
         parts.append("")
         for peer_id, text in item.peer_manuscripts:
             parts.append(f"### `{peer_id}`")
@@ -872,260 +1214,38 @@ def compose_evidence_prompt(prompt: PromptFile, item: EvidenceReviewInput) -> st
     return "\n".join(parts)
 
 
-def compose_line_prompt(prompt: PromptFile, item: LineReviewInput) -> str:
-    """Assemble the line editor's brief from a manuscript and nothing else."""
-
-    parts = [prompt.text.rstrip(), "", "---", "", "# The piece under review", ""]
+def compose_teaching_prompt(prompt: PromptFile, item: TeachingReviewInput) -> str:
+    parts = [prompt.text.rstrip(), "", "---", "", "# The explainer under review", ""]
     parts.append(f"- Article id: `{item.piece_id}`")
     parts.append(f"- content_mode: `{item.content_mode}`")
     if item.byline:
         parts.append(f"- Byline: {item.byline}")
-    parts.append(f"- Page budget: {item.max_pages} rendered A5 reader page(s)")
+    parts.append("")
+    parts.append("## The editor-authored furniture, in full")
     parts.append("")
     parts.append(
-        "The source extraction is deliberately withheld. Judge how this reads, "
-        "not whether it is true."
+        "Judge only the furniture that exists. Absent furniture is one "
+        "`missing_furniture` finding listing everything missing, never one per "
+        "item."
     )
-    parts.append("")
-    parts.append("## Manuscript")
-    parts.append("")
-    parts.append(_fence(item.manuscript))
-    parts.append("")
-    parts.append(_yaml_only_contract("line"))
-    return "\n".join(parts)
-
-
-def assert_source_withheld(
-    prompt: str,
-    extractions: Sequence[Extraction],
-    *,
-    manuscript: str,
-    label: str,
-) -> None:
-    """Refuse a brief that leaks source text the manuscript does not carry.
-
-    The check cannot simply look for source sentences: a ``faithful_edit``
-    manuscript *is* the source's sentences, and the manuscript is legitimately
-    in this prompt.  So the exempt set is the prose the manuscript itself
-    carries, and any other substantial run of source prose found in the prompt
-    is a leak by a route the type system did not close.
-
-    Both sides are compared through :func:`_fold`, and the manuscript is
-    compared as one folded body rather than as a set of lines.  A source line
-    is a wrap fragment, not a unit of meaning: the same sentence sits alone on
-    a source line and mid-paragraph in a manuscript, so line-for-line equality
-    exempted nothing real and every faithful piece tripped its own guard.
-    Folding cuts both ways -- a leak that re-wrapped or re-quoted the source no
-    longer slips past either.
-    """
-
-    folded_prompt = _fold(prompt)
-    folded_manuscript = _fold(manuscript)
-    for extraction in extractions:
-        for line in extraction.body.splitlines():
-            candidate = _fold(line)
-            if len(candidate) < _LEAK_LINE_LENGTH:
-                continue
-            if candidate in folded_manuscript:
-                continue
-            if candidate in folded_prompt:
-                raise ProduceError(
-                    f"{label} brief carries source text from "
-                    f"{extraction.source_id} that the manuscript does not: "
-                    f"{line.strip()[:60]!r}. This role is forbidden the source."
-                )
-
-
-# ---------------------------------------------------------------------------
-# Whole-issue briefs.
-
-
-@dataclass(frozen=True)
-class ManagerRunAInput:
-    """Run A's entire world: the editor-authored furniture.
-
-    Marcus is two runs, not two steps of one, and the boundary is the harness's
-    job rather than the model's self-restraint.  Run A cannot un-see a body it
-    was never given, which is the only version of this that holds.
-    """
-
-    edition_id: str
-    furniture: Mapping[str, Any]
-
-
-@dataclass(frozen=True)
-class LearningReviewInput:
-    """Run B: run A's block verbatim, plus everything the personas need."""
-
-    edition_id: str
-    furniture: Mapping[str, Any]
-    manager_takeaways: str
-    explainers: tuple[tuple[str, str], ...] = ()
-    articles: tuple[tuple[str, str], ...] = ()
-    """The bodies Marcus adjudicates his run A claims against.
-
-    Run A was denied these; run B needs them, and needing them is the whole
-    reason the two are separate calls.
-    """
-
-    extractions: tuple[Extraction, ...] = ()
-    writer_questions: tuple[str, ...] = ()
-
-
-@dataclass(frozen=True)
-class EditionReviewInput:
-    """The managing editor's brief: the issue, never its sources."""
-
-    edition_id: str
-    manifest: Mapping[str, Any]
-    editorial: str | None
-    articles: tuple[tuple[str, str, str], ...] = field(default=())
-
-
-def manager_run_a_identity(prompt: PromptFile, item: ManagerRunAInput) -> str:
-    return work_identity(
-        "manager_run_a",
-        {
-            "prompt_path": prompt.path,
-            "prompt_sha256": prompt.sha256,
-            "edition": item.edition_id,
-            "furniture": _digest(_yaml_block(item.furniture)),
-        },
-    )
-
-
-def learning_identity(prompt: PromptFile, item: LearningReviewInput) -> str:
-    return work_identity(
-        "learning",
-        {
-            "prompt_path": prompt.path,
-            "prompt_sha256": prompt.sha256,
-            "edition": item.edition_id,
-            "furniture": _digest(_yaml_block(item.furniture)),
-            "manager_takeaways": _digest(item.manager_takeaways),
-            "explainers": _text_digests(item.explainers),
-            "articles": _text_digests(item.articles),
-            "extractions": _body_digests(item.extractions),
-            "writer_questions": list(item.writer_questions),
-        },
-    )
-
-
-def edition_identity(prompt: PromptFile, item: EditionReviewInput) -> str:
-    return work_identity(
-        "edition",
-        {
-            "prompt_path": prompt.path,
-            "prompt_sha256": prompt.sha256,
-            "edition": item.edition_id,
-            "manifest": _digest(_yaml_block(item.manifest)),
-            "editorial": _digest(item.editorial),
-            "articles": {
-                article_id: [content_mode, _digest(text)]
-                for article_id, content_mode, text in item.articles
-            },
-        },
-    )
-
-
-def compose_manager_run_a(prompt: PromptFile, item: ManagerRunAInput) -> str:
-    """Compose run A.  This function has no parameter that could hold a body."""
-
-    return "\n".join(
-        [
-            prompt.text.rstrip(),
-            "",
-            "---",
-            "",
-            "# Marcus, run A only",
-            "",
-            "Run ONLY the run A step of the Marcus persona. Do not run Nadia, "
-            "do not run Priya, and do not run Marcus run B: the article bodies "
-            "and the explainer are withheld from this call and will be supplied "
-            "to a separate one. Everything you can see is below.",
-            "",
-            f"Edition: `{item.edition_id}`",
-            "",
-            "## The editor-authored furniture, in full",
-            "",
-            _fence(_yaml_block(item.furniture)),
-            "",
-            "## Output contract",
-            "",
-            "Return one YAML document and nothing else, carrying only a "
-            "`manager_takeaways` key: one entry per article you can see "
-            "furniture for, each with `article`, `decision`, and exactly three "
-            "`claims`, each a sentence Marcus would say aloud. Emit no "
-            "`adjudication`, no `findings`, no `result`, and no `scores`: you "
-            "have not read the bodies and cannot adjudicate anything yet.",
-            "",
-            "```yaml",
-            "manager_takeaways:",
-            "  - article: <article-id>",
-            "    decision: <the one decision he would make>",
-            "    claims:",
-            "      - <claim one>",
-            "      - <claim two>",
-            "      - <claim three>",
-            "```",
-            "",
-        ]
-    )
-
-
-def compose_learning_prompt(prompt: PromptFile, item: LearningReviewInput) -> str:
-    """Compose run B, carrying run A's block in verbatim and unrevisable."""
-
-    parts = [prompt.text.rstrip(), "", "---", "", "# The edition under review", ""]
-    parts.append(f"Edition: `{item.edition_id}`")
-    parts.append("")
-    parts.append("## Marcus run A, already written and closed")
-    parts.append("")
-    parts.append(
-        "This block was produced by a separate call that saw the furniture and "
-        "nothing else. It is a record, not a draft. Copy it into your answer "
-        "unchanged -- the same decision and the same three claims, word for "
-        "word -- and add only the `adjudication` list to each entry. A run B "
-        "that improves run A's claims after reading the body has destroyed the "
-        "only measurement this persona makes, and the harness refuses it."
-    )
-    parts.append("")
-    parts.append(_fence(item.manager_takeaways))
-    parts.append("")
-    parts.append("## The editor-authored furniture")
     parts.append("")
     parts.append(_fence(_yaml_block(item.furniture)))
     parts.append("")
-    for explainer_id, text in item.explainers:
-        parts.append(f"## Explainer `{explainer_id}`")
-        parts.append("")
-        parts.append(_fence(text))
-        parts.append("")
-    if item.articles:
-        parts.append("## The article bodies, for Marcus run B and nothing else")
-        parts.append("")
-        for article_id, text in item.articles:
-            parts.append(f"### `{article_id}`")
-            parts.append("")
-            parts.append(_fence(text))
-            parts.append("")
-    if item.writer_questions:
-        parts.append("## The writer's own comprehension questions")
-        parts.append("")
-        parts.append(
-            "Nadia writes her six first and never replaces them with these; a "
-            "question here that the piece cannot answer is a "
-            "`comprehension_gap` all the same."
-        )
-        parts.append("")
-        parts.extend(f"- {question}" for question in item.writer_questions)
-        parts.append("")
+    parts.append("## The explainer")
+    parts.append("")
+    parts.append(_fence(item.manuscript))
+    parts.append("")
     for extraction in item.extractions:
         parts.append(f"## Pinned extraction `{extraction.source_id}` (complete)")
         parts.append("")
+        parts.append(
+            "For step 1 and step 5 only. Write your six questions from this, "
+            "then close it and answer them from the explainer alone."
+        )
+        parts.append("")
         parts.append(_fence(extraction.body))
         parts.append("")
-    parts.append(_yaml_only_contract("learning"))
+    parts.append(_yaml_only_contract("teaching"))
     return "\n".join(parts)
 
 
@@ -1149,8 +1269,64 @@ def compose_edition_prompt(prompt: PromptFile, item: EditionReviewInput) -> str:
         parts.append("")
         parts.append(_fence(text))
         parts.append("")
+    if item.house_style:
+        parts.append("## The house style corpus (`docs/WRITING_RULES.md`), in full")
+        parts.append("")
+        parts.append(
+            "Reproduced here so this brief is complete on its own. The swap "
+            "test and the voice question are judged against it."
+        )
+        parts.append("")
+        parts.append(_fence(item.house_style))
+        parts.append("")
     parts.append(_yaml_only_contract("edition"))
     return "\n".join(parts)
+
+
+def assert_source_withheld(
+    prompt: str,
+    extractions: Sequence[Extraction],
+    *,
+    manuscript: str,
+    label: str,
+) -> None:
+    """Refuse a brief that leaks source text the manuscript does not carry.
+
+    The second line of the source-blindness guarantee.  The first is the type:
+    :class:`SourceBlindReviewInput` has no field an extraction could arrive in.
+    This catches the case the type cannot -- a future edit that routes source
+    text in through the manuscript, a peer, or a corpus that quotes one.
+
+    The check cannot simply look for source sentences: a ``faithful_edit``
+    manuscript *is* the source's sentences, and the manuscript is legitimately
+    in this prompt.  So the exempt set is the prose the manuscript itself
+    carries, and any other substantial run of source prose found in the prompt
+    is a leak by a route the type system did not close.
+
+    Both sides are compared through :func:`_fold`, and the manuscript is
+    compared as one folded body rather than as a set of lines.  A source line is
+    a wrap fragment, not a unit of meaning: the same sentence sits alone on a
+    source line and mid-paragraph in a manuscript, so line-for-line equality
+    exempted nothing real and every faithful piece tripped its own guard.
+    Folding cuts both ways -- a leak that re-wrapped or re-quoted the source no
+    longer slips past either.
+    """
+
+    folded_prompt = _fold(prompt)
+    folded_manuscript = _fold(manuscript)
+    for extraction in extractions:
+        for line in extraction.body.splitlines():
+            candidate = _fold(line)
+            if len(candidate) < _LEAK_LINE_LENGTH:
+                continue
+            if candidate in folded_manuscript:
+                continue
+            if candidate in folded_prompt:
+                raise ProduceError(
+                    f"{label} brief carries source text from "
+                    f"{extraction.source_id} that the manuscript does not: "
+                    f"{line.strip()[:60]!r}. This lens is forbidden the source."
+                )
 
 
 # ---------------------------------------------------------------------------
@@ -1182,18 +1358,33 @@ def parse_verdict(text: str, *, label: str) -> dict[str, Any]:
 
 
 def _yaml_only_contract(kind: str) -> str:
+    """The four keys every lens returns, and the one field that is new.
+
+    One parser serves all seven lenses, which is why the key set is identical
+    and why no kind gets a block of its own any more -- the retired ``learning``
+    kind carried two, and a per-kind block is a second parser by another name.
+
+    ``disposition`` is restated here rather than left to the prompt file
+    because it is the field that replaced the severity cap and the recorder
+    refuses a structured finding without it.  A worker that omitted it would
+    have its whole reply rejected after the call was paid for, and the sentence
+    that prevents that is cheaper than the call.
+    """
+
     return (
         "## Output contract\n\n"
         "Return one YAML document and nothing else, in exactly the shape the "
         f"{kind} review prompt above specifies. No preamble, no commentary "
-        "after it. The document may carry only `result`, `findings`, `scores`, "
-        "`notes`"
-        + (
-            ", `comprehension`, and `manager_takeaways`"
-            if kind == "learning"
-            else ""
-        )
-        + ": any other key is refused by the recorder.\n"
+        "after it. The document may carry only `result`, `findings`, `scores` "
+        "and `notes`: any other key is refused by the recorder.\n\n"
+        "Every finding must carry `disposition`, and it is either `fix` (the "
+        "writer resolves it) or `editor_decision` (a human chooses the remedy, "
+        "because the text is the source author's own in an author-voiced mode "
+        "and `docs/EDITORIAL_POLICY.md` makes changing its wording "
+        "review-required). Severity describes the defect; disposition says who "
+        "repairs it. Never soften or drop a finding because it is the author's: "
+        "file it at its true severity and route it. A finding without a "
+        "disposition is refused.\n"
     )
 
 

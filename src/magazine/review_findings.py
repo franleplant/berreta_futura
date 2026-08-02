@@ -12,7 +12,7 @@ it into a line of Python repr that no tool can read back.  This module is the
 one place that knows what a finding is, so every kind stores the same shape and
 no kind has to re-derive it.
 
-Two rules hold across the whole bench:
+Three rules hold across the whole bench:
 
 * **A finding is stored as authored.**  Known keys are written in a fixed
   order so records diff cleanly, unknown keys are preserved rather than
@@ -23,6 +23,47 @@ Two rules hold across the whole bench:
   exposed; nothing in this package reads one to decide anything.  A gated score
   invites generous scoring, which would cost more than the measurement is
   worth.  They exist to be rolled up by ``mag scores`` and looked at.
+* **Every authored finding says who repairs it.**  :data:`FINDING_DISPOSITIONS`
+  is the field that replaced the severity cap, and the reason it is *required*
+  rather than defaulted is written out below.
+
+Ownership is a routing decision, never a severity ceiling
+---------------------------------------------------------
+
+The old bench capped findings on the source author's retained sentences at
+``minor`` in the author-voiced modes.  That did not merely shield defects, it
+certified cleanliness: a round-3 line review approved a piece with the note that
+the actionable surface was clean *because* everything remaining was
+uncapped-able, and twelve lowercase sentence openings, a subject-verb error and
+six identical constructions in 495 words were inside that sentence.
+
+``prompts/README.md`` replaced the cap with routing, and this module is where
+that replacement is made structural.  Severity describes the defect;
+:data:`FINDING_DISPOSITIONS` says who is allowed to repair it:
+
+``fix``
+    The writer resolves it in the next round.
+
+``editor_decision``
+    A human chooses the remedy, because the sentence is the source author's own
+    retained text in ``faithful_edit`` or ``faithful_synthesis``, where
+    ``docs/EDITORIAL_POLICY.md`` makes changing wording review-required.  The
+    severity is still whatever the defect deserves.  An ``editor_decision``
+    finding blocks the release until a human dispositions it, is never dropped,
+    never softened, and never counted as clean -- which is what
+    :func:`has_editor_decision` exists to let a gate say.
+
+Because a parser that drops ``disposition`` reintroduces the bug the cap caused,
+it is required of every *authored* structured finding
+(:data:`DEFAULT_REQUIRED_FINDING_KEYS`, which :func:`normalize_findings` uses).
+It is deliberately **not** required of a *stored* one
+(:data:`STORED_REQUIRED_FINDING_KEYS`, which :func:`finding_errors` uses): every
+finding committed before this field existed would otherwise stop loading, and
+re-auditing a shipped edition to add a key nobody can now honestly supply is a
+worse answer than reading the old record for the part of it that is still true.
+That is the same bargain ``evidence_review`` already struck with its version 1
+ledger binding.  New records carry it; old records load without it; nothing in
+between can be written.
 """
 
 from __future__ import annotations
@@ -33,6 +74,20 @@ from .errors import ValidationError
 
 
 FINDING_SEVERITIES = ("blocking", "major", "minor")
+
+FIX = "fix"
+"""The writer resolves this finding in the next round."""
+
+EDITOR_DECISION = "editor_decision"
+"""A human chooses the remedy; the writer must not be sent at it.
+
+The remedies open to that human are a silent repair, ``[sic]``, leaving it, or
+not printing the piece.  An editor's note is deliberately not among them: the
+magazine does not print editorial apparatus inside an article, and a note is how
+a piece keeps its defect while appearing to answer one.
+"""
+
+FINDING_DISPOSITIONS = (FIX, EDITOR_DECISION)
 
 # The keys the prompts define, in the order a record writes them.  A finding
 # carrying anything else keeps it, sorted, after these -- the recorder is not
@@ -45,20 +100,42 @@ FINDING_SEVERITIES = ("blocking", "major", "minor")
 # mis-stated promise in paragraph two, and a reviser working from the locator
 # alone would have patched the symptom.  It is optional on every kind and
 # expected only on the structural categories.
+#
+# ``disposition`` sits after ``category`` because that is where every lens
+# prompt writes it, and a record should read the way the judge wrote it.
+#
+# ``persona`` is retired but not removed.  It was required of a ``learning``
+# finding, because the same sentence meant different things from Nadia (the
+# piece never says this) and from Priya (the piece says this and the source
+# disagrees).  ``prompts/README.md`` cut Marcus and Priya and kept Nadia as
+# ``teaching``, so there is one reader now and naming her on every row says
+# nothing -- but records written before the cut carry the key, and a recorder
+# that dropped it on the way past would rewrite history to match the present.
+# It stays in the order so those records still diff cleanly; nothing writes it.
 FINDING_KEYS = (
     "severity",
     "article",
     "locator",
     "repair_from",
     "category",
+    "disposition",
     "persona",
     "note",
     "suggestion",
 )
 
-# Every prompt requires these two of a structured finding: without a severity
-# the finding cannot be triaged, and without a note it says nothing.
-DEFAULT_REQUIRED_FINDING_KEYS = ("severity", "note")
+# What an *authored* structured finding must carry.  Without a severity the
+# finding cannot be triaged, without a note it says nothing, and without a
+# disposition the bench is back to a severity cap by omission -- see the module
+# docstring.  A plain-string finding typed into ``--finding`` is exempt from all
+# three, since a human filing a sentence is not filing against a locator.
+DEFAULT_REQUIRED_FINDING_KEYS = ("severity", "note", "disposition")
+
+# What a *stored* structured finding must carry to be readable.  Deliberately
+# short of the authored set: every finding committed before ``disposition``
+# existed still loads, and its absence is reported as unrouted rather than as a
+# corrupt record.  Nothing may be *written* to this weaker standard.
+STORED_REQUIRED_FINDING_KEYS = ("severity", "note")
 
 SCORE_RANGE = (1, 5)
 
@@ -107,14 +184,17 @@ def finding_errors(
     findings: Any,
     *,
     label: str,
-    required: tuple[str, ...] = DEFAULT_REQUIRED_FINDING_KEYS,
+    required: tuple[str, ...] = STORED_REQUIRED_FINDING_KEYS,
 ) -> list[str]:
     """The same checks as :func:`normalize_findings`, as a list of errors.
 
     Loading a record accumulates every complaint about the file before raising,
     so it cannot use the normalizer's own raise.  A record that predates
     structured findings must still load: a string finding passes here exactly
-    as it always did.
+    as it always did, and so does a mapping written before ``disposition``
+    existed -- the default ``required`` here is the *stored* set rather than the
+    authored one, deliberately, so that reading a shipped record never demands a
+    key the judge who wrote it was never asked for.
     """
 
     if not isinstance(findings, list):
@@ -160,9 +240,16 @@ def _normalize_mapping_finding(
             f"{label} finding {index} severity must be "
             + ", ".join(FINDING_SEVERITIES)
         )
-    persona = values.get("persona")
-    if persona is not None and not persona:
-        errors.append(f"{label} finding {index} persona must be a non-empty string")
+    # Checked whenever it is present, on the read path as well as the write
+    # path.  A misspelled disposition is worse than a missing one: an absent
+    # value is visibly unrouted, while ``editor-decision`` would be silently
+    # read as "not an editor decision" and quietly counted clean.
+    disposition = values.get("disposition")
+    if disposition is not None and disposition not in FINDING_DISPOSITIONS:
+        errors.append(
+            f"{label} finding {index} disposition must be "
+            + " or ".join(FINDING_DISPOSITIONS)
+        )
     ordered = {key: values[key] for key in FINDING_KEYS if key in values}
     ordered.update(
         {key: values[key] for key in sorted(values) if key not in FINDING_KEYS}
@@ -265,3 +352,58 @@ def has_blocking_finding(findings: Iterable[Any]) -> bool:
         isinstance(item, Mapping) and item.get("severity") == "blocking"
         for item in findings
     )
+
+
+def editor_decision_findings(findings: Iterable[Any]) -> list[Any]:
+    """Every finding a human still has to rule on, in stored order.
+
+    This is the *enforced* one, and unlike :func:`has_blocking_finding` it has
+    to be.  A blocking finding already forces ``changes_required`` inside the
+    verdict, so a recorder can report it and trust the judge.  An
+    ``editor_decision`` finding is compatible with any result the lens likes --
+    it has said the defect is real and said it is not the writer's -- so nothing
+    in the verdict itself stops an issue shipping with one unresolved.  The
+    release gate is the only place that can, so the per-kind
+    ``require_approved_*`` refusals in :mod:`magazine.piece_review` and
+    :mod:`magazine.edition_review` call this directly, and they name every
+    finding it returns rather than counting them: a count is a number an
+    operator can clear without reading what is in it.
+
+    Returns the findings rather than a boolean because every caller needs them.
+    A predicate would be one line shorter and would have produced exactly the
+    refusal message the old bench used to give -- "there are unresolved
+    findings" -- which is the sentence that teaches people to stop reading.
+    """
+
+    return [
+        item
+        for item in findings
+        if isinstance(item, Mapping) and item.get("disposition") == EDITOR_DECISION
+    ]
+
+
+def has_editor_decision(findings: Iterable[Any]) -> bool:
+    """Whether anything here is waiting on a human.  A convenience for reports.
+
+    The gates use :func:`editor_decision_findings` instead, because a refusal
+    has to name what it is refusing over.
+    """
+
+    return bool(editor_decision_findings(findings))
+
+
+def describe_finding(finding: Any) -> str:
+    """One line naming a finding, for a refusal that has to list several."""
+
+    if not isinstance(finding, Mapping):
+        return str(finding).strip().splitlines()[0] if str(finding).strip() else "?"
+    severity = str(finding.get("severity") or "?")
+    article = str(finding.get("article") or "").strip()
+    category = str(finding.get("category") or "unspecified")
+    locator = str(finding.get("locator") or "").strip()
+    head = f"[{severity}] {category}"
+    if article:
+        head = f"{article}: {head}"
+    if locator:
+        head += f" at {locator}"
+    return head

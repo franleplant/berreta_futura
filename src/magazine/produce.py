@@ -1,22 +1,47 @@
 """The pipeline that owns the order of generation and judgment.
 
 Until now the order lived in an operating agent's head: draft a piece, remember
-to fact-check it, remember that the line editor must not be shown the source,
-remember that a revision needs the previous draft's notes and not just the
-findings.  Every one of those was reliably remembered until the run that
+to fact-check it, remember that the source-blind lenses must not be shown the
+source, remember that a revision needs the previous draft's notes and not just
+the findings.  Every one of those was reliably remembered until the run that
 mattered.  ``mag produce`` moves the order into code, where forgetting is a
 test failure rather than a shipped defect.
 
 The shape, per piece::
 
-    writer  ->  deterministic gates  ->  fact-checker + line editor (parallel)
+    writer  ->  deterministic gates  ->  stage 1:  worth + mechanics
+                                              |
+                                         stage 2:  evidence + shape
+                                              |
+                                         stage 3:  craft + teaching
                                               |
                        findings + the writer's own notes back to the writer
                                               |
                                        at most three rounds
 
-and then, once every piece has passed, the two whole-issue judgments: the
-learning personas, then the managing editor.
+and then, once every piece has passed, stage 4: the managing editor, once, over
+the whole issue.
+
+**Why the stages, and why in that order.**  ``prompts/README.md`` sets them out
+and the rationale is cost against invalidation, not tidiness.  Worth is the gate
+because a piece that should not exist at this length makes every downstream
+finding worthless -- craft notes on a paragraph about to be cut are calls paid
+for and thrown away -- so a ``worth`` blocking finding stops the piece for the
+round.  Mechanics joins stage 1 because it is the cheapest call on the bench and
+its findings survive any later change; a mechanics blocking finding therefore
+does *not* stop stage 2, whose lenses read text its local repairs do not move.
+Craft runs last because sentence work is destroyed by every structural or
+factual repair above it, so stage 3 runs only where stages 1 and 2 produced no
+blocking finding at all.  Within a stage the lenses are independent and run
+concurrently.
+
+**Why a lens sometimes does not run at all.**  Two reasons, and they are
+different.  A lens may not *read* this piece -- ``worth`` never reads the
+editorial, ``teaching`` reads only the explainer -- in which case its graph node
+is ``not_applicable`` and nothing is owed.  Or its declared inputs have not
+moved since it last answered, in which case its verdict is carried forward
+untouched and no call is made.  Neither is the same as approving, and a round in
+which an applicable lens neither ran nor carried forward cannot pass the piece.
 
 **Why the gates come first.**  A judge costs a model call and several minutes.
 Pin verification, the code-fence check, figure-anchor reconciliation,
@@ -88,48 +113,55 @@ from .errors import MagazineError, ValidationError
 from .extraction import Extraction, load_extraction, verify_source_extractions
 from .footnotes import verify_manuscript_footnotes
 from .code_blocks import verify_manuscript_code_blocks
-from .learning_review import explainer_article_ids, furniture_projection
-from .line_review import EDITORIAL_ARTICLE_ID
 from .manifest import Edition
 from .media_schema import semantic_headings
+from .piece_review import EDITORIAL_ARTICLE_ID
 from .publication_document import DocumentParseError
 from .produce_graph import (
+    EDITION_JUDGE_KIND,
     ISSUE_PIECE_ID,
+    PIECE_JUDGE_KINDS,
     PIECE_JUDGE_LENSES,
+    JudgeLens,
     ProductionGraph,
+    lens_applies,
     resolve_production_graph,
+    stage_order,
 )
 from .produce_prompts import (
+    HOUSE_STYLE_PATH,
     JUDGE_PROMPTS,
     EditionReviewInput,
     EvidenceReviewInput,
     FigureSlot,
-    LearningReviewInput,
-    LineReviewInput,
-    ManagerRunAInput,
     Piece,
     ProduceError,
     PromptFile,
+    SourceBlindReviewInput,
+    TeachingReviewInput,
+    WorthReviewInput,
     WriterBrief,
     assert_source_withheld,
     compose_edition_prompt,
     compose_evidence_prompt,
-    compose_learning_prompt,
-    compose_line_prompt,
-    compose_manager_run_a,
+    compose_source_blind_prompt,
+    compose_teaching_prompt,
+    compose_worth_prompt,
     compose_writer_prompt,
     contains_scratch,
+    craft_identity,
     edition_identity,
     evidence_identity,
-    learning_identity,
-    line_identity,
     load_prompt,
-    manager_run_a_identity,
     parse_verdict,
+    source_blind_identity,
     split_reply,
+    teaching_identity,
+    worth_identity,
     writer_identity,
     writer_prompt_path,
 )
+from .teaching_review import furniture_projection
 from .production_record import (
     ModelCall,
     PieceRecord,
@@ -167,13 +199,12 @@ fourth round spends a model call to learn nothing.
 DEFAULT_EDITORIAL_PAGES = 1
 DEFAULT_ARTICLE_PAGES = 7
 
-# The judges that read one piece, in the order their findings are reported.
-# They run concurrently; this tuple decides only how the report reads.  It is
-# the graph's declaration rather than a second copy of it: the node set, the
-# completion predicate, the work contracts and this ordering must name the same
-# lenses, and the narrower single-concern lenses that replace these two will be
-# declared once, in :data:`~magazine.produce_graph.PIECE_JUDGE_LENSES`.
-PIECE_JUDGES = PIECE_JUDGE_LENSES
+# The lenses that read one piece, in repair order.  The graph's declaration
+# rather than a second copy of it: the node set, the completion predicate, the
+# work contracts, the staging schedule and this ordering all name the same seven
+# things because they are all read off
+# :data:`~magazine.produce_graph.PIECE_JUDGE_LENSES`.
+PIECE_JUDGES = PIECE_JUDGE_KINDS
 
 # Re-exported: ``ISSUE_PIECE_ID`` is the scope name the whole-issue judgments,
 # their records and their work items all share, and it is declared with the
@@ -879,8 +910,8 @@ class Production:
                 finished.append(piece.id)
             else:
                 # A piece that could not be settled makes every judgment
-                # downstream of it meaningless: the learning personas and the
-                # managing editor read the issue, and the issue is not finished.
+                # downstream of it meaningless: the managing editor reads the
+                # whole issue, and the issue is not finished.
                 human_actions.append(
                     f"{piece.id} exhausted {outcome.rounds} round(s) and needs a "
                     f"human; see {outcome.record}"
@@ -891,33 +922,51 @@ class Production:
         issue_reviews: dict[str, Any] = {}
         recorded: dict[str, str] = {}
         issue_due = produced or not self._issue_records_present(edition_id)
-        if finished and not parked and not stopped_on_escalation and issue_due:
-            # The learning personas and the managing editor read the finished
-            # issue.  With a piece still out, there is no finished issue, and
-            # nothing may be recorded against one.
+        # Every piece of the *edition*, not every piece of this invocation.
+        # ``finished`` holds what this run selected, and ``--articles article``
+        # therefore satisfied it with one article while the editorial was still
+        # the staged marker it arrived as -- so the managing editor read, judged
+        # and recorded a verdict on an issue that did not exist yet.  The
+        # declared graph already states the real dependency, so ask it rather
+        # than restating it here.
+        settled_everywhere = self._every_piece_settled(edition_id)
+        issue_parked = False
+        if finished and not parked and not stopped_on_escalation:
+            # Two different preconditions, told apart.  Binding this run's
+            # per-piece verdicts to the bench needs the pieces this run judged,
+            # which is what ``finished`` is.  The whole-issue judgments need the
+            # whole issue, which is what ``settled_everywhere`` is.  They used
+            # to share one branch, so a subset run got both -- and the managing
+            # editor read an issue whose editorial had not been written.
             edition = self._load_edition(edition_id)
-            try:
-                issue_reviews = self._judge_issue(edition_id, edition)
-            except WorkParked:
-                # The whole-issue stage is out with a worker.  Reported as an
-                # outcome of its own rather than pushed onto a local list and
-                # dropped, which is what used to happen: the stage that never
-                # ran left no trace in the result, so the report could not
-                # mention it and the operator could not miss it.
-                parked.append(ISSUE_PIECE_ID)
-                outcomes.append(
-                    PieceOutcome(
-                        piece_id=ISSUE_PIECE_ID,
-                        status="parked",
-                        rounds=0,
-                        record=str(
-                            issue_record_path(
-                                self.magazine.editions_dir, edition_id, "edition"
-                            )
-                        ),
+            if settled_everywhere and issue_due:
+                try:
+                    issue_reviews = self._judge_issue(edition_id, edition)
+                except WorkParked:
+                    issue_parked = True
+                    # The whole-issue stage is out with a worker.  Reported as
+                    # an outcome of its own rather than pushed onto a local
+                    # list and dropped, which is what used to happen: the stage
+                    # that never ran left no trace in the result, so the report
+                    # could not mention it and the operator could not miss it.
+                    parked.append(ISSUE_PIECE_ID)
+                    outcomes.append(
+                        PieceOutcome(
+                            piece_id=ISSUE_PIECE_ID,
+                            status="parked",
+                            rounds=0,
+                            record=str(
+                                issue_record_path(
+                                    self.magazine.editions_dir, edition_id, "edition"
+                                )
+                            ),
+                        )
                     )
-                )
-            else:
+            if not issue_parked:
+                # Nothing is recorded while the issue stage is out: a bench
+                # entry written now would be amended by the very next
+                # invocation, and a verdict recorded twice against the same
+                # bytes is how a record stops being evidence.
                 recorded, actions = self._record_bench(
                     edition_id, edition, finished, issue_reviews
                 )
@@ -943,6 +992,19 @@ class Production:
             self.root, self.magazine.editions_dir, edition_id
         )
 
+    def _every_piece_settled(self, edition_id: str) -> bool:
+        """Whether every piece the *edition* declares has reached ``settled``.
+
+        The precondition the whole-issue judgments actually have, as opposed to
+        the one the loop above can see.  A run producing a subset knows only
+        about its subset; the graph reads the manifest, so it knows about the
+        piece nobody selected.
+        """
+
+        graph = self._graph(edition_id)
+        settled = [node for node in graph.nodes if node.spec.id == "settled"]
+        return bool(settled) and all(node.accepting for node in settled)
+
     # -- one piece --------------------------------------------------------
 
     def _produce_piece(
@@ -966,6 +1028,12 @@ class Production:
         previous_notes: str | None = None
         findings: tuple[Mapping[str, Any], ...] = ()
         gate_failures: tuple[str, ...] = ()
+        # Verdicts from the previous round, offered to the next one's lenses as
+        # carry-forward candidates.  A lens whose declared inputs have not moved
+        # re-uses its answer rather than paying for it again -- the README's
+        # re-run rule -- and the freshness test is the lens's own work identity,
+        # so nothing here needs to know which lens depends on what.
+        carried: dict[str, "Verdict"] = {}
         # A finding filed from outside the loop makes round one a revision:
         # the draft it complains about is the one on disk, and a writer asked
         # to clear a defect without being shown the text carrying it would
@@ -1065,14 +1133,48 @@ class Production:
                 continue
 
             verdicts = self._judge_piece(
-                piece, extractions, manuscript, edition, round_number=round_number
+                piece,
+                extractions,
+                manuscript,
+                edition,
+                round_number=round_number,
+                carried=carried,
             )
+            # What this round settled becomes what the next round may reuse.
+            # Only the lenses that actually ran are carried: a lens the staging
+            # skipped has no verdict for this draft, and pretending otherwise
+            # would let a piece pass on a judgment nobody made.
+            carried = dict(verdicts)
             round_record.judges = {
                 name: verdict.to_dict() for name, verdict in verdicts.items()
             }
+            # Every applicable lens must have approved.  A lens the staging
+            # skipped is *absent*, not approving, so its absence has to fail the
+            # round -- otherwise a worth-blocked piece whose two stage-1 lenses
+            # both happened to return ``approved`` would pass without evidence,
+            # shape, craft or teaching ever having read it.
+            expected = {
+                lens.kind
+                for lens in PIECE_JUDGE_LENSES
+                if lens_applies(
+                    lens, piece_id=piece.id, content_mode=piece.content_mode
+                )
+            }
+            unrun = sorted(expected - set(verdicts))
             changed = [
                 verdict for verdict in verdicts.values() if verdict.result != "approved"
             ]
+            if unrun and not changed:
+                raise ProduceError(
+                    f"{piece.id} round {round_number} did not run "
+                    + ", ".join(unrun)
+                    + ", and every lens that did run returned approved. A stage "
+                    "is skipped only after a blocking finding, and the prompts "
+                    "require any blocking finding to force changes_required, so "
+                    "either a lens filed one under an approving verdict or the "
+                    "staging skipped a stage it had no reason to. Neither may "
+                    "pass a piece: an unrun lens is absent, never approving."
+                )
             round_record.result = "approved" if not changed else "changes_required"
             write_piece_record(self.magazine.editions_dir, record)
             if not changed:
@@ -1189,160 +1291,243 @@ class Production:
         edition: Edition,
         *,
         round_number: int,
+        carried: Mapping[str, "Verdict"] = {},
     ) -> dict[str, "Verdict"]:
-        """Run the fact-checker and the line editor over one piece, together.
+        """Run the applicable lenses over one piece, in stages, cheapest first.
 
-        They are independent and each costs minutes, so they overlap.
-        ``ordered_map`` is the package's one fan-out: results come back in
-        input order and the lowest-index failure is the one raised, so the two
-        judges cannot make a run's error message depend on thread scheduling.
+        ``prompts/README.md`` sets out four stages and a cost rationale, and
+        both halves matter.  Stage 1 is ``worth`` and ``mechanics``: worth is
+        the gate because a piece that should not exist at this length makes
+        every downstream finding worthless -- craft notes on a paragraph about
+        to be cut are wasted calls -- and mechanics is here because it is the
+        cheapest call on the bench and its findings survive any later change.
+        Stage 2 is ``evidence`` and ``shape``.  Stage 3 is ``craft`` and
+        ``teaching``, and craft runs last because sentence work is destroyed by
+        every structural or factual repair above it.
+
+        Two different skips, and they are not the same rule.  A ``worth``
+        blocking finding stops the piece: stages 2 and 3 do not run on it this
+        round.  A blocking finding from anything in stages 1 or 2 -- mechanics
+        included -- stops stage 3 only, because craft is the lens most sensitive
+        to text churn and a repair anywhere above it buys a re-run.  Mechanics
+        blocking deliberately does *not* stop stage 2: its repairs are local and
+        do not move what evidence and shape read.
+
+        Within a stage the lenses are independent, so they overlap.
+        ``ordered_map`` is the package's one fan-out: results come back in input
+        order and the lowest-index failure is the one raised, so concurrency
+        cannot make a run's error message depend on thread scheduling.  Every
+        lens in a stage is composed and offered even when the first one parks,
+        which is what lets a cooperative driver fan a whole stage out at once.
+
+        ``carried`` holds verdicts from an earlier round whose lens inputs have
+        not moved.  A lens re-runs only when its own declared inputs moved --
+        that is the README's re-run rule -- and the cache key is the same work
+        identity the cooperative backend binds a stored reply to, so the two
+        notions of "still the same question" cannot drift apart.
         """
 
-        evidence_prompt = self._prompt(JUDGE_PROMPTS["evidence"])
-        line_prompt = self._prompt(JUDGE_PROMPTS["line"])
-        evidence_input = EvidenceReviewInput(
-            piece_id=piece.id,
-            content_mode=piece.content_mode,
-            byline=piece.byline,
-            manuscript=manuscript,
-            extractions=tuple(extractions),
-            peer_manuscripts=self._peers(edition, piece),
-        )
-        line_input = LineReviewInput(
-            piece_id=piece.id,
-            content_mode=piece.content_mode,
-            byline=piece.byline,
-            max_pages=piece.max_pages,
-            manuscript=manuscript,
-        )
-        evidence_text = compose_evidence_prompt(evidence_prompt, evidence_input)
-        line_text = compose_line_prompt(line_prompt, line_input)
-        # The type already makes a source impossible to pass; this catches a
-        # future edit that smuggles one in through the manuscript or a peer.
-        assert_source_withheld(
-            line_text, extractions, manuscript=manuscript, label="line editor"
-        )
-        jobs = (
-            (
-                "evidence",
-                evidence_prompt,
-                evidence_text,
-                evidence_identity(evidence_prompt, evidence_input),
-            ),
-            ("line", line_prompt, line_text, line_identity(line_prompt, line_input)),
-        )
-        # Both jobs run whatever either does, so under a cooperative backend
-        # both briefs are composed and offered even though the first one to
-        # find no answer is the one whose signal escapes.  That is what makes
-        # the fact-checker and the line editor a *pair* a driver can fan out.
-        results = ordered_map(
-            lambda job: self._verdict(
-                job[0],
-                job[1],
-                job[2],
+        verdicts: dict[str, "Verdict"] = {}
+        halted = False
+        blocking_so_far = False
+        stages = stage_order()
+        # The finish stage, read off the table rather than written as ``3``.
+        # Which number it is is a fact about how many stages there are, and the
+        # rule is about position: the last stage is the one whose findings are
+        # destroyed by every repair above it.
+        finish_stage = stages[-1][0] if stages else 0
+        for stage, lenses in stages:
+            if halted:
+                break
+            if stage == finish_stage and blocking_so_far:
+                # Craft and teaching are the churn-sensitive pair.  Paying for
+                # them over text that a blocking finding above is about to move
+                # buys a finding against a paragraph that will not survive.
+                break
+            jobs = [
+                self._lens_job(
+                    lens, piece, extractions, manuscript, edition, carried=carried
+                )
+                for lens in lenses
+                if lens_applies(
+                    lens, piece_id=piece.id, content_mode=piece.content_mode
+                )
+            ]
+            if not jobs:
+                continue
+            fresh = [job for job in jobs if job.verdict is None]
+            results = (
+                ordered_map(
+                    lambda job: self._verdict(
+                        job.lens.kind,
+                        job.prompt,
+                        job.text,
+                        piece_id=piece.id,
+                        identity=job.identity,
+                        round_number=round_number,
+                        inputs_sha256=job.identity,
+                    ),
+                    fresh,
+                    workers=max(1, len(fresh)),
+                )
+                if fresh
+                else []
+            )
+            answered = {job.lens.kind: verdict for job, verdict in zip(fresh, results)}
+            for job in jobs:
+                verdict = job.verdict or answered[job.lens.kind]
+                verdicts[job.lens.kind] = verdict
+                if _has_blocking(verdict):
+                    blocking_so_far = True
+                    if job.lens.blocking_halts_piece:
+                        # Only ``worth`` declares this today, and it declares it
+                        # rather than being named here so that the rule stays a
+                        # property of the lens.  Note that the rest of *this*
+                        # stage still runs: the lenses in a stage are
+                        # independent and already dispatched, and throwing away
+                        # a sibling's answer would cost a call to buy nothing.
+                        halted = True
+        return verdicts
+
+    def _lens_job(
+        self,
+        lens: JudgeLens,
+        piece: Piece,
+        extractions: Sequence[Extraction],
+        manuscript: str,
+        edition: Edition,
+        *,
+        carried: Mapping[str, "Verdict"],
+    ) -> "_LensJob":
+        """Compose one lens's brief for one piece, or reuse a carried verdict.
+
+        This is the function the source-blindness guarantee is enforced in, and
+        it is enforced three times over.  A blind lens is handed a
+        :class:`~magazine.produce_prompts.SourceBlindReviewInput`, which has no
+        field an extraction could occupy; its composer accepts no other type;
+        and the composed text is then scanned by
+        :func:`~magazine.produce_prompts.assert_source_withheld` against the
+        very extractions it was denied, so a leak by any route the types did not
+        close is a refusal rather than a quiet contract breach.  The scan is not
+        redundant with the types: it is what catches source prose arriving
+        through a peer manuscript, a furniture field, or the house-style corpus.
+        """
+
+        prompt = self._prompt(JUDGE_PROMPTS[lens.kind])
+        if lens.kind == "worth":
+            item = WorthReviewInput(
                 piece_id=piece.id,
-                identity=job[3],
-                round_number=round_number,
-            ),
-            jobs,
-            workers=2,
-        )
-        return {job[0]: verdict for job, verdict in zip(jobs, results)}
+                content_mode=piece.content_mode,
+                byline=piece.byline,
+                title=piece.title,
+                manuscript=manuscript,
+                extractions=tuple(extractions),
+            )
+            text = compose_worth_prompt(prompt, item)
+            identity = worth_identity(prompt, item)
+        elif lens.kind == "evidence":
+            item = EvidenceReviewInput(
+                piece_id=piece.id,
+                content_mode=piece.content_mode,
+                byline=piece.byline,
+                manuscript=manuscript,
+                extractions=tuple(extractions),
+                peer_manuscripts=self._peers(edition, piece),
+            )
+            text = compose_evidence_prompt(prompt, item)
+            identity = evidence_identity(prompt, item)
+        elif lens.kind == "teaching":
+            item = TeachingReviewInput(
+                piece_id=piece.id,
+                content_mode=piece.content_mode,
+                byline=piece.byline,
+                manuscript=manuscript,
+                furniture=furniture_projection(edition),
+                extractions=tuple(extractions),
+            )
+            text = compose_teaching_prompt(prompt, item)
+            identity = teaching_identity(prompt, item)
+        else:
+            item = SourceBlindReviewInput(
+                piece_id=piece.id,
+                content_mode=piece.content_mode,
+                byline=piece.byline,
+                max_pages=piece.max_pages,
+                manuscript=manuscript,
+            )
+            house_style = self._house_style() if lens.kind == "craft" else ""
+            text = compose_source_blind_prompt(
+                prompt, item, kind=lens.kind, house_style=house_style
+            )
+            identity = (
+                craft_identity(prompt, item, house_style=house_style)
+                if lens.kind == "craft"
+                else source_blind_identity(lens.kind, prompt, item)
+            )
+        if lens.is_source_blind:
+            assert_source_withheld(
+                text, extractions, manuscript=manuscript, label=f"{lens.kind} lens"
+            )
+        previous = carried.get(lens.kind)
+        # The re-run rule, and the whole of it: a lens re-runs when its own
+        # declared inputs moved, and its identity *is* the digest of those
+        # inputs.  An unrevised piece therefore carries every lens's verdict
+        # forward untouched and costs nothing, and a piece whose manuscript
+        # moved re-runs the manuscript-reading lenses without anybody keeping a
+        # second list of what depends on what.
+        if previous is not None and previous.inputs_sha256 == identity:
+            return _LensJob(lens=lens, prompt=prompt, text=text, identity=identity,
+                            verdict=previous)
+        return _LensJob(lens=lens, prompt=prompt, text=text, identity=identity)
+
+    def _house_style(self) -> str:
+        """The house-style corpus, embedded in the briefs whose prompts cite it.
+
+        Loaded through the prompt loader so that a missing corpus is the same
+        named refusal a missing prompt file is, and so that its digest is
+        available to the identity functions: rewriting the house style rewrites
+        the question ``craft`` and ``edition`` were asked.
+        """
+
+        return self._prompt(HOUSE_STYLE_PATH).text
 
     def _issue_records_present(self, edition_id: str) -> bool:
-        """Whether both whole-issue judgments have already been made.
+        """Whether the whole-issue judgment has already been made.
 
         A run that produced nothing new has nothing to re-judge, which is why
-        the whole-issue personas are normally skipped in that case: they are the
-        most expensive calls in the pipeline and re-running them over unchanged
-        text buys nothing.  But "produced nothing new" is also what the *last*
+        the managing editor is normally skipped in that case: it is the most
+        expensive call in the pipeline and re-running it over unchanged text
+        buys nothing.  But "produced nothing new" is also what the *last*
         invocation of an agent-driven loop looks like -- every piece settled two
-        invocations ago and only the manager's runs are left -- so the skip has
-        to be conditioned on the judgments actually existing rather than on this
+        invocations ago and only the issue call is left -- so the skip has to be
+        conditioned on the judgment actually existing rather than on this
         process having drafted something.
         """
 
-        return all(
-            issue_record_path(self.magazine.editions_dir, edition_id, kind).is_file()
-            for kind in ("learning", "edition")
-        )
+        return issue_record_path(
+            self.magazine.editions_dir, edition_id, EDITION_JUDGE_KIND
+        ).is_file()
 
     def _judge_issue(self, edition_id: str, edition: Edition) -> dict[str, Any]:
-        """The learning personas, then the managing editor.
+        """Stage 4: the managing editor, once, over the finished issue.
 
-        The manager's two runs are the reason this is not one call.  Run A sees
-        the furniture and nothing else; run B is handed A's block and the
-        bodies.  A single run cannot un-see the body, and that is precisely the
-        run that finds its own takeaways well supported.
+        One call now, where there used to be three.  ``prompts/README.md``
+        retired the two reader personas that preceded it: Marcus's
+        furniture-versus-body adjudication is a support relation ``evidence``
+        already reads for free, Priya's furniture-versus-source check is
+        ``evidence``'s job applied to non-body text, and each of them cost two
+        extra whole-issue calls for one lens's worth of information.  Nadia
+        survives per piece as ``teaching``, where a closed-book comprehension
+        test is a thing only she can give.
+
+        This is also the only lens in the bench that may see more than one piece
+        at a time, and it may because its whole subject is the relation between
+        them: whether the strongest piece opens, whether two pieces make the
+        same point, whether two of them sound like the same writer.  Every other
+        lens is one piece per call, by construction.
         """
 
-        learning_prompt = self._prompt(JUDGE_PROMPTS["learning"])
-        furniture = furniture_projection(edition)
-        run_a_input = ManagerRunAInput(edition_id=edition_id, furniture=furniture)
-        run_a = self._dispatch(
-            WorkItem(ISSUE_PIECE_ID, "manager_run_a"),
-            learning_prompt,
-            compose_manager_run_a(learning_prompt, run_a_input),
-            identity=manager_run_a_identity(learning_prompt, run_a_input),
-            cwd=self.root,
-        )
-        takeaways_document = parse_verdict(run_a.text, label="manager run A")
-        takeaways = takeaways_document.get("manager_takeaways") or []
-        run_a_block = _takeaways_block(takeaways)
-
-        explainer_ids = set(explainer_article_ids(edition))
-        explainers = tuple(
-            (article.id, _read(article.manuscript))
-            for article in edition.articles
-            if article.id in explainer_ids
-        )
-        extractions: list[Extraction] = []
-        for article in edition.articles:
-            if article.id not in explainer_ids:
-                continue
-            extractions.extend(self._extractions_for(article.source_ids))
-        learning_input = LearningReviewInput(
-            edition_id=edition_id,
-            furniture=furniture,
-            manager_takeaways=run_a_block,
-            explainers=explainers,
-            articles=tuple(
-                (article.id, _read(article.manuscript))
-                for article in edition.articles
-            ),
-            extractions=tuple(extractions),
-        )
-        learning_verdict = self._verdict(
-            "learning",
-            learning_prompt,
-            compose_learning_prompt(learning_prompt, learning_input),
-            piece_id=ISSUE_PIECE_ID,
-            identity=learning_identity(learning_prompt, learning_input),
-        )
-        _require_unrevised_takeaways(takeaways, learning_verdict.document)
-        write_issue_record(
-            self.magazine.editions_dir,
-            edition_id,
-            "learning",
-            {
-                "manager_run_a": {
-                    "call": ModelCall(
-                        role="manager_run_a",
-                        prompt_path=learning_prompt.path,
-                        prompt_sha256=learning_prompt.sha256,
-                        backend=run_a.backend,
-                        model=self.model,
-                        argv=tuple(run_a.argv),
-                        duration_seconds=run_a.duration_seconds,
-                        output_sha256=text_sha256(run_a.text),
-                    ).to_dict(),
-                    "manager_takeaways": takeaways,
-                },
-                "run_b": learning_verdict.to_dict(),
-            },
-        )
-
-        edition_prompt = self._prompt(JUDGE_PROMPTS["edition"])
+        edition_prompt = self._prompt(JUDGE_PROMPTS[EDITION_JUDGE_KIND])
         edition_input = EditionReviewInput(
             edition_id=edition_id,
             manifest=_issue_furniture(edition),
@@ -1355,9 +1540,10 @@ class Production:
                 (article.id, article.content_mode, _read(article.manuscript))
                 for article in edition.articles
             ),
+            house_style=self._house_style(),
         )
         edition_verdict = self._verdict(
-            "edition",
+            EDITION_JUDGE_KIND,
             edition_prompt,
             compose_edition_prompt(edition_prompt, edition_input),
             piece_id=ISSUE_PIECE_ID,
@@ -1366,10 +1552,10 @@ class Production:
         write_issue_record(
             self.magazine.editions_dir,
             edition_id,
-            "edition",
+            EDITION_JUDGE_KIND,
             {"run": edition_verdict.to_dict()},
         )
-        return {"learning": learning_verdict, "edition": edition_verdict}
+        return {EDITION_JUDGE_KIND: edition_verdict}
 
     def _verdict(
         self,
@@ -1380,6 +1566,7 @@ class Production:
         piece_id: str,
         identity: str,
         round_number: int = 0,
+        inputs_sha256: str = "",
     ) -> "Verdict":
         generated = self._dispatch(
             WorkItem(piece_id, name, round_number),
@@ -1405,6 +1592,7 @@ class Production:
             scores=dict(document.get("scores") or {}),
             notes=str(document.get("notes") or ""),
             document=document,
+            inputs_sha256=inputs_sha256,
             call=ModelCall(
                 role=f"{name}_judge",
                 prompt_path=prompt.path,
@@ -1546,50 +1734,43 @@ class Production:
         that are no longer there.
         """
 
-        from .evidence_review import evidence_review_path, load_evidence_review
-        from .line_review import line_review_path, load_line_review
+        from .piece_review import load_review, review_path
+        from .review_bench import piece_review_spec
 
         recorded: dict[str, str] = {}
         actions: list[str] = []
-        article_ids = {article.id for article in edition.articles}
-        produced_articles = [item for item in finished if item in article_ids]
         produced_pieces = list(finished)
 
-        for kind, ids, loader, path_of, recorder in (
-            (
-                "evidence",
-                produced_articles,
-                load_evidence_review,
-                evidence_review_path,
-                self.magazine.record_evidence_review,
-            ),
-            (
-                "line",
-                produced_pieces,
-                load_line_review,
-                line_review_path,
-                self.magazine.record_line_review,
-            ),
-        ):
+        for kind in PIECE_JUDGE_KINDS:
+            spec = piece_review_spec(kind)
+            universe = self._bench_universe(kind, edition)
+            # The pieces this run finished that this lens actually reads.  A
+            # lens does not bind a piece it never judged: ``worth`` has nothing
+            # to say about the editorial and ``teaching`` nothing to say about a
+            # feature, and binding their bytes would record a reading that did
+            # not happen.
+            ids = [item for item in produced_pieces if item in universe]
             if not ids:
                 continue
-            # The editorial has no ``source_ids`` row, so the evidence record
-            # cannot bind it -- but the fact-checker did read it against the
-            # issue, and dropping its findings would lose the only audit the
-            # editorial gets.  Findings are record-level, so they travel;
-            # only the bindings are per-article.
+            # Findings travel record-level and the covered pieces travel per
+            # article, and the two sets are deliberately different.  The
+            # editorial has no ``source_ids`` row, so the evidence record cannot
+            # bind it -- but the fact-checker did read it against the issue, and
+            # dropping its findings would lose the only audit the editorial
+            # gets.
             findings, scores = self._bench_payload(
                 edition_id, kind, produced_pieces, score_ids=ids
             )
             existing = None
             try:
-                existing = loader(
-                    path_of(self.magazine.editions_dir, edition_id),
+                existing = load_review(
+                    spec,
+                    review_path(self.magazine.editions_dir, edition_id, kind),
                     edition_id=edition_id,
                 )
             except ValidationError:
                 existing = None
-            whole = set(ids) >= self._bench_universe(kind, edition)
+            whole = set(ids) >= universe
             if existing is None and not whole:
                 # ``rebind_articles`` refuses a partial amendment with no record
                 # to amend, and it is right to: recording the whole edition here
@@ -1603,45 +1784,35 @@ class Production:
                 continue
             try:
                 recorded[kind] = str(
-                    recorder(
+                    self.magazine.record_piece_review(
+                        kind,
                         edition_id,
                         reviewer=self.reviewer,
                         result="approved",
                         findings=findings,
                         scores=scores,
-                        notes=f"Recorded by mag produce; {len(ids)} piece(s) judged.",
+                        notes=(
+                            f"Recorded by mag produce; {len(ids)} piece(s) judged."
+                        ),
                         articles=None if whole and existing is None else sorted(ids),
                     )
                 )
             except MagazineError as error:
                 actions.append(f"could not record the {kind} review: {error}")
 
-        for kind in ("learning", "edition"):
+        for kind in (EDITION_JUDGE_KIND,):
             verdict = issue_reviews.get(kind)
             if verdict is None:
                 continue
-            recorder = (
-                self.magazine.record_learning_review
-                if kind == "learning"
-                else self.magazine.record_edition_review
-            )
-            extra: dict[str, Any] = {}
-            if kind == "learning":
-                extra = {
-                    "comprehension": verdict.document.get("comprehension") or (),
-                    "manager_takeaways": verdict.document.get("manager_takeaways")
-                    or (),
-                }
             try:
                 recorded[kind] = str(
-                    recorder(
+                    self.magazine.record_edition_review(
                         edition_id,
                         reviewer=self.reviewer,
                         result=verdict.result,
                         findings=verdict.findings,
                         scores=verdict.scores or None,
                         notes=verdict.notes,
-                        **extra,
                     )
                 )
             except MagazineError as error:
@@ -1655,10 +1826,19 @@ class Production:
         return recorded, actions
 
     def _bench_universe(self, kind: str, edition: Edition) -> set[str]:
-        ids = {article.id for article in edition.articles}
-        if kind == "line" and edition.editorial is not None:
-            ids.add(EDITORIAL_ARTICLE_ID)
-        return ids
+        """Which pieces this lens must have read before its record is complete.
+
+        Derived from the lens's declared coverage rather than from a branch on
+        its name.  That mattered the moment there were seven of them: the old
+        version tested ``kind == "line"`` to decide whether the editorial
+        counted, which is a sentence that has to be edited every time a lens is
+        added and which silently under-reports the moment somebody forgets.
+        """
+
+        from .piece_review import covered_piece_ids
+        from .review_bench import piece_review_spec
+
+        return set(covered_piece_ids(piece_review_spec(kind), edition))
 
     def _bench_payload(
         self,
@@ -1894,6 +2074,20 @@ class Verdict:
     notes: str
     document: Mapping[str, Any]
     call: ModelCall
+    inputs_sha256: str = ""
+    """The digest of what this lens was handed, and its re-run key.
+
+    ``prompts/README.md`` says a lens re-runs only when its own declared inputs
+    moved, and this is those inputs, hashed.  It is the same value the
+    cooperative backend binds a stored reply to
+    (:func:`~magazine.produce_prompts.work_identity`) rather than a second
+    notion of freshness, so "this answer is still current" means one thing
+    whether it is asked of a reply on disk or of a verdict in a record.
+
+    Stored in the round record, which is what makes carry-forward survive a
+    crash: the next invocation reads it back and re-runs nothing whose key still
+    matches.
+    """
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -1901,8 +2095,36 @@ class Verdict:
             "findings": list(self.findings),
             "scores": dict(self.scores),
             "notes": self.notes,
+            "inputs_sha256": self.inputs_sha256,
             "call": self.call.to_dict(),
         }
+
+
+@dataclass(frozen=True)
+class _LensJob:
+    """One composed lens call, with the verdict it can reuse instead of making."""
+
+    lens: JudgeLens
+    prompt: PromptFile
+    text: str
+    identity: str
+    verdict: Verdict | None = None
+
+
+def _has_blocking(verdict: Verdict) -> bool:
+    """Whether this lens filed anything at ``blocking``.
+
+    Read off the findings rather than off the result, because the two answer
+    different questions: ``changes_required`` says the piece needs another
+    round, and only a ``blocking`` finding says the piece is in a state that
+    makes further judgment of it worthless.  The staging skips are conditioned
+    on the second.
+    """
+
+    return any(
+        isinstance(finding, Mapping) and finding.get("severity") == "blocking"
+        for finding in verdict.findings
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1978,71 +2200,6 @@ def _grounded_in_the_other_pieces(piece: Piece) -> bool:
     """
 
     return piece.kind == "editorial"
-
-
-def _takeaways_block(takeaways: Any) -> str:
-    import yaml
-
-    return yaml.safe_dump(
-        {"manager_takeaways": takeaways}, sort_keys=False, allow_unicode=True
-    ).rstrip()
-
-
-def _require_unrevised_takeaways(
-    run_a: Any, document: Mapping[str, Any]
-) -> None:
-    """Refuse a run B that improved run A's claims after reading the body.
-
-    The whole measurement is whether the body supports what a manager took away
-    from the furniture alone.  A run B that quietly rewrites a claim it cannot
-    support has answered a different, easier question, and no reader of the
-    record could tell.
-    """
-
-    if not isinstance(run_a, Sequence) or isinstance(run_a, (str, bytes)):
-        return
-    written = {
-        str(entry.get("article")): _claim_set(entry)
-        for entry in run_a
-        if isinstance(entry, Mapping)
-    }
-    if not written:
-        return
-    adjudicated = document.get("manager_takeaways") or ()
-    if not isinstance(adjudicated, Sequence) or isinstance(adjudicated, (str, bytes)):
-        raise ProduceError(
-            "The learning judge returned no manager_takeaways; run A's block "
-            "must come back adjudicated, not dropped"
-        )
-    seen: set[str] = set()
-    for entry in adjudicated:
-        if not isinstance(entry, Mapping):
-            continue
-        article = str(entry.get("article"))
-        seen.add(article)
-        if article not in written:
-            continue
-        if _claim_set(entry) != written[article]:
-            raise ProduceError(
-                f"Run B rewrote run A's manager takeaways for {article!r}. Run A "
-                "is written before the body is visible and is never revised: an "
-                "adjudication of improved claims measures nothing."
-            )
-    dropped = sorted(set(written) - seen)
-    if dropped:
-        raise ProduceError(
-            "Run B dropped run A's manager takeaways for " + ", ".join(dropped)
-        )
-
-
-def _claim_set(entry: Mapping[str, Any]) -> tuple[str, tuple[str, ...]]:
-    claims = entry.get("claims") or ()
-    if isinstance(claims, (str, bytes)) or not isinstance(claims, Sequence):
-        claims = ()
-    return (
-        str(entry.get("decision") or "").strip(),
-        tuple(str(claim).strip() for claim in claims),
-    )
 
 
 def _issue_furniture(edition: Edition) -> dict[str, Any]:

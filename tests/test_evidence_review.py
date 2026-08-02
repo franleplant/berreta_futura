@@ -100,12 +100,13 @@ class EvidenceRecordTests(unittest.TestCase):
         loaded = load_evidence_review(path, edition_id="issue-001")
         status = evidence_review_status(loaded, edition_id="issue-001", bindings=BINDINGS)
 
-        # New records are written at version 3: the manuscript and the source
+        # New records are written at version 4: the manuscript and the source
         # extractions are still the whole of what an evidence audit compares,
-        # but a version 3 record may also carry structured findings and
-        # advisory per-article scores (see the module docstring).
-        self.assertEqual(EVIDENCE_REVIEW_SCHEMA_VERSION, 3)
-        self.assertEqual(loaded["schema_version"], 3)
+        # but a version 4 record also carries structured findings, advisory
+        # per-article scores, and a ``disposition`` on every authored finding
+        # (see the module docstring).
+        self.assertEqual(EVIDENCE_REVIEW_SCHEMA_VERSION, 4)
+        self.assertEqual(loaded["schema_version"], 4)
         self.assertEqual(status["status"], "approved")
         self.assertEqual(status["reviewer"], "Independent auditor")
         # A full record stamps every article with the record's own timestamp
@@ -244,13 +245,15 @@ class EvidenceRecordTests(unittest.TestCase):
         )
 
     def test_load_rejects_an_unsupported_schema_version(self):
-        """Only 1, 2 and 3 load: a future shape must not be read as if its keys
-        meant what version 3's mean."""
+        """Only 1, 2, 3 and 4 load: a future shape must not be read as if its
+        keys meant what version 4's mean."""
         path = write_evidence_review(
-            self.root / "reviews" / "evidence.yaml", make_record(schema_version=4)
+            self.root / "reviews" / "evidence.yaml", make_record(schema_version=5)
         )
 
-        with self.assertRaisesRegex(ValidationError, "schema_version must be 1, 2, or 3"):
+        with self.assertRaisesRegex(
+            ValidationError, "schema_version must be 1, 2, 3, or 4"
+        ):
             load_evidence_review(path, edition_id="issue-001")
 
     def test_load_rejects_a_blank_per_article_reviewed_at(self):
@@ -319,12 +322,18 @@ class EvidenceRecordTests(unittest.TestCase):
 
 
 class EvidenceStructuredFindingTests(unittest.TestCase):
-    """Version 3's findings: what the fact-checker prompt actually emits.
+    """Version 3 and 4's findings: what the fact-checker prompt actually emits.
 
     Versions 1 and 2 coerced every finding through ``str(item).strip()``, so a
     mapping survived the truthiness check and was written out as a line of
     Python repr.  A structured finding must now round-trip as a mapping, and a
     sentence typed into ``--finding`` must keep working beside it.
+
+    Every authored finding also carries ``disposition`` from version 4 on.  This
+    lens files ``fix`` on all of them by its prompt's own rule -- a claim the
+    source does not make is never the author's voice to keep -- so the field is
+    constant here; the write-strict/read-lenient rule behind it is tested once,
+    on the shared spine, in ``test_piece_review.py``.
     """
 
     FINDING = {
@@ -332,6 +341,7 @@ class EvidenceStructuredFindingTests(unittest.TestCase):
         "article": "eval-engineering",
         "locator": "Cost and latency | cuts eval cost by 40% | 1",
         "category": "number_or_name_error",
+        "disposition": "fix",
         "note": "The source says roughly a third in our two pilot teams.",
     }
 
@@ -374,6 +384,7 @@ class EvidenceStructuredFindingTests(unittest.TestCase):
             "locator": "Where the score goes | It is not a scoring problem. | 1",
             "repair_from": "- | This piece is about scoring. | 1",
             "category": "argument_order",
+            "disposition": "fix",
             "note": "The frame promised in the opening is contradicted here.",
         }
         record = create_evidence_review(
@@ -391,11 +402,19 @@ class EvidenceStructuredFindingTests(unittest.TestCase):
         self.assertEqual(stored, finding)
         self.assertEqual(
             list(stored),
-            ["severity", "article", "locator", "repair_from", "category", "note"],
+            [
+                "severity",
+                "article",
+                "locator",
+                "repair_from",
+                "category",
+                "disposition",
+                "note",
+            ],
         )
 
-    def test_a_structured_finding_needs_a_severity_and_a_note(self):
-        for missing in ("severity", "note"):
+    def test_a_structured_finding_needs_a_severity_a_note_and_a_disposition(self):
+        for missing in ("severity", "note", "disposition"):
             finding = {key: value for key, value in self.FINDING.items() if key != missing}
             with self.assertRaisesRegex(ValidationError, f"requires a non-empty {missing}"):
                 create_evidence_review(
@@ -676,7 +695,10 @@ class EvidenceReviewCliTests(unittest.TestCase):
                     "--reviewer", "c", "--result", "approved", "--articles", "",
                 ])
         self.assertEqual(code, 2)
-        self.assertIn("--articles applies only to evidence reviews", stderr.getvalue())
+        self.assertIn(
+            "--articles applies only to the per-piece lenses", stderr.getvalue()
+        )
+        self.assertIn("a render review binds whole-language PDFs", stderr.getvalue())
 
 
 class EvidenceReviewCompilerTests(unittest.TestCase):
