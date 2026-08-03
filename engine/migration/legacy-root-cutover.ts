@@ -26,6 +26,7 @@ import {
   assertLegacyRootBaseline,
   planLegacyRootMigration,
   readExactExistingRevisionBindings,
+  readLegacyDurableIdentities,
   readLegacyGitSnapshot,
   verifyLegacyRootMigrationPlan,
   type LegacyRootMigrationPlan,
@@ -55,6 +56,11 @@ async function main(): Promise<void> {
   if (bindingAudit.conflicts.length > 0) {
     throw new Error(`existing revision binding conflicts:\n${bindingAudit.conflicts.join("\n")}`);
   }
+  const durableIdentities = await readLegacyDurableIdentities(
+    repositoryRoot,
+    snapshot,
+    bindingAudit.durableIdentitiesBySourcePath,
+  );
   const revisionId = explicitRevision === undefined ? newRevisionId() : parseRevisionId(explicitRevision);
   const existingPlan = await existingPlanRevision(repositoryRoot);
   if (existingPlan !== undefined) {
@@ -70,6 +76,7 @@ async function main(): Promise<void> {
     migrationId: MIGRATION_ID,
     allocateRevisionId: () => newRevisionId(),
     existingBindingsBySourcePath: bindingAudit.bindingsBySourcePath,
+    durableIdentitiesBySourcePath: durableIdentities,
   });
   verifyLegacyRootMigrationPlan(plan);
   if (Object.keys(plan.allocatedRevisionIds).length !== 324) {
@@ -92,12 +99,20 @@ async function createSuccessorPlan(
   assertLegacyRootBaseline(snapshot);
   const bindings = await readExactExistingRevisionBindings(repositoryRoot, snapshot);
   if (bindings.conflicts.length > 0) throw new Error(`existing revision binding conflicts:\n${bindings.conflicts.join("\n")}`);
+  const durableIdentities = await readLegacyDurableIdentities(
+    repositoryRoot,
+    snapshot,
+    bindings.durableIdentitiesBySourcePath,
+  );
   const revisionId = explicitRevision === undefined ? newRevisionId() : parseRevisionId(explicitRevision);
   const next = {
     ...planLegacyRootMigration(snapshot, {
       migrationId: MIGRATION_ID,
+      allocatedRevisionIds: parent.allocatedRevisionIds,
       allocateRevisionId: () => newRevisionId(),
       existingBindingsBySourcePath: bindings.bindingsBySourcePath,
+      durableIdentitiesBySourcePath: durableIdentities,
+      preferExactExistingBindings: true,
     }),
     supersedesPlanRevisionId: parentPlanRevisionId,
   } satisfies LegacyRootMigrationPlan;

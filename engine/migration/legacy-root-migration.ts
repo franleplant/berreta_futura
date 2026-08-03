@@ -48,6 +48,12 @@ export type LegacyDisposition =
 
 export type LegacyMigrationCategory = "input" | "durable" | "archive";
 
+export type LegacyDurableIdentity = {
+  readonly editionId: string;
+  readonly logicalId: string;
+  readonly language?: string;
+};
+
 export type LegacyMigrationTarget = {
   /** Stable plan slot. It is not a content-derived identity. */
   readonly revisionSlot: string;
@@ -64,6 +70,10 @@ export type LegacyMigrationTarget = {
     | "image";
   readonly revisionId: RevisionId;
   readonly payloadPath: string;
+  /** Exact DurableRevision identity. Older superseded ledgers may omit it. */
+  readonly durableIdentity?: LegacyDurableIdentity;
+  /** Exact legacy lineage. Older superseded ledgers may omit it. */
+  readonly parentRevisionId?: RevisionId | null;
   readonly reuseBinding?: "edition4-fixed-revision";
 };
 
@@ -86,6 +96,8 @@ export type HistoricalCompositionPlan = {
 
 export type LegacyRootMigrationPlan = {
   readonly schemaVersion: "legacy-root-migration/1";
+  /** Present once every durable target carries its complete public identity. */
+  readonly durableIdentityContract?: "durable-identity/1";
   readonly migrationId: string;
   readonly supersedesPlanRevisionId?: RevisionId;
   readonly sourceSnapshot: LegacyGitSnapshot;
@@ -110,11 +122,16 @@ export type LegacyRootMigrationOptions = {
     string,
     Readonly<Partial<Record<LegacyMigrationTarget["revisionKind"], RevisionId>>>
   >>;
+  /** Exact semantic DurableRevision identities, keyed by protected source path. */
+  readonly durableIdentitiesBySourcePath?: Readonly<Record<string, LegacyDurableIdentity>>;
+  /** Successor-ledger repair: prefer an older exact binding over a duplicated allocation. */
+  readonly preferExactExistingBindings?: boolean;
   readonly allocateRevisionId?: () => RevisionId;
 };
 
 export type ExistingRevisionBindingAudit = {
   readonly bindingsBySourcePath: NonNullable<LegacyRootMigrationOptions["existingBindingsBySourcePath"]>;
+  readonly durableIdentitiesBySourcePath: Readonly<Record<string, LegacyDurableIdentity>>;
   readonly boundSourcePaths: number;
   readonly conflicts: readonly string[];
 };
@@ -181,6 +198,7 @@ export async function readExactExistingRevisionBindings(
   const tree = parseAnyBlobTree(await gitBuffer(root, ["ls-tree", "-r", "-l", "-z", head, "--", "inputs", "durable"]));
   const sourceByPath = new Map(snapshot.files.map((file) => [file.path, file]));
   const candidates = new Map<string, Map<LegacyMigrationTarget["revisionKind"], RevisionId>>();
+  const durableIdentities = new Map<string, LegacyDurableIdentity>();
   const conflicts: string[] = [];
   for (const manifestEntry of tree.filter((entry) => entry.path.endsWith("/manifest.yaml"))) {
     const decoded = parse((await gitBuffer(root, ["cat-file", "blob", manifestEntry.blobOid])).toString("utf8"));
@@ -188,6 +206,7 @@ export async function readExactExistingRevisionBindings(
     const kind = decoded.revision_kind as LegacyMigrationTarget["revisionKind"];
     if (!isMigratableKind(kind) || !/^rev_\d{8}T\d{9}Z_[a-z2-7]{12}$/u.test(decoded.revision_id)) continue;
     const revisionId = decoded.revision_id as RevisionId;
+    const durableIdentity = durableIdentityFromManifest(decoded, kind);
     const bindings: Array<{ readonly path: string; readonly sha: string }> = [];
     if (Array.isArray(decoded.files)) {
       for (const value of decoded.files) {
@@ -213,11 +232,19 @@ export async function readExactExistingRevisionBindings(
       const byKind = candidates.get(binding.path) ?? new Map();
       const prior = byKind.get(kind);
       if (prior !== undefined && prior !== revisionId) {
-        conflicts.push(`${binding.path} (${kind}): ${prior} vs ${revisionId}`);
-        continue;
+        byKind.set(kind, prior.localeCompare(revisionId) <= 0 ? prior : revisionId);
+      } else {
+        byKind.set(kind, revisionId);
       }
-      byKind.set(kind, revisionId);
       candidates.set(binding.path, byKind);
+      if (durableIdentity !== undefined) {
+        const priorIdentity = durableIdentities.get(binding.path);
+        if (priorIdentity !== undefined && !sameDurableIdentity(priorIdentity, durableIdentity)) {
+          conflicts.push(`${binding.path} (${kind}): conflicting DurableRevision identities`);
+          continue;
+        }
+        durableIdentities.set(binding.path, durableIdentity);
+      }
     }
   }
   return {
@@ -225,9 +252,89 @@ export async function readExactExistingRevisionBindings(
       path,
       Object.fromEntries(values),
     ])),
+    durableIdentitiesBySourcePath: Object.fromEntries([...durableIdentities].sort(([a], [b]) => a.localeCompare(b))),
     boundSourcePaths: candidates.size,
     conflicts: conflicts.sort(),
   };
+}
+
+/**
+ * Resolves semantic durable identities from the protected edition manifests.
+ * Legacy rerun roots remain separate allocation slots but resolve to the same
+ * numeric edition identity, so they become revisions rather than new editions.
+ */
+export async function readLegacyDurableIdentities(
+  repositoryRoot: string,
+  snapshot: LegacyGitSnapshot,
+  existing: Readonly<Record<string, LegacyDurableIdentity>> = {},
+): Promise<Readonly<Record<string, LegacyDurableIdentity>>> {
+  validateSnapshot(snapshot);
+  const root = resolve(repositoryRoot);
+  const identities = new Map<string, LegacyDurableIdentity>();
+  for (const file of snapshot.files) {
+    const article = articleFile(file.path);
+    if (article !== undefined) {
+      identities.set(file.path, {
+        editionId: durableEditionId(article.editionKey),
+        logicalId: article.logicalId,
+        language: article.language,
+      });
+      continue;
+    }
+    const editorial = editorialFile(file.path);
+    if (editorial !== undefined) {
+      identities.set(file.path, {
+        editionId: durableEditionId(editorial.editionKey),
+        logicalId: "opening",
+        language: editorial.language,
+      });
+      continue;
+    }
+    const image = editionImage(file.path);
+    if (image !== undefined) {
+      identities.set(file.path, {
+        editionId: durableEditionId(image.editionKey),
+        logicalId: image.ordinal,
+      });
+    }
+  }
+
+  for (const manifestFile of snapshot.files.filter((file) => /^editions\/[^/]+\/edition\.yaml$/u.test(file.path))) {
+    const decoded = parse((await gitBuffer(root, ["cat-file", "blob", manifestFile.blobOid])).toString("utf8"));
+    if (!isMapping(decoded)) throw invalid(`edition manifest is not a mapping: ${manifestFile.path}`);
+    const editionRoot = posix.dirname(manifestFile.path);
+    const key = editionKey(editionRoot.slice("editions/".length));
+    const editionId = durableEditionId(key);
+    const selected = selectedImageIdentities(decoded, editionRoot, editionId);
+    for (const [path, identity] of selected) {
+      if (!identities.has(path)) throw invalid(`edition manifest selects an untracked durable image: ${path}`);
+      identities.set(path, identity);
+    }
+  }
+
+  for (const [path, identity] of Object.entries(existing)) {
+    const derived = identities.get(path);
+    if (derived !== undefined && !sameDurableIdentity(derived, identity)) {
+      const image = editionImage(path);
+      if (image === undefined || derived.editionId !== identity.editionId || identity.language !== undefined) {
+        throw invalid(`protected manifest and existing DurableRevision disagree for ${path}`);
+      }
+    }
+    identities.set(path, identity);
+  }
+
+  const protectedPaths = new Set(snapshot.files.map((file) => file.path));
+  for (const path of [...identities.keys()].filter((candidate) => candidate.startsWith(
+    "editions/rerun-004-the-systems-around-the-model/",
+  ))) {
+    const counterpart = path.replace(
+      "editions/rerun-004-the-systems-around-the-model/",
+      "editions/004-the-systems-around-the-model/",
+    );
+    const identity = identities.get(counterpart);
+    if (protectedPaths.has(counterpart) && identity !== undefined) identities.set(path, identity);
+  }
+  return Object.fromEntries([...identities].sort(([a], [b]) => a.localeCompare(b)));
 }
 
 /**
@@ -262,7 +369,9 @@ export function planLegacyRootMigration(
     if (bound !== undefined) {
       const existingSlot = ids.get(target.revisionSlot);
       if (existingSlot !== undefined && existingSlot !== bound) {
-        throw invalid(`existing revision binding conflicts for ${file.path}`);
+        if (options.preferExactExistingBindings !== true) {
+          throw invalid(`existing revision binding conflicts for ${file.path}`);
+        }
       }
       ids.set(target.revisionSlot, bound);
       return {
@@ -321,13 +430,13 @@ export function planLegacyRootMigration(
     }
     if (file.path === "prompts/README.md") {
       const slot = "input:policy:review-bench";
-      disposition.push(exact(file, "import_exact", {
+      const binding = targetFor(file, {
         revisionSlot: slot,
         category: "input",
         revisionKind: "policy",
-        revisionId: revisionId(slot),
         payloadPath: "policy.md",
-      }, "legacy prompt-set policy"));
+      });
+      disposition.push(exact(file, binding.disposition, binding.target, "legacy prompt-set policy"));
       continue;
     }
 
@@ -339,6 +448,11 @@ export function planLegacyRootMigration(
         category: "durable",
         revisionKind: "article",
         payloadPath: "manuscript.md",
+        durableIdentity: options.durableIdentitiesBySourcePath?.[file.path] ?? {
+          editionId: durableEditionId(article.editionKey),
+          logicalId: article.logicalId,
+          language: article.language,
+        },
       });
       disposition.push(exact(file, binding.disposition, binding.target, "legacy article manuscript"));
       continue;
@@ -351,6 +465,11 @@ export function planLegacyRootMigration(
         category: "durable",
         revisionKind: "editorial",
         payloadPath: "manuscript.md",
+        durableIdentity: options.durableIdentitiesBySourcePath?.[file.path] ?? {
+          editionId: durableEditionId(editorial.editionKey),
+          logicalId: "opening",
+          language: editorial.language,
+        },
       });
       disposition.push(exact(file, binding.disposition, binding.target, "legacy opening editorial"));
       continue;
@@ -363,6 +482,10 @@ export function planLegacyRootMigration(
         category: "durable",
         revisionKind: "image",
         payloadPath: `image${image.extension}`,
+        durableIdentity: options.durableIdentitiesBySourcePath?.[file.path] ?? {
+          editionId: durableEditionId(image.editionKey),
+          logicalId: image.ordinal,
+        },
       });
       disposition.push(exact(file, binding.disposition, binding.target, "legacy art asset, including unselected candidates"));
       continue;
@@ -393,7 +516,8 @@ export function planLegacyRootMigration(
   if (uniqueSources !== 36 || uniqueExtractions !== 25) {
     throw invalid(`legacy snapshot is not the expected source corpus (sources=${uniqueSources}, extractions=${uniqueExtractions})`);
   }
-  assertCompleteLedger(snapshot, disposition);
+  const finalDisposition = withDurableParentBindings(disposition);
+  assertCompleteLedger(snapshot, finalDisposition);
   const historicalCompositions = historicalCompositionPlans(snapshot.sourceCommitOid, snapshot.files, revisionId);
   const generatedFiles = [
     ...[...ids.keys()].filter((slot) => slot.startsWith("input:prompt:")).map((slot) => ({
@@ -409,10 +533,11 @@ export function planLegacyRootMigration(
   ];
   return {
     schemaVersion: "legacy-root-migration/1",
+    durableIdentityContract: "durable-identity/1",
     migrationId: options.migrationId,
     sourceSnapshot: snapshot,
     allocatedRevisionIds: Object.fromEntries([...ids.entries()].sort(([a], [b]) => a.localeCompare(b))),
-    files: disposition,
+    files: finalDisposition,
     historicalCompositions,
     requiredHumanChoices: [
       "Protect or tag sourceSnapshot.sourceCommitOid before materialization.",
@@ -482,6 +607,17 @@ export function verifyLegacyRootMigrationPlan(plan: LegacyRootMigrationPlan): vo
       throw invalid(`legacy file ${file.source.path} references an unallocated RevisionId`);
     }
     safeRelative(target.payloadPath);
+    if (target.durableIdentity !== undefined) validateDurableIdentity(target);
+    if (plan.durableIdentityContract === "durable-identity/1" &&
+      target.category === "durable" && target.durableIdentity === undefined) {
+      throw invalid(`legacy durable file ${file.source.path} has no exact DurableRevision identity`);
+    }
+    if (plan.durableIdentityContract === "durable-identity/1" && target.category === "durable") {
+      if (target.parentRevisionId === undefined ||
+        (target.parentRevisionId !== null && !/^rev_\d{8}T\d{9}Z_[a-z2-7]{12}$/u.test(target.parentRevisionId))) {
+        throw invalid(`legacy durable file ${file.source.path} has no exact parent binding`);
+      }
+    }
   }
   const sources = sourceDirectoryIds(plan.sourceSnapshot.files);
   const extractions = new Set(plan.sourceSnapshot.files.flatMap((file) => sourceExtractionId(file.path)));
@@ -692,6 +828,111 @@ function editionKey(root: string): string {
   const number = /^(\d{3})-/u.exec(root)?.[1];
   if (number === undefined) return root.replace(/[^a-z0-9]+/giu, "-").toLowerCase();
   return number;
+}
+
+function durableEditionId(key: string): string {
+  const rerun = /^(\d{3})-rerun$/u.exec(key)?.[1];
+  return rerun ?? key;
+}
+
+function selectedImageIdentities(
+  edition: Record<string, unknown>,
+  root: string,
+  editionId: string,
+): ReadonlyMap<string, LegacyDurableIdentity> {
+  const selected = new Map<string, LegacyDurableIdentity>();
+  const add = (candidate: unknown, logicalId: string) => {
+    if (typeof candidate !== "string") return;
+    portableName(logicalId, "durable logical ID");
+    const path = candidate.startsWith("editions/") ? candidate : `${root}/${candidate}`;
+    safeRepositoryPath(path);
+    const identity = { editionId, logicalId } satisfies LegacyDurableIdentity;
+    const prior = selected.get(path);
+    if (prior !== undefined && !sameDurableIdentity(prior, identity)) {
+      throw invalid(`edition manifest assigns conflicting durable identities to ${path}`);
+    }
+    selected.set(path, identity);
+  };
+
+  if (isMapping(edition.cover)) add(edition.cover.art_path, "cover");
+  if (Array.isArray(edition.articles)) {
+    for (const article of edition.articles) {
+      if (!isMapping(article) || typeof article.id !== "string") continue;
+      if (isMapping(article.opener_art)) add(article.opener_art.path, `${article.id}-opener`);
+      add(article.tail_art_path, `${article.id}-tail`);
+    }
+  }
+  if (Array.isArray(edition.closing_plates)) {
+    for (const plate of edition.closing_plates) {
+      if (!isMapping(plate) || typeof plate.art_path !== "string") continue;
+      const filename = posix.basename(plate.art_path).replace(/\.(?:png|jpe?g|webp)$/iu, "");
+      const logicalId = filename.replace(/[^a-z0-9]+/giu, "-").replace(/^-+|-+$/gu, "").toLowerCase();
+      add(plate.art_path, logicalId);
+    }
+  }
+  return selected;
+}
+
+function durableIdentityFromManifest(
+  manifest: Record<string, unknown>,
+  kind: LegacyMigrationTarget["revisionKind"],
+): LegacyDurableIdentity | undefined {
+  if (kind !== "article" && kind !== "editorial" && kind !== "image") return undefined;
+  if (typeof manifest.edition_id !== "string" || typeof manifest.logical_id !== "string") return undefined;
+  if (kind !== "image" && typeof manifest.language !== "string") return undefined;
+  return {
+    editionId: manifest.edition_id,
+    logicalId: manifest.logical_id,
+    ...(kind === "image" ? {} : { language: manifest.language as string }),
+  };
+}
+
+function sameDurableIdentity(left: LegacyDurableIdentity, right: LegacyDurableIdentity): boolean {
+  return left.editionId === right.editionId &&
+    left.logicalId === right.logicalId &&
+    left.language === right.language;
+}
+
+function withDurableParentBindings(
+  entries: readonly LegacyFileDisposition[],
+): readonly LegacyFileDisposition[] {
+  const bySource = new Map(entries.map((entry) => [entry.source.path, entry]));
+  const rerunPrefix = "editions/rerun-004-the-systems-around-the-model/";
+  const originalPrefix = "editions/004-the-systems-around-the-model/";
+  return entries.map((entry) => {
+    const target = entry.targets[0]!;
+    if (target.category !== "durable") return entry;
+    let parentRevisionId: RevisionId | null = null;
+    if (entry.source.path.startsWith(rerunPrefix)) {
+      const counterpartPath = entry.source.path.replace(rerunPrefix, originalPrefix);
+      const counterpart = bySource.get(counterpartPath);
+      const counterpartTarget = counterpart?.targets[0];
+      if (counterpartTarget?.category !== "durable" ||
+        target.durableIdentity === undefined || counterpartTarget.durableIdentity === undefined ||
+        target.revisionKind !== counterpartTarget.revisionKind ||
+        !sameDurableIdentity(target.durableIdentity, counterpartTarget.durableIdentity)) {
+        throw invalid(`rerun durable item has no exact original identity: ${entry.source.path}`);
+      }
+      parentRevisionId = counterpartTarget.revisionId;
+    }
+    return { ...entry, targets: [{ ...target, parentRevisionId }] };
+  });
+}
+
+function validateDurableIdentity(target: LegacyMigrationTarget): void {
+  const identity = target.durableIdentity!;
+  if (target.category !== "durable" ||
+    (target.revisionKind !== "article" && target.revisionKind !== "editorial" && target.revisionKind !== "image")) {
+    throw invalid("only durable article, editorial, and image targets may declare durable identity");
+  }
+  portableName(identity.editionId, "durable edition ID");
+  portableName(identity.logicalId, "durable logical ID");
+  if (target.revisionKind === "image") {
+    if (identity.language !== undefined) throw invalid("durable image identity must not declare language");
+  } else {
+    if (identity.language === undefined) throw invalid("durable manuscript identity must declare language");
+    portableName(identity.language, "durable language");
+  }
 }
 
 function exact(
