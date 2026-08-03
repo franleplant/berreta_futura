@@ -1,0 +1,28 @@
+schema_version: 1
+revision_kind: image
+edition_id: "004"
+revision_id: rev_20260803T052536960Z_3ixlviah7wdn
+created_at: 2026-08-03T05:25:36.960Z
+parent_revision_id: null
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/004-the-systems-around-the-model/prototypes/assets/mcp-opener-boy-robot-color-v2.png
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: aa403e07f4c42bdcece571dc2b011950f3f3ed13
+    sha256: sha256:647c51b9985f81c8b17d5a363c3e528560be91d4a5b4d7217c2360a89515559b
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+files:
+  - path: image.png
+    mediaType: image/png
+    sha256: sha256:647c51b9985f81c8b17d5a363c3e528560be91d4a5b4d7217c2360a89515559b
+    sizeBytes: 2392479
+    legacySource:
+      repositoryPath: editions/004-the-systems-around-the-model/prototypes/assets/mcp-opener-boy-robot-color-v2.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: aa403e07f4c42bdcece571dc2b011950f3f3ed13
+logical_id: mcp-opener-boy-robot-color-v2
