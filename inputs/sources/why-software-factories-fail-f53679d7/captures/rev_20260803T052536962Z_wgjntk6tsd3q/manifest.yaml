@@ -1,0 +1,560 @@
+schema_version: 1
+revision_kind: source_capture
+logical_id: why-software-factories-fail-f53679d7
+revision_id: rev_20260803T052536962Z_wgjntk6tsd3q
+created_at: 2026-08-03T05:25:36.962Z
+parent_revision_id: null
+migration_id: legacy-four-root-source-2
+files:
+  - path: raw/media/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa.curation.json
+    media_type: application/json
+    sha256: sha256:106e5b7ae69ca1b6757df9c0fd44270fad0e98c8c321d1196bb09cd307f6cc6f
+    size_bytes: 27381
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/media/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa.curation.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 1b2e395fdc925f2f1f6db7d44d608b552aab3bfc
+  - path: raw/media/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa.json
+    media_type: application/json
+    sha256: sha256:d4134a5ae479c7e45e2f4f022434fc902f05b08a53c9d92e93ebbf86bfa70e69
+    size_bytes: 25535
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/media/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 4fb6861111dfaa170e2c3f94e91c2e024528e836
+  - path: raw/media/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55.curation.json
+    media_type: application/json
+    sha256: sha256:eaa40da94942784519578e37cc4dfe480f77ee44571fe09e6acbe55a1239c99d
+    size_bytes: 27429
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/media/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55.curation.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 48bd790e90ab09e98501758edcd4c9bc04c0fba7
+  - path: raw/media/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55.json
+    media_type: application/json
+    sha256: sha256:16eb73a65257abcc8d074e946fb5014c158aae7a48a0cb5d2748936c783fa3c5
+    size_bytes: 25566
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/media/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 9cd05f2a73cc964a4d1e4d7a3ecd71b7560c58aa
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/article.txt
+    media_type: text/plain
+    sha256: sha256:578963620c573d887378e2c22c7eb53ef86748b5d387322ed54e597967a2545e
+    size_bytes: 20734
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/article.txt
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 6ff5a8d428965adfe08df550346a6be1076c9abe
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/capture-meta.json
+    media_type: application/json
+    sha256: sha256:8e13d573048d008e76c0113e969bae388455ffc455e0ca756cac940a7108cd2e
+    size_bytes: 301
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/capture-meta.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: cb39500444d20ee0522a89f28d6f8cbf4eb78146
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/links.json
+    media_type: application/json
+    sha256: sha256:d17fa65588dbd9d2b09407ce63f2a611a53029004d891c7fb5fbc73c0132417e
+    size_bytes: 9816
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/links.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 94233b861351e5a929a9453b1a8af9ced521d0bf
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media-manifest.json
+    media_type: application/json
+    sha256: sha256:56fbb528300dddf5af21dc87113b267fa9e3a3c3c895c81647df0860a6828523
+    size_bytes: 11292
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media-manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: fc789513d8083a78fbb9d9da8473e8e249e94b21
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/001.png
+    media_type: image/png
+    sha256: sha256:5bf4de1c3a73afd8b77089acbabf6153013370c828ed73f8dc7bf4b42fbe2f95
+    size_bytes: 264997
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/001.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: cc259e0d5cd5a0427fab643c7144eb7e0d9c8c79
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/002.png
+    media_type: image/png
+    sha256: sha256:ff7a41f6423600e9300d95ee7f317fd671921eb312772c9fecc1b543bab5bbdd
+    size_bytes: 282420
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/002.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 6fe02b23750624b9aa734717a5d67c59dc7db60b
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/003.png
+    media_type: image/png
+    sha256: sha256:a2229a314f047d5c04a83ac24b68f9cfb5dce52fca9f32cc8937f0897f89995f
+    size_bytes: 163723
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/003.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 42dd9f0545c2149ea1e6db09901350d728d295c7
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/004.png
+    media_type: image/png
+    sha256: sha256:cfb1f567ce9a15a45f29ec2062b2a37e2ff4c1bed237f4c56220035183932fa2
+    size_bytes: 302856
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/004.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 707014973acd9b5b07bfb7a761a3690fb0403da5
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/005.png
+    media_type: image/png
+    sha256: sha256:fb62cba8e23f82be49289d167973d4b7492917616014d3ebf7ddd201b5152f8a
+    size_bytes: 365768
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/005.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 402f2bbe43adadc038a163ca0d47937817ef4c3a
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/006.png
+    media_type: image/png
+    sha256: sha256:3e07eebcba1130b2cceee5151d4ae3a5c85eb5f5e4664ac8821dd70bff798b68
+    size_bytes: 253324
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/006.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 14d4a60010209735ab1927523f11d2a67f424b81
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/007.png
+    media_type: image/png
+    sha256: sha256:b9e151fbbd18a772d680d696c346415072c328355f8a1558a1cbf38d33216e40
+    size_bytes: 288241
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/007.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: ec3a7638457e2e35d38e44e957d0deebe1347a74
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/008.png
+    media_type: image/png
+    sha256: sha256:6e16eb9bbee0f389c25f2233ad3636ec81c841a8908190fee253a93991b9fa15
+    size_bytes: 314228
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/008.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: e8c12ab7589ba0441b0adb6993d52ff8db124fc1
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/009.png
+    media_type: image/png
+    sha256: sha256:43b7295c302cafb86d56e566f84ee3b93a531acfeaca3e7467fc607080f0ee24
+    size_bytes: 358238
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/009.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 5f10f9d82cf8b1e1c8cfdadd10fb6b43202a4a7d
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/010.png
+    media_type: image/png
+    sha256: sha256:49fbe2c4fbb16d8998e5fda7edacc0e1687730bea6e56a9226f6d68108da7467
+    size_bytes: 359436
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/010.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 12db7c3c3efaa9e5567d483d189776f831c90cfc
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/011.png
+    media_type: image/png
+    sha256: sha256:7d4d9e5afe5cd2925f00abfa57be9afebcf1085b8d70cd4b81c097ba1400064d
+    size_bytes: 357694
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/011.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 3ee9e9215784a19d51b83aae4386ba47f16572a7
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/012.png
+    media_type: image/png
+    sha256: sha256:95b3eaa403665b821dcdf273d609c3b998ce5690d19be4765fe9b62911be09b3
+    size_bytes: 337635
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/012.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: e1b99e63aab9a74053dae3ee988ee9d5ded6bed4
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/013.png
+    media_type: image/png
+    sha256: sha256:e7fdac15a28a27a62610ddcc05952692959b2947562c62758489aab5c0b7cc4a
+    size_bytes: 318905
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/013.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: c91dce72f50d720a71fcbf8999918008d15668ae
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/014.png
+    media_type: image/png
+    sha256: sha256:864ed84e3ef2e0226e8cd621aadc44665cde4fdc626e7c7e540fb5476709d53d
+    size_bytes: 77597
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/014.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 689689737d907ba0c8811a2908c7104a5277a881
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/015.png
+    media_type: image/png
+    sha256: sha256:9d16eacb6dfd6461abc4ad725d9e4327659ce8c52ae31dfc7a7444e9fa1037a2
+    size_bytes: 42009
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/015.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 0bfa9170c95d1fd2a3ef7269868dae285d539294
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/016.png
+    media_type: image/png
+    sha256: sha256:abdc66db0c008d088cefa1b88f61faa85b35feb531667edb87ce551b23e9ec23
+    size_bytes: 134708
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/016.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 4a2f36ee468e28b9c7bcd2b3a3c1904fb7e4d929
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/017.png
+    media_type: image/png
+    sha256: sha256:1c292d0e32b4fd0305106b1183a7bb4c1dda3db01d6486f0070caaa8deda2f47
+    size_bytes: 295411
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/017.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 240ed30e6e70afc1f447167b198d3440ac0aa857
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/018.png
+    media_type: image/png
+    sha256: sha256:08a090b00e68f60885a81ccd632ee3592d7998372e34c83a6ed43d58a853f6ad
+    size_bytes: 54737
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/018.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 969eb24c67d79a236b72f808b046951742a494ae
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/019.png
+    media_type: image/png
+    sha256: sha256:a6d87221ed49c34406be0aa76b0d60997275f7f3883fae3e07fc13e8f6920732
+    size_bytes: 232369
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/019.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: d343c7e994f6998aebef3e5fd88f722a5c8fb00a
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/020.png
+    media_type: image/png
+    sha256: sha256:5b05a1dca1917b440e3ca52162e6d9050aeb315f221df3fd7c1f3276ebbfb146
+    size_bytes: 39241
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/020.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: e9ae793f1386044b8768fccfa75b6993ade20a45
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/021.png
+    media_type: image/png
+    sha256: sha256:8c0f78967500e70cbf77edff3141784cbc19ab1f9cfa4357d901aba1e791d9c9
+    size_bytes: 39193
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/021.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 5afa399653034ae763d87a5c9f65acc351bd7a60
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/022.png
+    media_type: image/png
+    sha256: sha256:a3167432135caf0a1dd5332755a25d1b5bba2570f5e829ea592f51ceccaa521b
+    size_bytes: 40247
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/022.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 972e3233da12bd32dae97d4c2873d85c35826366
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/023.png
+    media_type: image/png
+    sha256: sha256:fd96bb8b246e72fa95457edb4c4a882b3edbab0366e938bb9c9c75040ea3f871
+    size_bytes: 190782
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/023.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 585517961035d2374b2b879b908736a78c8d8b77
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/024.png
+    media_type: image/png
+    sha256: sha256:5c8102594c228e5febb7d7463408e2f5e851cb0d61f4f74fb0abfa7ab34d1878
+    size_bytes: 40546
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/024.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: d4f3599531efd011491dd52926b5a652f3b418bb
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/025.png
+    media_type: image/png
+    sha256: sha256:4be57fb2c2d1cfdf3df1cb962fc3e84bc3c8fccfee93ca41e3f682f96efe9877
+    size_bytes: 18233
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/025.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 215d2b7e4848fade0442948c90916732254ed83e
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/026.png
+    media_type: image/png
+    sha256: sha256:f533d36b171d361ba45dc08b6c9562a0d821c7aadc3cb1966762472747eddbbc
+    size_bytes: 18241
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/media/026.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: c8d41b5dae72ea6e95e1ad6619b343ebac76fb51
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/observed-images.json
+    media_type: application/json
+    sha256: sha256:162b6a65fa919db9113ea9af90426b3a43c1af0fe25751e5900011069dc1a16a
+    size_bytes: 4543
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/artifacts/observed-images.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: c7cc00d1e82ba7d12a50fde74cef042ae9916e42
+  - path: raw/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/manifest.json
+    media_type: application/json
+    sha256: sha256:3451cb86b09b2bcc1316c767f5ff4d545d58cb69e7795967b625f7200d4b8844
+    size_bytes: 5130
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: c978e17fc6bb60a16b9d6705abf3d4dc78a43aba
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/article.txt
+    media_type: text/plain
+    sha256: sha256:578963620c573d887378e2c22c7eb53ef86748b5d387322ed54e597967a2545e
+    size_bytes: 20734
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/article.txt
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 6ff5a8d428965adfe08df550346a6be1076c9abe
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/capture-meta.json
+    media_type: application/json
+    sha256: sha256:8e13d573048d008e76c0113e969bae388455ffc455e0ca756cac940a7108cd2e
+    size_bytes: 301
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/capture-meta.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: cb39500444d20ee0522a89f28d6f8cbf4eb78146
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/links.json
+    media_type: application/json
+    sha256: sha256:d17fa65588dbd9d2b09407ce63f2a611a53029004d891c7fb5fbc73c0132417e
+    size_bytes: 9816
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/links.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 94233b861351e5a929a9453b1a8af9ced521d0bf
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media-manifest.json
+    media_type: application/json
+    sha256: sha256:56fbb528300dddf5af21dc87113b267fa9e3a3c3c895c81647df0860a6828523
+    size_bytes: 11292
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media-manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: fc789513d8083a78fbb9d9da8473e8e249e94b21
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/001.png
+    media_type: image/png
+    sha256: sha256:03b49977307049427efa2d45348a6242f4a25f19c4de14615e7e01425a3f9c69
+    size_bytes: 46369
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/001.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 2bba5f8f37b53ab3c6de66eef76e81d041764a63
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/002.png
+    media_type: image/png
+    sha256: sha256:6b1bf8604684935678e303600ee94095dc162e306dd5c6f475e21bb0091d1cf4
+    size_bytes: 78220
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/002.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: dd9128ec2ee944b4b80e8e4e7b034813f9863054
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/003.png
+    media_type: image/png
+    sha256: sha256:3df2d1b7098245933a9c976400364e8485d4a7df3b77e3a3ea6d81cb6f226db1
+    size_bytes: 49312
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/003.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 36bc791423cbabee6d057d1db58d70391a74180a
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/004.png
+    media_type: image/png
+    sha256: sha256:557cbba86a87c4c443eefed64d8909d3353fe52f09a7ceefe193688cc95af88a
+    size_bytes: 77816
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/004.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 5001e3336bcb3107b5f0884283a9224c51f517cb
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/005.png
+    media_type: image/png
+    sha256: sha256:2138b1a8d0ea2b915f9888cf5e55b4c7fe322f60d28a40c2a7afaa539120ae6a
+    size_bytes: 87753
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/005.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: e98d9bf5dfa14fc65f26ea2549648310a89b049a
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/006.png
+    media_type: image/png
+    sha256: sha256:f71541818b89a1105035ff037f5f2b3167533123d1da2ea8749141338957e801
+    size_bytes: 65158
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/006.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: cfb0c824b26a8c9f76b4a076bc1cb0364953f3ee
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/007.png
+    media_type: image/png
+    sha256: sha256:c2c9faeb4ab799c42497fc41be89cc93d298977c22f5a5ea373846eed1e84177
+    size_bytes: 76037
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/007.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 18895c8b857b98c38c467a59d3051267ba940614
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/008.png
+    media_type: image/png
+    sha256: sha256:4f4aeb98e66705778ba52caf8a0ed92c793e7f09394fb1e39ff1bf09683e4881
+    size_bytes: 78175
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/008.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 508e2d72c7a0220cc3ec01c0049b33c99d37cec8
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/009.png
+    media_type: image/png
+    sha256: sha256:a8b905208c08443844e0469dc0c68143c74d20e485372a72f1823dad7e541605
+    size_bytes: 85844
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/009.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: be9079b392515c0a685a0cc164319215009655b1
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/010.png
+    media_type: image/png
+    sha256: sha256:4d3c659b98902a2de74cd7a44456d7bb2f3de6b3051e7811b6f6c5615571416b
+    size_bytes: 84485
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/010.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 9892ec4e79b4bb3830e6d14fcbf7ecb3ad640376
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/011.png
+    media_type: image/png
+    sha256: sha256:123c8cbb4d2d9cb91a445f2763cbac70c413b15c6cc3dfa977d7626c562df31d
+    size_bytes: 89377
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/011.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 28175d59d2f2b03c55fa866b8990029ba035e6a8
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/012.png
+    media_type: image/png
+    sha256: sha256:b7a0a7ce68c0625145fef8a678807d7df1adcf5cc142c5e6dc4760db238747f4
+    size_bytes: 79382
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/012.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 6c6c8bbe2d947866810992666361fd762ac3de72
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/013.png
+    media_type: image/png
+    sha256: sha256:74cb7fb72191c9343dd8c8f30d81a7e26f086538c415e3e78c2e5a2c56ec7ce7
+    size_bytes: 72543
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/013.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 9fce71362a39bdd5f5ab57f228dd564fdd1de00d
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/014.png
+    media_type: image/png
+    sha256: sha256:802913b035bd26b1e1f2e53190dc5699462985ebf4edf47cc16aee420698b1df
+    size_bytes: 20997
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/014.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 7d7e6526bda00b9db2991f7feef094d85146961f
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/015.png
+    media_type: image/png
+    sha256: sha256:b802c54356d9d52660c2b4e7a4185685efb96abaa123fcdc409e0df3c2eb1bce
+    size_bytes: 11315
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/015.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 5091e4fce105ebcfa1ac756d5e696d11823d5848
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/016.png
+    media_type: image/png
+    sha256: sha256:8a63510d3cd54f1eac55b2e231016742b15735f4f6df029bad96ebfe9005e6bd
+    size_bytes: 34469
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/016.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 82a48bd603be313444fe00e29bd18e0f7002d6f4
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/017.png
+    media_type: image/png
+    sha256: sha256:f273af85b02bfde57e807370bf0873c5aa93fa7515b7e8afe99388c80070583a
+    size_bytes: 90899
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/017.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: dd9dcfb960dc19985a4229d0ddee6606a9ced9a8
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/018.png
+    media_type: image/png
+    sha256: sha256:3dbc358147bef0672c417d90f215c026586a153a3a8babc24ee364311883896f
+    size_bytes: 19622
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/018.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: ccaf25439f4ff7408bca789264cf47fe4e6a99eb
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/019.png
+    media_type: image/png
+    sha256: sha256:3e3e62e8d49a2266aacacbfd80ec0ace12ce546d7ab050d64e42850881ea8406
+    size_bytes: 45418
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/019.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: c395d46d38369ff567f3befceb6101646ad7f257
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/020.png
+    media_type: image/png
+    sha256: sha256:58e6fd99a211deacef74852c2f23ec7daec46c89118575c9147898cced724ce2
+    size_bytes: 10674
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/020.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 5c00bdd6e8ff76c56f11b3507657d4e77bf42f9a
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/021.png
+    media_type: image/png
+    sha256: sha256:52a1d085d8cdd64bac1351d585d8f937c52beb2243475ac0b6cc424171b837a7
+    size_bytes: 10663
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/021.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 6db10137e879d03364043d3703deae98eede61df
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/022.png
+    media_type: image/png
+    sha256: sha256:dc4f62fde15aa10a5e8bd160499eef57e9835f357ee5614ccf443b9949442dba
+    size_bytes: 10314
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/022.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 729153ec65e3f2db8c913309b0405fa08ccb53ad
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/023.png
+    media_type: image/png
+    sha256: sha256:1f4a8508106f5965e2c39be1af7941473d3e0e12267aca5e2c52992995a3b3a8
+    size_bytes: 37476
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/023.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 9f8c66b2b092b75d7ab59fc5369758704c0b02e0
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/024.png
+    media_type: image/png
+    sha256: sha256:d1b313a80b8502e107b1fcb38335b5b0530a00fa2ce8bb86961ef0ddc93039f5
+    size_bytes: 10344
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/024.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 97952be8377c07d9987d0ee2e0fe56291a9836a5
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/025.png
+    media_type: image/png
+    sha256: sha256:4be57fb2c2d1cfdf3df1cb962fc3e84bc3c8fccfee93ca41e3f682f96efe9877
+    size_bytes: 18233
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/025.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 215d2b7e4848fade0442948c90916732254ed83e
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/026.png
+    media_type: image/png
+    sha256: sha256:f533d36b171d361ba45dc08b6c9562a0d821c7aadc3cb1966762472747eddbbc
+    size_bytes: 18241
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/media/026.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: c8d41b5dae72ea6e95e1ad6619b343ebac76fb51
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/observed-images.json
+    media_type: application/json
+    sha256: sha256:162b6a65fa919db9113ea9af90426b3a43c1af0fe25751e5900011069dc1a16a
+    size_bytes: 4543
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/artifacts/observed-images.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: c7cc00d1e82ba7d12a50fde74cef042ae9916e42
+  - path: raw/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/manifest.json
+    media_type: application/json
+    sha256: sha256:f468578dd331b59501978fcb98fd2657227c98ca17db330dad26c42bab1d35d8
+    size_bytes: 5134
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: cb33176c0f2a9609d600deec13630859c73e4717
+  - path: raw/record.yaml
+    media_type: application/yaml
+    sha256: sha256:6c07c29f21c66976caadd2b2b358ebe1118c2d4cddb12e83d56cbff6b2ac6755
+    size_bytes: 4992
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-f53679d7/record.yaml
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 5c4d42bf2958a4ffe373771b1cc956f5c3cdfd37

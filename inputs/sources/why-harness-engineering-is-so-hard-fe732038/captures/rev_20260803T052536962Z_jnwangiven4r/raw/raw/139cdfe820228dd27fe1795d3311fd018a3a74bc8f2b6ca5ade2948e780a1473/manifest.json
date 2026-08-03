@@ -1,0 +1,68 @@
+{
+  "artifact_count": 11,
+  "artifacts": [
+    {
+      "bytes": 15403,
+      "path": "article.txt",
+      "sha256": "d79461f3bb6a0d97cae2066333674375e56789742a65077b711e6af42ff1de7a"
+    },
+    {
+      "bytes": 318,
+      "path": "capture-meta.json",
+      "sha256": "40f0e2a386ccc49ab52f033570b6872b99cb941700a747f45f62ebd369630cca"
+    },
+    {
+      "bytes": 1421,
+      "path": "links.json",
+      "sha256": "f901e55ebd0a4819a7adac79aadf0d438e4eeec4b95e45f2b6b002072db709e9"
+    },
+    {
+      "bytes": 41734,
+      "path": "media/001.png",
+      "sha256": "9f8898199ffbcf7b0014665a7e7dd005dc15defac4a2e603ddd18137821e7847"
+    },
+    {
+      "bytes": 51775,
+      "path": "media/002.png",
+      "sha256": "9a307089253220d577c290360773c41e1069871ff31d240a972353fe97637aed"
+    },
+    {
+      "bytes": 46828,
+      "path": "media/003.png",
+      "sha256": "7411515f8464bc37e4c2d48942b55200cb239d445664b4704594712628adbea6"
+    },
+    {
+      "bytes": 53290,
+      "path": "media/004.png",
+      "sha256": "2a8dca381cb3c919a122b642264a592ed4e612af80b94420261657fbd2b58882"
+    },
+    {
+      "bytes": 57446,
+      "path": "media/005.png",
+      "sha256": "ae340cd351e99a8484942f0d34a3cb8010fcde430d2530424795c4c68cf211a3"
+    },
+    {
+      "bytes": 56448,
+      "path": "media/006.png",
+      "sha256": "48efa2cacb8d049e1dc9121ae7628223ca386f3fd394c69a9a863b99226bccfb"
+    },
+    {
+      "bytes": 2576,
+      "path": "media-manifest.json",
+      "sha256": "fd1980d871f7deab73c2dd72e8a4b493242a18a9cc243bc45aea135115381360"
+    },
+    {
+      "bytes": 1153,
+      "path": "observed-images.json",
+      "sha256": "2276876068ec14c46a33ab48eb1236c9bf36a6ce7537aec719fde0e761cc072c"
+    }
+  ],
+  "bundle_sha256": "139cdfe820228dd27fe1795d3311fd018a3a74bc8f2b6ca5ade2948e780a1473",
+  "byte_count": 328392,
+  "canonical_url": "https://x.com/WinterArc2125/status/2081042507471696318",
+  "captured_at": "2026-07-26T22:12:26Z",
+  "method": "authenticated_chrome_x_article_text_and_sanitized_media_views",
+  "schema_version": 1,
+  "source_id": "why-harness-engineering-is-so-hard-fe732038",
+  "submitted_url": "https://x.com/WinterArc2125/status/2081042507471696318"
+}

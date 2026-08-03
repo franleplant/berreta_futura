@@ -1,0 +1,243 @@
+{
+  "schema_version": 2,
+  "source_url": "https://x.com/dexhorthy/status/2080697380379427275",
+  "captured_from": "authenticated_chrome_media_views_and_article_crops",
+  "referenced_asset_count": 26,
+  "present_asset_count": 26,
+  "assets": [
+    {
+      "relative_url": "media/001.png",
+      "source_url": "https://pbs.twimg.com/media/HN8ZwOdbUAAi97D?format=jpg&name=medium",
+      "source_position": 1,
+      "role": "title_card",
+      "title": "Why Software Factories Fail — embedded media 1",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080409869174394880",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/002.png",
+      "source_url": "https://pbs.twimg.com/media/HN8Ped8aEAAF-zc?format=jpg&name=medium",
+      "source_position": 2,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 2",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080398568976945152",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/003.png",
+      "source_url": "https://pbs.twimg.com/media/HN8PswLa8AApp4d?format=jpg&name=medium",
+      "source_position": 3,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 3",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080398814389923840",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/025.png",
+      "source_url": "https://pbs.twimg.com/amplify_video_thumb/2080400367033217024/img/fzKh_OaEyf3OqYzU?format=jpg&name=medium",
+      "source_position": 4,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 4",
+      "description": "Authenticated Chrome crop of embedded video thumbnail.",
+      "alt_text": "Video insertado"
+    },
+    {
+      "relative_url": "media/004.png",
+      "source_url": "https://pbs.twimg.com/media/HN8RQdDakAA1V99?format=jpg&name=medium",
+      "source_position": 5,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 5",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080400527242989568",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/005.png",
+      "source_url": "https://pbs.twimg.com/media/HN8RTX9bwAAMpir?format=jpg&name=medium",
+      "source_position": 6,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 6",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080400577415331840",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/006.png",
+      "source_url": "https://pbs.twimg.com/media/HN8RZ2vbAAATZJh?format=jpg&name=medium",
+      "source_position": 7,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 7",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080400688757276672",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/007.png",
+      "source_url": "https://pbs.twimg.com/media/HN8RbyUa4AAPx8a?format=jpg&name=medium",
+      "source_position": 8,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 8",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080400721930018816",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/008.png",
+      "source_url": "https://pbs.twimg.com/media/HN8Rd9VbYAA-z7L?format=jpg&name=medium",
+      "source_position": 9,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 9",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080400759246774272",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/009.png",
+      "source_url": "https://pbs.twimg.com/media/HN8RgOcasAA3KGC?format=jpg&name=medium",
+      "source_position": 10,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 10",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080400798199230464",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/010.png",
+      "source_url": "https://pbs.twimg.com/media/HN8Rh7gaEAAqx76?format=jpg&name=medium",
+      "source_position": 11,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 11",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080400827475431424",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/011.png",
+      "source_url": "https://pbs.twimg.com/media/HN8RjrBaMAAj5CR?format=jpg&name=medium",
+      "source_position": 12,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 12",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080400857410187264",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/012.png",
+      "source_url": "https://pbs.twimg.com/media/HN8RmztaEAAOd9g?format=jpg&name=medium",
+      "source_position": 13,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 13",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080400911281819648",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/013.png",
+      "source_url": "https://pbs.twimg.com/media/HN8RoxQbEAAcloG?format=jpg&name=medium",
+      "source_position": 14,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 14",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080400944983117824",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/014.png",
+      "source_url": "https://pbs.twimg.com/media/HN8Wwh1akAAgZBY?format=jpg&name=medium",
+      "source_position": 15,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 15",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080406575840399360",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/015.png",
+      "source_url": "https://pbs.twimg.com/media/HN8RwLqbQAA-pQT?format=jpg&name=medium",
+      "source_position": 16,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 16",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080401072330588160",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/016.png",
+      "source_url": "https://pbs.twimg.com/media/HN8R0_naMAApmn2?format=jpg&name=medium",
+      "source_position": 17,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 17",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080401154996056064",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/017.png",
+      "source_url": "https://pbs.twimg.com/media/HN8R3wya8AAYoJi?format=jpg&name=medium",
+      "source_position": 18,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 18",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080401202555318272",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/026.png",
+      "source_url": "https://pbs.twimg.com/amplify_video_thumb/2080401322218758144/img/f7ow19XebOIFqSPf?format=jpg&name=medium",
+      "source_position": 19,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 19",
+      "description": "Authenticated Chrome crop of embedded video thumbnail.",
+      "alt_text": "Video insertado"
+    },
+    {
+      "relative_url": "media/018.png",
+      "source_url": "https://pbs.twimg.com/media/HN8U8yhbMAAZjQj?format=jpg&name=medium",
+      "source_position": 20,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 20",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080404587455131648",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/019.png",
+      "source_url": "https://pbs.twimg.com/media/HN8U_keaIAAotk_?format=jpg&name=medium",
+      "source_position": 21,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 21",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080404635223990272",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/020.png",
+      "source_url": "https://pbs.twimg.com/media/HN8VCrpbIAACaZp?format=jpg&name=medium",
+      "source_position": 22,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 22",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080404688688848896",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/021.png",
+      "source_url": "https://pbs.twimg.com/media/HN8VNn8bUAA3D4N?format=jpg&name=medium",
+      "source_position": 23,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 23",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080404876673372160",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/022.png",
+      "source_url": "https://pbs.twimg.com/media/HN8VhxEboAAS7gG?format=jpg&name=medium",
+      "source_position": 24,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 24",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080405222720249856",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/023.png",
+      "source_url": "https://pbs.twimg.com/media/HN8Vr0nakAAEKz4?format=jpg&name=medium",
+      "source_position": 25,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 25",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080405395470979072",
+      "alt_text": "Imagen"
+    },
+    {
+      "relative_url": "media/024.png",
+      "source_url": "https://pbs.twimg.com/media/HN8VxryaoAAtjN2?format=jpg&name=medium",
+      "source_position": 26,
+      "role": "figure",
+      "title": "Why Software Factories Fail — embedded media 26",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080405496180416512",
+      "alt_text": "Imagen"
+    }
+  ]
+}
