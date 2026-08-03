@@ -31,6 +31,7 @@ import {
   verifyLegacyRootMigrationPlan,
   type LegacyRootMigrationPlan,
 } from "./legacy-root-migration.ts";
+import { materializeLegacyMigrationAttestation } from "./legacy-migration-attestation.ts";
 
 const MIGRATION_ID = "legacy-four-root";
 
@@ -45,6 +46,31 @@ async function main(): Promise<void> {
   if (command === "successor-plan") {
     if (argument === undefined) throw usage();
     await createSuccessorPlan(process.cwd(), sourceCommit, parseRevisionId(argument), group);
+    return;
+  }
+  if (command === "attest") {
+    if (argument === undefined) throw usage();
+    const result = await materializeLegacyMigrationAttestation(
+      process.cwd(),
+      sourceCommit,
+      parseRevisionId(argument),
+      group === undefined ? newRevisionId() : parseRevisionId(group),
+    );
+    process.stdout.write(`${JSON.stringify({
+      status: "materialized",
+      migrationId: result.attestation.migrationId,
+      attestationRevisionId: result.ref.revisionId,
+      sourceCommitOid: result.attestation.protectedSource.commitOid,
+      targetSnapshotCommitOid: result.attestation.targetSnapshotCommitOid,
+      sourceRows: result.attestation.summary.sourceRows,
+      sourceBytes: result.attestation.summary.sourceBytes,
+      dispositions: result.attestation.summary.dispositions,
+      generatedFiles: result.attestation.summary.generatedFiles,
+      historicalCompositions: result.attestation.summary.historicalCompositions,
+      preExistingEdition4ImageFiles: result.attestation.summary.preExistingEdition4ImageFiles,
+      repositoryPaths: result.repositoryPaths,
+      cutoverStatus: result.attestation.cutover.status,
+    }, null, 2)}\n`);
     return;
   }
   if (command !== "plan") throw usage();
@@ -362,7 +388,8 @@ function usage(): Error {
   return new Error(
     "usage: legacy-root-cutover.ts plan <source-commit> [plan-revision-id] | " +
     "successor-plan <source-commit> <parent-plan-revision-id> [new-plan-revision-id] | " +
-    "materialize-inputs <source-commit> <plan-revision-id> <source-1|source-2|misc|archive>",
+    "materialize-inputs <source-commit> <plan-revision-id> <source-1|source-2|misc|archive> | " +
+    "attest <source-commit> <plan-revision-id> [attestation-revision-id]",
   );
 }
 
