@@ -25,8 +25,8 @@ articles:
     source_ids:
       - example-source-id
     # The SHA-256 of each source's committed extraction body. One source pins a
-    # bare digest; several pin a mapping keyed by source id. `mag article` writes
-    # this, and `mag pin <edition>` refreshes it after an extraction changes.
+    # bare digest; several pin a mapping keyed by source id. The durable engine
+    # records successor inputs when an extraction changes.
     source_body_sha256: 0000000000000000000000000000000000000000000000000000000000000000
     manuscript: editions/issue-001/articles/example-article.md
     opener_art:

@@ -29,6 +29,7 @@ import {
   type SqliteRunEngine,
 } from "../run-engine/index.ts";
 import { corruptStoredMachineVersion } from "./internal-schema-test-helper.ts";
+import { durableCheckpointAnswer } from "./durable-checkpoint-fixture.ts";
 import { prepareArticleSources } from "./approved-source-fixture.ts";
 
 function artifactId(value: string): ArtifactId {
@@ -295,6 +296,10 @@ async function completeArticle(
     const offer = view.offers.find((candidate) => candidate.status === "offered");
     assert.ok(offer, `run stranded in ${view.status}`);
     const claim = await engine.claim(offer.id, workerFor(offer));
+    if (offer.role === "durable_checkpoint") {
+      view = await engine.answer(claim, await durableCheckpointAnswer(engine, offer));
+      continue;
+    }
     view = await engine.answer(claim, {
       contractVersion: offer.contractVersion,
       result:

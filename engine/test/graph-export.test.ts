@@ -28,7 +28,39 @@ test("machine topology export is generated from the actual XState configs", asyn
     assert.match(svg, /awaiting_visual_review/);
     assert.match(json, /"always"/);
     assert.match(html, /generated directly from the live machine configs/);
-    const topology = JSON.parse(json) as { machines: Array<{ transitions: unknown[] }> };
+    const topology = JSON.parse(json) as {
+      machines: Array<{ name: string; states: string[]; transitions: unknown[] }>;
+    };
+    const editionStates = new Set(
+      topology.machines.find((machine) => machine.name === "EditionMachine")?.states,
+    );
+    for (const state of [
+      "verifying_bootstrap",
+      "composition_ready",
+      "composition_accepted_pending_durable",
+      "composition_durable_bound",
+      "migration_durable_backfill",
+      "migration_waiting_durable_children",
+      "render_reconciliation",
+      "rendering",
+      "bootstrap_render_approved",
+      "awaiting_release_approval",
+    ]) {
+      assert.ok(editionStates.has(state), state);
+    }
+    for (const [machineName, states] of [
+      ["ArticleMachine", ["accepted_pending_durable", "durable_bound"]],
+      ["EditorialMachine", ["accepted_pending_durable", "durable_bound"]],
+      ["CoverArtMachine", ["accepted_pending_durable", "durable_bound"]],
+      ["InteriorArtMachine", ["accepted_pending_durable", "durable_bound"]],
+      ["RenderMachine", ["measuring", "rendering", "inspecting", "awaiting_visual_review"]],
+      ["ReleaseMachine", ["awaiting_release_approval", "released"]],
+    ] as const) {
+      const actual = new Set(
+        topology.machines.find((machine) => machine.name === machineName)?.states,
+      );
+      for (const state of states) assert.ok(actual.has(state), `${machineName}:${state}`);
+    }
     const transitionCount = topology.machines.reduce((count, machine) => count + machine.transitions.length, 0);
     assert.equal([...svg.matchAll(/<g class="transition-label"/g)].length, transitionCount);
     assert.ok(svg.indexOf('<g class="transition-label"') > svg.lastIndexOf('<path class="edge"'));
@@ -50,6 +82,7 @@ test("the export includes a connected runtime orchestration overview", async () 
     ) as {
       readonly machines: readonly {
         readonly name: string;
+        readonly states: readonly string[];
         readonly transitions: readonly {
           readonly from: string;
           readonly to: string;
@@ -81,6 +114,12 @@ test("the export includes a connected runtime orchestration overview", async () 
     ]);
     const overview = JSON.parse(overviewJson) as {
       readonly lifecycleOwner: string;
+      readonly editionBranches: readonly {
+        readonly id: string;
+        readonly label: string;
+        readonly summary: string;
+        readonly states: readonly string[];
+      }[];
       readonly machines: readonly { readonly kind: string }[];
       readonly declarations: {
         readonly spawns: Readonly<Record<string, {
@@ -100,6 +139,11 @@ test("the export includes a connected runtime orchestration overview", async () 
     };
     assert.equal(overview.machines.length, 10);
     assert.equal(overview.lifecycleOwner, "edition");
+    assert.deepEqual(overview.editionBranches.map((branch) => branch.id), [
+      "production",
+      "bootstrap",
+      "migration",
+    ]);
     assert.deepEqual(overview.edges, runtimeOrchestrationEdges());
     const machineIds = new Set(overview.machines.map((machine) => machine.kind));
     assert.equal(machineIds.size, 10);
@@ -109,6 +153,21 @@ test("the export includes a connected runtime orchestration overview", async () 
       [...machineIds].filter((machine) => machine !== "edition").sort(),
     );
     assert.equal(Object.values(overview.declarations.spawns).length, machineIds.size - 1);
+    for (const child of [
+      "article",
+      "editorial",
+      "cover_art",
+      "interior_art",
+      "render",
+      "release",
+    ]) {
+      assert.ok(
+        overview.edges.some((edge) =>
+          edge.kind === "spawn" && edge.source === "edition" && edge.target === child
+        ),
+        `EditionMachine spawn path to ${child}`,
+      );
+    }
     for (const edge of overview.edges) {
       assert.ok(machineIds.has(edge.source), edge.source);
       assert.ok(machineIds.has(edge.target), edge.target);
@@ -146,7 +205,19 @@ test("the export includes a connected runtime orchestration overview", async () 
     for (const machine of editionOrchestration.machines) {
       assert.match(overviewSvg, new RegExp(machine.label));
     }
-    assert.match(overviewSvg, /lifecycle owner and durable router/);
+    assert.match(overviewSvg, /sole lifecycle owner and durable router/);
+    for (const branch of overview.editionBranches) {
+      assert.ok(branch.states.every((state) =>
+        detailed.machines
+          .find((machine) => machine.name === "EditionMachine")
+          ?.states?.includes(state)
+      ), branch.id);
+      assert.ok(overviewSvg.includes(`data-branch="${branch.id}"`), branch.id);
+    }
+    assert.match(overviewSvg, /produce: checkpoints -&gt; composition -&gt; fresh render -&gt; QA\/visual -&gt; release/);
+    assert.match(overviewSvg, /bootstrap: verify composition -&gt; fresh render -&gt; QA\/visual -&gt; unreleased/);
+    assert.match(overviewSvg, /migration: durable backfill -&gt; composition -&gt; reconciliation seam -&gt; fresh QA/);
+    assert.equal(machineIds.has("coordinator"), false);
     assert.match(overviewSvg, /edition join:/);
     assert.match(overviewSvg, /edition route:/);
     assert.match(overviewHtml, /projected from the same typed declarations enforced by the runtime/);

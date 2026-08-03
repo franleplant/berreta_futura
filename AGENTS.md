@@ -8,7 +8,9 @@ TypeScript and XState execution engine is the only workflow authority.
 - Run edition and article work through `engine/` and its public `RunEngine`
   interface. Use `npm run engine -- ...` from the CLI.
 - XState owns lifecycle and joins. `RunEngine` owns durable runs, immutable
-  artifacts, attempts, leases, fencing, events, decisions, and release state.
+  artifacts, attempts, leases, fencing, events, decisions, validation, exports,
+  and release state. It is the sole workflow, orchestration, state, validation,
+  and export authority.
 - Do not infer workflow state from paths, output presence, hashes, or mutable
   files. Do not send events directly to in-memory actors or query SQLite from
   callers.
@@ -21,19 +23,38 @@ TypeScript and XState execution engine is the only workflow authority.
 - A released or sealed run is immutable. Revisions create new artifact IDs and
   preserve the old graph.
 
-## Legacy Python
+## Python renderer seam
 
-- The Python implementation remains in the repository only because its removal
-  has not been authorized yet. It is not a workflow authority, compatibility
-  target, parity oracle, or place for new orchestration.
-- Do not run the Python test suite for routine development or verification. Do
-  not add Python workflow code or Python workflow tests.
-- The existing typesetter and source archive may remain temporarily behind the
-  versioned TypeScript adapter interfaces. Only the TypeScript worker may invoke
-  those seams. Callers must not use `mag produce`, `mag status`, `mag finish`,
-  `mag release`, or another legacy command to advance an XState run.
-- Do not delete the retained Python implementation until a human explicitly
-  requests its removal.
+- The previous Python pipeline, `mag` CLI, Python tests, and source bridge are
+  deleted. Do not restore, invoke, or document them.
+- Python implements only the versioned PDF/web renderer subprocess. It receives
+  an immutable manifest and a caller-owned destination from the TypeScript
+  worker, then returns its structured result. It is not workflow authority, a
+  compatibility target, or a place for orchestration.
+- Do not add Python workflow code or Python workflow tests. Routine verification
+  remains Node-only. Source capture is a TypeScript adapter and may not invoke
+  Python.
+
+## Repository roots and revisions
+
+- `inputs/` and `durable/` are Git-tracked repositories of immutable revisions.
+  `inputs/` contains versioned source evidence, specifications, prompts, and
+  policies. `durable/` contains promoted article, editorial, image, and
+  composition revisions. Never mutate a revision in place.
+- `.magazine/` is ignored runtime storage for SQLite, engine artifacts, staging,
+  leases, and worker scratch space. `output/` is ignored, ephemeral export
+  material. Neither path confers workflow authority.
+- For edition `004`, one run name is generated as `<UTC timestamp>--<RunId>`.
+  Its private runtime root is `.magazine/004/<run-name>` and any public export
+  root is `output/004/<run-name>`.
+- An `EngineArtifact` is an immutable, run-scoped `RunEngine` artifact with
+  offer, attempt, and parent-artifact provenance. A `DurableRevision` is a
+  Git-bound, immutable revision in `durable/`, promoted from accepted engine
+  artifacts. They are distinct identities, not interchangeable names.
+- A `CompositionRevision` selects exact article, editorial, image, and layout
+  input revisions. It can mix and match those exact immutable revisions from
+  compatible prior work; its pins and Git binding, not directory discovery,
+  define the selected edition inputs.
 
 ## Editorial and provenance rules
 
@@ -114,8 +135,9 @@ TypeScript and XState execution engine is the only workflow authority.
 - Never author Unicode U+2014 in repository prose, code comments, prompts, UI
   copy, or social copy. Use normal punctuation. Preserve it only in immutable
   raw evidence or an exact quotation.
-- Keep temporary runs, databases, artifact stores, output, credentials, and
-  browser-session data out of Git.
+- Keep `.magazine/`, `output/`, temporary runs, databases, artifact stores,
+  credentials, and browser-session data out of Git. Keep immutable revisions in
+  `inputs/` and `durable/` tracked.
 - Do not hand-edit generated hashes or operational records. Runtime identity is
   generated immutable IDs, not content digests.
 - Commit structured inputs, prompts, source records, manuscripts, machine code,
@@ -133,8 +155,8 @@ npm run build:viewer
 ```
 
 `npm run verify:engine` runs the same TypeScript checks. Routine verification
-must not invoke Python or UV. The retained Edition 4 bridge integration is an
-explicit, opt-in seam check and is not part of routine verification.
+must not invoke Python or UV. The TypeScript renderer executor invokes the
+Python renderer seam only when a claimed renderer offer requires it.
 
 Tests should cross the public `RunEngine` interface. A narrowly labeled schema
 migration test may use internal helpers, but workflow behavior must not depend

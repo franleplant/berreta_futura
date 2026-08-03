@@ -1,9 +1,11 @@
 # Magazine execution engine
 
 This directory contains the TypeScript and XState execution authority described
-in `meta/plans/graph-execution-model.md`. The retained Python tree is frozen
-legacy code. It is not a shadow authority, contributor workflow, or acceptance
-oracle, and the engine never reads its production records to infer state.
+in `meta/plans/graph-execution-model.md`. It is the sole workflow,
+orchestration, state, validation, and export authority. The old Python pipeline,
+CLI, tests, and source bridge are deleted. Python remains only as a renderer
+subprocess implementation, not a shadow authority, contributor workflow, or
+acceptance oracle.
 
 The public boundary is `RunEngine`. Its SQLite database is operational truth for
 runs, actors, state visits, events, offers, attempts, decisions, and immutable
@@ -22,22 +24,24 @@ npm run test:engine
 npm run build:viewer
 ```
 
-Routine verification is Node-only. `npm run verify:engine` combines those checks
-and does not run the legacy Python suite. The opt-in
-`npm run test:legacy-bridge` command exists only to exercise the temporary deep
-renderer seam against Edition 4 without generating images.
+Routine verification is Node-only. `npm run verify:engine` combines those
+checks. Do not invoke Python tests, a Python CLI, or a source bridge. The
+TypeScript renderer executor is the only component that invokes the Python seam
+when it holds a claimed renderer offer.
 
-The retained typesetter and source archive are reachable only through versioned
-adapter contracts. They receive immutable inputs and a caller-owned destination.
-They do not read workflow records or write global output directories. New
-workflow behavior, contracts, and tests belong in TypeScript.
+The renderer is reachable only through its versioned adapter contract. It
+receives an immutable manifest and a caller-owned destination. It does not read
+workflow records or write a canonical output directory. Source capture is
+TypeScript-only. New workflow behavior, contracts, and tests belong in
+TypeScript.
 
-`SourceArchiveExecutor` and `RendererExecutor` are the concrete worker-loop
-bridges. Their stored profiles are path-free: they name artifact IDs and safe
-staging targets only. For a claimed attempt, the executor copies those bytes into
-an owned root and creates the adapter transport request. The renderer also checks
-the assembly payload against its artifact-edge lineage, so a profile cannot use
-an artifact merely by guessing its ID.
+`SourceArchiveExecutor` and `RendererExecutor` are TypeScript worker-loop
+executors. `RendererExecutor` alone crosses the Python seam. Their stored
+profiles are path-free: they name artifact IDs and safe staging targets only. For
+a claimed attempt, the executor copies those bytes into an owned root and creates
+the adapter transport request. The renderer also checks the assembly payload
+against its artifact-edge lineage, so a profile cannot use an artifact merely by
+guessing its ID.
 
 ## CLI
 
@@ -57,6 +61,10 @@ Pass `--idempotency-key KEY` to `start` or `fork` when the caller may retry
 after losing the response. Reusing that key resumes the committed operation;
 reusing it for different immutable inputs is rejected. Starts without a key
 are independent operations, even when their specs are equal.
+
+The low-level commands accept explicit `--db` and `--artifacts` paths. When
+they are omitted, their isolated development state is `.magazine/dev/run.sqlite`
+and `.magazine/dev/artifacts`; they never create a `runs/` directory.
 
 `fork` creates an explicit successor. It may reuse an answered ancestor offer
 only when the run and actor machine versions, role, slot, answer contract, task
@@ -86,19 +94,11 @@ while work runs, aborts timed-out adapters, and submits results only through
 `RunEngine.answer` or `RunEngine.fail`. Expired claims are reclaimable and late
 workers remain fenced.
 
-Worker configuration is versioned JSON. The temporary deep renderer adapter
-expands to separate edition render, isolated article measurement, and
-translated-language fit executors. `render_inspection` reads committed
+Worker configuration is versioned JSON. The renderer adapter has separate
+edition-render and edition-measure executors. `render_inspection` reads committed
 `render_critic_report` and `printer_preflight` artifacts. Text and image models
 are explicit command adapters; their commands receive the complete materialized
 work package on stdin and must return one `WorkAnswer` JSON object on stdout.
-
-TODO: Make generated-PDF QA and visual verification first-class graph behavior:
-generate raster pages and contact sheets from the exact reader and booklet
-ArtifactIds; model machine critic and preflight state; offer independent human
-visual review over those exact artifacts and original-resolution pages; route
-findings to rerender or revision; and block release until the current render set
-is approved.
 
 ```json
 {
@@ -111,7 +111,7 @@ is approved.
       "kind": "python_renderer",
       "id": "mag-renderer",
       "projectRoot": ".",
-      "workDirectory": "runs/worker-temp"
+      "workDirectory": ".magazine/004/worker-temp"
     },
     {
       "kind": "render_inspection",
@@ -141,6 +141,33 @@ accepting filesystem paths.
 Edition 4 is an integration fixture. It stages only selected, committed art and
 source media as immutable artifacts. Image generation is disabled for that fixture.
 
+## Repository roots, artifacts, and composition
+
+`inputs/` and `durable/` are Git-tracked immutable revision roots. `inputs/`
+holds evidence, specifications, prompts, policies, and bootstrap revisions.
+`durable/` holds promoted article, editorial, image, and composition revisions.
+`.magazine/` is ignored runtime storage for per-run SQLite databases, engine
+artifacts, staging, and worker scratch space. `output/` is ignored, ephemeral
+export material. Paths are not workflow evidence.
+
+For edition `004`, each run has one engine-generated name,
+`<UTC timestamp>--<RunId>`. Its runtime storage is
+`.magazine/004/<UTC timestamp>--<RunId>`; any export uses the matching
+`output/004/<UTC timestamp>--<RunId>` root.
+
+An `EngineArtifact` is immutable run-scoped evidence committed by `RunEngine`,
+with producing offer, attempt, and parent-artifact lineage. A `DurableRevision`
+is a separately immutable, Git-bound promoted revision in `durable/`. Promotion
+records the accepted engine artifact IDs, decisions, input revisions, and Git
+binding. Do not use a durable path as an artifact ID or an artifact ID as a
+durable revision reference.
+
+A `CompositionRevision` is a durable revision whose `composition.yaml` pins the
+exact article and editorial language revisions, image revisions, and layout
+input revisions. It can mix and match compatible immutable revisions from
+different prior runs. Its explicit revision pins and Git binding select the
+edition inputs; a filesystem scan, matching content, or a timestamp never does.
+
 ## Machine topology export
 
 ```sh
@@ -161,18 +188,22 @@ projects them. The graph test proves every endpoint and declaration is present,
 the JSON edges exactly match the runtime projection, and all ten machines are
 connected to the EditionMachine lifecycle owner.
 
-## Edition 4 durable exercise
+## Edition 4 render exercise
 
 ```sh
 npm run edition4:durable
 ```
 
-The command writes its SQLite run, artifact store, staged fixture, and renderer
-workspace below ignored `runs/edition4-durable/`. It advances the source,
-planning, article measurement and judgment, editorial, translation proof,
-registered-art, renderer, visual-review, and release offers through public
-`RunEngine` claims and answers. The final edition measurement and render offers
-run through the versioned Python renderer adapter and reuse the committed Edition
-4 English, Spanish, and selected-art artifacts. Those committed content artifacts
-are intentionally initial revisions in this integration fixture, so the frozen
-renderer profile can name every staged layout input before the run begins.
+This is the canonical Edition 4 command. It resolves the committed
+`run_bootstrap` revision `rev_20260802T230000035Z_poyigg2sur72`, allocates or
+resumes its one canonical runtime run, and lets `EditionBootstrapRunner` execute
+only the configured non-human offers through `RunEngine`.
+
+The Edition 4 bootstrap reuses only its selected committed article, editorial,
+translation, source, and art revisions. It never generates an image. Its final
+measurement and render offers cross the versioned Python renderer seam. At the
+pending human visual-review boundary, the runner creates a fenced,
+non-authoritative projection of the exact render artifacts under the matching
+ignored `output/004/<UTC timestamp>--<RunId>/` directory. That projection does
+not claim or answer the human offer, does not approve the render, and does not
+release the edition.

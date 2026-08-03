@@ -9,6 +9,7 @@ import {
   type SourceRunSpec,
   type SubmitLeadRequest,
 } from "./run.ts";
+import type { InputRevisionRef } from "../durable/types.ts";
 
 const nonEmpty = z.string().trim().min(1);
 const artifactId = nonEmpty;
@@ -190,9 +191,30 @@ const artSchema = z
   })
   .strict();
 
+const runBootstrapRevisionSchema = z
+  .object({
+    kind: z.literal("run_bootstrap"),
+    logicalId: nonEmpty,
+    editionId: nonEmpty,
+    revisionId: nonEmpty,
+  })
+  .strict();
+
+const editionExecutionSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("produce") }).strict(),
+  z
+    .object({
+      kind: z.literal("bootstrap_composition"),
+      bootstrapRevision: runBootstrapRevisionSchema,
+      postRender: z.literal("stop_unreleased"),
+    })
+    .strict(),
+]);
+
 const editionSchema = z
   .object({
     editionId: nonEmpty,
+    execution: editionExecutionSchema,
     editionBrief: artifactId,
     planningArtifact: artifactId.optional(),
     sourceAssignmentPolicy: z.enum(["at_least_once", "exactly_once"]).optional(),
@@ -440,6 +462,19 @@ function editionReferences(edition: EditionRunSpec): readonly ArtifactId[] {
     edition.release.printerProfileArtifact,
     ...(edition.release.printerPreflightArtifacts ?? []),
   ].filter((value): value is ArtifactId => value !== undefined);
+}
+
+/**
+ * Immutable input revisions are accounted for separately from engine
+ * artifacts. In particular, the bootstrap selector is not an artifact ID and
+ * must never be resolved through the artifact repository seam.
+ */
+export function editionInputRevisionReferences(
+  edition: EditionRunSpec,
+): readonly InputRevisionRef[] {
+  return edition.execution.kind === "bootstrap_composition"
+    ? [edition.execution.bootstrapRevision]
+    : [];
 }
 
 function validateEdition(edition: EditionRunSpec, context: z.RefinementCtx): void {

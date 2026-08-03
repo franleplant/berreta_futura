@@ -4,8 +4,13 @@ import type {
   ArtifactId,
   EditorialRunSpec,
   JsonObject,
+  RevisionId,
   WorkOfferId,
 } from "../contracts/index.ts";
+import {
+  durableCheckpointOffer,
+  durableRevisionArtifact,
+} from "./durable-checkpoint.ts";
 import {
   emitEffects,
   initialMachineTransition,
@@ -16,7 +21,7 @@ import {
 } from "./runtime.ts";
 import { humanDecisionOffer } from "./human-decision.ts";
 
-export const editorialMachineVersion = "editorial/1";
+export const editorialMachineVersion = "editorial/2";
 const writerContractVersion = "editorial-writer/1";
 const editorDecisionContractVersion = "editor-decision/1";
 
@@ -25,6 +30,7 @@ export type EditorialMachineInput = MachineInputBase & {
 };
 
 export type EditorialMachineContext = MachineInputBase & {
+  readonly editionId: string | undefined;
   readonly editorialId: string;
   readonly briefArtifact: ArtifactId;
   readonly writingRules: ArtifactId;
@@ -32,6 +38,9 @@ export type EditorialMachineContext = MachineInputBase & {
   manuscriptArtifact: ArtifactId | undefined;
   revisionArtifacts: readonly ArtifactId[];
   revision: number;
+  boundRevisionId: RevisionId | undefined;
+  durableRevisionArtifact: ArtifactId | undefined;
+  editorDecisionArtifact: ArtifactId | undefined;
   editorRequestOrdinal: number;
   lastFailure: string | undefined;
 };
@@ -43,16 +52,17 @@ type CompletedArtifact = {
 
 export type EditorialMachineEvent =
   | { readonly type: "START" }
+  | { readonly type: "MIGRATION_DURABLE_BACKFILL" }
   | {
       readonly type: "WORK_COMPLETED";
-      readonly slot: "draft" | "editor_decision";
+      readonly slot: "draft" | "editor_decision" | "durable_checkpoint";
       readonly offerId?: WorkOfferId;
       readonly artifacts: readonly CompletedArtifact[];
       readonly result: JsonObject;
     }
   | {
       readonly type: "WORK_FAILED";
-      readonly slot: "draft" | "editor_decision";
+      readonly slot: "draft" | "editor_decision" | "durable_checkpoint";
       readonly classification: "canceled" | "permanent" | "retryable" | "timeout";
       readonly message: string;
     }
@@ -97,6 +107,10 @@ function draftInputs(context: EditorialMachineContext): readonly ArtifactId[] {
   ].filter((value): value is ArtifactId => value !== undefined);
 }
 
+function editorialRevisionId(context: EditorialMachineContext): RevisionId {
+  return `revision_${context.actorId}_${context.revision}` as RevisionId;
+}
+
 export const editorialMachine = setup({
   types: {
     context: {} as EditorialMachineContext,
@@ -121,6 +135,9 @@ export const editorialMachine = setup({
       event.type === "WORK_COMPLETED" && event.slot === "editor_decision",
     failedPermanently: ({ event }) =>
       event.type === "WORK_FAILED" && event.classification === "permanent",
+    durableCheckpointCompleted: ({ event }) =>
+      event.type === "WORK_COMPLETED" && event.slot === "durable_checkpoint" &&
+      durableRevisionArtifact(event.artifacts) !== undefined,
   },
   actions: {
     offerDraft: emitEffects(({ context }) => [
@@ -208,6 +225,41 @@ export const editorialMachine = setup({
         }),
       ];
     }),
+    rememberEditorDecision: assign(({ event }) => ({
+      editorDecisionArtifact:
+        event.type === "WORK_COMPLETED" && event.slot === "editor_decision"
+          ? artifact(event, "editor_decision")
+          : undefined,
+    })),
+    offerDurableCheckpoint: emitEffects(({ context }) =>
+      context.manuscriptArtifact === undefined
+        ? []
+        : durableCheckpointOffer({
+            actorId: context.actorId,
+            actorKey: context.logicalKey,
+            state: "accepted_pending_durable",
+            logicalItem: {
+              kind: "editorial",
+              editionId: context.editionId ?? "standalone",
+              logicalId: context.editorialId,
+              language: "en",
+            },
+            ...(context.boundRevisionId === undefined
+              ? {}
+              : { expectedParentRevisionId: context.boundRevisionId }),
+            acceptedArtifactId: context.manuscriptArtifact,
+          }),
+    ),
+    keepDurableRevision: assign(({ context, event }) => ({
+      boundRevisionId:
+        event.type === "WORK_COMPLETED" && typeof event.result.revisionId === "string"
+          ? event.result.revisionId as RevisionId
+          : context.boundRevisionId,
+      durableRevisionArtifact:
+        event.type === "WORK_COMPLETED" && event.slot === "durable_checkpoint"
+          ? durableRevisionArtifact(event.artifacts)
+          : context.durableRevisionArtifact,
+    })),
     publishSettled: emitEffects(({ context }) => {
       if (context.manuscriptArtifact === undefined) {
         return [];
@@ -221,7 +273,9 @@ export const editorialMachine = setup({
           result: {
             editorialId: context.editorialId,
             revision: context.revision,
-            status: "settled",
+            status: "durable_bound",
+            durableRevisionArtifactId: context.durableRevisionArtifact ?? null,
+            revisionId: context.boundRevisionId ?? null,
           },
         }),
       ];
@@ -249,12 +303,16 @@ export const editorialMachine = setup({
     actorId: input.actorId,
     logicalKey: input.logicalKey,
     editorialId: input.spec.editorialId,
+    editionId: input.spec.editionId,
     briefArtifact: input.spec.briefArtifact,
     writingRules: input.spec.writingRules,
     articleArtifacts: input.spec.articleArtifacts ?? [],
     manuscriptArtifact: input.spec.initialManuscript,
     revisionArtifacts: [],
     revision: 0,
+    boundRevisionId: undefined,
+    durableRevisionArtifact: undefined,
+    editorDecisionArtifact: undefined,
     editorRequestOrdinal: 0,
     lastFailure: undefined,
   }),
@@ -262,7 +320,7 @@ export const editorialMachine = setup({
     idle: {
       on: {
         START: [
-          { guard: "hasManuscript", target: "settled" },
+          { guard: "hasManuscript", target: "accepted_pending_durable" },
           { target: "drafting" },
         ],
       },
@@ -273,7 +331,7 @@ export const editorialMachine = setup({
         WORK_COMPLETED: {
           guard: "draftCompleted",
           actions: "keepDraft",
-          target: "settled",
+          target: "accepted_pending_durable",
         },
         WORK_FAILED: [
           {
@@ -304,8 +362,8 @@ export const editorialMachine = setup({
         WORK_COMPLETED: [
           {
             guard: "decisionAccepts",
-            actions: "recordEditorDecision",
-            target: "settled",
+            actions: ["recordEditorDecision", "rememberEditorDecision"],
+            target: "accepted_pending_durable",
           },
           {
             guard: "decisionRevises",
@@ -324,7 +382,19 @@ export const editorialMachine = setup({
     editor_decision_failed: {
       on: { RETRY: { actions: "clearFailure", target: "awaiting_editor" } },
     },
-    settled: {
+    accepted_pending_durable: {
+      entry: "offerDurableCheckpoint",
+      on: {
+        MIGRATION_DURABLE_BACKFILL: { target: "accepted_pending_durable", reenter: true },
+        WORK_COMPLETED: {
+          guard: "durableCheckpointCompleted",
+          actions: "keepDurableRevision",
+          target: "durable_bound",
+        },
+        WORK_FAILED: { actions: "rememberFailure", target: "failed" },
+      },
+    },
+    durable_bound: {
       entry: "publishSettled",
       on: {
         REVISION_REQUESTED: {

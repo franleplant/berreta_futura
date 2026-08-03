@@ -44,6 +44,7 @@ function emptyCollection(prefix: string): EditionRootRunSpec {
     ],
     edition: {
       editionId: `${prefix}-edition`,
+      execution: { kind: "produce" },
       editionBrief,
       sources: [],
       articles: [],

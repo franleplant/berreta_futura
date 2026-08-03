@@ -3,6 +3,7 @@ export * from "./art-machines.ts";
 export * from "./edition-machine.ts";
 export * from "./edition-review-machine.ts";
 export * from "./editorial-machine.ts";
+export * from "./durable-checkpoint.ts";
 export * from "./release-machine.ts";
 export * from "./render-machine.ts";
 export * from "./runtime.ts";

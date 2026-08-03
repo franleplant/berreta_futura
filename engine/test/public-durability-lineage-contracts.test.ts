@@ -26,6 +26,7 @@ import {
   type RunEngineFailpoint,
 } from "../run-engine/index.ts";
 import { serveRunViewer } from "../view/server.ts";
+import { durableCheckpointAnswer } from "./durable-checkpoint-fixture.ts";
 
 function artifactId(value: string): ArtifactId {
   return value as ArtifactId;
@@ -160,6 +161,7 @@ function editionFixture(
       artifacts: seeds,
       edition: {
         editionId: `${prefix}-edition`,
+        execution: { kind: "produce" },
         editionBrief,
         planningArtifact: planning,
         sources: [
@@ -287,6 +289,9 @@ async function submit(
   artifacts: readonly AnswerArtifact[] = [],
 ): Promise<RunView> {
   const claim = await engine.claim(offer.id, workerFor(offer));
+  if (offer.role === "durable_checkpoint") {
+    return await engine.answer(claim, await durableCheckpointAnswer(engine, offer));
+  }
   return await engine.answer(claim, {
     contractVersion: offer.contractVersion,
     result,
@@ -340,6 +345,9 @@ async function advanceToRenderMeasurement(
           { decision: "approved" },
           [answerArtifact(artifactId(`${prefix}-edition-review`), "edition_review")],
         );
+        break;
+      case "durable_checkpoint":
+        await submit(engine, next, {});
         break;
       case "measure_edition":
         return { view, offer: next };

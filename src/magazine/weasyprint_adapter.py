@@ -1250,7 +1250,7 @@ def _render_to_signature(
         # filler page; the equivalence contract bans the latter outright.  The
         # coda such a page used to print is named here so the arithmetic that
         # replaced it is checkable against the artifact it replaced.
-        signature_coda = f"{edition.publication_name} — {edition.title}"
+        signature_coda = f"{edition.publication_name} - {edition.title}"
         raise ValidationError(
             f"WeasyPrint reader for edition {edition.id} is {len(document.pages)} pages, "
             f"which is not an A4-fold signature. Closing plates close the signature; a "
@@ -1683,10 +1683,10 @@ def _is_runt(
 class HyphenLadder(NamedTuple):
     """One prose block's longest run of consecutive hyphen-ended lines.
 
-    ``key`` is the block's runt key -- the same name a ``ReaderPlan`` bind or a
-    ``mag measure`` paragraph row uses -- ``page`` is the reader page the run
-    starts on, and ``sample`` is the run's first line, so the report puts an
-    eye on the page without anyone re-deriving which paragraph it meant.
+    ``key`` is the block's runt key, the same name used by a ``ReaderPlan``
+    bind or the renderer measurement result. ``page`` is the reader page the
+    run starts on, and ``sample`` is the run's first line, so the report puts
+    an eye on the page without anyone re-deriving which paragraph it meant.
     """
 
     key: str
@@ -1942,7 +1942,7 @@ class OpenerIntroBudget:
     count ever exceeded the stated line count, at five, seven or nine lines.
     Being under it means fitting; being over it means asking :meth:`fits`,
     which answers the real question exactly and is reachable from the command
-    line as ``mag fit <edition> --opener <article-id>``.
+    line as the current RunEngine renderer measurement.
     """
 
     lines: int

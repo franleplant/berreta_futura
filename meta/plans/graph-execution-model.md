@@ -449,12 +449,12 @@ model, feedback, and judge design can be improved fastest.
 Conceptual command surface:
 
 ```text
-mag article run <article-spec>
-mag article inspect <run-id>
-mag article continue <run-id>
-mag article fork <run-id> --change <named-input>
-mag article compare <run-id> <run-id> [...]
-mag article promote <run-id>
+npm run engine -- start <article-spec>
+npm run engine -- inspect <run-id>
+npm run engine -- continue <run-id>
+npm run engine -- fork <run-id> <changes>
+npm run engine -- compare <run-id> <run-id> [...]
+npm run engine -- promote <run-id> <promotion>
 ```
 
 `continue` advances a waiting run after available answers have arrived. It does not

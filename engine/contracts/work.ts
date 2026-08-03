@@ -35,9 +35,12 @@ export const KNOWN_WORK_ROLES = [
   "select_art",
   "measure_edition",
   "render",
+  "render_reconciliation",
   "render_inspection",
   "visual_review",
   "release_approval",
+  "durable_checkpoint",
+  "composition_bootstrap",
   "editor_decision",
 ] as const;
 

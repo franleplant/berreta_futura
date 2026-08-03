@@ -8,6 +8,7 @@ import type {
   EditionRunSpec,
   JsonObject,
   RegisteredArtSpec,
+  RevisionId,
   SourceRunSpec,
   TranslationRunSpec,
   WorkOfferId,
@@ -35,6 +36,10 @@ import {
 } from "./production-plan.ts";
 import { humanDecisionOffer } from "./human-decision.ts";
 import {
+  durableCheckpointOffer,
+  durableRevisionArtifact,
+} from "./durable-checkpoint.ts";
+import {
   editionOrchestration,
   joinSettled,
   routeOrchestratedEvent,
@@ -44,7 +49,7 @@ import {
   type OrchestrationSpawnDeclaration,
 } from "./orchestration.ts";
 
-export const editionMachineVersion = "edition/2";
+export const editionMachineVersion = "edition/3";
 
 export type EditionMachineInput = MachineInputBase & {
   readonly spec: EditionRunSpec;
@@ -69,6 +74,9 @@ export type EditionMachineContext = MachineInputBase & {
   closeRequestOrdinal: number;
   planRequestOrdinal: number;
   editorRequestOrdinal: number;
+  compositionBoundRevisionId: RevisionId | undefined;
+  compositionDurableRevisionArtifact: ArtifactId | undefined;
+  migrationBackfill: boolean;
   routedArticleKeys: readonly string[];
   routedFindingArtifacts: readonly ArtifactId[];
   lastFailure: string | undefined;
@@ -79,14 +87,26 @@ type CompletedArtifact = {
   readonly kind: string;
 };
 
+type BootstrapExecution = {
+  readonly kind: "bootstrap_composition";
+  readonly bootstrapRevision: {
+    readonly kind: "run_bootstrap";
+    readonly logicalId: string;
+    readonly editionId: string;
+    readonly revisionId: RevisionId;
+  };
+  readonly postRender: "stop_unreleased";
+};
+
 export type EditionMachineEvent =
   | { readonly type: "START" }
+  | { readonly type: "MIGRATION_DURABLE_BACKFILL" }
   | { readonly type: "LEAD_RECEIVED"; readonly source: SourceRunSpec }
   | ChildSpawnedEvent
   | ChildStatusEvent
   | {
       readonly type: "WORK_COMPLETED";
-      readonly slot: "close_collection" | "plan_edition" | "editor_decision";
+      readonly slot: "close_collection" | "plan_edition" | "editor_decision" | "durable_checkpoint" | "render_reconciliation" | "composition_bootstrap";
       readonly offerId?: WorkOfferId;
       readonly taskArtifactId?: ArtifactId;
       readonly artifacts: readonly CompletedArtifact[];
@@ -94,7 +114,7 @@ export type EditionMachineEvent =
     }
   | {
       readonly type: "WORK_FAILED";
-      readonly slot: "close_collection" | "plan_edition" | "editor_decision";
+      readonly slot: "close_collection" | "plan_edition" | "editor_decision" | "durable_checkpoint" | "render_reconciliation" | "composition_bootstrap";
       readonly classification: "canceled" | "permanent" | "retryable" | "timeout";
       readonly message: string;
     }
@@ -135,6 +155,12 @@ function reviewKey(cycle: number): string {
 
 function renderKey(cycle: number): string {
   return `render:${cycle}`;
+}
+
+function migrationDurableChildKeys(context: EditionMachineContext): readonly string[] {
+  return Object.keys(context.children).filter((key) =>
+    key === "editorial" || key.startsWith("article:") || key.startsWith("art:")
+  );
 }
 
 function statusAfter(
@@ -400,9 +426,25 @@ function routedFindings(result: JsonObject): readonly {
 
 function generatedArtifactId(
   context: EditionMachineContext,
-  kind: "render-manifest" | "render-set",
+  kind: "render-manifest" | "render-set" | "render-reconciliation" | "composition-bootstrap",
 ): ArtifactId {
   return `art_${context.actorId}_${kind}_${context.renderCycle}` as ArtifactId;
+}
+
+function bootstrapExecution(context: EditionMachineContext): BootstrapExecution | undefined {
+  const execution = (context.spec as unknown as { readonly execution?: unknown }).execution;
+  return typeof execution === "object" && execution !== null &&
+      (execution as { readonly kind?: unknown }).kind === "bootstrap_composition"
+    ? execution as BootstrapExecution
+    : undefined;
+}
+
+function compositionRevisionId(context: EditionMachineContext): RevisionId {
+  return `revision_${context.actorId}_composition_${context.reviewCycle}` as RevisionId;
+}
+
+function compositionId(context: EditionMachineContext): string {
+  return `composition-${context.spec.editionId}-${context.reviewCycle}`;
 }
 
 function currentContentArtifacts(context: EditionMachineContext): readonly ArtifactId[] {
@@ -468,6 +510,17 @@ export const editionMachine = setup({
     input: {} as EditionMachineInput,
   },
   guards: {
+    isBootstrapComposition: ({ context }) => bootstrapExecution(context) !== undefined,
+    bootstrapRenderApproved: ({ context, event }) =>
+      bootstrapExecution(context)?.postRender === "stop_unreleased" &&
+      joinSettled(
+        editionOrchestration.joins.approvedRenderToRelease,
+        [statusAfter(context, event, renderKey(context.renderCycle))],
+      ) && resultStatus(resultAfter(context, event, renderKey(context.renderCycle))) === "approved",
+    bootstrapCompleted: ({ event }) =>
+      event.type === "WORK_COMPLETED" && event.slot === "composition_bootstrap" &&
+      event.artifacts.some((artifact) => artifact.kind === "composition_revision_bound"),
+    isMigrationBackfill: ({ context }) => context.migrationBackfill,
     noSources: ({ context }) => context.sources.length === 0,
     allSourcesReady: ({ context, event }) =>
       allAcceptingAfter(
@@ -526,6 +579,20 @@ export const editionMachine = setup({
         editionOrchestration.joins.contentAndArtToEditionReview,
         [...articleKeys(context), "editorial", ...artKeys(context)],
       ),
+    migrationDurableChildrenCurrentlyReady: ({ context }) =>
+      joinSettled(
+        editionOrchestration.joins.contentAndArtToEditionReview,
+        migrationDurableChildKeys(context).map(
+          (key) => context.children[key]?.status,
+        ),
+      ),
+    migrationDurableChildrenReady: ({ context, event }) =>
+      allAcceptingAfter(
+        context,
+        event,
+        editionOrchestration.joins.contentAndArtToEditionReview,
+        migrationDurableChildKeys(context),
+      ),
     editorialCompletedWithDependentArt: ({ context, event }) =>
       event.type === "CHILD_STATUS" &&
       event.childKey === "editorial" &&
@@ -552,6 +619,9 @@ export const editionMachine = setup({
         translationKeys(context),
       ),
     noTranslations: ({ context }) => plannedTranslations(context).length === 0,
+    compositionCheckpointCompleted: ({ event }) =>
+      event.type === "WORK_COMPLETED" && event.slot === "durable_checkpoint" &&
+      durableRevisionArtifact(event.artifacts) !== undefined,
     renderApproved: ({ context, event }) => {
       const key = renderKey(context.renderCycle);
       return (
@@ -712,7 +782,7 @@ export const editionMachine = setup({
           context,
           editionOrchestration.spawns.articles,
           articleKey(article.articleId),
-          article,
+          { ...article, editionId: context.spec.editionId },
         ),
       ),
       ...plannedArt(context).filter((art) => !hasDeclaredDependencies(art)).map((art) =>
@@ -722,7 +792,7 @@ export const editionMachine = setup({
             ? editionOrchestration.spawns.coverArt
             : editionOrchestration.spawns.interiorArt,
           artKey(art.key),
-          art,
+          { ...art, editionId: context.spec.editionId },
         ),
       ),
     ]),
@@ -751,7 +821,7 @@ export const editionMachine = setup({
                 ? editionOrchestration.spawns.coverArt
                 : editionOrchestration.spawns.interiorArt,
               artKey(art.key),
-              { ...art, dependencyArtifacts },
+              { ...art, editionId: context.spec.editionId, dependencyArtifacts },
             ),
           ];
         }
@@ -776,6 +846,7 @@ export const editionMachine = setup({
         return [
           spawn(context, editionOrchestration.spawns.editorial, "editorial", {
             ...context.spec.editorial,
+            editionId: context.spec.editionId,
             articleArtifacts: currentArticleArtifacts(context).map(
               (article) => article.artifactId,
             ),
@@ -892,9 +963,101 @@ export const editionMachine = setup({
     spawnRender: emitEffects(({ context }) => [
       spawn(context, editionOrchestration.spawns.renders, renderKey(context.renderCycle), {
         ...context.spec.render,
-        renderManifestArtifact: generatedArtifactId(context, "render-manifest"),
+        renderManifestArtifact: bootstrapExecution(context) === undefined
+          ? generatedArtifactId(context, "render-manifest")
+          : context.spec.render.renderManifestArtifact,
+        compositionRevisionArtifact: context.compositionDurableRevisionArtifact,
+        compositionId: compositionId(context),
       }),
     ]),
+    offerCompositionCheckpoint: emitEffects(({ context }) => {
+      return durableCheckpointOffer({
+        actorId: context.actorId,
+        actorKey: context.logicalKey,
+        state: "composition_accepted_pending_durable",
+        logicalItem: {
+          kind: "composition",
+          editionId: context.spec.editionId,
+          compositionId: compositionId(context),
+        },
+        ...(context.compositionBoundRevisionId === undefined
+          ? {}
+          : { expectedParentRevisionId: context.compositionBoundRevisionId }),
+        acceptedArtifactId: generatedArtifactId(context, "render-manifest"),
+      });
+    }),
+    offerRenderReconciliation: emitEffects(({ context }) => {
+      const legacyRender = context.children[renderKey(context.renderCycle)]?.outputs ?? [];
+      const composition = context.compositionDurableRevisionArtifact;
+      return composition === undefined ? [] : humanDecisionOffer({
+        actorId: context.actorId,
+        actorKey: context.logicalKey,
+        state: "render_reconciliation",
+        role: "render_reconciliation",
+        slot: "render_reconciliation",
+        requestArtifactId: generatedArtifactId(context, "render-reconciliation"),
+        requestSchemaVersion: "render-reconciliation-request/1",
+        requestKind: "render_reconciliation",
+        subjectArtifactId: composition,
+        inputArtifacts: [composition, ...legacyRender],
+        allowedChoices: ["adopt", "rerender"],
+        contractVersion: "render-reconciliation/1",
+        requiredCapabilities: ["human"],
+        details: {
+          compositionRevisionArtifactId: composition,
+          legacyRenderArtifactIds: legacyRender,
+          contentArtifactIds: currentContentArtifacts(context),
+          layoutArtifactIds: [context.spec.render.renderManifestArtifact],
+          languages: context.spec.render.configuredLanguages,
+          rendererVersion: context.spec.render.rendererContractVersion,
+          requiredProof: ["committed_composition", "content", "layout", "languages", "renderer", "output_digests"],
+        },
+      });
+    }),
+    offerCompositionBootstrap: emitEffects(({ context }) => {
+      const execution = bootstrapExecution(context);
+      return execution === undefined ? [] : humanDecisionOffer({
+        actorId: context.actorId,
+        actorKey: context.logicalKey,
+        state: "verifying_bootstrap",
+        role: "composition_bootstrap",
+        slot: "composition_bootstrap",
+        requestArtifactId: generatedArtifactId(context, "composition-bootstrap"),
+        requestSchemaVersion: "composition-bootstrap-request/1",
+        requestKind: "composition_bootstrap",
+        inputArtifacts: [context.spec.render.renderManifestArtifact],
+        allowedChoices: ["verify"],
+        contractVersion: "composition-bootstrap/1",
+        requiredCapabilities: ["subprocess"],
+        details: { bootstrapRevision: execution.bootstrapRevision, imageGenerationAllowed: false },
+      });
+    }),
+    keepBootstrapComposition: assign(({ context, event }) => ({
+      compositionBoundRevisionId:
+        event.type === "WORK_COMPLETED" && typeof event.result.compositionRevision === "object" &&
+          event.result.compositionRevision !== null &&
+          typeof (event.result.compositionRevision as JsonObject).revisionRef === "object"
+          ? ((event.result.compositionRevision as JsonObject).revisionRef as JsonObject).revisionId as RevisionId
+          : context.compositionBoundRevisionId,
+      compositionDurableRevisionArtifact:
+        event.type === "WORK_COMPLETED"
+          ? event.artifacts.find((artifact) => artifact.kind === "composition_revision_bound")?.artifactId
+          : context.compositionDurableRevisionArtifact,
+    })),
+    markMigrationBackfill: assign(({ context }) => ({
+      migrationBackfill: true,
+      renderCycle: context.renderCycle + 1,
+    })),
+    keepCompositionDurableRevision: assign(({ context, event }) => ({
+      compositionBoundRevisionId:
+        event.type === "WORK_COMPLETED" && typeof event.result.revisionId === "string"
+          ? event.result.revisionId as RevisionId
+          : context.compositionBoundRevisionId,
+      compositionDurableRevisionArtifact:
+        event.type === "WORK_COMPLETED" && event.slot === "durable_checkpoint"
+          ? durableRevisionArtifact(event.artifacts)
+          : context.compositionDurableRevisionArtifact,
+    })),
     registerRenderSet: emitEffects(({ context }) => {
       const child = context.children[renderKey(context.renderCycle)];
       const declared = child?.result.renderArtifactIds;
@@ -1077,6 +1240,16 @@ export const editionMachine = setup({
         }),
       ];
     }),
+    publishBootstrapRenderApproved: emitEffects(({ context }) => {
+      const outputs = context.children[renderKey(context.renderCycle)]?.outputs ?? [];
+      return [effect({
+        type: "complete_actor",
+        actorId: context.actorId,
+        accepting: false,
+        outputs,
+        result: { editionId: context.spec.editionId, status: "render_approved_unreleased" },
+      })];
+    }),
     publishFailure: emitEffects(({ context }) => [
       effect({
         type: "fail_actor",
@@ -1211,6 +1384,9 @@ export const editionMachine = setup({
     closeRequestOrdinal: 0,
     planRequestOrdinal: 0,
     editorRequestOrdinal: 0,
+    compositionBoundRevisionId: undefined,
+    compositionDurableRevisionArtifact: undefined,
+    migrationBackfill: false,
     routedArticleKeys: [],
     routedFindingArtifacts: [],
     lastFailure: undefined,
@@ -1218,9 +1394,24 @@ export const editionMachine = setup({
   states: {
     idle: {
       on: {
-        START: { actions: "spawnSources", target: "collecting" },
+        START: [
+          { guard: "isBootstrapComposition", target: "verifying_bootstrap" },
+          { actions: "spawnSources", target: "collecting" },
+        ],
       },
     },
+    verifying_bootstrap: {
+      entry: "offerCompositionBootstrap",
+      on: {
+        WORK_COMPLETED: {
+          guard: "bootstrapCompleted",
+          actions: "keepBootstrapComposition",
+          target: "composition_ready",
+        },
+        WORK_FAILED: { actions: "rememberFailure", target: "failed" },
+      },
+    },
+    composition_ready: { always: "rendering" },
     collecting: {
       entry: ["bumpCloseRequest", "offerCloseCollection"],
       on: {
@@ -1368,18 +1559,74 @@ export const editionMachine = setup({
         ],
       },
     },
-    assembling: { entry: "registerRenderManifest", always: "rendering" },
+    assembling: { entry: "registerRenderManifest", always: "composition_accepted_pending_durable" },
+    composition_accepted_pending_durable: {
+      entry: "offerCompositionCheckpoint",
+      on: {
+        WORK_COMPLETED: {
+          guard: "compositionCheckpointCompleted",
+          actions: "keepCompositionDurableRevision",
+          target: "composition_durable_bound",
+        },
+        WORK_FAILED: { actions: "rememberFailure", target: "failed" },
+      },
+    },
+    composition_durable_bound: {
+      always: [
+        // Edition 4 v1 cannot adopt a render: its newly committed composition
+        // and renderer-only adapter contract make exact equivalence false.
+        // Keep reconciliation as an explicit architecture state for future
+        // compatible migrations, but force this backfill through fresh render.
+        { target: "rendering" },
+      ],
+    },
+    // Only the public RunEngine migration seam may enter this state. It
+    // deliberately has no automatic route: legacy render/release authority
+    // cannot survive the durable graph backfill and fresh review gates.
+    migration_durable_backfill: {
+      on: {
+        MIGRATION_DURABLE_BACKFILL: {
+          actions: "markMigrationBackfill",
+          target: "migration_waiting_durable_children",
+        },
+      },
+    },
+    migration_waiting_durable_children: {
+      always: {
+        guard: "migrationDurableChildrenCurrentlyReady",
+        target: "assembling",
+      },
+      on: {
+        CHILD_STATUS: [
+          { guard: "childFailed", actions: ["rememberChild", "rememberFailure"], target: "failed" },
+          { guard: "migrationDurableChildrenReady", actions: "rememberChild", target: "assembling" },
+          { actions: "rememberChild" },
+        ],
+      },
+    },
+    render_reconciliation: {
+      entry: "offerRenderReconciliation",
+      on: {
+        // An adoption is only a proof-bearing proposal. Both paths still
+        // create a fresh RenderMachine QA/visual/release chain; the renderer
+        // decides whether it can reuse exact registered bytes.
+        WORK_COMPLETED: { target: "rendering" },
+        WORK_FAILED: { actions: "rememberFailure", target: "failed" },
+      },
+    },
     rendering: {
       entry: "spawnRender",
       on: {
         CHILD_SPAWNED: { actions: "rememberChild" },
         CHILD_STATUS: [
           { guard: "childFailed", actions: ["rememberChild", "rememberFailure"], target: "failed" },
+          { guard: "bootstrapRenderApproved", actions: "rememberChild", target: "bootstrap_render_approved" },
           { guard: "renderApproved", actions: "rememberChild", target: "awaiting_release_approval" },
           { actions: "rememberChild" },
         ],
       },
     },
+    bootstrap_render_approved: { entry: "publishBootstrapRenderApproved", type: "final" },
     awaiting_release_approval: {
       entry: ["registerRenderSet", "spawnRelease"],
       on: {

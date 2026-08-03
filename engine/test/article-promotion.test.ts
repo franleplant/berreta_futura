@@ -16,6 +16,7 @@ import type {
 } from "../contracts/index.ts";
 import { RunEngineError, SqliteRunEngine } from "../run-engine/index.ts";
 import { prepareArticleSources } from "./approved-source-fixture.ts";
+import { durableCheckpointAnswer } from "./durable-checkpoint-fixture.ts";
 
 const lenses: readonly JudgeLens[] = [
   "worth",
@@ -114,6 +115,10 @@ async function settle(engine: SqliteRunEngine, spec: ArticleRootRunSpec): Promis
       authority: offer.allowedWorkerCapabilities.includes("text_model") ? "model" : "tool",
       capabilities: offer.allowedWorkerCapabilities,
     });
+    if (offer.role === "durable_checkpoint") {
+      view = await engine.answer(claim, await durableCheckpointAnswer(engine, offer));
+      continue;
+    }
     view = await engine.answer(claim, {
       contractVersion: offer.contractVersion,
       result: offer.role === "measure_article"

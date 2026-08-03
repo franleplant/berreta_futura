@@ -2,8 +2,10 @@
 
 The magazine workflow is one durable TypeScript execution graph. XState owns
 lifecycle and joins. `RunEngine` owns persistence, identity, work dispatch,
-artifact lineage, and release authority. The retained Python tree is legacy
-implementation and is not a second workflow.
+artifact lineage, validation, export, and release authority. Together they are
+the sole workflow, orchestration, state, validation, and export authority. The
+old Python pipeline, CLI, tests, and source bridge are deleted. Python remains
+only as the renderer subprocess implementation.
 
 The governing design is
 [`meta/plans/graph-execution-model.md`](../meta/plans/graph-execution-model.md).
@@ -97,6 +99,35 @@ Large artifacts use a two-part commit:
 A file without a committed artifact row has no workflow meaning and is eligible
 for orphan collection after its writer lease expires.
 
+## Repository roots and immutable revision layers
+
+`inputs/` and `durable/` are Git-tracked roots of immutable revisions.
+`inputs/` records versioned source captures and extractions, edition
+specifications, prompts, policies, and run bootstraps. `durable/` records
+promoted article, editorial, image, and composition revisions. Revisions never
+change in place.
+
+`.magazine/` is ignored runtime storage for each run's SQLite database, engine
+artifact store, staging, leases, and worker scratch space. `output/` is ignored,
+ephemeral exported material. They are filesystem projections, never workflow
+authority. For edition `004`, a run is named `<UTC timestamp>--<RunId>` and uses
+`.magazine/004/<UTC timestamp>--<RunId>` privately, with a matching
+`output/004/<UTC timestamp>--<RunId>` root only for a permitted export.
+
+`EngineArtifact` and `DurableRevision` are separate immutable layers.
+`EngineArtifact` is run-scoped evidence committed by `RunEngine`, with exact
+offer, attempt, and parent-artifact lineage. `DurableRevision` is a Git-bound
+revision promoted into `durable/`; its manifest records the promotion,
+accepted artifacts, decision artifacts, input revisions, and Git binding. A
+durable revision is not a workflow event, and an engine artifact is not a
+durable revision just because their bytes match.
+
+`CompositionRevision` is a durable composition document that pins exact
+article, editorial, image, and layout-input revisions. It may mix and match
+compatible immutable revisions from different prior runs. Its explicit pins and
+Git binding define the composition; paths, timestamps, and content hashes do
+not discover or replace a pin.
+
 ## Identity and provenance
 
 Runtime identity uses generated IDs: run, actor, iteration, revision, offer,
@@ -174,11 +205,11 @@ human surfaces, source capture, layout measurement, rendering, and render
 inspection. The worker loop owns concurrency, heartbeat renewal, timeouts,
 process-group cancellation, and late-result fencing.
 
-The old Python orchestrator, checkpoints, fingerprints, production records, and
-reply directories are not read by the engine. A retained source archiver or
-typesetter may temporarily sit behind a versioned subprocess protocol. Such a
-deep adapter receives only immutable materialized inputs and a caller-owned
-destination; it cannot decide readiness or release state.
+The old Python orchestrator, checkpoints, fingerprints, production records,
+reply directories, CLI, tests, and source bridge are deleted and are not read by
+the engine. The only Python boundary is the renderer subprocess. The TypeScript
+worker supplies it an immutable render manifest and a caller-owned destination;
+it cannot decide readiness, state, validation, export, or release.
 
 ## Viewer
 
@@ -200,6 +231,7 @@ npm run test:engine
 npm run build:viewer
 ```
 
-Tests exercise behavior through the public `RunEngine` interface. The retained
-legacy implementation and its test suite are not an acceptance oracle for the
-XState engine.
+Tests exercise behavior through the public `RunEngine` interface. Routine
+verification runs only the Node commands above. The TypeScript renderer executor
+may invoke the Python renderer seam for a claimed renderer offer; no Python test
+suite, Python CLI, or source bridge exists.

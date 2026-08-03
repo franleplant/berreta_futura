@@ -35,6 +35,7 @@ import {
 } from "../renderer-adapter/index.ts";
 import { SqliteRunEngine } from "../run-engine/index.ts";
 import { prepareArticleSources } from "./approved-source-fixture.ts";
+import { durableCheckpointAnswer } from "./durable-checkpoint-fixture.ts";
 import {
   InMemorySourceAdapter,
   SOURCE_CONTRACT_VERSION,
@@ -107,6 +108,7 @@ function baseEdition(
     ],
     edition: {
       editionId: `${prefix}-edition`,
+      execution: { kind: "produce" },
       editionBrief,
       planningArtifact: planning,
       sources: [],
@@ -282,7 +284,7 @@ test("RenderMachine measure and render offers run through one versioned renderer
       publicationName: "Executor Fixture",
       renderer: "weasyprint",
       inputs: [
-        { artifactId: stagedEdition, targetPath: "editions/render-executor/edition.yaml" },
+        { artifactId: stagedEdition, targetPath: "editions/render-package/edition.yaml" },
         { artifactId: manuscript, targetPath: "editions/render-executor/article.md" },
         { artifactId: editorial, targetPath: "editions/render-executor/editorial.md" },
         { artifactId: printer, targetPath: "profiles/printer.json" },
@@ -302,7 +304,20 @@ test("RenderMachine measure and render offers run through one versioned renderer
       textSeed(editorialBrief, "editorial brief"),
       textSeed(editorial, "editorial manuscript", "editorial_manuscript"),
       jsonSeed(printer, { name: "Fixture printer" }, "printer_profile"),
-      textSeed(stagedEdition, "id: render-executor\n", "edition_manifest"),
+      {
+        ...textSeed(stagedEdition, "id: render-package\n", "edition_spec_revision_payload"),
+        mediaType: "application/yaml",
+        metadata: {
+          inputRevision: {
+            kind: "edition_spec",
+            editionId: "004",
+            logicalId: "main",
+            revisionId: "rev_fixture",
+          },
+          revisionPayloadPath: "edition.yaml",
+          rendererTargetPath: "editions/render-package/edition.yaml",
+        },
+      },
       jsonSeed(
         renderProfileId,
         profile as unknown as JsonObject,
@@ -337,6 +352,7 @@ test("RenderMachine measure and render offers run through one versioned renderer
       artifacts,
       edition: {
         editionId: "render-executor",
+        execution: { kind: "produce" },
         editionBrief,
         planningArtifact: planning,
         sources: [{
@@ -401,6 +417,7 @@ test("RenderMachine measure and render offers run through one versioned renderer
     const adapter = new InMemoryRendererAdapter(async (manifestPath, destination) => {
       const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as RenderManifest;
       operations.push(manifest.operation);
+      assert.equal(manifest.editionId, "render-package");
       assert.equal(manifest.artifactRoot.startsWith(resolve(temporary)), true);
       assert.equal(manifest.inputs.every((input) => input.sourcePath.startsWith(manifest.artifactRoot)), true);
       assert.equal(manifest.metadata?.imageGenerationAllowed, false);
@@ -851,6 +868,9 @@ async function advanceToRenderMeasurement(engine: SqliteRunEngine, runId: RunId)
             payload: { kind: "json", value: { decision: "approved" } },
           }]);
           break;
+        case "durable_checkpoint":
+          await submit(engine, offer, {});
+          break;
         default:
           assert.fail(`unexpected offer before render: ${offer.role}`);
       }
@@ -880,6 +900,9 @@ async function submit(
     capabilities: offer.allowedWorkerCapabilities,
   };
   const claim = await engine.claim(offer.id, worker);
+  if (offer.role === "durable_checkpoint") {
+    return await engine.answer(claim, await durableCheckpointAnswer(engine, offer));
+  }
   return await engine.answer(claim, {
     contractVersion: offer.contractVersion,
     result,

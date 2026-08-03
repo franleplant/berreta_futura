@@ -14,7 +14,12 @@ import type {
   WorkerIdentity,
   WorkOfferView,
 } from "../contracts/index.ts";
-import { executeAvailableWork, RendererExecutor } from "../executors/index.ts";
+import {
+  CompositionBootstrapExecutor,
+  executeAvailableWork,
+  RendererExecutor,
+} from "../executors/index.ts";
+import type { DurableGit } from "../durable/index.ts";
 import {
   EDITION_4_ID,
   mediaTypeForFixture,
@@ -42,9 +47,16 @@ export type Edition4DurableDriverOptions = {
   readonly renderer: RendererAdapter;
   readonly rendererWorkDirectory: string;
   readonly runId?: RunId;
+  readonly productionPlan?: JsonObject;
+  readonly compositionBootstrap?: {
+    readonly repositoryRoot: string;
+    readonly git: Pick<DurableGit, "assertCommitted">;
+  };
   readonly onRunStarted?: (runId: RunId) => Promise<void> | void;
   /** Only test fixtures may advance a visual-review offer without an independent review. */
   readonly approveVisualReview?: boolean;
+  /** Only tests may answer the final release offer automatically. */
+  readonly approveRelease?: boolean;
 };
 
 /**
@@ -86,12 +98,27 @@ export async function createEdition4DurableFixture(
 
   const frozenSeeds: ArtifactSeed[] = staged.entries.map((item) => ({
     id: item.artifactId,
-    kind: frozenKind(item.kind),
+    kind: item.kind === "edition_manifest"
+      ? "edition_spec_revision_payload"
+      : frozenKind(item.kind),
     schemaVersion: "edition4/1",
     mediaType: mediaTypeForFixture(item.target),
     origin: "imported",
     payload: { kind: "file", path: item.source },
-    metadata: { committedPath: item.target, editionId: EDITION_4_ID },
+    metadata: item.kind === "edition_manifest"
+      ? {
+          committedPath: item.target,
+          editionId: EDITION_4_ID,
+          inputRevision: {
+            kind: "edition_spec",
+            editionId: "004",
+            logicalId: "main",
+            revisionId: "rev_edition4_fixture",
+          },
+          revisionPayloadPath: "edition.yaml",
+          rendererTargetPath: item.target,
+        }
+      : { committedPath: item.target, editionId: EDITION_4_ID },
   }));
   const sourceLeads = sourceIds.map((sourceId) => textSeed(
     id(`lead-${sourceId}`),
@@ -118,6 +145,7 @@ export async function createEdition4DurableFixture(
   const profile: RenderExecutionProfile = {
     schemaVersion: 1,
     rendererContractVersion: RENDERER_CONTRACT_VERSION,
+    editionPackageId: EDITION_4_ID,
     primaryLanguage: "en",
     publicationName: "Berreta Futura",
     renderer: "weasyprint",
@@ -213,6 +241,7 @@ export async function createEdition4DurableFixture(
       metadata: { fixture: "edition4-durable", imageGenerationAllowed: false },
       edition: {
         editionId: EDITION_4_ID,
+        execution: { kind: "produce" },
         editionBrief,
         sources: sourceSpecs,
         articles: [],
@@ -271,6 +300,16 @@ export async function driveEdition4Durably(
     id: "edition4-durable-renderer",
     workDirectory: options.rendererWorkDirectory,
   });
+  const executors = [
+    ...(options.compositionBootstrap === undefined
+      ? []
+      : [new CompositionBootstrapExecutor({
+          repositoryRoot: options.compositionBootstrap.repositoryRoot,
+          git: options.compositionBootstrap.git,
+          id: "edition4-composition-bootstrap",
+        })]),
+    renderer,
+  ];
   let ordinal = 0;
   const nextId = (kind: string) => `edition4-durable-answer-${kind}-${ordinal += 1}` as ArtifactId;
   for (let steps = 0; steps < 500; steps += 1) {
@@ -279,24 +318,26 @@ export async function driveEdition4Durably(
       return { runId, view };
     }
     const offered = view.offers.filter((offer) => offer.status === "offered");
-    const renderOffer = offered.find((offer) =>
-      offer.role === "measure_edition" || offer.role === "render",
+    const executableOffer = offered.find((offer) =>
+      offer.role === "composition_bootstrap" ||
+      offer.role === "measure_edition" ||
+      offer.role === "render",
     );
-    if (renderOffer !== undefined) {
+    if (executableOffer !== undefined) {
       const result = await executeAvailableWork(
         options.engine,
         runId,
-        [renderer],
+        executors,
         new AbortController().signal,
       );
       if (result.failed.length > 0 || result.answered.length === 0) {
         const after = await options.engine.inspect(runId);
-        const actor = after.actors.find((candidate) => candidate.id === renderOffer.actorId);
+        const actor = after.actors.find((candidate) => candidate.id === executableOffer.actorId);
         const context = actor?.context as JsonObject | undefined;
         const failure = typeof context?.lastFailure === "string"
           ? `: ${context.lastFailure}`
           : "";
-        throw new Error(`Edition 4 renderer did not answer ${renderOffer.role}${failure}`);
+        throw new Error(`Edition 4 executor did not answer ${executableOffer.role}${failure}`);
       }
       continue;
     }
@@ -308,10 +349,13 @@ export async function driveEdition4Durably(
     if (offer.role === "visual_review" && options.approveVisualReview !== true) {
       return { runId, view };
     }
+    if (offer.role === "release_approval" && options.approveRelease !== true) {
+      return { runId, view };
+    }
     const response = await answerForOffer(
       options.engine,
       offer,
-      fixture?.productionPlan,
+      fixture?.productionPlan ?? options.productionPlan,
       nextId,
     );
     const claim = await options.engine.claim(offer.id, workerFor(offer));
@@ -377,6 +421,11 @@ async function answerForOffer(
     }
     case "visual_review":
       return { result: { decision: "approved", renderArtifactIds: renderArtifactsForOffer(offer) }, artifacts: [artifact("visual_review_decision")] };
+    case "durable_checkpoint": {
+      throw new Error(
+        "Edition 4 durable checkpoints require a configured DurableCheckpointExecutor",
+      );
+    }
     case "release_approval": {
       const request = JSON.parse(await engine.readText(offer.taskArtifactId)) as {
         readonly publicationArtifactId: ArtifactId;

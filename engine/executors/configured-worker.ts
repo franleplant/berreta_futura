@@ -11,7 +11,7 @@ import type {
 import {
   PythonRendererAdapter,
 } from "../renderer-adapter/index.ts";
-import { PythonSourceAdapter } from "../source-adapter/index.ts";
+import { LocalSourceAdapter } from "../source-adapter/index.ts";
 import { ImageModelExecutor } from "./image-model.ts";
 import {
   ArticleMeasurementExecutor,
@@ -25,6 +25,8 @@ import {
   type SubprocessCommand,
 } from "./subprocess.ts";
 import { TextModelExecutor } from "./text-model.ts";
+import { DurableCheckpointExecutor } from "./durable-checkpoint.ts";
+import { CompositionBootstrapExecutor } from "./composition-bootstrap.ts";
 import type { Executor } from "./types.ts";
 import {
   ConfiguredExecutorResolver,
@@ -81,18 +83,30 @@ const rendererSchema = z.object({
 }).strict();
 
 const sourceSchema = z.object({
-  kind: z.literal("python_source_archive"),
-  id: z.string().min(1).default("python-source-archive"),
+  kind: z.literal("source_archive"),
+  id: z.string().min(1).default("source-archive"),
   principalId: z.string().min(1).optional(),
-  projectRoot: z.string().min(1),
   workDirectory: z.string().min(1),
-  adapterTimeoutMs: z.number().int().positive().optional(),
 }).strict();
 
 const inspectionSchema = z.object({
   kind: z.literal("render_inspection"),
   id: z.string().min(1).default("render-inspection"),
   principalId: z.string().min(1).optional(),
+}).strict();
+
+const durableCheckpointSchema = z.object({
+  kind: z.literal("durable_checkpoint"),
+  id: z.string().min(1).default("durable-checkpoint"),
+  principalId: z.string().min(1).optional(),
+  command: commandSchema,
+}).strict();
+
+const compositionBootstrapSchema = z.object({
+  kind: z.literal("composition_bootstrap"),
+  id: z.string().min(1).default("composition-bootstrap"),
+  principalId: z.string().min(1).optional(),
+  projectRoot: z.string().min(1),
 }).strict();
 
 const workerConfigurationSchema = z.object({
@@ -103,6 +117,8 @@ const workerConfigurationSchema = z.object({
     rendererSchema,
     sourceSchema,
     inspectionSchema,
+    durableCheckpointSchema,
+    compositionBootstrapSchema,
   ])).min(1),
   pollIntervalMs: z.number().int().positive().optional(),
   heartbeatIntervalMs: z.number().int().positive().optional(),
@@ -142,9 +158,12 @@ export const WORK_ROLE_EXECUTION = {
   select_art: "human",
   measure_edition: "renderer",
   render: "renderer",
+  render_reconciliation: "human",
   render_inspection: "render_inspection",
   visual_review: "human",
   release_approval: "human",
+  durable_checkpoint: "durable_checkpoint",
+  composition_bootstrap: "composition_bootstrap",
   editor_decision: "human",
 } as const satisfies Record<KnownWorkRole, ExecutionOwner>;
 
@@ -156,7 +175,9 @@ type ExecutionOwner =
   | "render_inspection"
   | "renderer"
   | "source_archive"
-  | "text_model";
+  | "text_model"
+  | "durable_checkpoint"
+  | "composition_bootstrap";
 
 export function createConfiguredWorker(value: unknown): ConfiguredWorker {
   const parsed = workerConfigurationSchema.safeParse(value);
@@ -296,12 +317,8 @@ function createRegistrations(
         ),
       ];
     }
-    case "python_source_archive": {
-      const adapter = new PythonSourceAdapter(
-        resolve(value.projectRoot),
-        value.adapterTimeoutMs,
-      );
-      return [explicit(new SourceArchiveExecutor(adapter, {
+    case "source_archive": {
+      return [explicit(new SourceArchiveExecutor(new LocalSourceAdapter(), {
         id: value.id,
         ...(value.principalId === undefined ? {} : { principalId: value.principalId }),
         workDirectory: resolve(value.workDirectory),
@@ -312,6 +329,32 @@ function createRegistrations(
         id: value.id,
         ...(value.principalId === undefined ? {} : { principalId: value.principalId }),
       }), ["render_inspection"])];
+    case "durable_checkpoint": {
+      const worker = identity(
+        value.principalId ?? value.id,
+        "tool",
+        ["subprocess"],
+        value.id,
+      );
+      const delegate = new SubprocessExecutor(
+        `${value.id}:promotion`,
+        worker,
+        (_context, task) => command(value.command, task, undefined),
+        (offer) => offer.role === "durable_checkpoint",
+      );
+      return [explicit(new DurableCheckpointExecutor({
+        checkpoint: (context) => delegate.execute(context),
+      }, {
+        id: value.id,
+        ...(value.principalId === undefined ? {} : { principalId: value.principalId }),
+      }), ["durable_checkpoint"])];
+    }
+    case "composition_bootstrap":
+      return [explicit(new CompositionBootstrapExecutor({
+        repositoryRoot: resolve(value.projectRoot),
+        id: value.id,
+        ...(value.principalId === undefined ? {} : { principalId: value.principalId }),
+      }), ["composition_bootstrap"])];
   }
 }
 

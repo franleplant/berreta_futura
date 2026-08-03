@@ -10,6 +10,8 @@ export const RENDERER_CONTRACT_VERSION = "magazine-renderer/1";
 export type RenderExecutionProfile = {
   readonly schemaVersion: 1;
   readonly rendererContractVersion: typeof RENDERER_CONTRACT_VERSION;
+  /** Renderer package identity from the committed edition-spec payload. */
+  readonly editionPackageId?: string;
   readonly primaryLanguage: string;
   readonly publicationName: string;
   readonly renderer: "reportlab" | "weasyprint";

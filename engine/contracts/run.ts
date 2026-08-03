@@ -13,6 +13,7 @@ import type {
   SourceAssignmentPolicy,
 } from "./production-plan.ts";
 import type { WorkOfferView } from "./work.ts";
+import type { InputRevisionRef } from "../durable/types.ts";
 
 export const ARTICLE_LENSES = [
   "worth",
@@ -63,6 +64,8 @@ export type ArticleAttribution =
     };
 
 export type ArticleRunSpec = {
+  /** Edition identity is supplied by EditionMachine when this is a child actor. */
+  readonly editionId?: string;
   readonly articleId: string;
   readonly contentMode: ArticleContentMode;
   readonly attribution: ArticleAttribution;
@@ -105,6 +108,7 @@ export type SubmitLeadRequest = {
 };
 
 export type EditorialRunSpec = {
+  readonly editionId?: string;
   readonly editorialId: string;
   readonly briefArtifact: ArtifactId;
   readonly writingRules: ArtifactId;
@@ -126,6 +130,7 @@ export type TranslationRunSpec = {
 };
 
 export type RegisteredArtSpec = {
+  readonly editionId?: string;
   readonly key: string;
   readonly role: "cover" | "interior";
   readonly artifactId?: ArtifactId;
@@ -137,6 +142,8 @@ export type RegisteredArtSpec = {
 
 export type RenderRunSpec = {
   readonly renderManifestArtifact: ArtifactId;
+  readonly compositionRevisionArtifact?: ArtifactId;
+  readonly compositionId?: string;
   readonly rendererContractVersion: string;
   readonly printerProfileArtifact?: ArtifactId;
   readonly configuredLanguages: readonly string[];
@@ -156,8 +163,26 @@ export type ReleaseRunSpec = {
   readonly studioReady?: boolean;
 };
 
+/**
+ * Selects the immutable starting authority for an edition run. A normal
+ * production run begins with the configured collection and production plan.
+ * A bootstrap run instead starts from one committed CompositionRevision named
+ * by its exact run-bootstrap input revision, and can only stop before release.
+ */
+export type EditionExecution =
+  | { readonly kind: "produce" }
+  | {
+      readonly kind: "bootstrap_composition";
+      readonly bootstrapRevision: Extract<
+        InputRevisionRef,
+        { readonly kind: "run_bootstrap" }
+      >;
+      readonly postRender: "stop_unreleased";
+    };
+
 export type EditionRunSpec = {
   readonly editionId: string;
+  readonly execution: EditionExecution;
   readonly editionBrief: ArtifactId;
   readonly planningArtifact?: ArtifactId;
   readonly sourceAssignmentPolicy?: SourceAssignmentPolicy;

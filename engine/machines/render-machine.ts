@@ -27,6 +27,8 @@ export type RenderMachineInput = MachineInputBase & {
 
 export type RenderMachineContext = MachineInputBase & {
   renderManifestArtifact: ArtifactId;
+  readonly compositionRevisionArtifact: ArtifactId | undefined;
+  readonly compositionId: string | undefined;
   readonly rendererContractVersion: string;
   readonly printerProfileArtifact: ArtifactId | undefined;
   readonly configuredLanguages: readonly string[];
@@ -144,6 +146,7 @@ function effect(value: MachineEffect): MachineEffect {
 function baseInputs(context: RenderMachineContext): readonly ArtifactId[] {
   return [
     context.renderManifestArtifact,
+    context.compositionRevisionArtifact,
     context.printerProfileArtifact,
     ...context.findingArtifacts,
   ].filter((value): value is ArtifactId => value !== undefined);
@@ -456,6 +459,8 @@ export const renderMachine = setup({
     actorId: input.actorId,
     logicalKey: input.logicalKey,
     renderManifestArtifact: input.spec.renderManifestArtifact,
+    compositionRevisionArtifact: input.spec.compositionRevisionArtifact,
+    compositionId: input.spec.compositionId,
     rendererContractVersion: input.spec.rendererContractVersion,
     printerProfileArtifact: input.spec.printerProfileArtifact,
     configuredLanguages: input.spec.configuredLanguages,

@@ -47,6 +47,7 @@ function editionSpec(): EditionRootRunSpec {
     artifacts,
     edition: {
       editionId: "retry-fixture",
+      execution: { kind: "produce" },
       editionBrief,
       sources: [{ sourceId: "source-one", leadArtifact: lead }],
       articles: [],

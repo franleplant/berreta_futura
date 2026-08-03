@@ -191,7 +191,13 @@ function settlePassingArticle(input: ArticleMachineInput): MachineTransitionResu
   result = completeArticleWork(result, "evidence", { decision: "pass" });
   result = completeArticleWork(result, "shape", { decision: "pass" });
   result = completeArticleWork(result, "teaching", { decision: "pass" });
-  return completeArticleWork(result, "craft", { decision: "pass" });
+  result = completeArticleWork(result, "craft", { decision: "pass" });
+  return completeArticleWork(
+    result,
+    "durable_checkpoint",
+    {},
+    [{ artifactId: artifactId("durable-article-v1"), kind: "durable_revision_bound" }],
+  );
 }
 
 describe("ArticleMachine orchestration", () => {
@@ -226,7 +232,12 @@ describe("ArticleMachine orchestration", () => {
     result = completeArticleWork(result, "craft", { decision: "pass" });
     assert.equal(result.snapshot.value, "stage_3");
     result = completeArticleWork(result, "teaching", { decision: "pass" });
-    assert.equal(result.snapshot.value, "settled");
+    assert.equal(result.snapshot.value, "accepted_pending_durable");
+    assert.equal(effectsOfType(result, "open_durable_checkpoint").length, 1);
+    result = completeArticleWork(result, "durable_checkpoint", {}, [
+      { artifactId: artifactId("durable-article-order"), kind: "durable_revision_bound" },
+    ]);
+    assert.equal(result.snapshot.value, "durable_bound");
     assert.equal(effectsOfType(result, "complete_actor").length, 1);
   });
 
@@ -282,7 +293,7 @@ describe("ArticleMachine orchestration", () => {
     assert.equal(context.checks.teaching.status, "not_applicable");
 
     result = completeArticleWork(result, "craft", { decision: "pass" });
-    assert.equal(result.snapshot.value, "settled");
+    assert.equal(result.snapshot.value, "accepted_pending_durable");
   });
 
   test("an evidence-only policy skips empty judge stages and settles", () => {
@@ -307,8 +318,8 @@ describe("ArticleMachine orchestration", () => {
     assert.equal(result.snapshot.value, "stage_2");
     assert.deepEqual(offerRoles(result), ["evidence"]);
     result = completeArticleWork(result, "evidence", { decision: "pass" });
-    assert.equal(result.snapshot.value, "settled");
-    assert.equal(effectsOfType(result, "complete_actor").length, 1);
+    assert.equal(result.snapshot.value, "accepted_pending_durable");
+    assert.equal(effectsOfType(result, "complete_actor").length, 0);
   });
 
   test("writer work carries immutable policy artifacts in its ordered input lineage", () => {
@@ -476,8 +487,8 @@ describe("ArticleMachine orchestration", () => {
     const standalone = settlePassingArticle(articleInput());
     const nested = settlePassingArticle(articleInput(articleSpec(), actorId("edition-parent")));
 
-    assert.equal(standalone.snapshot.value, "settled");
-    assert.equal(nested.snapshot.value, "settled");
+    assert.equal(standalone.snapshot.value, "durable_bound");
+    assert.equal(nested.snapshot.value, "durable_bound");
     assert.deepEqual(nested.effects, standalone.effects);
     const { parentActorId: _nestedParent, ...nestedContext } =
       nested.snapshot.context as unknown as ArticleMachineContext;
@@ -584,6 +595,7 @@ function editionSpec(overrides: Partial<EditionRunSpec> = {}): EditionRunSpec {
   });
   return {
     editionId: "edition-one",
+    execution: { kind: "produce" },
     editionBrief: artifactId("edition-brief"),
     planningArtifact: artifactId("edition-plan"),
     sources: [],
@@ -1041,7 +1053,7 @@ describe("EditionMachine orchestration", () => {
       [artifactId("translation-fr-v1")],
       { status: "settled" },
     );
-    assert.equal(result.snapshot.value, "rendering");
+    assert.equal(result.snapshot.value, "composition_accepted_pending_durable");
     const manifestEffect = effectsOfType(result, "register_artifact")[0];
     assert.equal(manifestEffect?.slot, "render_manifest");
     assert.equal(manifestEffect?.artifact.kind, "render_manifest");
@@ -1061,6 +1073,14 @@ describe("EditionMachine orchestration", () => {
         .map((parent) => parent.artifactId),
       [artifactId("cover-v1"), artifactId("inside-v1")],
     );
+    assert.equal(effectsOfType(result, "open_durable_checkpoint").length, 1);
+    result = editionTransition(result.snapshot, {
+      type: "WORK_COMPLETED",
+      slot: "durable_checkpoint",
+      artifacts: [{ artifactId: artifactId("composition-bound-v1"), kind: "durable_revision_bound" }],
+      result: {},
+    });
+    assert.equal(result.snapshot.value, "rendering");
     const render = effectsOfType(result, "spawn_actor")[0];
     assert.equal(render?.machine, "render");
     assert.equal(render?.logicalKey, "render:0");
@@ -1301,7 +1321,7 @@ describe("EditionMachine orchestration", () => {
           const view = await engine.inspect(runId);
           const actor = view.actors.find((candidate) => candidate.id === actorId);
           assert.ok(actor);
-          if (actor.state === "settled") {
+          if (actor.state === "durable_bound") {
             return view;
           }
           const offer = view.offers.find(
@@ -1313,12 +1333,31 @@ describe("EditionMachine orchestration", () => {
             authority: offer.allowedWorkerCapabilities.includes("text_model") ? "model" : "tool",
             capabilities: offer.allowedWorkerCapabilities,
           });
+          const checkpoint = offer.role === "durable_checkpoint"
+            ? JSON.parse(await engine.readText(offer.taskArtifactId)) as {
+                promotionId: string;
+                revisionId: string;
+                logicalItem: JsonObject;
+                expectedParentRevisionId: string | null;
+              }
+            : undefined;
+          const checkpointResult = checkpoint === undefined ? undefined : {
+            promotionId: checkpoint.promotionId,
+            revisionId: checkpoint.revisionId,
+            logicalItem: checkpoint.logicalItem,
+            expectedParentRevisionId: checkpoint.expectedParentRevisionId,
+            revisionRef: checkpoint.logicalItem,
+            manifestDigest: `sha256:${"c".repeat(64)}`,
+            gitCommitOid: "a".repeat(40),
+            gitBlobOids: { "revision.json": "b".repeat(40) },
+          };
           await engine.answer(claim, {
             contractVersion: offer.contractVersion,
-            result: offer.role === "measure_article"
+            result: checkpointResult ?? (offer.role === "measure_article"
               ? { fits: true, openerFits: true, pageCount: 1 }
-              : { decision: "pass" },
-            artifacts: offer.role === "measure_article"
+              : { decision: "pass" }),
+            artifacts: checkpointResult === undefined
+              ? offer.role === "measure_article"
               ? [{
                   id: artifactId("equivalent-measurement"),
                   kind: "article_measurement",
@@ -1326,7 +1365,13 @@ describe("EditionMachine orchestration", () => {
                   mediaType: "application/json",
                   payload: { kind: "json", value: { fits: true, pageCount: 1 } },
                 }]
-              : [],
+              : []
+              : [{
+                  kind: "durable_revision_evidence",
+                  schemaVersion: "durable-revision-evidence/1",
+                  mediaType: "application/json",
+                  payload: { kind: "json", value: checkpointResult },
+                }],
           });
         }
         assert.fail(`article ${actorId} did not settle within replay budget`);
@@ -1338,6 +1383,13 @@ describe("EditionMachine orchestration", () => {
       const graph = (view: RunView, actorId: ActorId) =>
         view.artifacts
           .filter((artifact) => artifact.producingActorId === actorId)
+          .filter((artifact) =>
+            artifact.kind !== "durable_acceptance_decision" &&
+            artifact.kind !== "durable_checkpoint_request" &&
+            artifact.kind !== "durable_revision_bound" &&
+            artifact.kind !== "durable_revision_evidence" &&
+            !(artifact.kind === "work_answer" && artifact.schemaVersion === "durable-checkpoint/1"),
+          )
           .map((artifact) => ({
             kind: artifact.kind,
             schemaVersion: artifact.schemaVersion,
@@ -1348,7 +1400,8 @@ describe("EditionMachine orchestration", () => {
                 : parent.artifactId,
             })),
           }))
-          .sort((left, right) => left.kind.localeCompare(right.kind));
+          .sort((left, right) =>
+            `${left.kind}:${left.schemaVersion}`.localeCompare(`${right.kind}:${right.schemaVersion}`));
       assert.deepEqual(graph(settledNested, nestedActor.id), graph(settledStandalone, standaloneActor.id));
       assert.deepEqual(
         settledNested.actors.find((actor) => actor.id === nestedActor.id)?.outputs,

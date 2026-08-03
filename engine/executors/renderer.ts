@@ -1,6 +1,5 @@
-import { rm } from "node:fs/promises";
-
 import { z } from "zod";
+import { parse } from "yaml";
 
 import type {
   AnswerArtifact,
@@ -18,7 +17,7 @@ import {
   type RenderManifest,
 } from "../renderer-adapter/index.ts";
 import {
-  createAdapterWorkspace,
+  AdapterWorkspaceOwner,
   permanentAdapterError,
   readJsonArtifact,
   requireExactSequence,
@@ -32,6 +31,7 @@ import type { Executor, ExecutorContext } from "./types.ts";
 const profileSchema = z.object({
   schemaVersion: z.literal(1),
   rendererContractVersion: z.literal(RENDERER_CONTRACT_VERSION),
+  editionPackageId: z.string().min(1).optional(),
   primaryLanguage: z.string().min(1),
   publicationName: z.string().min(1),
   renderer: z.enum(["reportlab", "weasyprint"]),
@@ -66,13 +66,12 @@ export class RendererExecutor implements Executor {
   readonly worker: WorkerIdentity;
   readonly capabilities = ["subprocess"] as const;
   private readonly adapter: RendererAdapter;
-  private readonly workDirectory: string;
-  private readonly attemptRoots = new Map<string, string>();
+  private readonly workspaces: AdapterWorkspaceOwner;
 
   constructor(adapter: RendererAdapter, options: RendererExecutorOptions) {
     this.adapter = adapter;
     this.id = options.id ?? "renderer";
-    this.workDirectory = options.workDirectory;
+    this.workspaces = new AdapterWorkspaceOwner(options.workDirectory);
     this.worker = {
       principalId: options.principalId ?? this.id,
       authority: "tool",
@@ -125,12 +124,12 @@ export class RendererExecutor implements Executor {
         ...profileRecord.artifact.parents.map((parent) => parent.artifactId),
       ]),
     );
+    const editionPackageId = await resolveEditionPackageId(context, profile);
 
-    const workspace = await createAdapterWorkspace(
-      this.workDirectory,
+    const workspace = await this.workspaces.create(
+      context.claim.attemptId,
       `render-${context.claim.attemptId}`,
     );
-    this.attemptRoots.set(context.claim.attemptId, workspace.root);
     const inputs = await Promise.all(
       profile.inputs.map(async (input, index) => ({
         artifactId: input.artifactId,
@@ -150,7 +149,7 @@ export class RendererExecutor implements Executor {
       schemaVersion: 1,
       rendererContractVersion: RENDERER_CONTRACT_VERSION,
       operation,
-      editionId: assembly.editionId,
+      editionId: editionPackageId,
       primaryLanguage: profile.primaryLanguage,
       languages: assembly.configuredLanguages,
       publicationName: profile.publicationName,
@@ -171,10 +170,11 @@ export class RendererExecutor implements Executor {
       workspace.outputRoot,
       context.signal,
     );
-    validateRenderResult(assembly, profile, result);
+    validateRenderResult(assembly, profile, result, editionPackageId);
 
     const commonMetadata: JsonObject = {
       editionId: assembly.editionId,
+      editionPackageId,
       adapterContractVersion: RENDERER_CONTRACT_VERSION,
       inputArtifactIds: result.inputArtifactIds,
     };
@@ -244,12 +244,7 @@ export class RendererExecutor implements Executor {
   }
 
   async release(context: ExecutorContext): Promise<void> {
-    const root = this.attemptRoots.get(context.claim.attemptId);
-    if (root === undefined) {
-      return;
-    }
-    this.attemptRoots.delete(context.claim.attemptId);
-    await rm(root, { recursive: true, force: true });
+    await this.workspaces.release(context.claim.attemptId);
   }
 }
 
@@ -295,6 +290,81 @@ function validateRenderInputs(
   }
 }
 
+const editionSpecMetadataSchema = z.object({
+  inputRevision: z.object({ kind: z.literal("edition_spec") }).passthrough(),
+  revisionPayloadPath: z.literal("edition.yaml"),
+  rendererTargetPath: z.string().min(1),
+}).passthrough();
+
+const editionSpecDocumentSchema = z.object({
+  id: z.string().regex(/^[a-z0-9][a-z0-9._-]*$/u),
+}).passthrough();
+
+async function resolveEditionPackageId(
+  context: ExecutorContext,
+  profile: RenderExecutionProfile,
+): Promise<string> {
+  if (context.artifacts.readArtifact === undefined) {
+    throw permanentAdapterError("renderer executor requires artifact lineage access");
+  }
+  const manifestInputs = profile.inputs.filter((input) =>
+    /^editions\/[^/]+\/edition\.yaml$/u.test(input.targetPath)
+  );
+  const staged = await Promise.all(manifestInputs.map(async (input) => ({
+    input,
+    record: await context.artifacts.readArtifact!(input.artifactId),
+  })));
+  const candidates = staged.filter(({ record }) =>
+    record.artifact.kind === "edition_spec_revision_payload" &&
+    editionSpecMetadataSchema.safeParse(record.artifact.metadata).success
+  );
+  if (candidates.length !== 1) {
+    throw permanentAdapterError(
+      `render profile must bind exactly one committed edition_spec edition.yaml, found ${candidates.length}`,
+    );
+  }
+  const candidate = candidates[0]!;
+  const metadata = editionSpecMetadataSchema.parse(candidate.record.artifact.metadata);
+  if (
+    metadata.rendererTargetPath !== candidate.input.targetPath ||
+    candidate.record.artifact.mediaType !== "application/yaml"
+  ) {
+    throw permanentAdapterError(
+      "edition_spec renderer target or media type does not match its immutable artifact metadata",
+    );
+  }
+  let decoded: unknown;
+  try {
+    decoded = parse(Buffer.from(candidate.record.bytes).toString("utf8"));
+  } catch (error) {
+    throw permanentAdapterError(
+      `committed edition_spec edition.yaml is invalid: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  const document = editionSpecDocumentSchema.safeParse(decoded);
+  if (!document.success) {
+    throw permanentAdapterError(
+      `committed edition_spec edition.yaml has no valid package id: ${document.error.message}`,
+    );
+  }
+  const editionPackageId = document.data.id;
+  const expectedTarget = `editions/${editionPackageId}/edition.yaml`;
+  if (candidate.input.targetPath !== expectedTarget) {
+    throw permanentAdapterError(
+      `edition_spec edition.yaml target must be ${expectedTarget}, got ${candidate.input.targetPath}`,
+    );
+  }
+  if (
+    profile.editionPackageId !== undefined &&
+    profile.editionPackageId !== editionPackageId
+  ) {
+    throw permanentAdapterError(
+      `render profile editionPackageId ${profile.editionPackageId} does not match committed edition_spec ${editionPackageId}`,
+    );
+  }
+  return editionPackageId;
+}
+
 function validateAssemblyLineage(
   assembly: RenderAssemblyManifest,
   parents: readonly { readonly artifactId: ArtifactId; readonly relation: string }[],
@@ -327,11 +397,12 @@ function validateRenderResult(
   assembly: RenderAssemblyManifest,
   profile: RenderExecutionProfile,
   result: Awaited<ReturnType<RendererAdapter["render"]>>,
+  editionPackageId: string,
 ): void {
   if (
     result.schemaVersion !== 1 ||
     result.rendererContractVersion !== RENDERER_CONTRACT_VERSION ||
-    result.editionId !== assembly.editionId
+    result.editionId !== editionPackageId
   ) {
     throw permanentAdapterError("renderer returned the wrong contract or edition identity");
   }

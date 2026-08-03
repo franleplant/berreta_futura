@@ -19,6 +19,7 @@ import type {
 } from "../contracts/index.ts";
 import { InMemoryExecutor, runWorker } from "../executors/index.ts";
 import { RunEngineError, SqliteRunEngine } from "../run-engine/index.ts";
+import { durableCheckpointAnswer } from "./durable-checkpoint-fixture.ts";
 
 function artifactId(value: string): ArtifactId {
   return value as ArtifactId;
@@ -74,6 +75,7 @@ function emptyEdition(prefix: string): EditionRootRunSpec {
     ],
     edition: {
       editionId: `${prefix}-edition`,
+      execution: { kind: "produce" },
       editionBrief,
       sources: [],
       articles: [],
@@ -155,6 +157,7 @@ function releaseEdition(prefix: string): ReleaseFixture {
       ],
       edition: {
         editionId: `${prefix}-edition`,
+        execution: { kind: "produce" },
         editionBrief,
         sources: [],
         articles: [],
@@ -297,6 +300,9 @@ async function submit(
   artifacts: readonly AnswerArtifact[],
 ): Promise<RunView> {
   const claim = await engine.claim(offer.id, workerFor(offer));
+  if (offer.role === "durable_checkpoint") {
+    return await engine.answer(claim, await durableCheckpointAnswer(engine, offer));
+  }
   return await engine.answer(claim, {
     contractVersion: offer.contractVersion,
     result,
@@ -422,6 +428,9 @@ async function advanceToReleaseApproval(
         await submit(engine, next, { decision: "approved" }, [
           answerArtifact(artifactId(`${prefix}-edition-review`), "edition_review"),
         ]);
+        break;
+      case "durable_checkpoint":
+        await submit(engine, next, {}, []);
         break;
       case "measure_edition":
         await submit(engine, next, { fits: true }, [
@@ -732,6 +741,16 @@ test("public worker loop advances the declared graph between human planning and 
           result: { decision: "pass" },
           artifacts: [],
         })),
+        new InMemoryExecutor(
+          "worker-graph-durable-checkpoint",
+          {
+            principalId: "worker-graph-durable-checkpoint",
+            authority: "tool",
+            capabilities: ["subprocess"],
+          },
+          async ({ offer, artifacts }) => durableCheckpointAnswer(artifacts, offer),
+          (offer) => offer.role === "durable_checkpoint",
+        ),
         executor("edition_review", "model", ["text_model", "source_blind"], () => ({
           result: { decision: "approved" },
           artifacts: [answerArtifact(
@@ -819,7 +838,7 @@ test("public worker loop advances the declared graph between human planning and 
     assert.ok(reviewOffer, "worker loop did not reach the next explicit human offer");
     assert.deepEqual(reviewOffer.allowedWorkerCapabilities, ["human"]);
     assert.equal(workerResult.failed.length, 0);
-    assert.equal(workerResult.answered.length, 8);
+    assert.equal(workerResult.answered.length, 11);
     const machineNames = new Set(view.actors.map((actor) => actor.machine));
     for (const machine of ["source", "article", "editorial", "edition_review", "render"]) {
       assert.ok(machineNames.has(machine), machine);

@@ -7,8 +7,9 @@ import { test } from "node:test";
 import type { ArtifactId, RunId } from "../contracts/index.ts";
 import {
   exportApprovedRender,
+  materializeRenderProjection,
   type ApprovedRenderExportPlan,
-} from "../run-engine/index.ts";
+} from "../run-engine/approved-render-export.ts";
 
 const RUN_ID = "run_approved-render-export" as RunId;
 const APPROVAL_ARTIFACT = "art_approved-visual-review" as ArtifactId;
@@ -72,6 +73,54 @@ test("approved render export refuses historical artifacts and traversal before p
     await assert.rejects(
       exportApprovedRender(fixtureEngine(), traversalPlan),
       { code: "RENDER_EXPORT_PATH" },
+    );
+  } finally {
+    await rm(temporary, { recursive: true, force: true });
+  }
+});
+
+test("render projection rejects auxiliary traversal and manifest collisions before reading artifacts", async () => {
+  const temporary = await mkdtemp(join(tmpdir(), "mag-render-projection-auxiliary-"));
+  const engine = {
+    readArtifact: async () => {
+      throw new Error("artifact reads must not begin before auxiliary paths validate");
+    },
+  } as unknown as Parameters<typeof materializeRenderProjection>[0];
+  const base = {
+    destinationDirectory: join(temporary, "projection"),
+    files: [{
+      artifactId: READER,
+      destination: "en/reader.pdf",
+      kind: "reader_pdf",
+      mediaType: "application/pdf",
+    }],
+    manifestFile: "export.json" as const,
+    manifest: {},
+    verifyBeforePublish: async () => undefined,
+  };
+  const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>', "utf8");
+  try {
+    await assert.rejects(
+      materializeRenderProjection(engine, {
+        ...base,
+        auxiliaryFiles: [{
+          destination: "../machine.svg",
+          mediaType: "image/svg+xml",
+          bytes: svg,
+        }],
+      }),
+      { code: "RENDER_EXPORT_PATH" },
+    );
+    await assert.rejects(
+      materializeRenderProjection(engine, {
+        ...base,
+        auxiliaryFiles: [{
+          destination: "export.json",
+          mediaType: "application/json",
+          bytes: Buffer.from("{}\n", "utf8"),
+        }],
+      }),
+      { code: "RENDER_EXPORT_DUPLICATE" },
     );
   } finally {
     await rm(temporary, { recursive: true, force: true });
