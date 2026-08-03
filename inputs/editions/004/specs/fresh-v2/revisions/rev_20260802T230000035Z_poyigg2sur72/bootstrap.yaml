@@ -1,0 +1,168 @@
+schema_version: 1
+edition_id: "004"
+composition_revision:
+  revision_ref:
+    kind: composition
+    edition_id: "004"
+    composition_id: fresh-v2
+    revision_id: rev_20260802T230000065Z_nn4pdbpswp3n
+  manifest_digest: sha256:f078d9d4e5dbb631a1258a1d29a40bb5e2b334ee56072e8de94e64633b8c0ce0
+  git_commit_oid: de03fc9daa347a4788add0aac5675bf22434948c
+  git_blob_oids:
+    durable/editions/004/compositions/fresh-v2/revisions/rev_20260802T230000065Z_nn4pdbpswp3n/composition.yaml: cd5ad8464999e8330d116e1f2ecb5e5eae971ff4
+    durable/editions/004/compositions/fresh-v2/revisions/rev_20260802T230000065Z_nn4pdbpswp3n/manifest.yaml: bfee93f33295ca3466cda7c06edaf76414c6d40b
+configured_languages:
+  - en
+  - es
+selected_image_revision_refs:
+  - kind: image
+    edition_id: "004"
+    logical_id: frontier-lab-agent-intrusion-opener
+    revision_id: rev_20260802T230000053Z_7pcs4bj3w7g4
+  - kind: image
+    edition_id: "004"
+    logical_id: eval-engineering-opener
+    revision_id: rev_20260802T230000054Z_zhx3g4zhpfor
+  - kind: image
+    edition_id: "004"
+    logical_id: pragmatic-leverage-opener
+    revision_id: rev_20260802T230000055Z_bbwuyjtf2sxd
+  - kind: image
+    edition_id: "004"
+    logical_id: from-gpt2-to-kimi3-opener
+    revision_id: rev_20260802T230000056Z_vxv4c6xsm4bh
+  - kind: image
+    edition_id: "004"
+    logical_id: factory-systems-problem-opener
+    revision_id: rev_20260802T230000057Z_czv32wvq5vfh
+  - kind: image
+    edition_id: "004"
+    logical_id: factory-systems-problem-tail
+    revision_id: rev_20260802T230000060Z_3lkr2wkhk5vd
+  - kind: image
+    edition_id: "004"
+    logical_id: mcp-in-a-nutshell-opener
+    revision_id: rev_20260802T230000058Z_rcyepzxovpxf
+  - kind: image
+    edition_id: "004"
+    logical_id: mcp-in-a-nutshell-tail
+    revision_id: rev_20260802T230000061Z_24acmz3cblej
+  - kind: image
+    edition_id: "004"
+    logical_id: mcp-protocol-update-opener
+    revision_id: rev_20260802T230000059Z_o4tqx3zfdqx3
+  - kind: image
+    edition_id: "004"
+    logical_id: cover
+    revision_id: rev_20260802T230000052Z_txj4db7zordq
+  - kind: image
+    edition_id: "004"
+    logical_id: closing-signal-gates
+    revision_id: rev_20260802T230000062Z_qomqcv4kmony
+  - kind: image
+    edition_id: "004"
+    logical_id: closing-memory-rings
+    revision_id: rev_20260802T230000063Z_g4qgy4kwqze4
+  - kind: image
+    edition_id: "004"
+    logical_id: closing-protocol-exchange
+    revision_id: rev_20260802T230000064Z_nuozv3jq6crb
+image_generation_allowed: false
+renderer_contract_version: magazine-renderer/1
+prompt_set:
+  id: fresh_v2_prompt_set
+  role_inputs:
+    capture_source:
+      kind: disabled
+      reason: bootstrap_committed_inputs
+    extract_source:
+      kind: disabled
+      reason: bootstrap_committed_inputs
+    review_source:
+      kind: disabled
+      reason: bootstrap_committed_inputs
+    close_collection:
+      kind: disabled
+      reason: bootstrap_committed_composition
+    plan_edition:
+      kind: disabled
+      reason: bootstrap_committed_composition
+    writer:
+      kind: disabled
+      reason: bootstrap_existing_manuscripts
+    measure_article:
+      kind: disabled
+      reason: bootstrap_committed_composition
+    worth:
+      kind: disabled
+      reason: bootstrap_committed_composition
+    mechanics:
+      kind: disabled
+      reason: bootstrap_committed_composition
+    evidence:
+      kind: disabled
+      reason: bootstrap_committed_composition
+    shape:
+      kind: disabled
+      reason: bootstrap_committed_composition
+    teaching:
+      kind: disabled
+      reason: bootstrap_committed_composition
+    craft:
+      kind: disabled
+      reason: bootstrap_committed_composition
+    editorial_writer:
+      kind: disabled
+      reason: bootstrap_existing_manuscripts
+    edition_review:
+      kind: disabled
+      reason: bootstrap_committed_composition
+    translation_writer:
+      kind: disabled
+      reason: bootstrap_existing_translations
+    language_review:
+      kind: disabled
+      reason: bootstrap_existing_translations
+    language_fit:
+      kind: disabled
+      reason: bootstrap_existing_translations
+    cover_image:
+      kind: disabled
+      reason: bootstrap_existing_images
+    interior_image:
+      kind: disabled
+      reason: bootstrap_existing_images
+    select_art:
+      kind: disabled
+      reason: bootstrap_existing_images
+    measure_edition:
+      kind: contract
+      contract_version: measure-edition/1
+    render:
+      kind: contract
+      contract_version: render-edition/1
+    render_reconciliation:
+      kind: disabled
+      reason: bootstrap_forces_fresh_render
+    render_inspection:
+      kind: contract
+      contract_version: render-inspection/1
+    visual_review:
+      kind: human
+      authority: human
+      policy_revision:
+        kind: policy
+        policy_id: render-review
+        revision_id: rev_20260802T230000033Z_b2buhltexcey
+    release_approval:
+      kind: disabled
+      reason: stop_unreleased
+    durable_checkpoint:
+      kind: disabled
+      reason: bootstrap_committed_composition
+    composition_bootstrap:
+      kind: contract
+      contract_version: composition-bootstrap/1
+    editor_decision:
+      kind: disabled
+      reason: bootstrap_committed_composition
