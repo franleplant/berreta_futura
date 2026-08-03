@@ -1,6 +1,10 @@
 # Article review cycle and closed writer execution
 
-Status: **proposed**, not started. Revision 2, 2026-08-03.
+Status: **proposed**, not started. Revision 3, 2026-08-03.
+
+Revision 3 adds the infrastructure seam for multiple article formats. It does not
+define or ship any concrete magazine format profile. Article-specific editorial
+design, prompts, reviewer panels, and policies remain later content work.
 
 Revision 2 incorporates an independent adversarial review of the first draft.
 It resolves artifact/materialization ownership, dynamic reviewer identity,
@@ -82,10 +86,11 @@ interface is small enough for `ArticleMachine` to use without understanding
 individual reviewer kinds.
 
 The machine is pure and does not read artifacts during a transition. Before the
-initial snapshot is created, `RunEngine` reads and validates the pinned review-plan
-artifact and places a normalized `ResolvedReviewPlan` value in the frozen actor
-input. Review completion events carry a compact validated result summary plus the
-immutable result artifact ID. Full finding bodies remain in artifacts.
+initial snapshot is created, `RunEngine` reads and validates the pinned resolved
+production-profile artifact and its pinned review-plan artifact, then places
+normalized `ResolvedArticleProductionProfile` and `ResolvedReviewPlan` values in the
+frozen actor input. Review completion events carry a compact validated result summary
+plus the immutable result artifact ID. Full finding bodies remain in artifacts.
 
 Brief compilation is an explicit deterministic `compile_revision_brief` work offer.
 Its executor reads the exact review-result and ruling artifacts, returns one
@@ -106,22 +111,180 @@ nested cycle into a child machine only when at least one of these is true:
 
 More reviewers alone are not sufficient reason to add another actor.
 
-### 1.3 Review checks are immutable plan data
+### 1.3 Pin one immutable production profile per article
 
-An article pins one exact `ReviewPlan` artifact. The plan names every model
-reviewer and deterministic measurement, its prompt or profile, access class,
-authority, applicability rule, and optional wave. Reviewer identity is separate
-from execution role: all model reviews use the stable `article_review` role and
-`article-review/1` work contract; `reviewerId` identifies the lens inside the
-offer. `measure_article` remains its existing renderer-backed role and typed
-contract.
+Different article formats share the same lifecycle and execution modules while
+selecting different writer programs, reviewer panels, and policies. That variation
+lives in one immutable article production-profile revision, not in machine states, executor
+kinds, or role names.
+
+The committed input document and the resolved runtime value are distinct contracts:
 
 ```ts
-type ReviewPlan = {
+type ArticleProductionProfileDocument = {
+  schemaVersion: "article-production-profile/1";
+  profileId: string;
+  formatId: string;
+  writer: {
+    promptRevision: PromptRevisionRef;
+    resultContractVersion: "article-writer-result/1";
+    reviewMaterials: readonly ReviewMaterialRevisionContract[];
+  };
+  reviewPlanRevision: ArticleReviewPlanRevisionRef;
+  writingPolicyRevisions: readonly PolicyRevisionRef[];
+  revisionPolicy: {
+    maximumRewrites: number;
+  };
+};
+
+type ReviewMaterialRevisionContract = {
+  materialId: string;
+  schemaRevision: ReviewMaterialSchemaRevisionRef;
+  required: boolean;
+};
+
+type ResolvedArticleProductionProfile = {
+  schemaVersion: "resolved-article-production-profile/1";
+  profileId: string;
+  formatId: string;
+  profileArtifactId: ArtifactId;
+  writerPromptArtifactId: ArtifactId;
+  writerResultContractVersion: "article-writer-result/1";
+  reviewMaterials: readonly {
+    materialId: string;
+    schemaArtifactId: ArtifactId;
+    schemaVersion: string;
+    required: boolean;
+  }[];
+  reviewPlanArtifactId: ArtifactId;
+  writingPolicyArtifactIds: readonly ArtifactId[];
+  maximumRewrites: number;
+};
+```
+
+`formatId` is an opaque domain identity. The infrastructure does not enumerate
+magazine formats and does not assign meaning to any concrete value. The committed
+profile is a Git-bound immutable `article_production_profile` input revision. Its
+references pin exact `prompt`, `article_review_plan`, `policy`, and
+`review_material_schema` input revisions; it never contains run-scoped artifact
+IDs.
+
+The run builder resolves those Git-bound revisions, registers immutable engine
+artifacts for their exact payloads, and creates the resolved profile artifact. The
+resolved payload contains only the resulting engine artifact IDs and normalized
+scalar policy. `RunEngine.start` independently validates that complete artifact
+graph against the pinned input revisions before freezing it. `ArticleRunSpec` pins
+the resolved profile artifact alongside piece-specific facts:
+
+Input revision payloads are exact and versioned:
+
+- `article_production_profile` contains `profile.json` only;
+- `article_review_plan` contains `review-plan.json` only;
+- `review_material_schema` contains `schema.json` only.
+
+Their manifests and Git bindings follow the existing immutable input-revision
+rules. Unknown files, floating logical IDs, unresolved revisions, duplicate material
+IDs, and references to a different revision than the one materialized into the run
+are startup errors.
+
+```ts
+type ArticleRunSpec = {
+  articleId: string;
+  productionProfileArtifactId: ArtifactId;
+  articleBrief: ArtifactId;
+  sources: readonly ArtifactId[];
+  sourceApprovalArtifacts: readonly ArtifactId[];
+  contentMode: ArticleContentMode;
+  attribution: ArticleAttribution;
+  editionContext?: ArtifactId;
+  modelPolicy: ModelPolicy;
+  initialManuscript?: ArtifactId;
+  // durable and Git-bound provenance fields remain
+};
+```
+
+The profile owns reusable production behavior. The run spec owns the exact article
+assignment. Model choice remains run policy, and installed CLI configuration remains
+operational configuration. Neither is smuggled into the editorial profile.
+
+The approved production plan and committed write-pipeline document pin the exact
+`article_production_profile` revision for each article. They do not repeat or
+override its writer prompt, review plan, writing policies, review-material schemas,
+or rewrite budget. Per-article exceptions require a new immutable profile revision;
+there is no merge order for callers to learn and no partially overridden profile
+that can escape validation.
+
+Before the first article snapshot, `RunEngine` reads and validates the resolved
+profile artifact, then reads its review plan and validates every referenced prompt,
+policy, and schema artifact. It commits the normalized
+`ResolvedArticleProductionProfile` into frozen machine input. The machine and task
+composer receive only this resolved value and its immutable artifact identities;
+they never discover a profile by name or directory, and `RunEngine` never reads Git
+or reconstructs workflow state from input paths.
+
+Profile validation proves:
+
+- every referenced writer prompt, policy, review plan, and schema exists;
+- the writer result contract is supported by the certified `WriterExecutor`;
+- every declared review material has a unique identity and supported schema;
+- every review-plan request for writer-produced material is declared by the writer;
+- required review materials are consumed by at least one applicable review check;
+- the review plan is valid under section 1.4;
+- rewrite and measurement limits are finite and internally consistent;
+- source-access rules remain valid after all profile inputs are expanded.
+
+Changing any profile field or referenced revision creates a successor run. Two
+articles may pin the same profile revision, and one article may pin a later profile
+revision, without editing `ArticleMachine`, `WriterExecutor`, or reviewer execution.
+
+Do not add `FeatureWriterExecutor`, format-specific work roles, or format-specific
+article machines. Different prompts and model choices are writer programs executed
+through the existing deep module. A separate executor or machine is justified only
+if a future format genuinely requires a different execution policy or lifecycle
+contract, not merely different prose instructions or reviewers.
+
+### 1.4 Review checks are immutable plan data
+
+An article profile pins one exact committed `ArticleReviewPlanDocument`. The run
+builder resolves its input-revision references into one `ResolvedReviewPlan`
+artifact. The plan names every model reviewer and deterministic measurement, its
+prompt or profile, access class, authority, applicability rule, and optional wave.
+Reviewer identity is separate from execution role: all model reviews use the stable
+`article_review` role and `article-review/1` work contract; `reviewerId` identifies
+the lens inside the offer. `measure_article` remains its existing renderer-backed
+role and typed contract.
+
+```ts
+type ArticleReviewPlanDocument = {
   schemaVersion: "article-review-plan/1";
+  checks: readonly ReviewCheckRevisionDefinition[];
+  waves: readonly ReviewWave[];
+};
+
+type ResolvedReviewPlan = {
+  schemaVersion: "resolved-article-review-plan/1";
+  reviewPlanArtifactId: ArtifactId;
   checks: readonly ReviewCheckDefinition[];
   waves: readonly ReviewWave[];
 };
+
+type ModelReviewRevisionDefinition = Omit<
+  ModelReviewDefinition,
+  "promptArtifactId"
+> & {
+  promptRevision: PromptRevisionRef;
+};
+
+type ArticleMeasurementRevisionDefinition = Omit<
+  ArticleMeasurementDefinition,
+  "measurementProfileArtifactId"
+> & {
+  measurementProfileRevision: InputRevisionRef;
+};
+
+type ReviewCheckRevisionDefinition =
+  | ModelReviewRevisionDefinition
+  | ArticleMeasurementRevisionDefinition;
 
 type ReviewCheckDefinition = ModelReviewDefinition | ArticleMeasurementDefinition;
 
@@ -132,6 +295,7 @@ type ModelReviewDefinition = {
   promptArtifactId: ArtifactId;
   access: "source_aware" | "source_blind";
   authority: "advisory" | "blocking" | "human_required";
+  writerMaterialIds?: readonly string[];
   applicableWhen?: ReviewCondition;
 };
 
@@ -150,17 +314,19 @@ type ReviewWave = {
 };
 ```
 
-`ArticleRunSpec` references only the review-plan artifact ID. During `start`,
-`RunEngine` resolves that immutable artifact through its artifact repository,
-validates it, and supplies its normalized value as internal `ArticleMachineInput`.
-The ID and normalized value are committed together in the frozen actor input so
-replay and resume never require a caller to fetch or reinterpret the plan.
+`ArticleRunSpec` references the production-profile artifact ID. The resolved profile
+references exactly one review-plan artifact. During `start`, `RunEngine` resolves and
+validates both and supplies their normalized values as internal
+`ArticleMachineInput`. The IDs and normalized values are committed together in the
+frozen actor input so replay and resume never require a caller to fetch or
+reinterpret either input.
 
 The plan is validated before the run starts:
 
 - check and wave IDs are unique;
 - every check belongs to exactly one wave;
 - every named prompt exists;
+- every requested writer material is declared by the production profile;
 - every model check uses the stable `article_review` role and common result
   contract;
 - access and authority agree with the approved review-policy schema and the task
@@ -176,7 +342,7 @@ Changing the review plan, reviewer prompt, access class, or authority creates a
 new immutable input and therefore a successor run. It never mutates an active
 review cycle.
 
-### 1.4 One parallel panel is the default
+### 1.5 One parallel panel is the default
 
 All applicable reviewers inspect the same immutable manuscript independently.
 The default plan has one parallel wave containing measurement and all applicable
@@ -192,7 +358,7 @@ Multiple waves are allowed only for a declared reason:
 Waves are plan data. No wave receives a dedicated XState state name. A stopped
 wave records every unrun check as `skipped` with the exact stop reason.
 
-### 1.5 One rewrite consumes the whole review cycle
+### 1.6 One rewrite consumes the whole review cycle
 
 The writer does not rewrite once per finding. One completed review cycle creates
 one `RevisionBrief`; one writer offer creates one new immutable manuscript.
@@ -211,7 +377,7 @@ and a revision count that grows with the number of reviewers.
 Every review of manuscript N becomes stale when manuscript N+1 is created. No
 review approval is inherited by a changed manuscript.
 
-### 1.6 The writer is a closed, single-turn model role
+### 1.7 The writer is a closed, single-turn model role
 
 The writer receives only the complete immutable work package through standard
 input. It does not discover inputs from paths, inspect the repository, browse the
@@ -243,7 +409,7 @@ typed permanent-capacity failure and opens the exact human editor offer. The
 executor never truncates source text, drops findings, or inserts a model-generated
 summary to make the package fit.
 
-### 1.7 Keep Codex and Claude CLI adapters; remove writer ownership from `TextModelExecutor`
+### 1.8 Keep Codex and Claude CLI adapters; remove writer ownership from `TextModelExecutor`
 
 Codex CLI and Claude Code remain the initial ways to interact with hosted models.
 The executor invokes each CLI non-interactively with its tool access disabled and
@@ -293,7 +459,7 @@ Reviewer execution may later use the same adapter seam through a separate
 `ReviewerExecutor`. It does not share the writer's output contract merely because
 both roles call a language model.
 
-### 1.8 Tool denial is an enforced adapter contract
+### 1.9 Tool denial is an enforced adapter contract
 
 Tool-free execution is not represented only by a self-asserted worker capability.
 Writer offers require an engine-enforced execution class such as
@@ -471,6 +637,13 @@ type WriterResult = {
   manuscript: string;
   workingNotes: string;
   dispositions: readonly FindingDisposition[];
+  reviewMaterials: readonly WriterReviewMaterial[];
+};
+
+type WriterReviewMaterial = {
+  materialId: string;
+  schemaVersion: string;
+  value: JsonValue;
 };
 
 type FindingDisposition = {
@@ -484,20 +657,32 @@ For an initial draft, `dispositions` is empty. For a revision, the result must n
 every finding reference in the active `RevisionBrief` exactly once. Unknown,
 missing, or duplicated references reject the answer.
 
+Review materials are typed, profile-declared writer outputs intended for named
+review checks. The writer must return every required material exactly once and may
+return only materials declared by the active production profile. Each value is
+validated against its pinned schema. Initial infrastructure tests use synthetic
+materials only; no concrete magazine-format material contract is introduced here.
+
 A disposition is accountability, not authority. `declined` does not erase the
 finding or make the manuscript acceptable. The next fresh review determines whether
 the concern remains. Human rulings remain separate immutable decision artifacts.
 
 `WriterExecutor` parses one model result and constructs the complete `WorkAnswer`.
 The work-result contract requires exact agreement between the parsed writer envelope
-and the three artifact payloads; `answer.result` contains only routing metadata and
-cannot provide a second conflicting manuscript body.
+and every emitted artifact payload; `answer.result` contains only routing metadata
+and cannot provide a second conflicting manuscript body.
 
-The accepted answer creates exactly:
+The accepted answer creates exactly three core artifacts:
 
 - an `article_manuscript` text artifact;
 - a `writer_working_notes` text artifact;
 - a `writer_finding_dispositions` JSON artifact, empty on an initial draft.
+
+It additionally creates one immutable `writer_review_material` JSON artifact for
+each returned review material. Each carries the material ID and schema version and
+names the production-profile artifact as a parent. The task composer supplies it
+only to checks whose `writerMaterialIds` request it. Working notes remain writer-only
+revision context and are never used as an untyped reviewer-input channel.
 
 All are produced by the same writer offer and name their complete immutable input
 lineage.
@@ -543,9 +728,12 @@ state:
 ```ts
 type ArticleMachineContext = {
   // existing actor, spec, iteration, manuscript, durable, and history fields
+  productionProfileArtifactId: ArtifactId;
+  resolvedProductionProfile: ResolvedArticleProductionProfile;
   reviewPlanArtifactId: ArtifactId;
   resolvedReviewPlan: ResolvedReviewPlan;
   review: ReviewCycleState;
+  writerReviewMaterialArtifacts: Readonly<Record<string, ArtifactId>>;
   activeRevisionBriefArtifactId?: ArtifactId;
   carriedRulingArtifacts: readonly ArtifactId[];
 };
@@ -557,10 +745,11 @@ type ReviewCycleState = {
 };
 ```
 
-The context stores the normalized frozen plan, immutable artifact identities, and
-compact result summaries needed by synchronous guards. Large finding bodies stay in
-artifacts rather than being copied into every snapshot. The deterministic brief
-executor reads those artifacts only through its exact work offer.
+The context stores the normalized frozen profile and plan, immutable artifact
+identities, and compact result summaries needed by synchronous guards. Large policy,
+material, and finding bodies stay in artifacts rather than being copied into every
+snapshot. The deterministic brief executor reads those artifacts only through its
+exact work offer.
 
 ### 3.2 Events and offers
 
@@ -585,9 +774,10 @@ do not construct that trusted summary, and nobody infers the reviewer from state
 names.
 
 One offer remains one role, one actor, and one article. Each review offer names the
-exact manuscript and review-plan artifacts. Model reviewer offers use role
-`article_review` and put `reviewerId` in the slot and task artifact. Measurement keeps
-role `measure_article`. Source-aware and source-blind input composition remains in
+exact manuscript, production-profile, and review-plan artifacts. Model reviewer
+offers use role `article_review` and put `reviewerId` in the slot and task artifact.
+Measurement keeps role `measure_article`. Source-aware and source-blind input
+composition, including selective writer-review-material access, remains in
 `task-composer`, not in the machine.
 
 Brief compilation uses the stable deterministic role `compile_revision_brief` and a
@@ -604,6 +794,8 @@ manuscript. A transition from manuscript N to N+1 consumes one rewrite from the
 budget.
 
 - All review offers for manuscript N share its `IterationId` and `RevisionId`.
+- Writer review materials share the manuscript's revision identity and become stale
+  whenever that manuscript changes.
 - Retrying a failed reviewer creates a new attempt, not a new manuscript iteration.
 - One `changes_required` outcome can create at most one writer offer for N+1.
 - The writer receives the complete active brief, not findings piecemeal.
@@ -630,7 +822,8 @@ prose findings never bypass normalization or reach the writer as an untyped blob
 The redesigned machine receives a new article-machine version. No persisted snapshot
 silently resumes under the new topology.
 
-- New runs use the new version and `ReviewPlan` contract.
+- New runs use the new version, production-profile document/resolution contracts,
+  and article-review-plan document/resolution contracts.
 - Existing sealed or released work remains immutable.
 - Existing durable manuscripts may seed a new run through `initialManuscript` and an
   explicit durable parent revision.
@@ -647,12 +840,14 @@ silently resumes under the new topology.
 interface used by the worker loop. Its implementation owns:
 
 - accepting only `writer` offers with the closed execution policy;
+- requiring the exact frozen production-profile artifact and resolved profile;
 - reading every declared input artifact through `ArtifactReader`;
 - rejecting undeclared, duplicated, missing, or incorrectly classified inputs;
 - composing one model-visible prompt with stable labeled sections;
 - selecting the configured Codex, Claude, or later Ollama adapter;
 - enforcing ephemeral, tool-free invocation;
 - validating `WriterResult`;
+- validating profile-declared review materials and emitting them as typed artifacts;
 - producing inline immutable answer artifacts and complete parent lineage;
 - recording model and adapter metadata without credentials or session data.
 
@@ -753,7 +948,7 @@ Adding a reviewer does not change this topology.
 
 ### 5.2 Runtime review-plan graph
 
-Inspection can additionally project the exact frozen `ReviewPlan` for a run:
+Inspection can additionally project the exact frozen `ResolvedReviewPlan` for a run:
 
 ```text
 manuscript revision
@@ -765,9 +960,11 @@ manuscript revision
 ```
 
 The projection names reviewer IDs, roles, access classes, authority, prompt artifact
-IDs, offer status, result artifact IDs, skips, and retries. It is generated from the
-plan and `RunEngine.inspect`, never from directory discovery or a manually maintained
-diagram.
+IDs, offer status, result artifact IDs, skips, and retries. Its header names the exact
+production-profile artifact, profile ID, opaque format ID, and review-plan artifact.
+It is generated from the resolved profile, plan, and `RunEngine.inspect`, never from
+directory discovery or a manually maintained diagram. Format identity is diagnostic
+metadata, not a source of graph topology.
 
 The viewer defaults to the compact article lifecycle and links to this expanded
 runtime review view. A growing reviewer list therefore increases only the review-plan
@@ -821,16 +1018,40 @@ conformance suite.
 
 Build:
 
-- `ReviewerId`, `FindingRef`, `ReviewPlan`, `ReviewResult`,
+- `ArticleProductionProfileDocument`, `ResolvedArticleProductionProfile`, the new
+  Git-bound input revision kinds, run-builder materialization, and RunEngine profile
+  validation;
+- `ReviewerId`, `FindingRef`, `ArticleReviewPlanDocument`, `ResolvedReviewPlan`,
+  `ReviewResult`,
   `ArticleMeasurementResult`, `ExternalRevisionFinding`, `RevisionBrief`,
-  `WriterResult`, and disposition schemas;
-- immutable review-plan artifact input on `ArticleRunSpec`;
-- RunEngine materialization of validated `ResolvedReviewPlan` into frozen actor input;
+  `WriterResult`, `WriterReviewMaterial`, and disposition schemas;
+- immutable production-profile artifact input on `ArticleRunSpec`;
+- RunEngine materialization of validated `ResolvedArticleProductionProfile` and its
+  `ResolvedReviewPlan` into frozen actor input;
 - one stable `article_review` role and contract, with reviewer identity in plan/slot;
 - validation for check identity, wave membership, prompts, measurement, access,
-  authority, and required source review;
+  authority, required source review, and writer-material dependencies;
 - characterization tests for current writer inputs, review provenance, iteration
   budget, human decisions, and durable checkpoint behavior.
+
+Use two synthetic profile fixtures with deliberately different writer prompts,
+reviewer sets, policies, and optional writer-review-material contracts. They prove
+the infrastructure variation without defining a real magazine format.
+
+Add one public-`RunEngine` tracer test that creates a temporary input repository,
+commits both synthetic profile graphs, builds two article run specs, starts both runs,
+and drives them through writer, review, brief, rewrite, and durable checkpoint. The
+test asserts only public offers, artifacts, events, decisions, and inspection output;
+it never queries SQLite or calls machine internals.
+
+Replace direct writer/reviewer production fields in `ApprovedProductionPlan`,
+`WritePipelineArticle`, and `ArticleRunSpec` with the appropriate committed profile
+revision or resolved profile artifact reference. Keep piece identity, sources,
+brief, content/provenance mode, attribution, edition context, model policy, durable
+parent, and initial manuscript on the article assignment. Delete direct
+`writerPrompt`, `judgePrompts`, enabled/blocking lens lists, writing-policy lists, and
+rewrite-budget overrides after the profile path is covered by public-interface
+tests.
 
 Keep the old staged machine only long enough to establish the replacement tests. Do
 not add a permanent compatibility interface around stage names.
@@ -867,6 +1088,8 @@ Build:
 - writer input composition containing one lossless brief without duplicated review
   prose;
 - `WriterResult` validation and inline artifact creation;
+- profile-declared writer review-material validation, artifact creation, and
+  selective reviewer delivery;
 - exact agreement between validated model result and emitted artifact payloads;
 - exact finding disposition coverage;
 - one-rewrite-per-review-cycle transition;
@@ -918,6 +1141,12 @@ writer offer, review plan, or writer-result contract changes.
 
 ### 7.1 Review-plan and lifecycle tests
 
+- two synthetic production profiles run through the same article-machine version;
+- each synthetic profile produces its own exact writer prompt, review checks,
+  measurement policy, and rewrite budget;
+- changing only the profile artifact creates a successor run;
+- unknown, missing, malformed, or incompatible profile references prevent run start;
+- profile resolution never depends on `formatId`, paths, or a hardcoded registry;
 - adding a reviewer changes only plan data and offered review work;
 - every applicable reviewer receives the exact manuscript revision;
 - every article measurement uses the exact manuscript, measurement profile, opener
@@ -958,6 +1187,12 @@ writer offer, review plan, or writer-result contract changes.
 - a writer output cannot be a file payload or repository path.
 - source text is framed as untrusted evidence and cannot change the execution policy
   or output contract;
+- every required profile-declared review material is emitted exactly once;
+- undeclared, duplicate, missing, and schema-invalid review materials reject the
+  writer answer;
+- each review check receives only its declared writer materials, while working notes
+  remain private to the next writer revision;
+- writer review materials become stale with their manuscript revision;
 - an oversized lossless work package escalates before writer dispatch and is never
   truncated or silently summarized.
 
@@ -994,6 +1229,8 @@ Edition 4 sources or images.
   requires;
 - mixed-access parallel review uses separately registered principals;
 - review results name the exact offer, reviewer, manuscript, prompt, and plan;
+- writer, review, brief, and manuscript artifacts retain the exact production-profile
+  artifact in their provenance;
 - the revision brief names all producing review artifacts;
 - the revised manuscript names its parent manuscript, brief, findings, rulings, and
   writer policy inputs;
@@ -1033,14 +1270,15 @@ local to these modules:
 ```text
 engine/
   contracts/
+    article-production-profile.ts # reusable writer/review production profile
     article-review.ts           # review plan, result, brief, writer schemas
-    run.ts                      # review-plan artifact input
-    run-spec.ts                 # frozen plan validation
+    run.ts                      # production-profile artifact input
+    run-spec.ts                 # frozen profile and plan validation
   machines/
     article-machine.ts          # compact lifecycle and nested reviewing state
     review-cycle.ts             # deep review-cycle implementation
   task-composer/
-    article.ts                  # role-specific immutable input composition
+    article.ts                  # profile-driven immutable input composition
     review.ts                   # reviewer access and prompt composition
   executors/
     writer.ts                   # WriterExecutor
@@ -1054,8 +1292,14 @@ engine/
     subprocess.ts               # internal process lifecycle only
     configured-worker.ts        # startup preflight and explicit registration
   run-engine/
+    article-profile.ts          # profile resolution and compatibility validation
     execution-profiles.ts       # trusted profile registration and claim credentials
     work-result-contracts.ts    # exact writer and review answer validation
+  durable/
+    types.ts                    # new profile, review-plan, and schema revision refs
+    input-revision.ts           # exact payload validation for those input kinds
+    write-pipeline.ts           # article assignments pin profile revisions
+  write-production.ts           # materialize resolved profile artifact graphs
   view/
     ...                         # compact lifecycle and runtime review-plan views
   graph-export.ts               # nested and runtime-plan projections
@@ -1076,22 +1320,27 @@ The redesign is complete when:
 
 1. The top-level article graph expresses `drafting -> reviewing -> routing_review`
    without reviewer-specific states.
-2. A frozen plan can add or remove reviewers without editing `ArticleMachine`.
-3. XState durably joins every applicable reviewer for one exact manuscript.
-4. All feedback becomes one provenance-preserving `RevisionBrief`.
-5. One writer offer consumes the complete brief and creates one new manuscript.
-6. Every revision finding has exactly one writer disposition.
-7. Every changed manuscript receives a completely fresh review cycle.
-8. Production writer offers can be claimed only through an engine-registered
+2. Every article pins one immutable production-profile artifact, which resolves to
+   its exact writer program, policies, review plan, and rewrite policy.
+3. Two synthetic profiles can select different writer prompts, reviewer panels, and
+   typed review materials while using the same article machine and executors.
+4. A frozen plan can add or remove reviewers without editing `ArticleMachine`.
+5. XState durably joins every applicable reviewer for one exact manuscript.
+6. All feedback becomes one provenance-preserving `RevisionBrief`.
+7. One writer offer consumes the complete brief and creates one new manuscript.
+8. Every revision finding has exactly one writer disposition.
+9. Every changed manuscript and its writer review materials receive a completely
+   fresh review cycle.
+10. Production writer offers can be claimed only through an engine-registered
    `closed_writer/1` profile owned by `WriterExecutor`.
-9. Every enabled Codex or Claude writer adapter is ephemeral, tool-free, path-free,
+11. Every enabled Codex or Claude writer adapter is ephemeral, tool-free, path-free,
    structured-output-only, and startup-preflighted under a pinned profile. An
    adapter that cannot satisfy this is unavailable rather than weakened.
-10. No writer output enters through a file path.
-11. Ollama can be added later without changing article or writer contracts.
-12. Compact and expanded graphs are generated from live machine and review-plan
+12. No writer output enters through a file path.
+13. Ollama can be added later without changing article or writer contracts.
+14. Compact and expanded graphs are generated from live machine and review-plan
     authority.
-13. All public `RunEngine` tests and pinned Node verification pass.
+15. All public `RunEngine` tests and pinned Node verification pass.
 
 ---
 
@@ -1103,6 +1352,14 @@ The redesign is complete when:
 - No filesystem or internet exploration by the writer.
 - No direct hosted-model implementation that bypasses the selected CLI adapters.
 - No reviewer name encoded as a top-level article state.
+- No concrete magazine-format profile, format prompt, or format reviewer panel in
+  this infrastructure change.
+- No committed `inputs/` profile instances in this checkpoint; conformance uses
+  synthetic temporary-repository fixtures.
+- No format-name switch statement or registry in `ArticleMachine`, `WriterExecutor`,
+  task composition, or profile resolution.
+- No format-specific writer/reviewer work role, executor, or article machine merely
+  because prompts and checks differ.
 - No separate review actor until the extraction criteria in section 1.2 are met.
 - No reuse of a review approval across manuscript artifact IDs.
 - No compatibility restoration for the deleted Python workflow.
@@ -1113,18 +1370,17 @@ The redesign is complete when:
 
 ## 11. Remaining decisions before implementation
 
-These choices do not change the architecture but must be pinned in the first
-checkpoint:
+These choices do not change the architecture but must be pinned in their relevant
+implementation checkpoints. Real magazine production-profile contents are explicitly
+deferred until after the infrastructure checkpoint.
 
-1. The initial `ReviewPlan` reviewer set and whether any real dependency justifies
-   more than one wave.
-2. Whether the writer output schema permits an empty `workingNotes` string.
-3. The manuscript-scope representation used by findings: heading identity, structural
+1. Whether the writer output schema permits an empty `workingNotes` string.
+2. The manuscript-scope representation used by findings: heading identity, structural
    block identity, or another immutable anchor.
-4. Which approved review policies may request human judgment. Model-originated drop
+3. Which approved review policies may request human judgment. Model-originated drop
    is excluded from v1.
-5. The per-adapter input-context ceiling and reserved output budget. Once the exact
+4. The per-adapter input-context ceiling and reserved output budget. Once the exact
    lossless package exists, exceeding that ceiling escalates before writer dispatch;
    truncating or silently summarizing findings is forbidden.
-6. Whether certified tool-free execution should become mandatory for reviewer roles
+5. Whether certified tool-free execution should become mandatory for reviewer roles
    in the same checkpoint or immediately afterward.
