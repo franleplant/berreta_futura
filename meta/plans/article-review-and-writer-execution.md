@@ -1,6 +1,12 @@
 # Article review cycle and closed writer execution
 
-Status: **proposed**, not started. Revision 3, 2026-08-03.
+Status: **superseded**, not started. Revision 4, 2026-08-03.
+
+This plan is superseded in full by
+[`loops-workflow-migration.md`](loops-workflow-migration.md). Do not implement
+the XState article-machine redesign described below. The replacement plan keeps
+the useful production-profile, review-plan, writer-isolation, and provenance
+decisions while moving workflow authority to durable Loops scripts.
 
 Revision 3 adds the infrastructure seam for multiple article formats. It does not
 define or ship any concrete magazine format profile. Article-specific editorial
