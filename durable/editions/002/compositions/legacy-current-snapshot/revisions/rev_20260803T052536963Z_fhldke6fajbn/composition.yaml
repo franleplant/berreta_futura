@@ -1,0 +1,179 @@
+schema_version: 1
+edition_id: "002"
+composition_id: legacy-current-snapshot
+editorials:
+  - editorial_id: opening
+    manuscripts:
+      - language: en
+        revision:
+          kind: editorial
+          editionId: "002"
+          logicalId: opening
+          language: en
+          revisionId: rev_20260803T052536959Z_ojfe34cit4gr
+      - language: es
+        revision:
+          kind: editorial
+          editionId: "002"
+          logicalId: opening
+          language: es
+          revisionId: rev_20260803T052536959Z_3ab6fbmxvuv6
+articles:
+  - article_id: software-factories-light-and-dark
+    manuscripts:
+      - language: en
+        revision:
+          kind: article
+          editionId: "002"
+          logicalId: software-factories-light-and-dark
+          language: en
+          revisionId: rev_20260803T052536959Z_6aw6birmu6qg
+      - language: es
+        revision:
+          kind: article
+          editionId: "002"
+          logicalId: software-factories-light-and-dark
+          language: es
+          revisionId: rev_20260803T052536959Z_nfzr4ztx5jim
+    images: []
+  - article_id: the-building-block-economy
+    manuscripts:
+      - language: en
+        revision:
+          kind: article
+          editionId: "002"
+          logicalId: the-building-block-economy
+          language: en
+          revisionId: rev_20260803T052536959Z_vwsfs75rywqv
+      - language: es
+        revision:
+          kind: article
+          editionId: "002"
+          logicalId: the-building-block-economy
+          language: es
+          revisionId: rev_20260803T052536959Z_iosmlyhbcx4f
+    images:
+      - slot_id: tail
+        revision:
+          kind: image
+          editionId: "002"
+          logicalId: the-building-block-economy-tail
+          revisionId: rev_20260803T052536959Z_fjd73g23i432
+  - article_id: agent-swarms-and-model-economics
+    manuscripts:
+      - language: en
+        revision:
+          kind: article
+          editionId: "002"
+          logicalId: agent-swarms-and-model-economics
+          language: en
+          revisionId: rev_20260803T052536959Z_5zxfgk2bcxrw
+      - language: es
+        revision:
+          kind: article
+          editionId: "002"
+          logicalId: agent-swarms-and-model-economics
+          language: es
+          revisionId: rev_20260803T052536959Z_zk5px6kwwqtn
+    images: []
+  - article_id: loop-engineering-roadmap
+    manuscripts:
+      - language: en
+        revision:
+          kind: article
+          editionId: "002"
+          logicalId: loop-engineering-roadmap
+          language: en
+          revisionId: rev_20260803T052536959Z_nkt6uadbobxm
+      - language: es
+        revision:
+          kind: article
+          editionId: "002"
+          logicalId: loop-engineering-roadmap
+          language: es
+          revisionId: rev_20260803T052536959Z_4evlmoafap7i
+    images:
+      - slot_id: tail
+        revision:
+          kind: image
+          editionId: "002"
+          logicalId: loop-engineering-roadmap-tail
+          revisionId: rev_20260803T052536959Z_pudyvf6umbha
+  - article_id: agentic-pods
+    manuscripts:
+      - language: en
+        revision:
+          kind: article
+          editionId: "002"
+          logicalId: agentic-pods
+          language: en
+          revisionId: rev_20260803T052536959Z_bdenuko4zsqj
+      - language: es
+        revision:
+          kind: article
+          editionId: "002"
+          logicalId: agentic-pods
+          language: es
+          revisionId: rev_20260803T052536959Z_d72hnfbq45g4
+    images:
+      - slot_id: tail
+        revision:
+          kind: image
+          editionId: "002"
+          logicalId: agentic-pods-tail
+          revisionId: rev_20260803T052536959Z_dcpzefw4opsb
+  - article_id: how-we-built-our-knowledge-base
+    manuscripts:
+      - language: en
+        revision:
+          kind: article
+          editionId: "002"
+          logicalId: how-we-built-our-knowledge-base
+          language: en
+          revisionId: rev_20260803T052536959Z_tmj6qm7nrwiz
+      - language: es
+        revision:
+          kind: article
+          editionId: "002"
+          logicalId: how-we-built-our-knowledge-base
+          language: es
+          revisionId: rev_20260803T052536959Z_mq63fv533zmm
+    images:
+      - slot_id: tail
+        revision:
+          kind: image
+          editionId: "002"
+          logicalId: how-we-built-our-knowledge-base-tail
+          revisionId: rev_20260803T052536959Z_6zghmogfvpr2
+images:
+  - slot_id: cover
+    revision:
+      kind: image
+      editionId: "002"
+      logicalId: cover
+      revisionId: rev_20260803T052536959Z_3e33li6mgp6z
+  - slot_id: coda-convergence-v1
+    revision:
+      kind: image
+      editionId: "002"
+      logicalId: coda-convergence-v1
+      revisionId: rev_20260803T052536959Z_fplk3k73awpe
+  - slot_id: coda-branches-v2
+    revision:
+      kind: image
+      editionId: "002"
+      logicalId: coda-branches-v2
+      revisionId: rev_20260803T052536959Z_utj3a52wzoh6
+  - slot_id: coda-return-v1
+    revision:
+      kind: image
+      editionId: "002"
+      logicalId: coda-return-v1
+      revisionId: rev_20260803T052536959Z_o3rqqhbaagru
+layout_inputs:
+  - slot_id: edition-spec
+    revision:
+      kind: edition_spec
+      logicalId: main
+      editionId: "002"
+      revisionId: rev_20260803T052536959Z_ezemrqk3mhbi

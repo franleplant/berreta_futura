@@ -1,0 +1,191 @@
+schema_version: 1
+edition_id: "003"
+composition_id: legacy-current-snapshot
+editorials:
+  - editorial_id: opening
+    manuscripts:
+      - language: en
+        revision:
+          kind: editorial
+          editionId: "003"
+          logicalId: opening
+          language: en
+          revisionId: rev_20260803T052536959Z_6akmkzmruhfr
+      - language: es
+        revision:
+          kind: editorial
+          editionId: "003"
+          logicalId: opening
+          language: es
+          revisionId: rev_20260803T052536959Z_x5h4vlzbufs4
+articles:
+  - article_id: why-software-factories-fail
+    manuscripts:
+      - language: en
+        revision:
+          kind: article
+          editionId: "003"
+          logicalId: why-software-factories-fail
+          language: en
+          revisionId: rev_20260803T052536959Z_e3w3rnbqoiia
+      - language: es
+        revision:
+          kind: article
+          editionId: "003"
+          logicalId: why-software-factories-fail
+          language: es
+          revisionId: rev_20260803T052536959Z_3iihvwnselxg
+    images:
+      - slot_id: tail
+        revision:
+          kind: image
+          editionId: "003"
+          logicalId: why-software-factories-fail-tail
+          revisionId: rev_20260803T052536959Z_aucyjqr4cgr7
+  - article_id: why-harness-engineering-is-so-hard
+    manuscripts:
+      - language: en
+        revision:
+          kind: article
+          editionId: "003"
+          logicalId: why-harness-engineering-is-so-hard
+          language: en
+          revisionId: rev_20260803T052536959Z_u4rmpgmg2g4y
+      - language: es
+        revision:
+          kind: article
+          editionId: "003"
+          logicalId: why-harness-engineering-is-so-hard
+          language: es
+          revisionId: rev_20260803T052536959Z_m36ppbgsscmg
+    images:
+      - slot_id: tail
+        revision:
+          kind: image
+          editionId: "003"
+          logicalId: why-harness-engineering-is-so-hard-tail
+          revisionId: rev_20260803T052536959Z_goznls7cdhmc
+  - article_id: loop-engineering-above-the-harness
+    manuscripts:
+      - language: en
+        revision:
+          kind: article
+          editionId: "003"
+          logicalId: loop-engineering-above-the-harness
+          language: en
+          revisionId: rev_20260803T052536959Z_3s2gmdtu7xsc
+      - language: es
+        revision:
+          kind: article
+          editionId: "003"
+          logicalId: loop-engineering-above-the-harness
+          language: es
+          revisionId: rev_20260803T052536959Z_bd4b3udw3tyl
+    images:
+      - slot_id: tail
+        revision:
+          kind: image
+          editionId: "003"
+          logicalId: loop-engineering-above-the-harness-tail
+          revisionId: rev_20260803T052536959Z_bq72igzmkfhr
+  - article_id: new-rules-of-context-engineering
+    manuscripts:
+      - language: en
+        revision:
+          kind: article
+          editionId: "003"
+          logicalId: new-rules-of-context-engineering
+          language: en
+          revisionId: rev_20260803T052536959Z_7xvifpvlycdx
+      - language: es
+        revision:
+          kind: article
+          editionId: "003"
+          logicalId: new-rules-of-context-engineering
+          language: es
+          revisionId: rev_20260803T052536959Z_rdinhg7mvrgy
+    images:
+      - slot_id: tail
+        revision:
+          kind: image
+          editionId: "003"
+          logicalId: new-rules-of-context-engineering-tail
+          revisionId: rev_20260803T052536959Z_hntg5j4upwiv
+  - article_id: open-weights-and-american-ai-leadership
+    manuscripts:
+      - language: en
+        revision:
+          kind: article
+          editionId: "003"
+          logicalId: open-weights-and-american-ai-leadership
+          language: en
+          revisionId: rev_20260803T052536959Z_nic3nl3n5mvo
+      - language: es
+        revision:
+          kind: article
+          editionId: "003"
+          logicalId: open-weights-and-american-ai-leadership
+          language: es
+          revisionId: rev_20260803T052536959Z_r5xxb2bcxt3u
+    images:
+      - slot_id: tail
+        revision:
+          kind: image
+          editionId: "003"
+          logicalId: open-weights-and-american-ai-leadership-tail
+          revisionId: rev_20260803T052536959Z_jybax4wcrwjy
+  - article_id: buzz-multiplayer-agent-layer
+    manuscripts:
+      - language: en
+        revision:
+          kind: article
+          editionId: "003"
+          logicalId: buzz-multiplayer-agent-layer
+          language: en
+          revisionId: rev_20260803T052536959Z_xbieucvbftrx
+      - language: es
+        revision:
+          kind: article
+          editionId: "003"
+          logicalId: buzz-multiplayer-agent-layer
+          language: es
+          revisionId: rev_20260803T052536959Z_gx7cwz33s3mc
+    images:
+      - slot_id: tail
+        revision:
+          kind: image
+          editionId: "003"
+          logicalId: buzz-multiplayer-agent-layer-tail
+          revisionId: rev_20260803T052536959Z_hsofpxlzlto6
+images:
+  - slot_id: cover
+    revision:
+      kind: image
+      editionId: "003"
+      logicalId: cover
+      revisionId: rev_20260803T052536959Z_y5dpb74t3eq5
+  - slot_id: coda-manga-01
+    revision:
+      kind: image
+      editionId: "003"
+      logicalId: coda-manga-01
+      revisionId: rev_20260803T052536959Z_mss4cjqrb3lf
+  - slot_id: coda-manga-02
+    revision:
+      kind: image
+      editionId: "003"
+      logicalId: coda-manga-02
+      revisionId: rev_20260803T052536959Z_ypa2v6gawi2y
+  - slot_id: coda-manga-03
+    revision:
+      kind: image
+      editionId: "003"
+      logicalId: coda-manga-03
+      revisionId: rev_20260803T052536959Z_2ervc6gftbc5
+layout_inputs:
+  - slot_id: edition-spec
+    revision:
+      kind: edition_spec
+      logicalId: main
+      editionId: "003"
+      revisionId: rev_20260803T052536959Z_24u6nq3tbhvb
