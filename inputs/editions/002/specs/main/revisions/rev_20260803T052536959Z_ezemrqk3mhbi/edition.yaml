@@ -1,0 +1,242 @@
+schema_version: 1
+id: 002-unreleased
+issue_number: 2
+publication_date: '2026-07-21'
+title: The Systems That Build
+subtitle: Software factories, agent swarms, reusable blocks, and the human judgment that keeps them coherent
+language: en
+distribution: private
+status: released
+format:
+  trim: A5
+  home_sheet: A4
+  binding: saddle_stitch
+  max_article_pages: 7
+  max_editorial_pages: 2
+cover:
+  headline: The Systems That Build
+  deck: Six field reports on what happens when code, knowledge, and work become systems of loops
+  back_text: 'The loop is small. The factory is vast. Between them sits the difficult work: preserving
+    intent, evidence, and human understanding.'
+  art_path: art/cover-candidate-art-directed-v7.png
+sources:
+- software-factories-light-and-dark-ef463732
+- the-building-block-economy-af6644bd
+- agent-swarms-and-the-new-model-economics-8b346f57
+- loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f
+- agentic-pods-taking-ai-beyond-engineering-at-ube-5b9382d4
+- how-we-built-our-knowledge-base-e986baa0
+editorial: manuscript/editorial.md
+articles:
+- id: software-factories-light-and-dark
+  title: Software Factories, Light and Dark
+  short_title: Light and Dark
+  display_emphasis: Factories
+  opener_variant: split_axis
+  author: Addy Osmani
+  author_note: Addy Osmani spent 14 years leading engineering teams across Chrome, Gemini, and Google
+    Cloud AI.
+  content_mode: faithful_synthesis
+  source_ids:
+  - software-factories-light-and-dark-ef463732
+  manuscript: editions/002-unreleased/articles/software-factories-light-and-dark.md
+  source_body_sha256: eab817ab801b22342bb4c967044173c7b0b0d8790c89762c5cffed5cdde29e5a
+  figures:
+  - id: loop-harness-factory
+    decision: include
+    source_id: software-factories-light-and-dark-ef463732
+    asset_id: raster-003-c84acad9
+    caption: A loop becomes a harness when it gains sandbox, tools, memory, and gates; many harnesses
+      become a factory when they converge on a human-owned review gate.
+    alt_text: Three panels show one agent loop becoming a harness and then a software factory with multiple
+      harnesses, review, merge, and production.
+    anchor: Loop, harness, factory
+    layout: landscape_plate
+    criteria:
+    - important
+    - useful
+    rationale: The diagram compresses the article's core hierarchy into one legible progression.
+  - id: factory-closed-loop
+    decision: include
+    source_id: software-factories-light-and-dark-ef463732
+    asset_id: raster-004-99565ac9
+    caption: The factory closes the circuit from intent to queue, harness, automated checks, review and
+      deployment, then returns production signals to the work queue.
+    alt_text: A closed loop connects intent, queue, harness, automated checks, human review, deployment,
+      monitoring, and operational signals.
+    anchor: The narrow neck
+    layout: landscape_plate_after
+    criteria:
+    - important
+    - useful
+    rationale: The review gate makes the article's central throughput constraint visible.
+  - id: lights-on-factory
+    decision: include
+    source_id: software-factories-light-and-dark-ef463732
+    asset_id: raster-002-d955f82f
+    caption: A lights-on factory keeps humans at the review boundary while agents build and automated
+      checks, deployment, monitoring, incidents, and user feedback complete the loop.
+    alt_text: A software factory flow from leadership and user signals through an agent, automated checks,
+      human review, production, and monitoring.
+    anchor: Turning the lights on where judgment lives
+    layout: compact_band
+    criteria:
+    - important
+    - useful
+    rationale: The source sketch shows how human judgment and automated feedback coexist in a lit factory.
+- id: the-building-block-economy
+  title: The Building Block Economy
+  short_title: Building Block
+  display_emphasis: Building
+  opener_variant: edge_medallion
+  author: Mitchell Hashimoto
+  author_note: Mitchell Hashimoto is the creator of Ghostty and co-founder of HashiCorp.
+  content_mode: faithful_synthesis
+  source_ids:
+  - the-building-block-economy-af6644bd
+  manuscript: editions/002-unreleased/articles/the-building-block-economy.md
+  source_body_sha256: b32986a384bc5e4d53edec330a0b6488cc4fdafba27c23128e02bb9c34da0b4c
+  tail_art_path: editions/002-unreleased/art/article-tails/modular-ascent-v1.png
+- id: agent-swarms-and-model-economics
+  title: Agent Swarms and the New Model Economics
+  short_title: Agent Swarms
+  display_emphasis: Swarms
+  opener_variant: stepped_title
+  author: Wilson Lin
+  author_note: Wilson Lin is a researcher at Cursor, where he works on long-running autonomous coding
+    systems.
+  content_mode: faithful_synthesis
+  source_ids:
+  - agent-swarms-and-the-new-model-economics-8b346f57
+  manuscript: editions/002-unreleased/articles/agent-swarms-and-model-economics.md
+  source_body_sha256: edcf558282c8398fbcaec47dbcc35846779ce3ae5081d93cc4dc764bbec3db2a
+  figures:
+  - id: swarm-task-tree
+    decision: include
+    source_id: agent-swarms-and-the-new-model-economics-8b346f57
+    asset_id: raster-002-c12295d4
+    caption: Planner agents recursively decompose the goal; worker agents spend their context on bounded
+      leaves of the task tree.
+    alt_text: A goal branches through planner agents into narrow tasks handled by worker agents.
+    anchor: Trees and memory
+    layout: evidence_band_prose
+    criteria:
+    - important
+    - useful
+    rationale: The light print export makes the topology and its internal labels legible at A5 size.
+  - id: swarm-model-cost
+    decision: include
+    source_id: agent-swarms-and-the-new-model-economics-8b346f57
+    asset_id: raster-001-a065638c
+    caption: Comparable SQLite outcomes carried radically different costs depending on which models planned
+      and which performed the worker load.
+    alt_text: A cost comparison across four planner and worker model configurations under old and new
+      swarm harnesses.
+    anchor: Model economics
+    layout: adaptive_band
+    criteria:
+    - important
+    - useful
+    rationale: The light print export keeps model labels and values legible while showing model roles
+      as an economic choice.
+  minimum_reader_pages: 5
+- id: loop-engineering-roadmap
+  title: 'Loop Engineering: A Roadmap Beyond the Prompt'
+  short_title: Loop Engineering
+  display_emphasis: Loop
+  opener_variant: split_axis
+  author: Codez
+  author_note: Codez is the publishing name of Lev Deviatkin.
+  content_mode: faithful_synthesis
+  source_ids:
+  - loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f
+  manuscript: editions/002-unreleased/articles/loop-engineering-roadmap.md
+  source_body_sha256: 0afb464454caee032c609c98cf916add2721e4704ffb99ee4d8a477487d791a9
+  tail_art_path: editions/002-unreleased/art/article-tails/verified-circuit-v1.png
+- id: agentic-pods
+  title: 'Agentic Pods: Taking AI Beyond Engineering'
+  short_title: Agentic Pods
+  display_emphasis: Pods
+  opener_variant: edge_medallion
+  author: Praveen Neppalli
+  author_note: Praveen Neppalli Naga is Uber's chief technology officer and previously held engineering
+    leadership roles at LinkedIn.
+  content_mode: faithful_synthesis
+  source_ids:
+  - agentic-pods-taking-ai-beyond-engineering-at-ube-5b9382d4
+  manuscript: editions/002-unreleased/articles/agentic-pods.md
+  source_body_sha256: 162ce8cd9f6e51250bdf2f36aa71335701b5605f418e3e18400ab939539ddb55
+  tail_art_path: editions/002-unreleased/art/article-tails/pod-exchange-v1.png
+- id: how-we-built-our-knowledge-base
+  title: How We Built Our Knowledge Base
+  short_title: Our Knowledge Base
+  display_emphasis: Knowledge
+  opener_variant: stepped_title
+  author: Isaac Tai, Daniel Kim & Mike Gao
+  author_note: Isaac Tai, Daniel Kim, and Mike Gao work at Cerebras Systems, the AI-chip company behind
+    the Wafer-Scale Engine.
+  content_mode: selected_extracts
+  source_ids:
+  - how-we-built-our-knowledge-base-e986baa0
+  manuscript: editions/002-unreleased/articles/how-we-built-our-knowledge-base.md
+  source_body_sha256: ee07d26dc95a01cde7cf1145adbe49f1cf4e9fef10aeed8815efd47c0edb7967
+  tail_art_path: editions/002-unreleased/art/article-tails/evidence-fold-v1.png
+  figures:
+  - id: knowledge-pipeline
+    decision: include
+    source_id: how-we-built-our-knowledge-base-e986baa0
+    asset_id: svg-001-2157c84f
+    caption: Cerebras Knowledge moves source material through distillation, embeddings, retrieval, fusion
+      and reranking, then answer synthesis with citations.
+    alt_text: A vertical architecture diagram traces source material through distillation, embeddings,
+      multiple retrieval paths, fusion, reranking and a cited answer.
+    anchor: __opener__
+    layout: evidence_band
+    criteria:
+    - important
+    - useful
+    - beautiful
+    rationale: The overview makes the article's complete information path legible before the reader encounters
+      its individual components.
+  - id: planner-tool-fanout
+    decision: include
+    source_id: how-we-built-our-knowledge-base-e986baa0
+    asset_id: svg-007-a8dd9756
+    caption: A planning pass fans one question out across specialized search tools before evidence normalization
+      and answer synthesis.
+    alt_text: A horizontal diagram shows a user query entering a planner, branching to several search
+      tools, then converging into normalized evidence and synthesis.
+    anchor: Planning and tool fan-out
+    layout: evidence_band
+    criteria:
+    - important
+    - useful
+    - cool
+    rationale: The diagram converts an abstract orchestration sequence into a memorable visual flow at
+      the exact point where the article introduces planning.
+  - id: mcp-web-ui-comparison
+    decision: include
+    source_id: how-we-built-our-knowledge-base-e986baa0
+    asset_id: svg-008-b42cddcd
+    caption: MCP exposes raw retrieval primitives to external clients; the web UI owns the complete planner–executor–synthesis
+      loop.
+    alt_text: A side-by-side architecture comparison contrasts direct MCP retrieval tools with the web
+      interface's integrated planning, execution and synthesis pipeline.
+    anchor: Web UI
+    layout: evidence_band
+    criteria:
+    - important
+    - useful
+    - beautiful
+    rationale: The comparison clarifies the most consequential interface distinction more efficiently
+      than another paragraph of prose.
+rights:
+  faithful_source_reprint: private_only_while_rights_unknown
+  public_release: blocked_pending_permission_or_applicable_exception
+closing_plates:
+- title: Systems in Motion
+  art_path: editions/002-unreleased/art/coda-convergence-v1.png
+- title: Intent, Preserved
+  art_path: editions/002-unreleased/art/coda-branches-v2.png
+- title: Signals Return
+  art_path: editions/002-unreleased/art/coda-return-v1.png

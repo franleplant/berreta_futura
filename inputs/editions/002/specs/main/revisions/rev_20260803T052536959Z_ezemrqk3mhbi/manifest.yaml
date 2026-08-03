@@ -1,0 +1,25 @@
+schema_version: 1
+revision_kind: edition_spec
+logical_id: main
+edition_id: "002"
+revision_id: rev_20260803T052536959Z_ezemrqk3mhbi
+created_at: 2026-08-03T05:25:36.959Z
+parent_revision_id: null
+migration_id: legacy-four-root-misc
+files:
+  - path: edition.yaml
+    media_type: application/yaml
+    sha256: sha256:f76c52e3125075cb0a7671ae93273d3a02b830790888a9bdcc56e082b9d7327e
+    size_bytes: 10733
+    legacy_source:
+      repositoryPath: editions/002-unreleased/edition.yaml
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 3ecead7ec23b58604e1de8a8fcbe1a7ab5519f28
+  - path: translations/es/edition.yaml
+    media_type: application/yaml
+    sha256: sha256:3331524fd1dbfbf82dcaa44a422a7051abebfd2e0f6fc52e0943c739c8ef6aa7
+    size_bytes: 9256
+    legacy_source:
+      repositoryPath: editions/002-unreleased/translations/es/edition.yaml
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: bcb6601548693d1b9584a95bb7f485914113460d
