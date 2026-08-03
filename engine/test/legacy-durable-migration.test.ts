@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { execFile as execFileCallback } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -11,6 +11,7 @@ import { stringify } from "yaml";
 
 import type { RevisionId } from "../contracts/index.ts";
 import {
+  durableRevisionRelativeDirectory,
   inputRevisionRelativeDirectory,
   materializeLegacyDurableMigrationBatch,
   type CompositionDocument,
@@ -36,6 +37,9 @@ const REVISIONS = {
   migrationPlan: "rev_20260802T200000002Z_iiiiiiiiiiii" as RevisionId,
   articleSuccessor: "rev_20260802T210000006Z_jjjjjjjjjjjj" as RevisionId,
   historicalComposition: "rev_20260802T210000007Z_kkkkkkkkkkkk" as RevisionId,
+  invalidImage: "rev_20260802T210000008Z_mmmmmmmmmmmm" as RevisionId,
+  firstAtomic: "rev_20260802T210000009Z_nnnnnnnnnnnn" as RevisionId,
+  secondAtomic: "rev_20260802T210000010Z_oooooooooooo" as RevisionId,
 } as const;
 
 const EDITION_REF: InputRevisionRef = {
@@ -174,6 +178,98 @@ test("v2 durable migration installs immutable bound Git blobs after source prefl
   }
 });
 
+test("v2 durable migration publishes nothing when a later payload is invalid", async () => {
+  const root = await fixture();
+  try {
+    const first = articleRef("en", REVISIONS.articleSuccessor);
+    const second = {
+      kind: "image",
+      editionId: "004",
+      logicalId: "invalid-image",
+      revisionId: REVISIONS.invalidImage,
+    } as const;
+    const plan = await batchPlan(root, {
+      entries: [{
+        ref: first,
+        createdAt: "2026-08-02T21:00:00.006Z",
+        parentRevisionId: null,
+        inputRevisions: [EDITION_REF, MIGRATION_PLAN_REF],
+        files: [{ sourcePath: "legacy/article-en.md", targetPath: "manuscript.md", mediaType: "text/markdown" }],
+      }, {
+        ref: second,
+        createdAt: "2026-08-02T21:00:00.008Z",
+        parentRevisionId: null,
+        inputRevisions: [EDITION_REF, MIGRATION_PLAN_REF],
+        files: [{ sourcePath: "legacy/invalid-image.bin", targetPath: "image.png", mediaType: "image/png" }],
+      }],
+      compositions: [],
+      sourcePaths: ["legacy/article-en.md", "legacy/invalid-image.bin"],
+    });
+    await assert.rejects(
+      materializeLegacyDurableMigrationBatch(root, join(root, ".magazine/work"), plan, new GitCliDurableGit(root)),
+      /does not match image\/png/u,
+    );
+    await assertMissing(join(root, "durable", durableRevisionRelativeDirectory(first)));
+    await assertMissing(join(root, "durable", durableRevisionRelativeDirectory(second)));
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("v2 durable migration rolls back earlier publications when a later rename fails", async () => {
+  const root = await fixture();
+  try {
+    const first = {
+      kind: "article",
+      editionId: "004",
+      logicalId: "first-atomic",
+      language: "en",
+      revisionId: REVISIONS.firstAtomic,
+    } as const;
+    const second = {
+      kind: "article",
+      editionId: "004",
+      logicalId: "second-atomic",
+      language: "en",
+      revisionId: REVISIONS.secondAtomic,
+    } as const;
+    const entries = [
+      {
+        ref: first,
+        createdAt: "2026-08-02T21:00:00.009Z",
+        parentRevisionId: null,
+        inputRevisions: [EDITION_REF, MIGRATION_PLAN_REF],
+        files: [{ sourcePath: "legacy/article-en.md", targetPath: "manuscript.md", mediaType: "text/markdown" }],
+      },
+      {
+        ref: second,
+        createdAt: "2026-08-02T21:00:00.010Z",
+        parentRevisionId: null,
+        inputRevisions: [EDITION_REF, MIGRATION_PLAN_REF],
+        files: [{ sourcePath: "legacy/article-es.md", targetPath: "manuscript.md", mediaType: "text/markdown" }],
+      },
+    ] as const;
+    const plan = await batchPlan(root, {
+      entries,
+      compositions: [],
+      sourcePaths: ["legacy/article-en.md", "legacy/article-es.md"],
+    });
+    const secondDestination = join(root, "durable", durableRevisionRelativeDirectory(second));
+    const blocker = join(secondDestination, "..");
+    await mkdir(join(blocker, ".."), { recursive: true });
+    await writeFile(blocker, "injected publish blocker\n");
+
+    await assert.rejects(
+      materializeLegacyDurableMigrationBatch(root, join(root, ".magazine/work"), plan, new GitCliDurableGit(root)),
+    );
+    await assertMissing(join(root, "durable", durableRevisionRelativeDirectory(first)));
+    await assertMissing(secondDestination);
+    assert.equal(await readFile(blocker, "utf8"), "injected publish blocker\n");
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test("v2 durable migration rejects an unrelated migration plan input", async () => {
   const root = await fixture();
   try {
@@ -272,6 +368,7 @@ async function fixture(): Promise<string> {
   await writeFile(join(root, "legacy/editorial-en.md"), "# Editorial EN\n");
   await writeFile(join(root, "legacy/editorial-es.md"), "# Editorial ES\n");
   await writeFile(join(root, "legacy/cover.png"), PNG);
+  await writeFile(join(root, "legacy/invalid-image.bin"), "not a png\n");
   await writeFile(join(root, "legacy/edition.yaml"), "edition_id: '004'\n");
   await writeInput(root, EDITION_REF, "edition.yaml", Buffer.from("edition_id: '004'\n"));
   await writeInput(root, MIGRATION_PLAN_REF, "inventory.yaml", Buffer.from("migration: legacy-four-root\n"));
@@ -312,6 +409,10 @@ async function commitAll(root: string, message: string): Promise<void> {
 
 async function git(root: string, args: readonly string[]): Promise<string> {
   return (await execFile("git", args, { cwd: root, encoding: "utf8" })).stdout;
+}
+
+async function assertMissing(path: string): Promise<void> {
+  await assert.rejects(access(path));
 }
 
 function historicalComposition(): HistoricalCompositionEntry {
