@@ -1,0 +1,39 @@
+schema_version: 1
+revision_kind: article
+edition_id: "004"
+revision_id: rev_20260803T052536960Z_2zmewqqn7nbu
+created_at: 2026-08-03T05:25:36.960Z
+parent_revision_id: rev_20260802T230000043Z_prf2suz5toh2
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/rerun-004-the-systems-around-the-model/translations/es/articles/frontier-lab-agent-intrusion.md
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: 1f90cfb4402dc397f10df818c9fc1e10bab84cbe
+    sha256: sha256:88845887a4b1c81d8d677fb6086d42855faa7b74219fe4fd9978de115d88fd79
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+  - kind: edition_spec
+    logicalId: legacy-rerun
+    editionId: "004"
+    revisionId: rev_20260803T052536960Z_ksnov6fgzlar
+  - kind: source_capture
+    logicalId: anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
+    revisionId: rev_20260802T230000000Z_k53nh5xeumpz
+  - kind: source_extraction
+    logicalId: anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
+    revisionId: rev_20260802T230000009Z_pnitcpinodrl
+files:
+  - path: manuscript.md
+    mediaType: text/markdown
+    sha256: sha256:88845887a4b1c81d8d677fb6086d42855faa7b74219fe4fd9978de115d88fd79
+    sizeBytes: 7997
+    legacySource:
+      repositoryPath: editions/rerun-004-the-systems-around-the-model/translations/es/articles/frontier-lab-agent-intrusion.md
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 1f90cfb4402dc397f10df818c9fc1e10bab84cbe
+logical_id: frontier-lab-agent-intrusion
+language: es

@@ -1,0 +1,28 @@
+schema_version: 1
+revision_kind: image
+edition_id: "004"
+revision_id: rev_20260803T052536960Z_gg6tlgqcs2ft
+created_at: 2026-08-03T05:25:36.960Z
+parent_revision_id: rev_20260803T052536960Z_6amifyv23ufz
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/rerun-004-the-systems-around-the-model/art/cover-proofs/round-3-art-directed.png
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: 718c9ee1c37e01e07ba0b703ba87f4caeb80004c
+    sha256: sha256:c06f6b2e0d4c0ef6f13dec5b696da7006e9eb894836c5ccf219e22ff46d3adbb
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+files:
+  - path: image.png
+    mediaType: image/png
+    sha256: sha256:c06f6b2e0d4c0ef6f13dec5b696da7006e9eb894836c5ccf219e22ff46d3adbb
+    sizeBytes: 527865
+    legacySource:
+      repositoryPath: editions/rerun-004-the-systems-around-the-model/art/cover-proofs/round-3-art-directed.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 718c9ee1c37e01e07ba0b703ba87f4caeb80004c
+logical_id: cover-proofs-round-3-art-directed

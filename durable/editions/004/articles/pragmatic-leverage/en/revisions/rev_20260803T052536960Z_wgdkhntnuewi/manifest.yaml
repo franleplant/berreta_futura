@@ -1,0 +1,39 @@
+schema_version: 1
+revision_kind: article
+edition_id: "004"
+revision_id: rev_20260803T052536960Z_wgdkhntnuewi
+created_at: 2026-08-03T05:25:36.960Z
+parent_revision_id: rev_20260802T230000038Z_gljpurhpz2a2
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/rerun-004-the-systems-around-the-model/articles/pragmatic-leverage.md
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: f43f8c46be9ac21005e1117c57965c1b5035822a
+    sha256: sha256:9a6972de2b89af2dec6fc135bdd3f888b5172968899dab9e59c9823fe5d66eec
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+  - kind: edition_spec
+    logicalId: legacy-rerun
+    editionId: "004"
+    revisionId: rev_20260803T052536960Z_ksnov6fgzlar
+  - kind: source_capture
+    logicalId: pragmatic-leverage-in-the-software-factory-09879736
+    revisionId: rev_20260802T230000002Z_fu55xgo3jx4a
+  - kind: source_extraction
+    logicalId: pragmatic-leverage-in-the-software-factory-09879736
+    revisionId: rev_20260802T230000011Z_tws2rukw26uc
+files:
+  - path: manuscript.md
+    mediaType: text/markdown
+    sha256: sha256:9a6972de2b89af2dec6fc135bdd3f888b5172968899dab9e59c9823fe5d66eec
+    sizeBytes: 2837
+    legacySource:
+      repositoryPath: editions/rerun-004-the-systems-around-the-model/articles/pragmatic-leverage.md
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: f43f8c46be9ac21005e1117c57965c1b5035822a
+logical_id: pragmatic-leverage
+language: en

@@ -1,0 +1,39 @@
+schema_version: 1
+revision_kind: article
+edition_id: "004"
+revision_id: rev_20260803T052536960Z_wp6jatjuixma
+created_at: 2026-08-03T05:25:36.960Z
+parent_revision_id: rev_20260802T230000049Z_gzkugvvimnai
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/rerun-004-the-systems-around-the-model/translations/es/articles/mcp-protocol-update.md
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: c8bc32821f7c344a84ffbea0968fb64ea6a4e115
+    sha256: sha256:71e8cd2d3a067f2457dd7daf15bf1efb86fb1ea98e7fc56adc4fba53baa9bad3
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+  - kind: edition_spec
+    logicalId: legacy-rerun
+    editionId: "004"
+    revisionId: rev_20260803T052536960Z_ksnov6fgzlar
+  - kind: source_capture
+    logicalId: the-2026-07-28-mcp-specification-release-candida-1a1752b8
+    revisionId: rev_20260802T230000005Z_d3jdf4sucrfp
+  - kind: source_extraction
+    logicalId: the-2026-07-28-mcp-specification-release-candida-1a1752b8
+    revisionId: rev_20260802T230000014Z_3eoxg74rsw6f
+files:
+  - path: manuscript.md
+    mediaType: text/markdown
+    sha256: sha256:71e8cd2d3a067f2457dd7daf15bf1efb86fb1ea98e7fc56adc4fba53baa9bad3
+    sizeBytes: 7643
+    legacySource:
+      repositoryPath: editions/rerun-004-the-systems-around-the-model/translations/es/articles/mcp-protocol-update.md
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: c8bc32821f7c344a84ffbea0968fb64ea6a4e115
+logical_id: mcp-protocol-update
+language: es
