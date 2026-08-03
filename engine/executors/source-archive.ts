@@ -1,4 +1,3 @@
-import { rm } from "node:fs/promises";
 import { extname } from "node:path";
 
 import { z } from "zod";
@@ -19,7 +18,7 @@ import {
   type SourceRequest,
 } from "../source-adapter/index.ts";
 import {
-  createAdapterWorkspace,
+  AdapterWorkspaceOwner,
   permanentAdapterError,
   readJsonArtifact,
   requireExactSequence,
@@ -53,13 +52,12 @@ export class SourceArchiveExecutor implements Executor {
   readonly worker: WorkerIdentity;
   readonly capabilities = ["subprocess", "source_access"] as const;
   private readonly adapter: SourceAdapter;
-  private readonly workDirectory: string;
-  private readonly attemptRoots = new Map<string, string>();
+  private readonly workspaces: AdapterWorkspaceOwner;
 
   constructor(adapter: SourceAdapter, options: SourceArchiveExecutorOptions) {
     this.adapter = adapter;
     this.id = options.id ?? "source-archive";
-    this.workDirectory = options.workDirectory;
+    this.workspaces = new AdapterWorkspaceOwner(options.workDirectory);
     this.worker = {
       principalId: options.principalId ?? this.id,
       authority: "tool",
@@ -102,11 +100,10 @@ export class SourceArchiveExecutor implements Executor {
       "source capture target paths",
     );
 
-    const workspace = await createAdapterWorkspace(
-      this.workDirectory,
+    const workspace = await this.workspaces.create(
+      context.claim.attemptId,
       `source-${context.claim.attemptId}`,
     );
-    this.attemptRoots.set(context.claim.attemptId, workspace.root);
     const files = await Promise.all(
       profile.files.map(async (file, index) => ({
         artifactId: file.artifactId,
@@ -234,12 +231,7 @@ export class SourceArchiveExecutor implements Executor {
   }
 
   async release(context: ExecutorContext): Promise<void> {
-    const root = this.attemptRoots.get(context.claim.attemptId);
-    if (root === undefined) {
-      return;
-    }
-    this.attemptRoots.delete(context.claim.attemptId);
-    await rm(root, { recursive: true, force: true });
+    await this.workspaces.release(context.claim.attemptId);
   }
 }
 

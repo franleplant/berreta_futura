@@ -17,7 +17,9 @@ import type {
 import { KNOWN_WORK_ROLES } from "../contracts/index.ts";
 import {
   ArticleMeasurementExecutor,
+  CompositionBootstrapExecutor,
   ConfiguredExecutorResolver,
+  DurableCheckpointExecutor,
   ImageModelExecutor,
   InMemoryExecutor,
   LanguageFitExecutor,
@@ -294,6 +296,78 @@ test("caller cancellation reaches the executor and commits a canceled attempt", 
   });
 });
 
+test("a canceled worker releases attempt resources before returning when execution never settles", async () => {
+  await withEngine("worker-cancel-release", 1_000, async (engine, runId) => {
+    let signalStarted: (() => void) | undefined;
+    const started = new Promise<void>((resolveStarted) => {
+      signalStarted = resolveStarted;
+    });
+    let releases = 0;
+    const executor: Executor = {
+      id: "never-settling-release",
+      worker: {
+        principalId: "never-settling-release",
+        authority: "tool",
+        capabilities: ["subprocess"],
+      },
+      capabilities: ["subprocess"],
+      accepts: (offer) => offer.role === "measure_article",
+      execute: async () => {
+        signalStarted?.();
+        return await new Promise<WorkAnswer>(() => undefined);
+      },
+      release: async () => {
+        releases += 1;
+      },
+    };
+    const controller = new AbortController();
+    const work = executeAvailableWork(engine, runId, [executor], controller.signal, {
+      heartbeatIntervalMs: 5,
+      attemptTimeoutMs: 500,
+    });
+    await started;
+    controller.abort();
+    const result = await work;
+    assert.equal(result.failed.length, 1, JSON.stringify(result));
+    assert.equal(releases, 1);
+  });
+});
+
+test("answered and failed workers release attempt resources before returning", async () => {
+  for (const outcome of ["answered", "failed"] as const) {
+    await withEngine(`worker-${outcome}-release`, 1_000, async (engine, runId) => {
+      let releases = 0;
+      const executor: Executor = {
+        id: `${outcome}-release`,
+        worker: {
+          principalId: `${outcome}-release`,
+          authority: "tool",
+          capabilities: ["subprocess"],
+        },
+        capabilities: ["subprocess"],
+        accepts: (offer) => offer.role === "measure_article",
+        execute: async ({ offer }) => {
+          if (outcome === "failed") {
+            throw new Error("fixture adapter failed after allocating resources");
+          }
+          return measurementAnswer(offer, "released-success");
+        },
+        release: async () => {
+          releases += 1;
+        },
+      };
+      const result = await executeAvailableWork(
+        engine,
+        runId,
+        [executor],
+        new AbortController().signal,
+      );
+      assert.equal(result[outcome].length, 1, JSON.stringify(result));
+      assert.equal(releases, 1);
+    });
+  }
+});
+
 test("an expired worker claim is reclaimed and the old answer stays fenced", async () => {
   const clock = new ManualClock();
   await withEngine("worker-death", 10_000, async (engine, runId) => {
@@ -417,6 +491,10 @@ test("every declared work role has one intentional execution owner", () => {
     new LanguageFitExecutor(rendererAdapter, { workDirectory: tmpdir() }),
     new RendererExecutor(rendererAdapter, { workDirectory: tmpdir() }),
     new RenderInspectionExecutor(),
+    new DurableCheckpointExecutor({
+      checkpoint: async () => ({ contractVersion: "durable-checkpoint/1", result: {}, artifacts: [] }),
+    }),
+    new CompositionBootstrapExecutor({ repositoryRoot: tmpdir() }),
   ];
   for (const role of KNOWN_WORK_ROLES) {
     const owner = WORK_ROLE_EXECUTION[role];

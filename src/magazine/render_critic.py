@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import math
 import re
 import shutil
@@ -14,7 +15,6 @@ from pypdf import PdfReader
 from .booklet import A4_LANDSCAPE_POINTS, imposed_reader_page_plan, section_reader_pages
 from .concurrency import ordered_map, worker_count
 from .errors import DependencyError
-from .render_review import visual_review_status
 
 
 RASTER_DPI = 144
@@ -811,7 +811,7 @@ def inspect_render(
             "pages": cover_booklet_rows,
         },
         "visual_review": {
-            **visual_review_status(
+            **_visual_review_status(
                 recorded_review,
                 edition_id=edition_id,
                 language=language,
@@ -847,6 +847,62 @@ def inspect_render(
         },
     }
     return report, review_artifacts
+
+
+def _visual_review_status(
+    review: dict[str, Any] | None,
+    *,
+    edition_id: str,
+    language: str,
+    reader_pdf: Path,
+    booklet_pdf: Path,
+) -> dict[str, Any]:
+    """Describe review freshness without reading or writing review authority.
+
+    The retained renderer receives no workflow review record.  This local
+    projection is retained only so its critic report tells the TypeScript
+    visual-review offer which exact bytes require inspection.
+    """
+
+    def digest(path: Path) -> str:
+        hasher = hashlib.sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                hasher.update(chunk)
+        return hasher.hexdigest()
+
+    status: dict[str, Any] = {
+        "status": "required_before_release",
+        "reviewer": None,
+        "reviewed_at": None,
+        "result": None,
+        "findings": [],
+        "reader_sha256": digest(reader_pdf),
+        "booklet_sha256": digest(booklet_pdf),
+    }
+    if review is None:
+        return status
+    row = review.get("languages", {}).get(language)
+    status.update(
+        {
+            "reviewer": review.get("reviewer"),
+            "reviewed_at": review.get("reviewed_at"),
+            "result": review.get("result"),
+            "findings": list(review.get("findings", [])),
+        }
+    )
+    if review.get("edition_id") != edition_id or not isinstance(row, dict):
+        status["status"] = "stale"
+    elif (
+        row.get("reader_sha256") != status["reader_sha256"]
+        or row.get("booklet_sha256") != status["booklet_sha256"]
+    ):
+        status["status"] = "stale"
+    elif review.get("result") == "approved":
+        status["status"] = "approved"
+    else:
+        status["status"] = "changes_required"
+    return status
 
 
 def _all_a4_landscape(document: PdfReader) -> bool:

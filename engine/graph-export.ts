@@ -96,6 +96,71 @@ export type MachineTopologyExport = {
 
 export type MagazineOrchestrationExport = MachineTopologyExport;
 
+export type StateMachineTopologyBundleFile = {
+  readonly path: string;
+  readonly mediaType: "application/json" | "image/png" | "image/svg+xml" | "text/html";
+  readonly bytes: Uint8Array;
+};
+
+export type StateMachineTopologyBundle = {
+  readonly topology: MachineTopologyExport;
+  readonly orchestration: MagazineOrchestrationExport;
+  readonly files: readonly StateMachineTopologyBundleFile[];
+};
+
+type EditionLifecycleBranch = {
+  readonly id: "production" | "bootstrap" | "migration";
+  readonly label: string;
+  readonly summary: string;
+  readonly states: readonly string[];
+};
+
+const editionLifecycleBranchDefinitions = [
+  {
+    id: "production",
+    label: "produce",
+    summary: "checkpoints -> composition -> fresh render -> QA/visual -> release",
+    states: [
+      "producing_articles",
+      "producing_editorial",
+      "edition_review",
+      "translating",
+      "assembling",
+      "composition_accepted_pending_durable",
+      "composition_durable_bound",
+      "rendering",
+      "awaiting_release_approval",
+      "released",
+    ],
+  },
+  {
+    id: "bootstrap",
+    label: "bootstrap",
+    summary: "verify composition -> fresh render -> QA/visual -> unreleased",
+    states: [
+      "verifying_bootstrap",
+      "composition_ready",
+      "rendering",
+      "bootstrap_render_approved",
+    ],
+  },
+  {
+    id: "migration",
+    label: "migration",
+    summary: "durable backfill -> composition -> reconciliation seam -> fresh QA",
+    states: [
+      "migration_durable_backfill",
+      "migration_waiting_durable_children",
+      "assembling",
+      "composition_accepted_pending_durable",
+      "composition_durable_bound",
+      "render_reconciliation",
+      "rendering",
+      "awaiting_release_approval",
+    ],
+  },
+] as const satisfies readonly EditionLifecycleBranch[];
+
 /**
  * Projects the actual XState machine configs. No parallel diagram definition
  * exists: states and transitions are read from the same machine objects the
@@ -138,22 +203,37 @@ export async function exportMachineTopology(): Promise<MachineTopologyExport> {
 
 export async function writeMachineTopology(destination: string): Promise<MachineTopologyExport> {
   const output = resolve(destination);
+  const bundle = await exportStateMachineTopologyBundle();
+  await mkdir(output, { recursive: true });
+  await Promise.all(bundle.files.map((file) => writeFile(resolve(output, file.path), file.bytes)));
+  return bundle.topology;
+}
+
+/**
+ * Produces the deterministic Node-only topology payloads without touching the
+ * filesystem. Review projections use these bytes inside their atomic staging
+ * directory, so topology files cannot escape or partially update an export.
+ */
+export async function exportStateMachineTopologyBundle(): Promise<StateMachineTopologyBundle> {
   const [topology, orchestration] = await Promise.all([
     exportMachineTopology(),
     exportMagazineOrchestration(),
   ]);
-  await mkdir(output, { recursive: true });
-  await Promise.all([
-    writeFile(resolve(output, "machine-topology.html"), topology.html),
-    writeFile(resolve(output, "machine-topology.svg"), topology.svg),
-    writeFile(resolve(output, "machine-topology.png"), topology.png),
-    writeFile(resolve(output, "machine-topology.json"), topology.json),
-    writeFile(resolve(output, "magazine-orchestration.html"), orchestration.html),
-    writeFile(resolve(output, "magazine-orchestration.svg"), orchestration.svg),
-    writeFile(resolve(output, "magazine-orchestration.png"), orchestration.png),
-    writeFile(resolve(output, "magazine-orchestration.json"), orchestration.json),
-  ]);
-  return topology;
+  const encoded = (value: string): Uint8Array => Buffer.from(value, "utf8");
+  return {
+    topology,
+    orchestration,
+    files: [
+      { path: "machine-topology.html", mediaType: "text/html", bytes: encoded(topology.html) },
+      { path: "machine-topology.svg", mediaType: "image/svg+xml", bytes: encoded(topology.svg) },
+      { path: "machine-topology.png", mediaType: "image/png", bytes: topology.png },
+      { path: "machine-topology.json", mediaType: "application/json", bytes: encoded(topology.json) },
+      { path: "magazine-orchestration.html", mediaType: "text/html", bytes: encoded(orchestration.html) },
+      { path: "magazine-orchestration.svg", mediaType: "image/svg+xml", bytes: encoded(orchestration.svg) },
+      { path: "magazine-orchestration.png", mediaType: "image/png", bytes: orchestration.png },
+      { path: "magazine-orchestration.json", mediaType: "application/json", bytes: encoded(orchestration.json) },
+    ],
+  };
 }
 
 /**
@@ -162,8 +242,14 @@ export async function writeMachineTopology(destination: string): Promise<Machine
  */
 export async function exportMagazineOrchestration(): Promise<MagazineOrchestrationExport> {
   const declaredEdges = runtimeOrchestrationEdges();
-  const nodeWidth = 250;
-  const nodeHeight = 82;
+  const editionBranches = projectEditionLifecycleBranches();
+  const nodeWidth = 500;
+  const childNodeHeight = 82;
+  const ownerNodeHeight = 150;
+  const nodeHeights = new Map<MachineKind, number>(editionOrchestration.machines.map((machine) => [
+    machine.kind,
+    machine.kind === "edition" ? ownerNodeHeight : childNodeHeight,
+  ]));
   const labels = new Map(declaredEdges.map((edge) => [edge.id, overviewEdgeLabel(edge)]));
   const result = await elk.layout({
     id: "magazine-orchestration",
@@ -183,7 +269,7 @@ export async function exportMagazineOrchestration(): Promise<MagazineOrchestrati
     children: editionOrchestration.machines.map((machine) => ({
       id: machine.kind,
       width: nodeWidth,
-      height: nodeHeight,
+      height: nodeHeights.get(machine.kind),
       layoutOptions: machine.kind === "edition"
         ? { "elk.layered.layering.layerConstraint": "FIRST" }
         : undefined,
@@ -210,17 +296,19 @@ export async function exportMagazineOrchestration(): Promise<MagazineOrchestrati
     width,
     height,
     nodeWidth,
-    nodeHeight,
+    nodeHeights,
     padding,
     positions,
     routed,
     declaredEdges,
     labels,
+    editionBranches,
   );
   const json = JSON.stringify({
     schemaVersion: 1,
     description: "Connected overview projected from runtime-enforced orchestration declarations.",
     lifecycleOwner: "edition",
+    editionBranches,
     machines: editionOrchestration.machines,
     declarations: {
       spawns: editionOrchestration.spawns,
@@ -231,6 +319,19 @@ export async function exportMagazineOrchestration(): Promise<MagazineOrchestrati
   }, null, 2) + "\n";
   const html = renderOrchestrationHtml(svg, json);
   return { html, svg, png: rasterizeSvg(svg, width), json };
+}
+
+function projectEditionLifecycleBranches(): readonly EditionLifecycleBranch[] {
+  const config = editionMachine.config as unknown as MachineConfig;
+  const states = new Set(Object.keys(config.states ?? {}));
+  for (const branch of editionLifecycleBranchDefinitions) {
+    for (const state of branch.states) {
+      if (!states.has(state)) {
+        throw new Error(`Edition lifecycle branch ${branch.id} names missing live state ${state}`);
+      }
+    }
+  }
+  return editionLifecycleBranchDefinitions;
 }
 
 async function layoutMachine(name: string, config: MachineConfig): Promise<{
@@ -357,7 +458,7 @@ function renderSvg(
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="title description">
 <title id="title">Magazine XState machine topology</title><desc id="description">Generated from the implemented XState machine configs.</desc>
 <style>text{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.group{fill:#f7f7fb;stroke:#b8bdd4;stroke-width:1.2}.machine{font-size:18px;font-weight:700;fill:#1e2450}.node{fill:#fff;stroke:#4a5aa7;stroke-width:1.4}.node.final{fill:#e7f8ed;stroke:#27854d}.state{font-size:13px;fill:#1b2040}.edge{fill:none;stroke:#6975aa;stroke-width:1.15}.event-bg{fill:#eef1ff;stroke:#c9d0f0;stroke-width:1}.event{font-size:11px;font-weight:600;fill:#46517f;text-anchor:middle}</style>
-<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#6975aa"/></marker></defs>${groupSvg}${edgePathSvg}${nodeSvg}${edgeLabelSvg}</svg>`;
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#6975aa"/></marker></defs><rect width="100%" height="100%" fill="#f5f7fc"/>${groupSvg}${edgePathSvg}${nodeSvg}${edgeLabelSvg}</svg>`;
 }
 
 function renderHtml(svg: string, json: string): string {
@@ -381,12 +482,13 @@ function renderOrchestrationSvg(
   width: number,
   height: number,
   nodeWidth: number,
-  nodeHeight: number,
+  nodeHeights: ReadonlyMap<MachineKind, number>,
   padding: number,
   positions: ReadonlyMap<string, ElkNode>,
   routed: ReadonlyMap<string, ElkEdge>,
   edges: readonly RuntimeOrchestrationEdge[],
   labels: ReadonlyMap<string, string>,
+  editionBranches: readonly EditionLifecycleBranch[],
 ): string {
   const edgePaths = edges.map((edge) => {
     const sections = routed.get(edge.id)?.sections;
@@ -407,7 +509,14 @@ function renderOrchestrationSvg(
     const x = position.x + padding;
     const y = position.y + padding;
     const owner = machine.kind === "edition";
-    return `<g class="machine-node ${owner ? "owner" : "child"}" data-machine="${machine.kind}"><rect x="${x}" y="${y}" width="${nodeWidth}" height="${nodeHeight}" rx="12"/><text class="machine-title" x="${x + 18}" y="${y + 30}">${escapeXml(machine.label)}</text><text class="machine-kind" x="${x + 18}" y="${y + 55}">${escapeXml(owner ? "lifecycle owner and durable router" : machine.responsibility)}</text></g>`;
+    const nodeHeight = nodeHeights.get(machine.kind);
+    if (nodeHeight === undefined) {
+      throw new Error(`No orchestration node height exists for ${machine.kind}`);
+    }
+    const branches = owner
+      ? editionBranches.map((branch, index) => `<text class="branch-line" data-branch="${branch.id}" x="${x + 18}" y="${y + 82 + index * 22}">${escapeXml(`${branch.label}: ${branch.summary}`)}</text>`).join("")
+      : "";
+    return `<g class="machine-node ${owner ? "owner" : "child"}" data-machine="${machine.kind}"><rect x="${x}" y="${y}" width="${nodeWidth}" height="${nodeHeight}" rx="12"/><text class="machine-title" x="${x + 18}" y="${y + 30}">${escapeXml(machine.label)}</text><text class="machine-kind" x="${x + 18}" y="${y + 55}">${escapeXml(owner ? "sole lifecycle owner and durable router" : machine.responsibility)}</text>${branches}</g>`;
   }).join("");
   const edgeLabels = edges.map((edge) => {
     const label = routed.get(edge.id)?.labels?.[0];
@@ -422,7 +531,7 @@ function renderOrchestrationSvg(
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="orchestration-title orchestration-description">
 <title id="orchestration-title">Magazine runtime orchestration</title><desc id="orchestration-description">EditionMachine owns spawning, durable status return, joins, and feedback routes across all ten machines.</desc>
-<style>text{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.machine-node rect{fill:#fff;stroke:#52618f;stroke-width:1.6}.machine-node.owner rect{fill:#1d2755;stroke:#101735;stroke-width:2.6}.machine-title{font-size:16px;font-weight:750;fill:#1a2142}.owner .machine-title{fill:#fff}.machine-kind{font-size:9.5px;fill:#657092}.owner .machine-kind{fill:#cfd7ff}.edge{fill:none;stroke-width:1.65;opacity:.9}.edge.spawn{stroke:#355fcb}.edge.completion{stroke:#58708e}.edge.join{stroke:#17845d;stroke-dasharray:7 4}.edge.route{stroke:#bd4c65;stroke-width:2}.edge-label rect{fill:#fff;stroke-width:1}.edge-label text{font-size:10px;font-weight:650;text-anchor:middle}.edge-label.spawn rect{stroke:#9bb4ef}.edge-label.completion rect{stroke:#aeb9c8}.edge-label.join rect{stroke:#7ec8ac}.edge-label.route rect{stroke:#e5a2b1}</style>
+<style>text{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.machine-node rect{fill:#fff;stroke:#52618f;stroke-width:1.6}.machine-node.owner rect{fill:#1d2755;stroke:#101735;stroke-width:2.6}.machine-title{font-size:16px;font-weight:750;fill:#1a2142}.owner .machine-title{fill:#fff}.machine-kind{font-size:9.5px;fill:#657092}.owner .machine-kind{fill:#cfd7ff}.branch-line{font-size:9.5px;fill:#fff}.edge{fill:none;stroke-width:1.65;opacity:.9}.edge.spawn{stroke:#355fcb}.edge.completion{stroke:#58708e}.edge.join{stroke:#17845d;stroke-dasharray:7 4}.edge.route{stroke:#bd4c65;stroke-width:2}.edge-label rect{fill:#fff;stroke-width:1}.edge-label text{font-size:10px;font-weight:650;text-anchor:middle}.edge-label.spawn rect{stroke:#9bb4ef}.edge-label.completion rect{stroke:#aeb9c8}.edge-label.join rect{stroke:#7ec8ac}.edge-label.route rect{stroke:#e5a2b1}</style>
 <defs>${(["spawn", "completion", "join", "route"] as const).map((kind) => `<marker id="arrow-${kind}" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="${kind === "spawn" ? "#355fcb" : kind === "completion" ? "#58708e" : kind === "join" ? "#17845d" : "#bd4c65"}"/></marker>`).join("")}</defs>
 <rect width="100%" height="100%" fill="#f5f7fc"/>${edgePaths}${nodes}${edgeLabels}</svg>`;
 }

@@ -1,4 +1,5 @@
 import type Database from "better-sqlite3";
+import { isDeepStrictEqual } from "node:util";
 
 import type {
   ActorId,
@@ -17,6 +18,8 @@ import type {
   JsonObject,
   JsonValue,
   RunId,
+  PromotionId,
+  RevisionId,
   RunInputChange,
   RunOutcome,
   RunSpec,
@@ -31,6 +34,8 @@ import type {
   WorkFailure,
   WorkOfferId,
 } from "../contracts/index.ts";
+import { newRevisionId } from "../durable/revision-id.ts";
+import type { DurableLogicalItem, InputRevisionRef } from "../durable/types.ts";
 import {
   assertRunSpecArtifactReferences,
   newId,
@@ -85,6 +90,15 @@ import type {
   RunEngineClock,
   RunEngineIdGenerator,
   RunEngineOptions,
+  MigrationPlan,
+  MigrationRequest,
+  MigrationActorPlan,
+  MachineBundleVersion,
+  PlanMigrationRequest,
+  RunIdentityView,
+  RunMigrationCheckpoint,
+  RunMigrationFence,
+  RunMigrationFenceRequest,
   StartRunOptions,
 } from "./types.ts";
 import {
@@ -106,6 +120,27 @@ const OUTBOX_RETRY_MAX_MS = 30_000;
 const MAX_TRANSITIONS_PER_ADVANCE = 10_000;
 const XSTATE_VERSION = "5.32.5";
 const MACHINE_CONTRACT_VERSION = "machine-runtime/1";
+
+/**
+ * Snapshot migrations are deliberately narrow. A version may be listed here
+ * only when restoring it under the replacement machine is observationally
+ * equivalent: same state, same context, and no entry/always effects. Changed
+ * work topology is not reconstructed by a metadata migration.
+ */
+export const machineBundleVersion = "graph-execution@2" as const;
+
+const MACHINE_BUNDLE_V1 = "graph-execution@1" as const;
+const MACHINE_BUNDLE_V2 = machineBundleVersion;
+
+const SNAPSHOT_MIGRATION_ALLOWLIST: Readonly<
+  Partial<Record<MachineKind, Readonly<Record<string, string>>>>
+> = {
+  article: { "article/2": "article/3" },
+  editorial: { "editorial/1": "editorial/2" },
+  cover_art: { "art/1": "art/2" },
+  interior_art: { "art/1": "art/2" },
+  edition: { "edition/2": "edition/3" },
+};
 
 const noFailpoints: FailpointController = { hit: () => undefined };
 const systemClock: RunEngineClock = { now: () => new Date() };
@@ -317,6 +352,7 @@ export class SqliteRunEngine implements RunEngine {
 
   async start(spec: RunSpec, options: StartRunOptions = {}): Promise<RunOutcome> {
     this.assertOpen();
+    this.assertNoMigrationFences();
     const validatedSpec = parseRunSpec(spec);
     assertRunSpecArtifactReferences(
       validatedSpec,
@@ -605,6 +641,7 @@ export class SqliteRunEngine implements RunEngine {
     const leaseExpiresAtMs = nowMs + this.workLeaseMs;
     const claim = immediateTransaction(this.db, () => {
       let offer = this.requireOffer(offerId);
+      this.requireMutableRun(offer.run_id);
       this.assertOfferMachineCurrent(offer);
       if (offer.run_sealed_at !== null) {
         throw new RunEngineError("RUN_SEALED", `Run ${offer.run_id} is sealed`);
@@ -726,6 +763,7 @@ export class SqliteRunEngine implements RunEngine {
     const expiresAtMs = nowMs + this.workLeaseMs;
     const renewed = immediateTransaction(this.db, () => {
       const offer = this.requireOffer(claim.offerId);
+      this.requireMutableRun(offer.run_id);
       this.assertOfferMachineCurrent(offer);
       const attempt = this.requireAttempt(claim.attemptId);
       if (!claimMatches(attempt, claim) || !isActiveClaim(offer, attempt, nowMs)) {
@@ -748,6 +786,7 @@ export class SqliteRunEngine implements RunEngine {
   async answer(claim: WorkClaim, answer: WorkAnswer): Promise<RunView> {
     this.assertOpen();
     const offerBeforeCopy = this.requireOffer(claim.offerId);
+    this.requireMutableRun(offerBeforeCopy.run_id);
     this.assertOfferMachineCurrent(offerBeforeCopy);
     const priorAttempt = this.requireAttempt(claim.attemptId);
     if (priorAttempt.status === "answered" && claimMatches(priorAttempt, claim)) {
@@ -765,6 +804,15 @@ export class SqliteRunEngine implements RunEngine {
       answer.result,
       answer.artifacts,
     );
+    const durableCheckpoint = offerBeforeCopy.role === "durable_checkpoint"
+      ? this.assertDurableCheckpointAnswer(offerBeforeCopy, answer)
+      : undefined;
+    if (offerBeforeCopy.role === "render_reconciliation") {
+      this.assertRenderReconciliationAnswer(offerBeforeCopy, answer);
+    }
+    const compositionBootstrap = offerBeforeCopy.role === "composition_bootstrap"
+      ? this.assertCompositionBootstrapAnswer(offerBeforeCopy, answer)
+      : undefined;
     this.assertExactHumanChoice(offerBeforeCopy, answer.result);
     const now = this.now();
     const provenance = this.offerProvenance(claim.offerId);
@@ -779,13 +827,38 @@ export class SqliteRunEngine implements RunEngine {
         artifactOperationId,
       ),
     );
+    const durableBound = durableCheckpoint === undefined
+      ? undefined
+      : this.prepareDurableRevisionBound(
+          claim,
+          offerBeforeCopy,
+          durableCheckpoint,
+          answer.result,
+          outputRecords,
+          now,
+          artifactOperationId,
+        );
+    const bootstrapBound = compositionBootstrap === undefined
+      ? undefined
+      : this.prepareCompositionBootstrapBound(
+          claim,
+          offerBeforeCopy,
+          answer.result,
+          outputRecords,
+          now,
+        );
+    const completedRecords = [
+      ...outputRecords,
+      ...(durableBound === undefined ? [] : [durableBound]),
+      ...(bootstrapBound === undefined ? [] : [bootstrapBound]),
+    ];
     const envelopeId = this.ids.next<ArtifactId>("art");
     const envelopePayload: ArtifactPayload = {
       kind: "json",
       value: {
         contractVersion: answer.contractVersion,
         result: answer.result,
-        artifactIds: outputRecords.map((record) => record.id),
+        artifactIds: completedRecords.map((record) => record.id),
         ...(answer.metadata === undefined ? {} : { metadata: answer.metadata }),
       },
     };
@@ -798,7 +871,7 @@ export class SqliteRunEngine implements RunEngine {
       payload: this.store.prepare(envelopeId, envelopePayload),
       parents: deduplicateParents([
         ...provenance,
-        ...outputRecords.map((record) => ({
+        ...completedRecords.map((record) => ({
           artifactId: record.id,
           relation: "answer_output",
         })),
@@ -811,7 +884,7 @@ export class SqliteRunEngine implements RunEngine {
       producingOfferId: claim.offerId,
       createdAt: now,
     };
-    const prepared = [...outputRecords, envelope];
+    const prepared = [...completedRecords, envelope];
     this.failpoints.hit("answer.after_artifact_rename", {
       offerId: claim.offerId,
       attemptId: claim.attemptId,
@@ -820,6 +893,7 @@ export class SqliteRunEngine implements RunEngine {
 
     const accepted = immediateTransaction(this.db, () => {
       const offer = this.requireOffer(claim.offerId);
+      this.requireMutableRun(offer.run_id);
       this.assertOfferMachineCurrent(offer);
       const attempt = this.requireAttempt(claim.attemptId);
       const active = claimMatches(attempt, claim) && isActiveClaim(offer, attempt, this.nowMs());
@@ -867,7 +941,7 @@ export class SqliteRunEngine implements RunEngine {
           slot: offer.slot,
           offerId: offer.id,
           taskArtifactId: offer.task_artifact_id,
-          artifacts: outputRecords.map((record) => ({
+          artifacts: completedRecords.map((record) => ({
             artifactId: record.id,
             kind: record.kind,
           })).concat({ artifactId: envelope.id, kind: envelope.kind }),
@@ -902,6 +976,7 @@ export class SqliteRunEngine implements RunEngine {
     const now = this.now();
     const result = immediateTransaction(this.db, () => {
       const offer = this.requireOffer(claim.offerId);
+      this.requireMutableRun(offer.run_id);
       this.assertOfferMachineCurrent(offer);
       const attempt = this.requireAttempt(claim.attemptId);
       if (!claimMatches(attempt, claim) || !isActiveClaim(offer, attempt, this.nowMs())) {
@@ -957,7 +1032,7 @@ export class SqliteRunEngine implements RunEngine {
     options: ForkRunOptions = {},
   ): Promise<RunOutcome> {
     this.assertOpen();
-    const parent = this.requireRun(runId);
+    const parent = this.requireMutableRun(runId);
     let specObject = parseJson<JsonObject>(parent.spec_json, `run ${runId} spec`);
     specObject = this.materializeCollectedEditionSpec(runId, specObject);
     const original = specObject as unknown as RunSpec;
@@ -1226,7 +1301,7 @@ export class SqliteRunEngine implements RunEngine {
     if (existing !== undefined) {
       return existing.artifact_id;
     }
-    const run = this.requireRun(runId);
+    const run = this.requireMutableRun(runId);
     this.assertMachineCurrent(run.machine_name, run.machine_version);
     if (!isTerminalStatus(run.status)) {
       throw new RunEngineError(
@@ -1258,7 +1333,7 @@ export class SqliteRunEngine implements RunEngine {
     };
     this.failpoints.hit("seal.after_artifact_rename", { runId, artifactId });
     immediateTransaction(this.db, () => {
-      const current = this.requireRun(runId);
+      const current = this.requireMutableRun(runId);
       this.assertMachineCurrent(current.machine_name, current.machine_version);
       if (current.head_sequence !== run.head_sequence || current.status !== run.status) {
         throw new RunEngineError(
@@ -1527,6 +1602,9 @@ export class SqliteRunEngine implements RunEngine {
       case "create_work_offer":
         this.applyCreateOffer(runId, eventId, effect, now);
         break;
+      case "open_durable_checkpoint":
+        this.applyOpenDurableCheckpoint(runId, eventId, effect, now);
+        break;
       case "spawn_actor": {
         if (payload.spawned === undefined) {
           throw new RunEngineError(
@@ -1653,6 +1731,9 @@ export class SqliteRunEngine implements RunEngine {
           producingActorId: actorId,
         };
         return { effect, artifacts: [record] };
+      }
+      if (effect.type === "open_durable_checkpoint") {
+        return { effect, artifacts: [] };
       }
       if (effect.type === "spawn_actor") {
         const childActorId = this.ids.next<ActorId>("actor");
@@ -1854,6 +1935,159 @@ export class SqliteRunEngine implements RunEngine {
         now,
       );
     });
+  }
+
+  private applyOpenDurableCheckpoint(
+    runId: RunId,
+    eventId: EventId,
+    effect: Extract<MachineEffect, { readonly type: "open_durable_checkpoint" }>,
+    now: string,
+  ): void {
+    const actor = this.requireActor(effect.actorId);
+    const accepted = this.requireArtifactRecord(effect.acceptedArtifactId);
+    // Reused work may legitimately retain an immutable accepted artifact from
+    // an ancestor run. The checkpoint request names that exact artifact and
+    // its new decision; it must never be copied or replaced merely to satisfy
+    // current-run ownership.
+    const inputArtifactIds = this.db.prepare(
+      `SELECT parent_artifact_id FROM artifact_edges
+       WHERE child_artifact_id = ? ORDER BY ordinal`,
+    ).all(accepted.id) as readonly { readonly parent_artifact_id: ArtifactId }[];
+    const decisionArtifactId = this.ensureDurableAcceptanceDecision(
+      runId,
+      eventId,
+      actor,
+      accepted.id,
+      now,
+    );
+    const promotionId = this.ids.next<PromotionId>("promotion");
+    const revisionId = newRevisionId(this.clock.now());
+    const taskArtifactId = this.ids.next<ArtifactId>("art");
+    const request = {
+      schemaVersion: "durable-checkpoint-request/1" as const,
+      promotionId,
+      revisionId,
+      runId,
+      logicalItem: effect.logicalItem,
+      expectedParentRevisionId: effect.expectedParentRevisionId ?? null,
+      acceptedArtifactIds: [accepted.id],
+      decisionArtifactIds: [decisionArtifactId],
+      inputRevisions: effect.inputRevisions ?? [],
+      inputArtifactIds: inputArtifactIds.map((row) => row.parent_artifact_id),
+    };
+    const task: ArtifactRecord = {
+      id: taskArtifactId,
+      kind: "durable_checkpoint_request",
+      schemaVersion: "durable-checkpoint-request/1",
+      mediaType: "application/json",
+      origin: "machine",
+      payload: this.store.prepare(taskArtifactId, { kind: "json", value: request }),
+      parents: deduplicateParents([
+        { artifactId: accepted.id, relation: "accepted_output" },
+        { artifactId: decisionArtifactId, relation: "accepted_decision" },
+        ...inputArtifactIds.map(({ parent_artifact_id }) => ({
+          artifactId: parent_artifact_id,
+          relation: "checkpoint_input",
+        })),
+      ]),
+      metadata: { promotionId, revisionId },
+      disposition: "accepted",
+      producingRunId: runId,
+      producingActorId: actor.id,
+      createdAt: now,
+    };
+    insertArtifactRecords(this.db, [task]);
+    this.applyCreateOffer(runId, eventId, {
+      type: "create_work_offer",
+      actorId: effect.actorId,
+      actorKey: effect.actorKey,
+      state: effect.state,
+      role: "durable_checkpoint",
+      slot: "durable_checkpoint",
+      subjectArtifactId: accepted.id,
+      revisionId,
+      inputArtifacts: [...new Set([
+        taskArtifactId,
+        accepted.id,
+        decisionArtifactId,
+        ...inputArtifactIds.map((row) => row.parent_artifact_id),
+      ])],
+      taskArtifactId,
+      contractVersion: "durable-checkpoint/1",
+      allowedWorkerCapabilities: ["subprocess"],
+    }, now);
+  }
+
+  private ensureDurableAcceptanceDecision(
+    runId: RunId,
+    eventId: EventId,
+    actor: ActorMutationRow,
+    acceptedArtifactId: ArtifactId,
+    now: string,
+  ): ArtifactId {
+    const decision = this.db.prepare(
+      `SELECT id, offer_id, choice, authority, artifact_id FROM decisions
+       WHERE run_id = ? AND actor_id = ? ORDER BY created_at DESC, id DESC LIMIT 1`,
+    ).get(runId, actor.id) as
+      | {
+          readonly id: DecisionId;
+          readonly offer_id: WorkOfferId | null;
+          readonly choice: string;
+          readonly authority: string;
+          readonly artifact_id: ArtifactId | null;
+        }
+      | undefined;
+    if (decision?.artifact_id !== null && decision?.artifact_id !== undefined) {
+      return decision.artifact_id;
+    }
+    const decisionId = this.ids.next<DecisionId>("decision");
+    const artifactId = this.ids.next<ArtifactId>("art");
+    const choice = decision?.choice ?? "accept";
+    const authority = decision?.authority ?? "machine";
+    const record: ArtifactRecord = {
+      id: artifactId,
+      kind: "durable_acceptance_decision",
+      schemaVersion: "durable-acceptance-decision/1",
+      mediaType: "application/json",
+      origin: "machine",
+      payload: this.store.prepare(artifactId, {
+        kind: "json",
+        value: {
+          decisionId,
+          offerId: decision?.offer_id ?? null,
+          choice,
+          authority,
+          acceptedArtifactId,
+        },
+      }),
+      parents: [{ artifactId: acceptedArtifactId, relation: "accepted_output" }],
+      metadata: { decisionId, choice, authority },
+      disposition: "accepted",
+      producingRunId: runId,
+      producingActorId: actor.id,
+      createdAt: now,
+    };
+    insertArtifactRecords(this.db, [record]);
+    this.db.prepare(
+      `INSERT INTO decisions(
+        id, run_id, actor_id, offer_id, subject_artifact_id, authority,
+        principal_id, choice, artifact_id, details_json, event_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      decisionId,
+      runId,
+      actor.id,
+      decision?.offer_id ?? null,
+      acceptedArtifactId,
+      authority,
+      `machine:${actor.id}`,
+      choice,
+      artifactId,
+      stringifyJson({ durableCheckpoint: true, sourceDecisionId: decision?.id ?? null }),
+      eventId,
+      now,
+    );
+    return artifactId;
   }
 
   private applyCreateOffer(
@@ -2508,6 +2742,35 @@ export class SqliteRunEngine implements RunEngine {
     }
   }
 
+  private supersedeRunOutstandingOffers(
+    runId: RunId,
+    eventId: EventId,
+    reason: string,
+    now: string,
+  ): void {
+    const offers = this.db.prepare(
+      `SELECT id, active_attempt_id FROM work_offers
+       WHERE run_id = ? AND status IN ('offered', 'claimed')`,
+    ).all(runId) as readonly {
+      readonly id: WorkOfferId;
+      readonly active_attempt_id: AttemptId | null;
+    }[];
+    for (const offer of offers) {
+      if (offer.active_attempt_id !== null) {
+        this.db.prepare(
+          `UPDATE attempts SET status = 'stale', finished_at = ?,
+             failure_classification = 'canceled', failure_message = ?
+           WHERE id = ? AND status = 'active'`,
+        ).run(now, reason, offer.active_attempt_id);
+      }
+      this.db.prepare(
+        `UPDATE work_offers SET status = 'superseded', active_attempt_id = NULL,
+           claim_fence = claim_fence + 1, canceled_event_id = ?, updated_at = ?
+         WHERE id = ? AND status IN ('offered', 'claimed')`,
+      ).run(eventId, now, offer.id);
+    }
+  }
+
   private applyCompleteActor(
     runId: RunId,
     eventId: EventId,
@@ -2817,6 +3080,346 @@ export class SqliteRunEngine implements RunEngine {
     return inspectRun(this.db, runId);
   }
 
+  async listRuns(): Promise<readonly RunIdentityView[]> {
+    this.assertOpen();
+    return (this.db.prepare(
+      `SELECT id, kind, status, machine_version, head_sequence, metadata_json, created_at, updated_at
+       FROM runs ORDER BY created_at, id`,
+    ).all() as readonly {
+      readonly id: RunId;
+      readonly kind: RunIdentityView["kind"];
+      readonly status: RunIdentityView["status"];
+      readonly machine_version: string;
+      readonly head_sequence: number;
+      readonly metadata_json: string;
+      readonly created_at: string;
+      readonly updated_at: string;
+    }[]).map((run) => ({
+      id: run.id,
+      kind: run.kind,
+      status: run.status,
+      machineVersion: run.machine_version,
+      headSequence: run.head_sequence,
+      metadata: parseJson<JsonObject>(run.metadata_json, `run ${run.id} metadata`),
+      createdAt: run.created_at,
+      updatedAt: run.updated_at,
+    }));
+  }
+
+  async acquireMigrationFence(
+    request: RunMigrationFenceRequest,
+  ): Promise<RunMigrationFence> {
+    this.assertOpen();
+    if (
+      !Number.isSafeInteger(request.expectedHeadSequence) ||
+      request.expectedHeadSequence < 1 ||
+      request.idempotencyKey.length < 1 ||
+      request.idempotencyKey.length > 500
+    ) {
+      throw new RunEngineError(
+        "MIGRATION_FENCE_INVALID",
+        "Migration fence requires a positive head sequence and a non-empty idempotency key",
+      );
+    }
+    return immediateTransaction(this.db, () => {
+      const existing = this.db.prepare(
+        `SELECT run_id, fence_id, expected_head_sequence, expected_head_event_id,
+                idempotency_key, acquired_at
+         FROM run_migration_fences WHERE run_id = ? OR idempotency_key = ?`,
+      ).get(request.runId, request.idempotencyKey) as {
+        readonly run_id: RunId;
+        readonly fence_id: string;
+        readonly expected_head_sequence: number;
+        readonly expected_head_event_id: EventId;
+        readonly idempotency_key: string;
+        readonly acquired_at: string;
+      } | undefined;
+      if (existing !== undefined) {
+        if (
+          existing.run_id !== request.runId ||
+          existing.expected_head_sequence !== request.expectedHeadSequence ||
+          existing.expected_head_event_id !== request.expectedHeadEventId ||
+          existing.idempotency_key !== request.idempotencyKey
+        ) {
+          throw new RunEngineError(
+            "MIGRATION_FENCE_CONFLICT",
+            `Run ${request.runId} already has a different migration fence`,
+          );
+        }
+        return migrationFenceFromRow(existing);
+      }
+
+      const run = this.requireRun(request.runId);
+      const head = this.db.prepare(
+        "SELECT id, sequence FROM events WHERE run_id = ? ORDER BY sequence DESC LIMIT 1",
+      ).get(request.runId) as {
+        readonly id: EventId;
+        readonly sequence: number;
+      } | undefined;
+      if (
+        run.head_sequence !== request.expectedHeadSequence ||
+        head?.sequence !== request.expectedHeadSequence ||
+        head?.id !== request.expectedHeadEventId
+      ) {
+        throw new RunEngineError(
+          "MIGRATION_FENCE_CAS_MISMATCH",
+          `Run ${request.runId} changed before its migration fence was acquired`,
+        );
+      }
+      const activeLease = this.db.prepare(
+        "SELECT 1 FROM run_leases WHERE run_id = ? AND expires_at_ms > ? LIMIT 1",
+      ).get(request.runId, this.nowMs());
+      const activeAttempt = this.db.prepare(
+        `SELECT 1 FROM attempts AS a
+         JOIN work_offers AS o ON o.id = a.offer_id
+         WHERE o.run_id = ? AND a.status = 'active' LIMIT 1`,
+      ).get(request.runId);
+      const activeOutbox = this.db.prepare(
+        "SELECT 1 FROM outbox WHERE run_id = ? AND status = 'claimed' LIMIT 1",
+      ).get(request.runId);
+      const activeArtifactWriter = this.db.prepare(
+        "SELECT 1 FROM artifact_write_intents LIMIT 1",
+      ).get();
+      if (
+        activeLease !== undefined ||
+        activeAttempt !== undefined ||
+        activeOutbox !== undefined ||
+        activeArtifactWriter !== undefined
+      ) {
+        throw new RunEngineError(
+          "MIGRATION_ACTIVE_WORK",
+          `Run ${request.runId} has an active coordinator, claim, outbox worker, or artifact writer`,
+        );
+      }
+      const fence: RunMigrationFence = {
+        schemaVersion: "run-migration-fence/1",
+        fenceId: this.ids.next<string>("migration-fence"),
+        ...request,
+        acquiredAt: this.now(),
+      };
+      this.db.prepare(
+        `INSERT INTO run_migration_fences(
+           run_id, fence_id, expected_head_sequence, expected_head_event_id,
+           idempotency_key, acquired_at
+         ) VALUES (?, ?, ?, ?, ?, ?)`,
+      ).run(
+        fence.runId,
+        fence.fenceId,
+        fence.expectedHeadSequence,
+        fence.expectedHeadEventId,
+        fence.idempotencyKey,
+        fence.acquiredAt,
+      );
+      return fence;
+    })();
+  }
+
+  async checkpointMigrationFence(
+    fence: RunMigrationFence,
+  ): Promise<RunMigrationCheckpoint> {
+    this.assertOpen();
+    this.requireMigrationFence(fence);
+    const rows = this.db.pragma("wal_checkpoint(TRUNCATE)") as readonly RunMigrationCheckpoint[];
+    const checkpoint = rows[0];
+    if (
+      checkpoint === undefined ||
+      checkpoint.busy !== 0 ||
+      checkpoint.log !== checkpoint.checkpointed
+    ) {
+      throw new RunEngineError(
+        "MIGRATION_WAL_BUSY",
+        `Run ${fence.runId} could not checkpoint every WAL frame under its migration fence`,
+      );
+    }
+    this.requireMigrationFence(fence);
+    return checkpoint;
+  }
+
+  async releaseMigrationFence(fence: RunMigrationFence): Promise<void> {
+    this.assertOpen();
+    immediateTransaction(this.db, () => {
+      this.requireMigrationFence(fence);
+      const released = this.db.prepare(
+        "DELETE FROM run_migration_fences WHERE run_id = ? AND fence_id = ?",
+      ).run(fence.runId, fence.fenceId);
+      if (released.changes !== 1) {
+        throw new RunEngineError(
+          "MIGRATION_FENCE_STALE",
+          `Migration fence ${fence.fenceId} is stale`,
+        );
+      }
+    })();
+  }
+
+  async planMigration(request: PlanMigrationRequest): Promise<MigrationPlan> {
+    this.assertOpen();
+    return this.buildMigrationPlan(request.runId, request.targetBundleVersion);
+  }
+
+  async migrate(request: MigrationRequest): Promise<MigrationPlan> {
+    this.assertOpen();
+    const { runId } = request;
+    return immediateTransaction(this.db, () => {
+      const existing = this.db.prepare(
+        `SELECT plan_json FROM run_migrations WHERE run_id = ? AND idempotency_key = ?`,
+      ).get(runId, request.idempotencyKey) as { readonly plan_json: string } | undefined;
+      if (existing !== undefined) {
+        return parseJson<MigrationPlan>(existing.plan_json, "stored migration plan");
+      }
+      const lease = this.db.prepare(
+        "SELECT expires_at_ms FROM run_leases WHERE run_id = ?",
+      ).get(runId) as { readonly expires_at_ms: number } | undefined;
+      if (lease !== undefined && lease.expires_at_ms > this.nowMs()) {
+        throw new RunEngineError(
+          "MIGRATION_RUN_LEASED",
+          `Run ${runId} has an active coordinator lease`,
+        );
+      }
+
+      // Rebuild inside the write transaction. This is both the final snapshot
+      // validation and the optimistic-concurrency boundary for a dry plan.
+      const plan = this.buildMigrationPlan(runId, request.targetBundleVersion);
+      if (
+        request.expectedFrom !== plan.expectedFrom ||
+        request.targetBundleVersion !== plan.targetBundleVersion ||
+        request.expectedHeadEventId !== plan.expectedHeadEventId
+      ) {
+        throw new RunEngineError(
+          "MIGRATION_CAS_MISMATCH",
+          `Migration ${request.migrationId} no longer matches the planned run head`,
+        );
+      }
+      if (request.migrationId.length === 0 || request.idempotencyKey.length === 0) {
+        throw new RunEngineError("MIGRATION_REQUEST_INVALID", "Migration IDs must be non-empty");
+      }
+      if (plan.actors.length === 0) {
+        throw new RunEngineError("MIGRATION_NOT_REQUIRED", `Run ${runId} is already v2`);
+      }
+      const run = this.requireMutableRun(runId);
+      const now = this.now();
+      const nowMs = this.nowMs();
+      let sequence = run.head_sequence;
+      let lastMigrationEventId: EventId | undefined;
+      for (const migration of plan.actors) {
+        const actor = this.requireActor(migration.actorId);
+        const stored = this.requireCurrentSnapshot(actor);
+        const storedSnapshot = parseJson<JsonMachineSnapshot>(
+          stored.snapshot_json,
+          `actor ${actor.id} snapshot`,
+        );
+        const snapshot = this.transformMigrationSnapshot(actor, storedSnapshot);
+        this.assertMigrationSnapshotEquivalent(actor, snapshot, migration, storedSnapshot);
+        ensureMachineVersion(this.db, migration.machine, migration.toVersion, now);
+        const eventId = this.ids.next<EventId>("event");
+        lastMigrationEventId = eventId;
+        const nextSnapshotNumber = actor.current_snapshot_number + 1;
+        sequence += 1;
+        insertSnapshotEvent(this.db, {
+          eventId,
+          runId,
+          sequence,
+          actorId: actor.id,
+          type: "@@engine/snapshot_version_migrated",
+          payload: {
+            type: "@@engine/snapshot_version_migrated",
+            fromVersion: migration.fromVersion,
+            toVersion: migration.toVersion,
+            backup: {
+              actorId: actor.id,
+              snapshotNumber: actor.current_snapshot_number,
+              machineVersion: actor.machine_version,
+            },
+          },
+          previousSnapshotNumber: actor.current_snapshot_number,
+          nextSnapshotNumber,
+          previousState: actor.current_state,
+          snapshot,
+          machineVersion: migration.toVersion,
+          causationEventId: null,
+          correlationId: `snapshot-migration:${actor.id}:${actor.current_snapshot_number}`,
+          inboxId: null,
+          now,
+        });
+        const visitId = this.openMigrationStateVisit(actor, snapshot, eventId, now);
+        this.db.prepare(
+          `UPDATE actors SET machine_version = ?, current_state = ?, current_context_json = ?,
+             current_snapshot_number = ?, current_visit_id = ?, status = 'active', updated_at = ?
+           WHERE id = ? AND machine_version = ? AND current_snapshot_number = ?`,
+        ).run(
+          migration.toVersion,
+          stateKey(snapshot.value),
+          stringifyJson(snapshot.context),
+          nextSnapshotNumber,
+          visitId,
+          now,
+          actor.id,
+          migration.fromVersion,
+          actor.current_snapshot_number,
+        );
+        enqueueInbox(this.db, {
+          id: this.ids.next<InboxId>("inbox"),
+          runId,
+          actorId: actor.id,
+          type: "MIGRATION_DURABLE_BACKFILL",
+          payload: { type: "MIGRATION_DURABLE_BACKFILL" },
+          idempotencyKey: `snapshot-migration-backfill:${request.migrationId}:${actor.id}`,
+          causationEventId: eventId,
+          correlationId: `snapshot-migration:${request.migrationId}`,
+          priority: -100,
+          availableAtMs: nowMs,
+          now,
+        });
+      }
+      if (lastMigrationEventId !== undefined) {
+        this.supersedeRunOutstandingOffers(
+          runId,
+          lastMigrationEventId,
+          "Superseded by the v1 to v2 durable migration; fresh reconciliation and approval are required",
+          now,
+        );
+      }
+      ensureMachineVersion(this.db, run.machine_name, currentMachineVersion(run.machine_name), now);
+      const updated = this.db.prepare(
+        `UPDATE runs SET machine_version = ?, head_sequence = ?, version = version + 1,
+           updated_at = ? WHERE id = ? AND machine_version = ? AND head_sequence = ?`,
+      ).run(
+        currentMachineVersion(run.machine_name),
+        sequence,
+        now,
+        runId,
+        run.machine_version,
+        run.head_sequence,
+      );
+      if (updated.changes !== 1) {
+        throw new RunEngineError(
+          "SNAPSHOT_MIGRATION_STALE",
+          `Run ${runId} changed while its snapshots were being migrated`,
+        );
+      }
+      this.db.prepare(
+        `INSERT INTO run_migrations(
+          migration_id, run_id, idempotency_key, expected_from,
+          target_bundle_version, expected_head_event_id, plan_json, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        request.migrationId,
+        runId,
+        request.idempotencyKey,
+        request.expectedFrom,
+        request.targetBundleVersion,
+        request.expectedHeadEventId,
+        stringifyJson(plan as unknown as JsonObject),
+        now,
+      );
+      this.failpoints.hit("snapshot_migration.before_commit", {
+        runId,
+        migrationCount: plan.actors.length,
+      });
+      this.reconcileRunStatus(runId, sequence, now);
+      return plan;
+    })();
+  }
+
   async readArtifact(artifactId: ArtifactId): Promise<ReadArtifactResult> {
     this.assertOpen();
     const row = this.db.prepare("SELECT * FROM artifacts WHERE id = ?").get(artifactId) as
@@ -2875,6 +3478,7 @@ export class SqliteRunEngine implements RunEngine {
   async collectOrphanedArtifacts(): Promise<readonly ArtifactId[]> {
     this.assertOpen();
     return immediateTransaction(this.db, () => {
+      this.assertNoMigrationFences();
       const nowMs = this.nowMs();
       const referenced = new Set(
         (this.db
@@ -2904,8 +3508,22 @@ export class SqliteRunEngine implements RunEngine {
 
   close(): void {
     if (!this.closed) {
-      this.db.close();
-      this.closed = true;
+      try {
+        const checkpoint = this.db.pragma("wal_checkpoint(TRUNCATE)") as readonly {
+          readonly busy: number;
+          readonly log: number;
+          readonly checkpointed: number;
+        }[];
+        if (checkpoint.some((result) => result.busy !== 0)) {
+          throw new RunEngineError(
+            "WAL_CHECKPOINT_BUSY",
+            "RunEngine could not checkpoint every WAL frame before close",
+          );
+        }
+      } finally {
+        this.db.close();
+        this.closed = true;
+      }
     }
   }
 
@@ -2916,6 +3534,7 @@ export class SqliteRunEngine implements RunEngine {
     onlyPrepare: readonly ArtifactSeed[] = spec.artifacts,
     startKey = operationStartKey(undefined, this.ids.next<string>("start")),
   ): RunId {
+    this.assertNoMigrationFences();
     const canonicalSpec = stableStringify(spec as unknown as JsonObject);
     const existingStart = this.loadRunStart(startKey);
     if (existingStart !== undefined) {
@@ -2958,6 +3577,7 @@ export class SqliteRunEngine implements RunEngine {
     let committedRunId = runId;
     let created = false;
     immediateTransaction(this.db, () => {
+      this.assertNoMigrationFences();
       const duplicate = this.loadRunStart(startKey);
       if (duplicate !== undefined) {
         assertSameStartRequest(startKey, canonicalSpec, duplicate.specJson);
@@ -3197,6 +3817,7 @@ export class SqliteRunEngine implements RunEngine {
     const now = this.now();
     const nowMs = this.nowMs();
     return immediateTransaction(this.db, () => {
+      this.assertNoMigrationFences();
       const existing = this.db
         .prepare(
           `SELECT holder_id, fence, expires_at_ms
@@ -3296,10 +3917,62 @@ export class SqliteRunEngine implements RunEngine {
 
   private requireMutableRun(runId: RunId): RunMutationRow {
     const run = this.requireRun(runId);
+    const fence = this.db.prepare(
+      "SELECT fence_id FROM run_migration_fences WHERE run_id = ?",
+    ).get(runId) as { readonly fence_id: string } | undefined;
+    if (fence !== undefined) {
+      throw new RunEngineError(
+        "RUN_MIGRATION_FENCED",
+        `Run ${runId} is fenced by migration ${fence.fence_id}`,
+      );
+    }
     if (run.sealed_at !== null) {
       throw new RunEngineError("RUN_SEALED", `Run ${runId} is sealed and immutable`);
     }
     return run;
+  }
+
+  private assertNoMigrationFences(): void {
+    const fence = this.db.prepare(
+      "SELECT run_id, fence_id FROM run_migration_fences ORDER BY acquired_at LIMIT 1",
+    ).get() as { readonly run_id: RunId; readonly fence_id: string } | undefined;
+    if (fence !== undefined) {
+      throw new RunEngineError(
+        "RUN_MIGRATION_FENCED",
+        `Run ${fence.run_id} is fenced by migration ${fence.fence_id}`,
+      );
+    }
+  }
+
+  private requireMigrationFence(fence: RunMigrationFence): void {
+    if (fence.schemaVersion !== "run-migration-fence/1") {
+      throw new RunEngineError("MIGRATION_FENCE_STALE", "Migration fence schema is invalid");
+    }
+    const stored = this.db.prepare(
+      `SELECT run_id, fence_id, expected_head_sequence, expected_head_event_id,
+              idempotency_key, acquired_at
+       FROM run_migration_fences WHERE run_id = ?`,
+    ).get(fence.runId) as {
+      readonly run_id: RunId;
+      readonly fence_id: string;
+      readonly expected_head_sequence: number;
+      readonly expected_head_event_id: EventId;
+      readonly idempotency_key: string;
+      readonly acquired_at: string;
+    } | undefined;
+    if (
+      stored === undefined ||
+      stored.fence_id !== fence.fenceId ||
+      stored.expected_head_sequence !== fence.expectedHeadSequence ||
+      stored.expected_head_event_id !== fence.expectedHeadEventId ||
+      stored.idempotency_key !== fence.idempotencyKey ||
+      stored.acquired_at !== fence.acquiredAt
+    ) {
+      throw new RunEngineError(
+        "MIGRATION_FENCE_STALE",
+        `Migration fence ${fence.fenceId} is stale`,
+      );
+    }
   }
 
   private assertRunSpecSourceProvenance(spec: RunSpec): void {
@@ -3650,6 +4323,232 @@ export class SqliteRunEngine implements RunEngine {
     return actor;
   }
 
+  private buildMigrationPlan(
+    runId: RunId,
+    targetBundleVersion: MachineBundleVersion,
+  ): MigrationPlan {
+    if (targetBundleVersion !== MACHINE_BUNDLE_V2) {
+      throw new RunEngineError(
+        "MIGRATION_TARGET_UNSUPPORTED",
+        `Only the adjacent ${MACHINE_BUNDLE_V1} to ${MACHINE_BUNDLE_V2} migration is registered`,
+      );
+    }
+    const run = this.requireRun(runId);
+    const actors = this.db.prepare(
+      `SELECT * FROM actors
+       WHERE run_id = ?
+       ORDER BY parent_actor_id IS NOT NULL, created_at, id`,
+    ).all(runId) as readonly ActorMutationRow[];
+    const root = actors.find((actor) => actor.parent_actor_id === null);
+    if (root === undefined) {
+      throw new RunEngineError(
+        "MIGRATION_ROOT_MISSING",
+        `Run ${runId} has no live root actor to migrate`,
+      );
+    }
+    if (
+      root.machine_name !== run.machine_name ||
+      root.machine_version !== run.machine_version
+    ) {
+      throw new RunEngineError(
+        "MIGRATION_INCONSISTENT",
+        `Run ${runId} and root actor ${root.id} do not name the same machine version`,
+      );
+    }
+
+    const migrations: MigrationActorPlan[] = [];
+    for (const actor of actors) {
+      const targetVersion = currentMachineVersion(actor.machine_name);
+      if (actor.machine_version === targetVersion) {
+        continue;
+      }
+      const allowedTarget = SNAPSHOT_MIGRATION_ALLOWLIST[actor.machine_name]?.[
+        actor.machine_version
+      ];
+      if (allowedTarget !== targetVersion) {
+        throw new RunEngineError(
+          "MIGRATION_UNSUPPORTED",
+          `No approved snapshot migration exists for ${actor.machine_name} ${actor.machine_version}`,
+        );
+      }
+      const stored = this.requireCurrentSnapshot(actor);
+      if (stored.machine_version !== actor.machine_version) {
+        throw new RunEngineError(
+          "MIGRATION_INCONSISTENT",
+          `Actor ${actor.id} version ${actor.machine_version} disagrees with snapshot ${stored.machine_version}`,
+        );
+      }
+      const snapshot = parseJson<JsonMachineSnapshot>(
+        stored.snapshot_json,
+        `actor ${actor.id} snapshot`,
+      );
+      this.assertMigrationSnapshotEquivalent(actor, this.transformMigrationSnapshot(actor, snapshot), {
+        actorId: actor.id,
+        machine: actor.machine_name,
+        fromVersion: actor.machine_version,
+        toVersion: targetVersion,
+        snapshotNumber: actor.current_snapshot_number,
+        state: actor.current_state,
+      }, snapshot);
+      migrations.push({
+        actorId: actor.id,
+        machine: actor.machine_name,
+        fromVersion: actor.machine_version,
+        toVersion: targetVersion,
+        snapshotNumber: actor.current_snapshot_number,
+        state: actor.current_state,
+      });
+    }
+
+    const targetRunVersion = currentMachineVersion(run.machine_name);
+    const rootMigration = migrations.find((migration) => migration.actorId === root.id);
+    if (run.machine_version !== targetRunVersion && rootMigration === undefined) {
+      throw new RunEngineError(
+        "MIGRATION_INCONSISTENT",
+        `Run ${runId} needs ${targetRunVersion}, but its root snapshot is not migratable`,
+      );
+    }
+    const head = this.db.prepare(
+      "SELECT id FROM events WHERE run_id = ? AND sequence = ?",
+    ).get(runId, run.head_sequence) as { readonly id: EventId } | undefined;
+    if (head === undefined) {
+      throw new RunEngineError("MIGRATION_INCONSISTENT", `Run ${runId} has no head event`);
+    }
+    return {
+      runId,
+      expectedFrom: machineBundleFor(run.machine_name, run.machine_version),
+      targetBundleVersion,
+      expectedHeadEventId: head.id,
+      actors: migrations,
+    };
+  }
+
+  private requireCurrentSnapshot(actor: ActorMutationRow): {
+    readonly machine_version: string;
+    readonly snapshot_json: string;
+  } {
+    const stored = this.db.prepare(
+      `SELECT machine_version, snapshot_json FROM actor_snapshots
+       WHERE actor_id = ? AND snapshot_number = ?`,
+    ).get(actor.id, actor.current_snapshot_number) as
+      | { readonly machine_version: string; readonly snapshot_json: string }
+      | undefined;
+    if (stored === undefined) {
+      throw new RunEngineError(
+        "SNAPSHOT_MISSING",
+        `Actor ${actor.id} snapshot ${actor.current_snapshot_number} is missing`,
+      );
+    }
+    return stored;
+  }
+
+  private assertMigrationSnapshotEquivalent(
+    actor: ActorMutationRow,
+    retainedSnapshot: JsonMachineSnapshot,
+    migration: MigrationActorPlan,
+    backupSnapshot: JsonMachineSnapshot = retainedSnapshot,
+  ): void {
+    if (
+      stateKey(backupSnapshot.value) !== actor.current_state ||
+      stableStringify(backupSnapshot.context) !== stableStringify(parseJson<JsonObject>(
+        actor.current_context_json,
+        `actor ${actor.id} context`,
+      ))
+    ) {
+      throw new RunEngineError(
+        "MIGRATION_INCONSISTENT",
+        `Actor ${actor.id} current state does not match its stored snapshot`,
+      );
+    }
+    let preview: MachineTransitionResult;
+    try {
+      preview = transitionSnapshotFor(actor.machine_name, retainedSnapshot, {
+        type: "@@engine/snapshot_migration_validate",
+      });
+    } catch (error) {
+      throw new RunEngineError(
+        "MIGRATION_INVALID",
+        `Actor ${actor.id} cannot restore as ${migration.toVersion}`,
+        { cause: error },
+      );
+    }
+    if (
+      preview.effects.length > 0 ||
+      stateKey(preview.snapshot.value) !== stateKey(retainedSnapshot.value) ||
+      stableStringify(preview.snapshot.context) !== stableStringify(retainedSnapshot.context)
+    ) {
+      throw new RunEngineError(
+        "MIGRATION_INVALID",
+        `Actor ${actor.id} ${migration.fromVersion} is not observationally equivalent to ${migration.toVersion}`,
+      );
+    }
+  }
+
+  private openMigrationStateVisit(
+    actor: ActorMutationRow,
+    snapshot: JsonMachineSnapshot,
+    eventId: EventId,
+    now: string,
+  ): StateVisitId {
+    this.db.prepare(
+      "UPDATE state_visits SET exited_event_id = ? WHERE id = ? AND exited_event_id IS NULL",
+    ).run(eventId, actor.current_visit_id);
+    const visitId = this.ids.next<StateVisitId>("visit");
+    const visitNumber = (
+      this.db
+        .prepare("SELECT COALESCE(MAX(visit_number), 0) + 1 AS value FROM state_visits WHERE actor_id = ?")
+        .get(actor.id) as { readonly value: number }
+    ).value;
+    this.db.prepare(
+      `INSERT INTO state_visits(
+        id, actor_id, state_key, visit_number, entered_event_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?)`,
+    ).run(visitId, actor.id, stateKey(snapshot.value), visitNumber, eventId, now);
+    return visitId;
+  }
+
+  private transformMigrationSnapshot(
+    actor: ActorMutationRow,
+    snapshot: JsonMachineSnapshot,
+  ): JsonMachineSnapshot {
+    const state = stateKey(snapshot.value);
+    const targetState =
+      (actor.machine_name === "article" || actor.machine_name === "editorial") && state === "settled"
+        ? "accepted_pending_durable"
+        : (actor.machine_name === "cover_art" || actor.machine_name === "interior_art") &&
+            state === "registered"
+          ? "accepted_pending_durable"
+          : actor.machine_name === "edition" && state === "awaiting_release_approval"
+            ? "migration_durable_backfill"
+            : state;
+    if (targetState === state) return snapshot;
+    if (actor.machine_name !== "edition" || targetState !== "migration_durable_backfill") {
+      return { ...snapshot, value: targetState };
+    }
+    const children = jsonObject(snapshot.context.children, `edition ${actor.id} migration children`);
+    const resetChildren = Object.fromEntries(Object.entries(children).map(([key, value]) => {
+      if (!(key === "editorial" || key.startsWith("article:") || key.startsWith("art:"))) {
+        return [key, value];
+      }
+      const child = jsonObject(value, `edition ${actor.id} migration child ${key}`);
+      return [key, { ...child, status: "active", outputs: [], result: {} }];
+    }));
+    const {
+      compositionBoundRevisionId: _oldCompositionRevision,
+      compositionDurableRevisionArtifact: _oldCompositionArtifact,
+      ...retainedContext
+    } = snapshot.context;
+    return {
+      ...snapshot,
+      value: targetState,
+      context: {
+        ...retainedContext,
+        children: resetChildren,
+        migrationBackfill: true,
+      },
+    };
+  }
+
   private requireOffer(offerId: WorkOfferId): OfferClaimRow {
     const offer = this.db
       .prepare(
@@ -3690,6 +4589,12 @@ export class SqliteRunEngine implements RunEngine {
   private assertMachineCurrent(machine: MachineKind, storedVersion: string): void {
     const current = currentMachineVersion(machine);
     if (current !== storedVersion) {
+      if (SNAPSHOT_MIGRATION_ALLOWLIST[machine]?.[storedVersion] === current) {
+        throw new RunEngineError(
+          "MIGRATION_REQUIRED",
+          `Stored ${machine} machine version ${storedVersion} must migrate to ${current} before authority can advance`,
+        );
+      }
       throw new MachineVersionError(
         `Stored ${machine} machine version ${storedVersion} cannot run as ${current}`,
       );
@@ -3807,6 +4712,224 @@ export class SqliteRunEngine implements RunEngine {
     };
   }
 
+  private assertDurableCheckpointAnswer(
+    offer: OfferClaimRow,
+    answer: WorkAnswer,
+  ): JsonObject {
+    const task = this.requireArtifactRecord(offer.task_artifact_id);
+    if (
+      task.kind !== "durable_checkpoint_request" ||
+      task.schema_version !== "durable-checkpoint-request/1"
+    ) {
+      throw new RunEngineError(
+        "DURABLE_CHECKPOINT_REQUEST_MISSING",
+        `Offer ${offer.id} has no immutable durable checkpoint request`,
+      );
+    }
+    const request = jsonObject(
+      JSON.parse(this.readStoredArtifactBytes(task).toString("utf8")) as unknown,
+      `durable checkpoint request ${task.id}`,
+    );
+    const exactKeys = [
+      "promotionId",
+      "revisionId",
+      "logicalItem",
+      "expectedParentRevisionId",
+    ] as const;
+    for (const key of exactKeys) {
+      if (!isDeepStrictEqual(answer.result[key], request[key])) {
+        throw new RunEngineError(
+          "DURABLE_INTEGRITY_CONFLICT",
+          `Durable checkpoint answer for ${offer.id} does not match request ${key}`,
+        );
+      }
+    }
+    const evidence = answer.artifacts.find((artifact) =>
+      artifact.kind === "durable_revision_evidence" &&
+      artifact.mediaType === "application/json" &&
+      artifact.payload.kind === "json"
+    );
+    if (evidence === undefined || evidence.payload.kind !== "json") {
+      throw new RunEngineError(
+        "DURABLE_INTEGRITY_CONFLICT",
+        `Durable checkpoint answer for ${offer.id} has no JSON evidence`,
+      );
+    }
+    const evidenceValue = jsonObject(evidence.payload.value, "durable checkpoint evidence");
+    if (!isDeepStrictEqual(answer.result, evidenceValue)) {
+      const withoutPath = { ...evidenceValue };
+      delete withoutPath.revisionPath;
+      if (!isDeepStrictEqual(answer.result, withoutPath)) {
+        throw new RunEngineError(
+          "DURABLE_INTEGRITY_CONFLICT",
+          `Durable checkpoint evidence for ${offer.id} does not equal its answer`,
+        );
+      }
+    }
+    return request;
+  }
+
+  private assertRenderReconciliationAnswer(offer: OfferClaimRow, answer: WorkAnswer): void {
+    const task = this.requireArtifactRecord(offer.task_artifact_id);
+    const request = parseJson<JsonObject>(
+      this.readStoredArtifactBytes(task).toString("utf8"),
+      `render reconciliation task ${offer.task_artifact_id}`,
+    );
+    if (answer.result.choice !== "adopt") return;
+    const exact = (key: string, expected: unknown): boolean =>
+      isDeepStrictEqual(answer.result[key], expected);
+    const required = [
+      ["compositionRevisionArtifactId", request.subjectArtifactId],
+      ["renderArtifactIds", request.legacyRenderArtifactIds],
+      ["rendererVersion", request.rendererVersion],
+      ["contentArtifactIds", request.contentArtifactIds],
+      ["layoutArtifactIds", request.layoutArtifactIds],
+      ["languages", request.languages],
+    ] as const;
+    if (required.some(([key, expected]) => !exact(key, expected))) {
+      throw new RunEngineError(
+        "RENDER_RECONCILIATION_MISMATCH",
+        "Render adoption proof does not exactly match its immutable composition request",
+      );
+    }
+    const digests = answer.result.outputDigests;
+    if (digests === null || typeof digests !== "object" || Array.isArray(digests)) {
+      throw new RunEngineError("RENDER_RECONCILIATION_MISMATCH", "Render adoption has no digest proof");
+    }
+    const digestRecord = digests as JsonObject;
+    for (const artifactId of request.legacyRenderArtifactIds as readonly string[]) {
+      const artifact = this.requireArtifactRecord(artifactId as ArtifactId);
+      const metadata = parseJson<JsonObject>(artifact.metadata_json, `artifact ${artifact.id} metadata`);
+      if (typeof metadata.sha256 !== "string" || digestRecord[artifactId] !== metadata.sha256) {
+        throw new RunEngineError(
+          "RENDER_RECONCILIATION_MISMATCH",
+          `Render adoption digest does not bind ${artifactId}`,
+        );
+      }
+    }
+  }
+
+  private assertCompositionBootstrapAnswer(offer: OfferClaimRow, answer: WorkAnswer): JsonObject {
+    const task = this.requireArtifactRecord(offer.task_artifact_id);
+    const request = parseJson<JsonObject>(
+      this.readStoredArtifactBytes(task).toString("utf8"),
+      `composition bootstrap task ${offer.task_artifact_id}`,
+    );
+    if (!isDeepStrictEqual(answer.result.bootstrapRevision, request.bootstrapRevision)) {
+      throw new RunEngineError(
+        "COMPOSITION_BOOTSTRAP_MISMATCH",
+        "Bootstrap answer does not name the exact immutable bootstrap revision",
+      );
+    }
+    if (answer.result.imageGenerationAllowed !== false) {
+      throw new RunEngineError(
+        "COMPOSITION_BOOTSTRAP_MISMATCH",
+        "Bootstrap composition may not generate images",
+      );
+    }
+    const evidence = answer.artifacts.find((artifact) => artifact.kind === "composition_bootstrap_evidence");
+    if (evidence?.payload.kind !== "json" || !isDeepStrictEqual(evidence.payload.value, answer.result)) {
+      throw new RunEngineError(
+        "COMPOSITION_BOOTSTRAP_MISMATCH",
+        "Bootstrap evidence must exactly equal its answer result",
+      );
+    }
+    return request;
+  }
+
+  private prepareCompositionBootstrapBound(
+    claim: WorkClaim,
+    offer: OfferClaimRow,
+    result: JsonObject,
+    records: readonly ArtifactRecord[],
+    now: string,
+  ): ArtifactRecord {
+    const evidence = records.find((record) => record.kind === "composition_bootstrap_evidence");
+    if (evidence === undefined) {
+      throw new RunEngineError("COMPOSITION_BOOTSTRAP_MISMATCH", "Bootstrap evidence was not prepared");
+    }
+    const artifactId = this.ids.next<ArtifactId>("art");
+    return {
+      id: artifactId,
+      kind: "composition_revision_bound",
+      schemaVersion: "composition-bootstrap-bound/1",
+      mediaType: "application/json",
+      origin: "machine",
+      payload: this.store.prepare(artifactId, { kind: "json", value: result }),
+      parents: [
+        { artifactId: offer.task_artifact_id, relation: "bootstrap_task" },
+        { artifactId: evidence.id, relation: "bootstrap_evidence" },
+      ],
+      metadata: { offerId: offer.id, attemptId: claim.attemptId },
+      disposition: "accepted",
+      producingRunId: offer.run_id,
+      producingActorId: offer.actor_id,
+      producingAttemptId: claim.attemptId,
+      producingOfferId: offer.id,
+      createdAt: now,
+    };
+  }
+
+  private prepareDurableRevisionBound(
+    claim: WorkClaim,
+    offer: OfferClaimRow,
+    request: JsonObject,
+    result: JsonObject,
+    outputs: readonly ArtifactRecord[],
+    now: string,
+    artifactOperationId: string,
+  ): ArtifactRecord {
+    const evidence = outputs.find((artifact) => artifact.kind === "durable_revision_evidence");
+    if (evidence === undefined) {
+      throw new RunEngineError("DURABLE_INTEGRITY_CONFLICT", "checkpoint evidence was not prepared");
+    }
+    const id = this.ids.next<ArtifactId>("art");
+    return {
+      id,
+      kind: "durable_revision_bound",
+      schemaVersion: "durable-revision-bound/1",
+      mediaType: "application/json",
+      origin: "machine",
+      payload: this.prepareOwnedPayload(id, {
+        kind: "json",
+        value: {
+          ...request,
+          revisionRef: result.revisionRef,
+          manifestDigest: result.manifestDigest,
+          gitCommitOid: result.gitCommitOid,
+          gitBlobOids: result.gitBlobOids,
+          evidenceArtifactId: evidence.id,
+        } as unknown as JsonObject,
+      }, artifactOperationId),
+      parents: deduplicateParents([
+        { artifactId: offer.task_artifact_id, relation: "checkpoint_request" },
+        { artifactId: evidence.id, relation: "checkpoint_evidence" },
+        ...(request.acceptedArtifactIds as readonly ArtifactId[]).map((artifactId) => ({
+          artifactId,
+          relation: "accepted_output",
+        })),
+        ...(request.decisionArtifactIds as readonly ArtifactId[]).map((artifactId) => ({
+          artifactId,
+          relation: "accepted_decision",
+        })),
+        ...(request.inputArtifactIds as readonly ArtifactId[]).map((artifactId) => ({
+          artifactId,
+          relation: "checkpoint_input",
+        })),
+      ]),
+      metadata: {
+        promotionId: request.promotionId ?? null,
+        revisionId: request.revisionId ?? null,
+      },
+      disposition: "accepted",
+      producingRunId: offer.run_id,
+      producingActorId: offer.actor_id,
+      producingAttemptId: claim.attemptId,
+      producingOfferId: claim.offerId,
+      createdAt: now,
+    };
+  }
+
   private expireAttempt(offer: OfferClaimRow, attempt: AttemptClaimRow, now: string): void {
     this.db.prepare(
       `UPDATE attempts SET status = 'timed_out', finished_at = ?,
@@ -3854,7 +4977,7 @@ export class SqliteRunEngine implements RunEngine {
       .get(runId) as ActorMutationRow | undefined;
     if (
       actor === undefined ||
-      actor.current_state !== "settled" ||
+      (actor.current_state !== "durable_bound" && actor.current_state !== "settled") ||
       (actor.status !== "accepting" && actor.status !== "done")
     ) {
       throw new RunEngineError(
@@ -3925,6 +5048,16 @@ export class SqliteRunEngine implements RunEngine {
       throw new RunEngineError("RUN_NOT_FOUND", `Run ${runId} does not exist`);
     }
     return run;
+  }
+
+  private requireArtifactRecord(artifactId: ArtifactId): StoredArtifactRow {
+    const artifact = this.db.prepare("SELECT * FROM artifacts WHERE id = ?").get(artifactId) as
+      | StoredArtifactRow
+      | undefined;
+    if (artifact === undefined) {
+      throw new RunEngineError("ARTIFACT_NOT_FOUND", `Artifact ${artifactId} does not exist`);
+    }
+    return artifact;
   }
 }
 
@@ -4338,6 +5471,22 @@ function ensureMachineVersion(
   );
 }
 
+function machineBundleFor(
+  machine: MachineKind,
+  version: string,
+): MachineBundleVersion {
+  if (version === currentMachineVersion(machine)) {
+    return MACHINE_BUNDLE_V2;
+  }
+  if (SNAPSHOT_MIGRATION_ALLOWLIST[machine]?.[version] !== undefined) {
+    return MACHINE_BUNDLE_V1;
+  }
+  throw new RunEngineError(
+    "MIGRATION_UNSUPPORTED",
+    `Machine ${machine} version ${version} is outside the adjacent v1 to v2 migration registry`,
+  );
+}
+
 function exposureClass(
   capabilities: readonly WorkerCapability[],
 ): "source_aware" | "source_blind" | undefined {
@@ -4368,6 +5517,25 @@ function claimMatches(attempt: AttemptClaimRow, claim: WorkClaim): boolean {
     attempt.worker_capabilities_json === stringifyJson([...claim.worker.capabilities].sort()) &&
     attempt.worker_display_name === (claim.worker.displayName ?? null)
   );
+}
+
+function migrationFenceFromRow(row: {
+  readonly run_id: RunId;
+  readonly fence_id: string;
+  readonly expected_head_sequence: number;
+  readonly expected_head_event_id: EventId;
+  readonly idempotency_key: string;
+  readonly acquired_at: string;
+}): RunMigrationFence {
+  return {
+    schemaVersion: "run-migration-fence/1",
+    runId: row.run_id,
+    fenceId: row.fence_id,
+    expectedHeadSequence: row.expected_head_sequence,
+    expectedHeadEventId: row.expected_head_event_id,
+    idempotencyKey: row.idempotency_key,
+    acquiredAt: row.acquired_at,
+  };
 }
 
 function isActiveClaim(

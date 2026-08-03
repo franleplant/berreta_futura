@@ -313,7 +313,15 @@ describe("EditorialMachine", () => {
       artifacts: [{ kind: "editorial_manuscript", artifactId: artifactId("editorial-v1") }],
       result: {},
     });
-    state(result, "settled");
+    state(result, "accepted_pending_durable");
+    assert.equal(effectsOfType(result, "open_durable_checkpoint").length, 1);
+    result = editorialTransition(result.snapshot, {
+      type: "WORK_COMPLETED",
+      slot: "durable_checkpoint",
+      artifacts: [{ kind: "durable_revision_bound", artifactId: artifactId("editorial-bound-v1") }],
+      result: {},
+    });
+    state(result, "durable_bound");
     assert.equal(effectsOfType(result, "complete_actor")[0]?.outputs[0], "editorial-v1");
 
     result = editorialTransition(result.snapshot, {
@@ -437,8 +445,15 @@ describe("ArtMachine", () => {
       const transition = role === "cover" ? coverArtTransition : interiorArtTransition;
       let result = initial(artInput(role, { artifactId: registered }));
       result = transition(result.snapshot, { type: "START" });
-      state(result, "registered");
-      assertNoOffer(result);
+      state(result, "accepted_pending_durable");
+      assert.equal(effectsOfType(result, "open_durable_checkpoint").length, 1);
+      result = transition(result.snapshot, {
+        type: "WORK_COMPLETED",
+        slot: "durable_checkpoint",
+        artifacts: [{ kind: "durable_revision_bound", artifactId: artifactId(`${role}-bound`) }],
+        result: {},
+      });
+      state(result, "durable_bound");
       const completion = effectsOfType(result, "complete_actor");
       assert.equal(completion.length, 1);
       assert.deepEqual(completion[0]?.outputs, [registered]);
@@ -496,8 +511,15 @@ describe("ArtMachine", () => {
       artifacts: [{ kind: "art_selection", artifactId: artifactId("selection-current") }],
       result: { choice: "select", selectedArtifactId: "cover-candidate-3" },
     });
-    state(result, "registered");
-    assert.deepEqual(effectsOfType(result, "complete_actor")[0]?.outputs, ["cover-candidate-3"]);
+    state(result, "accepted_pending_durable");
+    assert.equal(effectsOfType(result, "open_durable_checkpoint").length, 1);
+    result = coverArtTransition(result.snapshot, {
+      type: "WORK_COMPLETED",
+      slot: "durable_checkpoint",
+      artifacts: [{ kind: "durable_revision_bound", artifactId: artifactId("cover-bound-current") }],
+      result: {},
+    });
+    state(result, "durable_bound");
 
     result = coverArtTransition(result.snapshot, {
       type: "REVISION_REQUESTED",

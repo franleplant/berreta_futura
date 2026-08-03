@@ -1,6 +1,6 @@
 import type Database from "better-sqlite3";
 
-export const RUN_ENGINE_SCHEMA_VERSION = 7;
+export const RUN_ENGINE_SCHEMA_VERSION = 8;
 
 const SCHEMA = String.raw`
 CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -55,6 +55,27 @@ CREATE TABLE IF NOT EXISTS run_starts (
   run_id TEXT NOT NULL UNIQUE REFERENCES runs(id),
   spec_json TEXT NOT NULL CHECK (json_valid(spec_json)),
   created_at TEXT NOT NULL
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS run_migrations (
+  migration_id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL REFERENCES runs(id),
+  idempotency_key TEXT NOT NULL,
+  expected_from TEXT NOT NULL,
+  target_bundle_version TEXT NOT NULL,
+  expected_head_event_id TEXT NOT NULL REFERENCES events(id),
+  plan_json TEXT NOT NULL CHECK (json_valid(plan_json)),
+  created_at TEXT NOT NULL,
+  UNIQUE (run_id, idempotency_key)
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS run_migration_fences (
+  run_id TEXT PRIMARY KEY REFERENCES runs(id),
+  fence_id TEXT NOT NULL UNIQUE,
+  expected_head_sequence INTEGER NOT NULL CHECK (expected_head_sequence >= 0),
+  expected_head_event_id TEXT NOT NULL REFERENCES events(id),
+  idempotency_key TEXT NOT NULL UNIQUE,
+  acquired_at TEXT NOT NULL
 ) STRICT;
 
 CREATE TABLE IF NOT EXISTS edition_source_submissions (
@@ -441,6 +462,7 @@ const IMMUTABLE_TABLES = [
   "released_source_assignments",
   "released_source_identities",
   "releases",
+  "run_migrations",
   "run_starts",
   "sealed_exports",
   "transition_effects",

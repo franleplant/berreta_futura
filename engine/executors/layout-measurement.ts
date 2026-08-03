@@ -1,5 +1,3 @@
-import { rm } from "node:fs/promises";
-
 import { z } from "zod";
 
 import type {
@@ -20,7 +18,7 @@ import {
   type RendererAdapter,
 } from "../renderer-adapter/index.ts";
 import {
-  createAdapterWorkspace,
+  AdapterWorkspaceOwner,
   permanentAdapterError,
   readJsonArtifact,
   requireExactSequence,
@@ -75,8 +73,7 @@ abstract class RendererMeasurementExecutor implements Executor {
   readonly worker: WorkerIdentity;
   readonly capabilities = ["subprocess"] as const;
   protected readonly adapter: RendererAdapter;
-  protected readonly workDirectory: string;
-  private readonly attemptRoots = new Map<string, string>();
+  private readonly workspaces: AdapterWorkspaceOwner;
 
   protected constructor(
     adapter: RendererAdapter,
@@ -85,7 +82,7 @@ abstract class RendererMeasurementExecutor implements Executor {
     displayName: string,
   ) {
     this.adapter = adapter;
-    this.workDirectory = workDirectory;
+    this.workspaces = new AdapterWorkspaceOwner(workDirectory);
     this.worker = {
       principalId,
       authority: "tool",
@@ -107,11 +104,10 @@ abstract class RendererMeasurementExecutor implements Executor {
     readonly layouts: readonly LanguageLayout[];
     readonly inputArtifactIds: readonly ArtifactId[];
   }> {
-    const workspace = await createAdapterWorkspace(
-      this.workDirectory,
+    const workspace = await this.workspaces.create(
+      context.claim.attemptId,
       `${operation}-${context.claim.attemptId}`,
     );
-    this.attemptRoots.set(context.claim.attemptId, workspace.root);
     const inputs = await Promise.all(profile.inputs.map(async (input, index) => ({
       artifactId: input.artifactId,
       sourcePath: await stageArtifact(
@@ -174,12 +170,7 @@ abstract class RendererMeasurementExecutor implements Executor {
   }
 
   async release(context: ExecutorContext): Promise<void> {
-    const root = this.attemptRoots.get(context.claim.attemptId);
-    if (root === undefined) {
-      return;
-    }
-    this.attemptRoots.delete(context.claim.attemptId);
-    await rm(root, { recursive: true, force: true });
+    await this.workspaces.release(context.claim.attemptId);
   }
 }
 

@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 
 import {
+  editionInputRevisionReferences,
   parseRunSpec,
   RunSpecReferenceError,
   type ArticleRootRunSpec,
@@ -185,6 +186,7 @@ test("an edition may begin collection with no sources", async (t) => {
     artifacts: ids.map((artifactId) => seed(artifactId, "fixture")),
     edition: {
       editionId: "empty-collection",
+      execution: { kind: "produce" },
       editionBrief: brief,
       planningArtifact: plan,
       sources: [],
@@ -217,4 +219,71 @@ test("an edition may begin collection with no sources", async (t) => {
   assert.equal(started.status, "waiting");
   const view = await engine.inspect(started.runId);
   assert.equal(view.offers[0]?.role, "close_collection");
+});
+
+test("EditionRunSpec makes production and committed-composition execution explicit", () => {
+  const produce = parseRunSpec({
+    schemaVersion: 1,
+    kind: "edition",
+    artifacts: [],
+    edition: {
+      editionId: "bootstrap-contract",
+      execution: { kind: "produce" },
+      editionBrief: "brief",
+      sources: [],
+      articles: [],
+      editorial: {
+        editorialId: "opening",
+        briefArtifact: "editorial-brief",
+        writingRules: "rules",
+        modelPolicy: { default: { adapter: "test", model: "test" } },
+      },
+      translations: [],
+      art: [],
+      render: {
+        renderManifestArtifact: "render",
+        rendererContractVersion: "render/1",
+        configuredLanguages: ["en"],
+        studioPolicy: "not_applicable",
+      },
+      release: {
+        publicationArtifact: "publication",
+        sourceArtifacts: [],
+        dryRun: true,
+        target: "private",
+      },
+      modelPolicy: { default: { adapter: "test", model: "test" } },
+    },
+  });
+  assert.equal(produce.kind, "edition");
+  assert.equal(produce.edition.execution.kind, "produce");
+
+  const bootstrap = parseRunSpec({
+    ...produce,
+    edition: {
+      ...produce.edition,
+      execution: {
+        kind: "bootstrap_composition",
+        bootstrapRevision: {
+          kind: "run_bootstrap",
+          editionId: "004",
+          logicalId: "run-bootstrap",
+          revisionId: "rev_20260802T200641636Z_aaaaaaaaaaaa",
+        },
+        postRender: "stop_unreleased",
+      },
+    },
+  });
+  assert.equal(bootstrap.kind, "edition");
+  assert.equal(bootstrap.edition.execution.kind, "bootstrap_composition");
+  assert.deepEqual(editionInputRevisionReferences(bootstrap.edition), [{
+    kind: "run_bootstrap",
+    editionId: "004",
+    logicalId: "run-bootstrap",
+    revisionId: "rev_20260802T200641636Z_aaaaaaaaaaaa",
+  }]);
+  assert.throws(() => parseRunSpec({
+    ...produce,
+    edition: { ...produce.edition, execution: { kind: "bootstrap_composition" } },
+  }));
 });

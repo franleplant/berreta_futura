@@ -1,4 +1,13 @@
-import { lstat, mkdir, mkdtemp, realpath, writeFile } from "node:fs/promises";
+import {
+  lstat,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  realpath,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 
 import type { ArtifactId } from "../contracts/index.ts";
@@ -12,23 +21,102 @@ export type AdapterWorkspace = {
   readonly requestPath: string;
 };
 
+const WORKSPACE_MARKER = ".magazine-adapter-workspace.json";
+const WORKSPACE_SCHEMA_VERSION = "adapter-workspace/1";
+
+export class AdapterWorkspaceOwner {
+  private readonly workRoot: string;
+  private readonly attempts = new Map<string, AdapterWorkspace>();
+
+  constructor(workRoot: string) {
+    this.workRoot = workRoot;
+  }
+
+  async create(
+    attemptId: string,
+    prefix: string,
+  ): Promise<AdapterWorkspace> {
+    if (this.attempts.has(attemptId)) {
+      throw new Error(`adapter attempt ${attemptId} already owns scratch`);
+    }
+    const workspace = await createAdapterWorkspace(this.workRoot, prefix);
+    this.attempts.set(attemptId, workspace);
+    return workspace;
+  }
+
+  async release(attemptId: string): Promise<void> {
+    const workspace = this.attempts.get(attemptId);
+    if (workspace === undefined) {
+      return;
+    }
+    await rm(workspace.root, {
+      recursive: true,
+      force: true,
+      maxRetries: 3,
+      retryDelay: 20,
+    });
+    this.attempts.delete(attemptId);
+  }
+}
+
 export async function createAdapterWorkspace(
   workRoot: string,
   prefix: string,
 ): Promise<AdapterWorkspace> {
   const ownedRoot = resolve(workRoot);
   await mkdir(ownedRoot, { recursive: true, mode: 0o700 });
+  await scavengeAdapterWorkspaces(ownedRoot);
   const root = await mkdtemp(join(ownedRoot, `${prefix}-`));
-  const inputRoot = join(root, "inputs");
-  const outputRoot = join(root, "output");
-  await mkdir(inputRoot, { mode: 0o700 });
-  await mkdir(outputRoot, { mode: 0o700 });
-  return {
-    root,
-    inputRoot,
-    outputRoot,
-    requestPath: join(root, "request.json"),
-  };
+  try {
+    await writeFile(
+      join(root, WORKSPACE_MARKER),
+      JSON.stringify({ schemaVersion: WORKSPACE_SCHEMA_VERSION, ownerPid: process.pid }),
+      { encoding: "utf8", mode: 0o600 },
+    );
+    const inputRoot = join(root, "inputs");
+    const outputRoot = join(root, "output");
+    await mkdir(inputRoot, { mode: 0o700 });
+    await mkdir(outputRoot, { mode: 0o700 });
+    return {
+      root,
+      inputRoot,
+      outputRoot,
+      requestPath: join(root, "request.json"),
+    };
+  } catch (error) {
+    await rm(root, { recursive: true, force: true });
+    throw error;
+  }
+}
+
+export async function scavengeAdapterWorkspaces(workRoot: string): Promise<readonly string[]> {
+  const ownedRoot = resolve(workRoot);
+  await mkdir(ownedRoot, { recursive: true, mode: 0o700 });
+  const removed: string[] = [];
+  for (const entry of await readdir(ownedRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory() || entry.isSymbolicLink()) {
+      continue;
+    }
+    const root = join(ownedRoot, entry.name);
+    const markerPath = join(root, WORKSPACE_MARKER);
+    let markerMetadata;
+    let marker: unknown;
+    try {
+      markerMetadata = await lstat(markerPath);
+      if (!markerMetadata.isFile() || markerMetadata.isSymbolicLink()) {
+        continue;
+      }
+      marker = JSON.parse(await readFile(markerPath, "utf8"));
+    } catch {
+      continue;
+    }
+    if (!isWorkspaceMarker(marker) || processIsAlive(marker.ownerPid)) {
+      continue;
+    }
+    await rm(root, { recursive: true, force: true });
+    removed.push(root);
+  }
+  return removed;
 }
 
 export async function stageArtifact(
@@ -134,4 +222,26 @@ function isContainedRelation(value: string): boolean {
     !value.startsWith(`..${sep}`) &&
     !isAbsolute(value)
   );
+}
+
+function isWorkspaceMarker(
+  value: unknown,
+): value is { readonly schemaVersion: typeof WORKSPACE_SCHEMA_VERSION; readonly ownerPid: number } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    (value as { readonly schemaVersion?: unknown }).schemaVersion === WORKSPACE_SCHEMA_VERSION &&
+    Number.isSafeInteger((value as { readonly ownerPid?: unknown }).ownerPid) &&
+    ((value as { readonly ownerPid: number }).ownerPid > 0)
+  );
+}
+
+function processIsAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code !== "ESRCH";
+  }
 }

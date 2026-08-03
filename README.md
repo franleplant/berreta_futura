@@ -1,7 +1,8 @@
 # Magazine execution engine
 
 This repository builds private-first, source-faithful magazine editions through
-one durable TypeScript and XState workflow.
+one TypeScript and XState execution engine. It is the sole workflow,
+orchestration, state, validation, and export authority.
 
 The root `EditionMachine` owns collection, source preparation, planning, English
 article and editorial work, art, edition review, translation, assembly, render,
@@ -10,8 +11,8 @@ a standalone root for fast prompt and model experiments.
 
 `RunEngine` is the public execution boundary. SQLite stores ordered events,
 snapshots, offers, attempts, leases, human decisions, immutable artifact lineage,
-and atomic release state. Callers do not inspect run directories, reconstruct
-state, or send events to live actors.
+validation, and export state. Callers do not inspect run directories,
+reconstruct state, or send events to live actors.
 
 ## Setup and verification
 
@@ -23,20 +24,51 @@ npm run verify:engine
 ```
 
 Routine verification is Node-only. It type-checks the engine, runs the public
-engine tests, and builds the viewer. The retained Edition 4 bridge check is
-explicit and opt-in:
+engine tests, and builds the viewer. Do not run Python tests or a legacy Python
+CLI. When rendering is needed, the TypeScript worker invokes the isolated Python
+renderer seam with an immutable manifest and a caller-owned destination.
 
-```sh
-npm run test:legacy-bridge
-```
+## Repository roots
 
-That integration reuses Edition 4's committed art and never generates images.
+Two Git-tracked roots hold immutable, reviewable revisions:
+
+- `inputs/` contains source evidence, source extractions, edition specifications,
+  prompts, policies, and run bootstrap revisions.
+- `durable/` contains promoted article, editorial, image, and composition
+  revisions.
+
+Two ignored roots hold disposable operational material:
+
+- `.magazine/` holds each run's SQLite database, engine artifact store, leases,
+  staging, and worker scratch space.
+- `output/` holds ephemeral exported files. It is never an input to workflow
+  state or validation.
+
+For edition `004`, the engine gives every run one name in the form
+`<UTC timestamp>--<RunId>`. Its runtime root is
+`.magazine/004/<UTC timestamp>--<RunId>`; a permitted export is written to the
+matching `output/004/<UTC timestamp>--<RunId>` root.
+
+### Engine artifacts and durable revisions
+
+An `EngineArtifact` is a `RunEngine` artifact: immutable, scoped to its run,
+and linked to the offer, attempt, and parent artifacts that produced it. A
+`DurableRevision` is a separately immutable, Git-bound revision under
+`durable/`, promoted from accepted engine artifacts. The two identities answer
+different questions and must not be substituted for each other.
+
+A `CompositionRevision` is the deliberate selector between them. Its composition
+document pins the exact article, editorial, image, and layout-input revisions
+for one edition. It may mix and match compatible immutable revisions from prior
+work, including revisions produced by different runs. The explicit pins and Git
+binding decide what is composed; neither timestamps, matching bytes, nor a
+directory scan do.
 
 ## Durable CLI
 
-Every command uses the same engine database and artifact repository. The default
-locations are under ignored `runs/` paths and may be overridden with `--db` and
-`--artifacts`.
+Every command uses the same engine database and artifact repository. Runtime
+storage belongs below ignored `.magazine/`; callers may use `--db` and
+`--artifacts` only to select an explicit engine-owned runtime location.
 
 ```sh
 # Start an article or edition from a strict immutable run specification.
@@ -97,9 +129,11 @@ second execution path.
   promotion.
 - `engine/view/` is a read projection plus revision-safe human inbox.
 
-The retained Python tree is legacy implementation, not workflow authority. It
-stays only until its removal is explicitly requested. New orchestration,
-contracts, tests, and contributor workflows belong in the TypeScript engine.
+The old Python pipeline, Python CLI, Python tests, and Python source bridge are
+deleted. The remaining Python package implements only the versioned PDF/web
+renderer adapter, launched by the TypeScript worker with an immutable manifest
+and caller-owned destination. New orchestration, contracts, tests, and
+contributor workflows belong in the TypeScript engine.
 
 See [engine/README.md](engine/README.md) for worker configuration and adapter
 details, and [meta/plans/graph-execution-model.md](meta/plans/graph-execution-model.md)

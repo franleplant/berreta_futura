@@ -4,8 +4,13 @@ import type {
   ArtifactId,
   JsonObject,
   RegisteredArtSpec,
+  RevisionId,
   WorkOfferId,
 } from "../contracts/index.ts";
+import {
+  durableCheckpointOffer,
+  durableRevisionArtifact,
+} from "./durable-checkpoint.ts";
 import {
   emitEffects,
   initialMachineTransition,
@@ -16,7 +21,7 @@ import {
 } from "./runtime.ts";
 import { humanDecisionOffer } from "./human-decision.ts";
 
-export const artMachineVersion = "art/1";
+export const artMachineVersion = "art/2";
 export const coverArtMachineVersion = artMachineVersion;
 export const interiorArtMachineVersion = artMachineVersion;
 const coverImageContractVersion = "cover-image/1";
@@ -28,6 +33,7 @@ export type ArtMachineInput = MachineInputBase & {
 };
 
 export type ArtMachineContext = MachineInputBase & {
+  readonly editionId: string | undefined;
   readonly key: string;
   readonly role: "cover" | "interior";
   readonly briefArtifact: ArtifactId;
@@ -36,6 +42,9 @@ export type ArtMachineContext = MachineInputBase & {
   registeredArtifact: ArtifactId | undefined;
   candidates: readonly ArtifactId[];
   revision: number;
+  boundRevisionId: RevisionId | undefined;
+  durableRevisionArtifact: ArtifactId | undefined;
+  selectionDecisionArtifact: ArtifactId | undefined;
   selectionRequestOrdinal: number;
   lastFailure: string | undefined;
 };
@@ -47,16 +56,17 @@ type CompletedArtifact = {
 
 export type ArtMachineEvent =
   | { readonly type: "START" }
+  | { readonly type: "MIGRATION_DURABLE_BACKFILL" }
   | {
       readonly type: "WORK_COMPLETED";
-      readonly slot: "generate" | "select";
+      readonly slot: "generate" | "select" | "durable_checkpoint";
       readonly offerId?: WorkOfferId;
       readonly artifacts: readonly CompletedArtifact[];
       readonly result: JsonObject;
     }
   | {
       readonly type: "WORK_FAILED";
-      readonly slot: "generate" | "select";
+      readonly slot: "generate" | "select" | "durable_checkpoint";
       readonly classification: "canceled" | "permanent" | "retryable" | "timeout";
       readonly message: string;
     }
@@ -107,6 +117,10 @@ function effect(value: MachineEffect): MachineEffect {
   return value;
 }
 
+function artRevisionId(context: ArtMachineContext): RevisionId {
+  return `revision_${context.actorId}_${context.revision}` as RevisionId;
+}
+
 function createArtMachine(expectedRole: "cover" | "interior") {
   return setup({
     types: {
@@ -133,6 +147,9 @@ function createArtMachine(expectedRole: "cover" | "interior") {
         event.type === "WORK_COMPLETED" && event.slot === "select",
       failedPermanently: ({ event }) =>
         event.type === "WORK_FAILED" && event.classification === "permanent",
+      durableCheckpointCompleted: ({ event }) =>
+        event.type === "WORK_COMPLETED" && event.slot === "durable_checkpoint" &&
+        durableRevisionArtifact(event.artifacts) !== undefined,
     },
     actions: {
       offerGeneration: emitEffects(({ context }) => [
@@ -194,6 +211,7 @@ function createArtMachine(expectedRole: "cover" | "interior") {
       }),
       keepSelection: assign(({ event }) => ({
         registeredArtifact: selectedArtifact(event),
+        selectionDecisionArtifact: decisionArtifact(event),
         lastFailure: undefined,
       })),
       recordSelection: emitEffects(({ context, event }) => {
@@ -225,7 +243,9 @@ function createArtMachine(expectedRole: "cover" | "interior") {
               key: context.key,
               role: context.role,
               revision: context.revision,
-              status: "registered",
+              status: "durable_bound",
+              durableRevisionArtifactId: context.durableRevisionArtifact ?? null,
+              revisionId: context.boundRevisionId ?? null,
             },
           }),
         ];
@@ -239,6 +259,34 @@ function createArtMachine(expectedRole: "cover" | "interior") {
           result: { key: context.key, role: context.role, status: "not_required" },
         }),
       ]),
+      offerDurableCheckpoint: emitEffects(({ context }) =>
+        context.registeredArtifact === undefined
+          ? []
+          : durableCheckpointOffer({
+              actorId: context.actorId,
+              actorKey: context.logicalKey,
+              state: "accepted_pending_durable",
+              logicalItem: {
+                kind: "image",
+                editionId: context.editionId ?? "standalone",
+                logicalId: context.key,
+              },
+              ...(context.boundRevisionId === undefined
+                ? {}
+                : { expectedParentRevisionId: context.boundRevisionId }),
+              acceptedArtifactId: context.registeredArtifact,
+            }),
+      ),
+      keepDurableRevision: assign(({ context, event }) => ({
+        boundRevisionId:
+          event.type === "WORK_COMPLETED" && typeof event.result.revisionId === "string"
+            ? event.result.revisionId as RevisionId
+            : context.boundRevisionId,
+        durableRevisionArtifact:
+          event.type === "WORK_COMPLETED" && event.slot === "durable_checkpoint"
+            ? durableRevisionArtifact(event.artifacts)
+            : context.durableRevisionArtifact,
+      })),
       publishFailure: emitEffects(({ context }) => [
         effect({
           type: "fail_actor",
@@ -273,6 +321,7 @@ function createArtMachine(expectedRole: "cover" | "interior") {
       actorId: input.actorId,
       logicalKey: input.logicalKey,
       key: input.spec.key,
+      editionId: input.spec.editionId,
       role: input.spec.role,
       briefArtifact: input.spec.briefArtifact,
       required: input.spec.required,
@@ -280,6 +329,9 @@ function createArtMachine(expectedRole: "cover" | "interior") {
       registeredArtifact: input.spec.artifactId,
       candidates: [],
       revision: 0,
+      boundRevisionId: undefined,
+      durableRevisionArtifact: undefined,
+      selectionDecisionArtifact: undefined,
       selectionRequestOrdinal: 0,
       lastFailure: undefined,
     }),
@@ -293,7 +345,7 @@ function createArtMachine(expectedRole: "cover" | "interior") {
               actions: assign({ lastFailure: `Expected ${expectedRole} art` }),
               target: "failed",
             },
-            { guard: "hasRegisteredArtifact", target: "registered" },
+            { guard: "hasRegisteredArtifact", target: "accepted_pending_durable" },
             { target: "generating" },
           ],
         },
@@ -336,7 +388,7 @@ function createArtMachine(expectedRole: "cover" | "interior") {
             {
               guard: "selectedKnownCandidate",
               actions: ["recordSelection", "keepSelection"],
-              target: "registered",
+              target: "accepted_pending_durable",
             },
             {
               guard: ({ context, event }) =>
@@ -366,7 +418,19 @@ function createArtMachine(expectedRole: "cover" | "interior") {
       selection_failed: {
         on: { RETRY: { actions: "clearFailure", target: "awaiting_selection" } },
       },
-      registered: {
+      accepted_pending_durable: {
+        entry: "offerDurableCheckpoint",
+        on: {
+          MIGRATION_DURABLE_BACKFILL: { target: "accepted_pending_durable", reenter: true },
+          WORK_COMPLETED: {
+            guard: "durableCheckpointCompleted",
+            actions: "keepDurableRevision",
+            target: "durable_bound",
+          },
+          WORK_FAILED: { actions: "rememberFailure", target: "failed" },
+        },
+      },
+      durable_bound: {
         entry: "publishRegistered",
         on: {
           REVISION_REQUESTED: { actions: "reopen", target: "generating" },

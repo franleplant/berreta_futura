@@ -22,6 +22,7 @@ import {
 } from "../run-engine/index.ts";
 import { corruptStoredMachineVersion } from "./internal-schema-test-helper.ts";
 import { prepareArticleSources } from "./approved-source-fixture.ts";
+import { durableCheckpointAnswer } from "./durable-checkpoint-fixture.ts";
 
 type Harness = {
   readonly engine: SqliteRunEngine;
@@ -155,6 +156,9 @@ async function answerOffer(
   outputPrefix: string,
 ): Promise<RunView> {
   const claim = await engine.claim(offer.id, worker(offer));
+  if (offer.role === "durable_checkpoint") {
+    return await engine.answer(claim, await durableCheckpointAnswer(engine, offer));
+  }
   if (offer.role === "writer") {
     return await engine.answer(claim, {
       contractVersion: offer.contractVersion,
@@ -224,7 +228,12 @@ test("an unchanged successor reuses exact ancestor answers without attempts", as
   const firstFork = await engine.fork(settled.id, [], {
     idempotencyKey: "unchanged-successor",
   });
-  assert.equal(firstFork.status, "complete");
+  const checkpoint = (await engine.inspect(firstFork.runId)).offers.find(
+    (offer) => offer.role === "durable_checkpoint" && offer.status === "offered",
+  );
+  assert.ok(checkpoint);
+  await answerOffer(engine, checkpoint, "successor-checkpoint");
+  assert.equal((await engine.inspect(firstFork.runId)).status, "complete");
   engine.close();
   const restarted = new SqliteRunEngine({ databasePath, artifactDirectory });
   context.after(() => restarted.close());
@@ -235,28 +244,42 @@ test("an unchanged successor reuses exact ancestor answers without attempts", as
 
   const successor = await restarted.inspect(firstFork.runId);
   assert.deepEqual(rootOutputs(successor), rootOutputs(settled));
-  assert.equal(successor.attempts.length, 0);
+  assert.equal(successor.attempts.length, 1);
   assert.ok(successor.offers.length > 0);
   assert.ok(successor.offers.every((offer) => offer.status === "answered"));
-  assert.ok(successor.offers.every((offer) => offer.reusedFromRunId !== undefined));
-  assert.ok(successor.offers.every((offer) => offer.reusedFromOfferId !== undefined));
-  assert.ok(successor.offers.every((offer) => offer.reusedAnswerArtifactId !== undefined));
+  assert.ok(successor.offers.every((offer) =>
+    offer.role === "durable_checkpoint" || offer.reusedFromRunId !== undefined
+  ));
+  assert.ok(successor.offers.every((offer) =>
+    offer.role === "durable_checkpoint" || offer.reusedFromOfferId !== undefined
+  ));
+  assert.ok(successor.offers.every((offer) =>
+    offer.role === "durable_checkpoint" || offer.reusedAnswerArtifactId !== undefined
+  ));
   const visible = new Set(successor.artifacts.map((artifact) => artifact.id));
-  for (const offer of successor.offers) {
+  for (const offer of successor.offers.filter((offer) => offer.role !== "durable_checkpoint")) {
     assert.ok(visible.has(offer.reusedAnswerArtifactId as ArtifactId));
   }
   const reuseEvents = successor.events.filter(
     (event) => event.type === "WORK_COMPLETED" && event.payload.reuse !== undefined,
   );
-  assert.equal(reuseEvents.length, successor.offers.length);
+  assert.equal(
+    reuseEvents.length,
+    successor.offers.filter((offer) => offer.role !== "durable_checkpoint").length,
+  );
 
   const grandchildOutcome = await restarted.fork(successor.id, []);
-  assert.equal(grandchildOutcome.status, "complete");
+  const grandchildCheckpoint = (await restarted.inspect(grandchildOutcome.runId)).offers.find(
+    (offer) => offer.role === "durable_checkpoint" && offer.status === "offered",
+  );
+  assert.ok(grandchildCheckpoint);
+  await answerOffer(restarted, grandchildCheckpoint, "grandchild-checkpoint");
+  assert.equal((await restarted.inspect(grandchildOutcome.runId)).status, "complete");
   const grandchild = await restarted.inspect(grandchildOutcome.runId);
   assert.deepEqual(rootOutputs(grandchild), rootOutputs(settled));
-  assert.equal(grandchild.attempts.length, 0);
+  assert.equal(grandchild.attempts.length, 1);
   assert.ok(grandchild.offers.every(
-    (offer) => offer.reusedFromRunId === successor.id,
+    (offer) => offer.role === "durable_checkpoint" || offer.reusedFromRunId === successor.id,
   ));
 });
 
@@ -303,10 +326,17 @@ test("reuse dispatch recovers atomically after a crash", async (context) => {
   const recovered = await restarted.fork(settled.id, [], {
     idempotencyKey: "reuse-crash-successor",
   });
-  assert.equal(recovered.status, "complete");
+  const checkpoint = (await restarted.inspect(recovered.runId)).offers.find(
+    (offer) => offer.role === "durable_checkpoint" && offer.status === "offered",
+  );
+  assert.ok(checkpoint);
+  await answerOffer(restarted, checkpoint, "recovered-checkpoint");
+  assert.equal((await restarted.inspect(recovered.runId)).status, "complete");
   const view = await restarted.inspect(recovered.runId);
-  assert.equal(view.attempts.length, 0);
-  assert.ok(view.offers.every((offer) => offer.reusedFromOfferId !== undefined));
+  assert.equal(view.attempts.length, 1);
+  assert.ok(view.offers.every((offer) =>
+    offer.role === "durable_checkpoint" || offer.reusedFromOfferId !== undefined
+  ));
 });
 
 test("a fork idempotency key is bound to its exact parent operation", async (context) => {

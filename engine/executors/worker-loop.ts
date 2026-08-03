@@ -258,17 +258,9 @@ async function executeOffer(
     options.attemptTimeoutMs ?? DEFAULT_ATTEMPT_TIMEOUT_MS,
   );
   const context = { claim, offer, artifacts: engine, signal: control.signal };
-  let executionSettled = false;
-  let releaseDeferred = false;
-  const execution = Promise.resolve().then(async () => {
-    try {
-      return await executor.execute(context);
-    } finally {
-      executionSettled = true;
-    }
-  });
-  // A timed-out executor is fenced immediately. Its underlying adapter still
-  // owns cleanup and gets a chance to stop after observing the abort signal.
+  const execution = Promise.resolve().then(async () => await executor.execute(context));
+  // A timed-out executor is fenced immediately. Release runs before this
+  // worker result returns, even when the underlying adapter never settles.
   void execution.catch(() => undefined);
   const heartbeat = heartbeatClaim(
     engine,
@@ -292,22 +284,13 @@ async function executeOffer(
     await heartbeat.catch(() => undefined);
     const failure = classifyFailure(error, executor.id, control);
     const view = await engine.fail(claim, failure);
-    if (!executionSettled) {
-      releaseDeferred = true;
-      void execution.then(
-        async () => await executor.release?.(context),
-        async () => await executor.release?.(context),
-      ).catch(() => undefined);
-    }
     if (acceptedAnswer(view, claim)) {
       return "answered";
     }
     return acceptedFailure(view, claim) ? "failed" : "superseded";
   } finally {
     control.dispose();
-    if (!releaseDeferred) {
-      await executor.release?.(context);
-    }
+    await executor.release?.(context);
   }
 }
 

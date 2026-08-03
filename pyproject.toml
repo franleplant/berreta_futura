@@ -24,12 +24,7 @@ dependencies = [
 ]
 
 [project.scripts]
-mag = "magazine.cli:main"
 mag-render-adapter = "magazine.engine_render_bridge:main"
-mag-source-adapter = "magazine.engine_source_bridge:main"
-
-[dependency-groups]
-dev = ["pytest>=8.0"]
 
 [tool.uv]
 package = true
@@ -40,8 +35,3 @@ module-name = "magazine"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/magazine"]
-
-[tool.pytest.ini_options]
-addopts = "-q"
-testpaths = ["tests"]
-pythonpath = ["src"]

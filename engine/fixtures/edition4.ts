@@ -28,6 +28,36 @@ export type Edition4Fixture = {
   readonly sourceFigureArtifactIds: readonly ArtifactId[];
 };
 
+/** Read-only inventory of the exact already-selected Edition 4 image files. */
+export async function edition4SelectedArtPaths(
+  projectRoot: string,
+): Promise<readonly string[]> {
+  const root = resolve(projectRoot);
+  const editionTarget = `editions/${EDITION_4_ID}/edition.yaml`;
+  const edition = await readYaml(join(root, editionTarget));
+  const editionRoot = dirname(editionTarget);
+  const paths = new Set<string>();
+  for (const article of objectArray(edition.articles, "edition.articles")) {
+    const opener = mapping(article.opener_art, "article.opener_art");
+    paths.add(requiredString(opener, "path"));
+    const tail = optionalString(article.tail_art_path);
+    if (tail !== undefined) paths.add(tail);
+  }
+  for (const plate of objectArray(edition.closing_plates, "edition.closing_plates")) {
+    paths.add(requiredString(plate, "art_path"));
+  }
+  const cover = mapping(edition.cover, "edition.cover");
+  const selectedCover = `${editionRoot}/${requiredString(cover, "art_path")}`;
+  paths.add(selectedCover);
+  if (paths.size !== 13) {
+    throw new Error(`edition 4 inventory expected 13 selected art files, found ${paths.size}`);
+  }
+  if ([...paths].some((path) => path.includes("candidate-") && path !== selectedCover)) {
+    throw new Error("edition 4 inventory selected an unapproved cover candidate");
+  }
+  return [...paths];
+}
+
 export async function stageEdition4Fixture(
   projectRoot: string,
   artifactRoot: string,

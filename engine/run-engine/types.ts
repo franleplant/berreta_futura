@@ -4,6 +4,8 @@ import type {
   ArticlePromotionView,
   ArtifactId,
   ArtifactView,
+  EventId,
+  JsonObject,
   RunId,
   RunInputChange,
   RunOutcome,
@@ -16,6 +18,7 @@ import type {
   WorkerIdentity,
   WorkOfferId,
 } from "../contracts/index.ts";
+import type { MachineKind } from "../machines/runtime.ts";
 
 export type RunEngineFailpoint =
   | "advance.after_effects"
@@ -33,6 +36,7 @@ export type RunEngineFailpoint =
   | "outbox.before_effect_commit"
   | "seal.after_artifact_rename"
   | "seal.after_commit"
+  | "snapshot_migration.before_commit"
   | "start.after_artifact_rename"
   | "start.after_commit"
   | "start.before_commit";
@@ -77,6 +81,80 @@ export type ReadArtifactResult = {
   readonly bytes: Uint8Array;
 };
 
+/**
+ * The compact public identity needed to discover runs in an explicitly
+ * configured RunEngine home. Callers must not inspect SQLite directly merely
+ * to learn which immutable run IDs a database contains.
+ */
+export type RunIdentityView = Pick<
+  RunView,
+  "id" | "kind" | "status" | "machineVersion" | "headSequence" | "createdAt" | "updatedAt"
+> & { readonly metadata: JsonObject };
+
+/** The execution graph is versioned as one bundle, never inferred from files. */
+export type MachineBundleVersion = "graph-execution@1" | "graph-execution@2";
+
+export type MigrationActorPlan = {
+  readonly actorId: ActorId;
+  readonly machine: MachineKind;
+  readonly fromVersion: string;
+  readonly toVersion: string;
+  readonly snapshotNumber: number;
+  readonly state: string;
+};
+
+/**
+ * A read-only, deterministic description of a snapshot metadata migration.
+ * The old snapshot remains immutable and is retained as the migration event's
+ * declared backup. Applying a plan only appends equivalent snapshots; it
+ * never dispatches a workflow event or replays authority.
+ */
+export type MigrationPlan = {
+  readonly runId: RunId;
+  readonly expectedFrom: MachineBundleVersion;
+  readonly targetBundleVersion: MachineBundleVersion;
+  readonly expectedHeadEventId: string;
+  readonly actors: readonly MigrationActorPlan[];
+};
+
+export type PlanMigrationRequest = {
+  readonly runId: RunId;
+  readonly targetBundleVersion: MachineBundleVersion;
+};
+
+export type MigrationRequest = {
+  readonly runId: RunId;
+  readonly expectedFrom: MachineBundleVersion;
+  readonly targetBundleVersion: MachineBundleVersion;
+  readonly migrationId: string;
+  readonly expectedHeadEventId: string;
+  readonly idempotencyKey: string;
+};
+
+/**
+ * A durable compare-and-swap fence used while a caller clones a complete
+ * RunEngine home. While present, every public mutation for the database is
+ * rejected, including work claims and heartbeats from already-open handles.
+ */
+export type RunMigrationFenceRequest = {
+  readonly runId: RunId;
+  readonly expectedHeadSequence: number;
+  readonly expectedHeadEventId: EventId;
+  readonly idempotencyKey: string;
+};
+
+export type RunMigrationFence = RunMigrationFenceRequest & {
+  readonly schemaVersion: "run-migration-fence/1";
+  readonly fenceId: string;
+  readonly acquiredAt: string;
+};
+
+export type RunMigrationCheckpoint = {
+  readonly busy: number;
+  readonly log: number;
+  readonly checkpointed: number;
+};
+
 export interface RunEngine {
   start(spec: RunSpec, options?: StartRunOptions): Promise<RunOutcome>;
   advance(runId: RunId): Promise<RunOutcome>;
@@ -86,7 +164,13 @@ export interface RunEngine {
     runId: RunId,
     request: ArticlePromotionRequest,
   ): Promise<ArticlePromotionView>;
+  listRuns(): Promise<readonly RunIdentityView[]>;
   inspect(runId: RunId): Promise<RunView>;
+  planMigration(request: PlanMigrationRequest): Promise<MigrationPlan>;
+  migrate(request: MigrationRequest): Promise<MigrationPlan>;
+  acquireMigrationFence(request: RunMigrationFenceRequest): Promise<RunMigrationFence>;
+  checkpointMigrationFence(fence: RunMigrationFence): Promise<RunMigrationCheckpoint>;
+  releaseMigrationFence(fence: RunMigrationFence): Promise<void>;
   fork(
     runId: RunId,
     changes: readonly RunInputChange[],

@@ -16,6 +16,8 @@ import type {
   WorkOfferView,
 } from "../contracts/index.ts";
 import { SqliteRunEngine } from "../run-engine/index.ts";
+import { durableCheckpointAnswer } from "./durable-checkpoint-fixture.ts";
+import { prepareLegacyEditionReleaseSnapshot } from "./internal-schema-test-helper.ts";
 
 function artifactId(value: string): ArtifactId {
   return value as ArtifactId;
@@ -79,6 +81,9 @@ async function submit(
   artifacts: readonly AnswerArtifact[] = [],
 ): Promise<RunView> {
   const claim = await engine.claim(offer.id, workerFor(offer));
+  if (offer.role === "durable_checkpoint") {
+    return await engine.answer(claim, await durableCheckpointAnswer(engine, offer));
+  }
   return await engine.answer(claim, {
     contractVersion: offer.contractVersion,
     result,
@@ -119,6 +124,7 @@ function freshLeadFixture(prefix: string): EditionRootRunSpec {
     ],
     edition: {
       editionId: `${prefix}-edition`,
+      execution: { kind: "produce" },
       editionBrief,
       sources: [{ sourceId: "lead-one", leadArtifact: lead }],
       articles: [],
@@ -276,6 +282,7 @@ test("an approved production plan resolves ready source names before spawning ar
     view = await submit(engine, offered(view, "worth"), { decision: "pass" });
     view = await submit(engine, offered(view, "evidence"), { decision: "pass" });
     view = await submit(engine, offered(view, "craft"), { decision: "pass" });
+    view = await submit(engine, offered(view, "durable_checkpoint"), {});
 
     const editorial = offered(view, "editorial_writer");
     assert.ok(editorial.inputArtifacts.includes(manuscript));
@@ -283,6 +290,7 @@ test("an approved production plan resolves ready source names before spawning ar
     view = await submit(engine, editorial, { status: "complete" }, [
       answerArtifact(editorialManuscript, "editorial_manuscript"),
     ]);
+    view = await submit(engine, offered(view, "durable_checkpoint"), {});
 
     const planView = await engine.readArtifact(planArtifact);
     assert.ok(planView.artifact.parents.some((parent) => parent.artifactId === ready.extraction));
@@ -309,6 +317,7 @@ test("an approved production plan resolves ready source names before spawning ar
       { choice: "select", selectedArtifactId: coverCandidate },
       [answerArtifact(artifactId(`${prefix}-art-selection`), "art_selection")],
     );
+    view = await submit(engine, offered(view, "durable_checkpoint"), {});
 
     const finding = artifactId(`${prefix}-article-finding`);
     view = await submit(
@@ -346,10 +355,112 @@ test("an approved production plan resolves ready source names before spawning ar
     view = await submit(engine, offered(view, "worth"), { decision: "pass" });
     view = await submit(engine, offered(view, "evidence"), { decision: "pass" });
     view = await submit(engine, offered(view, "craft"), { decision: "pass" });
+    view = await submit(engine, offered(view, "durable_checkpoint"), {});
 
     const editorialRevision = offered(view, "editorial_writer");
     assert.ok(editorialRevision.inputArtifacts.includes(revisedManuscript));
     assert.ok(editorialRevision.inputArtifacts.includes(finding));
+  } finally {
+    engine.close();
+    await rm(temporary, { recursive: true, force: true });
+  }
+});
+
+test("v1 edition migration re-checkpoints every accepted content and art child before composition", async () => {
+  const temporary = await mkdtemp(join(tmpdir(), "mag-migration-child-backfill-"));
+  const databasePath = join(temporary, "run.sqlite");
+  const artifactDirectory = join(temporary, "artifacts");
+  let engine = new SqliteRunEngine({ databasePath, artifactDirectory });
+  try {
+    const prefix = "migration-children";
+    const started = await engine.start(freshLeadFixture(prefix));
+    const ready = await readySourceAndOpenPlan(engine, started.runId, prefix);
+    const productionPlan = {
+      contractVersion: "approved-production-plan/1",
+      sourceAssignmentPolicy: "at_least_once",
+      articles: [plannedArticle(prefix, ["lead-one"])],
+      art: [plannedCover(prefix, ["planned-article"])],
+      translations: [],
+    } as const;
+    let view = await submit(engine, ready.planOffer, { choice: "approve", productionPlan }, [
+      answerArtifact(artifactId(`${prefix}-production-plan`), "edition_plan", productionPlan),
+    ]);
+    view = await submit(engine, offered(view, "writer"), { status: "complete" }, [
+      answerArtifact(artifactId(`${prefix}-manuscript`), "article_manuscript"),
+      answerArtifact(artifactId(`${prefix}-writer-notes`), "writer_working_notes"),
+    ]);
+    view = await submit(engine, offered(view, "measure_article"), {
+      fits: true,
+      openerFits: true,
+      pageCount: 1,
+    }, [answerArtifact(artifactId(`${prefix}-measurement`), "article_measurement")]);
+    view = await submit(engine, offered(view, "worth"), { decision: "pass" });
+    view = await submit(engine, offered(view, "evidence"), { decision: "pass" });
+    view = await submit(engine, offered(view, "craft"), { decision: "pass" });
+    view = await submit(engine, offered(view, "durable_checkpoint"), {});
+    view = await submit(engine, offered(view, "editorial_writer"), { status: "complete" }, [
+      answerArtifact(artifactId(`${prefix}-editorial-manuscript`), "editorial_manuscript"),
+    ]);
+    view = await submit(engine, offered(view, "durable_checkpoint"), {});
+    view = await submit(engine, offered(view, "cover_image"), { status: "complete" }, [
+      answerArtifact(artifactId(`${prefix}-cover-candidate`), "cover_art_candidate"),
+    ]);
+    view = await submit(engine, offered(view, "select_art"), {
+      choice: "select",
+      selectedArtifactId: `${prefix}-cover-candidate`,
+    }, [answerArtifact(artifactId(`${prefix}-art-selection`), "art_selection")]);
+    view = await submit(engine, offered(view, "durable_checkpoint"), {});
+    assert.ok(offered(view, "edition_review"));
+
+    engine.close();
+    prepareLegacyEditionReleaseSnapshot(databasePath, started.runId);
+    engine = new SqliteRunEngine({ databasePath, artifactDirectory });
+    const plan = await engine.planMigration({
+      runId: started.runId,
+      targetBundleVersion: "graph-execution@2",
+    });
+    assert.deepEqual(
+      plan.actors.map((actor) => actor.machine).sort(),
+      ["article", "cover_art", "edition", "editorial"],
+    );
+    await engine.migrate({
+      runId: started.runId,
+      expectedFrom: plan.expectedFrom,
+      targetBundleVersion: plan.targetBundleVersion,
+      expectedHeadEventId: plan.expectedHeadEventId,
+      migrationId: "migration_child_backfill_fixture",
+      idempotencyKey: "migration-child-backfill-fixture",
+    });
+    await engine.advance(started.runId);
+    view = await engine.inspect(started.runId);
+    const childOffers = view.offers.filter((offer) =>
+      offer.status === "offered" && offer.role === "durable_checkpoint"
+    );
+    assert.equal(childOffers.length, 3);
+    const kinds = await Promise.all(childOffers.map(async (offer) => {
+      const task = JSON.parse(await engine.readText(offer.taskArtifactId)) as {
+        readonly logicalItem: { readonly kind: string };
+      };
+      return task.logicalItem.kind;
+    }));
+    assert.deepEqual(kinds.sort(), ["article", "editorial", "image"]);
+    assert.equal(kinds.includes("composition"), false);
+
+    for (const [index, offer] of childOffers.entries()) {
+      view = await submit(engine, offer, {});
+      const compositionOffers = await Promise.all(
+        view.offers
+          .filter((candidate) => candidate.status === "offered" && candidate.role === "durable_checkpoint")
+          .map(async (candidate) => JSON.parse(await engine.readText(candidate.taskArtifactId)) as {
+            readonly logicalItem: { readonly kind: string };
+          }),
+      );
+      assert.equal(
+        compositionOffers.some((task) => task.logicalItem.kind === "composition"),
+        index === childOffers.length - 1,
+        "composition becomes offerable only after every migrated child is durably bound",
+      );
+    }
   } finally {
     engine.close();
     await rm(temporary, { recursive: true, force: true });

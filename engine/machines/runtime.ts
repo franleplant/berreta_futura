@@ -20,6 +20,7 @@ import type {
   WorkRole,
   WorkerCapability,
 } from "../contracts/index.ts";
+import type { DurableLogicalItem, InputRevisionRef } from "../durable/types.ts";
 import {
   initialTransition,
   transition,
@@ -121,6 +122,22 @@ export type RegisterArtifactEffect = {
   readonly artifact: AnswerArtifact;
 };
 
+/**
+ * The machine identifies the accepted output and logical item. RunEngine
+ * materializes the exact durable task from committed artifact/decision
+ * lineage, reserving promotion and durable revision identities atomically.
+ */
+export type OpenDurableCheckpointEffect = {
+  readonly type: "open_durable_checkpoint";
+  readonly actorId: ActorId;
+  readonly actorKey: string;
+  readonly state: string;
+  readonly logicalItem: DurableLogicalItem;
+  readonly acceptedArtifactId: ArtifactId;
+  readonly expectedParentRevisionId?: RevisionId;
+  readonly inputRevisions?: readonly InputRevisionRef[];
+};
+
 export type RecordDecisionEffect = {
   readonly type: "record_decision";
   readonly actorId: ActorId;
@@ -160,6 +177,7 @@ export type MachineEffect =
   | CreateWorkOfferEffect
   | FailActorEffect
   | RecordDecisionEffect
+  | OpenDurableCheckpointEffect
   | RegisterArtifactEffect
   | SendActorEventEffect
   | SpawnActorEffect;

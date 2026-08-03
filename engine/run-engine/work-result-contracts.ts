@@ -2,8 +2,8 @@ import { isDeepStrictEqual } from "node:util";
 
 import { z } from "zod";
 
-import type { AnswerArtifact, JsonObject, WorkRole } from "../contracts/index.ts";
-import { approvedProductionPlanSchema } from "../contracts/index.ts";
+import type { AnswerArtifact, JsonObject, KnownWorkRole, WorkRole } from "../contracts/index.ts";
+import { approvedProductionPlanSchema, KNOWN_WORK_ROLES } from "../contracts/index.ts";
 import { RunEngineError } from "./types.ts";
 
 type ResultContract = {
@@ -375,6 +375,210 @@ const releaseApprovalResult = z.object({
   rationale: z.string().optional(),
 }).strict();
 
+const durableCheckpointResult = z.object({
+  promotionId: z.string().min(1),
+  revisionId: z.string().min(1),
+  logicalItem: z.discriminatedUnion("kind", [z.object({
+    kind: z.enum(["article", "editorial", "image"]),
+    editionId: z.string().min(1),
+    logicalId: z.string().min(1),
+    language: z.string().min(1).optional(),
+    revisionId: z.string().min(1).optional(),
+  }).strict(), z.object({
+    kind: z.literal("composition"),
+    editionId: z.string().min(1),
+    compositionId: z.string().min(1),
+    language: z.string().min(1).optional(),
+    revisionId: z.string().min(1).optional(),
+  }).strict()]),
+  expectedParentRevisionId: z.string().min(1).nullable(),
+  revisionRef: z.discriminatedUnion("kind", [z.object({
+    kind: z.enum(["article", "editorial", "image"]),
+    editionId: z.string().min(1),
+    logicalId: z.string().min(1),
+    language: z.string().min(1).optional(),
+    revisionId: z.string().min(1).optional(),
+  }).strict(), z.object({
+    kind: z.literal("composition"),
+    editionId: z.string().min(1),
+    compositionId: z.string().min(1),
+    language: z.string().min(1).optional(),
+    revisionId: z.string().min(1).optional(),
+  }).strict()]),
+  manifestDigest: z.string().regex(/^sha256:[0-9a-f]{64}$/),
+  gitCommitOid: z.string().regex(/^[0-9a-f]{40,64}$/),
+  gitBlobOids: z.record(
+    z.string().min(1),
+    z.string().regex(/^[0-9a-f]{40,64}$/),
+  ).refine(
+    (entries) => {
+      const paths = Object.keys(entries);
+      return paths.length > 0 && paths.every((path, index) =>
+        index === 0 || paths[index - 1]!.localeCompare(path) < 0
+      );
+    }, { message: "gitBlobOids must bind at least one lexicographically sorted path" }),
+}).strict();
+
+const renderReconciliationResult = z.object({
+  choice: z.enum(["adopt", "rerender"]),
+  compositionRevisionArtifactId: z.string().min(1),
+  renderArtifactIds: z.array(z.string().min(1)),
+  rendererVersion: z.string().min(1),
+  contentArtifactIds: z.array(z.string().min(1)),
+  layoutArtifactIds: z.array(z.string().min(1)),
+  languages: z.array(z.string().min(1)),
+  outputDigests: z.record(z.string().min(1), z.string().regex(/^sha256:[0-9a-f]{64}$/)),
+}).strict();
+
+const compositionBootstrapPromptRevision = z.object({
+  kind: z.literal("prompt"),
+  promptId: z.string().min(1),
+  revisionId: z.string().min(1),
+}).strict();
+
+const compositionBootstrapPolicyRevision = z.object({
+  kind: z.literal("policy"),
+  policyId: z.string().min(1),
+  revisionId: z.string().min(1),
+}).strict();
+
+const compositionBootstrapRoleInput = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("prompt"), revisionRef: compositionBootstrapPromptRevision }).strict(),
+  z.object({ kind: z.literal("contract"), contractVersion: z.string().min(1) }).strict(),
+  z.object({ kind: z.literal("policy"), revisionRef: compositionBootstrapPolicyRevision }).strict(),
+  z.object({
+    kind: z.literal("human"),
+    authority: z.literal("human"),
+    policyRevision: compositionBootstrapPolicyRevision.optional(),
+  }).strict(),
+  z.object({ kind: z.literal("disabled"), reason: z.string().min(1) }).strict(),
+]);
+
+const compositionBootstrapContractRoles = new Map<KnownWorkRole, string>([
+  ["measure_edition", "measure-edition/1"],
+  ["render", "render-edition/1"],
+  ["render_inspection", "render-inspection/1"],
+  ["composition_bootstrap", "composition-bootstrap/1"],
+]);
+const compositionBootstrapDisabledRoles = new Map<KnownWorkRole, string>([
+  ["capture_source", "bootstrap_committed_inputs"],
+  ["extract_source", "bootstrap_committed_inputs"],
+  ["review_source", "bootstrap_committed_inputs"],
+  ["close_collection", "bootstrap_committed_composition"],
+  ["plan_edition", "bootstrap_committed_composition"],
+  ["writer", "bootstrap_existing_manuscripts"],
+  ["measure_article", "bootstrap_committed_composition"],
+  ["worth", "bootstrap_committed_composition"],
+  ["mechanics", "bootstrap_committed_composition"],
+  ["evidence", "bootstrap_committed_composition"],
+  ["shape", "bootstrap_committed_composition"],
+  ["teaching", "bootstrap_committed_composition"],
+  ["craft", "bootstrap_committed_composition"],
+  ["editorial_writer", "bootstrap_existing_manuscripts"],
+  ["edition_review", "bootstrap_committed_composition"],
+  ["translation_writer", "bootstrap_existing_translations"],
+  ["language_review", "bootstrap_existing_translations"],
+  ["language_fit", "bootstrap_existing_translations"],
+  ["cover_image", "bootstrap_existing_images"],
+  ["interior_image", "bootstrap_existing_images"],
+  ["select_art", "bootstrap_existing_images"],
+  ["render_reconciliation", "bootstrap_forces_fresh_render"],
+  ["release_approval", "stop_unreleased"],
+  ["durable_checkpoint", "bootstrap_committed_composition"],
+  ["editor_decision", "bootstrap_committed_composition"],
+]);
+
+const compositionBootstrapRoleInputs = z.record(
+  z.string().min(1),
+  compositionBootstrapRoleInput,
+).superRefine((inputs, context) => {
+  const known = new Set<string>(KNOWN_WORK_ROLES);
+  for (const role of Object.keys(inputs)) {
+    if (!known.has(role)) context.addIssue({ code: "custom", path: [role], message: `unknown work role ${role}` });
+  }
+  for (const role of KNOWN_WORK_ROLES) {
+    const input = inputs[role];
+    if (input === undefined) {
+      context.addIssue({ code: "custom", path: [role], message: `missing work role ${role}` });
+      continue;
+    }
+    const contract = compositionBootstrapContractRoles.get(role);
+    const disabledReason = compositionBootstrapDisabledRoles.get(role);
+    const compatible = contract !== undefined
+      ? input.kind === "contract" && input.contractVersion === contract
+      : role === "visual_review"
+        ? input.kind === "human" && input.authority === "human" &&
+          input.policyRevision !== undefined
+        : disabledReason !== undefined
+          ? input.kind === "disabled" && input.reason === disabledReason
+          : false;
+    if (!compatible) {
+      context.addIssue({ code: "custom", path: [role], message: `${input.kind} role input is not compatible with ${role}` });
+    }
+  }
+});
+
+const compositionBootstrapResult = z.object({
+  bootstrapRevision: z.object({ kind: z.literal("run_bootstrap"), logicalId: z.string().min(1), editionId: z.string().min(1), revisionId: z.string().min(1) }).strict(),
+  compositionRevision: z.object({
+    revisionRef: z.object({ kind: z.literal("composition"), editionId: z.string().min(1), compositionId: z.string().min(1), revisionId: z.string().min(1) }).strict(),
+    manifestDigest: z.string().regex(/^sha256:[0-9a-f]{64}$/),
+    gitCommitOid: z.string().regex(/^[0-9a-f]{40,64}$/),
+    gitBlobOids: z.record(z.string().min(1), z.string().regex(/^[0-9a-f]{40,64}$/)),
+  }).strict(),
+  configuredLanguages: z.array(z.string().min(1)).min(1),
+  selectedImageRevisionRefs: z.array(z.object({ kind: z.literal("image"), editionId: z.string().min(1), logicalId: z.string().min(1), revisionId: z.string().min(1) }).strict()),
+  imageGenerationAllowed: z.literal(false),
+  rendererContractVersion: z.literal("magazine-renderer/1"),
+  promptSet: z.object({
+    id: z.string().min(1),
+    roleInputs: compositionBootstrapRoleInputs,
+  }).strict(),
+}).strict();
+
+const validateRenderReconciliationArtifacts: ArtifactValidator = (result, artifacts) => {
+  if (result.choice === "rerender") return artifacts.length === 0 ? undefined : "rerender must not attach adoption artifacts";
+  const wrapper = artifacts.filter((artifact) => artifact.kind === "render_set_adopted");
+  if (wrapper.length !== 1 || wrapper[0]?.mediaType !== "application/json" || wrapper[0]?.payload.kind !== "json" || !isDeepStrictEqual(wrapper[0].payload.value, result)) {
+    return "adoption requires one exact render_set_adopted wrapper";
+  }
+  return undefined;
+};
+
+const validateDurableCheckpointEvidence: ArtifactValidator = (result, artifacts) => {
+  const cardinality = exactlyOne(
+    "durable checkpoint evidence",
+    "durable_revision_evidence",
+  )(result, artifacts);
+  if (cardinality !== undefined) {
+    return cardinality;
+  }
+  const evidence = artifacts.find((artifact) => artifact.kind === "durable_revision_evidence");
+  if (
+    evidence === undefined ||
+    evidence.mediaType !== "application/json" ||
+    evidence.payload.kind !== "json" ||
+    !isDeepStrictEqual(evidence.payload.value, result)
+  ) {
+    return "durable checkpoint evidence must be the exact JSON result";
+  }
+  return undefined;
+};
+
+const validateCompositionBootstrapEvidence: ArtifactValidator = (result, artifacts) => {
+  const cardinality = exactlyOne(
+    "composition bootstrap evidence",
+    "composition_bootstrap_evidence",
+  )(result, artifacts);
+  if (cardinality !== undefined) return cardinality;
+  const evidence = artifacts.find((artifact) => artifact.kind === "composition_bootstrap_evidence");
+  return evidence?.mediaType !== "application/json" ||
+      evidence.payload.kind !== "json" ||
+      !isDeepStrictEqual(evidence.payload.value, result)
+    ? "composition bootstrap evidence must be the exact JSON result"
+    : undefined;
+};
+
 const editorDecisionSchemas = {
   "editor-decision/1": z.object({
     choice: z.enum(["accept", "reject", "revise"]),
@@ -427,9 +631,12 @@ const contracts: readonly ResultContract[] = [
   { role: "measure_edition", contractVersion: "measure-edition/1", schema: editionMeasurementResult, validateArtifacts: exactlyOne("edition measurement", "edition_measurement") },
   { role: "render", contractVersion: "render-edition/1", schema: renderResult, validateArtifacts: validateRenderArtifacts },
   { role: "render", contractVersion: "magazine-renderer/1", schema: renderResult, validateArtifacts: validateRenderArtifacts },
+  { role: "render_reconciliation", contractVersion: "render-reconciliation/1", schema: renderReconciliationResult, validateArtifacts: validateRenderReconciliationArtifacts },
   { role: "render_inspection", contractVersion: "render-inspection/1", schema: renderInspectionResult, validateArtifacts: exactlyOne("render inspection", "render_inspection") },
   { role: "visual_review", contractVersion: "visual-review/1", schema: visualReviewResult, validateArtifacts: exactlyOne("visual review decision", "visual_review_decision") },
   { role: "release_approval", contractVersion: "release-approval/1", schema: releaseApprovalResult, validateArtifacts: exactlyOne("release decision", "release_decision") },
+  { role: "durable_checkpoint", contractVersion: "durable-checkpoint/1", schema: durableCheckpointResult, validateArtifacts: validateDurableCheckpointEvidence },
+  { role: "composition_bootstrap", contractVersion: "composition-bootstrap/1", schema: compositionBootstrapResult, validateArtifacts: validateCompositionBootstrapEvidence },
   { role: "editor_decision", contractVersion: "edition-editor/1", schema: editorDecisionSchemas["edition-editor/1"], validateArtifacts: exactlyOne("edition editor decision", "editor_decision") },
 ];
 

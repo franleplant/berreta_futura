@@ -8,6 +8,7 @@ export type RunId = Brand<string, "RunId">;
 export type ActorId = Brand<string, "ActorId">;
 export type ArtifactId = Brand<string, "ArtifactId">;
 export type RevisionId = Brand<string, "RevisionId">;
+export type PromotionId = Brand<string, "PromotionId">;
 export type IterationId = Brand<string, "IterationId">;
 export type AttemptId = Brand<string, "AttemptId">;
 export type WorkOfferId = Brand<string, "WorkOfferId">;
@@ -27,4 +28,8 @@ export function newRunId(): RunId {
 
 export function newArtifactId(): ArtifactId {
   return newId<ArtifactId>("art");
+}
+
+export function newPromotionId(): PromotionId {
+  return newId<PromotionId>("promotion");
 }

@@ -18,10 +18,13 @@ import type {
   WorkAnswer,
   WorkerCapability,
   WorkOfferId,
+  DecisionId,
+  RevisionId,
 } from "./contracts/index.ts";
 import { parseRunSpec } from "./contracts/index.ts";
+import { EditionBootstrapRunner } from "./edition-bootstrap-run.ts";
+import { EditionRunLayout } from "./edition-run-layout.ts";
 import { SqliteRunEngine } from "./run-engine/run-engine.ts";
-import { exportApprovedRender, type ApprovedRenderExportPlan } from "./run-engine/approved-render-export.ts";
 import { serveRunViewer } from "./view/server.ts";
 
 const HELP = `Usage:
@@ -38,7 +41,13 @@ const HELP = `Usage:
       [--heartbeat-ms NUMBER] [--timeout-ms NUMBER] [--concurrency NUMBER]
   npm run engine -- answer <run-id> <offer-id> <answer.json> [--principal ID]
   npm run engine -- seal <run-id> [--db PATH] [--artifacts PATH]
-  npm run engine -- export <approved-render-export.json> [--db PATH] [--artifacts PATH]
+  npm run engine -- edition plan <edition-key> --bootstrap-revision REVISION [--output-root PATH]
+  npm run engine -- edition run <edition-key> --bootstrap-revision REVISION [--output-root PATH]
+  npm run engine -- edition list <edition-key> [--output-root PATH]
+  npm run engine -- edition project-review <edition-key> <run-id> --expected-head NUMBER
+      --expected-offer OFFER_ID --critic-note TEXT [--output-root PATH]
+  npm run engine -- export <edition-key> <run-id> [--output-root PATH]
+      [--expected-visual-decision ID]
   npm run engine -- serve [--port NUMBER] [--db PATH] [--artifacts PATH]
 
 The article aliases "article run", "article inspect", "article continue",
@@ -57,12 +66,110 @@ type ParsedCommand = {
   readonly attemptTimeoutMs?: number;
   readonly maxConcurrency?: number;
   readonly idempotencyKey?: string;
+  readonly outputRoot: string;
+  readonly expectedVisualDecisionId?: DecisionId;
+  readonly bootstrapRevisionId?: RevisionId;
+  readonly expectedHeadSequence?: number;
+  readonly expectedOfferId?: WorkOfferId;
+  readonly independentCriticNote?: string;
 };
 
 async function main(argv: readonly string[]): Promise<number> {
   const parsed = parseCommand(argv);
   if (parsed.command === "help") {
     process.stdout.write(`${HELP}\n`);
+    return 0;
+  }
+  if (parsed.command === "edition-plan" || parsed.command === "edition-run") {
+    const editionKey = requiredArg(parsed.args, 0, "edition key");
+    requireArgCount(parsed.args, 1, parsed.command.replace("edition-", "edition "));
+    if (parsed.bootstrapRevisionId === undefined) {
+      throw new Error("bootstrap revision is required; pass --bootstrap-revision REVISION");
+    }
+    const bootstrapRevision = {
+      kind: "run_bootstrap" as const,
+      editionId: editionKey,
+      logicalId: "fresh-v2",
+      revisionId: parsed.bootstrapRevisionId,
+    };
+    const runner = new EditionBootstrapRunner({
+      editionKey,
+      repositoryRoot: resolve("."),
+      outputRoot: parsed.outputRoot,
+      render: {
+        primaryLanguage: "en",
+        publicationName: "Berreta Futura",
+        renderer: "weasyprint",
+      },
+    });
+    writeJson(parsed.command === "edition-plan"
+      ? await runner.plan(bootstrapRevision)
+      : await runner.run(bootstrapRevision));
+    return 0;
+  }
+  if (parsed.command === "edition-list") {
+    const editionKey = requiredArg(parsed.args, 0, "edition key");
+    requireArgCount(parsed.args, 1, "edition list");
+    if (parsed.bootstrapRevisionId !== undefined) {
+      throw new Error("edition list does not accept --bootstrap-revision");
+    }
+    const layout = new EditionRunLayout({
+      editionKey,
+      repositoryRoot: resolve("."),
+      outputRoot: parsed.outputRoot,
+    });
+    const runs = await layout.list();
+    writeJson({
+      schemaVersion: "edition-run-list/1",
+      editionKey,
+      runs: runs.map((run) => ({ ...run, ...layout.pathsFor(run) })),
+    });
+    return 0;
+  }
+  if (parsed.command === "edition-project-review") {
+    const editionKey = requiredArg(parsed.args, 0, "edition key");
+    const runId = asRunId(requiredArg(parsed.args, 1, "run ID"));
+    requireArgCount(parsed.args, 2, "edition project-review");
+    if (parsed.expectedHeadSequence === undefined) {
+      throw new Error("edition project-review requires --expected-head NUMBER");
+    }
+    if (parsed.expectedOfferId === undefined) {
+      throw new Error("edition project-review requires --expected-offer OFFER_ID");
+    }
+    if (parsed.independentCriticNote === undefined || !parsed.independentCriticNote.trim()) {
+      throw new Error("edition project-review requires a non-empty --critic-note TEXT");
+    }
+    const layout = new EditionRunLayout({
+      editionKey,
+      repositoryRoot: resolve("."),
+      outputRoot: parsed.outputRoot,
+    });
+    writeJson(await layout.projectReview(runId, {
+      expectedHeadSequence: parsed.expectedHeadSequence,
+      expectedOfferId: parsed.expectedOfferId,
+      independentCritic: {
+        result: "pass",
+        note: parsed.independentCriticNote,
+      },
+    }));
+    return 0;
+  }
+  if (parsed.command.startsWith("edition-")) {
+    throw new Error(`unknown edition command: ${parsed.command.slice("edition-".length)}`);
+  }
+  if (parsed.command === "export") {
+    const editionKey = requiredArg(parsed.args, 0, "edition key");
+    const runId = asRunId(requiredArg(parsed.args, 1, "run ID"));
+    const layout = new EditionRunLayout({
+      editionKey,
+      repositoryRoot: resolve("."),
+      outputRoot: parsed.outputRoot,
+    });
+    writeJson(await layout.publish(runId, {
+      ...(parsed.expectedVisualDecisionId === undefined
+        ? {}
+        : { expectedVisualDecisionId: parsed.expectedVisualDecisionId }),
+    }));
     return 0;
   }
   await mkdir(dirname(parsed.databasePath), { recursive: true });
@@ -215,13 +322,6 @@ async function main(argv: readonly string[]): Promise<number> {
         writeJson({ artifactId });
         return 0;
       }
-      case "export": {
-        const plan = await readJson<ApprovedRenderExportPlan>(
-          requiredArg(parsed.args, 0, "approved render export path"),
-        );
-        writeJson(await exportApprovedRender(engine, plan));
-        return 0;
-      }
       default:
         throw new Error(`unknown command: ${parsed.command}`);
     }
@@ -247,6 +347,12 @@ function parseCommand(argv: readonly string[]): ParsedCommand {
       once: { type: "boolean" },
       port: { type: "string" },
       principal: { type: "string" },
+      "output-root": { type: "string" },
+      "expected-visual-decision": { type: "string" },
+      "bootstrap-revision": { type: "string" },
+      "expected-head": { type: "string" },
+      "expected-offer": { type: "string" },
+      "critic-note": { type: "string" },
     },
   });
   if (parsed.values.help === true || parsed.positionals.length === 0) {
@@ -256,6 +362,10 @@ function parseCommand(argv: readonly string[]): ParsedCommand {
   let command = positionals.shift() ?? "help";
   if (command === "article") {
     command = positionals.shift() ?? "help";
+  }
+  if (command === "edition") {
+    const editionCommand = positionals.shift() ?? "help";
+    command = editionCommand === "help" ? "help" : `edition-${editionCommand}`;
   }
   if (command === "run") {
     command = "start";
@@ -267,11 +377,32 @@ function parseCommand(argv: readonly string[]): ParsedCommand {
   return {
     command,
     args: positionals,
-    databasePath: resolve(parsed.values.db ?? "runs/xstate-engine.sqlite"),
-    artifactDirectory: resolve(parsed.values.artifacts ?? "runs/xstate-artifacts"),
+    databasePath: resolve(parsed.values.db ?? ".magazine/dev/run.sqlite"),
+    artifactDirectory: resolve(parsed.values.artifacts ?? ".magazine/dev/artifacts"),
     principal: parsed.values.principal ?? "local-human",
     port,
     once: parsed.values.once ?? false,
+    outputRoot: parsed.values["output-root"] ?? resolve("output"),
+    ...(parsed.values["expected-visual-decision"] === undefined
+      ? {}
+      : {
+          expectedVisualDecisionId:
+            parsed.values["expected-visual-decision"] as DecisionId,
+        }),
+    ...(parsed.values["bootstrap-revision"] === undefined
+      ? {}
+      : { bootstrapRevisionId: parsed.values["bootstrap-revision"] as RevisionId }),
+    ...optionalNonNegativeInteger(
+      "expected-head",
+      parsed.values["expected-head"],
+      "expectedHeadSequence",
+    ),
+    ...(parsed.values["expected-offer"] === undefined
+      ? {}
+      : { expectedOfferId: parsed.values["expected-offer"] as WorkOfferId }),
+    ...(parsed.values["critic-note"] === undefined
+      ? {}
+      : { independentCriticNote: parsed.values["critic-note"] }),
     ...(parsed.values["idempotency-key"] === undefined
       ? {}
       : { idempotencyKey: parsed.values["idempotency-key"] }),
@@ -290,11 +421,12 @@ function defaults(command: string, args: readonly string[]): ParsedCommand {
   return {
     command,
     args,
-    databasePath: resolve("runs/xstate-engine.sqlite"),
-    artifactDirectory: resolve("runs/xstate-artifacts"),
+    databasePath: resolve(".magazine/dev/run.sqlite"),
+    artifactDirectory: resolve(".magazine/dev/artifacts"),
     principal: "local-human",
     port: 4173,
     once: false,
+    outputRoot: resolve("output"),
   };
 }
 
@@ -313,6 +445,19 @@ function optionalPositiveInteger<Key extends string>(
   return { [key]: parsed } as { readonly [Property in Key]: number };
 }
 
+function optionalNonNegativeInteger<Key extends string>(
+  option: string,
+  value: string | undefined,
+  key: Key,
+): { readonly [Property in Key]?: number } {
+  if (value === undefined) return {};
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isSafeInteger(parsed) || parsed < 0 || String(parsed) !== value) {
+    throw new Error(`${option} must be a non-negative integer`);
+  }
+  return { [key]: parsed } as { readonly [Property in Key]: number };
+}
+
 async function readJson<T>(path: string): Promise<T> {
   const value: unknown = JSON.parse(await readFile(resolve(path), "utf8"));
   return value as T;
@@ -324,6 +469,12 @@ function requiredArg(args: readonly string[], index: number, label: string): str
     throw new Error(`${label} is required`);
   }
   return value;
+}
+
+function requireArgCount(args: readonly string[], count: number, command: string): void {
+  if (args.length !== count) {
+    throw new Error(`${command} requires exactly ${count} positional argument${count === 1 ? "" : "s"}`);
+  }
 }
 
 function asRunId(value: string): RunId {

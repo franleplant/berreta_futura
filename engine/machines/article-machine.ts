@@ -9,6 +9,10 @@ import type {
   RevisionId,
   WorkOfferId,
 } from "../contracts/index.ts";
+import {
+  durableCheckpointOffer,
+  durableRevisionArtifact,
+} from "./durable-checkpoint.ts";
 import { composeArticleWorkOffer, type ArticleOfferRole } from "../task-composer/index.ts";
 import {
   emitEffects,
@@ -19,7 +23,7 @@ import {
   type MachineInputBase,
 } from "./runtime.ts";
 
-export const articleMachineVersion = "article/2";
+export const articleMachineVersion = "article/3";
 
 export type ArticleMachineInput = MachineInputBase & {
   readonly spec: ArticleRunSpec;
@@ -63,6 +67,8 @@ export type ArticleMachineContext = MachineInputBase & {
   iteration: number;
   iterationId: IterationId;
   revisionId: RevisionId;
+  boundRevisionId: RevisionId | undefined;
+  durableRevisionArtifact: ArtifactId | undefined;
   effectiveMaxIterations: number;
   history: readonly ArticleIterationRecord[];
   lastFailure: string | undefined;
@@ -82,11 +88,13 @@ type ArticleSlot =
   | "measure_article"
   | "shape"
   | "teaching"
+  | "durable_checkpoint"
   | "worth"
   | "writer";
 
 export type ArticleMachineEvent =
   | { readonly type: "START" }
+  | { readonly type: "MIGRATION_DURABLE_BACKFILL" }
   | {
       readonly type: "WORK_COMPLETED";
       readonly slot: ArticleSlot;
@@ -368,6 +376,26 @@ function offer(
   });
 }
 
+function checkpointInputs(context: ArticleMachineContext): readonly ArtifactId[] {
+  return [
+    context.spec.editionContext,
+    context.spec.articleBrief,
+    ...context.spec.sources,
+    ...context.spec.sourceApprovalArtifacts,
+    context.spec.writerPrompt,
+    context.spec.writingRules,
+    context.manuscriptArtifact,
+    context.workingNotesArtifact,
+  ].filter((artifact): artifact is ArtifactId => artifact !== undefined);
+}
+
+function checkpointDecisions(context: ArticleMachineContext): readonly ArtifactId[] {
+  return [
+    ...Object.values(context.checks).flatMap((check) => check.artifacts),
+    ...context.carriedRulingArtifacts,
+  ];
+}
+
 function stageOffers(
   context: ArticleMachineContext,
   stage: keyof typeof stageSlots,
@@ -549,6 +577,9 @@ export const articleMachine = setup({
     },
     externalCanRevise: ({ context }) =>
       context.iteration < context.effectiveMaxIterations,
+    durableCheckpointCompleted: ({ event }) =>
+      event.type === "WORK_COMPLETED" && event.slot === "durable_checkpoint" &&
+      durableRevisionArtifact(event.artifacts) !== undefined,
   },
   actions: {
     offerWriter: emitEffects(({ context }) => [offer(context, "writer", "writer", "drafting")]),
@@ -560,6 +591,25 @@ export const articleMachine = setup({
     ),
     offerBudgetDecision: emitEffects(({ context }) =>
       humanOfferEffects(context, "budget_decision", "escalated"),
+    ),
+    offerDurableCheckpoint: emitEffects(({ context }) =>
+      context.manuscriptArtifact === undefined
+        ? []
+        : durableCheckpointOffer({
+            actorId: context.actorId,
+            actorKey: context.logicalKey,
+            state: "accepted_pending_durable",
+            logicalItem: {
+              kind: "article",
+              editionId: context.spec.editionId ?? "standalone",
+              logicalId: context.spec.articleId,
+              language: "en",
+            },
+            ...(context.boundRevisionId === undefined
+              ? {}
+              : { expectedParentRevisionId: context.boundRevisionId }),
+            acceptedArtifactId: context.manuscriptArtifact,
+          }),
     ),
     publishSettled: emitEffects(({ context }) =>
       context.manuscriptArtifact === undefined
@@ -573,7 +623,9 @@ export const articleMachine = setup({
               result: {
                 articleId: context.spec.articleId,
                 iteration: context.iteration,
-                status: "settled",
+                status: "durable_bound",
+                durableRevisionArtifactId: context.durableRevisionArtifact ?? null,
+                revisionId: context.boundRevisionId ?? null,
               },
             }),
           ],
@@ -660,6 +712,18 @@ export const articleMachine = setup({
       }
       return {
         checks: { ...context.checks, [event.slot]: checkFromEvent(context, event) },
+      };
+    }),
+    keepDurableRevision: assign(({ context, event }) => {
+      if (event.type !== "WORK_COMPLETED" || event.slot !== "durable_checkpoint") {
+        return {};
+      }
+      return {
+        boundRevisionId:
+          typeof event.result.revisionId === "string"
+            ? event.result.revisionId as RevisionId
+            : context.boundRevisionId,
+        durableRevisionArtifact: durableRevisionArtifact(event.artifacts),
       };
     }),
     skipAfterStage1: assign(({ context }) => ({
@@ -784,6 +848,8 @@ export const articleMachine = setup({
     iteration: 1,
     iterationId: iterationId(input.actorId, 1),
     revisionId: revisionId(input.actorId, 1),
+    boundRevisionId: undefined,
+    durableRevisionArtifact: undefined,
     effectiveMaxIterations: input.spec.policy.maxIterations,
     history: [],
     lastFailure: undefined,
@@ -889,7 +955,7 @@ export const articleMachine = setup({
       always: [
         { guard: "wantsDrop", actions: ["archiveDrop", "recordMachineDecision"], target: "dropped" },
         { guard: "needsEditor", target: "awaiting_editor" },
-        { guard: "passes", actions: ["archivePass", "recordMachineDecision"], target: "settled" },
+        { guard: "passes", actions: ["archivePass", "recordMachineDecision"], target: "accepted_pending_durable" },
         { guard: "canRevise", actions: ["recordMachineDecision", "prepareRevision"], target: "drafting" },
         { actions: "recordMachineDecision", target: "escalated" },
       ],
@@ -898,7 +964,7 @@ export const articleMachine = setup({
       entry: "offerEditor",
       on: {
         WORK_COMPLETED: [
-          { guard: "editorAccepts", actions: ["recordHumanDecision", "archivePass"], target: "settled" },
+          { guard: "editorAccepts", actions: ["recordHumanDecision", "archivePass"], target: "accepted_pending_durable" },
           { guard: "editorDrops", actions: ["recordHumanDecision", "archiveDrop"], target: "dropped" },
           { guard: "editorRevises", actions: ["recordHumanDecision", "applyHumanRevision"], target: "drafting" },
           { guard: "editorAnswer", actions: "recordHumanDecision", target: "escalated" },
@@ -906,7 +972,19 @@ export const articleMachine = setup({
         WORK_FAILED: { actions: "rememberFailure", target: "failed" },
       },
     },
-    settled: {
+    accepted_pending_durable: {
+      entry: "offerDurableCheckpoint",
+      on: {
+        MIGRATION_DURABLE_BACKFILL: { target: "accepted_pending_durable", reenter: true },
+        WORK_COMPLETED: {
+          guard: "durableCheckpointCompleted",
+          actions: "keepDurableRevision",
+          target: "durable_bound",
+        },
+        WORK_FAILED: { actions: "rememberFailure", target: "failed" },
+      },
+    },
+    durable_bound: {
       entry: "publishSettled",
       on: {
         REVISION_REQUESTED: [
@@ -923,7 +1001,7 @@ export const articleMachine = setup({
       entry: ["publishEscalated", "offerBudgetDecision"],
       on: {
         WORK_COMPLETED: [
-          { guard: "budgetAccepts", actions: ["recordHumanDecision", "archivePass"], target: "settled" },
+          { guard: "budgetAccepts", actions: ["recordHumanDecision", "archivePass"], target: "accepted_pending_durable" },
           { guard: "budgetDrops", actions: ["recordHumanDecision", "archiveDrop"], target: "dropped" },
           { guard: "budgetRevises", actions: ["recordHumanDecision", "applyHumanRevision"], target: "drafting" },
         ],

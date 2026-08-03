@@ -1,4 +1,4 @@
-import { resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 import { z } from "zod";
 
@@ -43,6 +43,8 @@ export class PythonRendererAdapter implements RendererAdapter {
     destination: string,
     signal: AbortSignal,
   ): Promise<RenderResult> {
+    const resolvedManifestPath = resolve(manifestPath);
+    const uvCacheDirectory = join(dirname(resolvedManifestPath), "uv-cache");
     let result;
     try {
       result = await runSubprocess(
@@ -51,11 +53,16 @@ export class PythonRendererAdapter implements RendererAdapter {
           args: [
             "run",
             "--locked",
+            "--no-sync",
             "mag-render-adapter",
-            resolve(manifestPath),
+            resolvedManifestPath,
             resolve(destination),
           ],
           cwd: this.projectRoot,
+          env: {
+            UV_CACHE_DIR: uvCacheDirectory,
+            UV_NO_SYNC: "1",
+          },
           timeoutMs: this.timeoutMs,
           stdin: "",
         },
