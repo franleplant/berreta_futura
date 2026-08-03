@@ -1,0 +1,283 @@
+schema_version: 1
+edition_id: rerun-004-the-systems-around-the-model
+piece_id: from-gpt2-to-kimi3
+content_mode: faithful_synthesis
+status: drafting
+produced_at: '2026-08-02T13:53:50+00:00'
+inputs_sha256: 17fc13bdb522742d0ef6eb7fbfa31533902bcfc846fb6b62d543f1dd17ffcb5a
+manuscript_sha256: 5cb8f26259cabe3274db2d658183a9a62a883fd58e2da5a5837c146254409b8f
+rounds:
+- round: 1
+  result: changes_required
+  manuscript_sha256: 5cb8f26259cabe3274db2d658183a9a62a883fd58e2da5a5837c146254409b8f
+  writer:
+    role: writer
+    prompt_path: prompts/faithful-synthesis.md
+    prompt_sha256: 1bbcd7a51079b8540ee72c83f3410be3505cbe5afff9b1799f2e174ad87edd6a
+    backend: agent
+    model: null
+    argv:
+    - mag
+    - produce
+    - rerun-004-the-systems-around-the-model
+    - --backend
+    - agent
+    - --submit
+    - from-gpt2-to-kimi3/r1-writer
+    - --work-sha256
+    - fa36405b4e049907319759c322c334cbd1117ce1baf42cb7433b5b5694da9cf1
+    duration_seconds: 0.0
+    output_sha256: 1fe99dd405ebcf461e6c65e0c35d7cb912abd4c65dd042dfbadda3dc2009fda5
+  gate_failures: []
+  anchors_reconciled:
+  - GPT-2 and the cache
+  - From linear attention to DeltaNet
+  judges: {}
+  notes: '## The sentence
+
+
+    A reader gets the worklog reordered around the one question its material keeps answering and never
+    asks: what does a memory that has stopped growing do when it runs out of room? The source reaches
+    "a fixed-capacity associative memory needs an eviction policy" in its last paragraph, after eight
+    sections ordered by the papers'' publication dates. Here it is the spine from the opening paragraph,
+    one object (the fixed state, the author''s own "board") is followed through every step, and the piece
+    closes on the conclusion his own material forces and he never draws: attention is the best selective
+    read anyone has, which is why the model that fits 22,580 GPT-2s inside it still runs plain softmax
+    retrieval in one layer of every four.
+
+
+    Checked against the finished draft: the opener states the contrast in storage, every section is a
+    step in the eviction argument, and the close is the only sentence in the piece that joins two of his
+    facts into a third.
+
+
+    ## The two absences
+
+
+    1. **The GPT-2 walkthrough.** The five code blocks (block class, attention forward, the config), the
+    embeddings and layer-norm tour, and the 50k vocab / 12 blocks / 12 heads / 768 parameter budget. Only
+    the decode inefficiency survives, because it is the only part of GPT-2 the rest of the piece argues
+    against. `gpt2-baseline` still sits on this section, so the figure carries the architecture the prose
+    no longer walks.
+
+    2. **The "more direct changes" section.** Gated MLA, SiTU activations, the shared-expert down/up projection,
+    and the fused-kernel note (new activation ~3x slower without one). All capacity plumbing on an axis
+    the piece does not run on, and the largest cluster of undefined jargon in the previous draft.
+
+
+    A third near-absence, decided in step 3 rather than planned: the chunked-parallel machinery (block
+    size C, C=1 versus C=L, FLOPs against wall-clock, the tensor-core granularity note). See "What was
+    cut" below. It survives as two sentences, not a passage.
+
+
+    ## Claim ladder
+
+
+    Central claim (his, from his last two paragraphs): the change from GPT-2 to KimiK3 is not scale alone;
+    each step adds capacity to fix a concrete limitation of the one before, and the limitation is always
+    that a fixed-capacity associative memory must decide what to discard.
+
+
+    Supporting, in the order the argument needs:
+
+
+    1. GPT-2 decode recomputes projections for the whole prefix; the KV cache removes that but grows with
+    the sequence and becomes a memory-bandwidth bottleneck. Evidence kept: every decode step reads all
+    of it.
+
+    2. Linear attention folds keys and values into a state whose size is set by the head dimension, not
+    the sequence. Cost: a less expressive approximation of the softmax kernel, with accuracy loss depending
+    on architecture and workload.
+
+    3. His correction of the linear attention paper''s O(N²) framing, and the 2020 date that explains
+    it.
+
+    4. A finite state means additive interference, and that same addition is where the efficiency comes
+    from. Interference bites when tokens far exceed state capacity.
+
+    5. DeltaNet: ask what the key already holds, subtract, write the difference back.
+
+    6. Prefill will not parallelize for delta updates without a re-parameterization; the Parallelizing
+    Linear Transformers with Delta Rule authors supply one. Cost: seven hours of his understanding.
+
+    7. The delta rule forgets only with a replacement in hand. Mamba-2 decay forgets everything equally.
+    The Gated Delta rule combines them (alpha: 1 = pure delta, 0 = clear).
+
+    8. Kimi Linear: per-channel decay; outperformed full attention under controlled comparisons, drop-in,
+    up to 6x decode throughput.
+
+    9. KimiK3: four-layer macrocycles, 3 KDA + 1 MLA; experts with a router waking a handful per token;
+    AttnRes every 12 layers, roughly 2% latency for 1.25x compute.
+
+    10. MLA and AttnRes answer the same loss from two directions, context and depth.
+
+    11. Close: eviction policy, learned selection, attention as the best selective read.
+
+
+    Qualifications and hedges preserved verbatim in sense: "depends on the architecture and the workload";
+    "under controlled comparisons"; "up to 6x"; "roughly 2%"; "must inevitably discard information"; "can
+    get large enough to"; "we can''t parallelize it the same way without some mathematical re-parameterization".
+
+
+    ## Voice signature (kept verbatim)
+
+
+    1. "That''s what Flash Attention fixes... then I saw that it was released in 2020." Kept with its
+    ellipsis, which is his and is a beat of discovery, not the coy "But is it just... scale?" the previous
+    draft borrowed for its opener. The source spells it "Flash Attention" here and "FlashAttention" one
+    sentence later; the second mention was cut so the inconsistency never surfaces, rather than being
+    normalised inside his sentence.
+
+    2. "it took me about seven hours to develop a working understanding of it".
+
+    3. "we need every single state in order to compute the information that needs to be subtracted out,
+    and we can''t parallelize it the same way without some mathematical re-parameterization".
+
+
+    First person therefore appears in two separate places, the Flash Attention correction and the parallelization
+    paragraph, and is deliberately absent from the KimiK3 section, where the source itself stops using
+    it. The originally shipped 004 version was penalised for stripping every "I"; the danger in this draft
+    is the opposite direction, so no "I" was added anywhere the source does not have one.
+
+
+    A fourth candidate was dropped and is worth knowing about: "Inside a block I do real attention (the
+    masked QKᵀ times V), and across blocks I fold everything into the state and read it back with one
+    matmul", with "So the smaller I make C, the fewer FLOPs I do." It is the best technical sentence in
+    the source and it went with the chunking passage. If a later round has room, that passage is the first
+    thing to restore, and the gloss to use for the parenthetical is "every query against every key with
+    the later ones masked out", which is built from his own words in the linear attention paragraph.
+
+
+    ## Jargon: what happened to each of the five findings
+
+
+    Every one of these drew a finding on the previous draft. None is glossed with an editor''s note and
+    none is footnoted; each was either unpacked inside a sentence or removed with the claim it decorated.
+
+
+    - **ELU+1.** Cut. The name decided nothing. The claim it supports, a less expressive approximation
+    of the softmax kernel, survives as "a cheaper function" applied to q and k separately. q and k stay
+    because the sentence about softmax applying its nonlinearity after the q·k product needs them and
+    the source uses them throughout.
+
+    - **D×D state, and N.** Every N and every D is gone. "A state whose size is set by the head dimension,
+    never by the number of tokens" says what D×D meant; "far more tokens than the state has room for"
+    says what N >> D meant. This also removed O(N) and O(N²) from the prose. The only O-notation left
+    is inside his quoted sentence about cost per time-step, in quotation marks, as his.
+
+    - **Masked QK-transpose.** Gone with the chunking passage.
+
+    - **First-order linear recurrence with generalized Householder transition matrices.** Cut whole. What
+    the reader needs is that the rewrite lets a block''s corrections be computed at once, which the sentence
+    now says. The paper is named, so "the authors" has a referent.
+
+    - **Latent Mixture-of-Experts.** Reduced to "a bank of experts, of which a router wakes a handful
+    per token and leaves the rest asleep". The 898 / 2 shared / 896 / 16 numbers are gone: Move 7, none
+    of them changes the claim, and 896 is arithmetic the reader can do. The clause exists mainly so that
+    "routing" in the closing sentence is not an orphan. If it is ever cut, cut "routing" from that list
+    in the same edit.
+
+
+    Two more terms were unpacked without having been findings: **prefill** was removed rather than defined,
+    and **macrocycle** is defined by the apposition that follows it.
+
+
+    ## Referents repaired inside his own sentences
+
+
+    - "The paper''s O(N²) framing" becomes "The linear attention paper''s framing". The O(N²) went too,
+    because the quoted sentence that follows states the claim in words.
+
+    - "The authors therefore rewrite..." becomes "The authors of Parallelizing Linear Transformers with
+    Delta Rule supply one...". The title is the source''s own section heading.
+
+    - "This is the most difficult section of the post" becomes "Getting that to run in parallel was the
+    hardest part", since "the post" points at nothing here.
+
+    - "This is the Mamba-2 contribution" becomes "Mamba-2 supplies that half", which puts the actor in
+    the subject.
+
+    - Schlag''s Fast Weight Programmers quotation was **cut, not repaired**. It states the piece''s spine
+    a third time, after the interference paragraph and the close, and would have read as restatement.
+    If a later reviser wants an authority for the overcapacity claim it is at extraction line 538, and
+    the contiguous run to quote, needing no ellipsis, is "the model should learn to dynamically interact
+    with the memory contents and selectively decide which key-value associations to keep and which ones
+    to delete."
+
+
+    ## What was cut, and by which rule
+
+
+    Cut order step 1, second and third examples of a point the first already carried: the additive-forgetting
+    code sketch (alpha * S_old + S_new); the single-association read-back worked example (k @ (k.T @ v)
+    returning v scaled by the key''s squared norm); the "Q is also a learned pointer" paragraph. All three
+    illustrate the delta rule''s write, which one sentence now carries.
+
+
+    Cut order step 2, supporting evidence before the claim it supports: the FLOP accounting (2Ld² fixed,
+    2LCd growing, C=64 or 128, UMMA, tensor-core granularity); the two ND reads and two 1D writes to HBM,
+    compressed to "every decode step reads all of it"; the γʳ/γⁱ cumulative-decay prefix-sum note; the
+    three-step "make the scores non-negative, divide by the sum, weighted average" enumeration, which
+    only evidences the sentence about the feature map above it.
+
+
+    Cut order step 3, whole claims, least load-bearing first: the chunked-parallel mechanics, which is
+    the largest single cut and the one that took the piece from 1,033 words to 929. It is an implementation-efficiency
+    claim on a spine about what gets stored and discarded, and it survives only as the fact that additive
+    attention splits into blocks and delta updates do not. Also cut here: the "three major changes" enumeration
+    in the Kimi Linear section (items 1 and 2 are the KimiK3 section''s material and item 3 is the sentence
+    above it); MLA query LoRA and output gating; the experts'' compressed latent space and the near-halving
+    of their FLOPs; the AttnRes maths (the h_l formulae, alpha_i normalisation) and the eight-blocks count;
+    the "later layers must learn increasingly large outputs ... which can destabilize training" sentence;
+    the block_attn_res snippet.
+
+
+    Nothing from cut order step 4 was touched. No qualification was dropped to reach length, and no hedge
+    of his was hardened.
+
+
+    All code fences were dropped whole rather than trimmed, so nothing needs fence validation.
+
+
+    ## Choices the piece is resting on
+
+
+    - **"The board."** The only figure in the piece and it is his, from his own code comment `v_old =
+    k @ S # read the board at this key`. It is introduced once at DeltaNet as "a board of fixed capacity",
+    which is also what sets up "fixed-capacity associative memory" in the close, and it is never extended.
+    If a reviewer reads it as an invented metaphor, that comment is the defence. Do not repair it by adding
+    a gloss, and do not stretch it into chalk, rubbing out, or slots elsewhere: that is what would turn
+    one of his words into a house figure.
+
+    - **The close returns to 22,580, and the 3-KDA-plus-1-MLA structure appears twice.** Deliberate, and
+    the only fact deployed twice: once as structure in the KimiK3 paragraph, once as consequence in the
+    last sentence. If a shape reviewer files it as duplication, the fix is to thin the structural mention,
+    not to cut the close. The close is the only place the piece says something the source does not.
+
+    - **"Scaling laws remain relevant, but capacity must be added in the right place and in a form the
+    system can use"** was deliberately not retained even though it is his own sentence and rule vi would
+    allow it. `docs/WRITING_RULES.md` quotes it by name as the specimen ownerless imperative and prints
+    the repair, which is now the "gives every channel its own decay value ... so a layer can drop one
+    association without flattening the rest" sentence in the Kimi Linear paragraph. The claim survives;
+    the empty instruction does not.
+
+    - **No editor''s note.** The previous draft''s note carried the date, the venue and four paper names.
+    Date and venue are the byline''s job and are gone; the paper names now sit inside the sentences that
+    use them.
+
+    - **Headings.** Four, and both figure anchors sit on headings that already match `edition.yaml` ("GPT-2
+    and the cache", "From linear attention to DeltaNet"), so the anchors block is confirmation rather
+    than a move. "Adding the ability to forget" is built from his own sentence "Adding the ability to
+    forget would be simple."
+
+    - **Length.** 929 body words. The source runs roughly 2,900 words of prose once the code, the X chrome
+    and the reply thread are stripped, so this is a shade under a third. The rejected draft was 1,215
+    and the originally shipped 004 version 866. The paragraph deletion pass ran before the pagination
+    check and took out a KV-cache paragraph that repeated the opener and a closing recap of the four things
+    KimiK3 combines. Opening paragraph measured with `mag fit --opener`: 7 of 9 typeset lines, 469 characters.
+
+    - **If this has to be shorter again**, in order: the experts clause in the KimiK3 paragraph (and "routing"
+    in the close with it), then the linear attention trade-off sentence, then the AttnRes paragraph entire,
+    which would cost the piece its only cost-versus-bought number pair and force the last paragraph to
+    be rewritten around MLA alone. Do not reach for the Flash Attention paragraph: at 63 words it is the
+    cheapest human beat in the piece and it is most of what "did a person write this" has to work with.'

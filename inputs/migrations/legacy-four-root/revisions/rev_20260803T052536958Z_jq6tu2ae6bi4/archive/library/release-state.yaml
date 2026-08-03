@@ -1,0 +1,64 @@
+schema_version: 2
+intake_edition_id: 005-unreleased
+collecting_editions:
+- id: 005-unreleased
+  issue_number: 5
+  status: collecting
+  source_ids:
+  - how-enabling-two-settings-tripled-our-scores-on--265c6a01
+  - investigating-three-real-world-incidents-in-our--8b96329a
+released_editions:
+- id: 001-the-work-left-to-us
+  issue_number: 1
+  status: released
+  publication_date: '2026-07-16'
+  source_ids:
+  - src-arvind-tweet-2076994014692229601
+  - src-hassabis-frontier-ai-2026
+  - src-joshi-dsls-reliable-use-llms
+  - src-nadella-reverse-information-paradox-2026
+  - src-narayanan-icml-2026-keynote
+- id: 002-unreleased
+  issue_number: 2
+  status: released
+  publication_date: '2026-07-21'
+  source_ids:
+  - agent-swarms-and-the-new-model-economics-8b346f57
+  - agentic-pods-taking-ai-beyond-engineering-at-ube-5b9382d4
+  - how-we-built-our-knowledge-base-e986baa0
+  - loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f
+  - software-factories-light-and-dark-ef463732
+  - the-building-block-economy-af6644bd
+- id: 003-unreleased
+  issue_number: 3
+  status: released
+  publication_date: '2026-07-27'
+  source_ids:
+  - buzz-a-workspace-where-humans-and-agents-build-t-59122470
+  - buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e
+  - buzz-is-the-first-proper-multiplayer-agent-harne-49c061ac
+  - buzz-your-people-your-agents-your-project-all-in-833eef43
+  - loop-engineering-f0ddfd76
+  - open-weight-models-are-essential-to-a-healthy-ai-e7845a41
+  - open-weights-and-american-ai-leadership-7aa6038f
+  - the-most-interesting-thing-about-buzz-is-shared--f0fc7406
+  - the-new-rules-of-context-engineering-for-claude--aa1b1ea8
+  - why-harness-engineering-is-so-hard-fe732038
+  - why-software-factories-fail-benchmarking-the-new-f1d9c04a
+  - why-software-factories-fail-f53679d7
+  - why-software-factories-fail-turning-the-lights-b-1312d1ad
+  - why-we-re-buzzing-1c82f338
+- id: 004-the-systems-around-the-model
+  issue_number: 4
+  status: released
+  publication_date: '2026-08-03'
+  source_ids:
+  - 22580-from-gpt2-to-kimi3-explained-8f01b0fe
+  - anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
+  - architecture-overview-ce5cb1d1
+  - do-not-make-the-service-bus-non-deterministic-3a92442c
+  - eval-engineering-the-step-that-turns-a-200-model-9f6f868f
+  - factories-are-not-a-token-or-llm-problem-ba5fabbf
+  - pragmatic-leverage-in-the-software-factory-09879736
+  - software-factories-are-super-real-but-the-factor-ab8ad3ab
+  - the-2026-07-28-mcp-specification-release-candida-1a1752b8
