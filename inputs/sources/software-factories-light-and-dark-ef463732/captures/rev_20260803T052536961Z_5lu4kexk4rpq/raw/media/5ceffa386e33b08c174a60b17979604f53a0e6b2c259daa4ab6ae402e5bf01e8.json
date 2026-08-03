@@ -1,0 +1,178 @@
+{
+  "artifact_count": 8,
+  "bundle_sha256": "5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8",
+  "complete": true,
+  "duplicate_groups": [
+    {
+      "paths": [
+        "04-factory-closed-loop.jpg",
+        "05-light-dark-spectrum.jpg"
+      ],
+      "sha256": "99565ac98471c409bd3fdff25cdf6e6f875199ba04c960d46f28a648453ada1a"
+    }
+  ],
+  "image_count": 6,
+  "images": [
+    {
+      "animated": false,
+      "aspect_ratio": 2.500611,
+      "bytes": 103829,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": true,
+      "mime_type": "image/jpeg",
+      "path": "01-article-opener.jpg",
+      "pixel_height": 819,
+      "pixel_width": 2048,
+      "sha256": "b9c434aa7c3e356fc9948bdc22a22245741336f935f872d64d736c792930071b"
+    },
+    {
+      "animated": false,
+      "aspect_ratio": 1.787086,
+      "bytes": 140039,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/jpeg",
+      "path": "02-harness-engineering-talk.jpg",
+      "pixel_height": 1146,
+      "pixel_width": 2048,
+      "sha256": "d955f82f24828ab6ccdbf122cf2fb391d5d2c905c5aebd97b3b40f76dec7ac99"
+    },
+    {
+      "animated": false,
+      "aspect_ratio": 3.025111,
+      "bytes": 85863,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/jpeg",
+      "path": "03-loop-harness-factory.jpg",
+      "pixel_height": 677,
+      "pixel_width": 2048,
+      "sha256": "c84acad91eb1765a599dcfe7eff573df5fecd1fa9d5e3986ab468aba8be6edb9"
+    },
+    {
+      "animated": false,
+      "aspect_ratio": 1.98835,
+      "bytes": 125460,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/jpeg",
+      "path": "04-factory-closed-loop.jpg",
+      "pixel_height": 1030,
+      "pixel_width": 2048,
+      "sha256": "99565ac98471c409bd3fdff25cdf6e6f875199ba04c960d46f28a648453ada1a"
+    },
+    {
+      "animated": false,
+      "aspect_ratio": 1.98835,
+      "bytes": 125460,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/jpeg",
+      "path": "05-light-dark-spectrum.jpg",
+      "pixel_height": 1030,
+      "pixel_width": 2048,
+      "sha256": "99565ac98471c409bd3fdff25cdf6e6f875199ba04c960d46f28a648453ada1a"
+    },
+    {
+      "animated": false,
+      "aspect_ratio": 0.112878,
+      "bytes": 1690646,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/jpeg",
+      "path": "authenticated-x-article.jpg",
+      "pixel_height": 11065,
+      "pixel_width": 1249,
+      "sha256": "0ee01a4e882b39166cb6d19485aa6bfacd13792048d62409847f26d91e8ea71c"
+    }
+  ],
+  "local_references": [
+    {
+      "alt_text": "Software Factories, Light and Dark",
+      "attribute": "manifest",
+      "description": "The article title rendered as an image.",
+      "document_path": "media-manifest.json",
+      "present": true,
+      "reference": "01-article-opener.jpg",
+      "resolved_path": "01-article-opener.jpg",
+      "role": "title_card",
+      "source_position": 1,
+      "source_url": "https://pbs.twimg.com/media/HNjnfr1bkAEDDVa?format=jpg&name=large",
+      "title": "Software Factories, Light and Dark"
+    },
+    {
+      "alt_text": "A software factory flow from leadership and user signals through an agent, automated checks, human review, production, and monitoring.",
+      "attribute": "manifest",
+      "description": "A hand-drawn systems diagram showing intent, work queues, agent building, automated checks, human review, deployment, monitoring, incidents, and user feedback.",
+      "document_path": "media-manifest.json",
+      "heading": "The loop is the atom. The factory is the loop at scale.",
+      "present": true,
+      "reference": "02-harness-engineering-talk.jpg",
+      "resolved_path": "02-harness-engineering-talk.jpg",
+      "role": "diagram",
+      "source_position": 2,
+      "source_url": "https://pbs.twimg.com/media/HNtOWAbasAAhgEJ?format=jpg&name=large",
+      "title": "Optimizing the lights-on software factory"
+    },
+    {
+      "alt_text": "Three panels show one agent loop becoming a harness and then a software factory with multiple harnesses, review, merge, and production.",
+      "attribute": "manifest",
+      "description": "A progression from one agent loop, to a harness of sandbox, tools, memory and gates, to multiple harnesses flowing through a human-owned review gate into production.",
+      "document_path": "media-manifest.json",
+      "heading": "The loop is the atom. The factory is the loop at scale.",
+      "present": true,
+      "reference": "03-loop-harness-factory.jpg",
+      "resolved_path": "03-loop-harness-factory.jpg",
+      "role": "diagram",
+      "source_position": 3,
+      "source_url": "https://pbs.twimg.com/media/HNjddyQbEAAUdkq?format=jpg&name=large",
+      "title": "Loop, harness, factory"
+    },
+    {
+      "alt_text": "A closed loop connects intent, queue, harness, automated checks, human review, deployment, monitoring, and operational signals.",
+      "attribute": "manifest",
+      "description": "A closed factory loop in which intent feeds a queue, a harness builds, automated checks and human review gate deployment, monitoring produces signals, and incidents return to the queue.",
+      "document_path": "media-manifest.json",
+      "heading": "The loop is the atom. The factory is the loop at scale.",
+      "present": true,
+      "reference": "04-factory-closed-loop.jpg",
+      "resolved_path": "04-factory-closed-loop.jpg",
+      "role": "diagram",
+      "source_position": 4,
+      "source_url": "https://pbs.twimg.com/media/HNjdk_obEAA5UR9?format=jpg&name=large",
+      "title": "The agentic software factory"
+    },
+    {
+      "alt_text": "A repeated closed-loop diagram of the agentic software factory.",
+      "attribute": "manifest",
+      "description": "The article repeats the closed-loop factory diagram later in the argument.",
+      "document_path": "media-manifest.json",
+      "duplicate_of": "04-factory-closed-loop.jpg",
+      "heading": "Why we call it dark",
+      "present": true,
+      "reference": "05-light-dark-spectrum.jpg",
+      "resolved_path": "05-light-dark-spectrum.jpg",
+      "role": "duplicate",
+      "source_position": 5,
+      "source_url": "https://pbs.twimg.com/media/HNjflRVaIAARYSb?format=jpg&name=large",
+      "title": "The agentic software factory"
+    }
+  ],
+  "missing_references": [],
+  "referenced_image_count": 5,
+  "schema_version": 1,
+  "source_id": "software-factories-light-and-dark-ef463732",
+  "unresolved_acquisition_references": []
+}

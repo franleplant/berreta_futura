@@ -1,0 +1,29 @@
+{
+  "artifact_count": 3,
+  "bundle_sha256": "19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 1,
+  "images": [
+    {
+      "animated": false,
+      "aspect_ratio": 0.074237,
+      "bytes": 2011426,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/png",
+      "path": "article-full.png",
+      "pixel_height": 17323,
+      "pixel_width": 1286,
+      "sha256": "cb32342ad9467c5a3e943ae34392add7a7560dcd0cd4d763564f66e7c4c6cf28"
+    }
+  ],
+  "local_references": [],
+  "missing_references": [],
+  "referenced_image_count": 0,
+  "schema_version": 1,
+  "source_id": "how-we-built-our-knowledge-base-e986baa0",
+  "unresolved_acquisition_references": []
+}

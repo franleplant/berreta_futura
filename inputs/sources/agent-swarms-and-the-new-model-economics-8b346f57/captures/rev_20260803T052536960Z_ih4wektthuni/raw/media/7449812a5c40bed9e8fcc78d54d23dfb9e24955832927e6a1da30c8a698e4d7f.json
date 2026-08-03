@@ -1,0 +1,70 @@
+{
+  "artifact_count": 3,
+  "bundle_sha256": "7449812a5c40bed9e8fcc78d54d23dfb9e24955832927e6a1da30c8a698e4d7f",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 2,
+  "images": [
+    {
+      "animated": false,
+      "aspect_ratio": 1.263158,
+      "bytes": 274784,
+      "color_mode": "RGBA",
+      "frame_count": 1,
+      "has_alpha": true,
+      "icc_profile_present": false,
+      "mime_type": "image/png",
+      "path": "artifacts/cost-by-model-mix-light.png",
+      "pixel_height": 1520,
+      "pixel_width": 1920,
+      "sha256": "a065638cc30cf92172ff61d4a389b4409be1b7cb425fbd4c7928c15ad2c740ac"
+    },
+    {
+      "animated": false,
+      "aspect_ratio": 1.516588,
+      "bytes": 380546,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/png",
+      "path": "artifacts/task-tree-light.png",
+      "pixel_height": 1266,
+      "pixel_width": 1920,
+      "sha256": "c12295d450c03fca0862879826d12999fdd1462e0de5da137b7ead6dd87b99ba"
+    }
+  ],
+  "local_references": [
+    {
+      "alt_text": "Cost to rebuild SQLite by model mix under old and new agent swarms.",
+      "attribute": "manifest",
+      "description": "Total cost under the old and new swarm harnesses for four planner-worker model configurations.",
+      "document_path": "artifacts/media-manifest.json",
+      "heading": "Model economics",
+      "present": true,
+      "reference": "cost-by-model-mix-light.png",
+      "resolved_path": "artifacts/cost-by-model-mix-light.png",
+      "role": "figure",
+      "source_position": 1,
+      "title": "Cost to rebuild SQLite by model mix — light print export"
+    },
+    {
+      "alt_text": "Diagram of decomposing work across planner and worker agents in a task tree.",
+      "attribute": "manifest",
+      "description": "A large goal is recursively decomposed by planner agents into narrow tasks executed by worker agents.",
+      "document_path": "artifacts/media-manifest.json",
+      "heading": "Trees and leaves",
+      "present": true,
+      "reference": "task-tree-light.png",
+      "resolved_path": "artifacts/task-tree-light.png",
+      "role": "diagram",
+      "source_position": 2,
+      "title": "Planner-worker task tree — light print export"
+    }
+  ],
+  "missing_references": [],
+  "referenced_image_count": 2,
+  "schema_version": 1,
+  "source_id": "agent-swarms-and-the-new-model-economics-8b346f57",
+  "unresolved_acquisition_references": []
+}

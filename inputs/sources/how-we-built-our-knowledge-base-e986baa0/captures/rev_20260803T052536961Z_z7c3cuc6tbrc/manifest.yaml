@@ -1,0 +1,88 @@
+schema_version: 1
+revision_kind: source_capture
+logical_id: how-we-built-our-knowledge-base-e986baa0
+revision_id: rev_20260803T052536961Z_z7c3cuc6tbrc
+created_at: 2026-08-03T05:25:36.961Z
+parent_revision_id: null
+migration_id: legacy-four-root-source-1
+files:
+  - path: raw/media/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169.curation.json
+    media_type: application/json
+    sha256: sha256:3fd3e89acec83a4788a5a72abd2f8917ff5d8fb11e3d784adcedc52eabeb6b2c
+    size_bytes: 11468
+    legacy_source:
+      repositoryPath: library/sources/how-we-built-our-knowledge-base-e986baa0/media/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169.curation.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 8123c62ad446c4ae28387ecc562e8e5511a23f91
+  - path: raw/media/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169.json
+    media_type: application/json
+    sha256: sha256:c7dc42b8db736ebe3d54f0835502ab5e6bd8e9e5d2a3a3f7020285a4521d911c
+    size_bytes: 819
+    legacy_source:
+      repositoryPath: library/sources/how-we-built-our-knowledge-base-e986baa0/media/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 4521d3461694d81bcd178bc228f2d59ebd7a48b0
+  - path: raw/media/derived/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/svg-001-2157c84f5ec3.png
+    media_type: image/png
+    sha256: sha256:5bd29f88de4853edafa298b30c8fc7398f35aa61346eb8f2bade161d45e3c718
+    size_bytes: 134109
+    legacy_source:
+      repositoryPath: library/sources/how-we-built-our-knowledge-base-e986baa0/media/derived/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/svg-001-2157c84f5ec3.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 07f044e4afd638873bf2d721675e9230aa183544
+  - path: raw/media/derived/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/svg-007-a8dd975668e8.png
+    media_type: image/png
+    sha256: sha256:29d14d218b7273c11c6efa9ef8d755c158a13074a4d0e83ba044bb40773af535
+    size_bytes: 33004
+    legacy_source:
+      repositoryPath: library/sources/how-we-built-our-knowledge-base-e986baa0/media/derived/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/svg-007-a8dd975668e8.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 8c253f9ddc522fdba0445b604f50635d0ac864df
+  - path: raw/media/derived/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/svg-008-b42cddcda2b0.png
+    media_type: image/png
+    sha256: sha256:65c9341d84c9fa2d77299174b9a0c72e335848c95bac5c0b602e358e16a7bd5f
+    size_bytes: 27690
+    legacy_source:
+      repositoryPath: library/sources/how-we-built-our-knowledge-base-e986baa0/media/derived/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/svg-008-b42cddcda2b0.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 9fd3ab2e80bc71574f8d5fc76e42d092625f286e
+  - path: raw/raw/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/artifacts/article-full.png
+    media_type: image/png
+    sha256: sha256:cb32342ad9467c5a3e943ae34392add7a7560dcd0cd4d763564f66e7c4c6cf28
+    size_bytes: 2011426
+    legacy_source:
+      repositoryPath: library/sources/how-we-built-our-knowledge-base-e986baa0/raw/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/artifacts/article-full.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 3131796fc64144607c92c0898808562808550161
+  - path: raw/raw/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/artifacts/article.pdf
+    media_type: application/pdf
+    sha256: sha256:15064b1e30f218c14b0ad684bdb7109ae3c6a33fdd740e1ce448c35a17b9d777
+    size_bytes: 626771
+    legacy_source:
+      repositoryPath: library/sources/how-we-built-our-knowledge-base-e986baa0/raw/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/artifacts/article.pdf
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 412637b591df49e47db14fc4e7561d8ef9f4381f
+  - path: raw/raw/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/artifacts/capture.json
+    media_type: application/json
+    sha256: sha256:a38de6a416b0c7b21ce2ad32cdcf80608f19d0124fe6f91e48125438d945282b
+    size_bytes: 940015
+    legacy_source:
+      repositoryPath: library/sources/how-we-built-our-knowledge-base-e986baa0/raw/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/artifacts/capture.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 2ad2ec56386bec7c051f8a3ce5de935f5c8bd061
+  - path: raw/raw/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/manifest.json
+    media_type: application/json
+    sha256: sha256:cfee0911f329e828b4112a326df6a16bd3fbc74ef2f7a166a3c353d2c5c91cb3
+    size_bytes: 1011
+    legacy_source:
+      repositoryPath: library/sources/how-we-built-our-knowledge-base-e986baa0/raw/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: e85c137462d1d6267a797921b24426a38a668b98
+  - path: raw/record.yaml
+    media_type: application/yaml
+    sha256: sha256:550318254008684e90b4e31d8dfcd86b78f70ea4f9fbfd599e316a0067cf1cc9
+    size_bytes: 4200
+    legacy_source:
+      repositoryPath: library/sources/how-we-built-our-knowledge-base-e986baa0/record.yaml
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 6a0796b1893b44836a2378532e89a86616856e17

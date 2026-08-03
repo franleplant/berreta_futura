@@ -1,0 +1,176 @@
+schema_version: 1
+revision_kind: source_capture
+logical_id: open-weight-models-are-essential-to-a-healthy-ai-e7845a41
+revision_id: rev_20260803T052536961Z_teumf4duebze
+created_at: 2026-08-03T05:25:36.961Z
+parent_revision_id: null
+migration_id: legacy-four-root-source-1
+files:
+  - path: raw/media/0684c529f7f00bcfa5ea9c68bfe4e902db63454df0bbac05574b460ca9887768.curation.json
+    media_type: application/json
+    sha256: sha256:84ac480296667d7d164f5e48a4c865de8b66215995cdd91a0313989ebc07ab2c
+    size_bytes: 3613
+    legacy_source:
+      repositoryPath: library/sources/open-weight-models-are-essential-to-a-healthy-ai-e7845a41/media/0684c529f7f00bcfa5ea9c68bfe4e902db63454df0bbac05574b460ca9887768.curation.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 12de27bdeeafd497448eacf0a7706166e91dac95
+  - path: raw/media/0684c529f7f00bcfa5ea9c68bfe4e902db63454df0bbac05574b460ca9887768.json
+    media_type: application/json
+    sha256: sha256:89d0629ef19776cff178d1911ded5a84a2e238d9a3782c9a3876ce28592a0457
+    size_bytes: 3300
+    legacy_source:
+      repositoryPath: library/sources/open-weight-models-are-essential-to-a-healthy-ai-e7845a41/media/0684c529f7f00bcfa5ea9c68bfe4e902db63454df0bbac05574b460ca9887768.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: a5c9a34a2d78ae536f8e6ca25a2a044b6a5cce51
+  - path: raw/media/e01979796302a3483274d78bb393bb2ef061f2f4e51bbb1e74bb1037aa17cb01.curation.json
+    media_type: application/json
+    sha256: sha256:4f1dd3b1be0dacabcd5f1d355e37ca9afc4fc2de7a78a423092005dda3e993ea
+    size_bytes: 3104
+    legacy_source:
+      repositoryPath: library/sources/open-weight-models-are-essential-to-a-healthy-ai-e7845a41/media/e01979796302a3483274d78bb393bb2ef061f2f4e51bbb1e74bb1037aa17cb01.curation.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: d33c5735ec105233244870d5a0abf00a564647ca
+  - path: raw/media/e01979796302a3483274d78bb393bb2ef061f2f4e51bbb1e74bb1037aa17cb01.json
+    media_type: application/json
+    sha256: sha256:1e5bfecea2dfc931cf20743b52c634fcd64533d6b4085798804a29f97cacfab7
+    size_bytes: 3297
+    legacy_source:
+      repositoryPath: library/sources/open-weight-models-are-essential-to-a-healthy-ai-e7845a41/media/e01979796302a3483274d78bb393bb2ef061f2f4e51bbb1e74bb1037aa17cb01.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: ea7810ed63e45ad3b184e4ab33c1ce11d97cac73
+  - path: raw/raw/0684c529f7f00bcfa5ea9c68bfe4e902db63454df0bbac05574b460ca9887768/artifacts/article.txt
+    media_type: text/plain
+    sha256: sha256:fe97965b473512943c3807f58da78bc8564e970b2201a5cc20df15b9ec978d82
+    size_bytes: 485
+    legacy_source:
+      repositoryPath: library/sources/open-weight-models-are-essential-to-a-healthy-ai-e7845a41/raw/0684c529f7f00bcfa5ea9c68bfe4e902db63454df0bbac05574b460ca9887768/artifacts/article.txt
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: ba752364bf86c828e78e1e86b9bcf8dd2d8adffb
+  - path: raw/raw/0684c529f7f00bcfa5ea9c68bfe4e902db63454df0bbac05574b460ca9887768/artifacts/links.json
+    media_type: application/json
+    sha256: sha256:e389e5c2d08f60d35954b03c2dd8ef04f2badbc1b65f696896e6825974412348
+    size_bytes: 1022
+    legacy_source:
+      repositoryPath: library/sources/open-weight-models-are-essential-to-a-healthy-ai-e7845a41/raw/0684c529f7f00bcfa5ea9c68bfe4e902db63454df0bbac05574b460ca9887768/artifacts/links.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 90830d490b7b557b09ac4921e80311f665e9ee7e
+  - path: raw/raw/0684c529f7f00bcfa5ea9c68bfe4e902db63454df0bbac05574b460ca9887768/artifacts/media-manifest.json
+    media_type: application/json
+    sha256: sha256:5ac1fe31b5d4343f7bbe88c8fae235dd9fe259858a449f673323e8f25535bf17
+    size_bytes: 1476
+    legacy_source:
+      repositoryPath: library/sources/open-weight-models-are-essential-to-a-healthy-ai-e7845a41/raw/0684c529f7f00bcfa5ea9c68bfe4e902db63454df0bbac05574b460ca9887768/artifacts/media-manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: f0ecaa0d88e2c10068afde0f73f75ed4941bdd03
+  - path: raw/raw/0684c529f7f00bcfa5ea9c68bfe4e902db63454df0bbac05574b460ca9887768/artifacts/media/001.png
+    media_type: image/png
+    sha256: sha256:578527d024ac6ccb085cbcd3f53668fe99ea106340852eaf07f5c7568b650c54
+    size_bytes: 87683
+    legacy_source:
+      repositoryPath: library/sources/open-weight-models-are-essential-to-a-healthy-ai-e7845a41/raw/0684c529f7f00bcfa5ea9c68bfe4e902db63454df0bbac05574b460ca9887768/artifacts/media/001.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 48f47d3bccfbc3f71528556faf24810ceb4c8f5c
+  - path: raw/raw/0684c529f7f00bcfa5ea9c68bfe4e902db63454df0bbac05574b460ca9887768/artifacts/media/002.png
+    media_type: image/png
+    sha256: sha256:d45b543b3a9d2aa3f987b2c78e3bcdccceaa790850d33bac367f629e799ab6f8
+    size_bytes: 93420
+    legacy_source:
+      repositoryPath: library/sources/open-weight-models-are-essential-to-a-healthy-ai-e7845a41/raw/0684c529f7f00bcfa5ea9c68bfe4e902db63454df0bbac05574b460ca9887768/artifacts/media/002.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: f2ce0d2404e01974cdb16acf36ecba8a51bbf271
+  - path: raw/raw/0684c529f7f00bcfa5ea9c68bfe4e902db63454df0bbac05574b460ca9887768/artifacts/media/003.png
+    media_type: image/png
+    sha256: sha256:e0516ba0caa1e49493dafb406bd6c2ffa929360b0bf74785d74f20e130369244
+    size_bytes: 67298
+    legacy_source:
+      repositoryPath: library/sources/open-weight-models-are-essential-to-a-healthy-ai-e7845a41/raw/0684c529f7f00bcfa5ea9c68bfe4e902db63454df0bbac05574b460ca9887768/artifacts/media/003.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: f536fd8aabf59b2c65ddba9cca68af43eece919e
+  - path: raw/raw/0684c529f7f00bcfa5ea9c68bfe4e902db63454df0bbac05574b460ca9887768/artifacts/observed-images.json
+    media_type: application/json
+    sha256: sha256:36bbc2ad604e6bfe48704c54e2cc91761a3eb72daea0c128d8962ed5305c3ee7
+    size_bytes: 822
+    legacy_source:
+      repositoryPath: library/sources/open-weight-models-are-essential-to-a-healthy-ai-e7845a41/raw/0684c529f7f00bcfa5ea9c68bfe4e902db63454df0bbac05574b460ca9887768/artifacts/observed-images.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 4d89a8079931f0b3793b12c230863ca7a4241516
+  - path: raw/raw/0684c529f7f00bcfa5ea9c68bfe4e902db63454df0bbac05574b460ca9887768/manifest.json
+    media_type: application/json
+    sha256: sha256:dcb700d1f9c252654e413ba88cf9cc3c813f1a39721678a3e09727b28d3feb59
+    size_bytes: 1574
+    legacy_source:
+      repositoryPath: library/sources/open-weight-models-are-essential-to-a-healthy-ai-e7845a41/raw/0684c529f7f00bcfa5ea9c68bfe4e902db63454df0bbac05574b460ca9887768/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 24b6047091bdb3bde19cb10a8f561e7433e6ef31
+  - path: raw/raw/e01979796302a3483274d78bb393bb2ef061f2f4e51bbb1e74bb1037aa17cb01/artifacts/article.txt
+    media_type: text/plain
+    sha256: sha256:fe97965b473512943c3807f58da78bc8564e970b2201a5cc20df15b9ec978d82
+    size_bytes: 485
+    legacy_source:
+      repositoryPath: library/sources/open-weight-models-are-essential-to-a-healthy-ai-e7845a41/raw/e01979796302a3483274d78bb393bb2ef061f2f4e51bbb1e74bb1037aa17cb01/artifacts/article.txt
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: ba752364bf86c828e78e1e86b9bcf8dd2d8adffb
+  - path: raw/raw/e01979796302a3483274d78bb393bb2ef061f2f4e51bbb1e74bb1037aa17cb01/artifacts/links.json
+    media_type: application/json
+    sha256: sha256:e389e5c2d08f60d35954b03c2dd8ef04f2badbc1b65f696896e6825974412348
+    size_bytes: 1022
+    legacy_source:
+      repositoryPath: library/sources/open-weight-models-are-essential-to-a-healthy-ai-e7845a41/raw/e01979796302a3483274d78bb393bb2ef061f2f4e51bbb1e74bb1037aa17cb01/artifacts/links.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 90830d490b7b557b09ac4921e80311f665e9ee7e
+  - path: raw/raw/e01979796302a3483274d78bb393bb2ef061f2f4e51bbb1e74bb1037aa17cb01/artifacts/media-manifest.json
+    media_type: application/json
+    sha256: sha256:5ac1fe31b5d4343f7bbe88c8fae235dd9fe259858a449f673323e8f25535bf17
+    size_bytes: 1476
+    legacy_source:
+      repositoryPath: library/sources/open-weight-models-are-essential-to-a-healthy-ai-e7845a41/raw/e01979796302a3483274d78bb393bb2ef061f2f4e51bbb1e74bb1037aa17cb01/artifacts/media-manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: f0ecaa0d88e2c10068afde0f73f75ed4941bdd03
+  - path: raw/raw/e01979796302a3483274d78bb393bb2ef061f2f4e51bbb1e74bb1037aa17cb01/artifacts/media/001.png
+    media_type: image/png
+    sha256: sha256:e89577e012fb84a890581a17e20e964efcbc27516035c6104ca1d56fc44e9ced
+    size_bytes: 221779
+    legacy_source:
+      repositoryPath: library/sources/open-weight-models-are-essential-to-a-healthy-ai-e7845a41/raw/e01979796302a3483274d78bb393bb2ef061f2f4e51bbb1e74bb1037aa17cb01/artifacts/media/001.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 3576b909e4a78a922a6ce17ec7c14e880cd3d392
+  - path: raw/raw/e01979796302a3483274d78bb393bb2ef061f2f4e51bbb1e74bb1037aa17cb01/artifacts/media/002.png
+    media_type: image/png
+    sha256: sha256:9712e7be709c75cd7566cfe80e3552de12ab9d6a796b58c9af9c3f5f0348d6e8
+    size_bytes: 239550
+    legacy_source:
+      repositoryPath: library/sources/open-weight-models-are-essential-to-a-healthy-ai-e7845a41/raw/e01979796302a3483274d78bb393bb2ef061f2f4e51bbb1e74bb1037aa17cb01/artifacts/media/002.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: ea4b46423f4e99d66f2766668de08fd2f8f33251
+  - path: raw/raw/e01979796302a3483274d78bb393bb2ef061f2f4e51bbb1e74bb1037aa17cb01/artifacts/media/003.png
+    media_type: image/png
+    sha256: sha256:0364f04894fd7c7722f2203103abecd59bc64afa0756d2d4d54c8d651d1508b2
+    size_bytes: 176482
+    legacy_source:
+      repositoryPath: library/sources/open-weight-models-are-essential-to-a-healthy-ai-e7845a41/raw/e01979796302a3483274d78bb393bb2ef061f2f4e51bbb1e74bb1037aa17cb01/artifacts/media/003.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 0c116c2ed8d1cf9bd698aec0d81d5cc312a7eb04
+  - path: raw/raw/e01979796302a3483274d78bb393bb2ef061f2f4e51bbb1e74bb1037aa17cb01/artifacts/observed-images.json
+    media_type: application/json
+    sha256: sha256:36bbc2ad604e6bfe48704c54e2cc91761a3eb72daea0c128d8962ed5305c3ee7
+    size_bytes: 822
+    legacy_source:
+      repositoryPath: library/sources/open-weight-models-are-essential-to-a-healthy-ai-e7845a41/raw/e01979796302a3483274d78bb393bb2ef061f2f4e51bbb1e74bb1037aa17cb01/artifacts/observed-images.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 4d89a8079931f0b3793b12c230863ca7a4241516
+  - path: raw/raw/e01979796302a3483274d78bb393bb2ef061f2f4e51bbb1e74bb1037aa17cb01/manifest.json
+    media_type: application/json
+    sha256: sha256:f40ab463454cfcc762b25eaacb38ea94bfd96076ab22f18fc3ef5c178994044b
+    size_bytes: 1559
+    legacy_source:
+      repositoryPath: library/sources/open-weight-models-are-essential-to-a-healthy-ai-e7845a41/raw/e01979796302a3483274d78bb393bb2ef061f2f4e51bbb1e74bb1037aa17cb01/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 7487706d67c568b81835a85725103f800755da6f
+  - path: raw/record.yaml
+    media_type: application/yaml
+    sha256: sha256:2c0b4b143995eb52cd3a8872a5c3421703c408641c5fad649e0ec96da20a808b
+    size_bytes: 3715
+    legacy_source:
+      repositoryPath: library/sources/open-weight-models-are-essential-to-a-healthy-ai-e7845a41/record.yaml
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: fd155c32d77ce41d7174f69a1fa7436c9fc9f3c1

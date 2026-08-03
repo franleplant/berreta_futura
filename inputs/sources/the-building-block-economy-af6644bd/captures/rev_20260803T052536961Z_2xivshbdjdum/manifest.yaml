@@ -1,0 +1,88 @@
+schema_version: 1
+revision_kind: source_capture
+logical_id: the-building-block-economy-af6644bd
+revision_id: rev_20260803T052536961Z_2xivshbdjdum
+created_at: 2026-08-03T05:25:36.961Z
+parent_revision_id: null
+migration_id: legacy-four-root-source-1
+files:
+  - path: raw/media/5f13c33cddb4dbc122a34aa6dacb44a8626ad45eaab3c7f5c7276728fc7258dc.curation.json
+    media_type: application/json
+    sha256: sha256:cfb80b2a384857ef130dd4e657162c57c9b06dd56d7f5f7e546291b7c5155ea8
+    size_bytes: 2734
+    legacy_source:
+      repositoryPath: library/sources/the-building-block-economy-af6644bd/media/5f13c33cddb4dbc122a34aa6dacb44a8626ad45eaab3c7f5c7276728fc7258dc.curation.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 94a40ff9fd04603359c579402c75ef3e2dd62556
+  - path: raw/media/5f13c33cddb4dbc122a34aa6dacb44a8626ad45eaab3c7f5c7276728fc7258dc.json
+    media_type: application/json
+    sha256: sha256:3aba5254aa4853f3d97f0afbe87fcea823d9d6b05658bb5ee967984555345f6b
+    size_bytes: 1648
+    legacy_source:
+      repositoryPath: library/sources/the-building-block-economy-af6644bd/media/5f13c33cddb4dbc122a34aa6dacb44a8626ad45eaab3c7f5c7276728fc7258dc.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 173efaca12f78c302e34498bab166350965e9603
+  - path: raw/raw/5f13c33cddb4dbc122a34aa6dacb44a8626ad45eaab3c7f5c7276728fc7258dc/artifacts/authenticated-x-article.jpg
+    media_type: image/jpeg
+    sha256: sha256:3d7b6f45ec0e2aacf2a5a4618f7c9dab8a66ddd2d6428e0d04b634d16032cb56
+    size_bytes: 570489
+    legacy_source:
+      repositoryPath: library/sources/the-building-block-economy-af6644bd/raw/5f13c33cddb4dbc122a34aa6dacb44a8626ad45eaab3c7f5c7276728fc7258dc/artifacts/authenticated-x-article.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 80e02a260f6ad4bab21685a43c51e0da4feff37c
+  - path: raw/raw/5f13c33cddb4dbc122a34aa6dacb44a8626ad45eaab3c7f5c7276728fc7258dc/artifacts/authenticated-x-article.txt
+    media_type: text/plain
+    sha256: sha256:b32986a384bc5e4d53edec330a0b6488cc4fdafba27c23128e02bb9c34da0b4c
+    size_bytes: 9744
+    legacy_source:
+      repositoryPath: library/sources/the-building-block-economy-af6644bd/raw/5f13c33cddb4dbc122a34aa6dacb44a8626ad45eaab3c7f5c7276728fc7258dc/artifacts/authenticated-x-article.txt
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 2e6318138f9b98591626c741c6b97a8933717c46
+  - path: raw/raw/5f13c33cddb4dbc122a34aa6dacb44a8626ad45eaab3c7f5c7276728fc7258dc/artifacts/primary-article.pdf
+    media_type: application/pdf
+    sha256: sha256:3e76584719f60688979b90ad3cff1f69bada4d6efe6fe273875b96f635d33714
+    size_bytes: 102914
+    legacy_source:
+      repositoryPath: library/sources/the-building-block-economy-af6644bd/raw/5f13c33cddb4dbc122a34aa6dacb44a8626ad45eaab3c7f5c7276728fc7258dc/artifacts/primary-article.pdf
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 5f2a765f3e90fe4c95e9e631f7899f550f4f7928
+  - path: raw/raw/5f13c33cddb4dbc122a34aa6dacb44a8626ad45eaab3c7f5c7276728fc7258dc/artifacts/primary-article.png
+    media_type: image/png
+    sha256: sha256:5f6eb248f2a60305a72478554ad43c7e81f11efa427a7b0ad88b602c5d1cade2
+    size_bytes: 695035
+    legacy_source:
+      repositoryPath: library/sources/the-building-block-economy-af6644bd/raw/5f13c33cddb4dbc122a34aa6dacb44a8626ad45eaab3c7f5c7276728fc7258dc/artifacts/primary-article.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 724ac819723c0878ccfa1cdeb1d091787b7aa0e4
+  - path: raw/raw/5f13c33cddb4dbc122a34aa6dacb44a8626ad45eaab3c7f5c7276728fc7258dc/artifacts/submitted-post.pdf
+    media_type: application/pdf
+    sha256: sha256:56a3265846b83ee46b7f0cf2db05f8b3bb2bdcf4b3c680398811b4453c41ac41
+    size_bytes: 47027
+    legacy_source:
+      repositoryPath: library/sources/the-building-block-economy-af6644bd/raw/5f13c33cddb4dbc122a34aa6dacb44a8626ad45eaab3c7f5c7276728fc7258dc/artifacts/submitted-post.pdf
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 5870e8b958aabe4013b72c0bcd13aa6e52ab4143
+  - path: raw/raw/5f13c33cddb4dbc122a34aa6dacb44a8626ad45eaab3c7f5c7276728fc7258dc/artifacts/submitted-post.png
+    media_type: image/png
+    sha256: sha256:f165bed16c171309e7e3b1a2f318ffe16b761b6daace13b3d786766c45f9d96f
+    size_bytes: 112929
+    legacy_source:
+      repositoryPath: library/sources/the-building-block-economy-af6644bd/raw/5f13c33cddb4dbc122a34aa6dacb44a8626ad45eaab3c7f5c7276728fc7258dc/artifacts/submitted-post.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 34f4f0a8b3aad5747b118a20c37447d20715d769
+  - path: raw/raw/5f13c33cddb4dbc122a34aa6dacb44a8626ad45eaab3c7f5c7276728fc7258dc/manifest.json
+    media_type: application/json
+    sha256: sha256:808d93e25509af9508170192ab27f733859eb2fb592a472b4f182544d6c424a2
+    size_bytes: 1507
+    legacy_source:
+      repositoryPath: library/sources/the-building-block-economy-af6644bd/raw/5f13c33cddb4dbc122a34aa6dacb44a8626ad45eaab3c7f5c7276728fc7258dc/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: ae4d356a0b6162dbc209d0b84fab5b04438946f2
+  - path: raw/record.yaml
+    media_type: application/yaml
+    sha256: sha256:f432ef3189ba8a013c3d5c810c695847f1d17d11aea310942a9d4edd084beb04
+    size_bytes: 1741
+    legacy_source:
+      repositoryPath: library/sources/the-building-block-economy-af6644bd/record.yaml
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 0cbc298bc6a2b18b66d25ec54b5c0b170a0ec9f6

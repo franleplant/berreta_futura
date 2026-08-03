@@ -1,0 +1,38 @@
+{
+  "artifact_count": 5,
+  "artifacts": [
+    {
+      "bytes": 18932,
+      "path": "article.html",
+      "sha256": "33d489c0ad510e0c92fc37c029fbc6ab07bf5a7ff80f8c9b3c66edb4b12332a3"
+    },
+    {
+      "bytes": 14429,
+      "path": "article.txt",
+      "sha256": "1d76754ccaec6abd88c92a2233195d27983d394a1b9fe57c1d25a80da8159b5c"
+    },
+    {
+      "bytes": 1937,
+      "path": "links.json",
+      "sha256": "8a1a91f2d2a5635e19ad047b969867ca7d94cb1bee472ae4195c9aeee7c0df24"
+    },
+    {
+      "bytes": 3,
+      "path": "observed-images.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "bytes": 109375,
+      "path": "viewport.png",
+      "sha256": "18e6cb52460809a84b77ef6e65dcd7bd80f9e85dec510b2fafb87f5216f56127"
+    }
+  ],
+  "bundle_sha256": "71ecb34b8033c50d3eb1e3384771978d5bdfb38fa373c2299593cacc8e6d4c8f",
+  "byte_count": 144676,
+  "canonical_url": "https://addyosmani.com/blog/loop-engineering",
+  "captured_at": "2026-07-26T22:11:38Z",
+  "method": "public_chrome_article_text_links_and_viewport",
+  "schema_version": 1,
+  "source_id": "loop-engineering-f0ddfd76",
+  "submitted_url": "https://addyosmani.com/blog/loop-engineering/"
+}

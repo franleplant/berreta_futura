@@ -1,0 +1,29 @@
+{
+  "artifact_count": 4,
+  "bundle_sha256": "98b41281cc44fd93754c2df85cafd40cbc5ab798054dec01d9446a1feb1ed529",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 1,
+  "images": [
+    {
+      "animated": false,
+      "aspect_ratio": 1.958015,
+      "bytes": 1125,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/jpeg",
+      "path": "embedded-video-thumbnail.png",
+      "pixel_height": 262,
+      "pixel_width": 513,
+      "sha256": "04b56bde316f6ce9699e77fbb1bd5c85430f7093c693ad07d43bd7c8977038fa"
+    }
+  ],
+  "local_references": [],
+  "missing_references": [],
+  "referenced_image_count": 0,
+  "schema_version": 1,
+  "source_id": "buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e",
+  "unresolved_acquisition_references": []
+}

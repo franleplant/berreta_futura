@@ -1,0 +1,63 @@
+{
+  "artifact_count": 10,
+  "artifacts": [
+    {
+      "bytes": 9527,
+      "path": "article.txt",
+      "sha256": "e118cf2f0dc76b19fab955921cf43ca00df5f559f5c3cc2958587372149b985f"
+    },
+    {
+      "bytes": 326,
+      "path": "capture-meta.json",
+      "sha256": "43cd3eb9a4e2e45c6a90d28ae47c274337baf570b61913750ad1f57c9feff5b2"
+    },
+    {
+      "bytes": 2001,
+      "path": "links.json",
+      "sha256": "d8bff30ceb810ff7e8c4d702146dfbbbed972392788560caf2b3ae7a8074a96d"
+    },
+    {
+      "bytes": 38670,
+      "path": "media/001.png",
+      "sha256": "19552cb7f0b983faae32b053da031e4174e574f5a4852e70d5e6da1875d03697"
+    },
+    {
+      "bytes": 41309,
+      "path": "media/002.png",
+      "sha256": "cc72eed6b40a3d1e7dfd60e4697c3347a7f1b8dde2cfba343c8b81f0da378dc8"
+    },
+    {
+      "bytes": 39818,
+      "path": "media/003.png",
+      "sha256": "06d54bf743f8c8928f08d2ae4a820b51efcf66f2809545c95c6656fb022c7390"
+    },
+    {
+      "bytes": 45658,
+      "path": "media/004.png",
+      "sha256": "2eeb472cc0477dd4ff1c8e91d748265f8487812e370ea5c0d98461e60a8a8f62"
+    },
+    {
+      "bytes": 38382,
+      "path": "media/005.png",
+      "sha256": "eac2f2bd0d81434538215ae5dc56c80398e19642bfa53340b11edb4ac2e19af2"
+    },
+    {
+      "bytes": 2289,
+      "path": "media-manifest.json",
+      "sha256": "e3f4f0b07b7fe5ddfb079ce7692eae2864b25c4ea20cabc9ae739487c3dc43d0"
+    },
+    {
+      "bytes": 986,
+      "path": "observed-images.json",
+      "sha256": "f198b7bdb2a13654a7e02c43636cf440a07504f462c6bd122cd09d392127dc3f"
+    }
+  ],
+  "bundle_sha256": "36ee6309f236ecd0506f76c973bb4eb64beaa1abbcdddf8bcc66b9bec8a4798d",
+  "byte_count": 218966,
+  "canonical_url": "https://x.com/trq212/status/2080710971228918066",
+  "captured_at": "2026-07-26T22:12:40Z",
+  "method": "authenticated_chrome_x_article_text_and_sanitized_media_views",
+  "schema_version": 1,
+  "source_id": "the-new-rules-of-context-engineering-for-claude--aa1b1ea8",
+  "submitted_url": "https://x.com/trq212/status/2080710971228918066"
+}

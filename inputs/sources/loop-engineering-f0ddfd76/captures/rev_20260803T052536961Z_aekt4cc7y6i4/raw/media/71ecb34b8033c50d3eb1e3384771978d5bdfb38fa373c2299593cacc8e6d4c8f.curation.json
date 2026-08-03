@@ -1,0 +1,36 @@
+{
+  "bundle_sha256": "71ecb34b8033c50d3eb1e3384771978d5bdfb38fa373c2299593cacc8e6d4c8f",
+  "candidate_count": 1,
+  "candidates": [
+    {
+      "artifact_path": "viewport.png",
+      "artifact_sha256": "18e6cb52460809a84b77ef6e65dcd7bd80f9e85dec510b2fafb87f5216f56127",
+      "aspect_ratio": 2.116667,
+      "criteria": [],
+      "decision": "reject",
+      "description": "",
+      "heading": "",
+      "id": "raster-001-18e6cb52",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 900,
+      "pixel_width": 1905,
+      "rationale": "",
+      "rejection_reasons": [
+        "no_semantic_source_context"
+      ],
+      "score": 0,
+      "source_artifact": "viewport.png",
+      "source_artifact_sha256": "18e6cb52460809a84b77ef6e65dcd7bd80f9e85dec510b2fafb87f5216f56127",
+      "source_position": 1,
+      "title": "viewport"
+    }
+  ],
+  "curator": "magazine-compiler/automatic-media-curator",
+  "input_sha256": "f8cbbbddf671eb5b2601e04b6db6d949ca01a8b0b28b1813b68234c2e9aeb9fc",
+  "policy_version": "editorial-impact-v4",
+  "schema_version": 1,
+  "selected": [],
+  "selection_limit": 3,
+  "source_id": "loop-engineering-f0ddfd76"
+}

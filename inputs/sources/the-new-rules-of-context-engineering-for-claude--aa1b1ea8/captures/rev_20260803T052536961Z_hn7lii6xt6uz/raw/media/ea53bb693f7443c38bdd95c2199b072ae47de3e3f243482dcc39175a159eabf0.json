@@ -1,0 +1,44 @@
+{
+  "artifact_count": 2,
+  "bundle_sha256": "ea53bb693f7443c38bdd95c2199b072ae47de3e3f243482dcc39175a159eabf0",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 1,
+  "images": [
+    {
+      "animated": false,
+      "aspect_ratio": 1.19916,
+      "bytes": 123381,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/jpeg",
+      "path": "media/002.jpg",
+      "pixel_height": 1667,
+      "pixel_width": 1999,
+      "sha256": "7b66ba87ff76c4b19eab01343485df12cc0b42ce3b6f10a0e3236789aaa8b05a"
+    }
+  ],
+  "local_references": [
+    {
+      "alt_text": "A diagram of assembled context highlights conflicting instructions in the system prompt, skills, and user request sections and includes its full explanatory caption.",
+      "attribute": "manifest",
+      "description": "Clean full-resolution original embedded in the source article; system prompt, skill, and user-request instructions conflict inside one assembled context.",
+      "document_path": "media-manifest.json",
+      "heading": "Unhobbling Claude",
+      "present": true,
+      "reference": "media/002.jpg",
+      "resolved_path": "media/002.jpg",
+      "role": "diagram",
+      "source_position": 2,
+      "source_url": "https://pbs.twimg.com/media/HOAlwbJbQAAIuHV?format=jpg&name=orig",
+      "title": "The assembled context"
+    }
+  ],
+  "missing_references": [],
+  "referenced_image_count": 1,
+  "schema_version": 1,
+  "source_id": "the-new-rules-of-context-engineering-for-claude--aa1b1ea8",
+  "unresolved_acquisition_references": []
+}

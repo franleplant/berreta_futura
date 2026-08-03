@@ -1,0 +1,29 @@
+{
+  "artifact_count": 2,
+  "bundle_sha256": "59d88cee6d28a4d1e228476a7538b0d9452b3afd182793ac3dae7d4be833ec10",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 1,
+  "images": [
+    {
+      "animated": false,
+      "aspect_ratio": 0.108844,
+      "bytes": 2574144,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/png",
+      "path": "article.png",
+      "pixel_height": 11760,
+      "pixel_width": 1280,
+      "sha256": "4f148f681871b9e0646ecaef046490cd8a5a820338191a2ecfdf637d98f35d6c"
+    }
+  ],
+  "local_references": [],
+  "missing_references": [],
+  "referenced_image_count": 0,
+  "schema_version": 1,
+  "source_id": "investigating-three-real-world-incidents-in-our--8b96329a",
+  "unresolved_acquisition_references": []
+}

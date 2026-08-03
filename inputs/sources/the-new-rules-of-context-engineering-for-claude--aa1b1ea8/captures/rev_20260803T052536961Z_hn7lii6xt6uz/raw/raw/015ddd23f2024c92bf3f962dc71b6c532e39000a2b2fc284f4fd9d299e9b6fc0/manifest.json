@@ -1,0 +1,63 @@
+{
+  "artifact_count": 10,
+  "artifacts": [
+    {
+      "bytes": 9527,
+      "path": "article.txt",
+      "sha256": "e118cf2f0dc76b19fab955921cf43ca00df5f559f5c3cc2958587372149b985f"
+    },
+    {
+      "bytes": 326,
+      "path": "capture-meta.json",
+      "sha256": "43cd3eb9a4e2e45c6a90d28ae47c274337baf570b61913750ad1f57c9feff5b2"
+    },
+    {
+      "bytes": 2001,
+      "path": "links.json",
+      "sha256": "d8bff30ceb810ff7e8c4d702146dfbbbed972392788560caf2b3ae7a8074a96d"
+    },
+    {
+      "bytes": 114008,
+      "path": "media/001.png",
+      "sha256": "9dd19e2393c065196bf757634447fe4c3eda48945152f5fcea17d9904d37e595"
+    },
+    {
+      "bytes": 107548,
+      "path": "media/002.png",
+      "sha256": "0d7d13dcd261944c722a7d1c794ee29be2332efdd0324122c9f122d078c0a4cc"
+    },
+    {
+      "bytes": 107525,
+      "path": "media/003.png",
+      "sha256": "8559f94f6d0a577ef0707a463d6e09b82b577697f086b389113feca27dfb2453"
+    },
+    {
+      "bytes": 121281,
+      "path": "media/004.png",
+      "sha256": "5ac8f4280a26eeece31de1ed4f68ca162f1ae144356eda6822a6d3203c243c31"
+    },
+    {
+      "bytes": 83637,
+      "path": "media/005.png",
+      "sha256": "333797e934d037918aa33ff1163c709a23090df4d0918209a2b984822321ed59"
+    },
+    {
+      "bytes": 2289,
+      "path": "media-manifest.json",
+      "sha256": "e3f4f0b07b7fe5ddfb079ce7692eae2864b25c4ea20cabc9ae739487c3dc43d0"
+    },
+    {
+      "bytes": 986,
+      "path": "observed-images.json",
+      "sha256": "f198b7bdb2a13654a7e02c43636cf440a07504f462c6bd122cd09d392127dc3f"
+    }
+  ],
+  "bundle_sha256": "015ddd23f2024c92bf3f962dc71b6c532e39000a2b2fc284f4fd9d299e9b6fc0",
+  "byte_count": 549128,
+  "canonical_url": "https://x.com/trq212/status/2080710971228918066",
+  "captured_at": "2026-07-26T22:17:28Z",
+  "method": "authenticated_chrome_source_media_clean_crops",
+  "schema_version": 1,
+  "source_id": "the-new-rules-of-context-engineering-for-claude--aa1b1ea8",
+  "submitted_url": "https://x.com/trq212/status/2080710971228918066"
+}

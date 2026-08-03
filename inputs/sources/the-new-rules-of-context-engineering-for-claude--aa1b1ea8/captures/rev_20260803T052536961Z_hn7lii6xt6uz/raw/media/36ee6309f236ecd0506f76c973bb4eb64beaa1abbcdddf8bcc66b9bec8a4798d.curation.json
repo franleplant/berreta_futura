@@ -1,0 +1,138 @@
+{
+  "bundle_sha256": "36ee6309f236ecd0506f76c973bb4eb64beaa1abbcdddf8bcc66b9bec8a4798d",
+  "candidate_count": 5,
+  "candidates": [
+    {
+      "artifact_path": "media/001.png",
+      "artifact_sha256": "19552cb7f0b983faae32b053da031e4174e574f5a4852e70d5e6da1875d03697",
+      "aspect_ratio": 1.335113,
+      "criteria": [],
+      "decision": "reject",
+      "description": "Sanitized authenticated Chrome rendering of the embedded X media view.",
+      "heading": "",
+      "id": "raster-001-19552cb7",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "",
+      "rejection_reasons": [
+        "article_title_card"
+      ],
+      "score": 0,
+      "source_artifact": "media/001.png",
+      "source_artifact_sha256": "19552cb7f0b983faae32b053da031e4174e574f5a4852e70d5e6da1875d03697",
+      "source_position": 1,
+      "title": "The new rules of context engineering for Claude 5 models — embedded media 1"
+    },
+    {
+      "artifact_path": "media/002.png",
+      "artifact_sha256": "cc72eed6b40a3d1e7dfd60e4697c3347a7f1b8dde2cfba343c8b81f0da378dc8",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "include",
+      "description": "Sanitized authenticated Chrome rendering of the embedded X media view.",
+      "heading": "",
+      "id": "raster-002-cc72eed6",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "The new rules of context engineering for Claude 5 models — embedded media 2 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [],
+      "score": 64,
+      "source_artifact": "media/002.png",
+      "source_artifact_sha256": "cc72eed6b40a3d1e7dfd60e4697c3347a7f1b8dde2cfba343c8b81f0da378dc8",
+      "source_position": 2,
+      "title": "The new rules of context engineering for Claude 5 models — embedded media 2"
+    },
+    {
+      "artifact_path": "media/003.png",
+      "artifact_sha256": "06d54bf743f8c8928f08d2ae4a820b51efcf66f2809545c95c6656fb022c7390",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "include",
+      "description": "Sanitized authenticated Chrome rendering of the embedded X media view.",
+      "heading": "",
+      "id": "raster-003-06d54bf7",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "The new rules of context engineering for Claude 5 models — embedded media 3 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [],
+      "score": 64,
+      "source_artifact": "media/003.png",
+      "source_artifact_sha256": "06d54bf743f8c8928f08d2ae4a820b51efcf66f2809545c95c6656fb022c7390",
+      "source_position": 3,
+      "title": "The new rules of context engineering for Claude 5 models — embedded media 3"
+    },
+    {
+      "artifact_path": "media/004.png",
+      "artifact_sha256": "2eeb472cc0477dd4ff1c8e91d748265f8487812e370ea5c0d98461e60a8a8f62",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "include",
+      "description": "Sanitized authenticated Chrome rendering of the embedded X media view.",
+      "heading": "",
+      "id": "raster-004-2eeb472c",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "The new rules of context engineering for Claude 5 models — embedded media 4 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [],
+      "score": 64,
+      "source_artifact": "media/004.png",
+      "source_artifact_sha256": "2eeb472cc0477dd4ff1c8e91d748265f8487812e370ea5c0d98461e60a8a8f62",
+      "source_position": 4,
+      "title": "The new rules of context engineering for Claude 5 models — embedded media 4"
+    },
+    {
+      "artifact_path": "media/005.png",
+      "artifact_sha256": "eac2f2bd0d81434538215ae5dc56c80398e19642bfa53340b11edb4ac2e19af2",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Sanitized authenticated Chrome rendering of the embedded X media view.",
+      "heading": "",
+      "id": "raster-005-eac2f2bd",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "The new rules of context engineering for Claude 5 models — embedded media 5 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 64,
+      "source_artifact": "media/005.png",
+      "source_artifact_sha256": "eac2f2bd0d81434538215ae5dc56c80398e19642bfa53340b11edb4ac2e19af2",
+      "source_position": 5,
+      "title": "The new rules of context engineering for Claude 5 models — embedded media 5"
+    }
+  ],
+  "curator": "magazine-compiler/automatic-media-curator",
+  "input_sha256": "21c21d160f9b86b601a0dceaa0581958e65024b9c5cfcfe0ff9addfc2ac03a88",
+  "policy_version": "editorial-impact-v4",
+  "schema_version": 1,
+  "selected": [
+    "raster-002-cc72eed6",
+    "raster-003-06d54bf7",
+    "raster-004-2eeb472c"
+  ],
+  "selection_limit": 3,
+  "source_id": "the-new-rules-of-context-engineering-for-claude--aa1b1ea8"
+}

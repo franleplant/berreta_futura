@@ -1,0 +1,28 @@
+{
+  "artifact_count": 3,
+  "artifacts": [
+    {
+      "bytes": 2441,
+      "path": "index.html",
+      "sha256": "d4990a54b4f9d0409cee833da2ecc1ed21724f273272141f13ba8a44e1001310"
+    },
+    {
+      "bytes": 2685498,
+      "path": "page.pdf",
+      "sha256": "bdebbbe9d54728c93ca0f1ac325e61839cde2c6e0dbcc3f9c2460f138de378f1"
+    },
+    {
+      "bytes": 1106190,
+      "path": "page.png",
+      "sha256": "a09fd79b7958e8bcd105e39aa4c79277697db831e02ca7efadf47ec8d109d391"
+    }
+  ],
+  "bundle_sha256": "916a511ca1084acafb198055556f76b1caa0f98e9315ac711d58e6f8540ede3c",
+  "byte_count": 3794129,
+  "canonical_url": "https://buzz.xyz/",
+  "captured_at": "2026-07-23T12:32:52Z",
+  "method": "public_browser_html_and_pdf",
+  "schema_version": 1,
+  "source_id": "buzz-your-people-your-agents-your-project-all-in-833eef43",
+  "submitted_url": "https://buzz.xyz/"
+}

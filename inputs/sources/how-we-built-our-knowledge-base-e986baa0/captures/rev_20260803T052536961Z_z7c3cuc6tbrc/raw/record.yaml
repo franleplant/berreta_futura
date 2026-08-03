@@ -1,0 +1,91 @@
+schema_version: 1
+id: how-we-built-our-knowledge-base-e986baa0
+title: How We Built Our Knowledge Base
+author: Isaac Tai, Daniel Kim, and Mike Gao
+canonical_url: https://www.cerebras.ai/blog/how-we-built-our-knowledge-base
+submitted_url: https://www.cerebras.ai/blog/how-we-built-our-knowledge-base
+captured_at: '2026-07-17T19:45:07Z'
+publication_date: '2026-07-15'
+kind: article
+status: extracted
+content_hash: ee07d26dc95a01cde7cf1145adbe49f1cf4e9fef10aeed8815efd47c0edb7967
+raw_captures:
+- id: 19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169
+  path: raw/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/manifest.json
+  method: Rendered public HTML via headless Chromium; structured text/HTML, PDF, and full-page screenshot.
+  captured_at: '2026-07-17T19:45:07Z'
+  artifact_count: 3
+  byte_count: 3578212
+provenance: []
+rights:
+  status: unknown
+  license: none_found
+  intended_use: private_reference
+  attribution_required: true
+  public_reprint_allowed: false
+  permission_required_for_public_reprint: true
+media_reviews:
+- capture_id: 19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169
+  status: media_curated
+  assets:
+  - id: svg-001-2157c84f
+    artifact_path: media/derived/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/svg-001-2157c84f5ec3.png
+    artifact_sha256: 5bd29f88de4853edafa298b30c8fc7398f35aa61346eb8f2bade161d45e3c718
+    mime_type: image/png
+    creator: Isaac Tai, Daniel Kim, and Mike Gao
+    credit: 'Diagram by Isaac Tai, Daniel Kim, and Mike Gao; source: How We Built Our Knowledge Base.'
+    rights:
+      status: unknown
+      license: none_found
+      intended_use: private_reference
+      attribution_required: true
+      public_reprint_allowed: false
+      permission_required_for_public_reprint: true
+  - id: svg-007-a8dd9756
+    artifact_path: media/derived/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/svg-007-a8dd975668e8.png
+    artifact_sha256: 29d14d218b7273c11c6efa9ef8d755c158a13074a4d0e83ba044bb40773af535
+    mime_type: image/png
+    creator: Isaac Tai, Daniel Kim, and Mike Gao
+    credit: 'Diagram by Isaac Tai, Daniel Kim, and Mike Gao; source: How We Built Our Knowledge Base.'
+    rights:
+      status: unknown
+      license: none_found
+      intended_use: private_reference
+      attribution_required: true
+      public_reprint_allowed: false
+      permission_required_for_public_reprint: true
+  - id: svg-008-b42cddcd
+    artifact_path: media/derived/19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169/svg-008-b42cddcda2b0.png
+    artifact_sha256: 65c9341d84c9fa2d77299174b9a0c72e335848c95bac5c0b602e358e16a7bd5f
+    mime_type: image/png
+    creator: Isaac Tai, Daniel Kim, and Mike Gao
+    credit: 'Diagram by Isaac Tai, Daniel Kim, and Mike Gao; source: How We Built Our Knowledge Base.'
+    rights:
+      status: unknown
+      license: none_found
+      intended_use: private_reference
+      attribution_required: true
+      public_reprint_allowed: false
+      permission_required_for_public_reprint: true
+  note: Automatic curation selected 3 of 10 candidates under editorial-impact-v4; decisions are hash-pinned
+    in 19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169.curation.json.
+metadata:
+  language: en
+  rendered_word_count: 3371
+  rendered_character_count: 21813
+  semantic_block_count: 131
+  inline_svg_count: 9
+  extraction_method: Rendered public HTML captured with headless Chromium.
+  snapshot_hash_basis: Visible text of the main element.
+  capture_durability: Structured text and rendered HTML, plus PDF and full-page screenshot, stored in
+    a committed source-local raw bundle.
+  raw_capture_policy: committed_source_local
+  tags:
+  - enterprise-search
+  - hybrid-retrieval
+  - knowledge-management
+  - llm-agents
+  synopsis: How Cerebras built an internal knowledge system over Slack, code, documentation, and custom
+    sources using distillation, hybrid retrieval, reranking, and scoped agent interfaces.
+notes: Primary Cerebras engineering article. The committed capture preserves rendered text, semantic blocks,
+  inline SVG markup, a PDF, and a full-page screenshot; no explicit reuse license was visible.

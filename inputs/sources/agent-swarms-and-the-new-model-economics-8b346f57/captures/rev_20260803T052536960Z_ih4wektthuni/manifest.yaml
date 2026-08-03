@@ -1,0 +1,256 @@
+schema_version: 1
+revision_kind: source_capture
+logical_id: agent-swarms-and-the-new-model-economics-8b346f57
+revision_id: rev_20260803T052536960Z_ih4wektthuni
+created_at: 2026-08-03T05:25:36.960Z
+parent_revision_id: null
+migration_id: legacy-four-root-source-1
+files:
+  - path: raw/media/2f1f70dbf66b2a0ea473e8df7cf64aa36734899fe61d97bd0cfacb84d8c2ffe0.curation.json
+    media_type: application/json
+    sha256: sha256:47f69486e754e88fc8ad5f1eb54f0b8785d60bcba73e0f805bc78ebfb5ed158c
+    size_bytes: 1266
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/media/2f1f70dbf66b2a0ea473e8df7cf64aa36734899fe61d97bd0cfacb84d8c2ffe0.curation.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 6d6aed7904b707e0ec7f23c24d363138f2b330ae
+  - path: raw/media/2f1f70dbf66b2a0ea473e8df7cf64aa36734899fe61d97bd0cfacb84d8c2ffe0.json
+    media_type: application/json
+    sha256: sha256:1af23e977fb2b76494c16edd67d92d8f9649a46fe356b14cd7c97f7212af0ab9
+    size_bytes: 830
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/media/2f1f70dbf66b2a0ea473e8df7cf64aa36734899fe61d97bd0cfacb84d8c2ffe0.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: efc7dc780720ccc37f4992139bc2b1763e575bd1
+  - path: raw/media/7449812a5c40bed9e8fcc78d54d23dfb9e24955832927e6a1da30c8a698e4d7f.curation.json
+    media_type: application/json
+    sha256: sha256:4b3ac5238b693e90eeedcef86a1f2fd6111f536719a83f00fff2caa70c4195c0
+    size_bytes: 2616
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/media/7449812a5c40bed9e8fcc78d54d23dfb9e24955832927e6a1da30c8a698e4d7f.curation.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 345978bad23baa86d71ce9dee76ba7d99242b272
+  - path: raw/media/7449812a5c40bed9e8fcc78d54d23dfb9e24955832927e6a1da30c8a698e4d7f.json
+    media_type: application/json
+    sha256: sha256:841b37b015e68f7d41f65bcfa34d28528e9864e8449e81dea28122835a3eeba6
+    size_bytes: 2481
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/media/7449812a5c40bed9e8fcc78d54d23dfb9e24955832927e6a1da30c8a698e4d7f.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 77ba4a670239fae89ff204692104113b5e62b4b3
+  - path: raw/media/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270.curation.json
+    media_type: application/json
+    sha256: sha256:b9bc59d029d07539a6694e68d348770b3d0f9e4448b88e0c65c97c521f944d88
+    size_bytes: 13931
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/media/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270.curation.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 046611a627e97db841b62df05661189310a633ca
+  - path: raw/media/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270.json
+    media_type: application/json
+    sha256: sha256:5bfe5b1710f4dcc0212a61c3dffe811ad1fcc5f26cac16682a6768e53fd55ab1
+    size_bytes: 12898
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/media/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 66ea9eabbe216f9924361b2dc4ae535d3aee4f44
+  - path: raw/raw/2f1f70dbf66b2a0ea473e8df7cf64aa36734899fe61d97bd0cfacb84d8c2ffe0/artifacts/primary-article.pdf
+    media_type: application/pdf
+    sha256: sha256:edcf558282c8398fbcaec47dbcc35846779ce3ae5081d93cc4dc764bbec3db2a
+    size_bytes: 633258
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/2f1f70dbf66b2a0ea473e8df7cf64aa36734899fe61d97bd0cfacb84d8c2ffe0/artifacts/primary-article.pdf
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: a0401ad36f63c76561534ca76a6068bbf07e8557
+  - path: raw/raw/2f1f70dbf66b2a0ea473e8df7cf64aa36734899fe61d97bd0cfacb84d8c2ffe0/artifacts/primary-article.png
+    media_type: image/png
+    sha256: sha256:a2200824d7f53ae1ec2b053146c48a1fed16906b158a8cd4dcf104a951160335
+    size_bytes: 2020239
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/2f1f70dbf66b2a0ea473e8df7cf64aa36734899fe61d97bd0cfacb84d8c2ffe0/artifacts/primary-article.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 1ec06f519f7013268b1ee5e0923906d7b4224fcc
+  - path: raw/raw/2f1f70dbf66b2a0ea473e8df7cf64aa36734899fe61d97bd0cfacb84d8c2ffe0/manifest.json
+    media_type: application/json
+    sha256: sha256:aadfcb4d741a7b58082930dbdcdede00a19e4f97f562cf99312f5f3da0fa94eb
+    size_bytes: 841
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/2f1f70dbf66b2a0ea473e8df7cf64aa36734899fe61d97bd0cfacb84d8c2ffe0/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: e1795ca8f5841719f01ac5d7aab6aca88c5c6fc1
+  - path: raw/raw/7449812a5c40bed9e8fcc78d54d23dfb9e24955832927e6a1da30c8a698e4d7f/artifacts/artifacts/cost-by-model-mix-light.png
+    media_type: image/png
+    sha256: sha256:a065638cc30cf92172ff61d4a389b4409be1b7cb425fbd4c7928c15ad2c740ac
+    size_bytes: 274784
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/7449812a5c40bed9e8fcc78d54d23dfb9e24955832927e6a1da30c8a698e4d7f/artifacts/artifacts/cost-by-model-mix-light.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: c42bb8c8ad5ddf31c45bddd59cc11a357feb89d6
+  - path: raw/raw/7449812a5c40bed9e8fcc78d54d23dfb9e24955832927e6a1da30c8a698e4d7f/artifacts/artifacts/media-manifest.json
+    media_type: application/json
+    sha256: sha256:0655ed344d4e5f2f5cd71b3286ea782fca4c03fcbc148f4d99d4271258b22f87
+    size_bytes: 1116
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/7449812a5c40bed9e8fcc78d54d23dfb9e24955832927e6a1da30c8a698e4d7f/artifacts/artifacts/media-manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 28d7f962e8214fa3c15aec3f0dc9cd27dc6b36a3
+  - path: raw/raw/7449812a5c40bed9e8fcc78d54d23dfb9e24955832927e6a1da30c8a698e4d7f/artifacts/artifacts/task-tree-light.png
+    media_type: image/png
+    sha256: sha256:c12295d450c03fca0862879826d12999fdd1462e0de5da137b7ead6dd87b99ba
+    size_bytes: 380546
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/7449812a5c40bed9e8fcc78d54d23dfb9e24955832927e6a1da30c8a698e4d7f/artifacts/artifacts/task-tree-light.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: c22a80ba6f389653e689101682c8b2e324728e0c
+  - path: raw/raw/7449812a5c40bed9e8fcc78d54d23dfb9e24955832927e6a1da30c8a698e4d7f/manifest.json
+    media_type: application/json
+    sha256: sha256:e435937616897158a5c6b50f26992be82f56c538dce399922af174f162acf94e
+    size_bytes: 1010
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/7449812a5c40bed9e8fcc78d54d23dfb9e24955832927e6a1da30c8a698e4d7f/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 5b7fad46e74f9c8d5f88f9f9fafda95bb3c58e3c
+  - path: raw/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/code-size-comparison.png
+    media_type: image/png
+    sha256: sha256:b3f0d4283c56e74214e8e98c7d005cad7b1e1f775c8eaf67dcc000bee5db5df8
+    size_bytes: 219703
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/code-size-comparison.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: c6ee2417d6931d36a48ae6218a9e7952df5f6d1f
+  - path: raw/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/commits-grok45.png
+    media_type: image/png
+    sha256: sha256:2f60f6ab4fbb6658633832a855d942ee7db5d3458afbad6e5bb32502ff2b4154
+    size_bytes: 198721
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/commits-grok45.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 03d4e7d26cc2a2e487852e946ced9b46c1fe2e86
+  - path: raw/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/conflicts-grok45.png
+    media_type: image/png
+    sha256: sha256:e74b7ac4977ec8e2a3761d983738b12080b9aa7c843592d427e2145b16d07fa4
+    size_bytes: 202773
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/conflicts-grok45.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: ffda8ef35f9be017d3ba54455919d81255d59f0a
+  - path: raw/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/cost-by-model-mix.png
+    media_type: image/png
+    sha256: sha256:9fe9e59076abfa89fd2a7a335c976d04707abb115195b4b6049ecccd975f92fc
+    size_bytes: 254114
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/cost-by-model-mix.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 7f3efac48aa4cae7a07f777a4ae3cd2069717c6b
+  - path: raw/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/crates-grok45.png
+    media_type: image/png
+    sha256: sha256:8a11e036068deb9c68b85f9d0957c2a4e85cbadcf4248b5779ba3dd647b5c6e4
+    size_bytes: 133746
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/crates-grok45.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 15acaf27d5f32d482f32bcdd1dc9e67d768b9a38
+  - path: raw/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/file-size-grok45.png
+    media_type: image/png
+    sha256: sha256:c3ab1d8067dd02f4ee7d01f6b24f9ddb2041367b82b8cb6a0174f44f09bea0db
+    size_bytes: 460289
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/file-size-grok45.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 21bb40ad37b541ca2e04dbd3e6688a956ec0dac5
+  - path: raw/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/grade-fable5-composer25.png
+    media_type: image/png
+    sha256: sha256:f2d7eba8c3162380b5f9c96bf64a148e15acfd5ee5e3d35dc308afefbf411dbe
+    size_bytes: 224010
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/grade-fable5-composer25.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 6107210d95d7f4d62e42d9660ee71711dd41efac
+  - path: raw/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/grade-gpt55.png
+    media_type: image/png
+    sha256: sha256:94168ebc772760883b055e3028311f5a0c75ea5b526382e99ea10374c1afbbe5
+    size_bytes: 175929
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/grade-gpt55.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 90592412526412d613734bb64cb60c4b74c74dfa
+  - path: raw/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/grade-grok45.png
+    media_type: image/png
+    sha256: sha256:83c68ef95ab707353d5608c27bfe67a02646fae524a3ca2940cf8a496e1d1bae
+    size_bytes: 172317
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/grade-grok45.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: a65421210d9e099a9521a8178e9ce4deb2c75a9f
+  - path: raw/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/grade-opus48-composer25.png
+    media_type: image/png
+    sha256: sha256:65ae73cfb1293939d3d35b348792a4e90462e7d7594a091cab3134fbb3320c3c
+    size_bytes: 211972
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/grade-opus48-composer25.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 81c8ce1a4dd10cbcdbe258f5615890cda3d469e6
+  - path: raw/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/media-manifest.json
+    media_type: application/json
+    sha256: sha256:5b5fbf6b9b898875a216a7f0c4aa88dce331b4750ed287f35eaf0afc75421417
+    size_bytes: 4504
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/media-manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 83ad6f371d9c5ae996492096c32b4ac2accee025
+  - path: raw/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/primary-article.pdf
+    media_type: application/pdf
+    sha256: sha256:edcf558282c8398fbcaec47dbcc35846779ce3ae5081d93cc4dc764bbec3db2a
+    size_bytes: 633258
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/primary-article.pdf
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: a0401ad36f63c76561534ca76a6068bbf07e8557
+  - path: raw/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/primary-article.png
+    media_type: image/png
+    sha256: sha256:a2200824d7f53ae1ec2b053146c48a1fed16906b158a8cd4dcf104a951160335
+    size_bytes: 2020239
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/primary-article.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 1ec06f519f7013268b1ee5e0923906d7b4224fcc
+  - path: raw/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/source-text.txt
+    media_type: text/plain
+    sha256: sha256:b7d3100ee5d97b8a4a6ae84e75aea64e100f8c705a242c770feeed52c6d72b24
+    size_bytes: 20683
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/source-text.txt
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 478ddbca729d087e33ca9fae14466f544e9ea6a8
+  - path: raw/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/task-tree.png
+    media_type: image/png
+    sha256: sha256:9f22d8ba92e2905251f338eaecee89560f48521a48cfd5e8b4bb350d7aa86057
+    size_bytes: 378494
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/task-tree.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 6979f4394fd68eb2dd9aba670da6c35c03af9739
+  - path: raw/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/tokens-by-role.png
+    media_type: image/png
+    sha256: sha256:b25fcaf83c2621f106188c4727b352434a2707ed1bb218e85fce9b40c1a426c6
+    size_bytes: 267323
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/artifacts/artifacts/tokens-by-role.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 32b2559aae0a9ceb98878b7e3f8a43544ffad6d9
+  - path: raw/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/manifest.json
+    media_type: application/json
+    sha256: sha256:1e9935028702de875bc9edd264000ad73263e488fa004abdae8a6d67aaca6f13
+    size_bytes: 3146
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/raw/dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 25be51f24257fe45eeef24f84ba1812f2edd44ef
+  - path: raw/record.yaml
+    media_type: application/yaml
+    sha256: sha256:8a90bf7bb721c15d4486b822f124b6367665f085198b18e6acbe561f3559a67e
+    size_bytes: 5041
+    legacy_source:
+      repositoryPath: library/sources/agent-swarms-and-the-new-model-economics-8b346f57/record.yaml
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: bca5560e0cd7493d111aa2c644a612fee5919cf3

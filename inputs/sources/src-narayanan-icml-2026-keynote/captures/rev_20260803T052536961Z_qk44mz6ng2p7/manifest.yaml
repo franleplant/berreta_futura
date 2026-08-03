@@ -1,0 +1,408 @@
+schema_version: 1
+revision_kind: source_capture
+logical_id: src-narayanan-icml-2026-keynote
+revision_id: rev_20260803T052536961Z_qk44mz6ng2p7
+created_at: 2026-08-03T05:25:36.961Z
+parent_revision_id: null
+migration_id: legacy-four-root-source-1
+files:
+  - path: raw/media/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57.json
+    media_type: application/json
+    sha256: sha256:4ce1e8cfc3e088128c1259eb126632b1b8228d6bdb799a7ba1ae517ab260a951
+    size_bytes: 27535
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/media/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 17a3e843d80a5d75ebb1f6dafef8c032e5b6d8cd
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/headers.txt
+    media_type: text/plain
+    sha256: sha256:8f4c383f12b5056a478d95c9f49334eed11cc89a6dc724530ffe1e12bf189a18
+    size_bytes: 461
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/headers.txt
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 12903062193866d934016f4b01f25ac1f674aa18
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/index.html
+    media_type: text/html
+    sha256: sha256:2cabadbdf2ac581ecae24de31f361f9c3950e440fefbdde193feef620cfc019d
+    size_bytes: 167638
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/index.html
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 8f38ffdeaeb2bdeeda2fe08924b8cd1062189bcc
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media-manifest.json
+    media_type: application/json
+    sha256: sha256:f05fea96cced2535e55e460d0256cc60b7c4cb4f2bd72f60a318d41aaa86d536
+    size_bytes: 9009
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media-manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: c3a24678d9d5032e922f9dd6999acc3f1cdcb675
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/crop-15-p6.png
+    media_type: image/png
+    sha256: sha256:f86b35b8d131d12d11879aac2bb620dc631b3e3a023e6ed1a884ed3e2193f832
+    size_bytes: 9122
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/crop-15-p6.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 08455886545372d422da926176db908f311f4490
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/crop-15-p8.png
+    media_type: image/png
+    sha256: sha256:5c8dca290205eb9399fa0c3c64fbad1cc8797792f1f5579ffdde1d67d6fd13fb
+    size_bytes: 10044
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/crop-15-p8.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 69eb9cc3523f3eea387ce9b9d79e4cc88a2c170c
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/crop-16-p11.png
+    media_type: image/png
+    sha256: sha256:446f2ee6b37c9c1fb6eede052e1c5f1fd57669c6398ca237131a553355449dc7
+    size_bytes: 28654
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/crop-16-p11.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 635a542fa6a2d5defb1766ba172a8f9e6bb344ad
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/crop-54-g5.png
+    media_type: image/png
+    sha256: sha256:7753efee42f6ebb8e64513a2a29d6e153d47f10c9c86749ebbf1987983a83cf4
+    size_bytes: 16826
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/crop-54-g5.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: fe423242264874f17ad396c9032006d00bdf6859
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide01-3.png
+    media_type: image/png
+    sha256: sha256:df02040cf83f5edb1893d2329a1ea38830dbcbc44c5237adfc4ae290f3a06e88
+    size_bytes: 136852
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide01-3.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 233f4beae8a6bae3078118240e6bc4ba967647e2
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide01-4.png
+    media_type: image/png
+    sha256: sha256:0dc2afbb434b636c1ed397b42b4a4c0acc00f86b33d2d91d1897e2db494b0556
+    size_bytes: 4040
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide01-4.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 2b781f652e578fdab573a803f1c3fbc9fc6c4adc
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide02-6.png
+    media_type: image/png
+    sha256: sha256:394557625ee1493b01c2425e1fc89ce0b28fdf6a1419bd503c586c170a51066b
+    size_bytes: 1587685
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide02-6.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 6185a9c49f5ca16fdeda8ac9d4f17557dabf4bf3
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide02-9.png
+    media_type: image/png
+    sha256: sha256:9185cb392c3311f4e40d6527f00b99876f9de8d42733ec38a2f88d660f7ee5dd
+    size_bytes: 372326
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide02-9.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 5534bcf0be5bae18bc3779a403e73a5895a112b8
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide10-3074.png
+    media_type: image/png
+    sha256: sha256:f31c56a3bc3d50332f332b0f4c8c6ff79021f5bddb9677de6f1c4e7627295fe8
+    size_bytes: 242155
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide10-3074.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 679b7974488195e9db2ee986f5b91f8a4f903064
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide10-3076.png
+    media_type: image/png
+    sha256: sha256:946012b1b6da074d2afccef815432e19f1acf0574f5be70d8c0ff385e792cebd
+    size_bytes: 140046
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide10-3076.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 87caac2d8dc47ebc8ba3ec4f959239c597e0f647
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide11-1026.jpg
+    media_type: image/jpeg
+    sha256: sha256:a1e7ab499bc9ce6ef1e03954bac53489c0383527daca83a810a501b31fbec70b
+    size_bytes: 165931
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide11-1026.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: f865addaf19e2e02d2f346098b327baa5156bce4
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide12-5.png
+    media_type: image/png
+    sha256: sha256:9cc8f9131c03de2b538d4aa601e72b2182b22095ad2f99df20b34e9ed7401401
+    size_bytes: 189327
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide12-5.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 6d5664c6a85116a220479f92ca27c4f33a28c954
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide14-15.png
+    media_type: image/png
+    sha256: sha256:5d913b54b236f818fea3324e8dc90cfd8d261e856e5603a3c163f8a053d2a9d9
+    size_bytes: 525537
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide14-15.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 6bba9e7d35c252942a1c1215455662ff5cde1395
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide19-6.png
+    media_type: image/png
+    sha256: sha256:51eb93a463bc67e8ec48cb46003b3c7b254c3048a4bbcb2ccaac46ccfd232286
+    size_bytes: 396807
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide19-6.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: de04672cfa4006c173617c86ccd5b15c692fb246
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide20-10.png
+    media_type: image/png
+    sha256: sha256:31aa6a9fd5e50065c19d958ba6b8069a1342fa8c0ec740d39ebfef9b979cbbef
+    size_bytes: 212021
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide20-10.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 8383748a33a72040f4cb02d0ac367babeea9a98e
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide20-12.png
+    media_type: image/png
+    sha256: sha256:bd880a4cb8dc65503e6d239730a9cdbad60bc995dccd5fb0963de73d70c337fc
+    size_bytes: 107395
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide20-12.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 1f79dd0eb55a6bd83573ad1e27e329661c4c216f
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide20-16.png
+    media_type: image/png
+    sha256: sha256:484db34b502f6e69bab5fab80818e2bff0a23a5d2f45dcbbc5bd63fc6ba8fae4
+    size_bytes: 821311
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide20-16.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: d6519e4946599c8da16771fcbcc27b8fbff5c7cd
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide20-17.png
+    media_type: image/png
+    sha256: sha256:1a33f81e62e7ec857f7b4c07a0e8141cf1a5f6e6f8a605deba93fe37067b386e
+    size_bytes: 101435
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide20-17.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 36c3f00d88cee17988240cf00aab262ec20d6745
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide20-19.png
+    media_type: image/png
+    sha256: sha256:f3e65b340866695d54fa2704444689cf4aa63d3fc80112071935892ede927c8a
+    size_bytes: 187164
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide20-19.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: e83a445e121e46dc566a163218167e638a5e8f11
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide20-21.png
+    media_type: image/png
+    sha256: sha256:f95d58fa3067f2fe32927df18b7de55c94a239ae35ac8bf0d12a7f232242d6c3
+    size_bytes: 263723
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide20-21.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 4f12fe228d6f4e22506d9ee0bb440617233c8a36
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide20-6.png
+    media_type: image/png
+    sha256: sha256:91d2512764d7bc0835527b2f9b2af539a6ee92f28441034a9cee5752d6ed835a
+    size_bytes: 352023
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide20-6.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 2080324f5a97e0dcbdea96201202ee02a74a0a70
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide20-8.png
+    media_type: image/png
+    sha256: sha256:14f5f0bdf20ca8b6fc57c6d2ce3ac88bfe93b0d31489ff8aacc1110743786a29
+    size_bytes: 100758
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide20-8.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: f6f46e5f75193ce77e5b9b730730d172fa52e280
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide21-7.png
+    media_type: image/png
+    sha256: sha256:8b71bc091f5475a5d2099a0aac83892f259d2d1140cbce70a40dfe36dc23c4eb
+    size_bytes: 4991531
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide21-7.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 0009e0f91250d9d8a238af382a214696fcb86b7e
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide21-9.png
+    media_type: image/png
+    sha256: sha256:2e9f1c8294a3c5bec959ef0854f1d60dfe671f566dee475d464faa7b9e02e6f4
+    size_bytes: 4853650
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide21-9.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 45b6e59ce50f0ab352f5e1c682f5468e20a8f397
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide22-5122.jpg
+    media_type: image/jpeg
+    sha256: sha256:e6097e03ca87343a031c9e59e0b2e399dcd7709a1fa7bb9d13c7733991cf80bb
+    size_bytes: 39098
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide22-5122.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 932c942feacb14bdd4b50dd9d1f5879307d832e0
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide23-3.jpg
+    media_type: image/jpeg
+    sha256: sha256:b0c34a388344ae6f93ffe35ee517e0a3159becfdfd4bc3a605e188ba56ba7404
+    size_bytes: 23134
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide23-3.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 50265c9bc25a438089386e5927b4a57bf244a77f
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide24-5.jpg
+    media_type: image/jpeg
+    sha256: sha256:fd73c768afd0e14ca1ca7334082eec8ae3edf7b1023653d3fb2c681559a67684
+    size_bytes: 46133
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide24-5.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 38ff4f6a2f67552b18bc348a40013835613a0064
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide27-5.png
+    media_type: image/png
+    sha256: sha256:687fd3edb467edadf63d6df0576d68692c30ba314615d19fa82a18c00f35a259
+    size_bytes: 159321
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide27-5.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: c8a2e73e0ec9d4e6cd651a9613eda04918db35f4
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide27-6.png
+    media_type: image/png
+    sha256: sha256:fbd73bd09698dd005a1d45d16c51f45b48121906151a05af5c6c9985c0b151da
+    size_bytes: 2142037
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide27-6.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 976f1334018dd0c7b30f2aedb24ff423ab04dbc3
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide29-5.jpg
+    media_type: image/jpeg
+    sha256: sha256:db94ce62330c7e44289b72fc1705100b87e22a313c185a55a265734c27d62ca8
+    size_bytes: 2941607
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide29-5.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 0a6507780fd9ab447b7215f93df652e724adfddb
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide36-6.png
+    media_type: image/png
+    sha256: sha256:8278a84d9ae5e8f779770de4f9f73ea9dc02620c942400c1d121020744ce5f07
+    size_bytes: 386401
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide36-6.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 4e5cfd7951dfb16fa1459957705fd24ff3d844d8
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide44-5.jpg
+    media_type: image/jpeg
+    sha256: sha256:29842582b421f4eafa7c0e1340b9d6267c9a7e71dc0b7f7421652fcc580d68c8
+    size_bytes: 185320
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide44-5.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: a6d8d504304b3aef917eba36d4a5262200e414e1
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide47-5.jpg
+    media_type: image/jpeg
+    sha256: sha256:a93f73398ae7464371f99718533308f003962bf1f21f34aac94e10eae72dbec3
+    size_bytes: 166694
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide47-5.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: ee091126a803b2c1cfbdf082d16ef63b7742c232
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide47-7.jpg
+    media_type: image/jpeg
+    sha256: sha256:472fdfec632929e1cbe718be5c26109b340e33e1de6123ad37dc501ed50619b1
+    size_bytes: 280608
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide47-7.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 6eea5d492d0a02d480d63b3535075800e41d279b
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide49-8.png
+    media_type: image/png
+    sha256: sha256:69747194d35697ffb2fd3034bdecfe28f5880542b6a60d4b8894f6fbbcb3004e
+    size_bytes: 9180905
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide49-8.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: c1cce8951636746da4308ff83090b07204dd4620
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide51-5.jpg
+    media_type: image/jpeg
+    sha256: sha256:c59fc4ea3422d074b87a06723abc7594ec81fbb7e818810c952e8e01902702b7
+    size_bytes: 70965
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide51-5.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: f16c90779057c11bb9eb539962b9bc2b43c77fa3
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide53-5.jpg
+    media_type: image/jpeg
+    sha256: sha256:a93f73398ae7464371f99718533308f003962bf1f21f34aac94e10eae72dbec3
+    size_bytes: 166694
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide53-5.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: ee091126a803b2c1cfbdf082d16ef63b7742c232
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide53-7.jpg
+    media_type: image/jpeg
+    sha256: sha256:472fdfec632929e1cbe718be5c26109b340e33e1de6123ad37dc501ed50619b1
+    size_bytes: 280608
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide53-7.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 6eea5d492d0a02d480d63b3535075800e41d279b
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide55-5.jpg
+    media_type: image/jpeg
+    sha256: sha256:1334496075a2d7b638cfa3e7fbaab542895d0f1dca2a556b1635fdab77f2be45
+    size_bytes: 6636154
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide55-5.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 55c6fd6abc2277a9cb75265f1f986ee69f295314
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide56-10.png
+    media_type: image/png
+    sha256: sha256:1c372cf9e924ec4ae559480f625b9f10242d9dda3521410f462a948f4b3af4de
+    size_bytes: 159548
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide56-10.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: abbe868c5018a20e1f0d7baccb9135c085f062b0
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide56-15.png
+    media_type: image/png
+    sha256: sha256:1e96645f242e91ec77e8d63176431254855f35393e8ba017198690816c53cb09
+    size_bytes: 153979
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide56-15.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: f527e24814e0aa7617bc162f6c4bc1c8f1b69d7b
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide56-6.png
+    media_type: image/png
+    sha256: sha256:a1b7a6fc270fff9af7b1d3bbb47471f580e2526e8f8f4450a786a25aede356ab
+    size_bytes: 172207
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide56-6.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: d7c561e1a0329733f640207bb1afb919478b0edf
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide56-8.png
+    media_type: image/png
+    sha256: sha256:5714be85080df48a6fa2d92c23d5e5c949b6d401f2b7e2957012a032a63c3e11
+    size_bytes: 162772
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/media/slide56-8.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: f0115331a0d38a9452a0be46709bd4a1982590bf
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/og-image.png
+    media_type: image/png
+    sha256: sha256:adffc6eea85b6314978e219edb694be95d8450a25e43e80fa4e685efd9bb6ea1
+    size_bytes: 114209
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/artifacts/og-image.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 52fccfb456d65e79609e7814819f20ce22fecb7c
+  - path: raw/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/manifest.json
+    media_type: application/json
+    sha256: sha256:0a01684a7b07dd3849e3553a6ff3b8a12d3bf285c39740f25824fc2b1922c9ae
+    size_bytes: 7854
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/raw/ce5dfdc713e2a51f371887f4b37a0cd936b1bec37429d8a1aebea3f480f2cc57/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: a963a3130598bd036f66576fff48ef94721bb6e9
+  - path: raw/record.yaml
+    media_type: application/yaml
+    sha256: sha256:4007ffcde1f4a018d81cce1b71ee942ceca2cfaa979b137b8cb0f5275572f965
+    size_bytes: 2744
+    legacy_source:
+      repositoryPath: library/sources/src-narayanan-icml-2026-keynote/record.yaml
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: f4eca5aa7ae99dc7e16c7e2ebc246c47e1dd81af

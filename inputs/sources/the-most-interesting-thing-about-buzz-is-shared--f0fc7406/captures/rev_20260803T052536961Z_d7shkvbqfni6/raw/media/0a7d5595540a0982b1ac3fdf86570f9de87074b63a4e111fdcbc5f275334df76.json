@@ -1,0 +1,14 @@
+{
+  "artifact_count": 3,
+  "bundle_sha256": "0a7d5595540a0982b1ac3fdf86570f9de87074b63a4e111fdcbc5f275334df76",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 0,
+  "images": [],
+  "local_references": [],
+  "missing_references": [],
+  "referenced_image_count": 0,
+  "schema_version": 1,
+  "source_id": "the-most-interesting-thing-about-buzz-is-shared--f0fc7406",
+  "unresolved_acquisition_references": []
+}

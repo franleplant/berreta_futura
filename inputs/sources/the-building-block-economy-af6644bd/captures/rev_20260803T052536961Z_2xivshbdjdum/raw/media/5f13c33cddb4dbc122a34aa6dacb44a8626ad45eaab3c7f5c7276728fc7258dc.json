@@ -1,0 +1,57 @@
+{
+  "artifact_count": 6,
+  "bundle_sha256": "5f13c33cddb4dbc122a34aa6dacb44a8626ad45eaab3c7f5c7276728fc7258dc",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 3,
+  "images": [
+    {
+      "animated": false,
+      "aspect_ratio": 0.315006,
+      "bytes": 570489,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/jpeg",
+      "path": "authenticated-x-article.jpg",
+      "pixel_height": 3965,
+      "pixel_width": 1249,
+      "sha256": "3d7b6f45ec0e2aacf2a5a4618f7c9dab8a66ddd2d6428e0d04b634d16032cb56"
+    },
+    {
+      "animated": false,
+      "aspect_ratio": 0.310454,
+      "bytes": 695035,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/png",
+      "path": "primary-article.png",
+      "pixel_height": 4123,
+      "pixel_width": 1280,
+      "sha256": "5f6eb248f2a60305a72478554ad43c7e81f11efa427a7b0ad88b602c5d1cade2"
+    },
+    {
+      "animated": false,
+      "aspect_ratio": 1.777778,
+      "bytes": 112929,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/png",
+      "path": "submitted-post.png",
+      "pixel_height": 720,
+      "pixel_width": 1280,
+      "sha256": "f165bed16c171309e7e3b1a2f318ffe16b761b6daace13b3d786766c45f9d96f"
+    }
+  ],
+  "local_references": [],
+  "missing_references": [],
+  "referenced_image_count": 0,
+  "schema_version": 1,
+  "source_id": "the-building-block-economy-af6644bd",
+  "unresolved_acquisition_references": []
+}
