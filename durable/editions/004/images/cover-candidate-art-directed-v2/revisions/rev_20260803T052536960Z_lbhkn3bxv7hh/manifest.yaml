@@ -1,0 +1,28 @@
+schema_version: 1
+revision_kind: image
+edition_id: "004"
+revision_id: rev_20260803T052536960Z_lbhkn3bxv7hh
+created_at: 2026-08-03T05:25:36.960Z
+parent_revision_id: rev_20260803T052536959Z_dcxennswxynj
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/rerun-004-the-systems-around-the-model/art/cover-candidate-art-directed-v2.png
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: de7326a2eeb06404dff88a49e4fbb7bc468f5569
+    sha256: sha256:07be2d2f377a5ef4a9e8c4697cf66bec88c8f584230fae301b524c757d0aec10
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+files:
+  - path: image.png
+    mediaType: image/png
+    sha256: sha256:07be2d2f377a5ef4a9e8c4697cf66bec88c8f584230fae301b524c757d0aec10
+    sizeBytes: 3666034
+    legacySource:
+      repositoryPath: editions/rerun-004-the-systems-around-the-model/art/cover-candidate-art-directed-v2.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: de7326a2eeb06404dff88a49e4fbb7bc468f5569
+logical_id: cover-candidate-art-directed-v2

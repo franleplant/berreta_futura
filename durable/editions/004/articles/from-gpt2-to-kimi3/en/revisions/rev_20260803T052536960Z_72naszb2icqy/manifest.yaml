@@ -1,0 +1,39 @@
+schema_version: 1
+revision_kind: article
+edition_id: "004"
+revision_id: rev_20260803T052536960Z_72naszb2icqy
+created_at: 2026-08-03T05:25:36.960Z
+parent_revision_id: rev_20260802T230000039Z_3z5epujlhrg4
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/rerun-004-the-systems-around-the-model/articles/from-gpt2-to-kimi3.md
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: e276772cbee5b0e1bb5d98bb23c302b45ab5a8f7
+    sha256: sha256:5cb8f26259cabe3274db2d658183a9a62a883fd58e2da5a5837c146254409b8f
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+  - kind: edition_spec
+    logicalId: legacy-rerun
+    editionId: "004"
+    revisionId: rev_20260803T052536960Z_ksnov6fgzlar
+  - kind: source_capture
+    logicalId: 22580-from-gpt2-to-kimi3-explained-8f01b0fe
+    revisionId: rev_20260802T230000003Z_vbxyqxotuugm
+  - kind: source_extraction
+    logicalId: 22580-from-gpt2-to-kimi3-explained-8f01b0fe
+    revisionId: rev_20260802T230000012Z_q7nfhrrpiizm
+files:
+  - path: manuscript.md
+    mediaType: text/markdown
+    sha256: sha256:5cb8f26259cabe3274db2d658183a9a62a883fd58e2da5a5837c146254409b8f
+    sizeBytes: 5900
+    legacySource:
+      repositoryPath: editions/rerun-004-the-systems-around-the-model/articles/from-gpt2-to-kimi3.md
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: e276772cbee5b0e1bb5d98bb23c302b45ab5a8f7
+logical_id: from-gpt2-to-kimi3
+language: en

@@ -1,0 +1,51 @@
+schema_version: 1
+revision_kind: article
+edition_id: "004"
+revision_id: rev_20260803T052536960Z_rv74bm6u4vft
+created_at: 2026-08-03T05:25:36.960Z
+parent_revision_id: rev_20260802T230000047Z_kj32cx2lgs54
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/rerun-004-the-systems-around-the-model/translations/es/articles/factory-systems-problem.md
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: 752d7640e031eabdb4fb366f27e87aa41234a4db
+    sha256: sha256:c95e0e817833c44a8698badf0ea832c05fc95998305d0dc19a83193c1244df3e
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+  - kind: edition_spec
+    logicalId: legacy-rerun
+    editionId: "004"
+    revisionId: rev_20260803T052536960Z_ksnov6fgzlar
+  - kind: source_capture
+    logicalId: software-factories-are-super-real-but-the-factor-ab8ad3ab
+    revisionId: rev_20260802T230000006Z_kyfnqaqayltu
+  - kind: source_extraction
+    logicalId: software-factories-are-super-real-but-the-factor-ab8ad3ab
+    revisionId: rev_20260802T230000015Z_exb6ila5bcjf
+  - kind: source_capture
+    logicalId: factories-are-not-a-token-or-llm-problem-ba5fabbf
+    revisionId: rev_20260802T230000007Z_ngft3xfbgzib
+  - kind: source_extraction
+    logicalId: factories-are-not-a-token-or-llm-problem-ba5fabbf
+    revisionId: rev_20260802T230000016Z_oa3hzaxnhkae
+  - kind: source_capture
+    logicalId: do-not-make-the-service-bus-non-deterministic-3a92442c
+    revisionId: rev_20260802T230000008Z_fuu6aytbkrfc
+  - kind: source_extraction
+    logicalId: do-not-make-the-service-bus-non-deterministic-3a92442c
+    revisionId: rev_20260802T230000017Z_yplg2plpqd4a
+files:
+  - path: manuscript.md
+    mediaType: text/markdown
+    sha256: sha256:c95e0e817833c44a8698badf0ea832c05fc95998305d0dc19a83193c1244df3e
+    sizeBytes: 2681
+    legacySource:
+      repositoryPath: editions/rerun-004-the-systems-around-the-model/translations/es/articles/factory-systems-problem.md
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 752d7640e031eabdb4fb366f27e87aa41234a4db
+logical_id: factory-systems-problem
+language: es
