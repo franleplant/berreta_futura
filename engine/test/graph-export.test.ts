@@ -73,6 +73,48 @@ test("machine topology export is generated from the actual XState configs", asyn
   }
 });
 
+test("one live machine can be exported as its own standalone graph", async () => {
+  const output = await mkdtemp(join(tmpdir(), "mag-article-machine-"));
+  try {
+    await writeMachineTopology(output, "article");
+    const [html, svg, json, png] = await Promise.all([
+      readFile(join(output, "article-machine.html"), "utf8"),
+      readFile(join(output, "article-machine.svg"), "utf8"),
+      readFile(join(output, "article-machine.json"), "utf8"),
+      readFile(join(output, "article-machine.png")),
+    ]);
+    assert.match(html, /generated directly from the live machine configs/);
+    assert.match(svg, /ArticleMachine/);
+    assert.match(svg, /stage_1_decision/);
+    assert.match(svg, /accepted_pending_durable/);
+    assert.match(svg, /entry: offerStage1/);
+    assert.match(svg, /Parallel work: measure_article, worth judge,/);
+    assert.match(svg, /mechanics judge/);
+    assert.match(svg, /always \[stage1Blocking\]/);
+    assert.match(svg, /WORK_COMPLETED \[writerCompleted\]/);
+    assert.doesNotMatch(svg, /EditionMachine/);
+    const topology = JSON.parse(json) as {
+      readonly machines: readonly {
+        readonly name: string;
+        readonly states: readonly string[];
+        readonly transitions: readonly unknown[];
+      }[];
+    };
+    assert.equal(topology.machines.length, 1);
+    assert.equal(topology.machines[0]?.name, "ArticleMachine");
+    assert.ok(topology.machines[0]?.states.includes("drafting"));
+    assert.ok((topology.machines[0]?.transitions.length ?? 0) > 20);
+    assert.equal(
+      [...svg.matchAll(/<g class="transition-label/g)].length,
+      topology.machines[0]?.transitions.length,
+    );
+    assert.deepEqual([...png.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+    assert.ok(png.readUInt32BE(20) > png.readUInt32BE(16) * 2);
+  } finally {
+    await rm(output, { recursive: true, force: true });
+  }
+});
+
 test("the export includes a connected runtime orchestration overview", async () => {
   const output = await mkdtemp(join(tmpdir(), "mag-orchestration-topology-"));
   try {
