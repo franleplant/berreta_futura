@@ -43,8 +43,8 @@ piece may be, derived from pagination, and never a size to aim at. A 350-word
 source produces a 350-word piece, and two of edition 004's best articles run 431
 and 516 words against this same budget. See "Right-sizing" in
 `docs/WRITING_RULES.md`, and run the paragraph deletion pass before you check
-pagination, not after. `mag fit <edition-id>` measures the real span; the
-renderer refuses an over-budget build.
+pagination, not after. The current RunEngine renderer measurement establishes
+the real span and refuses an over-budget render.
 
 Over-length is the other failure and it has its own remedy. A 3,000-word source
 loses roughly half its substantive claims at this length: that is the mode

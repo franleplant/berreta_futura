@@ -73,7 +73,7 @@ the wording is loose but the meaning survives.
 ## Output
 
 Return one YAML document and nothing else. The operator records it with
-`mag review record <edition-id> --kind evidence`.
+the exact active RunEngine human-review offer.
 
 ```yaml
 result: changes_required        # approved | changes_required
