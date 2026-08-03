@@ -1,0 +1,33 @@
+schema_version: 1
+revision_kind: edition_spec
+logical_id: legacy-rerun
+edition_id: "004"
+revision_id: rev_20260803T052536960Z_ksnov6fgzlar
+created_at: 2026-08-03T05:25:36.960Z
+parent_revision_id: null
+migration_id: legacy-four-root-misc
+files:
+  - path: art/illustrations.yaml
+    media_type: application/yaml
+    sha256: sha256:16acdddd0669ef7e05e6e57010c5fc020f8e3ce88206ba425640316d678dc401
+    size_bytes: 11309
+    legacy_source:
+      repositoryPath: editions/rerun-004-the-systems-around-the-model/art/illustrations.yaml
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 887d3875cc970073189f8fe1f2bbdf6775a57a64
+  - path: edition.yaml
+    media_type: application/yaml
+    sha256: sha256:30caa06228c5ae23c848326656d0ad6e210431b57b41672dfdbddd0796d4ac8a
+    size_bytes: 13214
+    legacy_source:
+      repositoryPath: editions/rerun-004-the-systems-around-the-model/edition.yaml
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 9e2e103e6ba351d82e421314039c9b156ed112a0
+  - path: translations/es/edition.yaml
+    media_type: application/yaml
+    sha256: sha256:ee12be20a998552e2e64d3fd5d8ecabc7db659bcf77e58576cdc0c67bf4e64f8
+    size_bytes: 7297
+    legacy_source:
+      repositoryPath: editions/rerun-004-the-systems-around-the-model/translations/es/edition.yaml
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: c9211c99038d28dad2cfd13948ac10c0628cc6ee

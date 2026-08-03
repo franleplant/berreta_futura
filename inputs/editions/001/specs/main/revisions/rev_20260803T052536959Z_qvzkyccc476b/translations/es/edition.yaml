@@ -1,0 +1,60 @@
+schema_version: 1
+language: es
+source_language: en
+locale: es-AR
+fallback_locale: es-ES
+base_copy_sha256: eb8417ddd17e526c52d6666ded4d02cfbd2a4f5753c42954f46c879ab3380bea
+policy:
+  register: educated_castellano
+  regional_preference: restrained_argentinian
+  fallback: spain
+  prohibited_fallbacks:
+  - generic_latin_american
+  - mexican
+  - caribbean
+title: El trabajo que nos queda
+subtitle: Trabajo, capacidad de acción, propiedad y gobernanza en la era de las máquinas capaces
+cover:
+  headline: El trabajo que nos queda
+  deck: Trabajo, capacidad de acción, propiedad y gobernanza en la era de las máquinas capaces
+  back_text: La inteligencia no se gobierna sola. Los límites que construyamos a su alrededor decidirán quién aprende,
+    quién posee y quién responde.
+editorial:
+  path: manuscript/editorial.md
+  source_sha256: 8508dd21790ceea04de4911fb7071674c1e4a618cf59aa25d913a927d489f492
+articles:
+- id: narayanan-what-will-be-left
+  title: ¿Qué trabajo nos quedará por hacer?
+  short_title: Qué trabajo nos quedará
+  display_emphasis: quedará
+  author_note: Arvind Narayanan es profesor de informática en la Universidad de Princeton.
+  manuscript: articles/narayanan-what-will-be-left.md
+  source_sha256: 49fc3fd5f93ab9c8211387bd229184e3475e4a10c79eb4d7c5438fe25ba8724f
+  figures:
+  - id: capability-reliability-gap
+    caption: A lo largo de las versiones de los modelos, la precisión aumenta con rapidez mientras que la confiabilidad mejora solo gradualmente; es la brecha entre capacidad y despliegue confiable.
+    alt_text: Dos gráficos de dispersión comparan la precisión y la confiabilidad de modelos de IA según su fecha de lanzamiento; la tendencia de precisión sube mucho más rápido.
+    anchor: __opener__
+    source_caption_sha256: baeceeb051bc7796ff3fa143960d75e4091a491f000c713a28335ce661d51e2c
+- id: joshi-dsls-reliable-use-llms
+  title: Los DSL permiten un uso confiable de los LLM
+  short_title: uso confiable de los LLM
+  display_emphasis: confiable
+  author_note: Unmesh Joshi es Distinguished Engineer en Thoughtworks y colabora en martinfowler.com.
+  manuscript: articles/joshi-dsls-reliable-use-llms.md
+  source_sha256: ca116c68323207b16243c158f6d50d59fa1ed5de17a975144aa84ed9f3c45192
+- id: nadella-reverse-information-paradox
+  title: La paradoja inversa de la información
+  short_title: paradoja inversa de la información
+  display_emphasis: inversa
+  author_note: Satya Nadella es presidente y consejero delegado de Microsoft.
+  manuscript: articles/nadella-reverse-information-paradox.md
+  source_sha256: 7777a53531ba65d20c4427cf996226b91e612509198b330f2f269d049f011f1c
+- id: hassabis-frontier-ai
+  title: Un marco para la IA de frontera y el amanecer de una nueva era
+  short_title: marco para la IA de frontera
+  display_emphasis: frontera
+  author_note: Demis Hassabis es cofundador y consejero delegado de Google DeepMind.
+  manuscript: articles/hassabis-frontier-ai.md
+  source_sha256: 9f415e615a9a9b91f50262c862cdf6fe3dadf044175986105a09d7a5742fe257
+sections: []
