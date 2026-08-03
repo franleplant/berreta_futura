@@ -150,7 +150,7 @@ export const releaseMachine = setup({
           artifact: {
             id: requestId,
             kind: "human_decision_request",
-            schemaVersion: "release-approval-request/1",
+            schemaVersion: "human-decision-request/3",
             mediaType: "application/json",
             origin: "machine",
             payload: {
@@ -164,6 +164,8 @@ export const releaseMachine = setup({
                 printerProfileArtifactId: context.printerProfileArtifact ?? null,
                 printerPreflightArtifactIds: context.printerPreflightArtifacts,
                 studioReady: context.studioReady,
+                inputArtifactIds: inputs,
+                intentSchemaVersion: "human-decision-intent/1",
                 releaseLabel:
                   context.target === "press"
                     ? context.studioReady
@@ -191,6 +193,7 @@ export const releaseMachine = setup({
         inputArtifacts: [requestId, ...inputs],
         taskArtifactId: requestId,
         contractVersion: releaseApprovalContractVersion,
+        requirements: { authority: "human", capabilities: [], minimumAssurance: "local_bearer" },
         allowedWorkerCapabilities: ["human"],
         }),
       ];

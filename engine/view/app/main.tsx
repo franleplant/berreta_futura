@@ -291,14 +291,29 @@ function OfferForm({
         onClick={async () => {
           setBusy(true);
           try {
-            const result = JSON.parse(answer) as unknown;
-            const response = await fetch(`/api/offers/${encodeURIComponent(offer.id)}/answer`, {
+            const decision = JSON.parse(answer) as {
+              readonly choice?: unknown;
+              readonly details?: unknown;
+            };
+            const prepared = await fetch(`/api/offers/${encodeURIComponent(offer.id)}/prepare`, {
               method: "POST",
               headers: { "content-type": "application/json" },
               body: JSON.stringify({
                 runId: offer.runId,
                 expectedOfferId: offer.id,
-                result,
+              }),
+            });
+            if (!prepared.ok) {
+              throw new Error(await prepared.text());
+            }
+            const response = await fetch(`/api/offers/${encodeURIComponent(offer.id)}/decide`, {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                runId: offer.runId,
+                expectedOfferId: offer.id,
+                choice: decision.choice,
+                ...(decision.details === undefined ? {} : { details: decision.details }),
               }),
             });
             if (!response.ok) {

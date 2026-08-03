@@ -9,12 +9,12 @@ import type {
   ArtifactId,
   ArtifactSeed,
   EditionRootRunSpec,
-  WorkerIdentity,
   WorkOfferView,
 } from "../contracts/index.ts";
 import type { RunId } from "../contracts/index.ts";
 import { EditionRunLayout, editionRunName } from "../edition-run-layout.ts";
 import { SqliteRunEngine } from "../run-engine/index.ts";
+import { AuthorityTestHarness } from "./authority-fixture.ts";
 import { prepareLegacyEditionReleaseSnapshot } from "./internal-schema-test-helper.ts";
 
 test("EditionRunLayout bootstraps one durable run under its createdAt name and reopens it", async () => {
@@ -358,6 +358,7 @@ test("EditionRunLayout relocates a whole run atomically, reopens its artifact st
 test("RunEngine migration fence rejects active work and checkpoints WAL under exact CAS", async () => {
   const root = await mkdtemp(join(tmpdir(), "mag-run-migration-fence-"));
   const home = join(root, "legacy-run");
+  const authority = await AuthorityTestHarness.create(root);
   const engine = new SqliteRunEngine({
     databasePath: join(home, "run.sqlite"),
     artifactDirectory: join(home, "artifacts"),
@@ -377,7 +378,7 @@ test("RunEngine migration fence rejects active work and checkpoints WAL under ex
     );
 
     const offer = requiredOfferedWork(view);
-    const claim = await engine.claim(offer.id, workerFor(offer, "active-migration-worker"));
+    const claim = await authority.claim(engine, offer, { principalId: "active-migration-worker" });
     await assert.rejects(
       engine.acquireMigrationFence({
         runId,
@@ -411,6 +412,7 @@ test("RunEngine migration fence rejects active work and checkpoints WAL under ex
 test("EditionRunLayout relocation fence rejects a concurrent worker from an already-open engine", async () => {
   const root = await mkdtemp(join(tmpdir(), "mag-run-relocate-worker-race-"));
   const sourceDirectory = join(root, "legacy-run");
+  const authority = await AuthorityTestHarness.create(root);
   let announceFence!: () => void;
   let continueRelocation!: () => void;
   const fenced = new Promise<void>((resolve) => {
@@ -444,7 +446,7 @@ test("EditionRunLayout relocation fence rejects a concurrent worker from an alre
     await fenced;
     const offer = requiredOfferedWork(await worker.inspect(runId));
     await assert.rejects(
-      worker.claim(offer.id, workerFor(offer, "concurrent-worker")),
+      authority.claim(worker, offer, { principalId: "concurrent-worker" }),
       (error: unknown) => hasCode(error, "RUN_MIGRATION_FENCED"),
     );
     worker.close();
@@ -469,6 +471,7 @@ test("EditionRunLayout relocation fence rejects a concurrent worker from an alre
 test("EditionRunLayout rolls an installed clone back and releases its source fence", async () => {
   const root = await mkdtemp(join(tmpdir(), "mag-run-relocate-cutover-rollback-"));
   const sourceDirectory = join(root, "legacy-run");
+  const authority = await AuthorityTestHarness.create(root);
   const layout = new EditionRunLayout({
     editionKey: "004",
     outputRoot: join(root, "output"),
@@ -497,7 +500,7 @@ test("EditionRunLayout rolls an installed clone back and releases its source fen
     try {
       const restoredView = await restored.inspect(runId);
       const offer = requiredOfferedWork(restoredView);
-      const claim = await restored.claim(offer.id, workerFor(offer, "restored-worker"));
+      const claim = await authority.claim(restored, offer, { principalId: "restored-worker" });
       assert.equal(claim.offerId, offer.id);
     } finally {
       restored.close();
@@ -592,14 +595,6 @@ function requiredOfferedWork(view: Awaited<ReturnType<SqliteRunEngine["inspect"]
   const offer = view.offers.find((candidate) => candidate.status === "offered");
   assert.ok(offer, `run ${view.id} must expose offered work`);
   return offer;
-}
-
-function workerFor(offer: WorkOfferView, principalId: string): WorkerIdentity {
-  return {
-    principalId,
-    authority: offer.allowedWorkerCapabilities.includes("human") ? "human" : "model",
-    capabilities: offer.allowedWorkerCapabilities,
-  };
 }
 
 function hasCode(error: unknown, code: string): boolean {

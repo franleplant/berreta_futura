@@ -10,6 +10,7 @@ import type {
   EditionRootRunSpec,
 } from "../contracts/index.ts";
 import { SqliteRunEngine } from "../run-engine/index.ts";
+import { AuthorityTestHarness } from "./authority-fixture.ts";
 
 function id(value: string): ArtifactId {
   return value as ArtifactId;
@@ -82,6 +83,7 @@ test("durably retries a stranded child state and reactivates the actor", async (
     databasePath: join(temporary, "run.sqlite"),
     artifactDirectory: join(temporary, "artifacts"),
   });
+  const authority = await AuthorityTestHarness.create(temporary);
   try {
     const started = await engine.start(editionSpec());
     let view = await engine.inspect(started.runId);
@@ -89,7 +91,7 @@ test("durably retries a stranded child state and reactivates the actor", async (
       (offer) => offer.role === "capture_source" && offer.status === "offered",
     );
     assert.ok(capture);
-    const claim = await engine.claim(capture.id, {
+    const claim = await authority.claim(engine, capture, {
       principalId: "capture-tool",
       authority: "tool",
       capabilities: ["source_access", "subprocess"],

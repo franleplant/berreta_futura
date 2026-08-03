@@ -2,6 +2,10 @@ import { resolve } from "node:path";
 
 import { z } from "zod";
 
+import {
+  LocalAuthorityStore,
+  type AuthorizedWorker,
+} from "../authority/local-authority.ts";
 import type {
   KnownWorkRole,
   WorkOfferView,
@@ -133,6 +137,11 @@ export type ConfiguredWorker = {
   readonly options: RunWorkerOptions;
 };
 
+export type CreateConfiguredWorkerOptions = {
+  /** Owner-private, ignored storage for configured worker credentials. */
+  readonly authorityDirectory: string;
+};
+
 /** Exhaustive ownership table for every currently declared work role. */
 export const WORK_ROLE_EXECUTION = {
   capture_source: "source_archive",
@@ -179,7 +188,13 @@ type ExecutionOwner =
   | "durable_checkpoint"
   | "composition_bootstrap";
 
-export function createConfiguredWorker(value: unknown): ConfiguredWorker {
+export async function createConfiguredWorker(
+  value: unknown,
+  options: CreateConfiguredWorkerOptions,
+): Promise<ConfiguredWorker> {
+  if (!options.authorityDirectory.trim()) {
+    throw new Error("configured worker authorityDirectory must be non-empty");
+  }
   const parsed = workerConfigurationSchema.safeParse(value);
   if (!parsed.success) {
     throw new Error(`worker configuration is invalid: ${parsed.error.message}`);
@@ -189,8 +204,13 @@ export function createConfiguredWorker(value: unknown): ConfiguredWorker {
   if (new Set(ids).size !== ids.length) {
     throw new Error("worker executor IDs must be unique after expansion");
   }
+  const authority = await LocalAuthorityStore.init(resolve(options.authorityDirectory));
+  const authorizedWorkers = await authorizeConfiguredWorkers(authority, registrations);
   return {
-    resolver: new ConfiguredExecutorResolver(registrations),
+    resolver: new ConfiguredExecutorResolver(registrations.map((registration) => ({
+      ...registration,
+      authorizedWorker: requiredAuthorizedWorker(authorizedWorkers, registration.executor.worker.principalId),
+    }))),
     options: {
       ...(parsed.data.pollIntervalMs === undefined
         ? {}
@@ -289,12 +309,12 @@ function createRegistrations(
         value.adapterTimeoutMs,
       );
       const workDirectory = resolve(value.workDirectory);
-      const prefix = value.principalId ?? value.id;
+      const principalId = value.principalId ?? value.id;
       return [
         explicit(
           new RendererExecutor(adapter, {
             id: `${value.id}:edition`,
-            principalId: `${prefix}:edition`,
+            principalId,
             workDirectory,
           }),
           ["measure_edition", "render"],
@@ -302,7 +322,7 @@ function createRegistrations(
         explicit(
           new ArticleMeasurementExecutor(adapter, {
             id: `${value.id}:article`,
-            principalId: `${prefix}:article`,
+            principalId,
             workDirectory,
           }),
           ["measure_article"],
@@ -310,7 +330,7 @@ function createRegistrations(
         explicit(
           new LanguageFitExecutor(adapter, {
             id: `${value.id}:language`,
-            principalId: `${prefix}:language`,
+            principalId,
             workDirectory,
           }),
           ["language_fit"],
@@ -442,4 +462,71 @@ function uniqueCapabilities(
   capabilities: readonly WorkerCapability[],
 ): readonly WorkerCapability[] {
   return [...new Set(capabilities)];
+}
+
+async function authorizeConfiguredWorkers(
+  authority: LocalAuthorityStore,
+  registrations: readonly ExecutorRegistration[],
+): Promise<ReadonlyMap<string, AuthorizedWorker>> {
+  const requested = new Map<string, {
+    authority: Exclude<WorkerIdentity["authority"], "human">;
+    capabilities: Set<Exclude<WorkerCapability, "human">>;
+  }>();
+  for (const { executor } of registrations) {
+    const worker = executor.worker;
+    if (worker.authority === "human" || worker.capabilities.includes("human")) {
+      throw new Error(`configured executor ${executor.id} may not be enrolled as a human worker`);
+    }
+    const existing = requested.get(worker.principalId);
+    if (existing !== undefined && existing.authority !== worker.authority) {
+      throw new Error(`configured principal ${worker.principalId} has conflicting authority`);
+    }
+    const entry = existing ?? {
+      authority: worker.authority,
+      capabilities: new Set<Exclude<WorkerCapability, "human">>(),
+    };
+    for (const capability of worker.capabilities) {
+      if (capability !== "human") {
+        entry.capabilities.add(capability);
+      }
+    }
+    requested.set(worker.principalId, entry);
+  }
+
+  const snapshot = await authority.snapshot();
+  const sessions = new Map<string, AuthorizedWorker>();
+  for (const [principalId, worker] of requested) {
+    const existing = snapshot.principals.find((principal) => principal.principalId === principalId);
+    const capabilities = [...worker.capabilities].sort();
+    if (existing === undefined) {
+      await authority.enrollWorker({ principalId, authority: worker.authority, capabilities });
+    } else if (
+      existing.revoked ||
+      existing.authority !== worker.authority ||
+      capabilities.some((capability) => !existing.capabilities.includes(capability))
+    ) {
+      throw new Error(`configured principal ${principalId} is incompatible with its persisted authority enrollment`);
+    }
+    const credential = await authority.createCredentialProfile({ principalId, label: "configured-worker" });
+    await authority.grant({
+      credentialProfileId: credential.credentialProfileId,
+      capabilities,
+    });
+    sessions.set(principalId, await authority.authenticate({
+      credentialProfileId: credential.credentialProfileId,
+      secret: credential.secret,
+    }));
+  }
+  return sessions;
+}
+
+function requiredAuthorizedWorker(
+  workers: ReadonlyMap<string, AuthorizedWorker>,
+  principalId: string,
+): AuthorizedWorker {
+  const worker = workers.get(principalId);
+  if (worker === undefined) {
+    throw new Error(`configured principal ${principalId} has no authenticated credential`);
+  }
+  return worker;
 }

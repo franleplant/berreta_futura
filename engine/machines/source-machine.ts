@@ -16,7 +16,7 @@ import {
 } from "./runtime.ts";
 import { humanDecisionOffer } from "./human-decision.ts";
 
-export const sourceMachineVersion = "source/2";
+export const sourceMachineVersion = "source/3";
 const captureContractVersion = "capture-source/1";
 const extractionContractVersion = "extract-source/1";
 const reviewContractVersion = "review-source/1";
@@ -136,6 +136,7 @@ export const sourceMachine = setup({
         ].filter((value): value is ArtifactId => value !== undefined),
         taskArtifactId: context.captureProfileArtifact ?? context.leadArtifact,
         contractVersion: captureContractVersion,
+        requirements: { authority: "tool", capabilities: ["subprocess", "source_access"], minimumAssurance: "local_bearer" },
         allowedWorkerCapabilities: ["subprocess", "source_access"],
       }),
     ]),
@@ -157,6 +158,7 @@ export const sourceMachine = setup({
         ),
         taskArtifactId: context.leadArtifact,
         contractVersion: extractionContractVersion,
+        requirements: { authority: "model", capabilities: ["text_model", "source_access"], minimumAssurance: "local_bearer" },
         allowedWorkerCapabilities: ["text_model", "source_access"],
       }),
     ]),
@@ -178,7 +180,7 @@ export const sourceMachine = setup({
         inputArtifacts: inputs,
         allowedChoices: ["approved", "changes_required", "reject", "revise"],
         contractVersion: reviewContractVersion,
-        requiredCapabilities: ["human", "source_access"],
+        requiredCapabilities: ["source_access"],
         details: {
           sourceId: context.sourceId,
           leadArtifactId: context.leadArtifact,
@@ -287,7 +289,10 @@ export const sourceMachine = setup({
     rawEvidenceArtifacts: input.spec.rawEvidenceArtifacts ?? [],
     extractionArtifact: input.spec.extractionArtifact,
     metadataArtifact: input.spec.metadataArtifact,
-    approvalArtifact: input.spec.approvalArtifact,
+    // A review decision belongs to one offer in one run. Even a persisted
+    // historical decision cannot pre-approve this source actor: its current
+    // capture and extraction must be reviewed through the offer emitted here.
+    approvalArtifact: undefined,
     revision: 0,
     reviewRequestOrdinal: 0,
     lastFailure: undefined,

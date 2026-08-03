@@ -7,18 +7,31 @@ import type {
   ActorId,
   JsonObject,
   RunId,
-  WorkerCapability,
   WorkOfferId,
 } from "../contracts/index.ts";
+import type { AuthorizedWorker } from "../authority/local-authority.ts";
+import type { HumanDecisionPreparation } from "../run-engine/types.ts";
 import type { RunEngine } from "../run-engine/types.ts";
 
 const MAX_REQUEST_BYTES = 1024 * 1024;
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "::1", "localhost"]);
 
+class RequestError extends Error {
+  readonly status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "RequestError";
+    this.status = status;
+  }
+}
+
 export type RunViewerServerOptions = {
   readonly host?: string;
   readonly port?: number;
   readonly staticDirectory: string;
+  /** An already authenticated local human session. Read-only projection works without one. */
+  readonly humanWorker?: AuthorizedWorker;
 };
 
 export type RunningViewer = {
@@ -37,8 +50,9 @@ export async function serveRunViewer(
     throw new Error("the run viewer may bind only to a loopback address");
   }
   const staticRoot = resolve(options.staticDirectory);
+  const preparedDecisions = new Map<WorkOfferId, PreparedDecision>();
   const server = createServer((request, response) => {
-    void handleRequest(engine, staticRoot, request, response).catch((error: unknown) => {
+    void handleRequest(engine, staticRoot, options.humanWorker, preparedDecisions, request, response).catch((error: unknown) => {
       if (!response.headersSent) {
         writeJson(response, statusForError(error), {
           error: error instanceof Error ? error.message : String(error),
@@ -75,6 +89,8 @@ export async function serveRunViewer(
 async function handleRequest(
   engine: RunEngine,
   staticRoot: string,
+  humanWorker: AuthorizedWorker | undefined,
+  preparedDecisions: Map<WorkOfferId, PreparedDecision>,
   request: IncomingMessage,
   response: ServerResponse,
 ): Promise<void> {
@@ -128,54 +144,45 @@ async function handleRequest(
     writeJson(response, 200, await engine.retry(runId, actorId));
     return;
   }
-  const answerMatch = /^\/api\/offers\/([^/]+)\/answer$/.exec(url.pathname);
-  if (request.method === "POST" && answerMatch?.[1] !== undefined) {
-    const offerId = decodeURIComponent(answerMatch[1]) as WorkOfferId;
+  const prepareMatch = /^\/api\/offers\/([^/]+)\/prepare$/.exec(url.pathname);
+  if (request.method === "POST" && prepareMatch?.[1] !== undefined) {
+    const offerId = decodeURIComponent(prepareMatch[1]) as WorkOfferId;
     const body = await readJsonObject(request);
-    if (body.expectedOfferId !== offerId) {
-      writeJson(response, 409, { error: "expectedOfferId does not name the active route offer" });
+    const offer = await preparedHumanOffer(engine, body, offerId, humanWorker);
+    if (humanWorker === undefined) throw new RequestError(403, "viewer has no authenticated human session");
+    const preparation = await engine.prepareHumanDecision(offerId, humanWorker);
+    preparedDecisions.set(offerId, { runId: offer.runId, preparation });
+    writeJson(response, 200, preparedDecisionView(preparation));
+    return;
+  }
+  const decideMatch = /^\/api\/offers\/([^/]+)\/decide$/.exec(url.pathname);
+  if (request.method === "POST" && decideMatch?.[1] !== undefined) {
+    const offerId = decodeURIComponent(decideMatch[1]) as WorkOfferId;
+    const body = await readJsonObject(request);
+    if (humanWorker === undefined) {
+      writeJson(response, 403, { error: "viewer has no authenticated human session" });
       return;
     }
-    if (!isJsonObject(body.result)) {
-      writeJson(response, 400, { error: "result must be a JSON object" });
+    const prepared = preparedDecisions.get(offerId);
+    if (prepared === undefined) {
+      writeJson(response, 409, { error: "human decision must be prepared in this authenticated viewer session" });
       return;
     }
-    if (typeof body.runId !== "string" || !body.runId) {
-      writeJson(response, 400, { error: "runId must be a non-empty string" });
+    const offer = await preparedHumanOffer(engine, body, offerId, humanWorker);
+    if (prepared.runId !== offer.runId) {
+      writeJson(response, 409, { error: "prepared human decision belongs to a different run" });
       return;
     }
-    const offer = await findOffer(engine, body.runId as RunId, offerId);
-    if (!offer.allowedWorkerCapabilities.includes("human")) {
-      writeJson(response, 403, { error: "offer does not permit human authority" });
-      return;
-    }
-    const claim = await engine.claim(offerId, {
-      principalId: "local-human",
-      displayName: "Local reviewer",
-      authority: "human",
-      capabilities: humanCapabilities(offer.allowedWorkerCapabilities),
+    const decision = parseDecision(body);
+    await engine.decide(prepared.preparation, humanWorker, {
+      schemaVersion: "human-decision-intent/1",
+      offerId: prepared.preparation.offerId,
+      taskArtifactId: prepared.preparation.taskArtifactId,
+      inputArtifactIds: prepared.preparation.inputArtifactIds,
+      result: decision.result,
     });
-    await engine.answer(claim, {
-      contractVersion: offer.contractVersion,
-      result: body.result,
-      artifacts: [{
-        kind: humanDecisionKind(offer.role),
-        schemaVersion: offer.contractVersion,
-        mediaType: "application/json",
-        origin: "human",
-        payload: {
-          kind: "json",
-          value: humanDecisionPayload(offer.role, body.result),
-        },
-        metadata: {
-          offerId: offer.id,
-          reviewer: "local-human",
-        },
-      }],
-      metadata: { surface: "local-viewer" },
-    });
-    const outcome = await engine.advance(offer.runId);
-    writeJson(response, 200, outcome);
+    preparedDecisions.delete(offerId);
+    writeJson(response, 200, await engine.advance(offer.runId));
     return;
   }
   if (request.method !== "GET" && request.method !== "HEAD") {
@@ -185,39 +192,56 @@ async function handleRequest(
   await serveStatic(staticRoot, url.pathname, request.method === "HEAD", response);
 }
 
-function humanDecisionPayload(role: string, result: JsonObject) {
-  if (role === "plan_edition") {
-    return result.productionPlan ?? null;
-  }
-  return result;
+type PreparedDecision = {
+  readonly runId: RunId;
+  readonly preparation: HumanDecisionPreparation;
+};
+
+function preparedDecisionView(preparation: HumanDecisionPreparation): Omit<HumanDecisionPreparation, "claim"> {
+  return {
+    schemaVersion: preparation.schemaVersion,
+    offerId: preparation.offerId,
+    taskArtifactId: preparation.taskArtifactId,
+    inputArtifactIds: preparation.inputArtifactIds,
+    allowedChoices: preparation.allowedChoices,
+  };
 }
 
-function humanDecisionKind(role: string): string {
-  switch (role) {
-    case "close_collection":
-      return "collection_decision";
-    case "plan_edition":
-      return "edition_plan";
-    case "release_approval":
-      return "release_decision";
-    case "review_source":
-      return "source_review_decision";
-    case "select_art":
-      return "art_selection";
-    case "visual_review":
-      return "visual_review_decision";
-    default:
-      return "editor_decision";
+async function preparedHumanOffer(
+  engine: RunEngine,
+  body: JsonObject,
+  offerId: WorkOfferId,
+  humanWorker: AuthorizedWorker | undefined,
+) {
+  if (body.expectedOfferId !== offerId) {
+    throw new RequestError(409, "expectedOfferId does not name the active route offer");
   }
+  if (typeof body.runId !== "string" || !body.runId) {
+    throw new RequestError(400, "runId must be a non-empty string");
+  }
+  if (humanWorker === undefined) {
+    throw new RequestError(403, "viewer has no authenticated human session");
+  }
+  const offer = await findOffer(engine, body.runId as RunId, offerId);
+  if (offer.requirements?.authority !== "human") {
+    throw new RequestError(403, "offer does not require a human decision");
+  }
+  const session = await humanWorker.describe();
+  if (session.authority !== "human") {
+    throw new RequestError(403, "viewer session is not human authority");
+  }
+  return offer;
 }
 
-function humanCapabilities(
-  required: ReadonlyArray<WorkerCapability>,
-): ReadonlyArray<WorkerCapability> {
-  return [
-    "human" as const,
-    ...(required.includes("source_access") ? ["source_access" as const] : []),
-  ];
+function parseDecision(body: JsonObject): { readonly result: JsonObject } {
+  const fields = Object.keys(body);
+  if (fields.some((field) => field !== "runId" && field !== "expectedOfferId" && field !== "result")) {
+    throw new RequestError(400, "human decision permits only an exact result object");
+  }
+  if (!isJsonObject(body.result)) {
+    throw new RequestError(400, "human decision result must be a JSON object");
+  }
+  return { result: body.result };
 }
 
 async function findOffer(engine: RunEngine, runId: RunId, offerId: WorkOfferId) {
@@ -298,6 +322,9 @@ function writeJson(response: ServerResponse, status: number, value: unknown): vo
 }
 
 function statusForError(error: unknown): number {
+  if (error instanceof RequestError) {
+    return error.status;
+  }
   if (error instanceof SyntaxError) {
     return 400;
   }

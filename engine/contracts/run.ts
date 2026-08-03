@@ -13,7 +13,7 @@ import type {
   SourceAssignmentPolicy,
 } from "./production-plan.ts";
 import type { WorkOfferView } from "./work.ts";
-import type { InputRevisionRef } from "../durable/types.ts";
+import type { DurableRevisionRef, InputRevisionRef } from "../durable/types.ts";
 
 export const ARTICLE_LENSES = [
   "worth",
@@ -84,9 +84,24 @@ export type ArticleRunSpec = {
   readonly writingRules: ArtifactId;
   readonly measurementProfileArtifact?: ArtifactId;
   readonly measurementInputArtifacts?: readonly ArtifactId[];
+  /** Git-bound inputs that must be pinned into the resulting DurableRevision. */
+  readonly inputRevisions?: readonly InputRevisionRef[];
+  /** Exact prior DurableRevision, if this fresh manuscript supersedes one. */
+  readonly durableParentRevisionId?: import("./ids.ts").RevisionId;
   readonly initialManuscript?: ArtifactId;
   readonly policy: ArticlePolicy;
   readonly modelPolicy: ModelPolicy;
+};
+
+/**
+ * An edition's configured article binds stable source identities only. Exact
+ * extraction and review-decision artifacts are resolved after collection.
+ */
+export type PreplannedArticleRunSpec = Omit<
+  ArticleRunSpec,
+  "sources" | "sourceApprovalArtifacts"
+> & {
+  readonly sourceIds: readonly string[];
 };
 
 export type SourceRunSpec = {
@@ -114,16 +129,30 @@ export type EditorialRunSpec = {
   readonly writingRules: ArtifactId;
   readonly articleArtifacts?: readonly ArtifactId[];
   readonly initialManuscript?: ArtifactId;
+  /** Git-bound inputs that must be pinned into the resulting DurableRevision. */
+  readonly inputRevisions?: readonly InputRevisionRef[];
+  /** Exact prior DurableRevision, if this fresh editorial supersedes one. */
+  readonly durableParentRevisionId?: import("./ids.ts").RevisionId;
   readonly modelPolicy: ModelPolicy;
 };
 
 export type TranslationRunSpec = {
+  /** Edition identity is supplied by EditionMachine when this is a child actor. */
+  readonly editionId?: string;
+  /** One translation actor owns one exact English article or opening editorial. */
+  readonly pieceKind: "article" | "editorial";
+  readonly pieceId: string;
   readonly language: string;
   readonly sourceLanguage: string;
+  /** Exactly one current source-piece artifact, retained as an array for task compatibility. */
   readonly englishArtifacts: readonly ArtifactId[];
   readonly promptArtifact: ArtifactId;
   readonly measurementProfileArtifact?: ArtifactId;
   readonly measurementInputArtifacts?: readonly ArtifactId[];
+  /** Git-bound inputs that must be pinned into the resulting DurableRevision. */
+  readonly inputRevisions?: readonly InputRevisionRef[];
+  /** Exact prior DurableRevision for this language and piece. */
+  readonly durableParentRevisionId?: import("./ids.ts").RevisionId;
   readonly initialTranslationArtifacts?: readonly ArtifactId[];
   readonly maximumReaderPages: number;
   readonly modelPolicy: ModelPolicy;
@@ -146,7 +175,13 @@ export type RenderRunSpec = {
   readonly compositionId?: string;
   readonly rendererContractVersion: string;
   readonly printerProfileArtifact?: ArtifactId;
+  /** Git-bound layout and renderer inputs pinned by a CompositionRevision. */
+  readonly layoutInputRevisions?: readonly InputRevisionRef[];
   readonly configuredLanguages: readonly string[];
+  /** Preselected immutable art, bound directly without any art-machine offer. */
+  readonly selectedArtArtifacts?: readonly ArtifactId[];
+  /** Exact durable image revisions corresponding to preselected art artifacts. */
+  readonly selectedArtRevisions?: readonly Extract<DurableRevisionRef, { readonly kind: "image" }>[];
   readonly studioPolicy:
     | "not_applicable"
     | "home_ready_studio_blocked"
@@ -187,7 +222,8 @@ export type EditionRunSpec = {
   readonly planningArtifact?: ArtifactId;
   readonly sourceAssignmentPolicy?: SourceAssignmentPolicy;
   readonly sources: readonly SourceRunSpec[];
-  readonly articles: readonly ArticleRunSpec[];
+  /** Configured articles use sourceIds; legacy resolved articles are normalized at collection. */
+  readonly articles: readonly (PreplannedArticleRunSpec | ArticleRunSpec)[];
   readonly editorial: EditorialRunSpec;
   readonly translations: readonly TranslationRunSpec[];
   readonly art: readonly RegisteredArtSpec[];
@@ -278,6 +314,7 @@ export type DecisionView = {
   readonly choice: string;
   readonly authority: string;
   readonly artifactId?: ArtifactId;
+  readonly authorizationId?: string;
   readonly details: JsonObject;
   readonly createdAt: string;
 };

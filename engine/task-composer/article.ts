@@ -5,6 +5,7 @@ import type {
   JudgeLens,
   RevisionId,
   IterationId,
+  OfferRequirements,
   WorkRole,
   WorkerCapability,
 } from "../contracts/index.ts";
@@ -173,10 +174,26 @@ function capabilities(role: ArticleOfferRole): readonly WorkerCapability[] {
     case "craft":
       return ["text_model", "source_blind"];
     case "editor_decision":
-      return ["human"];
+      return [];
     default:
       return ["text_model", "source_access"];
   }
+}
+
+function requirements(role: ArticleOfferRole): OfferRequirements {
+  return {
+    authority: role === "editor_decision"
+      ? "human"
+      : role === "measure_article"
+        ? "tool"
+        : "model",
+    capabilities: capabilities(role),
+    minimumAssurance: "local_bearer",
+  };
+}
+
+function legacyCapabilities(role: ArticleOfferRole): readonly WorkerCapability[] {
+  return role === "editor_decision" ? ["human"] : capabilities(role);
 }
 
 export function composeArticleWorkOffer(
@@ -221,6 +238,8 @@ export function composeArticleWorkOffer(
     inputArtifacts: artifactIds(artifacts),
     taskArtifactId: taskArtifactId(input),
     contractVersion: `article-${input.role}/1`,
-    allowedWorkerCapabilities: capabilities(input.role),
+    requirements: requirements(input.role),
+    // Compatibility only. Human authority is represented by requirements.
+    allowedWorkerCapabilities: legacyCapabilities(input.role),
   };
 }

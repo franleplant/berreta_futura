@@ -10,7 +10,6 @@ import type {
   ArtifactPayload,
   ArticleRootRunSpec,
   RunView,
-  WorkerIdentity,
   WorkOfferView,
 } from "../contracts/index.ts";
 import {
@@ -22,6 +21,7 @@ import {
   type RunEngineFailpoint,
 } from "../run-engine/index.ts";
 import { prepareArticleSources } from "./approved-source-fixture.ts";
+import { AuthorityTestHarness } from "./authority-fixture.ts";
 
 function artifactId(value: string): ArtifactId {
   return value as ArtifactId;
@@ -81,6 +81,7 @@ type Harness = {
   readonly databasePath: string;
   readonly artifactDirectory: string;
   readonly clock: ManualClock;
+  readonly authority: AuthorityTestHarness;
   open(options?: {
     readonly failpoints?: FailpointController;
     readonly coordinatorLeaseMs?: number;
@@ -92,6 +93,7 @@ async function harness(context: TestContext): Promise<Harness> {
   const root = await mkdtemp(join(tmpdir(), "mag-public-durability-"));
   const engines: SqliteRunEngine[] = [];
   const clock = new ManualClock();
+  const authority = await AuthorityTestHarness.create(root);
   context.after(async () => {
     for (const engine of engines) {
       engine.close();
@@ -103,6 +105,7 @@ async function harness(context: TestContext): Promise<Harness> {
     databasePath: join(root, "runs.sqlite"),
     artifactDirectory: join(root, "artifacts"),
     clock,
+    authority,
     open(options = {}) {
       const engine = new SqliteRunEngine({
         databasePath: join(root, "runs.sqlite"),
@@ -183,6 +186,7 @@ async function preparedArticleSpec(
       preparationEngine,
       articleSpec(prefix, manuscriptPayload),
       `${prefix}-source-prep`,
+      await fixture.authority.human("public-durability-source-reviewer"),
     );
   } finally {
     preparationEngine.close();
@@ -206,14 +210,6 @@ function offered(view: RunView, role: string): WorkOfferView {
   );
   assert.ok(offer, `Expected an offered ${role} task`);
   return offer;
-}
-
-function workerFor(offer: WorkOfferView): WorkerIdentity {
-  return {
-    principalId: `worker-${offer.id}`,
-    authority: "tool",
-    capabilities: offer.allowedWorkerCapabilities,
-  };
 }
 
 function measurement(id: ArtifactId): AnswerArtifact {
@@ -369,14 +365,14 @@ test("a blocking artifact-free judge answer remains immutable writer feedback", 
   const started = await engine.start(await preparedArticleSpec(fixture, "answer-envelope-feedback"));
   const beforeMeasure = await engine.inspect(started.runId);
   const measureOffer = offered(beforeMeasure, "measure_article");
-  const measureClaim = await engine.claim(measureOffer.id, workerFor(measureOffer));
+  const measureClaim = await fixture.authority.claim(engine, measureOffer);
   const afterMeasure = await engine.answer(measureClaim, {
     contractVersion: measureOffer.contractVersion,
     result: { fits: true, pageCount: 1 },
     artifacts: [measurement(artifactId("answer-envelope-measurement"))],
   });
   const worthOffer = offered(afterMeasure, "worth");
-  const worthClaim = await engine.claim(worthOffer.id, workerFor(worthOffer));
+  const worthClaim = await fixture.authority.claim(engine, worthOffer);
   const finding = "The central claim has no supporting example.";
   const afterWorth = await engine.answer(worthClaim, {
     contractVersion: worthOffer.contractVersion,

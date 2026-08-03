@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "required": [
+    "english_sha256",
+    "markdown"
+  ],
+  "properties": {
+    "english_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "markdown": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

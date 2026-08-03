@@ -26,6 +26,7 @@ import {
   stageArtifact,
   writeAdapterRequest,
 } from "./adapter-workspace.ts";
+import { materializeReducedMeasurementEdition } from "./renderer.ts";
 import type { Executor, ExecutorContext } from "./types.ts";
 
 const inputSchema = z.object({
@@ -108,7 +109,7 @@ abstract class RendererMeasurementExecutor implements Executor {
       context.claim.attemptId,
       `${operation}-${context.claim.attemptId}`,
     );
-    const inputs = await Promise.all(profile.inputs.map(async (input, index) => ({
+    const stagedInputs = await Promise.all(profile.inputs.map(async (input, index) => ({
       artifactId: input.artifactId,
       sourcePath: await stageArtifact(
         context.artifacts,
@@ -118,6 +119,17 @@ abstract class RendererMeasurementExecutor implements Executor {
       ),
       targetPath: input.targetPath,
     })));
+    const measurementPieceId = typeof profile.metadata?.measurementPieceId === "string"
+      ? profile.metadata.measurementPieceId
+      : undefined;
+    const inputs = measurementPieceId === undefined
+      ? stagedInputs
+      : await materializeReducedMeasurementEdition(
+          stagedInputs,
+          workspace.inputRoot,
+          measurementPieceId,
+          profile.primaryLanguage === "es" ? "es" : "en",
+        );
     const manifest: RenderManifest = {
       schemaVersion: 1,
       rendererContractVersion: RENDERER_CONTRACT_VERSION,
@@ -210,8 +222,9 @@ export class ArticleMeasurementExecutor extends RendererMeasurementExecutor {
         `article measurement profile is invalid: ${parsed.error.message}`,
       );
     }
-    const profile = parsed.data as unknown as ArticleMeasurementProfile;
-    validateProfileInputs(context, profile.inputs, record.parents);
+    const template = parsed.data as unknown as ArticleMeasurementProfile;
+    validateProfileInputs(context, template.inputs, record.parents);
+    const profile = await currentArticleProfile(context, template);
     if (
       context.offer.subjectArtifactId !== profile.manuscriptArtifactId ||
       !context.offer.inputArtifacts.includes(profile.manuscriptArtifactId)
@@ -220,12 +233,14 @@ export class ArticleMeasurementExecutor extends RendererMeasurementExecutor {
         "article measurement profile does not bind the exact offered manuscript",
       );
     }
-    requireParent(
-      record.parents,
-      profile.manuscriptArtifactId,
-      "measured_manuscript",
-      "article measurement profile",
-    );
+    if (template.manuscriptArtifactId !== "$current") {
+      requireParent(
+        record.parents,
+        profile.manuscriptArtifactId,
+        "measured_manuscript",
+        "article measurement profile",
+      );
+    }
     if (!profile.inputs.some((input) => input.artifactId === profile.manuscriptArtifactId)) {
       throw permanentAdapterError("article measurement inputs omit the exact manuscript");
     }
@@ -310,11 +325,12 @@ export class LanguageFitExecutor extends RendererMeasurementExecutor {
     if (!parsed.success) {
       throw permanentAdapterError(`language fit profile is invalid: ${parsed.error.message}`);
     }
-    const profile = parsed.data as unknown as LanguageFitProfile;
+    const template = parsed.data as unknown as LanguageFitProfile;
+    const profile = await currentLanguageProfile(context, template);
     if (profile.primaryLanguage !== profile.language) {
       throw permanentAdapterError("language fit profile primaryLanguage must equal language");
     }
-    validateProfileInputs(context, profile.inputs, record.parents);
+    validateProfileInputs(context, template.inputs, record.parents);
     requireUnique(
       profile.translatedPieces.map((piece) => piece.articleId),
       "language fit article IDs",
@@ -332,12 +348,10 @@ export class LanguageFitExecutor extends RendererMeasurementExecutor {
           `language fit profile does not bind translated piece ${piece.articleId}`,
         );
       }
-      requireParent(
-        record.parents,
-        piece.artifactId,
-        "translated_piece",
-        "language fit profile",
-      );
+      if (template.translatedPieces.some((candidate) => candidate.artifactId === "$current")) {
+        continue;
+      }
+      requireParent(record.parents, piece.artifactId, "translated_piece", "language fit profile");
     }
 
     const measured = await this.renderMeasurement(
@@ -448,6 +462,63 @@ function requireParent(
   )) {
     throw permanentAdapterError(`${label} has no ${relation} edge to ${artifactId}`);
   }
+}
+
+async function currentArticleProfile(
+  context: ExecutorContext,
+  template: ArticleMeasurementProfile,
+): Promise<ArticleMeasurementProfile> {
+  if (template.manuscriptArtifactId !== "$current") return template;
+  const manuscriptArtifactId = context.offer.subjectArtifactId;
+  if (manuscriptArtifactId === undefined || context.artifacts.readArtifact === undefined) {
+    throw permanentAdapterError("dynamic article profile requires the current manuscript subject");
+  }
+  const record = await context.artifacts.readArtifact(manuscriptArtifactId);
+  const targetPath = record.artifact.metadata.rendererTargetPath;
+  if (typeof targetPath !== "string") {
+    throw permanentAdapterError("current manuscript has no rendererTargetPath metadata");
+  }
+  return {
+    ...template,
+    manuscriptArtifactId,
+    inputs: [...template.inputs, { artifactId: manuscriptArtifactId, targetPath }],
+  };
+}
+
+async function currentLanguageProfile(
+  context: ExecutorContext,
+  template: LanguageFitProfile,
+): Promise<LanguageFitProfile> {
+  if (!template.translatedPieces.some((piece) => piece.artifactId === "$current")) return template;
+  const artifactId = context.offer.subjectArtifactId;
+  if (artifactId === undefined || context.artifacts.readArtifact === undefined) {
+    throw permanentAdapterError("dynamic language profile requires the current translated piece subject");
+  }
+  const record = await context.artifacts.readArtifact(artifactId);
+  const targetPath = record.artifact.metadata.rendererTargetPath;
+  if (typeof targetPath !== "string") {
+    throw permanentAdapterError("current translated piece has no rendererTargetPath metadata");
+  }
+  const offeredRecords = await Promise.all(context.offer.inputArtifacts
+    .filter((candidate) => candidate !== artifactId)
+    .map(async (candidate) => ({ artifactId: candidate, record: await context.artifacts.readArtifact!(candidate) })));
+  const english = offeredRecords.filter(({ record }) =>
+    record.artifact.kind === "article_manuscript" || record.artifact.kind === "editorial_manuscript"
+  );
+  if (english.length !== 1) {
+    throw permanentAdapterError("dynamic language profile requires exactly one current English manuscript");
+  }
+  const englishTarget = english[0]!.record.artifact.metadata.rendererTargetPath;
+  if (typeof englishTarget !== "string") {
+    throw permanentAdapterError("current English manuscript has no rendererTargetPath metadata");
+  }
+  return {
+    ...template,
+    translatedPieces: template.translatedPieces.map((piece) => piece.artifactId === "$current"
+      ? { ...piece, artifactId, articleId: piece.articleId === "$current" ? artifactId : piece.articleId }
+      : piece),
+    inputs: [...template.inputs, { artifactId, targetPath }, { artifactId: english[0]!.artifactId, targetPath: englishTarget }],
+  };
 }
 
 function requireUnique(values: readonly string[], label: string): void {

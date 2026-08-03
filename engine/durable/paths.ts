@@ -62,6 +62,15 @@ export function inputRevisionRelativeDirectory(ref: InputRevisionRef): string {
     case "migration_attestation":
     case "migration_plan":
       return join("migrations", logical, "revisions", revision);
+    case "write_pipeline":
+      return join(
+        "editions",
+        portableComponent(ref.editionId ?? "", "input edition ID"),
+        "specs",
+        "write-pipeline",
+        "revisions",
+        revision,
+      );
     case "edition_spec":
     case "run_bootstrap":
       return join(

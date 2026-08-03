@@ -7,6 +7,7 @@ import type {
   RevisionId,
   WorkOfferId,
 } from "../contracts/index.ts";
+import type { InputRevisionRef } from "../durable/types.ts";
 import {
   durableCheckpointOffer,
   durableRevisionArtifact,
@@ -34,6 +35,7 @@ export type EditorialMachineContext = MachineInputBase & {
   readonly editorialId: string;
   readonly briefArtifact: ArtifactId;
   readonly writingRules: ArtifactId;
+  readonly inputRevisions: readonly InputRevisionRef[];
   articleArtifacts: readonly ArtifactId[];
   manuscriptArtifact: ArtifactId | undefined;
   revisionArtifacts: readonly ArtifactId[];
@@ -152,6 +154,7 @@ export const editorialMachine = setup({
         inputArtifacts: draftInputs(context as EditorialMachineContext),
         taskArtifactId: context.briefArtifact,
         contractVersion: writerContractVersion,
+        requirements: { authority: "model", capabilities: ["text_model", "source_blind"], minimumAssurance: "local_bearer" },
         allowedWorkerCapabilities: ["text_model", "source_blind"],
       }),
     ]),
@@ -248,6 +251,9 @@ export const editorialMachine = setup({
               ? {}
               : { expectedParentRevisionId: context.boundRevisionId }),
             acceptedArtifactId: context.manuscriptArtifact,
+            ...(context.inputRevisions.length === 0
+              ? {}
+              : { inputRevisions: context.inputRevisions }),
           }),
     ),
     keepDurableRevision: assign(({ context, event }) => ({
@@ -306,11 +312,12 @@ export const editorialMachine = setup({
     editionId: input.spec.editionId,
     briefArtifact: input.spec.briefArtifact,
     writingRules: input.spec.writingRules,
+    inputRevisions: input.spec.inputRevisions ?? [],
     articleArtifacts: input.spec.articleArtifacts ?? [],
     manuscriptArtifact: input.spec.initialManuscript,
     revisionArtifacts: [],
     revision: 0,
-    boundRevisionId: undefined,
+    boundRevisionId: input.spec.durableParentRevisionId,
     durableRevisionArtifact: undefined,
     editorDecisionArtifact: undefined,
     editorRequestOrdinal: 0,

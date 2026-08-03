@@ -1297,8 +1297,9 @@ function currentVisualReview(
     offer.slot !== "visual_review" ||
     offer.contractVersion !== "visual-review/1" ||
     offer.activeAttemptId != null ||
-    offer.allowedWorkerCapabilities.length !== 1 ||
-    offer.allowedWorkerCapabilities[0] !== "human"
+    offer.requirements?.authority !== "human" ||
+    offer.requirements.minimumAssurance !== "local_bearer" ||
+    offer.requirements.capabilities.length !== 0
   ) {
     throw new RunEngineError(
       "RENDER_REVIEW_STATE",
@@ -1355,7 +1356,7 @@ function currentVisualReview(
   const request = view.artifacts.find((artifact) => artifact.id === offer.taskArtifactId);
   if (
     request?.kind !== "human_decision_request" ||
-    request.schemaVersion !== "visual-review-request/1" ||
+    request.schemaVersion !== "human-decision-request/3" ||
     request.origin !== "machine"
   ) {
     throw new RunEngineError(

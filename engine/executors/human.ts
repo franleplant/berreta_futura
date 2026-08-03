@@ -1,24 +1,23 @@
-import type { WorkOfferView, WorkerIdentity } from "../contracts/index.ts";
-import type { Executor, ExecutorContext } from "./types.ts";
-import { WorkUnavailableError } from "./types.ts";
+import type { AuthorizedWorker, WorkerClaimPort } from "../authority/local-authority.ts";
+import type { WorkClaim, WorkOfferId } from "../contracts/index.ts";
 
-export class HumanExecutor implements Executor {
-  readonly id = "human";
-  readonly capabilities;
-  readonly worker: WorkerIdentity;
+/**
+ * A narrow authenticated boundary for human work. Human work is deliberately
+ * not an automatic executor: a model or tool credential can never stand in
+ * for an explicit human decision.
+ */
+export class HumanExecutor {
+  private readonly worker: AuthorizedWorker;
 
-  constructor(worker: WorkerIdentity) {
+  constructor(worker: AuthorizedWorker) {
     this.worker = worker;
-    this.capabilities = worker.capabilities;
   }
 
-  accepts(offer: WorkOfferView): boolean {
-    return offer.allowedWorkerCapabilities.includes("human");
-  }
-
-  execute(context: ExecutorContext): Promise<never> {
-    return Promise.reject(new WorkUnavailableError(
-      `offer ${context.offer.id} requires an explicit human answer`,
-    ));
+  async claim(engine: WorkerClaimPort, offerId: WorkOfferId): Promise<WorkClaim> {
+    const description = await this.worker.describe();
+    if (description.authority !== "human") {
+      throw new Error("HumanExecutor requires an authenticated human credential");
+    }
+    return await this.worker.claim(engine, offerId);
   }
 }

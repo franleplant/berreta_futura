@@ -17,10 +17,12 @@ import {
   type SqliteRunEngine,
 } from "../run-engine/index.ts";
 import { prepareArticleSources } from "./approved-source-fixture.ts";
+import { AuthorityTestHarness } from "./authority-fixture.ts";
 
 type Harness = {
   readonly engine: SqliteRunEngine;
   readonly root: string;
+  readonly authority: AuthorityTestHarness;
 };
 
 async function harness(testContext: TestContext): Promise<Harness> {
@@ -33,7 +35,7 @@ async function harness(testContext: TestContext): Promise<Harness> {
     engine.close();
     await rm(root, { recursive: true, force: true });
   });
-  return { engine, root };
+  return { engine, root, authority: await AuthorityTestHarness.create(root) };
 }
 
 function artifactId(value: string): ArtifactId {
@@ -112,11 +114,16 @@ function offered(view: Awaited<ReturnType<SqliteRunEngine["inspect"]>>, role: st
 
 describe("RunEngine answer contracts", () => {
   test("rejects a malformed role result before artifacts or completion are accepted", async (testContext) => {
-    const { engine } = await harness(testContext);
-    const outcome = await engine.start(await prepareArticleSources(engine, articleSpec("malformed"), "malformed"));
+    const { engine, authority } = await harness(testContext);
+    const outcome = await engine.start(await prepareArticleSources(
+      engine,
+      articleSpec("malformed"),
+      "malformed",
+      await authority.human("malformed-source-reviewer"),
+    ));
     const initial = await engine.inspect(outcome.runId);
     const measure = offered(initial, "measure_article");
-    const claim = await engine.claim(measure.id, {
+    const claim = await authority.claim(engine, measure, {
       principalId: "measurement-worker",
       authority: "tool",
       capabilities: ["subprocess"],
@@ -197,13 +204,18 @@ describe("RunEngine answer contracts", () => {
   });
 
   test("does not consume a writer offer without exactly one manuscript", async (testContext) => {
-    const { engine } = await harness(testContext);
-    const withManuscript = await prepareArticleSources(engine, articleSpec("writer-artifact"), "writer-artifact");
+    const { engine, authority } = await harness(testContext);
+    const withManuscript = await prepareArticleSources(
+      engine,
+      articleSpec("writer-artifact"),
+      "writer-artifact",
+      await authority.human("writer-artifact-source-reviewer"),
+    );
     const { initialManuscript: _initialManuscript, ...article } = withManuscript.article;
     const outcome = await engine.start({ ...withManuscript, article });
     const initial = await engine.inspect(outcome.runId);
     const writer = offered(initial, "writer");
-    const claim = await engine.claim(writer.id, {
+    const claim = await authority.claim(engine, writer, {
       principalId: "article-writer",
       authority: "model",
       capabilities: ["text_model", "source_access"],
@@ -256,18 +268,23 @@ describe("RunEngine answer contracts", () => {
 
 describe("RunEngine state visit fencing", () => {
   test("cancels unfinished sibling offers and stales active attempts when a visit exits", async (testContext) => {
-    const { engine } = await harness(testContext);
-    const outcome = await engine.start(await prepareArticleSources(engine, articleSpec("visit-exit"), "visit-exit"));
+    const { engine, authority } = await harness(testContext);
+    const outcome = await engine.start(await prepareArticleSources(
+      engine,
+      articleSpec("visit-exit"),
+      "visit-exit",
+      await authority.human("visit-exit-source-reviewer"),
+    ));
     const initial = await engine.inspect(outcome.runId);
     const measurement = offered(initial, "measure_article");
     const mechanics = offered(initial, "mechanics");
     const worth = offered(initial, "worth");
-    const measurementClaim = await engine.claim(measurement.id, {
+    const measurementClaim = await authority.claim(engine, measurement, {
       principalId: "measurement-worker",
       authority: "tool",
       capabilities: ["subprocess"],
     });
-    const mechanicsClaim = await engine.claim(mechanics.id, {
+    const mechanicsClaim = await authority.claim(engine, mechanics, {
       principalId: "mechanics-worker",
       authority: "model",
       capabilities: ["text_model", "source_blind"],
@@ -313,7 +330,7 @@ describe("RunEngine state visit fencing", () => {
         capabilities: ["subprocess"],
       }),
       (error: unknown) =>
-        error instanceof RunEngineError && error.code === "WORK_UNAVAILABLE",
+        error instanceof RunEngineError && error.code === "CALLER_IDENTITY_REJECTED",
     );
 
     const eventCount = exited.events.length;

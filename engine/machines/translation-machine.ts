@@ -3,9 +3,11 @@ import { assign, setup } from "xstate";
 import type {
   ArtifactId,
   JsonObject,
+  RevisionId,
   TranslationRunSpec,
   WorkOfferId,
 } from "../contracts/index.ts";
+import type { InputRevisionRef } from "../durable/types.ts";
 import {
   emitEffects,
   initialMachineTransition,
@@ -15,8 +17,12 @@ import {
   type MachineInputBase,
 } from "./runtime.ts";
 import { humanDecisionOffer } from "./human-decision.ts";
+import {
+  durableCheckpointOffer,
+  durableRevisionArtifact,
+} from "./durable-checkpoint.ts";
 
-export const translationMachineVersion = "translation/1";
+export const translationMachineVersion = "translation/2";
 const draftContractVersion = "translation-writer/1";
 const reviewContractVersion = "language-review/1";
 const fitContractVersion = "language-fit/1";
@@ -27,17 +33,23 @@ export type TranslationMachineInput = MachineInputBase & {
 };
 
 export type TranslationMachineContext = MachineInputBase & {
+  readonly editionId: string | undefined;
+  readonly pieceKind: "article" | "editorial";
+  readonly pieceId: string;
   readonly language: string;
   readonly sourceLanguage: string;
   readonly promptArtifact: ArtifactId;
   readonly measurementProfileArtifact: ArtifactId | undefined;
   readonly measurementInputArtifacts: readonly ArtifactId[];
+  readonly inputRevisions: readonly InputRevisionRef[] | undefined;
   readonly maximumReaderPages: number;
   englishArtifacts: readonly ArtifactId[];
   translationArtifacts: readonly ArtifactId[];
   reviewArtifact: ArtifactId | undefined;
   measurementArtifact: ArtifactId | undefined;
   editorDecisionArtifact: ArtifactId | undefined;
+  boundRevisionId: RevisionId | undefined;
+  durableRevisionArtifact: ArtifactId | undefined;
   findingArtifacts: readonly ArtifactId[];
   editorCheckpoint: "language_review" | "language_fit" | undefined;
   revision: number;
@@ -54,14 +66,14 @@ export type TranslationMachineEvent =
   | { readonly type: "START" }
   | {
       readonly type: "WORK_COMPLETED";
-      readonly slot: "draft" | "language_review" | "language_fit" | "editor_decision";
+      readonly slot: "draft" | "language_review" | "language_fit" | "editor_decision" | "durable_checkpoint";
       readonly offerId?: WorkOfferId;
       readonly artifacts: readonly CompletedArtifact[];
       readonly result: JsonObject;
     }
   | {
       readonly type: "WORK_FAILED";
-      readonly slot: "draft" | "language_review" | "language_fit" | "editor_decision";
+      readonly slot: "draft" | "language_review" | "language_fit" | "editor_decision" | "durable_checkpoint";
       readonly classification: "canceled" | "permanent" | "retryable" | "timeout";
       readonly message: string;
     }
@@ -180,6 +192,9 @@ export const translationMachine = setup({
       event.type === "WORK_COMPLETED" && event.slot === "editor_decision",
     failedPermanently: ({ event }) =>
       event.type === "WORK_FAILED" && event.classification === "permanent",
+    durableCheckpointCompleted: ({ event }) =>
+      event.type === "WORK_COMPLETED" && event.slot === "durable_checkpoint" &&
+      durableRevisionArtifact(event.artifacts) !== undefined,
   },
   actions: {
     offerDraft: emitEffects(({ context }) => [
@@ -198,6 +213,7 @@ export const translationMachine = setup({
         ],
         taskArtifactId: context.promptArtifact,
         contractVersion: draftContractVersion,
+        requirements: { authority: "model", capabilities: ["text_model"], minimumAssurance: "local_bearer" },
         allowedWorkerCapabilities: ["text_model"],
       }),
     ]),
@@ -216,6 +232,7 @@ export const translationMachine = setup({
         ],
         taskArtifactId: context.promptArtifact,
         contractVersion: reviewContractVersion,
+        requirements: { authority: "model", capabilities: ["text_model"], minimumAssurance: "local_bearer" },
         allowedWorkerCapabilities: ["text_model"],
       }),
     ]),
@@ -227,7 +244,11 @@ export const translationMachine = setup({
         state: "language_fit",
         role: "language_fit",
         slot: "language_fit",
+        ...(context.translationArtifacts[0] === undefined
+          ? {}
+          : { subjectArtifactId: context.translationArtifacts[0] }),
         inputArtifacts: [
+          ...context.englishArtifacts,
           ...context.translationArtifacts,
           context.reviewArtifact,
           context.measurementProfileArtifact,
@@ -235,6 +256,7 @@ export const translationMachine = setup({
         ].filter((value): value is ArtifactId => value !== undefined),
         taskArtifactId: context.measurementProfileArtifact ?? context.promptArtifact,
         contractVersion: fitContractVersion,
+        requirements: { authority: "tool", capabilities: ["subprocess"], minimumAssurance: "local_bearer" },
         allowedWorkerCapabilities: ["subprocess"],
       }),
     ]),
@@ -269,6 +291,29 @@ export const translationMachine = setup({
           findingArtifactIds: context.findingArtifacts,
         },
       });
+    }),
+    offerDurableCheckpoint: emitEffects(({ context }) => {
+      const acceptedArtifactId = context.translationArtifacts[0];
+      return acceptedArtifactId === undefined
+        ? []
+        : durableCheckpointOffer({
+            actorId: context.actorId,
+            actorKey: context.logicalKey,
+            state: "accepted_pending_durable",
+            logicalItem: {
+              kind: context.pieceKind,
+              editionId: context.editionId ?? "standalone",
+              logicalId: context.pieceId,
+              language: context.language,
+            },
+            ...(context.boundRevisionId === undefined
+              ? {}
+              : { expectedParentRevisionId: context.boundRevisionId }),
+            acceptedArtifactId,
+            ...(context.inputRevisions === undefined
+              ? {}
+              : { inputRevisions: context.inputRevisions }),
+          });
     }),
     keepDraft: assign(({ context, event }) => {
       if (event.type !== "WORK_COMPLETED" || event.slot !== "draft") {
@@ -355,6 +400,16 @@ export const translationMachine = setup({
           artifact(event, "editor_decision") ?? context.editorDecisionArtifact,
       };
     }),
+    keepDurableRevision: assign(({ context, event }) => ({
+      boundRevisionId:
+        event.type === "WORK_COMPLETED" && typeof event.result.revisionId === "string"
+          ? event.result.revisionId as RevisionId
+          : context.boundRevisionId,
+      durableRevisionArtifact:
+        event.type === "WORK_COMPLETED" && event.slot === "durable_checkpoint"
+          ? durableRevisionArtifact(event.artifacts)
+          : context.durableRevisionArtifact,
+    })),
     publishSettled: emitEffects(({ context }) => [
       effect({
         type: "complete_actor",
@@ -362,6 +417,8 @@ export const translationMachine = setup({
         accepting: true,
         outputs: context.translationArtifacts,
         result: {
+          pieceKind: context.pieceKind,
+          pieceId: context.pieceId,
           language: context.language,
           sourceLanguage: context.sourceLanguage,
           revision: context.revision,
@@ -370,6 +427,8 @@ export const translationMachine = setup({
           reviewArtifactId: context.reviewArtifact ?? null,
           measurementArtifactId: context.measurementArtifact ?? null,
           editorDecisionArtifactId: context.editorDecisionArtifact ?? null,
+          durableRevisionArtifactId: context.durableRevisionArtifact ?? null,
+          revisionId: context.boundRevisionId ?? null,
         },
       }),
     ]),
@@ -397,17 +456,23 @@ export const translationMachine = setup({
   context: ({ input }) => ({
     actorId: input.actorId,
     logicalKey: input.logicalKey,
+    editionId: input.spec.editionId,
+    pieceKind: input.spec.pieceKind,
+    pieceId: input.spec.pieceId,
     language: input.spec.language,
     sourceLanguage: input.spec.sourceLanguage,
     promptArtifact: input.spec.promptArtifact,
     measurementProfileArtifact: input.spec.measurementProfileArtifact,
     measurementInputArtifacts: input.spec.measurementInputArtifacts ?? [],
+    inputRevisions: input.spec.inputRevisions,
     maximumReaderPages: input.spec.maximumReaderPages,
     englishArtifacts: input.spec.englishArtifacts,
     translationArtifacts: input.spec.initialTranslationArtifacts ?? [],
     reviewArtifact: undefined,
     measurementArtifact: undefined,
     editorDecisionArtifact: undefined,
+    boundRevisionId: input.spec.durableParentRevisionId,
+    durableRevisionArtifact: undefined,
     findingArtifacts: [],
     editorCheckpoint: undefined,
     revision: 0,
@@ -484,7 +549,7 @@ export const translationMachine = setup({
           {
             guard: "fitPasses",
             actions: "keepFit",
-            target: "settled",
+            target: "accepted_pending_durable",
           },
           {
             guard: "fitNeedsEditor",
@@ -522,7 +587,7 @@ export const translationMachine = setup({
           {
             guard: "editorAcceptsFit",
             actions: ["keepEditorDecision", "recordEditorDecision", "clearEditorCheckpoint"],
-            target: "settled",
+            target: "accepted_pending_durable",
           },
           {
             guard: "editorRetries",
@@ -540,6 +605,17 @@ export const translationMachine = setup({
     },
     editor_failed: {
       on: { RETRY: { actions: "clearFailure", target: "awaiting_editor" } },
+    },
+    accepted_pending_durable: {
+      entry: "offerDurableCheckpoint",
+      on: {
+        WORK_COMPLETED: {
+          guard: "durableCheckpointCompleted",
+          actions: "keepDurableRevision",
+          target: "settled",
+        },
+        WORK_FAILED: { actions: "rememberFailure", target: "failed" },
+      },
     },
     settled: {
       entry: "publishSettled",

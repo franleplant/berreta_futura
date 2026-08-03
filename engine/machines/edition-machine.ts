@@ -13,6 +13,10 @@ import type {
   TranslationRunSpec,
   WorkOfferId,
 } from "../contracts/index.ts";
+import type {
+  CompositionDocument,
+  InputRevisionRef,
+} from "../durable/index.ts";
 import { parseApprovedProductionPlan } from "../contracts/index.ts";
 import {
   emitEffects,
@@ -145,8 +149,13 @@ function artKey(key: string): string {
   return `art:${key}`;
 }
 
-function translationKey(language: string, cycle: number): string {
-  return `translation:${language}:${cycle}`;
+function translationKey(
+  language: string,
+  pieceKind: TranslationRunSpec["pieceKind"],
+  pieceId: string,
+  cycle: number,
+): string {
+  return `translation:${language}:${pieceKind}:${pieceId}:${cycle}`;
 }
 
 function reviewKey(cycle: number): string {
@@ -214,7 +223,7 @@ function specWithCollectedSources(context: EditionMachineContext): EditionRunSpe
 }
 
 function plannedArticles(context: EditionMachineContext): readonly ArticleRunSpec[] {
-  return context.resolvedPlan?.articles ?? context.spec.articles;
+  return context.resolvedPlan?.articles ?? [];
 }
 
 function plannedArt(context: EditionMachineContext): readonly RegisteredArtSpec[] {
@@ -228,7 +237,8 @@ function plannedTranslations(
 }
 
 function articleKeys(context: EditionMachineContext): readonly string[] {
-  return plannedArticles(context).map((article) => articleKey(article.articleId));
+  return (context.resolvedPlan?.articles ?? context.spec.articles)
+    .map((article) => articleKey(article.articleId));
 }
 
 function artKeys(context: EditionMachineContext): readonly string[] {
@@ -237,8 +247,22 @@ function artKeys(context: EditionMachineContext): readonly string[] {
 
 function translationKeys(context: EditionMachineContext): readonly string[] {
   return plannedTranslations(context).map((translation) =>
-    translationKey(translation.language, context.reviewCycle),
+    translationKey(
+      translation.language,
+      translation.pieceKind,
+      translation.pieceId,
+      context.reviewCycle,
+    ),
   );
+}
+
+function currentTranslationSourceArtifact(
+  context: EditionMachineContext,
+  translation: TranslationRunSpec,
+): ArtifactId | undefined {
+  return translation.pieceKind === "article"
+    ? context.children[articleKey(translation.pieceId)]?.outputs[0]
+    : context.children.editorial?.outputs[0];
 }
 
 function readySourceExtractions(
@@ -426,7 +450,7 @@ function routedFindings(result: JsonObject): readonly {
 
 function generatedArtifactId(
   context: EditionMachineContext,
-  kind: "render-manifest" | "render-set" | "render-reconciliation" | "composition-bootstrap",
+  kind: "render-manifest" | "render-set" | "render-reconciliation" | "composition-bootstrap" | "composition-manifest",
 ): ArtifactId {
   return `art_${context.actorId}_${kind}_${context.renderCycle}` as ArtifactId;
 }
@@ -480,7 +504,108 @@ function currentTranslationProofArtifacts(
 }
 
 function currentArtArtifacts(context: EditionMachineContext): readonly ArtifactId[] {
-  return artKeys(context).flatMap((key) => context.children[key]?.outputs ?? []);
+  return [
+    ...(context.spec.render.selectedArtArtifacts ?? []),
+    ...artKeys(context).flatMap((key) => context.children[key]?.outputs ?? []),
+  ];
+}
+
+function revisionFromChild(
+  context: EditionMachineContext,
+  key: string,
+): RevisionId | undefined {
+  const revision = context.children[key]?.result.revisionId;
+  return typeof revision === "string" ? revision as RevisionId : undefined;
+}
+
+function translationRevision(
+  context: EditionMachineContext,
+  pieceKind: TranslationRunSpec["pieceKind"],
+  pieceId: string,
+  language: string,
+): RevisionId | undefined {
+  return revisionFromChild(
+    context,
+    translationKey(language, pieceKind, pieceId, context.reviewCycle),
+  );
+}
+
+function currentCompositionDocument(
+  context: EditionMachineContext,
+): CompositionDocument | undefined {
+  const layoutInputs = context.spec.render.layoutInputRevisions;
+  if (layoutInputs === undefined || layoutInputs.length === 0) return undefined;
+  const editorial = {
+    editorial_id: context.spec.editorial.editorialId,
+    manuscripts: context.spec.render.configuredLanguages.map((language) => {
+      const revisionId = language === "en"
+        ? revisionFromChild(context, "editorial")
+        : translationRevision(context, "editorial", context.spec.editorial.editorialId, language);
+      return revisionId === undefined ? undefined : {
+        language,
+        revision: {
+          kind: "editorial" as const,
+          editionId: context.spec.editionId,
+          logicalId: context.spec.editorial.editorialId,
+          language,
+          revisionId,
+        },
+      };
+    }),
+  };
+  const articles = plannedArticles(context).map((article) => ({
+    article_id: article.articleId,
+    manuscripts: context.spec.render.configuredLanguages.map((language) => {
+      const revisionId = language === "en"
+        ? revisionFromChild(context, articleKey(article.articleId))
+        : translationRevision(context, "article", article.articleId, language);
+      return revisionId === undefined ? undefined : {
+        language,
+        revision: {
+          kind: "article" as const,
+          editionId: context.spec.editionId,
+          logicalId: article.articleId,
+          language,
+          revisionId,
+        },
+      };
+    }),
+    images: [],
+  }));
+  const generatedImages = plannedArt(context).map((art) => {
+    const revisionId = revisionFromChild(context, artKey(art.key));
+    return revisionId === undefined ? undefined : {
+      slot_id: art.key,
+      revision: {
+        kind: "image" as const,
+        editionId: context.spec.editionId,
+        logicalId: art.key,
+        revisionId,
+      },
+    };
+  });
+  const selectedImages = (context.spec.render.selectedArtRevisions ?? []).map((revision) => ({
+    slot_id: revision.logicalId,
+    revision,
+  }));
+  const images = [...generatedImages, ...selectedImages];
+  if (
+    editorial.manuscripts.some((pin) => pin === undefined) ||
+    articles.some((article) => article.manuscripts.some((pin) => pin === undefined)) ||
+    images.some((pin) => pin === undefined)
+  ) return undefined;
+  return {
+    schema_version: 1,
+    edition_id: context.spec.editionId,
+    composition_id: compositionId(context),
+    editorials: [editorial] as CompositionDocument["editorials"],
+    articles: articles as CompositionDocument["articles"],
+    images: images as CompositionDocument["images"],
+    layout_inputs: layoutInputs.map((revision, index) => ({
+      slot_id: `layout-${index + 1}`,
+      revision: revision as InputRevisionRef,
+    })),
+  };
 }
 
 function currentSourceArtifacts(context: EditionMachineContext): readonly ArtifactId[] {
@@ -499,7 +624,6 @@ function sourceInputArtifacts(source: SourceRunSpec): readonly ArtifactId[] {
     ...(source.rawEvidenceArtifacts ?? []),
     source.extractionArtifact,
     source.metadataArtifact,
-    source.approvalArtifact,
   ].filter((value): value is ArtifactId => value !== undefined);
 }
 
@@ -882,16 +1006,24 @@ export const editionMachine = setup({
     }),
     spawnTranslations: emitEffects(({ context }) =>
       plannedTranslations(context).map(
-        (translation) =>
-        spawn(
-          context,
-          editionOrchestration.spawns.translations,
-          translationKey(translation.language, context.reviewCycle),
-          {
-            ...translation,
-            englishArtifacts: currentContentArtifacts(context),
-          },
-        ),
+        (translation) => {
+          const englishArtifact = currentTranslationSourceArtifact(context, translation);
+          return spawn(
+            context,
+            editionOrchestration.spawns.translations,
+            translationKey(
+              translation.language,
+              translation.pieceKind,
+              translation.pieceId,
+              context.reviewCycle,
+            ),
+            {
+              ...translation,
+              editionId: context.spec.editionId,
+              englishArtifacts: englishArtifact === undefined ? translation.englishArtifacts : [englishArtifact],
+            },
+          );
+        },
       ),
     ),
     registerRenderManifest: emitEffects(({ context }) => {
@@ -960,6 +1092,28 @@ export const editionMachine = setup({
         }),
       ];
     }),
+    registerCompositionManifest: emitEffects(({ context }) => {
+      const document = currentCompositionDocument(context);
+      if (document === undefined) return [];
+      return [effect({
+        type: "register_artifact",
+        actorId: context.actorId,
+        slot: "composition_manifest",
+        artifact: {
+          id: generatedArtifactId(context, "composition-manifest"),
+          kind: "composition_manifest",
+          schemaVersion: "composition/1",
+          mediaType: "application/json",
+          origin: "machine",
+          payload: { kind: "json", value: document as unknown as JsonObject },
+          parents: [
+            ...currentContentArtifacts(context),
+            ...currentTranslationArtifacts(context),
+            ...currentArtArtifacts(context),
+          ].map((artifactId) => ({ artifactId, relation: "composition_input" })),
+        },
+      })];
+    }),
     spawnRender: emitEffects(({ context }) => [
       spawn(context, editionOrchestration.spawns.renders, renderKey(context.renderCycle), {
         ...context.spec.render,
@@ -971,6 +1125,26 @@ export const editionMachine = setup({
       }),
     ]),
     offerCompositionCheckpoint: emitEffects(({ context }) => {
+      const document = currentCompositionDocument(context);
+      // Older in-memory fixtures do not carry Git-bound layout inputs. They
+      // retain their historical checkpoint shape, while a real production
+      // run must supply layout inputs and therefore promotes composition.yaml.
+      if (document === undefined) {
+        return durableCheckpointOffer({
+          actorId: context.actorId,
+          actorKey: context.logicalKey,
+          state: "composition_accepted_pending_durable",
+          logicalItem: {
+            kind: "composition",
+            editionId: context.spec.editionId,
+            compositionId: compositionId(context),
+          },
+          ...(context.compositionBoundRevisionId === undefined
+            ? {}
+            : { expectedParentRevisionId: context.compositionBoundRevisionId }),
+          acceptedArtifactId: generatedArtifactId(context, "render-manifest"),
+        });
+      }
       return durableCheckpointOffer({
         actorId: context.actorId,
         actorKey: context.logicalKey,
@@ -983,7 +1157,8 @@ export const editionMachine = setup({
         ...(context.compositionBoundRevisionId === undefined
           ? {}
           : { expectedParentRevisionId: context.compositionBoundRevisionId }),
-        acceptedArtifactId: generatedArtifactId(context, "render-manifest"),
+        acceptedArtifactId: generatedArtifactId(context, "composition-manifest"),
+        inputRevisions: document.layout_inputs.map((input) => input.revision),
       });
     }),
     offerRenderReconciliation: emitEffects(({ context }) => {
@@ -1002,7 +1177,6 @@ export const editionMachine = setup({
         inputArtifacts: [composition, ...legacyRender],
         allowedChoices: ["adopt", "rerender"],
         contractVersion: "render-reconciliation/1",
-        requiredCapabilities: ["human"],
         details: {
           compositionRevisionArtifactId: composition,
           legacyRenderArtifactIds: legacyRender,
@@ -1028,6 +1202,7 @@ export const editionMachine = setup({
         inputArtifacts: [context.spec.render.renderManifestArtifact],
         allowedChoices: ["verify"],
         contractVersion: "composition-bootstrap/1",
+        authority: "tool",
         requiredCapabilities: ["subprocess"],
         details: { bootstrapRevision: execution.bootstrapRevision, imageGenerationAllowed: false },
       });
@@ -1559,7 +1734,10 @@ export const editionMachine = setup({
         ],
       },
     },
-    assembling: { entry: "registerRenderManifest", always: "composition_accepted_pending_durable" },
+    assembling: {
+      entry: ["registerRenderManifest", "registerCompositionManifest"],
+      always: "composition_accepted_pending_durable",
+    },
     composition_accepted_pending_durable: {
       entry: "offerCompositionCheckpoint",
       on: {

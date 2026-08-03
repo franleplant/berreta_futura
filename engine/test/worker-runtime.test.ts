@@ -36,6 +36,25 @@ import type { RendererAdapter } from "../renderer-adapter/index.ts";
 import { SqliteRunEngine, type RunEngineClock } from "../run-engine/index.ts";
 import type { SourceAdapter } from "../source-adapter/index.ts";
 import { prepareArticleSources } from "./approved-source-fixture.ts";
+import { AuthorityTestHarness } from "./authority-fixture.ts";
+
+type AuthorizedExecutor = Executor & { readonly authorizedWorker: Awaited<ReturnType<AuthorityTestHarness["workerFor"]>> };
+
+async function authorizedExecutor(
+  authority: AuthorityTestHarness,
+  executor: Executor,
+): Promise<AuthorizedExecutor> {
+  const registration = await authority.registration(executor);
+  return Object.freeze({
+    id: executor.id,
+    worker: executor.worker,
+    capabilities: executor.capabilities,
+    accepts: (offer: WorkOfferView) => executor.accepts(offer),
+    execute: async (context) => await executor.execute(context),
+    ...(executor.release === undefined ? {} : { release: async (context) => await executor.release?.(context) }),
+    authorizedWorker: registration.authorizedWorker,
+  }) as AuthorizedExecutor;
+}
 
 function id(value: string): ArtifactId {
   return value as ArtifactId;
@@ -150,7 +169,7 @@ function measurementExecutor(
 async function withEngine(
   prefix: string,
   workLeaseMs: number,
-  implementation: (engine: SqliteRunEngine, runId: RunId) => Promise<void>,
+  implementation: (engine: SqliteRunEngine, runId: RunId, authority: AuthorityTestHarness) => Promise<void>,
   options: { readonly clock?: RunEngineClock } = {},
 ): Promise<void> {
   const temporary = await mkdtemp(join(tmpdir(), `${prefix}-`));
@@ -160,9 +179,15 @@ async function withEngine(
     workLeaseMs,
     ...(options.clock === undefined ? {} : { clock: options.clock }),
   });
+  const authority = await AuthorityTestHarness.create(temporary);
   try {
-    const started = await engine.start(await prepareArticleSources(engine, articleSpec(prefix), prefix));
-    await implementation(engine, started.runId);
+    const started = await engine.start(await prepareArticleSources(
+      engine,
+      articleSpec(prefix),
+      prefix,
+      await authority.human("worker-runtime-source-reviewer"),
+    ));
+    await implementation(engine, started.runId, authority);
   } finally {
     engine.close();
     await rm(temporary, { recursive: true, force: true });
@@ -170,11 +195,11 @@ async function withEngine(
 }
 
 test("worker heartbeats keep a long public claim alive", async () => {
-  await withEngine("worker-heartbeat", 500, async (engine, runId) => {
+  await withEngine("worker-heartbeat", 500, async (engine, runId, authority) => {
     let heartbeatCount = 0;
     const observed: WorkEngine = {
       inspect: async (candidate) => await engine.inspect(candidate),
-      claim: async (offerId, worker) => await engine.claim(offerId, worker),
+      claimAuthorized: async (offerId, worker) => await engine.claimAuthorized(offerId, worker),
       heartbeat: async (claim) => {
         heartbeatCount += 1;
         return await engine.heartbeat(claim);
@@ -192,7 +217,7 @@ test("worker heartbeats keep a long public claim alive", async () => {
     const result = await executeAvailableWork(
       observed,
       runId,
-      [executor],
+      [await authorizedExecutor(authority, executor)],
       new AbortController().signal,
       { heartbeatIntervalMs: 50, attemptTimeoutMs: 5_000 },
     );
@@ -221,7 +246,7 @@ test("worker heartbeats keep a long public claim alive", async () => {
 });
 
 test("worker timeout fences ignored late completion and permits durable retry", async () => {
-  await withEngine("worker-timeout", 1_000, async (engine, runId) => {
+  await withEngine("worker-timeout", 1_000, async (engine, runId, authority) => {
     const slow = measurementExecutor("ignores-abort", async (offer) => {
       await delay(70);
       return measurementAnswer(offer, "too-late");
@@ -229,7 +254,7 @@ test("worker timeout fences ignored late completion and permits durable retry", 
     const timedOut = await executeAvailableWork(
       engine,
       runId,
-      [slow],
+      [await authorizedExecutor(authority, slow)],
       new AbortController().signal,
       { heartbeatIntervalMs: 5, attemptTimeoutMs: 10 },
     );
@@ -248,7 +273,7 @@ test("worker timeout fences ignored late completion and permits durable retry", 
     const retried = await executeAvailableWork(
       engine,
       runId,
-      [replacement],
+      [await authorizedExecutor(authority, replacement)],
       new AbortController().signal,
       { heartbeatIntervalMs: 5, attemptTimeoutMs: 100 },
     );
@@ -260,7 +285,7 @@ test("worker timeout fences ignored late completion and permits durable retry", 
 });
 
 test("caller cancellation reaches the executor and commits a canceled attempt", async () => {
-  await withEngine("worker-cancel", 1_000, async (engine, runId) => {
+  await withEngine("worker-cancel", 1_000, async (engine, runId, authority) => {
     let observedAbort = false;
     const executor = new InMemoryExecutor(
       "cancel-aware",
@@ -277,12 +302,13 @@ test("caller cancellation reaches the executor and commits a canceled attempt", 
       }),
       (offer) => offer.role === "measure_article",
     );
+    const configured = await authorizedExecutor(authority, executor);
     const controller = new AbortController();
-    setTimeout(() => controller.abort(), 10);
+    setTimeout(() => controller.abort(), 100);
     const result = await executeAvailableWork(
       engine,
       runId,
-      [executor],
+      [await authorizedExecutor(authority, executor)],
       controller.signal,
       { heartbeatIntervalMs: 5, attemptTimeoutMs: 500 },
     );
@@ -297,7 +323,7 @@ test("caller cancellation reaches the executor and commits a canceled attempt", 
 });
 
 test("a canceled worker releases attempt resources before returning when execution never settles", async () => {
-  await withEngine("worker-cancel-release", 1_000, async (engine, runId) => {
+  await withEngine("worker-cancel-release", 1_000, async (engine, runId, authority) => {
     let signalStarted: (() => void) | undefined;
     const started = new Promise<void>((resolveStarted) => {
       signalStarted = resolveStarted;
@@ -321,7 +347,7 @@ test("a canceled worker releases attempt resources before returning when executi
       },
     };
     const controller = new AbortController();
-    const work = executeAvailableWork(engine, runId, [executor], controller.signal, {
+    const work = executeAvailableWork(engine, runId, [await authorizedExecutor(authority, executor)], controller.signal, {
       heartbeatIntervalMs: 5,
       attemptTimeoutMs: 500,
     });
@@ -335,7 +361,7 @@ test("a canceled worker releases attempt resources before returning when executi
 
 test("answered and failed workers release attempt resources before returning", async () => {
   for (const outcome of ["answered", "failed"] as const) {
-    await withEngine(`worker-${outcome}-release`, 1_000, async (engine, runId) => {
+    await withEngine(`worker-${outcome}-release`, 1_000, async (engine, runId, authority) => {
       let releases = 0;
       const executor: Executor = {
         id: `${outcome}-release`,
@@ -359,7 +385,7 @@ test("answered and failed workers release attempt resources before returning", a
       const result = await executeAvailableWork(
         engine,
         runId,
-        [executor],
+        [await authorizedExecutor(authority, executor)],
         new AbortController().signal,
       );
       assert.equal(result[outcome].length, 1, JSON.stringify(result));
@@ -370,11 +396,11 @@ test("answered and failed workers release attempt resources before returning", a
 
 test("an expired worker claim is reclaimed and the old answer stays fenced", async () => {
   const clock = new ManualClock();
-  await withEngine("worker-death", 10_000, async (engine, runId) => {
+  await withEngine("worker-death", 10_000, async (engine, runId, authority) => {
     const initial = await engine.inspect(runId);
     const offer = initial.offers.find((candidate) => candidate.role === "measure_article");
     assert.ok(offer);
-    const oldClaim = await engine.claim(offer.id, {
+    const oldClaim = await authority.claim(engine, offer, {
       principalId: "dead-worker",
       authority: "tool",
       capabilities: ["subprocess"],
@@ -392,7 +418,7 @@ test("an expired worker claim is reclaimed and the old answer stays fenced", asy
     const result = await executeAvailableWork(
       engine,
       runId,
-      [replacement],
+      [await authorizedExecutor(authority, replacement)],
       new AbortController().signal,
       {
         heartbeatIntervalMs: 100,
@@ -453,7 +479,7 @@ test("configured resolver follows frozen per-role model policy and rejects ambig
     const resolver = new ConfiguredExecutorResolver([registration]);
     const selected = resolver.resolve(view, worth);
     assert.ok(selected);
-    assert.match(selected.worker.principalId, new RegExp(`${worth.id}$`));
+    assert.equal(selected.worker.principalId, "worth-model");
     assert.throws(
       () => new ConfiguredExecutorResolver([registration, registration]).resolve(view, worth),
       /multiple configured executors/,

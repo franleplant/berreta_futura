@@ -157,6 +157,7 @@ export const editionReviewMachine = setup({
         inputArtifacts: inputs(context),
         taskArtifactId: context.spec.editionBrief,
         contractVersion: "edition-review/1",
+        requirements: { authority: "model", capabilities: ["text_model", "source_blind"], minimumAssurance: "local_bearer" },
         allowedWorkerCapabilities: ["text_model", "source_blind"],
       }),
     ]),

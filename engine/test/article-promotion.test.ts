@@ -16,6 +16,7 @@ import type {
 } from "../contracts/index.ts";
 import { RunEngineError, SqliteRunEngine } from "../run-engine/index.ts";
 import { prepareArticleSources } from "./approved-source-fixture.ts";
+import { AuthorityTestHarness } from "./authority-fixture.ts";
 import { durableCheckpointAnswer } from "./durable-checkpoint-fixture.ts";
 
 const lenses: readonly JudgeLens[] = [
@@ -100,21 +101,36 @@ function measurement(offer: WorkOfferView): AnswerArtifact {
   };
 }
 
-async function settle(engine: SqliteRunEngine, spec: ArticleRootRunSpec): Promise<RunView> {
+async function settle(
+  engine: SqliteRunEngine,
+  spec: ArticleRootRunSpec,
+  authority: AuthorityTestHarness,
+): Promise<RunView> {
   const started = await engine.start(await prepareArticleSources(
     engine,
     spec,
     `promotion-${spec.article.articleId}`,
+    await authority.human(),
   ));
   let view = await engine.inspect(started.runId);
   for (let count = 0; count < 20 && view.status !== "complete"; count += 1) {
     const offer = view.offers.find((candidate) => candidate.status === "offered");
     assert.ok(offer, `article run stranded as ${view.status}`);
-    const claim = await engine.claim(offer.id, {
-      principalId: `worker-${offer.id}`,
-      authority: offer.allowedWorkerCapabilities.includes("text_model") ? "model" : "tool",
-      capabilities: offer.allowedWorkerCapabilities,
-    });
+    if (offer.requirements?.authority === "human") {
+      const worker = await authority.workerFor(offer);
+      const preparation = await engine.prepareHumanDecision(offer.id, worker);
+      const choice = preparation.allowedChoices.includes("accept") ? "accept" : preparation.allowedChoices[0];
+      assert.ok(choice);
+      view = await engine.decide(preparation, worker, {
+        schemaVersion: "human-decision-intent/1",
+        offerId: preparation.offerId,
+        taskArtifactId: preparation.taskArtifactId,
+        inputArtifactIds: preparation.inputArtifactIds,
+        result: { choice },
+      });
+      continue;
+    }
+    const claim = await authority.claim(engine, offer);
     if (offer.role === "durable_checkpoint") {
       view = await engine.answer(claim, await durableCheckpointAnswer(engine, offer));
       continue;
@@ -137,9 +153,10 @@ test("ArticleLab durably promotes a settled comparison winner and its policy lin
     databasePath: join(temporary, "runs.sqlite"),
     artifactDirectory: join(temporary, "artifacts"),
   });
+  const authority = await AuthorityTestHarness.create(temporary);
   try {
-    const left = await settle(engine, articleSpec("left"));
-    const right = await settle(engine, articleSpec("right"));
+    const left = await settle(engine, articleSpec("left"), authority);
+    const right = await settle(engine, articleSpec("right"), authority);
     const lab = new ArticleLab(engine);
     const preference = await lab.choose(
       [left.id, right.id],

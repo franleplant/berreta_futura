@@ -28,6 +28,7 @@ import { SqliteRunEngine } from "../run-engine/index.ts";
 import { RunEngineError } from "../run-engine/types.ts";
 import { composeArticleWorkOffer } from "../task-composer/index.ts";
 import { prepareArticleSources } from "./approved-source-fixture.ts";
+import { AuthorityTestHarness } from "./authority-fixture.ts";
 
 function actorId(value: string): ActorId {
   return value as ActorId;
@@ -231,11 +232,13 @@ describe("durable source exposure isolation", () => {
       databasePath: join(temporary, "run.sqlite"),
       artifactDirectory: join(temporary, "artifact-store"),
     });
+    const authority = await AuthorityTestHarness.create(temporary);
     try {
       const started = await engine.start(await prepareArticleSources(
         engine,
         isolationRunSpec(),
         "isolation",
+        await authority.human("source-reviewer"),
       ));
       const initial = await engine.inspect(started.runId);
       const mechanics = initial.offers.find(
@@ -248,23 +251,24 @@ describe("durable source exposure isolation", () => {
       assert.ok(mechanics, "article run did not offer mechanics work");
       assert.ok(measurement, "article run did not offer measurement work");
 
-      const dualExposureWorker: WorkerIdentity = {
+      const dualExposureWorker = await authority.workerFor(mechanics, {
         principalId: "same-reviewer",
         authority: "model",
         capabilities: ["text_model", "source_blind", "source_access"],
-      };
-      const mechanicsClaim = await engine.claim(mechanics.id, dualExposureWorker);
+      });
+      const mechanicsClaim = await dualExposureWorker.claim(engine, mechanics.id);
       await engine.answer(mechanicsClaim, {
         contractVersion: mechanics.contractVersion,
         result: { decision: "pass" },
         artifacts: [],
       });
 
-      const measurementClaim = await engine.claim(measurement.id, {
+      const measurementWorker = await authority.workerFor(measurement, {
         principalId: "measurement-tool",
         authority: "tool",
         capabilities: ["subprocess"],
       });
+      const measurementClaim = await measurementWorker.claim(engine, measurement.id);
       const afterMeasurement = await engine.answer(measurementClaim, {
         contractVersion: measurement.contractVersion,
         result: { fits: true, pageCount: 1, openerFits: true },
@@ -281,7 +285,7 @@ describe("durable source exposure isolation", () => {
       assert.ok(evidence, "article run did not advance to evidence work");
 
       await assert.rejects(
-        engine.claim(evidence.id, dualExposureWorker),
+        dualExposureWorker.claim(engine, evidence.id),
         (error: unknown) =>
           error instanceof RunEngineError && error.code === "WORKER_EXPOSURE_CONFLICT",
       );
@@ -320,6 +324,7 @@ const subprocessClaim: WorkClaim = {
   offerId: subprocessOffer.id,
   attemptId: attemptId("attempt-subprocess"),
   attemptFence: 1,
+  ticket: "test-subprocess-ticket",
   worker: subprocessWorker,
   leaseExpiresAt: "2026-08-02T00:15:00.000Z",
 };

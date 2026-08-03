@@ -155,7 +155,11 @@ function validateManifest(value: unknown, ref: InputRevisionRef): InputRevisionM
   if (!isCanonicalInstant(value.created_at)) {
     throw invalid("input manifest created_at must be a canonical UTC instant");
   }
-  if (ref.kind === "edition_spec" || ref.kind === "run_bootstrap") {
+  if (
+    ref.kind === "edition_spec" ||
+    ref.kind === "run_bootstrap" ||
+    ref.kind === "write_pipeline"
+  ) {
     if (value.edition_id !== ref.editionId) {
       throw invalid("edition spec manifest does not match its edition ID");
     }
@@ -275,6 +279,12 @@ function validatePayloadConvention(
       if (!sameSequence(paths, ["bootstrap.yaml"])) {
         throw invalid("run bootstrap revision must contain exactly bootstrap.yaml");
       }
+      return;
+    case "write_pipeline":
+      if (!sameSequence(paths, ["production.yaml"])) {
+        throw invalid("write pipeline revision must contain exactly production.yaml");
+      }
+      return;
   }
 }
 

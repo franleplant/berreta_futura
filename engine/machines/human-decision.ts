@@ -2,6 +2,7 @@ import type {
   ActorId,
   ArtifactId,
   JsonObject,
+  WorkAuthority,
   WorkRole,
   WorkerCapability,
 } from "../contracts/index.ts";
@@ -20,6 +21,9 @@ export type HumanDecisionOfferInput = {
   readonly inputArtifacts: readonly ArtifactId[];
   readonly allowedChoices: readonly string[];
   readonly contractVersion: string;
+  /** Defaults to human. Use only for a machine-owned verification request. */
+  readonly authority?: WorkAuthority;
+  /** Additional non-authority capabilities, such as source access. */
   readonly requiredCapabilities?: readonly WorkerCapability[];
   readonly details?: JsonObject;
 };
@@ -39,18 +43,22 @@ export function humanDecisionOffer(
     artifact: {
       id: input.requestArtifactId,
       kind: "human_decision_request",
-      schemaVersion: input.requestSchemaVersion,
+      schemaVersion: "human-decision-request/3",
       mediaType: "application/json",
       origin: "machine",
       payload: {
         kind: "json",
         value: {
           requestKind: input.requestKind,
+          requestSchemaVersion: input.requestSchemaVersion,
           actorKey: input.actorKey,
           subjectArtifactId: input.subjectArtifactId ?? null,
           inputArtifactIds: exactInputs,
           choices: input.allowedChoices,
           allowedChoices: input.allowedChoices,
+          ...(input.authority === undefined || input.authority === "human"
+            ? { intentSchemaVersion: "human-decision-intent/1" }
+            : {}),
           ...(input.details ?? {}),
         },
       },
@@ -73,7 +81,16 @@ export function humanDecisionOffer(
     inputArtifacts: [input.requestArtifactId, ...exactInputs],
     taskArtifactId: input.requestArtifactId,
     contractVersion: input.contractVersion,
-    allowedWorkerCapabilities: input.requiredCapabilities ?? ["human"],
+    requirements: {
+      authority: input.authority ?? "human",
+      capabilities: input.requiredCapabilities ?? [],
+      minimumAssurance: "local_bearer",
+    },
+    // Compatibility only. Authority is carried by `requirements.authority`.
+    allowedWorkerCapabilities: [
+      ...(input.authority === undefined || input.authority === "human" ? ["human" as const] : []),
+      ...(input.requiredCapabilities ?? []),
+    ],
   };
   return [request, offer];
 }

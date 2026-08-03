@@ -228,6 +228,7 @@ export const renderMachine = setup({
         inputArtifacts: baseInputs(context as RenderMachineContext),
         taskArtifactId: context.renderManifestArtifact,
         contractVersion: measureContractVersion,
+        requirements: { authority: "tool", capabilities: ["subprocess"], minimumAssurance: "local_bearer" },
         allowedWorkerCapabilities: ["subprocess"],
       }),
     ]),
@@ -246,6 +247,7 @@ export const renderMachine = setup({
         ].filter((value): value is ArtifactId => value !== undefined),
         taskArtifactId: context.renderManifestArtifact,
         contractVersion: context.rendererContractVersion || renderContractVersion,
+        requirements: { authority: "tool", capabilities: ["subprocess"], minimumAssurance: "local_bearer" },
         allowedWorkerCapabilities: ["subprocess"],
       }),
     ]),
@@ -265,6 +267,7 @@ export const renderMachine = setup({
         ].filter((value): value is ArtifactId => value !== undefined),
         taskArtifactId: context.renderManifestArtifact,
         contractVersion: inspectionContractVersion,
+        requirements: { authority: "tool", capabilities: ["subprocess"], minimumAssurance: "local_bearer" },
         allowedWorkerCapabilities: ["subprocess"],
       }),
     ]),
@@ -283,7 +286,7 @@ export const renderMachine = setup({
           artifact: {
             id: requestId,
             kind: "human_decision_request",
-            schemaVersion: "visual-review-request/1",
+            schemaVersion: "human-decision-request/3",
             mediaType: "application/json",
             origin: "machine",
             payload: {
@@ -292,7 +295,9 @@ export const renderMachine = setup({
                 renderManifestArtifactId: context.renderManifestArtifact,
                 renderArtifactIds: context.renderArtifacts,
                 inspectionArtifactId: context.inspectionArtifact ?? null,
+                inputArtifactIds: inputs,
                 choices: ["approved", "changes_required"],
+                intentSchemaVersion: "human-decision-intent/1",
               },
             },
             parents: inputs.map((artifactId: ArtifactId) => ({
@@ -311,6 +316,7 @@ export const renderMachine = setup({
         inputArtifacts: [requestId, ...inputs],
         taskArtifactId: requestId,
         contractVersion: visualReviewContractVersion,
+        requirements: { authority: "human", capabilities: [], minimumAssurance: "local_bearer" },
         allowedWorkerCapabilities: ["human"],
         }),
       ];

@@ -45,7 +45,7 @@ const machines = [
   { kind: "article", label: "ArticleMachine", responsibility: "article drafting, judgment, and fit" },
   { kind: "editorial", label: "EditorialMachine", responsibility: "opening editorial" },
   { kind: "edition_review", label: "EditionReviewMachine", responsibility: "English issue review and finding routes" },
-  { kind: "translation", label: "TranslationMachine", responsibility: "per-language translation, review, and fit" },
+  { kind: "translation", label: "TranslationMachine", responsibility: "per-language, per-piece translation, review, fit, and durable promotion" },
   { kind: "cover_art", label: "CoverArtMachine", responsibility: "registered cover selection" },
   { kind: "interior_art", label: "InteriorArtMachine", responsibility: "registered interior art selection" },
   { kind: "render", label: "RenderMachine", responsibility: "measurement, render, inspection, and visual review" },
@@ -90,7 +90,7 @@ const spawns = {
     owner: "edition",
     child: "translation",
     cardinality: "many",
-    condition: "the current English issue is approved",
+    condition: "the current English issue is approved; one actor is spawned per configured language and exact piece",
     completionEvent: "CHILD_STATUS",
   },
   coverArt: {
@@ -209,7 +209,7 @@ const joins = {
     participants: ["translation"],
     targets: ["render"],
     mode: "all_settled",
-    condition: "every configured non-English language settles",
+    condition: "every configured non-English language and exact translated piece settles durably",
   },
   declaredContentToArt: {
     id: "edition.join.declared_content_to_art",

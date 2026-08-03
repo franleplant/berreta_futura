@@ -15,12 +15,14 @@ import type { ArtifactId } from "../contracts/index.ts";
 import { FIXED_ARTICLE_EVALUATION_CORPUS } from "../fixtures/article-lab-corpus.ts";
 import { SqliteRunEngine } from "../run-engine/index.ts";
 import { prepareArticleSources } from "./approved-source-fixture.ts";
+import { AuthorityTestHarness } from "./authority-fixture.ts";
 
 const execFileAsync = promisify(execFile);
 
 async function prepareCorpusSources(
   engine: SqliteRunEngine,
   corpus: ArticleEvaluationCorpus,
+  authority: AuthorityTestHarness,
 ): Promise<ArticleEvaluationCorpus> {
   const first = corpus.experiments[0];
   assert.ok(first, "corpus must contain an experiment");
@@ -28,6 +30,7 @@ async function prepareCorpusSources(
     engine,
     first.spec,
     `article-lab-${corpus.corpusId}-${corpus.version}`,
+    await authority.human(),
   );
   const sourceSeeds = new Map(
     prepared.article.sources.map((source) => [
@@ -63,9 +66,10 @@ test("the versioned ArticleLab corpus preserves fixed input IDs and named varian
     databasePath: join(root, "runs.sqlite"),
     artifactDirectory: join(root, "artifacts"),
   });
+  const authority = await AuthorityTestHarness.create(root);
   try {
     const lab = new ArticleLab(engine);
-    const corpus = await prepareCorpusSources(engine, FIXED_ARTICLE_EVALUATION_CORPUS);
+    const corpus = await prepareCorpusSources(engine, FIXED_ARTICLE_EVALUATION_CORPUS, authority);
     const first = await lab.startCorpus(corpus);
     assert.deepEqual(
       first.map((experiment) => experiment.variantName),
@@ -147,9 +151,11 @@ test("the article corpus CLI starts every named variant", async () => {
     const databasePath = join(root, "runs.sqlite");
     const artifactDirectory = join(root, "artifacts");
     const preparationEngine = new SqliteRunEngine({ databasePath, artifactDirectory });
+    const authority = await AuthorityTestHarness.create(root);
     const corpus = await prepareCorpusSources(
       preparationEngine,
       FIXED_ARTICLE_EVALUATION_CORPUS,
+      authority,
     );
     preparationEngine.close();
     await writeFile(

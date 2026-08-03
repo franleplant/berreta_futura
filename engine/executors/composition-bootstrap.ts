@@ -174,6 +174,7 @@ const bootstrapDocumentSchema = z.object({
 
 const bootstrapTaskSchema = z.object({
   requestKind: z.literal("composition_bootstrap"),
+  requestSchemaVersion: z.literal("composition-bootstrap-request/1"),
   actorKey: nonEmpty,
   subjectArtifactId: z.null(),
   inputArtifactIds: z.array(nonEmpty).min(1),

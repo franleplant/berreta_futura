@@ -7,6 +7,7 @@ import test from "node:test";
 import type { ArtifactId, ArtifactSeed, EditionRootRunSpec } from "../contracts/index.ts";
 import { SqliteRunEngine, type FailpointController, type RunEngineFailpoint } from "../run-engine/index.ts";
 import { prepareLegacyEditionReleaseSnapshot } from "./internal-schema-test-helper.ts";
+import { AuthorityTestHarness } from "./authority-fixture.ts";
 
 test("v1 release-path snapshot preserves legacy authority, then offers a fresh durable backfill", async () => {
   const root = await mkdtemp(join(tmpdir(), "mag-v1-v2-migration-"));
@@ -168,15 +169,16 @@ test("migration supersedes claimed legacy authority and makes its claim stale", 
   const databasePath = join(root, "run.sqlite");
   const artifactDirectory = join(root, "artifacts");
   let engine = new SqliteRunEngine({ databasePath, artifactDirectory });
+  const authority = await AuthorityTestHarness.create(root);
   try {
     const runId = (await engine.start(editionSpec())).runId;
     const oldOffer = (await engine.inspect(runId)).offers.find((offer) => offer.status === "offered");
     assert.ok(oldOffer);
-    const claim = await engine.claim(oldOffer.id, {
+    const worker = await authority.workerFor(oldOffer, {
       principalId: "legacy-editor",
       authority: "human",
-      capabilities: ["human"],
     });
+    const claim = (await engine.prepareHumanDecision(oldOffer.id, worker)).claim;
     engine.close();
     prepareLegacyEditionReleaseSnapshot(databasePath, runId);
     engine = new SqliteRunEngine({ databasePath, artifactDirectory });

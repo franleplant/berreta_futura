@@ -12,10 +12,10 @@ import type {
   JsonObject,
   RunId,
   RunView,
-  WorkerIdentity,
   WorkOfferView,
 } from "../contracts/index.ts";
 import { SqliteRunEngine } from "../run-engine/index.ts";
+import { AuthorityTestHarness } from "./authority-fixture.ts";
 import { durableCheckpointAnswer } from "./durable-checkpoint-fixture.ts";
 import { prepareLegacyEditionReleaseSnapshot } from "./internal-schema-test-helper.ts";
 
@@ -62,16 +62,12 @@ function offered(view: RunView, role: string): WorkOfferView {
   return offer;
 }
 
-function workerFor(offer: WorkOfferView): WorkerIdentity {
-  return {
-    principalId: `worker-${offer.id}`,
-    authority: offer.allowedWorkerCapabilities.includes("human")
-      ? "human"
-      : offer.allowedWorkerCapabilities.includes("text_model")
-        ? "model"
-        : "tool",
-    capabilities: offer.allowedWorkerCapabilities,
-  };
+const authorities = new WeakMap<SqliteRunEngine, AuthorityTestHarness>();
+
+function authorityFor(engine: SqliteRunEngine): AuthorityTestHarness {
+  const authority = authorities.get(engine);
+  assert.ok(authority, "test engine is missing its authority fixture");
+  return authority;
 }
 
 async function submit(
@@ -80,7 +76,19 @@ async function submit(
   result: JsonObject,
   artifacts: readonly AnswerArtifact[] = [],
 ): Promise<RunView> {
-  const claim = await engine.claim(offer.id, workerFor(offer));
+  const authority = authorityFor(engine);
+  if (offer.requirements?.authority === "human") {
+    const worker = await authority.workerFor(offer);
+    const preparation = await engine.prepareHumanDecision(offer.id, worker);
+    return await engine.decide(preparation, worker, {
+      schemaVersion: "human-decision-intent/1",
+      offerId: preparation.offerId,
+      taskArtifactId: preparation.taskArtifactId,
+      inputArtifactIds: preparation.inputArtifactIds,
+      result,
+    });
+  }
+  const claim = await authority.claim(engine, offer);
   if (offer.role === "durable_checkpoint") {
     return await engine.answer(claim, await durableCheckpointAnswer(engine, offer));
   }
@@ -240,6 +248,7 @@ test("an approved production plan resolves ready source names before spawning ar
     databasePath: join(temporary, "run.sqlite"),
     artifactDirectory: join(temporary, "artifacts"),
   });
+  authorities.set(engine, await AuthorityTestHarness.create(temporary));
   try {
     const prefix = "dynamic";
     const started = await engine.start(freshLeadFixture(prefix));
@@ -253,13 +262,12 @@ test("an approved production plan resolves ready source names before spawning ar
       art: [plannedCover(prefix, ["planned-article"])],
       translations: [],
     } as const;
-    const planArtifact = artifactId(`${prefix}-production-plan`);
     let view = await submit(
       engine,
       ready.planOffer,
       { choice: "approve", productionPlan },
       [
-      answerArtifact(planArtifact, "edition_plan", productionPlan),
+      answerArtifact(artifactId(`${prefix}-production-plan`), "edition_plan", productionPlan),
       ],
     );
 
@@ -292,7 +300,9 @@ test("an approved production plan resolves ready source names before spawning ar
     ]);
     view = await submit(engine, offered(view, "durable_checkpoint"), {});
 
-    const planView = await engine.readArtifact(planArtifact);
+    const planDecision = view.decisions.find((decision) => decision.offerId === ready.planOffer.id);
+    assert.ok(planDecision);
+    const planView = await engine.readArtifact(planDecision.artifactId);
     assert.ok(planView.artifact.parents.some((parent) => parent.artifactId === ready.extraction));
     const manuscriptView = await engine.readArtifact(manuscript);
     assert.ok(
@@ -371,6 +381,8 @@ test("v1 edition migration re-checkpoints every accepted content and art child b
   const databasePath = join(temporary, "run.sqlite");
   const artifactDirectory = join(temporary, "artifacts");
   let engine = new SqliteRunEngine({ databasePath, artifactDirectory });
+  const authority = await AuthorityTestHarness.create(temporary);
+  authorities.set(engine, authority);
   try {
     const prefix = "migration-children";
     const started = await engine.start(freshLeadFixture(prefix));
@@ -415,6 +427,7 @@ test("v1 edition migration re-checkpoints every accepted content and art child b
     engine.close();
     prepareLegacyEditionReleaseSnapshot(databasePath, started.runId);
     engine = new SqliteRunEngine({ databasePath, artifactDirectory });
+    authorities.set(engine, authority);
     const plan = await engine.planMigration({
       runId: started.runId,
       targetBundleVersion: "graph-execution@2",
@@ -495,6 +508,7 @@ test("invalid source assignments fail before any planned production actor is spa
       databasePath: join(temporary, "run.sqlite"),
       artifactDirectory: join(temporary, "artifacts"),
     });
+    authorities.set(engine, await AuthorityTestHarness.create(temporary));
     try {
       const started = await engine.start(freshLeadFixture(candidate.name));
       const ready = await readySourceAndOpenPlan(
