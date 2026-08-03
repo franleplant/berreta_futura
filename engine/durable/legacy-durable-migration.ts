@@ -106,6 +106,27 @@ export type MaterializedLegacyDurableMigration = {
   readonly manifestDigests: Readonly<Record<string, string>>;
 };
 
+type PreparedLegacyDurableRevision = {
+  readonly ref: DurableRevisionRef;
+  readonly candidateDirectory: string;
+  readonly relativeDirectory: string;
+  readonly manifestDigest: string;
+  readonly repositoryPaths: readonly string[];
+};
+
+type PublishJournalEntry = {
+  readonly relativeDirectory: string;
+  readonly manifestDigest: string;
+  state: "prepared" | "existing" | "published" | "rolled_back";
+};
+
+type PublishJournal = {
+  readonly schemaVersion: "legacy-durable-publish-journal/1";
+  readonly migrationId: string;
+  state: "prepared" | "publishing" | "rolling_back" | "rolled_back" | "completed";
+  readonly entries: PublishJournalEntry[];
+};
+
 export class LegacyDurableMigrationError extends Error {
   readonly code: string;
 
@@ -134,6 +155,7 @@ export async function materializeLegacyDurableMigrationBatch(
     ...plan.entries.flatMap((entry) => entry.files.map((file) => file.sourcePath)),
     ...plan.compositions.flatMap((entry) => entry.sourcePaths),
   ]);
+  let retainBatchRoot = false;
   try {
     await git.assertCommitted(sourcePaths, plan.sourceGitBinding);
   } catch (error) {
@@ -143,7 +165,15 @@ export async function materializeLegacyDurableMigrationBatch(
       { cause: error },
     );
   }
-  const readSource = (path: string) => readBoundLegacyFile(root, path, plan.sourceGitBinding);
+  const sourceBytes = new Map<string, Promise<Buffer>>();
+  const readSource = (path: string): Promise<Buffer> => {
+    let pending = sourceBytes.get(path);
+    if (pending === undefined) {
+      pending = readBoundLegacyFile(root, path, plan.sourceGitBinding);
+      sourceBytes.set(path, pending);
+    }
+    return pending;
+  };
 
   // Resolve all cross-revision references before materialization. This makes
   // a partial batch impossible when a parent or pinned child is only present
@@ -164,52 +194,80 @@ export async function materializeLegacyDurableMigrationBatch(
     }
   }
 
-  const revisions: Array<MaterializedLegacyDurableMigration["revisions"][number]> = [];
-  const repositoryPaths: string[] = [];
-  const manifestDigests: Record<string, string> = {};
-  let index = 0;
+  // Read every immutable source blob and reject every malformed payload before
+  // staging or publishing any DurableRevision destination.
+  await Promise.all(sourcePaths.map(async (path) => {
+    const bytes = await readSource(path);
+    if (bytes.byteLength === 0) throw invalid(`legacy durable source ${path} is empty`);
+  }));
   for (const entry of plan.entries) {
-    const manifest = await legacyManifest(root, plan, entry, readSource);
-    const installed = await materializeRevision(
-      root,
-      workRoot,
-      plan.migrationId,
-      index++,
-      entry.ref,
-      manifest,
-      entry.files.map((file) => ({
-        targetPath: file.targetPath,
-        read: async () => {
-          const bytes = await readSource(file.sourcePath);
-          validateLegacyPayload(bytes, file.mediaType, file.sourcePath);
-          return bytes;
-        },
-      })),
-    );
-    appendInstalled(installed, revisions, repositoryPaths, manifestDigests);
+    for (const file of entry.files) {
+      validateLegacyPayload(await readSource(file.sourcePath), file.mediaType, file.sourcePath);
+    }
   }
-  for (const entry of plan.compositions) {
-    const installed = await materializeHistoricalComposition(
-      root,
-      workRoot,
-      plan.migrationId,
-      plan.sourceGitBinding,
-      index++,
-      entry,
-      readSource,
-    );
-    appendInstalled(installed, revisions, repositoryPaths, manifestDigests);
+
+  await mkdir(resolve(workRoot), { recursive: true, mode: 0o700 });
+  const batchRoot = await mkdtemp(join(resolve(workRoot), `${plan.migrationId}-batch-`));
+  try {
+    const prepared: PreparedLegacyDurableRevision[] = [];
+    let index = 0;
+    for (const entry of plan.entries) {
+      const manifest = await legacyManifest(root, plan, entry, readSource);
+      prepared.push(await prepareRevision(
+        batchRoot,
+        index++,
+        entry.ref,
+        manifest,
+        entry.files.map((file) => ({
+          targetPath: file.targetPath,
+          read: () => readSource(file.sourcePath),
+        })),
+      ));
+    }
+    for (const entry of plan.compositions) {
+      prepared.push(await prepareHistoricalComposition(
+        root,
+        batchRoot,
+        plan.migrationId,
+        plan.sourceGitBinding,
+        index++,
+        entry,
+        readSource,
+      ));
+    }
+    const repositoryPaths = prepared.flatMap((revision) => revision.repositoryPaths);
+    const exactPaths = uniqueSorted(repositoryPaths);
+    if (exactPaths.length !== repositoryPaths.length) {
+      throw invalid("durable migration entries collide on repository paths");
+    }
+    await publishPreparedBatch(root, batchRoot, plan.migrationId, prepared);
+    const revisions = prepared.map(({ ref, relativeDirectory, manifestDigest }) => ({
+      ref,
+      relativeDirectory,
+      manifestDigest,
+    }));
+    const manifestDigests = Object.fromEntries(prepared.map((revision) => [
+      join(revision.relativeDirectory, "manifest.yaml"),
+      revision.manifestDigest,
+    ]));
+    return {
+      migrationId: plan.migrationId,
+      revisions,
+      repositoryPaths: exactPaths,
+      manifestDigests,
+    };
+  } catch (error) {
+    retainBatchRoot = error instanceof LegacyDurableMigrationError &&
+      error.code === "DURABLE_MIGRATION_ROLLBACK_FAILED";
+    throw error;
+  } finally {
+    if (!retainBatchRoot) await rm(batchRoot, { recursive: true, force: true });
   }
-  const exactPaths = uniqueSorted(repositoryPaths);
-  if (exactPaths.length !== repositoryPaths.length) {
-    throw invalid("durable migration entries collide on repository paths");
-  }
-  return { migrationId: plan.migrationId, revisions, repositoryPaths: exactPaths, manifestDigests };
 }
 
-async function materializeHistoricalComposition(
+async function prepareHistoricalComposition(
   repositoryRoot: string,
-  workRoot: string,
+  batchRoot: string,
   migrationId: string,
   sourceGitBinding: GitRevisionBinding,
   index: number,
@@ -254,10 +312,8 @@ async function materializeHistoricalComposition(
     ]),
     files: [record],
   };
-  return materializeRevision(
-    repositoryRoot,
-    workRoot,
-    migrationId,
+  return prepareRevision(
+    batchRoot,
     index,
     entry.ref,
     manifest,
@@ -319,99 +375,161 @@ async function legacyManifest(
   }
 }
 
-async function materializeRevision(
-  repositoryRoot: string,
-  workRoot: string,
-  migrationId: string,
+async function prepareRevision(
+  batchRoot: string,
   index: number,
   ref: DurableRevisionRef,
   template: DurableRevisionManifest,
   files: readonly { readonly targetPath: string; readonly read: () => Promise<Buffer> }[],
-): Promise<{
-  readonly ref: DurableRevisionRef;
-  readonly relativeDirectory: string;
-  readonly manifestDigest: string;
-  readonly repositoryPaths: readonly string[];
-}> {
-  await mkdir(resolve(workRoot), { recursive: true, mode: 0o700 });
-  const candidate = await mkdtemp(join(resolve(workRoot), `${migrationId}-${index}-`));
-  try {
-    const records: DurableFileRecord[] = [];
-    for (const [fileIndex, file] of files.entries()) {
-      const bytes = await file.read();
-      if (bytes.byteLength === 0) throw invalid(`durable payload ${file.targetPath} is empty`);
-      const target = containedPath(candidate, file.targetPath);
-      await mkdir(dirname(target), { recursive: true, mode: 0o700 });
-      await writeFile(target, bytes, { mode: 0o600 });
-      const sourceRecord = template.files[fileIndex];
-      if (sourceRecord === undefined || sourceRecord.path !== file.targetPath) {
-        throw invalid("durable migration manifest template disagrees with its files");
-      }
-      records.push({
-        ...sourceRecord,
-        sha256: digest(bytes),
-        sizeBytes: bytes.byteLength,
-      });
+): Promise<PreparedLegacyDurableRevision> {
+  const candidate = containedPath(batchRoot, join("candidates", String(index).padStart(6, "0")));
+  await mkdir(candidate, { recursive: true, mode: 0o700 });
+  const records: DurableFileRecord[] = [];
+  for (const [fileIndex, file] of files.entries()) {
+    const bytes = await file.read();
+    if (bytes.byteLength === 0) throw invalid(`durable payload ${file.targetPath} is empty`);
+    const target = containedPath(candidate, file.targetPath);
+    await mkdir(dirname(target), { recursive: true, mode: 0o700 });
+    await writeFile(target, bytes, { mode: 0o600 });
+    const sourceRecord = template.files[fileIndex];
+    if (sourceRecord === undefined || sourceRecord.path !== file.targetPath) {
+      throw invalid("durable migration manifest template disagrees with its files");
     }
-    const exactManifest = { ...template, files: records } as DurableRevisionManifest;
-    await writeFile(
-      join(candidate, "manifest.yaml"),
-      stringify(exactManifest, { lineWidth: 0 }),
-      { mode: 0o600 },
-    );
-    const relativeDirectory = join("durable", durableRevisionRelativeDirectory(ref));
-    const destination = containedPath(repositoryRoot, relativeDirectory);
-    const validatedCandidate = await validateDurableRevisionTree(candidate, ref);
-    if (await exists(destination)) {
-      const existing = await validateDurableRevisionTree(destination, ref);
-      if (existing.manifestDigest !== validatedCandidate.manifestDigest) {
-        throw conflict(`DurableRevision target ${relativeDirectory} contains different bytes`);
-      }
-    } else {
+    records.push({
+      ...sourceRecord,
+      sha256: digest(bytes),
+      sizeBytes: bytes.byteLength,
+    });
+  }
+  const exactManifest = { ...template, files: records } as DurableRevisionManifest;
+  await writeFile(
+    join(candidate, "manifest.yaml"),
+    stringify(exactManifest, { lineWidth: 0 }),
+    { mode: 0o600 },
+  );
+  const relativeDirectory = join("durable", durableRevisionRelativeDirectory(ref));
+  const validated = await validateDurableRevisionTree(candidate, ref);
+  return {
+    ref,
+    candidateDirectory: candidate,
+    relativeDirectory,
+    manifestDigest: validated.manifestDigest,
+    repositoryPaths: [
+      join(relativeDirectory, "manifest.yaml"),
+      ...validated.payloadPaths.map((path) => join(relativeDirectory, path)),
+    ].sort(),
+  };
+}
+
+async function publishPreparedBatch(
+  repositoryRoot: string,
+  batchRoot: string,
+  migrationId: string,
+  prepared: readonly PreparedLegacyDurableRevision[],
+): Promise<void> {
+  const entries: PublishJournalEntry[] = prepared.map((revision) => ({
+    relativeDirectory: revision.relativeDirectory,
+    manifestDigest: revision.manifestDigest,
+    state: "prepared",
+  }));
+  for (const [index, revision] of prepared.entries()) {
+    const destination = containedPath(repositoryRoot, revision.relativeDirectory);
+    if (!(await exists(destination))) continue;
+    const existing = await validateDurableRevisionTree(destination, revision.ref);
+    if (existing.manifestDigest !== revision.manifestDigest) {
+      throw conflict(`DurableRevision target ${revision.relativeDirectory} contains different bytes`);
+    }
+    entries[index]!.state = "existing";
+  }
+  const journal: PublishJournal = {
+    schemaVersion: "legacy-durable-publish-journal/1",
+    migrationId,
+    state: "prepared",
+    entries,
+  };
+  await writePublishJournal(batchRoot, journal);
+
+  const published: Array<{
+    readonly revision: PreparedLegacyDurableRevision;
+    readonly journalEntry: PublishJournalEntry;
+    readonly destination: string;
+  }> = [];
+  try {
+    journal.state = "publishing";
+    await writePublishJournal(batchRoot, journal);
+    for (const [index, revision] of prepared.entries()) {
+      const journalEntry = entries[index]!;
+      if (journalEntry.state === "existing") continue;
+      const destination = containedPath(repositoryRoot, revision.relativeDirectory);
       await mkdir(dirname(destination), { recursive: true, mode: 0o700 });
       try {
-        await rename(candidate, destination);
+        await rename(revision.candidateDirectory, destination);
       } catch (error) {
         if (!(await exists(destination))) throw error;
-        const raced = await validateDurableRevisionTree(destination, ref);
-        if (raced.manifestDigest !== validatedCandidate.manifestDigest) {
-          throw conflict(`DurableRevision target ${relativeDirectory} raced with different bytes`, error);
+        const raced = await validateDurableRevisionTree(destination, revision.ref);
+        if (raced.manifestDigest !== revision.manifestDigest) {
+          throw conflict(
+            `DurableRevision target ${revision.relativeDirectory} raced with different bytes`,
+            error,
+          );
         }
+        journalEntry.state = "existing";
+        await writePublishJournal(batchRoot, journal);
+        continue;
+      }
+      journalEntry.state = "published";
+      published.push({ revision, journalEntry, destination });
+      const installed = await validateDurableRevisionTree(destination, revision.ref);
+      if (installed.manifestDigest !== revision.manifestDigest) {
+        throw conflict(`published DurableRevision ${revision.relativeDirectory} changed during installation`);
+      }
+      await writePublishJournal(batchRoot, journal);
+    }
+    journal.state = "completed";
+    await writePublishJournal(batchRoot, journal);
+  } catch (error) {
+    const rollbackErrors: unknown[] = [];
+    journal.state = "rolling_back";
+    try {
+      await writePublishJournal(batchRoot, journal);
+    } catch (journalError) {
+      rollbackErrors.push(journalError);
+    }
+    for (const item of [...published].reverse()) {
+      try {
+        const installed = await validateDurableRevisionTree(item.destination, item.revision.ref);
+        if (installed.manifestDigest !== item.revision.manifestDigest) {
+          throw conflict(`refusing to roll back changed destination ${item.revision.relativeDirectory}`);
+        }
+        await rm(item.destination, { recursive: true, force: false });
+        item.journalEntry.state = "rolled_back";
+        await writePublishJournal(batchRoot, journal);
+      } catch (rollbackError) {
+        rollbackErrors.push(rollbackError);
       }
     }
-    const validated = await validateDurableRevisionTree(destination, ref);
-    return {
-      ref,
-      relativeDirectory,
-      manifestDigest: validated.manifestDigest,
-      repositoryPaths: [
-        join(relativeDirectory, "manifest.yaml"),
-        ...validated.payloadPaths.map((path) => join(relativeDirectory, path)),
-      ].sort(),
-    };
-  } finally {
-    await rm(candidate, { recursive: true, force: true });
+    journal.state = "rolled_back";
+    try {
+      await writePublishJournal(batchRoot, journal);
+    } catch (journalError) {
+      rollbackErrors.push(journalError);
+    }
+    if (rollbackErrors.length > 0) {
+      throw new LegacyDurableMigrationError(
+        "DURABLE_MIGRATION_ROLLBACK_FAILED",
+        `durable migration publish failed and ${rollbackErrors.length} rollback operations failed; journal retained at ${batchRoot}`,
+        { cause: new AggregateError([error, ...rollbackErrors]) },
+      );
+    }
+    throw error;
   }
 }
 
-function appendInstalled(
-  installed: {
-    readonly ref: DurableRevisionRef;
-    readonly relativeDirectory: string;
-    readonly manifestDigest: string;
-    readonly repositoryPaths: readonly string[];
-  },
-  revisions: Array<MaterializedLegacyDurableMigration["revisions"][number]>,
-  repositoryPaths: string[],
-  manifestDigests: Record<string, string>,
-): void {
-  revisions.push({
-    ref: installed.ref,
-    relativeDirectory: installed.relativeDirectory,
-    manifestDigest: installed.manifestDigest,
-  });
-  repositoryPaths.push(...installed.repositoryPaths);
-  manifestDigests[join(installed.relativeDirectory, "manifest.yaml")] = installed.manifestDigest;
+async function writePublishJournal(batchRoot: string, journal: PublishJournal): Promise<void> {
+  const pending = containedPath(batchRoot, "publish-journal.next.json");
+  const destination = containedPath(batchRoot, "publish-journal.json");
+  await writeFile(pending, `${JSON.stringify(journal, null, 2)}\n`, { mode: 0o600 });
+  await rename(pending, destination);
 }
 
 async function resolveInputRefs(
