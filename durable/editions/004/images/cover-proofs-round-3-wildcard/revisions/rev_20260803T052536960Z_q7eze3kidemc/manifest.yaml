@@ -1,0 +1,28 @@
+schema_version: 1
+revision_kind: image
+edition_id: "004"
+revision_id: rev_20260803T052536960Z_q7eze3kidemc
+created_at: 2026-08-03T05:25:36.960Z
+parent_revision_id: null
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/004-the-systems-around-the-model/art/cover-proofs/round-3-wildcard.png
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: 5d00c3e92752528b1991ff74dce69b9c280e6c20
+    sha256: sha256:858fbffd67016d080f17aee8fec4c3c73df0ceafb7204cdcb62e9c01e444c064
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+files:
+  - path: image.png
+    mediaType: image/png
+    sha256: sha256:858fbffd67016d080f17aee8fec4c3c73df0ceafb7204cdcb62e9c01e444c064
+    sizeBytes: 568017
+    legacySource:
+      repositoryPath: editions/004-the-systems-around-the-model/art/cover-proofs/round-3-wildcard.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 5d00c3e92752528b1991ff74dce69b9c280e6c20
+logical_id: cover-proofs-round-3-wildcard
