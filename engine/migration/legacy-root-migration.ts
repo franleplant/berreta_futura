@@ -10,25 +10,13 @@ import {
 import { dirname, join, posix, resolve, sep } from "node:path";
 import { promisify } from "node:util";
 
-import { stringify } from "yaml";
+import { parse, stringify } from "yaml";
 
 import { newRevisionId } from "../durable/revision-id.ts";
 import type { RevisionId } from "../contracts/index.ts";
 
 const execFile = promisify(execFileCallback);
 const LEGACY_ROOTS = ["editions", "library", "prompts"] as const;
-const EDITION4_ROOT = "editions/004-the-systems-around-the-model";
-const EDITION4_SOURCE_IDS = new Set([
-  "anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df",
-  "eval-engineering-the-step-that-turns-a-200-model-9f6f868f",
-  "pragmatic-leverage-in-the-software-factory-09879736",
-  "22580-from-gpt2-to-kimi3-explained-8f01b0fe",
-  "architecture-overview-ce5cb1d1",
-  "the-2026-07-28-mcp-specification-release-candida-1a1752b8",
-  "software-factories-are-super-real-but-the-factor-ab8ad3ab",
-  "factories-are-not-a-token-or-llm-problem-ba5fabbf",
-  "do-not-make-the-service-bus-non-deterministic-3a92442c",
-]);
 const EDITION4_FIXED_COMPOSITION_REVISION =
   "rev_20260802T230000065Z_nn4pdbpswp3n" as RevisionId;
 
@@ -116,7 +104,18 @@ export type LegacyRootMigrationOptions = {
   readonly migrationId: string;
   /** A reloaded plan's allocation map. Passing it prevents new identities. */
   readonly allocatedRevisionIds?: Readonly<Record<string, RevisionId>>;
+  /** Exact already-committed revision bindings, keyed by source path then kind. */
+  readonly existingBindingsBySourcePath?: Readonly<Record<
+    string,
+    Readonly<Partial<Record<LegacyMigrationTarget["revisionKind"], RevisionId>>>
+  >>;
   readonly allocateRevisionId?: () => RevisionId;
+};
+
+export type ExistingRevisionBindingAudit = {
+  readonly bindingsBySourcePath: NonNullable<LegacyRootMigrationOptions["existingBindingsBySourcePath"]>;
+  readonly boundSourcePaths: number;
+  readonly conflicts: readonly string[];
 };
 
 export class LegacyRootMigrationError extends Error {
@@ -133,9 +132,12 @@ export class LegacyRootMigrationError extends Error {
  * Reads only committed legacy bytes. It deliberately does not stat or read a
  * working-tree path, so a plan remains bound to one protected Git snapshot.
  */
-export async function readLegacyGitSnapshot(repositoryRoot: string): Promise<LegacyGitSnapshot> {
+export async function readLegacyGitSnapshot(
+  repositoryRoot: string,
+  commitish = "HEAD",
+): Promise<LegacyGitSnapshot> {
   const root = resolve(repositoryRoot);
-  const sourceCommitOid = await gitText(root, ["rev-parse", "HEAD^{commit}"]);
+  const sourceCommitOid = await gitText(root, ["rev-parse", `${commitish}^{commit}`]);
   const tree = await gitBuffer(root, ["ls-tree", "-r", "-l", "-z", sourceCommitOid, "--", ...LEGACY_ROOTS]);
   const parsed = parseLsTree(tree);
   assertNoUnsafeOrAliasedPaths(parsed.map((file) => file.path));
@@ -165,6 +167,69 @@ export function assertLegacyRootBaseline(snapshot: LegacyGitSnapshot): void {
 }
 
 /**
+ * Derives reuse candidates from committed manifests only, and accepts a
+ * binding only when its declared SHA-256 equals the protected source byte.
+ */
+export async function readExactExistingRevisionBindings(
+  repositoryRoot: string,
+  snapshot: LegacyGitSnapshot,
+): Promise<ExistingRevisionBindingAudit> {
+  validateSnapshot(snapshot);
+  const root = resolve(repositoryRoot);
+  const head = await gitText(root, ["rev-parse", "HEAD^{commit}"]);
+  const tree = parseAnyBlobTree(await gitBuffer(root, ["ls-tree", "-r", "-l", "-z", head, "--", "inputs", "durable"]));
+  const sourceByPath = new Map(snapshot.files.map((file) => [file.path, file]));
+  const candidates = new Map<string, Map<LegacyMigrationTarget["revisionKind"], RevisionId>>();
+  const conflicts: string[] = [];
+  for (const manifestEntry of tree.filter((entry) => entry.path.endsWith("/manifest.yaml"))) {
+    const decoded = parse((await gitBuffer(root, ["cat-file", "blob", manifestEntry.blobOid])).toString("utf8"));
+    if (!isMapping(decoded) || typeof decoded.revision_kind !== "string" || typeof decoded.revision_id !== "string") continue;
+    const kind = decoded.revision_kind as LegacyMigrationTarget["revisionKind"];
+    if (!isMigratableKind(kind) || !/^rev_\d{8}T\d{9}Z_[a-z2-7]{12}$/u.test(decoded.revision_id)) continue;
+    const revisionId = decoded.revision_id as RevisionId;
+    const bindings: Array<{ readonly path: string; readonly sha: string }> = [];
+    if (Array.isArray(decoded.files)) {
+      for (const value of decoded.files) {
+        if (!isMapping(value)) continue;
+        const legacy = isMapping(value.legacy_source) ? value.legacy_source :
+          isMapping(value.legacySource) ? value.legacySource : undefined;
+        const digest = typeof value.sha256 === "string" ? value.sha256 : undefined;
+        const path = legacy === undefined ? undefined :
+          typeof legacy.repositoryPath === "string" ? legacy.repositoryPath :
+            typeof legacy.repository_path === "string" ? legacy.repository_path : undefined;
+        if (path !== undefined && digest !== undefined) bindings.push({ path, sha: digest });
+      }
+    }
+    if (Array.isArray(decoded.legacy_source_bindings)) {
+      for (const value of decoded.legacy_source_bindings) {
+        if (!isMapping(value) || typeof value.repositoryPath !== "string" || typeof value.sha256 !== "string") continue;
+        bindings.push({ path: value.repositoryPath, sha: value.sha256 });
+      }
+    }
+    for (const binding of bindings) {
+      const source = sourceByPath.get(binding.path);
+      if (source === undefined || source.sha256 !== binding.sha) continue;
+      const byKind = candidates.get(binding.path) ?? new Map();
+      const prior = byKind.get(kind);
+      if (prior !== undefined && prior !== revisionId) {
+        conflicts.push(`${binding.path} (${kind}): ${prior} vs ${revisionId}`);
+        continue;
+      }
+      byKind.set(kind, revisionId);
+      candidates.set(binding.path, byKind);
+    }
+  }
+  return {
+    bindingsBySourcePath: Object.fromEntries([...candidates].map(([path, values]) => [
+      path,
+      Object.fromEntries(values),
+    ])),
+    boundSourcePaths: candidates.size,
+    conflicts: conflicts.sort(),
+  };
+}
+
+/**
  * Generates a complete, byte-level ledger. It makes no filesystem changes.
  * New RevisionIds are allocated only for missing slots and are returned in the
  * plan so the plan itself is the one-time allocation record.
@@ -188,6 +253,24 @@ export function planLegacyRootMigration(
     ids.set(slot, next);
     return next;
   };
+  const targetFor = <Target extends Omit<LegacyMigrationTarget, "revisionId" | "reuseBinding">>(
+    file: LegacyGitFile,
+    target: Target,
+  ): { readonly disposition: "import_exact" | "reuse_existing"; readonly target: LegacyMigrationTarget } => {
+    const bound = options.existingBindingsBySourcePath?.[file.path]?.[target.revisionKind];
+    if (bound !== undefined) {
+      const existingSlot = ids.get(target.revisionSlot);
+      if (existingSlot !== undefined && existingSlot !== bound) {
+        throw invalid(`existing revision binding conflicts for ${file.path}`);
+      }
+      ids.set(target.revisionSlot, bound);
+      return {
+        disposition: "reuse_existing",
+        target: { ...target, revisionId: bound, reuseBinding: "edition4-fixed-revision" },
+      };
+    }
+    return { disposition: "import_exact", target: { ...target, revisionId: revisionId(target.revisionSlot) } };
+  };
   const archiveSlot = `input:archive:${options.migrationId}`;
   const sourceIds = sourceDirectoryIds(snapshot.files);
   const extractionIds = new Set(snapshot.files.flatMap((file) => sourceExtractionId(file.path)));
@@ -203,24 +286,22 @@ export function planLegacyRootMigration(
       const [sourceId, suffix] = source;
       if (suffix === "extracted.md") {
         const slot = `input:source_extraction:${sourceId}`;
-        disposition.push(exact(file, EDITION4_SOURCE_IDS.has(sourceId) ? "reuse_existing" : "import_exact", {
+        const binding = targetFor(file, {
           revisionSlot: slot,
           category: "input",
           revisionKind: "source_extraction",
-          revisionId: revisionId(slot),
           payloadPath: "extracted.md",
-          ...(EDITION4_SOURCE_IDS.has(sourceId) ? { reuseBinding: "edition4-fixed-revision" as const } : {}),
-        }, "committed source extraction"));
+        });
+        disposition.push(exact(file, binding.disposition, binding.target, "committed source extraction"));
       } else {
         const slot = `input:source_capture:${sourceId}`;
-        disposition.push(exact(file, EDITION4_SOURCE_IDS.has(sourceId) ? "reuse_existing" : "import_exact", {
+        const binding = targetFor(file, {
           revisionSlot: slot,
           category: "input",
           revisionKind: "source_capture",
-          revisionId: revisionId(slot),
           payloadPath: `raw/${suffix}`,
-          ...(EDITION4_SOURCE_IDS.has(sourceId) ? { reuseBinding: "edition4-fixed-revision" as const } : {}),
-        }, "committed source evidence, record, or media"));
+        });
+        disposition.push(exact(file, binding.disposition, binding.target, "committed source evidence, record, or media"));
       }
       continue;
     }
@@ -228,13 +309,13 @@ export function planLegacyRootMigration(
     const promptId = promptIdFor(file.path);
     if (promptId !== undefined) {
       const slot = `input:prompt:${promptId}`;
-      disposition.push(exact(file, "import_exact", {
+      const binding = targetFor(file, {
         revisionSlot: slot,
         category: "input",
         revisionKind: "prompt",
-        revisionId: revisionId(slot),
         payloadPath: "prompt.md",
-      }, "legacy prompt source"));
+      });
+      disposition.push(exact(file, binding.disposition, binding.target, "legacy prompt source"));
       continue;
     }
     if (file.path === "prompts/README.md") {
@@ -252,52 +333,49 @@ export function planLegacyRootMigration(
     const article = articleFile(file.path);
     if (article !== undefined) {
       const slot = `durable:article:${article.editionKey}:${article.logicalId}:${article.language}`;
-      disposition.push(exact(file, isEdition4Original(file.path) ? "reuse_existing" : "import_exact", {
+      const binding = targetFor(file, {
         revisionSlot: slot,
         category: "durable",
         revisionKind: "article",
-        revisionId: revisionId(slot),
         payloadPath: "manuscript.md",
-        ...(isEdition4Original(file.path) ? { reuseBinding: "edition4-fixed-revision" as const } : {}),
-      }, "legacy article manuscript"));
+      });
+      disposition.push(exact(file, binding.disposition, binding.target, "legacy article manuscript"));
       continue;
     }
     const editorial = editorialFile(file.path);
     if (editorial !== undefined) {
       const slot = `durable:editorial:${editorial.editionKey}:opening:${editorial.language}`;
-      disposition.push(exact(file, isEdition4Original(file.path) ? "reuse_existing" : "import_exact", {
+      const binding = targetFor(file, {
         revisionSlot: slot,
         category: "durable",
         revisionKind: "editorial",
-        revisionId: revisionId(slot),
         payloadPath: "manuscript.md",
-        ...(isEdition4Original(file.path) ? { reuseBinding: "edition4-fixed-revision" as const } : {}),
-      }, "legacy opening editorial"));
+      });
+      disposition.push(exact(file, binding.disposition, binding.target, "legacy opening editorial"));
       continue;
     }
     const image = editionImage(file.path);
     if (image !== undefined) {
       const slot = `durable:image:${image.editionKey}:${image.ordinal}`;
-      disposition.push(exact(file, isSelectedEdition4Image(file.path) ? "reuse_existing" : "import_exact", {
+      const binding = targetFor(file, {
         revisionSlot: slot,
         category: "durable",
         revisionKind: "image",
-        revisionId: revisionId(slot),
         payloadPath: `image${image.extension}`,
-        ...(isSelectedEdition4Image(file.path) ? { reuseBinding: "edition4-fixed-revision" as const } : {}),
-      }, "legacy art asset, including unselected candidates"));
+      });
+      disposition.push(exact(file, binding.disposition, binding.target, "legacy art asset, including unselected candidates"));
       continue;
     }
     const spec = editionSpec(file.path, editionRootsWithManifest);
     if (spec !== undefined) {
       const slot = `input:edition_spec:${spec.editionKey}`;
-      disposition.push(exact(file, "import_exact", {
+      const binding = targetFor(file, {
         revisionSlot: slot,
         category: "input",
         revisionKind: "edition_spec",
-        revisionId: revisionId(slot),
         payloadPath: spec.payloadPath,
-      }, "edition or layout specification"));
+      });
+      disposition.push(exact(file, binding.disposition, binding.target, "edition or layout specification"));
       continue;
     }
     disposition.push(exact(file, "archive_non_authoritative", {
@@ -455,6 +533,17 @@ function parseLsTree(bytes: Buffer): readonly Omit<LegacyGitFile, "sha256">[] {
   }).sort((a, b) => a.path.localeCompare(b.path));
 }
 
+function parseAnyBlobTree(bytes: Buffer): readonly {
+  readonly path: string;
+  readonly blobOid: string;
+}[] {
+  return bytes.toString("utf8").split("\0").filter(Boolean).map((line) => {
+    const match = /^\d{6}\s+blob\s+([0-9a-f]{40,64})\s+\d+\t(.+)$/u.exec(line);
+    if (match === null) throw invalid(`unsupported committed tree entry: ${line.slice(0, 120)}`);
+    return { blobOid: match[1]!, path: match[2]! };
+  });
+}
+
 function validateSnapshot(snapshot: LegacyGitSnapshot): void {
   if (!/^[0-9a-f]{40,64}$/u.test(snapshot.sourceCommitOid)) throw invalid("snapshot has invalid source commit");
   if (snapshot.files.length === 0) throw invalid("snapshot is empty");
@@ -571,27 +660,9 @@ function editionSpec(
   if (
     relative === "edition.yaml" ||
     /^translations\/[^/]+\/edition\.yaml$/u.test(relative) ||
-    relative === "art/illustrations.yaml" ||
-    /^art\/cover-candidates(?:-[a-z0-9-]+)?\.yaml$/u.test(relative)
+    relative === "art/illustrations.yaml"
   ) return { editionKey: editionKey(match[1]!), payloadPath: relative };
   return undefined;
-}
-
-function isEdition4Original(path: string): boolean {
-  return path.startsWith(`${EDITION4_ROOT}/articles/`) ||
-    path.startsWith(`${EDITION4_ROOT}/translations/es/articles/`) ||
-    path === `${EDITION4_ROOT}/manuscript/editorial.md` ||
-    path === `${EDITION4_ROOT}/translations/es/manuscript/editorial.md`;
-}
-
-function isSelectedEdition4Image(path: string): boolean {
-  return path === `${EDITION4_ROOT}/art/cover-candidate-wildcard-v2.png` ||
-    /^editions\/004-the-systems-around-the-model\/art\/article-openers\/.+\.png$/u.test(path) ||
-    path === `${EDITION4_ROOT}/art/article-tails/factory-systems-problem.png` ||
-    path === `${EDITION4_ROOT}/art/article-tails/mcp-four-vignettes.png` ||
-    path === `${EDITION4_ROOT}/art/closing-signal-gates-manga.png` ||
-    path === `${EDITION4_ROOT}/art/closing-memory-rings-manga.png` ||
-    path === `${EDITION4_ROOT}/art/closing-protocol-exchange-manga.png`;
 }
 
 function editionRoot(path: string): string | undefined {
@@ -676,6 +747,23 @@ function relativePortable(root: string, path: string): string {
 function required<T>(value: T | undefined, label: string): T {
   if (value === undefined) throw invalid(`missing value: ${label}`);
   return value;
+}
+
+function isMapping(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isMigratableKind(value: string): value is LegacyMigrationTarget["revisionKind"] {
+  return [
+    "source_capture",
+    "source_extraction",
+    "prompt",
+    "policy",
+    "edition_spec",
+    "article",
+    "editorial",
+    "image",
+  ].includes(value);
 }
 
 function invalid(message: string): LegacyRootMigrationError {

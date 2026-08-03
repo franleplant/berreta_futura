@@ -58,6 +58,10 @@ export function inputRevisionRelativeDirectory(ref: InputRevisionRef): string {
       return join("prompts", logical, "revisions", revision);
     case "policy":
       return join("policies", logical, "revisions", revision);
+    case "migration_archive":
+    case "migration_attestation":
+    case "migration_plan":
+      return join("migrations", logical, "revisions", revision);
     case "edition_spec":
     case "run_bootstrap":
       return join(
