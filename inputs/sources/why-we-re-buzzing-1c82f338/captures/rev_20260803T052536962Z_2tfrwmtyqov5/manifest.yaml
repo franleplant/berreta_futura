@@ -1,0 +1,64 @@
+schema_version: 1
+revision_kind: source_capture
+logical_id: why-we-re-buzzing-1c82f338
+revision_id: rev_20260803T052536962Z_2tfrwmtyqov5
+created_at: 2026-08-03T05:25:36.962Z
+parent_revision_id: null
+migration_id: legacy-four-root-source-2
+files:
+  - path: raw/media/a6599b7abc52d10b7569e4e2fdecb2c9f9333989f0b24ca0ec777924c2430568.curation.json
+    media_type: application/json
+    sha256: sha256:a93247abb9e75ea23a45be651d3c35f705d9bcc24a5e3766c85456c390e6d2d4
+    size_bytes: 1157
+    legacy_source:
+      repositoryPath: library/sources/why-we-re-buzzing-1c82f338/media/a6599b7abc52d10b7569e4e2fdecb2c9f9333989f0b24ca0ec777924c2430568.curation.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 66282d222f124dcd5df152d10474d5520bf17d6b
+  - path: raw/media/a6599b7abc52d10b7569e4e2fdecb2c9f9333989f0b24ca0ec777924c2430568.json
+    media_type: application/json
+    sha256: sha256:9ce98e19a20f006d00bde779018617692ed3d69490f0e2c577336aaefa0e8baf
+    size_bytes: 795
+    legacy_source:
+      repositoryPath: library/sources/why-we-re-buzzing-1c82f338/media/a6599b7abc52d10b7569e4e2fdecb2c9f9333989f0b24ca0ec777924c2430568.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 06f82f4aae2ffa1d3fbd466a268b0cab221d2b77
+  - path: raw/raw/a6599b7abc52d10b7569e4e2fdecb2c9f9333989f0b24ca0ec777924c2430568/artifacts/oembed.json
+    media_type: application/json
+    sha256: sha256:c0498412344a9eab19598347956e007db85fcd5af2aec216efd6b6aa6940e171
+    size_bytes: 621
+    legacy_source:
+      repositoryPath: library/sources/why-we-re-buzzing-1c82f338/raw/a6599b7abc52d10b7569e4e2fdecb2c9f9333989f0b24ca0ec777924c2430568/artifacts/oembed.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 2d0665bc6793d9dda54cd3142a7387decd244c6a
+  - path: raw/raw/a6599b7abc52d10b7569e4e2fdecb2c9f9333989f0b24ca0ec777924c2430568/artifacts/post.pdf
+    media_type: application/pdf
+    sha256: sha256:7ed624e0fc88c33a49716cae3346f956dc55a7f09e0ab4a072fa82724ed95c45
+    size_bytes: 278312
+    legacy_source:
+      repositoryPath: library/sources/why-we-re-buzzing-1c82f338/raw/a6599b7abc52d10b7569e4e2fdecb2c9f9333989f0b24ca0ec777924c2430568/artifacts/post.pdf
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 4d19bc89d03ed4eee0bf4314d5f3f9416e00d3c9
+  - path: raw/raw/a6599b7abc52d10b7569e4e2fdecb2c9f9333989f0b24ca0ec777924c2430568/artifacts/post.png
+    media_type: image/png
+    sha256: sha256:26a3767928f18b080b04360e203bbbf9c20c2952e4d2be2aacf8907ddcbe9aac
+    size_bytes: 698756
+    legacy_source:
+      repositoryPath: library/sources/why-we-re-buzzing-1c82f338/raw/a6599b7abc52d10b7569e4e2fdecb2c9f9333989f0b24ca0ec777924c2430568/artifacts/post.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 1f70c47eac2b582036da6890ca9a36a421249797
+  - path: raw/raw/a6599b7abc52d10b7569e4e2fdecb2c9f9333989f0b24ca0ec777924c2430568/manifest.json
+    media_type: application/json
+    sha256: sha256:ea0156264676994d5e4ad29ba6a24be8607c3593b1d5df8116c72a78953b73da
+    size_bytes: 939
+    legacy_source:
+      repositoryPath: library/sources/why-we-re-buzzing-1c82f338/raw/a6599b7abc52d10b7569e4e2fdecb2c9f9333989f0b24ca0ec777924c2430568/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 49add1b0f3f63816971626ac86a0788b875ccbc0
+  - path: raw/record.yaml
+    media_type: application/yaml
+    sha256: sha256:b28c29214b2af68411d21084ab55365f30e6f00eb2117b313f08b49e3f55f7e1
+    size_bytes: 1614
+    legacy_source:
+      repositoryPath: library/sources/why-we-re-buzzing-1c82f338/record.yaml
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 203f80764f4c2b40ba794d73e470394f4c2fb8f3

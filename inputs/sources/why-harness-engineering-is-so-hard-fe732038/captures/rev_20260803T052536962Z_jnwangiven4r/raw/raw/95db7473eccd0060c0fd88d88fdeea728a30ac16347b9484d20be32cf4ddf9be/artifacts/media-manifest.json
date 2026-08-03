@@ -1,0 +1,29 @@
+{
+  "schema_version": 2,
+  "source_url": "https://x.com/WinterArc2125/status/2081042507471696318",
+  "captured_from": "browser_verified_x_article_original_media",
+  "referenced_asset_count": 2,
+  "present_asset_count": 2,
+  "assets": [
+    {
+      "relative_url": "media/002.jpg",
+      "source_url": "https://pbs.twimg.com/media/HOExxgEXMAAgfOe?format=jpg&name=orig",
+      "source_position": 2,
+      "role": "diagram",
+      "heading": "You can't write the test you want to write",
+      "title": "Non-determinism breaks testing",
+      "description": "Clean full-resolution original embedded in the source article; one input fans out to correct, close-but-wrong, and wrong outputs.",
+      "alt_text": "A diagram titled non-determinism breaks testing shows one input producing correct, close-but-wrong, and wrong outputs, with an equality assertion crossed out below."
+    },
+    {
+      "relative_url": "media/003.jpg",
+      "source_url": "https://pbs.twimg.com/media/HOEx5uXWsAAyjYx?format=jpg&name=orig",
+      "source_position": 3,
+      "role": "diagram",
+      "heading": "Failure is silent and graded, not binary",
+      "title": "Traditional code versus model output",
+      "description": "Clean full-resolution original embedded in the source article; traditional code crashes while broken lines remain embedded in a finished model document.",
+      "alt_text": "Two panels contrast traditional code ending in a crash with model output producing a full document marked as broken."
+    }
+  ]
+}

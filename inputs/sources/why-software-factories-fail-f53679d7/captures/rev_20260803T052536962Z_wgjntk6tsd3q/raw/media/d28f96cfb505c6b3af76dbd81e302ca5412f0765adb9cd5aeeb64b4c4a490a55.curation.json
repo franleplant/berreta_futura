@@ -1,0 +1,678 @@
+{
+  "bundle_sha256": "d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55",
+  "candidate_count": 26,
+  "candidates": [
+    {
+      "artifact_path": "media/001.png",
+      "artifact_sha256": "03b49977307049427efa2d45348a6242f4a25f19c4de14615e7e01425a3f9c69",
+      "aspect_ratio": 1.335113,
+      "criteria": [],
+      "decision": "reject",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080409869174394880",
+      "heading": "",
+      "id": "raster-001-03b49977",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "",
+      "rejection_reasons": [
+        "article_title_card"
+      ],
+      "score": 0,
+      "source_artifact": "media/001.png",
+      "source_artifact_sha256": "03b49977307049427efa2d45348a6242f4a25f19c4de14615e7e01425a3f9c69",
+      "source_position": 1,
+      "title": "Why Software Factories Fail — embedded media 1"
+    },
+    {
+      "artifact_path": "media/002.png",
+      "artifact_sha256": "6b1bf8604684935678e303600ee94095dc162e306dd5c6f475e21bb0091d1cf4",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "include",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080398568976945152",
+      "heading": "",
+      "id": "raster-002-6b1bf860",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 2 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [],
+      "score": 64,
+      "source_artifact": "media/002.png",
+      "source_artifact_sha256": "6b1bf8604684935678e303600ee94095dc162e306dd5c6f475e21bb0091d1cf4",
+      "source_position": 2,
+      "title": "Why Software Factories Fail — embedded media 2"
+    },
+    {
+      "artifact_path": "media/003.png",
+      "artifact_sha256": "3df2d1b7098245933a9c976400364e8485d4a7df3b77e3a3ea6d81cb6f226db1",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "include",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080398814389923840",
+      "heading": "",
+      "id": "raster-003-3df2d1b7",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 3 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [],
+      "score": 64,
+      "source_artifact": "media/003.png",
+      "source_artifact_sha256": "3df2d1b7098245933a9c976400364e8485d4a7df3b77e3a3ea6d81cb6f226db1",
+      "source_position": 3,
+      "title": "Why Software Factories Fail — embedded media 3"
+    },
+    {
+      "artifact_path": "media/004.png",
+      "artifact_sha256": "557cbba86a87c4c443eefed64d8909d3353fe52f09a7ceefe193688cc95af88a",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "include",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080400527242989568",
+      "heading": "",
+      "id": "raster-004-557cbba8",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 5 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [],
+      "score": 64,
+      "source_artifact": "media/004.png",
+      "source_artifact_sha256": "557cbba86a87c4c443eefed64d8909d3353fe52f09a7ceefe193688cc95af88a",
+      "source_position": 5,
+      "title": "Why Software Factories Fail — embedded media 5"
+    },
+    {
+      "artifact_path": "media/005.png",
+      "artifact_sha256": "2138b1a8d0ea2b915f9888cf5e55b4c7fe322f60d28a40c2a7afaa539120ae6a",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080400577415331840",
+      "heading": "",
+      "id": "raster-005-2138b1a8",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 6 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 64,
+      "source_artifact": "media/005.png",
+      "source_artifact_sha256": "2138b1a8d0ea2b915f9888cf5e55b4c7fe322f60d28a40c2a7afaa539120ae6a",
+      "source_position": 6,
+      "title": "Why Software Factories Fail — embedded media 6"
+    },
+    {
+      "artifact_path": "media/006.png",
+      "artifact_sha256": "f71541818b89a1105035ff037f5f2b3167533123d1da2ea8749141338957e801",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080400688757276672",
+      "heading": "",
+      "id": "raster-006-f7154181",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 7 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 64,
+      "source_artifact": "media/006.png",
+      "source_artifact_sha256": "f71541818b89a1105035ff037f5f2b3167533123d1da2ea8749141338957e801",
+      "source_position": 7,
+      "title": "Why Software Factories Fail — embedded media 7"
+    },
+    {
+      "artifact_path": "media/007.png",
+      "artifact_sha256": "c2c9faeb4ab799c42497fc41be89cc93d298977c22f5a5ea373846eed1e84177",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080400721930018816",
+      "heading": "",
+      "id": "raster-007-c2c9faeb",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 8 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 64,
+      "source_artifact": "media/007.png",
+      "source_artifact_sha256": "c2c9faeb4ab799c42497fc41be89cc93d298977c22f5a5ea373846eed1e84177",
+      "source_position": 8,
+      "title": "Why Software Factories Fail — embedded media 8"
+    },
+    {
+      "artifact_path": "media/008.png",
+      "artifact_sha256": "4f4aeb98e66705778ba52caf8a0ed92c793e7f09394fb1e39ff1bf09683e4881",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080400759246774272",
+      "heading": "",
+      "id": "raster-008-4f4aeb98",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 9 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 64,
+      "source_artifact": "media/008.png",
+      "source_artifact_sha256": "4f4aeb98e66705778ba52caf8a0ed92c793e7f09394fb1e39ff1bf09683e4881",
+      "source_position": 9,
+      "title": "Why Software Factories Fail — embedded media 9"
+    },
+    {
+      "artifact_path": "media/009.png",
+      "artifact_sha256": "a8b905208c08443844e0469dc0c68143c74d20e485372a72f1823dad7e541605",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080400798199230464",
+      "heading": "",
+      "id": "raster-009-a8b90520",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 10 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 64,
+      "source_artifact": "media/009.png",
+      "source_artifact_sha256": "a8b905208c08443844e0469dc0c68143c74d20e485372a72f1823dad7e541605",
+      "source_position": 10,
+      "title": "Why Software Factories Fail — embedded media 10"
+    },
+    {
+      "artifact_path": "media/010.png",
+      "artifact_sha256": "4d3c659b98902a2de74cd7a44456d7bb2f3de6b3051e7811b6f6c5615571416b",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080400827475431424",
+      "heading": "",
+      "id": "raster-010-4d3c659b",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 11 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 64,
+      "source_artifact": "media/010.png",
+      "source_artifact_sha256": "4d3c659b98902a2de74cd7a44456d7bb2f3de6b3051e7811b6f6c5615571416b",
+      "source_position": 11,
+      "title": "Why Software Factories Fail — embedded media 11"
+    },
+    {
+      "artifact_path": "media/011.png",
+      "artifact_sha256": "123c8cbb4d2d9cb91a445f2763cbac70c413b15c6cc3dfa977d7626c562df31d",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080400857410187264",
+      "heading": "",
+      "id": "raster-011-123c8cbb",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 12 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 64,
+      "source_artifact": "media/011.png",
+      "source_artifact_sha256": "123c8cbb4d2d9cb91a445f2763cbac70c413b15c6cc3dfa977d7626c562df31d",
+      "source_position": 12,
+      "title": "Why Software Factories Fail — embedded media 12"
+    },
+    {
+      "artifact_path": "media/012.png",
+      "artifact_sha256": "b7a0a7ce68c0625145fef8a678807d7df1adcf5cc142c5e6dc4760db238747f4",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080400911281819648",
+      "heading": "",
+      "id": "raster-012-b7a0a7ce",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 13 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 64,
+      "source_artifact": "media/012.png",
+      "source_artifact_sha256": "b7a0a7ce68c0625145fef8a678807d7df1adcf5cc142c5e6dc4760db238747f4",
+      "source_position": 13,
+      "title": "Why Software Factories Fail — embedded media 13"
+    },
+    {
+      "artifact_path": "media/013.png",
+      "artifact_sha256": "74cb7fb72191c9343dd8c8f30d81a7e26f086538c415e3e78c2e5a2c56ec7ce7",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080400944983117824",
+      "heading": "",
+      "id": "raster-013-74cb7fb7",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 14 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 64,
+      "source_artifact": "media/013.png",
+      "source_artifact_sha256": "74cb7fb72191c9343dd8c8f30d81a7e26f086538c415e3e78c2e5a2c56ec7ce7",
+      "source_position": 14,
+      "title": "Why Software Factories Fail — embedded media 14"
+    },
+    {
+      "artifact_path": "media/014.png",
+      "artifact_sha256": "802913b035bd26b1e1f2e53190dc5699462985ebf4edf47cc16aee420698b1df",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080406575840399360",
+      "heading": "",
+      "id": "raster-014-802913b0",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 15 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 64,
+      "source_artifact": "media/014.png",
+      "source_artifact_sha256": "802913b035bd26b1e1f2e53190dc5699462985ebf4edf47cc16aee420698b1df",
+      "source_position": 15,
+      "title": "Why Software Factories Fail — embedded media 15"
+    },
+    {
+      "artifact_path": "media/015.png",
+      "artifact_sha256": "b802c54356d9d52660c2b4e7a4185685efb96abaa123fcdc409e0df3c2eb1bce",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080401072330588160",
+      "heading": "",
+      "id": "raster-015-b802c543",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 16 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 64,
+      "source_artifact": "media/015.png",
+      "source_artifact_sha256": "b802c54356d9d52660c2b4e7a4185685efb96abaa123fcdc409e0df3c2eb1bce",
+      "source_position": 16,
+      "title": "Why Software Factories Fail — embedded media 16"
+    },
+    {
+      "artifact_path": "media/016.png",
+      "artifact_sha256": "8a63510d3cd54f1eac55b2e231016742b15735f4f6df029bad96ebfe9005e6bd",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080401154996056064",
+      "heading": "",
+      "id": "raster-016-8a63510d",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 17 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 64,
+      "source_artifact": "media/016.png",
+      "source_artifact_sha256": "8a63510d3cd54f1eac55b2e231016742b15735f4f6df029bad96ebfe9005e6bd",
+      "source_position": 17,
+      "title": "Why Software Factories Fail — embedded media 17"
+    },
+    {
+      "artifact_path": "media/017.png",
+      "artifact_sha256": "f273af85b02bfde57e807370bf0873c5aa93fa7515b7e8afe99388c80070583a",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080401202555318272",
+      "heading": "",
+      "id": "raster-017-f273af85",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 18 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 64,
+      "source_artifact": "media/017.png",
+      "source_artifact_sha256": "f273af85b02bfde57e807370bf0873c5aa93fa7515b7e8afe99388c80070583a",
+      "source_position": 18,
+      "title": "Why Software Factories Fail — embedded media 18"
+    },
+    {
+      "artifact_path": "media/018.png",
+      "artifact_sha256": "3dbc358147bef0672c417d90f215c026586a153a3a8babc24ee364311883896f",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080404587455131648",
+      "heading": "",
+      "id": "raster-018-3dbc3581",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 20 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 64,
+      "source_artifact": "media/018.png",
+      "source_artifact_sha256": "3dbc358147bef0672c417d90f215c026586a153a3a8babc24ee364311883896f",
+      "source_position": 20,
+      "title": "Why Software Factories Fail — embedded media 20"
+    },
+    {
+      "artifact_path": "media/019.png",
+      "artifact_sha256": "3e3e62e8d49a2266aacacbfd80ec0ace12ce546d7ab050d64e42850881ea8406",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080404635223990272",
+      "heading": "",
+      "id": "raster-019-3e3e62e8",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 21 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 64,
+      "source_artifact": "media/019.png",
+      "source_artifact_sha256": "3e3e62e8d49a2266aacacbfd80ec0ace12ce546d7ab050d64e42850881ea8406",
+      "source_position": 21,
+      "title": "Why Software Factories Fail — embedded media 21"
+    },
+    {
+      "artifact_path": "media/020.png",
+      "artifact_sha256": "58e6fd99a211deacef74852c2f23ec7daec46c89118575c9147898cced724ce2",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080404688688848896",
+      "heading": "",
+      "id": "raster-020-58e6fd99",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 22 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 64,
+      "source_artifact": "media/020.png",
+      "source_artifact_sha256": "58e6fd99a211deacef74852c2f23ec7daec46c89118575c9147898cced724ce2",
+      "source_position": 22,
+      "title": "Why Software Factories Fail — embedded media 22"
+    },
+    {
+      "artifact_path": "media/021.png",
+      "artifact_sha256": "52a1d085d8cdd64bac1351d585d8f937c52beb2243475ac0b6cc424171b837a7",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080404876673372160",
+      "heading": "",
+      "id": "raster-021-52a1d085",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 23 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 64,
+      "source_artifact": "media/021.png",
+      "source_artifact_sha256": "52a1d085d8cdd64bac1351d585d8f937c52beb2243475ac0b6cc424171b837a7",
+      "source_position": 23,
+      "title": "Why Software Factories Fail — embedded media 23"
+    },
+    {
+      "artifact_path": "media/022.png",
+      "artifact_sha256": "dc4f62fde15aa10a5e8bd160499eef57e9835f357ee5614ccf443b9949442dba",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080405222720249856",
+      "heading": "",
+      "id": "raster-022-dc4f62fd",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 24 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 64,
+      "source_artifact": "media/022.png",
+      "source_artifact_sha256": "dc4f62fde15aa10a5e8bd160499eef57e9835f357ee5614ccf443b9949442dba",
+      "source_position": 24,
+      "title": "Why Software Factories Fail — embedded media 24"
+    },
+    {
+      "artifact_path": "media/023.png",
+      "artifact_sha256": "1f4a8508106f5965e2c39be1af7941473d3e0e12267aca5e2c52992995a3b3a8",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080405395470979072",
+      "heading": "",
+      "id": "raster-023-1f4a8508",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 25 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 64,
+      "source_artifact": "media/023.png",
+      "source_artifact_sha256": "1f4a8508106f5965e2c39be1af7941473d3e0e12267aca5e2c52992995a3b3a8",
+      "source_position": 25,
+      "title": "Why Software Factories Fail — embedded media 25"
+    },
+    {
+      "artifact_path": "media/024.png",
+      "artifact_sha256": "d1b313a80b8502e107b1fcb38335b5b0530a00fa2ce8bb86961ef0ddc93039f5",
+      "aspect_ratio": 1.335113,
+      "criteria": [
+        "important",
+        "useful"
+      ],
+      "decision": "reject",
+      "description": "Authenticated Chrome rendering of https://x.com/dexhorthy/article/2080697380379427275/media/2080405496180416512",
+      "heading": "",
+      "id": "raster-024-d1b313a8",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 749,
+      "pixel_width": 1000,
+      "rationale": "Why Software Factories Fail — embedded media 26 is a source-referenced, print-resolvable visual explanation.",
+      "rejection_reasons": [
+        "lower_editorial_impact_than_selected_candidates"
+      ],
+      "score": 64,
+      "source_artifact": "media/024.png",
+      "source_artifact_sha256": "d1b313a80b8502e107b1fcb38335b5b0530a00fa2ce8bb86961ef0ddc93039f5",
+      "source_position": 26,
+      "title": "Why Software Factories Fail — embedded media 26"
+    },
+    {
+      "artifact_path": "media/025.png",
+      "artifact_sha256": "4be57fb2c2d1cfdf3df1cb962fc3e84bc3c8fccfee93ca41e3f682f96efe9877",
+      "aspect_ratio": 1.784722,
+      "criteria": [],
+      "decision": "reject",
+      "description": "Authenticated Chrome crop of embedded video thumbnail.",
+      "heading": "",
+      "id": "raster-025-4be57fb2",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 288,
+      "pixel_width": 514,
+      "rationale": "",
+      "rejection_reasons": [
+        "insufficient_print_resolution"
+      ],
+      "score": 0,
+      "source_artifact": "media/025.png",
+      "source_artifact_sha256": "4be57fb2c2d1cfdf3df1cb962fc3e84bc3c8fccfee93ca41e3f682f96efe9877",
+      "source_position": 4,
+      "title": "Why Software Factories Fail — embedded media 4"
+    },
+    {
+      "artifact_path": "media/026.png",
+      "artifact_sha256": "f533d36b171d361ba45dc08b6c9562a0d821c7aadc3cb1966762472747eddbbc",
+      "aspect_ratio": 1.784722,
+      "criteria": [],
+      "decision": "reject",
+      "description": "Authenticated Chrome crop of embedded video thumbnail.",
+      "heading": "",
+      "id": "raster-026-f533d36b",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 288,
+      "pixel_width": 514,
+      "rationale": "",
+      "rejection_reasons": [
+        "insufficient_print_resolution"
+      ],
+      "score": 0,
+      "source_artifact": "media/026.png",
+      "source_artifact_sha256": "f533d36b171d361ba45dc08b6c9562a0d821c7aadc3cb1966762472747eddbbc",
+      "source_position": 19,
+      "title": "Why Software Factories Fail — embedded media 19"
+    }
+  ],
+  "curator": "magazine-compiler/automatic-media-curator",
+  "input_sha256": "29a1d96353916203c655b0e4d321c596f0ed68b5c5995cf8da2401c4c7527f87",
+  "policy_version": "editorial-impact-v4",
+  "schema_version": 1,
+  "selected": [
+    "raster-002-6b1bf860",
+    "raster-003-3df2d1b7",
+    "raster-004-557cbba8"
+  ],
+  "selection_limit": 3,
+  "source_id": "why-software-factories-fail-f53679d7"
+}

@@ -1,0 +1,160 @@
+schema_version: 1
+revision_kind: source_capture
+logical_id: why-software-factories-fail-benchmarking-the-new-f1d9c04a
+revision_id: rev_20260803T052536962Z_vk42rchyyulj
+created_at: 2026-08-03T05:25:36.962Z
+parent_revision_id: null
+migration_id: legacy-four-root-source-2
+files:
+  - path: raw/media/9dd8f8028416a980a0a6e3d38ba4f20acb889d9d62c2c11dbd4cb059bd2756ef.curation.json
+    media_type: application/json
+    sha256: sha256:29acf5b0e9c69a0f659ff3aec7ec751db8d8adefc30d2a352dd0e7e70953e3cc
+    size_bytes: 1242
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-benchmarking-the-new-f1d9c04a/media/9dd8f8028416a980a0a6e3d38ba4f20acb889d9d62c2c11dbd4cb059bd2756ef.curation.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 34d3538c7b65afec864a4c94b8e863d4d4f499dc
+  - path: raw/media/9dd8f8028416a980a0a6e3d38ba4f20acb889d9d62c2c11dbd4cb059bd2756ef.json
+    media_type: application/json
+    sha256: sha256:1890f9e410ea41d3b3120878c84a290ea5792206420499c63d2a9ca281736537
+    size_bytes: 828
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-benchmarking-the-new-f1d9c04a/media/9dd8f8028416a980a0a6e3d38ba4f20acb889d9d62c2c11dbd4cb059bd2756ef.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 58b74fdf06ac288b20b68e85d39276fb1a6d5d25
+  - path: raw/media/ad174081d24d94f7a7e20962fc352c2989e87760dd2d788f6a5f55b66771dbd4.curation.json
+    media_type: application/json
+    sha256: sha256:0332b49574b144138d7ffd4f40c447b863b2bfd9823fcf9db7291fb7022c2e28
+    size_bytes: 1250
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-benchmarking-the-new-f1d9c04a/media/ad174081d24d94f7a7e20962fc352c2989e87760dd2d788f6a5f55b66771dbd4.curation.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: e0840232467b5d9391268bd0728ed46c868d2a91
+  - path: raw/media/ad174081d24d94f7a7e20962fc352c2989e87760dd2d788f6a5f55b66771dbd4.json
+    media_type: application/json
+    sha256: sha256:cf5d8758db1214543d59c715f1a462a09aab5968f9281bc24518b5e75387ddf0
+    size_bytes: 830
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-benchmarking-the-new-f1d9c04a/media/ad174081d24d94f7a7e20962fc352c2989e87760dd2d788f6a5f55b66771dbd4.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 37ab829e9ff7d9460160b6304abee611e7b484fa
+  - path: raw/media/cdfa48fa02780b5af421b6c07a22d462025ad79063995a5768fe5813aa0bef61.curation.json
+    media_type: application/json
+    sha256: sha256:4b2ebad770bb2b5dc282c6255a99f3bba656aaddac9dd23b8c23b0aca13aa238
+    size_bytes: 2728
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-benchmarking-the-new-f1d9c04a/media/cdfa48fa02780b5af421b6c07a22d462025ad79063995a5768fe5813aa0bef61.curation.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: b3579e607b4456341d9f67edc2a32c6f7748a796
+  - path: raw/media/cdfa48fa02780b5af421b6c07a22d462025ad79063995a5768fe5813aa0bef61.json
+    media_type: application/json
+    sha256: sha256:d7683ca84e07117c3ea7ffd034954def754b9f7fa61d76f0a01545eeceedaaab
+    size_bytes: 2914
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-benchmarking-the-new-f1d9c04a/media/cdfa48fa02780b5af421b6c07a22d462025ad79063995a5768fe5813aa0bef61.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: b1691542fb0a656baabaa91aa4b56b8873eea286
+  - path: raw/raw/9dd8f8028416a980a0a6e3d38ba4f20acb889d9d62c2c11dbd4cb059bd2756ef/artifacts/page.pdf
+    media_type: application/pdf
+    sha256: sha256:3a1a952c5d3a1871944158d0893ae3ca22726408c20480cb7dd77315352b83ae
+    size_bytes: 1984570
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-benchmarking-the-new-f1d9c04a/raw/9dd8f8028416a980a0a6e3d38ba4f20acb889d9d62c2c11dbd4cb059bd2756ef/artifacts/page.pdf
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 7f62f1056f9434b722d79fd4f8bd2b4b1418dc62
+  - path: raw/raw/9dd8f8028416a980a0a6e3d38ba4f20acb889d9d62c2c11dbd4cb059bd2756ef/artifacts/page.png
+    media_type: image/png
+    sha256: sha256:2b28c36dd6d963b7a8883a56784081502a3d3b703bf5a89a3cc8326023015721
+    size_bytes: 3449649
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-benchmarking-the-new-f1d9c04a/raw/9dd8f8028416a980a0a6e3d38ba4f20acb889d9d62c2c11dbd4cb059bd2756ef/artifacts/page.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 3ecd927e06639d37c1cb250821283ad986e82eb5
+  - path: raw/raw/9dd8f8028416a980a0a6e3d38ba4f20acb889d9d62c2c11dbd4cb059bd2756ef/artifacts/page.txt
+    media_type: text/plain
+    sha256: sha256:801f5c1f6e31c8299b09967e957eee0a7c6b63cc25c8dcaad1897689e31c961a
+    size_bytes: 29895
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-benchmarking-the-new-f1d9c04a/raw/9dd8f8028416a980a0a6e3d38ba4f20acb889d9d62c2c11dbd4cb059bd2756ef/artifacts/page.txt
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 7a08c1c3d7477261034a4322e199810a021e9b1d
+  - path: raw/raw/9dd8f8028416a980a0a6e3d38ba4f20acb889d9d62c2c11dbd4cb059bd2756ef/manifest.json
+    media_type: application/json
+    sha256: sha256:320a697890cbee5449d0c17e6c34473b4a45da918cccf1b0ac71abc19a14c55f
+    size_bytes: 950
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-benchmarking-the-new-f1d9c04a/raw/9dd8f8028416a980a0a6e3d38ba4f20acb889d9d62c2c11dbd4cb059bd2756ef/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 7552355f2a3f5e245376429ee4ab89d7e95bbfe2
+  - path: raw/raw/ad174081d24d94f7a7e20962fc352c2989e87760dd2d788f6a5f55b66771dbd4/artifacts/article.pdf
+    media_type: application/pdf
+    sha256: sha256:be0301b708de33607772a79e44f33d153c1202e059f8877d0d02e602a4d4e5a5
+    size_bytes: 1568209
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-benchmarking-the-new-f1d9c04a/raw/ad174081d24d94f7a7e20962fc352c2989e87760dd2d788f6a5f55b66771dbd4/artifacts/article.pdf
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 084ab3889a74d1f2487d8143c7e5115a5fedefb2
+  - path: raw/raw/ad174081d24d94f7a7e20962fc352c2989e87760dd2d788f6a5f55b66771dbd4/artifacts/article.png
+    media_type: image/png
+    sha256: sha256:86728c9d3037d0b7594ac28b2db9a1f762a9723aeba9cc7f15308d4ec1d702cd
+    size_bytes: 4429308
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-benchmarking-the-new-f1d9c04a/raw/ad174081d24d94f7a7e20962fc352c2989e87760dd2d788f6a5f55b66771dbd4/artifacts/article.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 30d0e428e52c4390ba925b80696f89333a1f781a
+  - path: raw/raw/ad174081d24d94f7a7e20962fc352c2989e87760dd2d788f6a5f55b66771dbd4/artifacts/article.txt
+    media_type: text/plain
+    sha256: sha256:47ba9dbfff2df911a63363e5ec41c4deba7f4b29583eab89bbc94a979ea4c897
+    size_bytes: 21205
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-benchmarking-the-new-f1d9c04a/raw/ad174081d24d94f7a7e20962fc352c2989e87760dd2d788f6a5f55b66771dbd4/artifacts/article.txt
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 05c2af2566b98788dbbaaefc77342e7807fe8210
+  - path: raw/raw/ad174081d24d94f7a7e20962fc352c2989e87760dd2d788f6a5f55b66771dbd4/manifest.json
+    media_type: application/json
+    sha256: sha256:9d19fbfeadb6c89434f9175ccd0559b62a8efdbb694d1ca720f35a6c56bf7051
+    size_bytes: 961
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-benchmarking-the-new-f1d9c04a/raw/ad174081d24d94f7a7e20962fc352c2989e87760dd2d788f6a5f55b66771dbd4/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: a47e362fd2cd975ccbf9c8b1cf0d9a9e791139e6
+  - path: raw/raw/cdfa48fa02780b5af421b6c07a22d462025ad79063995a5768fe5813aa0bef61/artifacts/media-manifest.json
+    media_type: application/json
+    sha256: sha256:315580584ac2127366c9b47412d92e2195f2e41a5a997e5fe6e860c45d0b22df
+    size_bytes: 1390
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-benchmarking-the-new-f1d9c04a/raw/cdfa48fa02780b5af421b6c07a22d462025ad79063995a5768fe5813aa0bef61/artifacts/media-manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: ad80f1be69641e11776d76f8107c6f35c6676738
+  - path: raw/raw/cdfa48fa02780b5af421b6c07a22d462025ad79063995a5768fe5813aa0bef61/artifacts/media/handoff-experiment.png
+    media_type: image/png
+    sha256: sha256:cce088adc0cc4d497ef2d88d727908993682e9b8764419c8273bd4ec75e062d7
+    size_bytes: 129984
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-benchmarking-the-new-f1d9c04a/raw/cdfa48fa02780b5af421b6c07a22d462025ad79063995a5768fe5813aa0bef61/artifacts/media/handoff-experiment.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: d321fed543323fd095d248c59d285a867a0047cf
+  - path: raw/raw/cdfa48fa02780b5af421b6c07a22d462025ad79063995a5768fe5813aa0bef61/artifacts/media/strict-pass-rate.jpg
+    media_type: image/jpeg
+    sha256: sha256:c6471a04dd3568ff0659821ae98f68417054c802fd74224b90e8fc19612b42e1
+    size_bytes: 42738
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-benchmarking-the-new-f1d9c04a/raw/cdfa48fa02780b5af421b6c07a22d462025ad79063995a5768fe5813aa0bef61/artifacts/media/strict-pass-rate.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 6667aacf1e3048f7ae27de28dbed50b95bbf8a5c
+  - path: raw/raw/cdfa48fa02780b5af421b6c07a22d462025ad79063995a5768fe5813aa0bef61/manifest.json
+    media_type: application/json
+    sha256: sha256:e21b9dcc3e267f039e9b635f166859c8d7298e76935f54581f112d14ddd316c5
+    size_bytes: 976
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-benchmarking-the-new-f1d9c04a/raw/cdfa48fa02780b5af421b6c07a22d462025ad79063995a5768fe5813aa0bef61/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 889167e22b24090620c44c6c5fe25d389a0d2594
+  - path: raw/record.yaml
+    media_type: application/yaml
+    sha256: sha256:eac79c18dc868cb1e9a9977f23d554385ac7e4d749cb4050c9c23a859477023d
+    size_bytes: 3690
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-benchmarking-the-new-f1d9c04a/record.yaml
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: a45141cce37a0ae96d99697863f42dd8ab1451bd

@@ -1,0 +1,28 @@
+{
+  "artifact_count": 3,
+  "artifacts": [
+    {
+      "bytes": 129984,
+      "path": "media/handoff-experiment.png",
+      "sha256": "cce088adc0cc4d497ef2d88d727908993682e9b8764419c8273bd4ec75e062d7"
+    },
+    {
+      "bytes": 42738,
+      "path": "media/strict-pass-rate.jpg",
+      "sha256": "c6471a04dd3568ff0659821ae98f68417054c802fd74224b90e8fc19612b42e1"
+    },
+    {
+      "bytes": 1390,
+      "path": "media-manifest.json",
+      "sha256": "315580584ac2127366c9b47412d92e2195f2e41a5a997e5fe6e860c45d0b22df"
+    }
+  ],
+  "bundle_sha256": "cdfa48fa02780b5af421b6c07a22d462025ad79063995a5768fe5813aa0bef61",
+  "byte_count": 174112,
+  "canonical_url": "https://x.com/dexhorthy/status/2081797628552270027",
+  "captured_at": "2026-07-27T21:53:30Z",
+  "method": "public_browser_source_ordered_media",
+  "schema_version": 1,
+  "source_id": "why-software-factories-fail-benchmarking-the-new-f1d9c04a",
+  "submitted_url": "https://x.com/dexhorthy/status/2081797628552270027"
+}

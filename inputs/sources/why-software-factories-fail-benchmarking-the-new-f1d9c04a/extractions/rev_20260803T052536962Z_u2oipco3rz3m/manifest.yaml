@@ -1,0 +1,16 @@
+schema_version: 1
+revision_kind: source_extraction
+logical_id: why-software-factories-fail-benchmarking-the-new-f1d9c04a
+revision_id: rev_20260803T052536962Z_u2oipco3rz3m
+created_at: 2026-08-03T05:25:36.962Z
+parent_revision_id: null
+migration_id: legacy-four-root-source-2
+files:
+  - path: extracted.md
+    media_type: text/markdown
+    sha256: sha256:7ebb2f6cdb12540a413e088ab402302ea8f1cac84fdd6bb34f9e322535fb5ee3
+    size_bytes: 21508
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-benchmarking-the-new-f1d9c04a/extracted.md
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: b787e87db5e4344bfa39869d1e077351406f9e5d

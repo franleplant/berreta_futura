@@ -1,0 +1,312 @@
+schema_version: 1
+revision_kind: source_capture
+logical_id: why-software-factories-fail-turning-the-lights-b-1312d1ad
+revision_id: rev_20260803T052536962Z_6uwm4hxtkrts
+created_at: 2026-08-03T05:25:36.962Z
+parent_revision_id: null
+migration_id: legacy-four-root-source-2
+files:
+  - path: raw/media/02-lights-on-factory.jpg
+    media_type: image/jpeg
+    sha256: sha256:da05c49361d1d56bc7a2e4c7ae09ca8253dd60dfd8a8dc0a2f32960b08ac2dae
+    size_bytes: 406608
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/media/02-lights-on-factory.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: bd862c9a9d0ec7ff9f2bdb87f90c335b23f80e22
+  - path: raw/media/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d.curation.json
+    media_type: application/json
+    sha256: sha256:e9e9dc4c483cb3be3d75fe50a0ab058aed3bc1894d39fa591596cc95e21a5cad
+    size_bytes: 7917
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/media/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d.curation.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 5d237a7651fe0047d52dc3195033fe22af4100ec
+  - path: raw/media/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d.json
+    media_type: application/json
+    sha256: sha256:643a9d77bdee211a0e88aca1f7c0eb5ffe16fc9ed5b9bda154c3e9078d0d6afb
+    size_bytes: 4502
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/media/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 8052bc16218be797205e9dc32c10b5f8a2271bf9
+  - path: raw/media/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3.curation.json
+    media_type: application/json
+    sha256: sha256:a808a31fbe18e29ea400770b2c9b59e518ee25a4ac092249adf3fdfce5042cc8
+    size_bytes: 8708
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/media/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3.curation.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: e42ab01459576a78c9423d0b8e13ae93af8b8f27
+  - path: raw/media/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3.json
+    media_type: application/json
+    sha256: sha256:d8860383dca01cfc311ac52cb19b894b03c12631cd6ffe34d51c3739529371a0
+    size_bytes: 4867
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/media/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 6c67c2688cab0beb6a3c2545a465fe9e3c2b0a49
+  - path: raw/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/article.txt
+    media_type: text/plain
+    sha256: sha256:e2b15724ecd99d724de29cd01cb5920ff35ead723a0da2e53629304307524939
+    size_bytes: 13509
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/article.txt
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 34dc312396e30eaa86e1b110f41fa5baff5b5ed4
+  - path: raw/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/authenticated-x-article.txt
+    media_type: text/plain
+    sha256: sha256:698602b2c0eb35e56a318343c297e1bd9d2b5001190762b8e433b242ebbd69ad
+    size_bytes: 13631
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/authenticated-x-article.txt
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 7a852e691ccd596aef5a5b4bc6c8434536b355f2
+  - path: raw/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/links.json
+    media_type: application/json
+    sha256: sha256:15e2106126bec8c9471c6ab19fee1faf170e2d1285fb9a813a5aa7500173cf8f
+    size_bytes: 10365
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/links.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 0c433f22ef9e111efdcbeea3723e1e4b6dc02bbf
+  - path: raw/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/media-01.png
+    media_type: image/png
+    sha256: sha256:420a48b266baf195a51c932b2c96a2dac92d4540dbe5abb3f60c2c460c7641c1
+    size_bytes: 55845
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/media-01.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 0a0e7d6eb658a564b99e5e7ff7846fdc3628cd0a
+  - path: raw/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/media-02.png
+    media_type: image/png
+    sha256: sha256:1ce9e59f424c7b8a554d3fb9cb2a37fd2fa25b1e0da20b4e3bc550d62199221e
+    size_bytes: 72615
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/media-02.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 4ddfcea03d28b3601f3c09d620ea53d9f3d80808
+  - path: raw/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/media-03.png
+    media_type: image/png
+    sha256: sha256:ddd5e92abf71b85f7f848b7824a8f4944ef52b2b00a89126246756c460cbe33b
+    size_bytes: 53318
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/media-03.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 51593f385755607e012a570cd36043c98d1b7142
+  - path: raw/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/media-04.png
+    media_type: image/png
+    sha256: sha256:437e32f942da287541e64861a0b9bbb33de1e4d64f2cf0495d0c0aea12839bee
+    size_bytes: 41845
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/media-04.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: d5b10ba7cfe485e0bcf5841ae08ab49173cd85c5
+  - path: raw/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/media-05.png
+    media_type: image/png
+    sha256: sha256:b8ee31ca87037d67e7ba925cd09d0e08d5c90214608d2d9a3c7fc3e8ad1aae86
+    size_bytes: 36826
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/media-05.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 90d0b4d93a5d565a396b57aeee95601ec08dab2c
+  - path: raw/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/media-06.png
+    media_type: image/png
+    sha256: sha256:49e2cd5db2a5a0b97d12960e531e3d5ee7c54343d2f737d0ac5ba6eac8aac99b
+    size_bytes: 35078
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/media-06.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: f03e6906c07e9ad06a7a11f59d5686897e0959b0
+  - path: raw/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/media-07.png
+    media_type: image/png
+    sha256: sha256:122fdd9cf6a07e6f7dbae77974e8ea6b9f368726d89dc705a2672164db8ad809
+    size_bytes: 42924
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/media-07.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: c059e525426198059f2ee7c00d38191bf9e0f28b
+  - path: raw/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/media-08.png
+    media_type: image/png
+    sha256: sha256:5ab2004612348b4f99a48aaa04b0809c1aef84f1d4d07e409eeba4ea6b6cd0c8
+    size_bytes: 33404
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/media-08.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 52e8d27deb7fd9004d0d26d9bb02e791272930b8
+  - path: raw/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/media-09-video-thumbnail.png
+    media_type: image/png
+    sha256: sha256:c5aa5a2ad8c0586ae96f44d354635b8ea570d7fa7824226cdc4ef192b2409954
+    size_bytes: 14824
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/media-09-video-thumbnail.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 525afa36f061a01da382d10c5e9f2e3c2bb515d9
+  - path: raw/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/media-10-video-thumbnail.png
+    media_type: image/png
+    sha256: sha256:4df6b965a4d8b5b6545862ccaef62d66a675bcd126b8aad9be56a89217c98a3e
+    size_bytes: 8149
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/media-10-video-thumbnail.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 6a2c8c7cc76c837f9b1fcf689ab0c423352705d5
+  - path: raw/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/media-manifest.json
+    media_type: application/json
+    sha256: sha256:650a3a7f00f590a275321f6585e7a07e70810dd50d4d4a246fbfcd0631ef9415
+    size_bytes: 3260
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/media-manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 8547a69fb3f6f3a83bab5a0a00e94de141ee4d02
+  - path: raw/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/observed-media.json
+    media_type: application/json
+    sha256: sha256:eb7a43f79fcba9f05c4ec83ba3600eba5c8ec508804e25ff2565b3be9ae826e2
+    size_bytes: 2711
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/artifacts/observed-media.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: b097a930fd28305ae9792936cfcc6cc0263d5a57
+  - path: raw/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/manifest.json
+    media_type: application/json
+    sha256: sha256:f0fd63772c0f0d1100a41b4983f11e9083479a095ec4e473c04eea7ccbc7f4da
+    size_bytes: 2802
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/3477ad11361bf5f4195e8d0273b3cb1530c5f658804e1397e2bc24f586165a0d/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 2cc1624c59ae6952e204e4c51a0b5fb3a17857b4
+  - path: raw/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/01-title-part-two.jpg
+    media_type: image/jpeg
+    sha256: sha256:796dfe0c66acb1353662a229a1e4f427aa5e2b012f09f8c1b613b46412ceebbe
+    size_bytes: 164287
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/01-title-part-two.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 7dd3149310da8bb8e7fa7171c76e45ba267c89c6
+  - path: raw/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/02-lights-on-factory.jpg
+    media_type: image/jpeg
+    sha256: sha256:da05c49361d1d56bc7a2e4c7ae09ca8253dd60dfd8a8dc0a2f32960b08ac2dae
+    size_bytes: 406608
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/02-lights-on-factory.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: bd862c9a9d0ec7ff9f2bdb87f90c335b23f80e22
+  - path: raw/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/03-system-architecture-sequence-diagram.jpg
+    media_type: image/jpeg
+    sha256: sha256:a2e8b307615e63ba2ca9a271e45c9f8cebac4076749a8420927c9e45dd3c0a34
+    size_bytes: 52552
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/03-system-architecture-sequence-diagram.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 79d49fd1ab9317ce4daeb1331a24a5cb4249e466
+  - path: raw/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/04-contract-endpoint-shapes.jpg
+    media_type: image/jpeg
+    sha256: sha256:f4e5f90891c341a726e9015006d0ac06debcc9f7677934bd7ac10b85bf2efc10
+    size_bytes: 62080
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/04-contract-endpoint-shapes.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 280d91e4a61d3805c82896ed1254e6dad90b721f
+  - path: raw/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/05-data-model-transformations.jpg
+    media_type: image/jpeg
+    sha256: sha256:ae86acb161389eb82f0f74b45425a8989b8a21f3408948ee1d3e8c1e782db0a9
+    size_bytes: 105770
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/05-data-model-transformations.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: bbd942f81a175bfb167136e23e116933a66b0a13
+  - path: raw/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/06-call-stack-tree.jpg
+    media_type: image/jpeg
+    sha256: sha256:b6ace701eba36715744a232b547688e98bb2fec8e53e9e53f97d94da3ac2c53f
+    size_bytes: 86683
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/06-call-stack-tree.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: c3beb585382910ef46ade2f2c18e284dc73f8cc0
+  - path: raw/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/07-file-tree-diff.jpg
+    media_type: image/jpeg
+    sha256: sha256:4a170f0efff5de6406ef0f39766d6493cbb988a6629de01a4d53ab10f9aad550
+    size_bytes: 132830
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/07-file-tree-diff.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: d8866b3f02c0097c28a3514c89c212a52eb646f2
+  - path: raw/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/08-types-method-signatures.jpg
+    media_type: image/jpeg
+    sha256: sha256:5a60c3509b95026f4253b8c84a2840c4ff4db3c2fc5e00cf2873070f2175bcc0
+    size_bytes: 133455
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/08-types-method-signatures.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: bb07c60260d55d9671e917ee1e3a61117608cc3a
+  - path: raw/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/09-horizontal-plan-video-still.jpg
+    media_type: image/jpeg
+    sha256: sha256:e3e2a3a96b7ae33b7b2526c92fc3f555d240190c7180af2d3b7f438ba45463ee
+    size_bytes: 5925
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/09-horizontal-plan-video-still.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 4e0c8e62497fa486ea759d2125f9c993a7d5fa07
+  - path: raw/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/10-vertical-slices-video-still.jpg
+    media_type: image/jpeg
+    sha256: sha256:e3e2a3a96b7ae33b7b2526c92fc3f555d240190c7180af2d3b7f438ba45463ee
+    size_bytes: 5925
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/10-vertical-slices-video-still.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 4e0c8e62497fa486ea759d2125f9c993a7d5fa07
+  - path: raw/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/article.txt
+    media_type: text/plain
+    sha256: sha256:e2b15724ecd99d724de29cd01cb5920ff35ead723a0da2e53629304307524939
+    size_bytes: 13509
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/article.txt
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 34dc312396e30eaa86e1b110f41fa5baff5b5ed4
+  - path: raw/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/authenticated-x-article.txt
+    media_type: text/plain
+    sha256: sha256:698602b2c0eb35e56a318343c297e1bd9d2b5001190762b8e433b242ebbd69ad
+    size_bytes: 13631
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/authenticated-x-article.txt
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 7a852e691ccd596aef5a5b4bc6c8434536b355f2
+  - path: raw/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/links.json
+    media_type: application/json
+    sha256: sha256:15e2106126bec8c9471c6ab19fee1faf170e2d1285fb9a813a5aa7500173cf8f
+    size_bytes: 10365
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/links.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 0c433f22ef9e111efdcbeea3723e1e4b6dc02bbf
+  - path: raw/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/media-context.json
+    media_type: application/json
+    sha256: sha256:d0b1839edc8d1e32020fb44476ceb67b632e99de170387f4794349a3dbba40c2
+    size_bytes: 1746
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/media-context.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 7e4c43c2eeefdfb7668f734c3965e9a2b90e41ee
+  - path: raw/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/observed-media.json
+    media_type: application/json
+    sha256: sha256:eb7a43f79fcba9f05c4ec83ba3600eba5c8ec508804e25ff2565b3be9ae826e2
+    size_bytes: 2711
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/artifacts/observed-media.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: b097a930fd28305ae9792936cfcc6cc0263d5a57
+  - path: raw/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/manifest.json
+    media_type: application/json
+    sha256: sha256:4075d035292f770ee2568435731b2b259263f1ca19d472924eb6f6d3d05e6f9e
+    size_bytes: 2924
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/raw/570a376a03e24be8a47b521121aac229e5b6a7006515dee855adaafff41ceab3/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: fff302e50530117a0723da5c9b0e2cbbf3e83783
+  - path: raw/record.yaml
+    media_type: application/yaml
+    sha256: sha256:013e60d844f9f894380fdb5d39cf776791301026f746c9322b81569da800c3df
+    size_bytes: 2961
+    legacy_source:
+      repositoryPath: library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/record.yaml
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 580df7f1c508f395995d87d6bce625f26dd905c8
