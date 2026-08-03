@@ -1,0 +1,28 @@
+{
+  "artifact_count": 3,
+  "artifacts": [
+    {
+      "bytes": 274784,
+      "path": "artifacts/cost-by-model-mix-light.png",
+      "sha256": "a065638cc30cf92172ff61d4a389b4409be1b7cb425fbd4c7928c15ad2c740ac"
+    },
+    {
+      "bytes": 1116,
+      "path": "artifacts/media-manifest.json",
+      "sha256": "0655ed344d4e5f2f5cd71b3286ea782fca4c03fcbc148f4d99d4271258b22f87"
+    },
+    {
+      "bytes": 380546,
+      "path": "artifacts/task-tree-light.png",
+      "sha256": "c12295d450c03fca0862879826d12999fdd1462e0de5da137b7ead6dd87b99ba"
+    }
+  ],
+  "bundle_sha256": "7449812a5c40bed9e8fcc78d54d23dfb9e24955832927e6a1da30c8a698e4d7f",
+  "byte_count": 656446,
+  "canonical_url": "https://cursor.com/blog/agent-swarm-model-economics",
+  "captured_at": "2026-07-21T19:03:51Z",
+  "method": "authenticated_chrome_page_assets_light_print_exports",
+  "schema_version": 1,
+  "source_id": "agent-swarms-and-the-new-model-economics-8b346f57",
+  "submitted_url": "https://cursor.com/blog/agent-swarm-model-economics"
+}

@@ -1,0 +1,33 @@
+{
+  "artifact_count": 4,
+  "artifacts": [
+    {
+      "bytes": 417,
+      "path": "article.txt",
+      "sha256": "d60e51eca278f81f1eddaa0a0979c9f9f8daaeb1c4b557e1c3b4d1cefdaf0352"
+    },
+    {
+      "bytes": 1125,
+      "path": "embedded-video-thumbnail.png",
+      "sha256": "04b56bde316f6ce9699e77fbb1bd5c85430f7093c693ad07d43bd7c8977038fa"
+    },
+    {
+      "bytes": 608,
+      "path": "links.json",
+      "sha256": "595dc5612032ff836080f7a128923757f4c0670003a545646b28f4989ecd9507"
+    },
+    {
+      "bytes": 456,
+      "path": "media-manifest.json",
+      "sha256": "dc4558bcc0140c013d151ee17844d514e3e95c1d0b8475a1392e870c0b77e404"
+    }
+  ],
+  "bundle_sha256": "98b41281cc44fd93754c2df85cafd40cbc5ab798054dec01d9446a1feb1ed529",
+  "byte_count": 2606,
+  "canonical_url": "https://x.com/DocumentingBTC/status/2081334299614224420",
+  "captured_at": "2026-07-26T22:23:15Z",
+  "method": "authenticated_browser_text_links_and_archived_video_thumbnail",
+  "schema_version": 1,
+  "source_id": "buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e",
+  "submitted_url": "https://x.com/DocumentingBTC/status/2081334299614224420"
+}

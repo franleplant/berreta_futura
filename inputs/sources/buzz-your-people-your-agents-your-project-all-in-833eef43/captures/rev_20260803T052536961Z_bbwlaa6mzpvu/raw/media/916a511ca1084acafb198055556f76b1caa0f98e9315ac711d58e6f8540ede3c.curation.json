@@ -1,0 +1,36 @@
+{
+  "bundle_sha256": "916a511ca1084acafb198055556f76b1caa0f98e9315ac711d58e6f8540ede3c",
+  "candidate_count": 1,
+  "candidates": [
+    {
+      "artifact_path": "page.png",
+      "artifact_sha256": "a09fd79b7958e8bcd105e39aa4c79277697db831e02ca7efadf47ec8d109d391",
+      "aspect_ratio": 0.36561,
+      "criteria": [],
+      "decision": "reject",
+      "description": "",
+      "heading": "",
+      "id": "raster-001-a09fd79b",
+      "mime_type": "image/png",
+      "origin": "raw_raster",
+      "pixel_height": 3501,
+      "pixel_width": 1280,
+      "rationale": "",
+      "rejection_reasons": [
+        "no_semantic_source_context"
+      ],
+      "score": 0,
+      "source_artifact": "page.png",
+      "source_artifact_sha256": "a09fd79b7958e8bcd105e39aa4c79277697db831e02ca7efadf47ec8d109d391",
+      "source_position": 1,
+      "title": "page"
+    }
+  ],
+  "curator": "magazine-compiler/automatic-media-curator",
+  "input_sha256": "1240e2d4f3596bf10b39c19576c426655902152f24e688246a23f77254691ebb",
+  "policy_version": "editorial-impact-v4",
+  "schema_version": 1,
+  "selected": [],
+  "selection_limit": 3,
+  "source_id": "buzz-your-people-your-agents-your-project-all-in-833eef43"
+}

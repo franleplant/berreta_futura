@@ -1,0 +1,43 @@
+schema_version: 1
+id: buzz-is-the-first-proper-multiplayer-agent-harne-49c061ac
+title: Buzz is the first proper multiplayer agent harness
+author: Justin Waldron
+canonical_url: https://x.com/jtwald/status/2081265718163919051
+submitted_url: https://x.com/jtwald/status/2081265718163919051
+captured_at: '2026-07-26T22:23:04Z'
+publication_date: '2026-07-26T06:29:49Z'
+kind: web
+status: captured
+content_hash: null
+raw_captures:
+- id: f646eba77111f87c4556e46f376e521fb01cd6ad340e605bf1335b216ab40311
+  path: raw/f646eba77111f87c4556e46f376e521fb01cd6ad340e605bf1335b216ab40311/manifest.json
+  method: authenticated_browser_text_links_and_media_inventory
+  captured_at: '2026-07-26T22:23:04Z'
+  artifact_count: 3
+  byte_count: 1242
+provenance:
+- relation: primary_material
+  url: https://buzz.xyz/
+- relation: primary_material
+  url: https://github.com/block/buzz
+rights:
+  status: unknown
+  intended_use: private_reference
+  attribution_required: true
+  public_reprint_allowed: false
+media_reviews:
+- capture_id: f646eba77111f87c4556e46f376e521fb01cd6ad340e605bf1335b216ab40311
+  status: no_media
+  assets: []
+  note: Automatic curation found no source images or substantive inline diagrams.
+metadata:
+  tags:
+  - agents
+  - buzz
+  - collaboration
+  - network-effects
+  synopsis: Justin Waldron argues that Buzz should be understood as a multiplayer agent harness rather
+    than a Slack clone, and that this coordination layer may capture value as models commoditize.
+notes: Authenticated X capture supplied for edition 003. The network-effects claim is attributed analysis,
+  not a verified product outcome.

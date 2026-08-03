@@ -1,0 +1,29 @@
+{
+  "artifact_count": 3,
+  "bundle_sha256": "1c8cbd943699dea76bc4cbd59908a456d1a600e299d9df491ade5dfd871cb50b",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 1,
+  "images": [
+    {
+      "animated": false,
+      "aspect_ratio": 2.116667,
+      "bytes": 105754,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/jpeg",
+      "path": "viewport.png",
+      "pixel_height": 900,
+      "pixel_width": 1905,
+      "sha256": "893b338b17eff74b8865985b5fff640c1f76dabe602d8c3d3b984b341315e42d"
+    }
+  ],
+  "local_references": [],
+  "missing_references": [],
+  "referenced_image_count": 0,
+  "schema_version": 1,
+  "source_id": "open-weights-and-american-ai-leadership-7aa6038f",
+  "unresolved_acquisition_references": []
+}

@@ -1,0 +1,37 @@
+{
+  "bundle_sha256": "1897cc7ea085e81c39fbccc5439f0d01dadcb505cc3b6867db8eb579d5df9a54",
+  "candidate_count": 1,
+  "candidates": [
+    {
+      "artifact_path": "repository.png",
+      "artifact_sha256": "e5a36a3d87c3ef833c1aaaf93a1859aaaa5f0ea976b3b913b87e01e4e3b8b2fd",
+      "aspect_ratio": 0.126745,
+      "criteria": [],
+      "decision": "reject",
+      "description": "",
+      "heading": "",
+      "id": "raster-001-e5a36a3d",
+      "mime_type": "image/png",
+      "origin": "raw_raster",
+      "pixel_height": 10099,
+      "pixel_width": 1280,
+      "rationale": "",
+      "rejection_reasons": [
+        "extreme_aspect_ratio_or_full_page_capture",
+        "no_semantic_source_context"
+      ],
+      "score": 0,
+      "source_artifact": "repository.png",
+      "source_artifact_sha256": "e5a36a3d87c3ef833c1aaaf93a1859aaaa5f0ea976b3b913b87e01e4e3b8b2fd",
+      "source_position": 1,
+      "title": "repository"
+    }
+  ],
+  "curator": "magazine-compiler/automatic-media-curator",
+  "input_sha256": "07fda13bb741bd12a6901885e5357eb93bb6b9eafa3d1534e2aac788027f0b5d",
+  "policy_version": "editorial-impact-v4",
+  "schema_version": 1,
+  "selected": [],
+  "selection_limit": 3,
+  "source_id": "buzz-a-workspace-where-humans-and-agents-build-t-59122470"
+}

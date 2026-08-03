@@ -1,0 +1,12 @@
+{
+  "bundle_sha256": "0a7d5595540a0982b1ac3fdf86570f9de87074b63a4e111fdcbc5f275334df76",
+  "candidate_count": 0,
+  "candidates": [],
+  "curator": "magazine-compiler/automatic-media-curator",
+  "input_sha256": "c33ac91ec93195b827bcde91d7302ac638b9a8d60ce30d8ca9bb3c699e0a0c94",
+  "policy_version": "editorial-impact-v4",
+  "schema_version": 1,
+  "selected": [],
+  "selection_limit": 3,
+  "source_id": "the-most-interesting-thing-about-buzz-is-shared--f0fc7406"
+}

@@ -1,0 +1,23 @@
+{
+  "artifact_count": 2,
+  "artifacts": [
+    {
+      "bytes": 1690646,
+      "path": "authenticated-x-article.jpg",
+      "sha256": "0ee01a4e882b39166cb6d19485aa6bfacd13792048d62409847f26d91e8ea71c"
+    },
+    {
+      "bytes": 25766,
+      "path": "authenticated-x-article.txt",
+      "sha256": "eab817ab801b22342bb4c967044173c7b0b0d8790c89762c5cffed5cdde29e5a"
+    }
+  ],
+  "bundle_sha256": "60b2ecf8fcb0a39bb63fde6e1a40965d5a1d228f9348178a4cc56d5a5956753c",
+  "byte_count": 1716412,
+  "canonical_url": "https://x.com/addyosmani/status/2079442194449232227",
+  "captured_at": "2026-07-21T14:51:59Z",
+  "method": "Authenticated Chrome X Article full-page capture and structured text; focus mode, sanitized, no session data.",
+  "schema_version": 1,
+  "source_id": "software-factories-light-and-dark-ef463732",
+  "submitted_url": "https://x.com/addyosmani/status/2079442194449232227"
+}

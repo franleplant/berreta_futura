@@ -1,0 +1,64 @@
+schema_version: 1
+revision_kind: source_capture
+logical_id: agentic-pods-taking-ai-beyond-engineering-at-ube-5b9382d4
+revision_id: rev_20260803T052536960Z_rpbk45y6pyry
+created_at: 2026-08-03T05:25:36.960Z
+parent_revision_id: null
+migration_id: legacy-four-root-source-1
+files:
+  - path: raw/media/4b17bfcd8501be249f8188989877e8b46b738645f3b83be62a9cce62526510ec.curation.json
+    media_type: application/json
+    sha256: sha256:9f58e169bf1f38a689c0712f9d76afac5b89966885eaffbde35a059a4a3b5b84
+    size_bytes: 1218
+    legacy_source:
+      repositoryPath: library/sources/agentic-pods-taking-ai-beyond-engineering-at-ube-5b9382d4/media/4b17bfcd8501be249f8188989877e8b46b738645f3b83be62a9cce62526510ec.curation.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 8c42ca876f8dd0d3b90f3d5e2cad593691389ac9
+  - path: raw/media/4b17bfcd8501be249f8188989877e8b46b738645f3b83be62a9cce62526510ec.json
+    media_type: application/json
+    sha256: sha256:9f7302757cbbed65a8e28bbc3d2acc6c5cac39fdabfe7bec89e2799139f74d39
+    size_bytes: 836
+    legacy_source:
+      repositoryPath: library/sources/agentic-pods-taking-ai-beyond-engineering-at-ube-5b9382d4/media/4b17bfcd8501be249f8188989877e8b46b738645f3b83be62a9cce62526510ec.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: f878c4404172b601626f443a7c970e02d070bfdc
+  - path: raw/raw/4b17bfcd8501be249f8188989877e8b46b738645f3b83be62a9cce62526510ec/artifacts/authenticated-x-post.txt
+    media_type: text/plain
+    sha256: sha256:162ce8cd9f6e51250bdf2f36aa71335701b5605f418e3e18400ab939539ddb55
+    size_bytes: 3127
+    legacy_source:
+      repositoryPath: library/sources/agentic-pods-taking-ai-beyond-engineering-at-ube-5b9382d4/raw/4b17bfcd8501be249f8188989877e8b46b738645f3b83be62a9cce62526510ec/artifacts/authenticated-x-post.txt
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 7505fec872a431849d21520602a3ee451b78dc1c
+  - path: raw/raw/4b17bfcd8501be249f8188989877e8b46b738645f3b83be62a9cce62526510ec/artifacts/submitted-post.pdf
+    media_type: application/pdf
+    sha256: sha256:18e64682d06f2435634a49dbdd54b63ccf482b1c5ecad5d08e3e4385cdf676e5
+    size_bytes: 325357
+    legacy_source:
+      repositoryPath: library/sources/agentic-pods-taking-ai-beyond-engineering-at-ube-5b9382d4/raw/4b17bfcd8501be249f8188989877e8b46b738645f3b83be62a9cce62526510ec/artifacts/submitted-post.pdf
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 72102c6aa9f6f4455c5d8b9e27b1c56982ed61f5
+  - path: raw/raw/4b17bfcd8501be249f8188989877e8b46b738645f3b83be62a9cce62526510ec/artifacts/submitted-post.png
+    media_type: image/png
+    sha256: sha256:5b7d4c8827efd1e2f2a5960c8f7713ee9232569dd222de14a3d3fce300faf775
+    size_bytes: 451080
+    legacy_source:
+      repositoryPath: library/sources/agentic-pods-taking-ai-beyond-engineering-at-ube-5b9382d4/raw/4b17bfcd8501be249f8188989877e8b46b738645f3b83be62a9cce62526510ec/artifacts/submitted-post.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 68bfaaa03000a4c7426263a5ca4ad0aa1289f14d
+  - path: raw/raw/4b17bfcd8501be249f8188989877e8b46b738645f3b83be62a9cce62526510ec/manifest.json
+    media_type: application/json
+    sha256: sha256:db675b2d065ad0dde00eeb4fe83f4abd34ed7526c804540ca665389f638c1600
+    size_bytes: 1067
+    legacy_source:
+      repositoryPath: library/sources/agentic-pods-taking-ai-beyond-engineering-at-ube-5b9382d4/raw/4b17bfcd8501be249f8188989877e8b46b738645f3b83be62a9cce62526510ec/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: ee9ea508091fef6ee033594b222a1286be53a04a
+  - path: raw/record.yaml
+    media_type: application/yaml
+    sha256: sha256:5d2d77ead1d0637aff43ae106a0e623691041027a88b9702ba2284ffee86e14f
+    size_bytes: 1642
+    legacy_source:
+      repositoryPath: library/sources/agentic-pods-taking-ai-beyond-engineering-at-ube-5b9382d4/record.yaml
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: f07cbbefcd625ce6fb7cdda308fff5536f4c9cda

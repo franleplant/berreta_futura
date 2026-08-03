@@ -1,0 +1,40 @@
+schema_version: 1
+revision_kind: source_capture
+logical_id: src-nadella-reverse-information-paradox-2026
+revision_id: rev_20260803T052536961Z_sh7ywp7r4bwh
+created_at: 2026-08-03T05:25:36.961Z
+parent_revision_id: null
+migration_id: legacy-four-root-source-1
+files:
+  - path: raw/media/54014991c1b3e5915efc1df65ff2cd4014576cc0f34b217ed9a20000628d3add.json
+    media_type: application/json
+    sha256: sha256:d5b5c37cf9e317114c0d574f640bb8877acee4e67c785f189c573f0d8d67c1ad
+    size_bytes: 409
+    legacy_source:
+      repositoryPath: library/sources/src-nadella-reverse-information-paradox-2026/media/54014991c1b3e5915efc1df65ff2cd4014576cc0f34b217ed9a20000628d3add.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 4b3f1d8bdbc2a4f2fe4e70adc6c2ec7c1459b792
+  - path: raw/raw/54014991c1b3e5915efc1df65ff2cd4014576cc0f34b217ed9a20000628d3add/artifacts/capture.json
+    media_type: application/json
+    sha256: sha256:3474b5e472bef49f0e83b1a5291fcba7a8f3f0b715ce03e581e93a8cf5370eb4
+    size_bytes: 17579
+    legacy_source:
+      repositoryPath: library/sources/src-nadella-reverse-information-paradox-2026/raw/54014991c1b3e5915efc1df65ff2cd4014576cc0f34b217ed9a20000628d3add/artifacts/capture.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: b588b3d38d47adc952eec2496b1bec3187c14313
+  - path: raw/raw/54014991c1b3e5915efc1df65ff2cd4014576cc0f34b217ed9a20000628d3add/manifest.json
+    media_type: application/json
+    sha256: sha256:d3675595072f9356180372616433dd8b4d2fcaa461d61c75b1da5f17c7e04471
+    size_bytes: 646
+    legacy_source:
+      repositoryPath: library/sources/src-nadella-reverse-information-paradox-2026/raw/54014991c1b3e5915efc1df65ff2cd4014576cc0f34b217ed9a20000628d3add/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: f94db564f0015770133d2d00de08dddf2c3fca9d
+  - path: raw/record.yaml
+    media_type: application/yaml
+    sha256: sha256:3fc83dc34048fee76ce48d356387ff1fb378a79e2f607a5032cc625646832584
+    size_bytes: 3395
+    legacy_source:
+      repositoryPath: library/sources/src-nadella-reverse-information-paradox-2026/record.yaml
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: ea1a06246a03cecb28de3f61f9cce88d1a805965

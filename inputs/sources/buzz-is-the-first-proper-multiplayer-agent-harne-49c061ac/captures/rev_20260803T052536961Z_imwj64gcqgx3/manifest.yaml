@@ -1,0 +1,64 @@
+schema_version: 1
+revision_kind: source_capture
+logical_id: buzz-is-the-first-proper-multiplayer-agent-harne-49c061ac
+revision_id: rev_20260803T052536961Z_imwj64gcqgx3
+created_at: 2026-08-03T05:25:36.961Z
+parent_revision_id: null
+migration_id: legacy-four-root-source-1
+files:
+  - path: raw/media/f646eba77111f87c4556e46f376e521fb01cd6ad340e605bf1335b216ab40311.curation.json
+    media_type: application/json
+    sha256: sha256:b70714f47b8ae0e1885aefd36d862fbd264fa86cced4db6ed16a33fdbcb149e8
+    size_bytes: 462
+    legacy_source:
+      repositoryPath: library/sources/buzz-is-the-first-proper-multiplayer-agent-harne-49c061ac/media/f646eba77111f87c4556e46f376e521fb01cd6ad340e605bf1335b216ab40311.curation.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: a55c2bed3c3884e20bbd8b89f66491a581b0a402
+  - path: raw/media/f646eba77111f87c4556e46f376e521fb01cd6ad340e605bf1335b216ab40311.json
+    media_type: application/json
+    sha256: sha256:85158824cc2d4a72764e164b5ca8ea4fb07b667083f4a4c877caa674f23d05b1
+    size_bytes: 422
+    legacy_source:
+      repositoryPath: library/sources/buzz-is-the-first-proper-multiplayer-agent-harne-49c061ac/media/f646eba77111f87c4556e46f376e521fb01cd6ad340e605bf1335b216ab40311.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: a9ae8e3c925584b1a72b213cad3e4c1e721da9c8
+  - path: raw/raw/f646eba77111f87c4556e46f376e521fb01cd6ad340e605bf1335b216ab40311/artifacts/article.txt
+    media_type: text/plain
+    sha256: sha256:e52cf5ae9285c13619f62fa621c7fd0e7702b8e2fe32f49eeb9b83a703de5c84
+    size_bytes: 356
+    legacy_source:
+      repositoryPath: library/sources/buzz-is-the-first-proper-multiplayer-agent-harne-49c061ac/raw/f646eba77111f87c4556e46f376e521fb01cd6ad340e605bf1335b216ab40311/artifacts/article.txt
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 3fe3ab00a51f5957562efc6394746501d67284a7
+  - path: raw/raw/f646eba77111f87c4556e46f376e521fb01cd6ad340e605bf1335b216ab40311/artifacts/links.json
+    media_type: application/json
+    sha256: sha256:22bf13d511b8528fafd10c8ad61b102965e6d11754e4578237ef3a205f745221
+    size_bytes: 606
+    legacy_source:
+      repositoryPath: library/sources/buzz-is-the-first-proper-multiplayer-agent-harne-49c061ac/raw/f646eba77111f87c4556e46f376e521fb01cd6ad340e605bf1335b216ab40311/artifacts/links.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 12e6554686ee72f5f8098ac27264ee2986b81899
+  - path: raw/raw/f646eba77111f87c4556e46f376e521fb01cd6ad340e605bf1335b216ab40311/artifacts/media-manifest.json
+    media_type: application/json
+    sha256: sha256:2315785c605533dc5a213a4516447030dc92b29fdee48310760e9b7e1e43c1a7
+    size_bytes: 280
+    legacy_source:
+      repositoryPath: library/sources/buzz-is-the-first-proper-multiplayer-agent-harne-49c061ac/raw/f646eba77111f87c4556e46f376e521fb01cd6ad340e605bf1335b216ab40311/artifacts/media-manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: b105b2cf8886b51817c327082c8c2ffdd5534e0f
+  - path: raw/raw/f646eba77111f87c4556e46f376e521fb01cd6ad340e605bf1335b216ab40311/manifest.json
+    media_type: application/json
+    sha256: sha256:c62f35fa0aa9efef776396dd1b66364df88f31c8cec1ce00478ab1f8610711b1
+    size_bytes: 946
+    legacy_source:
+      repositoryPath: library/sources/buzz-is-the-first-proper-multiplayer-agent-harne-49c061ac/raw/f646eba77111f87c4556e46f376e521fb01cd6ad340e605bf1335b216ab40311/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: a401d07668970b82b17a0c5e172c7f599b96552f
+  - path: raw/record.yaml
+    media_type: application/yaml
+    sha256: sha256:abb68c60b7d5521f2fcc13725e5a79b639d426692f694aeb3dc0b534ffaa41be
+    size_bytes: 1605
+    legacy_source:
+      repositoryPath: library/sources/buzz-is-the-first-proper-multiplayer-agent-harne-49c061ac/record.yaml
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 908b417c55d295511c053c00a5455ad8053817c1

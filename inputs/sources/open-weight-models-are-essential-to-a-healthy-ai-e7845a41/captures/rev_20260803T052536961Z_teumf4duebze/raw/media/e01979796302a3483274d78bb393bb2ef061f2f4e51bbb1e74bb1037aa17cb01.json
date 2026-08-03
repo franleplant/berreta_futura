@@ -1,0 +1,97 @@
+{
+  "artifact_count": 7,
+  "bundle_sha256": "e01979796302a3483274d78bb393bb2ef061f2f4e51bbb1e74bb1037aa17cb01",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 3,
+  "images": [
+    {
+      "animated": false,
+      "aspect_ratio": 0.715621,
+      "bytes": 221779,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/png",
+      "path": "media/001.png",
+      "pixel_height": 749,
+      "pixel_width": 536,
+      "sha256": "e89577e012fb84a890581a17e20e964efcbc27516035c6104ca1d56fc44e9ced"
+    },
+    {
+      "animated": false,
+      "aspect_ratio": 0.715621,
+      "bytes": 239550,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/png",
+      "path": "media/002.png",
+      "pixel_height": 749,
+      "pixel_width": 536,
+      "sha256": "9712e7be709c75cd7566cfe80e3552de12ab9d6a796b58c9af9c3f5f0348d6e8"
+    },
+    {
+      "animated": false,
+      "aspect_ratio": 0.715621,
+      "bytes": 176482,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/png",
+      "path": "media/003.png",
+      "pixel_height": 749,
+      "pixel_width": 536,
+      "sha256": "0364f04894fd7c7722f2203103abecd59bc64afa0756d2d4d54c8d651d1508b2"
+    }
+  ],
+  "local_references": [
+    {
+      "alt_text": "Imagen",
+      "attribute": "manifest",
+      "description": "Sanitized authenticated Chrome rendering of the embedded X media view.",
+      "document_path": "media-manifest.json",
+      "present": true,
+      "reference": "media/001.png",
+      "resolved_path": "media/001.png",
+      "role": "figure",
+      "source_position": 1,
+      "source_url": "https://pbs.twimg.com/media/HN_vsqtbgAAJ73S?format=jpg&name=900x900",
+      "title": "Open-weight models are essential to a healthy AI ecosystem — embedded media 1"
+    },
+    {
+      "alt_text": "Imagen",
+      "attribute": "manifest",
+      "description": "Sanitized authenticated Chrome rendering of the embedded X media view.",
+      "document_path": "media-manifest.json",
+      "present": true,
+      "reference": "media/002.png",
+      "resolved_path": "media/002.png",
+      "role": "figure",
+      "source_position": 2,
+      "source_url": "https://pbs.twimg.com/media/HN_vuJZaMAAdRVT?format=jpg&name=900x900",
+      "title": "Open-weight models are essential to a healthy AI ecosystem — embedded media 2"
+    },
+    {
+      "alt_text": "Imagen",
+      "attribute": "manifest",
+      "description": "Sanitized authenticated Chrome rendering of the embedded X media view.",
+      "document_path": "media-manifest.json",
+      "present": true,
+      "reference": "media/003.png",
+      "resolved_path": "media/003.png",
+      "role": "figure",
+      "source_position": 3,
+      "source_url": "https://pbs.twimg.com/media/HN_vvV0aAAAFLRF?format=jpg&name=900x900",
+      "title": "Open-weight models are essential to a healthy AI ecosystem — embedded media 3"
+    }
+  ],
+  "missing_references": [],
+  "referenced_image_count": 3,
+  "schema_version": 1,
+  "source_id": "open-weight-models-are-essential-to-a-healthy-ai-e7845a41",
+  "unresolved_acquisition_references": []
+}

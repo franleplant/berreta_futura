@@ -1,0 +1,93 @@
+{
+  "artifact_count": 16,
+  "artifacts": [
+    {
+      "bytes": 219703,
+      "path": "artifacts/code-size-comparison.png",
+      "sha256": "b3f0d4283c56e74214e8e98c7d005cad7b1e1f775c8eaf67dcc000bee5db5df8"
+    },
+    {
+      "bytes": 198721,
+      "path": "artifacts/commits-grok45.png",
+      "sha256": "2f60f6ab4fbb6658633832a855d942ee7db5d3458afbad6e5bb32502ff2b4154"
+    },
+    {
+      "bytes": 202773,
+      "path": "artifacts/conflicts-grok45.png",
+      "sha256": "e74b7ac4977ec8e2a3761d983738b12080b9aa7c843592d427e2145b16d07fa4"
+    },
+    {
+      "bytes": 254114,
+      "path": "artifacts/cost-by-model-mix.png",
+      "sha256": "9fe9e59076abfa89fd2a7a335c976d04707abb115195b4b6049ecccd975f92fc"
+    },
+    {
+      "bytes": 133746,
+      "path": "artifacts/crates-grok45.png",
+      "sha256": "8a11e036068deb9c68b85f9d0957c2a4e85cbadcf4248b5779ba3dd647b5c6e4"
+    },
+    {
+      "bytes": 460289,
+      "path": "artifacts/file-size-grok45.png",
+      "sha256": "c3ab1d8067dd02f4ee7d01f6b24f9ddb2041367b82b8cb6a0174f44f09bea0db"
+    },
+    {
+      "bytes": 224010,
+      "path": "artifacts/grade-fable5-composer25.png",
+      "sha256": "f2d7eba8c3162380b5f9c96bf64a148e15acfd5ee5e3d35dc308afefbf411dbe"
+    },
+    {
+      "bytes": 175929,
+      "path": "artifacts/grade-gpt55.png",
+      "sha256": "94168ebc772760883b055e3028311f5a0c75ea5b526382e99ea10374c1afbbe5"
+    },
+    {
+      "bytes": 172317,
+      "path": "artifacts/grade-grok45.png",
+      "sha256": "83c68ef95ab707353d5608c27bfe67a02646fae524a3ca2940cf8a496e1d1bae"
+    },
+    {
+      "bytes": 211972,
+      "path": "artifacts/grade-opus48-composer25.png",
+      "sha256": "65ae73cfb1293939d3d35b348792a4e90462e7d7594a091cab3134fbb3320c3c"
+    },
+    {
+      "bytes": 4504,
+      "path": "artifacts/media-manifest.json",
+      "sha256": "5b5fbf6b9b898875a216a7f0c4aa88dce331b4750ed287f35eaf0afc75421417"
+    },
+    {
+      "bytes": 633258,
+      "path": "artifacts/primary-article.pdf",
+      "sha256": "edcf558282c8398fbcaec47dbcc35846779ce3ae5081d93cc4dc764bbec3db2a"
+    },
+    {
+      "bytes": 2020239,
+      "path": "artifacts/primary-article.png",
+      "sha256": "a2200824d7f53ae1ec2b053146c48a1fed16906b158a8cd4dcf104a951160335"
+    },
+    {
+      "bytes": 20683,
+      "path": "artifacts/source-text.txt",
+      "sha256": "b7d3100ee5d97b8a4a6ae84e75aea64e100f8c705a242c770feeed52c6d72b24"
+    },
+    {
+      "bytes": 378494,
+      "path": "artifacts/task-tree.png",
+      "sha256": "9f22d8ba92e2905251f338eaecee89560f48521a48cfd5e8b4bb350d7aa86057"
+    },
+    {
+      "bytes": 267323,
+      "path": "artifacts/tokens-by-role.png",
+      "sha256": "b25fcaf83c2621f106188c4727b352434a2707ed1bb218e85fce9b40c1a426c6"
+    }
+  ],
+  "bundle_sha256": "dc7168a5ee97699f5bb8e80370fcbb35a147dd5ad5ba1b7b3ebc8ab0974cc270",
+  "byte_count": 5578075,
+  "canonical_url": "https://cursor.com/blog/agent-swarm-model-economics",
+  "captured_at": "2026-07-21T18:52:56Z",
+  "method": "authenticated_chrome_page_assets",
+  "schema_version": 1,
+  "source_id": "agent-swarms-and-the-new-model-economics-8b346f57",
+  "submitted_url": "https://cursor.com/blog/agent-swarm-model-economics"
+}

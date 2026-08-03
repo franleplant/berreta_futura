@@ -1,0 +1,144 @@
+schema_version: 1
+revision_kind: source_capture
+logical_id: software-factories-light-and-dark-ef463732
+revision_id: rev_20260803T052536961Z_5lu4kexk4rpq
+created_at: 2026-08-03T05:25:36.961Z
+parent_revision_id: null
+migration_id: legacy-four-root-source-1
+files:
+  - path: raw/media/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8.curation.json
+    media_type: application/json
+    sha256: sha256:f43e85e0de1267ab27690e89f12cf381b5531195038da39b9f0978ce1a8ab3a7
+    size_bytes: 6422
+    legacy_source:
+      repositoryPath: library/sources/software-factories-light-and-dark-ef463732/media/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8.curation.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: ffb4881b0c09a9b195b964c8eb8b1537b41c9f7a
+  - path: raw/media/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8.json
+    media_type: application/json
+    sha256: sha256:84e9a93cde1246e5678e6a3ebba4fa101cfb440b9dbdb424555968d870bd9831
+    size_bytes: 6839
+    legacy_source:
+      repositoryPath: library/sources/software-factories-light-and-dark-ef463732/media/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 2e618dc2d289afc185daf94fbf705aa690193f0e
+  - path: raw/media/60b2ecf8fcb0a39bb63fde6e1a40965d5a1d228f9348178a4cc56d5a5956753c.curation.json
+    media_type: application/json
+    sha256: sha256:5158cb2912dd7ba7dd7680892ae8f4cab67784bc130e4b72f55fc42474f63986
+    size_bytes: 1285
+    legacy_source:
+      repositoryPath: library/sources/software-factories-light-and-dark-ef463732/media/60b2ecf8fcb0a39bb63fde6e1a40965d5a1d228f9348178a4cc56d5a5956753c.curation.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 19b817a987a0d04dae8a9c2b657622e0a3edd75c
+  - path: raw/media/60b2ecf8fcb0a39bb63fde6e1a40965d5a1d228f9348178a4cc56d5a5956753c.json
+    media_type: application/json
+    sha256: sha256:2d0fa90033080f0ba14ffb4af073c052e86670dcda5bf5dc7f94900072d1104a
+    size_bytes: 833
+    legacy_source:
+      repositoryPath: library/sources/software-factories-light-and-dark-ef463732/media/60b2ecf8fcb0a39bb63fde6e1a40965d5a1d228f9348178a4cc56d5a5956753c.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 986c1ea73f18b43a820fa013066fef617aa5538a
+  - path: raw/raw/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8/artifacts/01-article-opener.jpg
+    media_type: image/jpeg
+    sha256: sha256:b9c434aa7c3e356fc9948bdc22a22245741336f935f872d64d736c792930071b
+    size_bytes: 103829
+    legacy_source:
+      repositoryPath: library/sources/software-factories-light-and-dark-ef463732/raw/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8/artifacts/01-article-opener.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 94c21ada9301ff967c31ab74bd48af9961d1a65f
+  - path: raw/raw/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8/artifacts/02-harness-engineering-talk.jpg
+    media_type: image/jpeg
+    sha256: sha256:d955f82f24828ab6ccdbf122cf2fb391d5d2c905c5aebd97b3b40f76dec7ac99
+    size_bytes: 140039
+    legacy_source:
+      repositoryPath: library/sources/software-factories-light-and-dark-ef463732/raw/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8/artifacts/02-harness-engineering-talk.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 2541f67c3b5c6125c6afee55d55b47b1b6132f98
+  - path: raw/raw/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8/artifacts/03-loop-harness-factory.jpg
+    media_type: image/jpeg
+    sha256: sha256:c84acad91eb1765a599dcfe7eff573df5fecd1fa9d5e3986ab468aba8be6edb9
+    size_bytes: 85863
+    legacy_source:
+      repositoryPath: library/sources/software-factories-light-and-dark-ef463732/raw/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8/artifacts/03-loop-harness-factory.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 0626a0bff9400c67833669ee413a36cd4579f85b
+  - path: raw/raw/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8/artifacts/04-factory-closed-loop.jpg
+    media_type: image/jpeg
+    sha256: sha256:99565ac98471c409bd3fdff25cdf6e6f875199ba04c960d46f28a648453ada1a
+    size_bytes: 125460
+    legacy_source:
+      repositoryPath: library/sources/software-factories-light-and-dark-ef463732/raw/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8/artifacts/04-factory-closed-loop.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 0640301ab0bb2e00e8da5a2362dd30db74526172
+  - path: raw/raw/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8/artifacts/05-light-dark-spectrum.jpg
+    media_type: image/jpeg
+    sha256: sha256:99565ac98471c409bd3fdff25cdf6e6f875199ba04c960d46f28a648453ada1a
+    size_bytes: 125460
+    legacy_source:
+      repositoryPath: library/sources/software-factories-light-and-dark-ef463732/raw/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8/artifacts/05-light-dark-spectrum.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 0640301ab0bb2e00e8da5a2362dd30db74526172
+  - path: raw/raw/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8/artifacts/authenticated-x-article.jpg
+    media_type: image/jpeg
+    sha256: sha256:0ee01a4e882b39166cb6d19485aa6bfacd13792048d62409847f26d91e8ea71c
+    size_bytes: 1690646
+    legacy_source:
+      repositoryPath: library/sources/software-factories-light-and-dark-ef463732/raw/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8/artifacts/authenticated-x-article.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 729c6f2b8b5bcfe0d9b7b7311e27717c254d8755
+  - path: raw/raw/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8/artifacts/authenticated-x-article.txt
+    media_type: text/plain
+    sha256: sha256:eab817ab801b22342bb4c967044173c7b0b0d8790c89762c5cffed5cdde29e5a
+    size_bytes: 25766
+    legacy_source:
+      repositoryPath: library/sources/software-factories-light-and-dark-ef463732/raw/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8/artifacts/authenticated-x-article.txt
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 814b808c9c3e179a6711d66f8f32698ae49109bc
+  - path: raw/raw/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8/artifacts/media-manifest.json
+    media_type: application/json
+    sha256: sha256:646831ad1cc741a7a0eec79cfb144d18f807490642f978bf1cf5260a3da46228
+    size_bytes: 3176
+    legacy_source:
+      repositoryPath: library/sources/software-factories-light-and-dark-ef463732/raw/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8/artifacts/media-manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 1ca6ee6ae21842c86b3e2d98ae14cd7a6d357c2e
+  - path: raw/raw/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8/manifest.json
+    media_type: application/json
+    sha256: sha256:1c5f686c5e911f3a228931fcb9d40aa0aef3c19171730d53e35ee9cc0835b980
+    size_bytes: 1893
+    legacy_source:
+      repositoryPath: library/sources/software-factories-light-and-dark-ef463732/raw/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 86bf9ce44f2f46068a4c24b04f3176665c4ff290
+  - path: raw/raw/60b2ecf8fcb0a39bb63fde6e1a40965d5a1d228f9348178a4cc56d5a5956753c/artifacts/authenticated-x-article.jpg
+    media_type: image/jpeg
+    sha256: sha256:0ee01a4e882b39166cb6d19485aa6bfacd13792048d62409847f26d91e8ea71c
+    size_bytes: 1690646
+    legacy_source:
+      repositoryPath: library/sources/software-factories-light-and-dark-ef463732/raw/60b2ecf8fcb0a39bb63fde6e1a40965d5a1d228f9348178a4cc56d5a5956753c/artifacts/authenticated-x-article.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 729c6f2b8b5bcfe0d9b7b7311e27717c254d8755
+  - path: raw/raw/60b2ecf8fcb0a39bb63fde6e1a40965d5a1d228f9348178a4cc56d5a5956753c/artifacts/authenticated-x-article.txt
+    media_type: text/plain
+    sha256: sha256:eab817ab801b22342bb4c967044173c7b0b0d8790c89762c5cffed5cdde29e5a
+    size_bytes: 25766
+    legacy_source:
+      repositoryPath: library/sources/software-factories-light-and-dark-ef463732/raw/60b2ecf8fcb0a39bb63fde6e1a40965d5a1d228f9348178a4cc56d5a5956753c/artifacts/authenticated-x-article.txt
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 814b808c9c3e179a6711d66f8f32698ae49109bc
+  - path: raw/raw/60b2ecf8fcb0a39bb63fde6e1a40965d5a1d228f9348178a4cc56d5a5956753c/manifest.json
+    media_type: application/json
+    sha256: sha256:196e326b3855242802a76b48ac474b8c89f3eddff0ce86eddb766ad3c67392d6
+    size_bytes: 885
+    legacy_source:
+      repositoryPath: library/sources/software-factories-light-and-dark-ef463732/raw/60b2ecf8fcb0a39bb63fde6e1a40965d5a1d228f9348178a4cc56d5a5956753c/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: a79cf56c742b196bb73c25248185263e47228db9
+  - path: raw/record.yaml
+    media_type: application/yaml
+    sha256: sha256:66632d48b22aa64f8025896149a312cd7fd74cf741465ca013d2c085943dff47
+    size_bytes: 3911
+    legacy_source:
+      repositoryPath: library/sources/software-factories-light-and-dark-ef463732/record.yaml
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 2bf3ba8f1956813170a0d9d841352248aafb4110

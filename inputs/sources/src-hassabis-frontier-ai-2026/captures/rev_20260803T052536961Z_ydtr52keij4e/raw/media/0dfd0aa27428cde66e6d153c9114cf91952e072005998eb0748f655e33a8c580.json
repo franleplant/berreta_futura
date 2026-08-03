@@ -1,0 +1,14 @@
+{
+  "artifact_count": 1,
+  "bundle_sha256": "0dfd0aa27428cde66e6d153c9114cf91952e072005998eb0748f655e33a8c580",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 0,
+  "images": [],
+  "local_references": [],
+  "missing_references": [],
+  "referenced_image_count": 0,
+  "schema_version": 1,
+  "source_id": "src-hassabis-frontier-ai-2026",
+  "unresolved_acquisition_references": []
+}

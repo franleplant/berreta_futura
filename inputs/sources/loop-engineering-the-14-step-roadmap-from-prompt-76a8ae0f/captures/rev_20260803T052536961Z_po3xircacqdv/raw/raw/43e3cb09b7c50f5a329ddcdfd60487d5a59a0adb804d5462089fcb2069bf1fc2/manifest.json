@@ -1,0 +1,33 @@
+{
+  "artifact_count": 4,
+  "artifacts": [
+    {
+      "bytes": 72625,
+      "path": "authenticated-x-article.jpg",
+      "sha256": "ff71e48211c72c85e6237acdb413bc04942298eca72741091731c7fe09ccfd3d"
+    },
+    {
+      "bytes": 31942,
+      "path": "authenticated-x-article.txt",
+      "sha256": "0afb464454caee032c609c98cf916add2721e4704ffb99ee4d8a477487d791a9"
+    },
+    {
+      "bytes": 109582,
+      "path": "submitted-post.pdf",
+      "sha256": "031350456e7fd2dcac96b3cda03c559f07dbb7951b0427565072b3f8f5e2d431"
+    },
+    {
+      "bytes": 217719,
+      "path": "submitted-post.png",
+      "sha256": "56742c8c4e16b42f36a5e4e9beadb1ce1e6df993ebdbe885b6fa920b8df7ac6b"
+    }
+  ],
+  "bundle_sha256": "43e3cb09b7c50f5a329ddcdfd60487d5a59a0adb804d5462089fcb2069bf1fc2",
+  "byte_count": 431868,
+  "canonical_url": "https://x.com/0xCodez/status/2064374643729773029",
+  "captured_at": "2026-07-21T14:47:53Z",
+  "method": "Authenticated Chrome X Article text and viewport capture plus rendered submitted-post PDF and screenshot; sanitized, no session data.",
+  "schema_version": 1,
+  "source_id": "loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f",
+  "submitted_url": "https://x.com/0xCodez/status/2064374643729773029"
+}

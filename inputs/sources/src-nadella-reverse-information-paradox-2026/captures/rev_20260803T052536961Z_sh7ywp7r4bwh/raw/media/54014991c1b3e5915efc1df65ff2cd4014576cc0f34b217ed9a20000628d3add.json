@@ -1,0 +1,14 @@
+{
+  "artifact_count": 1,
+  "bundle_sha256": "54014991c1b3e5915efc1df65ff2cd4014576cc0f34b217ed9a20000628d3add",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 0,
+  "images": [],
+  "local_references": [],
+  "missing_references": [],
+  "referenced_image_count": 0,
+  "schema_version": 1,
+  "source_id": "src-nadella-reverse-information-paradox-2026",
+  "unresolved_acquisition_references": []
+}

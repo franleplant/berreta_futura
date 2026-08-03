@@ -1,0 +1,12 @@
+{
+  "bundle_sha256": "f646eba77111f87c4556e46f376e521fb01cd6ad340e605bf1335b216ab40311",
+  "candidate_count": 0,
+  "candidates": [],
+  "curator": "magazine-compiler/automatic-media-curator",
+  "input_sha256": "be20552470e5e66ea73387bf0e8c6ff23e95df076526987fd657e9a2184b7d82",
+  "policy_version": "editorial-impact-v4",
+  "schema_version": 1,
+  "selected": [],
+  "selection_limit": 3,
+  "source_id": "buzz-is-the-first-proper-multiplayer-agent-harne-49c061ac"
+}

@@ -1,0 +1,48 @@
+{
+  "artifact_count": 7,
+  "artifacts": [
+    {
+      "bytes": 45446,
+      "path": "ARCHITECTURE.md",
+      "sha256": "d91d837ec0fdd3efbc8940957aa90feae6b6c89391466fe9906c8e06a1aac1b9"
+    },
+    {
+      "bytes": 14813,
+      "path": "README.md",
+      "sha256": "dee38f89475a30b2b4a72ca9fc316ec69a4918e7544a87be45f3baa6064a7386"
+    },
+    {
+      "bytes": 12366,
+      "path": "VISION.md",
+      "sha256": "40189e7d78a2b32eae20a184de4f1009b21af90f5c53e152f8c364a5b32f9205"
+    },
+    {
+      "bytes": 10592,
+      "path": "main-commit.json",
+      "sha256": "04fea1e841a7183b9034031504b5d3a641f04301e5b210a806da44ddf44a6c7a"
+    },
+    {
+      "bytes": 12735,
+      "path": "repository.json",
+      "sha256": "f3afae954ed8f5caa4bd1c1ee98acc44273d2ae6dac9e6b86dafbf795ccee01b"
+    },
+    {
+      "bytes": 8660120,
+      "path": "repository.pdf",
+      "sha256": "92fe42587b7877e91a6ea69ed6f066c5fe785edde2c82056b53c0e012cf1abfb"
+    },
+    {
+      "bytes": 2214402,
+      "path": "repository.png",
+      "sha256": "e5a36a3d87c3ef833c1aaaf93a1859aaaa5f0ea976b3b913b87e01e4e3b8b2fd"
+    }
+  ],
+  "bundle_sha256": "1897cc7ea085e81c39fbccc5439f0d01dadcb505cc3b6867db8eb579d5df9a54",
+  "byte_count": 10970474,
+  "canonical_url": "https://github.com/block/buzz",
+  "captured_at": "2026-07-23T12:32:52Z",
+  "method": "public_repository_browser_and_raw_files",
+  "schema_version": 1,
+  "source_id": "buzz-a-workspace-where-humans-and-agents-build-t-59122470",
+  "submitted_url": "https://github.com/block/buzz"
+}

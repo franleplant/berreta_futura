@@ -1,0 +1,29 @@
+{
+  "artifact_count": 7,
+  "bundle_sha256": "1897cc7ea085e81c39fbccc5439f0d01dadcb505cc3b6867db8eb579d5df9a54",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 1,
+  "images": [
+    {
+      "animated": false,
+      "aspect_ratio": 0.126745,
+      "bytes": 2214402,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/png",
+      "path": "repository.png",
+      "pixel_height": 10099,
+      "pixel_width": 1280,
+      "sha256": "e5a36a3d87c3ef833c1aaaf93a1859aaaa5f0ea976b3b913b87e01e4e3b8b2fd"
+    }
+  ],
+  "local_references": [],
+  "missing_references": [],
+  "referenced_image_count": 0,
+  "schema_version": 1,
+  "source_id": "buzz-a-workspace-where-humans-and-agents-build-t-59122470",
+  "unresolved_acquisition_references": []
+}

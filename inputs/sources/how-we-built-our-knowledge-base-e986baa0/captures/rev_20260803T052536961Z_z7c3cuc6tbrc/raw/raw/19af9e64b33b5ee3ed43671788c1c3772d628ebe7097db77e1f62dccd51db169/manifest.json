@@ -1,0 +1,28 @@
+{
+  "artifact_count": 3,
+  "artifacts": [
+    {
+      "bytes": 2011426,
+      "path": "article-full.png",
+      "sha256": "cb32342ad9467c5a3e943ae34392add7a7560dcd0cd4d763564f66e7c4c6cf28"
+    },
+    {
+      "bytes": 626771,
+      "path": "article.pdf",
+      "sha256": "15064b1e30f218c14b0ad684bdb7109ae3c6a33fdd740e1ce448c35a17b9d777"
+    },
+    {
+      "bytes": 940015,
+      "path": "capture.json",
+      "sha256": "a38de6a416b0c7b21ce2ad32cdcf80608f19d0124fe6f91e48125438d945282b"
+    }
+  ],
+  "bundle_sha256": "19af9e64b33b5ee3ed43671788c1c3772d628ebe7097db77e1f62dccd51db169",
+  "byte_count": 3578212,
+  "canonical_url": "https://www.cerebras.ai/blog/how-we-built-our-knowledge-base",
+  "captured_at": "2026-07-17T19:45:07Z",
+  "method": "Rendered public HTML via headless Chromium; structured text/HTML, PDF, and full-page screenshot.",
+  "schema_version": 1,
+  "source_id": "how-we-built-our-knowledge-base-e986baa0",
+  "submitted_url": "https://www.cerebras.ai/blog/how-we-built-our-knowledge-base"
+}

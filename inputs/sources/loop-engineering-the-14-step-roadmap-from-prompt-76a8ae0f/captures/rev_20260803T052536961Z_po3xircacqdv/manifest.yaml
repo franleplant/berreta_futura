@@ -1,0 +1,72 @@
+schema_version: 1
+revision_kind: source_capture
+logical_id: loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f
+revision_id: rev_20260803T052536961Z_po3xircacqdv
+created_at: 2026-08-03T05:25:36.961Z
+parent_revision_id: null
+migration_id: legacy-four-root-source-1
+files:
+  - path: raw/media/43e3cb09b7c50f5a329ddcdfd60487d5a59a0adb804d5462089fcb2069bf1fc2.curation.json
+    media_type: application/json
+    sha256: sha256:cce8ef564cacd793fc2670d8600431cabc9fa3ddc41fdf1bc9c2318778a7a973
+    size_bytes: 1998
+    legacy_source:
+      repositoryPath: library/sources/loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f/media/43e3cb09b7c50f5a329ddcdfd60487d5a59a0adb804d5462089fcb2069bf1fc2.curation.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: fcd0e8d1f7715158901586a536fdf641951a828a
+  - path: raw/media/43e3cb09b7c50f5a329ddcdfd60487d5a59a0adb804d5462089fcb2069bf1fc2.json
+    media_type: application/json
+    sha256: sha256:61cd5e01d30548a664fd2669c503c1331adc0c623ed0a6a446e9bdb7c165e6c8
+    size_bytes: 1255
+    legacy_source:
+      repositoryPath: library/sources/loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f/media/43e3cb09b7c50f5a329ddcdfd60487d5a59a0adb804d5462089fcb2069bf1fc2.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 2fa899eabb3953ee31c2d458a1a57007c4e39df4
+  - path: raw/raw/43e3cb09b7c50f5a329ddcdfd60487d5a59a0adb804d5462089fcb2069bf1fc2/artifacts/authenticated-x-article.jpg
+    media_type: image/jpeg
+    sha256: sha256:ff71e48211c72c85e6237acdb413bc04942298eca72741091731c7fe09ccfd3d
+    size_bytes: 72625
+    legacy_source:
+      repositoryPath: library/sources/loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f/raw/43e3cb09b7c50f5a329ddcdfd60487d5a59a0adb804d5462089fcb2069bf1fc2/artifacts/authenticated-x-article.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 2ae32da48a7b0eefdb3879410dbe120f94c46efd
+  - path: raw/raw/43e3cb09b7c50f5a329ddcdfd60487d5a59a0adb804d5462089fcb2069bf1fc2/artifacts/authenticated-x-article.txt
+    media_type: text/plain
+    sha256: sha256:0afb464454caee032c609c98cf916add2721e4704ffb99ee4d8a477487d791a9
+    size_bytes: 31942
+    legacy_source:
+      repositoryPath: library/sources/loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f/raw/43e3cb09b7c50f5a329ddcdfd60487d5a59a0adb804d5462089fcb2069bf1fc2/artifacts/authenticated-x-article.txt
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 7a72cf0c8f4aeb80415e5c4f3defb01c3746acf1
+  - path: raw/raw/43e3cb09b7c50f5a329ddcdfd60487d5a59a0adb804d5462089fcb2069bf1fc2/artifacts/submitted-post.pdf
+    media_type: application/pdf
+    sha256: sha256:031350456e7fd2dcac96b3cda03c559f07dbb7951b0427565072b3f8f5e2d431
+    size_bytes: 109582
+    legacy_source:
+      repositoryPath: library/sources/loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f/raw/43e3cb09b7c50f5a329ddcdfd60487d5a59a0adb804d5462089fcb2069bf1fc2/artifacts/submitted-post.pdf
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 4cefe29435d55726d64d1e9c74aec459553e3b51
+  - path: raw/raw/43e3cb09b7c50f5a329ddcdfd60487d5a59a0adb804d5462089fcb2069bf1fc2/artifacts/submitted-post.png
+    media_type: image/png
+    sha256: sha256:56742c8c4e16b42f36a5e4e9beadb1ce1e6df993ebdbe885b6fa920b8df7ac6b
+    size_bytes: 217719
+    legacy_source:
+      repositoryPath: library/sources/loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f/raw/43e3cb09b7c50f5a329ddcdfd60487d5a59a0adb804d5462089fcb2069bf1fc2/artifacts/submitted-post.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: d19770be3f7bf7c83a50d609d9151ea5aa7298c4
+  - path: raw/raw/43e3cb09b7c50f5a329ddcdfd60487d5a59a0adb804d5462089fcb2069bf1fc2/manifest.json
+    media_type: application/json
+    sha256: sha256:ccb55e4de9982f712dec23e9bed5d36d598c533e34a885befdd86094c60686ab
+    size_bytes: 1225
+    legacy_source:
+      repositoryPath: library/sources/loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f/raw/43e3cb09b7c50f5a329ddcdfd60487d5a59a0adb804d5462089fcb2069bf1fc2/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 3eb29b68f36f78980f9802551c55316132ce683d
+  - path: raw/record.yaml
+    media_type: application/yaml
+    sha256: sha256:82470aa22768721d7375e9c4aec81cde824dac2754e7ef6317fab3c8e1d2564b
+    size_bytes: 1841
+    legacy_source:
+      repositoryPath: library/sources/loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f/record.yaml
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: a147790b0dd080142c97e68daa6dd2958a18b367

@@ -1,0 +1,36 @@
+{
+  "bundle_sha256": "1c8cbd943699dea76bc4cbd59908a456d1a600e299d9df491ade5dfd871cb50b",
+  "candidate_count": 1,
+  "candidates": [
+    {
+      "artifact_path": "viewport.png",
+      "artifact_sha256": "893b338b17eff74b8865985b5fff640c1f76dabe602d8c3d3b984b341315e42d",
+      "aspect_ratio": 2.116667,
+      "criteria": [],
+      "decision": "reject",
+      "description": "",
+      "heading": "",
+      "id": "raster-001-893b338b",
+      "mime_type": "image/jpeg",
+      "origin": "raw_raster",
+      "pixel_height": 900,
+      "pixel_width": 1905,
+      "rationale": "",
+      "rejection_reasons": [
+        "no_semantic_source_context"
+      ],
+      "score": 0,
+      "source_artifact": "viewport.png",
+      "source_artifact_sha256": "893b338b17eff74b8865985b5fff640c1f76dabe602d8c3d3b984b341315e42d",
+      "source_position": 1,
+      "title": "viewport"
+    }
+  ],
+  "curator": "magazine-compiler/automatic-media-curator",
+  "input_sha256": "ee4788e13ad2fa6083223adc6dc6db1e7de0a0b36bd9f94234105faf4184eae3",
+  "policy_version": "editorial-impact-v4",
+  "schema_version": 1,
+  "selected": [],
+  "selection_limit": 3,
+  "source_id": "open-weights-and-american-ai-leadership-7aa6038f"
+}

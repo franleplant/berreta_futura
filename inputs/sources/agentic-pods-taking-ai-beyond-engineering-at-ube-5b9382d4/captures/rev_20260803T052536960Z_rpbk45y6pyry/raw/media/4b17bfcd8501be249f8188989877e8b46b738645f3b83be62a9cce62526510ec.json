@@ -1,0 +1,29 @@
+{
+  "artifact_count": 3,
+  "bundle_sha256": "4b17bfcd8501be249f8188989877e8b46b738645f3b83be62a9cce62526510ec",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 1,
+  "images": [
+    {
+      "animated": false,
+      "aspect_ratio": 0.634921,
+      "bytes": 451080,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/png",
+      "path": "submitted-post.png",
+      "pixel_height": 2016,
+      "pixel_width": 1280,
+      "sha256": "5b7d4c8827efd1e2f2a5960c8f7713ee9232569dd222de14a3d3fce300faf775"
+    }
+  ],
+  "local_references": [],
+  "missing_references": [],
+  "referenced_image_count": 0,
+  "schema_version": 1,
+  "source_id": "agentic-pods-taking-ai-beyond-engineering-at-ube-5b9382d4",
+  "unresolved_acquisition_references": []
+}

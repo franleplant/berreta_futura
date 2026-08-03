@@ -1,0 +1,29 @@
+{
+  "artifact_count": 2,
+  "bundle_sha256": "60b2ecf8fcb0a39bb63fde6e1a40965d5a1d228f9348178a4cc56d5a5956753c",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 1,
+  "images": [
+    {
+      "animated": false,
+      "aspect_ratio": 0.112878,
+      "bytes": 1690646,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/jpeg",
+      "path": "authenticated-x-article.jpg",
+      "pixel_height": 11065,
+      "pixel_width": 1249,
+      "sha256": "0ee01a4e882b39166cb6d19485aa6bfacd13792048d62409847f26d91e8ea71c"
+    }
+  ],
+  "local_references": [],
+  "missing_references": [],
+  "referenced_image_count": 0,
+  "schema_version": 1,
+  "source_id": "software-factories-light-and-dark-ef463732",
+  "unresolved_acquisition_references": []
+}

@@ -1,0 +1,45 @@
+schema_version: 1
+id: loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f
+title: 'Loop Engineering: The 14-Step Roadmap from Prompter to Loop Designer'
+author: Codez
+canonical_url: https://x.com/0xCodez/status/2064374643729773029
+submitted_url: https://x.com/0xCodez/status/2064374643729773029
+captured_at: '2026-07-21T14:47:53Z'
+publication_date: '2026-06-09'
+kind: web
+status: captured
+content_hash: null
+raw_captures:
+- id: 43e3cb09b7c50f5a329ddcdfd60487d5a59a0adb804d5462089fcb2069bf1fc2
+  path: raw/43e3cb09b7c50f5a329ddcdfd60487d5a59a0adb804d5462089fcb2069bf1fc2/manifest.json
+  method: Authenticated Chrome X Article text and viewport capture plus rendered submitted-post PDF and
+    screenshot; sanitized, no session data.
+  captured_at: '2026-07-21T14:47:53Z'
+  artifact_count: 4
+  byte_count: 431868
+provenance:
+- relation: primary_material
+  url: https://x.com/i/article/2064357550225510400
+- relation: primary_material
+  url: https://x.com/0xCodez/article/2064374643729773029
+rights:
+  status: unknown
+  intended_use: private_reference
+  attribution_required: true
+  public_reprint_allowed: false
+media_reviews:
+- capture_id: 43e3cb09b7c50f5a329ddcdfd60487d5a59a0adb804d5462089fcb2069bf1fc2
+  status: media_rejected
+  assets: []
+  note: 'Automatic curation rejected all candidates: no_semantic_source_context (2).'
+metadata:
+  tags:
+  - ai-agents
+  - automation
+  - loop-engineering
+  - software-engineering
+  synopsis: A practical roadmap for deciding when coding-agent loops are worthwhile and designing them
+    with automation, isolated worktrees, reusable skills, state, verification, human gates, and security
+    limits.
+notes: Submitted as an X post linking an X Article. The complete article was captured from the user-authenticated
+  X session; raw exports exclude cookies, credentials, profiles, and session UI.

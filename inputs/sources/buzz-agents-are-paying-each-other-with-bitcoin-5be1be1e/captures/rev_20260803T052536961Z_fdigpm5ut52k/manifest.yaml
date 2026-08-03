@@ -1,0 +1,136 @@
+schema_version: 1
+revision_kind: source_capture
+logical_id: buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e
+revision_id: rev_20260803T052536961Z_fdigpm5ut52k
+created_at: 2026-08-03T05:25:36.961Z
+parent_revision_id: null
+migration_id: legacy-four-root-source-1
+files:
+  - path: raw/media/98b41281cc44fd93754c2df85cafd40cbc5ab798054dec01d9446a1feb1ed529.curation.json
+    media_type: application/json
+    sha256: sha256:2eb06f3b5c28fb731a2499adc6debbd0b8e4f0a5b0911805a6944811baf16992
+    size_bytes: 1286
+    legacy_source:
+      repositoryPath: library/sources/buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e/media/98b41281cc44fd93754c2df85cafd40cbc5ab798054dec01d9446a1feb1ed529.curation.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 75175ccf1f984dc846699e732ef319f514dd5ada
+  - path: raw/media/98b41281cc44fd93754c2df85cafd40cbc5ab798054dec01d9446a1feb1ed529.json
+    media_type: application/json
+    sha256: sha256:3ff3d3a8aaddb5c2c5993d23b2170a50c3fe6dfc874c3e1e0f46a7421f788acc
+    size_bytes: 841
+    legacy_source:
+      repositoryPath: library/sources/buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e/media/98b41281cc44fd93754c2df85cafd40cbc5ab798054dec01d9446a1feb1ed529.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 3a60bc74922f8695085f77ec80cd51bc97a9a180
+  - path: raw/media/ad37c9b46a51d9209c82e9499a4d664aeab51e9d2736afcea120493487727110.curation.json
+    media_type: application/json
+    sha256: sha256:1cecca962f33a1d1540aa31acda5f43d14d5ba1f1fb439dbefc3009138b2fda0
+    size_bytes: 2070
+    legacy_source:
+      repositoryPath: library/sources/buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e/media/ad37c9b46a51d9209c82e9499a4d664aeab51e9d2736afcea120493487727110.curation.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 1176a66547c4b4c0ff289ee96ee836954ae0a388
+  - path: raw/media/ad37c9b46a51d9209c82e9499a4d664aeab51e9d2736afcea120493487727110.json
+    media_type: application/json
+    sha256: sha256:26ded3a1ba7b3f6a66c226a9aaaa4aa919516d3482ed96ebea48a03d2956d653
+    size_bytes: 1262
+    legacy_source:
+      repositoryPath: library/sources/buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e/media/ad37c9b46a51d9209c82e9499a4d664aeab51e9d2736afcea120493487727110.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 25df981a255d95b787d1f8c2b497fd3ae0911538
+  - path: raw/raw/98b41281cc44fd93754c2df85cafd40cbc5ab798054dec01d9446a1feb1ed529/artifacts/article.txt
+    media_type: text/plain
+    sha256: sha256:d60e51eca278f81f1eddaa0a0979c9f9f8daaeb1c4b557e1c3b4d1cefdaf0352
+    size_bytes: 417
+    legacy_source:
+      repositoryPath: library/sources/buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e/raw/98b41281cc44fd93754c2df85cafd40cbc5ab798054dec01d9446a1feb1ed529/artifacts/article.txt
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: e0137b3eb1adf484b3df0d383076dffad45638c7
+  - path: raw/raw/98b41281cc44fd93754c2df85cafd40cbc5ab798054dec01d9446a1feb1ed529/artifacts/embedded-video-thumbnail.png
+    media_type: image/png
+    sha256: sha256:04b56bde316f6ce9699e77fbb1bd5c85430f7093c693ad07d43bd7c8977038fa
+    size_bytes: 1125
+    legacy_source:
+      repositoryPath: library/sources/buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e/raw/98b41281cc44fd93754c2df85cafd40cbc5ab798054dec01d9446a1feb1ed529/artifacts/embedded-video-thumbnail.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: f1ef8816d895e426098298dcf5ce96063145e0ac
+  - path: raw/raw/98b41281cc44fd93754c2df85cafd40cbc5ab798054dec01d9446a1feb1ed529/artifacts/links.json
+    media_type: application/json
+    sha256: sha256:595dc5612032ff836080f7a128923757f4c0670003a545646b28f4989ecd9507
+    size_bytes: 608
+    legacy_source:
+      repositoryPath: library/sources/buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e/raw/98b41281cc44fd93754c2df85cafd40cbc5ab798054dec01d9446a1feb1ed529/artifacts/links.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 1fbeb180751609646225d783c948f2daa8a0d6f2
+  - path: raw/raw/98b41281cc44fd93754c2df85cafd40cbc5ab798054dec01d9446a1feb1ed529/artifacts/media-manifest.json
+    media_type: application/json
+    sha256: sha256:dc4558bcc0140c013d151ee17844d514e3e95c1d0b8475a1392e870c0b77e404
+    size_bytes: 456
+    legacy_source:
+      repositoryPath: library/sources/buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e/raw/98b41281cc44fd93754c2df85cafd40cbc5ab798054dec01d9446a1feb1ed529/artifacts/media-manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: dff28bbc9bdc035357061f720e4f2fbc4d02d91e
+  - path: raw/raw/98b41281cc44fd93754c2df85cafd40cbc5ab798054dec01d9446a1feb1ed529/manifest.json
+    media_type: application/json
+    sha256: sha256:1fa342657c7cf08664c56c7a71dfce1ca74f532c1861df63e9f92e1311677d3b
+    size_bytes: 1132
+    legacy_source:
+      repositoryPath: library/sources/buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e/raw/98b41281cc44fd93754c2df85cafd40cbc5ab798054dec01d9446a1feb1ed529/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: f70cfe721babc245dd369c8b648b6fc9747b875b
+  - path: raw/raw/ad37c9b46a51d9209c82e9499a4d664aeab51e9d2736afcea120493487727110/artifacts/article.txt
+    media_type: text/plain
+    sha256: sha256:d60e51eca278f81f1eddaa0a0979c9f9f8daaeb1c4b557e1c3b4d1cefdaf0352
+    size_bytes: 417
+    legacy_source:
+      repositoryPath: library/sources/buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e/raw/ad37c9b46a51d9209c82e9499a4d664aeab51e9d2736afcea120493487727110/artifacts/article.txt
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: e0137b3eb1adf484b3df0d383076dffad45638c7
+  - path: raw/raw/ad37c9b46a51d9209c82e9499a4d664aeab51e9d2736afcea120493487727110/artifacts/embedded-video-thumbnail.jpg
+    media_type: image/jpeg
+    sha256: sha256:a59e9ee9a121d1589a03d4fddcd996a2d9a09a5ef81daabd23d5bcaaca80f4c2
+    size_bytes: 43111
+    legacy_source:
+      repositoryPath: library/sources/buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e/raw/ad37c9b46a51d9209c82e9499a4d664aeab51e9d2736afcea120493487727110/artifacts/embedded-video-thumbnail.jpg
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 7b3e796767791769f892bddd024d51cd92b62676
+  - path: raw/raw/ad37c9b46a51d9209c82e9499a4d664aeab51e9d2736afcea120493487727110/artifacts/embedded-video-thumbnail.png
+    media_type: image/png
+    sha256: sha256:04b56bde316f6ce9699e77fbb1bd5c85430f7093c693ad07d43bd7c8977038fa
+    size_bytes: 1125
+    legacy_source:
+      repositoryPath: library/sources/buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e/raw/ad37c9b46a51d9209c82e9499a4d664aeab51e9d2736afcea120493487727110/artifacts/embedded-video-thumbnail.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: f1ef8816d895e426098298dcf5ce96063145e0ac
+  - path: raw/raw/ad37c9b46a51d9209c82e9499a4d664aeab51e9d2736afcea120493487727110/artifacts/links.json
+    media_type: application/json
+    sha256: sha256:595dc5612032ff836080f7a128923757f4c0670003a545646b28f4989ecd9507
+    size_bytes: 608
+    legacy_source:
+      repositoryPath: library/sources/buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e/raw/ad37c9b46a51d9209c82e9499a4d664aeab51e9d2736afcea120493487727110/artifacts/links.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 1fbeb180751609646225d783c948f2daa8a0d6f2
+  - path: raw/raw/ad37c9b46a51d9209c82e9499a4d664aeab51e9d2736afcea120493487727110/artifacts/media-manifest.json
+    media_type: application/json
+    sha256: sha256:65452b9a6f9f4b8e191fe1a62111f79df5e45e0423c4c8855e3fd2c63998bfac
+    size_bytes: 492
+    legacy_source:
+      repositoryPath: library/sources/buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e/raw/ad37c9b46a51d9209c82e9499a4d664aeab51e9d2736afcea120493487727110/artifacts/media-manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 338dc061de748a72af11acc681d132fa7faa33d8
+  - path: raw/raw/ad37c9b46a51d9209c82e9499a4d664aeab51e9d2736afcea120493487727110/manifest.json
+    media_type: application/json
+    sha256: sha256:8bef461828add0b665da11132a1fe19bb2fd639861794f453b9cf4b0cb6aa60b
+    size_bytes: 1297
+    legacy_source:
+      repositoryPath: library/sources/buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e/raw/ad37c9b46a51d9209c82e9499a4d664aeab51e9d2736afcea120493487727110/manifest.json
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 1030545b85b5a9fdda5bbd5a129e8e8728a6f92e
+  - path: raw/record.yaml
+    media_type: application/yaml
+    sha256: sha256:f98b7fbb132ab241854d2003097054e54f20da30ee27eee487af2210fe4dd2e5
+    size_bytes: 2262
+    legacy_source:
+      repositoryPath: library/sources/buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e/record.yaml
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 600e9f714094963f2ccf8275d48085713cd1a767
