@@ -1,0 +1,28 @@
+schema_version: 1
+revision_kind: image
+edition_id: "002"
+revision_id: rev_20260803T052536959Z_c2zd2u5wsn22
+created_at: 2026-08-03T05:25:36.959Z
+parent_revision_id: null
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/002-unreleased/art/cover-candidate-wildcard-v4-draft1.png
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: ba1211331be63f8cb2db259edf8cc5682f1c8202
+    sha256: sha256:2ac917fa88adcf0d00e36fefb2a1dd448eab9094f3e95bdab9428b30be4d485a
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+files:
+  - path: image.png
+    mediaType: image/png
+    sha256: sha256:2ac917fa88adcf0d00e36fefb2a1dd448eab9094f3e95bdab9428b30be4d485a
+    sizeBytes: 1547520
+    legacySource:
+      repositoryPath: editions/002-unreleased/art/cover-candidate-wildcard-v4-draft1.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: ba1211331be63f8cb2db259edf8cc5682f1c8202
+logical_id: cover-candidate-wildcard-v4-draft1

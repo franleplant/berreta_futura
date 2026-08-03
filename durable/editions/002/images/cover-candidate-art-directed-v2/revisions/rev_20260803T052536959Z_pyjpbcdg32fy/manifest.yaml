@@ -1,0 +1,28 @@
+schema_version: 1
+revision_kind: image
+edition_id: "002"
+revision_id: rev_20260803T052536959Z_pyjpbcdg32fy
+created_at: 2026-08-03T05:25:36.959Z
+parent_revision_id: null
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/002-unreleased/art/cover-candidate-art-directed-v2.png
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: 01ffae76fb414d3370226aed45721df757199851
+    sha256: sha256:e10eabccbb9a90169111aaf7e8803ae94f03021bc15d446d339bd640cedd42ac
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+files:
+  - path: image.png
+    mediaType: image/png
+    sha256: sha256:e10eabccbb9a90169111aaf7e8803ae94f03021bc15d446d339bd640cedd42ac
+    sizeBytes: 3282371
+    legacySource:
+      repositoryPath: editions/002-unreleased/art/cover-candidate-art-directed-v2.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 01ffae76fb414d3370226aed45721df757199851
+logical_id: cover-candidate-art-directed-v2
