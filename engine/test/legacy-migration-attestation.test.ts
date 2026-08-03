@@ -7,6 +7,7 @@ import { parse } from "yaml";
 import type { RevisionId } from "../contracts/index.ts";
 import {
   buildLegacyMigrationAttestation,
+  serializeLegacyMigrationAttestation,
   verifyLegacyMigrationAttestation,
   verifyManifestSourceCommitProofs,
   verifyLegacySourceBlobDigests,
@@ -54,6 +55,14 @@ test("legacy cutover attestation binds every source row and preserves Edition 4 
   ), true);
   assert.equal(attestation.cutover.releaseAuthorityImported, false);
   assert.equal(attestation.cutover.freshRunEngineReviewStillRequired, true);
+});
+
+test("legacy cutover attestation serializes without YAML alias ordering", async () => {
+  const [plan, attestation] = await Promise.all([planPromise, attestationPromise]);
+  const payload = serializeLegacyMigrationAttestation(attestation);
+  const decoded = parse(payload.toString("utf8"));
+  verifyLegacyMigrationAttestation(decoded, plan);
+  assert.doesNotMatch(payload.toString("utf8"), /(?:^|\s)[&*]a\d+(?:\s|$)/u);
 });
 
 test("legacy cutover attestation verifier rejects a target digest mismatch", async () => {
