@@ -4,6 +4,7 @@ import {
   access,
   mkdir,
   mkdtemp,
+  readFile,
   rename,
   rm,
   writeFile,
@@ -165,16 +166,6 @@ export async function materializeLegacyDurableMigrationBatch(
       { cause: error },
     );
   }
-  const sourceBytes = new Map<string, Promise<Buffer>>();
-  const readSource = (path: string): Promise<Buffer> => {
-    let pending = sourceBytes.get(path);
-    if (pending === undefined) {
-      pending = readBoundLegacyFile(root, path, plan.sourceGitBinding);
-      sourceBytes.set(path, pending);
-    }
-    return pending;
-  };
-
   // Resolve all cross-revision references before materialization. This makes
   // a partial batch impossible when a parent or pinned child is only present
   // in the working tree.
@@ -194,21 +185,41 @@ export async function materializeLegacyDurableMigrationBatch(
     }
   }
 
-  // Read every immutable source blob and reject every malformed payload before
-  // staging or publishing any DurableRevision destination.
-  await Promise.all(sourcePaths.map(async (path) => {
-    const bytes = await readSource(path);
-    if (bytes.byteLength === 0) throw invalid(`legacy durable source ${path} is empty`);
-  }));
-  for (const entry of plan.entries) {
-    for (const file of entry.files) {
-      validateLegacyPayload(await readSource(file.sourcePath), file.mediaType, file.sourcePath);
-    }
-  }
-
   await mkdir(resolve(workRoot), { recursive: true, mode: 0o700 });
   const batchRoot = await mkdtemp(join(resolve(workRoot), `${plan.migrationId}-batch-`));
   try {
+    // Copy immutable Git blobs into isolated staging sequentially. Keeping only
+    // one source buffer resident bounds memory for image-heavy batches without
+    // weakening the all-candidates-before-publish transaction boundary.
+    const stagedSources = new Map<string, string>();
+    const mediaTypes = new Map<string, Set<string>>();
+    for (const entry of plan.entries) {
+      for (const file of entry.files) {
+        const types = mediaTypes.get(file.sourcePath) ?? new Set<string>();
+        types.add(file.mediaType);
+        mediaTypes.set(file.sourcePath, types);
+      }
+    }
+    for (const [sourceIndex, path] of sourcePaths.entries()) {
+      const bytes = await readBoundLegacyFile(root, path, plan.sourceGitBinding);
+      if (bytes.byteLength === 0) throw invalid(`legacy durable source ${path} is empty`);
+      for (const mediaType of mediaTypes.get(path) ?? []) {
+        validateLegacyPayload(bytes, mediaType, path);
+      }
+      const stagedPath = containedPath(
+        batchRoot,
+        join("sources", String(sourceIndex).padStart(6, "0")),
+      );
+      await mkdir(dirname(stagedPath), { recursive: true, mode: 0o700 });
+      await writeFile(stagedPath, bytes, { mode: 0o600 });
+      stagedSources.set(path, stagedPath);
+    }
+    const readSource = async (path: string): Promise<Buffer> => {
+      const stagedPath = stagedSources.get(path);
+      if (stagedPath === undefined) throw invalid(`legacy durable source ${path} was not staged`);
+      return readFile(stagedPath);
+    };
+
     const prepared: PreparedLegacyDurableRevision[] = [];
     let index = 0;
     for (const entry of plan.entries) {
