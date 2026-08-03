@@ -28,6 +28,19 @@ test("legacy-root planner maps every committed byte and does not invent missing 
   assert.equal(plan.files.filter((entry) => entry.disposition === "archive_non_authoritative").length > 0, true);
   const uppercase = plan.files.find((entry) => entry.source.path.endsWith("/README.md"));
   assert.equal(uppercase?.targets[0]?.payloadPath.endsWith("/readme.md"), true);
+  assert.equal(plan.durableIdentityContract, "durable-identity/1");
+  const currentArticle = plan.files.find((entry) =>
+    entry.source.path === "editions/004-the-systems-around-the-model/articles/a.md"
+  )!;
+  const rerunArticle = plan.files.find((entry) =>
+    entry.source.path === "editions/rerun-004-the-systems-around-the-model/articles/a.md"
+  )!;
+  assert.deepEqual(rerunArticle.targets[0]?.durableIdentity, {
+    editionId: "004",
+    logicalId: "a",
+    language: "en",
+  });
+  assert.equal(rerunArticle.targets[0]?.parentRevisionId, currentArticle.targets[0]?.revisionId);
   assert.deepEqual(
     plan.historicalCompositions.map((entry) => [entry.editionId, entry.compositionId, entry.state]),
     [
@@ -98,7 +111,13 @@ function corpusSnapshot(): LegacyGitSnapshot {
     files.push(file(`editions/${edition}/manuscript/editorial.md`, files.length));
   }
   files.push(file("editions/004-the-systems-around-the-model/edition.yaml", files.length));
+  files.push(file("editions/004-the-systems-around-the-model/articles/a.md", files.length));
+  files.push(file("editions/004-the-systems-around-the-model/manuscript/editorial.md", files.length));
   files.push(file("editions/004-the-systems-around-the-model/art/cover-candidate-wildcard-v2.png", files.length));
+  files.push(file("editions/rerun-004-the-systems-around-the-model/edition.yaml", files.length));
+  files.push(file("editions/rerun-004-the-systems-around-the-model/articles/a.md", files.length));
+  files.push(file("editions/rerun-004-the-systems-around-the-model/manuscript/editorial.md", files.length));
+  files.push(file("editions/rerun-004-the-systems-around-the-model/art/cover-candidate-wildcard-v2.png", files.length));
   files.push(file("editions/005-unreleased/art/cover-candidates.yaml", files.length));
   files.push(file("editions/002-old/reviews/render.yaml", files.length));
   const canonical = inventoryDigest(files);
