@@ -87,6 +87,7 @@ export type HistoricalCompositionPlan = {
 export type LegacyRootMigrationPlan = {
   readonly schemaVersion: "legacy-root-migration/1";
   readonly migrationId: string;
+  readonly supersedesPlanRevisionId?: RevisionId;
   readonly sourceSnapshot: LegacyGitSnapshot;
   /** Persist this map in the ledger. Replanning must reload, not reallocate it. */
   readonly allocatedRevisionIds: Readonly<Record<string, RevisionId>>;
@@ -299,7 +300,7 @@ export function planLegacyRootMigration(
           revisionSlot: slot,
           category: "input",
           revisionKind: "source_capture",
-          payloadPath: `raw/${suffix}`,
+          payloadPath: `raw/${portableLegacyPayloadPath(suffix)}`,
         });
         disposition.push(exact(file, binding.disposition, binding.target, "committed source evidence, record, or media"));
       }
@@ -569,6 +570,16 @@ function assertCompleteLedger(snapshot: LegacyGitSnapshot, entries: readonly Leg
       throw invalid(`migration ledger does not exactly bind ${source.path}`);
     }
   }
+  const targetAliases = new Set<string>();
+  for (const entry of entries) {
+    for (const target of entry.targets) {
+      const key = `${target.revisionSlot}/${target.payloadPath}`.normalize("NFC").toLocaleLowerCase("en-US");
+      if (targetAliases.has(key)) {
+        throw invalid(`migration ledger has a case or Unicode-normalization target collision: ${key}`);
+      }
+      targetAliases.add(key);
+    }
+  }
 }
 
 function historicalCompositionPlans(
@@ -725,6 +736,13 @@ function safeRelative(path: string): void {
     posix.normalize(path) !== path || path.split("/").some((part) => part === "" || part === "." || part === "..")) {
     throw invalid(`unsafe relative path: ${path}`);
   }
+}
+
+function portableLegacyPayloadPath(path: string): string {
+  const portable = path.split("/").map((component) => component.normalize("NFC").toLowerCase()).join("/");
+  safeRelative(portable);
+  for (const component of portable.split("/")) portableName(component, "legacy payload component");
+  return portable;
 }
 
 function portableName(value: string, label: string): void {
