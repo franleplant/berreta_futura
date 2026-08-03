@@ -11,13 +11,13 @@ import {
 } from "../contracts/index.ts";
 import {
   GitCliDurableGit,
-  materializeLegacyDurableRevisions,
+  materializeLegacyDurableMigrationBatch,
   materializeLegacyInputs,
   resolveDurableRevision,
   type CompositionRevisionBinding,
   type DurableRevisionRef,
   type InputRevisionRef,
-  type LegacyDurableMigrationPlan,
+  type LegacyDurableBatchMigrationPlan,
   type LegacyInputMigrationPlan,
 } from "../durable/index.ts";
 
@@ -70,6 +70,7 @@ export async function writeBootstrapRepositoryFixture(
     "library/sources/fixture-source/extracted.md": "# Exact extraction\n",
     "legacy/prompt.md": "Preserve the source.\n",
     "legacy/policy.md": "Review exact immutable artifacts.\n",
+    "legacy/migration-plan.yaml": "migration_id: bootstrap-fixture-durable\n",
     "editions/fixture-edition/manuscript/editorial.md": "# Opening\n",
     "editions/fixture-edition/translations/es/manuscript/editorial.md": "# Apertura\n",
     "editions/fixture-edition/articles/systems.md": "# Systems\n",
@@ -148,6 +149,16 @@ export async function writeBootstrapRepositoryFixture(
         mediaType: "text/markdown",
       }],
     },
+    {
+      ref: migrationPlanRef(),
+      createdAt: "2026-08-02T20:06:41.636Z",
+      parentRevisionId: null,
+      files: [{
+        sourcePath: "legacy/migration-plan.yaml",
+        targetPath: "inventory.yaml",
+        mediaType: "application/yaml",
+      }],
+    },
   ];
   const inputSources = inputEntries.flatMap((entry) => entry.files.flatMap((file) =>
     file.sourcePath === undefined ? [] : [file.sourcePath]
@@ -164,6 +175,8 @@ export async function writeBootstrapRepositoryFixture(
     inputPlan,
     gitAuthority,
   );
+  await git(root, ["add", "inputs"]);
+  await git(root, ["commit", "-m", "Fixture immutable inputs"]);
 
   const durableSources = [
     "editions/fixture-edition/manuscript/editorial.md",
@@ -171,30 +184,30 @@ export async function writeBootstrapRepositoryFixture(
     "editions/fixture-edition/articles/systems.md",
     "editions/fixture-edition/translations/es/articles/systems.md",
     "editions/fixture-edition/art/cover.png",
-    "editions/fixture-edition/edition.yaml",
   ];
-  const durablePlan: LegacyDurableMigrationPlan = {
-    schemaVersion: "legacy-durable-migration/1",
+  const durablePlan: LegacyDurableBatchMigrationPlan = {
+    schemaVersion: "legacy-durable-migration/2",
     migrationId: "bootstrap-fixture-durable",
+    migrationPlanRevision: migrationPlanRef(),
     sourceGitBinding: await gitBinding(root, durableSources),
     entries: [
       manuscriptEntry(editorialRef("en"), "editions/fixture-edition/manuscript/editorial.md", [
-        editionSpecRef(), promptRef(), policyRef(),
+        migrationPlanRef(), editionSpecRef(), promptRef(), policyRef(),
       ]),
       manuscriptEntry(editorialRef("es"), "editions/fixture-edition/translations/es/manuscript/editorial.md", [
-        editionSpecRef(), policyRef(),
+        migrationPlanRef(), editionSpecRef(), policyRef(),
       ]),
       manuscriptEntry(articleRef("en"), "editions/fixture-edition/articles/systems.md", [
-        editionSpecRef(), captureRef(), extractionRef(), promptRef(), policyRef(),
+        migrationPlanRef(), editionSpecRef(), captureRef(), extractionRef(), promptRef(), policyRef(),
       ]),
       manuscriptEntry(articleRef("es"), "editions/fixture-edition/translations/es/articles/systems.md", [
-        editionSpecRef(), policyRef(),
+        migrationPlanRef(), editionSpecRef(), policyRef(),
       ]),
       {
         ref: imageRef(),
         createdAt: "2026-08-02T20:06:41.636Z",
         parentRevisionId: null,
-        inputRevisions: [editionSpecRef()],
+        inputRevisions: [migrationPlanRef(), editionSpecRef()],
         files: [{
           sourcePath: "editions/fixture-edition/art/cover.png",
           targetPath: "image.png",
@@ -202,11 +215,29 @@ export async function writeBootstrapRepositoryFixture(
         }],
       },
     ],
-    composition: {
+    compositions: [],
+  };
+  await materializeLegacyDurableMigrationBatch(
+    root,
+    join(root, ".fixture-work", "durable"),
+    durablePlan,
+    gitAuthority,
+  );
+  await git(root, ["add", "durable"]);
+  await git(root, ["commit", "-m", "Fixture immutable durable entries"]);
+
+  const compositionSource = "editions/fixture-edition/edition.yaml";
+  const compositionPlan: LegacyDurableBatchMigrationPlan = {
+    schemaVersion: "legacy-durable-migration/2",
+    migrationId: "bootstrap-fixture-durable",
+    migrationPlanRevision: migrationPlanRef(),
+    sourceGitBinding: await gitBinding(root, [compositionSource]),
+    entries: [],
+    compositions: [{
       ref: compositionRef(),
       createdAt: "2026-08-02T20:06:41.636Z",
       parentRevisionId: null,
-      sourcePaths: ["editions/fixture-edition/edition.yaml"],
+      sourcePaths: [compositionSource],
       document: {
         schema_version: 1,
         edition_id: "004",
@@ -229,15 +260,17 @@ export async function writeBootstrapRepositoryFixture(
         images: [{ slot_id: "cover", revision: imageRef() }],
         layout_inputs: [{ slot_id: "edition-spec", revision: editionSpecRef() }],
       },
-    },
+      assemblyBasis: "fixture composition from exact committed durable revisions",
+      extraInputRevisions: [migrationPlanRef()],
+    }],
   };
-  await materializeLegacyDurableRevisions(
+  await materializeLegacyDurableMigrationBatch(
     root,
-    join(root, ".fixture-work", "durable"),
-    durablePlan,
+    join(root, ".fixture-work", "composition"),
+    compositionPlan,
     gitAuthority,
   );
-  await git(root, ["add", "inputs", "durable"]);
+  await git(root, ["add", "durable"]);
   await git(root, ["commit", "-m", "Fixture immutable composition"]);
 
   const resolvedComposition = await resolveDurableRevision(
@@ -326,6 +359,14 @@ function policyRef(): InputRevisionRef {
   return { kind: "policy", logicalId: "render-review", revisionId: REVISION };
 }
 
+function migrationPlanRef() {
+  return {
+    kind: "migration_plan",
+    logicalId: "bootstrap-fixture-durable",
+    revisionId: REVISION,
+  } as const;
+}
+
 function editorialRef(
   language: "en" | "es",
 ): Extract<DurableRevisionRef, { readonly kind: "editorial" }> {
@@ -350,7 +391,7 @@ function manuscriptEntry(
   ref: Extract<DurableRevisionRef, { readonly kind: "article" | "editorial" }>,
   sourcePath: string,
   inputRevisions: readonly InputRevisionRef[],
-): LegacyDurableMigrationPlan["entries"][number] {
+): LegacyDurableBatchMigrationPlan["entries"][number] {
   return {
     ref,
     createdAt: "2026-08-02T20:06:41.636Z",

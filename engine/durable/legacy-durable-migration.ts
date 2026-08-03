@@ -1,15 +1,15 @@
 import { createHash } from "node:crypto";
+import { execFile as execFileCallback } from "node:child_process";
 import {
   access,
-  lstat,
   mkdir,
   mkdtemp,
-  readFile,
   rename,
   rm,
   writeFile,
 } from "node:fs/promises";
 import { dirname, isAbsolute, join, posix, resolve, sep } from "node:path";
+import { promisify } from "node:util";
 
 import { stringify } from "yaml";
 
@@ -19,11 +19,13 @@ import {
   parseCompositionDocument,
   type CompositionDocument,
 } from "./composition-schema.ts";
-import { validateDurableRevisionTree } from "./durable-store.ts";
-import { validateInputRevisionTree } from "./input-revision.ts";
+import {
+  resolveDurableRevision,
+  validateDurableRevisionTree,
+} from "./durable-store.ts";
+import { resolveInputRevision } from "./input-revision.ts";
 import {
   durableRevisionRelativeDirectory,
-  inputRevisionRelativeDirectory,
   portableComponent,
 } from "./paths.ts";
 import { parseRevisionId } from "./revision-id.ts";
@@ -36,6 +38,8 @@ import type {
   InputRevisionRef,
   LegacyDurableRevisionManifest,
 } from "./types.ts";
+
+const execFile = promisify(execFileCallback);
 
 type LegacyDurableRevisionRef = Exclude<
   DurableRevisionRef,
@@ -56,20 +60,39 @@ export type LegacyDurableRevisionEntry = {
   readonly files: readonly LegacyDurableFile[];
 };
 
-export type BootstrapCompositionEntry = {
+/**
+ * Historical import can install an arbitrary set of legacy revisions,
+ * historical compositions, or both. Every referenced revision is resolved
+ * through the public Git-backed resolver before any candidate is written.
+ */
+export type HistoricalCompositionEntry = {
   readonly ref: Extract<DurableRevisionRef, { readonly kind: "composition" }>;
   readonly createdAt: string;
   readonly parentRevisionId: RevisionId | null;
   readonly sourcePaths: readonly string[];
   readonly document: CompositionDocument;
+  /** Explicitly explains how this historical assembly was reconstructed. */
+  readonly assemblyBasis: string;
+  /**
+   * Inputs beyond layout pins. This must include the exact migration plan
+   * revision which authorized the historical assembly.
+   */
+  readonly extraInputRevisions: readonly InputRevisionRef[];
 };
 
-export type LegacyDurableMigrationPlan = {
-  readonly schemaVersion: "legacy-durable-migration/1";
+export type MigrationPlanRevisionRef = {
+  readonly kind: "migration_plan";
+  readonly logicalId: string;
+  readonly revisionId: RevisionId;
+};
+
+export type LegacyDurableBatchMigrationPlan = {
+  readonly schemaVersion: "legacy-durable-migration/2";
   readonly migrationId: string;
+  readonly migrationPlanRevision: MigrationPlanRevisionRef;
   readonly sourceGitBinding: GitRevisionBinding;
   readonly entries: readonly LegacyDurableRevisionEntry[];
-  readonly composition: BootstrapCompositionEntry;
+  readonly compositions: readonly HistoricalCompositionEntry[];
 };
 
 export type MaterializedLegacyDurableMigration = {
@@ -94,24 +117,23 @@ export class LegacyDurableMigrationError extends Error {
 }
 
 /**
- * Copies an explicit legacy inventory into immutable DurableRevisions, then
- * assembles one fresh composition from exact revision references. It does not
- * invent a legacy RunId, decision, or PromotionId.
+ * Materializes a durable migration batch without inventing a run, promotion,
+ * or decision. Unlike the v1 bootstrap helper, v2 treats every input, parent,
+ * and composition child as a committed immutable revision before writing any
+ * candidate tree. It supports entry-only and composition-only batches.
  */
-export async function materializeLegacyDurableRevisions(
+export async function materializeLegacyDurableMigrationBatch(
   repositoryRoot: string,
   workRoot: string,
-  plan: LegacyDurableMigrationPlan,
+  plan: LegacyDurableBatchMigrationPlan,
   git: Pick<DurableGit, "assertCommitted">,
 ): Promise<MaterializedLegacyDurableMigration> {
-  validatePlan(plan);
+  validateBatchPlan(plan);
   const root = resolve(repositoryRoot);
-  const sourcePaths = uniqueSorted(
-    [
-      ...plan.entries.flatMap((entry) => entry.files.map((file) => file.sourcePath)),
-      ...plan.composition.sourcePaths,
-    ],
-  );
+  const sourcePaths = uniqueSorted([
+    ...plan.entries.flatMap((entry) => entry.files.map((file) => file.sourcePath)),
+    ...plan.compositions.flatMap((entry) => entry.sourcePaths),
+  ]);
   try {
     await git.assertCommitted(sourcePaths, plan.sourceGitBinding);
   } catch (error) {
@@ -121,24 +143,44 @@ export async function materializeLegacyDurableRevisions(
       { cause: error },
     );
   }
+  const readSource = (path: string) => readBoundLegacyFile(root, path, plan.sourceGitBinding);
+
+  // Resolve all cross-revision references before materialization. This makes
+  // a partial batch impossible when a parent or pinned child is only present
+  // in the working tree.
+  await resolveInputRevision(root, plan.migrationPlanRevision, git);
+  for (const entry of plan.entries) {
+    await resolveInputRefs(root, entry.inputRevisions, git);
+    await resolveParent(root, entry.ref, entry.parentRevisionId, git);
+  }
+  for (const entry of plan.compositions) {
+    await resolveInputRefs(root, [
+      ...entry.document.layout_inputs.map((pin) => pin.revision),
+      ...entry.extraInputRevisions,
+    ], git);
+    await resolveParent(root, entry.ref, entry.parentRevisionId, git);
+    for (const child of compositionDurableRefs(entry.document)) {
+      await resolveDurableRevision(root, child, git);
+    }
+  }
 
   const revisions: Array<MaterializedLegacyDurableMigration["revisions"][number]> = [];
   const repositoryPaths: string[] = [];
   const manifestDigests: Record<string, string> = {};
-  for (const [index, entry] of plan.entries.entries()) {
-    await validateInputRefs(root, entry.inputRevisions);
-    const manifest = await legacyManifest(root, plan, entry);
+  let index = 0;
+  for (const entry of plan.entries) {
+    const manifest = await legacyManifest(root, plan, entry, readSource);
     const installed = await materializeRevision(
       root,
       workRoot,
       plan.migrationId,
-      index,
+      index++,
       entry.ref,
       manifest,
       entry.files.map((file) => ({
         targetPath: file.targetPath,
         read: async () => {
-          const bytes = await readCommittedLegacyFile(root, file.sourcePath);
+          const bytes = await readSource(file.sourcePath);
           validateLegacyPayload(bytes, file.mediaType, file.sourcePath);
           return bytes;
         },
@@ -146,61 +188,48 @@ export async function materializeLegacyDurableRevisions(
     );
     appendInstalled(installed, revisions, repositoryPaths, manifestDigests);
   }
-
-  const composition = await materializeBootstrapComposition(
-    root,
-    workRoot,
-    plan.migrationId,
-    plan.sourceGitBinding,
-    plan.entries.length,
-    plan.composition,
-  );
-  appendInstalled(composition, revisions, repositoryPaths, manifestDigests);
-
+  for (const entry of plan.compositions) {
+    const installed = await materializeHistoricalComposition(
+      root,
+      workRoot,
+      plan.migrationId,
+      plan.sourceGitBinding,
+      index++,
+      entry,
+      readSource,
+    );
+    appendInstalled(installed, revisions, repositoryPaths, manifestDigests);
+  }
   const exactPaths = uniqueSorted(repositoryPaths);
   if (exactPaths.length !== repositoryPaths.length) {
     throw invalid("durable migration entries collide on repository paths");
   }
-  return {
-    migrationId: plan.migrationId,
-    revisions,
-    repositoryPaths: exactPaths,
-    manifestDigests,
-  };
+  return { migrationId: plan.migrationId, revisions, repositoryPaths: exactPaths, manifestDigests };
 }
 
-async function materializeBootstrapComposition(
+async function materializeHistoricalComposition(
   repositoryRoot: string,
   workRoot: string,
   migrationId: string,
   sourceGitBinding: GitRevisionBinding,
   index: number,
-  entry: BootstrapCompositionEntry,
+  entry: HistoricalCompositionEntry,
+  readSource: (path: string) => Promise<Buffer>,
 ) {
-  await validateInputRefs(
-    repositoryRoot,
-    entry.document.layout_inputs.map((pin) => pin.revision),
-  );
-  for (const ref of compositionDurableRefs(entry.document)) {
-    const directory = join(repositoryRoot, "durable", durableRevisionRelativeDirectory(ref));
-    await validateDurableRevisionTree(directory, ref);
-  }
   const compositionBytes = Buffer.from(stringify(entry.document, { lineWidth: 0 }), "utf8");
   const parsed = parseCompositionDocument(compositionBytes, {
     editionId: entry.ref.editionId,
     compositionId: entry.ref.compositionId,
   });
   if (JSON.stringify(parsed) !== JSON.stringify(entry.document)) {
-    throw invalid("bootstrap composition is not canonical under its public schema");
+    throw invalid("historical composition is not canonical under its public schema");
   }
   const record: DurableFileRecord = {
     path: "composition.yaml",
     mediaType: "application/yaml",
     sha256: digest(compositionBytes),
     sizeBytes: compositionBytes.byteLength,
-    migrationAssembly: {
-      basis: "fresh_v2_composition_from_committed_legacy_inventory",
-    },
+    migrationAssembly: { basis: entry.assemblyBasis },
   };
   const manifest: LegacyDurableRevisionManifest = {
     schema_version: 1,
@@ -217,8 +246,12 @@ async function materializeBootstrapComposition(
       repositoryRoot,
       entry.sourcePaths,
       sourceGitBinding,
+      readSource,
     ),
-    input_revisions: entry.document.layout_inputs.map((pin) => pin.revision),
+    input_revisions: uniqueInputRefs([
+      ...entry.document.layout_inputs.map((pin) => pin.revision),
+      ...entry.extraInputRevisions,
+    ]),
     files: [record],
   };
   return materializeRevision(
@@ -234,8 +267,9 @@ async function materializeBootstrapComposition(
 
 async function legacyManifest(
   repositoryRoot: string,
-  plan: LegacyDurableMigrationPlan,
+  plan: Pick<LegacyDurableBatchMigrationPlan, "migrationId" | "sourceGitBinding">,
   entry: LegacyDurableRevisionEntry,
+  readSource: (path: string) => Promise<Buffer>,
 ): Promise<LegacyDurableRevisionManifest> {
   const files = entry.files.map((file) => ({
     path: file.targetPath,
@@ -262,6 +296,7 @@ async function legacyManifest(
       repositoryRoot,
       entry.files.map((file) => file.sourcePath),
       plan.sourceGitBinding,
+      readSource,
     ),
     input_revisions: entry.inputRevisions,
     files,
@@ -379,23 +414,56 @@ function appendInstalled(
   manifestDigests[join(installed.relativeDirectory, "manifest.yaml")] = installed.manifestDigest;
 }
 
-async function validateInputRefs(
+async function resolveInputRefs(
   repositoryRoot: string,
   refs: readonly InputRevisionRef[],
+  git: Pick<DurableGit, "assertCommitted">,
 ): Promise<void> {
-  for (const ref of refs) {
-    const directory = join(repositoryRoot, "inputs", inputRevisionRelativeDirectory(ref));
-    await validateInputRevisionTree(directory, ref);
+  for (const ref of uniqueInputRefs(refs)) {
+    await resolveInputRevision(repositoryRoot, ref, git);
   }
 }
 
-async function readCommittedLegacyFile(root: string, path: string): Promise<Buffer> {
-  const source = containedPath(root, path);
-  const info = await lstat(source);
-  if (info.isSymbolicLink() || !info.isFile()) {
-    throw invalid(`legacy durable source ${path} is not a regular file`);
+async function resolveParent(
+  repositoryRoot: string,
+  ref: DurableRevisionRef,
+  parentRevisionId: RevisionId | null,
+  git: Pick<DurableGit, "assertCommitted">,
+): Promise<void> {
+  if (parentRevisionId === null) return;
+  if (parentRevisionId === ref.revisionId) {
+    throw invalid("durable revision cannot name itself as its parent");
   }
-  return readFile(source);
+  const parent = { ...ref, revisionId: parentRevisionId } as DurableRevisionRef;
+  const resolved = await resolveDurableRevision(repositoryRoot, parent, git);
+  if (!sameLogicalIdentity(ref, resolved.ref)) {
+    throw invalid("durable revision parent does not match its logical identity");
+  }
+}
+
+async function readBoundLegacyFile(
+  repositoryRoot: string,
+  repositoryPath: string,
+  binding: GitRevisionBinding,
+): Promise<Buffer> {
+  const blobOid = binding.blobOids[repositoryPath];
+  if (blobOid === undefined || !validGitOid(blobOid)) {
+    throw invalid(`legacy durable source ${repositoryPath} has no exact Git blob binding`);
+  }
+  try {
+    const { stdout } = await execFile(
+      "git",
+      ["-C", repositoryRoot, "cat-file", "blob", blobOid],
+      { encoding: "buffer", maxBuffer: 1024 * 1024 * 1024 },
+    );
+    return Buffer.isBuffer(stdout) ? stdout : Buffer.from(stdout);
+  } catch (error) {
+    throw new LegacyDurableMigrationError(
+      "DURABLE_MIGRATION_SOURCE_UNCOMMITTED",
+      `cannot read immutable Git blob ${blobOid} for ${repositoryPath}`,
+      { cause: error },
+    );
+  }
 }
 
 function validateLegacyPayload(bytes: Buffer, mediaType: string, sourcePath: string): void {
@@ -414,22 +482,28 @@ function validateLegacyPayload(bytes: Buffer, mediaType: string, sourcePath: str
   if (!valid) throw invalid(`legacy durable source ${sourcePath} does not match ${mediaType}`);
 }
 
-function validatePlan(plan: LegacyDurableMigrationPlan): void {
+function validateBatchPlan(plan: LegacyDurableBatchMigrationPlan): void {
   if (
-    plan.schemaVersion !== "legacy-durable-migration/1" ||
-    plan.entries.length === 0
+    plan.schemaVersion !== "legacy-durable-migration/2" ||
+    (plan.entries.length === 0 && plan.compositions.length === 0)
   ) {
-    throw invalid("legacy durable migration plan is empty or has the wrong schema");
+    throw invalid("legacy durable batch migration plan is empty or has the wrong schema");
   }
   portableComponent(plan.migrationId, "durable migration ID");
-  const sourcePaths = uniqueSorted(
-    [
-      ...plan.entries.flatMap((entry) => entry.files.map((file) => file.sourcePath)),
-      ...plan.composition.sourcePaths,
-    ],
-  );
+  if (
+    plan.migrationPlanRevision.kind !== "migration_plan" ||
+    plan.migrationPlanRevision.logicalId !== plan.migrationId
+  ) {
+    throw invalid("legacy durable batch must name its exact authorizing migration plan");
+  }
+  parseRevisionId(plan.migrationPlanRevision.revisionId);
+  const sourcePaths = uniqueSorted([
+    ...plan.entries.flatMap((entry) => entry.files.map((file) => file.sourcePath)),
+    ...plan.compositions.flatMap((entry) => entry.sourcePaths),
+  ]);
   if (
     !validGitOid(plan.sourceGitBinding.commitOid) ||
+    sourcePaths.length === 0 ||
     !sameSequence(Object.keys(plan.sourceGitBinding.blobOids), sourcePaths) ||
     Object.values(plan.sourceGitBinding.blobOids).some((oid) => !validGitOid(oid))
   ) {
@@ -438,32 +512,73 @@ function validatePlan(plan: LegacyDurableMigrationPlan): void {
   const refs = new Set<string>();
   for (const entry of plan.entries) {
     validateRevisionEntry(entry);
-    const key = revisionKey(entry.ref);
-    if (refs.has(key)) throw invalid(`duplicate DurableRevision ${key}`);
-    refs.add(key);
+    validateExactMigrationPlanInput(
+      entry.inputRevisions,
+      plan.migrationPlanRevision,
+      "legacy durable revision",
+    );
+    if (uniqueInputRefs(entry.inputRevisions).length !== entry.inputRevisions.length) {
+      throw invalid("legacy durable revision has duplicate input revision references");
+    }
+    addUniqueRevision(refs, entry.ref);
   }
-  parseRevisionId(plan.composition.ref.revisionId);
-  if (plan.composition.parentRevisionId !== null) {
-    parseRevisionId(plan.composition.parentRevisionId);
-  }
-  if (!canonicalInstant(plan.composition.createdAt)) {
-    throw invalid("bootstrap composition has an invalid creation time");
-  }
-  if (plan.composition.sourcePaths.length === 0) {
-    throw invalid("migrated composition must name its committed legacy source basis");
-  }
-  for (const sourcePath of plan.composition.sourcePaths) {
-    validateRelativePath(sourcePath, "composition legacy source");
+  for (const entry of plan.compositions) {
+    validateHistoricalCompositionEntry(entry, plan.migrationPlanRevision);
+    addUniqueRevision(refs, entry.ref);
   }
 }
 
+function validateHistoricalCompositionEntry(
+  entry: HistoricalCompositionEntry,
+  migrationPlanRevision: MigrationPlanRevisionRef,
+): void {
+  parseRevisionId(entry.ref.revisionId);
+  if (entry.parentRevisionId !== null) parseRevisionId(entry.parentRevisionId);
+  if (!canonicalInstant(entry.createdAt)) {
+    throw invalid("historical composition has an invalid creation time");
+  }
+  if (entry.sourcePaths.length === 0) {
+    throw invalid("historical composition must name its committed legacy source basis");
+  }
+  for (const sourcePath of entry.sourcePaths) {
+    validateRelativePath(sourcePath, "composition legacy source");
+  }
+  if (entry.assemblyBasis.trim().length === 0) {
+    throw invalid("historical composition requires a caller-supplied assembly basis");
+  }
+  validateExactMigrationPlanInput(
+    entry.extraInputRevisions,
+    migrationPlanRevision,
+    "historical composition",
+  );
+  const compositionBytes = Buffer.from(stringify(entry.document, { lineWidth: 0 }), "utf8");
+  parseCompositionDocument(compositionBytes, {
+    editionId: entry.ref.editionId,
+    compositionId: entry.ref.compositionId,
+  });
+  const inputs = [
+    ...entry.document.layout_inputs.map((pin) => pin.revision),
+    ...entry.extraInputRevisions,
+  ];
+  if (uniqueInputRefs(inputs).length !== inputs.length) {
+    throw invalid("historical composition has duplicate input revision references");
+  }
+}
+
+function addUniqueRevision(refs: Set<string>, ref: DurableRevisionRef): void {
+  const key = revisionKey(ref);
+  if (refs.has(key)) throw invalid(`duplicate DurableRevision ${key}`);
+  refs.add(key);
+}
+
 async function legacySourceBindings(
-  repositoryRoot: string,
+  _repositoryRoot: string,
   sourcePaths: readonly string[],
   gitBinding: GitRevisionBinding,
+  readSource: (path: string) => Promise<Buffer>,
 ) {
   return Promise.all(uniqueSorted(sourcePaths).map(async (repositoryPath) => {
-    const bytes = await readCommittedLegacyFile(repositoryRoot, repositoryPath);
+    const bytes = await readSource(repositoryPath);
     return {
       repositoryPath,
       gitCommitOid: gitBinding.commitOid,
@@ -513,6 +628,45 @@ function revisionKey(ref: DurableRevisionRef): string {
   return ref.kind === "composition"
     ? `composition:${ref.editionId}:${ref.compositionId}:${ref.revisionId}`
     : `${ref.kind}:${ref.editionId}:${ref.logicalId}:${ref.language ?? ""}:${ref.revisionId}`;
+}
+
+function sameLogicalIdentity(left: DurableRevisionRef, right: DurableRevisionRef): boolean {
+  if (left.kind !== right.kind || left.editionId !== right.editionId) return false;
+  switch (left.kind) {
+    case "article":
+    case "editorial":
+      return right.kind === left.kind &&
+        left.logicalId === right.logicalId && left.language === right.language;
+    case "image":
+      return right.kind === "image" && left.logicalId === right.logicalId;
+    case "composition":
+      return right.kind === "composition" && left.compositionId === right.compositionId;
+  }
+}
+
+function inputKey(ref: InputRevisionRef): string {
+  return `${ref.kind}:${ref.editionId ?? ""}:${ref.logicalId}:${ref.revisionId}`;
+}
+
+function sameInputRevision(left: InputRevisionRef, right: InputRevisionRef): boolean {
+  return inputKey(left) === inputKey(right);
+}
+
+function validateExactMigrationPlanInput(
+  refs: readonly InputRevisionRef[],
+  expected: MigrationPlanRevisionRef,
+  label: string,
+): void {
+  const migrationPlans = refs.filter((ref) => ref.kind === "migration_plan");
+  if (migrationPlans.length !== 1 || !sameInputRevision(migrationPlans[0]!, expected)) {
+    throw invalid(`${label} requires exactly one exact migration plan input revision`);
+  }
+}
+
+function uniqueInputRefs(refs: readonly InputRevisionRef[]): InputRevisionRef[] {
+  const byKey = new Map<string, InputRevisionRef>();
+  for (const ref of refs) byKey.set(inputKey(ref), ref);
+  return [...byKey.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([, ref]) => ref);
 }
 
 function validateRelativePath(path: string, label: string): void {
