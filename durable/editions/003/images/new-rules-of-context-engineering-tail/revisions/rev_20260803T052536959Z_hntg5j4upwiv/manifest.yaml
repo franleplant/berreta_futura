@@ -1,0 +1,32 @@
+schema_version: 1
+revision_kind: image
+edition_id: "003"
+revision_id: rev_20260803T052536959Z_hntg5j4upwiv
+created_at: 2026-08-03T05:25:36.959Z
+parent_revision_id: null
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/003-unreleased/art/article-tails/context-engineering-manga-v1.png
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: 099bacf90b4c07cb4f649906110ec34c5cfa0ed7
+    sha256: sha256:1001c581288e924c3bba5b1b2f0780681ab1832d2dea7dc61c76656a311d677c
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+  - kind: edition_spec
+    logicalId: main
+    editionId: "003"
+    revisionId: rev_20260803T052536959Z_24u6nq3tbhvb
+files:
+  - path: image.png
+    mediaType: image/png
+    sha256: sha256:1001c581288e924c3bba5b1b2f0780681ab1832d2dea7dc61c76656a311d677c
+    sizeBytes: 3780364
+    legacySource:
+      repositoryPath: editions/003-unreleased/art/article-tails/context-engineering-manga-v1.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 099bacf90b4c07cb4f649906110ec34c5cfa0ed7
+logical_id: new-rules-of-context-engineering-tail

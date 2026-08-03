@@ -1,0 +1,28 @@
+schema_version: 1
+revision_kind: image
+edition_id: "003"
+revision_id: rev_20260803T052536959Z_3wfoczwzfrqj
+created_at: 2026-08-03T05:25:36.959Z
+parent_revision_id: null
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/003-unreleased/art/cover-art-search-negotiated-passage-human.png
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: 4f853c16104846ec73b6daa1490c761fbdbd371d
+    sha256: sha256:3490f5ab55125a4f6d8d2086ef174f6c12002b9435ee28ea20bfd7f78e7384f5
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+files:
+  - path: image.png
+    mediaType: image/png
+    sha256: sha256:3490f5ab55125a4f6d8d2086ef174f6c12002b9435ee28ea20bfd7f78e7384f5
+    sizeBytes: 2819822
+    legacySource:
+      repositoryPath: editions/003-unreleased/art/cover-art-search-negotiated-passage-human.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 4f853c16104846ec73b6daa1490c761fbdbd371d
+logical_id: cover-art-search-negotiated-passage-human

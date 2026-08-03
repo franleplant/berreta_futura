@@ -1,0 +1,28 @@
+schema_version: 1
+revision_kind: image
+edition_id: "003"
+revision_id: rev_20260803T052536959Z_gae37b2ypzvw
+created_at: 2026-08-03T05:25:36.959Z
+parent_revision_id: null
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/003-unreleased/art/article-tails/software-factories.png
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: bf3adb0abab14a07f720678eb3fbfa18d48fbe9d
+    sha256: sha256:fa7378cde118692c63dc68bdab9c51f9da793b5b5d1bba0db3fb5048c69cdbfa
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+files:
+  - path: image.png
+    mediaType: image/png
+    sha256: sha256:fa7378cde118692c63dc68bdab9c51f9da793b5b5d1bba0db3fb5048c69cdbfa
+    sizeBytes: 6535
+    legacySource:
+      repositoryPath: editions/003-unreleased/art/article-tails/software-factories.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: bf3adb0abab14a07f720678eb3fbfa18d48fbe9d
+logical_id: article-tails-software-factories

@@ -1,0 +1,28 @@
+schema_version: 1
+revision_kind: image
+edition_id: "003"
+revision_id: rev_20260803T052536959Z_qiypn3buhroc
+created_at: 2026-08-03T05:25:36.959Z
+parent_revision_id: null
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/003-unreleased/art/cover-art-variant-c.png
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: 26f29ea5b4e1c63e7038a918e1e6e07dfe523d70
+    sha256: sha256:53bc022e5051a5371aa0da43528f429d301d4100e53d98cfc04296b2b007bbc5
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+files:
+  - path: image.png
+    mediaType: image/png
+    sha256: sha256:53bc022e5051a5371aa0da43528f429d301d4100e53d98cfc04296b2b007bbc5
+    sizeBytes: 16875
+    legacySource:
+      repositoryPath: editions/003-unreleased/art/cover-art-variant-c.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 26f29ea5b4e1c63e7038a918e1e6e07dfe523d70
+logical_id: cover-art-variant-c
