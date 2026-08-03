@@ -1,0 +1,57 @@
+schema_version: 1
+revision_kind: article
+edition_id: "004"
+revision_id: rev_20260802T230000040Z_dbonnqzwxxoj
+created_at: 2026-08-02T23:00:00.040Z
+parent_revision_id: null
+provenance_kind: legacy_import
+migration_id: edition4-fresh-v2
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/004-the-systems-around-the-model/articles/factory-systems-problem.md
+    gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+    gitBlobOid: 3abf80bb9ba98dae14e98b08cc9516cc8c465b27
+    sha256: sha256:f51bbbb1bec4e25697d468bfe4b30f8abe13ae095798a439f7d3c22ab3adc4de
+input_revisions:
+  - kind: edition_spec
+    editionId: "004"
+    logicalId: main
+    revisionId: rev_20260802T230000034Z_nvdvmifoqlet
+  - kind: source_capture
+    logicalId: software-factories-are-super-real-but-the-factor-ab8ad3ab
+    revisionId: rev_20260802T230000006Z_kyfnqaqayltu
+  - kind: source_extraction
+    logicalId: software-factories-are-super-real-but-the-factor-ab8ad3ab
+    revisionId: rev_20260802T230000015Z_exb6ila5bcjf
+  - kind: source_capture
+    logicalId: factories-are-not-a-token-or-llm-problem-ba5fabbf
+    revisionId: rev_20260802T230000007Z_ngft3xfbgzib
+  - kind: source_extraction
+    logicalId: factories-are-not-a-token-or-llm-problem-ba5fabbf
+    revisionId: rev_20260802T230000016Z_oa3hzaxnhkae
+  - kind: source_capture
+    logicalId: do-not-make-the-service-bus-non-deterministic-3a92442c
+    revisionId: rev_20260802T230000008Z_fuu6aytbkrfc
+  - kind: source_extraction
+    logicalId: do-not-make-the-service-bus-non-deterministic-3a92442c
+    revisionId: rev_20260802T230000017Z_yplg2plpqd4a
+  - kind: prompt
+    logicalId: faithful-edit
+    revisionId: rev_20260802T230000022Z_rafete5xuo7q
+  - kind: policy
+    logicalId: writing-rules
+    revisionId: rev_20260802T230000031Z_ryqeuddxgzli
+  - kind: policy
+    logicalId: editorial-policy
+    revisionId: rev_20260802T230000032Z_ydz3343qcwis
+files:
+  - path: manuscript.md
+    mediaType: text/markdown
+    sha256: sha256:f51bbbb1bec4e25697d468bfe4b30f8abe13ae095798a439f7d3c22ab3adc4de
+    sizeBytes: 2092
+    legacySource:
+      repositoryPath: editions/004-the-systems-around-the-model/articles/factory-systems-problem.md
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 3abf80bb9ba98dae14e98b08cc9516cc8c465b27
+logical_id: factory-systems-problem
+language: en

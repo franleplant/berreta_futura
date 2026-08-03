@@ -1,0 +1,22 @@
+schema_version: 1
+revision_kind: prompt
+logical_id: faithful-edit
+revision_id: rev_20260802T230000022Z_rafete5xuo7q
+created_at: 2026-08-02T23:00:00.022Z
+parent_revision_id: null
+migration_id: edition4-fresh-v2
+files:
+  - path: output.schema.json
+    media_type: application/json
+    sha256: sha256:ffa8f1eaddc1b16973d958d9dd506dc9a1714822119991b2420354c9f19558e3
+    size_bytes: 158
+    generated_by_migration:
+      basis: fresh_v2_prompt_set output contract for faithful-edit
+  - path: prompt.md
+    media_type: text/markdown
+    sha256: sha256:ef2944ca05f9956a401175571fb899ce2f72c9ec9cdd6aa9b4b0115d69312344
+    size_bytes: 6666
+    legacy_source:
+      repositoryPath: prompts/faithful-edit.md
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 83433a9a4dfe27e56e61b9c73ca77c8c5c485c49

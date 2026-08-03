@@ -1,0 +1,25 @@
+{
+  "artifact_count": 2,
+  "artifacts": [
+    {
+      "bytes": 509108,
+      "path": "article.pdf",
+      "sha256": "677c4f858e80e0e96e73d3a34b0df40da99b95d3ec27e2ccc344cc19973d7d4e"
+    },
+    {
+      "bytes": 1420123,
+      "path": "article.png",
+      "sha256": "b788c5d36f64031342d31e81103edc3cc2b1a54e58373fe0a616241144871037"
+    }
+  ],
+  "bundle_sha256": "f6abd7cfaba52c1e657c62b74c9f16529c47ace355d61d60ebcbb0b4d88d17f4",
+  "byte_count": 1929231,
+  "canonical_url": "https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate",
+  "captured_at": "2026-07-29T00:36:13Z",
+  "method": "authenticated_browser",
+  "purpose": "article",
+  "schema_version": 2,
+  "source_id": "the-2026-07-28-mcp-specification-release-candida-1a1752b8",
+  "source_url": "https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate",
+  "submitted_url": "https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate/"
+}

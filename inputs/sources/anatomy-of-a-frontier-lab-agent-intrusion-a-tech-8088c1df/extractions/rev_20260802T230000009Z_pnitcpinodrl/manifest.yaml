@@ -1,0 +1,16 @@
+schema_version: 1
+revision_kind: source_extraction
+logical_id: anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
+revision_id: rev_20260802T230000009Z_pnitcpinodrl
+created_at: 2026-08-02T23:00:00.009Z
+parent_revision_id: null
+migration_id: edition4-fresh-v2
+files:
+  - path: extracted.md
+    media_type: text/markdown
+    sha256: sha256:1fe981f16cd673acb07ef4f9ec9d9d8cd8098c396a9e8c152692786d960b39be
+    size_bytes: 49613
+    legacy_source:
+      repositoryPath: library/sources/anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df/extracted.md
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: caefdb5c52173d1fe23c9de7a401178507ea9515

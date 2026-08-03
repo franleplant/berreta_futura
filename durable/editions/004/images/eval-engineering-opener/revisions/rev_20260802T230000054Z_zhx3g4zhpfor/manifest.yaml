@@ -1,0 +1,29 @@
+schema_version: 1
+revision_kind: image
+edition_id: "004"
+revision_id: rev_20260802T230000054Z_zhx3g4zhpfor
+created_at: 2026-08-02T23:00:00.054Z
+parent_revision_id: null
+provenance_kind: legacy_import
+migration_id: edition4-fresh-v2
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/004-the-systems-around-the-model/art/article-openers/eval-engineering.png
+    gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+    gitBlobOid: b4cb9c8e0ce201eac9640526a1372cf864727f99
+    sha256: sha256:4c6113a54985e11dfe2bdab43b1a15d377b030fc7332bbce4e73c9aa4dda58ab
+input_revisions:
+  - kind: edition_spec
+    editionId: "004"
+    logicalId: main
+    revisionId: rev_20260802T230000034Z_nvdvmifoqlet
+files:
+  - path: image.png
+    mediaType: image/png
+    sha256: sha256:4c6113a54985e11dfe2bdab43b1a15d377b030fc7332bbce4e73c9aa4dda58ab
+    sizeBytes: 3343339
+    legacySource:
+      repositoryPath: editions/004-the-systems-around-the-model/art/article-openers/eval-engineering.png
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: b4cb9c8e0ce201eac9640526a1372cf864727f99
+logical_id: eval-engineering-opener

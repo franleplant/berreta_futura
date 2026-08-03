@@ -1,0 +1,22 @@
+schema_version: 1
+revision_kind: prompt
+logical_id: edition-review
+revision_id: rev_20260802T230000020Z_lwwllzbsfftp
+created_at: 2026-08-02T23:00:00.020Z
+parent_revision_id: null
+migration_id: edition4-fresh-v2
+files:
+  - path: output.schema.json
+    media_type: application/json
+    sha256: sha256:1fce69d8286a6dfc9ead059bc39ef8a9fcb8d47dd54eece1e2bfd9490f3abfba
+    size_bytes: 152
+    generated_by_migration:
+      basis: fresh_v2_prompt_set output contract for edition-review
+  - path: prompt.md
+    media_type: text/markdown
+    sha256: sha256:064934664aee312ae8b403d7e4b889a4ea18dc82ac1b74947f34ca02b98b298b
+    size_bytes: 6169
+    legacy_source:
+      repositoryPath: prompts/edition-review.md
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 2acf0038934177591e2b0ba83d998654c53d9a08

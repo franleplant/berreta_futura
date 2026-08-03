@@ -1,0 +1,45 @@
+schema_version: 1
+revision_kind: article
+edition_id: "004"
+revision_id: rev_20260802T230000042Z_ijlzqdn2akcq
+created_at: 2026-08-02T23:00:00.042Z
+parent_revision_id: null
+provenance_kind: legacy_import
+migration_id: edition4-fresh-v2
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/004-the-systems-around-the-model/articles/mcp-protocol-update.md
+    gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+    gitBlobOid: 02a76627af245d2f2ce07ec4a10afbb3c7c0cd43
+    sha256: sha256:3d65b78ca8cb043a9e6a217bfa1068da48002eaf5501a69a03b2326c92bf6078
+input_revisions:
+  - kind: edition_spec
+    editionId: "004"
+    logicalId: main
+    revisionId: rev_20260802T230000034Z_nvdvmifoqlet
+  - kind: source_capture
+    logicalId: the-2026-07-28-mcp-specification-release-candida-1a1752b8
+    revisionId: rev_20260802T230000005Z_d3jdf4sucrfp
+  - kind: source_extraction
+    logicalId: the-2026-07-28-mcp-specification-release-candida-1a1752b8
+    revisionId: rev_20260802T230000014Z_3eoxg74rsw6f
+  - kind: prompt
+    logicalId: faithful-synthesis
+    revisionId: rev_20260802T230000023Z_usfgg5a6f375
+  - kind: policy
+    logicalId: writing-rules
+    revisionId: rev_20260802T230000031Z_ryqeuddxgzli
+  - kind: policy
+    logicalId: editorial-policy
+    revisionId: rev_20260802T230000032Z_ydz3343qcwis
+files:
+  - path: manuscript.md
+    mediaType: text/markdown
+    sha256: sha256:3d65b78ca8cb043a9e6a217bfa1068da48002eaf5501a69a03b2326c92bf6078
+    sizeBytes: 6426
+    legacySource:
+      repositoryPath: editions/004-the-systems-around-the-model/articles/mcp-protocol-update.md
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 02a76627af245d2f2ce07ec4a10afbb3c7c0cd43
+logical_id: mcp-protocol-update
+language: en

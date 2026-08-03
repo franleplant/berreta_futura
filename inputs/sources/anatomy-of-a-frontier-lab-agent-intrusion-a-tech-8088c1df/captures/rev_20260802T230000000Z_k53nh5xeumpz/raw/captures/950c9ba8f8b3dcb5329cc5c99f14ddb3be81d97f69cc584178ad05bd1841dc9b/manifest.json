@@ -1,0 +1,20 @@
+{
+  "artifact_count": 1,
+  "artifacts": [
+    {
+      "bytes": 862008,
+      "path": "chris-rannou-profile.pdf",
+      "sha256": "7e45169dea2a98eea69eb58335ab25c5ea20d7a6c47755c25cd3057f95065171"
+    }
+  ],
+  "bundle_sha256": "950c9ba8f8b3dcb5329cc5c99f14ddb3be81d97f69cc584178ad05bd1841dc9b",
+  "byte_count": 862008,
+  "canonical_url": "https://huggingface.co/blog/agent-intrusion-technical-timeline",
+  "captured_at": "2026-07-29T00:35:45Z",
+  "method": "author_identity_profile",
+  "purpose": "author_identity",
+  "schema_version": 2,
+  "source_id": "anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df",
+  "source_url": "https://huggingface.co/chris-rannou",
+  "submitted_url": "https://huggingface.co/blog/agent-intrusion-technical-timeline"
+}

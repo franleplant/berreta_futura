@@ -1,0 +1,12 @@
+{
+  "bundle_sha256": "971de2066c74b2569b464238e52eaacb30b75515e3560ae62fa8cfd6a5e4c264",
+  "candidate_count": 0,
+  "candidates": [],
+  "curator": "magazine-compiler/automatic-media-curator",
+  "input_sha256": "6fe790aed639a4c8317ba1a64ff3d0585a0b527798cdedf6b6f3dc70ad3cffbf",
+  "policy_version": "editorial-impact-v4",
+  "schema_version": 1,
+  "selected": [],
+  "selection_limit": 3,
+  "source_id": "software-factories-are-super-real-but-the-factor-ab8ad3ab"
+}

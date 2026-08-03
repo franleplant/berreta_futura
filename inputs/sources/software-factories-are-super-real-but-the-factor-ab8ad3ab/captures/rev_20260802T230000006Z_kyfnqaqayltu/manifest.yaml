@@ -1,0 +1,72 @@
+schema_version: 1
+revision_kind: source_capture
+logical_id: software-factories-are-super-real-but-the-factor-ab8ad3ab
+revision_id: rev_20260802T230000006Z_kyfnqaqayltu
+created_at: 2026-08-02T23:00:00.006Z
+parent_revision_id: null
+migration_id: edition4-fresh-v2
+files:
+  - path: raw/captures/5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88/artifacts/profile.txt
+    media_type: text/plain
+    sha256: sha256:5bc8f82fdcd6fcf1cd11b0e2a1eeac5034ff46d6dfc48a1d7c2245a9597cf5b6
+    size_bytes: 359
+    legacy_source:
+      repositoryPath: library/sources/software-factories-are-super-real-but-the-factor-ab8ad3ab/raw/5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88/artifacts/profile.txt
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: ad354ff06d27e3ef0e9ce2181b18c7592d680d59
+  - path: raw/captures/5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88/manifest.json
+    media_type: application/json
+    sha256: sha256:aa99cdb992d4d575b1ffe8c7bcfe56e1ca43c339d424203470385d9c8be1a60c
+    size_bytes: 723
+    legacy_source:
+      repositoryPath: library/sources/software-factories-are-super-real-but-the-factor-ab8ad3ab/raw/5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88/manifest.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: ca9b90e4741ec8eeaf512d74adccf5e773c1afcf
+  - path: raw/captures/971de2066c74b2569b464238e52eaacb30b75515e3560ae62fa8cfd6a5e4c264/artifacts/post.txt
+    media_type: text/plain
+    sha256: sha256:bbc3f3fac54b5aa53ca88fdd431cff08b985ae4236552a14431dcf1dc96ee6d4
+    size_bytes: 1404
+    legacy_source:
+      repositoryPath: library/sources/software-factories-are-super-real-but-the-factor-ab8ad3ab/raw/971de2066c74b2569b464238e52eaacb30b75515e3560ae62fa8cfd6a5e4c264/artifacts/post.txt
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 1387b94ffe21dcacf96826e9fa1af5409b926e66
+  - path: raw/captures/971de2066c74b2569b464238e52eaacb30b75515e3560ae62fa8cfd6a5e4c264/manifest.json
+    media_type: application/json
+    sha256: sha256:50c8f1f92bf9b5db737230120d2ae1b1d302218e5c391752c9003e691e9c08f9
+    size_bytes: 750
+    legacy_source:
+      repositoryPath: library/sources/software-factories-are-super-real-but-the-factor-ab8ad3ab/raw/971de2066c74b2569b464238e52eaacb30b75515e3560ae62fa8cfd6a5e4c264/manifest.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 98a7a144d457137044d39408762282fd7e6dc0eb
+  - path: raw/media/5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88.json
+    media_type: application/json
+    sha256: sha256:dfa3b2beaa87df9450b1333d517001769f5e069bd5bcae02f233b410cf749edc
+    size_bytes: 422
+    legacy_source:
+      repositoryPath: library/sources/software-factories-are-super-real-but-the-factor-ab8ad3ab/media/5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: c1b7ae5799c33ffdbaea8372645bb7743cf4b306
+  - path: raw/media/971de2066c74b2569b464238e52eaacb30b75515e3560ae62fa8cfd6a5e4c264.curation.json
+    media_type: application/json
+    sha256: sha256:a0706c6b77a5f6d88eb0a50245da9ec1b1eb07f51e7f5c7c42dd492773094612
+    size_bytes: 462
+    legacy_source:
+      repositoryPath: library/sources/software-factories-are-super-real-but-the-factor-ab8ad3ab/media/971de2066c74b2569b464238e52eaacb30b75515e3560ae62fa8cfd6a5e4c264.curation.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 9548c335921a9bc5e1a6d437938a53fde42e9d77
+  - path: raw/media/971de2066c74b2569b464238e52eaacb30b75515e3560ae62fa8cfd6a5e4c264.json
+    media_type: application/json
+    sha256: sha256:297532bb4fa30d03a9291e2b8abf4d2f80b15f475963c2b941b7cb7e4ac1f037
+    size_bytes: 422
+    legacy_source:
+      repositoryPath: library/sources/software-factories-are-super-real-but-the-factor-ab8ad3ab/media/971de2066c74b2569b464238e52eaacb30b75515e3560ae62fa8cfd6a5e4c264.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 5ad458922e67731d0f19dc09d92b56fb5e0d750d
+  - path: raw/record.yaml
+    media_type: application/yaml
+    sha256: sha256:b64ae394b86d84919271c074c77379b68a5bae4daa36a8f168d4962b94d8d813
+    size_bytes: 2017
+    legacy_source:
+      repositoryPath: library/sources/software-factories-are-super-real-but-the-factor-ab8ad3ab/record.yaml
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 6c63ea2c0bf4020f722c6506b66307963b1f8f4b

@@ -1,0 +1,14 @@
+{
+  "artifact_count": 1,
+  "bundle_sha256": "28229f2cb0a62496b6d89fca809f7167f052c7378405e8cd671ce7c46d48c16e",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 0,
+  "images": [],
+  "local_references": [],
+  "missing_references": [],
+  "referenced_image_count": 0,
+  "schema_version": 1,
+  "source_id": "factories-are-not-a-token-or-llm-problem-ba5fabbf",
+  "unresolved_acquisition_references": []
+}

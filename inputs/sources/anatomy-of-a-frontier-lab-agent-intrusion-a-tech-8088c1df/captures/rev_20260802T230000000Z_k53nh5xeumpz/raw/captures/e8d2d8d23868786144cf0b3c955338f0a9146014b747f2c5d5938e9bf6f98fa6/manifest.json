@@ -1,0 +1,55 @@
+{
+  "artifact_count": 8,
+  "artifacts": [
+    {
+      "bytes": 1965148,
+      "path": "article.pdf",
+      "sha256": "6b7732401ac7ab909e429ef5c7f822d1645c060f9ea2a79853c651191655a23f"
+    },
+    {
+      "bytes": 4363225,
+      "path": "article.png",
+      "sha256": "220f17c01bff0ea143cb9ab378d965a729d709d87a86ae26de6c72e46776c4b3"
+    },
+    {
+      "bytes": 11516,
+      "path": "media/001.svg",
+      "sha256": "10ec4749f89d85211d7223045ec83eba30e6ce0a415f3cbff2744efe795e7e74"
+    },
+    {
+      "bytes": 5857,
+      "path": "media/002.svg",
+      "sha256": "da743431325752c4466c0532011bdfdcf079906368a8d790cf25365a14fbe5a0"
+    },
+    {
+      "bytes": 91619,
+      "path": "media/003.png",
+      "sha256": "55dae29d6fda7e646ba04071dfb2d5546fa506c95ccfc65129a6c08660fa8e9a"
+    },
+    {
+      "bytes": 6818,
+      "path": "media/004.svg",
+      "sha256": "f5c773c748555d31d2e7a74d911ef7b2db83140582f47cfab8e6a14c54a0e64c"
+    },
+    {
+      "bytes": 58568,
+      "path": "media/005.png",
+      "sha256": "ae87dbf3e48103df38b82329514147b4579f97b4e0f20867547d5054faef9934"
+    },
+    {
+      "bytes": 3000,
+      "path": "media-manifest.json",
+      "sha256": "05318a8e362eee55c062fa2cb073ee20c153bc5b6c6e57f24fb98b20c6b229a2"
+    }
+  ],
+  "bundle_sha256": "e8d2d8d23868786144cf0b3c955338f0a9146014b747f2c5d5938e9bf6f98fa6",
+  "byte_count": 6505751,
+  "canonical_url": "https://huggingface.co/blog/agent-intrusion-technical-timeline",
+  "captured_at": "2026-07-29T00:44:54Z",
+  "method": "authenticated_browser_original_media",
+  "purpose": "article",
+  "schema_version": 2,
+  "source_id": "anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df",
+  "source_url": "https://huggingface.co/blog/agent-intrusion-technical-timeline",
+  "submitted_url": "https://huggingface.co/blog/agent-intrusion-technical-timeline"
+}

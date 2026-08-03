@@ -1,0 +1,14 @@
+{
+  "artifact_count": 1,
+  "bundle_sha256": "6673eb827dc1ca5a5ee8a8fbe17dc5e842a3977f4ea65ea0350db2a29153318c",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 0,
+  "images": [],
+  "local_references": [],
+  "missing_references": [],
+  "referenced_image_count": 0,
+  "schema_version": 1,
+  "source_id": "22580-from-gpt2-to-kimi3-explained-8f01b0fe",
+  "unresolved_acquisition_references": []
+}

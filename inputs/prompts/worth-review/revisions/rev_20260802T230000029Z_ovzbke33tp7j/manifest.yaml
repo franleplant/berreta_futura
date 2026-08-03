@@ -1,0 +1,22 @@
+schema_version: 1
+revision_kind: prompt
+logical_id: worth-review
+revision_id: rev_20260802T230000029Z_ovzbke33tp7j
+created_at: 2026-08-02T23:00:00.029Z
+parent_revision_id: null
+migration_id: edition4-fresh-v2
+files:
+  - path: output.schema.json
+    media_type: application/json
+    sha256: sha256:fb056c7f8ac45569dfe17962c59675380dfd38094f5aeb3aeffac2a5da256057
+    size_bytes: 150
+    generated_by_migration:
+      basis: fresh_v2_prompt_set output contract for worth-review
+  - path: prompt.md
+    media_type: text/markdown
+    sha256: sha256:f8e92c009581ec1447b3c1ebc865717c0db6f16bea6d229ae5c5fb6d0f10eebf
+    size_bytes: 6424
+    legacy_source:
+      repositoryPath: prompts/worth-review.md
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: d9c176d0398a1e7b72294d0332586ec1b34c854b

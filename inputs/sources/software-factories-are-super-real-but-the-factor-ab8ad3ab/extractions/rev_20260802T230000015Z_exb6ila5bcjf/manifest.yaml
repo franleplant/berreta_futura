@@ -1,0 +1,16 @@
+schema_version: 1
+revision_kind: source_extraction
+logical_id: software-factories-are-super-real-but-the-factor-ab8ad3ab
+revision_id: rev_20260802T230000015Z_exb6ila5bcjf
+created_at: 2026-08-02T23:00:00.015Z
+parent_revision_id: null
+migration_id: edition4-fresh-v2
+files:
+  - path: extracted.md
+    media_type: text/markdown
+    sha256: sha256:7d39ba20dd2eb67ee478ad427a8c26c984b68a9a432611dda1521590e7bed91f
+    size_bytes: 1433
+    legacy_source:
+      repositoryPath: library/sources/software-factories-are-super-real-but-the-factor-ab8ad3ab/extracted.md
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: bb4ac84a1c12a36c2fc9e4d99d0c79abb37e278c

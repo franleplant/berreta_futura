@@ -1,0 +1,20 @@
+{
+  "artifact_count": 1,
+  "artifacts": [
+    {
+      "bytes": 1015,
+      "path": "post.txt",
+      "sha256": "b1a341b72300f5226081d62aad7f8182abf6672687f968d5a76aaa296974d9fc"
+    }
+  ],
+  "bundle_sha256": "2897c9836334cfec9e19044a7b16980cc4035cadb8d7d020ba464ae268609ee6",
+  "byte_count": 1015,
+  "canonical_url": "https://x.com/GeoffreyHuntley/status/2082576563439312982",
+  "captured_at": "2026-07-29T21:40:25-03:00",
+  "method": "authenticated_browser_dom_export",
+  "purpose": "article",
+  "schema_version": 2,
+  "source_id": "do-not-make-the-service-bus-non-deterministic-3a92442c",
+  "source_url": "https://x.com/GeoffreyHuntley/status/2082576563439312982",
+  "submitted_url": "https://x.com/GeoffreyHuntley/status/2082576563439312982"
+}

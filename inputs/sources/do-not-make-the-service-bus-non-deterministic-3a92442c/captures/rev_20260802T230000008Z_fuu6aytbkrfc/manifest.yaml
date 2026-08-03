@@ -1,0 +1,72 @@
+schema_version: 1
+revision_kind: source_capture
+logical_id: do-not-make-the-service-bus-non-deterministic-3a92442c
+revision_id: rev_20260802T230000008Z_fuu6aytbkrfc
+created_at: 2026-08-02T23:00:00.008Z
+parent_revision_id: null
+migration_id: edition4-fresh-v2
+files:
+  - path: raw/captures/2897c9836334cfec9e19044a7b16980cc4035cadb8d7d020ba464ae268609ee6/artifacts/post.txt
+    media_type: text/plain
+    sha256: sha256:b1a341b72300f5226081d62aad7f8182abf6672687f968d5a76aaa296974d9fc
+    size_bytes: 1015
+    legacy_source:
+      repositoryPath: library/sources/do-not-make-the-service-bus-non-deterministic-3a92442c/raw/2897c9836334cfec9e19044a7b16980cc4035cadb8d7d020ba464ae268609ee6/artifacts/post.txt
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: f914eff36fde69d24ab79c847bac3f027a6141a9
+  - path: raw/captures/2897c9836334cfec9e19044a7b16980cc4035cadb8d7d020ba464ae268609ee6/manifest.json
+    media_type: application/json
+    sha256: sha256:0bde15c733d80b8f9108c6e5be196699baaeeac7ae5564b0ebcd8f19211c2d43
+    size_bytes: 747
+    legacy_source:
+      repositoryPath: library/sources/do-not-make-the-service-bus-non-deterministic-3a92442c/raw/2897c9836334cfec9e19044a7b16980cc4035cadb8d7d020ba464ae268609ee6/manifest.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: a846164f03a77548031c205d5dc4e3dd924be2dd
+  - path: raw/captures/5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88/artifacts/profile.txt
+    media_type: text/plain
+    sha256: sha256:5bc8f82fdcd6fcf1cd11b0e2a1eeac5034ff46d6dfc48a1d7c2245a9597cf5b6
+    size_bytes: 359
+    legacy_source:
+      repositoryPath: library/sources/do-not-make-the-service-bus-non-deterministic-3a92442c/raw/5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88/artifacts/profile.txt
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: ad354ff06d27e3ef0e9ce2181b18c7592d680d59
+  - path: raw/captures/5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88/manifest.json
+    media_type: application/json
+    sha256: sha256:9ed9a42b9cbcd83729f45eb2316e5c1582764c9fc1aa48c3c99269969f319d0c
+    size_bytes: 720
+    legacy_source:
+      repositoryPath: library/sources/do-not-make-the-service-bus-non-deterministic-3a92442c/raw/5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88/manifest.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: a1d11787b56f7fc36154ec0bca8990159eec817b
+  - path: raw/media/2897c9836334cfec9e19044a7b16980cc4035cadb8d7d020ba464ae268609ee6.curation.json
+    media_type: application/json
+    sha256: sha256:eb839e8fe3fabde40566f6b18b61d717f8046ce6040368fa10aa685156a8e959
+    size_bytes: 459
+    legacy_source:
+      repositoryPath: library/sources/do-not-make-the-service-bus-non-deterministic-3a92442c/media/2897c9836334cfec9e19044a7b16980cc4035cadb8d7d020ba464ae268609ee6.curation.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: ad47dcf7065bd24dc71665754169e957505e8e37
+  - path: raw/media/2897c9836334cfec9e19044a7b16980cc4035cadb8d7d020ba464ae268609ee6.json
+    media_type: application/json
+    sha256: sha256:44ed8c6819e8568fd6a6f20736384053d0d436787b1a88af3bf230a230f3bdec
+    size_bytes: 419
+    legacy_source:
+      repositoryPath: library/sources/do-not-make-the-service-bus-non-deterministic-3a92442c/media/2897c9836334cfec9e19044a7b16980cc4035cadb8d7d020ba464ae268609ee6.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 58a633277982c45db24cb1b7b6bfe13f6c2c1ec6
+  - path: raw/media/5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88.json
+    media_type: application/json
+    sha256: sha256:b3209f3e8efc5df821cd88076899afb4e9afb872ed1b1b5efa46eb44f4e25295
+    size_bytes: 419
+    legacy_source:
+      repositoryPath: library/sources/do-not-make-the-service-bus-non-deterministic-3a92442c/media/5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 24f47fa35a290097ab269278b504e7bcc717f159
+  - path: raw/record.yaml
+    media_type: application/yaml
+    sha256: sha256:e1057e4c6ba85658888d0a65c15b274f59b1bf4830b3b0ba3a7d69297787b499
+    size_bytes: 1994
+    legacy_source:
+      repositoryPath: library/sources/do-not-make-the-service-bus-non-deterministic-3a92442c/record.yaml
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 3516f8f61fda0bf3ed3e1e5040295c15f0a2d10a

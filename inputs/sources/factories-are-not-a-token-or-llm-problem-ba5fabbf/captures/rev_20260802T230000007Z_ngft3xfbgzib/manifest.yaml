@@ -1,0 +1,72 @@
+schema_version: 1
+revision_kind: source_capture
+logical_id: factories-are-not-a-token-or-llm-problem-ba5fabbf
+revision_id: rev_20260802T230000007Z_ngft3xfbgzib
+created_at: 2026-08-02T23:00:00.007Z
+parent_revision_id: null
+migration_id: edition4-fresh-v2
+files:
+  - path: raw/captures/28229f2cb0a62496b6d89fca809f7167f052c7378405e8cd671ce7c46d48c16e/artifacts/post.txt
+    media_type: text/plain
+    sha256: sha256:0988efd38c5f35551809bf3509c291eb372b4f2af9e089d76cc31771ab0b71e3
+    size_bytes: 452
+    legacy_source:
+      repositoryPath: library/sources/factories-are-not-a-token-or-llm-problem-ba5fabbf/raw/28229f2cb0a62496b6d89fca809f7167f052c7378405e8cd671ce7c46d48c16e/artifacts/post.txt
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: ba86080709e93fde4c7b95038a9a160711bae4c2
+  - path: raw/captures/28229f2cb0a62496b6d89fca809f7167f052c7378405e8cd671ce7c46d48c16e/manifest.json
+    media_type: application/json
+    sha256: sha256:314fc98132fa311195bf5711c19238990ff282a0b429dbb200eb50876ef88f2f
+    size_bytes: 740
+    legacy_source:
+      repositoryPath: library/sources/factories-are-not-a-token-or-llm-problem-ba5fabbf/raw/28229f2cb0a62496b6d89fca809f7167f052c7378405e8cd671ce7c46d48c16e/manifest.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: d71ff70c7d91ce9c239cb5cdd60c59bdb609faa9
+  - path: raw/captures/5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88/artifacts/profile.txt
+    media_type: text/plain
+    sha256: sha256:5bc8f82fdcd6fcf1cd11b0e2a1eeac5034ff46d6dfc48a1d7c2245a9597cf5b6
+    size_bytes: 359
+    legacy_source:
+      repositoryPath: library/sources/factories-are-not-a-token-or-llm-problem-ba5fabbf/raw/5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88/artifacts/profile.txt
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: ad354ff06d27e3ef0e9ce2181b18c7592d680d59
+  - path: raw/captures/5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88/manifest.json
+    media_type: application/json
+    sha256: sha256:19884f34c30a9fb01f517a37186b35ab25635460850473b7b8c62ed72c60f073
+    size_bytes: 715
+    legacy_source:
+      repositoryPath: library/sources/factories-are-not-a-token-or-llm-problem-ba5fabbf/raw/5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88/manifest.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: a5f1b65bd32132fcf1952c8294e8c680b2469042
+  - path: raw/media/28229f2cb0a62496b6d89fca809f7167f052c7378405e8cd671ce7c46d48c16e.curation.json
+    media_type: application/json
+    sha256: sha256:3273571002d507a73b381c71714603c491e7d1a72667cc9f0be059c7e13a4a1a
+    size_bytes: 454
+    legacy_source:
+      repositoryPath: library/sources/factories-are-not-a-token-or-llm-problem-ba5fabbf/media/28229f2cb0a62496b6d89fca809f7167f052c7378405e8cd671ce7c46d48c16e.curation.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: bc3cacb0fbaeb5a2db217494b7414f9bb932aa5c
+  - path: raw/media/28229f2cb0a62496b6d89fca809f7167f052c7378405e8cd671ce7c46d48c16e.json
+    media_type: application/json
+    sha256: sha256:97f1c9bb62a9eac0d0616614dd0efca1110f153b3b1dffdf3da0e6c35371a08a
+    size_bytes: 414
+    legacy_source:
+      repositoryPath: library/sources/factories-are-not-a-token-or-llm-problem-ba5fabbf/media/28229f2cb0a62496b6d89fca809f7167f052c7378405e8cd671ce7c46d48c16e.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: a1d6c705fc98f73923d0d0451afc4b0a98ac1535
+  - path: raw/media/5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88.json
+    media_type: application/json
+    sha256: sha256:d7ccc08406560ecf5cef37ca7f7647e69a57fcbd3cd79e9289d9bfe3f796b508
+    size_bytes: 414
+    legacy_source:
+      repositoryPath: library/sources/factories-are-not-a-token-or-llm-problem-ba5fabbf/media/5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 1ea60a5d3d5ba043e3b26ef7de76cc46862c4e02
+  - path: raw/record.yaml
+    media_type: application/yaml
+    sha256: sha256:8891c0fd308ecab62fa7c642eec3aef90c0bb2a43ba7c6dc62c1e98d37c06c35
+    size_bytes: 1983
+    legacy_source:
+      repositoryPath: library/sources/factories-are-not-a-token-or-llm-problem-ba5fabbf/record.yaml
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 357105726364fea346adf18fcf66ed4adb23e7c9
