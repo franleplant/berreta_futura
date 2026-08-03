@@ -1,7 +1,16 @@
 import assert from "node:assert/strict";
-import { execFile as execFileCallback } from "node:child_process";
+import { execFile as execFileCallback, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  access,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -270,6 +279,57 @@ test("v2 durable migration rolls back earlier publications when a later rename f
   }
 });
 
+test("v2 durable migration rejects a replaced staged source before publication", async () => {
+  const root = await fixture();
+  try {
+    const revisions = RACE_REVISIONS.slice(0, 2);
+    const sourcePaths = revisions.map((_, index) =>
+      `legacy/race-${String(index).padStart(2, "0")}.png`
+    );
+    await writeFile(
+      join(root, sourcePaths[1]!),
+      Buffer.concat([PNG, Buffer.alloc(8 * 1024 * 1024, 7)]),
+    );
+    await commitAll(root, "Enlarge second staging-race blob");
+    const entries = revisions.map((revisionId, index) => ({
+      ref: {
+        kind: "image" as const,
+        editionId: "004",
+        logicalId: `race-${String(index).padStart(2, "0")}`,
+        revisionId,
+      },
+      createdAt: `2026-08-02T21:00:00.${String(100 + index).padStart(3, "0")}Z`,
+      parentRevisionId: null,
+      inputRevisions: [EDITION_REF, MIGRATION_PLAN_REF],
+      files: [{ sourcePath: sourcePaths[index]!, targetPath: "image.png", mediaType: "image/png" }],
+    }));
+    const plan = await batchPlan(root, { entries, compositions: [], sourcePaths });
+    const workRoot = join(root, ".magazine/race-work");
+    await mkdir(workRoot, { recursive: true });
+    const result = await runMigrationWithStagedReplacement(
+      root,
+      workRoot,
+      plan,
+      join(root, "legacy/article-en.md"),
+    );
+    assert.equal(
+      result.replaced,
+      true,
+      result.stderr || "test replacement must win the staging race",
+    );
+    assert.notEqual(result.exitCode, 0);
+    assert.match(
+      result.stderr,
+      /cannot safely read staged legacy source|changed after Git blob capture/u,
+    );
+    for (const entry of entries) {
+      await assertMissing(join(root, "durable", durableRevisionRelativeDirectory(entry.ref)));
+    }
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test("v2 durable migration rejects an unrelated migration plan input", async () => {
   const root = await fixture();
   try {
@@ -359,6 +419,20 @@ test("v2 historical compositions reject additional and duplicate migration plan 
 });
 
 const PNG = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 1, 2, 3, 4]);
+const RACE_REVISIONS: readonly RevisionId[] = [
+  "rev_20260802T210000100Z_pppppppppppp" as RevisionId,
+  "rev_20260802T210000101Z_qqqqqqqqqqqq" as RevisionId,
+  "rev_20260802T210000102Z_rrrrrrrrrrrr" as RevisionId,
+  "rev_20260802T210000103Z_ssssssssssss" as RevisionId,
+  "rev_20260802T210000104Z_tttttttttttt" as RevisionId,
+  "rev_20260802T210000105Z_uuuuuuuuuuuu" as RevisionId,
+  "rev_20260802T210000106Z_vvvvvvvvvvvv" as RevisionId,
+  "rev_20260802T210000107Z_wwwwwwwwwwww" as RevisionId,
+  "rev_20260802T210000108Z_xxxxxxxxxxxx" as RevisionId,
+  "rev_20260802T210000109Z_yyyyyyyyyyyy" as RevisionId,
+  "rev_20260802T210000110Z_zzzzzzzzzzzz" as RevisionId,
+  "rev_20260802T210000111Z_222222222222" as RevisionId,
+];
 
 async function fixture(): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), "mag-legacy-durable-"));
@@ -369,6 +443,12 @@ async function fixture(): Promise<string> {
   await writeFile(join(root, "legacy/editorial-es.md"), "# Editorial ES\n");
   await writeFile(join(root, "legacy/cover.png"), PNG);
   await writeFile(join(root, "legacy/invalid-image.bin"), "not a png\n");
+  for (const [index, revisionId] of RACE_REVISIONS.entries()) {
+    await writeFile(
+      join(root, `legacy/race-${String(index).padStart(2, "0")}.png`),
+      Buffer.concat([PNG, Buffer.from(revisionId)]),
+    );
+  }
   await writeFile(join(root, "legacy/edition.yaml"), "edition_id: '004'\n");
   await writeInput(root, EDITION_REF, "edition.yaml", Buffer.from("edition_id: '004'\n"));
   await writeInput(root, MIGRATION_PLAN_REF, "inventory.yaml", Buffer.from("migration: legacy-four-root\n"));
@@ -413,6 +493,59 @@ async function git(root: string, args: readonly string[]): Promise<string> {
 
 async function assertMissing(path: string): Promise<void> {
   await assert.rejects(access(path));
+}
+
+async function runMigrationWithStagedReplacement(
+  root: string,
+  workRoot: string,
+  plan: LegacyDurableBatchMigrationPlan,
+  replacementPath: string,
+): Promise<{ readonly replaced: boolean; readonly exitCode: number | null; readonly stderr: string }> {
+  const moduleUrl = new URL("../durable/index.ts", import.meta.url).href;
+  const scriptPath = join(root, "run-staged-race.mjs");
+  await writeFile(scriptPath, [
+    `import { materializeLegacyDurableMigrationBatch } from ${JSON.stringify(moduleUrl)};`,
+    `const root = ${JSON.stringify(root)};`,
+    `const workRoot = ${JSON.stringify(workRoot)};`,
+    `const plan = ${JSON.stringify(plan)};`,
+    "await materializeLegacyDurableMigrationBatch(root, workRoot, plan, { async assertCommitted() {} });",
+    "",
+  ].join("\n"));
+  const child = spawn(process.execPath, [scriptPath], {
+    cwd: root,
+    stdio: ["ignore", "ignore", "pipe"],
+  });
+  let stderr = "";
+  child.stderr.setEncoding("utf8");
+  child.stderr.on("data", (chunk: string) => {
+    stderr += chunk;
+  });
+  const completed = new Promise<{ readonly exitCode: number | null; readonly stderr: string }>(
+    (resolve) => child.once("close", (exitCode) => resolve({ exitCode, stderr })),
+  );
+  const deadline = Date.now() + 30_000;
+  let replaced = false;
+  while (!replaced && child.exitCode === null && Date.now() < deadline) {
+    for (const batchName of await readdir(workRoot)) {
+      const stagedPath = join(workRoot, batchName, "sources", "000000");
+      try {
+        await access(stagedPath);
+      } catch {
+        continue;
+      }
+      child.kill("SIGSTOP");
+      await new Promise<void>((resolve) => setTimeout(resolve, 10));
+      await rm(stagedPath);
+      await symlink(replacementPath, stagedPath);
+      child.kill("SIGCONT");
+      replaced = true;
+      break;
+    }
+    if (!replaced) await new Promise<void>((resolve) => setTimeout(resolve, 2));
+  }
+  if (!replaced) child.kill("SIGKILL");
+  const result = await completed;
+  return { replaced, ...result };
 }
 
 function historicalComposition(): HistoricalCompositionEntry {
