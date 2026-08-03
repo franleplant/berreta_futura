@@ -251,6 +251,21 @@ function validatePayloadConvention(
         throw invalid("policy revision must contain exactly policy.md");
       }
       return;
+    case "migration_plan":
+      if (!sameSequence(paths, ["inventory.yaml"])) {
+        throw invalid("migration plan must contain exactly inventory.yaml");
+      }
+      return;
+    case "migration_attestation":
+      if (!sameSequence(paths, ["attestation.yaml"])) {
+        throw invalid("migration attestation must contain exactly attestation.yaml");
+      }
+      return;
+    case "migration_archive":
+      if (paths.length === 0 || paths.some((path) => !path.startsWith("archive/"))) {
+        throw invalid("migration archive payloads must live under archive/");
+      }
+      return;
     case "edition_spec":
       if (!paths.includes("edition.yaml")) {
         throw invalid("edition spec revision must contain edition.yaml");

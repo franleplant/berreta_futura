@@ -37,6 +37,9 @@ export type DurableRevisionRef = DurableLogicalItem & {
 
 export type InputRevisionKind =
   | "edition_spec"
+  | "migration_archive"
+  | "migration_attestation"
+  | "migration_plan"
   | "policy"
   | "prompt"
   | "run_bootstrap"

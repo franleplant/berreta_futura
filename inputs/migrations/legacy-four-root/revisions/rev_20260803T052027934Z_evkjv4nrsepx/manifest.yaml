@@ -1,0 +1,14 @@
+schema_version: 1
+revision_kind: migration_plan
+logical_id: legacy-four-root
+revision_id: rev_20260803T052027934Z_evkjv4nrsepx
+created_at: 2026-08-03T05:20:27.934Z
+parent_revision_id: null
+migration_id: legacy-four-root
+files:
+  - path: inventory.yaml
+    media_type: application/yaml
+    sha256: sha256:4ec0029503d4c26adc659e130cdefb837a31a5aef309be7b0f41f8689a832909
+    size_bytes: 1010583
+    generated_by_migration:
+      basis: complete immutable inventory and disposition plan for 5097aab2154be41b9315adfc1bf737898217be73
