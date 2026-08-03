@@ -161,6 +161,12 @@ export function verifyLegacySourceBlobDigests(
   }
 }
 
+/** Emits a value-only YAML document so sorted output cannot precede an alias anchor. */
+export function serializeLegacyMigrationAttestation(attestation: LegacyMigrationAttestation): Buffer {
+  const detached = JSON.parse(JSON.stringify(attestation)) as LegacyMigrationAttestation;
+  return Buffer.from(stringify(detached, { lineWidth: 0, sortMapEntries: true }), "utf8");
+}
+
 /**
  * Proves that every protected legacy blob has one exact committed destination
  * before the legacy roots are removed. This reads Git objects, never mutable
@@ -459,7 +465,7 @@ export async function materializeLegacyMigrationAttestation(
   await mkdir(destinationParent, { recursive: true, mode: 0o700 });
   const candidate = await mkdtemp(join(destinationParent, ".legacy-attestation-stage-"));
   try {
-    const payload = Buffer.from(stringify(attestation, { lineWidth: 0, sortMapEntries: true }), "utf8");
+    const payload = serializeLegacyMigrationAttestation(attestation);
     const manifest = Buffer.from(stringify({
       schema_version: 1,
       revision_kind: "migration_attestation",
@@ -560,9 +566,13 @@ export function verifyLegacyMigrationAttestation(
       entry.source.sizeBytes !== entry.target.sizeBytes)) {
     throw new Error("migration attestation does not preserve pre-existing Edition 4 image blobs");
   }
+  const expectedDispositions = dispositionCounts(attestation.sourceRows);
   if (attestation.summary.sourceRows !== attestation.sourceRows.length ||
     attestation.summary.sourceBytes !== attestation.sourceRows.reduce((sum, row) => sum + row.source.sizeBytes, 0) ||
-    JSON.stringify(attestation.summary.dispositions) !== JSON.stringify(dispositionCounts(attestation.sourceRows)) ||
+    attestation.summary.dispositions.import_exact !== expectedDispositions.import_exact ||
+    attestation.summary.dispositions.reuse_existing !== expectedDispositions.reuse_existing ||
+    attestation.summary.dispositions.archive_non_authoritative !== expectedDispositions.archive_non_authoritative ||
+    attestation.summary.dispositions.retire_housekeeping !== expectedDispositions.retire_housekeeping ||
     attestation.summary.generatedFiles !== attestation.generatedFiles.length ||
     attestation.summary.historicalCompositions !== attestation.historicalCompositions.length ||
     attestation.summary.preExistingEdition4ImageFiles !== attestation.preExistingEdition4ImageFiles.length) {
