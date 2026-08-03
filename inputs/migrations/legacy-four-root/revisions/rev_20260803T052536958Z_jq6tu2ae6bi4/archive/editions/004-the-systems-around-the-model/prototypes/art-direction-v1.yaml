@@ -1,0 +1,43 @@
+schema_version: 1
+direction:
+  name: Story-Led Boy and Robot
+  visual_language: >-
+    Original family-friendly children's science-comedy manga with the warmth,
+    economy, and visual clarity of late-20th-century work. Use simple confident
+    black contours, rounded shapes, large readable expressions, flat color,
+    minimal hatching, restrained halftone, and one playful visual idea per
+    illustration. The recurring cast is exactly one curious school-age boy and
+    one compact helper robot. Preserve their defining shapes and colors across
+    the edition while changing their pose, action, props, and setting to serve
+    each article. Use broad genre cues only. Never reproduce a franchise
+    character, costume, face, silhouette, or signature gadget.
+  palette: >-
+    Colorful and scene-led. Use cobalt and sky blue, turquoise, fresh green,
+    coral red, violet, orange, and other print-safe colors as the subject needs.
+    The background is chosen for each scene and may be white, a cool pale tint,
+    a simple room, an outdoor setting, or another article-relevant environment.
+    Do not impose one paper color across the edition. Yellow may be used as a
+    local accent when the scene benefits, but never as the automatic field,
+    paper tint, or full-image cast.
+  reference_images:
+  - editions/004-the-systems-around-the-model/prototypes/assets/factory-systems-boy-robot-color-v1.png
+  constraints:
+  - Entirely wordless editorial storytelling
+  - Exactly one recurring boy and one recurring robot in every authored illustration
+  - Boy has black tousled hair, round glasses, a blue-green top, shorts, and red sneakers
+  - Robot is waist-high to the boy with an off-white rounded rectangular body, cobalt side panels, black face screen, two friendly curved white eyes, one short antenna, mitten-like hands, and a coral tool pouch
+  - One clear funny situation or visual proposition tied to the article
+  - Strong simple silhouettes and expressions that remain legible at A5 size
+  - Essential article-tail action remains inside the safe horizontal crop
+  - Multi-panel structure is used only when an ordered sequence is the article's central idea
+  - Background color and setting are selected from the article subject, not inherited from a publication default
+  - Use at least three distinct non-neutral spot colors unless the article gives a clear reason for restraint
+  - Print-friendly contrast with simple black contours, minimal hatching, and restrained halftone
+  avoid:
+  - Direct copies of Doraemon, Nobita, or any recognizable franchise character
+  - Blue robotic cats, cat ears, whiskers, bell collars, round cat bodies, belly pockets, copied costumes, copied faces, or signature franchise gadgets
+  - Uniform yellow, mustard, beige, sepia, cream-paper, parchment, or aged-paper backgrounds
+  - Extra humans, extra robots, robot-faced appliances, or background mascots that weaken cast continuity
+  - Dense technical realism, crowded machinery, steampunk clutter, or excessive crosshatching
+  - Modern glossy anime rendering, painterly concept art, photorealism, or generic corporate vector art
+  - Decorative pseudo-writing, captions, labels, interface text, logos, speech balloons, or watermarks

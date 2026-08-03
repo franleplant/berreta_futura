@@ -1,0 +1,22 @@
+schema_version: 1
+edition_id: 003-unreleased
+reviewer: Codex independent render critic (edition3_render_critic)
+reviewed_at: '2026-07-29T00:53:32+00:00'
+result: approved
+engine: weasyprint
+design_direction: WeasyPrint / A5 fold proof
+findings: []
+notes: Inspected every English and Spanish reader and booklet contact sheet plus individual 144-DPI rasters
+  for all printed illustration pages. New wordless retro manga tails and closing plates are legible, coherent,
+  collision-free, correctly cropped, and preserve blank inside covers and imposition.
+languages:
+  en:
+    reader_sha256: 4312930154f0e4f34b40b95acaf0dac18668e06d14a219a16c9e7466bfa49d45
+    booklet_sha256: 9544016cdc559261a0922f911b91d6e314140bc70558f7782312eb558ae8a8a1
+    page_count: 36
+    machine_result: pass
+  es:
+    reader_sha256: c6191aba9d928be547af572902c6d35464352fb87450b58f9bb24c3ab2a14851
+    booklet_sha256: 9ffdd43a1111011a405f736d79dba86e5b20eb35a97a5b2f6b2d1da04063aaa4
+    page_count: 40
+    machine_result: pass

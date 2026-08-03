@@ -1,0 +1,210 @@
+schema_version: 1
+edition_id: rerun-004-the-systems-around-the-model
+piece_id: factory-systems-problem
+content_mode: faithful_edit
+status: drafting
+produced_at: '2026-08-02T13:52:59+00:00'
+inputs_sha256: 75304b6f8676a192d102f228660f3b81b134e22ba43deec0f6b691ccfc7625ea
+manuscript_sha256: 74d8a63f53bfabe52af94eeec50c6ac4738f0a1303d61b3f5a52c2d16ab0180f
+rounds:
+- round: 1
+  result: changes_required
+  manuscript_sha256: 74d8a63f53bfabe52af94eeec50c6ac4738f0a1303d61b3f5a52c2d16ab0180f
+  writer:
+    role: writer
+    prompt_path: prompts/faithful-edit.md
+    prompt_sha256: ef2944ca05f9956a401175571fb899ce2f72c9ec9cdd6aa9b4b0115d69312344
+    backend: agent
+    model: null
+    argv:
+    - mag
+    - produce
+    - rerun-004-the-systems-around-the-model
+    - --backend
+    - agent
+    - --submit
+    - factory-systems-problem/r1-writer
+    - --work-sha256
+    - ac356360b4df5a112f2098d030558f34f8c600acb8ca2c78d41e76cade50e235
+    duration_seconds: 0.0
+    output_sha256: f24622d419e399fc8b38460c0b469ad978427785278d22e5568ac55d359bf077
+  gate_failures: []
+  anchors_reconciled: []
+  judges: {}
+  notes: "## What changed in this round, and nothing else did\n\nOne finding: F1, `capitalization`, `major`,\
+    \ filed by the owner reading the\nprinted page. This draft is the previous one with sentence-initial\
+    \ capitals\nadded and **no other change of any kind**. Same words, same order, same\nparagraphing,\
+    \ same two headings, same folded side-notes, same straight\napostrophes, same 370/363 counts. If you\
+    \ are diffing, every hunk should be a\nsingle letter.\n\nRead \"The capitalisation record\" below\
+    \ before you touch a capital, and\n\"The agreement error\" before you touch that sentence. Everything\
+    \ above those two\nsections is carried forward from the previous draft's notes because it is still\n\
+    true and the next reviser still needs it.\n\n## Why this is a reprint\n\nScattered short posts collected.\
+    \ Three separate X posts by one author, each one\nor two paragraphs long, each on its own page behind\
+    \ an account, and the first\none carrying three of the author's own numbered side-notes parked at\
+    \ the bottom\nof the post away from the sentences they annotate. A reader with all three posts\nopen\
+    \ reads the argument in pieces and reassembles the side-notes by matching\nmarkers. The page gives\
+    \ them the argument in one pass, in a declared order, with\nthe notes sitting inside the sentences\
+    \ they belong to. That is access and\nlegibility, which is what `faithful_edit` has to buy. Nothing\
+    \ was compressed and\nnothing was added.\n\n## The order, and how it is declared\n\nThe order is the\
+    \ `source_ids` list in the frontmatter, and the two `##` headings\nmark where the second and third\
+    \ posts begin. That is the whole declaration and\nit is deliberately thin.\n\n**Do not add publication\
+    \ dates or a posting sequence.** An earlier version of\nthis piece carried an editor's note asserting\
+    \ which post came first and when\nthey were posted. Both facts are in `record.yaml` (`publication_date`,\
+    \ canonical\nURLs), neither is in any pinned extraction, and the extraction is the only truth\nby\
+    \ policy. That note drew a blocking fidelity finding. The order used here is\nthe manifest's `source_ids`\
+    \ order, which is a manifest fact and not a claim\nprinted in the prose.\n\n## Editor's notes: gone,\
+    \ and they cannot come back\n\nAn earlier version carried two labelled editor's notes. The owner's\
+    \ instruction\nis flat, `docs/EDITORIAL_POLICY.md` says the magazine does not print editorial\napparatus\
+    \ inside an article, and `mechanics-review.md` files a labelled note as\n`major` on sight. There is\
+    \ no note in this draft, no bracketed gloss of my own,\nno standfirst and no transition between the\
+    \ posts. Everything the notes used to\ncarry is either shown by the layout or left standing.\n\nNote\
+    \ for whoever reads the brief next: the brief's inlined \"draft under\nrevision\" block is stale.\
+    \ It shows the two-editor's-note, three-heading version,\nnot the draft actually on disk (`reply.superseded.md`),\
+    \ which is what F1 was\nfiled against and what this draft is built from. Do not reintroduce the note\
+    \ or\nthe third heading by copying the brief's block.\n\n## Missing referents\n\nRestored: none. Nothing\
+    \ in the three extractions names a referent that another\nsentence leaves dangling, so there was nothing\
+    \ the \"restore inside the author's\nown sentence\" repair could act on without importing a fact from\
+    \ outside the\npins.\n\nLeft standing, deliberately, for the editor rather than the next reviser:\n\
+    \n1. **\"Second hot take, as it seems the first hot take landed.\"** The first hot\n   take is not\
+    \ identified anywhere in the three extractions. It is almost\n   certainly the factories post printed\
+    \ above it, but \"almost certainly\" is a\n   sourcing inference and writing it into his sentence\
+    \ is exactly the\n   fabrication an earlier draft was blocked for. A reader survives it: the\n   sentence\
+    \ still says a previous take landed, and the piece has just printed\n   two. If a finding lands here\
+    \ it is an `editor_decision`, and the remedy list\n   is silent repair, `[sic]`, or leave it. It is\
+    \ not a note.\n2. **\"Blog post time.\"** and **\"ugh.\"** Sign-offs with no referent and no\n   apparatus\
+    \ needed. Keep.\n3. **n8n, mass transit, nservicebus, wcf, @dotnet, @temporalio.** Unglossed\n   product\
+    \ and handle names. The audience is engineers, rule v's house\n   resolution is not available in a\
+    \ mode where I may not write a clause, and a\n   gloss would be apparatus. Leave.\n\n## What I did\
+    \ to the author's text, exhaustively\n\nEvery item below except the capitals is on the \"automatically\
+    \ permitted\" list in\n`docs/EDITORIAL_POLICY.md`. Nothing else was touched: no word cut, no word\n\
+    added, no sentence reordered inside a post.\n\n- **Sentence-initial capitals.** Eighteen of them.\
+    \ See the next section.\n- **Side-note markers removed, note bodies folded to their anchors.** Post\
+    \ one\n  carries `[1]`, `[2]` and `[3]` inline and their three bodies in a run at the\n  end. `[1]\
+    \ almost lights out` folds into its anchor as a parenthesis:\n  \"Software factories (almost lights\
+    \ out) are super real\". `[2]`'s list folds\n  onto its anchor with a colon: \"solving non-agent topics:\
+    \ sandboxing, monorepo,\n  ...\". `[3]` is sixty words and two sentences, too long to fold into the\
+    \ middle\n  of its anchor sentence, so it stays a paragraph of its own. It sits last in\n  post one\
+    \ because it sits last in the extraction, so the extraction's own\n  sequence is preserved. Post three's\
+    \ single `[1] lots of bad memories here`\n  folds into parentheses after `wcf`, which is where its\
+    \ marker sits. Footnote\n  normalization, and the parentheses are the author's words, not mine.\n\
+    - **Paragraphing.** Each extraction is one unbroken line. Post one is set as\n  three paragraphs,\
+    \ post two as one, post three as two. Whitespace\n  normalization; no sentence moved across a boundary\
+    \ except the folded notes\n  described above.\n- **Apostrophes normalized to straight.** The extractions\
+    \ use U+2019. Every\n  other article in this edition uses straight apostrophes. Typography\n  normalization.\
+    \ There is not one U+2019 left in this file; keep it that way.\n- **`theory / education` left with\
+    \ its spaces**, against `abstractions/pieces`\n  and `interview/doing` unspaced elsewhere. I could\
+    \ have closed it up under\n  whitespace normalization and chose not to: three characters of the author's\n\
+    \  own typing, and minimal intervention is the posture of the mode. If mechanics\n  files it, it is\
+    \ a minor and the editor can close it up in one keystroke.\n- **`circa <10 people` kept verbatim.**\
+    \ `<10` is not a valid HTML tag opening,\n  so `MarkdownIt(\"commonmark\")` in `src/magazine/publication_document.py`\n\
+    \  renders it as literal text. It shipped rendered in the previous build. Do not\n  \"repair\" it\
+    \ to \"under 10\": that is a wording change and review-required.\n\n## The capitalisation record\n\
+    \nThis is the section the last three rounds of this piece kept getting wrong, so\nit is written as\
+    \ a set of instructions rather than as a diary.\n\n**The ruling.** The owner read this piece in print,\
+    \ quoted a sentence opening\nwith a lowercase \"the\", said it should be \"The\", and added that there\
+    \ are a lot\nof these dumb capitalisation problems. Sentence-initial capitals are required in\nthe\
+    \ printed magazine. His lowercase is his register on X, where it reads as\nspeed; set on A5 under\
+    \ a display title and a byline it reads as broken\ntypesetting.\n\n**What was done.** The first word\
+    \ of every sentence in the body is capitalised.\nEighteen sentences, eighteen capitals, one exception\
+    \ recorded below. Nothing\nelse was cased up or down.\n\n**What was deliberately left lowercase, and\
+    \ why each one is not a sentence\nopening:**\n\n- `llm`, `roi`, `ci/cd`, `devex`, `rn`, `impl`, `wcf`,\
+    \ `nservicebus`,\n  `mass transit`, `silicon valley`, `n8n`, `@dotnet`, `@temporalio`. His\n  diction,\
+    \ his abbreviations, his handles, all mid-sentence. Untouched.\n- `i've` in \"which i've always suspected\"\
+    . Mid-sentence, so his usage stands.\n  The only `i` that became `I` is the one that opens \"I must\
+    \ stress\".\n- \"ie. they are likely startups created in last six months!\" -- the period in\n  `ie.`\
+    \ is an abbreviation point, not a full stop, so \"they\" is not a sentence\n  opening and stays lowercase.\
+    \ Same reasoning for `ugh.` in \"(but it is a piece\n  of the puzzle) ugh.\", which is the tail of\
+    \ its sentence rather than the head\n  of a new one; the sentence that follows it, \"Blog post time.\"\
+    , is capitalised.\n- Everything after the colon in \"non-agent topics: sandboxing, monorepo, ...\"\
+    .\n  A colon does not start a sentence.\n- The capitals already in the body are his: `LLM`, `@dotnet`,\
+    \ `@temporalio`.\n\n**The one exception: \"n8n was a silly idea.\"** Left lowercase. It is the\nproduct's\
+    \ own orthography, in the same class as the `@dotnet` and `@temporalio`\nhandles the ruling explicitly\
+    \ protects, and \"N8n\" is a misspelling of a name\nrather than a corrected capital. An engineer reading\
+    \ \"N8n\" sees an error;\nnobody reading \"n8n was a silly idea\" sees broken typesetting, which is\
+    \ the\ndefect the ruling exists to remove. This is the only sentence in the piece that\ndoes not open\
+    \ with a capital letter, it is flagged here rather than left to be\ndiscovered, and if the owner wants\
+    \ zero exceptions it is one keystroke. Do not\nrecast the sentence to move the name off the front:\
+    \ that is a wording change and\nreview-required.\n\n**Two dead ends, so nobody walks into them again:**\n\
+    \n1. **Do not lowercase the whole body for consistency.** That was the previous\n   draft's answer\
+    \ and F1 names it and rejects it: \"Do not solve this by making\n   the piece uniformly lowercase,\
+    \ which is the current draft's approach and is\n   not what was asked for.\"\n2. **`prompts/mechanics-review.md`\
+    \ currently contradicts this ruling and the\n   ruling wins.** That prompt names `factory-systems-problem`\
+    \ as its worked\n   example and says \"It is lowercase from first word to last, so every lowercase\n\
+    \   opening there is the convention and none is a finding.\" That was written\n   before the owner\
+    \ read the page. If a mechanics review comes back approving\n   lowercase openings here, it is reading\
+    \ a stale example, not overturning the\n   owner. The prompt is worth updating, but that is a repo\
+    \ change and outside a\n   writer's remit; whoever holds the editor's pen should file it.\n\n## The\
+    \ agreement error, flagged rather than decided\n\n**\"I must stress that factories is not a token\
+    \ or llm problem.\"** \"factories\nis\" does not agree. Its first word is capitalised this round because\
+    \ the ruling\ncapitalises every sentence opening regardless of what else is wrong inside the\nsentence.\
+    \ The agreement error itself is **unrepaired**, and that is a decision I\nam declaring rather than\
+    \ an oversight.\n\nWhy I did not repair it: fixing it means changing \"is\" to \"are\", which is\n\
+    changing source wording, which is review-required under\n`docs/EDITORIAL_POLICY.md`. The owner's finding\
+    \ scoped itself to capitalisation\nand said in terms to leave everything else of his intact. He had\
+    \ this exact\nsentence in front of him in print, with the error in it, and raised the capitals\nonly.\
+    \ Deciding for him inside his own author's sentence is what\n`disposition: editor_decision` exists\
+    \ to prevent.\n\n**My recommendation, for the human who rules on it: repair it, to \"factories\nare\
+    \ not a token or llm problem.\"** The house rule the capitalisation ruling\nrests on is `mechanics-review.md`'s\
+    \ own first line, \"Capitalisation and grammar\nare never voice\", and it covers agreement in the\
+    \ same breath as capitals. A\nsubject-verb error under a display title reads as broken for the same\
+    \ reason a\nlowercase \"the\" does. The repair is one word, it changes no meaning, no diction,\nno\
+    \ rhythm, and it is the mechanics prompt's own printed `suggestion` for this\nexact sentence. Nothing\
+    \ else in the sentence should move.\n\nExpect this back as `major`, `category: agreement`,\n`disposition:\
+    \ editor_decision`, with the locator\n`\"Systems and culture | I must stress that factories is not\
+    \ | 1\"`. Do not\nsilently repair it in a writer round and do not answer it with a `[sic]` of your\n\
+    own initiative. A human picks between silent repair, `[sic]`, leaving it, and\nnot printing the piece.\n\
+    \nSecond, smaller, same routing: **\"service busses\"**. His spelling. Untouched,\nand I do not recommend\
+    \ changing it; it is a spelling variant rather than an\nerror, and it is one of the two or three places\
+    \ his register is audible.\n\n## Numbers a reviser will want\n\nCounted with `str.split()` on the\
+    \ body text, the way a reviewer would.\nCapitalisation changes no count, so these are the previous\
+    \ draft's numbers\nunchanged, which is the point:\n\n| text | tokens |\n| --- | --- |\n| the three\
+    \ extraction bodies as committed | 371 |\n| the same, minus the eight `[n]` markers | 363 |\n| this\
+    \ manuscript, headings and `##` included | 370 |\n| this manuscript, author's words only | 363 |\n\
+    \nEvery author word is printed. Nothing was cut and nothing was compressed, which\nis the mode. The\
+    \ five heading words are the entire growth, and they are more\nthan paid for by the eight markers\
+    \ that go, so the manuscript is shorter than\nits sources on a straight count and identical to them\
+    \ on author text.\n\nThat margin is the reason the headings are five words and not eleven.\n`worth-review.md`\
+    \ files `longer_than_source` at `blocking`, \"always\", for a\nmanuscript at or above its source's\
+    \ word count, one bullet above the bullet\nsaying `faithful_edit` runs at the source's length by design.\
+    \ The two bullets\ncannot both be applied literally to this mode, and I am not going to be the\npiece\
+    \ that finds out which way a judge resolves it. Anyone adding words here\nmust take the same count\
+    \ first. For calibration: `pragmatic-leverage` in the\nshipped rerun runs 506 against a 495-word extraction,\
+    \ and its editor's note is\nmost of the difference.\n\n## The opener still fits, and it fits with\
+    \ zero margin\n\nRe-measured after capitalising, because capitals are wider than lowercase and\nthis\
+    \ paragraph had no room:\n\n```\nprintf '%s' \"<opening paragraph>\" | \\\n  uv run --locked mag fit\
+    \ rerun-004-the-systems-around-the-model \\\n  --opener factory-systems-problem\n```\n\n**7 of 7 typeset\
+    \ lines, 479 characters, fits.** The four new capitals in the\nopener (S, T, I, T) did not move a\
+    \ line break. Any edit to that paragraph,\nincluding a one-word one and including a single further\
+    \ capital, must re-run\nthat command or the build will refuse the edition. If it ever has to shrink,\
+    \ the\nbreak to take is after \"practices and pieces\", which puts \"If someone is selling\nyou a\
+    \ factory rn\" and \"They are selling bullshit.\" into paragraph two together.\nDo not break between\
+    \ \"If someone is selling you a factory\" and \"They are selling\nbullshit\": that sentence pair is\
+    \ the post's punchline and it currently lands on\nthe last line of the opener page.\n\n## What I wrote\
+    \ myself\n\nTwo headings, five words in total, and nothing else. No other word in the\nmanuscript\
+    \ is mine, and the eighteen capitals are recasings of his letters\nrather than words.\n\n- `## Systems\
+    \ and culture` is the pair of nouns out of the sentence beneath it\n  (\"a systems engineering and\
+    \ corporate culture problem\"). I avoided the shape\n  the post wants to give a heading, \"not tokens,\
+    \ but culture\", because the\n  antithesis is banned tic 1.\n- `## Service buses` names the object\
+    \ the post is about.\n\nBoth are flat signposts on purpose, and the better-sounding alternatives were\n\
+    written and cut (\"Steal from the enterprise service bus\"). An imperative in the\nheading is the\
+    \ editor's voice arriving in a piece whose whole premise is that\nthe editor is invisible, and it\
+    \ costs words in a piece that must not outgrow its\nsource. Five words of signage is the most this\
+    \ mode should spend.\n\nPost one gets no heading: the body must open on a paragraph for the illustrated\n\
+    opener, and the first post's boundary is the start of the piece.\n\nBoth headings are sentence case,\
+    \ which is `mechanics-review.md`'s form check.\nThey no longer stand out against a lowercase body,\
+    \ which is a small side benefit\nof F1 and not a reason to add more of them.\n\n## What I considered\
+    \ and did not do\n\n- **A third heading inside post one**, which an earlier version had (\"The stack\n\
+    \  under the factory\"). It cut a single 200-word post in half at a point the\n  author did not mark.\
+    \ Two headings, two real post boundaries.\n- **Printing the side-notes as real footnotes** with markers\
+    \ and a rule. It\n  keeps every anchor exactly, but it puts four superscripts and a note block\n \
+    \ into a 363-word reprint, and `src/magazine/footnotes.py` machinery on four\n  asides is more apparatus\
+    \ than the asides are worth.\n- **A caption.** There is no figure. The opener art is credited in\n\
+    \  `edition.yaml` and needs no words from me.\n- **Thematic breaks instead of headings.** `---` between\
+    \ the posts parses\n  (`publication_document.py` has `HorizontalRule`, `document_structure.py`\n \
+    \ spells it `rule`) and would have cost zero words. No manuscript in any edition\n  uses one in the\
+    \ body, so it is untested through the print renderer, and a rule\n  marks a boundary without telling\
+    \ a reader what is on the other side of it.\n  Headings do both jobs for five words.\n- **Capitalising\
+    \ `llm` to `LLM` in \"not a token or llm problem\"**, where the\n  same post spells it `LLM` two paragraphs\
+    \ later. It is mid-sentence, so the\n  ruling does not reach it, and normalising his two spellings\
+    \ of a term against\n  each other is a wording change. If mechanics files the inconsistency it is\
+    \ a\n  `minor` and an `editor_decision`, which is the correct place for it."
