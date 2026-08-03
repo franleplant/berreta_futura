@@ -170,10 +170,15 @@ export async function buildLegacyMigrationAttestation(
   repositoryRoot: string,
   sourceCommitish: string,
   planRevisionId: RevisionId,
+  targetSnapshotCommitish = "HEAD",
 ): Promise<LegacyMigrationAttestation> {
   const root = resolve(repositoryRoot);
   const sourceCommitOid = await gitText(root, ["rev-parse", `${sourceCommitish}^{commit}`]);
-  const targetSnapshotCommitOid = await gitText(root, ["rev-parse", "HEAD^{commit}"]);
+  const headCommitOid = await gitText(root, ["rev-parse", "HEAD^{commit}"]);
+  const targetSnapshotCommitOid = await gitText(root, ["rev-parse", `${targetSnapshotCommitish}^{commit}`]);
+  if (targetSnapshotCommitOid !== headCommitOid) {
+    await assertGitAncestor(root, targetSnapshotCommitOid, headCommitOid);
+  }
   const planPath = planRepositoryPath(planRevisionId, "inventory.yaml");
   const planManifestPath = planRepositoryPath(planRevisionId, "manifest.yaml");
   const targetTree = await readGitTree(root, targetSnapshotCommitOid, ["inputs", "durable"]);
@@ -422,6 +427,10 @@ export async function buildLegacyMigrationAttestation(
     },
   };
   verifyLegacyMigrationAttestation(result, plan);
+  if (targetSnapshotCommitOid !== headCommitOid) {
+    const headTree = await readGitTree(root, headCommitOid, ["inputs", "durable"]);
+    verifyAttestedTargetFilesStillCurrent(result, targetTree, headTree);
+  }
   return result;
 }
 
@@ -430,6 +439,7 @@ export async function materializeLegacyMigrationAttestation(
   sourceCommitish: string,
   planRevisionId: RevisionId,
   revisionId: RevisionId = newRevisionId(),
+  targetSnapshotCommitish = "HEAD",
 ): Promise<MaterializedLegacyMigrationAttestation> {
   const root = resolve(repositoryRoot);
   const ref: InputRevisionRef = {
@@ -439,7 +449,12 @@ export async function materializeLegacyMigrationAttestation(
   };
   const destination = join(root, "inputs", inputRevisionRelativeDirectory(ref));
   if (await exists(destination)) throw new Error(`migration attestation already exists: ${destination}`);
-  const attestation = await buildLegacyMigrationAttestation(root, sourceCommitish, planRevisionId);
+  const attestation = await buildLegacyMigrationAttestation(
+    root,
+    sourceCommitish,
+    planRevisionId,
+    targetSnapshotCommitish,
+  );
   const destinationParent = dirname(destination);
   await mkdir(destinationParent, { recursive: true, mode: 0o700 });
   const candidate = await mkdtemp(join(destinationParent, ".legacy-attestation-stage-"));
@@ -819,6 +834,56 @@ function compositionKey(value: Pick<HistoricalCompositionPlan, "editionId" | "co
 
 function sameStrings(left: readonly string[], right: readonly string[]): boolean {
   return JSON.stringify([...left].sort()) === JSON.stringify([...right].sort());
+}
+
+async function assertGitAncestor(
+  repositoryRoot: string,
+  ancestorCommitOid: string,
+  descendantCommitOid: string,
+): Promise<void> {
+  try {
+    await execFile("git", ["merge-base", "--is-ancestor", ancestorCommitOid, descendantCommitOid], {
+      cwd: repositoryRoot,
+      encoding: "utf8",
+    });
+  } catch (error) {
+    throw new Error(
+      `explicit target snapshot ${ancestorCommitOid} is not an ancestor of HEAD ${descendantCommitOid}`,
+      { cause: error },
+    );
+  }
+}
+
+function verifyAttestedTargetFilesStillCurrent(
+  attestation: LegacyMigrationAttestation,
+  targetTree: ReadonlyMap<string, GitTreeEntry>,
+  headTree: ReadonlyMap<string, GitTreeEntry>,
+): void {
+  const paths = new Set<string>([
+    attestation.migrationPlan.manifest.repositoryPath,
+    attestation.migrationPlan.inventory.repositoryPath,
+    ...attestation.sourceRows.flatMap((row) => [
+      row.target.manifest.repositoryPath,
+      row.target.payload.repositoryPath,
+    ]),
+    ...attestation.generatedFiles.flatMap((entry) => [
+      entry.manifest.repositoryPath,
+      entry.payload.repositoryPath,
+    ]),
+    ...attestation.historicalCompositions.flatMap((entry) => [
+      entry.manifest.repositoryPath,
+      entry.payload.repositoryPath,
+    ]),
+    ...attestation.preExistingEdition4ImageFiles.map((entry) => entry.target.repositoryPath),
+  ]);
+  for (const path of paths) {
+    const target = requiredTree(targetTree, path);
+    const current = requiredTree(headTree, path);
+    if (target.mode !== current.mode || target.gitBlobOid !== current.gitBlobOid ||
+      target.sizeBytes !== current.sizeBytes) {
+      throw new Error(`explicit target snapshot migration file differs from HEAD: ${path}`);
+    }
+  }
 }
 
 export async function verifyManifestSourceCommitProofs(

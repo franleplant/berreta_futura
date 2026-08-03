@@ -14,15 +14,22 @@ import {
 import type { LegacyRootMigrationPlan } from "../migration/legacy-root-migration.ts";
 
 const SOURCE_COMMIT = "5097aab2154be41b9315adfc1bf737898217be73";
+const TARGET_COMMIT = "423030b15a96fc1355591c5ced19f41a987035bd";
 const PLAN_REVISION = "rev_20260803T054439271Z_bg2bfnprnbd4" as RevisionId;
 const PLAN_PATH = `inputs/migrations/legacy-four-root/revisions/${PLAN_REVISION}/inventory.yaml`;
 const planPromise = readFile(PLAN_PATH, "utf8").then((value) => parse(value) as LegacyRootMigrationPlan);
-const attestationPromise = buildLegacyMigrationAttestation(process.cwd(), SOURCE_COMMIT, PLAN_REVISION);
+const attestationPromise = buildLegacyMigrationAttestation(
+  process.cwd(),
+  SOURCE_COMMIT,
+  PLAN_REVISION,
+  TARGET_COMMIT,
+);
 
 test("legacy cutover attestation binds every source row and preserves Edition 4 image blobs", async () => {
   const [plan, attestation] = await Promise.all([planPromise, attestationPromise]);
 
   verifyLegacyMigrationAttestation(attestation, plan);
+  assert.equal(attestation.targetSnapshotCommitOid, TARGET_COMMIT);
   assert.equal(attestation.sourceRows.length, 933);
   assert.equal(attestation.summary.sourceBytes, 525_474_841);
   assert.deepEqual(attestation.summary.dispositions, {
