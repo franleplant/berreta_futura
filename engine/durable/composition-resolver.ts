@@ -90,6 +90,7 @@ export async function resolveCompositionRevision(
   const inputCache = new Map<string, Promise<ResolvedInputRevision>>();
   const inputRefs = [
     ...document.layout_inputs.map((pin) => pin.revision),
+    ...composition.manifest.input_revisions,
     ...durableInputs.flatMap((revision) => revision.manifest.input_revisions),
   ];
   const seenInputs = new Set<string>();

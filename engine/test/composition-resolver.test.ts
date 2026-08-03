@@ -26,6 +26,7 @@ const REVISION = "rev_20260802T200641636Z_aaaaaaaaaaaa" as RevisionId;
 const COMPOSITION_REVISION = "rev_20260802T200700000Z_bbbbbbbbbbbb" as RevisionId;
 const INPUT_REVISION = "rev_20260801T010203004Z_cccccccccccc" as RevisionId;
 const SOURCE_INPUT_REVISION = "rev_20260801T010203005Z_dddddddddddd" as RevisionId;
+const MIGRATION_INPUT_REVISION = "rev_20260801T010203006Z_eeeeeeeeeeee" as RevisionId;
 const COMPOSITION_REF = {
   kind: "composition",
   editionId: "004",
@@ -52,8 +53,10 @@ test("CompositionRevision resolves every ordered durable and layout pin from com
     ]);
     assert.deepEqual(stage.inputRevisions.map((revision) => revision.ref.kind), [
       "edition_spec",
+      "migration_plan",
       "source_extraction",
     ]);
+    assert.equal(stage.inputRevisions[1]?.ref.revisionId, MIGRATION_INPUT_REVISION);
     assert.deepEqual(git.expectedBindings, [{
       commitOid: fixture.binding.gitCommitOid,
       blobOids: fixture.binding.gitBlobOids,
@@ -142,6 +145,11 @@ async function writeCompositionFixture(
     logicalId: "first-source",
     revisionId: SOURCE_INPUT_REVISION,
   };
+  const migrationInput: InputRevisionRef = {
+    kind: "migration_plan",
+    logicalId: "legacy-four-root",
+    revisionId: MIGRATION_INPUT_REVISION,
+  };
   await Promise.all([
     writeDurableRevision(root, editorial, "manuscript.md", Buffer.from("# Opening\n")),
     writeDurableRevision(root, first, "manuscript.md", Buffer.from("# First\n"), [sourceInput]),
@@ -150,6 +158,7 @@ async function writeCompositionFixture(
     writeDurableRevision(root, coverImage, "image.png", pngBytes(2)),
     writeInputRevision(root, layoutInput),
     writeInputRevision(root, sourceInput),
+    writeInputRevision(root, migrationInput),
   ]);
   const composition: CompositionDocument = {
     schema_version: 1,
@@ -176,6 +185,7 @@ async function writeCompositionFixture(
     COMPOSITION_REF,
     "composition.yaml",
     Buffer.from(stringify(composition, { lineWidth: 0 })),
+    [migrationInput],
   );
   const relativeDirectory = join("durable", durableRevisionRelativeDirectory(COMPOSITION_REF));
   const repositoryPaths = [
@@ -234,11 +244,11 @@ async function writeDurableRevision(
 
 async function writeInputRevision(root: string, ref: InputRevisionRef): Promise<void> {
   const directory = join(root, "inputs", inputRevisionRelativeDirectory(ref));
-  const payloadName = ref.kind === "edition_spec" ? "edition.yaml" : "extracted.md";
-  const bytes = Buffer.from(
-    ref.kind === "edition_spec" ? "edition_id: '004'\n" : "# Extracted source\n",
-    "utf8",
-  );
+  const payloadName = ref.kind === "edition_spec" ? "edition.yaml" :
+    ref.kind === "migration_plan" ? "inventory.yaml" : "extracted.md";
+  const contents = ref.kind === "edition_spec" ? "edition_id: '004'\n" :
+    ref.kind === "migration_plan" ? "migration_id: legacy-four-root\n" : "# Extracted source\n";
+  const bytes = Buffer.from(contents, "utf8");
   await mkdir(directory, { recursive: true });
   await writeFile(join(directory, payloadName), bytes);
   await writeFile(join(directory, "manifest.yaml"), stringify({
@@ -251,7 +261,9 @@ async function writeInputRevision(root: string, ref: InputRevisionRef): Promise<
     parent_revision_id: null,
     files: [{
       path: payloadName,
-      media_type: ref.kind === "edition_spec" ? "application/yaml" : "text/markdown",
+      media_type: ref.kind === "edition_spec" || ref.kind === "migration_plan"
+        ? "application/yaml"
+        : "text/markdown",
       sha256: digest(bytes),
       size_bytes: bytes.byteLength,
     }],
