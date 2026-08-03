@@ -1,10 +1,11 @@
 import { createHash } from "node:crypto";
 import { execFile as execFileCallback } from "node:child_process";
+import { constants as fsConstants } from "node:fs";
 import {
   access,
   mkdir,
   mkdtemp,
-  readFile,
+  open,
   rename,
   rm,
   writeFile,
@@ -115,6 +116,12 @@ type PreparedLegacyDurableRevision = {
   readonly repositoryPaths: readonly string[];
 };
 
+type StagedLegacySource = {
+  readonly path: string;
+  readonly sha256: string;
+  readonly sizeBytes: number;
+};
+
 type PublishJournalEntry = {
   readonly relativeDirectory: string;
   readonly manifestDigest: string;
@@ -191,7 +198,7 @@ export async function materializeLegacyDurableMigrationBatch(
     // Copy immutable Git blobs into isolated staging sequentially. Keeping only
     // one source buffer resident bounds memory for image-heavy batches without
     // weakening the all-candidates-before-publish transaction boundary.
-    const stagedSources = new Map<string, string>();
+    const stagedSources = new Map<string, StagedLegacySource>();
     const mediaTypes = new Map<string, Set<string>>();
     for (const entry of plan.entries) {
       for (const file of entry.files) {
@@ -212,12 +219,16 @@ export async function materializeLegacyDurableMigrationBatch(
       );
       await mkdir(dirname(stagedPath), { recursive: true, mode: 0o700 });
       await writeFile(stagedPath, bytes, { mode: 0o600 });
-      stagedSources.set(path, stagedPath);
+      stagedSources.set(path, {
+        path: stagedPath,
+        sha256: digest(bytes),
+        sizeBytes: bytes.byteLength,
+      });
     }
     const readSource = async (path: string): Promise<Buffer> => {
-      const stagedPath = stagedSources.get(path);
-      if (stagedPath === undefined) throw invalid(`legacy durable source ${path} was not staged`);
-      return readFile(stagedPath);
+      const staged = stagedSources.get(path);
+      if (staged === undefined) throw invalid(`legacy durable source ${path} was not staged`);
+      return readVerifiedStagedSource(path, staged);
     };
 
     const prepared: PreparedLegacyDurableRevision[] = [];
@@ -595,6 +606,30 @@ async function readBoundLegacyFile(
   }
 }
 
+async function readVerifiedStagedSource(
+  repositoryPath: string,
+  staged: StagedLegacySource,
+): Promise<Buffer> {
+  let handle: Awaited<ReturnType<typeof open>> | undefined;
+  try {
+    handle = await open(staged.path, fsConstants.O_RDONLY | fsConstants.O_NOFOLLOW);
+    const info = await handle.stat();
+    if (!info.isFile()) {
+      throw conflict(`staged legacy source ${repositoryPath} is not a regular file`);
+    }
+    const bytes = await handle.readFile();
+    if (bytes.byteLength !== staged.sizeBytes || digest(bytes) !== staged.sha256) {
+      throw conflict(`staged legacy source ${repositoryPath} changed after Git blob capture`);
+    }
+    return bytes;
+  } catch (error) {
+    if (error instanceof LegacyDurableMigrationError) throw error;
+    throw conflict(`cannot safely read staged legacy source ${repositoryPath}`, error);
+  } finally {
+    await handle?.close();
+  }
+}
+
 function validateLegacyPayload(bytes: Buffer, mediaType: string, sourcePath: string): void {
   if (bytes.byteLength === 0) throw invalid(`legacy durable source ${sourcePath} is empty`);
   if (mediaType === "text/markdown") return;
@@ -706,15 +741,22 @@ async function legacySourceBindings(
   gitBinding: GitRevisionBinding,
   readSource: (path: string) => Promise<Buffer>,
 ) {
-  return Promise.all(uniqueSorted(sourcePaths).map(async (repositoryPath) => {
+  const bindings: Array<{
+    readonly repositoryPath: string;
+    readonly gitCommitOid: string;
+    readonly gitBlobOid: string;
+    readonly sha256: string;
+  }> = [];
+  for (const repositoryPath of uniqueSorted(sourcePaths)) {
     const bytes = await readSource(repositoryPath);
-    return {
+    bindings.push({
       repositoryPath,
       gitCommitOid: gitBinding.commitOid,
       gitBlobOid: gitBinding.blobOids[repositoryPath]!,
       sha256: digest(bytes),
-    };
-  }));
+    });
+  }
+  return bindings;
 }
 
 function validateRevisionEntry(entry: LegacyDurableRevisionEntry): void {
