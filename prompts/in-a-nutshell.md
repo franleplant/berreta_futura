@@ -141,7 +141,7 @@ abstraction stack and the changelog are the shapes an explainer falls into.
 
 The page cap in `edition.yaml` (`format.max_article_pages`, seven A5 reader
 pages including the opener illustration, title, and credit) is a ceiling, and
-only the renderer can measure it: `mag fit <edition-id>`. Around a thousand body
+only the renderer can measure it through the active RunEngine offer. Around a thousand body
 words is the most the page holds, not a size to aim at, and an explainer that
 teaches its subject in 500 words ships at 500. Length here is judged as a ratio
 against what the source charged for the same understanding, never against the

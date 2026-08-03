@@ -81,7 +81,7 @@ fed. `minor` for adjustments that would improve the issue without changing it.
 ## Output
 
 Return one YAML document and nothing else. The operator records it with
-`mag review record <edition-id> --kind edition`.
+the exact active RunEngine human-review offer.
 
 ```yaml
 result: changes_required        # approved | changes_required
