@@ -22,9 +22,12 @@ test("legacy-root planner maps every committed byte and does not invent missing 
   assert.equal(plan.files.length, snapshot.files.length);
   assert.equal(plan.files.filter((entry) => entry.source.path.startsWith("library/sources/")).length > 0, true);
   assert.equal(new Set(plan.files.map((entry) => entry.source.path)).size, snapshot.files.length);
-  assert.equal(plan.files.filter((entry) => entry.targets[0]?.revisionKind === "source_capture").length, 36);
+  assert.equal(new Set(plan.files.filter((entry) => entry.targets[0]?.revisionKind === "source_capture")
+    .map((entry) => entry.targets[0]!.revisionSlot)).size, 36);
   assert.equal(plan.files.filter((entry) => entry.targets[0]?.revisionKind === "source_extraction").length, 25);
   assert.equal(plan.files.filter((entry) => entry.disposition === "archive_non_authoritative").length > 0, true);
+  const uppercase = plan.files.find((entry) => entry.source.path.endsWith("/README.md"));
+  assert.equal(uppercase?.targets[0]?.payloadPath.endsWith("/readme.md"), true);
   assert.deepEqual(
     plan.historicalCompositions.map((entry) => [entry.editionId, entry.compositionId, entry.state]),
     [
@@ -82,6 +85,7 @@ function corpusSnapshot(): LegacyGitSnapshot {
   for (let index = 0; index < 36; index += 1) {
     const sourceId = `source-${String(index).padStart(2, "0")}`;
     files.push(file(`library/sources/${sourceId}/record.yaml`, index));
+    if (index === 0) files.push(file(`library/sources/${sourceId}/raw/capture/artifacts/README.md`, 500));
     if (index < 25) files.push(file(`library/sources/${sourceId}/extracted.md`, 100 + index));
   }
   for (const name of ["faithful-edit", "faithful-synthesis", "in-a-nutshell"]) {
