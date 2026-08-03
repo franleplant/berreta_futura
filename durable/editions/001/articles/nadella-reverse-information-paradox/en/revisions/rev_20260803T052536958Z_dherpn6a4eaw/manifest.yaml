@@ -1,0 +1,36 @@
+schema_version: 1
+revision_kind: article
+edition_id: "001"
+revision_id: rev_20260803T052536958Z_dherpn6a4eaw
+created_at: 2026-08-03T05:25:36.958Z
+parent_revision_id: null
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/001-the-work-left-to-us/articles/nadella-reverse-information-paradox.md
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: b811a0275d1778591eceba653c9d0038f5617688
+    sha256: sha256:7777a53531ba65d20c4427cf996226b91e612509198b330f2f269d049f011f1c
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+  - kind: edition_spec
+    logicalId: main
+    editionId: "001"
+    revisionId: rev_20260803T052536959Z_qvzkyccc476b
+  - kind: source_capture
+    logicalId: src-nadella-reverse-information-paradox-2026
+    revisionId: rev_20260803T052536961Z_sh7ywp7r4bwh
+files:
+  - path: manuscript.md
+    mediaType: text/markdown
+    sha256: sha256:7777a53531ba65d20c4427cf996226b91e612509198b330f2f269d049f011f1c
+    sizeBytes: 5506
+    legacySource:
+      repositoryPath: editions/001-the-work-left-to-us/articles/nadella-reverse-information-paradox.md
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: b811a0275d1778591eceba653c9d0038f5617688
+logical_id: nadella-reverse-information-paradox
+language: en
