@@ -1,0 +1,37 @@
+{
+  "bundle_sha256": "6b7c4575be0b61404a0aed9b2fb9fd9363a579516f59d434331628de7f817447",
+  "candidate_count": 1,
+  "candidates": [
+    {
+      "artifact_path": "post.png",
+      "artifact_sha256": "b92dd4da8b6a25478db1e08a73808ae4a6f9ca6ec3c0d4a166561459ddc625e0",
+      "aspect_ratio": 0.082751,
+      "criteria": [],
+      "decision": "reject",
+      "description": "",
+      "heading": "",
+      "id": "raster-001-b92dd4da",
+      "mime_type": "image/png",
+      "origin": "raw_raster",
+      "pixel_height": 15468,
+      "pixel_width": 1280,
+      "rationale": "",
+      "rejection_reasons": [
+        "extreme_aspect_ratio_or_full_page_capture",
+        "no_semantic_source_context"
+      ],
+      "score": 0,
+      "source_artifact": "post.png",
+      "source_artifact_sha256": "b92dd4da8b6a25478db1e08a73808ae4a6f9ca6ec3c0d4a166561459ddc625e0",
+      "source_position": 1,
+      "title": "post"
+    }
+  ],
+  "curator": "magazine-compiler/automatic-media-curator",
+  "input_sha256": "359168465bc04ad64c716817666ea7bdad6d5c19d75f65ce570d554037c80f1a",
+  "policy_version": "editorial-impact-v4",
+  "schema_version": 1,
+  "selected": [],
+  "selection_limit": 3,
+  "source_id": "eval-engineering-the-step-that-turns-a-200-model-9f6f868f"
+}

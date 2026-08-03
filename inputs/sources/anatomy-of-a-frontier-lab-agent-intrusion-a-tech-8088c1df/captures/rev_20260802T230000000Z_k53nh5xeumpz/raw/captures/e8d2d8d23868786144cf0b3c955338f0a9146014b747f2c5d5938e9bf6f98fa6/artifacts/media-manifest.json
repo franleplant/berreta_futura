@@ -1,0 +1,59 @@
+{
+  "schema_version": 2,
+  "source_url": "https://huggingface.co/blog/agent-intrusion-technical-timeline",
+  "captured_from": "authenticated_browser_original_media",
+  "referenced_asset_count": 5,
+  "present_asset_count": 5,
+  "assets": [
+    {
+      "relative_url": "media/001.svg",
+      "source_url": "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/agent-intrusion-technical-timeline/attack-chain-dark.svg",
+      "source_position": 1,
+      "role": "diagram",
+      "heading": "TL;DR",
+      "title": "The attack chain",
+      "description": "The attack chain from a frontier-model evaluation sandbox to the internal network.",
+      "alt_text": "The attack chain: from a frontier-model evaluation sandbox to our internal network"
+    },
+    {
+      "relative_url": "media/002.svg",
+      "source_url": "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/agent-intrusion-technical-timeline/track-b-loop-dark.svg",
+      "source_position": 2,
+      "role": "diagram",
+      "heading": "Stage 2",
+      "title": "Stage 2 injection and read-back loop",
+      "description": "The injection and read-back loop used during the second stage.",
+      "alt_text": "Stage 2 injection and read-back loop"
+    },
+    {
+      "relative_url": "media/003.png",
+      "source_url": "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/agent-intrusion-technical-timeline/timeline.png",
+      "source_position": 3,
+      "role": "diagram",
+      "heading": "The kill chain",
+      "title": "Campaign timeline",
+      "description": "Event volume and per-phase activity across the 4.5-day campaign.",
+      "alt_text": "Campaign timeline: event volume and per-phase activity across the 4.5-day window"
+    },
+    {
+      "relative_url": "media/004.svg",
+      "source_url": "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/agent-intrusion-technical-timeline/c2-protocol-dark.svg",
+      "source_position": 4,
+      "role": "diagram",
+      "heading": "Building an improvised message protocol",
+      "title": "The improvised C2 protocol",
+      "description": "Envelope fields, polling receiver, and interchangeable transports in the improvised command-and-control protocol.",
+      "alt_text": "The improvised C2 protocol: envelope fields, polling receiver, and interchangeable transports"
+    },
+    {
+      "relative_url": "media/005.png",
+      "source_url": "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/agent-intrusion-technical-timeline/guardrails.png",
+      "source_position": 5,
+      "role": "figure",
+      "heading": "How we intercepted and analyzed the attack",
+      "title": "Cybersecurity guardrail response",
+      "description": "An API response showing safety measures flagging a message for a cybersecurity topic.",
+      "alt_text": "API error: safety measures flagged this message for a cybersecurity topic"
+    }
+  ]
+}

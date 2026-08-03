@@ -1,0 +1,56 @@
+schema_version: 1
+revision_kind: source_capture
+logical_id: architecture-overview-ce5cb1d1
+revision_id: rev_20260802T230000004Z_vkooja45s3ic
+created_at: 2026-08-02T23:00:00.004Z
+parent_revision_id: null
+migration_id: edition4-fresh-v2
+files:
+  - path: raw/captures/1ced8cc9c9845813bd7544a26e4ec78ce05fc460eb5ca1261fb21d14b3280c03/artifacts/article.pdf
+    media_type: application/pdf
+    sha256: sha256:7e52f6ab0e89b5d9ba9e0ea5f08627e916b5b7516bf87a7443e371288a015c0b
+    size_bytes: 672212
+    legacy_source:
+      repositoryPath: library/sources/architecture-overview-ce5cb1d1/raw/1ced8cc9c9845813bd7544a26e4ec78ce05fc460eb5ca1261fb21d14b3280c03/artifacts/article.pdf
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: dea80cbfcc1cb179eda99171b9a978e6aa649c64
+  - path: raw/captures/1ced8cc9c9845813bd7544a26e4ec78ce05fc460eb5ca1261fb21d14b3280c03/artifacts/article.png
+    media_type: image/png
+    sha256: sha256:ccc83816f31ee65f0ac1eb324036bde5bb5d619c4e24ea84628cfe9fd2a5d242
+    size_bytes: 2615175
+    legacy_source:
+      repositoryPath: library/sources/architecture-overview-ce5cb1d1/raw/1ced8cc9c9845813bd7544a26e4ec78ce05fc460eb5ca1261fb21d14b3280c03/artifacts/article.png
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: a144d47f185d161ff6c2b11ce2b0168c96cc9aa5
+  - path: raw/captures/1ced8cc9c9845813bd7544a26e4ec78ce05fc460eb5ca1261fb21d14b3280c03/manifest.json
+    media_type: application/json
+    sha256: sha256:094e7be49b760275d8fab15901b1008bb07b06b561e85b225f7aa6f4ce86cfb9
+    size_bytes: 894
+    legacy_source:
+      repositoryPath: library/sources/architecture-overview-ce5cb1d1/raw/1ced8cc9c9845813bd7544a26e4ec78ce05fc460eb5ca1261fb21d14b3280c03/manifest.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: e5125127e154f4d76c57e56d40c2c7219b29df30
+  - path: raw/media/1ced8cc9c9845813bd7544a26e4ec78ce05fc460eb5ca1261fb21d14b3280c03.curation.json
+    media_type: application/json
+    sha256: sha256:a7483e6116d0ebb8ab178437a315d4597b8d4c6bd7a94ed386e5b3e80bf45717
+    size_bytes: 1224
+    legacy_source:
+      repositoryPath: library/sources/architecture-overview-ce5cb1d1/media/1ced8cc9c9845813bd7544a26e4ec78ce05fc460eb5ca1261fb21d14b3280c03.curation.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: c73ab358e66d795c895b873e494e47972b24fd64
+  - path: raw/media/1ced8cc9c9845813bd7544a26e4ec78ce05fc460eb5ca1261fb21d14b3280c03.json
+    media_type: application/json
+    sha256: sha256:19466649f6b53f41d31ab5f88b29010db42933f2f099b1688600bc65a1b22910
+    size_bytes: 804
+    legacy_source:
+      repositoryPath: library/sources/architecture-overview-ce5cb1d1/media/1ced8cc9c9845813bd7544a26e4ec78ce05fc460eb5ca1261fb21d14b3280c03.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: ef35d91bbf2ef80d6f47cc49ba27fc3f9e54f63c
+  - path: raw/record.yaml
+    media_type: application/yaml
+    sha256: sha256:8e230954f60c6c16a89d1cfa5a390c58254537febe2edbd4a6315b43c493d85e
+    size_bytes: 1895
+    legacy_source:
+      repositoryPath: library/sources/architecture-overview-ce5cb1d1/record.yaml
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 255e4c190262762be50d8afd6b9b04e103e7c77a

@@ -1,0 +1,16 @@
+schema_version: 1
+revision_kind: policy
+logical_id: writing-rules
+revision_id: rev_20260802T230000031Z_ryqeuddxgzli
+created_at: 2026-08-02T23:00:00.031Z
+parent_revision_id: null
+migration_id: edition4-fresh-v2
+files:
+  - path: policy.md
+    media_type: text/markdown
+    sha256: sha256:9bb7257e2c35d3bd831bf96b05534d4000bbd31e4ea126d672de9e333556dacc
+    size_bytes: 21439
+    legacy_source:
+      repositoryPath: docs/WRITING_RULES.md
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 062a22b760c8485031ecd34578dd417f753b2c95

@@ -1,0 +1,29 @@
+{
+  "artifact_count": 2,
+  "bundle_sha256": "6e7ce0625874e73e7b4b50667213a4a797d6c31f34009b2338e22bef13809965",
+  "complete": true,
+  "duplicate_groups": [],
+  "image_count": 1,
+  "images": [
+    {
+      "animated": false,
+      "aspect_ratio": 0.051883,
+      "bytes": 4775305,
+      "color_mode": "RGB",
+      "frame_count": 1,
+      "has_alpha": false,
+      "icc_profile_present": false,
+      "mime_type": "image/png",
+      "path": "post.png",
+      "pixel_height": 24671,
+      "pixel_width": 1280,
+      "sha256": "aacb6dbc85d913d6e73a348b242f95043c76cebe37641c9d1e5afdd0bd27cf68"
+    }
+  ],
+  "local_references": [],
+  "missing_references": [],
+  "referenced_image_count": 0,
+  "schema_version": 1,
+  "source_id": "22580-from-gpt2-to-kimi3-explained-8f01b0fe",
+  "unresolved_acquisition_references": []
+}

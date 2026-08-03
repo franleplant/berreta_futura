@@ -1,0 +1,80 @@
+schema_version: 1
+revision_kind: source_capture
+logical_id: the-2026-07-28-mcp-specification-release-candida-1a1752b8
+revision_id: rev_20260802T230000005Z_d3jdf4sucrfp
+created_at: 2026-08-02T23:00:00.005Z
+parent_revision_id: null
+migration_id: edition4-fresh-v2
+files:
+  - path: raw/captures/68def973fb16beb2dadfe9ddd477055a471d0c02103cf1e593df19db1f7343a2/artifacts/article.pdf
+    media_type: application/pdf
+    sha256: sha256:677c4f858e80e0e96e73d3a34b0df40da99b95d3ec27e2ccc344cc19973d7d4e
+    size_bytes: 509108
+    legacy_source:
+      repositoryPath: library/sources/the-2026-07-28-mcp-specification-release-candida-1a1752b8/raw/68def973fb16beb2dadfe9ddd477055a471d0c02103cf1e593df19db1f7343a2/artifacts/article.pdf
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 3de3b1ce52f014532a804f51eacec1b07ebe5f75
+  - path: raw/captures/68def973fb16beb2dadfe9ddd477055a471d0c02103cf1e593df19db1f7343a2/manifest.json
+    media_type: application/json
+    sha256: sha256:7ca0a29a26fe548189c56aa82cda4cfa1fb96cce32eb7e2124d16fedfed64762
+    size_bytes: 797
+    legacy_source:
+      repositoryPath: library/sources/the-2026-07-28-mcp-specification-release-candida-1a1752b8/raw/68def973fb16beb2dadfe9ddd477055a471d0c02103cf1e593df19db1f7343a2/manifest.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 1ca7c9baa1d909b0230b1d81f81ea1432955f144
+  - path: raw/captures/f6abd7cfaba52c1e657c62b74c9f16529c47ace355d61d60ebcbb0b4d88d17f4/artifacts/article.pdf
+    media_type: application/pdf
+    sha256: sha256:677c4f858e80e0e96e73d3a34b0df40da99b95d3ec27e2ccc344cc19973d7d4e
+    size_bytes: 509108
+    legacy_source:
+      repositoryPath: library/sources/the-2026-07-28-mcp-specification-release-candida-1a1752b8/raw/f6abd7cfaba52c1e657c62b74c9f16529c47ace355d61d60ebcbb0b4d88d17f4/artifacts/article.pdf
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 3de3b1ce52f014532a804f51eacec1b07ebe5f75
+  - path: raw/captures/f6abd7cfaba52c1e657c62b74c9f16529c47ace355d61d60ebcbb0b4d88d17f4/artifacts/article.png
+    media_type: image/png
+    sha256: sha256:b788c5d36f64031342d31e81103edc3cc2b1a54e58373fe0a616241144871037
+    size_bytes: 1420123
+    legacy_source:
+      repositoryPath: library/sources/the-2026-07-28-mcp-specification-release-candida-1a1752b8/raw/f6abd7cfaba52c1e657c62b74c9f16529c47ace355d61d60ebcbb0b4d88d17f4/artifacts/article.png
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 4fb42d1f9d5dd5556a4c41269ea05a6bf872f017
+  - path: raw/captures/f6abd7cfaba52c1e657c62b74c9f16529c47ace355d61d60ebcbb0b4d88d17f4/manifest.json
+    media_type: application/json
+    sha256: sha256:135118701647f1329e517aa6014d3c04057409bd9076a2e2efb5995efb500e72
+    size_bytes: 937
+    legacy_source:
+      repositoryPath: library/sources/the-2026-07-28-mcp-specification-release-candida-1a1752b8/raw/f6abd7cfaba52c1e657c62b74c9f16529c47ace355d61d60ebcbb0b4d88d17f4/manifest.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: c8812cd2794552cef0d92052210bcb761df06513
+  - path: raw/media/68def973fb16beb2dadfe9ddd477055a471d0c02103cf1e593df19db1f7343a2.json
+    media_type: application/json
+    sha256: sha256:f9716c2a8f16af7abb51983e5520cc914db2735ff68a96edcf220c364e319725
+    size_bytes: 422
+    legacy_source:
+      repositoryPath: library/sources/the-2026-07-28-mcp-specification-release-candida-1a1752b8/media/68def973fb16beb2dadfe9ddd477055a471d0c02103cf1e593df19db1f7343a2.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 17528af662bef9b5395f89240d38edb19f17ce22
+  - path: raw/media/f6abd7cfaba52c1e657c62b74c9f16529c47ace355d61d60ebcbb0b4d88d17f4.curation.json
+    media_type: application/json
+    sha256: sha256:43ddd24888d7c5d6aae42ab5d4ac869c0c763043a274ea4a3033b2730fed6f29
+    size_bytes: 1250
+    legacy_source:
+      repositoryPath: library/sources/the-2026-07-28-mcp-specification-release-candida-1a1752b8/media/f6abd7cfaba52c1e657c62b74c9f16529c47ace355d61d60ebcbb0b4d88d17f4.curation.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 610391ff998a1b7bbc4db03eb17c59d0d6f948e3
+  - path: raw/media/f6abd7cfaba52c1e657c62b74c9f16529c47ace355d61d60ebcbb0b4d88d17f4.json
+    media_type: application/json
+    sha256: sha256:7b13bc5940dc912f43991618a9a82df3ff0b00a07ee96d6e20ffea29f6491e49
+    size_bytes: 830
+    legacy_source:
+      repositoryPath: library/sources/the-2026-07-28-mcp-specification-release-candida-1a1752b8/media/f6abd7cfaba52c1e657c62b74c9f16529c47ace355d61d60ebcbb0b4d88d17f4.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 51794084477da70f68de8229d22a4ada750d62a9
+  - path: raw/record.yaml
+    media_type: application/yaml
+    sha256: sha256:9af6983728103f87b13ba1fdc5fc7c42065a12e531990923ad1ce5e0d9e492f3
+    size_bytes: 2481
+    legacy_source:
+      repositoryPath: library/sources/the-2026-07-28-mcp-specification-release-candida-1a1752b8/record.yaml
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 3399fc2f1a824675608fa63b6fc20a0197766e65

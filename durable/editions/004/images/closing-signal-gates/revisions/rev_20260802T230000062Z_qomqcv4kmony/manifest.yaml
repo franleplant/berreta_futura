@@ -1,0 +1,29 @@
+schema_version: 1
+revision_kind: image
+edition_id: "004"
+revision_id: rev_20260802T230000062Z_qomqcv4kmony
+created_at: 2026-08-02T23:00:00.062Z
+parent_revision_id: null
+provenance_kind: legacy_import
+migration_id: edition4-fresh-v2
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/004-the-systems-around-the-model/art/closing-signal-gates-manga.png
+    gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+    gitBlobOid: 941509efd0af0d309e7a3f1ce4469364009d9d3a
+    sha256: sha256:f1c39659719072a797bbf00667950db6bc368cd77662abdbfc16c45a31af2510
+input_revisions:
+  - kind: edition_spec
+    editionId: "004"
+    logicalId: main
+    revisionId: rev_20260802T230000034Z_nvdvmifoqlet
+files:
+  - path: image.png
+    mediaType: image/png
+    sha256: sha256:f1c39659719072a797bbf00667950db6bc368cd77662abdbfc16c45a31af2510
+    sizeBytes: 2655851
+    legacySource:
+      repositoryPath: editions/004-the-systems-around-the-model/art/closing-signal-gates-manga.png
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 941509efd0af0d309e7a3f1ce4469364009d9d3a
+logical_id: closing-signal-gates

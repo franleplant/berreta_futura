@@ -1,0 +1,12 @@
+{
+  "bundle_sha256": "28229f2cb0a62496b6d89fca809f7167f052c7378405e8cd671ce7c46d48c16e",
+  "candidate_count": 0,
+  "candidates": [],
+  "curator": "magazine-compiler/automatic-media-curator",
+  "input_sha256": "e4dd2d704a6f3b132221af14480ec30774a0aaed6a7003da4cd48c616bfadc8f",
+  "policy_version": "editorial-impact-v4",
+  "schema_version": 1,
+  "selected": [],
+  "selection_limit": 3,
+  "source_id": "factories-are-not-a-token-or-llm-problem-ba5fabbf"
+}

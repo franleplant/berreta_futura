@@ -1,0 +1,59 @@
+schema_version: 2
+id: the-2026-07-28-mcp-specification-release-candida-1a1752b8
+title: The 2026-07-28 MCP Specification Release Candidate
+author: David Soria Parra, Den Delimarsky
+author_profile:
+  note: David Soria Parra and Den Delimarsky are lead maintainers of the Model Context Protocol.
+  evidence:
+  - url: https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate
+    capture_id: 68def973fb16beb2dadfe9ddd477055a471d0c02103cf1e593df19db1f7343a2
+canonical_url: https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate
+submitted_url: https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate/
+captured_at: '2026-07-29T00:36:13Z'
+publication_date: '2026-05-21'
+kind: web
+status: captured
+content_hash: null
+raw_captures:
+- id: 68def973fb16beb2dadfe9ddd477055a471d0c02103cf1e593df19db1f7343a2
+  path: raw/68def973fb16beb2dadfe9ddd477055a471d0c02103cf1e593df19db1f7343a2/manifest.json
+  method: author_identity_profile
+  purpose: author_identity
+  source_url: https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate
+  captured_at: '2026-07-29T00:36:13Z'
+  artifact_count: 1
+  byte_count: 509108
+- id: f6abd7cfaba52c1e657c62b74c9f16529c47ace355d61d60ebcbb0b4d88d17f4
+  path: raw/f6abd7cfaba52c1e657c62b74c9f16529c47ace355d61d60ebcbb0b4d88d17f4/manifest.json
+  method: authenticated_browser
+  purpose: article
+  source_url: https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate
+  captured_at: '2026-07-29T00:36:13Z'
+  artifact_count: 2
+  byte_count: 1929231
+provenance: []
+rights:
+  status: unknown
+  intended_use: private_reference
+  attribution_required: true
+  public_reprint_allowed: false
+media_reviews:
+- capture_id: 68def973fb16beb2dadfe9ddd477055a471d0c02103cf1e593df19db1f7343a2
+  status: media_rejected
+  assets: []
+  note: Author identity evidence is provenance, not article artwork.
+- capture_id: f6abd7cfaba52c1e657c62b74c9f16529c47ace355d61d60ebcbb0b4d88d17f4
+  status: media_rejected
+  assets: []
+  note: 'Automatic curation rejected all candidates: extreme_aspect_ratio_or_full_page_capture (1), no_semantic_source_context
+    (1).'
+metadata:
+  tags:
+  - infrastructure
+  - mcp
+  - protocols
+  synopsis: 'The maintainers explain MCP 2026-07-28: a stateless core, first-class extensions, authorization
+    hardening, deprecations, and full JSON Schema for tools.'
+notes: >-
+  Edition 4 editorial decision: develop this source as a standalone full article
+  about the MCP protocol update.

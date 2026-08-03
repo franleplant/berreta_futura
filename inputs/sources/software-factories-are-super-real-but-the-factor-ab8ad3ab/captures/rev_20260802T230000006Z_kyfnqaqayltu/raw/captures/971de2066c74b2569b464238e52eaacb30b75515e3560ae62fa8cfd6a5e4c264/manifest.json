@@ -1,0 +1,20 @@
+{
+  "artifact_count": 1,
+  "artifacts": [
+    {
+      "bytes": 1404,
+      "path": "post.txt",
+      "sha256": "bbc3f3fac54b5aa53ca88fdd431cff08b985ae4236552a14431dcf1dc96ee6d4"
+    }
+  ],
+  "bundle_sha256": "971de2066c74b2569b464238e52eaacb30b75515e3560ae62fa8cfd6a5e4c264",
+  "byte_count": 1404,
+  "canonical_url": "https://x.com/GeoffreyHuntley/status/2082525589416923314",
+  "captured_at": "2026-07-29T21:40:25-03:00",
+  "method": "authenticated_browser_dom_export",
+  "purpose": "article",
+  "schema_version": 2,
+  "source_id": "software-factories-are-super-real-but-the-factor-ab8ad3ab",
+  "source_url": "https://x.com/GeoffreyHuntley/status/2082525589416923314",
+  "submitted_url": "https://x.com/GeoffreyHuntley/status/2082525589416923314"
+}

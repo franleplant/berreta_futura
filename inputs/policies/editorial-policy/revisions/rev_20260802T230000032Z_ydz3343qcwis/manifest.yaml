@@ -1,0 +1,16 @@
+schema_version: 1
+revision_kind: policy
+logical_id: editorial-policy
+revision_id: rev_20260802T230000032Z_ydz3343qcwis
+created_at: 2026-08-02T23:00:00.032Z
+parent_revision_id: null
+migration_id: edition4-fresh-v2
+files:
+  - path: policy.md
+    media_type: text/markdown
+    sha256: sha256:1474b112d0c9edb0c3915e9e4477c3ee4c9d0f58b008ed9bdca572f7a6728aa6
+    size_bytes: 8600
+    legacy_source:
+      repositoryPath: docs/EDITORIAL_POLICY.md
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: b06f8cf077ea2e6330b1afe4c2e0a2afecbc9b95

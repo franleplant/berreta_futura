@@ -1,0 +1,152 @@
+schema_version: 1
+revision_kind: source_capture
+logical_id: pragmatic-leverage-in-the-software-factory-09879736
+revision_id: rev_20260802T230000002Z_fu55xgo3jx4a
+created_at: 2026-08-02T23:00:00.002Z
+parent_revision_id: null
+migration_id: edition4-fresh-v2
+files:
+  - path: raw/captures/3b23a434aba80bb0a966965912d17c1fd0b9d3cc44413902396efe8ce6956df4/artifacts/profile.png
+    media_type: image/png
+    sha256: sha256:f4bd74db58e4c63cb8cf3e4073897eee18a651e73cd73f3e303e87a3af492856
+    size_bytes: 131340
+    legacy_source:
+      repositoryPath: library/sources/pragmatic-leverage-in-the-software-factory-09879736/raw/3b23a434aba80bb0a966965912d17c1fd0b9d3cc44413902396efe8ce6956df4/artifacts/profile.png
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: c744d56ac5c1690f570f8d55cae9d95986e903b1
+  - path: raw/captures/3b23a434aba80bb0a966965912d17c1fd0b9d3cc44413902396efe8ce6956df4/manifest.json
+    media_type: application/json
+    sha256: sha256:3859303d614d511a7cef2adc7e12fc51407d7e3a633f2c1532d86027f0524e7d
+    size_bytes: 700
+    legacy_source:
+      repositoryPath: library/sources/pragmatic-leverage-in-the-software-factory-09879736/raw/3b23a434aba80bb0a966965912d17c1fd0b9d3cc44413902396efe8ce6956df4/manifest.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 8341423b4943b7e0f3637802608a2fa27d592574
+  - path: raw/captures/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/artifacts/article.png
+    media_type: image/png
+    sha256: sha256:393e74962d9b86aa50654ec98ec10f141bb2328f835b18c05de03e8f7e2194fe
+    size_bytes: 395829
+    legacy_source:
+      repositoryPath: library/sources/pragmatic-leverage-in-the-software-factory-09879736/raw/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/artifacts/article.png
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 123eb96c095ad0a60d103c63760ee08a1a4b1db0
+  - path: raw/captures/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/artifacts/media-manifest.json
+    media_type: application/json
+    sha256: sha256:3d7d80a72b06760347ccb36ed74f4025fa76b6c5b67d5f128926fb2d8aeb45b7
+    size_bytes: 3860
+    legacy_source:
+      repositoryPath: library/sources/pragmatic-leverage-in-the-software-factory-09879736/raw/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/artifacts/media-manifest.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 2fb4af82d26373dd3326159623fbbb6871bbd645
+  - path: raw/captures/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/artifacts/media/001.png
+    media_type: image/png
+    sha256: sha256:8925967c0eb1c7879eb87da11fab28d68b170e520454b2dd4f76292ae135bcc6
+    size_bytes: 139622
+    legacy_source:
+      repositoryPath: library/sources/pragmatic-leverage-in-the-software-factory-09879736/raw/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/artifacts/media/001.png
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 2863728f9b237a2b56a55135f600e5973a1b8459
+  - path: raw/captures/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/artifacts/media/002.jpg
+    media_type: image/jpeg
+    sha256: sha256:3781e0b28128fa9fe69691da2b6b1afb88e6c1b279f0502157e0f9a6dca8dcb9
+    size_bytes: 140548
+    legacy_source:
+      repositoryPath: library/sources/pragmatic-leverage-in-the-software-factory-09879736/raw/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/artifacts/media/002.jpg
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: b963222bae9143188f249bd65b4115066d67e218
+  - path: raw/captures/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/artifacts/media/003.jpg
+    media_type: image/jpeg
+    sha256: sha256:90e286025e35e76ee02b53ba4170df8eaacd075bf44c79d4932678a11c1b8a36
+    size_bytes: 136439
+    legacy_source:
+      repositoryPath: library/sources/pragmatic-leverage-in-the-software-factory-09879736/raw/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/artifacts/media/003.jpg
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 4df0ab6941810c2823a8b53b748f59e13e1e9003
+  - path: raw/captures/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/artifacts/media/004.jpg
+    media_type: image/jpeg
+    sha256: sha256:cdc35a1870197c062562d7c869fe52121fdde5444ca301fbfcad8efe545ab66c
+    size_bytes: 158792
+    legacy_source:
+      repositoryPath: library/sources/pragmatic-leverage-in-the-software-factory-09879736/raw/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/artifacts/media/004.jpg
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 23feb5c12d067e82adaf8bfed4a2738b0cd36860
+  - path: raw/captures/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/artifacts/media/005.jpg
+    media_type: image/jpeg
+    sha256: sha256:8ea5b0859de035c406a8c8dac4c34a0dafe1fd2af7adea8b8622529c4339aef5
+    size_bytes: 102985
+    legacy_source:
+      repositoryPath: library/sources/pragmatic-leverage-in-the-software-factory-09879736/raw/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/artifacts/media/005.jpg
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 7c681871d3d67e7a1adff0c3c0c5e9a2ad3d3a26
+  - path: raw/captures/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/artifacts/media/006.jpg
+    media_type: image/jpeg
+    sha256: sha256:7cba4626faf91106e7d2e12ac854f7b52f349f94bcb05803ec38a96ee511f72e
+    size_bytes: 123853
+    legacy_source:
+      repositoryPath: library/sources/pragmatic-leverage-in-the-software-factory-09879736/raw/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/artifacts/media/006.jpg
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: e7b58dbf0e4effe3c1e37b0124ce145e5eb28b91
+  - path: raw/captures/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/artifacts/media/007.jpg
+    media_type: image/jpeg
+    sha256: sha256:706707a054cdfff461e2516e1baefcb394ed03ef51e4a02c6f77d8d85a4fb02e
+    size_bytes: 114170
+    legacy_source:
+      repositoryPath: library/sources/pragmatic-leverage-in-the-software-factory-09879736/raw/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/artifacts/media/007.jpg
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 4c20e5b037ab806c229cc9b9b659d94570d7d87e
+  - path: raw/captures/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/artifacts/media/008.jpg
+    media_type: image/jpeg
+    sha256: sha256:6460b75ab35398ba1a9f7311c95d8248ae5b657abc9194db44882639e81310aa
+    size_bytes: 138268
+    legacy_source:
+      repositoryPath: library/sources/pragmatic-leverage-in-the-software-factory-09879736/raw/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/artifacts/media/008.jpg
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 2d55bdf4af20fefd54a487536f4b1553efcbfb30
+  - path: raw/captures/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/artifacts/rendered.txt
+    media_type: text/plain
+    sha256: sha256:c2ae3271fe106f9d3ae71844f0752847ea73a6096971796786cf41f08d8d3c2c
+    size_bytes: 2812
+    legacy_source:
+      repositoryPath: library/sources/pragmatic-leverage-in-the-software-factory-09879736/raw/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/artifacts/rendered.txt
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 2339c0dd25d62b5dca9c9c3750011a0399dd91b9
+  - path: raw/captures/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/manifest.json
+    media_type: application/json
+    sha256: sha256:b12d5e3a5f0f64eafa193eef7d851684abd22debf9bc7dc5aa0bad5806cb6819
+    size_bytes: 2235
+    legacy_source:
+      repositoryPath: library/sources/pragmatic-leverage-in-the-software-factory-09879736/raw/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900/manifest.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 41f295444a98be4a9022ac8691cc9371762fdd07
+  - path: raw/media/3b23a434aba80bb0a966965912d17c1fd0b9d3cc44413902396efe8ce6956df4.json
+    media_type: application/json
+    sha256: sha256:b616da2cc2dd0bf3ceef45f97d33d8188ccf30936173f801d8160cbcee67c503
+    size_bytes: 824
+    legacy_source:
+      repositoryPath: library/sources/pragmatic-leverage-in-the-software-factory-09879736/media/3b23a434aba80bb0a966965912d17c1fd0b9d3cc44413902396efe8ce6956df4.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: a6c4ddbe8d16eaa01474e18617fd819c330326dd
+  - path: raw/media/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900.curation.json
+    media_type: application/json
+    sha256: sha256:4d9508ef7b954ee28b3311087dd496aea5caf7eed67662134b1e7ecc2c689583
+    size_bytes: 9001
+    legacy_source:
+      repositoryPath: library/sources/pragmatic-leverage-in-the-software-factory-09879736/media/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900.curation.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 3e875429df977f56b9a6492f0dd9033cf246fe65
+  - path: raw/media/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900.json
+    media_type: application/json
+    sha256: sha256:5a3738f26a059234588616dfa2df8780fec7d9bde527b941fa5a3ca835a072b6
+    size_bytes: 8809
+    legacy_source:
+      repositoryPath: library/sources/pragmatic-leverage-in-the-software-factory-09879736/media/bab63860aafe3c00202d01e15ec3cf360f31811f6d944b20fe2209d90b94e900.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: a7341cabebb79835ab84a158f9bfb5c43416cbbf
+  - path: raw/record.yaml
+    media_type: application/yaml
+    sha256: sha256:15168e8744177cce0cb7d08afebad60be56d70fd597ef6e3ec31dc67f053a1c1
+    size_bytes: 3563
+    legacy_source:
+      repositoryPath: library/sources/pragmatic-leverage-in-the-software-factory-09879736/record.yaml
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: bd79479f7089d7644ea8fa6d0ca58e961584b267

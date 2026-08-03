@@ -1,0 +1,29 @@
+schema_version: 1
+revision_kind: image
+edition_id: "004"
+revision_id: rev_20260802T230000058Z_rcyepzxovpxf
+created_at: 2026-08-02T23:00:00.058Z
+parent_revision_id: null
+provenance_kind: legacy_import
+migration_id: edition4-fresh-v2
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/004-the-systems-around-the-model/art/article-openers/mcp-in-a-nutshell.png
+    gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+    gitBlobOid: 102c7457981df5da381f2b576b8d39284d5887a4
+    sha256: sha256:46452dedeede06e769c4ad86cf42e4786cf1712e6d367b1a21e90f758f12e11c
+input_revisions:
+  - kind: edition_spec
+    editionId: "004"
+    logicalId: main
+    revisionId: rev_20260802T230000034Z_nvdvmifoqlet
+files:
+  - path: image.png
+    mediaType: image/png
+    sha256: sha256:46452dedeede06e769c4ad86cf42e4786cf1712e6d367b1a21e90f758f12e11c
+    sizeBytes: 3012005
+    legacySource:
+      repositoryPath: editions/004-the-systems-around-the-model/art/article-openers/mcp-in-a-nutshell.png
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 102c7457981df5da381f2b576b8d39284d5887a4
+logical_id: mcp-in-a-nutshell-opener

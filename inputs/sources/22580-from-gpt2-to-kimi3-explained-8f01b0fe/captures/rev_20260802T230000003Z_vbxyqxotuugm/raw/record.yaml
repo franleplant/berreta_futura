@@ -1,0 +1,115 @@
+schema_version: 2
+id: 22580-from-gpt2-to-kimi3-explained-8f01b0fe
+title: '22580: From GPT2 to Kimi3, Explained'
+author: ali
+author_profile:
+  note: ali works on inference at Baseten and studies engineering at the University of Waterloo.
+  evidence:
+  - url: https://x.com/waterloo_intern
+    capture_id: 6673eb827dc1ca5a5ee8a8fbe17dc5e842a3977f4ea65ea0350db2a29153318c
+canonical_url: https://x.com/waterloo_intern/status/2081762065392541951
+submitted_url: https://x.com/waterloo_intern/status/2081762065392541951
+captured_at: '2026-07-29T00:35:54Z'
+publication_date: '2026-07-27'
+kind: web
+status: captured
+content_hash: null
+raw_captures:
+- id: 6e7ce0625874e73e7b4b50667213a4a797d6c31f34009b2338e22bef13809965
+  path: raw/6e7ce0625874e73e7b4b50667213a4a797d6c31f34009b2338e22bef13809965/manifest.json
+  method: authenticated_browser
+  purpose: article
+  source_url: https://x.com/waterloo_intern/status/2081762065392541951
+  captured_at: '2026-07-29T00:35:54Z'
+  artifact_count: 2
+  byte_count: 8041864
+- id: ded12bdec54f810c6734a8a7c35c6bc398c33458ffb5dda4c104e819736c945d
+  path: raw/ded12bdec54f810c6734a8a7c35c6bc398c33458ffb5dda4c104e819736c945d/manifest.json
+  method: author_identity_profile
+  purpose: author_identity
+  source_url: https://x.com/waterloo_intern
+  captured_at: '2026-07-29T00:35:54Z'
+  artifact_count: 2
+  byte_count: 2304923
+- id: 6673eb827dc1ca5a5ee8a8fbe17dc5e842a3977f4ea65ea0350db2a29153318c
+  path: raw/6673eb827dc1ca5a5ee8a8fbe17dc5e842a3977f4ea65ea0350db2a29153318c/manifest.json
+  method: author_identity_profile
+  purpose: author_identity
+  source_url: https://x.com/waterloo_intern
+  captured_at: '2026-07-29T00:44:55Z'
+  artifact_count: 1
+  byte_count: 1243055
+- id: a40d2a8da452e8adeb6060b5ee81b8ff6bfe76e86ac06687ce3ee84a16a06ef6
+  path: raw/a40d2a8da452e8adeb6060b5ee81b8ff6bfe76e86ac06687ce3ee84a16a06ef6/manifest.json
+  method: authenticated_browser_original_media
+  purpose: article
+  source_url: https://x.com/waterloo_intern/status/2081762065392541951
+  captured_at: '2026-07-29T00:44:55Z'
+  artifact_count: 25
+  byte_count: 16382820
+provenance: []
+rights:
+  status: unknown
+  intended_use: private_reference
+  attribution_required: true
+  public_reprint_allowed: false
+media_reviews:
+- capture_id: 6673eb827dc1ca5a5ee8a8fbe17dc5e842a3977f4ea65ea0350db2a29153318c
+  status: media_rejected
+  assets: []
+  note: Author identity evidence is provenance, not article artwork.
+- capture_id: 6e7ce0625874e73e7b4b50667213a4a797d6c31f34009b2338e22bef13809965
+  status: media_rejected
+  assets: []
+  note: 'Automatic curation rejected all candidates: extreme_aspect_ratio_or_full_page_capture (1), no_semantic_source_context
+    (1).'
+- capture_id: a40d2a8da452e8adeb6060b5ee81b8ff6bfe76e86ac06687ce3ee84a16a06ef6
+  status: media_curated
+  assets:
+  - id: raster-002-7f1aea9b
+    artifact_path: media/002.jpg
+    artifact_sha256: 7f1aea9babb5cce8122d33bbc6e5391c1fd2e2b37f43f492263a59928b946518
+    mime_type: image/jpeg
+    creator: ali
+    credit: 'Diagram by ali; source: 22580: From GPT2 to Kimi3, Explained.'
+    rights:
+      status: unknown
+      intended_use: private_reference
+      attribution_required: true
+      public_reprint_allowed: false
+  - id: raster-003-af0218d8
+    artifact_path: media/003.jpg
+    artifact_sha256: af0218d891d0043854b73d79a00a3905fa18103f4bf7d9524b36408688ca53a9
+    mime_type: image/jpeg
+    creator: ali
+    credit: 'Diagram by ali; source: 22580: From GPT2 to Kimi3, Explained.'
+    rights:
+      status: unknown
+      intended_use: private_reference
+      attribution_required: true
+      public_reprint_allowed: false
+  - id: raster-004-3de01053
+    artifact_path: media/004.jpg
+    artifact_sha256: 3de010533e4b1fd18877857274e2f81a6ab21a6d4dc39ce6cbec304d846eb2b6
+    mime_type: image/jpeg
+    creator: ali
+    credit: 'Diagram by ali; source: 22580: From GPT2 to Kimi3, Explained.'
+    rights:
+      status: unknown
+      intended_use: private_reference
+      attribution_required: true
+      public_reprint_allowed: false
+  note: Automatic curation selected 3 of 23 candidates under editorial-impact-v4; decisions are hash-pinned
+    in a40d2a8da452e8adeb6060b5ee81b8ff6bfe76e86ac06687ce3ee84a16a06ef6.curation.json.
+- capture_id: ded12bdec54f810c6734a8a7c35c6bc398c33458ffb5dda4c104e819736c945d
+  status: media_rejected
+  assets: []
+  note: Author identity evidence is provenance, not article artwork.
+metadata:
+  tags:
+  - inference
+  - model-architecture
+  - transformers
+  synopsis: A code-led lineage from GPT-2 through linear attention, DeltaNet, Kimi Linear, and the KimiK3
+    architecture.
+notes: ''

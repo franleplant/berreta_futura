@@ -1,0 +1,16 @@
+schema_version: 1
+revision_kind: source_extraction
+logical_id: pragmatic-leverage-in-the-software-factory-09879736
+revision_id: rev_20260802T230000011Z_tws2rukw26uc
+created_at: 2026-08-02T23:00:00.011Z
+parent_revision_id: null
+migration_id: edition4-fresh-v2
+files:
+  - path: extracted.md
+    media_type: text/markdown
+    sha256: sha256:f6c72fe2cf0ea5efef216a536182cf0911f5f84c5c8560b7b8bb41fda4b4e921
+    size_bytes: 3244
+    legacy_source:
+      repositoryPath: library/sources/pragmatic-leverage-in-the-software-factory-09879736/extracted.md
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 2552371eea61650f74edd182dd0426f1cd33a169

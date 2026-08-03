@@ -1,0 +1,224 @@
+schema_version: 1
+revision_kind: source_capture
+logical_id: eval-engineering-the-step-that-turns-a-200-model-9f6f868f
+revision_id: rev_20260802T230000001Z_qasyw5wztscv
+created_at: 2026-08-02T23:00:00.001Z
+parent_revision_id: null
+migration_id: edition4-fresh-v2
+files:
+  - path: raw/captures/1aae1d4a293e043b82cd53145d8f506d3f37fb9256947628847939623d087050/artifacts/profile.pdf
+    media_type: application/pdf
+    sha256: sha256:6fe2464014a7bc2b72ab42bd362fd6e935b6b41bcb04733cf839d1aaf8b23d39
+    size_bytes: 868380
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/raw/1aae1d4a293e043b82cd53145d8f506d3f37fb9256947628847939623d087050/artifacts/profile.pdf
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 710c120385e9cf4b090b7991a688267b80cd0725
+  - path: raw/captures/1aae1d4a293e043b82cd53145d8f506d3f37fb9256947628847939623d087050/manifest.json
+    media_type: application/json
+    sha256: sha256:8f4ad87b7db248eb8dc079d9a7dbc358d9ea58e5b981c602532d9bba330e6285
+    size_bytes: 703
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/raw/1aae1d4a293e043b82cd53145d8f506d3f37fb9256947628847939623d087050/manifest.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 608fcdc514af1b1511721eeee8feeecc3b4d8d72
+  - path: raw/captures/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/artifacts/media-manifest.json
+    media_type: application/json
+    sha256: sha256:2421201e2558717f2ce95c57b6996996fe1577b5335aaab82b8fbfa17ae0ddf2
+    size_bytes: 2985
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/raw/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/artifacts/media-manifest.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 5784589dcc0a3f38a2dec35b169e9ab66071881f
+  - path: raw/captures/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/artifacts/media/001.jpg
+    media_type: image/jpeg
+    sha256: sha256:2994c16250acfa19156b3a4527107b94966d505fa358f9dd4f87753716ecafd0
+    size_bytes: 81806
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/raw/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/artifacts/media/001.jpg
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: f6089c54717d70690f089a35c815a66d38f3c605
+  - path: raw/captures/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/artifacts/media/002.jpg
+    media_type: image/jpeg
+    sha256: sha256:8e40815eef28e32d00a53ad180729a88ff7ec9ad05bfb5125959d26b64772b49
+    size_bytes: 161479
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/raw/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/artifacts/media/002.jpg
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 22de646354afe037d23a342dd8e7889615292c6b
+  - path: raw/captures/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/artifacts/media/003.jpg
+    media_type: image/jpeg
+    sha256: sha256:92da0fe4ced1f723b2e74ec7468fe25ddf3100f9f8577649cca27a081d54a9ae
+    size_bytes: 183984
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/raw/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/artifacts/media/003.jpg
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: a68c687e412b689ebccff661bc6f553cdfa718f2
+  - path: raw/captures/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/artifacts/media/004.jpg
+    media_type: image/jpeg
+    sha256: sha256:4a90e2c3f539e6f1b9233dea84ab24aaf8f6dd13b0a2249e71cee9d4e8b36c5b
+    size_bytes: 514904
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/raw/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/artifacts/media/004.jpg
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: ada79c03423399b1d75810e4744964b6ee9c6ed3
+  - path: raw/captures/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/artifacts/media/005.jpg
+    media_type: image/jpeg
+    sha256: sha256:5aadaba016ea86553a0d9a23299baf8b1e06cb2dfcbd38403bda2432f28d9441
+    size_bytes: 194245
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/raw/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/artifacts/media/005.jpg
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: fb516133eff105cc5bd8df491f2478fd5ab39a8c
+  - path: raw/captures/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/artifacts/media/006.jpg
+    media_type: image/jpeg
+    sha256: sha256:e7891e4e39d8f1a635018b6b5a9a7f1a0ba2b93014a34bb54acc4a87fabbbc42
+    size_bytes: 153844
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/raw/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/artifacts/media/006.jpg
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: a99e9719f185b97c818392c4308fe074204c9bbd
+  - path: raw/captures/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/artifacts/media/007.jpg
+    media_type: image/jpeg
+    sha256: sha256:b2962316fc3a1bacc6fbf2c841000c54926b73d1197cd8d5ebfe6d4d8b162658
+    size_bytes: 175374
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/raw/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/artifacts/media/007.jpg
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 134479bda697498aa1c90c3915ea2a62ec226a0e
+  - path: raw/captures/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/artifacts/media/008.jpg
+    media_type: image/jpeg
+    sha256: sha256:0298c49396c589b97293a37736225a1b2820d6e4a9fef1ec2dadbdf462ea0878
+    size_bytes: 108722
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/raw/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/artifacts/media/008.jpg
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: a38e50aad20ea555976a76dfe4d0ea9c0995f5eb
+  - path: raw/captures/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/artifacts/post.pdf
+    media_type: application/pdf
+    sha256: sha256:ed17e4c8c1832b878abd7ee5e35b1037749b678750e079bfc56607c2b826ba95
+    size_bytes: 1048525
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/raw/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/artifacts/post.pdf
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 59e947f630cd2f3f475e63bba6665b1bf799f1b5
+  - path: raw/captures/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/artifacts/post.png
+    media_type: image/png
+    sha256: sha256:b92dd4da8b6a25478db1e08a73808ae4a6f9ca6ec3c0d4a166561459ddc625e0
+    size_bytes: 2962194
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/raw/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/artifacts/post.png
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 5acc7ac3f5464c8485950073593f643ffc128649
+  - path: raw/captures/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/manifest.json
+    media_type: application/json
+    sha256: sha256:3c0b5a5f2602b129c02c6d799d65e44db9bc7c5eb2646edea796e472d0ae41a8
+    size_bytes: 2234
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/raw/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04/manifest.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 6ee3adada3ef30e5a5ff2bd9c18d67c7f700df00
+  - path: raw/captures/6b7c4575be0b61404a0aed9b2fb9fd9363a579516f59d434331628de7f817447/artifacts/post.pdf
+    media_type: application/pdf
+    sha256: sha256:ed17e4c8c1832b878abd7ee5e35b1037749b678750e079bfc56607c2b826ba95
+    size_bytes: 1048525
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/raw/6b7c4575be0b61404a0aed9b2fb9fd9363a579516f59d434331628de7f817447/artifacts/post.pdf
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 59e947f630cd2f3f475e63bba6665b1bf799f1b5
+  - path: raw/captures/6b7c4575be0b61404a0aed9b2fb9fd9363a579516f59d434331628de7f817447/artifacts/post.png
+    media_type: image/png
+    sha256: sha256:b92dd4da8b6a25478db1e08a73808ae4a6f9ca6ec3c0d4a166561459ddc625e0
+    size_bytes: 2962194
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/raw/6b7c4575be0b61404a0aed9b2fb9fd9363a579516f59d434331628de7f817447/artifacts/post.png
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 5acc7ac3f5464c8485950073593f643ffc128649
+  - path: raw/captures/6b7c4575be0b61404a0aed9b2fb9fd9363a579516f59d434331628de7f817447/manifest.json
+    media_type: application/json
+    sha256: sha256:eea686701422c9756f760508e0285050e8e8a2b2ceb879829f52049e922889e3
+    size_bytes: 865
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/raw/6b7c4575be0b61404a0aed9b2fb9fd9363a579516f59d434331628de7f817447/manifest.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 3c928202d76d4a2c0f92732c65482ac466ac8490
+  - path: raw/captures/a8a18eb8ba9a2281cd1e480c3abd944fb558084fad70b524c356619bbe7d96e4/artifacts/profile.pdf
+    media_type: application/pdf
+    sha256: sha256:6fe2464014a7bc2b72ab42bd362fd6e935b6b41bcb04733cf839d1aaf8b23d39
+    size_bytes: 868380
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/raw/a8a18eb8ba9a2281cd1e480c3abd944fb558084fad70b524c356619bbe7d96e4/artifacts/profile.pdf
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 710c120385e9cf4b090b7991a688267b80cd0725
+  - path: raw/captures/a8a18eb8ba9a2281cd1e480c3abd944fb558084fad70b524c356619bbe7d96e4/artifacts/profile.png
+    media_type: image/png
+    sha256: sha256:3666781866cbe6e68980905798d252a62e03ee3905ae1be19906444d286f1411
+    size_bytes: 1415399
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/raw/a8a18eb8ba9a2281cd1e480c3abd944fb558084fad70b524c356619bbe7d96e4/artifacts/profile.png
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: c25f867b9a90577f64b8ea594fe1077ceeb33128
+  - path: raw/captures/a8a18eb8ba9a2281cd1e480c3abd944fb558084fad70b524c356619bbe7d96e4/manifest.json
+    media_type: application/json
+    sha256: sha256:e76f60cecc9689a896f7b1f53cf148d7994cf7f0ab1f13452e66b0cbc5709666
+    size_bytes: 853
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/raw/a8a18eb8ba9a2281cd1e480c3abd944fb558084fad70b524c356619bbe7d96e4/manifest.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: d37203738d680ee04a01e796302455293b66d208
+  - path: raw/media/1aae1d4a293e043b82cd53145d8f506d3f37fb9256947628847939623d087050.json
+    media_type: application/json
+    sha256: sha256:4bd7103d48a44fb5b47dd11a58447526703b8e0b98a206861d84772f3cde0ba2
+    size_bytes: 422
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/media/1aae1d4a293e043b82cd53145d8f506d3f37fb9256947628847939623d087050.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 1fe6b13a7d756faa57aab86c1fdfa9dc842df11c
+  - path: raw/media/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04.curation.json
+    media_type: application/json
+    sha256: sha256:38e0223981446f499ddeabc451ae9fe8ef430d7ec63f2ae1dcc567be99602d69
+    size_bytes: 8548
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/media/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04.curation.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 6a23a04d04c362c5b336ec789c47072285870f7c
+  - path: raw/media/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04.json
+    media_type: application/json
+    sha256: sha256:f05f91cae264325ad5da0c241863f1a9b34ad72f3be055c725ee3d33866ad297
+    size_bytes: 7924
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/media/28c62a33c7df62a3662133de34bfda66f531ae0ecda0ea1a3844280e6fc08c04.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 5fd1d298d5058d3afd392f26dcb877d25cbcd0f0
+  - path: raw/media/6b7c4575be0b61404a0aed9b2fb9fd9363a579516f59d434331628de7f817447.curation.json
+    media_type: application/json
+    sha256: sha256:2b37a9d994cbb36104632ec2099aade49e3a538e3eaec3be7d47eda0a07533ac
+    size_bytes: 1242
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/media/6b7c4575be0b61404a0aed9b2fb9fd9363a579516f59d434331628de7f817447.curation.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 20278965b7a23b0109ed185092df27c24ee105ca
+  - path: raw/media/6b7c4575be0b61404a0aed9b2fb9fd9363a579516f59d434331628de7f817447.json
+    media_type: application/json
+    sha256: sha256:a2ef5b57b65760c01b01d7eb96c2a320ebc61d5c9e3cd2e181551a1df13a3c6b
+    size_bytes: 828
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/media/6b7c4575be0b61404a0aed9b2fb9fd9363a579516f59d434331628de7f817447.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 39d752c1da233ddb22acc94d5e8214b7f71265f7
+  - path: raw/media/a8a18eb8ba9a2281cd1e480c3abd944fb558084fad70b524c356619bbe7d96e4.json
+    media_type: application/json
+    sha256: sha256:60a0f6d4070cddf411ae9761c30a814b2bcff7425889a6d28d317f20f591b2a5
+    size_bytes: 830
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/media/a8a18eb8ba9a2281cd1e480c3abd944fb558084fad70b524c356619bbe7d96e4.json
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: b1492bb2a46211da7104c51de3d95ca661a6033e
+  - path: raw/record.yaml
+    media_type: application/yaml
+    sha256: sha256:00fda5ad07b59b353470911e1e19a7bf1488bf9f33913dd45d9cd08a5374874e
+    size_bytes: 4729
+    legacy_source:
+      repositoryPath: library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/record.yaml
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: bc437577aacb0133ac95e461edf4aef67b10e1a4

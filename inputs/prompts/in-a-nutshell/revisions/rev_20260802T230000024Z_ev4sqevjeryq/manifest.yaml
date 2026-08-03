@@ -1,0 +1,22 @@
+schema_version: 1
+revision_kind: prompt
+logical_id: in-a-nutshell
+revision_id: rev_20260802T230000024Z_ev4sqevjeryq
+created_at: 2026-08-02T23:00:00.024Z
+parent_revision_id: null
+migration_id: edition4-fresh-v2
+files:
+  - path: output.schema.json
+    media_type: application/json
+    sha256: sha256:68a0c2fee4b8ece5e948028af4c326fc2c45e890b1a1c8163be5a1fa81cc0b29
+    size_bytes: 158
+    generated_by_migration:
+      basis: fresh_v2_prompt_set output contract for in-a-nutshell
+  - path: prompt.md
+    media_type: text/markdown
+    sha256: sha256:a36703876810de5d3d9bd99e0de9b2f61de4156a5649e7a08468ae0c5ddf0995
+    size_bytes: 13063
+    legacy_source:
+      repositoryPath: prompts/in-a-nutshell.md
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 305d9b14c48804ddfa19a8cb4bc2a485a87494f3

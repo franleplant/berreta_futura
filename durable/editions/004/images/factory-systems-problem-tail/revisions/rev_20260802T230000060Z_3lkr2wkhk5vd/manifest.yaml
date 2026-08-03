@@ -1,0 +1,29 @@
+schema_version: 1
+revision_kind: image
+edition_id: "004"
+revision_id: rev_20260802T230000060Z_3lkr2wkhk5vd
+created_at: 2026-08-02T23:00:00.060Z
+parent_revision_id: null
+provenance_kind: legacy_import
+migration_id: edition4-fresh-v2
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/004-the-systems-around-the-model/art/article-tails/factory-systems-problem.png
+    gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+    gitBlobOid: 35df8b92d3c977d7a34659e4cedfc6e484ff5963
+    sha256: sha256:4d0cae4b8d8cd5533c112703e90ca4fb267bde0c812307304444838808cb50d6
+input_revisions:
+  - kind: edition_spec
+    editionId: "004"
+    logicalId: main
+    revisionId: rev_20260802T230000034Z_nvdvmifoqlet
+files:
+  - path: image.png
+    mediaType: image/png
+    sha256: sha256:4d0cae4b8d8cd5533c112703e90ca4fb267bde0c812307304444838808cb50d6
+    sizeBytes: 3428610
+    legacySource:
+      repositoryPath: editions/004-the-systems-around-the-model/art/article-tails/factory-systems-problem.png
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 35df8b92d3c977d7a34659e4cedfc6e484ff5963
+logical_id: factory-systems-problem-tail

@@ -1,0 +1,73 @@
+schema_version: 1
+revision_kind: edition_spec
+logical_id: main
+edition_id: "004"
+revision_id: rev_20260802T230000034Z_nvdvmifoqlet
+created_at: 2026-08-02T23:00:00.034Z
+parent_revision_id: null
+migration_id: edition4-fresh-v2
+files:
+  - path: art/illustrations.yaml
+    media_type: application/yaml
+    sha256: sha256:8b271044a0879858c540834b10f984c7680034ce165f2268fe649e32a94ff931
+    size_bytes: 11237
+    legacy_source:
+      repositoryPath: editions/004-the-systems-around-the-model/art/illustrations.yaml
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 8de6d72919c1fc5fb71e203be8497b531530a07e
+  - path: design/covers/canto-vivo/back-references/en.png
+    media_type: image/png
+    sha256: sha256:a5f76912b8cad6c994e6a569125e4bfa3d1389429891768d0dd56b6addd1b028
+    size_bytes: 106520
+    legacy_source:
+      repositoryPath: design/covers/canto-vivo/back-references/en.png
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 139b376e57b08af249e4f075acbcac713f2b4750
+  - path: design/covers/canto-vivo/back-references/es.png
+    media_type: image/png
+    sha256: sha256:05e9f310b06f075408d7e860c26479ed9f86c082b9c5308d3398b592333f758b
+    size_bytes: 112780
+    legacy_source:
+      repositoryPath: design/covers/canto-vivo/back-references/es.png
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: d067846c74c46f0083f05e66f840e6e3bfcf1808
+  - path: design/covers/canto-vivo/design.toml
+    media_type: application/toml
+    sha256: sha256:402f72abce53b621e475beda23fdc52dcb2212df42c97cfb1569101f642f541a
+    size_bytes: 1465
+    legacy_source:
+      repositoryPath: design/covers/canto-vivo/design.toml
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 3994c99c38532752bba060f6793d900e766c0bc2
+  - path: design/covers/canto-vivo/references/en.png
+    media_type: image/png
+    sha256: sha256:45e15baa8b3737e50b7513eb24c7513a418106074768d165d8c8e298a4d220b9
+    size_bytes: 340517
+    legacy_source:
+      repositoryPath: design/covers/canto-vivo/references/en.png
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 9254de28db2d0c2a5b608a2fcdd4e1095d1f828d
+  - path: design/covers/canto-vivo/references/es.png
+    media_type: image/png
+    sha256: sha256:e8ef3753fec0c318282a2dad3e650a1829013659f004a1c7c83fffda547f9fab
+    size_bytes: 344831
+    legacy_source:
+      repositoryPath: design/covers/canto-vivo/references/es.png
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 5ce1b40d74e1c0d9eb58b51001c1ab3b87c8a691
+  - path: edition.yaml
+    media_type: application/yaml
+    sha256: sha256:02131bd00d6940a80dc02df1636fafc372d5761a49c56a0b06a8496cd39dae9e
+    size_bytes: 13172
+    legacy_source:
+      repositoryPath: editions/004-the-systems-around-the-model/edition.yaml
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: ea4f4c56fb11e48f856ae91054075b2b8dab9bd3
+  - path: translations/es/edition.yaml
+    media_type: application/yaml
+    sha256: sha256:647a02c440aa9c354177125601f773a62c36018071328bb26b68ebf318e695dc
+    size_bytes: 8078
+    legacy_source:
+      repositoryPath: editions/004-the-systems-around-the-model/translations/es/edition.yaml
+      gitCommitOid: dfc38e4143332f59789cfab7cd06721b1050f24d
+      gitBlobOid: 206e7bd02749eed193b69652923d524c2ebcfb0f
