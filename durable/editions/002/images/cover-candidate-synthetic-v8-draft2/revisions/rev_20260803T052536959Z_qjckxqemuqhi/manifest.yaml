@@ -1,0 +1,28 @@
+schema_version: 1
+revision_kind: image
+edition_id: "002"
+revision_id: rev_20260803T052536959Z_qjckxqemuqhi
+created_at: 2026-08-03T05:25:36.959Z
+parent_revision_id: null
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/002-unreleased/art/cover-candidate-synthetic-v8-draft2.png
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: 25b32587fdea2fc6915c13378158de7070225ac6
+    sha256: sha256:36d52749cd309fc407d8a64635f9b60de22b73e856709ee1c12ada6ed8346f1a
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+files:
+  - path: image.png
+    mediaType: image/png
+    sha256: sha256:36d52749cd309fc407d8a64635f9b60de22b73e856709ee1c12ada6ed8346f1a
+    sizeBytes: 1370409
+    legacySource:
+      repositoryPath: editions/002-unreleased/art/cover-candidate-synthetic-v8-draft2.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 25b32587fdea2fc6915c13378158de7070225ac6
+logical_id: cover-candidate-synthetic-v8-draft2

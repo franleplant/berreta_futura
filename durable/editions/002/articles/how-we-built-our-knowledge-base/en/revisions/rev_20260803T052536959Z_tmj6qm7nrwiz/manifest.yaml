@@ -1,0 +1,36 @@
+schema_version: 1
+revision_kind: article
+edition_id: "002"
+revision_id: rev_20260803T052536959Z_tmj6qm7nrwiz
+created_at: 2026-08-03T05:25:36.959Z
+parent_revision_id: null
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/002-unreleased/articles/how-we-built-our-knowledge-base.md
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: 84347db635bf68b7532248293eb9227a394bd7eb
+    sha256: sha256:03e2ec79ed92616fed51eec3b1e03c7e5cc2024ff9e637bccddaa75d070b7b20
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+  - kind: edition_spec
+    logicalId: main
+    editionId: "002"
+    revisionId: rev_20260803T052536959Z_ezemrqk3mhbi
+  - kind: source_capture
+    logicalId: how-we-built-our-knowledge-base-e986baa0
+    revisionId: rev_20260803T052536961Z_z7c3cuc6tbrc
+files:
+  - path: manuscript.md
+    mediaType: text/markdown
+    sha256: sha256:03e2ec79ed92616fed51eec3b1e03c7e5cc2024ff9e637bccddaa75d070b7b20
+    sizeBytes: 6873
+    legacySource:
+      repositoryPath: editions/002-unreleased/articles/how-we-built-our-knowledge-base.md
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 84347db635bf68b7532248293eb9227a394bd7eb
+logical_id: how-we-built-our-knowledge-base
+language: en

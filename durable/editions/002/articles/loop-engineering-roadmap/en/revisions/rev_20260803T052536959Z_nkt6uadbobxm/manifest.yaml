@@ -1,0 +1,36 @@
+schema_version: 1
+revision_kind: article
+edition_id: "002"
+revision_id: rev_20260803T052536959Z_nkt6uadbobxm
+created_at: 2026-08-03T05:25:36.959Z
+parent_revision_id: null
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/002-unreleased/articles/loop-engineering-roadmap.md
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: c317de913f2dadd49fa88047aa1bf7e423f896c6
+    sha256: sha256:f3267e632f4217d6769daf07f731c24df7ce163e77a174cc778a7f7c08cb06da
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+  - kind: edition_spec
+    logicalId: main
+    editionId: "002"
+    revisionId: rev_20260803T052536959Z_ezemrqk3mhbi
+  - kind: source_capture
+    logicalId: loop-engineering-the-14-step-roadmap-from-prompt-76a8ae0f
+    revisionId: rev_20260803T052536961Z_po3xircacqdv
+files:
+  - path: manuscript.md
+    mediaType: text/markdown
+    sha256: sha256:f3267e632f4217d6769daf07f731c24df7ce163e77a174cc778a7f7c08cb06da
+    sizeBytes: 2984
+    legacySource:
+      repositoryPath: editions/002-unreleased/articles/loop-engineering-roadmap.md
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: c317de913f2dadd49fa88047aa1bf7e423f896c6
+logical_id: loop-engineering-roadmap
+language: en
