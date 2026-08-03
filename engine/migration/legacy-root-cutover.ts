@@ -36,7 +36,7 @@ import { materializeLegacyMigrationAttestation } from "./legacy-migration-attest
 const MIGRATION_ID = "legacy-four-root";
 
 async function main(): Promise<void> {
-  const [command, sourceCommit, argument, group] = process.argv.slice(2);
+  const [command, sourceCommit, argument, group, targetSnapshot] = process.argv.slice(2);
   if (sourceCommit === undefined) throw usage();
   if (command === "materialize-inputs") {
     if (argument === undefined || group === undefined) throw usage();
@@ -55,6 +55,7 @@ async function main(): Promise<void> {
       sourceCommit,
       parseRevisionId(argument),
       group === undefined ? newRevisionId() : parseRevisionId(group),
+      targetSnapshot ?? "HEAD",
     );
     process.stdout.write(`${JSON.stringify({
       status: "materialized",
@@ -389,7 +390,7 @@ function usage(): Error {
     "usage: legacy-root-cutover.ts plan <source-commit> [plan-revision-id] | " +
     "successor-plan <source-commit> <parent-plan-revision-id> [new-plan-revision-id] | " +
     "materialize-inputs <source-commit> <plan-revision-id> <source-1|source-2|misc|archive> | " +
-    "attest <source-commit> <plan-revision-id> [attestation-revision-id]",
+    "attest <source-commit> <plan-revision-id> [attestation-revision-id] [target-snapshot-commit]",
   );
 }
 
