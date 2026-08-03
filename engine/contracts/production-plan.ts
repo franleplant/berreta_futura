@@ -114,12 +114,15 @@ const plannedArtSchema = z
 
 const plannedTranslationSchema = z
   .object({
+    pieceKind: z.enum(["article", "editorial"]),
+    pieceId: z.string().min(1),
     language: z.string().min(1),
     sourceLanguage: z.string().min(1),
-    englishArtifacts: z.array(artifactIdSchema).default([]),
+    englishArtifacts: z.array(artifactIdSchema).length(1),
     promptArtifact: artifactIdSchema,
     measurementProfileArtifact: artifactIdSchema.optional(),
     measurementInputArtifacts: z.array(artifactIdSchema).optional(),
+    inputRevisions: z.array(z.unknown()).optional(),
     initialTranslationArtifacts: z.array(artifactIdSchema).optional(),
     maximumReaderPages: z.number().int().positive(),
     modelPolicy: modelPolicySchema,

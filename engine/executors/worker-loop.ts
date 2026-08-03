@@ -8,8 +8,8 @@ import type {
   WorkFailure,
   WorkOfferId,
   WorkOfferView,
-  WorkerIdentity,
 } from "../contracts/index.ts";
+import type { AuthorizedWorker } from "../authority/local-authority.ts";
 import type { ArtifactReader, Executor } from "./types.ts";
 import {
   SubprocessExecutionError,
@@ -17,7 +17,7 @@ import {
 
 export interface WorkEngine extends ArtifactReader {
   inspect(runId: RunId): Promise<RunView>;
-  claim(offerId: WorkOfferId, worker: WorkerIdentity): Promise<WorkClaim>;
+  claimAuthorized(offerId: WorkOfferId, worker: AuthorizedWorker): Promise<WorkClaim>;
   heartbeat(claim: WorkClaim): Promise<WorkClaim>;
   answer(claim: WorkClaim, answer: WorkAnswer): Promise<RunView>;
   fail(claim: WorkClaim, failure: WorkFailure): Promise<RunView>;
@@ -25,11 +25,16 @@ export interface WorkEngine extends ArtifactReader {
 
 export type ExecutorRegistration = {
   readonly executor: Executor;
+  /** Authenticated credential for this configured executor. */
+  readonly authorizedWorker?: AuthorizedWorker;
   readonly adapter?: string;
   readonly model?: string;
   readonly reasoningEffort?: string;
   readonly roles?: readonly string[];
-  readonly principalPrefix?: string;
+};
+
+type AuthorizedExecutor = Executor & {
+  readonly authorizedWorker?: AuthorizedWorker;
 };
 
 export interface ExecutorResolver {
@@ -145,7 +150,7 @@ export class ConfiguredExecutorResolver implements ExecutorResolver {
       }
       return undefined;
     }
-    return bindExecutorIdentity(selected, offer);
+    return bindExecutorAuthorization(selected);
   }
 }
 
@@ -243,9 +248,16 @@ async function executeOffer(
   parentSignal: AbortSignal,
   options: ExecuteAvailableWorkOptions,
 ): Promise<OfferDisposition> {
+  const authorized = executor as AuthorizedExecutor;
+  if (authorized.authorizedWorker === undefined) {
+    throw new WorkerConfigurationError(
+      "EXECUTOR_UNAUTHORIZED",
+      `Executor ${executor.id} has no authenticated worker credential`,
+    );
+  }
   let claim: WorkClaim;
   try {
-    claim = await engine.claim(offer.id, executor.worker);
+    claim = await authorized.authorizedWorker.claim(engine, offer.id);
   } catch (error) {
     if (errorCode(error) === "WORK_UNAVAILABLE") {
       return "skipped";
@@ -454,21 +466,16 @@ function modelChoiceFor(input: unknown, offer: WorkOfferView): ModelChoice | und
   return selected as ModelChoice;
 }
 
-function bindExecutorIdentity(
-  registration: ExecutorRegistration,
-  offer: WorkOfferView,
-): Executor {
+function bindExecutorAuthorization(registration: ExecutorRegistration): Executor {
   const executor = registration.executor;
-  const principalPrefix = registration.principalPrefix ?? executor.worker.principalId;
   return {
     id: executor.id,
     capabilities: executor.capabilities,
-    worker: {
-      ...executor.worker,
-      principalId: `${principalPrefix}:${offer.role}:${offer.id}`,
-      displayName: executor.worker.displayName ?? executor.id,
-    },
-    accepts: (candidate) => candidate.id === offer.id && executor.accepts(candidate),
+    worker: executor.worker,
+    ...(registration.authorizedWorker === undefined
+      ? {}
+      : { authorizedWorker: registration.authorizedWorker }),
+    accepts: (candidate) => executor.accepts(candidate),
     execute: async (context) => await executor.execute(context),
     ...(executor.release === undefined
       ? {}

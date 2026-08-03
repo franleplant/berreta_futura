@@ -1,6 +1,6 @@
 import type Database from "better-sqlite3";
 
-export const RUN_ENGINE_SCHEMA_VERSION = 8;
+export const RUN_ENGINE_SCHEMA_VERSION = 9;
 
 const SCHEMA = String.raw`
 CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -271,6 +271,8 @@ CREATE TABLE IF NOT EXISTS work_offers (
   subject_artifact_id TEXT REFERENCES artifacts(id),
   task_artifact_id TEXT NOT NULL REFERENCES artifacts(id),
   contract_version TEXT NOT NULL,
+  required_authority TEXT NOT NULL DEFAULT 'tool' CHECK (required_authority IN ('human', 'machine', 'model', 'tool')),
+  minimum_assurance TEXT NOT NULL DEFAULT 'local_bearer',
   status TEXT NOT NULL CHECK (status IN ('offered', 'claimed', 'answered', 'canceled', 'failed', 'superseded')),
   offer_version INTEGER NOT NULL DEFAULT 1 CHECK (offer_version > 0),
   claim_fence INTEGER NOT NULL DEFAULT 0 CHECK (claim_fence >= 0),
@@ -302,6 +304,49 @@ CREATE TABLE IF NOT EXISTS work_offer_capabilities (
   PRIMARY KEY (offer_id, capability)
 ) STRICT;
 
+/*
+ * Authority is captured by the engine at claim time.  Credentials themselves
+ * live only in the local authority store, never in this workflow database.
+ */
+CREATE TABLE IF NOT EXISTS authorization_snapshots (
+  id TEXT PRIMARY KEY,
+  principal_id TEXT NOT NULL,
+  authority TEXT NOT NULL CHECK (authority IN ('human', 'machine', 'model', 'tool')),
+  assurance TEXT NOT NULL,
+  credential_id TEXT NOT NULL,
+  capabilities_json TEXT NOT NULL CHECK (json_valid(capabilities_json)),
+  roles_json TEXT NOT NULL CHECK (json_valid(roles_json)),
+  snapshot_json TEXT NOT NULL CHECK (json_valid(snapshot_json)),
+  created_at TEXT NOT NULL
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS authorizations (
+  id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL REFERENCES runs(id),
+  offer_id TEXT NOT NULL UNIQUE REFERENCES work_offers(id),
+  snapshot_id TEXT NOT NULL REFERENCES authorization_snapshots(id),
+  principal_id TEXT NOT NULL,
+  authority TEXT NOT NULL CHECK (authority IN ('human', 'machine', 'model', 'tool')),
+  assurance TEXT NOT NULL,
+  created_at TEXT NOT NULL
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS authorization_bindings (
+  authorization_id TEXT NOT NULL REFERENCES authorizations(id),
+  binding_kind TEXT NOT NULL CHECK (binding_kind IN ('input', 'task', 'requirement')),
+  ordinal INTEGER NOT NULL CHECK (ordinal >= 0),
+  value_json TEXT NOT NULL CHECK (json_valid(value_json)),
+  PRIMARY KEY (authorization_id, binding_kind, ordinal)
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS work_claim_tickets (
+  attempt_id TEXT PRIMARY KEY REFERENCES attempts(id),
+  ticket_hash TEXT NOT NULL UNIQUE,
+  issued_at TEXT NOT NULL,
+  revoked_at TEXT,
+  consumed_at TEXT
+) STRICT;
+
 CREATE TABLE IF NOT EXISTS work_reuses (
   run_id TEXT NOT NULL REFERENCES runs(id),
   offer_id TEXT PRIMARY KEY REFERENCES work_offers(id),
@@ -323,6 +368,7 @@ CREATE TABLE IF NOT EXISTS attempts (
   worker_authority TEXT NOT NULL CHECK (worker_authority IN ('human', 'machine', 'model', 'tool')),
   worker_capabilities_json TEXT NOT NULL CHECK (json_valid(worker_capabilities_json)),
   worker_display_name TEXT,
+  authorization_id TEXT REFERENCES authorizations(id),
   status TEXT NOT NULL CHECK (status IN ('active', 'answered', 'failed', 'stale', 'timed_out')),
   claimed_at TEXT NOT NULL,
   lease_expires_at_ms INTEGER NOT NULL,
@@ -370,6 +416,7 @@ CREATE TABLE IF NOT EXISTS decisions (
   principal_id TEXT NOT NULL,
   choice TEXT NOT NULL,
   artifact_id TEXT REFERENCES artifacts(id),
+  authorization_id TEXT REFERENCES authorizations(id),
   details_json TEXT NOT NULL CHECK (json_valid(details_json)),
   event_id TEXT NOT NULL REFERENCES events(id),
   created_at TEXT NOT NULL
@@ -454,6 +501,9 @@ const IMMUTABLE_TABLES = [
   "actor_snapshots",
   "artifact_edges",
   "article_promotions",
+  "authorization_bindings",
+  "authorization_snapshots",
+  "authorizations",
   "artifacts",
   "decisions",
   "edition_source_submissions",
@@ -483,6 +533,27 @@ export function applySchema(db: Database.Database, now: string): void {
     }[];
     if (!inboxColumns.some((column) => column.name === "priority")) {
       db.exec("ALTER TABLE inbox ADD COLUMN priority INTEGER NOT NULL DEFAULT 0");
+    }
+    const attemptColumns = db.pragma("table_info(attempts)") as readonly {
+      readonly name: string;
+    }[];
+    if (!attemptColumns.some((column) => column.name === "authorization_id")) {
+      db.exec("ALTER TABLE attempts ADD COLUMN authorization_id TEXT REFERENCES authorizations(id)");
+    }
+    const decisionAuthorityColumns = db.pragma("table_info(decisions)") as readonly {
+      readonly name: string;
+    }[];
+    if (!decisionAuthorityColumns.some((column) => column.name === "authorization_id")) {
+      db.exec("ALTER TABLE decisions ADD COLUMN authorization_id TEXT REFERENCES authorizations(id)");
+    }
+    const offerAuthorityColumns = db.pragma("table_info(work_offers)") as readonly {
+      readonly name: string;
+    }[];
+    if (!offerAuthorityColumns.some((column) => column.name === "required_authority")) {
+      db.exec("ALTER TABLE work_offers ADD COLUMN required_authority TEXT NOT NULL DEFAULT 'tool'");
+    }
+    if (!offerAuthorityColumns.some((column) => column.name === "minimum_assurance")) {
+      db.exec("ALTER TABLE work_offers ADD COLUMN minimum_assurance TEXT NOT NULL DEFAULT 'local_bearer'");
     }
     for (const table of IMMUTABLE_TABLES) {
       db.exec(`

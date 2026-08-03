@@ -43,6 +43,7 @@ export type InputRevisionKind =
   | "policy"
   | "prompt"
   | "run_bootstrap"
+  | "write_pipeline"
   | "source_capture"
   | "source_extraction";
 
@@ -53,6 +54,11 @@ export type InputRevisionRef = ({
   readonly editionId: string;
 } | {
   readonly kind: "run_bootstrap";
+  readonly logicalId: string;
+  readonly revisionId: RevisionId;
+  readonly editionId: string;
+} | {
+  readonly kind: "write_pipeline";
   readonly logicalId: string;
   readonly revisionId: RevisionId;
   readonly editionId: string;

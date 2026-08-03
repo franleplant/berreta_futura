@@ -22,6 +22,7 @@ import {
 } from "../durable/index.ts";
 import { DurableCheckpointExecutor } from "../executors/durable-checkpoint.ts";
 import type { RunEngine } from "../run-engine/index.ts";
+import { AuthorityTestHarness } from "./authority-fixture.ts";
 
 const RUN_ID = "run_backfill" as RunId;
 const ACCEPTED = "art_accepted" as ArtifactId;
@@ -30,12 +31,16 @@ const TASK = "art_task" as ArtifactId;
 const OFFER = "offer_checkpoint" as WorkOfferId;
 const REVISION = "rev_20260802T200641636Z_aaaaaaaaaaaa" as RevisionId;
 
-test("durable backfill executes and replays an exact declarative inventory through public offers", async () => {
+test("durable backfill executes and replays an exact declarative inventory through public offers", async (context) => {
   const harness = new BackfillEngine();
+  const authority = await AuthorityTestHarness.create();
+  context.after(async () => await authority.dispose());
+  const worker = await authority.workerFor(harness.offer());
   const executor = executorFor(harness.request);
   const first = await runDurableBackfill(
     harness as unknown as RunEngine,
     executor,
+    { worker },
     plan(),
     new AbortController().signal,
   );
@@ -46,6 +51,7 @@ test("durable backfill executes and replays an exact declarative inventory throu
   const replayed = await runDurableBackfill(
     harness as unknown as RunEngine,
     executor,
+    { worker },
     plan(),
     new AbortController().signal,
   );
@@ -53,12 +59,15 @@ test("durable backfill executes and replays an exact declarative inventory throu
   assert.equal(harness.claimCount, 1, "replay adopts the graph-visible durable binding");
 });
 
-test("durable backfill rejects an offer outside the declarative inventory", async () => {
+test("durable backfill rejects an offer outside the declarative inventory", async (context) => {
   const harness = new BackfillEngine();
+  const authority = await AuthorityTestHarness.create();
+  context.after(async () => await authority.dispose());
   await assert.rejects(
     runDurableBackfill(
       harness as unknown as RunEngine,
       executorFor(harness.request),
+      { worker: await authority.workerFor(harness.offer()) },
       {
         ...plan(),
         expectedCheckpoints: [{
@@ -163,12 +172,13 @@ class BackfillEngine {
     return { artifact: this.boundArtifact(), bytes: this.boundBytes! };
   }
 
-  async claim(): Promise<WorkClaim> {
+  async claimAuthorized(): Promise<WorkClaim> {
     this.claimCount += 1;
     return {
       offerId: OFFER,
       attemptId: "attempt_backfill" as AttemptId,
       attemptFence: 1,
+      ticket: "test-backfill-ticket",
       worker: {
         principalId: "durable-checkpoint",
         authority: "tool",
@@ -192,7 +202,7 @@ class BackfillEngine {
     return Buffer.from(await this.readText(artifactId));
   }
 
-  private offer(): WorkOfferView {
+  offer(): WorkOfferView {
     return {
       id: OFFER,
       runId: RUN_ID,

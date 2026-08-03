@@ -16,15 +16,20 @@ function id(value: string): ArtifactId {
   return value as ArtifactId;
 }
 
-test("configured workers use the TypeScript source archive without a Python project root", () => {
-  assert.doesNotThrow(() => createConfiguredWorker({
-    schemaVersion: 1,
-    executors: [{
-      kind: "source_archive",
-      id: "local-source",
-      workDirectory: "/private/tmp/local-source",
-    }],
-  }));
+test("configured workers use the TypeScript source archive without a Python project root", async () => {
+  const temporary = await mkdtemp(join(tmpdir(), "mag-configured-worker-"));
+  try {
+    await assert.doesNotReject(createConfiguredWorker({
+      schemaVersion: 1,
+      executors: [{
+        kind: "source_archive",
+        id: "local-source",
+        workDirectory: "/private/tmp/local-source",
+      }],
+    }, { authorityDirectory: join(temporary, "authority") }));
+  } finally {
+    await rm(temporary, { recursive: true, force: true });
+  }
 });
 
 test("local source adapter archives only named immutable files into the owned destination", async () => {

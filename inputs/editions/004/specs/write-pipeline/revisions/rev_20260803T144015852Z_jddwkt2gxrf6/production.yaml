@@ -1,0 +1,401 @@
+schema_version: 1
+edition_id: "004"
+pipeline_id: edition4-write
+edition_spec: &a8
+  kind: edition_spec
+  logical_id: main
+  revision_id: rev_20260802T230000034Z_nvdvmifoqlet
+  edition_id: "004"
+sources:
+  - source_id: anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
+    capture:
+      kind: source_capture
+      logical_id: anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
+      revision_id: rev_20260802T230000000Z_k53nh5xeumpz
+    extraction:
+      kind: source_extraction
+      logical_id: anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
+      revision_id: rev_20260802T230000009Z_pnitcpinodrl
+  - source_id: eval-engineering-the-step-that-turns-a-200-model-9f6f868f
+    capture:
+      kind: source_capture
+      logical_id: eval-engineering-the-step-that-turns-a-200-model-9f6f868f
+      revision_id: rev_20260802T230000001Z_qasyw5wztscv
+    extraction:
+      kind: source_extraction
+      logical_id: eval-engineering-the-step-that-turns-a-200-model-9f6f868f
+      revision_id: rev_20260802T230000010Z_lt4zgvv4rf5n
+  - source_id: pragmatic-leverage-in-the-software-factory-09879736
+    capture:
+      kind: source_capture
+      logical_id: pragmatic-leverage-in-the-software-factory-09879736
+      revision_id: rev_20260802T230000002Z_fu55xgo3jx4a
+    extraction:
+      kind: source_extraction
+      logical_id: pragmatic-leverage-in-the-software-factory-09879736
+      revision_id: rev_20260802T230000011Z_tws2rukw26uc
+  - source_id: 22580-from-gpt2-to-kimi3-explained-8f01b0fe
+    capture:
+      kind: source_capture
+      logical_id: 22580-from-gpt2-to-kimi3-explained-8f01b0fe
+      revision_id: rev_20260802T230000003Z_vbxyqxotuugm
+    extraction:
+      kind: source_extraction
+      logical_id: 22580-from-gpt2-to-kimi3-explained-8f01b0fe
+      revision_id: rev_20260802T230000012Z_q7nfhrrpiizm
+  - source_id: architecture-overview-ce5cb1d1
+    capture:
+      kind: source_capture
+      logical_id: architecture-overview-ce5cb1d1
+      revision_id: rev_20260802T230000004Z_vkooja45s3ic
+    extraction:
+      kind: source_extraction
+      logical_id: architecture-overview-ce5cb1d1
+      revision_id: rev_20260802T230000013Z_xtdcxicbrsrw
+  - source_id: the-2026-07-28-mcp-specification-release-candida-1a1752b8
+    capture:
+      kind: source_capture
+      logical_id: the-2026-07-28-mcp-specification-release-candida-1a1752b8
+      revision_id: rev_20260802T230000005Z_d3jdf4sucrfp
+    extraction:
+      kind: source_extraction
+      logical_id: the-2026-07-28-mcp-specification-release-candida-1a1752b8
+      revision_id: rev_20260802T230000014Z_3eoxg74rsw6f
+  - source_id: software-factories-are-super-real-but-the-factor-ab8ad3ab
+    capture:
+      kind: source_capture
+      logical_id: software-factories-are-super-real-but-the-factor-ab8ad3ab
+      revision_id: rev_20260802T230000006Z_kyfnqaqayltu
+    extraction:
+      kind: source_extraction
+      logical_id: software-factories-are-super-real-but-the-factor-ab8ad3ab
+      revision_id: rev_20260802T230000015Z_exb6ila5bcjf
+  - source_id: factories-are-not-a-token-or-llm-problem-ba5fabbf
+    capture:
+      kind: source_capture
+      logical_id: factories-are-not-a-token-or-llm-problem-ba5fabbf
+      revision_id: rev_20260802T230000007Z_ngft3xfbgzib
+    extraction:
+      kind: source_extraction
+      logical_id: factories-are-not-a-token-or-llm-problem-ba5fabbf
+      revision_id: rev_20260802T230000016Z_oa3hzaxnhkae
+  - source_id: do-not-make-the-service-bus-non-deterministic-3a92442c
+    capture:
+      kind: source_capture
+      logical_id: do-not-make-the-service-bus-non-deterministic-3a92442c
+      revision_id: rev_20260802T230000008Z_fuu6aytbkrfc
+    extraction:
+      kind: source_extraction
+      logical_id: do-not-make-the-service-bus-non-deterministic-3a92442c
+      revision_id: rev_20260802T230000017Z_yplg2plpqd4a
+articles:
+  - article_id: frontier-lab-agent-intrusion
+    content_mode: faithful_synthesis
+    byline: Hugo Larcher, Adrien Carreira, raphael g, Christophe Rannou
+    source_ids:
+      - anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
+    source_authors:
+      - Hugo Larcher, Adrien Carreira, raphael g, Christophe Rannou
+    brief: Create a fresh source-faithful manuscript for frontier-lab-agent-intrusion from every assigned extraction.
+    writer_prompt: &a1
+      kind: prompt
+      logical_id: faithful-synthesis
+      revision_id: rev_20260802T230000023Z_usfgg5a6f375
+    judge_prompts:
+      worth: &a2
+        kind: prompt
+        logical_id: worth-review
+        revision_id: rev_20260802T230000029Z_ovzbke33tp7j
+      evidence: &a3
+        kind: prompt
+        logical_id: evidence-review
+        revision_id: rev_20260802T230000021Z_l2cblwvt2377
+      craft: &a4
+        kind: prompt
+        logical_id: craft-review
+        revision_id: rev_20260802T230000019Z_fwfi5ddi3mru
+    input_revisions:
+      - &a5
+        kind: policy
+        logical_id: writing-rules
+        revision_id: rev_20260802T230000031Z_ryqeuddxgzli
+      - &a6
+        kind: policy
+        logical_id: review-bench
+        revision_id: rev_20260803T052536962Z_q6bfqbkwpe4h
+    parent: null
+    maximum_reader_pages: 7
+    max_iterations: 3
+    model_policy:
+      default:
+        adapter: cooperative
+        model: gpt-5.6-terra
+        reasoning_effort: high
+  - article_id: eval-engineering
+    content_mode: faithful_synthesis
+    byline: Argona
+    source_ids:
+      - eval-engineering-the-step-that-turns-a-200-model-9f6f868f
+    source_authors:
+      - Argona
+    brief: Create a fresh source-faithful manuscript for eval-engineering from every assigned extraction.
+    writer_prompt: *a1
+    judge_prompts:
+      worth: *a2
+      evidence: *a3
+      craft: *a4
+    input_revisions:
+      - *a5
+      - *a6
+    parent: null
+    maximum_reader_pages: 7
+    max_iterations: 3
+    model_policy:
+      default:
+        adapter: cooperative
+        model: gpt-5.6-terra
+        reasoning_effort: high
+  - article_id: pragmatic-leverage
+    content_mode: faithful_edit
+    byline: Dex Horthy
+    source_ids:
+      - pragmatic-leverage-in-the-software-factory-09879736
+    source_authors:
+      - Dex Horthy
+    brief: Create a fresh source-faithful manuscript for pragmatic-leverage from every assigned extraction.
+    writer_prompt: &a7
+      kind: prompt
+      logical_id: faithful-edit
+      revision_id: rev_20260802T230000022Z_rafete5xuo7q
+    judge_prompts:
+      worth: *a2
+      evidence: *a3
+      craft: *a4
+    input_revisions:
+      - *a5
+      - *a6
+    parent: null
+    maximum_reader_pages: 7
+    max_iterations: 3
+    model_policy:
+      default:
+        adapter: cooperative
+        model: gpt-5.6-terra
+        reasoning_effort: high
+  - article_id: from-gpt2-to-kimi3
+    content_mode: faithful_synthesis
+    byline: ali
+    source_ids:
+      - 22580-from-gpt2-to-kimi3-explained-8f01b0fe
+    source_authors:
+      - ali
+    brief: Create a fresh source-faithful manuscript for from-gpt2-to-kimi3 from every assigned extraction.
+    writer_prompt: *a1
+    judge_prompts:
+      worth: *a2
+      evidence: *a3
+      craft: *a4
+    input_revisions:
+      - *a5
+      - *a6
+    parent: null
+    maximum_reader_pages: 7
+    max_iterations: 3
+    model_policy:
+      default:
+        adapter: cooperative
+        model: gpt-5.6-terra
+        reasoning_effort: high
+  - article_id: factory-systems-problem
+    content_mode: faithful_edit
+    byline: Geoffrey Huntley
+    source_ids:
+      - software-factories-are-super-real-but-the-factor-ab8ad3ab
+      - factories-are-not-a-token-or-llm-problem-ba5fabbf
+      - do-not-make-the-service-bus-non-deterministic-3a92442c
+    source_authors:
+      - Geoffrey Huntley
+    brief: Create a fresh source-faithful manuscript for factory-systems-problem from every assigned extraction.
+    writer_prompt: *a7
+    judge_prompts:
+      worth: *a2
+      evidence: *a3
+      craft: *a4
+    input_revisions:
+      - *a5
+      - *a6
+    parent: null
+    maximum_reader_pages: 7
+    max_iterations: 3
+    model_policy:
+      default:
+        adapter: cooperative
+        model: gpt-5.6-terra
+        reasoning_effort: high
+  - article_id: mcp-in-a-nutshell
+    content_mode: faithful_synthesis
+    byline: Model Context Protocol
+    source_ids:
+      - architecture-overview-ce5cb1d1
+    source_authors:
+      - Model Context Protocol
+    brief: Create a fresh source-faithful manuscript for mcp-in-a-nutshell from every assigned extraction.
+    writer_prompt: *a1
+    judge_prompts:
+      worth: *a2
+      evidence: *a3
+      craft: *a4
+    input_revisions:
+      - *a5
+      - *a6
+    parent: null
+    maximum_reader_pages: 7
+    max_iterations: 3
+    model_policy:
+      default:
+        adapter: cooperative
+        model: gpt-5.6-terra
+        reasoning_effort: high
+  - article_id: mcp-protocol-update
+    content_mode: faithful_synthesis
+    byline: David Soria Parra, Den Delimarsky
+    source_ids:
+      - the-2026-07-28-mcp-specification-release-candida-1a1752b8
+    source_authors:
+      - David Soria Parra, Den Delimarsky
+    brief: Create a fresh source-faithful manuscript for mcp-protocol-update from every assigned extraction.
+    writer_prompt: *a1
+    judge_prompts:
+      worth: *a2
+      evidence: *a3
+      craft: *a4
+    input_revisions:
+      - *a5
+      - *a6
+    parent: null
+    maximum_reader_pages: 7
+    max_iterations: 3
+    model_policy:
+      default:
+        adapter: cooperative
+        model: gpt-5.6-terra
+        reasoning_effort: high
+editorial:
+  editorial_id: opening
+  brief: Develop the issue's unifying idea without becoming an article-by-article summary.
+  writer_prompt:
+    kind: prompt
+    logical_id: opening-editorial
+    revision_id: rev_20260802T230000026Z_wnfh2ok36agc
+  input_revisions:
+    - *a5
+    - kind: policy
+      logical_id: editorial-policy
+      revision_id: rev_20260802T230000032Z_ydz3343qcwis
+  parent: null
+  maximum_reader_pages: 1
+  model_policy:
+    default:
+      adapter: cooperative
+      model: gpt-5.6-terra
+      reasoning_effort: high
+translations:
+  - language: es
+    source_language: en
+    prompt:
+      kind: prompt
+      logical_id: translation-es
+      revision_id: rev_20260803T144015831Z_fp3ceo3gtrr6
+    input_revisions:
+      - *a5
+    parents:
+      frontier-lab-agent-intrusion: null
+      eval-engineering: null
+      pragmatic-leverage: null
+      from-gpt2-to-kimi3: null
+      factory-systems-problem: null
+      mcp-in-a-nutshell: null
+      mcp-protocol-update: null
+      opening: null
+    maximum_reader_pages: 7
+    model_policy:
+      default:
+        adapter: cooperative
+        model: gpt-5.6-terra
+        reasoning_effort: high
+images:
+  - kind: image
+    edition_id: "004"
+    logical_id: cover
+    revision_id: rev_20260802T230000052Z_txj4db7zordq
+  - kind: image
+    edition_id: "004"
+    logical_id: frontier-lab-agent-intrusion-opener
+    revision_id: rev_20260802T230000053Z_7pcs4bj3w7g4
+  - kind: image
+    edition_id: "004"
+    logical_id: eval-engineering-opener
+    revision_id: rev_20260802T230000054Z_zhx3g4zhpfor
+  - kind: image
+    edition_id: "004"
+    logical_id: pragmatic-leverage-opener
+    revision_id: rev_20260802T230000055Z_bbwuyjtf2sxd
+  - kind: image
+    edition_id: "004"
+    logical_id: from-gpt2-to-kimi3-opener
+    revision_id: rev_20260802T230000056Z_vxv4c6xsm4bh
+  - kind: image
+    edition_id: "004"
+    logical_id: factory-systems-problem-opener
+    revision_id: rev_20260802T230000057Z_czv32wvq5vfh
+  - kind: image
+    edition_id: "004"
+    logical_id: mcp-in-a-nutshell-opener
+    revision_id: rev_20260802T230000058Z_rcyepzxovpxf
+  - kind: image
+    edition_id: "004"
+    logical_id: mcp-protocol-update-opener
+    revision_id: rev_20260802T230000059Z_o4tqx3zfdqx3
+  - kind: image
+    edition_id: "004"
+    logical_id: factory-systems-problem-tail
+    revision_id: rev_20260802T230000060Z_3lkr2wkhk5vd
+  - kind: image
+    edition_id: "004"
+    logical_id: mcp-in-a-nutshell-tail
+    revision_id: rev_20260802T230000061Z_24acmz3cblej
+  - kind: image
+    edition_id: "004"
+    logical_id: closing-signal-gates
+    revision_id: rev_20260802T230000062Z_qomqcv4kmony
+  - kind: image
+    edition_id: "004"
+    logical_id: closing-memory-rings
+    revision_id: rev_20260802T230000063Z_g4qgy4kwqze4
+  - kind: image
+    edition_id: "004"
+    logical_id: closing-protocol-exchange
+    revision_id: rev_20260802T230000064Z_nuozv3jq6crb
+layout_inputs:
+  - *a8
+renderer_inputs:
+  - input: *a8
+    payload_path: edition.yaml
+    renderer_target_path: editions/004-the-systems-around-the-model/edition.yaml
+  - input: *a8
+    payload_path: art/illustrations.yaml
+    renderer_target_path: editions/004-the-systems-around-the-model/art/illustrations.yaml
+  - input: *a8
+    payload_path: translations/es/edition.yaml
+    renderer_target_path: editions/004-the-systems-around-the-model/translations/es/edition.yaml
+  - input: *a5
+    payload_path: policy.md
+    renderer_target_path: editions/004-the-systems-around-the-model/design/writing-rules.md
+render:
+  primary_language: en
+  publication_name: Berreta Futura
+  renderer: weasyprint
+  configured_languages:
+    - en
+    - es
+  studio_policy: home_ready_studio_blocked

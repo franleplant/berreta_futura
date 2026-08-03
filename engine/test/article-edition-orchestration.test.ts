@@ -16,6 +16,7 @@ import type {
   ModelPolicy,
   RunId,
   RunView,
+  TranslationRunSpec,
 } from "../contracts/index.ts";
 import {
   articleInitial,
@@ -48,6 +49,7 @@ import type {
 } from "../machines/runtime.ts";
 import { SqliteRunEngine } from "../run-engine/index.ts";
 import { prepareArticleSources } from "./approved-source-fixture.ts";
+import { AuthorityTestHarness } from "./authority-fixture.ts";
 
 function actorId(value: string): ActorId {
   return value as ActorId;
@@ -408,11 +410,13 @@ describe("ArticleMachine orchestration", () => {
       databasePath: join(temporary, "run.sqlite"),
       artifactDirectory: join(temporary, "artifacts"),
     });
+    const authority = await AuthorityTestHarness.create(temporary);
     try {
       const started = await engine.start(await prepareArticleSources(
         engine,
         articleRootSpec(spec),
         "durable-iteration",
+        await authority.human("source-reviewer"),
       ));
       let view = await engine.inspect(started.runId);
       const mechanics = view.offers.find(
@@ -424,11 +428,12 @@ describe("ArticleMachine orchestration", () => {
       assert.ok(mechanics);
       assert.ok(measurement);
 
-      const mechanicsClaim = await engine.claim(mechanics.id, {
+      const mechanicsWorker = await authority.workerFor(mechanics, {
         principalId: "mechanics-model",
         authority: "model",
         capabilities: ["text_model", "source_blind"],
       });
+      const mechanicsClaim = await mechanicsWorker.claim(engine, mechanics.id);
       view = await engine.answer(mechanicsClaim, {
         contractVersion: mechanics.contractVersion,
         result: { decision: "changes_required", findings: ["agreement"] },
@@ -441,11 +446,12 @@ describe("ArticleMachine orchestration", () => {
           },
         ],
       });
-      const measurementClaim = await engine.claim(measurement.id, {
+      const measurementWorker = await authority.workerFor(measurement, {
         principalId: "measure-tool",
         authority: "tool",
         capabilities: ["subprocess"],
       });
+      const measurementClaim = await measurementWorker.claim(engine, measurement.id);
       view = await engine.answer(measurementClaim, {
         contractVersion: measurement.contractVersion,
         result: { fits: true, openerFits: true, pageCount: 4 },
@@ -607,24 +613,38 @@ function editionSpec(overrides: Partial<EditionRunSpec> = {}): EditionRunSpec {
       initialManuscript: artifactId("editorial-v1"),
       modelPolicy,
     },
-    translations: [
+    translations: ["es", "fr"].flatMap((language) => [
       {
-        language: "es",
+        pieceKind: "article" as const,
+        pieceId: "article-one",
+        language,
         sourceLanguage: "en",
-        englishArtifacts: [],
-        promptArtifact: artifactId("translation-es-prompt"),
+        englishArtifacts: [artifactId("article-one-v1")],
+        promptArtifact: artifactId(`translation-${language}-prompt`),
         maximumReaderPages: 7,
         modelPolicy,
       },
       {
-        language: "fr",
+        pieceKind: "article" as const,
+        pieceId: "article-two",
+        language,
         sourceLanguage: "en",
-        englishArtifacts: [],
-        promptArtifact: artifactId("translation-fr-prompt"),
+        englishArtifacts: [artifactId("article-two-v1")],
+        promptArtifact: artifactId(`translation-${language}-prompt`),
         maximumReaderPages: 7,
         modelPolicy,
       },
-    ],
+      {
+        pieceKind: "editorial" as const,
+        pieceId: "opening",
+        language,
+        sourceLanguage: "en",
+        englishArtifacts: [artifactId("editorial-v1")],
+        promptArtifact: artifactId(`translation-${language}-prompt`),
+        maximumReaderPages: 7,
+        modelPolicy,
+      },
+    ]),
     art: [
       {
         key: "cover",
@@ -713,7 +733,17 @@ function editionRootSpec(spec: EditionRunSpec): EditionRootRunSpec {
       ...(source.metadataArtifact === undefined ? [] : [source.metadataArtifact]),
       ...(source.approvalArtifact === undefined ? [] : [source.approvalArtifact]),
     ]),
-    ...spec.articles.flatMap((article) => articleRootSpec(article).artifacts.map((seed) => seed.id)),
+    ...spec.articles.flatMap((article) => "sources" in article
+      ? articleRootSpec(article).artifacts.map((seed) => seed.id)
+      : [
+          article.articleBrief,
+          article.writerPrompt,
+          ...Object.values(article.judgePrompts).filter(
+            (candidate): candidate is ArtifactId => candidate !== undefined,
+          ),
+          article.writingRules,
+          ...(article.initialManuscript === undefined ? [] : [article.initialManuscript]),
+        ]),
     spec.editorial.briefArtifact,
     spec.editorial.writingRules,
     ...(spec.editorial.initialManuscript === undefined
@@ -1006,23 +1036,124 @@ describe("EditionMachine orchestration", () => {
     const translations = effectsOfType(result, "spawn_actor");
     assert.deepEqual(
       translations.map((effect) => effect.logicalKey),
-      ["translation:es:1", "translation:fr:1"],
+      [
+        "translation:es:article:article-one:1",
+        "translation:es:article:article-two:1",
+        "translation:es:editorial:opening:1",
+        "translation:fr:article:article-one:1",
+        "translation:fr:article:article-two:1",
+        "translation:fr:editorial:opening:1",
+      ],
     );
-    const expected = [
-      artifactId("article-one-v2"),
-      artifactId("article-two-v1"),
-      artifactId("editorial-v2"),
-    ];
+    const expected = new Map([
+      ["article-one", artifactId("article-one-v2")],
+      ["article-two", artifactId("article-two-v1")],
+      ["opening", artifactId("editorial-v2")],
+    ]);
     for (const translation of translations) {
+      const spec = translation.spec as EditionRunSpec["translations"][number];
       assert.deepEqual(
-        (translation.spec as EditionRunSpec["translations"][number]).englishArtifacts,
-        expected,
+        spec.englishArtifacts,
+        [expected.get(spec.pieceId)],
       );
     }
   });
 
+  test("spawns eight isolated Spanish actors for seven articles and the opening editorial", () => {
+    const articles = Array.from({ length: 7 }, (_, index) => articleSpec({
+      articleId: `article-${index + 1}`,
+      initialManuscript: artifactId(`article-${index + 1}-v1`),
+    }));
+    const translations = [
+      ...articles.map((article) => ({
+        pieceKind: "article" as const,
+        pieceId: article.articleId,
+        language: "es",
+        sourceLanguage: "en",
+        englishArtifacts: [article.initialManuscript as ArtifactId],
+        promptArtifact: artifactId("translation-es-prompt"),
+        maximumReaderPages: 7,
+        modelPolicy,
+      })),
+      {
+        pieceKind: "editorial" as const,
+        pieceId: "opening",
+        language: "es",
+        sourceLanguage: "en",
+        englishArtifacts: [artifactId("editorial-v1")],
+        promptArtifact: artifactId("translation-es-prompt"),
+        maximumReaderPages: 7,
+        modelPolicy,
+      },
+    ];
+    const spec = editionSpec({ articles, translations, art: [], render: {
+      ...editionSpec().render,
+      configuredLanguages: ["en", "es"],
+    } });
+    let result = beginPreplannedEdition(spec);
+    result = closeCollection(result);
+    for (const article of articles) {
+      result = childSpawned(result, `article:${article.articleId}`, "article");
+    }
+    for (const article of articles) {
+      result = childStatus(
+        result,
+        `article:${article.articleId}`,
+        "accepting",
+        [article.initialManuscript as ArtifactId],
+        { status: "durable_bound" },
+      );
+    }
+    result = childSpawned(result, "editorial", "editorial");
+    result = childStatus(
+      result,
+      "editorial",
+      "accepting",
+      [artifactId("editorial-v1")],
+      { status: "durable_bound" },
+    );
+    result = childSpawned(result, "edition-review:0", "edition_review");
+    result = childStatus(
+      result,
+      "edition-review:0",
+      "accepting",
+      [artifactId("edition-review-v1")],
+      { status: "approved" },
+    );
+
+    const spawned = effectsOfType(result, "spawn_actor");
+    assert.equal(spawned.length, 8);
+    for (const effect of spawned) {
+      const translation = effect.spec as TranslationRunSpec;
+      assert.equal(translation.language, "es");
+      assert.equal(translation.englishArtifacts.length, 1);
+      assert.match(effect.logicalKey, /^translation:es:(article|editorial):.+:0$/u);
+    }
+  });
+
   test("waits for every language and carries the selected art join into rendering", () => {
-    let result = driveToFirstEditionReview();
+    const layoutRevision = {
+      kind: "write_pipeline" as const,
+      editionId: "edition-one",
+      logicalId: "layout",
+      revisionId: "revision-layout-v1" as never,
+    };
+    let result = driveToFirstEditionReview(editionSpec({ render: {
+      ...editionSpec().render,
+      layoutInputRevisions: [layoutRevision],
+    } }));
+    for (const [key, output] of [
+      ["article:article-one", artifactId("article-one-v1")],
+      ["article:article-two", artifactId("article-two-v1")],
+      ["editorial", artifactId("editorial-v1")],
+      ["art:cover", artifactId("cover-v1")],
+      ["art:inside", artifactId("inside-v1")],
+    ] as const) {
+      result = childStatus(result, key, "accepting", [output], {
+        status: "durable_bound",
+        revisionId: `revision-${key.replace(/[^a-z0-9]/gu, "-")}`,
+      });
+    }
     result = childSpawned(result, "edition-review:0", "edition_review");
     result = childStatus(
       result,
@@ -1032,26 +1163,42 @@ describe("EditionMachine orchestration", () => {
       { status: "approved" },
     );
     assert.equal(result.snapshot.value, "translating");
-    result = childSpawned(result, "translation:es:0", "translation");
-    result = childSpawned(result, "translation:fr:0", "translation");
+    for (const key of [
+      "translation:es:article:article-one:0",
+      "translation:es:article:article-two:0",
+      "translation:es:editorial:opening:0",
+      "translation:fr:article:article-one:0",
+      "translation:fr:article:article-two:0",
+      "translation:fr:editorial:opening:0",
+    ]) {
+      result = childSpawned(result, key, "translation");
+    }
 
-    result = childStatus(
-      result,
-      "translation:es:0",
-      "accepting",
-      [artifactId("translation-es-v1")],
-      { status: "settled" },
-    );
+    for (const [key, output] of [
+      ["translation:es:article:article-one:0", artifactId("translation-es-article-one-v1")],
+      ["translation:es:article:article-two:0", artifactId("translation-es-article-two-v1")],
+      ["translation:es:editorial:opening:0", artifactId("translation-es-opening-v1")],
+      ["translation:fr:article:article-one:0", artifactId("translation-fr-article-one-v1")],
+      ["translation:fr:article:article-two:0", artifactId("translation-fr-article-two-v1")],
+    ] as const) {
+      result = childStatus(result, key, "accepting", [output], {
+        status: "durable_bound",
+        revisionId: `revision-${key.replace(/[^a-z0-9]/gu, "-")}`,
+      });
+    }
     assert.equal(result.snapshot.value, "translating");
     assert.deepEqual(effectsOfType(result, "register_artifact"), []);
     assert.deepEqual(effectsOfType(result, "spawn_actor"), []);
 
     result = childStatus(
       result,
-      "translation:fr:0",
+      "translation:fr:editorial:opening:0",
       "accepting",
-      [artifactId("translation-fr-v1")],
-      { status: "settled" },
+      [artifactId("translation-fr-opening-v1")],
+      {
+        status: "durable_bound",
+        revisionId: "revision-translation-fr-opening",
+      },
     );
     assert.equal(result.snapshot.value, "composition_accepted_pending_durable");
     const manifestEffect = effectsOfType(result, "register_artifact")[0];
@@ -1063,8 +1210,12 @@ describe("EditionMachine orchestration", () => {
     }
     const manifest = manifestEffect.artifact.payload.value as JsonObject;
     assert.deepEqual(manifest.translations, [
-      artifactId("translation-es-v1"),
-      artifactId("translation-fr-v1"),
+      artifactId("translation-es-article-one-v1"),
+      artifactId("translation-es-article-two-v1"),
+      artifactId("translation-es-opening-v1"),
+      artifactId("translation-fr-article-one-v1"),
+      artifactId("translation-fr-article-two-v1"),
+      artifactId("translation-fr-opening-v1"),
     ]);
     assert.deepEqual(manifest.art, [artifactId("cover-v1"), artifactId("inside-v1")]);
     assert.deepEqual(
@@ -1074,6 +1225,18 @@ describe("EditionMachine orchestration", () => {
       [artifactId("cover-v1"), artifactId("inside-v1")],
     );
     assert.equal(effectsOfType(result, "open_durable_checkpoint").length, 1);
+    const checkpoint = effectsOfType(result, "open_durable_checkpoint")[0];
+    assert.equal(checkpoint?.acceptedArtifactId, "art_actor-edition_composition-manifest_0");
+    assert.deepEqual(checkpoint?.inputRevisions, [layoutRevision]);
+    const composition = effectsOfType(result, "register_artifact").find(
+      (effect) => effect.slot === "composition_manifest",
+    );
+    assert.equal(composition?.artifact.kind, "composition_manifest");
+    assert.equal(composition?.artifact.payload.kind, "json");
+    if (composition?.artifact.payload.kind !== "json") assert.fail("composition must be JSON/YAML");
+    const document = composition.artifact.payload.value as JsonObject;
+    assert.equal((document.articles as readonly unknown[]).length, 2);
+    assert.equal((document.images as readonly unknown[]).length, 2);
     result = editionTransition(result.snapshot, {
       type: "WORK_COMPLETED",
       slot: "durable_checkpoint",
@@ -1225,11 +1388,13 @@ describe("EditionMachine orchestration", () => {
       databasePath: join(temporary, "nested.sqlite"),
       artifactDirectory: join(temporary, "nested-artifacts"),
     });
+    const authority = await AuthorityTestHarness.create(temporary);
     try {
       const standaloneRun = await standalone.start(await prepareArticleSources(
         standalone,
         articleRootSpec(nestedArticle),
         "nested-equivalence",
+        await authority.human("source-editor"),
       ));
       const standaloneView = await standalone.inspect(standaloneRun.runId);
 
@@ -1239,41 +1404,31 @@ describe("EditionMachine orchestration", () => {
         (offer) => offer.role === "close_collection" && offer.status === "offered",
       );
       assert.ok(close);
-      const closeClaim = await nested.claim(close.id, {
-        principalId: "managing-editor",
-        authority: "human",
-        capabilities: ["human"],
-      });
-      nestedView = await nested.answer(closeClaim, {
-        contractVersion: close.contractVersion,
+      const managingEditor = await authority.workerFor(close, { principalId: "managing-editor" });
+      const closePreparation = await nested.prepareHumanDecision(close.id, managingEditor);
+      nestedView = await nested.decide(closePreparation, managingEditor, {
+        schemaVersion: "human-decision-intent/1",
+        offerId: closePreparation.offerId,
+        taskArtifactId: closePreparation.taskArtifactId,
+        inputArtifactIds: closePreparation.inputArtifactIds,
         result: { choice: "close" },
-        artifacts: [{
-          kind: "collection_decision",
-          schemaVersion: "1",
-          mediaType: "application/json",
-          payload: { kind: "json", value: { choice: "close" } },
-        }],
       });
 
       const sourceReview = nestedView.offers.find(
         (offer) => offer.role === "review_source" && offer.status === "offered",
       );
       assert.ok(sourceReview);
-      const sourceReviewClaim = await nested.claim(sourceReview.id, {
+      const sourceEditor = await authority.workerFor(sourceReview, {
         principalId: "source-editor",
-        authority: "human",
-        capabilities: ["human", "source_access"],
+        capabilities: ["source_access"],
       });
-      nestedView = await nested.answer(sourceReviewClaim, {
-        contractVersion: sourceReview.contractVersion,
+      const sourcePreparation = await nested.prepareHumanDecision(sourceReview.id, sourceEditor);
+      nestedView = await nested.decide(sourcePreparation, sourceEditor, {
+        schemaVersion: "human-decision-intent/1",
+        offerId: sourcePreparation.offerId,
+        taskArtifactId: sourcePreparation.taskArtifactId,
+        inputArtifactIds: sourcePreparation.inputArtifactIds,
         result: { decision: "approved" },
-        artifacts: [{
-          id: artifactId("nested-equivalence-0-source-review"),
-          kind: "source_review_decision",
-          schemaVersion: "review-source/1",
-          mediaType: "application/json",
-          payload: { kind: "json", value: { decision: "approved" } },
-        }],
       });
 
       const nestedActor = nestedView.actors.find(
@@ -1328,10 +1483,8 @@ describe("EditionMachine orchestration", () => {
             (candidate) => candidate.actorId === actorId && candidate.status === "offered",
           );
           assert.ok(offer, `article ${actorId} stranded in ${actor.state}`);
-          const claim = await engine.claim(offer.id, {
-            principalId: `replay-${offer.role}`,
-            authority: offer.allowedWorkerCapabilities.includes("text_model") ? "model" : "tool",
-            capabilities: offer.allowedWorkerCapabilities,
+          const claim = await authority.claim(engine, offer, {
+            principalId: `equivalence-${offer.id}`,
           });
           const checkpoint = offer.role === "durable_checkpoint"
             ? JSON.parse(await engine.readText(offer.taskArtifactId)) as {
@@ -1397,7 +1550,9 @@ describe("EditionMachine orchestration", () => {
               ...parent,
               artifactId: parent.artifactId.includes("source-review")
                 ? artifactId("equivalent-source-review")
-                : parent.artifactId,
+                : parent.artifactId.startsWith("art_")
+                  ? artifactId("equivalent-engine-artifact")
+                  : parent.artifactId,
             })),
           }))
           .sort((left, right) =>

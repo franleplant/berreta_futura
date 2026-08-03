@@ -68,6 +68,8 @@ type OfferRow = {
   readonly revision_id: string | null;
   readonly task_artifact_id: ArtifactId;
   readonly contract_version: string;
+  readonly required_authority: "human" | "machine" | "model" | "tool";
+  readonly minimum_assurance: "local_bearer";
   readonly status: WorkOfferStatus;
   readonly active_attempt_id: AttemptId | null;
   readonly created_at: string;
@@ -112,6 +114,7 @@ type DecisionRow = {
   readonly choice: string;
   readonly authority: string;
   readonly artifact_id: ArtifactId | null;
+  readonly authorization_id: string | null;
   readonly details_json: string;
   readonly created_at: string;
 };
@@ -221,6 +224,7 @@ export function inspectRun(db: Database.Database, runId: RunId): RunView {
         ? {}
         : { subjectArtifactId: row.subject_artifact_id }),
       ...(row.artifact_id === null ? {} : { artifactId: row.artifact_id }),
+      ...(row.authorization_id === null ? {} : { authorizationId: row.authorization_id }),
     }));
 
     const iterations = (db
@@ -319,6 +323,13 @@ export function loadOfferViews(
       inputArtifacts: inputs.map((candidate) => candidate.artifact_id),
       taskArtifactId: row.task_artifact_id,
       contractVersion: row.contract_version,
+      requirements: {
+        authority: row.required_authority,
+        capabilities: capabilities
+          .map((candidate) => candidate.capability)
+          .filter((capability) => capability !== "human"),
+        minimumAssurance: row.minimum_assurance,
+      },
       allowedWorkerCapabilities: capabilities.map((candidate) => candidate.capability),
       status: row.status,
       createdAt: row.created_at,

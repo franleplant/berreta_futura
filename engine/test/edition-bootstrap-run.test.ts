@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import type { ArtifactId } from "../contracts/index.ts";
+import type { ArtifactId, WorkOfferView } from "../contracts/index.ts";
 import { EditionBootstrapRunner } from "../edition-bootstrap-run.ts";
 import { SubprocessExecutionError } from "../executors/index.ts";
 import {
@@ -15,12 +15,45 @@ import {
   type RenderedFile,
 } from "../renderer-adapter/index.ts";
 import { EditionRunLayout } from "../edition-run-layout.ts";
+import { AuthorityTestHarness } from "./authority-fixture.ts";
 import { writeBootstrapRepositoryFixture } from "./bootstrap-repository-fixture.ts";
+
+test("bootstrap run requires an injected authenticated subprocess worker before allocating", async () => {
+  const root = await mkdtemp(join(tmpdir(), "mag-edition-bootstrap-authorization-"));
+  const outputRoot = join(root, "output");
+  try {
+    const fixture = await writeBootstrapRepositoryFixture(root);
+    const runner = new EditionBootstrapRunner({
+      editionKey: "004",
+      repositoryRoot: root,
+      outputRoot,
+      render: {
+        primaryLanguage: "en",
+        publicationName: "Berreta Futura",
+        renderer: "weasyprint",
+      },
+      rendererAdapter: new InMemoryRendererAdapter(async () => {
+        throw new Error("renderer must not run without an authenticated worker");
+      }),
+    });
+    await assert.rejects(
+      runner.run(fixture.bootstrapRevision),
+      { code: "EDITION_BOOTSTRAP_EXECUTOR_AUTH_REQUIRED" },
+    );
+    assert.deepEqual(
+      await new EditionRunLayout({ editionKey: "004", repositoryRoot: root, outputRoot }).list(),
+      [],
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
 
 test("bootstrap run is idempotent, executes configured work, and stops at exact visual review", async () => {
   const root = await mkdtemp(join(tmpdir(), "mag-edition-bootstrap-run-"));
   const outputRoot = join(root, "output");
   const operations: RenderManifest["operation"][] = [];
+  const authority = await AuthorityTestHarness.create(root);
   try {
     const fixture = await writeBootstrapRepositoryFixture(root);
     const renderer = new InMemoryRendererAdapter(async (manifestPath, destination) => {
@@ -37,6 +70,7 @@ test("bootstrap run is idempotent, executes configured work, and stops at exact 
         publicationName: "Berreta Futura",
         renderer: "weasyprint",
       },
+      authority: { toolWorker: await bootstrapToolWorker(authority) },
       rendererAdapter: renderer,
     });
 
@@ -113,21 +147,14 @@ test("bootstrap run is idempotent, executes configured work, and stops at exact 
         decision: "approved" as const,
         renderArtifactIds: renderArtifactIds as unknown as readonly ArtifactId[],
       };
-      const claim = await opened.engine.claim(offer.id, {
-        principalId: "visual-reviewer",
-        displayName: "Visual reviewer",
-        authority: "human",
-        capabilities: ["human"],
-      });
-      await opened.engine.answer(claim, {
-        contractVersion: offer.contractVersion,
+      const reviewer = await authority.workerFor(offer, { principalId: "visual-reviewer" });
+      const preparation = await opened.engine.prepareHumanDecision(offer.id, reviewer);
+      await opened.engine.decide(preparation, reviewer, {
+        schemaVersion: "human-decision-intent/1",
+        offerId: preparation.offerId,
+        taskArtifactId: preparation.taskArtifactId,
+        inputArtifactIds: preparation.inputArtifactIds,
         result: approval,
-        artifacts: [{
-          kind: "visual_review_decision",
-          schemaVersion: offer.contractVersion,
-          mediaType: "application/json",
-          payload: { kind: "json", value: approval },
-        }],
       });
     } finally {
       opened.close();
@@ -154,6 +181,7 @@ test("a fresh invocation resumes one exact persisted retryable machine failure",
   const root = await mkdtemp(join(tmpdir(), "mag-edition-bootstrap-resume-"));
   const outputRoot = join(root, "output");
   const operations: RenderManifest["operation"][] = [];
+  const authority = await AuthorityTestHarness.create(root);
   let failFirstMeasurement = true;
   try {
     const fixture = await writeBootstrapRepositoryFixture(root);
@@ -166,7 +194,7 @@ test("a fresh invocation resumes one exact persisted retryable machine failure",
       }
       return await renderFixture(manifest, destination);
     });
-    const runner = bootstrapRunner(root, outputRoot, renderer);
+    const runner = await bootstrapRunner(root, outputRoot, renderer, authority);
 
     await assert.rejects(
       runner.run(fixture.bootstrapRevision),
@@ -213,10 +241,8 @@ test("a fresh invocation resumes one exact persisted retryable machine failure",
         (offer) => offer.id === resumed.pendingHuman?.offerId,
       );
       assert.ok(humanOffer);
-      const humanClaim = await opened.engine.claim(humanOffer.id, {
+      const humanClaim = await authority.claim(opened.engine, humanOffer, {
         principalId: "visual-reviewer",
-        authority: "human",
-        capabilities: ["human"],
       });
       await opened.engine.fail(humanClaim, {
         classification: "retryable",
@@ -253,10 +279,11 @@ test("a fresh invocation resumes one exact persisted retryable machine failure",
 test("a fresh invocation never resumes a persisted permanent machine failure", async () => {
   const root = await mkdtemp(join(tmpdir(), "mag-edition-bootstrap-permanent-"));
   const outputRoot = join(root, "output");
+  const authority = await AuthorityTestHarness.create(root);
   let rendererCalls = 0;
   try {
     const fixture = await writeBootstrapRepositoryFixture(root);
-    const runner = bootstrapRunner(
+    const runner = await bootstrapRunner(
       root,
       outputRoot,
       new InMemoryRendererAdapter(() => {
@@ -268,6 +295,7 @@ test("a fresh invocation never resumes a persisted permanent machine failure", a
           "",
         );
       }),
+      authority,
     );
 
     const failed = await runner.run(fixture.bootstrapRevision);
@@ -300,11 +328,12 @@ test("a fresh invocation never resumes a persisted permanent machine failure", a
   }
 });
 
-function bootstrapRunner(
+async function bootstrapRunner(
   root: string,
   outputRoot: string,
   renderer: InMemoryRendererAdapter,
-): EditionBootstrapRunner {
+  authority: AuthorityTestHarness,
+): Promise<EditionBootstrapRunner> {
   return new EditionBootstrapRunner({
     editionKey: "004",
     repositoryRoot: root,
@@ -314,8 +343,21 @@ function bootstrapRunner(
       publicationName: "Berreta Futura",
       renderer: "weasyprint",
     },
+    authority: { toolWorker: await bootstrapToolWorker(authority) },
     rendererAdapter: renderer,
   });
+}
+
+async function bootstrapToolWorker(authority: AuthorityTestHarness) {
+  return await authority.workerFor({
+    id: "fixture-bootstrap-tool-offer",
+    allowedWorkerCapabilities: ["subprocess"],
+    requirements: {
+      authority: "tool",
+      capabilities: ["subprocess"],
+      minimumAssurance: "local_bearer",
+    },
+  } as unknown as WorkOfferView, { principalId: "fixture-bootstrap-tool" });
 }
 
 async function renderFixture(

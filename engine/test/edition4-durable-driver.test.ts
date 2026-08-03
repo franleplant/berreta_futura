@@ -22,12 +22,14 @@ import {
   committedFixtureGit,
   writeCompositionBootstrapRepositoryFixture,
 } from "./composition-bootstrap-fixture.ts";
+import { AuthorityTestHarness } from "./authority-fixture.ts";
 
 test("Edition 4 publishes only the current composition-bound approved render", async () => {
   const temporary = await mkdtemp(join(tmpdir(), "mag-edition4-layout-"));
   const projectRoot = resolve(import.meta.dirname, "../..");
   const repositoryRoot = join(temporary, "repository");
   const durableGit = committedFixtureGit();
+  const authority = await AuthorityTestHarness.create();
   const layout = new EditionRunLayout({
     editionKey: "004",
     repositoryRoot,
@@ -68,6 +70,7 @@ test("Edition 4 publishes only the current composition-bound approved render", a
       try {
         return await driveEdition4Durably({
           engine: active.engine,
+          authority,
           projectRoot,
           stagingDirectory: scratch.stagedDirectory,
           renderer: publicationRenderer(operations),
@@ -170,6 +173,7 @@ test("Edition 4 publishes only the current composition-bound approved render", a
     assert.deepEqual(await readFile(repeated.exportManifestPath), firstManifest);
     assert.deepEqual(await fileTree(repeated.publicDirectory), expectedPublicFiles());
   } finally {
+    await authority.dispose();
     await rm(temporary, { recursive: true, force: true });
   }
 });
@@ -179,6 +183,7 @@ test("Edition 4 atomically projects the exact offered visual-review render witho
   const projectRoot = resolve(import.meta.dirname, "../..");
   const repositoryRoot = join(temporary, "repository");
   const durableGit = committedFixtureGit();
+  const authority = await AuthorityTestHarness.create();
   const layout = new EditionRunLayout({
     editionKey: "004",
     repositoryRoot,
@@ -210,6 +215,7 @@ test("Edition 4 atomically projects the exact offered visual-review render witho
       try {
         return await driveEdition4Durably({
           engine: active.engine,
+          authority,
           projectRoot,
           stagingDirectory: scratch.stagedDirectory,
           renderer: publicationRenderer([]),
@@ -227,7 +233,11 @@ test("Edition 4 atomically projects the exact offered visual-review render witho
     );
     assert.ok(offer);
     assert.equal(offer.state, "awaiting_visual_review");
-    assert.deepEqual(offer.allowedWorkerCapabilities, ["human"]);
+    assert.deepEqual(offer.requirements, {
+      authority: "human",
+      capabilities: [],
+      minimumAssurance: "local_bearer",
+    });
 
     await assert.rejects(
       layout.projectReview(runId, {
@@ -371,6 +381,7 @@ test("Edition 4 atomically projects the exact offered visual-review render witho
     assert.deepEqual(await readFile(repeated.exportManifestPath), firstManifest);
     assert.deepEqual(await fileTree(repeated.publicDirectory), expectedReviewProjectionFiles());
   } finally {
+    await authority.dispose();
     await rm(temporary, { recursive: true, force: true });
   }
 });

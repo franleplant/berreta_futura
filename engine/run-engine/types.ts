@@ -6,6 +6,7 @@ import type {
   ArtifactView,
   EventId,
   JsonObject,
+  HumanDecisionIntent,
   RunId,
   RunInputChange,
   RunOutcome,
@@ -19,6 +20,7 @@ import type {
   WorkOfferId,
 } from "../contracts/index.ts";
 import type { MachineKind } from "../machines/runtime.ts";
+import type { AuthorizedWorker } from "../authority/local-authority.ts";
 
 export type RunEngineFailpoint =
   | "advance.after_effects"
@@ -155,6 +157,16 @@ export type RunMigrationCheckpoint = {
   readonly checkpointed: number;
 };
 
+/** Exact machine-owned context presented for one active human decision. */
+export type HumanDecisionPreparation = {
+  readonly schemaVersion: "human-decision-preparation/1";
+  readonly claim: WorkClaim;
+  readonly offerId: WorkOfferId;
+  readonly taskArtifactId: ArtifactId;
+  readonly inputArtifactIds: readonly ArtifactId[];
+  readonly allowedChoices: readonly string[];
+};
+
 export interface RunEngine {
   start(spec: RunSpec, options?: StartRunOptions): Promise<RunOutcome>;
   advance(runId: RunId): Promise<RunOutcome>;
@@ -176,6 +188,21 @@ export interface RunEngine {
     changes: readonly RunInputChange[],
     options?: ForkRunOptions,
   ): Promise<RunOutcome>;
+  /** Claims accept an authenticated session, never caller supplied identity data. */
+  claimAuthorized(offerId: WorkOfferId, worker: AuthorizedWorker): Promise<WorkClaim>;
+  prepareHumanDecision(
+    offerId: WorkOfferId,
+    worker: AuthorizedWorker,
+  ): Promise<HumanDecisionPreparation>;
+  decide(
+    preparation: HumanDecisionPreparation,
+    worker: AuthorizedWorker,
+    intent: HumanDecisionIntent,
+  ): Promise<RunView>;
+  /**
+   * @deprecated This compatibility declaration exists only to give old callers
+   * a deterministic rejection. It never authorizes caller-supplied identity.
+   */
   claim(offerId: WorkOfferId, worker: WorkerIdentity): Promise<WorkClaim>;
   heartbeat(claim: WorkClaim): Promise<WorkClaim>;
   answer(claim: WorkClaim, answer: WorkAnswer): Promise<RunView>;

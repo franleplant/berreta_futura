@@ -25,6 +25,7 @@ import {
   SqliteRunEngine,
   type RunEngineFailpoint,
 } from "../run-engine/index.ts";
+import { LocalAuthorityStore } from "../authority/local-authority.ts";
 import { serveRunViewer } from "../view/server.ts";
 import { durableCheckpointAnswer } from "./durable-checkpoint-fixture.ts";
 
@@ -187,8 +188,7 @@ function editionFixture(
             },
             editionContext: editionBrief,
             articleBrief,
-            sources: [sourceExtraction],
-            sourceApprovalArtifacts: [ids.sourceApproval],
+            sourceIds: [options.sourceId ?? `${prefix}-source`],
             writerPrompt,
             judgePrompts: {
               worth: worthPrompt,
@@ -800,12 +800,27 @@ test("viewer rejects stale and duplicate human answers without advancing the run
       1,
     );
 
+    const authority = await LocalAuthorityStore.init(join(temporary, "authority"));
+    await authority.enrollHuman({
+      principalId: "viewer-editor",
+      capabilities: ["source_access"],
+    });
+    const credential = await authority.createCredentialProfile({
+      principalId: "viewer-editor",
+      credentialProfileId: "viewer-editor-credential",
+    });
+    await authority.grant({
+      credentialProfileId: credential.credentialProfileId,
+      capabilities: ["source_access"],
+    });
+    const viewerEditor = await authority.authenticate(credential);
     let viewer;
     try {
       viewer = await serveRunViewer(engine, {
         host: "127.0.0.1",
         port: 0,
         staticDirectory: temporary,
+        humanWorker: viewerEditor,
       });
     } catch (error: unknown) {
       if (
@@ -825,19 +840,21 @@ test("viewer rejects stale and duplicate human answers without advancing the run
       const started = await engine.start(fixture.spec);
       const before = await engine.inspect(started.runId);
       const closeCollection = offered(before, "close_collection");
-      const endpoint = `http://${viewer.host}:${viewer.port}/api/offers/${encodeURIComponent(closeCollection.id)}/answer`;
+      const endpoint = `http://${viewer.host}:${viewer.port}/api/offers/${encodeURIComponent(closeCollection.id)}`;
 
-      const staleRoute = await fetch(endpoint, {
+      const legacyAnswer = await fetch(`${endpoint}/answer`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      assert.equal(legacyAnswer.status, 405);
+
+      const staleRoute = await fetch(`${endpoint}/prepare`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           runId: started.runId,
           expectedOfferId: "a-different-offer",
-          result: { choice: "close" },
-          artifacts: [answerArtifact(
-            artifactId("viewer-http-stale-collection-decision"),
-            "collection_decision",
-          )],
         }),
       });
       assert.equal(staleRoute.status, 409);
@@ -849,17 +866,25 @@ test("viewer rejects stale and duplicate human answers without advancing the run
         "offered",
       );
 
-      const accepted = await fetch(endpoint, {
+      const prepared = await fetch(`${endpoint}/prepare`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           runId: started.runId,
           expectedOfferId: closeCollection.id,
-          result: { choice: "close" },
-          artifacts: [answerArtifact(
-            artifactId("viewer-http-collection-decision"),
-            "collection_decision",
-          )],
+        }),
+      });
+      assert.equal(prepared.status, 200);
+      const preparedBody = await prepared.json() as { readonly allowedChoices: readonly string[] };
+      assert.equal(preparedBody.allowedChoices.includes("close"), true);
+
+      const accepted = await fetch(`${endpoint}/decide`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          runId: started.runId,
+          expectedOfferId: closeCollection.id,
+          choice: "close",
         }),
       });
       assert.equal(accepted.status, 200);
@@ -873,21 +898,17 @@ test("viewer rejects stale and duplicate human answers without advancing the run
         1,
       );
 
-      const duplicate = await fetch(endpoint, {
+      const duplicate = await fetch(`${endpoint}/decide`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           runId: started.runId,
           expectedOfferId: closeCollection.id,
-          result: { choice: "close" },
-          artifacts: [answerArtifact(
-            artifactId("viewer-http-duplicate-collection-decision"),
-            "collection_decision",
-          )],
+          choice: "close",
         }),
       });
       assert.equal(duplicate.status, 409);
-      assert.match(await duplicate.text(), /not available/);
+      assert.match(await duplicate.text(), /must be prepared/);
       const afterDuplicate = await engine.inspect(started.runId);
       assert.equal(afterDuplicate.headSequence, afterAccepted.headSequence);
       assert.equal(

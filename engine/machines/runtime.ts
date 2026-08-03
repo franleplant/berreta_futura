@@ -18,6 +18,7 @@ import type {
   TranslationRunSpec,
   WorkOfferId,
   WorkRole,
+  OfferRequirements,
   WorkerCapability,
 } from "../contracts/index.ts";
 import type { DurableLogicalItem, InputRevisionRef } from "../durable/types.ts";
@@ -93,6 +94,13 @@ export type CreateWorkOfferEffect = {
   readonly inputArtifacts: readonly ArtifactId[];
   readonly taskArtifactId: ArtifactId;
   readonly contractVersion: string;
+  /**
+   * The authoritative eligibility policy for v3 offers. It is optional only
+   * while replaying and migrating legacy effects that have the compatibility
+   * field below.
+   */
+  readonly requirements?: OfferRequirements;
+  /** @deprecated Compatibility field while stored v1 offer rows are migrated. */
   readonly allowedWorkerCapabilities: readonly WorkerCapability[];
 };
 

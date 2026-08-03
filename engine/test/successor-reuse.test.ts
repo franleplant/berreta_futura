@@ -22,12 +22,14 @@ import {
 } from "../run-engine/index.ts";
 import { corruptStoredMachineVersion } from "./internal-schema-test-helper.ts";
 import { prepareArticleSources } from "./approved-source-fixture.ts";
+import { AuthorityTestHarness } from "./authority-fixture.ts";
 import { durableCheckpointAnswer } from "./durable-checkpoint-fixture.ts";
 
 type Harness = {
   readonly engine: SqliteRunEngine;
   readonly databasePath: string;
   readonly artifactDirectory: string;
+  readonly authority: AuthorityTestHarness;
 };
 
 class CrashOnce implements FailpointController {
@@ -58,11 +60,12 @@ async function harness(context: TestContext): Promise<Harness> {
   const databasePath = join(root, "runs.sqlite");
   const artifactDirectory = join(root, "artifacts");
   const engine = new SqliteRunEngine({ databasePath, artifactDirectory });
+  const authority = await AuthorityTestHarness.create(root);
   context.after(async () => {
     engine.close();
     await rm(root, { recursive: true, force: true });
   });
-  return { engine, databasePath, artifactDirectory };
+  return { engine, databasePath, artifactDirectory, authority };
 }
 
 function id(value: string): ArtifactId {
@@ -126,16 +129,6 @@ function articleSpec(prefix: string): ArticleRootRunSpec {
   };
 }
 
-function worker(offer: WorkOfferView) {
-  return {
-    principalId: `worker:${offer.id}`,
-    authority: offer.allowedWorkerCapabilities.includes("text_model")
-      ? "model" as const
-      : "tool" as const,
-    capabilities: offer.allowedWorkerCapabilities,
-  };
-}
-
 function outputArtifact(
   artifactId: ArtifactId,
   kind: string,
@@ -154,8 +147,9 @@ async function answerOffer(
   engine: SqliteRunEngine,
   offer: WorkOfferView,
   outputPrefix: string,
+  authority: AuthorityTestHarness,
 ): Promise<RunView> {
-  const claim = await engine.claim(offer.id, worker(offer));
+  const claim = await authority.claim(engine, offer);
   if (offer.role === "durable_checkpoint") {
     return await engine.answer(claim, await durableCheckpointAnswer(engine, offer));
   }
@@ -201,6 +195,7 @@ async function settle(
   engine: SqliteRunEngine,
   runId: RunId,
   outputPrefix: string,
+  authority: AuthorityTestHarness,
 ): Promise<RunView> {
   for (let step = 0; step < 20; step += 1) {
     const view = await engine.inspect(runId);
@@ -209,7 +204,7 @@ async function settle(
     }
     const offer = view.offers.find((candidate) => candidate.status === "offered");
     assert.ok(offer, `run ${runId} stranded in ${view.actors[0]?.state}`);
-    await answerOffer(engine, offer, outputPrefix);
+    await answerOffer(engine, offer, outputPrefix, authority);
   }
   assert.fail(`run ${runId} exceeded its settlement budget`);
 }
@@ -221,9 +216,9 @@ function rootOutputs(view: RunView): readonly ArtifactId[] {
 }
 
 test("an unchanged successor reuses exact ancestor answers without attempts", async (context) => {
-  const { engine, databasePath, artifactDirectory } = await harness(context);
-  const original = await engine.start(await prepareArticleSources(engine, articleSpec("exact"), "exact"));
-  const settled = await settle(engine, original.runId, "ancestor");
+  const { engine, databasePath, artifactDirectory, authority } = await harness(context);
+  const original = await engine.start(await prepareArticleSources(engine, articleSpec("exact"), "exact", await authority.human()));
+  const settled = await settle(engine, original.runId, "ancestor", authority);
 
   const firstFork = await engine.fork(settled.id, [], {
     idempotencyKey: "unchanged-successor",
@@ -232,7 +227,7 @@ test("an unchanged successor reuses exact ancestor answers without attempts", as
     (offer) => offer.role === "durable_checkpoint" && offer.status === "offered",
   );
   assert.ok(checkpoint);
-  await answerOffer(engine, checkpoint, "successor-checkpoint");
+  await answerOffer(engine, checkpoint, "successor-checkpoint", authority);
   assert.equal((await engine.inspect(firstFork.runId)).status, "complete");
   engine.close();
   const restarted = new SqliteRunEngine({ databasePath, artifactDirectory });
@@ -273,7 +268,7 @@ test("an unchanged successor reuses exact ancestor answers without attempts", as
     (offer) => offer.role === "durable_checkpoint" && offer.status === "offered",
   );
   assert.ok(grandchildCheckpoint);
-  await answerOffer(restarted, grandchildCheckpoint, "grandchild-checkpoint");
+  await answerOffer(restarted, grandchildCheckpoint, "grandchild-checkpoint", authority);
   assert.equal((await restarted.inspect(grandchildOutcome.runId)).status, "complete");
   const grandchild = await restarted.inspect(grandchildOutcome.runId);
   assert.deepEqual(rootOutputs(grandchild), rootOutputs(settled));
@@ -284,9 +279,9 @@ test("an unchanged successor reuses exact ancestor answers without attempts", as
 });
 
 test("an old machine run forks as a fresh explicit successor instead of resuming", async (context) => {
-  const { engine, databasePath, artifactDirectory } = await harness(context);
-  const original = await engine.start(await prepareArticleSources(engine, articleSpec("old-machine"), "old-machine"));
-  const settled = await settle(engine, original.runId, "ancestor");
+  const { engine, databasePath, artifactDirectory, authority } = await harness(context);
+  const original = await engine.start(await prepareArticleSources(engine, articleSpec("old-machine"), "old-machine", await authority.human()));
+  const settled = await settle(engine, original.runId, "ancestor", authority);
   engine.close();
   corruptStoredMachineVersion(databasePath, settled.id, "article/old");
 
@@ -302,9 +297,9 @@ test("an old machine run forks as a fresh explicit successor instead of resuming
 });
 
 test("reuse dispatch recovers atomically after a crash", async (context) => {
-  const { engine, databasePath, artifactDirectory } = await harness(context);
-  const original = await engine.start(await prepareArticleSources(engine, articleSpec("reuse-crash"), "reuse-crash"));
-  const settled = await settle(engine, original.runId, "ancestor");
+  const { engine, databasePath, artifactDirectory, authority } = await harness(context);
+  const original = await engine.start(await prepareArticleSources(engine, articleSpec("reuse-crash"), "reuse-crash", await authority.human()));
+  const settled = await settle(engine, original.runId, "ancestor", authority);
   engine.close();
 
   const clock = new ManualClock();
@@ -330,7 +325,7 @@ test("reuse dispatch recovers atomically after a crash", async (context) => {
     (offer) => offer.role === "durable_checkpoint" && offer.status === "offered",
   );
   assert.ok(checkpoint);
-  await answerOffer(restarted, checkpoint, "recovered-checkpoint");
+  await answerOffer(restarted, checkpoint, "recovered-checkpoint", authority);
   assert.equal((await restarted.inspect(recovered.runId)).status, "complete");
   const view = await restarted.inspect(recovered.runId);
   assert.equal(view.attempts.length, 1);
@@ -340,8 +335,8 @@ test("reuse dispatch recovers atomically after a crash", async (context) => {
 });
 
 test("a fork idempotency key is bound to its exact parent operation", async (context) => {
-  const { engine } = await harness(context);
-  const spec = await prepareArticleSources(engine, articleSpec("fork-operation-key"), "fork-operation-key");
+  const { engine, authority } = await harness(context);
+  const spec = await prepareArticleSources(engine, articleSpec("fork-operation-key"), "fork-operation-key", await authority.human());
   const firstParent = await engine.start(spec);
   const secondParent = await engine.start(spec);
   assert.notEqual(firstParent.runId, secondParent.runId);
@@ -360,10 +355,10 @@ test("a fork idempotency key is bound to its exact parent operation", async (con
 });
 
 test("a changed writer prompt reruns the writer and all dependent work", async (context) => {
-  const { engine } = await harness(context);
-  const spec = await prepareArticleSources(engine, articleSpec("changed"), "changed");
+  const { engine, authority } = await harness(context);
+  const spec = await prepareArticleSources(engine, articleSpec("changed"), "changed", await authority.human());
   const original = await engine.start(spec);
-  const settled = await settle(engine, original.runId, "ancestor");
+  const settled = await settle(engine, original.runId, "ancestor", authority);
   const changedPrompt = textSeed(
     id("changed-writer-prompt-v2"),
     "writer_prompt",
@@ -383,12 +378,12 @@ test("a changed writer prompt reruns the writer and all dependent work", async (
   assert.ok(writer);
   assert.equal(writer.reusedFromOfferId, undefined);
 
-  view = await answerOffer(engine, writer, "successor");
+  view = await answerOffer(engine, writer, "successor", authority);
   const dependent = view.offers.filter((offer) => offer.status === "offered");
   assert.ok(dependent.some((offer) => offer.role === "measure_article"));
   assert.ok(dependent.some((offer) => offer.role === "worth"));
   assert.ok(dependent.every((offer) => offer.reusedFromOfferId === undefined));
-  const completed = await settle(engine, view.id, "successor");
+  const completed = await settle(engine, view.id, "successor", authority);
   assert.ok(completed.offers.some((offer) => offer.role === "evidence"));
   assert.ok(completed.offers.some((offer) => offer.role === "craft"));
   assert.ok(completed.offers.every((offer) => offer.reusedFromOfferId === undefined));
@@ -396,10 +391,10 @@ test("a changed writer prompt reruns the writer and all dependent work", async (
 });
 
 test("equal bytes under a new prompt ArtifactId never qualify for reuse", async (context) => {
-  const { engine } = await harness(context);
-  const spec = await prepareArticleSources(engine, articleSpec("identity"), "identity");
+  const { engine, authority } = await harness(context);
+  const spec = await prepareArticleSources(engine, articleSpec("identity"), "identity", await authority.human());
   const original = await engine.start(spec);
-  const settled = await settle(engine, original.runId, "ancestor");
+  const settled = await settle(engine, original.runId, "ancestor", authority);
   const sameBytesNewIdentity = textSeed(
     id("identity-writer-prompt-new-id"),
     "writer_prompt",
@@ -420,7 +415,7 @@ test("equal bytes under a new prompt ArtifactId never qualify for reuse", async 
 });
 
 test("ordered artifact dependencies are part of reuse identity", async (context) => {
-  const { engine } = await harness(context);
+  const { engine, authority } = await harness(context);
   const base = articleSpec("ordered-inputs");
   const secondSource = id("ordered-inputs-source-two");
   const spec: ArticleRootRunSpec = {
@@ -434,9 +429,9 @@ test("ordered artifact dependencies are part of reuse identity", async (context)
       sources: [...base.article.sources, secondSource],
     },
   };
-  const prepared = await prepareArticleSources(engine, spec, "ordered-inputs");
+  const prepared = await prepareArticleSources(engine, spec, "ordered-inputs", await authority.human());
   const original = await engine.start(prepared);
-  const settled = await settle(engine, original.runId, "ancestor");
+  const settled = await settle(engine, original.runId, "ancestor", authority);
 
   const successor = await engine.fork(settled.id, [{
     kind: "replace_spec",
@@ -455,10 +450,10 @@ test("ordered artifact dependencies are part of reuse identity", async (context)
 });
 
 test("replace_spec accepts scalar and array successor inputs", async (context) => {
-  const { engine } = await harness(context);
-  const spec = await prepareArticleSources(engine, articleSpec("json-values"), "json-values");
+  const { engine, authority } = await harness(context);
+  const spec = await prepareArticleSources(engine, articleSpec("json-values"), "json-values", await authority.human());
   const original = await engine.start(spec);
-  const settled = await settle(engine, original.runId, "ancestor");
+  const settled = await settle(engine, original.runId, "ancestor", authority);
   const scalar = await engine.fork(settled.id, [{
     kind: "replace_spec",
     path: "/article/modelPolicy/default/model",

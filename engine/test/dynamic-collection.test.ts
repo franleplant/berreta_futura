@@ -19,6 +19,7 @@ import type {
 } from "../contracts/index.ts";
 import { InMemoryExecutor, runWorker } from "../executors/index.ts";
 import { RunEngineError, SqliteRunEngine } from "../run-engine/index.ts";
+import { AuthorityTestHarness } from "./authority-fixture.ts";
 import { durableCheckpointAnswer } from "./durable-checkpoint-fixture.ts";
 
 function artifactId(value: string): ArtifactId {
@@ -281,16 +282,12 @@ function offered(view: RunView, role: string): WorkOfferView {
   return offer;
 }
 
-function workerFor(offer: WorkOfferView): WorkerIdentity {
-  return {
-    principalId: `worker-${offer.id}`,
-    authority: offer.allowedWorkerCapabilities.includes("human")
-      ? "human"
-      : offer.allowedWorkerCapabilities.includes("text_model")
-        ? "model"
-        : "tool",
-    capabilities: offer.allowedWorkerCapabilities,
-  };
+const authorities = new WeakMap<SqliteRunEngine, AuthorityTestHarness>();
+
+function authorityFor(engine: SqliteRunEngine): AuthorityTestHarness {
+  const authority = authorities.get(engine);
+  assert.ok(authority, "test engine is missing its authority fixture");
+  return authority;
 }
 
 async function submit(
@@ -299,7 +296,19 @@ async function submit(
   result: JsonObject,
   artifacts: readonly AnswerArtifact[],
 ): Promise<RunView> {
-  const claim = await engine.claim(offer.id, workerFor(offer));
+  const authority = authorityFor(engine);
+  if (offer.requirements?.authority === "human") {
+    const worker = await authority.workerFor(offer);
+    const preparation = await engine.prepareHumanDecision(offer.id, worker);
+    return await engine.decide(preparation, worker, {
+      schemaVersion: "human-decision-intent/1",
+      offerId: preparation.offerId,
+      taskArtifactId: preparation.taskArtifactId,
+      inputArtifactIds: preparation.inputArtifactIds,
+      result,
+    });
+  }
+  const claim = await authority.claim(engine, offer);
   if (offer.role === "durable_checkpoint") {
     return await engine.answer(claim, await durableCheckpointAnswer(engine, offer));
   }
@@ -549,6 +558,8 @@ test("dynamic collection survives restart and freezes accepted sources into plan
   const databasePath = join(temporary, "runs.sqlite");
   const artifactDirectory = join(temporary, "artifacts");
   let engine = new SqliteRunEngine({ databasePath, artifactDirectory });
+  const authority = await AuthorityTestHarness.create(temporary);
+  authorities.set(engine, authority);
   try {
     const started = await engine.start(emptyEdition("dynamic"));
     let view = await engine.inspect(started.runId);
@@ -578,6 +589,7 @@ test("dynamic collection survives restart and freezes accepted sources into plan
 
     engine.close();
     engine = new SqliteRunEngine({ databasePath, artifactDirectory });
+    authorities.set(engine, authority);
     view = await engine.inspect(started.runId);
     assert.equal(view.sourceSubmissions.length, 2);
     assert.equal(offered(view, "capture_source").subjectArtifactId, live.lead);
@@ -678,6 +690,8 @@ test("public worker loop advances the declared graph between human planning and 
     databasePath: join(temporary, "runs.sqlite"),
     artifactDirectory: join(temporary, "artifacts"),
   });
+  const authority = await AuthorityTestHarness.create(temporary);
+  authorities.set(engine, authority);
   const controller = new AbortController();
   try {
     const fixture = releaseEdition("worker-graph");
@@ -718,10 +732,7 @@ test("public worker loop advances the declared graph between human planning and 
       ({ offer }) => ({ contractVersion: offer.contractVersion, ...answer(offer) }),
       (offer) => offer.role === role,
     );
-    const worker = runWorker(
-      engine,
-      started.runId,
-      [
+    const executors = [
         executor("measure_article", "tool", ["subprocess"], (offer) => ({
           result: { fits: true, pageCount: 1, openerFits: true },
           artifacts: [answerArtifact(
@@ -818,7 +829,31 @@ test("public worker loop advances the declared graph between human planning and 
             "render_inspection",
           )],
         })),
-      ],
+      ];
+    const authorizedExecutors = await Promise.all(executors.map(async (candidate) => ({
+      id: candidate.id,
+      worker: candidate.worker,
+      capabilities: candidate.capabilities,
+      authorizedWorker: await authority.workerFor({
+        id: candidate.id,
+        allowedWorkerCapabilities: candidate.worker.capabilities,
+        requirements: {
+          authority: candidate.worker.authority,
+          capabilities: candidate.worker.capabilities,
+          minimumAssurance: "local_bearer",
+        },
+      } as unknown as WorkOfferView, {
+        principalId: candidate.worker.principalId,
+        authority: candidate.worker.authority,
+        capabilities: candidate.worker.capabilities,
+      }),
+      accepts: (offer: WorkOfferView) => candidate.accepts(offer),
+      execute: async (context: Parameters<typeof candidate.execute>[0]) => await candidate.execute(context),
+    })));
+    const worker = runWorker(
+      engine,
+      started.runId,
+      authorizedExecutors,
       controller.signal,
       { pollIntervalMs: 5, heartbeatIntervalMs: 20, attemptTimeoutMs: 2_000 },
     );
@@ -836,7 +871,8 @@ test("public worker loop advances the declared graph between human planning and 
     controller.abort();
     const workerResult = await worker;
     assert.ok(reviewOffer, "worker loop did not reach the next explicit human offer");
-    assert.deepEqual(reviewOffer.allowedWorkerCapabilities, ["human"]);
+    assert.deepEqual(reviewOffer.allowedWorkerCapabilities, []);
+    assert.equal(reviewOffer.requirements?.authority, "human");
     assert.equal(workerResult.failed.length, 0);
     assert.equal(workerResult.answered.length, 11);
     const machineNames = new Set(view.actors.map((actor) => actor.machine));
@@ -863,6 +899,7 @@ test("release uniqueness includes dynamically collected source identities", asyn
     databasePath: join(temporary, "runs.sqlite"),
     artifactDirectory: join(temporary, "artifacts"),
   });
+  authorities.set(engine, await AuthorityTestHarness.create(temporary));
   try {
     const sourceId = "stable-dynamic-source";
     const firstFixture = releaseEdition("dynamic-release-first");

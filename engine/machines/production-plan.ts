@@ -9,6 +9,7 @@ import type {
   SourceAssignmentPolicy,
   TranslationRunSpec,
 } from "../contracts/index.ts";
+import type { InputRevisionRef } from "../durable/types.ts";
 
 export type ReadySourceExtraction = {
   readonly sourceId: string;
@@ -28,6 +29,12 @@ export class ProductionPlanError extends Error {
     super(message);
     this.name = "ProductionPlanError";
   }
+}
+
+function isPreplannedArticle(
+  article: EditionRunSpec["articles"][number],
+): article is import("../contracts/index.ts").PreplannedArticleRunSpec {
+  return "sourceIds" in article;
 }
 
 type PlannedModelPolicy = ApprovedProductionPlan["articles"][number]["modelPolicy"];
@@ -205,7 +212,11 @@ export function resolveApprovedProductionPlan(
   const sourceArtifacts = readySourceMap(spec, readySources);
   uniqueBy(plan.articles, (article) => article.articleId, "article");
   uniqueBy(plan.art, (art) => art.key, "art key");
-  uniqueBy(plan.translations, (translation) => translation.language, "language");
+  uniqueBy(
+    plan.translations,
+    (translation) => `${translation.language}:${translation.pieceKind}:${translation.pieceId}`,
+    "translation language and piece",
+  );
 
   const articles = plan.articles.map((planned) => {
     validatePlannedArticle(planned);
@@ -309,6 +320,7 @@ export function resolveApprovedProductionPlan(
       initialTranslationArtifacts,
       measurementProfileArtifact,
       measurementInputArtifacts,
+      inputRevisions,
       ...translation
     } = planned;
     return {
@@ -335,14 +347,15 @@ export function resolveApprovedProductionPlan(
               (artifactId) => artifactId as ArtifactId,
             ),
           }),
+      ...(inputRevisions === undefined
+        ? {}
+        : { inputRevisions: inputRevisions as readonly InputRevisionRef[] }),
     };
   });
   const configuredTranslations = new Set(
     spec.render.configuredLanguages.filter((language) => language !== "en"),
   );
-  const plannedTranslationLanguages = new Set(
-    translations.map((translation) => translation.language),
-  );
+  const plannedTranslationLanguages = new Set(translations.map((translation) => translation.language));
   for (const translation of translations) {
     if (translation.sourceLanguage !== "en") {
       throw new ProductionPlanError(
@@ -363,6 +376,20 @@ export function resolveApprovedProductionPlan(
       }, unknown ${unknownLanguages.join(", ") || "none"}`,
     );
   }
+  for (const language of configuredTranslations) {
+    const requiredPieces = [
+      ...articles.map((article) => `article:${article.articleId}`),
+      `editorial:${spec.editorial.editorialId}`,
+    ];
+    const actualPieces = translations
+      .filter((translation) => translation.language === language)
+      .map((translation) => `${translation.pieceKind}:${translation.pieceId}`);
+    if (actualPieces.length !== requiredPieces.length || requiredPieces.some((piece) => !actualPieces.includes(piece))) {
+      throw new ProductionPlanError(
+        `Translations for ${language} must contain exactly one actor for every planned article and opening editorial`,
+      );
+    }
+  }
 
   return {
     sourceAssignmentPolicy: plan.sourceAssignmentPolicy,
@@ -377,31 +404,79 @@ export function resolvePreplannedProduction(
   readySources: readonly ReadySourceExtraction[],
 ): ResolvedProductionPlan {
   const sourceAssignmentPolicy = spec.sourceAssignmentPolicy ?? "at_least_once";
-  if (spec.sources.length > 0) {
-    const sources = readySourceMap(spec, readySources);
-    const sourceIdByExtraction = new Map(
-      [...sources.entries()].map(([sourceId, source]) => [source.extractionArtifactId, sourceId] as const),
+  if (spec.sources.length === 0) {
+    const legacyArticles = spec.articles.filter(
+      (article): article is ArticleRunSpec => !isPreplannedArticle(article),
     );
-    const assignedSourceIds = spec.articles.flatMap((article) =>
-      article.sources.map((artifactId) => {
-        const sourceId = sourceIdByExtraction.get(artifactId);
-        if (sourceId === undefined) {
+    if (legacyArticles.length !== spec.articles.length) {
+      throw new ProductionPlanError(
+        "Preplanned articles with sourceIds require configured sources",
+      );
+    }
+    return {
+      sourceAssignmentPolicy,
+      articles: legacyArticles,
+      art: spec.art,
+      translations: spec.translations,
+    };
+  }
+  const sources = readySourceMap(spec, readySources);
+  const sourceIdByDeclaredExtraction = new Map(
+    spec.sources.flatMap((source) => source.extractionArtifact === undefined
+      ? []
+      : [[source.extractionArtifact, source.sourceId] as const]),
+  );
+  const articles = spec.articles.map((article) => {
+      const sourceIds = isPreplannedArticle(article)
+        ? article.sourceIds
+        : article.sources.map((artifactId) => {
+            const sourceId = sourceIdByDeclaredExtraction.get(artifactId);
+            if (sourceId === undefined) {
+              throw new ProductionPlanError(
+                `Preplanned article ${article.articleId} uses an unknown source extraction ${artifactId}`,
+              );
+            }
+            return sourceId;
+          });
+      const current = sourceIds.map((sourceId) => {
+        const ready = sources.get(sourceId);
+        if (ready?.approvalArtifactId === undefined) {
           throw new ProductionPlanError(
-            `Preplanned article ${article.articleId} uses an unknown source extraction ${artifactId}`,
+            `Preplanned article ${article.articleId} uses source ${sourceId} without a current human review approval`,
           );
         }
-        return sourceId;
-      }),
-    );
-    validateAssignments(
-      sourceAssignmentPolicy,
-      [...sources.keys()],
-      assignedSourceIds,
-    );
-  }
+        return ready;
+      });
+      const resolvedArticle = isPreplannedArticle(article)
+        ? (() => {
+            const { sourceIds: _plannedSourceIds, ...value } = article;
+            return value;
+          })()
+        : article;
+      return {
+        ...resolvedArticle,
+        sources: current.map((source) => source.extractionArtifactId),
+        sourceApprovalArtifacts: current.map((source) => source.approvalArtifactId!),
+      };
+    });
+  validateAssignments(
+    sourceAssignmentPolicy,
+    [...sources.keys()],
+    spec.articles.flatMap((article) => isPreplannedArticle(article)
+      ? article.sourceIds
+      : article.sources.map((artifactId) => {
+          const sourceId = sourceIdByDeclaredExtraction.get(artifactId);
+          if (sourceId === undefined) {
+            throw new ProductionPlanError(
+              `Preplanned article ${article.articleId} uses an unknown source extraction ${artifactId}`,
+            );
+          }
+          return sourceId;
+        })),
+  );
   return {
     sourceAssignmentPolicy,
-    articles: spec.articles,
+    articles,
     art: spec.art,
     translations: spec.translations,
   };

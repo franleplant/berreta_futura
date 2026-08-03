@@ -58,6 +58,7 @@ test("composition bootstrap executor resolves only the declared committed compos
         readBytes: async () => Buffer.alloc(0),
         readText: async () => JSON.stringify({
           requestKind: "composition_bootstrap",
+          requestSchemaVersion: "composition-bootstrap-request/1",
           actorKey: "edition",
           subjectArtifactId: null,
           inputArtifactIds: ["art-render-assembly"],

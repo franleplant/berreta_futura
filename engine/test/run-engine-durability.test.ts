@@ -12,7 +12,7 @@ import type {
   ArticleRootRunSpec,
   JudgeLens,
   RunView,
-  WorkerIdentity,
+  WorkClaim,
   WorkOfferId,
   WorkOfferView,
 } from "../contracts/index.ts";
@@ -31,6 +31,7 @@ import {
 import { corruptStoredMachineVersion } from "./internal-schema-test-helper.ts";
 import { durableCheckpointAnswer } from "./durable-checkpoint-fixture.ts";
 import { prepareArticleSources } from "./approved-source-fixture.ts";
+import { AuthorityTestHarness } from "./authority-fixture.ts";
 
 function artifactId(value: string): ArtifactId {
   return value as ArtifactId;
@@ -83,6 +84,7 @@ type Harness = {
   readonly databasePath: string;
   readonly artifactDirectory: string;
   readonly clock: ManualClock;
+  readonly authority: AuthorityTestHarness;
   open(options?: Omit<RunEngineOptions, "artifactDirectory" | "clock" | "databasePath">): SqliteRunEngine;
 };
 
@@ -91,6 +93,7 @@ async function harness(testContext: TestContext): Promise<Harness> {
   const databasePath = join(root, "run.sqlite3");
   const artifactDirectory = join(root, "owned-artifacts");
   const clock = new ManualClock();
+  const authority = await AuthorityTestHarness.create(root);
   const engines: SqliteRunEngine[] = [];
   testContext.after(async () => {
     for (const engine of engines) {
@@ -103,6 +106,7 @@ async function harness(testContext: TestContext): Promise<Harness> {
     databasePath,
     artifactDirectory,
     clock,
+    authority,
     open: (options = {}) => {
       const engine = createRunEngine({
         databasePath,
@@ -232,6 +236,7 @@ async function prepareArticleFixture(
         preparationEngine,
         fixture.spec,
         `${fixture.spec.article.articleId}-source-prep`,
+        await testHarness.authority.human("durability-source-reviewer"),
       ),
     };
   } finally {
@@ -263,19 +268,13 @@ function offered(view: RunView, role: string): WorkOfferView {
   return result;
 }
 
-function workerFor(
+async function claimOffer(
+  testHarness: Harness,
+  engine: SqliteRunEngine,
   offer: WorkOfferView,
   principalId = `worker-${offer.role}-${offer.id}`,
-): WorkerIdentity {
-  return {
-    principalId,
-    authority: offer.allowedWorkerCapabilities.includes("human")
-      ? "human"
-      : offer.allowedWorkerCapabilities.includes("text_model")
-        ? "model"
-        : "tool",
-    capabilities: offer.allowedWorkerCapabilities,
-  };
+): Promise<WorkClaim> {
+  return await testHarness.authority.claim(engine, offer, { principalId });
 }
 
 async function rejectCode(promise: Promise<unknown>, code: string): Promise<void> {
@@ -287,6 +286,7 @@ async function rejectCode(promise: Promise<unknown>, code: string): Promise<void
 }
 
 async function completeArticle(
+  testHarness: Harness,
   engine: SqliteRunEngine,
   fixture: ArticleFixture,
 ): Promise<RunView> {
@@ -295,7 +295,7 @@ async function completeArticle(
   for (let step = 0; step < 20 && view.status !== "complete"; step += 1) {
     const offer = view.offers.find((candidate) => candidate.status === "offered");
     assert.ok(offer, `run stranded in ${view.status}`);
-    const claim = await engine.claim(offer.id, workerFor(offer));
+    const claim = await claimOffer(testHarness, engine, offer);
     if (offer.role === "durable_checkpoint") {
       view = await engine.answer(claim, await durableCheckpointAnswer(engine, offer));
       continue;
@@ -327,16 +327,13 @@ describe("RunEngine concurrency and leases", () => {
     const started = await crashing.start(fixture.spec);
     const measure = offered(await crashing.inspect(started.runId), "measure_article");
     await assert.rejects(
-      crashing.claim(measure.id, workerFor(measure, "crashed-claimer")),
+      claimOffer(testHarness, crashing, measure, "crashed-claimer"),
       InjectedCrash,
     );
     const committed = await crashing.inspect(started.runId);
     assert.equal(committed.offers.find((offer) => offer.id === measure.id)?.status, "claimed");
     testHarness.clock.advance(51);
-    const replacement = await crashing.claim(
-      measure.id,
-      workerFor(measure, "replacement-claimer"),
-    );
+    const replacement = await claimOffer(testHarness, crashing, measure, "crashed-claimer");
     assert.notEqual(replacement.attemptId, committed.attempts[0]?.id);
   });
 
@@ -354,8 +351,8 @@ describe("RunEngine concurrency and leases", () => {
     const measure = offered(initial, "measure_article");
 
     const claims = await Promise.allSettled([
-      first.claim(measure.id, workerFor(measure, "measure-worker-one")),
-      second.claim(measure.id, workerFor(measure, "measure-worker-two")),
+      claimOffer(testHarness, first, measure, "measure-worker-one"),
+      claimOffer(testHarness, second, measure, "measure-worker-two"),
     ]);
     assert.equal(claims.filter((result) => result.status === "fulfilled").length, 1);
     const rejected = claims.find((result) => result.status === "rejected");
@@ -412,10 +409,10 @@ describe("RunEngine concurrency and leases", () => {
     const fixture = await prepareArticleFixture(testHarness, articleFixture("late-answer"));
     const outcome = await first.start(fixture.spec);
     const measure = offered(await first.inspect(outcome.runId), "measure_article");
-    const oldClaim = await first.claim(measure.id, workerFor(measure, "old-worker"));
+    const oldClaim = await claimOffer(testHarness, first, measure, "old-worker");
 
     testHarness.clock.advance(1_001);
-    const newClaim = await second.claim(measure.id, workerFor(measure, "new-worker"));
+    const newClaim = await claimOffer(testHarness, second, measure, "old-worker");
     await assert.rejects(first.heartbeat(oldClaim), StaleClaimError);
 
     const staleOutputId = artifactId("late-answer-output");
@@ -463,7 +460,7 @@ describe("RunEngine concurrency and leases", () => {
     const fixture = await prepareArticleFixture(testHarness, articleFixture("restart"));
     const outcome = await first.start(fixture.spec);
     const measure = offered(await first.inspect(outcome.runId), "measure_article");
-    const claim = await first.claim(measure.id, workerFor(measure, "restart-worker"));
+    const claim = await claimOffer(testHarness, first, measure, "restart-worker");
     first.close();
 
     const restarted = testHarness.open({ coordinatorId: "restart-second", workLeaseMs: 2_000 });
@@ -491,13 +488,13 @@ describe("RunEngine isolation, versions, and escalation", () => {
     const worth = offered(view, "worth");
     const mechanics = offered(view, "mechanics");
     assert.equal(worth.subjectArtifactId, mechanics.subjectArtifactId);
-    const worker: WorkerIdentity = {
+    const worker = await testHarness.authority.workerFor(worth, {
       principalId: "same-principal",
       authority: "model",
       capabilities: ["text_model", "source_access", "source_blind"],
-    };
-    await engine.claim(worth.id, worker);
-    await rejectCode(engine.claim(mechanics.id, worker), "WORKER_EXPOSURE_CONFLICT");
+    });
+    await worker.claim(engine, worth.id);
+    await rejectCode(worker.claim(engine, mechanics.id), "WORKER_EXPOSURE_CONFLICT");
   });
 
   test("stored machine versions are refused after restart", async (testContext) => {
@@ -512,7 +509,7 @@ describe("RunEngine isolation, versions, and escalation", () => {
     await assert.rejects(restarted.advance(outcome.runId), MachineVersionError);
     const measure = offered(await restarted.inspect(outcome.runId), "measure_article");
     await assert.rejects(
-      restarted.claim(measure.id, workerFor(measure, "version-worker")),
+      claimOffer(testHarness, restarted, measure, "version-worker"),
       MachineVersionError,
     );
   });
@@ -538,31 +535,24 @@ describe("RunEngine isolation, versions, and escalation", () => {
     assert.equal(budget.slot, "budget_decision");
     await rejectCode(engine.seal(outcome.runId), "RUN_NOT_TERMINAL");
 
-    const claim = await engine.claim(budget.id, workerFor(budget, "budget-editor"));
+    const worker = await testHarness.authority.workerFor(budget, { principalId: "budget-editor" });
+    const preparation = await engine.prepareHumanDecision(budget.id, worker);
     await rejectCode(
-      engine.answer(claim, {
-        contractVersion: budget.contractVersion,
+      engine.decide(preparation, worker, {
+        schemaVersion: "human-decision-intent/1",
+        offerId: preparation.offerId,
+        taskArtifactId: preparation.taskArtifactId,
+        inputArtifactIds: preparation.inputArtifactIds,
         result: { choice: "revise" },
-        artifacts: [{
-          id: artifactId("escalation-invalid-decision"),
-          kind: "editor_decision",
-          schemaVersion: "decision/1",
-          mediaType: "application/json",
-          payload: { kind: "json", value: { choice: "revise" } },
-        }],
       }),
       "HUMAN_DECISION_CHOICE_INVALID",
     );
-    const recovered = await engine.answer(claim, {
-      contractVersion: budget.contractVersion,
+    const recovered = await engine.decide(preparation, worker, {
+      schemaVersion: "human-decision-intent/1",
+      offerId: preparation.offerId,
+      taskArtifactId: preparation.taskArtifactId,
+      inputArtifactIds: preparation.inputArtifactIds,
       result: { choice: "increase_budget", maxIterations: 2 },
-      artifacts: [{
-        id: artifactId("escalation-budget-decision"),
-        kind: "editor_decision",
-        schemaVersion: "decision/1",
-        mediaType: "application/json",
-        payload: { kind: "json", value: { choice: "increase_budget", maxIterations: 2 } },
-      }],
     });
     assert.equal(recovered.status, "waiting");
     const recoveredActor = recovered.actors.find((actor) => actor.id === rootActor.id);
@@ -631,7 +621,7 @@ describe("RunEngine crash boundaries", () => {
       );
       const outcome = await engine.start(fixture.spec);
       const measure = offered(await engine.inspect(outcome.runId), "measure_article");
-      const claim = await engine.claim(measure.id, workerFor(measure, `worker-${point}`));
+      const claim = await claimOffer(testHarness, engine, measure, `worker-${point}`);
       const payloadPath = join(testHarness.root, `answer-${point.replaceAll(".", "-")}.json`);
       await writeFile(payloadPath, JSON.stringify({ fits: true, pageCount: 1 }), "utf8");
       const outputId = artifactId(`output-${point.replaceAll(".", "-")}`);
@@ -681,7 +671,7 @@ describe("RunEngine crash boundaries", () => {
     const fixture = await prepareArticleFixture(testHarness, articleFixture("answer-after-commit"));
     const outcome = await engine.start(fixture.spec);
     const measure = offered(await engine.inspect(outcome.runId), "measure_article");
-    const claim = await engine.claim(measure.id, workerFor(measure, "after-commit-worker"));
+    const claim = await claimOffer(testHarness, engine, measure, "after-commit-worker");
     await assert.rejects(
       engine.answer(claim, {
         contractVersion: measure.contractVersion,
@@ -708,7 +698,7 @@ describe("RunEngine sealing and artifact authority", () => {
       const testHarness = await harness(testContext);
       const fixture = await prepareArticleFixture(testHarness, articleFixture(`seal-${point}`));
       const initial = testHarness.open();
-      const completed = await completeArticle(initial, fixture);
+      const completed = await completeArticle(testHarness, initial, fixture);
       initial.close();
 
       const crashing = testHarness.open({ failpoints: new ThrowOnce(point) });
@@ -725,7 +715,7 @@ describe("RunEngine sealing and artifact authority", () => {
     const testHarness = await harness(testContext);
     const engine = testHarness.open();
     const fixture = await prepareArticleFixture(testHarness, articleFixture("seal"));
-    const completed = await completeArticle(engine, fixture);
+    const completed = await completeArticle(testHarness, engine, fixture);
     const sealed = await engine.seal(completed.id);
     assert.equal(await engine.seal(completed.id), sealed);
     const exportValue = JSON.parse(await engine.readText(sealed)) as { readonly id: string };

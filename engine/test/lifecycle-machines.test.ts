@@ -133,17 +133,24 @@ function editorialInput(
 function translationInput(
   overrides: Partial<TranslationMachineInput["spec"]> = {},
 ): TranslationMachineInput {
+  const {
+    pieceKind = "article",
+    pieceId = "translated-article",
+    ...otherOverrides
+  } = overrides;
   return {
     actorId: actorId("actor-translation"),
     logicalKey: "translation:es",
     spec: {
       language: "es",
       sourceLanguage: "en",
+      pieceKind,
+      pieceId,
       englishArtifacts: [artifactId("english-article")],
       promptArtifact: artifactId("translation-prompt"),
       maximumReaderPages: 7,
       modelPolicy,
-      ...overrides,
+      ...otherOverrides,
     },
   };
 }
@@ -260,7 +267,7 @@ describe("SourceMachine", () => {
     assert.equal(effectsOfType(result, "record_decision")[0]?.choice, "revise");
   });
 
-  test("prepared extraction still requires a fresh human source review", () => {
+  test("prepared extraction still requires a fresh human source approval", () => {
     let result = sourceInitial(
       sourceInput({
         extractionArtifact: artifactId("extraction-approved"),
@@ -273,7 +280,11 @@ describe("SourceMachine", () => {
     result = sourceTransition(result.snapshot, { type: "START" });
     state(result, "awaiting_source_review");
     assertHumanRequest(result, "review");
-    assert.equal(effectsOfType(result, "complete_actor").length, 0);
+    const offer = effectsOfType(result, "create_work_offer")[0];
+    assert.deepEqual(offer?.allowedWorkerCapabilities, ["human", "source_access"]);
+    assert.ok(offer?.inputArtifacts.includes(artifactId("raw-approved")));
+    assert.ok(offer?.inputArtifacts.includes(artifactId("extraction-approved")));
+    assert.equal(offer?.inputArtifacts.includes(artifactId("source-review-approved")), false);
   });
 });
 
@@ -405,8 +416,27 @@ describe("TranslationMachine", () => {
       artifacts: [{ kind: "language_measurement", artifactId: artifactId("fit-v2") }],
       result: { fits: true },
     });
+    state(result, "accepted_pending_durable");
+    const checkpoint = effectsOfType(result, "open_durable_checkpoint")[0];
+    assert.deepEqual(checkpoint?.logicalItem, {
+      kind: "article",
+      editionId: "standalone",
+      logicalId: "translated-article",
+      language: "es",
+    });
+
+    result = translationTransition(result.snapshot, {
+      type: "WORK_COMPLETED",
+      slot: "durable_checkpoint",
+      artifacts: [{ kind: "durable_revision_bound", artifactId: artifactId("translation-bound-v2") }],
+      result: { revisionId: "revision-translation-v2" },
+    });
     state(result, "settled");
     assert.deepEqual(effectsOfType(result, "complete_actor")[0]?.outputs, ["translation-v2"]);
+    assert.equal(
+      effectsOfType(result, "complete_actor")[0]?.result.durableRevisionArtifactId,
+      "translation-bound-v2",
+    );
 
     result = translationTransition(result.snapshot, {
       type: "REVISION_REQUESTED",
@@ -434,6 +464,48 @@ describe("TranslationMachine", () => {
     state(result, "drafting");
     assert.deepEqual(result.snapshot.context, before.context);
     assert.deepEqual(result.effects, []);
+  });
+
+  test("opens one durable checkpoint for each of eight isolated Spanish pieces", () => {
+    const pieces = [
+      ...Array.from({ length: 7 }, (_, index) => ({ kind: "article" as const, id: `article-${index + 1}` })),
+      { kind: "editorial" as const, id: "opening" },
+    ];
+    for (const piece of pieces) {
+      let result = translationInitial(translationInput({
+        editionId: "edition-eight",
+        pieceKind: piece.kind,
+        pieceId: piece.id,
+        englishArtifacts: [artifactId(`${piece.id}-english-v1`)],
+      }));
+      result = translationTransition(result.snapshot, { type: "START" });
+      result = translationTransition(result.snapshot, {
+        type: "WORK_COMPLETED",
+        slot: "draft",
+        artifacts: [{ kind: "translated_piece", artifactId: artifactId(`${piece.id}-es-v1`) }],
+        result: {},
+      });
+      result = translationTransition(result.snapshot, {
+        type: "WORK_COMPLETED",
+        slot: "language_review",
+        artifacts: [{ kind: "language_review", artifactId: artifactId(`${piece.id}-review-v1`) }],
+        result: { decision: "approved" },
+      });
+      result = translationTransition(result.snapshot, {
+        type: "WORK_COMPLETED",
+        slot: "language_fit",
+        artifacts: [{ kind: "language_measurement", artifactId: artifactId(`${piece.id}-fit-v1`) }],
+        result: { fits: true },
+      });
+      const checkpoint = effectsOfType(result, "open_durable_checkpoint");
+      assert.equal(checkpoint.length, 1);
+      assert.deepEqual(checkpoint[0]?.logicalItem, {
+        kind: piece.kind,
+        editionId: "edition-eight",
+        logicalId: piece.id,
+        language: "es",
+      });
+    }
   });
 });
 

@@ -15,7 +15,6 @@ import type {
   RunView,
   WorkClaim,
   WorkOfferView,
-  WorkerIdentity,
 } from "../contracts/index.ts";
 import {
   executeAvailableWork,
@@ -24,6 +23,7 @@ import {
   RenderInspectionExecutor,
   RendererExecutor,
   SourceArchiveExecutor,
+  type ExecutorResolver,
 } from "../executors/index.ts";
 import {
   InMemoryRendererAdapter,
@@ -34,6 +34,7 @@ import {
   type RenderManifest,
 } from "../renderer-adapter/index.ts";
 import { SqliteRunEngine } from "../run-engine/index.ts";
+import { AuthorityTestHarness } from "./authority-fixture.ts";
 import { prepareArticleSources } from "./approved-source-fixture.ts";
 import { durableCheckpointAnswer } from "./durable-checkpoint-fixture.ts";
 import {
@@ -141,6 +142,7 @@ function baseEdition(
 
 test("SourceMachine capture offer runs through the versioned archive executor", async () => {
   const temporary = await mkdtemp(join(tmpdir(), "mag-source-executor-"));
+  const authority = await AuthorityTestHarness.create(temporary);
   const engine = new SqliteRunEngine({
     databasePath: join(temporary, "runs.sqlite"),
     artifactDirectory: join(temporary, "engine-artifacts"),
@@ -214,7 +216,10 @@ test("SourceMachine capture offer runs through the versioned archive executor", 
     const result = await executeAvailableWork(
       engine,
       started.runId,
-      [new SourceArchiveExecutor(adapter, { workDirectory: temporary })],
+      await configured(authority, [{
+        executor: new SourceArchiveExecutor(adapter, { workDirectory: temporary }),
+        roles: ["capture_source"],
+      }]),
       new AbortController().signal,
     );
     assert.equal(result.answered.length, 1);
@@ -251,6 +256,7 @@ test("SourceMachine capture offer runs through the versioned archive executor", 
 
 test("RenderMachine measure and render offers run through one versioned renderer executor", async () => {
   const temporary = await mkdtemp(join(tmpdir(), "mag-render-executor-"));
+  const authority = await AuthorityTestHarness.create(temporary);
   const engine = new SqliteRunEngine({
     databasePath: join(temporary, "runs.sqlite"),
     artifactDirectory: join(temporary, "engine-artifacts"),
@@ -341,10 +347,6 @@ test("RenderMachine measure and render offers run through one versioned renderer
       textSeed(sourceMetadata, "source metadata", "source_metadata", [
         { artifactId: sourceRaw, relation: "describes_bundle" },
       ]),
-      textSeed(sourceApproval, "source approval", "source_review_decision", [
-        { artifactId: sourceRaw, relation: "reviewed_raw_bundle" },
-        { artifactId: sourceExtraction, relation: "reviewed_extraction" },
-      ], "human"),
     ];
     const spec: EditionRootRunSpec = {
       schemaVersion: 1,
@@ -362,15 +364,13 @@ test("RenderMachine measure and render offers run through one versioned renderer
           rawEvidenceArtifacts: [sourceEvidence],
           extractionArtifact: sourceExtraction,
           metadataArtifact: sourceMetadata,
-          approvalArtifact: sourceApproval,
         }],
         articles: [{
           articleId: "render-executor-article",
           contentMode: "original_synthesis",
           attribution: { kind: "magazine", byline: "Magazine" },
           articleBrief,
-          sources: [sourceExtraction],
-          sourceApprovalArtifacts: [sourceApproval],
+          sourceIds: ["render-executor-source"],
           writerPrompt,
           judgePrompts: {
             worth: worthPrompt,
@@ -471,12 +471,12 @@ test("RenderMachine measure and render offers run through one versioned renderer
     });
 
     const started = await engine.start(spec);
-    await advanceToRenderMeasurement(engine, started.runId);
+    await advanceToRenderMeasurement(engine, started.runId, authority);
     const executor = new RendererExecutor(adapter, { workDirectory: temporary });
     const measurement = await executeAvailableWork(
       engine,
       started.runId,
-      [executor],
+      await configured(authority, [{ executor, roles: ["measure_edition", "render"] }]),
       new AbortController().signal,
     );
     assert.equal(measurement.answered.length, 1, JSON.stringify(measurement));
@@ -486,7 +486,7 @@ test("RenderMachine measure and render offers run through one versioned renderer
     const rendering = await executeAvailableWork(
       engine,
       started.runId,
-      [executor],
+      await configured(authority, [{ executor, roles: ["measure_edition", "render"] }]),
       new AbortController().signal,
     );
     assert.equal(rendering.answered.length, 1);
@@ -513,7 +513,7 @@ test("RenderMachine measure and render offers run through one versioned renderer
     const inspection = await executeAvailableWork(
       engine,
       started.runId,
-      [new RenderInspectionExecutor()],
+      await configured(authority, [{ executor: new RenderInspectionExecutor(), roles: ["render_inspection"] }]),
       new AbortController().signal,
     );
     assert.equal(inspection.answered.length, 1, JSON.stringify(inspection));
@@ -538,6 +538,7 @@ test("RenderMachine measure and render offers run through one versioned renderer
 
 test("ArticleMachine uses the renderer-backed isolated measurement profile", async () => {
   const temporary = await mkdtemp(join(tmpdir(), "mag-article-measurement-"));
+  const authority = await AuthorityTestHarness.create(temporary);
   const engine = new SqliteRunEngine({
     databasePath: join(temporary, "runs.sqlite"),
     artifactDirectory: join(temporary, "engine-artifacts"),
@@ -634,11 +635,15 @@ test("ArticleMachine uses the renderer-backed isolated measurement profile", asy
       engine,
       spec,
       "article-measurement",
+      await authority.human(),
     ));
     const result = await executeAvailableWork(
       engine,
       started.runId,
-      [new ArticleMeasurementExecutor(adapter, { workDirectory: temporary })],
+      await configured(authority, [{
+        executor: new ArticleMeasurementExecutor(adapter, { workDirectory: temporary }),
+        roles: ["measure_article"],
+      }]),
       new AbortController().signal,
     );
     assert.equal(result.answered.length, 1, JSON.stringify(result));
@@ -735,6 +740,7 @@ test("language fit measures every translated piece and binds review lineage", as
       offerId: offer.id,
       attemptId: "attempt-language-fit" as WorkClaim["attemptId"],
       attemptFence: 1,
+      ticket: "test-render-ticket",
       worker: {
         principalId: "language-fit-worker",
         authority: "tool",
@@ -813,7 +819,11 @@ test("language fit measures every translated piece and binds review lineage", as
   }
 });
 
-async function advanceToRenderMeasurement(engine: SqliteRunEngine, runId: RunId): Promise<void> {
+async function advanceToRenderMeasurement(
+  engine: SqliteRunEngine,
+  runId: RunId,
+  authority: AuthorityTestHarness,
+): Promise<void> {
   for (let step = 0; step < 30; step += 1) {
     const view = await engine.inspect(runId);
     if (view.offers.some((offer) => offer.role === "measure_edition" && offer.status === "offered")) {
@@ -824,7 +834,7 @@ async function advanceToRenderMeasurement(engine: SqliteRunEngine, runId: RunId)
     for (const offer of offers) {
       switch (offer.role) {
         case "close_collection":
-          await submit(engine, offer, { choice: "close" }, [{
+          await submit(engine, offer, authority, { choice: "close" }, [{
             kind: "collection_decision",
             schemaVersion: "close-collection/1",
             mediaType: "application/json",
@@ -835,6 +845,7 @@ async function advanceToRenderMeasurement(engine: SqliteRunEngine, runId: RunId)
           await submit(
             engine,
             offer,
+            authority,
             { fits: true, pageCount: 1, openerFits: true },
             [{
               kind: "article_measurement",
@@ -850,10 +861,10 @@ async function advanceToRenderMeasurement(engine: SqliteRunEngine, runId: RunId)
         case "worth":
         case "evidence":
         case "craft":
-          await submit(engine, offer, { decision: "pass" });
+          await submit(engine, offer, authority, { decision: "pass" });
           break;
         case "review_source":
-          await submit(engine, offer, { decision: "approved" }, [{
+          await submit(engine, offer, authority, { decision: "approved" }, [{
             kind: "source_review_decision",
             schemaVersion: "review-source/1",
             mediaType: "application/json",
@@ -861,7 +872,7 @@ async function advanceToRenderMeasurement(engine: SqliteRunEngine, runId: RunId)
           }]);
           break;
         case "edition_review":
-          await submit(engine, offer, { decision: "approved" }, [{
+          await submit(engine, offer, authority, { decision: "approved" }, [{
             kind: "edition_review",
             schemaVersion: "edition-review/1",
             mediaType: "application/json",
@@ -869,7 +880,7 @@ async function advanceToRenderMeasurement(engine: SqliteRunEngine, runId: RunId)
           }]);
           break;
         case "durable_checkpoint":
-          await submit(engine, offer, {});
+          await submit(engine, offer, authority, {});
           break;
         default:
           assert.fail(`unexpected offer before render: ${offer.role}`);
@@ -890,16 +901,22 @@ function offered(view: RunView, role: string): WorkOfferView {
 async function submit(
   engine: SqliteRunEngine,
   offer: WorkOfferView,
+  authority: AuthorityTestHarness,
   result: JsonObject,
   artifacts: readonly AnswerArtifact[] = [],
 ): Promise<RunView> {
-  const human = offer.allowedWorkerCapabilities.includes("human");
-  const worker: WorkerIdentity = {
-    principalId: `fixture-${offer.id}`,
-    authority: human ? "human" : "tool",
-    capabilities: offer.allowedWorkerCapabilities,
-  };
-  const claim = await engine.claim(offer.id, worker);
+  if (offer.requirements?.authority === "human" || offer.allowedWorkerCapabilities.includes("human")) {
+    const worker = await authority.workerFor(offer);
+    const preparation = await engine.prepareHumanDecision(offer.id, worker);
+    return await engine.decide(preparation, worker, {
+      schemaVersion: "human-decision-intent/1",
+      offerId: preparation.offerId,
+      taskArtifactId: preparation.taskArtifactId,
+      inputArtifactIds: preparation.inputArtifactIds,
+      result,
+    });
+  }
+  const claim = await authority.claim(engine, offer);
   if (offer.role === "durable_checkpoint") {
     return await engine.answer(claim, await durableCheckpointAnswer(engine, offer));
   }
@@ -908,4 +925,36 @@ async function submit(
     result,
     artifacts,
   });
+}
+
+async function configured(
+  authority: AuthorityTestHarness,
+  executors: readonly {
+    readonly executor: Parameters<AuthorityTestHarness["registration"]>[0];
+    readonly roles: readonly string[];
+  }[],
+): Promise<ExecutorResolver> {
+  const registrations = await Promise.all(
+    executors.map(async ({ executor, roles }) => await authority.registration(executor, { roles })),
+  );
+  return {
+    resolve: (_view, offer) => {
+      const registration = registrations.find(({ executor, roles }) =>
+        executor.accepts(offer) && roles?.includes(offer.role),
+      );
+      if (registration === undefined || registration.authorizedWorker === undefined) return undefined;
+      const executor = registration.executor;
+      return {
+        id: executor.id,
+        worker: executor.worker,
+        capabilities: executor.capabilities,
+        authorizedWorker: registration.authorizedWorker,
+        accepts: (candidate) => executor.accepts(candidate),
+        execute: async (context) => await executor.execute(context),
+        ...(executor.release === undefined
+          ? {}
+          : { release: async (context) => await executor.release?.(context) }),
+      };
+    },
+  };
 }

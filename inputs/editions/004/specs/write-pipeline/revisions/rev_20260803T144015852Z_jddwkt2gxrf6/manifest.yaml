@@ -1,0 +1,12 @@
+schema_version: 1
+revision_kind: write_pipeline
+logical_id: edition4-write
+edition_id: "004"
+revision_id: rev_20260803T144015852Z_jddwkt2gxrf6
+created_at: 2026-08-03T14:40:15.852Z
+parent_revision_id: null
+files:
+  - path: production.yaml
+    media_type: application/yaml
+    sha256: sha256:2de0462016f9de4bf4c61b03edf74682144a42396aa886f18d7467ef4ae6c79e
+    size_bytes: 13131

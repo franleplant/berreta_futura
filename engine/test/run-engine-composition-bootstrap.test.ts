@@ -13,7 +13,6 @@ import type {
   KnownWorkRole,
   RevisionId,
   RunView,
-  WorkerIdentity,
   WorkOfferView,
 } from "../contracts/index.ts";
 import { KNOWN_WORK_ROLES } from "../contracts/index.ts";
@@ -22,6 +21,7 @@ import {
   type RunEngineClock,
   type SqliteRunEngine,
 } from "../run-engine/index.ts";
+import { AuthorityTestHarness } from "./authority-fixture.ts";
 
 const REVISION = "rev_20260802T200641636Z_aaaaaaaaaaaa" as RevisionId;
 const BOOTSTRAP_REVISION = {
@@ -46,7 +46,7 @@ class ManualClock implements RunEngineClock {
 async function harness(
   context: TestContext,
   options: { readonly clock?: ManualClock; readonly workLeaseMs?: number } = {},
-): Promise<SqliteRunEngine> {
+): Promise<{ readonly engine: SqliteRunEngine; readonly authority: AuthorityTestHarness }> {
   const root = await mkdtemp(join(tmpdir(), "mag-bootstrap-run-engine-"));
   const engine = createRunEngine({
     databasePath: join(root, "run.sqlite3"),
@@ -58,7 +58,7 @@ async function harness(
     engine.close();
     await rm(root, { recursive: true, force: true });
   });
-  return engine;
+  return { engine, authority: await AuthorityTestHarness.create(root) };
 }
 
 function artifactId(value: string): ArtifactId {
@@ -221,14 +221,6 @@ function offered(view: RunView, role: string): WorkOfferView {
   return offer;
 }
 
-function workerFor(offer: WorkOfferView, suffix: string = offer.id): WorkerIdentity {
-  return {
-    principalId: `worker-${suffix}`,
-    authority: offer.allowedWorkerCapabilities.includes("human") ? "human" : "tool",
-    capabilities: offer.allowedWorkerCapabilities,
-  };
-}
-
 function answerArtifact(
   id: ArtifactId,
   kind: string,
@@ -260,11 +252,23 @@ function bootstrapAnswer(prefix: string) {
 
 async function submit(
   engine: SqliteRunEngine,
+  authority: AuthorityTestHarness,
   offer: WorkOfferView,
   result: JsonObject,
   artifacts: readonly AnswerArtifact[],
 ): Promise<RunView> {
-  const claim = await engine.claim(offer.id, workerFor(offer));
+  if (offer.requirements?.authority === "human") {
+    const worker = await authority.workerFor(offer);
+    const preparation = await engine.prepareHumanDecision(offer.id, worker);
+    return await engine.decide(preparation, worker, {
+      schemaVersion: "human-decision-intent/1",
+      offerId: preparation.offerId,
+      taskArtifactId: preparation.taskArtifactId,
+      inputArtifactIds: preparation.inputArtifactIds,
+      result,
+    });
+  }
+  const claim = await authority.claim(engine, offer);
   return await engine.answer(claim, {
     contractVersion: offer.contractVersion,
     result,
@@ -273,7 +277,7 @@ async function submit(
 }
 
 test("bootstrap composition renders through RunEngine and stops approved but unreleased", async (context) => {
-  const engine = await harness(context);
+  const { engine, authority } = await harness(context);
   const spec = bootstrapSpec("success");
   const started = await engine.start(spec);
   let view = await engine.inspect(started.runId);
@@ -285,8 +289,10 @@ test("bootstrap composition renders through RunEngine and stops approved but unr
   const request = JSON.parse(await engine.readText(bootstrap.taskArtifactId)) as JsonObject;
   assert.deepEqual(request.bootstrapRevision, BOOTSTRAP_REVISION);
   assert.equal(request.imageGenerationAllowed, false);
+  assert.equal(request.requestSchemaVersion, "composition-bootstrap-request/1");
+  assert.equal("intentSchemaVersion" in request, false);
 
-  const bootstrapClaim = await engine.claim(bootstrap.id, workerFor(bootstrap));
+  const bootstrapClaim = await authority.claim(engine, bootstrap);
   view = await engine.answer(bootstrapClaim, bootstrapAnswer("success"));
   const bound = view.artifacts.find((artifact) => artifact.kind === "composition_revision_bound");
   assert.ok(bound);
@@ -298,7 +304,7 @@ test("bootstrap composition renders through RunEngine and stops approved but unr
   assert.equal(measurement.taskArtifactId, renderAssembly);
   assert.ok(measurement.inputArtifacts.includes(renderAssembly));
   assert.ok(measurement.inputArtifacts.includes(bound.id));
-  view = await submit(engine, measurement, { fits: true }, [
+  view = await submit(engine, authority, measurement, { fits: true }, [
     answerArtifact(artifactId("success-edition-measurement"), "edition_measurement"),
   ]);
 
@@ -312,7 +318,7 @@ test("bootstrap composition renders through RunEngine and stops approved but unr
     artifactId("success-render-critic"),
     artifactId("success-printer-preflight"),
   ] as const;
-  view = await submit(engine, render, { renderedLanguages: ["en"] }, [
+  view = await submit(engine, authority, render, { renderedLanguages: ["en"] }, [
     answerArtifact(renderArtifactIds[0], "reader_pdf", {}, { relativePath: "en/reader.pdf" }),
     answerArtifact(renderArtifactIds[1], "web_output", {}, { relativePath: "en/web.html" }),
     answerArtifact(renderArtifactIds[2], "booklet_pdf", {}, { relativePath: "en/booklet.pdf" }),
@@ -321,13 +327,13 @@ test("bootstrap composition renders through RunEngine and stops approved but unr
     answerArtifact(renderArtifactIds[5], "printer_preflight", {}, { relativePath: "en/preflight.json" }),
   ]);
 
-  view = await submit(engine, offered(view, "render_inspection"), {
+  view = await submit(engine, authority, offered(view, "render_inspection"), {
     result: "pass",
     renderArtifactIds,
     printerPreflightArtifactIds: [renderArtifactIds[5]],
     studioReady: false,
   }, [answerArtifact(artifactId("success-render-inspection"), "render_inspection")]);
-  view = await submit(engine, offered(view, "visual_review"), {
+  view = await submit(engine, authority, offered(view, "visual_review"), {
     decision: "approved",
     renderArtifactIds,
   }, [answerArtifact(artifactId("success-visual-review"), "visual_review_decision")]);
@@ -345,11 +351,11 @@ test("bootstrap composition renders through RunEngine and stops approved but unr
 });
 
 test("a permanent composition bootstrap failure is terminal and has no production fallback", async (context) => {
-  const engine = await harness(context);
+  const { engine, authority } = await harness(context);
   const started = await engine.start(bootstrapSpec("failure"));
   let view = await engine.inspect(started.runId);
   const offer = offered(view, "composition_bootstrap");
-  const claim = await engine.claim(offer.id, workerFor(offer));
+  const claim = await authority.claim(engine, offer);
   view = await engine.fail(claim, {
     classification: "permanent",
     message: "committed bootstrap verification failed",
@@ -367,13 +373,13 @@ test("a permanent composition bootstrap failure is terminal and has no productio
 
 test("stale and duplicate composition bootstrap answers never advance twice", async (context) => {
   const clock = new ManualClock();
-  const engine = await harness(context, { clock, workLeaseMs: 1_000 });
+  const { engine, authority } = await harness(context, { clock, workLeaseMs: 1_000 });
   const started = await engine.start(bootstrapSpec("idempotency"));
   let view = await engine.inspect(started.runId);
   const offer = offered(view, "composition_bootstrap");
-  const staleClaim = await engine.claim(offer.id, workerFor(offer, "stale"));
+  const staleClaim = await authority.claim(engine, offer, { principalId: "worker-stale" });
   clock.advance(1_001);
-  const acceptedClaim = await engine.claim(offer.id, workerFor(offer, "accepted"));
+  const acceptedClaim = await authority.claim(engine, offer, { principalId: "worker-stale" });
 
   view = await engine.answer(staleClaim, bootstrapAnswer("idempotency-stale"));
   assert.equal(view.actors.find((actor) => actor.machine === "edition")?.state, "verifying_bootstrap");

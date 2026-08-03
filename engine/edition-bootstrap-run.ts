@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 
 import { parse } from "yaml";
 
+import type { AuthorizedWorker } from "./authority/local-authority.ts";
 import type {
   ArtifactId,
   ArtifactSeed,
@@ -140,6 +141,12 @@ export type EditionBootstrapRunnerOptions = {
   readonly render: EditionBootstrapRenderConfiguration;
   readonly durableGit?: DurableGit;
   readonly rendererAdapter?: RendererAdapter;
+  /** Authenticated subprocess authority for bounded non-human bootstrap work. */
+  readonly authority?: EditionBootstrapAutomationAuthority;
+};
+
+export type EditionBootstrapAutomationAuthority = {
+  readonly toolWorker: AuthorizedWorker;
 };
 
 const MAX_AUTONOMOUS_STEPS = 32;
@@ -160,6 +167,7 @@ export class EditionBootstrapRunner {
   private readonly git: DurableGit;
   private readonly rendererAdapter: RendererAdapter;
   private readonly layout: EditionRunLayout;
+  private readonly authority: EditionBootstrapAutomationAuthority | undefined;
 
   constructor(options: EditionBootstrapRunnerOptions) {
     this.editionKey = options.editionKey;
@@ -167,6 +175,7 @@ export class EditionBootstrapRunner {
     this.render = options.render;
     this.git = options.durableGit ?? new GitCliDurableGit(this.repositoryRoot);
     this.rendererAdapter = options.rendererAdapter ?? new PythonRendererAdapter(this.repositoryRoot);
+    this.authority = options.authority;
     this.layout = new EditionRunLayout({
       editionKey: this.editionKey,
       repositoryRoot: this.repositoryRoot,
@@ -203,6 +212,7 @@ export class EditionBootstrapRunner {
 
   /** Allocate or resume one canonical run and stop at a human or terminal boundary. */
   async run(bootstrapRevision: RunBootstrapRevision): Promise<EditionBootstrapRunResult> {
+    const toolWorker = await this.requireToolWorker();
     const prepared = await this.prepare(bootstrapRevision);
     const allocated = await this.layout.allocate(prepared.spec, {
       idempotencyKey: bootstrapRevision.revisionId,
@@ -230,22 +240,26 @@ export class EditionBootstrapRunner {
               repositoryRoot: this.repositoryRoot,
               git: this.git,
             }),
+            authorizedWorker: toolWorker,
             roles: ["composition_bootstrap"],
           },
           {
             executor: new RendererExecutor(this.rendererAdapter, {
               workDirectory: scratch.rendererWorkDirectory,
             }),
+            authorizedWorker: toolWorker,
             roles: ["measure_edition", "render"],
           },
           {
             executor: new RenderInspectionExecutor(),
+            authorizedWorker: toolWorker,
             roles: ["render_inspection"],
           },
           {
             executor: new DurableCheckpointExecutor(
               new DurableStoreCheckpointImplementation(opened.engine, store),
             ),
+            authorizedWorker: toolWorker,
             roles: ["durable_checkpoint"],
           },
         ];
@@ -330,6 +344,24 @@ export class EditionBootstrapRunner {
     } finally {
       opened.close();
     }
+  }
+
+  private async requireToolWorker(): Promise<AuthorizedWorker> {
+    const worker = this.authority?.toolWorker;
+    if (worker === undefined) {
+      throw new RunEngineError(
+        "EDITION_BOOTSTRAP_EXECUTOR_AUTH_REQUIRED",
+        "Edition bootstrap run requires an injected authenticated subprocess worker",
+      );
+    }
+    const description = await worker.describe();
+    if (description.authority !== "tool" || !description.capabilities.includes("subprocess")) {
+      throw new RunEngineError(
+        "EDITION_BOOTSTRAP_EXECUTOR_AUTH_INVALID",
+        "Edition bootstrap executor authority must be a subprocess-capable tool session",
+      );
+    }
+    return worker;
   }
 
   private async currentHeadSequence(runId: RunId): Promise<number> {
@@ -654,9 +686,14 @@ export async function buildEditionBootstrapRunSpec(
       translations: bootstrap.configuredLanguages
         .filter((language) => language !== render.primaryLanguage)
         .map((language) => ({
+          // Bootstrap composition renders the already-bound composition rather
+          // than spawning translation actors, but the root spec remains a
+          // valid per-piece edition graph.
+          pieceKind: "editorial" as const,
+          pieceId: "bootstrap-composition",
           language,
           sourceLanguage: render.primaryLanguage,
-          englishArtifacts: [],
+          englishArtifacts: [controlArtifactId],
           promptArtifact: controlArtifactId,
           maximumReaderPages: 7,
           modelPolicy,

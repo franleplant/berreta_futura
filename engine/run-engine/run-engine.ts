@@ -1,4 +1,5 @@
 import type Database from "better-sqlite3";
+import { createHash, randomBytes } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 
 import type {
@@ -15,6 +16,7 @@ import type {
   DecisionId,
   EventId,
   InboxId,
+  HumanDecisionIntent,
   JsonObject,
   JsonValue,
   RunId,
@@ -27,6 +29,7 @@ import type {
   SourceRunSpec,
   StateVisitId,
   SubmitLeadRequest,
+  OfferRequirements,
   WorkerCapability,
   WorkerIdentity,
   WorkAnswer,
@@ -99,6 +102,7 @@ import type {
   RunMigrationCheckpoint,
   RunMigrationFence,
   RunMigrationFenceRequest,
+  HumanDecisionPreparation,
   StartRunOptions,
 } from "./types.ts";
 import {
@@ -106,6 +110,7 @@ import {
   RunEngineError,
   StaleClaimError,
 } from "./types.ts";
+import type { AuthorizedWorker, WorkerClaimPort } from "../authority/local-authority.ts";
 import {
   assertWorkResultContractRegistered,
   validateWorkResult,
@@ -194,6 +199,8 @@ type OfferClaimRow = {
   readonly subject_artifact_id: ArtifactId | null;
   readonly task_artifact_id: ArtifactId;
   readonly contract_version: string;
+  readonly required_authority: "human" | "machine" | "model" | "tool";
+  readonly minimum_assurance: "local_bearer";
   readonly status: string;
   readonly claim_fence: number;
   readonly active_attempt_id: AttemptId | null;
@@ -213,6 +220,7 @@ type AttemptClaimRow = {
   readonly worker_authority: WorkerIdentity["authority"];
   readonly worker_capabilities_json: string;
   readonly worker_display_name: string | null;
+  readonly authorization_id: string | null;
   readonly status: string;
   readonly lease_expires_at_ms: number;
 };
@@ -318,7 +326,7 @@ type Lease = {
   readonly expiresAtMs: number;
 };
 
-export class SqliteRunEngine implements RunEngine {
+export class SqliteRunEngine implements RunEngine, WorkerClaimPort {
   private readonly db: Database.Database;
   private readonly store: ArtifactStore;
   readonly clock: RunEngineClock;
@@ -353,7 +361,7 @@ export class SqliteRunEngine implements RunEngine {
   async start(spec: RunSpec, options: StartRunOptions = {}): Promise<RunOutcome> {
     this.assertOpen();
     this.assertNoMigrationFences();
-    const validatedSpec = parseRunSpec(spec);
+    const validatedSpec = containEditionSourceApprovals(parseRunSpec(spec));
     assertRunSpecArtifactReferences(
       validatedSpec,
       (artifactId) =>
@@ -529,9 +537,16 @@ export class SqliteRunEngine implements RunEngine {
         { cause: error },
       );
     }
-    const source = parseSourceRunSpec(validated.source);
+    const submittedSource = parseSourceRunSpec(validated.source);
+    const source = containSourceApproval(submittedSource);
     const sourceReferences = sourceArtifactReferences(source);
-    const referenceSet = new Set(sourceReferences);
+    // A historical approval seed may be carried as immutable evidence, but is
+    // deliberately not a source reference and is never persisted into the
+    // collection actor's source specification.
+    const submittedSeedArtifacts = new Set([
+      ...sourceReferences,
+      submittedSource.approvalArtifact,
+    ].filter((artifactId): artifactId is ArtifactId => artifactId !== undefined));
     const seedIds = validated.artifacts.map((artifact) => artifact.id);
     if (new Set(seedIds).size !== seedIds.length) {
       throw new RunEngineError(
@@ -539,7 +554,7 @@ export class SqliteRunEngine implements RunEngine {
         `Lead ${source.sourceId} repeats an artifact ID`,
       );
     }
-    const unrelated = seedIds.find((artifactId) => !referenceSet.has(artifactId));
+    const unrelated = seedIds.find((artifactId) => !submittedSeedArtifacts.has(artifactId));
     if (unrelated !== undefined) {
       throw new RunEngineError(
         "LEAD_SUBMISSION_INVALID",
@@ -634,11 +649,96 @@ export class SqliteRunEngine implements RunEngine {
     return inspectRun(this.db, runId);
   }
 
-  async claim(offerId: WorkOfferId, worker: WorkerIdentity): Promise<WorkClaim> {
+  async claimAuthorized(offerId: WorkOfferId, session: AuthorizedWorker): Promise<WorkClaim> {
+    const description = await session.describe();
+    const worker: WorkerIdentity = {
+      principalId: description.principalId,
+      authority: description.authority,
+      capabilities: description.capabilities,
+    };
+    return await this.claimIdentity(offerId, worker, description.credentialProfileId, description.grantIds);
+  }
+
+  async claim(_offerId: WorkOfferId, _identity: WorkerIdentity): Promise<WorkClaim> {
+    throw new RunEngineError(
+      "CALLER_IDENTITY_REJECTED",
+      "Use an authenticated AuthorizedWorker session and claimAuthorized; caller-supplied identity cannot authorize work",
+    );
+  }
+
+  async prepareHumanDecision(
+    offerId: WorkOfferId,
+    worker: AuthorizedWorker,
+  ): Promise<HumanDecisionPreparation> {
+    const offer = this.requireOffer(offerId);
+    if (offer.required_authority !== "human") {
+      throw new RunEngineError("HUMAN_DECISION_NOT_REQUIRED", `Offer ${offerId} is not a human decision`);
+    }
+    const task = this.readHumanDecisionRequest(offer);
+    const choices = humanDecisionChoices(task, offerId);
+    const inputArtifactIds = this.offerInputArtifactIds(offerId);
+    const claim = await this.claimAuthorized(offerId, worker);
+    return Object.freeze({
+      schemaVersion: "human-decision-preparation/1",
+      claim,
+      offerId,
+      taskArtifactId: offer.task_artifact_id,
+      inputArtifactIds: Object.freeze(inputArtifactIds),
+      allowedChoices: Object.freeze(choices),
+    });
+  }
+
+  async decide(
+    preparation: HumanDecisionPreparation,
+    worker: AuthorizedWorker,
+    intent: HumanDecisionIntent,
+  ): Promise<RunView> {
+    const description = await worker.describe();
+    const authorization = this.db.prepare(
+      `SELECT a.principal_id, s.credential_id
+       FROM attempts t
+       JOIN authorizations a ON a.id = t.authorization_id
+       JOIN authorization_snapshots s ON s.id = a.snapshot_id
+       WHERE t.id = ?`,
+    ).get(preparation.claim.attemptId) as
+      | { readonly principal_id: string; readonly credential_id: string }
+      | undefined;
+    if (
+      authorization === undefined ||
+      authorization.principal_id !== description.principalId ||
+      authorization.credential_id !== description.credentialProfileId ||
+      description.authority !== "human"
+    ) {
+      throw new RunEngineError("HUMAN_DECISION_AUTHORIZATION_REVOKED", "Human decision authorization is no longer valid");
+    }
+    this.assertHumanDecisionIntent(preparation, intent);
+    const offer = this.requireOffer(preparation.offerId);
+    const result = intent.result;
+    this.assertExactHumanChoice(offer, result);
+    const artifacts = humanDecisionArtifactsFor(offer.role, result);
+    // Validate before the answer pipeline writes anything. The artifact kind,
+    // payload, origin, and provenance remain engine-derived, never supplied by
+    // the human caller.
+    validateWorkResult(offer.role, offer.contract_version, result, artifacts);
+    return await this.answerClaim(preparation.claim, {
+      contractVersion: offer.contract_version,
+      result,
+      artifacts,
+    });
+  }
+
+  private async claimIdentity(
+    offerId: WorkOfferId,
+    worker: WorkerIdentity,
+    credentialProfileId: string,
+    grantIds: readonly string[],
+  ): Promise<WorkClaim> {
     this.assertOpen();
     const now = this.now();
     const nowMs = this.nowMs();
     const leaseExpiresAtMs = nowMs + this.workLeaseMs;
+    const ticket = randomBytes(32).toString("base64url");
+    const ticketHash = hashTicket(ticket);
     const claim = immediateTransaction(this.db, () => {
       let offer = this.requireOffer(offerId);
       this.requireMutableRun(offer.run_id);
@@ -663,6 +763,9 @@ export class SqliteRunEngine implements RunEngine {
              WHERE id = ? AND status = 'active'`,
           ).run(now, active.id);
           this.db.prepare(
+            "UPDATE work_claim_tickets SET revoked_at = ? WHERE attempt_id = ? AND revoked_at IS NULL",
+          ).run(now, active.id);
+          this.db.prepare(
             `UPDATE work_offers SET status = 'offered', active_attempt_id = NULL,
                updated_at = ? WHERE id = ? AND active_attempt_id = ?`,
           ).run(now, offerId, active.id);
@@ -681,11 +784,14 @@ export class SqliteRunEngine implements RunEngine {
           `Worker ${worker.principalId} lacks: ${missing.join(", ")}`,
         );
       }
-      if (required.includes("human") && worker.authority !== "human") {
+      if (worker.authority !== offer.required_authority) {
         throw new RunEngineError(
           "WORKER_AUTHORITY_MISMATCH",
-          `Offer ${offerId} requires human authority`,
+          `Offer ${offerId} requires ${offer.required_authority} authority`,
         );
+      }
+      if (offer.minimum_assurance !== "local_bearer") {
+        throw new RunEngineError("WORKER_ASSURANCE_MISMATCH", `Offer ${offerId} has unsupported assurance`);
       }
       const exposure = exposureClass(required);
       if (exposure !== undefined && offer.subject_artifact_id === null) {
@@ -708,18 +814,103 @@ export class SqliteRunEngine implements RunEngine {
         }
       }
       const attemptId = this.ids.next<AttemptId>("attempt");
+      const snapshotId = this.ids.next<string>("authorization-snapshot");
+      let authorizationId = this.ids.next<string>("authorization");
       const fence = offer.claim_fence + 1;
       const attemptNumber = (
         this.db
           .prepare("SELECT COALESCE(MAX(attempt_number), 0) + 1 AS value FROM attempts WHERE offer_id = ?")
           .get(offerId) as { readonly value: number }
       ).value;
+      const existingAuthorization = this.db.prepare(
+        `SELECT a.id, a.principal_id, a.authority, s.credential_id
+         FROM authorizations a JOIN authorization_snapshots s ON s.id = a.snapshot_id
+         WHERE a.offer_id = ?`,
+      ).get(offerId) as
+        | { readonly id: string; readonly principal_id: string; readonly authority: string; readonly credential_id: string }
+        | undefined;
+      if (existingAuthorization !== undefined) {
+        if (
+          existingAuthorization.principal_id !== worker.principalId ||
+          existingAuthorization.authority !== worker.authority ||
+          existingAuthorization.credential_id !== credentialProfileId
+        ) {
+          throw new RunEngineError(
+            "OFFER_ALREADY_AUTHORIZED",
+            `Offer ${offerId} is already bound to another authorization`,
+          );
+        }
+        authorizationId = existingAuthorization.id;
+      }
+      const capabilities = [...worker.capabilities].filter((capability) => capability !== "human").sort();
+      if (existingAuthorization === undefined) {
+        this.db.prepare(
+        `INSERT INTO authorization_snapshots(
+          id, principal_id, authority, assurance, credential_id, capabilities_json,
+          roles_json, snapshot_json, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ).run(
+        snapshotId,
+        worker.principalId,
+        worker.authority,
+        offer.minimum_assurance,
+        credentialProfileId,
+        stringifyJson(capabilities),
+        stringifyJson([...grantIds].sort()),
+        stringifyJson({
+          schemaVersion: "authorization-snapshot/1",
+          principalId: worker.principalId,
+          authority: worker.authority,
+          credentialProfileId,
+          capabilities,
+          grantIds: [...grantIds].sort(),
+          assurance: offer.minimum_assurance,
+        }),
+        now,
+      );
+        this.db.prepare(
+        `INSERT INTO authorizations(
+          id, run_id, offer_id, snapshot_id, principal_id, authority, assurance, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        ).run(
+        authorizationId,
+        offer.run_id,
+        offerId,
+        snapshotId,
+        worker.principalId,
+        worker.authority,
+        offer.minimum_assurance,
+        now,
+      );
+        const bindings = [
+        ...this.offerProvenance(offerId).map((parent, ordinal) => ({
+          kind: parent.relation === "task" ? "task" : "input",
+          ordinal,
+          value: { artifactId: parent.artifactId },
+        })),
+        {
+          kind: "requirement",
+          ordinal: 0,
+          value: {
+            authority: offer.required_authority,
+            capabilities,
+            minimumAssurance: offer.minimum_assurance,
+          },
+        },
+      ];
+        for (const binding of bindings) {
+          this.db.prepare(
+          `INSERT INTO authorization_bindings(authorization_id, binding_kind, ordinal, value_json)
+           VALUES (?, ?, ?, ?)`,
+          ).run(authorizationId, binding.kind, binding.ordinal, stringifyJson(binding.value));
+        }
+      }
       this.db.prepare(
         `INSERT INTO attempts(
           id, offer_id, attempt_number, fence, worker_principal_id,
           worker_authority, worker_capabilities_json, worker_display_name,
-          status, claimed_at, lease_expires_at_ms, heartbeat_at_ms
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
+          authorization_id, status, claimed_at, lease_expires_at_ms, heartbeat_at_ms
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
       ).run(
         attemptId,
         offerId,
@@ -729,10 +920,14 @@ export class SqliteRunEngine implements RunEngine {
         worker.authority,
         stringifyJson([...worker.capabilities].sort()),
         worker.displayName ?? null,
+        authorizationId,
         now,
         leaseExpiresAtMs,
         nowMs,
       );
+      this.db.prepare(
+        "INSERT INTO work_claim_tickets(attempt_id, ticket_hash, issued_at) VALUES (?, ?, ?)",
+      ).run(attemptId, ticketHash, now);
       if (exposure !== undefined && offer.subject_artifact_id !== null) {
         this.db.prepare(
           `INSERT OR IGNORE INTO worker_exposures(
@@ -749,6 +944,7 @@ export class SqliteRunEngine implements RunEngine {
         offerId,
         attemptId,
         attemptFence: fence,
+        ticket,
         worker,
         leaseExpiresAt: isoFromMs(leaseExpiresAtMs),
       } satisfies WorkClaim;
@@ -766,7 +962,7 @@ export class SqliteRunEngine implements RunEngine {
       this.requireMutableRun(offer.run_id);
       this.assertOfferMachineCurrent(offer);
       const attempt = this.requireAttempt(claim.attemptId);
-      if (!claimMatches(attempt, claim) || !isActiveClaim(offer, attempt, nowMs)) {
+      if (!this.claimMatches(attempt, claim) || !isActiveClaim(offer, attempt, nowMs)) {
         if (attempt.status === "active" && attempt.lease_expires_at_ms <= nowMs) {
           this.expireAttempt(offer, attempt, this.now());
         }
@@ -784,12 +980,23 @@ export class SqliteRunEngine implements RunEngine {
   }
 
   async answer(claim: WorkClaim, answer: WorkAnswer): Promise<RunView> {
+    const offer = this.requireOffer(claim.offerId);
+    if (offer.required_authority === "human") {
+      throw new RunEngineError(
+        "HUMAN_DECISION_API_REQUIRED",
+        "Human offers must be completed through prepareHumanDecision and decide",
+      );
+    }
+    return await this.answerClaim(claim, answer);
+  }
+
+  private async answerClaim(claim: WorkClaim, answer: WorkAnswer): Promise<RunView> {
     this.assertOpen();
     const offerBeforeCopy = this.requireOffer(claim.offerId);
     this.requireMutableRun(offerBeforeCopy.run_id);
     this.assertOfferMachineCurrent(offerBeforeCopy);
     const priorAttempt = this.requireAttempt(claim.attemptId);
-    if (priorAttempt.status === "answered" && claimMatches(priorAttempt, claim)) {
+    if (priorAttempt.status === "answered" && this.claimMatches(priorAttempt, claim)) {
       return inspectRun(this.db, offerBeforeCopy.run_id);
     }
     if (answer.contractVersion !== offerBeforeCopy.contract_version) {
@@ -896,7 +1103,7 @@ export class SqliteRunEngine implements RunEngine {
       this.requireMutableRun(offer.run_id);
       this.assertOfferMachineCurrent(offer);
       const attempt = this.requireAttempt(claim.attemptId);
-      const active = claimMatches(attempt, claim) && isActiveClaim(offer, attempt, this.nowMs());
+      const active = this.claimMatches(attempt, claim) && isActiveClaim(offer, attempt, this.nowMs());
       const disposition: ArtifactDisposition = active ? "accepted" : "stale";
       this.insertPreparedArtifacts(
         prepared.map((record) => ({ ...record, disposition })),
@@ -979,7 +1186,7 @@ export class SqliteRunEngine implements RunEngine {
       this.requireMutableRun(offer.run_id);
       this.assertOfferMachineCurrent(offer);
       const attempt = this.requireAttempt(claim.attemptId);
-      if (!claimMatches(attempt, claim) || !isActiveClaim(offer, attempt, this.nowMs())) {
+      if (!this.claimMatches(attempt, claim) || !isActiveClaim(offer, attempt, this.nowMs())) {
         if (attempt.status === "active" && attempt.lease_expires_at_ms <= this.nowMs()) {
           this.expireAttempt(offer, attempt, now);
         }
@@ -1319,7 +1526,9 @@ export class SqliteRunEngine implements RunEngine {
     const record: ArtifactRecord = {
       id: artifactId,
       kind: "sealed_run_export",
-      schemaVersion: "run-export/1",
+      // A sealed export is a public projection, never a credential transport.
+      // Claim-ticket material and credential secrets are intentionally absent.
+      schemaVersion: "run-export/2",
       mediaType: "application/json",
       origin: "machine",
       payload: this.store.prepare(artifactId, { kind: "text", text: exportText }),
@@ -2014,6 +2223,11 @@ export class SqliteRunEngine implements RunEngine {
       ])],
       taskArtifactId,
       contractVersion: "durable-checkpoint/1",
+      requirements: {
+        authority: "tool",
+        capabilities: ["subprocess"],
+        minimumAssurance: "local_bearer",
+      },
       allowedWorkerCapabilities: ["subprocess"],
     }, now);
   }
@@ -2156,8 +2370,8 @@ export class SqliteRunEngine implements RunEngine {
       `INSERT INTO work_offers(
         id, run_id, actor_id, state_visit_id, iteration_id, revision_id,
         role, slot, subject_artifact_id, task_artifact_id, contract_version,
-        status, created_event_id, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        required_authority, minimum_assurance, status, created_event_id, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       offerId,
       runId,
@@ -2170,6 +2384,8 @@ export class SqliteRunEngine implements RunEngine {
       effect.subjectArtifactId ?? null,
       effect.taskArtifactId,
       effect.contractVersion,
+      offerRequirementsForEffect(effect).authority,
+      offerRequirementsForEffect(effect).minimumAssurance,
       reuse === undefined ? "offered" : "answered",
       eventId,
       now,
@@ -2180,7 +2396,7 @@ export class SqliteRunEngine implements RunEngine {
         "INSERT INTO work_offer_inputs(offer_id, ordinal, artifact_id) VALUES (?, ?, ?)",
       ).run(offerId, ordinal, artifactId);
     });
-    effect.allowedWorkerCapabilities.forEach((capability) => {
+    offerRequirementsForEffect(effect).capabilities.forEach((capability) => {
       this.db.prepare(
         "INSERT INTO work_offer_capabilities(offer_id, capability) VALUES (?, ?)",
       ).run(offerId, capability);
@@ -2629,16 +2845,20 @@ export class SqliteRunEngine implements RunEngine {
     const worker = offeredId === undefined
       ? undefined
       : this.db.prepare(
-          `SELECT worker_principal_id, worker_authority FROM attempts
+          `SELECT worker_principal_id, worker_authority, authorization_id FROM attempts
            WHERE offer_id = ? AND status = 'answered'
            ORDER BY attempt_number DESC LIMIT 1`,
         ).get(offeredId) as
           | {
               readonly worker_principal_id: string;
               readonly worker_authority: WorkerIdentity["authority"];
+              readonly authorization_id: string | null;
             }
           | undefined;
-    if (effect.authority === "human" && worker?.worker_authority !== "human") {
+    if (
+      effect.authority === "human" &&
+      (worker?.worker_authority !== "human" || worker.authorization_id === null)
+    ) {
       throw new RunEngineError(
         "DECISION_AUTHORITY_INVALID",
         `Human decision for actor ${effect.actorId} has no answered human offer`,
@@ -2648,8 +2868,8 @@ export class SqliteRunEngine implements RunEngine {
     this.db.prepare(
       `INSERT INTO decisions(
         id, run_id, actor_id, offer_id, subject_artifact_id, authority,
-        principal_id, choice, artifact_id, details_json, event_id, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        principal_id, choice, artifact_id, authorization_id, details_json, event_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       decisionId,
       runId,
@@ -2660,6 +2880,7 @@ export class SqliteRunEngine implements RunEngine {
       worker?.worker_principal_id ?? `machine:${effect.actorId}`,
       effect.choice,
       effect.artifactId ?? null,
+      worker?.authorization_id ?? null,
       stringifyJson(effect.details ?? {}),
       eventId,
       now,
@@ -4581,6 +4802,19 @@ export class SqliteRunEngine implements RunEngine {
     return attempt;
   }
 
+  private claimMatches(attempt: AttemptClaimRow, claim: WorkClaim): boolean {
+    if (!claimMatches(attempt, claim)) {
+      return false;
+    }
+    if (typeof claim.ticket !== "string" || claim.ticket.length === 0) {
+      return false;
+    }
+    const ticket = this.db.prepare(
+      "SELECT ticket_hash, revoked_at FROM work_claim_tickets WHERE attempt_id = ?",
+    ).get(attempt.id) as { readonly ticket_hash: string; readonly revoked_at: string | null } | undefined;
+    return ticket !== undefined && ticket.revoked_at === null && ticket.ticket_hash === hashTicket(claim.ticket);
+  }
+
   private assertOfferMachineCurrent(offer: OfferClaimRow): void {
     this.assertMachineCurrent(offer.run_machine_name, offer.run_machine_version);
     this.assertMachineCurrent(offer.actor_machine_name, offer.actor_machine_version);
@@ -4632,9 +4866,20 @@ export class SqliteRunEngine implements RunEngine {
    * different visit from advancing the current offer.
    */
   private assertExactHumanChoice(offer: OfferClaimRow, result: JsonObject): void {
-    if (!this.offerCapabilities(offer.id).includes("human")) {
+    if (offer.required_authority !== "human") {
       return;
     }
+    const choices = humanDecisionChoices(this.readHumanDecisionRequest(offer), offer.id);
+    const submitted = humanDecisionChoiceFor(offer.role, result);
+    if (submitted === undefined || !choices.includes(submitted)) {
+      throw new RunEngineError(
+        "HUMAN_DECISION_CHOICE_INVALID",
+        `Human offer ${offer.id} does not permit choice ${submitted ?? "<missing>"}`,
+      );
+    }
+  }
+
+  private readHumanDecisionRequest(offer: OfferClaimRow): JsonObject {
     const task = this.db.prepare("SELECT * FROM artifacts WHERE id = ?").get(
       offer.task_artifact_id,
     ) as StoredArtifactRow | undefined;
@@ -4644,9 +4889,8 @@ export class SqliteRunEngine implements RunEngine {
         `Human offer ${offer.id} does not name an immutable decision request`,
       );
     }
-    let request: JsonObject;
     try {
-      request = jsonObject(
+      return jsonObject(
         JSON.parse(this.readStoredArtifactBytes(task).toString("utf8")) as unknown,
         `human decision request ${task.id}`,
       );
@@ -4657,23 +4901,43 @@ export class SqliteRunEngine implements RunEngine {
         { cause: error },
       );
     }
-    const choices = request.choices;
-    if (!Array.isArray(choices) || choices.length === 0 || choices.some((choice) => typeof choice !== "string")) {
+  }
+
+  private offerInputArtifactIds(offerId: WorkOfferId): readonly ArtifactId[] {
+    return (this.db.prepare(
+      "SELECT artifact_id FROM work_offer_inputs WHERE offer_id = ? ORDER BY ordinal",
+    ).all(offerId) as readonly { readonly artifact_id: ArtifactId }[]).map((row) => row.artifact_id);
+  }
+
+  private assertHumanDecisionIntent(
+    preparation: HumanDecisionPreparation,
+    intent: HumanDecisionIntent,
+  ): void {
+    if (
+      preparation.schemaVersion !== "human-decision-preparation/1" ||
+      intent.schemaVersion !== "human-decision-intent/1" ||
+      intent.offerId !== preparation.offerId ||
+      intent.taskArtifactId !== preparation.taskArtifactId ||
+      !isDeepStrictEqual(intent.inputArtifactIds, preparation.inputArtifactIds)
+    ) {
       throw new RunEngineError(
-        "HUMAN_DECISION_REQUEST_INVALID",
-        `Human offer ${offer.id} has no exact choice list`,
+        "HUMAN_DECISION_INTENT_STALE",
+        "Human decision intent does not bind the exact active offer and immutable inputs",
       );
     }
-    const submitted = typeof result.choice === "string"
-      ? result.choice
-      : typeof result.decision === "string"
-        ? result.decision
-        : undefined;
-    if (submitted === undefined || !choices.includes(submitted)) {
-      throw new RunEngineError(
-        "HUMAN_DECISION_CHOICE_INVALID",
-        `Human offer ${offer.id} does not permit choice ${submitted ?? "<missing>"}`,
-      );
+    const offer = this.requireOffer(preparation.offerId);
+    const attempt = this.requireAttempt(preparation.claim.attemptId);
+    if (offer.required_authority !== "human") {
+      throw new RunEngineError("HUMAN_DECISION_INTENT_STALE", `Human offer ${offer.id} is no longer active`);
+    }
+    if (!this.claimMatches(attempt, preparation.claim)) {
+      throw new StaleClaimError(`Human decision claim ${preparation.claim.attemptId} is stale`);
+    }
+    if (attempt.status === "answered") {
+      return;
+    }
+    if (offer.status !== "claimed") {
+      throw new RunEngineError("HUMAN_DECISION_INTENT_STALE", `Human offer ${offer.id} is no longer active`);
     }
   }
 
@@ -4685,6 +4949,13 @@ export class SqliteRunEngine implements RunEngine {
     now: string,
     artifactOperationId: string,
   ): ArtifactRecord {
+    const derivedOrigin = originForWorker(claim.worker);
+    if (artifact.origin === "human" && derivedOrigin !== "human") {
+      throw new RunEngineError(
+        "ARTIFACT_ORIGIN_FORBIDDEN",
+        "Only an authenticated human claim may produce human-origin artifacts",
+      );
+    }
     const id = artifact.id ?? this.ids.next<ArtifactId>("art");
     if (this.db.prepare("SELECT 1 FROM artifacts WHERE id = ?").get(id) !== undefined) {
       throw new RunEngineError(
@@ -4698,7 +4969,7 @@ export class SqliteRunEngine implements RunEngine {
       kind: artifact.kind,
       schemaVersion: artifact.schemaVersion,
       mediaType: artifact.mediaType,
-      origin: artifact.origin ?? originForWorker(claim.worker),
+      origin: artifact.origin ?? derivedOrigin,
       payload: this.prepareOwnedPayload(id, artifact.payload, artifactOperationId),
       parents,
       metadata: artifact.metadata ?? {},
@@ -5177,20 +5448,41 @@ function sourceArtifactReferences(source: SourceRunSpec): readonly ArtifactId[] 
     ...(source.rawEvidenceArtifacts ?? []),
     source.extractionArtifact,
     source.metadataArtifact,
-    source.approvalArtifact,
   ].filter((value): value is ArtifactId => value !== undefined))];
+}
+
+/**
+ * A source-review decision belongs to the current source actor's human offer.
+ * Source specifications may retain this legacy optional field for parsing old
+ * immutable inputs, but it must never enter a new edition collection.
+ */
+function containSourceApproval(source: SourceRunSpec): SourceRunSpec {
+  const { approvalArtifact: _seedApproval, ...unapproved } = source;
+  return unapproved;
+}
+
+function containEditionSourceApprovals(spec: RunSpec): RunSpec {
+  if (spec.kind !== "edition") {
+    return spec;
+  }
+  return {
+    ...spec,
+    edition: {
+      ...spec.edition,
+      sources: spec.edition.sources.map(containSourceApproval),
+    },
+  };
 }
 
 function materializeSourceSpec(
   source: SourceRunSpec,
   context: JsonObject | undefined,
 ): SourceRunSpec {
-  if (context === undefined) {
-    return source;
-  }
+  const unapproved = containSourceApproval(source);
+  if (context === undefined) return unapproved;
   const rawEvidence = context.rawEvidenceArtifacts;
   return {
-    ...source,
+    ...unapproved,
     ...(typeof context.rawBundleArtifact === "string"
       ? { rawBundleArtifact: context.rawBundleArtifact as ArtifactId }
       : {}),
@@ -5507,6 +5799,30 @@ function exposureClass(
   return undefined;
 }
 
+function offerRequirementsForEffect(
+  effect: Extract<MachineEffect, { readonly type: "create_work_offer" }>,
+): OfferRequirements {
+  if (effect.requirements !== undefined) {
+    return effect.requirements;
+  }
+  // Old machine bundles have no authority field. Their compatibility projection
+  // is only used to read/migrate work already produced by that bundle; a v3
+  // human decision is never accepted through this inference path.
+  const authority = effect.allowedWorkerCapabilities.includes("human")
+    ? "human"
+    : effect.allowedWorkerCapabilities.includes("text_model") ||
+        effect.allowedWorkerCapabilities.includes("image_model")
+      ? "model"
+      : effect.allowedWorkerCapabilities.includes("subprocess")
+        ? "tool"
+        : "machine";
+  return {
+    authority,
+    capabilities: effect.allowedWorkerCapabilities.filter((capability) => capability !== "human"),
+    minimumAssurance: "local_bearer",
+  };
+}
+
 function claimMatches(attempt: AttemptClaimRow, claim: WorkClaim): boolean {
   return (
     attempt.id === claim.attemptId &&
@@ -5517,6 +5833,59 @@ function claimMatches(attempt: AttemptClaimRow, claim: WorkClaim): boolean {
     attempt.worker_capabilities_json === stringifyJson([...claim.worker.capabilities].sort()) &&
     attempt.worker_display_name === (claim.worker.displayName ?? null)
   );
+}
+
+function hashTicket(ticket: string): string {
+  return createHash("sha256").update(ticket, "utf8").digest("base64url");
+}
+
+function humanDecisionChoices(request: JsonObject, offerId: WorkOfferId): readonly string[] {
+  const choices = request.choices;
+  if (!Array.isArray(choices) || choices.length === 0 || choices.some((choice) => typeof choice !== "string")) {
+    throw new RunEngineError(
+      "HUMAN_DECISION_REQUEST_INVALID",
+      `Human offer ${offerId} has no exact choice list`,
+    );
+  }
+  return choices as readonly string[];
+}
+
+function humanDecisionChoiceFor(role: string, result: unknown): string | undefined {
+  if (typeof result !== "object" || result === null || Array.isArray(result)) {
+    return undefined;
+  }
+  const field = role === "review_source" || role === "visual_review" ? "decision" : "choice";
+  const value = (result as JsonObject)[field];
+  return typeof value === "string" ? value : undefined;
+}
+
+function humanDecisionArtifactsFor(role: string, result: JsonObject): readonly AnswerArtifact[] {
+  if (role === "render_reconciliation" && result.choice === "rerender") {
+    return [];
+  }
+  const kind = humanDecisionArtifactKind(role);
+  return [{
+    kind,
+    schemaVersion: "human-decision/1",
+    mediaType: "application/json",
+    payload: {
+      kind: "json",
+      value: role === "plan_edition" ? result.productionPlan as JsonObject : result,
+    },
+  }];
+}
+
+function humanDecisionArtifactKind(role: string): string {
+  switch (role) {
+    case "review_source": return "source_review_decision";
+    case "close_collection": return "collection_decision";
+    case "plan_edition": return "edition_plan";
+    case "select_art": return "art_selection";
+    case "render_reconciliation": return "render_set_adopted";
+    case "visual_review": return "visual_review_decision";
+    case "release_approval": return "release_decision";
+    default: return "editor_decision";
+  }
 }
 
 function migrationFenceFromRow(row: {

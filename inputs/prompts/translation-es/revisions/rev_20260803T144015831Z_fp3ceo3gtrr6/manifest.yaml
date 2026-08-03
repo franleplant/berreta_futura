@@ -1,0 +1,15 @@
+schema_version: 1
+revision_kind: prompt
+logical_id: translation-es
+revision_id: rev_20260803T144015831Z_fp3ceo3gtrr6
+created_at: 2026-08-03T14:40:15.831Z
+parent_revision_id: null
+files:
+  - path: output.schema.json
+    media_type: application/json
+    sha256: sha256:2d2f953efbe1191e2ff564a54c2a14ec32d85b11acc74b42cdec41eea0d09112
+    size_bytes: 280
+  - path: prompt.md
+    media_type: text/markdown
+    sha256: sha256:032aa08f6f4ac109744879b8550bb335c1bdfb35443fcd92468840c542cea579
+    size_bytes: 655

@@ -3,6 +3,7 @@ import { join, resolve } from "node:path";
 
 import { parse } from "yaml";
 
+import type { AuthorizedWorker } from "../authority/local-authority.ts";
 import type {
   AnswerArtifact,
   ArtifactId,
@@ -11,7 +12,6 @@ import type {
   JsonObject,
   RunId,
   RunView,
-  WorkerIdentity,
   WorkOfferView,
 } from "../contracts/index.ts";
 import {
@@ -40,8 +40,14 @@ export type Edition4DurableFixture = {
   readonly stagedRoot: string;
 };
 
+/** Supplies already authenticated sessions without creating or enrolling identities. */
+export type Edition4DurableAuthority = {
+  workerFor(offer: WorkOfferView): Promise<AuthorizedWorker>;
+};
+
 export type Edition4DurableDriverOptions = {
   readonly engine: RunEngine;
+  readonly authority: Edition4DurableAuthority;
   readonly projectRoot: string;
   readonly stagingDirectory: string;
   readonly renderer: RendererAdapter;
@@ -78,6 +84,11 @@ export async function createEdition4DurableFixture(
   )));
   const sourceIds = strings(edition.sources, "edition.sources");
   const articles = mappings(edition.articles, "edition.articles");
+  const editorialTarget = `editions/${EDITION_4_ID}/${required(edition, "editorial")}`;
+  const spanishEdition = mapping(parse(await readFile(
+    join(root, `editions/${EDITION_4_ID}/translations/es/edition.yaml`),
+    "utf8",
+  )));
   const entryByTarget = new Map(staged.entries.map((entry) => [entry.target, entry]));
   const entry = (target: string) => {
     const found = entryByTarget.get(target);
@@ -135,9 +146,6 @@ export async function createEdition4DurableFixture(
       textSeed(id(`craft-prompt-${articleId}`), "Assess editorial craft.", "judge_prompt"),
     ];
   });
-  const translationArtifacts = staged.entries
-    .filter((item) => item.kind === "translation")
-    .map((item) => item.artifactId);
   const profileInputs = [
     ...staged.manifest.inputs.map(({ artifactId, targetPath }) => ({ artifactId, targetPath })),
     { artifactId: printerProfile, targetPath: "profiles/edition4-printer.json" },
@@ -215,22 +223,53 @@ export async function createEdition4DurableFixture(
     briefArtifact: artBrief,
     required: true,
   }));
+  const spanishRoot = `editions/${EDITION_4_ID}/translations/es`;
+  const spanishEditorial = entry(
+    `${spanishRoot}/${required(mapping(spanishEdition.editorial), "path")}`,
+  ).artifactId;
+  const spanishArticleById = new Map(
+    mappings(spanishEdition.articles, "translation.articles").map((article) => [
+      required(article, "id"),
+      entry(`${spanishRoot}/${required(article, "manuscript")}`).artifactId,
+    ] as const),
+  );
+  const translationSpecs = [
+    ...plannedArticles.map((article) => ({
+      pieceKind: "article" as const,
+      pieceId: article.articleId,
+      language: "es",
+      sourceLanguage: "en",
+      englishArtifacts: [article.initialManuscript],
+      promptArtifact: translationPrompt,
+      initialTranslationArtifacts: [spanishArticleById.get(article.articleId) as ArtifactId],
+      maximumReaderPages: 7,
+      modelPolicy: modelPolicy(),
+    })),
+    {
+      pieceKind: "editorial" as const,
+      pieceId: "edition4-opening-editorial",
+      language: "es",
+      sourceLanguage: "en",
+      englishArtifacts: [entry(editorialTarget).artifactId],
+      promptArtifact: translationPrompt,
+      initialTranslationArtifacts: [spanishEditorial],
+      maximumReaderPages: 7,
+      modelPolicy: modelPolicy(),
+    },
+  ];
+  // Before human planning this root has no declared article actors. Its
+  // fallback translation graph therefore names only the opening editorial;
+  // the approved production plan below supplies all eight per-piece actors.
+  const fallbackTranslationSpecs = translationSpecs.filter(
+    (translation) => translation.pieceKind === "editorial",
+  );
   const productionPlan = {
     contractVersion: "approved-production-plan/1",
     sourceAssignmentPolicy: "at_least_once",
     articles: plannedArticles,
     art: plannedArt,
-    translations: [{
-      language: "es",
-      sourceLanguage: "en",
-      englishArtifacts: [],
-      promptArtifact: translationPrompt,
-      initialTranslationArtifacts: translationArtifacts,
-      maximumReaderPages: 7,
-      modelPolicy: modelPolicy(),
-    }],
+    translations: translationSpecs,
   } as const;
-  const editorialTarget = `editions/${EDITION_4_ID}/${required(edition, "editorial")}`;
   return {
     stagedRoot,
     productionPlan: productionPlan as unknown as JsonObject,
@@ -252,15 +291,7 @@ export async function createEdition4DurableFixture(
           initialManuscript: entry(editorialTarget).artifactId,
           modelPolicy: modelPolicy(),
         },
-        translations: [{
-          language: "es",
-          sourceLanguage: "en",
-          englishArtifacts: [],
-          promptArtifact: translationPrompt,
-          initialTranslationArtifacts: translationArtifacts,
-          maximumReaderPages: 7,
-          modelPolicy: modelPolicy(),
-        }],
+        translations: fallbackTranslationSpecs,
         art: [],
         render: {
           renderManifestArtifact: renderProfile,
@@ -281,7 +312,7 @@ export async function createEdition4DurableFixture(
   };
 }
 
-/** Runs every Edition 4 offer via RunEngine claims and answers. */
+/** Runs every Edition 4 offer through authenticated claims and human decisions. */
 export async function driveEdition4Durably(
   options: Edition4DurableDriverOptions,
 ): Promise<{ readonly runId: RunId; readonly view: RunView }> {
@@ -324,10 +355,15 @@ export async function driveEdition4Durably(
       offer.role === "render",
     );
     if (executableOffer !== undefined) {
+      const authorizedExecutors = await authorizeExecutors(
+        executors,
+        executableOffer,
+        options.authority,
+      );
       const result = await executeAvailableWork(
         options.engine,
         runId,
-        executors,
+        authorizedExecutors,
         new AbortController().signal,
       );
       if (result.failed.length > 0 || result.answered.length === 0) {
@@ -358,7 +394,19 @@ export async function driveEdition4Durably(
       fixture?.productionPlan ?? options.productionPlan,
       nextId,
     );
-    const claim = await options.engine.claim(offer.id, workerFor(offer));
+    const worker = await options.authority.workerFor(offer);
+    if (offer.requirements?.authority === "human" || offer.allowedWorkerCapabilities.includes("human")) {
+      const preparation = await options.engine.prepareHumanDecision(offer.id, worker);
+      await options.engine.decide(preparation, worker, {
+        schemaVersion: "human-decision-intent/1",
+        offerId: preparation.offerId,
+        taskArtifactId: preparation.taskArtifactId,
+        inputArtifactIds: preparation.inputArtifactIds,
+        result: response.result,
+      });
+      continue;
+    }
+    const claim = await worker.claim(options.engine, offer.id);
     await options.engine.answer(claim, {
       contractVersion: offer.contractVersion,
       result: response.result,
@@ -366,6 +414,21 @@ export async function driveEdition4Durably(
     });
   }
   throw new Error("Edition 4 durable driver exceeded its offer budget");
+}
+
+async function authorizeExecutors(
+  executors: readonly (CompositionBootstrapExecutor | RendererExecutor)[],
+  offer: WorkOfferView,
+  authority: Edition4DurableAuthority,
+): Promise<readonly (CompositionBootstrapExecutor | RendererExecutor)[]> {
+  return await Promise.all(executors.map(async (executor) => {
+    if (!executor.accepts(offer)) return executor;
+    return Object.assign(
+      Object.create(Object.getPrototypeOf(executor)) as typeof executor,
+      executor,
+      { authorizedWorker: await authority.workerFor(offer) },
+    );
+  }));
 }
 
 async function answerForOffer(
@@ -457,18 +520,6 @@ async function artifactsOfKind(
 ): Promise<readonly ArtifactId[]> {
   const artifacts = await Promise.all(artifactIds.map((id) => engine.readArtifact(id)));
   return artifacts.filter((item) => item.artifact.kind === kind).map((item) => item.artifact.id);
-}
-
-function workerFor(offer: WorkOfferView): WorkerIdentity {
-  const human = offer.allowedWorkerCapabilities.includes("human");
-  return {
-    principalId: `edition4-durable-${offer.role}-${offer.id}`,
-    authority: human ? "human" : offer.allowedWorkerCapabilities.includes("text_model") ? "model" : "tool",
-    capabilities: [
-      ...offer.allowedWorkerCapabilities,
-      ...(offer.role === "review_source" ? ["source_access" as const] : []),
-    ],
-  };
 }
 
 function frozenKind(kind: string): string {

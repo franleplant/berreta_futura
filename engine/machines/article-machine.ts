@@ -428,7 +428,7 @@ function humanOfferEffects(
       artifact: {
         id: requestId,
         kind: "human_decision_request",
-        schemaVersion: "article-decision-request/1",
+        schemaVersion: "human-decision-request/3",
         mediaType: "application/json",
         origin: "machine",
         payload: {
@@ -440,8 +440,10 @@ function humanOfferEffects(
             manuscriptArtifactId: context.manuscriptArtifact ?? null,
             findingArtifactIds: context.carriedFindingArtifacts,
             rulingArtifactIds: context.carriedRulingArtifacts,
+            inputArtifactIds: work.inputArtifacts,
             choices,
             currentIterationBudget: context.effectiveMaxIterations,
+            intentSchemaVersion: "human-decision-intent/1",
           },
         },
         parents: work.inputArtifacts.map((artifactId: ArtifactId) => ({
@@ -454,6 +456,12 @@ function humanOfferEffects(
       ...work,
       taskArtifactId: requestId,
       inputArtifacts: [requestId, ...work.inputArtifacts],
+      requirements: {
+        authority: "human",
+        capabilities: [],
+        minimumAssurance: "local_bearer",
+      },
+      allowedWorkerCapabilities: ["human"],
     }),
   ];
 }
@@ -609,6 +617,9 @@ export const articleMachine = setup({
               ? {}
               : { expectedParentRevisionId: context.boundRevisionId }),
             acceptedArtifactId: context.manuscriptArtifact,
+            ...(context.spec.inputRevisions === undefined
+              ? {}
+              : { inputRevisions: context.spec.inputRevisions }),
           }),
     ),
     publishSettled: emitEffects(({ context }) =>
@@ -848,7 +859,7 @@ export const articleMachine = setup({
     iteration: 1,
     iterationId: iterationId(input.actorId, 1),
     revisionId: revisionId(input.actorId, 1),
-    boundRevisionId: undefined,
+    boundRevisionId: input.spec.durableParentRevisionId,
     durableRevisionArtifact: undefined,
     effectiveMaxIterations: input.spec.policy.maxIterations,
     history: [],

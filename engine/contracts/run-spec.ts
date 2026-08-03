@@ -5,6 +5,7 @@ import {
   ARTICLE_LENSES,
   type ArticleRunSpec,
   type EditionRunSpec,
+  type PreplannedArticleRunSpec,
   type RunSpec,
   type SourceRunSpec,
   type SubmitLeadRequest,
@@ -120,10 +121,17 @@ const articleSchema = z
     writingRules: artifactId,
     measurementProfileArtifact: artifactId.optional(),
     measurementInputArtifacts: z.array(artifactId).optional(),
+    inputRevisions: z.array(z.unknown()).optional(),
+    durableParentRevisionId: nonEmpty.optional(),
     initialManuscript: artifactId.optional(),
     policy: articlePolicySchema,
     modelPolicy: modelPolicySchema,
   })
+  .strict();
+
+const preplannedArticleSchema = articleSchema
+  .omit({ sources: true, sourceApprovalArtifacts: true })
+  .extend({ sourceIds: z.array(nonEmpty).min(1) })
   .strict();
 
 const sourceSchema = z
@@ -154,18 +162,24 @@ const editorialSchema = z
     writingRules: artifactId,
     articleArtifacts: z.array(artifactId).optional(),
     initialManuscript: artifactId.optional(),
+    inputRevisions: z.array(z.unknown()).optional(),
+    durableParentRevisionId: nonEmpty.optional(),
     modelPolicy: modelPolicySchema,
   })
   .strict();
 
 const translationSchema = z
   .object({
+    pieceKind: z.enum(["article", "editorial"]),
+    pieceId: nonEmpty,
     language: nonEmpty,
     sourceLanguage: nonEmpty,
-    englishArtifacts: z.array(artifactId),
+    englishArtifacts: z.array(artifactId).length(1),
     promptArtifact: artifactId,
     measurementProfileArtifact: artifactId.optional(),
     measurementInputArtifacts: z.array(artifactId).optional(),
+    inputRevisions: z.array(z.unknown()).optional(),
+    durableParentRevisionId: nonEmpty.optional(),
     initialTranslationArtifacts: z.array(artifactId).optional(),
     maximumReaderPages: z.number().int().positive(),
     modelPolicy: modelPolicySchema,
@@ -188,6 +202,15 @@ const artSchema = z
     required: z.boolean(),
     dependencies: dependencySchema.optional(),
     dependencyArtifacts: z.array(artifactId).optional(),
+  })
+  .strict();
+
+const imageRevisionSchema = z
+  .object({
+    kind: z.literal("image"),
+    editionId: nonEmpty,
+    logicalId: nonEmpty,
+    revisionId: nonEmpty,
   })
   .strict();
 
@@ -219,7 +242,7 @@ const editionSchema = z
     planningArtifact: artifactId.optional(),
     sourceAssignmentPolicy: z.enum(["at_least_once", "exactly_once"]).optional(),
     sources: z.array(sourceSchema),
-    articles: z.array(articleSchema),
+    articles: z.array(z.union([preplannedArticleSchema, articleSchema])),
     editorial: editorialSchema,
     translations: z.array(translationSchema),
     art: z.array(artSchema),
@@ -228,6 +251,9 @@ const editionSchema = z
         renderManifestArtifact: artifactId,
         rendererContractVersion: nonEmpty,
         printerProfileArtifact: artifactId.optional(),
+        selectedArtArtifacts: z.array(artifactId).optional(),
+        selectedArtRevisions: z.array(imageRevisionSchema).optional(),
+        layoutInputRevisions: z.array(z.unknown()).optional(),
         configuredLanguages: z.array(nonEmpty).min(1),
         studioPolicy: z.enum([
           "not_applicable",
@@ -309,6 +335,29 @@ function articleReferences(article: ArticleRunSpec): readonly ArtifactId[] {
 function editionArticleReferences(article: ArticleRunSpec): readonly ArtifactId[] {
   const approvals = new Set(article.sourceApprovalArtifacts);
   return articleReferences(article).filter((artifactId) => !approvals.has(artifactId));
+}
+
+function preplannedArticleReferences(article: PreplannedArticleRunSpec): readonly ArtifactId[] {
+  return [
+    article.editionContext,
+    article.articleBrief,
+    article.writerPrompt,
+    article.contentModeArtifact,
+    article.attributionArtifact,
+    article.editorialPolicyArtifact,
+    article.modelPolicyArtifact,
+    ...Object.values(article.judgePrompts),
+    article.writingRules,
+    article.measurementProfileArtifact,
+    ...(article.measurementInputArtifacts ?? []),
+    article.initialManuscript,
+  ].filter((value): value is ArtifactId => value !== undefined);
+}
+
+function isPreplannedArticle(
+  article: ArticleRunSpec | PreplannedArticleRunSpec,
+): article is PreplannedArticleRunSpec {
+  return "sourceIds" in article;
 }
 
 function validateArticle(
@@ -421,6 +470,19 @@ function validateArticle(
   );
 }
 
+function validatePreplannedArticle(
+  article: PreplannedArticleRunSpec,
+  context: z.RefinementCtx,
+  path: readonly PropertyKey[],
+): void {
+  validateArticle(
+    { ...article, sources: [], sourceApprovalArtifacts: [] },
+    context,
+    path,
+  );
+  assertUnique(context, article.sourceIds, [...path, "sourceIds"], "planned source IDs");
+}
+
 function editionReferences(edition: EditionRunSpec): readonly ArtifactId[] {
   return [
     edition.editionBrief,
@@ -433,12 +495,14 @@ function editionReferences(edition: EditionRunSpec): readonly ArtifactId[] {
       ...(source.rawEvidenceArtifacts ?? []),
       source.extractionArtifact,
       source.metadataArtifact,
-      source.approvalArtifact,
     ]),
     // Source approvals for nested articles are not root inputs. The production
-    // plan replaces their parse-time placeholders with the exact decisions
-    // produced by the collection's source actors before it spawns each article.
-    ...edition.articles.flatMap(editionArticleReferences),
+    // plan binds the exact decisions produced by the collection's source
+    // actors before it spawns each article.
+    ...edition.articles.flatMap((article) =>
+      "sourceIds" in article
+        ? preplannedArticleReferences(article)
+        : editionArticleReferences(article)),
     edition.editorial.briefArtifact,
     edition.editorial.writingRules,
     ...(edition.editorial.articleArtifacts ?? []),
@@ -457,6 +521,7 @@ function editionReferences(edition: EditionRunSpec): readonly ArtifactId[] {
     ]),
     edition.render.renderManifestArtifact,
     edition.render.printerProfileArtifact,
+    ...(edition.render.selectedArtArtifacts ?? []),
     edition.release.publicationArtifact,
     ...edition.release.sourceArtifacts,
     edition.release.printerProfileArtifact,
@@ -483,9 +548,9 @@ function validateEdition(edition: EditionRunSpec, context: z.RefinementCtx): voi
   assertUnique(context, edition.art.map((art) => art.key), ["edition", "art"], "art keys");
   assertUnique(
     context,
-    edition.translations.map((translation) => translation.language),
+    edition.translations.map((translation) => `${translation.language}:${translation.pieceKind}:${translation.pieceId}`),
     ["edition", "translations"],
-    "translation languages",
+    "translation language and piece identities",
   );
   assertUnique(
     context,
@@ -493,6 +558,37 @@ function validateEdition(edition: EditionRunSpec, context: z.RefinementCtx): voi
     ["edition", "render", "configuredLanguages"],
     "configured languages",
   );
+  const selectedArtArtifacts = edition.render.selectedArtArtifacts ?? [];
+  const selectedArtRevisions = edition.render.selectedArtRevisions ?? [];
+  if (selectedArtArtifacts.length !== selectedArtRevisions.length) {
+    addIssue(
+      context,
+      ["edition", "render", "selectedArtRevisions"],
+      "selected art artifacts and durable image revisions must be ordered one-for-one",
+    );
+  }
+  assertUnique(
+    context,
+    selectedArtRevisions.map((revision) => revision.logicalId),
+    ["edition", "render", "selectedArtRevisions"],
+    "selected durable image logical IDs",
+  );
+  selectedArtRevisions.forEach((revision, index) => {
+    if (revision.editionId !== edition.editionId) {
+      addIssue(
+        context,
+        ["edition", "render", "selectedArtRevisions", index, "editionId"],
+        "selected durable image revision must belong to this edition",
+      );
+    }
+    if (edition.art.some((art) => art.key === revision.logicalId)) {
+      addIssue(
+        context,
+        ["edition", "render", "selectedArtRevisions", index, "logicalId"],
+        "selected durable image revision must not duplicate an art-machine slot",
+      );
+    }
+  });
 
   const configured = new Set(edition.render.configuredLanguages);
   const translations = new Set(edition.translations.map((item) => item.language));
@@ -503,13 +599,13 @@ function validateEdition(edition: EditionRunSpec, context: z.RefinementCtx): voi
     edition.render.configuredLanguages.filter((language) => language !== "en"),
   );
   if (
-    translations.size !== expectedTranslations.size ||
-    [...translations].some((language) => !expectedTranslations.has(language))
+    [...translations].some((language) => !expectedTranslations.has(language)) ||
+    [...expectedTranslations].some((language) => !translations.has(language))
   ) {
     addIssue(
       context,
       ["edition", "translations"],
-      "translations must name every configured non-English language exactly once",
+      "translations must name every configured non-English language",
     );
   }
   edition.translations.forEach((translation, index) => {
@@ -528,6 +624,15 @@ function validateEdition(edition: EditionRunSpec, context: z.RefinementCtx): voi
       );
     }
     if (
+      translation.pieceKind === "article" &&
+      !edition.articles.some((article) => article.articleId === translation.pieceId)
+    ) {
+      addIssue(context, ["edition", "translations", index, "pieceId"], "translation article piece must exist");
+    }
+    if (translation.pieceKind === "editorial" && translation.pieceId !== edition.editorial.editorialId) {
+      addIssue(context, ["edition", "translations", index, "pieceId"], "translation editorial piece must be the opening editorial");
+    }
+    if (
       (translation.measurementProfileArtifact === undefined) !==
       (translation.measurementInputArtifacts === undefined)
     ) {
@@ -544,6 +649,18 @@ function validateEdition(edition: EditionRunSpec, context: z.RefinementCtx): voi
       "translation measurement inputs",
     );
   });
+  for (const language of expectedTranslations) {
+    const requiredPieces = [
+      ...edition.articles.map((article) => `article:${article.articleId}`),
+      `editorial:${edition.editorial.editorialId}`,
+    ];
+    const actualPieces = edition.translations
+      .filter((translation) => translation.language === language)
+      .map((translation) => `${translation.pieceKind}:${translation.pieceId}`);
+    if (actualPieces.length !== requiredPieces.length || requiredPieces.some((piece) => !actualPieces.includes(piece))) {
+      addIssue(context, ["edition", "translations"], `translations for ${language} must contain exactly one actor for every article and the opening editorial`);
+    }
+  }
   if (
     !edition.release.dryRun &&
     edition.release.target === "press" &&
@@ -615,22 +732,33 @@ function validateEdition(edition: EditionRunSpec, context: z.RefinementCtx): voi
     edition.sources.map((source) => [source.sourceId, 0]),
   );
   edition.articles.forEach((article, articleIndex) => {
-    validateArticle(article, context, ["edition", "articles", articleIndex]);
-    const assignedSourceIds = article.sources.flatMap((sourceArtifact, sourceIndex) => {
-      const sourceId = extractionToSource.get(sourceArtifact);
-      if (sourceId === undefined) {
+    const sourceIds = isPreplannedArticle(article)
+      ? (validatePreplannedArticle(article, context, ["edition", "articles", articleIndex]), article.sourceIds)
+      : (validateArticle(article, context, ["edition", "articles", articleIndex]), article.sources.flatMap((artifactId, sourceIndex) => {
+          const sourceId = extractionToSource.get(artifactId);
+          if (sourceId === undefined) {
+            addIssue(
+              context,
+              ["edition", "articles", articleIndex, "sources", sourceIndex],
+              `article source ${artifactId} is not a prepared source extraction`,
+            );
+            return [];
+          }
+          return [sourceId];
+        }));
+    for (const [sourceIndex, sourceId] of sourceIds.entries()) {
+      if (!assignmentCounts.has(sourceId)) {
         addIssue(
           context,
-          ["edition", "articles", articleIndex, "sources", sourceIndex],
-          `article source ${sourceArtifact} is not a prepared source extraction`,
+          ["edition", "articles", articleIndex, isPreplannedArticle(article) ? "sourceIds" : "sources", sourceIndex],
+          `article source ${sourceId} is not a configured source`,
         );
-        return [];
+        continue;
       }
       assignmentCounts.set(sourceId, (assignmentCounts.get(sourceId) ?? 0) + 1);
-      return [sourceId];
-    });
+    }
     if (article.attribution.kind === "source_author") {
-      const actual = new Set(assignedSourceIds);
+      const actual = new Set(sourceIds);
       const attributed = new Set(article.attribution.sourceIds);
       if (
         actual.size !== attributed.size ||

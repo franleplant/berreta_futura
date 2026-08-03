@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 
 import type {
-  AnswerArtifact,
   ArtifactId,
   ArtifactSeed,
   ArticleRootRunSpec,
@@ -9,6 +8,7 @@ import type {
   SubmitLeadRequest,
   WorkOfferView,
 } from "../contracts/index.ts";
+import type { AuthorizedWorker } from "../authority/local-authority.ts";
 import type { RunEngine } from "../run-engine/types.ts";
 
 function id(value: string): ArtifactId {
@@ -90,7 +90,9 @@ export async function prepareArticleSources(
   engine: RunEngine,
   spec: ArticleRootRunSpec,
   prefix: string,
+  sourceReviewer?: AuthorizedWorker,
 ): Promise<ArticleRootRunSpec> {
+  assert.ok(sourceReviewer, "prepareArticleSources requires an authenticated human reviewer session");
   const approvals: ArtifactId[] = [];
   const rewritten = [...spec.artifacts];
   for (const [index, extraction] of spec.article.sources.entries()) {
@@ -101,7 +103,6 @@ export async function prepareArticleSources(
     const rawBundle = id(`${token}-raw-bundle`);
     const rawEvidence = id(`${token}-raw-evidence`);
     const metadata = id(`${token}-metadata`);
-    const decision = id(`${token}-source-review`);
     const extractionSeed: ArtifactSeed = {
       ...sourceSeed,
       kind: "source_extraction",
@@ -127,25 +128,23 @@ export async function prepareArticleSources(
     const collection = await engine.start(emptyCollection(`${token}-collection`));
     const submitted = await engine.submitLead(collection.runId, request);
     const review = offered(submitted);
-    const claim = await engine.claim(review.id, {
-      principalId: `${token}-source-editor`,
-      authority: "human",
-      capabilities: ["human", "source_access"],
+    const preparation = await engine.prepareHumanDecision(review.id, sourceReviewer);
+    const decision = preparation.allowedChoices.find((candidate) => candidate === "approved");
+    assert.ok(decision, "fixture source review must permit approval");
+    const decided = await engine.decide(preparation, sourceReviewer, {
+      schemaVersion: "human-decision-intent/1",
+      offerId: preparation.offerId,
+      taskArtifactId: preparation.taskArtifactId,
+      inputArtifactIds: preparation.inputArtifactIds,
+      result: { decision },
     });
-    await engine.answer(claim, {
-      contractVersion: review.contractVersion,
-      result: { decision: "approved" },
-      artifacts: [{
-        id: decision,
-        kind: "source_review_decision",
-        schemaVersion: "review-source/1",
-        mediaType: "application/json",
-        payload: { kind: "json", value: { decision: "approved" } },
-      } satisfies AnswerArtifact],
-    });
+    const approval = decided.artifacts.find(
+      (artifact) => artifact.producingOfferId === review.id && artifact.kind === "source_review_decision",
+    )?.id;
+    assert.ok(approval, "fixture source review did not create its decision artifact");
     const sourceIndex = rewritten.findIndex((candidate) => candidate.id === extraction);
     rewritten[sourceIndex] = extractionSeed;
-    approvals.push(decision);
+    approvals.push(approval);
   }
   return {
     ...spec,

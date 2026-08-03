@@ -1,5 +1,6 @@
 import { isDeepStrictEqual } from "node:util";
 
+import type { AuthorizedWorker } from "../authority/local-authority.ts";
 import type {
   ArtifactId,
   ArtifactView,
@@ -35,6 +36,11 @@ export type DurableBackfillResult = {
   readonly boundArtifactIds: readonly ArtifactId[];
 };
 
+/** Authenticated subprocess session permitted to claim durable checkpoints. */
+export type DurableBackfillAuthority = {
+  readonly worker: AuthorizedWorker;
+};
+
 export class DurableBackfillError extends Error {
   readonly code: string;
 
@@ -52,6 +58,7 @@ export class DurableBackfillError extends Error {
 export async function runDurableBackfill(
   engine: RunEngine,
   executor: DurableCheckpointExecutor,
+  authority: DurableBackfillAuthority,
   plan: DurableBackfillPlan,
   signal: AbortSignal,
 ): Promise<DurableBackfillResult> {
@@ -91,7 +98,7 @@ export async function runDurableBackfill(
           `run exposed a duplicate checkpoint for ${key}`,
         );
       }
-      await answerOffer(engine, executor, offer, signal);
+      await answerOffer(engine, executor, authority, offer, signal);
     }
   }
   const missing = [...expected.keys()].filter((key) => !completed.has(key));
@@ -104,10 +111,11 @@ export async function runDurableBackfill(
 async function answerOffer(
   engine: RunEngine,
   executor: DurableCheckpointExecutor,
+  authority: DurableBackfillAuthority,
   offer: WorkOfferView,
   signal: AbortSignal,
 ): Promise<void> {
-  const claim = await engine.claim(offer.id, executor.worker);
+  const claim = await authority.worker.claim(engine, offer.id);
   try {
     const answer = await executor.execute({
       claim,

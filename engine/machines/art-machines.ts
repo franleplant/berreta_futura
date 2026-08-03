@@ -166,6 +166,7 @@ function createArtMachine(expectedRole: "cover" | "interior") {
             context.role === "cover"
               ? coverImageContractVersion
               : interiorImageContractVersion,
+          requirements: { authority: "model", capabilities: ["image_model"], minimumAssurance: "local_bearer" },
           allowedWorkerCapabilities: ["image_model"],
         }),
       ]),
