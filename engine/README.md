@@ -176,11 +176,29 @@ npm run graph:export -- output/machine-topology
 
 The exporter uses the same ELK layered layout dependency as the run viewer and
 writes two separate sets of standalone HTML, SVG, PNG, and JSON files. The
-`machine-topology.*` files project every state and transition directly from the
-implemented XState `machine.config` objects. The compact
+`machine-topology.*` files project every state, guarded transition, internal
+transition, and entry action directly from the implemented XState
+`machine.config` objects. The compact
 `magazine-orchestration.*` files show the ten machines as one connected system
 under EditionMachine, including spawn, durable child-status, join, dependency,
 and feedback-route edges.
+
+To render one implemented machine as its own standalone graph, pass its runtime
+machine kind:
+
+```sh
+npm run graph:export -- output/article-machine --machine article
+```
+
+This writes `article-machine.html`, `article-machine.svg`,
+`article-machine.png`, and `article-machine.json`. Supported kinds are
+`edition`, `source`, `article`, `editorial`, `edition_review`, `translation`,
+`cover_art`, `interior_art`, `render`, and `release`.
+
+Focused exports use a vertical primary lifecycle. Internal retries, revision
+returns, and failures remain exact but move into labeled transition indexes
+below the graph instead of crossing the pipeline. State descriptions and entry
+actions come from the live XState config and render inside their state nodes.
 
 Cross-machine edges come from `machines/orchestration.ts`. EditionMachine and
 RunEngine consume and validate those typed declarations, and the overview only

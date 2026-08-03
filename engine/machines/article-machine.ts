@@ -855,8 +855,12 @@ export const articleMachine = setup({
     lastFailure: undefined,
   }),
   states: {
-    idle: { on: { START: "initializing" } },
+    idle: {
+      description: "Waiting for START",
+      on: { START: "initializing" },
+    },
     initializing: {
+      description: "Route from frozen inputs",
       always: [
         { guard: "hasNoBudget", target: "escalated" },
         { guard: "hasInitialManuscript", target: "stage_1" },
@@ -864,6 +868,7 @@ export const articleMachine = setup({
       ],
     },
     drafting: {
+      description: "Writer drafts or rewrites one manuscript revision",
       entry: "offerWriter",
       on: {
         WORK_COMPLETED: {
@@ -886,6 +891,7 @@ export const articleMachine = setup({
       },
     },
     stage_1: {
+      description: "Parallel work: measure_article, worth judge, mechanics judge",
       entry: "offerStage1",
       always: { guard: "stage1AlreadyComplete", target: "stage_1_decision" },
       on: {
@@ -904,12 +910,14 @@ export const articleMachine = setup({
       },
     },
     stage_1_decision: {
+      description: "Blocking Stage 1 result skips the remaining review stages",
       always: [
         { guard: "stage1Blocking", actions: "skipAfterStage1", target: "deciding" },
         { target: "stage_2" },
       ],
     },
     stage_2: {
+      description: "Parallel judges: evidence and shape",
       entry: "offerStage2",
       always: { guard: "stage2AlreadyComplete", target: "stage_2_decision" },
       on: {
@@ -928,12 +936,14 @@ export const articleMachine = setup({
       },
     },
     stage_2_decision: {
+      description: "Blocking Stage 2 result skips the final review stage",
       always: [
         { guard: "stage2Blocking", actions: "skipAfterStage2", target: "deciding" },
         { target: "stage_3" },
       ],
     },
     stage_3: {
+      description: "Parallel judges: teaching when applicable, and craft",
       entry: "offerStage3",
       always: { guard: "stage3AlreadyComplete", target: "deciding" },
       on: {
@@ -952,6 +962,7 @@ export const articleMachine = setup({
       },
     },
     deciding: {
+      description: "Choose drop, human review, accept, revise, or escalate",
       always: [
         { guard: "wantsDrop", actions: ["archiveDrop", "recordMachineDecision"], target: "dropped" },
         { guard: "needsEditor", target: "awaiting_editor" },
@@ -961,6 +972,7 @@ export const articleMachine = setup({
       ],
     },
     awaiting_editor: {
+      description: "Human editor chooses revise, accept, or drop",
       entry: "offerEditor",
       on: {
         WORK_COMPLETED: [
@@ -973,6 +985,7 @@ export const articleMachine = setup({
       },
     },
     accepted_pending_durable: {
+      description: "Checkpoint the accepted manuscript as a durable revision",
       entry: "offerDurableCheckpoint",
       on: {
         MIGRATION_DURABLE_BACKFILL: { target: "accepted_pending_durable", reenter: true },
@@ -985,6 +998,7 @@ export const articleMachine = setup({
       },
     },
     durable_bound: {
+      description: "Settled article with a bound durable revision",
       entry: "publishSettled",
       on: {
         REVISION_REQUESTED: [
@@ -998,6 +1012,7 @@ export const articleMachine = setup({
       },
     },
     escalated: {
+      description: "Human budget decision: increase, accept, or drop",
       entry: ["publishEscalated", "offerBudgetDecision"],
       on: {
         WORK_COMPLETED: [
@@ -1007,8 +1022,16 @@ export const articleMachine = setup({
         ],
       },
     },
-    dropped: { entry: "publishDropped", type: "final" },
-    failed: { entry: "publishFailure", type: "final" },
+    dropped: {
+      description: "Final non-accepting outcome",
+      entry: "publishDropped",
+      type: "final",
+    },
+    failed: {
+      description: "Final failure outcome",
+      entry: "publishFailure",
+      type: "final",
+    },
   },
 });
 

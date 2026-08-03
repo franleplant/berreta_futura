@@ -56,17 +56,42 @@ type MachineConfig = {
   readonly states?: Record<string, StateConfig>;
 };
 type StateConfig = {
+  readonly description?: string;
   readonly type?: string;
+  readonly entry?: Action | readonly Action[];
   readonly on?: Record<string, Transition | readonly Transition[]>;
   readonly always?: Transition | readonly Transition[];
 };
-type Transition = string | { readonly target?: string };
-type GraphNode = { readonly id: string; readonly label: string; readonly machine: string; readonly final: boolean };
-type GraphEdge = { readonly source: string; readonly target: string; readonly label: string };
+type Action = string | { readonly type?: string };
+type Guard = string | { readonly type?: string };
+type Transition = string | {
+  readonly target?: string;
+  readonly guard?: Guard;
+};
+type GraphNode = {
+  readonly id: string;
+  readonly label: string;
+  readonly machine: string;
+  readonly final: boolean;
+  readonly description?: string;
+  readonly entryActions: readonly string[];
+};
+type GraphEdgeKind = "failure" | "internal" | "primary" | "recovery";
+type GraphEdge = {
+  readonly source: string;
+  readonly target: string;
+  readonly label: string;
+  readonly kind: GraphEdgeKind;
+};
 type PositionedNode = GraphNode & { readonly x: number; readonly y: number };
 type PositionedEdge = GraphEdge & {
   readonly labelBox: { readonly x: number; readonly y: number; readonly width: number; readonly height: number };
   readonly sections: readonly (readonly ElkPoint[])[];
+};
+type PositionedTransitionRow = GraphEdge & {
+  readonly x: number;
+  readonly y: number;
+  readonly heading?: string;
 };
 
 const machinePadding = { x: 30, y: 28 } as const;
@@ -75,16 +100,16 @@ const eventLabelHeight = 18;
 const elk = new (ELK as unknown as ElkConstructor)();
 
 const machines = [
-  ["EditionMachine", editionMachine],
-  ["SourceMachine", sourceMachine],
-  ["ArticleMachine", articleMachine],
-  ["EditorialMachine", editorialMachine],
-  ["EditionReviewMachine", editionReviewMachine],
-  ["TranslationMachine", translationMachine],
-  ["CoverArtMachine", coverArtMachine],
-  ["InteriorArtMachine", interiorArtMachine],
-  ["RenderMachine", renderMachine],
-  ["ReleaseMachine", releaseMachine],
+  ["edition", "EditionMachine", editionMachine],
+  ["source", "SourceMachine", sourceMachine],
+  ["article", "ArticleMachine", articleMachine],
+  ["editorial", "EditorialMachine", editorialMachine],
+  ["edition_review", "EditionReviewMachine", editionReviewMachine],
+  ["translation", "TranslationMachine", translationMachine],
+  ["cover_art", "CoverArtMachine", coverArtMachine],
+  ["interior_art", "InteriorArtMachine", interiorArtMachine],
+  ["render", "RenderMachine", renderMachine],
+  ["release", "ReleaseMachine", releaseMachine],
 ] as const;
 
 export type MachineTopologyExport = {
@@ -166,15 +191,25 @@ const editionLifecycleBranchDefinitions = [
  * exists: states and transitions are read from the same machine objects the
  * durable driver transitions at runtime.
  */
-export async function exportMachineTopology(): Promise<MachineTopologyExport> {
-  const projections = await Promise.all(machines.map(async ([name, machine]) => {
+export async function exportMachineTopology(
+  machineKind?: MachineKind,
+): Promise<MachineTopologyExport> {
+  const selected = machineKind === undefined
+    ? machines
+    : machines.filter(([kind]) => kind === machineKind);
+  if (selected.length === 0) {
+    throw new TypeError(`Unknown machine kind: ${machineKind}`);
+  }
+  const focused = selected.length === 1;
+  const projections = await Promise.all(selected.map(async ([, name, machine]) => {
     const config = machine.config as unknown as MachineConfig;
-    return layoutMachine(name, config);
+    return layoutMachine(name, config, focused ? "focused" : "bundle");
   }));
   const width = Math.max(...projections.map((projection) => projection.width), 920);
   let cursor = 70;
   const nodes: PositionedNode[] = [];
   const edges: PositionedEdge[] = [];
+  const transitionRows: PositionedTransitionRow[] = [];
   const groups: Array<{ readonly name: string; readonly y: number; readonly height: number }> = [];
   for (const projection of projections) {
     groups.push({ name: projection.name, y: cursor, height: projection.height });
@@ -184,25 +219,41 @@ export async function exportMachineTopology(): Promise<MachineTopologyExport> {
       labelBox: { ...edge.labelBox, y: edge.labelBox.y + cursor },
       sections: edge.sections.map((section) => section.map((point) => ({ ...point, y: point.y + cursor }))),
     })));
+    transitionRows.push(...projection.transitionRows.map((row) => ({ ...row, y: row.y + cursor })));
     cursor += projection.height + 86;
   }
   const height = cursor;
-  const svg = renderSvg(width, height, groups, nodes, edges);
+  const svg = renderSvg(width, height, groups, nodes, edges, transitionRows);
   const json = JSON.stringify({
     schemaVersion: 1,
     description: "Generated from live XState machine.config state topology.",
     machines: projections.map((projection) => ({
       name: projection.name,
       states: projection.nodes.map((node) => node.label),
-      transitions: projection.edges.map((edge) => ({ from: edge.source, to: edge.target, event: edge.label })),
+      transitions: projection.allEdges.map((edge) => ({ from: edge.source, to: edge.target, event: edge.label })),
     })),
   }, null, 2) + "\n";
   const html = renderHtml(svg, json);
   return { html, svg, png: rasterizeSvg(svg, width), json };
 }
 
-export async function writeMachineTopology(destination: string): Promise<MachineTopologyExport> {
+export async function writeMachineTopology(
+  destination: string,
+  machineKind?: MachineKind,
+): Promise<MachineTopologyExport> {
   const output = resolve(destination);
+  if (machineKind !== undefined) {
+    const topology = await exportMachineTopology(machineKind);
+    const prefix = `${machineKind.replaceAll("_", "-")}-machine`;
+    await mkdir(output, { recursive: true });
+    await Promise.all([
+      writeFile(resolve(output, `${prefix}.html`), topology.html),
+      writeFile(resolve(output, `${prefix}.svg`), topology.svg),
+      writeFile(resolve(output, `${prefix}.png`), topology.png),
+      writeFile(resolve(output, `${prefix}.json`), topology.json),
+    ]);
+    return topology;
+  }
   const bundle = await exportStateMachineTopologyBundle();
   await mkdir(output, { recursive: true });
   await Promise.all(bundle.files.map((file) => writeFile(resolve(output, file.path), file.bytes)));
@@ -334,31 +385,48 @@ function projectEditionLifecycleBranches(): readonly EditionLifecycleBranch[] {
   return editionLifecycleBranchDefinitions;
 }
 
-async function layoutMachine(name: string, config: MachineConfig): Promise<{
+async function layoutMachine(
+  name: string,
+  config: MachineConfig,
+  mode: "bundle" | "focused",
+): Promise<{
   readonly name: string;
   readonly width: number;
   readonly height: number;
   readonly nodes: readonly PositionedNode[];
   readonly edges: readonly PositionedEdge[];
+  readonly allEdges: readonly GraphEdge[];
+  readonly transitionRows: readonly PositionedTransitionRow[];
 }> {
   const states = config.states ?? {};
+  const stateOrder = new Map(Object.keys(states).map((state, index) => [state, index]));
   const nodes = Object.entries(states).map(([state, definition]) => ({
     id: `${name}:${state}`,
     label: state,
     machine: name,
     final: definition.type === "final",
+    ...(definition.description === undefined ? {} : { description: definition.description }),
+    entryActions: actionNames(definition.entry),
   }));
-  const edges = Object.entries(states).flatMap(([state, definition]) => transitions(name, state, definition));
+  const allEdges = Object.entries(states).flatMap(([state, definition]) =>
+    transitions(name, state, definition, stateOrder)
+  );
+  const edges = mode === "focused"
+    ? allEdges.filter((edge) => edge.kind === "primary")
+    : allEdges;
   const result = await elk.layout({
     id: name,
     layoutOptions: {
       "elk.algorithm": "layered",
-      "elk.direction": "RIGHT",
+      "elk.direction": mode === "focused" ? "DOWN" : "RIGHT",
       "elk.edgeRouting": "ORTHOGONAL",
       "elk.edgeLabels.inline": "false",
       "elk.layered.edgeLabels.sideSelection": "SMART_UP",
       "elk.layered.edgeLabels.centerLabelPlacementStrategy": "SPACE_EFFICIENT_LAYER",
       "elk.layered.spacing.nodeNodeBetweenLayers": "140",
+      "elk.layered.considerModelOrder.strategy": mode === "focused" ? "NODES_AND_EDGES" : "NONE",
+      "elk.layered.crossingMinimization.forceNodeModelOrder": mode === "focused" ? "true" : "false",
+      "elk.layered.cycleBreaking.strategy": mode === "focused" ? "MODEL_ORDER" : "GREEDY",
       "elk.layered.spacing.edgeEdgeBetweenLayers": "18",
       "elk.layered.spacing.edgeNodeBetweenLayers": "24",
       "elk.spacing.nodeNode": "58",
@@ -367,7 +435,14 @@ async function layoutMachine(name: string, config: MachineConfig): Promise<{
       "elk.spacing.edgeLabel": "10",
       "elk.spacing.labelLabel": "14",
     },
-    children: nodes.map((node) => ({ id: node.id, width: Math.max(128, node.label.length * 8 + 36), height: 44 })),
+    children: nodes.map((node) => ({
+      id: node.id,
+      width: nodeWidth(node),
+      height: nodeHeight(node),
+      layoutOptions: mode === "focused" && node.final
+        ? { "elk.layered.layering.layerConstraint": "LAST" }
+        : undefined,
+    })),
     edges: edges.map((edge, index) => ({
       id: `${name}:edge:${index}`,
       sources: [edge.source],
@@ -383,15 +458,52 @@ async function layoutMachine(name: string, config: MachineConfig): Promise<{
   });
   const positions = new Map((result.children ?? []).map((node) => [node.id, node]));
   const routedEdges = new Map((result.edges ?? []).map((edge) => [edge.id, edge]));
+  const transitionRows = mode === "focused"
+    ? positionTransitionRows(
+        allEdges.filter((edge) => edge.kind !== "primary"),
+        (result.height ?? 0) + machinePadding.y + 34,
+      )
+    : [];
+  const rowWidth = Math.max(
+    0,
+    ...transitionRows.map((row) => transitionRowLabel(row).length * 7 + machinePadding.x * 2),
+  );
+  const connected = new Set(edges.flatMap((edge) => [edge.source, edge.target]));
+  const finalAnchor = nodes.find((node) => node.final && connected.has(node.id));
+  const finalAnchorPosition = finalAnchor === undefined ? undefined : positions.get(finalAnchor.id);
+  const positionedNodes = nodes.map((node) => {
+    const position = positions.get(node.id);
+    if (
+      mode === "focused" && node.final && !connected.has(node.id) &&
+      finalAnchor !== undefined && finalAnchorPosition?.x !== undefined && finalAnchorPosition.y !== undefined
+    ) {
+      return {
+        ...node,
+        x: finalAnchorPosition.x + nodeWidth(finalAnchor) + 80 + machinePadding.x,
+        y: finalAnchorPosition.y + machinePadding.y,
+      };
+    }
+    return {
+      ...node,
+      x: (position?.x ?? 0) + machinePadding.x,
+      y: (position?.y ?? 0) + machinePadding.y,
+    };
+  });
+  const positionedNodeWidth = Math.max(
+    0,
+    ...positionedNodes.map((node) => node.x + nodeWidth(node) + machinePadding.x),
+  );
   return {
     name,
-    width: (result.width ?? 0) + machinePadding.x * 2,
-    height: Math.max((result.height ?? 0) + machinePadding.y * 2, 64),
-    nodes: nodes.map((node) => {
-      const position = positions.get(node.id);
-      return { ...node, x: (position?.x ?? 0) + machinePadding.x, y: (position?.y ?? 0) + machinePadding.y };
-    }),
+    width: Math.max((result.width ?? 0) + machinePadding.x * 2, rowWidth, positionedNodeWidth),
+    height: Math.max(
+      (result.height ?? 0) + machinePadding.y * 2 + (transitionRows.length === 0 ? 0 : transitionRows.length * 25 + 80),
+      64,
+    ),
+    nodes: positionedNodes,
     edges: edges.map((edge, index) => positionEdge(name, index, edge, routedEdges.get(`${name}:edge:${index}`))),
+    allEdges,
+    transitionRows,
   };
 }
 
@@ -417,26 +529,114 @@ function positionEdge(name: string, index: number, edge: GraphEdge, routed: ElkE
   };
 }
 
-function transitions(machine: string, source: string, definition: StateConfig): GraphEdge[] {
+function transitions(
+  machine: string,
+  source: string,
+  definition: StateConfig,
+  stateOrder: ReadonlyMap<string, number>,
+): GraphEdge[] {
   const result: GraphEdge[] = [];
   for (const [event, transition] of Object.entries(definition.on ?? {})) {
-    for (const target of targets(transition)) result.push(edge(machine, source, target, event));
+    for (const item of transitionItems(transition)) {
+      result.push(edge(
+        machine,
+        source,
+        transitionTarget(item) ?? source,
+        transitionLabel(event, item),
+        stateOrder,
+      ));
+    }
   }
-  for (const target of targets(definition.always)) result.push(edge(machine, source, target, "always"));
+  for (const item of transitionItems(definition.always)) {
+    result.push(edge(
+      machine,
+      source,
+      transitionTarget(item) ?? source,
+      transitionLabel("always", item),
+      stateOrder,
+    ));
+  }
   return result;
 }
 
-function targets(value: Transition | readonly Transition[] | undefined): readonly string[] {
+function transitionItems(
+  value: Transition | readonly Transition[] | undefined,
+): readonly Transition[] {
+  return value === undefined
+    ? []
+    : Array.isArray(value)
+      ? value as readonly Transition[]
+      : [value as Transition];
+}
+
+function transitionTarget(item: Transition): string | undefined {
+  const target = typeof item === "string" ? item : item.target;
+  return target?.replace(/^\./, "").split(".")[0] ?? target;
+}
+
+function transitionLabel(event: string, item: Transition): string {
+  if (typeof item === "string" || item.guard === undefined) return event;
+  const guard = typeof item.guard === "string" ? item.guard : item.guard.type;
+  return guard === undefined ? event : `${event} [${guard}]`;
+}
+
+function actionNames(value: Action | readonly Action[] | undefined): readonly string[] {
   if (value === undefined) return [];
-  const items = Array.isArray(value) ? value : [value];
-  return items.flatMap((item) => {
-    const target = typeof item === "string" ? item : item.target;
-    return target === undefined ? [] : [target.replace(/^\./, "").split(".")[0] ?? target];
+  const actions = Array.isArray(value) ? value : [value];
+  return actions.flatMap((action) => {
+    const name = typeof action === "string" ? action : action.type;
+    return name === undefined ? [] : [name];
   });
 }
 
-function edge(machine: string, source: string, target: string, label: string): GraphEdge {
-  return { source: `${machine}:${source}`, target: `${machine}:${target}`, label };
+function positionTransitionRows(
+  edges: readonly GraphEdge[],
+  startY: number,
+): readonly PositionedTransitionRow[] {
+  const headings: Record<Exclude<GraphEdgeKind, "primary">, string> = {
+    internal: "Internal and retry transitions",
+    recovery: "Revision and return transitions",
+    failure: "Failure transitions",
+  };
+  const rows: PositionedTransitionRow[] = [];
+  let y = startY;
+  for (const kind of ["internal", "recovery", "failure"] as const) {
+    const grouped = edges.filter((edge) => edge.kind === kind);
+    if (grouped.length === 0) continue;
+    y += 28;
+    grouped.forEach((edge, index) => {
+      rows.push({
+        ...edge,
+        x: machinePadding.x,
+        y,
+        ...(index === 0 ? { heading: headings[kind] } : {}),
+      });
+      y += 25;
+    });
+  }
+  return rows;
+}
+
+function transitionRowLabel(edge: GraphEdge): string {
+  const state = (id: string) => id.split(":").at(-1) ?? id;
+  return `${state(edge.source)} -> ${state(edge.target)}: ${edge.label}`;
+}
+
+function edge(
+  machine: string,
+  source: string,
+  target: string,
+  label: string,
+  stateOrder: ReadonlyMap<string, number>,
+): GraphEdge {
+  const kind: GraphEdgeKind = source === target
+    ? "internal"
+    : target === "failed"
+      ? "failure"
+      : (stateOrder.get(target) ?? 0) <= (stateOrder.get(source) ?? 0)
+        ? "recovery"
+        : "primary";
+  return { source: `${machine}:${source}`, target: `${machine}:${target}`, label, kind };
 }
 
 function renderSvg(
@@ -445,6 +645,7 @@ function renderSvg(
   groups: readonly { readonly name: string; readonly y: number; readonly height: number }[],
   nodes: readonly PositionedNode[],
   edges: readonly PositionedEdge[],
+  transitionRows: readonly PositionedTransitionRow[],
 ): string {
   const groupSvg = groups.map((group) => `<g><rect class="group" x="12" y="${group.y - 26}" width="${width - 24}" height="${group.height + 50}" rx="12"/><text class="machine" x="28" y="${group.y - 6}">${escapeXml(group.name)}</text></g>`).join("");
   const edgePathSvg = edges.flatMap((edge) => edge.sections
@@ -453,12 +654,29 @@ function renderSvg(
     const { x, y, width: labelWidth, height: labelHeight } = edge.labelBox;
     return `<g class="transition-label" data-event="${escapeXml(edge.label)}"><rect class="event-bg" x="${x - 5}" y="${y - 3}" width="${labelWidth + 10}" height="${labelHeight + 6}" rx="4"/><text class="event" x="${x + labelWidth / 2}" y="${y + 13}">${escapeXml(edge.label)}</text></g>`;
   }).join("");
-  const nodeSvg = nodes.map((node) => `<g data-machine="${escapeXml(node.machine)}" data-state="${escapeXml(node.label)}"><rect class="node ${node.final ? "final" : ""}" x="${node.x}" y="${node.y}" width="${nodeWidth(node.label)}" height="44" rx="7"/><text class="state" x="${node.x + 14}" y="${node.y + 27}">${escapeXml(node.label)}</text></g>`).join("");
+  const nodeSvg = nodes.map((node) => {
+    const width = nodeWidth(node);
+    const descriptionLines = wrapText(node.description ?? "", 46);
+    const description = descriptionLines.map((line, index) =>
+      `<text class="description" x="${node.x + 14}" y="${node.y + 46 + index * 15}">${escapeXml(line)}</text>`
+    ).join("");
+    const entryY = node.y + 46 + descriptionLines.length * 15;
+    const entries = node.entryActions.length === 0
+      ? ""
+      : `<text class="entry" x="${node.x + 14}" y="${entryY}">${escapeXml(`entry: ${node.entryActions.join(", ")}`)}</text>`;
+    return `<g data-machine="${escapeXml(node.machine)}" data-state="${escapeXml(node.label)}"><rect class="node ${node.final ? "final" : ""}" x="${node.x}" y="${node.y}" width="${width}" height="${nodeHeight(node)}" rx="7"/><text class="state" x="${node.x + 14}" y="${node.y + 27}">${escapeXml(node.label)}</text>${description}${entries}</g>`;
+  }).join("");
+  const transitionRowSvg = transitionRows.map((row) => {
+    const heading = row.heading === undefined
+      ? ""
+      : `<text class="transition-heading" x="${row.x}" y="${row.y - 10}">${escapeXml(row.heading)}</text>`;
+    return `<g class="transition-label secondary" data-event="${escapeXml(row.label)}">${heading}<text class="transition-row" x="${row.x}" y="${row.y + 10}">${escapeXml(transitionRowLabel(row))}</text></g>`;
+  }).join("");
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="title description">
 <title id="title">Magazine XState machine topology</title><desc id="description">Generated from the implemented XState machine configs.</desc>
-<style>text{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.group{fill:#f7f7fb;stroke:#b8bdd4;stroke-width:1.2}.machine{font-size:18px;font-weight:700;fill:#1e2450}.node{fill:#fff;stroke:#4a5aa7;stroke-width:1.4}.node.final{fill:#e7f8ed;stroke:#27854d}.state{font-size:13px;fill:#1b2040}.edge{fill:none;stroke:#6975aa;stroke-width:1.15}.event-bg{fill:#eef1ff;stroke:#c9d0f0;stroke-width:1}.event{font-size:11px;font-weight:600;fill:#46517f;text-anchor:middle}</style>
-<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#6975aa"/></marker></defs><rect width="100%" height="100%" fill="#f5f7fc"/>${groupSvg}${edgePathSvg}${nodeSvg}${edgeLabelSvg}</svg>`;
+<style>text{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.group{fill:#f7f7fb;stroke:#b8bdd4;stroke-width:1.2}.machine{font-size:18px;font-weight:700;fill:#1e2450}.node{fill:#fff;stroke:#4a5aa7;stroke-width:1.4}.node.final{fill:#e7f8ed;stroke:#27854d}.state{font-size:13px;font-weight:700;fill:#1b2040}.description{font-size:11px;fill:#39415f}.entry{font-size:10px;fill:#626c91}.edge{fill:none;stroke:#6975aa;stroke-width:1.15}.event-bg{fill:#eef1ff;stroke:#c9d0f0;stroke-width:1}.event{font-size:11px;font-weight:600;fill:#46517f;text-anchor:middle}.transition-heading{font-size:13px;font-weight:700;fill:#1e2450}.transition-row{font-size:11px;fill:#46517f}</style>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#6975aa"/></marker></defs><rect width="100%" height="100%" fill="#f5f7fc"/>${groupSvg}${edgePathSvg}${nodeSvg}${edgeLabelSvg}${transitionRowSvg}</svg>`;
 }
 
 function renderHtml(svg: string, json: string): string {
@@ -551,7 +769,28 @@ function rasterizeSvg(svg: string, width: number): Uint8Array {
   return renderer.render().asPng();
 }
 
-function nodeWidth(label: string): number { return Math.max(128, label.length * 8 + 36); }
+function nodeWidth(node: GraphNode): number {
+  const entryLabel = node.entryActions.length === 0 ? "" : `entry: ${node.entryActions.join(", ")}`;
+  const descriptionWidth = Math.max(0, ...wrapText(node.description ?? "", 46).map((line) => line.length * 7 + 28));
+  return Math.max(128, node.label.length * 8 + 36, entryLabel.length * 7 + 28, descriptionWidth);
+}
+function nodeHeight(node: GraphNode): number {
+  return 44 + wrapText(node.description ?? "", 46).length * 15 +
+    (node.entryActions.length === 0 ? 0 : 18);
+}
+function wrapText(value: string, maximum: number): readonly string[] {
+  if (value === "") return [];
+  const lines: string[] = [];
+  for (const word of value.split(" ")) {
+    const current = lines.at(-1);
+    if (current === undefined || current.length + word.length + 1 > maximum) {
+      lines.push(word);
+    } else {
+      lines[lines.length - 1] = `${current} ${word}`;
+    }
+  }
+  return lines;
+}
 function eventWidth(label: string): number { return Math.max(46, label.length * 7 + 12); }
 function polylinePath(points: readonly ElkPoint[]): string {
   const [first, ...rest] = points;
@@ -561,8 +800,24 @@ function polylinePath(points: readonly ElkPoint[]): string {
 function escapeXml(value: string): string { return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;"); }
 function escapeScript(value: string): string { return value.replaceAll("</", "<\\/"); }
 
+function requestedMachine(args: readonly string[]): MachineKind | undefined {
+  const equalsArgument = args.find((argument) => argument.startsWith("--machine="));
+  const flagIndex = args.indexOf("--machine");
+  const value = equalsArgument?.slice("--machine=".length) ??
+    (flagIndex === -1 ? undefined : args[flagIndex + 1]);
+  if (value === undefined) return undefined;
+  if (!machines.some(([kind]) => kind === value)) {
+    throw new TypeError(
+      `Unknown machine kind ${value}. Expected one of: ${machines.map(([kind]) => kind).join(", ")}`,
+    );
+  }
+  return value as MachineKind;
+}
+
 if (import.meta.main) {
-  const destination = process.argv[2] ?? "output/machine-topology";
-  await writeMachineTopology(destination);
+  const args = process.argv.slice(2);
+  const destination = args.find((argument) => !argument.startsWith("--") &&
+    args[args.indexOf(argument) - 1] !== "--machine") ?? "output/machine-topology";
+  await writeMachineTopology(destination, requestedMachine(args));
   process.stdout.write(`${resolve(destination)}\n`);
 }
