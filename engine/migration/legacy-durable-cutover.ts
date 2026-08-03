@@ -1,11 +1,13 @@
 import { execFile as execFileCallback } from "node:child_process";
-import { basename, extname } from "node:path";
+import { basename, extname, join } from "node:path";
 import { promisify } from "node:util";
 
 import { parse } from "yaml";
 
 import type { RevisionId } from "../contracts/index.ts";
 import type { CompositionDocument } from "../durable/composition-schema.ts";
+import { GitCliDurableGit } from "../durable/git-cli.ts";
+import { materializeLegacyDurableMigrationBatch } from "../durable/legacy-durable-migration.ts";
 import type {
   InputRevisionRef,
   DurableRevisionRef,
@@ -137,10 +139,11 @@ export async function readLegacyDurablePlanningInputs(
   return { ledger, sources: { editionDocuments } };
 }
 
-/** A read-only operator command. Materialization remains an explicit later cutover. */
+/** Plans or explicitly materializes one ordered historical batch. */
 export async function main(argv = process.argv.slice(2)): Promise<void> {
   const [command, sourceCommit, planRevision, group] = argv;
-  if (command !== "plan" || sourceCommit === undefined || planRevision === undefined || !isGroup(group)) {
+  if ((command !== "plan" && command !== "materialize") ||
+    sourceCommit === undefined || planRevision === undefined || !isGroup(group)) {
     throw usage();
   }
   const inputs = await readLegacyDurablePlanningInputs(
@@ -153,6 +156,25 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     ...plan.entries.flatMap((entry) => entry.files.map((file) => file.sourcePath)),
     ...plan.compositions.flatMap((entry) => entry.sourcePaths),
   ])].sort();
+  if (command === "materialize") {
+    const materialized = await materializeLegacyDurableMigrationBatch(
+      process.cwd(),
+      join(process.cwd(), ".magazine", "migrations", plan.migrationId, "durable", group),
+      plan,
+      new GitCliDurableGit(process.cwd()),
+    );
+    process.stdout.write(`${JSON.stringify({
+      status: "materialized",
+      group,
+      migrationId: materialized.migrationId,
+      sourceCommitOid: plan.sourceGitBinding.commitOid,
+      migrationPlanRevisionId: planRevision,
+      revisions: materialized.revisions,
+      repositoryPaths: materialized.repositoryPaths,
+      manifestDigests: materialized.manifestDigests,
+    }, null, 2)}\n`);
+    return;
+  }
   process.stdout.write(`${JSON.stringify({
     status: "planned",
     group,
@@ -610,7 +632,7 @@ async function gitText(root: string, args: readonly string[]): Promise<string> {
 
 function usage(): Error {
   return new Error(
-    "usage: legacy-durable-cutover.ts plan <protected-source-commit> <migration-plan-revision-id> " +
+    "usage: legacy-durable-cutover.ts <plan|materialize> <protected-source-commit> <migration-plan-revision-id> " +
     "<001|002|003|004-base|004-rerun|compositions>",
   );
 }
