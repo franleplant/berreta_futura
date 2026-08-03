@@ -1,0 +1,32 @@
+schema_version: 1
+revision_kind: image
+edition_id: "003"
+revision_id: rev_20260803T052536959Z_mss4cjqrb3lf
+created_at: 2026-08-03T05:25:36.959Z
+parent_revision_id: null
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/003-unreleased/art/coda-manga-01.png
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: 2927405413e29ac9ae771ca6a37f6cc07d06beac
+    sha256: sha256:d2aa20a7c47944ea73cddc1e670aa2c03b355e4b7f12fc02bba0b2bf3ac6dd1a
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+  - kind: edition_spec
+    logicalId: main
+    editionId: "003"
+    revisionId: rev_20260803T052536959Z_24u6nq3tbhvb
+files:
+  - path: image.png
+    mediaType: image/png
+    sha256: sha256:d2aa20a7c47944ea73cddc1e670aa2c03b355e4b7f12fc02bba0b2bf3ac6dd1a
+    sizeBytes: 4551722
+    legacySource:
+      repositoryPath: editions/003-unreleased/art/coda-manga-01.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 2927405413e29ac9ae771ca6a37f6cc07d06beac
+logical_id: coda-manga-01

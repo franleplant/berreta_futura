@@ -1,0 +1,28 @@
+schema_version: 1
+revision_kind: image
+edition_id: "003"
+revision_id: rev_20260803T052536959Z_r2fv7j6ps533
+created_at: 2026-08-03T05:25:36.959Z
+parent_revision_id: null
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/003-unreleased/art/cover-r4-3.png
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: 4b678e5aee16992df10221c2be3438c5a26c09f5
+    sha256: sha256:5729d54e98f8c4217badbaec1abeca6364032dd2c859224811ae03c2e47082bb
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+files:
+  - path: image.png
+    mediaType: image/png
+    sha256: sha256:5729d54e98f8c4217badbaec1abeca6364032dd2c859224811ae03c2e47082bb
+    sizeBytes: 981023
+    legacySource:
+      repositoryPath: editions/003-unreleased/art/cover-r4-3.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 4b678e5aee16992df10221c2be3438c5a26c09f5
+logical_id: cover-r4-3

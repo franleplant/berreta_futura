@@ -1,0 +1,28 @@
+schema_version: 1
+revision_kind: image
+edition_id: "003"
+revision_id: rev_20260803T052536959Z_ksgpjkax6edg
+created_at: 2026-08-03T05:25:36.959Z
+parent_revision_id: null
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/003-unreleased/art/cover-art-wildcard.png
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: 830d9fd3bbfd95f3573ce2a173117052337c6980
+    sha256: sha256:6f5e1c742554ec2fb887b28156c8e119ed1caf4e88edb9549224f66ede50ec57
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+files:
+  - path: image.png
+    mediaType: image/png
+    sha256: sha256:6f5e1c742554ec2fb887b28156c8e119ed1caf4e88edb9549224f66ede50ec57
+    sizeBytes: 1722155
+    legacySource:
+      repositoryPath: editions/003-unreleased/art/cover-art-wildcard.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: 830d9fd3bbfd95f3573ce2a173117052337c6980
+logical_id: cover-art-wildcard

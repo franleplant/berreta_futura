@@ -1,0 +1,28 @@
+schema_version: 1
+revision_kind: image
+edition_id: "003"
+revision_id: rev_20260803T052536959Z_s2iq4jgwj4q7
+created_at: 2026-08-03T05:25:36.959Z
+parent_revision_id: null
+provenance_kind: legacy_import
+migration_id: legacy-four-root
+legacy_run_inventory: absent
+legacy_source_bindings:
+  - repositoryPath: editions/003-unreleased/art/coda-02.png
+    gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+    gitBlobOid: bdc3bad928efacac2b82fd24e12bcd94a3e62cba
+    sha256: sha256:757167ea9db33f036ba66ebdc95dcd0db22e8556ca9a5ad57cc6e90703131ec1
+input_revisions:
+  - kind: migration_plan
+    logicalId: legacy-four-root
+    revisionId: rev_20260803T054439271Z_bg2bfnprnbd4
+files:
+  - path: image.png
+    mediaType: image/png
+    sha256: sha256:757167ea9db33f036ba66ebdc95dcd0db22e8556ca9a5ad57cc6e90703131ec1
+    sizeBytes: 880853
+    legacySource:
+      repositoryPath: editions/003-unreleased/art/coda-02.png
+      gitCommitOid: 5097aab2154be41b9315adfc1bf737898217be73
+      gitBlobOid: bdc3bad928efacac2b82fd24e12bcd94a3e62cba
+logical_id: coda-02
