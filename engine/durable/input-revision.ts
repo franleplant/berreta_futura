@@ -265,6 +265,21 @@ function validatePayloadConvention(
         throw invalid("migration attestation must contain exactly attestation.yaml");
       }
       return;
+    case "article_production_profile":
+      if (!sameSequence(paths, ["profile.json"])) {
+        throw invalid("article production profile must contain exactly profile.json");
+      }
+      return;
+    case "article_review_plan":
+      if (!sameSequence(paths, ["review-plan.json"])) {
+        throw invalid("article review plan must contain exactly review-plan.json");
+      }
+      return;
+    case "review_material_schema":
+      if (!sameSequence(paths, ["schema.json"])) {
+        throw invalid("review material schema must contain exactly schema.json");
+      }
+      return;
     case "migration_archive":
       if (paths.length === 0 || paths.some((path) => !path.startsWith("archive/"))) {
         throw invalid("migration archive payloads must live under archive/");

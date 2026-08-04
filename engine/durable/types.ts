@@ -40,12 +40,26 @@ export type InputRevisionKind =
   | "migration_archive"
   | "migration_attestation"
   | "migration_plan"
+  | "article_production_profile"
+  | "article_review_plan"
+  | "review_material_schema"
   | "policy"
   | "prompt"
   | "run_bootstrap"
   | "write_pipeline"
   | "source_capture"
   | "source_extraction";
+
+type UnboundInputRevisionKind = Exclude<InputRevisionKind, "edition_spec" | "run_bootstrap" | "write_pipeline">;
+
+type UnboundInputRevisionRef = {
+  readonly [Kind in UnboundInputRevisionKind]: {
+    readonly kind: Kind;
+    readonly logicalId: string;
+    readonly revisionId: RevisionId;
+    readonly editionId?: never;
+  };
+}[UnboundInputRevisionKind];
 
 export type InputRevisionRef = ({
   readonly kind: "edition_spec";
@@ -62,12 +76,7 @@ export type InputRevisionRef = ({
   readonly logicalId: string;
   readonly revisionId: RevisionId;
   readonly editionId: string;
-} | {
-  readonly kind: Exclude<InputRevisionKind, "edition_spec" | "run_bootstrap">;
-  readonly logicalId: string;
-  readonly revisionId: RevisionId;
-  readonly editionId?: never;
-});
+} | UnboundInputRevisionRef);
 
 export type DurablePromotionRequest = {
   readonly schemaVersion: "durable-checkpoint-request/1";
