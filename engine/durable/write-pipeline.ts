@@ -153,6 +153,8 @@ export type LoopsArticleEntryInput = {
   readonly maximumReaderPages: number;
   readonly modelPolicy: ModelPolicy;
   readonly productionProfile: ResolvedArticleProductionProfile;
+  /** The exact writing-rules artifact selected by the authenticated profile resolver. */
+  readonly writingRulesArtifactId: ArtifactId;
   readonly reviewPlan: ResolvedReviewPlan;
   readonly materializedInputs: readonly MaterializedWritePipelineInput[];
   readonly inputBindings: readonly {
@@ -228,7 +230,12 @@ export async function resolveWritePipeline(
     const profilePath = profileInput.payloadPaths["profile.json"];
     if (profilePath === undefined) throw new WritePipelineError("WRITE_PIPELINE_INVALID", `article ${article.articleId} production profile has no profile.json`);
     const profile = await parseProfileInput(profilePath, article.articleId);
-    nestedRefs.push(profile.writer.promptRevision, profile.reviewPlanRevision, ...profile.writingPolicyRevisions);
+    nestedRefs.push(
+      profile.writer.promptRevision,
+      profile.reviewPlanRevision,
+      profile.writingRulesRevision,
+      ...profile.writingPolicyRevisions,
+    );
     for (const material of profile.writer.reviewMaterials) nestedRefs.push(material.schemaRevision);
     // A nested plan can also be named by the pipeline's direct inputs. Reuse
     // that exact resolved revision, but always parse it so its own prompt and
@@ -368,6 +375,7 @@ export async function resolveProfileBackedArticleInput(
     writerResultContractVersion: profile.writer.resultContractVersion,
     reviewMaterials,
     reviewPlanArtifactId,
+    writingRulesArtifactId: inputArtifact(materialized, profile.writingRulesRevision, "policy.md", article),
     writingPolicyArtifactIds: profile.writingPolicyRevisions.map((revision) =>
       inputArtifact(materialized, revision, "policy.md", article)),
     maximumRewrites: profile.revisionPolicy.maximumRewrites,
@@ -429,6 +437,7 @@ export async function resolveProfileBackedArticleInput(
     maximumReaderPages: article.maximumReaderPages,
     modelPolicy: article.modelPolicy,
     productionProfile: resolvedProfile,
+    writingRulesArtifactId: resolvedProfile.writingRulesArtifactId,
     reviewPlan: resolvedReviewPlan,
     materializedInputs,
     inputBindings,
@@ -516,6 +525,9 @@ function validateProfileReviewDependencies(
     if (check.kind === "article_measurement") {
       if (applies) hasMeasurement = true;
       continue;
+    }
+    if (check.access === "source_blind" && (check.writerMaterialIds?.length ?? 0) > 0) {
+      throw invalidProfile(article, `source-blind review check ${check.id} cannot request writer material`);
     }
     if (
       applies &&
@@ -606,6 +618,7 @@ function articleProfileInputRefs(
     article.productionProfileRevision!,
     profile.writer.promptRevision,
     profile.reviewPlanRevision,
+    profile.writingRulesRevision,
     ...profile.writingPolicyRevisions,
     ...profile.writer.reviewMaterials.map((material) => material.schemaRevision),
     ...reviewPlan.checks.flatMap<InputRevisionRef>((check) => check.kind === "model_review"

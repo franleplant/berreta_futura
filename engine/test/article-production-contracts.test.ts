@@ -43,7 +43,8 @@ test("article production profiles normalize immutable revision references", () =
       }],
     },
     review_plan_revision: revision("article_review_plan", "source-faithful-reviews"),
-    writing_policy_revisions: [revision("policy", "writing-rules")],
+    writing_rules_revision: revision("policy", "writing-rules"),
+    writing_policy_revisions: [],
     revision_policy: { maximum_rewrites: 2 },
   });
   assert.equal(profile.profileId, "source-faithful");
@@ -113,6 +114,39 @@ test("review plans reject duplicate checks and normalize wave membership", () =>
   }), /expected policy input revision/u);
 });
 
+test("source-blind review checks cannot request writer-produced material", () => {
+  assert.throws(() => parseArticleReviewPlanDocument({
+    schema_version: "article-review-plan/1",
+    checks: [{
+      kind: "model_review",
+      id: "craft",
+      role: "article_review",
+      prompt_revision: revision("prompt", "craft-review"),
+      access: "source_blind",
+      authority: "advisory",
+      writer_material_ids: ["claim-map"],
+    }],
+    waves: [{ id: "panel", check_ids: ["craft"], stop_after: "never" }],
+  }), /source-blind review check craft cannot request writer material/u);
+});
+
+test("resolved source-blind review checks cannot request writer-produced material", () => {
+  assert.throws(() => parseResolvedReviewPlan({
+    schema_version: "resolved-article-review-plan/1",
+    review_plan_artifact_id: "review-plan",
+    checks: [{
+      kind: "model_review",
+      id: "craft",
+      role: "article_review",
+      prompt_artifact_id: "craft-prompt",
+      access: "source_blind",
+      authority: "advisory",
+      writer_material_ids: ["claim-map"],
+    }],
+    waves: [{ id: "panel", check_ids: ["craft"], stop_after: "never" }],
+  }), /source-blind review check craft cannot request writer material/u);
+});
+
 test("resolved profile and plan contracts contain artifact identities only", () => {
   const profile = parseResolvedArticleProductionProfile({
     schema_version: "resolved-article-production-profile/1",
@@ -123,7 +157,8 @@ test("resolved profile and plan contracts contain artifact identities only", () 
     writer_result_contract_version: "article-writer-result/1",
     review_materials: [{ material_id: "claim-map", schema_artifact_id: "schema", schema_version: "schema/1", required: true }],
     review_plan_artifact_id: "review-plan",
-    writing_policy_artifact_ids: ["writing-rules"],
+    writing_rules_artifact_id: "writing-rules",
+    writing_policy_artifact_ids: [],
     maximum_rewrites: 2,
   });
   assert.equal(profile.writerPromptArtifactId, "prompt");
@@ -197,7 +232,8 @@ test("profile-backed Loops input authenticates nested prompt and measurement rev
         review_materials: [{ material_id: "claim-map", schema_revision: rawRef(refs.schema), required: true }],
       },
       review_plan_revision: rawRef(refs.plan),
-      writing_policy_revisions: [rawRef(refs.policy)],
+      writing_rules_revision: rawRef(refs.policy),
+      writing_policy_revisions: [],
       revision_policy: { maximum_rewrites: 2 },
     }));
     const planValue = {
@@ -304,7 +340,7 @@ test("profile-backed Loops input authenticates nested prompt and measurement rev
     await writeFile(join(root, "plan", "review-plan.json"), JSON.stringify({
       ...planValue,
       checks: planValue.checks.map((check) => check.id === "evidence"
-        ? { ...check, id: "facts", access: "source_blind" }
+        ? { ...check, id: "facts", access: "source_blind", writer_material_ids: undefined }
         : check),
       waves: [{ id: "panel", check_ids: ["facts", "measure_article"], stop_after: "never" }],
     }), "utf8");
@@ -333,6 +369,26 @@ test("profile-backed Loops input authenticates nested prompt and measurement rev
     await assert.rejects(
       resolveProfileBackedArticleInput(materialized, article),
       /review plan must include measure_article/u,
+    );
+
+    await writeFile(join(root, "plan", "review-plan.json"), JSON.stringify(planValue), "utf8");
+    await writeFile(join(root, "profile", "profile.json"), JSON.stringify({
+      schema_version: "article-production-profile/1",
+      profile_id: "source-faithful",
+      format_id: "longform",
+      writer: {
+        prompt_revision: rawRef(refs.writer),
+        result_contract_version: "article-writer-result/1",
+        review_materials: [{ material_id: "claim-map", schema_revision: rawRef(refs.schema), required: true }],
+      },
+      review_plan_revision: rawRef(refs.plan),
+      writing_rules_revision: rawRef({ ...refs.policy, logicalId: "other-writing-rules" }),
+      writing_policy_revisions: [],
+      revision_policy: { maximum_rewrites: 2 },
+    }), "utf8");
+    await assert.rejects(
+      resolveProfileBackedArticleInput(materialized, article),
+      /profile is invalid/u,
     );
   } finally {
     await rm(root, { recursive: true, force: true });
@@ -401,7 +457,8 @@ test("resolveWritePipeline authenticates and materializes a direct and nested ar
           review_materials: [{ material_id: "claim-map", schema_revision: rawRef(refs.schema), required: true }],
         },
         review_plan_revision: rawRef(refs.plan),
-        writing_policy_revisions: [rawRef(refs.policy)],
+        writing_rules_revision: rawRef(refs.policy),
+        writing_policy_revisions: [],
         revision_policy: { maximum_rewrites: 2 },
       }),
     });
