@@ -13,9 +13,26 @@ use std::sync::{Condvar, Mutex};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-pub const CALL_TIMEOUT_SECS: u64 = 600;
 pub const CALL_RETRIES: u32 = 2;
 pub const CONCURRENCY: usize = 8;
+
+/// Call timeout in seconds; MAG_CALL_TIMEOUT_SECS overrides the 600s default
+/// (local models with long prompts can legitimately need more).
+pub fn call_timeout_secs() -> u64 {
+    std::env::var("MAG_CALL_TIMEOUT_SECS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(600)
+}
+
+/// Context window requested from ollama; MAG_OLLAMA_NUM_CTX overrides.
+/// Ollama's server default (4096) silently truncates our ~20k-token prompts.
+fn ollama_num_ctx() -> u64 {
+    std::env::var("MAG_OLLAMA_NUM_CTX")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(49152)
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Backend {
@@ -279,8 +296,20 @@ impl Caller {
                 c
             }
             Backend::Ollama => {
-                let mut c = Command::new("ollama");
-                c.args(["run", &spec.model]);
+                // The local API rather than `ollama run`: it lets us set
+                // num_ctx (the server default of 4096 silently truncates our
+                // prompts) and avoids TTY quirks. Body goes in on stdin.
+                let mut c = Command::new("curl");
+                c.args([
+                    "-s",
+                    "--max-time",
+                    &call_timeout_secs().to_string(),
+                    "-X",
+                    "POST",
+                    "http://localhost:11434/api/generate",
+                    "-d",
+                    "@-",
+                ]);
                 c
             }
         };
@@ -293,10 +322,19 @@ impl Caller {
             .spawn()
             .map_err(|e| format!("failed to spawn {:?}: {e}", spec.backend))?;
 
+        let stdin_payload = match spec.backend {
+            Backend::Claude => prompt.to_string(),
+            Backend::Ollama => serde_json::json!({
+                "model": spec.model,
+                "prompt": prompt,
+                "stream": false,
+                "options": {"num_ctx": ollama_num_ctx()},
+            })
+            .to_string(),
+        };
         let mut stdin = child.stdin.take().expect("piped stdin");
-        let prompt_owned = prompt.to_string();
         let writer = thread::spawn(move || {
-            let _ = stdin.write_all(prompt_owned.as_bytes());
+            let _ = stdin.write_all(stdin_payload.as_bytes());
             // drop stdin here to close it, signaling EOF to the child
         });
 
@@ -314,7 +352,7 @@ impl Caller {
             buf
         });
 
-        let timeout = Duration::from_secs(CALL_TIMEOUT_SECS);
+        let timeout = Duration::from_secs(call_timeout_secs());
         let status = loop {
             match child.try_wait() {
                 Ok(Some(status)) => break Some(status),
@@ -337,7 +375,7 @@ impl Caller {
 
         let status = match status {
             Some(s) => s,
-            None => return Err(format!("timeout after {CALL_TIMEOUT_SECS}s")),
+            None => return Err(format!("timeout after {}s", call_timeout_secs())),
         };
 
         match spec.backend {
@@ -372,9 +410,21 @@ impl Caller {
                 if !status.success() {
                     let err_text = String::from_utf8_lossy(&err);
                     let truncated: String = err_text.chars().take(300).collect();
-                    return Err(format!("ollama exited with {status}: {truncated}"));
+                    return Err(format!("ollama call exited with {status}: {truncated}"));
                 }
-                let result = String::from_utf8_lossy(&out).to_string();
+                let data: serde_json::Value = serde_json::from_slice(&out).map_err(|_| {
+                    let text = String::from_utf8_lossy(&out);
+                    let truncated: String = text.chars().take(300).collect();
+                    format!("non-JSON ollama response: {truncated}")
+                })?;
+                if let Some(e) = data.get("error").and_then(|v| v.as_str()) {
+                    return Err(format!("ollama error: {e}"));
+                }
+                let result = data
+                    .get("response")
+                    .and_then(|v| v.as_str())
+                    .ok_or_else(|| "ollama reply had no 'response' field".to_string())?
+                    .to_string();
                 Ok((result, 0.0, seconds))
             }
         }
