@@ -95,6 +95,19 @@ His characteristic movement is:
 4. expose evasions, euphemisms, and unsupported certainty;
 5. say plainly what happened, who acted, and what follows.
 
+### The six rules, in his words
+
+These are the rules the 20% actually means. Quoted, not paraphrased:
+
+1. Never use a metaphor, simile or other figure of speech which you are used to seeing in print.
+2. Never use a long word where a short one will do.
+3. If it is possible to cut a word out, always cut it out.
+4. Never use the passive where you can use the active.
+5. Never use a foreign phrase, a scientific word or a jargon word if you can think of an everyday English equivalent.
+6. Break any of these rules sooner than say anything outright barbarous.
+
+Rule vi is not decoration and not permission to relax. It ranks the rules below the sentence: when obeying one of the first five would produce prose a person would not say, the rule loses. It also governs the faithful modes, where the words being set are the author's own: their clichés, jokes, jargon and broken rules survive in their own sentences, and rules i–v bind only the sentences you write yourself.
+
 ### What to take from Orwell
 
 - Prefer familiar words when they express the meaning accurately.
