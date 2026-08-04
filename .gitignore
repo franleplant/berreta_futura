@@ -23,3 +23,7 @@ prototypes/design-directions/previews/
 # Agent work queue: briefs embed whole source extractions and are
 # regenerated on demand. Provenance lives in production/articles/.
 editions/*/production/agent/
+
+# mag run/render outputs inside edition dirs; promote finals into the edition proper.
+editions/*/run-*/
+editions/*/render-*/

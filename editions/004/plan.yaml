@@ -1,5 +1,5 @@
 edition:
-  id: rerun-004-the-systems-around-the-model
+  id: "004"
   title: The Systems Around the Model
   subtitle: Protocols, evaluations, architectures, and the operational work that turns model capability
     into dependable systems

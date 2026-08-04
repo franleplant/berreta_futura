@@ -1,5 +1,5 @@
 schema_version: 1
-edition_id: rerun-004-the-systems-around-the-model
+edition_id: "004"
 piece_id: pragmatic-leverage
 content_mode: faithful_edit
 status: drafting
@@ -19,7 +19,7 @@ rounds:
     argv:
     - mag
     - produce
-    - rerun-004-the-systems-around-the-model
+    - "004"
     - --backend
     - agent
     - --submit
@@ -45,7 +45,7 @@ rounds:
     \ opener; the format forbids an H1 here.\n3. The bold `**note**` label in front of the \"I'm gonna\
     \ blur\" paragraph. See the\n   next section: this is the one deletion that matters.\n4. Nothing else.\
     \ No paragraph of Dex's argument was cut, no sentence reordered.\n\n## The apparatus ban, and what\
-    \ it cost the last version\n\nThe owner's complaint about the previously shipped draft\n(`editions/rerun-004-the-systems-around-the-model/articles/pragmatic-leverage.md`,\n\
+    \ it cost the last version\n\nThe owner's complaint about the previously shipped draft\n(`editions/004/articles/pragmatic-leverage.md`,\n\
     516 words) was \"soooo robotic and long for what Dex is trying to say\". The robotic\npart was not\
     \ Dex. It was a 40-word `**Editor's note.**` about publishing logistics\nand a glossary of \"factory\"\
     \ and \"levels\", sitting between the reader and the first\nreal sentence, plus a second `**Author's\

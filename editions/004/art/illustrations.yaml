@@ -37,7 +37,7 @@ assets:
 - id: opener-frontier-lab-agent-intrusion
   role: article_opener
   article_id: frontier-lab-agent-intrusion
-  art_path: editions/rerun-004-the-systems-around-the-model/art/article-openers/frontier-lab-agent-intrusion.png
+  art_path: editions/004/art/article-openers/frontier-lab-agent-intrusion.png
   subject: >-
     The recurring pair spot and calmly contain a mischievous abstract red
     signal crossing layered security gates.
@@ -49,7 +49,7 @@ assets:
 - id: opener-eval-engineering
   role: article_opener
   article_id: eval-engineering
-  art_path: editions/rerun-004-the-systems-around-the-model/art/article-openers/eval-engineering.png
+  art_path: editions/004/art/article-openers/eval-engineering.png
   subject: >-
     The pair operate a physical evaluation loop with stamp, reroute, reject,
     and empty human-review stations.
@@ -61,7 +61,7 @@ assets:
 - id: opener-pragmatic-leverage
   role: article_opener
   article_id: pragmatic-leverage
-  art_path: editions/rerun-004-the-systems-around-the-model/art/article-openers/pragmatic-leverage.png
+  art_path: editions/004/art/article-openers/pragmatic-leverage.png
   subject: >-
     A modest plan guides one useful factory task while the cost of rushed
     rework becomes a comic background cascade.
@@ -73,7 +73,7 @@ assets:
 - id: opener-from-gpt2-to-kimi3
   role: article_opener
   article_id: from-gpt2-to-kimi3
-  art_path: editions/rerun-004-the-systems-around-the-model/art/article-openers/from-gpt2-to-kimi3.png
+  art_path: editions/004/art/article-openers/from-gpt2-to-kimi3.png
   subject: >-
     The boy and robot compare a long tangled attention ribbon with a compact
     recurrent memory spool, then delight as the compact device handles it.
@@ -85,7 +85,7 @@ assets:
 - id: opener-factory-systems-problem
   role: article_opener
   article_id: factory-systems-problem
-  art_path: editions/rerun-004-the-systems-around-the-model/art/article-openers/factory-systems-problem.png
+  art_path: editions/004/art/article-openers/factory-systems-problem.png
   subject: >-
     The pair inspect a layered software factory in which one small model module
     moves through sandboxing, source control, reproducible build, identity, and
@@ -98,7 +98,7 @@ assets:
 - id: opener-mcp-in-a-nutshell
   role: article_opener
   article_id: mcp-in-a-nutshell
-  art_path: editions/rerun-004-the-systems-around-the-model/art/article-openers/mcp-in-a-nutshell.png
+  art_path: editions/004/art/article-openers/mcp-in-a-nutshell.png
   subject: >-
     The boy and robot test a compact connector box that routes three colored
     cables to document, database, and tool endpoints.
@@ -110,7 +110,7 @@ assets:
 - id: opener-mcp-protocol-update
   role: article_opener
   article_id: mcp-protocol-update
-  art_path: editions/rerun-004-the-systems-around-the-model/art/article-openers/mcp-protocol-update.png
+  art_path: editions/004/art/article-openers/mcp-protocol-update.png
   subject: >-
     The pair swap a calendar-like specification module into their connector
     workshop and check compatibility through a clean approval gate.
@@ -122,7 +122,7 @@ assets:
 - id: factory-systems-problem
   role: article_tail
   article_id: factory-systems-problem
-  art_path: editions/rerun-004-the-systems-around-the-model/art/article-tails/factory-systems-problem.png
+  art_path: editions/004/art/article-tails/factory-systems-problem.png
   subject: >-
     The engineer and helper robot inspect a software factory whose small model
     module rides inside a much larger system of sandboxing, source control,
@@ -138,7 +138,7 @@ assets:
 - id: mcp-four-vignettes
   role: article_tail
   article_id: mcp-in-a-nutshell
-  art_path: editions/rerun-004-the-systems-around-the-model/art/article-tails/mcp-four-vignettes.png
+  art_path: editions/004/art/article-tails/mcp-four-vignettes.png
   subject: >-
     Four left-to-right vignettes explain MCP as host, separate clients and
     bounded servers, tool discovery, then a call and structured return through
@@ -155,7 +155,7 @@ assets:
 - id: closing-signal-gates
   role: closing_plate
   plate_index: 1
-  art_path: editions/rerun-004-the-systems-around-the-model/art/closing-signal-gates-manga.png
+  art_path: editions/004/art/closing-signal-gates-manga.png
   subject: >-
     The engineer and helper robot guide a bright signal parcel through shield,
     inspection, and human approval gates.
@@ -170,7 +170,7 @@ assets:
 - id: closing-memory-rings
   role: closing_plate
   plate_index: 2
-  art_path: editions/rerun-004-the-systems-around-the-model/art/closing-memory-rings-manga.png
+  art_path: editions/004/art/closing-memory-rings-manga.png
   subject: >-
     The characters compare a compact glowing memory ribbon with a retrieval
     cabinet that fetches one precise resource.
@@ -185,7 +185,7 @@ assets:
 - id: closing-useful-boundary
   role: closing_plate
   plate_index: 3
-  art_path: editions/rerun-004-the-systems-around-the-model/art/closing-protocol-exchange-manga.png
+  art_path: editions/004/art/closing-protocol-exchange-manga.png
   subject: >-
     Separate clients connect one host to document, database, and workshop
     servers while boundaries prevent an unsafe tangle.

@@ -1,5 +1,5 @@
 schema_version: 1
-edition_id: rerun-004-the-systems-around-the-model
+edition_id: "004"
 piece_id: factory-systems-problem
 content_mode: faithful_edit
 status: drafting
@@ -19,7 +19,7 @@ rounds:
     argv:
     - mag
     - produce
-    - rerun-004-the-systems-around-the-model
+    - "004"
     - --backend
     - agent
     - --submit
@@ -172,7 +172,7 @@ rounds:
     \ and its editor's note is\nmost of the difference.\n\n## The opener still fits, and it fits with\
     \ zero margin\n\nRe-measured after capitalising, because capitals are wider than lowercase and\nthis\
     \ paragraph had no room:\n\n```\nprintf '%s' \"<opening paragraph>\" | \\\n  uv run --locked mag fit\
-    \ rerun-004-the-systems-around-the-model \\\n  --opener factory-systems-problem\n```\n\n**7 of 7 typeset\
+    \ "004" \\\n  --opener factory-systems-problem\n```\n\n**7 of 7 typeset\
     \ lines, 479 characters, fits.** The four new capitals in the\nopener (S, T, I, T) did not move a\
     \ line break. Any edit to that paragraph,\nincluding a one-word one and including a single further\
     \ capital, must re-run\nthat command or the build will refuse the edition. If it ever has to shrink,\
