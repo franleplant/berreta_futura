@@ -1,9 +1,12 @@
 // mag — sources in, edition content out. Port of tools/produce.py's shape:
 // no database, no run state, fail loud, plain output files.
 
+mod art;
 mod caller;
 mod plan_cmd;
 mod produce;
+mod render;
+mod translate;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -39,12 +42,34 @@ enum Cmd {
         #[arg(long = "judge-model", default_value = "sonnet")]
         judge_model: String,
     },
-    /// Translate accepted pieces of a run (not implemented yet)
-    Translate { run_dir: PathBuf },
-    /// Generate and select cover/figure art for an edition (not implemented yet)
-    Art { edition: String },
-    /// Render an edition to PDF/booklet/web (not implemented yet)
-    Render { edition: String },
+    /// Translate a run's accepted pieces to Spanish
+    Translate {
+        run_dir: PathBuf,
+        #[arg(long, default_value = "opus")]
+        model: String,
+    },
+    /// Generate art candidate rounds for an edition (human selects)
+    Art {
+        edition: String,
+        /// Shell command template for one image; {prompt} and {out} are substituted
+        #[arg(long = "gen-cmd")]
+        gen_cmd: String,
+        /// How many candidates per art brief
+        #[arg(long, default_value_t = 4)]
+        candidates: u32,
+        #[arg(long, default_value = "opus")]
+        model: String,
+    },
+    /// Render an edition via the Python renderer seam (mag-render-adapter)
+    Render {
+        edition: String,
+        /// measure_article, measure_edition, or render_edition
+        #[arg(long, default_value = "render_edition")]
+        operation: String,
+        /// Article id, required for measure_article
+        #[arg(long)]
+        article: Option<String>,
+    },
 }
 
 fn main() {
@@ -75,9 +100,16 @@ fn run(cli: Cli) -> Result<i32> {
                 only.map(|s| s.split(',').map(|x| x.trim().to_string()).collect());
             produce::run_edition(&plan, resume, only_set, &writer, &judge)
         }
-        Cmd::Translate { .. } | Cmd::Art { .. } | Cmd::Render { .. } => {
-            eprintln!("not implemented yet");
-            Ok(2)
+        Cmd::Translate { run_dir, model } => {
+            let spec = caller::ModelSpec::parse(&model)?;
+            translate::run(&run_dir, &spec)
+        }
+        Cmd::Art { edition, gen_cmd, candidates, model } => {
+            let spec = caller::ModelSpec::parse(&model)?;
+            art::run(&edition, &gen_cmd, candidates, &spec)
+        }
+        Cmd::Render { edition, operation, article } => {
+            render::run(&edition, &operation, article.as_deref())
         }
     }
 }
