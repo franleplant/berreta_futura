@@ -421,10 +421,18 @@ export async function resolveProfileBackedArticleInput(
     if (input === undefined) throw invalidProfile(article, `input ${ref.kind}:${ref.logicalId} was not materialized`);
     return input;
   });
-  const inputBindings = materializedInputs.flatMap((input) => input.artifacts.map(({ artifactId }) => ({
-    artifactId,
-    revision: input.ref,
-  })));
+  // A durable promotion has one InputRevision binding per immutable revision
+  // (the payload package may contain several files, such as prompt.md and
+  // output.schema.json). Keep every payload materialized above, but bind one
+  // deterministic canonical artifact per revision so the promotion request
+  // cannot repeat the same InputRevision identity.
+  const inputBindings = materializedInputs.map((input) => {
+    const artifact = input.artifacts[0];
+    if (artifact === undefined) {
+      throw invalidProfile(article, `input ${input.ref.kind}:${input.ref.logicalId} has no payload artifacts`);
+    }
+    return { artifactId: artifact.artifactId, revision: input.ref };
+  });
 
   const loopsInput: LoopsArticleEntryInput = {
     schemaVersion: "loops-article-entry-input/1",

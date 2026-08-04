@@ -22,5 +22,22 @@ export {
   type ClosedWriterStep,
   type CreateClosedWriterExecutorConfig,
 } from "./closed-writer/runtime.ts";
+export {
+  CLOSED_REVIEWER_EXECUTION_CLASS,
+  CLOSED_REVIEWER_RUNTIME_IDENTITY,
+  ClosedReviewerError,
+  createClosedReviewerExecutor,
+  normalizeReviewResult,
+  parseClosedReviewerOutput,
+  reviewArtifactSeed,
+  type ClosedReviewerCheck,
+  type ClosedReviewerExecutionRequest,
+  type ClosedReviewerExecutor,
+  type ClosedReviewerModelOutput,
+  type ClosedReviewerReviewInput,
+  type ClosedReviewerRuntimeIdentity,
+  type ClosedReviewerStep,
+  type CreateClosedReviewerExecutorConfig,
+} from "./closed-reviewer/runtime.ts";
 export * from "./types.ts";
 export * from "./worker-loop.ts";

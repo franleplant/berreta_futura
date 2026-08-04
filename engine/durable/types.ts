@@ -87,6 +87,8 @@ export type DurablePromotionRequest = {
   readonly expectedParentRevisionId: RevisionId | null;
   readonly acceptedArtifactIds: readonly ArtifactId[];
   readonly decisionArtifactIds: readonly ArtifactId[];
+  /** Exact ordered evidence list shown to the human decision and promotion. */
+  readonly decisionEvidenceArtifactIds?: readonly ArtifactId[];
   /** Canonical artifact-to-revision bindings. */
   readonly inputBindings?: readonly DurableInputBinding[];
   /** Legacy projections retained for old durable records; new callers omit them. */

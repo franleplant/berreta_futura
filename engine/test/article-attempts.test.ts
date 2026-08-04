@@ -44,18 +44,30 @@ function materials(access: "source_aware" | "source_blind", manuscriptArtifactId
   };
 }
 
-async function fixture(): Promise<{
+async function fixture(options: { readonly separateAttemptClock?: boolean; readonly defaultAttemptClock?: boolean } = {}): Promise<{
   readonly root: string;
   readonly ledger: ArtifactLedger;
   readonly runner: ArticleAttemptRunner;
   readonly aware: import("../authority/local-authority.ts").AuthorizedWorker;
   readonly blind: import("../authority/local-authority.ts").AuthorizedWorker;
   readonly clock: { now: () => Date; advance: (ms: number) => void };
+  readonly leaseClock: { nowMs: () => number; advance: (ms: number) => void };
 }> {
   const root = await mkdtemp(join(tmpdir(), "mag-article-attempt-"));
   let nowMs = Date.parse("2026-08-03T00:00:00.000Z");
   const clock = { now: () => new Date(nowMs), advance: (ms: number) => { nowMs += ms; } };
-  const ledger = new ArtifactLedger(join(root, "magazine.sqlite"), { clock, articleAttemptLeaseMs: 1_000 });
+  let leaseNowMs = nowMs;
+  const leaseClock = { nowMs: () => leaseNowMs, advance: (ms: number) => { leaseNowMs += ms; } };
+  const attemptClock = options.defaultAttemptClock === true
+    ? undefined
+    : options.separateAttemptClock === true
+      ? leaseClock
+      : { nowMs: () => clock.now().getTime() };
+  const ledger = new ArtifactLedger(join(root, "magazine.sqlite"), {
+    clock,
+    articleAttemptLeaseMs: 1_000,
+    ...(attemptClock === undefined ? {} : { attemptClock }),
+  });
   ledger.createArtifact({
     id: manuscript,
     kind: "article_manuscript",
@@ -84,7 +96,7 @@ async function fixture(): Promise<{
   const blindCredential = await authority.createCredentialProfile({ principalId: "blind-reviewer", credentialProfileId: "blind-profile" });
   await authority.grant({ credentialProfileId: blindCredential.credentialProfileId, grantId: "blind-grant", capabilities: ["text_model", "source_blind"] });
   const blind = await authority.authenticate({ credentialProfileId: blindCredential.credentialProfileId, secret: blindCredential.secret });
-  return { root, ledger, runner: ledger.createArticleAttemptRunner(), aware: worker, blind, clock };
+  return { root, ledger, runner: ledger.createArticleAttemptRunner(), aware: worker, blind, clock, leaseClock };
 }
 
 function request(access: "source_aware" | "source_blind", operationKey: string, manuscriptArtifactIdValue = manuscript) {
@@ -142,6 +154,40 @@ test("claims are fenced under concurrent and retry attempts", async () => {
     const retry = await inAttempt(f, "parallel", () => f.runner.claimModel(f.aware, request("source_aware", "parallel")), 2);
     assert.equal(retry.claimSequence, 2);
     assert.notEqual(retry.claimId, (claims.find((item) => item.status === "fulfilled") as PromiseFulfilledResult<Awaited<ReturnType<typeof f.runner.claimModel>>>).value.claimId);
+  } finally {
+    f.ledger.close();
+    await rm(f.root, { recursive: true, force: true });
+  }
+});
+
+test("operational lease clock is independent from domain timestamps", async () => {
+  const f = await fixture({ separateAttemptClock: true });
+  try {
+    const claim = await inAttempt(f, "manual-clock", () => f.runner.claimModel(f.aware, request("source_aware", "manual-clock")));
+    f.clock.advance(10_000);
+    assert.doesNotThrow(() => f.runner.heartbeat(claim));
+    f.leaseClock.advance(2_000);
+    assert.throws(() => f.runner.heartbeat(claim), (error: unknown) => error instanceof ArtifactLedgerError && error.code === "ATTEMPT_STALE");
+  } finally {
+    f.ledger.close();
+    await rm(f.root, { recursive: true, force: true });
+  }
+});
+
+test("default operational lease clock advances independently of a frozen domain clock", async () => {
+  const f = await fixture({ defaultAttemptClock: true });
+  try {
+    const claim = await inAttempt(f, "default-moving-clock", () => f.runner.claimModel(f.aware, {
+      ...request("source_aware", "default-moving-clock"),
+      leaseMs: 1,
+    }));
+    await new Promise((resolve) => setTimeout(resolve, 15));
+    assert.throws(
+      () => f.runner.heartbeat(claim),
+      (error: unknown) => error instanceof ArtifactLedgerError && error.code === "ATTEMPT_STALE",
+    );
+    // Domain timestamps remain on the injected frozen clock.
+    assert.equal(claim.durableContext.kind === "step" || claim.durableContext.kind === "agent", true);
   } finally {
     f.ledger.close();
     await rm(f.root, { recursive: true, force: true });

@@ -273,6 +273,7 @@ function validateRequest(request: DurablePromotionRequest): void {
   requireUnique(request.acceptedArtifactIds, "accepted EngineArtifact IDs");
   requireUnique(request.decisionArtifactIds, "decision EngineArtifact IDs");
   requireUnique(request.inputArtifactIds ?? [], "input EngineArtifact IDs");
+  requireUnique(request.decisionEvidenceArtifactIds ?? [], "decision evidence EngineArtifact IDs");
   requireUnique(
     (request.inputRevisions ?? []).map((ref) => `${ref.kind}:${ref.editionId ?? ""}:${ref.logicalId}:${ref.revisionId}`),
     "InputRevision references",
@@ -289,7 +290,7 @@ type NormalizedDurablePromotionRequest = DurablePromotionRequest & {
 function normalizePromotionRequest(request: DurablePromotionRequest): NormalizedDurablePromotionRequest {
   if (request.inputBindings !== undefined) {
     const inputArtifactIds = request.inputBindings.map((binding) => binding.artifactId);
-    const inputRevisions = request.inputBindings.map((binding) => binding.revision);
+    const inputRevisions = request.inputRevisions ?? uniqueInputRevisions(request.inputBindings.map((binding) => binding.revision));
     if (
       request.inputArtifactIds !== undefined &&
       !sameSequence(request.inputArtifactIds, inputArtifactIds)
@@ -298,9 +299,9 @@ function normalizePromotionRequest(request: DurablePromotionRequest): Normalized
     }
     if (
       request.inputRevisions !== undefined &&
-      !sameJsonSequence(request.inputRevisions, inputRevisions)
+      request.inputBindings.some((binding) => !request.inputRevisions!.some((candidate) => inputRevisionKey(candidate) === inputRevisionKey(binding.revision)))
     ) {
-      throw new DurableStoreError("DURABLE_INPUT_MISMATCH", "input revision projections disagree with bindings");
+      throw new DurableStoreError("DURABLE_INPUT_MISMATCH", "input revision projections omit a bound revision");
     }
     return { ...request, inputArtifactIds, inputRevisions } as NormalizedDurablePromotionRequest;
   }
@@ -316,8 +317,14 @@ function normalizePromotionRequest(request: DurablePromotionRequest): Normalized
   } as NormalizedDurablePromotionRequest;
 }
 
-function sameJsonSequence(left: readonly unknown[], right: readonly unknown[]): boolean {
-  return JSON.stringify(left) === JSON.stringify(right);
+function uniqueInputRevisions(values: readonly import("./types.ts").InputRevisionRef[]): readonly import("./types.ts").InputRevisionRef[] {
+  const seen = new Set<string>();
+  return values.filter((value) => {
+    const key = inputRevisionKey(value);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function sameSequence(left: readonly string[], right: readonly string[]): boolean {
