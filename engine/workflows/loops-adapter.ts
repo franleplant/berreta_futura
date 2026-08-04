@@ -7,7 +7,6 @@ import {
   SQLiteDurableRunStore,
   type DurableWorkflowPin,
   type LoopsConfig,
-  type WorkflowGlobals,
 } from "@loops/core";
 import { buildDurableWorkflowPin } from "@loops/workflow";
 
@@ -20,7 +19,8 @@ import type {
   ArticleWorkflowPorts,
   MagazineLoopsInspection,
 } from "./internal-types.ts";
-import articleLoopsEntry from "./article-loops-entry.ts";
+import { invokeArticleWorkflowWithPorts } from "./article-loops-entry.ts";
+import { createMagazineWorkflowResolver } from "./magazine-workflow-resolver.ts";
 import {
   assertRendererIdentity,
   hashRendererIdentityManifest,
@@ -169,8 +169,12 @@ class PrivateDurableLoopsAdapter implements LoopsPort {
       },
       args,
       cwd: this.#projectRoot,
+      workflowResolver: createMagazineWorkflowResolver({
+        projectRoot: this.#projectRoot,
+        articlePorts: this.#runtime,
+      }),
     });
-    return await runtime.run((globals: WorkflowGlobals) => articleLoopsEntry(globals, this.#runtime));
+    return await runtime.run((globals) => invokeArticleWorkflowWithPorts(globals, this.#runtime, args));
   }
 
   async #loadPin(): Promise<{ readonly pin: DurableWorkflowPin; readonly rendererIdentity: RendererIdentity }> {

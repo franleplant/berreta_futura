@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 const sourceDirectory = resolve(process.env.LOOPS_SOURCE_DIR ?? "/Users/franguijarro/code/loopsv2");
-const requestedCommit = process.env.LOOPS_COMMIT ?? "19f03c7ba2c1f21062891aaa1f0213fb514b6631";
+const requestedCommit = process.env.LOOPS_COMMIT ?? "e7c652f5ace0b74d5574830c37c6f5ac124a291f";
 const repositoryRoot = resolve(new URL("..", import.meta.url).pathname);
 
 const status = execFileSync("git", ["status", "--porcelain"], { cwd: sourceDirectory, encoding: "utf8" });
