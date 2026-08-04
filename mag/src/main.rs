@@ -69,6 +69,9 @@ enum Cmd {
         /// Article id, required for measure_article
         #[arg(long)]
         article: Option<String>,
+        /// Comma-separated languages to render (default: en + es if translations exist)
+        #[arg(long)]
+        langs: Option<String>,
     },
 }
 
@@ -108,8 +111,8 @@ fn run(cli: Cli) -> Result<i32> {
             let spec = caller::ModelSpec::parse(&model)?;
             art::run(&edition, &gen_cmd, candidates, &spec)
         }
-        Cmd::Render { edition, operation, article } => {
-            render::run(&edition, &operation, article.as_deref())
+        Cmd::Render { edition, operation, article, langs } => {
+            render::run(&edition, &operation, article.as_deref(), langs.as_deref())
         }
     }
 }
