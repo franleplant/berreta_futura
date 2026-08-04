@@ -1,6 +1,6 @@
 # Loops workflow migration
 
-Status: **proposed**, not started. Revision 1, 2026-08-03.
+Status: **in progress**. Revision 2, 2026-08-03.
 
 This plan supersedes
 [`article-review-and-writer-execution.md`](article-review-and-writer-execution.md)
@@ -78,8 +78,39 @@ Remove after migration:
 
 ### Phase 1: prove one durable article workflow
 
-Create one Loops article workflow that can run both alone and as an edition
-child.
+The durable tracer landed in commit `5e3f2d5`. It proves pinned Loops execution,
+checkpointed measurement, a human wait, exact promotion, resume, and public
+inspection. It is not the full article workflow.
+
+Finish the article workflow in these dependency-ordered slices:
+
+1. Add immutable production-profile and review-plan contracts. Extract one
+   shared write-pipeline resolver and artifact materializer for the existing
+   production path and Loops.
+2. Extract the exact writer, source-aware reviewer, and source-blind reviewer
+   material rules from the task composer. Both workflow paths use the same
+   pure policy module.
+3. Add authenticated model and tool execution around durable `step()` calls.
+   Record the exact Loops invocation, call, and attempt on every result. Enforce
+   that one principal cannot cross the source-aware boundary for one
+   manuscript.
+4. Add a dedicated closed writer executor with enforced tool denial. The
+   generic text-model executor and cooperative bridge cannot execute writer
+   work.
+5. Execute every applicable review-plan check in a keyed parallel panel.
+   Validate each result against the exact manuscript and exact material set.
+6. Build the revision brief and route as pure deterministic functions. Preserve
+   every finding and result identity without semantic deduplication.
+7. Replace the tracer body with the full write, review, route, rewrite, and
+   editor-decision loop. A rewrite consumes rewrite budget; an execution retry
+   does not. Every manuscript revision receives a fresh review panel.
+8. Launch the workflow from the authenticated write-pipeline seam. Callers
+   cannot invent or omit production materials.
+
+Use an article execution identity that is separate from the root Loops run
+identity. The same article function runs alone in this phase and can run as an
+edition child in Phase 2 without changing its authority or artifact schema.
+Phase 1 does not need to implement the edition parent.
 
 It must cover:
 

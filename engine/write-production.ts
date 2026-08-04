@@ -12,6 +12,8 @@ import type {
 } from "./contracts/index.ts";
 import {
   GitCliDurableGit,
+  materializeWritePipelineInputs,
+  resolveProfileBackedArticleInput,
   resolveDurableRevision,
   resolveWritePipeline,
   type DurableGit,
@@ -106,37 +108,23 @@ export async function prepareWriteProduction(
   git: Pick<DurableGit, "assertCommitted">,
 ): Promise<WriteProductionPlan> {
   const root = resolve(repositoryRoot);
-  const pipeline = await resolveWritePipeline(root, pipelineRef, git);
-  const artifacts: ArtifactSeed[] = [];
-  const inputArtifactIds = new Map<string, ArtifactId>();
-  for (const input of pipeline.inputs) {
-    for (const path of Object.keys(input.payloadPaths).sort()) {
-      const id = artifactId(`input:${input.ref.kind}:${input.ref.editionId ?? ""}:${input.ref.logicalId}:${input.ref.revisionId}:${path}`);
-      inputArtifactIds.set(inputKey(input.ref, path), id);
-      artifacts.push({
-        id,
-        kind: input.ref.kind === "edition_spec" && path === "edition.yaml"
-          ? "edition_spec_revision_payload"
-          : "input_revision_payload",
-        schemaVersion: "input-revision-payload/1",
-        mediaType: mediaType(path),
-        origin: "imported",
-        payload: { kind: "file", path: input.payloadPaths[path]! },
-        metadata: {
-          inputRevision: input.ref,
-          revisionPayloadPath: path,
-          ...(input.ref.kind === "edition_spec" && path === "edition.yaml"
-            ? { rendererTargetPath: "editions/004-the-systems-around-the-model/edition.yaml" }
-            : {}),
-        },
-      });
-    }
-  }
-  const inputArtifact = (ref: InputRevisionRef, path: string): ArtifactId => {
-    const id = inputArtifactIds.get(inputKey(ref, path));
-    if (id === undefined) throw new Error(`write pipeline did not import ${ref.kind}:${ref.logicalId}:${path}`);
-    return id;
-  };
+  const authenticated = await resolveWritePipeline(root, pipelineRef, git);
+  const materialized = materializeWritePipelineInputs(authenticated);
+  const pipeline = materialized.pipeline;
+  const artifacts: ArtifactSeed[] = [...materialized.artifacts];
+  const inputArtifact = materialized.inputArtifact;
+  // Authenticate profile-backed articles through the same resolver that the
+  // future Loops entry point will use. This legacy builder still stops at its
+  // explicit XState authority boundary below; it must not silently construct a
+  // partial profile or invent artifact IDs first.
+  const profileBackedArticles = new Map(
+    await Promise.all(pipeline.document.articles
+      .filter((article) => article.productionProfileRevision !== undefined)
+      .map(async (article) => [
+        article.articleId,
+        await resolveProfileBackedArticleInput(materialized, article),
+      ] as const)),
+  );
   const pipelineArtifact = artifactId(`write-pipeline:${pipelineRef.revisionId}`);
   artifacts.push({
     id: pipelineArtifact,
@@ -280,6 +268,15 @@ export async function prepareWriteProduction(
   const policy = (ref: InputRevisionRef): ArtifactId => inputArtifact(ref, "policy.md");
   const prompt = (ref: InputRevisionRef): ArtifactId => inputArtifact(ref, "prompt.md");
   const articleArtifacts = pipeline.document.articles.map((article) => {
+    if (article.productionProfileRevision !== undefined) {
+      if (!profileBackedArticles.has(article.articleId)) {
+        throw new Error(`article ${article.articleId} profile was not authenticated`);
+      }
+      throw new Error(`article ${article.articleId} requires the Loops profile-backed launch; the legacy edition builder cannot start it`);
+    }
+    if (article.writerPrompt === undefined || article.judgePrompts === undefined || article.inputRevisions === undefined || article.maxIterations === undefined) {
+      throw new Error(`article ${article.articleId} has incomplete legacy writer inputs`);
+    }
     const brief = artifactId(`article-brief:${article.articleId}`);
     const model = artifactId(`article-model-policy:${article.articleId}`);
     const measurementProfile = artifactId(`article-measurement-profile:${article.articleId}`);
@@ -445,10 +442,6 @@ function artifactId(value: string): ArtifactId {
   return `art_write_${createHash("sha256").update(value).digest("hex").slice(0, 24)}` as ArtifactId;
 }
 
-function inputKey(ref: InputRevisionRef, path: string): string {
-  return `${ref.kind}:${ref.editionId ?? ""}:${ref.logicalId}:${ref.revisionId}:${path}`;
-}
-
 function sameInputRevision(left: InputRevisionRef, right: InputRevisionRef): boolean {
   return left.kind === right.kind &&
     left.editionId === right.editionId &&
@@ -489,14 +482,6 @@ function captureRendererTarget(sourceId: string, payloadPath: string): string {
     throw new Error(`source capture payload is outside raw/: ${payloadPath}`);
   }
   return `${root}/${payloadPath.slice("raw/".length)}`;
-}
-
-function mediaType(path: string): string {
-  if (path.endsWith(".md")) return "text/markdown";
-  if (path.endsWith(".yaml") || path.endsWith(".yml")) return "application/yaml";
-  if (path.endsWith(".json")) return "application/json";
-  if (path.endsWith(".png")) return "image/png";
-  return "application/octet-stream";
 }
 
 function selectedImageTarget(logicalId: string): string {
