@@ -78,8 +78,16 @@ export type DurablePromotionRequest = {
   readonly expectedParentRevisionId: RevisionId | null;
   readonly acceptedArtifactIds: readonly ArtifactId[];
   readonly decisionArtifactIds: readonly ArtifactId[];
+  /** Canonical artifact-to-revision bindings. */
+  readonly inputBindings?: readonly DurableInputBinding[];
+  /** Legacy projections retained for old durable records; new callers omit them. */
   readonly inputRevisions: readonly InputRevisionRef[];
   readonly inputArtifactIds: readonly ArtifactId[];
+};
+
+export type DurableInputBinding = {
+  readonly artifactId: ArtifactId;
+  readonly revision: InputRevisionRef;
 };
 
 type DurableFileRecordBase = {
@@ -208,6 +216,10 @@ export type DurableCheckpointResult = {
     readonly promotionId: PromotionId;
     readonly logicalItem: DurableLogicalItem;
     readonly expectedParentRevisionId: RevisionId | null;
+    readonly acceptedArtifactIds: readonly ArtifactId[];
+    readonly decisionArtifactIds: readonly ArtifactId[];
+    readonly inputArtifactIds: readonly ArtifactId[];
+    readonly inputRevisions: readonly InputRevisionRef[];
     readonly manifestDigest: string;
     readonly gitCommitOid: string;
     readonly gitBlobOids: Readonly<Record<string, string>>;

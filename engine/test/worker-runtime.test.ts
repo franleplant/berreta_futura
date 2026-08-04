@@ -30,6 +30,7 @@ import {
   WORK_ROLE_EXECUTION,
   executeAvailableWork,
   type Executor,
+  type ExecutorContext,
   type WorkEngine,
 } from "../executors/index.ts";
 import type { RendererAdapter } from "../renderer-adapter/index.ts";
@@ -50,8 +51,8 @@ async function authorizedExecutor(
     worker: executor.worker,
     capabilities: executor.capabilities,
     accepts: (offer: WorkOfferView) => executor.accepts(offer),
-    execute: async (context) => await executor.execute(context),
-    ...(executor.release === undefined ? {} : { release: async (context) => await executor.release?.(context) }),
+    execute: async (context: ExecutorContext) => await executor.execute(context),
+    ...(executor.release === undefined ? {} : { release: async (context: ExecutorContext) => await executor.release?.(context) }),
     authorizedWorker: registration.authorizedWorker,
   }) as AuthorizedExecutor;
 }

@@ -195,6 +195,7 @@ def _layout_row(
         "totalPages": len(PdfReader(str(reader_pdf)).pages),
         "editorialPages": layout.editorial_pages or 0,
         "articlePages": layout.article_pages,
+        "articleOpenerFits": layout.article_opener_fits,
         "figureCount": len(layout.figure_placements),
         "criticResult": critic_result,
     }

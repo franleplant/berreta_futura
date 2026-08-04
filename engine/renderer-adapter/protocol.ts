@@ -1,4 +1,5 @@
 import type { ArtifactId, JsonObject } from "../contracts/index.ts";
+import type { RendererIdentity } from "../workflows/renderer-identity.ts";
 
 export const RENDERER_CONTRACT_VERSION = "magazine-renderer/1";
 
@@ -29,6 +30,7 @@ export type ArticleMeasurementProfile = RenderExecutionProfile & {
   readonly editionId: string;
   readonly manuscriptArtifactId: ArtifactId;
   readonly maximumReaderPages: number;
+  readonly rendererIdentity?: RendererIdentity;
 };
 
 /** Immutable inputs for measuring every translated piece in one language. */
@@ -88,6 +90,8 @@ export type LanguageLayout = {
   readonly totalPages: number;
   readonly editorialPages: number;
   readonly articlePages: Readonly<Record<string, number>>;
+  /** Actual per-article opener fit reported by the renderer. */
+  readonly articleOpenerFits?: Readonly<Record<string, boolean>>;
   readonly figureCount: number;
   readonly criticResult: "pass" | "fail" | "not_run";
 };

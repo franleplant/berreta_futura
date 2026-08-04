@@ -1,9 +1,23 @@
 import { dirname, join, resolve } from "node:path";
+import { readFile } from "node:fs/promises";
 
 import { z } from "zod";
 
 import { SubprocessExecutionError, runSubprocess } from "../executors/subprocess.ts";
 import type { RendererAdapter, RenderResult } from "./protocol.ts";
+import {
+  assertRendererIdentity,
+  type RendererIdentity,
+} from "../workflows/renderer-identity.ts";
+import {
+  assertToolchainIdentity,
+  probeRendererToolchain,
+} from "./toolchain.ts";
+import type { RendererToolchainResource } from "../contracts/workflow-run.ts";
+
+export type RendererIdentityProvider =
+  | RendererIdentity
+  | (() => RendererIdentity | Promise<RendererIdentity>);
 
 const resultSchema = z.object({
   schemaVersion: z.literal(1),
@@ -19,6 +33,7 @@ const resultSchema = z.object({
     totalPages: z.number().int().nonnegative(),
     editorialPages: z.number().int().nonnegative(),
     articlePages: z.record(z.string(), z.number().int().nonnegative()),
+    articleOpenerFits: z.record(z.string(), z.boolean()).optional(),
     figureCount: z.number().int().nonnegative(),
     criticResult: z.enum(["pass", "fail", "not_run"]),
   })),
@@ -33,10 +48,17 @@ export class PythonRendererAdapter implements RendererAdapter {
   constructor(
     projectRoot: string,
     timeoutMs = 10 * 60_000,
+    rendererIdentity?: RendererIdentityProvider,
+    toolchain?: RendererToolchainResource,
   ) {
     this.projectRoot = projectRoot;
     this.timeoutMs = timeoutMs;
+    this.rendererIdentity = rendererIdentity;
+    this.toolchain = toolchain;
   }
+
+  private readonly rendererIdentity: RendererIdentityProvider | undefined;
+  private readonly toolchain: RendererToolchainResource | undefined;
 
   async render(
     manifestPath: string,
@@ -45,13 +67,20 @@ export class PythonRendererAdapter implements RendererAdapter {
   ): Promise<RenderResult> {
     const resolvedManifestPath = resolve(manifestPath);
     const uvCacheDirectory = join(dirname(resolvedManifestPath), "uv-cache");
+    const toolchainIdentity = await this.verifyRendererIdentity(resolvedManifestPath);
+    const toolchain = this.toolchain;
+    if (toolchain === undefined) {
+      throw new Error("PythonRendererAdapter requires an explicit renderer toolchain resource");
+    }
     let result;
     try {
       result = await runSubprocess(
         {
-          executable: "uv",
+          executable: toolchain.uvExecutable,
           args: [
             "run",
+            "--python",
+            toolchain.pythonExecutable,
             "--locked",
             "--no-sync",
             "mag-render-adapter",
@@ -62,6 +91,7 @@ export class PythonRendererAdapter implements RendererAdapter {
           env: {
             UV_CACHE_DIR: uvCacheDirectory,
             UV_NO_SYNC: "1",
+            PYTHONDONTWRITEBYTECODE: "1",
           },
           timeoutMs: this.timeoutMs,
           stdin: "",
@@ -79,10 +109,37 @@ export class PythonRendererAdapter implements RendererAdapter {
       }
       throw error;
     }
+    void toolchainIdentity;
     const parsed = resultSchema.safeParse(JSON.parse(result.stdout));
     if (!parsed.success) {
       throw new Error(`renderer result violated its contract: ${parsed.error.message}`);
     }
     return parsed.data as unknown as RenderResult;
+  }
+
+  /** Recheck the pinned renderer closure after the request is materialized. */
+  private async verifyRendererIdentity(manifestPath: string): Promise<RendererIdentity["toolchain"]> {
+    const toolchain = this.toolchain;
+    if (toolchain === undefined) {
+      throw new Error("PythonRendererAdapter requires an explicit renderer toolchain resource");
+    }
+    const actualToolchain = await probeRendererToolchain(toolchain);
+    if (this.rendererIdentity === undefined) return actualToolchain;
+    const expected = typeof this.rendererIdentity === "function"
+      ? await this.rendererIdentity()
+      : this.rendererIdentity;
+    const request = JSON.parse(await readFile(manifestPath, "utf8")) as {
+      readonly metadata?: { readonly rendererIdentity?: unknown };
+    };
+    if (request.metadata?.rendererIdentity === undefined) {
+      throw new Error("renderer request does not carry its pinned renderer identity");
+    }
+    const actual = request.metadata.rendererIdentity as RendererIdentity;
+    assertRendererIdentity(expected, actual, "renderer request identity");
+    if (expected.toolchain === undefined || actualToolchain === undefined) {
+      throw new Error("renderer request does not carry its pinned toolchain identity");
+    }
+    assertToolchainIdentity(expected.toolchain, actualToolchain);
+    return actualToolchain;
   }
 }

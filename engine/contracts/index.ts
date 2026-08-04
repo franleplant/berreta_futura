@@ -6,3 +6,18 @@ export * from "./run.ts";
 export * from "./run-spec.ts";
 export * from "./view.ts";
 export * from "./work.ts";
+export type {
+  ArticleDecisionAnswer,
+  ArticleDecisionRequest,
+  ArticleHumanChoice,
+  ArticleInputBinding,
+  ArticleOfferView,
+  ArticlePromotion,
+  ArticleStartRequest,
+  ArticleWorkflowResult,
+  ArticleWorkflowStatus,
+  ArticleWorkflowView,
+  AuthenticatedHuman,
+  MagazineWorkflowEngineOptions,
+  RendererToolchainResource,
+} from "./workflow-run.ts";

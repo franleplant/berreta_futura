@@ -89,8 +89,9 @@ export class DurableStore {
 
   async promote(
     engine: PromotionEngine,
-    request: DurablePromotionRequest,
+    rawRequest: DurablePromotionRequest,
   ): Promise<DurableCheckpointResult> {
+    const request = normalizePromotionRequest(rawRequest);
     validateRequest(request);
     const view = await engine.inspect(request.runId);
     const artifacts = validateEngineReferences(view, request);
@@ -271,11 +272,56 @@ function validateRequest(request: DurablePromotionRequest): void {
   }
   requireUnique(request.acceptedArtifactIds, "accepted EngineArtifact IDs");
   requireUnique(request.decisionArtifactIds, "decision EngineArtifact IDs");
-  requireUnique(request.inputArtifactIds, "input EngineArtifact IDs");
+  requireUnique(request.inputArtifactIds ?? [], "input EngineArtifact IDs");
   requireUnique(
-    request.inputRevisions.map((ref) => `${ref.kind}:${ref.editionId ?? ""}:${ref.logicalId}:${ref.revisionId}`),
+    (request.inputRevisions ?? []).map((ref) => `${ref.kind}:${ref.editionId ?? ""}:${ref.logicalId}:${ref.revisionId}`),
     "InputRevision references",
   );
+}
+
+/** Convert the public binding shape to the historical internal projections. */
+type NormalizedDurablePromotionRequest = DurablePromotionRequest & {
+  readonly inputBindings: readonly import("./types.ts").DurableInputBinding[];
+  readonly inputArtifactIds: readonly ArtifactId[];
+  readonly inputRevisions: readonly import("./types.ts").InputRevisionRef[];
+};
+
+function normalizePromotionRequest(request: DurablePromotionRequest): NormalizedDurablePromotionRequest {
+  if (request.inputBindings !== undefined) {
+    const inputArtifactIds = request.inputBindings.map((binding) => binding.artifactId);
+    const inputRevisions = request.inputBindings.map((binding) => binding.revision);
+    if (
+      request.inputArtifactIds !== undefined &&
+      !sameSequence(request.inputArtifactIds, inputArtifactIds)
+    ) {
+      throw new DurableStoreError("DURABLE_INPUT_MISMATCH", "input artifact projections disagree with bindings");
+    }
+    if (
+      request.inputRevisions !== undefined &&
+      !sameJsonSequence(request.inputRevisions, inputRevisions)
+    ) {
+      throw new DurableStoreError("DURABLE_INPUT_MISMATCH", "input revision projections disagree with bindings");
+    }
+    return { ...request, inputArtifactIds, inputRevisions } as NormalizedDurablePromotionRequest;
+  }
+  if (request.inputArtifactIds === undefined || request.inputRevisions === undefined) {
+    throw new DurableStoreError("DURABLE_REQUEST_INVALID", "durable checkpoint requires exact input bindings");
+  }
+  return {
+    ...request,
+    inputBindings: request.inputArtifactIds.map((artifactId, index) => ({
+      artifactId,
+      revision: request.inputRevisions![index]!,
+    })),
+  } as NormalizedDurablePromotionRequest;
+}
+
+function sameJsonSequence(left: readonly unknown[], right: readonly unknown[]): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function sameSequence(left: readonly string[], right: readonly string[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
 function validateEngineReferences(
@@ -774,9 +820,13 @@ function checkpointResult(
   const result = {
     revisionId: request.revisionId,
     promotionId: request.promotionId,
-    logicalItem: request.logicalItem,
-    expectedParentRevisionId: request.expectedParentRevisionId,
-    manifestDigest,
+      logicalItem: request.logicalItem,
+      expectedParentRevisionId: request.expectedParentRevisionId,
+      acceptedArtifactIds: [...request.acceptedArtifactIds],
+      decisionArtifactIds: [...request.decisionArtifactIds],
+      inputArtifactIds: [...request.inputArtifactIds],
+      inputRevisions: [...request.inputRevisions],
+      manifestDigest,
     gitCommitOid: binding.commitOid,
     gitBlobOids: Object.fromEntries(Object.entries(binding.blobOids).sort(([left], [right]) => left.localeCompare(right))),
     revisionRef,
