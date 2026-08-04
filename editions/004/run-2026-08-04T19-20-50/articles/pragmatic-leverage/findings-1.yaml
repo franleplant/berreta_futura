@@ -1,0 +1,127 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    category: no_added_value
+    disposition: editor_decision
+    note: "The manuscript is a verbatim reproduction of the source without editorial \nintervention. For a faithful_edit, value must come from access (paywalled or \nephemeral sources) or legibility (scattered posts compiled coherently). This \npublic Twitter thread is freely available and already presented as coherent \ntext in the source extraction. A reader gains nothing from our version that \nthey cannot read directly at source.\n"
+  scores:
+    value_over_source: 1
+    length_earned: 1
+    retention: 5
+  notes: "No added value. This is an unedited reprint of publicly available content. The \nremedy is an editorial decision about whether to include it, not writer revision.\n"
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    All factual claims, numbers, dates, names, and quotations checked against
+    extraction. No invented claims or quote inaccuracies found. All qualifications
+    and pragmatic hedges carried. The manuscript is a faithful reproduction of the
+    source.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    category: spelling
+    locator: Seeking Leverage | Lets assume if you yolo | 1
+    disposition: fix
+    note: |
+      Contraction of "let us" requires an apostrophe: "Let's assume", not "Lets assume".
+    suggestion: Let's assume if you yolo
+  - severity: major
+    category: spelling
+    locator: The 80/20 rule in AI coding leverage | Now lets say you are | 1
+    disposition: fix
+    note: |
+      Contraction of "let us" requires an apostrophe: "Let's say", not "lets say".
+    suggestion: Let's say you are
+  - severity: major
+    category: spelling
+    locator: The 80/20 rule in AI coding leverage | its possible you may | 1
+    disposition: fix
+    note: |
+      Contraction of "it is" requires an apostrophe: "it's", not the possessive "its".
+    suggestion: it's possible you may
+  - severity: major
+    category: capitalisation
+    locator: The 80/20 rule in AI coding leverage | good luck | 1
+    disposition: editor_decision
+    note: |
+      The magazine convention requires sentences to open with capitals. This lowercase
+      opening is inconsistent with both the author's pattern throughout this piece and
+      the standing rule for the publication. The author's text requires editorial decision.
+    suggestion: Good luck
+  scores:
+    grammar: 5
+    typography: 3
+    consistency: 3
+  notes: |
+    Three missing apostrophes in contractions and one sentence-initial lowercase that
+    violates the magazine's capitalisation convention. The prose is otherwise well-structured
+    and grammatically sound.
+shape:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: '- | If you''re doing multiple phases of planning, zooming in from 50kft view all the way to the 10kft view, you want to do a little bit of steering at each phase to ensure you are eliminating as much expected pain as possible. | 1'
+    repair_from: '- | If you''re doing multiple phases of planning, zooming in from 50kft view all the way to the 10kft view, you want to do a little bit of steering at each phase to ensure you are eliminating as much expected pain as possible. | 1'
+    category: ending
+    disposition: fix
+    note: |
+      The final paragraph restates the core claim about pragmatic steering across planning phases, then the piece ends with "good luck." The argument does not land; it stops mid-thought. Either develop this claim with a concrete outcome or close the piece with a sentence that reframes and resolves the main claim about connecting planning depth to rework risk.
+    suggestion: Land the piece with a closing sentence that either shows what proper steering achieves or reframes the central claim about pragmatic planning in AI-assisted delivery.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | **note** For this example I'm gonna blur | 1
+    repair_from: The 80/20 rule in AI coding leverage | **note** For this example I'm gonna blur | 1
+    category: furniture_placement
+    disposition: fix
+    note: |
+      The "note" paragraph appears mid-argument and reads as source apparatus—explaining how the author simplifies assumptions for illustration—rather than integrated prose. It breaks the spectrum explanation without advancing the argument.
+    suggestion: Integrate the note's content into surrounding prose (e.g., 'For clarity, treat probability and pain severity as a single expected-pain number') or remove it.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | expected pain = P(you'll have to change it) × how painful the change is | 1
+    repair_from: The 80/20 rule in AI coding leverage | expected pain = P(you'll have to change it) × how painful the change is | 1
+    category: duplication
+    disposition: fix
+    note: |
+      The inverse relationship between upfront effort and rework pain appears three times: as the spectrum principle (yolo 50% rework → spec 10% → write-it-yourself 0%), as a formula, and as a warning (don't spend 6 hours planning). The same insight is stated, formalized, and exemplified redundantly, which dulls its force.
+    suggestion: State the relationship once—either spectrum + formula, or spectrum + the 6-hour example, but not all three. One crisp statement lets the insight land.
+  - severity: major
+    article: pragmatic-leverage
+    locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    repair_from: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: orphan_referent
+    disposition: fix
+    note: |
+      "The recent series" is undefined. The next sentence mentions "Why Software Factories Fail part 2," but "the recent series" itself is vague to a reader unfamiliar with prior coverage.
+    suggestion: 'Name the series explicitly: ''This one is a bit of an addendum to the Why Software Factories Fail series'' or remove the vague reference.'
+  scores:
+    order: 4
+    coherence: 3
+    opening: 3
+    ending: 1
+  notes: |
+    The piece's argument—that AI leverage comes from pragmatic multi-phase planning, not just code acceleration, and upfront effort has diminishing returns—is sound and carries through logically. The failure is in execution: the piece does not land (abrupt ending), repeats its central insight three times (duplication), breaks narrative flow mid-argument (furniture placement), and references something undefined (orphan referent).
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | If you're only using AI to write | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: "Six \"If you X, then Y\" constructions in ~500 words: \"If you're only using \nAI to write the code, then you're taking\", \"if you use AI to help you plan \nand align, then you actually get\", \"If the model is 50% likely to get a \nbutton style wrong, but the fix is one cheap prompt, then our combined\", \n\"If you draw this out, there's an inverse relationship\", \"if you've done \nsome work at the Product level and have not answered all the open questions \nyet, its possible you may need\", and \"If you're doing multiple phases of \nplanning, zooming in from 50kft view all the way to the 10kft view, you \nwant to do\". The pattern is the author's own voice—pragmatic reasoning \nthrough conditionals—but six instances create monotony that a reader hears \nbefore the substance. The remedy is an editor's choice: cut two of these \npassages, run the piece shorter, or decide whether it can live with the \nrhythm unchanged.\n"
+  scores:
+    voice: 4
+    sentence_variety: 1
+    economy: 4
+  notes: "Strong author voice throughout—concrete, direct, and personally credible. The \npiece loses clarity only where conditional reasoning stacks into a visible \npattern that the reader hears as shape instead of sense.\n"

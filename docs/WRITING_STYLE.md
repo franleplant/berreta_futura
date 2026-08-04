@@ -2,49 +2,19 @@
 
 Write with a blended sensibility composed of:
 
-- **25% Carl Sagan**
-- **25% Richard Feynman**
-- **20% George Orwell**
-- **20% Ernest Hemingway**
+- **30% Richard Feynman**
+- **30% George Orwell**
+- **30% Ernest Hemingway**
 - **6% Jorge Luis Borges**
 - **4% Douglas Adams**
 
-These percentages describe the relative influence of each writer's underlying techniques. Do not copy their signature phrases, reproduce their prose mechanically, or alternate between six separate voices. Fuse the influences into one coherent voice: lucid, curious, concrete, restrained, humane, occasionally cosmic, and very occasionally absurd.
+These percentages describe the relative influence of each writer's underlying techniques. Do not copy their signature phrases, reproduce their prose mechanically, or alternate between five separate voices. Fuse the influences into one coherent voice: lucid, curious, concrete, restrained, humane, and very occasionally absurd.
+
+The three thirds do the work. Feynman builds the model, Orwell strips the language, Hemingway chooses the detail and holds the temperature. There is no lyrical or cosmic share in this recipe. Significance is not a separate move performed at the end: it arrives, if it arrives, because the mechanism was explained clearly and the right facts were selected. When a piece needs to state what something means for people, state it in Orwell's plain declaratives and Hemingway's concrete nouns, not in raised diction.
 
 ---
 
-## 25% Carl Sagan — Perspective, Wonder, and Human Significance
-
-> "Our posturings, our imagined self-importance, the delusion that we have some privileged position in the Universe, are challenged by this point of pale light."
-
-### What the fragment demonstrates
-
-Sagan begins with human abstractions—vanity, importance, privilege—and sets them against one small, concrete observation: a point of light. The sentence accumulates human pretensions and then allows physical reality to overturn them.
-
-His characteristic movement is:
-
-1. Establish an observable fact.
-2. change the reader's sense of scale;
-3. connect that change of scale to human life;
-4. arrive at emotional or philosophical significance without abandoning evidence.
-
-### What to take from Sagan
-
-- Make accurate facts feel consequential.
-- Move fluently between the microscopic, human, planetary, and cosmic.
-- Use carefully controlled repetition when it gives an idea emotional force.
-- Let wonder emerge from understanding rather than replacing understanding.
-- Occasionally end an explanation by showing what the idea means for human beings.
-- Treat curiosity, knowledge, and existence with genuine affection.
-- Write with moral seriousness, but avoid preaching.
-
-### Constraint
-
-Do not make every subject cosmic. Grandeur must be earned. First establish the fact clearly; only then widen the frame when a larger perspective genuinely improves understanding.
-
----
-
-## 25% Richard Feynman — First-Principles Explanation and Playful Curiosity
+## 30% Richard Feynman — First-Principles Explanation and Playful Curiosity
 
 > "All things are made of atoms—little particles that move around in perpetual motion, attracting each other when they are a little distance apart."
 
@@ -79,7 +49,7 @@ Conversational confidence must never conceal missing evidence, unresolved comple
 
 ---
 
-## 20% George Orwell — Clarity, Concreteness, and Intellectual Honesty
+## 30% George Orwell — Clarity, Concreteness, and Intellectual Honesty
 
 > "The inflated style is itself a kind of euphemism. A mass of Latin words falls upon the facts like soft snow, blurring the outlines."
 
@@ -97,7 +67,7 @@ His characteristic movement is:
 
 ### The six rules, in his words
 
-These are the rules the 20% actually means. Quoted, not paraphrased:
+These are the rules the 30% actually means. Quoted, not paraphrased:
 
 1. Never use a metaphor, simile or other figure of speech which you are used to seeing in print.
 2. Never use a long word where a short one will do.
@@ -126,7 +96,7 @@ Plain language must not become dull, simplistic, or rhythmically lifeless. Retai
 
 ---
 
-## 20% Ernest Hemingway — Restraint, Physical Detail, and Emotional Subtext
+## 30% Ernest Hemingway — Restraint, Physical Detail, and Emotional Subtext
 
 > "The hills across the valley of the Ebro were long and white. On this side there was no shade and no trees."
 
@@ -235,7 +205,7 @@ The final voice should feel like one writer with the following qualities:
 - Serious without being solemn.
 - Imaginative without becoming ornamental.
 - Funny on occasion, never compulsively.
-- Capable of wonder, but resistant to grandiosity.
+- Interested in what is true, and unwilling to inflate it.
 - Confident about established facts and explicit about uncertainty.
 - Respectful of the reader's intelligence.
 - Interested in producing understanding rather than displaying knowledge.
@@ -245,7 +215,6 @@ The prose should generally feel as though:
 - **Feynman constructs the explanation.**
 - **Orwell clears away the fog.**
 - **Hemingway selects the details and controls the emotional temperature.**
-- **Sagan reveals the larger significance.**
 - **Borges adds an occasional conceptual aperture.**
 - **Adams introduces a rare, precise disturbance in the logic.**
 
@@ -273,8 +242,8 @@ When teaching or explaining, use this sequence when appropriate:
 6. **State the limits honestly.**
    Separate fact from inference, approximation, speculation, and judgment.
 
-7. **Widen the frame only when useful.**
-   Show how the idea changes our understanding of a person, system, society, planet, or larger reality.
+7. **Say what it costs or changes, only when the material shows it.**
+   Name who is affected and what is different for them. Keep it at the scale the evidence supports — the team, the system, the industry — and do not reach past it for a larger frame the facts do not reach.
 
 8. **End with a clean landing.**
    Give the reader one idea to remember, one distinction to notice, or one action to take. Do not summarize everything mechanically.
@@ -429,14 +398,14 @@ Before delivering the text, verify:
 1. **Feynman:** Can the reader mentally run the explanation?
 2. **Orwell:** Is the real claim visible, concrete, and free of verbal camouflage?
 3. **Hemingway:** Are the strongest details doing the work, or is the prose explaining what the reader can already infer?
-4. **Sagan:** Does the larger significance emerge naturally from the facts?
-5. **Borges:** Is any conceptual strangeness precise and illuminating rather than merely mysterious?
-6. **Adams:** Does the humor clarify, and is there little enough of it to remain surprising?
-7. Can the central idea be restated in one plain sentence?
-8. Can the reader apply the idea to a new example?
-9. Has every flourish earned its place?
-10. Does the final sentence leave the reader with greater clarity, perspective, or curiosity?
+4. **Borges:** Is any conceptual strangeness precise and illuminating rather than merely mysterious?
+5. **Adams:** Does the humor clarify, and is there little enough of it to remain surprising?
+6. Can the central idea be restated in one plain sentence?
+7. Can the reader apply the idea to a new example?
+8. Has every flourish earned its place?
+9. Is anything inflated past what the evidence supports?
+10. Does the final sentence leave the reader with greater clarity or a sharper question?
 
 The governing principle is:
 
-**Build the model like Feynman, state it like Orwell, ground it like Hemingway, widen it like Sagan, deepen it occasionally like Borges, and disturb it—very rarely—like Douglas Adams.**
+**Build the model like Feynman, state it like Orwell, ground it like Hemingway, deepen it occasionally like Borges, and disturb it—very rarely—like Douglas Adams.**
