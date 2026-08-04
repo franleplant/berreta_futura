@@ -25,5 +25,5 @@ prototypes/design-directions/previews/
 editions/*/production/agent/
 
 # mag run/render outputs inside edition dirs; promote finals into the edition proper.
-editions/*/run-*/
+# runs are tracked: they are the content of record. renders stay local.
 editions/*/render-*/

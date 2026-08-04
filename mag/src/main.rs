@@ -72,6 +72,9 @@ enum Cmd {
         /// Comma-separated languages to render (default: en + es if translations exist)
         #[arg(long)]
         langs: Option<String>,
+        /// Run dir whose finals to render (default: newest complete run, else committed files)
+        #[arg(long)]
+        run: Option<String>,
     },
 }
 
@@ -111,8 +114,8 @@ fn run(cli: Cli) -> Result<i32> {
             let spec = caller::ModelSpec::parse(&model)?;
             art::run(&edition, &gen_cmd, candidates, &spec)
         }
-        Cmd::Render { edition, operation, article, langs } => {
-            render::run(&edition, &operation, article.as_deref(), langs.as_deref())
+        Cmd::Render { edition, operation, article, langs, run } => {
+            render::run(&edition, &operation, article.as_deref(), langs.as_deref(), run.as_deref())
         }
     }
 }
