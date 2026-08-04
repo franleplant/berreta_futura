@@ -1,4 +1,6 @@
-import type { ArtifactId, JsonObject, RunId } from "../contracts/index.ts";
+import { readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import type { ArtifactId, ArtifactSeed, JsonObject, JsonValue, RunId, RevisionId } from "../contracts/index.ts";
 import type {
   ArticleDecisionRequest,
   ArticleStartRequest,
@@ -9,12 +11,22 @@ import type {
 } from "../contracts/workflow-run.ts";
 import { newArticleExecutionId, newId } from "../contracts/ids.ts";
 import { newRevisionId } from "../durable/revision-id.ts";
+import {
+  GitCliDurableGit,
+  materializeWritePipelineInputs,
+  resolveProfileBackedArticleInput,
+  resolveWritePipeline,
+  type InputRevisionRef,
+  type LoopsArticleEntryInput,
+} from "../durable/index.ts";
+import { articleMaterialContextFromLoops } from "../article-production/materials.ts";
 import { ArtifactLedger, ArtifactLedgerError } from "../workflow-authority/artifact-ledger.ts";
 import { HumanDecisionAuthority } from "../workflow-authority/human-decisions.ts";
 import { createArticleWorkflowPorts } from "./article-runtime.ts";
 import {
   decisionArtifactId,
   manuscriptId,
+  measurementProfileId,
 } from "./article-workflow.ts";
 import type {
   ArticleRuntimeStartArgs,
@@ -39,17 +51,30 @@ export class MagazineWorkflowEngine {
   readonly #loops: ReturnType<typeof createDurableLoopsAdapter>;
   readonly #decisions: HumanDecisionAuthority;
   readonly #clock: { readonly now: () => Date };
+  readonly #repositoryRootValue: string;
+  readonly #validateRuntimeResources: () => Promise<void>;
 
   constructor(options: MagazineWorkflowEngineOptions) {
-    this.#clock = options.clock ?? { now: () => new Date() };
-    this.#ledger = new ArtifactLedger(options.databasePath, { clock: this.#clock });
+    // Capture the default wall clock outside the Loops deterministic runtime.
+    // Calling `new Date()` from a workflow body is forbidden by Loops, while
+    // the ledger still needs a stable operational timestamp for run facts.
+    const defaultNow = new Date();
+    this.#clock = options.clock ?? { now: () => defaultNow };
+    this.#repositoryRootValue = options.repositoryRoot;
+    this.#ledger = new ArtifactLedger(options.databasePath, {
+      clock: this.#clock,
+      ...(options.attemptClock === undefined ? {} : { attemptClock: options.attemptClock }),
+    });
     const ports = createArticleWorkflowPorts({
       ledger: this.#ledger,
       repositoryRoot: options.repositoryRoot,
       workRoot: options.workRoot,
       renderer: options.renderer,
       projectRoot: options.projectRoot,
+      ...(options.articleReviewWorkers === undefined ? {} : { articleReviewWorkers: options.articleReviewWorkers }),
+      ...(options.articleReviewCredentials === undefined ? {} : { articleReviewCredentials: options.articleReviewCredentials }),
     });
+    this.#validateRuntimeResources = ports.validateRuntimeResources ?? (async () => undefined);
     this.#loops = createDurableLoopsAdapter({
       storePath: options.loopsDatabasePath,
       projectRoot: options.projectRoot,
@@ -59,29 +84,132 @@ export class MagazineWorkflowEngine {
     this.#decisions = new HumanDecisionAuthority({ ledger: this.#ledger, clock: this.#clock });
   }
 
+  #repositoryRoot(): string {
+    return this.#repositoryRootValue;
+  }
+
   async startArticle(request: ArticleStartRequest): Promise<ArticleWorkflowView> {
-    validateStart(request, this.#ledger);
-    const runId = request.runId ?? newId<RunId>("run");
-    const articleExecutionId = request.articleExecutionId ?? newArticleExecutionId();
+    throw new MagazineWorkflowError("PROFILE_ENTRY_REQUIRED", "startArticle requires a profile-backed write pipeline; use startArticleFromWritePipeline");
+  }
+
+  /**
+   * Authenticate one article from the committed write pipeline, materialize
+   * its exact immutable entry, and launch Loops with that entry as its args.
+   */
+  async startArticleFromWritePipeline(
+    pipelineRef: Extract<InputRevisionRef, { readonly kind: "write_pipeline" }>,
+    articleId: string,
+    options: {
+      readonly runId?: RunId;
+      readonly articleExecutionId?: import("../contracts/index.ts").ArticleExecutionId;
+      readonly expectedParentRevisionId?: RevisionId | null;
+      readonly promotionId?: import("../contracts/index.ts").PromotionId;
+      readonly revisionId?: RevisionId;
+      readonly language?: string;
+    } = {},
+  ): Promise<ArticleWorkflowView> {
+    // Resolve and authenticate every process-local runtime resource before
+    // importing evidence or creating a magazine/Loops run.
+    await this.#validateRuntimeResources();
+    const git = new GitCliDurableGit(this.#repositoryRoot());
+    const resolved = await resolveWritePipeline(this.#repositoryRoot(), pipelineRef, git);
+    const materialized = materializeWritePipelineInputs(resolved);
+    const article = resolved.document.articles.find((candidate) => candidate.articleId === articleId);
+    if (article === undefined) throw new MagazineWorkflowError("ARTICLE_INVALID", `write pipeline has no article ${articleId}`);
+    const profile = await resolveProfileBackedArticleInput(materialized, article);
+    const language = options.language ?? "en";
+    if (language !== "en") throw new MagazineWorkflowError("ARTICLE_INVALID", "profile-backed article launch currently requires the English source language");
+    const runId = options.runId ?? newId<RunId>("run");
+    const articleExecutionId = options.articleExecutionId ?? newArticleExecutionId();
     const rendererIdentity = await this.#loops.getRendererIdentity();
-    const args = {
-      ...request,
+    // Keep the imported source manuscript distinct from the run-owned
+    // accepted manuscript produced by the durable `article.manuscript` step.
+    const seedId = `art-input-manuscript-${safeIdentity(runId)}` as ArtifactId;
+    const measurementProfileArtifactId = `art-input-measurement-profile-${safeIdentity(runId)}` as ArtifactId;
+    const entryArtifactId = `art-article-workflow-entry-${safeIdentity(runId)}` as ArtifactId;
+    const args: ArticleRuntimeStartArgs = {
       runId,
       articleExecutionId,
-      promotionId: request.promotionId ?? (`promotion-${safeIdentity(runId)}` as never),
-      revisionId: request.revisionId ?? newRevisionId(this.#clock.now()),
+      articleId,
+      editionId: resolved.document.editionId,
+      language,
+      logicalItem: { kind: "article", editionId: resolved.document.editionId, logicalId: articleId, language },
+      manuscriptArtifactId: seedId,
+      measurementProfileArtifactId,
+      expectedParentRevisionId: options.expectedParentRevisionId ?? article.parent?.revisionId ?? null,
+      promotionId: options.promotionId ?? (`promotion-${safeIdentity(runId)}` as import("../contracts/index.ts").PromotionId),
+      revisionId: options.revisionId ?? newRevisionId(this.#clock.now()),
+      entryArtifactId,
+      entry: profile.loopsInput,
       rendererIdentity,
-    } satisfies ArticleRuntimeStartArgs;
+      review: {
+        materialContext: articleMaterialContextFromLoops(profile.loopsInput, { measurementInputArtifactIds: [seedId] }),
+      },
+    };
+
+    for (const seed of materialized.artifacts) await this.#importArtifactSeed(seed);
+    const sourceText = await this.#sourceText(materialized, article);
+    this.#ledger.createArtifact({
+      id: seedId,
+      kind: "article_manuscript",
+      schemaVersion: "article-manuscript/1",
+      mediaType: "text/markdown",
+      origin: "imported",
+      payload: { kind: "text", text: sourceText },
+      parents: profile.loopsInput.materializedInputs.flatMap((input) => input.artifacts.map((artifact) => ({ artifactId: artifact.artifactId, relation: "input_binding" }))),
+      metadata: {
+        articleId,
+        materialArtifactIds: profile.loopsInput.materializedInputs.flatMap((input) => input.artifacts.map((artifact) => artifact.artifactId)) as unknown as JsonValue,
+        revisionId: deterministicManuscriptRevisionId(profile.loopsInput, sourceText, profile.loopsInput.materializedInputs.flatMap((input) => input.artifacts.map((artifact) => artifact.artifactId))),
+        inputBindings: profile.loopsInput.inputBindings as unknown as readonly JsonObject[],
+      },
+    });
     const workflowVersion = await this.#loops.getWorkflowVersion();
     this.#ledger.createRun({
       runId,
       articleExecutionId,
-      articleId: request.articleId,
-      editionId: request.editionId,
+      articleId,
+      editionId: resolved.document.editionId,
       workflowVersion,
       loopsRunId: runId,
-      manuscriptArtifactId: request.manuscriptArtifactId,
+      manuscriptArtifactId: seedId,
       args: args as unknown as JsonObject,
+    });
+    this.#ledger.createArtifact({
+      id: measurementProfileArtifactId,
+      kind: "article_measurement_profile",
+      schemaVersion: "article-measurement-profile/1",
+      mediaType: "application/json",
+      origin: "machine",
+      payload: {
+        kind: "json",
+        value: {
+          schemaVersion: 1,
+          rendererContractVersion: "magazine-renderer/1",
+          editionId: resolved.document.editionId,
+          primaryLanguage: language,
+          publicationName: resolved.document.render.publicationName,
+          renderer: resolved.document.render.renderer,
+          articleId,
+          manuscriptArtifactId: seedId,
+          maximumReaderPages: article.maximumReaderPages,
+          inputs: [{ artifactId: seedId, targetPath: `articles/${articleId}/manuscript.md` }],
+          rendererIdentity,
+        } as unknown as JsonObject,
+      },
+      parents: [{ artifactId: seedId, relation: "profile_manuscript" }],
+      runId,
+    });
+    this.#ledger.createArtifact({
+      id: entryArtifactId,
+      kind: "article_workflow_entry",
+      schemaVersion: "loops-article-entry-input/1",
+      mediaType: "application/json",
+      origin: "machine",
+      payload: { kind: "json", value: profile.loopsInput as unknown as JsonObject },
+      parents: profile.loopsInput.materializedInputs.flatMap((input) => input.artifacts.map((artifact) => ({ artifactId: artifact.artifactId, relation: "entry_input" }))),
+      metadata: { articleId, entrySchemaVersion: profile.loopsInput.schemaVersion },
+      runId,
     });
     try {
       await this.#loops.startArticle(runId, args);
@@ -89,6 +217,47 @@ export class MagazineWorkflowEngine {
       if (!isSuspension(error)) throw error;
     }
     return await this.inspect(runId);
+  }
+
+  async #importArtifactSeed(seed: ArtifactSeed): Promise<void> {
+    const payload = seed.payload.kind === "file"
+      ? { kind: "bytes" as const, bytes: new Uint8Array(await readFile(seed.payload.path)) }
+      : seed.payload.kind === "bytes"
+        ? { kind: "bytes" as const, bytes: Buffer.from(seed.payload.dataBase64, "base64") }
+        : seed.payload;
+    this.#ledger.createArtifact({
+      id: seed.id,
+      kind: seed.kind,
+      schemaVersion: seed.schemaVersion,
+      mediaType: seed.mediaType,
+      origin: seed.origin,
+      payload: payload as never,
+      ...(seed.parents === undefined ? {} : { parents: seed.parents }),
+      ...(seed.metadata === undefined ? {} : { metadata: seed.metadata }),
+    });
+  }
+
+  async #sourceText(
+    materialized: ReturnType<typeof materializeWritePipelineInputs>,
+    article: { readonly sourceIds: readonly string[] },
+  ): Promise<string> {
+    const wanted = new Set(article.sourceIds);
+    const chunks: string[] = [];
+    for (const input of materialized.materializedInputs) {
+      if (input.ref.kind !== "source_extraction" || !wanted.has(input.ref.logicalId)) continue;
+      for (const artifact of [...input.artifacts].sort((left, right) => left.path.localeCompare(right.path))) {
+        const read = this.#ledger.readArtifact(artifact.artifactId);
+        let text: string;
+        try {
+          text = new TextDecoder("utf-8", { fatal: true }).decode(read.bytes);
+        } catch (error) {
+          throw new MagazineWorkflowError("ARTICLE_INVALID", `source extraction file ${artifact.path} is not UTF-8`, { cause: error });
+        }
+        chunks.push(`--- source ${input.ref.logicalId} ${artifact.path} sha256:${read.artifact.digest} ---\n${text}\n--- end source ${artifact.path} ---`);
+      }
+    }
+    if (chunks.length === 0) throw new MagazineWorkflowError("ARTICLE_INVALID", "profile-backed article has no source extraction payload");
+    return chunks.join("\n\n");
   }
 
   async resume(runId: RunId): Promise<ArticleWorkflowView> {
@@ -323,6 +492,17 @@ function sameStrings(left: readonly string[], right: readonly string[]): boolean
 
 function safeIdentity(value: string): string {
   return value.replace(/[^A-Za-z0-9_.-]/gu, "_").slice(0, 160);
+}
+
+function deterministicManuscriptRevisionId(entry: LoopsArticleEntryInput, text: string, materialArtifactIds: readonly ArtifactId[] = []): import("../contracts/index.ts").ManuscriptRevisionId {
+  const digest = createHash("sha256").update(JSON.stringify({
+    schemaVersion: "manuscript-revision/1",
+    articleId: entry.articleId,
+    inputBindings: entry.inputBindings,
+    materialArtifactIds,
+    text,
+  }), "utf8").digest("hex");
+  return `manuscript-${digest}` as import("../contracts/index.ts").ManuscriptRevisionId;
 }
 
 function isSuspension(error: unknown): boolean {

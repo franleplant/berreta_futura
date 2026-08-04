@@ -95,6 +95,10 @@ export class ArticlePromotionAuthority {
     if (decision.artifactId !== request.request.decisionArtifactIds[0]) {
       throw new ArtifactLedgerError("PROMOTION_INVALID", "Durable promotion decision artifact does not match the accepted offer");
     }
+    const decisionEvidence = request.request.decisionEvidenceArtifactIds ?? decision.inputArtifactIds;
+    if (!sameStrings(decisionEvidence, decision.inputArtifactIds)) {
+      throw new ArtifactLedgerError("PROMOTION_INVALID", "Durable promotion evidence does not match the answered decision");
+    }
     if (decision.choice !== "accept") {
       throw new ArtifactLedgerError("ARTICLE_NOT_ACCEPTED", `Article ${run.articleId} was not accepted`);
     }
@@ -143,12 +147,12 @@ export class ArticlePromotionAuthority {
           rationale,
         },
       },
-      parents: [
-        { artifactId: run.manuscriptArtifactId, relation: "promoted_manuscript" },
-        { artifactId: request.measurementArtifactId, relation: "promoted_measurement" },
-        { artifactId: decision.artifactId, relation: "promoted_decision" },
-      ],
-      metadata: { promotionId: request.request.promotionId, durableRevisionId: promoted.revisionId },
+      parents: decisionEvidence.map((artifactId) => ({ artifactId, relation: "decision_evidence" })),
+      metadata: {
+        promotionId: request.request.promotionId,
+        durableRevisionId: promoted.revisionId,
+        decisionEvidenceArtifactIds: decisionEvidence as unknown as import("../contracts/index.ts").JsonValue,
+      },
       runId: request.runId,
       ...(request.durableContext === undefined ? {} : { durableContext: request.durableContext }),
     });
@@ -205,7 +209,15 @@ function inputArtifactIds(request: DurablePromotionRequest): readonly ArtifactId
 }
 
 function inputRevisions(request: DurablePromotionRequest): readonly import("../durable/types.ts").InputRevisionRef[] {
-  return request.inputBindings?.map((binding) => binding.revision) ?? request.inputRevisions ?? [];
+  if (request.inputRevisions !== undefined) return request.inputRevisions;
+  const seen = new Set<string>();
+  return (request.inputBindings ?? []).flatMap((binding) => {
+    const revision = binding.revision;
+    const key = `${revision.kind}:${revision.editionId ?? ""}:${revision.logicalId}:${revision.revisionId}`;
+    if (seen.has(key)) return [];
+    seen.add(key);
+    return [revision];
+  });
 }
 
 function validatePromotionResult(

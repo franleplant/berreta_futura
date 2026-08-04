@@ -19,6 +19,15 @@ export interface ArticleMeasurementArtifactReader {
   readText(artifactId: ArtifactId): Promise<string>;
 }
 
+/**
+ * A caller-owned, closed artifact package for one measurement attempt. The
+ * renderer seam may read only these preloaded IDs; it cannot fall back to a
+ * ledger or guess additional inputs from a profile or path.
+ */
+export type ScopedArticleMeasurementArtifactReader = ArticleMeasurementArtifactReader & {
+  readonly artifactIds: readonly ArtifactId[];
+};
+
 export type ArticleMeasurementResult = {
   readonly schemaVersion: "article-measurement/1";
   readonly articleId: string;
@@ -82,6 +91,12 @@ export async function measureArticle(input: {
   const manuscriptIncluded = profile.inputs.some((candidate) => candidate.artifactId === input.manuscriptArtifactId);
   if (!manuscriptIncluded) throw permanentAdapterError("article measurement profile omits the exact manuscript");
   const inputIds = profile.inputs.map((candidate) => candidate.artifactId);
+  if ("artifactIds" in input.artifacts) {
+    const allowed = new Set((input.artifacts as ScopedArticleMeasurementArtifactReader).artifactIds);
+    if (inputIds.some((artifactId) => !allowed.has(artifactId))) {
+      throw permanentAdapterError("article measurement profile requests an artifact outside its preloaded package");
+    }
+  }
   if (new Set(inputIds).size !== inputIds.length) throw permanentAdapterError("article measurement inputs must be unique");
   for (const [index, candidate] of profile.inputs.entries()) {
     requireSafeTargetPath(candidate.targetPath, `article measurement input ${index}`);

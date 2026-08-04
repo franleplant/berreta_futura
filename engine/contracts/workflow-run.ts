@@ -151,4 +151,14 @@ export type MagazineWorkflowEngineOptions = {
     readonly toolchain: RendererToolchainResource;
   };
   readonly clock?: { readonly now: () => Date };
+  /** Authenticated, role-specific workers for the durable article review panel. */
+  readonly articleReviewWorkers?: {
+    readonly sourceAwareReviewer: import("../authority/local-authority.ts").AuthorizedWorker;
+    readonly sourceBlindReviewer: import("../authority/local-authority.ts").AuthorizedWorker;
+    readonly measurementTool: import("../authority/local-authority.ts").AuthorizedWorker;
+  };
+  /** Owner-private OpenAI credential resource used by the closed reviewer. */
+  readonly articleReviewCredentials?: import("../executors/closed-writer/credentials.ts").ClosedWriterCredentialResource;
+  /** Operational lease time is separate from the domain timestamp clock. */
+  readonly attemptClock?: import("../workflow-authority/artifact-ledger.ts").OperationalLeaseClock;
 };
