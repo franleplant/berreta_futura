@@ -328,6 +328,7 @@ impl Caller {
                 "model": spec.model,
                 "prompt": prompt,
                 "stream": false,
+                "keep_alive": "2h",
                 "options": {"num_ctx": ollama_num_ctx()},
             })
             .to_string(),
