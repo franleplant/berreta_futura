@@ -3,6 +3,7 @@ import type { ArtifactId, JsonObject, JsonValue, ManuscriptRevisionId, RunId } f
 import type {
   ArticleInputBinding,
   ArticleWorkflowResult,
+  ArticleWorkflowRouteResult,
 } from "../contracts/workflow-run.ts";
 import type { DurableInputBinding, DurablePromotionRequest, InputRevisionRef } from "../durable/types.ts";
 import type {
@@ -13,6 +14,15 @@ import type {
 } from "./internal-types.ts";
 import type { ArtifactLedger } from "../workflow-authority/artifact-ledger.ts";
 import { assertRendererIdentity, type RendererIdentity } from "./renderer-identity.ts";
+import {
+  compileRevisionBrief,
+  deriveArticleReviewRoute,
+  articleReviewCycleId,
+  assertValidatedArticleEditorDecision,
+  revisionBriefParents,
+  type ArticleReviewRoute,
+  type RevisionBrief,
+} from "../article-production/review-cycle.ts";
 
 /**
  * Small durable article tracer. Loops owns control flow and lifecycle; this
@@ -22,7 +32,7 @@ export async function runArticleWorkflow(
   args: ArticleRuntimeStartArgs,
   context: MagazineWorkflowContext,
   ports: ArticleWorkflowPorts,
-): Promise<ArticleWorkflowResult> {
+): Promise<ArticleWorkflowResult | ArticleWorkflowRouteResult> {
   const runIdValue = args.runId ?? context.durableContext?.()?.runId;
   if (runIdValue === undefined) throw new Error("Article workflow requires a durable run identity");
   const runId = runIdValue as RunId;
@@ -130,13 +140,23 @@ export async function runArticleWorkflow(
   );
 
   const manuscriptRevisionId = requireManuscriptRevision(ports.ledger.requireArtifact(acceptedManuscriptArtifactId), acceptedManuscriptArtifactId);
+  const rewriteOrdinal = args.rewriteOrdinal ?? 0;
+  const reviewPlanArtifactId = args.review.materialContext.reviewPlan.reviewPlanArtifactId;
+  const cycleId = articleReviewCycleId({
+    articleExecutionId: args.articleExecutionId,
+    manuscriptRevisionId,
+    reviewPlanArtifactId,
+    rewriteOrdinal,
+  });
   const reviewPanel = await ports.runReviewPanel({
     runId,
     articleExecutionId: args.articleExecutionId,
     articleId: args.articleId,
     manuscriptArtifactId: acceptedManuscriptArtifactId,
     manuscriptRevisionId,
-    manuscriptOrdinal: 0,
+    manuscriptOrdinal: rewriteOrdinal,
+    cycleId,
+    rewriteOrdinal,
     rendererIdentity: args.rendererIdentity,
     materialContext: bindReviewMaterialContext(
       args.review.materialContext,
@@ -151,28 +171,140 @@ export async function runArticleWorkflow(
   const measurement = reviewPanel.checks.find((check) => check.status === "completed" && check.kind === "article_measurement");
   if (measurement?.resultArtifactId === undefined) throw new Error("Article review panel did not produce a selected measurement artifact");
   const measurementArtifactId = measurement.resultArtifactId;
-  const reviewArtifactIds = reviewPanel.checks
-    .filter((check) => check.kind === "model_review")
-    .flatMap((check) => check.resultArtifactId === undefined ? [] : [check.resultArtifactId]);
-  const reviewOutputArtifactIds = reviewPanel.checks
-    .filter((check) => check.kind === "article_measurement")
-    .flatMap((check) => check.outputArtifactIds.filter((artifactId) => artifactId !== measurementArtifactId));
   ports.ledger.recordMeasurement(runId, measurementArtifactId);
 
-  const taskArtifactId = decisionTaskId(runId);
-  const offer = offerId(runId);
+  const iterationId = articleIterationId(cycleId);
+  const reviewCycle = await context.step(
+    `article.review-routing.${safeIdentity(cycleId)}`,
+    () => {
+      const brief = compileRevisionBrief({
+        articleId: args.articleId,
+        iterationId,
+        manuscriptArtifactId: acceptedManuscriptArtifactId,
+        manuscriptRevisionId,
+        articleExecutionId: args.articleExecutionId,
+        reviewPlanArtifactId,
+        rewriteOrdinal,
+        cycleId,
+        reviewPlan: args.review.materialContext.reviewPlan,
+        reviewResults: reviewPanel.checks,
+        measurementArtifactId,
+      });
+      const route = deriveArticleReviewRoute({
+        brief,
+        reviewPlan: args.review.materialContext.reviewPlan,
+        reviewResults: reviewPanel.checks,
+        // The seeded manuscript is the first available manuscript. Provider
+        // and Loops retries never consume this writer-rewrite budget.
+        rewriteBudget: {
+          rewritesUsed: 0,
+          maximumRewrites: args.review.materialContext.productionProfile.maximumRewrites,
+        },
+      });
+      const briefArtifactId = revisionBriefId(cycleId);
+      const routeArtifactId = reviewRouteId(cycleId);
+      ports.ledger.createArtifact({
+        id: briefArtifactId,
+        kind: "article_revision_brief",
+        schemaVersion: "article-revision-brief/1",
+        mediaType: "application/json",
+        origin: "machine",
+        payload: { kind: "json", value: brief as unknown as JsonValue },
+        parents: revisionBriefParents({ brief }).map((artifactId) => ({ artifactId, relation: "revision_brief_input" })),
+        metadata: {
+          articleId: args.articleId,
+          iterationId,
+          manuscriptArtifactId: acceptedManuscriptArtifactId,
+          reviewResultArtifactIds: brief.reviewResultArtifactIds as unknown as JsonValue,
+          measurementArtifactId,
+          reviewOutputArtifactIds: brief.reviewOutputArtifactIds as unknown as JsonValue,
+        },
+        runId,
+        ...withContext(context),
+      });
+      ports.ledger.createArtifact({
+        id: routeArtifactId,
+        kind: "article_review_route",
+        schemaVersion: "article-review-route/1",
+        mediaType: "application/json",
+        origin: "machine",
+        payload: { kind: "json", value: route as unknown as JsonValue },
+        parents: [{ artifactId: briefArtifactId, relation: "revision_brief" }],
+        metadata: {
+          articleId: args.articleId,
+          iterationId,
+          manuscriptArtifactId: acceptedManuscriptArtifactId,
+          revisionBriefArtifactId: briefArtifactId,
+          outcome: route.outcome,
+          reason: route.reason,
+        },
+        runId,
+        ...withContext(context),
+      });
+      return { brief, route, briefArtifactId, routeArtifactId };
+    },
+    { input: {
+      articleId: args.articleId,
+      iterationId,
+      manuscriptArtifactId: acceptedManuscriptArtifactId,
+      measurementArtifactId,
+      maximumRewrites: args.review.materialContext.productionProfile.maximumRewrites,
+      reviewResultArtifactIds: reviewPanel.checks.flatMap((check) => check.resultArtifactId === undefined ? [] : [check.resultArtifactId]),
+    } },
+  );
+  const brief = reviewCycle.brief as RevisionBrief;
+  const route = reviewCycle.route as ArticleReviewRoute;
+  const revisionBriefArtifactId = reviewCycle.briefArtifactId as ArtifactId;
+  const routeArtifactId = reviewCycle.routeArtifactId as ArtifactId;
+
+  if (route.outcome === "auto_rewrite") {
+    // Slice 7 owns the actual writer loop. Returning an explicit route result
+    // keeps this checkpoint honest instead of claiming a false completion.
+    return {
+      schemaVersion: "magazine-article-route-result/1",
+      runId,
+      articleExecutionId: args.articleExecutionId,
+      articleId: args.articleId,
+      status: "rewrite_pending",
+      manuscriptArtifactId: acceptedManuscriptArtifactId,
+      measurementArtifactId,
+      revisionBriefArtifactId,
+      routeArtifactId,
+      route: route as unknown as JsonObject,
+    };
+  }
+
+  const taskArtifactId = decisionTaskId(cycleId);
+  const offer = offerId(cycleId);
   const decisionArtifact = decisionArtifactId(offer);
   const decisionInputs = canonicalDecisionEvidence({
     manuscriptArtifactId: acceptedManuscriptArtifactId,
-    reviewArtifactIds,
+    reviewArtifactIds: [revisionBriefArtifactId, routeArtifactId, ...brief.reviewResultArtifactIds],
     measurementArtifactId,
     measurementProfileArtifactId,
-    reviewOutputArtifactIds,
+    reviewOutputArtifactIds: brief.reviewOutputArtifactIds,
     inputArtifactIds: materialArtifactIds,
   });
 
+  const decisionTask = {
+    schemaVersion: "article-decision-task/1" as const,
+    runId,
+    articleExecutionId: args.articleExecutionId,
+    articleId: args.articleId,
+    cycleId,
+    iterationId,
+    manuscriptArtifactId: acceptedManuscriptArtifactId,
+    manuscriptRevisionId,
+    reviewPlanArtifactId,
+    rewriteOrdinal,
+    revisionBriefArtifactId,
+    routeArtifactId,
+    inputArtifactIds: decisionInputs,
+    expectedDecisionArtifactId: decisionArtifact,
+    allowedChoices: ["accept", "revise", "drop"] as const,
+  };
   await context.step(
-    "article.decision-offer",
+    `article.decision-offer.${safeIdentity(cycleId)}`,
     () => {
       ports.ledger.createArtifact({
         id: taskArtifactId,
@@ -183,16 +315,7 @@ export async function runArticleWorkflow(
         payload: {
           kind: "json",
           value: {
-            schemaVersion: "article-decision-request/1",
-            runId,
-            articleId: args.articleId,
-            manuscriptArtifactId: acceptedManuscriptArtifactId,
-            measurementArtifactId,
-            measurementProfileArtifactId,
-            inputArtifactIds: decisionInputs,
-            decisionEvidenceArtifactIds: decisionInputs,
-            decisionArtifactId: decisionArtifact,
-            allowedChoices: ["accept", "drop"],
+            ...decisionTask,
           },
         },
         // The canonical evidence list is the one lineage authority for the
@@ -201,14 +324,18 @@ export async function runArticleWorkflow(
         parents: decisionInputs.map((artifactId) => ({ artifactId, relation: "decision_evidence" })),
         metadata: {
           articleId: args.articleId,
-          allowedChoices: ["accept", "drop"],
+          cycleId,
+          reviewPlanArtifactId,
+          manuscriptRevisionId,
+          rewriteOrdinal,
+          allowedChoices: ["accept", "revise", "drop"],
           decisionArtifactId: decisionArtifact,
           rendererIdentity: args.rendererIdentity as unknown as JsonObject,
         },
         runId,
         ...withContext(context),
       });
-      ports.ledger.createOffer({ id: offer, runId, taskArtifactId, inputArtifactIds: decisionInputs });
+      ports.ledger.createOffer({ id: offer, runId, taskArtifactId, inputArtifactIds: decisionInputs, allowedChoices: ["accept", "revise", "drop"] });
       return { taskArtifactId, offerId: offer };
     },
     { input: {
@@ -224,13 +351,16 @@ export async function runArticleWorkflow(
     } },
   );
 
-  const answer = await context.wait("article.decision", {
+  const answer = await context.wait(articleDecisionWaitKey(cycleId), {
     request: {
       schemaVersion: "magazine-article-decision-request/1",
       runId,
       offerId: offer,
       taskArtifactId,
       decisionArtifactId: decisionArtifact,
+      revisionBriefArtifactId,
+      routeArtifactId,
+      cycleId,
     },
   });
   if (answer.decisionArtifactId !== decisionArtifact) {
@@ -245,6 +375,14 @@ export async function runArticleWorkflow(
   ) {
     throw new Error("Article decision artifact is not bound to the exact immutable offer");
   }
+  assertValidatedArticleEditorDecision(route, {
+    choice: decision.choice,
+    ...(decision.approvedFindingIds === undefined ? {} : { approvedFindingIds: decision.approvedFindingIds }),
+    ...(decision.additionalRewriteBudget === undefined ? {} : { additionalRewriteBudget: decision.additionalRewriteBudget }),
+    ...(decision.validatorVersion === undefined ? {} : { validatorVersion: decision.validatorVersion }),
+    ...(decision.canonicalApprovedFindingIds === undefined ? {} : { canonicalApprovedFindingIds: decision.canonicalApprovedFindingIds }),
+    ...(decision.rewriteBudget === undefined ? {} : { rewriteBudget: decision.rewriteBudget }),
+  });
   if (decision.choice === "drop") {
     return {
       schemaVersion: "magazine-article-workflow-result/1",
@@ -255,6 +393,25 @@ export async function runArticleWorkflow(
       manuscriptArtifactId: acceptedManuscriptArtifactId,
       measurementArtifactId,
       decisionArtifactId: decision.artifactId,
+    };
+  }
+
+  if (decision.choice === "revise") {
+    return {
+      schemaVersion: "magazine-article-route-result/1",
+      runId,
+      articleExecutionId: args.articleExecutionId,
+      articleId: args.articleId,
+      status: "rewrite_pending",
+      manuscriptArtifactId: acceptedManuscriptArtifactId,
+      measurementArtifactId,
+      revisionBriefArtifactId,
+      routeArtifactId,
+      route: {
+        ...(route as unknown as JsonObject),
+        editorDecisionArtifactId: decision.artifactId,
+        ...(decision.additionalRewriteBudget === undefined ? {} : { additionalRewriteBudget: decision.additionalRewriteBudget }),
+      },
     };
   }
 
@@ -370,20 +527,36 @@ export function measurementProfileId(runId: RunId): ArtifactId {
   return `art-measurement-profile-${safeIdentity(runId)}` as ArtifactId;
 }
 
+export function revisionBriefId(cycleId: string): ArtifactId {
+  return `art-revision-brief-${safeIdentity(cycleId)}` as ArtifactId;
+}
+
+export function reviewRouteId(cycleId: string): ArtifactId {
+  return `art-review-route-${safeIdentity(cycleId)}` as ArtifactId;
+}
+
 export function measurementId(runId: RunId): ArtifactId {
   return `art-measurement-${safeIdentity(runId)}` as ArtifactId;
 }
 
-export function decisionTaskId(runId: RunId): ArtifactId {
-  return `art-decision-task-${safeIdentity(runId)}` as ArtifactId;
+export function decisionTaskId(cycleId: string): ArtifactId {
+  return `art-decision-task-${safeIdentity(cycleId)}` as ArtifactId;
 }
 
-export function offerId(runId: RunId): string {
-  return `offer-article-decision-${safeIdentity(runId)}`;
+export function offerId(cycleId: string): string {
+  return `offer-article-decision-${safeIdentity(cycleId)}`;
 }
 
 export function decisionArtifactId(offer: string): ArtifactId {
   return `art-decision-${safeIdentity(offer)}` as ArtifactId;
+}
+
+function articleIterationId(cycleId: string): string {
+  return `iteration-${safeIdentity(cycleId)}`;
+}
+
+export function articleDecisionWaitKey(cycleId: string): string {
+  return `article.decision.${safeIdentity(cycleId)}`;
 }
 
 function assertBindingMetadata(ledger: ArtifactLedger, bindings: readonly ArticleInputBinding[]): void {

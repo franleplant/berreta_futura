@@ -423,6 +423,7 @@ type RevisionBrief = {
   readonly humanRulings: readonly ArtifactId[];
   readonly reviewResultArtifactIds: readonly ArtifactId[];
   readonly measurementArtifactId: ArtifactId;
+  readonly reviewOutputArtifactIds: readonly ArtifactId[];
 };
 
 function readRevisionBrief(
@@ -437,7 +438,7 @@ function readRevisionBrief(
     throw new ClosedWriterError("WRITER_REVISION_BRIEF_INVALID", "writer revision brief is not the exact run-owned artifact");
   }
   const raw = parseJsonBytes(read.bytes, "revision brief");
-  exactKeys(raw, ["schemaVersion", "articleId", "iterationId", "manuscriptArtifactId", "mustFix", "consider", "humanRulings", "reviewResultArtifactIds", "measurementArtifactId"], "revision brief");
+  exactKeys(raw, ["schemaVersion", "articleId", "iterationId", "manuscriptArtifactId", "mustFix", "consider", "humanRulings", "reviewResultArtifactIds", "measurementArtifactId", "reviewOutputArtifactIds"], "revision brief");
   if (raw.schemaVersion !== REVISION_BRIEF_VERSION || raw.articleId !== articleId || raw.manuscriptArtifactId !== manuscriptArtifactId || !text(raw.iterationId) || !text(raw.measurementArtifactId)) {
     throw new ClosedWriterError("WRITER_REVISION_BRIEF_INVALID", "writer revision brief does not match the current manuscript");
   }
@@ -445,7 +446,8 @@ function readRevisionBrief(
   const consider = jsonObjectArray(raw.consider, "consider");
   const humanRulings = artifactIdsValue(raw.humanRulings, "humanRulings");
   const reviewResultArtifactIds = artifactIdsValue(raw.reviewResultArtifactIds, "reviewResultArtifactIds");
-  const expectedParents = [manuscriptArtifactId, ...reviewResultArtifactIds, raw.measurementArtifactId as ArtifactId, ...humanRulings];
+  const reviewOutputArtifactIds = artifactIdsValue(raw.reviewOutputArtifactIds, "reviewOutputArtifactIds");
+  const expectedParents = [manuscriptArtifactId, ...reviewResultArtifactIds, raw.measurementArtifactId as ArtifactId, ...reviewOutputArtifactIds, ...humanRulings];
   if (!sameStrings(read.artifact.parents.map((parent) => parent.artifactId), expectedParents) || new Set(expectedParents).size !== expectedParents.length) {
     throw new ClosedWriterError("WRITER_REVISION_BRIEF_LINEAGE_INVALID", "revision brief parents do not equal its immutable references");
   }
@@ -461,6 +463,7 @@ function readRevisionBrief(
       humanRulings,
       reviewResultArtifactIds,
       measurementArtifactId: raw.measurementArtifactId as ArtifactId,
+      reviewOutputArtifactIds,
     },
   };
 }

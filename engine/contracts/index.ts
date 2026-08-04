@@ -15,6 +15,7 @@ export type {
   ArticlePromotion,
   ArticleStartRequest,
   ArticleWorkflowResult,
+  ArticleWorkflowRouteResult,
   ArticleWorkflowStatus,
   ArticleWorkflowView,
   AuthenticatedHuman,

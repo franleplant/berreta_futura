@@ -19,8 +19,13 @@ import type {
   AttemptId,
   WorkOfferView,
 } from "../contracts/index.ts";
+import type {
+  ArticleDecisionRequest,
+  AuthenticatedHuman,
+} from "../contracts/workflow-run.ts";
 import { newId } from "../contracts/ids.ts";
 import { AuthorizedWorker, type AuthorizedWorkerDescription } from "../authority/local-authority.ts";
+import { articleDecisionWaitKey, decisionArtifactId } from "../workflows/article-workflow.ts";
 import type {
   ArticleAttemptClaim,
   ArticleAttemptArtifactSeed,
@@ -35,6 +40,23 @@ import {
   type ArticleMaterialSet,
   SourceExposureConflictError,
 } from "../article-production/materials.ts";
+import {
+  articleDecisionTaskSchema,
+  articleEditorDecisionSchema,
+  articleReviewRouteSchema,
+  revisionBriefParents,
+  revisionBriefSchema,
+  validateArticleEditorDecision,
+  validatedArticleEditorDecision,
+  type ArticleDecisionTask,
+  type ArticleDecisionBudgetSnapshot,
+  type ArticleEditorDecision,
+  type ArticleFindingId,
+  type ArticleReviewRoute,
+  type RevisionBrief,
+  type ValidatedArticleEditorDecision,
+} from "../article-production/review-cycle.ts";
+import type { HumanDecisionAuthority } from "./human-decisions.ts";
 
 export type LedgerPayload =
   | { readonly kind: "text"; readonly text: string }
@@ -174,7 +196,7 @@ export type LedgerOffer = {
   readonly status: "active" | "answered";
   readonly taskArtifactId: ArtifactId;
   readonly inputArtifactIds: readonly ArtifactId[];
-  readonly allowedChoices: readonly ("accept" | "drop")[];
+  readonly allowedChoices: readonly ("accept" | "revise" | "drop")[];
   readonly createdAt: string;
 };
 
@@ -186,11 +208,34 @@ export type LedgerDecision = {
   readonly inputArtifactIds: readonly ArtifactId[];
   readonly principalId: string;
   readonly credentialProfileId: string;
-  readonly choice: "accept" | "drop";
+  readonly choice: "accept" | "revise" | "drop";
   readonly rationale: string;
+  readonly approvedFindingIds?: readonly string[];
+  readonly additionalRewriteBudget?: number;
+  /** Validation facts are immutable authority, not a recomputed view. */
+  readonly validatorVersion?: string;
+  readonly canonicalApprovedFindingIds?: readonly ArticleFindingId[];
+  readonly rewriteBudget?: ArticleDecisionBudgetSnapshot;
   readonly artifactId: ArtifactId;
   readonly durableContext?: WorkflowWaitContext;
   readonly createdAt: string;
+};
+
+type ArticleEditorDecisionRecordInput = Omit<LedgerDecision, "createdAt" | "durableContext" | "validatorVersion" | "canonicalApprovedFindingIds" | "rewriteBudget"> & {
+  readonly durableContext: WorkflowWaitContext;
+  readonly createdAt?: string;
+};
+
+type ArticleEditorDecisionAuthorityFacts = {
+  readonly task: ArticleDecisionTask;
+  readonly brief: RevisionBrief;
+  readonly route: ArticleReviewRoute;
+  readonly validation: ValidatedArticleEditorDecision;
+};
+
+type HumanDecisionPersistenceInput = {
+  readonly decision: ArticleEditorDecisionRecordInput;
+  readonly artifact: LedgerArtifactInput;
 };
 
 export type LedgerPromotion = {
@@ -317,6 +362,24 @@ export class ArtifactLedger {
       readSelectedArticleAttempt: (input) => this.#readSelectedArticleAttempt(input),
       failArticleAttempt: (claim) => this.#failArticleAttempt(claim),
     });
+  }
+
+  /**
+   * Return the only public human-decision seam. The decision authority keeps
+   * the persistence capability in this module-private closure, just like the
+   * article-attempt runner above. Callers receive validation and decision
+   * methods, never a ledger writer or caller-supplied identity port.
+   */
+  createHumanDecisionAuthority(options: {
+    readonly clock?: { readonly now: () => Date };
+  } = {}): HumanDecisionAuthority {
+    const clock = options.clock ?? this.#clock;
+    return new HumanDecisionAuthorityImpl(
+      humanDecisionAuthorityToken,
+      this,
+      (input) => this.#recordValidatedEditorDecision(input),
+      clock,
+    );
   }
 
   createRun(input: {
@@ -923,13 +986,13 @@ export class ArtifactLedger {
     readonly runId: RunId;
     readonly taskArtifactId: ArtifactId;
     readonly inputArtifactIds: readonly ArtifactId[];
-    readonly allowedChoices?: readonly ("accept" | "drop")[];
+    readonly allowedChoices: readonly ("accept" | "revise" | "drop")[];
   }): LedgerOffer {
     const existing = this.#db.prepare("SELECT * FROM magazine_offers WHERE id = ?").get(input.id) as OfferRow | undefined;
     if (existing !== undefined) {
       const offer = toOffer(existing);
       const expectedInputs = input.inputArtifactIds;
-      const expectedChoices = input.allowedChoices ?? ["accept", "drop"];
+      const expectedChoices = input.allowedChoices;
       if (
         offer.runId !== input.runId
         || offer.taskArtifactId !== input.taskArtifactId
@@ -943,9 +1006,9 @@ export class ArtifactLedger {
     this.requireRun(input.runId);
     this.requireArtifact(input.taskArtifactId);
     for (const artifactId of input.inputArtifactIds) this.requireArtifact(artifactId);
-    const allowedChoices = input.allowedChoices ?? ["accept", "drop"];
-    if (allowedChoices.length === 0 || allowedChoices.some((choice) => !["accept", "drop"].includes(choice))) {
-      throw new ArtifactLedgerError("OFFER_INVALID", "Article decision offer must expose accept or drop");
+    const allowedChoices = input.allowedChoices;
+    if (!sameStrings(allowedChoices, ["accept", "revise", "drop"])) {
+      throw new ArtifactLedgerError("OFFER_INVALID", "Article decision offer must explicitly expose accept, revise, and drop in canonical order");
     }
     this.#db.prepare(
       `INSERT INTO magazine_offers(
@@ -988,7 +1051,209 @@ export class ArtifactLedger {
     },
   ): LedgerDecision {
     assertWaitContext(input.durableContext, input.runId);
+    const offer = this.requireOffer(input.offerId);
+    if (offer.role === "article_decision") {
+      throw new ArtifactLedgerError(
+        "DECISION_VALIDATION_REQUIRED",
+        "Article editor decisions must be validated against their parsed task, route, and review brief before persistence",
+      );
+    }
     return this.#recordDecision(input);
+  }
+
+  /**
+   * Atomically persist an editor decision and its immutable decision artifact.
+   *
+   * Only the human request and immutable artifact identity cross this seam.
+   * Validation facts are derived again from the task, route, and revision
+   * brief stored in this ledger. A caller cannot smuggle validatorVersion,
+   * approvals, or rewrite-budget facts into persistence.
+   */
+  #recordValidatedEditorDecision(input: {
+    readonly decision: ArticleEditorDecisionRecordInput;
+    readonly artifact: LedgerArtifactInput;
+  }): LedgerDecision {
+    const decision = input.decision;
+    const authority = this.#deriveArticleEditorDecisionAuthority(decision);
+    const validation = authority.validation;
+    assertWaitContext(decision.durableContext, decision.runId);
+    if (input.artifact.id !== decision.artifactId || input.artifact.runId !== decision.runId) {
+      throw new ArtifactLedgerError("DECISION_ARTIFACT_MISMATCH", "validated decision artifact must bind the exact run and decision identity");
+    }
+    assertDecisionArtifactFacts(input.artifact, decision, validation);
+
+    const existing = this.#db.prepare("SELECT * FROM magazine_decisions WHERE offer_id = ?").get(decision.offerId) as DecisionRow | undefined;
+    if (existing !== undefined) {
+      const persisted = toDecision(existing);
+      if (!sameValidatedDecision(persisted, decision, validation)) {
+        throw new ArtifactLedgerError("DECISION_ALREADY_RECORDED", `Offer ${decision.offerId} already has a different validated decision`);
+      }
+      this.requireArtifact(persisted.artifactId);
+      return persisted;
+    }
+
+    const offer = this.requireOffer(decision.offerId);
+    if (offer.runId !== decision.runId || offer.status !== "active") throw new ArtifactLedgerError("OFFER_STALE", `Offer ${decision.offerId} is not active for this run`);
+    if (!offer.allowedChoices.includes(decision.choice)) throw new ArtifactLedgerError("CHOICE_INVALID", `Choice ${decision.choice} is not allowed for offer ${decision.offerId}`);
+    if (offer.taskArtifactId !== decision.taskArtifactId || !sameStrings(offer.inputArtifactIds, decision.inputArtifactIds)) throw new ArtifactLedgerError("OFFER_INPUT_MISMATCH", `Decision does not bind offer ${decision.offerId}'s immutable inputs`);
+
+    const payload = encodePayload(input.artifact.payload);
+    const metadata = { ...(input.artifact.metadata ?? {}), durableContext: contextObject(decision.durableContext) };
+    const parents = input.artifact.parents ?? [];
+    const createdAt = decision.createdAt ?? this.#clock.now().toISOString();
+    const transaction = this.#db.transaction(() => {
+      const existingArtifact = this.#db.prepare("SELECT * FROM magazine_artifacts WHERE id = ?").get(input.artifact.id) as ArtifactRow | undefined;
+      if (existingArtifact !== undefined) {
+        if (!sameArtifact(existingArtifact, { ...input.artifact, durableContext: decision.durableContext }, payload, metadata, parents, this.parentRows(input.artifact.id))) {
+          throw new ArtifactLedgerError("ARTIFACT_ID_COLLISION", `Artifact ${input.artifact.id} already exists with different immutable content`);
+        }
+      } else {
+        for (const parent of parents) this.requireArtifact(parent.artifactId);
+        this.#db.prepare(
+          `INSERT INTO magazine_artifacts(
+            id, kind, schema_version, media_type, origin, payload_kind, payload,
+            metadata_json, durable_context_json, run_id, created_at, digest
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ).run(
+          input.artifact.id,
+          input.artifact.kind,
+          input.artifact.schemaVersion,
+          input.artifact.mediaType,
+          input.artifact.origin,
+          input.artifact.payload.kind,
+          payload,
+          JSON.stringify(metadata),
+          JSON.stringify(contextObject(decision.durableContext)),
+          decision.runId,
+          createdAt,
+          digest(payload),
+        );
+        parents.forEach((parent, ordinal) => {
+          this.#db.prepare(
+            `INSERT INTO magazine_artifact_edges(child_artifact_id, parent_artifact_id, relation, ordinal)
+             VALUES (?, ?, ?, ?)`,
+          ).run(input.artifact.id, parent.artifactId, parent.relation, ordinal);
+        });
+      }
+      this.#db.prepare(
+        `INSERT INTO magazine_decisions(
+          id, run_id, offer_id, task_artifact_id, input_artifact_ids_json,
+          principal_id, credential_profile_id, choice, rationale,
+          approved_finding_ids_json, additional_rewrite_budget,
+          validator_version, canonical_approved_finding_ids_json, rewrite_budget_json,
+          artifact_id, created_at, durable_context_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        decision.id,
+        decision.runId,
+        decision.offerId,
+        decision.taskArtifactId,
+        JSON.stringify(decision.inputArtifactIds),
+        decision.principalId,
+        decision.credentialProfileId,
+        decision.choice,
+        decision.rationale,
+        decision.approvedFindingIds === undefined ? null : JSON.stringify(decision.approvedFindingIds),
+        decision.additionalRewriteBudget ?? null,
+        validation.validatorVersion,
+        JSON.stringify(validation.canonicalApprovedFindingIds),
+        JSON.stringify(validation.rewriteBudget),
+        decision.artifactId,
+        createdAt,
+        JSON.stringify(contextObject(decision.durableContext)),
+      );
+    });
+    transaction();
+    return this.requireDecision(decision.offerId);
+  }
+
+  /**
+   * Rebuild editor authority facts from immutable ledger evidence. This stays
+   * private so a caller cannot replace the route or validation with a hint.
+   */
+  #deriveArticleEditorDecisionAuthority(
+    decision: ArticleEditorDecisionRecordInput,
+  ): ArticleEditorDecisionAuthorityFacts {
+    const offer = this.requireOffer(decision.offerId);
+    if (offer.role !== "article_decision") {
+      throw new ArtifactLedgerError("DECISION_VALIDATION_REQUIRED", "Only article decision offers use editor authority validation");
+    }
+    if (offer.runId !== decision.runId || offer.status !== "active") {
+      throw new ArtifactLedgerError("OFFER_STALE", `Offer ${decision.offerId} is not active for this run`);
+    }
+    if (offer.taskArtifactId !== decision.taskArtifactId || !sameStrings(offer.inputArtifactIds, decision.inputArtifactIds)) {
+      throw new ArtifactLedgerError("OFFER_INPUT_MISMATCH", `Decision does not bind offer ${decision.offerId}'s immutable inputs`);
+    }
+    const run = this.requireRun(decision.runId);
+    const taskArtifact = this.requireArtifact(offer.taskArtifactId);
+    if (taskArtifact.kind !== "article_decision_request" || taskArtifact.schemaVersion !== "article-decision-request/1") {
+      throw new ArtifactLedgerError("DECISION_TASK_INVALID", "active decision task has the wrong artifact contract");
+    }
+    const task = parseLedgerArtifact(this, offer.taskArtifactId, taskArtifact, articleDecisionTaskSchema, "article decision task") as ArticleDecisionTask;
+    if (
+      task.runId !== run.runId
+      || task.articleExecutionId !== run.articleExecutionId
+      || task.articleId !== run.articleId
+      || task.expectedDecisionArtifactId !== decision.artifactId
+      || !sameStrings(task.inputArtifactIds, offer.inputArtifactIds)
+      || !sameStrings(task.allowedChoices, ["accept", "revise", "drop"])
+    ) {
+      throw new ArtifactLedgerError("DECISION_TASK_INVALID", "decision task is not bound to the exact run, offer, and decision artifact");
+    }
+    assertWaitContext(decision.durableContext, decision.runId);
+    if (decision.durableContext.key !== `article.decision.${safeIdentity(task.cycleId)}`) {
+      throw new ArtifactLedgerError("DECISION_PROVENANCE_INVALID", "decision wait key is not scoped to the exact review cycle");
+    }
+
+    const briefArtifact = this.requireArtifact(task.revisionBriefArtifactId);
+    const routeArtifact = this.requireArtifact(task.routeArtifactId);
+    if (briefArtifact.kind !== "article_revision_brief" || briefArtifact.schemaVersion !== "article-revision-brief/1") {
+      throw new ArtifactLedgerError("DECISION_LINEAGE_INVALID", "decision task references the wrong revision brief artifact");
+    }
+    if (routeArtifact.kind !== "article_review_route" || routeArtifact.schemaVersion !== "article-review-route/1") {
+      throw new ArtifactLedgerError("DECISION_LINEAGE_INVALID", "decision task references the wrong review route artifact");
+    }
+    const brief = parseLedgerArtifact(this, task.revisionBriefArtifactId, briefArtifact, revisionBriefSchema, "revision brief") as RevisionBrief;
+    const route = parseLedgerArtifact(this, task.routeArtifactId, routeArtifact, articleReviewRouteSchema, "review route") as ArticleReviewRoute;
+    if (
+      route.outcome !== "editor_wait"
+      || !sameStrings(route.allowedChoices, task.allowedChoices)
+      || brief.articleId !== task.articleId
+      || brief.manuscriptArtifactId !== task.manuscriptArtifactId
+      || brief.iterationId !== task.iterationId
+      || route.articleId !== brief.articleId
+      || route.manuscriptArtifactId !== brief.manuscriptArtifactId
+      || route.iterationId !== brief.iterationId
+      || brief.cycleId !== task.cycleId
+      || route.cycleId !== task.cycleId
+      || brief.manuscriptRevisionId !== task.manuscriptRevisionId
+      || route.manuscriptRevisionId !== task.manuscriptRevisionId
+      || brief.reviewPlanArtifactId !== task.reviewPlanArtifactId
+      || route.reviewPlanArtifactId !== task.reviewPlanArtifactId
+      || brief.rewriteOrdinal !== task.rewriteOrdinal
+      || route.rewriteOrdinal !== task.rewriteOrdinal
+      || !sameParents(taskArtifact.parents, task.inputArtifactIds.map((artifactId) => ({ artifactId, relation: "decision_evidence" })))
+      || !sameParents(routeArtifact.parents, [{ artifactId: task.revisionBriefArtifactId, relation: "revision_brief" }])
+      || !sameStrings(briefArtifact.parents.map((parent) => parent.artifactId), revisionBriefParents({ brief }))
+    ) {
+      throw new ArtifactLedgerError("DECISION_LINEAGE_INVALID", "decision task, brief, route, and immutable parents do not match");
+    }
+    const editorDecision = {
+      choice: decision.choice,
+      ...(decision.approvedFindingIds === undefined ? {} : { approvedFindingIds: decision.approvedFindingIds }),
+      ...(decision.additionalRewriteBudget === undefined ? {} : { additionalRewriteBudget: decision.additionalRewriteBudget }),
+    } as ArticleEditorDecision;
+    const parsedDecision = articleEditorDecisionSchema.safeParse(editorDecision);
+    if (!parsedDecision.success) {
+      throw new ArtifactLedgerError("DECISION_VALIDATION_INVALID", "editor decision has fields outside the strict article decision contract");
+    }
+    let validation: ValidatedArticleEditorDecision;
+    try {
+      validation = validatedArticleEditorDecision(route, parsedDecision.data as ArticleEditorDecision);
+    } catch (error) {
+      throw new ArtifactLedgerError("DECISION_VALIDATION_INVALID", error instanceof Error ? error.message : "editor decision failed authority validation", { cause: error });
+    }
+    return { task, brief, route, validation };
   }
 
   #recordDecision(
@@ -997,7 +1262,14 @@ export class ArtifactLedger {
     const existing = this.#db.prepare("SELECT * FROM magazine_decisions WHERE offer_id = ?").get(input.offerId) as DecisionRow | undefined;
     if (existing !== undefined) {
       const decision = toDecision(existing);
-      if (decision.principalId !== input.principalId || decision.choice !== input.choice || decision.rationale !== input.rationale) {
+      if (
+        decision.principalId !== input.principalId
+        || decision.credentialProfileId !== input.credentialProfileId
+        || decision.choice !== input.choice
+        || decision.rationale !== input.rationale
+        || JSON.stringify(decision.approvedFindingIds ?? null) !== JSON.stringify(input.approvedFindingIds ?? null)
+        || decision.additionalRewriteBudget !== input.additionalRewriteBudget
+      ) {
         throw new ArtifactLedgerError("DECISION_ALREADY_RECORDED", `Offer ${input.offerId} already has a different decision`);
       }
       if (JSON.stringify(decision.durableContext ?? null) !== JSON.stringify(input.durableContext ?? null)) {
@@ -1014,9 +1286,10 @@ export class ArtifactLedger {
       this.#db.prepare(
         `INSERT INTO magazine_decisions(
           id, run_id, offer_id, task_artifact_id, input_artifact_ids_json,
-          principal_id, credential_profile_id, choice, rationale, artifact_id, created_at
+          principal_id, credential_profile_id, choice, rationale,
+          approved_finding_ids_json, additional_rewrite_budget, artifact_id, created_at
           , durable_context_json
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).run(
         input.id,
         input.runId,
@@ -1027,6 +1300,8 @@ export class ArtifactLedger {
         input.credentialProfileId,
         input.choice,
         input.rationale,
+        input.approvedFindingIds === undefined ? null : JSON.stringify(input.approvedFindingIds),
+        input.additionalRewriteBudget ?? null,
         input.artifactId,
         createdAt,
         input.durableContext === undefined ? null : JSON.stringify(contextObject(input.durableContext)),
@@ -1269,6 +1544,11 @@ export class ArtifactLedger {
         credential_profile_id TEXT NOT NULL,
         choice TEXT NOT NULL,
         rationale TEXT NOT NULL,
+        approved_finding_ids_json TEXT,
+        additional_rewrite_budget INTEGER,
+        validator_version TEXT,
+        canonical_approved_finding_ids_json TEXT,
+        rewrite_budget_json TEXT,
         artifact_id TEXT NOT NULL,
         durable_context_json TEXT,
         created_at TEXT NOT NULL,
@@ -1309,6 +1589,11 @@ export class ArtifactLedger {
     this.#ensureColumn("magazine_article_attempts", "operation_input_digest", "TEXT");
     this.#ensureColumn("magazine_article_operation_selections", "operation_input_digest", "TEXT");
     this.#ensureColumn("magazine_decisions", "durable_context_json", "TEXT");
+    this.#ensureColumn("magazine_decisions", "approved_finding_ids_json", "TEXT");
+    this.#ensureColumn("magazine_decisions", "additional_rewrite_budget", "INTEGER");
+    this.#ensureColumn("magazine_decisions", "validator_version", "TEXT");
+    this.#ensureColumn("magazine_decisions", "canonical_approved_finding_ids_json", "TEXT");
+    this.#ensureColumn("magazine_decisions", "rewrite_budget_json", "TEXT");
     this.#db.prepare(
       "UPDATE magazine_runs SET article_execution_id = ? || run_id WHERE article_execution_id IS NULL",
     ).run("article-execution-");
@@ -1461,6 +1746,223 @@ export class ArtifactLedger {
     return this.#db.prepare(
       "SELECT parent_artifact_id AS artifactId, relation FROM magazine_artifact_edges WHERE child_artifact_id = ? ORDER BY ordinal",
     ).all(artifactId) as readonly ArtifactParent[];
+  }
+}
+
+const humanDecisionAuthorityToken = Symbol("magazine.humanDecisionAuthority");
+
+/**
+ * Private implementation of the human decision facade. It is deliberately
+ * not exported. The only way to obtain it is ArtifactLedger's factory, which
+ * captures the persistence closure over the ledger's private method.
+ */
+class HumanDecisionAuthorityImpl implements HumanDecisionAuthority {
+  readonly #ledger: ArtifactLedger;
+  readonly #persist: (input: HumanDecisionPersistenceInput) => LedgerDecision;
+  readonly #clock: { readonly now: () => Date };
+
+  constructor(
+    token: typeof humanDecisionAuthorityToken,
+    ledger: ArtifactLedger,
+    persist: (input: HumanDecisionPersistenceInput) => LedgerDecision,
+    clock: { readonly now: () => Date },
+  ) {
+    if (token !== humanDecisionAuthorityToken) {
+      throw new ArtifactLedgerError("HUMAN_AUTHORITY_REQUIRED", "Human decision authorities must be created by ArtifactLedger");
+    }
+    this.#ledger = ledger;
+    this.#persist = persist;
+    this.#clock = clock;
+  }
+
+  async decide(
+    human: AuthenticatedHuman,
+    request: ArticleDecisionRequest,
+    durableContext: WorkflowWaitContext,
+  ): Promise<LedgerDecision> {
+    if (!(human instanceof AuthorizedWorker)) {
+      throw new ArtifactLedgerError(
+        "HUMAN_AUTHORITY_REQUIRED",
+        "A decision requires an AuthorizedWorker session minted by LocalAuthorityStore",
+      );
+    }
+    const description = await human.describe();
+    if (description.authority !== "human" || description.grantIds.length === 0 || description.capabilities.length === 0) {
+      throw new ArtifactLedgerError(
+        "HUMAN_AUTHORITY_REQUIRED",
+        "Only an authenticated human with active capabilities may answer an article decision offer",
+      );
+    }
+    const boundary = this.#loadBoundary(request, durableContext);
+    if (request.rationale.trim().length === 0) {
+      throw new ArtifactLedgerError("DECISION_INVALID", "A human decision requires a rationale");
+    }
+    const editorDecision: ArticleEditorDecision = {
+      choice: request.choice,
+      ...(request.approvedFindingIds === undefined ? {} : { approvedFindingIds: request.approvedFindingIds }),
+      ...(request.additionalRewriteBudget === undefined ? {} : { additionalRewriteBudget: request.additionalRewriteBudget }),
+    };
+    const validation = this.#validate(boundary.route, editorDecision);
+    const existing = this.#ledger.getDecision(request.offerId);
+    if (existing !== undefined) {
+      if (!sameHumanDecision(existing, request, description, durableContext, validation)) {
+        throw new ArtifactLedgerError("DECISION_ALREADY_RECORDED", `Offer ${request.offerId} already has a different validated decision`);
+      }
+      return existing;
+    }
+    if (boundary.offer.status !== "active") {
+      throw new ArtifactLedgerError("OFFER_STALE", `Offer ${request.offerId} is no longer active`);
+    }
+
+    const rationale = request.rationale.trim();
+    const artifactId = decisionArtifactId(request.offerId);
+    const artifact = {
+      id: artifactId,
+      kind: "article_human_decision",
+      schemaVersion: "article-human-decision/1",
+      mediaType: "application/json",
+      origin: "human",
+      payload: {
+        kind: "json",
+        value: {
+          schemaVersion: "article-human-decision/1",
+          offerId: request.offerId,
+          taskArtifactId: request.taskArtifactId,
+          inputArtifactIds: request.inputArtifactIds,
+          principalId: description.principalId,
+          credentialProfileId: description.credentialProfileId,
+          capabilities: description.capabilities,
+          choice: request.choice,
+          rationale,
+          ...(request.approvedFindingIds === undefined ? {} : { approvedFindingIds: request.approvedFindingIds }),
+          ...(request.additionalRewriteBudget === undefined ? {} : { additionalRewriteBudget: request.additionalRewriteBudget }),
+          validatorVersion: validation.validatorVersion,
+          canonicalApprovedFindingIds: validation.canonicalApprovedFindingIds,
+          rewriteBudget: validation.rewriteBudget,
+        },
+      },
+      parents: [
+        { artifactId: request.taskArtifactId, relation: "decision_task" },
+        ...request.inputArtifactIds.map((artifactId) => ({ artifactId, relation: "decision_input" })),
+      ],
+      metadata: {
+        offerId: request.offerId,
+        principalId: description.principalId,
+        credentialProfileId: description.credentialProfileId,
+        capabilities: description.capabilities,
+        choice: request.choice,
+        ...(request.approvedFindingIds === undefined ? {} : { approvedFindingIds: request.approvedFindingIds }),
+        ...(request.additionalRewriteBudget === undefined ? {} : { additionalRewriteBudget: request.additionalRewriteBudget }),
+        validatorVersion: validation.validatorVersion,
+        canonicalApprovedFindingIds: validation.canonicalApprovedFindingIds,
+        rewriteBudget: validation.rewriteBudget,
+      },
+      runId: request.runId,
+      durableContext,
+    } as const;
+    const decision = {
+      id: `decision-${safeIdentity(request.offerId)}`,
+      runId: request.runId,
+      offerId: request.offerId,
+      taskArtifactId: request.taskArtifactId,
+      inputArtifactIds: request.inputArtifactIds,
+      principalId: description.principalId,
+      credentialProfileId: description.credentialProfileId,
+      choice: request.choice,
+      ...(request.approvedFindingIds === undefined ? {} : { approvedFindingIds: request.approvedFindingIds }),
+      ...(request.additionalRewriteBudget === undefined ? {} : { additionalRewriteBudget: request.additionalRewriteBudget }),
+      rationale,
+      artifactId,
+      durableContext,
+      createdAt: this.#clock.now().toISOString(),
+    } as const;
+    // The closure is the only path to persistence. Validation is rebuilt by
+    // the ledger from its immutable evidence before the row is written.
+    return this.#persist({ decision, artifact });
+  }
+
+  #validate(route: ArticleReviewRoute, decision: ArticleEditorDecision): ValidatedArticleEditorDecision {
+    const parsed = articleEditorDecisionSchema.safeParse(decision);
+    if (!parsed.success) {
+      throw new ArtifactLedgerError("DECISION_VALIDATION_INVALID", "editor decision is not a strict article decision contract");
+    }
+    try {
+      validateArticleEditorDecision(route, parsed.data as ArticleEditorDecision);
+      return validatedArticleEditorDecision(route, parsed.data as ArticleEditorDecision);
+    } catch (error) {
+      throw new ArtifactLedgerError("DECISION_VALIDATION_INVALID", error instanceof Error ? error.message : "editor decision failed authority validation", { cause: error });
+    }
+  }
+
+  #loadBoundary(request: ArticleDecisionRequest, durableContext: WorkflowWaitContext): {
+    readonly task: ArticleDecisionTask;
+    readonly brief: RevisionBrief;
+    readonly route: ArticleReviewRoute;
+    readonly offer: LedgerOffer;
+  } {
+    const run = this.#ledger.requireRun(request.runId);
+    const offer = this.#ledger.requireOffer(request.offerId);
+    if (offer.runId !== run.runId) throw new ArtifactLedgerError("OFFER_RUN_MISMATCH", `Offer ${request.offerId} belongs to another run`);
+    if (offer.taskArtifactId !== request.taskArtifactId || !sameStrings(offer.inputArtifactIds, request.inputArtifactIds)) {
+      throw new ArtifactLedgerError("OFFER_INPUT_MISMATCH", "Decision task and inputs are not the exact active offer evidence");
+    }
+    if (!offer.allowedChoices.includes(request.choice)) {
+      throw new ArtifactLedgerError("CHOICE_INVALID", `Choice ${request.choice} is not allowed by the active offer`);
+    }
+    assertWaitContext(durableContext, request.runId);
+    const taskArtifact = this.#ledger.requireArtifact(offer.taskArtifactId);
+    if (taskArtifact.kind !== "article_decision_request" || taskArtifact.schemaVersion !== "article-decision-request/1") {
+      throw new ArtifactLedgerError("DECISION_TASK_INVALID", "active decision task has the wrong artifact contract");
+    }
+    const task = parseLedgerArtifact(this.#ledger, offer.taskArtifactId, taskArtifact, articleDecisionTaskSchema, "article decision task") as ArticleDecisionTask;
+    if (
+      task.runId !== run.runId
+      || task.articleExecutionId !== run.articleExecutionId
+      || task.articleId !== run.articleId
+      || task.expectedDecisionArtifactId !== decisionArtifactId(offer.id)
+      || !sameStrings(task.inputArtifactIds, offer.inputArtifactIds)
+      || !sameStrings(task.allowedChoices, ["accept", "revise", "drop"])
+      || request.taskArtifactId !== offer.taskArtifactId
+    ) {
+      throw new ArtifactLedgerError("DECISION_TASK_INVALID", "decision task is not bound to the exact run and offer");
+    }
+    if (durableContext.key !== articleDecisionWaitKey(task.cycleId)) {
+      throw new ArtifactLedgerError("DECISION_PROVENANCE_INVALID", "decision wait key is not scoped to the exact review cycle");
+    }
+    const briefArtifact = this.#ledger.requireArtifact(task.revisionBriefArtifactId);
+    const routeArtifact = this.#ledger.requireArtifact(task.routeArtifactId);
+    if (briefArtifact.kind !== "article_revision_brief" || briefArtifact.schemaVersion !== "article-revision-brief/1") {
+      throw new ArtifactLedgerError("DECISION_LINEAGE_INVALID", "decision task references the wrong revision brief artifact");
+    }
+    if (routeArtifact.kind !== "article_review_route" || routeArtifact.schemaVersion !== "article-review-route/1") {
+      throw new ArtifactLedgerError("DECISION_LINEAGE_INVALID", "decision task references the wrong review route artifact");
+    }
+    const brief = parseLedgerArtifact(this.#ledger, task.revisionBriefArtifactId, briefArtifact, revisionBriefSchema, "revision brief") as RevisionBrief;
+    const route = parseLedgerArtifact(this.#ledger, task.routeArtifactId, routeArtifact, articleReviewRouteSchema, "review route") as ArticleReviewRoute;
+    if (
+      route.outcome !== "editor_wait"
+      || !sameStrings(route.allowedChoices, task.allowedChoices)
+      || brief.articleId !== task.articleId
+      || brief.manuscriptArtifactId !== task.manuscriptArtifactId
+      || brief.iterationId !== task.iterationId
+      || route.articleId !== brief.articleId
+      || route.manuscriptArtifactId !== brief.manuscriptArtifactId
+      || route.iterationId !== brief.iterationId
+      || brief.cycleId !== task.cycleId
+      || route.cycleId !== task.cycleId
+      || brief.manuscriptRevisionId !== task.manuscriptRevisionId
+      || route.manuscriptRevisionId !== task.manuscriptRevisionId
+      || brief.reviewPlanArtifactId !== task.reviewPlanArtifactId
+      || route.reviewPlanArtifactId !== task.reviewPlanArtifactId
+      || brief.rewriteOrdinal !== task.rewriteOrdinal
+      || route.rewriteOrdinal !== task.rewriteOrdinal
+      || !sameParentsWithRelation(taskArtifact.parents, task.inputArtifactIds, "decision_evidence")
+      || !sameParentsWithRelation(routeArtifact.parents, [task.revisionBriefArtifactId], "revision_brief")
+      || !sameStrings(briefArtifact.parents.map((parent) => parent.artifactId), revisionBriefParents({ brief }))
+    ) {
+      throw new ArtifactLedgerError("DECISION_LINEAGE_INVALID", "decision task, brief, route, and immutable parents do not match");
+    }
+    return { task, brief, route, offer };
   }
 }
 
@@ -1652,8 +2154,13 @@ type DecisionRow = {
   readonly input_artifact_ids_json: string;
   readonly principal_id: string;
   readonly credential_profile_id: string;
-  readonly choice: "accept" | "drop";
+  readonly choice: "accept" | "revise" | "drop";
   readonly rationale: string;
+  readonly approved_finding_ids_json: string | null;
+  readonly additional_rewrite_budget: number | null;
+  readonly validator_version: string | null;
+  readonly canonical_approved_finding_ids_json: string | null;
+  readonly rewrite_budget_json: string | null;
   readonly artifact_id: ArtifactId;
   readonly durable_context_json: string | null;
   readonly created_at: string;
@@ -1743,6 +2250,60 @@ function sameStrings(left: readonly string[], right: readonly string[]): boolean
   return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
+function sameParentsWithRelation(
+  actual: readonly { readonly artifactId: ArtifactId; readonly relation: string }[],
+  expectedIds: readonly ArtifactId[],
+  relation: string,
+): boolean {
+  return actual.length === expectedIds.length
+    && actual.every((parent, index) => parent.artifactId === expectedIds[index] && parent.relation === relation);
+}
+
+function sameHumanDecision(
+  existing: LedgerDecision,
+  request: ArticleDecisionRequest,
+  description: Awaited<ReturnType<AuthorizedWorker["describe"]>>,
+  durableContext: WorkflowWaitContext,
+  validation: ValidatedArticleEditorDecision,
+): boolean {
+  return existing.runId === request.runId
+    && existing.offerId === request.offerId
+    && existing.taskArtifactId === request.taskArtifactId
+    && sameStrings(existing.inputArtifactIds, request.inputArtifactIds)
+    && existing.choice === request.choice
+    && existing.rationale === request.rationale.trim()
+    && JSON.stringify(existing.approvedFindingIds ?? null) === JSON.stringify(request.approvedFindingIds ?? null)
+    && existing.additionalRewriteBudget === request.additionalRewriteBudget
+    && existing.validatorVersion === validation.validatorVersion
+    && sameStrings(existing.canonicalApprovedFindingIds ?? [], validation.canonicalApprovedFindingIds)
+    && JSON.stringify(existing.rewriteBudget ?? null) === JSON.stringify(validation.rewriteBudget)
+    && existing.principalId === description.principalId
+    && existing.credentialProfileId === description.credentialProfileId
+    && JSON.stringify(existing.durableContext ?? null) === JSON.stringify(durableContext);
+}
+
+function sameValidatedDecision(
+  persisted: LedgerDecision,
+  expected: Omit<LedgerDecision, "createdAt" | "validatorVersion" | "canonicalApprovedFindingIds" | "rewriteBudget">,
+  validation: ValidatedArticleEditorDecision,
+): boolean {
+  return persisted.runId === expected.runId
+    && persisted.offerId === expected.offerId
+    && persisted.taskArtifactId === expected.taskArtifactId
+    && sameStrings(persisted.inputArtifactIds, expected.inputArtifactIds)
+    && persisted.principalId === expected.principalId
+    && persisted.credentialProfileId === expected.credentialProfileId
+    && persisted.choice === expected.choice
+    && persisted.rationale === expected.rationale
+    && JSON.stringify(persisted.approvedFindingIds ?? []) === JSON.stringify(expected.approvedFindingIds ?? [])
+    && (persisted.additionalRewriteBudget ?? 0) === (expected.additionalRewriteBudget ?? 0)
+    && persisted.artifactId === expected.artifactId
+    && persisted.validatorVersion === validation.validatorVersion
+    && sameStrings(persisted.canonicalApprovedFindingIds ?? [], validation.canonicalApprovedFindingIds)
+    && JSON.stringify(persisted.rewriteBudget ?? null) === JSON.stringify(validation.rewriteBudget)
+    && JSON.stringify(persisted.durableContext ?? null) === JSON.stringify(expected.durableContext ?? null);
+}
+
 function assertAttemptAccess(input: ArticleAttemptClaimInput): void {
   if (input.role === "model" && input.authority !== "model") {
     throw new ArtifactLedgerError("ATTEMPT_AUTHORITY_MISMATCH", "Model article work requires model authority");
@@ -1808,6 +2369,8 @@ function assertWaitContext(context: WorkflowWaitContext, runId: RunId): void {
     context.kind !== "wait" ||
     context.runId !== runId ||
     context.invocationId.length === 0 ||
+    context.workflowName.length === 0 ||
+    context.workflowVersion.length === 0 ||
     context.callId.length === 0 ||
     context.waitId.length === 0 ||
     context.key.length === 0 ||
@@ -2063,6 +2626,65 @@ function stripContext(value: JsonObject): JsonObject {
   return rest;
 }
 
+function parseLedgerArtifact(
+  ledger: ArtifactLedger,
+  artifactId: ArtifactId,
+  artifact: LedgerArtifact,
+  schema: { readonly safeParse: (value: unknown) => { readonly success: boolean; readonly data?: unknown } },
+  label: string,
+): unknown {
+  if (artifact.payloadKind !== "json" || artifact.mediaType !== "application/json") {
+    throw new ArtifactLedgerError("DECISION_LINEAGE_INVALID", `${label} ${artifactId} is not canonical JSON evidence`);
+  }
+  let value: unknown;
+  try {
+    value = JSON.parse(Buffer.from(ledger.readArtifact(artifactId).bytes).toString("utf8")) as unknown;
+  } catch (error) {
+    throw new ArtifactLedgerError("DECISION_LINEAGE_INVALID", `${label} ${artifactId} is not valid JSON`, { cause: error });
+  }
+  const parsed = schema.safeParse(value);
+  if (!parsed.success) throw new ArtifactLedgerError("DECISION_LINEAGE_INVALID", `${label} ${artifactId} does not match its strict schema`);
+  return parsed.data;
+}
+
+function assertDecisionArtifactFacts(
+  artifact: LedgerArtifactInput,
+  decision: ArticleEditorDecisionRecordInput,
+  validation: ValidatedArticleEditorDecision,
+): void {
+  if (artifact.kind !== "article_human_decision" || artifact.schemaVersion !== "article-human-decision/1" || artifact.mediaType !== "application/json" || artifact.origin !== "human" || artifact.payload.kind !== "json") {
+    throw new ArtifactLedgerError("DECISION_ARTIFACT_INVALID", "editor decision artifact does not match the exact human decision contract");
+  }
+  const payload = artifact.payload.value;
+  if (typeof payload !== "object" || payload === null || Array.isArray(payload)) {
+    throw new ArtifactLedgerError("DECISION_ARTIFACT_INVALID", "editor decision artifact payload must be a JSON object");
+  }
+  const value = payload as Record<string, unknown>;
+  if (
+    value.schemaVersion !== "article-human-decision/1"
+    || value.offerId !== decision.offerId
+    || value.taskArtifactId !== decision.taskArtifactId
+    || !sameStrings(readStringArray(value.inputArtifactIds), decision.inputArtifactIds)
+    || value.principalId !== decision.principalId
+    || value.credentialProfileId !== decision.credentialProfileId
+    || value.choice !== decision.choice
+    || value.rationale !== decision.rationale
+    || JSON.stringify(value.approvedFindingIds ?? null) !== JSON.stringify(decision.approvedFindingIds ?? null)
+    || (value.additionalRewriteBudget as number | undefined) !== decision.additionalRewriteBudget
+    || value.validatorVersion !== validation.validatorVersion
+    || !sameStrings(readStringArray(value.canonicalApprovedFindingIds), validation.canonicalApprovedFindingIds)
+    || JSON.stringify(value.rewriteBudget ?? null) !== JSON.stringify(validation.rewriteBudget)
+  ) {
+    throw new ArtifactLedgerError("DECISION_ARTIFACT_INVALID", "editor decision artifact does not carry the authority-derived facts");
+  }
+}
+
+function readStringArray(value: unknown): readonly string[] {
+  return Array.isArray(value) && value.every((candidate) => typeof candidate === "string")
+    ? value as readonly string[]
+    : [];
+}
+
 function sameParents(left: readonly ArtifactParent[], right: readonly ArtifactParent[]): boolean {
   return left.length === right.length && left.every((parent, index) => {
     const other = right[index];
@@ -2097,7 +2719,7 @@ function toOffer(row: OfferRow): LedgerOffer {
     status: row.status,
     taskArtifactId: row.task_artifact_id,
     inputArtifactIds: JSON.parse(row.input_artifact_ids_json) as readonly ArtifactId[],
-    allowedChoices: JSON.parse(row.allowed_choices_json) as readonly ("accept" | "drop")[],
+    allowedChoices: JSON.parse(row.allowed_choices_json) as readonly ("accept" | "revise" | "drop")[],
     createdAt: row.created_at,
   };
 }
@@ -2113,6 +2735,11 @@ function toDecision(row: DecisionRow): LedgerDecision {
     credentialProfileId: row.credential_profile_id,
     choice: row.choice,
     rationale: row.rationale,
+    ...(row.approved_finding_ids_json === null ? {} : { approvedFindingIds: JSON.parse(row.approved_finding_ids_json) as readonly string[] }),
+    ...(row.additional_rewrite_budget === null ? {} : { additionalRewriteBudget: row.additional_rewrite_budget }),
+    ...(row.validator_version === null ? {} : { validatorVersion: row.validator_version }),
+    ...(row.canonical_approved_finding_ids_json === null ? {} : { canonicalApprovedFindingIds: JSON.parse(row.canonical_approved_finding_ids_json) as readonly ArticleFindingId[] }),
+    ...(row.rewrite_budget_json === null ? {} : { rewriteBudget: JSON.parse(row.rewrite_budget_json) as ArticleDecisionBudgetSnapshot }),
     artifactId: row.artifact_id,
     ...(row.durable_context_json === null ? {} : { durableContext: JSON.parse(row.durable_context_json) as WorkflowWaitContext }),
     createdAt: row.created_at,

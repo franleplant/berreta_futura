@@ -2,7 +2,7 @@ import type { ArticleExecutionId, ArtifactId, PromotionId, RevisionId, RunId } f
 import type { JsonObject } from "./json.ts";
 import type { InputRevisionRef, DurableLogicalItem } from "../durable/types.ts";
 
-export type ArticleHumanChoice = "accept" | "drop";
+export type ArticleHumanChoice = "accept" | "revise" | "drop";
 
 /** One immutable source/input identity approved by an article run. */
 export type ArticleInputBinding = {
@@ -120,6 +120,24 @@ export type ArticleDecisionRequest = {
   readonly inputArtifactIds: readonly ArtifactId[];
   readonly choice: ArticleHumanChoice;
   readonly rationale: string;
+  /** Canonical review finding IDs explicitly approved by an editor. */
+  readonly approvedFindingIds?: readonly string[];
+  /** Additional writer rewrites granted by an editor. */
+  readonly additionalRewriteBudget?: number;
+};
+
+/** A typed handoff until the next article rewrite-loop slice is available. */
+export type ArticleWorkflowRouteResult = {
+  readonly schemaVersion: "magazine-article-route-result/1";
+  readonly runId: RunId;
+  readonly articleExecutionId: ArticleExecutionId;
+  readonly articleId: string;
+  readonly status: "rewrite_pending";
+  readonly manuscriptArtifactId: ArtifactId;
+  readonly measurementArtifactId: ArtifactId;
+  readonly revisionBriefArtifactId: ArtifactId;
+  readonly routeArtifactId: ArtifactId;
+  readonly route: JsonObject;
 };
 
 export type ArticlePromotion = {
