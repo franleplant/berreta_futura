@@ -64,8 +64,7 @@ concrete meaning, and use concrete nouns and active verbs. The source says
 "observability layer"; you know from three paragraphs later that it means a log
 line nobody reads. Say the log line.
 
-**4. Deploy each fact where it decides something.** `docs/WRITING_STYLE.md`
-step 7: say what it costs or changes, at the scale the evidence supports. A number
+**4. Deploy each fact where it decides something.** A number
 survives only if the argument changes when the number changes, and a surviving
 number gets the sentence that says what it cost or what it bought.
 

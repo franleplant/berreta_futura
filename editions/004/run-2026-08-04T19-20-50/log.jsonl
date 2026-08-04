@@ -32,3 +32,5 @@
 {"attempt":0,"label":"pragmatic-leverage r1 judge:shape","model":"haiku","seconds":70.0,"usd":0.0591}
 {"attempt":0,"label":"pragmatic-leverage r1 judge:craft","model":"haiku","seconds":73.0,"usd":0.0613}
 {"attempt":0,"label":"pragmatic-leverage r1 judge:mechanics","model":"haiku","seconds":106.2,"usd":0.0616}
+{"attempt":1,"label":"pragmatic-leverage r1 write","model":"sonnet","seconds":48.0,"usd":0.1717}
+{"attempt":0,"label":"pragmatic-leverage r1 judge:evidence","model":"haiku","seconds":23.4,"usd":0.0358}
