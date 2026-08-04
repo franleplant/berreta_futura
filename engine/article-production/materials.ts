@@ -25,7 +25,11 @@ import type {
 export type ArticleArtifactClassification =
   | "article_brief"
   | "edition_context"
+  | "revision_context"
+  | "revision_brief"
+  | "revision_route"
   | "judge_prompt"
+  | "human_ruling"
   | "manuscript"
   | "measurement_input"
   | "measurement_profile"
@@ -79,6 +83,15 @@ export type ArticleMaterialContext = {
   /** Optional run-local artifacts created outside the write-pipeline resolver. */
   readonly articleBriefArtifactId?: ArtifactId;
   readonly editionContextArtifactId?: ArtifactId;
+  /** Exact current revision package carried into writer work. */
+  readonly revisionContextArtifactId?: ArtifactId;
+  readonly revisionBriefArtifactId?: ArtifactId;
+  readonly routeArtifactId?: ArtifactId;
+  readonly priorWorkingNotesArtifactId?: ArtifactId;
+  readonly priorFindingDispositionsArtifactId?: ArtifactId;
+  readonly priorReviewMaterialArtifactIds?: readonly ArtifactId[];
+  readonly humanRulingArtifactIds?: readonly ArtifactId[];
+  readonly editorDecisionArtifactId?: ArtifactId;
   readonly sourceApprovalArtifactIds?: readonly ArtifactId[];
   readonly measurementInputArtifactIds?: readonly ArtifactId[];
   readonly writerReviewMaterialArtifacts?: Readonly<Record<string, ArtifactId>>;
@@ -434,6 +447,14 @@ function commonWriterArtifacts(
     ...classified(context.articleId, "writing_rules", writingRulesArtifact(context)),
     ...classified(context.articleId, "article_brief", context.articleBriefArtifactId),
     ...classified(context.articleId, "edition_context", context.editionContextArtifactId),
+    ...classified(context.articleId, "revision_context", context.revisionContextArtifactId),
+    ...classified(context.articleId, "revision_brief", context.revisionBriefArtifactId),
+    ...classified(context.articleId, "revision_route", context.routeArtifactId),
+    ...classified(context.articleId, "working_notes", context.priorWorkingNotesArtifactId),
+    ...classified(context.articleId, "revision_finding", context.priorFindingDispositionsArtifactId),
+    ...classifiedMany(context.articleId, "writer_review_material", context.priorReviewMaterialArtifactIds),
+    ...classifiedMany(context.articleId, "human_ruling", context.humanRulingArtifactIds),
+    ...classified(context.articleId, "human_ruling", context.editorDecisionArtifactId),
     ...sourceArtifacts(context),
     ...classifiedMany(context.articleId, "source", context.sourceApprovalArtifactIds),
     ...classified(context.articleId, "manuscript", selection.manuscriptArtifactId),

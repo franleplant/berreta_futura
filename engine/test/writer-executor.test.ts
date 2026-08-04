@@ -268,6 +268,40 @@ test("profile parent mismatch is permanent and rejects before transport", async 
   }
 });
 
+test("writer mode pins revision context requirements before loading any package", async () => {
+  const f = await fixture();
+  try {
+    const run = (request: Parameters<ClosedWriterExecutor["executeInStep"]>[1]) => f.writer.executeInStep(
+      (async (_key, operation, _options) => await operation()) as ClosedWriterStep,
+      request,
+    );
+    await assert.rejects(
+      run({
+        worker: f.worker,
+        articleExecutionId: ARTICLE_EXECUTION_ID,
+        operationKey: "writer-rewrite-without-context",
+        currentManuscriptArtifactId: MANUSCRIPT_ID,
+        productionProfileArtifactId: RESOLVED_PROFILE_ID,
+        mode: "rewrite",
+      } as unknown as Parameters<ClosedWriterExecutor["executeInStep"]>[1]),
+      (error: unknown) => error instanceof ClosedWriterError && error.code === "WRITER_MODE_INVALID",
+    );
+    await assert.rejects(
+      run({
+        worker: f.worker,
+        articleExecutionId: ARTICLE_EXECUTION_ID,
+        operationKey: "writer-initial-with-context",
+        currentManuscriptArtifactId: MANUSCRIPT_ID,
+        productionProfileArtifactId: RESOLVED_PROFILE_ID,
+        revisionContextArtifactId: id("unexpected-context"),
+      } as unknown as Parameters<ClosedWriterExecutor["executeInStep"]>[1]),
+      (error: unknown) => error instanceof ClosedWriterError && error.code === "WRITER_MODE_INVALID",
+    );
+  } finally {
+    await f.close();
+  }
+});
+
 test("response codec permits validated reasoning and one completed assistant output_text", () => {
   const envelope = validEnvelope();
   (envelope.output as JsonObject[]).unshift({
