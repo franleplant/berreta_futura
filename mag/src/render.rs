@@ -85,6 +85,49 @@ impl Staging {
             target_path: target,
         });
     }
+
+    /// Stage `source` (repo-root-relative) at the tree position `target`
+    /// declares — how a run's final.md lands on the path edition.yaml names.
+    fn add_mapped(&mut self, source: &Path, target: &Path) {
+        let target = target.to_string_lossy().replace('\\', "/");
+        if !self.seen.insert(target.clone()) {
+            return;
+        }
+        let abs = self.repo_root.join(source);
+        if !abs.exists() {
+            self.missing.push(format!("{} (for {})", source.display(), target));
+            return;
+        }
+        self.rows.push(InputRow {
+            artifact_id: target.clone(),
+            source_path: abs.to_string_lossy().to_string(),
+            target_path: target,
+        });
+    }
+}
+
+/// The newest run dir under the edition that ran fully: editorial/final.md
+/// plus articles/<id>/final.md for every article edition.yaml declares.
+fn latest_complete_run(edition_dir: &Path, article_ids: &[String]) -> Option<PathBuf> {
+    let mut runs: Vec<PathBuf> = fs::read_dir(edition_dir)
+        .ok()?
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| {
+            p.is_dir()
+                && p.file_name()
+                    .map(|n| n.to_string_lossy().starts_with("run-"))
+                    .unwrap_or(false)
+        })
+        .collect();
+    runs.sort();
+    runs.into_iter().rev().find(|run| run_is_complete(run, article_ids))
+}
+
+fn run_is_complete(run: &Path, article_ids: &[String]) -> bool {
+    run.join("editorial/final.md").exists()
+        && article_ids
+            .iter()
+            .all(|id| run.join("articles").join(id).join("final.md").exists())
 }
 
 /// Field-value path-resolution rule: a value whose first segment is
@@ -256,7 +299,13 @@ fn print_summary(value: &serde_json::Value, out_dir: &Path) {
     println!("  out dir: {}", out_dir.display());
 }
 
-pub fn run(edition: &str, operation: &str, article: Option<&str>, langs: Option<&str>) -> Result<i32> {
+pub fn run(
+    edition: &str,
+    operation: &str,
+    article: Option<&str>,
+    langs: Option<&str>,
+    run_flag: Option<&str>,
+) -> Result<i32> {
     if !OPERATIONS.contains(&operation) {
         bail!("unknown operation '{operation}': expected one of {}", OPERATIONS.join(", "));
     }
@@ -296,14 +345,49 @@ pub fn run(edition: &str, operation: &str, article: Option<&str>, langs: Option<
 
     let mut staging = Staging::new(repo_root.clone());
 
+    // Content comes from a run: --run <dir>, else the newest complete run,
+    // else the files edition.yaml points at. Run finals are staged AT the
+    // paths edition.yaml declares, so no promotion step exists.
+    let article_ids: Vec<String> =
+        articles.iter().filter_map(|a| str_field(a, "id").map(str::to_string)).collect();
+    let content_run: Option<PathBuf> = match run_flag {
+        Some(dir) => {
+            let dir = PathBuf::from(dir);
+            if !run_is_complete(&dir, &article_ids) {
+                bail!(
+                    "{} is not a complete run (needs editorial/final.md and articles/<id>/final.md for: {})",
+                    dir.display(),
+                    article_ids.join(", ")
+                );
+            }
+            Some(dir)
+        }
+        None => latest_complete_run(&edition_dir, &article_ids),
+    };
+    match &content_run {
+        Some(run) => println!("content: {}", run.display()),
+        None => println!("content: committed edition files (no complete run found)"),
+    }
+
     // A. Base edition manuscript + editorial + article manuscripts.
     staging.add(&edition_yaml_path);
     if let Some(editorial) = str_field(&edition_yaml, "editorial") {
-        staging.add(&resolve_field(editorial, &edition_dir));
+        let declared = resolve_field(editorial, &edition_dir);
+        match &content_run {
+            Some(run) => staging.add_mapped(&run.join("editorial/final.md"), &declared),
+            None => staging.add(&declared),
+        }
     }
     for article in &articles {
-        if let Some(manuscript) = str_field(article, "manuscript") {
-            staging.add(&resolve_field(manuscript, &edition_dir));
+        if let (Some(id), Some(manuscript)) =
+            (str_field(article, "id"), str_field(article, "manuscript"))
+        {
+            let declared = resolve_field(manuscript, &edition_dir);
+            match &content_run {
+                Some(run) => staging
+                    .add_mapped(&run.join("articles").join(id).join("final.md"), &declared),
+                None => staging.add(&declared),
+            }
         }
     }
 
