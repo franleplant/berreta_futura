@@ -41,6 +41,28 @@ const tracerReviewerResponse = JSON.stringify({
   }],
 });
 
+const tracerWriterResponse = JSON.stringify({
+  id: "resp_tracer_writer",
+  object: "response",
+  status: "completed",
+  output: [{
+    id: "msg_tracer_writer",
+    type: "message",
+    status: "completed",
+    role: "assistant",
+    content: [{
+      type: "output_text",
+      text: JSON.stringify({
+        schemaVersion: "article-writer-result/1",
+        manuscript: "# Tracer article\n\nA source-faithful tracer draft.",
+        workingNotes: "Initial writer fixture.",
+        dispositions: [],
+        reviewMaterials: [],
+      }),
+    }],
+  }],
+});
+
 function guardedTest(name: string, fn: (context: TestContext) => Promise<void>): void {
   if (process.env.MAGAZINE_TRACER_REVIEWER_CHILD === "1") test(name, fn);
 }
@@ -53,6 +75,7 @@ if (process.env.MAGAZINE_TRACER_REVIEWER_CHILD !== "1") {
       MAGAZINE_TRACER_REVIEWER_CHILD: "1",
       MAGAZINE_TRACER_REVIEWER_SECRET: secret,
       MAGAZINE_TRACER_REVIEWER_RESPONSE: tracerReviewerResponse,
+      MAGAZINE_TRACER_WRITER_RESPONSE: tracerWriterResponse,
       NODE_TLS_REJECT_UNAUTHORIZED: "0",
     };
     delete childEnvironment.NODE_TEST_CONTEXT;
@@ -181,7 +204,7 @@ async function fixture(
     production_profile_revision: rawRef(refs.profile),
     parent: null,
     maximum_reader_pages: 7,
-    model_policy: { default: { adapter: "test", model: "test" } },
+    model_policy: { default: { adapter: "openai-responses-v1", model: "gpt-5.6-terra", reasoning_effort: "high" } },
   }));
   const translationParents = Object.fromEntries([
     ...articleDocuments.map((article) => article.article_id),
@@ -295,6 +318,11 @@ async function fixture(
   await authority.grant({ credentialProfileId: awareCredential.credentialProfileId, grantId: "tracer-source-aware-grant", capabilities: ["text_model", "source_access"] });
   const sourceAwareReviewer = await authority.authenticate({ credentialProfileId: awareCredential.credentialProfileId, secret: awareCredential.secret });
 
+  await authority.enrollWorker({ principalId: "tracer-writer", authority: "model", capabilities: ["text_model", "source_access"] });
+  const writerCredential = await authority.createCredentialProfile({ principalId: "tracer-writer", credentialProfileId: "tracer-writer-profile" });
+  await authority.grant({ credentialProfileId: writerCredential.credentialProfileId, grantId: "tracer-writer-grant", capabilities: ["text_model", "source_access"] });
+  const articleWriter = await authority.authenticate({ credentialProfileId: writerCredential.credentialProfileId, secret: writerCredential.secret });
+
   await authority.enrollWorker({ principalId: "tracer-source-blind", authority: "model", capabilities: ["text_model", "source_blind"] });
   const blindCredential = await authority.createCredentialProfile({ principalId: "tracer-source-blind", credentialProfileId: "tracer-source-blind-profile" });
   await authority.grant({ credentialProfileId: blindCredential.credentialProfileId, grantId: "tracer-source-blind-grant", capabilities: ["text_model", "source_blind"] });
@@ -353,6 +381,7 @@ process.stdout.write(JSON.stringify({ pythonVersion: "3.12.11", pythonImplementa
     },
     ...(resources === "valid" ? {
       articleReviewWorkers: { sourceAwareReviewer, sourceBlindReviewer, measurementTool },
+      articleWriter,
       articleReviewCredentials: {
         schemaVersion: "closed-writer-credential-resource/1" as const,
         read: () => ({ OPENAI_API_KEY: process.env.MAGAZINE_TRACER_REVIEWER_SECRET ?? "magazine-tracer-reviewer-secret" }),
@@ -409,7 +438,10 @@ guardedTest("the fixed runtime pins the complete graph and committed config", as
     assert.equal(pin.execution.configPath, "engine/workflows/article-runtime-identity.json");
     assert.match(String(pin.execution.configHash), /^sha256:/u);
     assert.equal(pin.source.entryPath, "engine/workflows/article-loops-entry.ts");
-    assert.ok(view.artifacts.some((artifactId) => String(artifactId) === `art-manuscript-${view.runId}`));
+    const initialWriterOutput = f.ledger.listArtifacts(view.runId).find((artifact) => artifact.kind === "article_manuscript" && artifact.metadata.operationKey === "article.writer.initial");
+    assert.ok(initialWriterOutput, "initial writer output should be persisted");
+    assert.equal(initialWriterOutput.metadata.writerExecutionClass, "closed_writer/1");
+    assert.equal(initialWriterOutput.metadata.operationKey, "article.writer.initial");
   } finally {
     f.engine.close(); f.restorePath(); await rm(f.root, { recursive: true, force: true });
   }
@@ -484,6 +516,10 @@ guardedTest("a human decision resumes the same durable run and promotes through 
     assert.deepEqual(decisionTask.parents, offer.inputArtifactIds.map((artifactId) => ({ artifactId, relation: "decision_evidence" })));
     const decision = f.ledger.requireDecisionForRun(waiting.runId);
     assert.deepEqual(decision.inputArtifactIds, offer.inputArtifactIds);
+    const acceptedManuscript = f.ledger.requireArtifact(complete.manuscriptArtifactId);
+    const promotion = f.ledger.getPromotion(waiting.runId);
+    assert.ok(promotion);
+    assert.deepEqual(promotion.inputArtifactIds, acceptedManuscript.parents.map((parent) => parent.artifactId));
     const promotionArtifact = f.ledger.listArtifacts(waiting.runId).find((artifact) => artifact.kind === "article_durable_promotion");
     assert.ok(promotionArtifact);
     assert.deepEqual(promotionArtifact.parents, offer.inputArtifactIds.map((artifactId) => ({ artifactId, relation: "decision_evidence" })));

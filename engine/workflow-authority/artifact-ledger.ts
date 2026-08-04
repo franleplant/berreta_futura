@@ -211,6 +211,33 @@ export type ArticleRevisionFinalizeInput = {
   readonly durableContext?: WorkflowAttemptContext;
 };
 
+/** Inputs for the first immutable writer revision produced from source evidence. */
+export type ArticleInitialRevisionFinalizeInput = {
+  readonly runId: RunId;
+  readonly articleExecutionId: ArticleExecutionId;
+  readonly articleId: string;
+  readonly operationKey: string;
+  readonly operationInputDigest: string;
+  /** Imported source manuscript used only as writer input, never as accepted prose. */
+  readonly sourceManuscriptArtifactId: ArtifactId;
+  readonly writerArtifactIds: readonly ArtifactId[];
+  readonly manuscriptRevisionId: ManuscriptRevisionId;
+  readonly manuscriptArtifactId: ArtifactId;
+  readonly revisionRecordArtifactId: ArtifactId;
+  /** The closed-writer contract pinned by the selected operation. */
+  readonly writerExecutionClass: "closed_writer/1";
+  readonly writerRuntimeIdentity: JsonObject;
+  /** Exact ordered package consumed by the closed writer. */
+  readonly expectedWriterInputArtifactIds: readonly ArtifactId[];
+  /** The immutable writer output contract declared by the resolved profile. */
+  readonly declaredWriterReviewMaterials: readonly {
+    readonly materialId: string;
+    readonly schemaVersion: string;
+    readonly required: boolean;
+  }[];
+  readonly durableContext?: WorkflowAttemptContext;
+};
+
 export type ArticleRevisionFinalizeResult = {
   readonly manuscriptArtifactId: ArtifactId;
   readonly revisionRecordArtifactId: ArtifactId;
@@ -775,6 +802,159 @@ export class ArtifactLedger {
     return result;
   }
 
+  /**
+   * Commit the first writer-produced manuscript and its package record in one
+   * transaction. The imported source manuscript is evidence only; it is
+   * never selected as the accepted initial prose.
+   */
+  finalizeInitialArticleRevision(input: ArticleInitialRevisionFinalizeInput): ArticleRevisionFinalizeResult {
+    const run = this.requireRun(input.runId);
+    if (run.articleExecutionId !== input.articleExecutionId || run.articleId !== input.articleId) {
+      throw new ArtifactLedgerError("REVISION_FINALIZE_IDENTITY", "initial article revision finalization is not bound to the exact run");
+    }
+    if (run.manuscriptArtifactId !== input.sourceManuscriptArtifactId) {
+      throw new ArtifactLedgerError("REVISION_FINALIZE_PREDECESSOR", "initial article revision must start from the imported source manuscript");
+    }
+    if (input.operationKey.trim().length === 0 || input.operationInputDigest.trim().length === 0) {
+      throw new ArtifactLedgerError("REVISION_FINALIZE_INPUT", "initial article revision finalization requires the exact writer key and digest");
+    }
+    if (input.writerArtifactIds.length === 0 || new Set(input.writerArtifactIds).size !== input.writerArtifactIds.length) {
+      throw new ArtifactLedgerError("REVISION_FINALIZE_OUTPUTS", "initial article revision finalization requires unique selected writer outputs");
+    }
+    if (input.writerExecutionClass !== "closed_writer/1" || !isJsonObject(input.writerRuntimeIdentity)) {
+      throw new ArtifactLedgerError("REVISION_FINALIZE_OUTPUTS", "initial article revision finalization requires the pinned closed-writer runtime contract");
+    }
+    if (input.expectedWriterInputArtifactIds.length === 0 || new Set(input.expectedWriterInputArtifactIds).size !== input.expectedWriterInputArtifactIds.length || !input.expectedWriterInputArtifactIds.includes(input.sourceManuscriptArtifactId)) {
+      throw new ArtifactLedgerError("REVISION_FINALIZE_OUTPUTS", "initial article revision finalization requires the exact source writer input package");
+    }
+    if (run.currentRevisionRecordArtifactId !== undefined) {
+      if (run.currentRevisionRecordArtifactId !== input.revisionRecordArtifactId) {
+        throw new ArtifactLedgerError("REVISION_FINALIZE_CONFLICT", "initial article revision predecessor is no longer the empty package");
+      }
+      return this.#adoptInitialFinalizedRevision(input, run);
+    }
+    const writer = this.#validateRevisionWriterOutputs(input, run);
+    const selectedWriterClaimId = textValue(writer.manuscript.metadata.claimId);
+    const record: ArticleRevisionRecord = {
+      schemaVersion: "article-revision-record/1",
+      ordinal: 0,
+      manuscriptArtifactId: input.manuscriptArtifactId,
+      manuscriptRevisionId: input.manuscriptRevisionId,
+      ...(selectedWriterClaimId === undefined ? {} : { selectedWriterClaimId }),
+      selectedWriterOutputArtifactId: writer.manuscript.id,
+      workingNotesArtifactId: writer.workingNotes.id,
+      findingDispositionsArtifactId: writer.findingDispositions.id,
+      reviewMaterialArtifactIds: Object.freeze(writer.reviewMaterials.map((artifact) => artifact.id)),
+      humanRulingArtifactIds: Object.freeze([]),
+      trigger: "initial",
+    };
+    const manuscriptText = Buffer.from(this.readArtifact(writer.manuscript.id).bytes).toString("utf8");
+    const manuscriptInput: LedgerArtifactInput = {
+      id: input.manuscriptArtifactId,
+      kind: "article_manuscript",
+      schemaVersion: "article-manuscript/1",
+      mediaType: "text/markdown",
+      origin: "model",
+      payload: { kind: "text", text: manuscriptText },
+      parents: [
+        { artifactId: input.sourceManuscriptArtifactId, relation: "initial_source_manuscript" },
+        { artifactId: writer.manuscript.id, relation: "writer_output" },
+      ],
+      metadata: {
+        articleId: input.articleId,
+        revisionId: input.manuscriptRevisionId,
+        manuscriptRevisionId: input.manuscriptRevisionId,
+        sourceManuscriptArtifactId: input.sourceManuscriptArtifactId,
+        writerOutputArtifactId: writer.manuscript.id,
+        ...(selectedWriterClaimId === undefined ? {} : { selectedWriterClaimId }),
+        selectedWriterOutputArtifactId: writer.manuscript.id,
+        textDigest: `sha256:${createHash("sha256").update(manuscriptText, "utf8").digest("hex")}`,
+        operationKey: input.operationKey,
+        operationInputDigest: input.operationInputDigest,
+        writerInputArtifactIds: input.expectedWriterInputArtifactIds as unknown as JsonValue,
+      },
+      runId: input.runId,
+      ...(input.durableContext === undefined ? {} : { durableContext: input.durableContext }),
+    };
+    const recordInput: LedgerArtifactInput = {
+      id: input.revisionRecordArtifactId,
+      kind: "article_revision_record",
+      schemaVersion: "article-revision-record/1",
+      mediaType: "application/json",
+      origin: "machine",
+      payload: { kind: "json", value: record as unknown as JsonValue },
+      parents: articleRevisionRecordParents(record),
+      metadata: {
+        articleId: input.articleId,
+        manuscriptArtifactId: input.manuscriptArtifactId,
+        manuscriptRevisionId: input.manuscriptRevisionId,
+        ordinal: 0,
+        trigger: "initial",
+        operationKey: input.operationKey,
+        operationInputDigest: input.operationInputDigest,
+      },
+      runId: input.runId,
+      ...(input.durableContext === undefined ? {} : { durableContext: input.durableContext }),
+    };
+    const transaction = this.#db.transaction(() => {
+      this.#insertArtifactWithinTransaction(manuscriptInput);
+      this.#insertArtifactWithinTransaction(recordInput);
+      const changed = this.#db.prepare(
+        `UPDATE magazine_runs
+         SET manuscript_artifact_id = ?, current_revision_record_artifact_id = ?, updated_at = ?
+         WHERE run_id = ? AND manuscript_artifact_id = ? AND current_revision_record_artifact_id IS NULL`,
+      ).run(input.manuscriptArtifactId, input.revisionRecordArtifactId, this.#clock.now().toISOString(), input.runId, input.sourceManuscriptArtifactId);
+      if (changed.changes !== 1) throw new ArtifactLedgerError("REVISION_FINALIZE_CONFLICT", "initial article revision pointer advanced concurrently");
+      const revisionConflict = this.#db.prepare("SELECT revision_id, manuscript_artifact_id, article_id FROM magazine_manuscript_revisions WHERE revision_id = ? OR manuscript_artifact_id = ?").all(input.manuscriptRevisionId, input.manuscriptArtifactId) as readonly ManuscriptRevisionRow[];
+      for (const row of revisionConflict) {
+        if (row.revision_id !== input.manuscriptRevisionId || row.manuscript_artifact_id !== input.manuscriptArtifactId || row.article_id !== input.articleId) {
+          throw new ArtifactLedgerError("REVISION_FINALIZE_CONFLICT", "initial manuscript revision identity is already bound to another artifact");
+        }
+      }
+      if (revisionConflict.length === 0) {
+        this.#db.prepare(
+          `INSERT INTO magazine_manuscript_revisions(revision_id, manuscript_artifact_id, article_id, registered_at) VALUES (?, ?, ?, ?)`,
+        ).run(input.manuscriptRevisionId, input.manuscriptArtifactId, input.articleId, this.#clock.now().toISOString());
+      }
+      const after = this.#db.prepare("SELECT current_revision_record_artifact_id, manuscript_artifact_id FROM magazine_runs WHERE run_id = ?").get(input.runId) as { readonly current_revision_record_artifact_id: ArtifactId; readonly manuscript_artifact_id: ArtifactId } | undefined;
+      if (after?.current_revision_record_artifact_id !== input.revisionRecordArtifactId || after.manuscript_artifact_id !== input.manuscriptArtifactId) {
+        throw new ArtifactLedgerError("REVISION_FINALIZE_CONFLICT", "initial article revision pointer did not advance to the exact successor");
+      }
+    });
+    transaction();
+    this.#validateRevisionRecordArtifact(this.requireRun(input.runId), input.revisionRecordArtifactId);
+    return this.#initialFinalizeResult(input, writer.reviewMaterials);
+  }
+
+  #adoptInitialFinalizedRevision(input: ArticleInitialRevisionFinalizeInput, run: LedgerRun): ArticleRevisionFinalizeResult {
+    const writer = this.#validateRevisionWriterOutputs(input, run);
+    const record = this.#validateRevisionRecordArtifact(run, input.revisionRecordArtifactId);
+    if (
+      record.ordinal !== 0
+      || record.trigger !== "initial"
+      || record.previousRevisionRecordArtifactId !== undefined
+      || record.revisionContextArtifactId !== undefined
+      || record.manuscriptArtifactId !== input.manuscriptArtifactId
+      || record.manuscriptRevisionId !== input.manuscriptRevisionId
+      || record.selectedWriterOutputArtifactId !== writer.manuscript.id
+      || record.workingNotesArtifactId !== writer.workingNotes.id
+      || record.findingDispositionsArtifactId !== writer.findingDispositions.id
+      || !sameStrings(record.reviewMaterialArtifactIds, writer.reviewMaterials.map((artifact) => artifact.id))
+    ) {
+      throw new ArtifactLedgerError("REVISION_FINALIZE_CONFLICT", "persisted initial revision package does not match the exact selected writer outputs");
+    }
+    const manuscript = this.requireArtifact(input.manuscriptArtifactId);
+    if (
+      manuscript.metadata.operationKey !== input.operationKey
+      || manuscript.metadata.operationInputDigest !== input.operationInputDigest
+      || manuscript.metadata.sourceManuscriptArtifactId !== input.sourceManuscriptArtifactId
+      || manuscript.metadata.writerOutputArtifactId !== writer.manuscript.id
+    ) {
+      throw new ArtifactLedgerError("REVISION_FINALIZE_CONFLICT", "persisted initial manuscript does not match the exact writer transition");
+    }
+    return this.#initialFinalizeResult(input, writer.reviewMaterials, true);
+  }
+
   #adoptFinalizedRevision(input: ArticleRevisionFinalizeInput, run: LedgerRun): ArticleRevisionFinalizeResult {
     const writer = this.#validateRevisionWriterOutputs(input, run);
     this.#validateRevisionFinalizeContext(input, run);
@@ -831,6 +1011,28 @@ export class ArtifactLedger {
     };
   }
 
+  #initialFinalizeResult(
+    input: ArticleInitialRevisionFinalizeInput,
+    reviewMaterials: readonly LedgerArtifact[],
+    adopted = false,
+  ): ArticleRevisionFinalizeResult {
+    const writerReviewMaterialArtifacts = reviewMaterials.reduce<Record<string, ArtifactId>>((map, artifact) => {
+      const materialId = textValue(artifact.metadata.materialId);
+      if (materialId !== undefined) map[materialId] = artifact.id;
+      return map;
+    }, {});
+    return {
+      manuscriptArtifactId: input.manuscriptArtifactId,
+      revisionRecordArtifactId: input.revisionRecordArtifactId,
+      manuscriptRevisionId: input.manuscriptRevisionId,
+      ordinal: 0,
+      writerOperationKey: input.operationKey,
+      writerOperationInputDigest: input.operationInputDigest,
+      writerReviewMaterialArtifacts: Object.freeze({ ...writerReviewMaterialArtifacts }),
+      ...(adopted ? { adopted: true } : {}),
+    };
+  }
+
   #validateRevisionFinalizeContext(input: ArticleRevisionFinalizeInput, run: LedgerRun): ArticleRevisionContext {
     const artifact = this.requireArtifact(input.revisionContextArtifactId);
     if (artifact.kind !== "article_revision_context" || artifact.schemaVersion !== "article-revision-context/1" || artifact.mediaType !== "application/json" || artifact.payloadKind !== "json" || artifact.producingRunId !== run.runId) {
@@ -858,7 +1060,7 @@ export class ArtifactLedger {
     return value;
   }
 
-  #validateRevisionWriterOutputs(input: ArticleRevisionFinalizeInput, run: LedgerRun): {
+  #validateRevisionWriterOutputs(input: ArticleRevisionFinalizeInput | ArticleInitialRevisionFinalizeInput, run: LedgerRun): {
     readonly manuscript: LedgerArtifact;
     readonly workingNotes: LedgerArtifact;
     readonly findingDispositions: LedgerArtifact;
@@ -898,6 +1100,8 @@ export class ArtifactLedger {
     if (new Set(selectedArtifactIds).size !== selectedArtifactIds.length) {
       throw new ArtifactLedgerError("REVISION_FINALIZE_OUTPUTS", "selected writer operation repeats an output artifact");
     }
+    const initial = "sourceManuscriptArtifactId" in input;
+    const predecessorManuscriptArtifactId = initial ? input.sourceManuscriptArtifactId : input.previousManuscriptArtifactId;
     const claim = this.#db.prepare("SELECT * FROM magazine_article_attempts WHERE claim_id = ?").get(selection.claim_id) as ArticleAttemptRow | undefined;
     if (
       claim === undefined
@@ -907,7 +1111,7 @@ export class ArtifactLedger {
       || claim.article_id !== input.articleId
       || claim.operation_key !== input.operationKey
       || claim.operation_input_digest !== input.operationInputDigest
-      || claim.manuscript_artifact_id !== input.previousManuscriptArtifactId
+      || claim.manuscript_artifact_id !== predecessorManuscriptArtifactId
       || claim.role !== "model"
       || claim.access !== "source_aware"
       || claim.authority !== "model"
@@ -960,7 +1164,7 @@ export class ArtifactLedger {
         || attemptNumber !== claim.attempt_number
         || writerExecutionClass !== input.writerExecutionClass
         || !isDeepStrictEqual(writerRuntimeIdentity, input.writerRuntimeIdentity)
-        || revisionContextArtifactId !== input.revisionContextArtifactId
+        || (initial ? revisionContextArtifactId !== undefined : revisionContextArtifactId !== input.revisionContextArtifactId)
         || !sameStrings(writerInputArtifactIds, input.expectedWriterInputArtifactIds)
         || !sameParents(artifact.parents, expectedParents)
       ) {

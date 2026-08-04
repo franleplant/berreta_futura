@@ -179,11 +179,17 @@ export type ArticleWorkflowPorts = {
     input: {
       readonly articleExecutionId: ArticleExecutionId;
       readonly operationKey: string;
-      readonly mode?: "initial" | "rewrite";
       readonly currentManuscriptArtifactId: ArtifactId;
       readonly productionProfileArtifactId: ArtifactId;
+    } & ({
+      /** Initial writing consumes the committed source package only. */
+      readonly mode: "initial";
+      readonly revisionContextArtifactId?: never;
+    } | {
+      /** Rewrite writing consumes the exact ID-only revision context. */
+      readonly mode: "rewrite";
       readonly revisionContextArtifactId: ArtifactId;
-    },
+    }),
     context: MagazineWorkflowContext,
   ) => Promise<ArticleAttemptExecutionResult<WriterResult>>;
   readonly requireDecision: (decisionArtifactId: ArtifactId) => LedgerDecision;

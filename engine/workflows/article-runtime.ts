@@ -163,21 +163,31 @@ export function createArticleWorkflowPorts(options: {
       const worker = options.articleWriter;
       if (worker === undefined) throw new Error("Article route requires an authenticated article writer worker");
       writerExecutor ??= createClosedWriterExecutor({ ledger: options.ledger, credentials });
+      const writerRequest = input.mode === "initial"
+        ? {
+          worker,
+          mode: "initial" as const,
+          articleExecutionId: input.articleExecutionId,
+          operationKey: input.operationKey,
+          currentManuscriptArtifactId: input.currentManuscriptArtifactId,
+          productionProfileArtifactId: input.productionProfileArtifactId,
+        }
+        : {
+          worker,
+          mode: "rewrite" as const,
+          articleExecutionId: input.articleExecutionId,
+          operationKey: input.operationKey,
+          currentManuscriptArtifactId: input.currentManuscriptArtifactId,
+          productionProfileArtifactId: input.productionProfileArtifactId,
+          revisionContextArtifactId: input.revisionContextArtifactId,
+        };
       return await writerExecutor.executeInStep(
         async (key, operation, stepOptions) => await context.step(key, operation, {
           input: stepOptions.input,
           retry: stepOptions.retry,
           label: "article.writer",
         }),
-        {
-          worker,
-          mode: "rewrite",
-          articleExecutionId: input.articleExecutionId,
-          operationKey: input.operationKey,
-          currentManuscriptArtifactId: input.currentManuscriptArtifactId,
-          productionProfileArtifactId: input.productionProfileArtifactId,
-          revisionContextArtifactId: input.revisionContextArtifactId,
-        },
+        writerRequest,
       );
     },
     requireDecision: (artifactId) => {

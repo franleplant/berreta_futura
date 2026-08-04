@@ -106,7 +106,7 @@ function parseArticleRevisionFinalizeResult(value: unknown): ArticleRevisionFina
   const required = ["manuscriptArtifactId", "revisionRecordArtifactId", "manuscriptRevisionId", "ordinal", "writerOperationKey", "writerOperationInputDigest", "writerReviewMaterialArtifacts"];
   if (required.some((key) => !Object.prototype.hasOwnProperty.call(record, key))) throw new Error("article revision finalization result is incomplete");
   for (const key of ["manuscriptArtifactId", "revisionRecordArtifactId", "manuscriptRevisionId", "writerOperationKey", "writerOperationInputDigest"]) if (!textValue(record[key])) throw new Error(`article revision finalization result ${key} is invalid`);
-  if (!Number.isSafeInteger(record.ordinal) || (record.ordinal as number) < 1) throw new Error("article revision finalization result ordinal is invalid");
+  if (!Number.isSafeInteger(record.ordinal) || (record.ordinal as number) < 0) throw new Error("article revision finalization result ordinal is invalid");
   if (typeof record.writerReviewMaterialArtifacts !== "object" || record.writerReviewMaterialArtifacts === null || Array.isArray(record.writerReviewMaterialArtifacts)) throw new Error("article revision finalization result writer materials are invalid");
   for (const [key, id] of Object.entries(record.writerReviewMaterialArtifacts as Record<string, unknown>)) if (!textValue(key) || !textValue(id)) throw new Error("article revision finalization result writer materials are invalid");
   if (record.adopted !== undefined && typeof record.adopted !== "boolean") throw new Error("article revision finalization result adoption flag is invalid");
@@ -120,21 +120,6 @@ function parseArticleRevisionFinalizeResult(value: unknown): ArticleRevisionFina
     writerReviewMaterialArtifacts: Object.freeze({ ...(record.writerReviewMaterialArtifacts as Record<string, ArtifactId>) }),
     ...(record.adopted === true ? { adopted: true } : {}),
   };
-}
-
-function parseArticleManuscriptStepResult(value: unknown): { readonly manuscriptArtifactId: ArtifactId; readonly manuscriptRevisionId: ManuscriptRevisionId } {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) throw new Error("article manuscript step result must be an object");
-  const record = value as Record<string, unknown>;
-  if (!textValue(record.manuscriptArtifactId) || !textValue(record.manuscriptRevisionId)) throw new Error("article manuscript step result is invalid");
-  return { manuscriptArtifactId: record.manuscriptArtifactId as ArtifactId, manuscriptRevisionId: record.manuscriptRevisionId as ManuscriptRevisionId };
-}
-
-function parseInitialRevisionResult(value: unknown): { readonly manuscriptArtifactId: ArtifactId; readonly manuscriptRevisionId: ManuscriptRevisionId; readonly revisionRecordArtifactId: ArtifactId; readonly ordinal: number } {
-  const parsed = parseArticleManuscriptStepResult(value);
-  if (typeof value !== "object" || value === null || Array.isArray(value)) throw new Error("article initial revision result must be an object");
-  const record = value as Record<string, unknown>;
-  if (!textValue(record.revisionRecordArtifactId) || !Number.isSafeInteger(record.ordinal) || (record.ordinal as number) < 0) throw new Error("article initial revision result is invalid");
-  return { ...parsed, revisionRecordArtifactId: record.revisionRecordArtifactId as ArtifactId, ordinal: record.ordinal as number };
 }
 
 /**
@@ -163,46 +148,83 @@ export async function runArticleWorkflow(
   assertBindingMetadata(ports.ledger, bindings);
   assertCanonicalMaterialMetadata(ports.ledger, args.entry);
 
-  const acceptedManuscriptValue = await context.step(
-    "article.manuscript",
-    async () => {
-      const source = ports.ledger.readArtifact(args.manuscriptArtifactId);
-      const text = Buffer.from(source.bytes).toString("utf8");
-      ports.ledger.createArtifact({
-        id: manuscriptId(runId),
-        kind: "article_manuscript",
-        schemaVersion: "article-manuscript/1",
-        mediaType: "text/markdown",
-        origin: "machine",
-        payload: { kind: "text", text },
-        parents: materialArtifactIds.map((artifactId) => ({ artifactId, relation: "input_binding" })),
-        metadata: {
-          articleId: args.articleId,
-          sourceManuscriptArtifactId: args.manuscriptArtifactId,
-          rendererIdentity: args.rendererIdentity as unknown as JsonObject,
-          inputBindings: bindings as unknown as readonly JsonObject[],
-          materialArtifactIds: materialArtifactIds as unknown as readonly JsonValue[],
-          revisionId: deterministicManuscriptRevisionId(args.articleId, bindings, text, materialArtifactIds),
-        },
-        runId,
-        ...withContext(context),
-      });
-      ports.ledger.recordManuscriptArtifact(runId, manuscriptId(runId));
-      return {
-        manuscriptArtifactId: manuscriptId(runId),
-        manuscriptRevisionId: requireManuscriptRevision(ports.ledger.requireArtifact(manuscriptId(runId)), manuscriptId(runId)),
-      };
-    },
-    { input: {
+  if (ports.runWriter === undefined) throw new Error("Article workflow requires a closed writer for the initial manuscript");
+  const productionProfileArtifactId = args.productionProfileArtifactId;
+  if (productionProfileArtifactId === undefined) {
+    throw new Error("Article workflow requires the exact run-owned resolved production profile artifact");
+  }
+  const initialOperationKey = "article.writer.initial";
+  const initialWriter = await ports.runWriter({
+    articleExecutionId: args.articleExecutionId,
+    operationKey: initialOperationKey,
+    currentManuscriptArtifactId: args.manuscriptArtifactId,
+    productionProfileArtifactId,
+    mode: "initial",
+  }, context);
+  if (!initialWriter.selected || initialWriter.artifacts.length === 0) {
+    throw new Error(`Writer operation ${initialOperationKey} did not select a durable result`);
+  }
+  const initialManuscripts = initialWriter.artifacts.filter((artifact) => artifact.kind === "article_manuscript" && artifact.mediaType === "text/markdown");
+  if (initialManuscripts.length !== 1) throw new Error(`Writer operation ${initialOperationKey} did not produce exactly one manuscript artifact`);
+  const initialWriterOutput = initialManuscripts[0]!;
+  const initialWriterExecutionClass = textMetadataString(initialWriterOutput.metadata.writerExecutionClass);
+  const initialWriterRuntimeIdentity = jsonObjectMetadata(initialWriterOutput.metadata.writerRuntimeIdentity);
+  const initialWriterInputArtifactIds = artifactIdMetadataArray(initialWriterOutput.metadata.writerInputArtifactIds);
+  const initialOperationInputDigest = textMetadataString(initialWriterOutput.metadata.operationInputDigest);
+  if (initialWriterExecutionClass !== "closed_writer/1" || initialWriterRuntimeIdentity === undefined || initialWriterInputArtifactIds === undefined || initialOperationInputDigest === undefined) {
+    throw new Error(`Writer operation ${initialOperationKey} did not persist the exact closed-writer contract`);
+  }
+  const initialWriterClaimId = initialWriter.claim?.claimId ?? textMetadataString(initialWriterOutput.metadata.claimId);
+  const sourceRevision = requireManuscriptRevision(seed, args.manuscriptArtifactId);
+  const initialCycleId = articleInitialRevisionCycleId(args.articleExecutionId, sourceRevision);
+  const initialText = Buffer.from(ports.ledger.readArtifact(initialWriterOutput.id).bytes).toString("utf8");
+  const initialRevisionId = deterministicManuscriptRevisionId(args.articleId, bindings, initialText, materialArtifactIds, {
+    articleExecutionId: args.articleExecutionId,
+    previousRevisionId: sourceRevision,
+    cycleId: initialCycleId,
+    rewriteOrdinal: 0,
+    ...(initialWriterClaimId === undefined ? {} : { selectedWriterClaimId: initialWriterClaimId }),
+    selectedWriterOutputArtifactId: initialWriterOutput.id,
+  });
+  const initialManuscriptArtifactId = manuscriptArtifactIdForRevision(initialRevisionId);
+  const initialRevisionRecordArtifactId = revisionRecordId(initialRevisionId);
+  const initialDurableContext = attemptContextFor(context);
+  const initialRevisionValue = await context.step(
+    "article.revision-finalize.initial",
+    () => ports.ledger.finalizeInitialArticleRevision({
+      runId,
+      articleExecutionId: args.articleExecutionId,
       articleId: args.articleId,
+      operationKey: initialOperationKey,
+      operationInputDigest: initialOperationInputDigest,
       sourceManuscriptArtifactId: args.manuscriptArtifactId,
-      inputBindings: bindings as unknown as readonly JsonObject[],
-      materialArtifactIds: materialArtifactIds as unknown as readonly JsonValue[],
+      writerArtifactIds: initialWriter.artifacts.map((artifact) => artifact.id),
+      manuscriptRevisionId: initialRevisionId,
+      manuscriptArtifactId: initialManuscriptArtifactId,
+      revisionRecordArtifactId: initialRevisionRecordArtifactId,
+      writerExecutionClass: initialWriterExecutionClass,
+      writerRuntimeIdentity: initialWriterRuntimeIdentity,
+      expectedWriterInputArtifactIds: initialWriterInputArtifactIds,
+      declaredWriterReviewMaterials: args.review.materialContext.productionProfile.reviewMaterials,
+      ...(initialDurableContext === undefined ? {} : { durableContext: initialDurableContext }),
+    }),
+    { input: {
+      articleExecutionId: args.articleExecutionId,
+      operationKey: initialOperationKey,
+      operationInputDigest: initialOperationInputDigest,
+      sourceManuscriptArtifactId: args.manuscriptArtifactId,
+      writerArtifactIds: initialWriter.artifacts.map((artifact) => artifact.id) as unknown as JsonValue,
+      manuscriptRevisionId: initialRevisionId,
+      manuscriptArtifactId: initialManuscriptArtifactId,
+      revisionRecordArtifactId: initialRevisionRecordArtifactId,
+      writerExecutionClass: initialWriterExecutionClass,
+      writerRuntimeIdentity: initialWriterRuntimeIdentity,
+      expectedWriterInputArtifactIds: initialWriterInputArtifactIds as unknown as JsonValue,
+      declaredWriterReviewMaterials: args.review.materialContext.productionProfile.reviewMaterials as unknown as JsonValue,
     } },
   );
-  const acceptedManuscript = parseArticleManuscriptStepResult(acceptedManuscriptValue);
-
-  const acceptedManuscriptArtifactId = acceptedManuscript.manuscriptArtifactId;
+  const initialRevision = parseArticleRevisionFinalizeResult(initialRevisionValue);
+  const acceptedManuscriptArtifactId = initialRevision.manuscriptArtifactId;
   const measurementProfileArtifactId = await context.step(
     "article.measurement-profile",
     async () => {
@@ -257,18 +279,6 @@ export async function runArticleWorkflow(
     { input: { profileArtifactId: args.measurementProfileArtifactId, manuscriptArtifactId: acceptedManuscriptArtifactId } },
   );
 
-  const initialRevisionValue = await context.step(
-    "article.revision-record.initial",
-    () => createInitialRevisionRecord({
-      args,
-      runId,
-      manuscriptArtifactId: acceptedManuscriptArtifactId,
-      ports,
-      context,
-    }),
-    { input: { articleId: args.articleId, manuscriptArtifactId: acceptedManuscriptArtifactId } },
-  );
-  const initialRevision = parseInitialRevisionResult(initialRevisionValue);
   const reviewPlanArtifactId = args.review.materialContext.reviewPlan.reviewPlanArtifactId;
   let state = parseArticleLoopCheckpoint({
     schemaVersion: "article-loop-checkpoint/1",
@@ -638,6 +648,8 @@ export async function runArticleWorkflow(
       continue;
     }
 
+    const acceptedManuscript = ports.ledger.requireArtifact(state.manuscriptArtifactId);
+    const promotionInputArtifactIds = acceptedManuscript.parents.map((parent) => parent.artifactId);
     const request: DurablePromotionRequest = {
       schemaVersion: "durable-checkpoint-request/1",
       promotionId: requirePromotionId(args, runId),
@@ -647,9 +659,8 @@ export async function runArticleWorkflow(
       expectedParentRevisionId: args.expectedParentRevisionId,
       acceptedArtifactIds: [state.manuscriptArtifactId],
       decisionArtifactIds: [decision.artifactId],
-      inputBindings: canonicalMaterialBindings(args.entry),
       inputRevisions,
-      inputArtifactIds: materialArtifactIds,
+      inputArtifactIds: promotionInputArtifactIds,
       decisionEvidenceArtifactIds: decisionInputs,
     };
     const promoted = await context.step(
@@ -911,47 +922,6 @@ async function rewriteManuscript(input: {
   });
 }
 
-function createInitialRevisionRecord(input: {
-  readonly args: ArticleRuntimeStartArgs;
-  readonly runId: RunId;
-  readonly manuscriptArtifactId: ArtifactId;
-  readonly ports: ArticleWorkflowPorts;
-  readonly context: MagazineWorkflowContext;
-}): { readonly manuscriptArtifactId: ArtifactId; readonly manuscriptRevisionId: ManuscriptRevisionId; readonly revisionRecordArtifactId: ArtifactId; readonly ordinal: number } {
-  const manuscript = input.ports.ledger.requireArtifact(input.manuscriptArtifactId);
-  const manuscriptRevisionId = requireManuscriptRevision(manuscript, input.manuscriptArtifactId);
-  const record: ArticleRevisionRecord = {
-    schemaVersion: "article-revision-record/1",
-    ordinal: 0,
-    manuscriptArtifactId: input.manuscriptArtifactId,
-    manuscriptRevisionId,
-    reviewMaterialArtifactIds: Object.freeze([]),
-    humanRulingArtifactIds: Object.freeze([]),
-    trigger: "initial",
-  };
-  const artifactId = revisionRecordId(manuscriptRevisionId);
-  input.ports.ledger.createArtifact({
-    id: artifactId,
-    kind: "article_revision_record",
-    schemaVersion: "article-revision-record/1",
-    mediaType: "application/json",
-    origin: "machine",
-    payload: { kind: "json", value: record as unknown as JsonValue },
-    parents: articleRevisionRecordParents(record),
-    metadata: {
-      articleId: input.args.articleId,
-      manuscriptArtifactId: input.manuscriptArtifactId,
-      manuscriptRevisionId,
-      ordinal: 0,
-      trigger: "initial",
-    },
-    runId: input.runId,
-    ...withContext(input.context),
-  });
-  input.ports.ledger.recordCurrentRevisionRecord(input.runId, artifactId);
-  return { manuscriptArtifactId: input.manuscriptArtifactId, manuscriptRevisionId, revisionRecordArtifactId: artifactId, ordinal: 0 };
-}
-
 function createRevisionContext(input: {
   readonly args: ArticleRuntimeStartArgs;
   readonly runId: RunId;
@@ -1110,6 +1080,10 @@ export function measurementProfileId(runId: RunId): ArtifactId {
 
 export function measurementProfileCycleId(cycleId: string): ArtifactId {
   return `art-measurement-profile-${safeIdentity(cycleId)}` as ArtifactId;
+}
+
+function articleInitialRevisionCycleId(articleExecutionId: string, sourceRevisionId: ManuscriptRevisionId): string {
+  return `article-initial-${safeIdentity(articleExecutionId)}-${safeIdentity(sourceRevisionId)}`;
 }
 
 export function manuscriptArtifactIdForRevision(revisionId: ManuscriptRevisionId): ArtifactId {
