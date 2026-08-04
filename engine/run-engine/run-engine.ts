@@ -63,6 +63,10 @@ import {
   orchestrationSpawn,
 } from "../machines/orchestration.ts";
 import {
+  assertPrincipalExposureIsolated,
+  SourceExposureConflictError,
+} from "../article-production/materials.ts";
+import {
   insertArtifactRecords,
   type ArtifactDisposition,
   type ArtifactRecord,
@@ -801,16 +805,31 @@ export class SqliteRunEngine implements RunEngine, WorkerClaimPort {
         );
       }
       if (exposure !== undefined && offer.subject_artifact_id !== null) {
-        const opposite = exposure === "source_aware" ? "source_blind" : "source_aware";
-        const conflict = this.db.prepare(
-          `SELECT first_attempt_id FROM worker_exposures
-           WHERE worker_principal_id = ? AND subject_artifact_id = ? AND exposure_class = ?`,
-        ).get(worker.principalId, offer.subject_artifact_id, opposite);
-        if (conflict !== undefined) {
-          throw new RunEngineError(
-            "WORKER_EXPOSURE_CONFLICT",
-            `Worker ${worker.principalId} has incompatible permanent exposure for ${offer.subject_artifact_id}`,
+        const previous = this.db.prepare(
+          `SELECT subject_artifact_id, exposure_class FROM worker_exposures
+           WHERE worker_principal_id = ? AND subject_artifact_id = ?`,
+        ).all(worker.principalId, offer.subject_artifact_id) as readonly {
+          readonly subject_artifact_id: ArtifactId;
+          readonly exposure_class: "source_aware" | "source_blind";
+        }[];
+        try {
+          assertPrincipalExposureIsolated(
+            previous.map((row) => ({
+              principalId: worker.principalId,
+              manuscriptArtifactId: row.subject_artifact_id,
+              access: row.exposure_class,
+            })),
+            {
+              principalId: worker.principalId,
+              manuscriptArtifactId: offer.subject_artifact_id,
+              access: exposure,
+            },
           );
+        } catch (error) {
+          if (error instanceof SourceExposureConflictError) {
+            throw new RunEngineError("WORKER_EXPOSURE_CONFLICT", error.message);
+          }
+          throw error;
         }
       }
       const attemptId = this.ids.next<AttemptId>("attempt");

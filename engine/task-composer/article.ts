@@ -2,27 +2,18 @@ import type {
   ActorId,
   ArtifactId,
   ArticleRunSpec,
-  JudgeLens,
   RevisionId,
   IterationId,
   OfferRequirements,
-  WorkRole,
   WorkerCapability,
 } from "../contracts/index.ts";
 import type { CreateWorkOfferEffect } from "../machines/runtime.ts";
 import {
-  artifactIds,
-  assertOneArticle,
-  assertRoleArtifactAccess,
-  type ArticleArtifactClassification,
-  type ClassifiedArticleArtifact,
-} from "./artifacts.ts";
+  selectLegacyArticleMaterialSet,
+  type ArticleOfferRole,
+} from "../article-production/materials.ts";
 
-export type ArticleOfferRole =
-  | "writer"
-  | "measure_article"
-  | JudgeLens
-  | "editor_decision";
+export type { ArticleOfferRole } from "../article-production/materials.ts";
 
 export type ComposeArticleOfferInput = {
   readonly actorId: ActorId;
@@ -41,116 +32,6 @@ export type ComposeArticleOfferInput = {
   readonly revisionId?: RevisionId;
 };
 
-function classified(
-  articleId: string,
-  classification: ArticleArtifactClassification,
-  artifactId: ArtifactId | undefined,
-): ClassifiedArticleArtifact[] {
-  return artifactId === undefined
-    ? []
-    : [{ artifactId, articleId, classification }];
-}
-
-function classifiedMany(
-  articleId: string,
-  classification: ArticleArtifactClassification,
-  artifactIds: readonly ArtifactId[] | undefined,
-): ClassifiedArticleArtifact[] {
-  return (artifactIds ?? []).map((artifactId) => ({
-    artifactId,
-    articleId,
-    classification,
-  }));
-}
-
-function judgePrompt(spec: ArticleRunSpec, lens: JudgeLens): ArtifactId {
-  const prompt = spec.judgePrompts[lens];
-  if (prompt === undefined) {
-    throw new TypeError(`Article ${spec.articleId} has no prompt for ${lens}`);
-  }
-  return prompt;
-}
-
-function writerArtifacts(
-  input: ComposeArticleOfferInput,
-): readonly ClassifiedArticleArtifact[] {
-  const { articleId } = input.spec;
-  return [
-    ...classified(articleId, "writer_prompt", input.spec.writerPrompt),
-    ...classified(articleId, "writer_policy", input.spec.contentModeArtifact),
-    ...classified(articleId, "writer_policy", input.spec.attributionArtifact),
-    ...classified(articleId, "writer_policy", input.spec.editorialPolicyArtifact),
-    ...classified(articleId, "writer_policy", input.spec.modelPolicyArtifact),
-    ...classified(articleId, "article_brief", input.spec.articleBrief),
-    ...classified(articleId, "writing_rules", input.spec.writingRules),
-    ...classified(articleId, "edition_context", input.spec.editionContext),
-    ...classifiedMany(articleId, "source", input.spec.sources),
-    ...classifiedMany(articleId, "source", input.spec.sourceApprovalArtifacts),
-    ...classified(articleId, "manuscript", input.manuscriptArtifact),
-    ...classifiedMany(articleId, "revision_finding", input.findingArtifacts),
-    ...classifiedMany(articleId, "revision_finding", input.rulingArtifacts),
-    ...classified(articleId, "working_notes", input.workingNotesArtifact),
-  ];
-}
-
-function judgeArtifacts(
-  input: ComposeArticleOfferInput,
-  lens: JudgeLens,
-): readonly ClassifiedArticleArtifact[] {
-  const { articleId } = input.spec;
-  const common = [
-    ...classified(articleId, "judge_prompt", judgePrompt(input.spec, lens)),
-    ...classified(articleId, "manuscript", input.manuscriptArtifact),
-    ...classified(articleId, "writing_rules", input.spec.writingRules),
-  ];
-  if (lens === "mechanics" || lens === "shape" || lens === "craft") {
-    return common;
-  }
-  return [
-    ...common,
-    ...classified(articleId, "article_brief", input.spec.articleBrief),
-    ...classified(articleId, "edition_context", input.spec.editionContext),
-    ...classifiedMany(articleId, "source", input.spec.sources),
-    ...classifiedMany(articleId, "source", input.spec.sourceApprovalArtifacts),
-  ];
-}
-
-function offerArtifacts(
-  input: ComposeArticleOfferInput,
-): readonly ClassifiedArticleArtifact[] {
-  const { articleId } = input.spec;
-  switch (input.role) {
-    case "writer":
-      return writerArtifacts(input);
-    case "measure_article":
-      return [
-        ...classified(articleId, "manuscript", input.manuscriptArtifact),
-        ...classified(articleId, "article_brief", input.spec.articleBrief),
-        ...classified(articleId, "edition_context", input.spec.editionContext),
-        ...classified(
-          articleId,
-          "measurement_profile",
-          input.spec.measurementProfileArtifact,
-        ),
-        ...classifiedMany(
-          articleId,
-          "measurement_input",
-          input.spec.measurementInputArtifacts ?? [],
-        ),
-      ];
-    case "editor_decision":
-      return [
-        ...classified(articleId, "manuscript", input.manuscriptArtifact),
-        ...classified(articleId, "article_brief", input.spec.articleBrief),
-        ...classifiedMany(articleId, "revision_finding", input.findingArtifacts),
-        ...classifiedMany(articleId, "revision_finding", input.rulingArtifacts),
-        ...classified(articleId, "working_notes", input.workingNotesArtifact),
-      ];
-    default:
-      return judgeArtifacts(input, input.role);
-  }
-}
-
 function taskArtifactId(input: ComposeArticleOfferInput): ArtifactId {
   if (input.role === "writer") {
     return input.spec.writerPrompt;
@@ -160,7 +41,11 @@ function taskArtifactId(input: ComposeArticleOfferInput): ArtifactId {
       ? input.spec.measurementProfileArtifact ?? input.spec.articleBrief
       : input.spec.articleBrief;
   }
-  return judgePrompt(input.spec, input.role);
+  const prompt = input.spec.judgePrompts[input.role];
+  if (prompt === undefined) {
+    throw new TypeError(`Article ${input.spec.articleId} has no prompt for ${input.role}`);
+  }
+  return prompt;
 }
 
 function capabilities(role: ArticleOfferRole): readonly WorkerCapability[] {
@@ -208,9 +93,15 @@ export function composeArticleWorkOffer(
       `Article ${input.spec.articleId} cannot offer ${input.role} without a manuscript`,
     );
   }
-  const artifacts = offerArtifacts(input);
-  assertOneArticle(input.spec.articleId, artifacts);
-  assertRoleArtifactAccess(input.role as WorkRole, artifacts);
+  const artifacts = selectLegacyArticleMaterialSet({
+    articleId: input.spec.articleId,
+    spec: input.spec,
+    role: input.role,
+    ...(input.manuscriptArtifact === undefined ? {} : { manuscriptArtifact: input.manuscriptArtifact }),
+    ...(input.findingArtifacts === undefined ? {} : { findingArtifacts: input.findingArtifacts }),
+    ...(input.rulingArtifacts === undefined ? {} : { rulingArtifacts: input.rulingArtifacts }),
+    ...(input.workingNotesArtifact === undefined ? {} : { workingNotesArtifact: input.workingNotesArtifact }),
+  });
 
   return {
     type: "create_work_offer",
@@ -235,7 +126,7 @@ export function composeArticleWorkOffer(
       ? {}
       : { parentManuscriptArtifactId: input.parentManuscriptArtifactId }),
     ...(input.revisionId === undefined ? {} : { revisionId: input.revisionId }),
-    inputArtifacts: artifactIds(artifacts),
+    inputArtifacts: artifacts.artifactIds,
     taskArtifactId: taskArtifactId(input),
     contractVersion: `article-${input.role}/1`,
     requirements: requirements(input.role),

@@ -193,6 +193,9 @@ export type ArticleProductionProfileDocument = {
     readonly reviewMaterials: readonly ReviewMaterialRevisionContract[];
   };
   readonly reviewPlanRevision: ArticleReviewPlanRevisionRef;
+  /** The one exact house-writing-rules policy revision required by every writer. */
+  readonly writingRulesRevision: PolicyRevisionRef;
+  /** Additional writer policies. These are not a substitute for writingRulesRevision. */
   readonly writingPolicyRevisions: readonly PolicyRevisionRef[];
   readonly revisionPolicy: {
     readonly maximumRewrites: number;
@@ -213,6 +216,8 @@ export type ResolvedArticleProductionProfile = {
     readonly required: boolean;
   }[];
   readonly reviewPlanArtifactId: ArtifactId;
+  /** The exact materialized writing-rules payload bound to this profile. */
+  readonly writingRulesArtifactId: ArtifactId;
   readonly writingPolicyArtifactIds: readonly ArtifactId[];
   readonly maximumRewrites: number;
 };
@@ -350,6 +355,7 @@ const profileSchema = z.object({
     }).strict()),
   }).strict(),
   review_plan_revision: reviewPlanRevisionSchema,
+  writing_rules_revision: policyRevisionSchema,
   writing_policy_revisions: z.array(policyRevisionSchema),
   revision_policy: z.object({ maximum_rewrites: z.number().int().nonnegative() }).strict(),
 }).strict();
@@ -399,7 +405,12 @@ function validateReviewPlan(plan: ArticleReviewPlanDocument): ArticleReviewPlanD
   for (const check of plan.checks) {
     if (membership.get(check.id) !== 1) throw new Error(`review check ${check.id} must belong to exactly one wave`);
     validateCondition(check.applicableWhen);
-    if (check.kind === "model_review") unique(check.writerMaterialIds ?? [], `writer material IDs for ${check.id}`);
+    if (check.kind === "model_review") {
+      unique(check.writerMaterialIds ?? [], `writer material IDs for ${check.id}`);
+      if (check.access === "source_blind" && (check.writerMaterialIds?.length ?? 0) > 0) {
+        throw new Error(`source-blind review check ${check.id} cannot request writer material`);
+      }
+    }
   }
   return plan;
 }
@@ -408,6 +419,9 @@ export function parseArticleProductionProfileDocument(value: unknown): ArticlePr
   const parsed = profileSchema.parse(value);
   unique(parsed.writer.review_materials.map((material) => material.material_id), "writer review material IDs");
   unique(parsed.writing_policy_revisions.map((revision) => revision.logical_id), "writing policy revisions");
+  if (parsed.writing_policy_revisions.some((revision) => revision.logical_id === parsed.writing_rules_revision.logical_id)) {
+    throw new Error("writing-rules revision must not also appear in writing policy revisions");
+  }
   return {
     schemaVersion: parsed.schema_version,
     profileId: parsed.profile_id,
@@ -422,6 +436,7 @@ export function parseArticleProductionProfileDocument(value: unknown): ArticlePr
       })),
     },
     reviewPlanRevision: inputRevisionRef(parsed.review_plan_revision, "article_review_plan") as ArticleReviewPlanRevisionRef,
+    writingRulesRevision: inputRevisionRef(parsed.writing_rules_revision, "policy") as PolicyRevisionRef,
     writingPolicyRevisions: parsed.writing_policy_revisions.map((revision) => inputRevisionRef(revision, "policy") as PolicyRevisionRef),
     revisionPolicy: { maximumRewrites: parsed.revision_policy.maximum_rewrites },
   };
@@ -475,6 +490,7 @@ export function parseResolvedArticleProductionProfile(value: unknown): ResolvedA
     writer_result_contract_version: z.literal(ARTICLE_WRITER_RESULT_CONTRACT_VERSION),
     review_materials: z.array(resolvedMaterialSchema),
     review_plan_artifact_id: artifactRefSchema,
+    writing_rules_artifact_id: artifactRefSchema,
     writing_policy_artifact_ids: z.array(artifactRefSchema),
     maximum_rewrites: z.number().int().nonnegative(),
   }).strict().parse(value);
@@ -493,6 +509,7 @@ export function parseResolvedArticleProductionProfile(value: unknown): ResolvedA
       required: material.required,
     })),
     reviewPlanArtifactId: parsed.review_plan_artifact_id as ArtifactId,
+    writingRulesArtifactId: parsed.writing_rules_artifact_id as ArtifactId,
     writingPolicyArtifactIds: parsed.writing_policy_artifact_ids as ArtifactId[],
     maximumRewrites: parsed.maximum_rewrites,
   };
@@ -564,7 +581,12 @@ function validateResolvedReviewPlan(plan: ResolvedReviewPlan): ResolvedReviewPla
   }
   for (const check of plan.checks) {
     if (membership.get(check.id) !== 1) throw new Error(`resolved review check ${check.id} must belong to exactly one wave`);
-    if (check.kind === "model_review") unique(check.writerMaterialIds ?? [], `writer material IDs for ${check.id}`);
+    if (check.kind === "model_review") {
+      unique(check.writerMaterialIds ?? [], `writer material IDs for ${check.id}`);
+      if (check.access === "source_blind" && (check.writerMaterialIds?.length ?? 0) > 0) {
+        throw new Error(`source-blind review check ${check.id} cannot request writer material`);
+      }
+    }
   }
   return plan;
 }
