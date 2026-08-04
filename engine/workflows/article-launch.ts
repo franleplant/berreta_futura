@@ -152,6 +152,12 @@ export async function buildAuthenticatedArticleLaunchArgsFromMaterialized(
     manuscriptArtifactId: seedId,
     args: args as unknown as JsonObject,
   });
+  dependencies.ledger.bindArtifactToRun({
+    runId,
+    artifactId: seedId,
+    articleId,
+    expectedParents: profile.loopsInput.materializedInputs.flatMap((input) => input.artifacts.map((artifact) => ({ artifactId: artifact.artifactId, relation: "input_binding" }))),
+  });
   dependencies.ledger.createArtifact({
     id: measurementProfileArtifactId,
     kind: "article_measurement_profile",

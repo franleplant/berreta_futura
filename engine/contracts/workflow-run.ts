@@ -64,6 +64,17 @@ export type ArticleDecisionAnswer = {
   readonly decisionArtifactId: ArtifactId;
 };
 
+export type EditorialHumanChoice = "accept" | "revise" | "abort";
+
+export type EditorialDecisionRequest = {
+  readonly runId: RunId;
+  readonly offerId: string;
+  readonly taskArtifactId: ArtifactId;
+  readonly inputArtifactIds: readonly ArtifactId[];
+  readonly choice: EditorialHumanChoice;
+  readonly rationale: string;
+};
+
 export type ArticleWorkflowResult = {
   readonly schemaVersion: "magazine-article-workflow-result/1";
   readonly runId: RunId;
@@ -169,6 +180,8 @@ export type MagazineWorkflowEngineOptions = {
     readonly projectRoot?: string;
     readonly timeoutMs?: number;
     readonly toolchain: RendererToolchainResource;
+    /** Test/host TypeScript adapter. Production defaults to the pinned subprocess adapter. */
+    readonly adapter?: import("../renderer-adapter/protocol.ts").RendererAdapter;
   };
   readonly clock?: { readonly now: () => Date };
   /** Authenticated, role-specific workers for the durable article review panel. */
@@ -179,6 +192,10 @@ export type MagazineWorkflowEngineOptions = {
   };
   /** Optional distinct authenticated source-aware writer identity. */
   readonly articleWriter?: import("../authority/local-authority.ts").AuthorizedWorker;
+  /** Optional distinct authenticated source-blind opening-editorial writer identity. */
+  readonly editorialWriter?: import("../authority/local-authority.ts").AuthorizedWorker;
+  /** Optional distinct authenticated source-blind opening-editorial reviewer identity. */
+  readonly editorialReviewer?: import("../authority/local-authority.ts").AuthorizedWorker;
   /** Owner-private OpenAI credential resource used by the closed reviewer. */
   readonly articleReviewCredentials?: import("../executors/closed-writer/credentials.ts").ClosedWriterCredentialResource;
   /** Operational lease time is separate from the domain timestamp clock. */

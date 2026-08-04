@@ -23,6 +23,7 @@ import type {
 import type {
   ArticleDecisionRequest,
   AuthenticatedHuman,
+  EditorialDecisionRequest,
 } from "../contracts/workflow-run.ts";
 import { newId } from "../contracts/ids.ts";
 import { AuthorizedWorker, type AuthorizedWorkerDescription } from "../authority/local-authority.ts";
@@ -274,11 +275,11 @@ export type ArticleAttemptExecutionResult<T> = {
 export type LedgerOffer = {
   readonly id: string;
   readonly runId: RunId;
-  readonly role: "article_decision";
+  readonly role: "article_decision" | "editorial_decision";
   readonly status: "active" | "answered";
   readonly taskArtifactId: ArtifactId;
   readonly inputArtifactIds: readonly ArtifactId[];
-  readonly allowedChoices: readonly ("accept" | "revise" | "drop")[];
+  readonly allowedChoices: readonly ("accept" | "revise" | "drop" | "abort")[];
   readonly createdAt: string;
 };
 
@@ -300,6 +301,21 @@ export type LedgerDecision = {
   readonly rewriteBudget?: ArticleDecisionBudgetSnapshot;
   readonly artifactId: ArtifactId;
   readonly durableContext?: WorkflowWaitContext;
+  readonly createdAt: string;
+};
+
+export type LedgerEditorialDecision = {
+  readonly id: string;
+  readonly runId: RunId;
+  readonly offerId: string;
+  readonly taskArtifactId: ArtifactId;
+  readonly inputArtifactIds: readonly ArtifactId[];
+  readonly principalId: string;
+  readonly credentialProfileId: string;
+  readonly choice: "accept" | "revise" | "abort";
+  readonly rationale: string;
+  readonly artifactId: ArtifactId;
+  readonly durableContext: WorkflowWaitContext;
   readonly createdAt: string;
 };
 
@@ -461,6 +477,7 @@ export class ArtifactLedger {
       humanDecisionAuthorityToken,
       this,
       (input) => this.#recordValidatedEditorDecision(input),
+      (input) => this.#recordEditorialDecision(input),
       clock,
     );
   }
@@ -595,6 +612,61 @@ export class ArtifactLedger {
   recordManuscriptArtifact(runId: RunId, manuscriptArtifactId: ArtifactId): LedgerRun {
     this.requireArtifact(manuscriptArtifactId);
     return this.#recordRunFacts(runId, { manuscriptArtifactId });
+  }
+
+  /** Claim one exact pre-run imported manuscript seed for its owning run. */
+  bindArtifactToRun(input: {
+    readonly runId: RunId;
+    readonly artifactId: ArtifactId;
+    readonly articleId: string;
+    /** Exact ordered parent tuples declared by the imported seed. */
+    readonly expectedParents: readonly ArtifactParent[];
+  }): LedgerArtifact {
+    const transaction = this.#db.transaction(() => {
+      const runId = input.runId;
+      const artifactId = input.artifactId;
+      const run = this.requireRun(runId);
+      if (run.manuscriptArtifactId !== artifactId || run.articleId !== input.articleId) {
+        throw new ArtifactLedgerError("ARTIFACT_SEED_INVALID", `Artifact ${artifactId} is not the exact manuscript seed selected by run ${runId}`);
+      }
+      const artifact = this.requireArtifact(artifactId);
+      if (
+        artifact.kind !== "article_manuscript"
+        || artifact.mediaType !== "text/markdown"
+        || artifact.metadata.articleId !== input.articleId
+        || !sameParents(artifact.parents, input.expectedParents)
+      ) {
+        throw new ArtifactLedgerError("ARTIFACT_SEED_INVALID", `Artifact ${artifactId} is not the exact ${input.articleId} manuscript seed`);
+      }
+      if (artifact.producingRunId !== undefined) {
+        if (artifact.producingRunId !== runId) {
+          throw new ArtifactLedgerError("ARTIFACT_RUN_MISMATCH", `Artifact ${artifactId} already belongs to ${artifact.producingRunId}`);
+        }
+        return artifact;
+      }
+
+      // Use an immediate transaction so concurrent ledger connections cannot
+      // both validate the unbound row before either one claims it. The WHERE
+      // clause remains a compare-and-set guard and the re-read proves which
+      // run won before returning success.
+      const changed = this.#db.prepare(
+        "UPDATE magazine_artifacts SET run_id = ? WHERE id = ? AND run_id IS NULL",
+      ).run(runId, artifactId);
+      if (changed.changes !== 1) {
+        const winner = this.requireArtifact(artifactId);
+        if (winner.producingRunId === runId) return winner;
+        throw new ArtifactLedgerError(
+          "ARTIFACT_RUN_MISMATCH",
+          `Artifact ${artifactId} was claimed concurrently by ${winner.producingRunId ?? "an unknown run"}`,
+        );
+      }
+      const bound = this.requireArtifact(artifactId);
+      if (bound.producingRunId !== runId) {
+        throw new ArtifactLedgerError("ARTIFACT_RUN_MISMATCH", `Artifact ${artifactId} did not bind to ${runId}`);
+      }
+      return bound;
+    });
+    return transaction.immediate();
   }
 
   /**
@@ -1588,7 +1660,7 @@ export class ArtifactLedger {
     if (!matchesArticleAttempt(row, input.claim)) {
       throw new ArtifactLedgerError("ATTEMPT_STALE", `Article attempt ${input.claim.claimId} does not match its fence`);
     }
-    const run = this.requireRun(input.claim.durableContext.runId as RunId);
+    const run = this.requireRun(row.run_id);
     const authorityMetadata: JsonObject = {
       articleExecutionId: input.claim.articleExecutionId,
       operationKey: input.claim.operationKey,
@@ -1732,9 +1804,10 @@ export class ArtifactLedger {
   createOffer(input: {
     readonly id: string;
     readonly runId: RunId;
+    readonly role?: "article_decision" | "editorial_decision";
     readonly taskArtifactId: ArtifactId;
     readonly inputArtifactIds: readonly ArtifactId[];
-    readonly allowedChoices: readonly ("accept" | "revise" | "drop")[];
+    readonly allowedChoices: readonly ("accept" | "revise" | "drop" | "abort")[];
   }): LedgerOffer {
     const existing = this.#db.prepare("SELECT * FROM magazine_offers WHERE id = ?").get(input.id) as OfferRow | undefined;
     if (existing !== undefined) {
@@ -1743,6 +1816,7 @@ export class ArtifactLedger {
       const expectedChoices = input.allowedChoices;
       if (
         offer.runId !== input.runId
+        || offer.role !== (input.role ?? "article_decision")
         || offer.taskArtifactId !== input.taskArtifactId
         || !sameStrings(offer.inputArtifactIds, expectedInputs)
         || !sameStrings(offer.allowedChoices, expectedChoices)
@@ -1755,17 +1829,24 @@ export class ArtifactLedger {
     this.requireArtifact(input.taskArtifactId);
     for (const artifactId of input.inputArtifactIds) this.requireArtifact(artifactId);
     const allowedChoices = input.allowedChoices;
-    if (!sameStrings(allowedChoices, ["accept", "revise", "drop"])) {
-      throw new ArtifactLedgerError("OFFER_INVALID", "Article decision offer must explicitly expose accept, revise, and drop in canonical order");
+    const role = input.role ?? "article_decision";
+    const canonicalChoices = role === "editorial_decision" ? ["accept", "revise", "abort"] as const : ["accept", "revise", "drop"] as const;
+    const validChoices = sameStrings(allowedChoices, canonicalChoices)
+      || (role === "editorial_decision" && sameStrings(allowedChoices, ["revise", "abort"]));
+    if (!validChoices) {
+      throw new ArtifactLedgerError("OFFER_INVALID", role === "editorial_decision"
+        ? "Editorial decision offer must expose revise and abort, with accept only when the revision is eligible"
+        : "Article decision offer must explicitly expose accept, revise, and drop in canonical order");
     }
     this.#db.prepare(
       `INSERT INTO magazine_offers(
         id, run_id, role, status, task_artifact_id, input_artifact_ids_json,
-        allowed_choices_json, created_at
-      ) VALUES (?, ?, 'article_decision', 'active', ?, ?, ?, ?)`,
+      allowed_choices_json, created_at
+      ) VALUES (?, ?, ?, 'active', ?, ?, ?, ?)`,
     ).run(
       input.id,
       input.runId,
+      role,
       input.taskArtifactId,
       JSON.stringify(input.inputArtifactIds),
       JSON.stringify(allowedChoices),
@@ -1824,7 +1905,7 @@ export class ArtifactLedger {
     const decision = input.decision;
     const authority = this.#deriveArticleEditorDecisionAuthority(decision);
     const validation = authority.validation;
-    assertWaitContext(decision.durableContext, decision.runId);
+    assertWaitContext(decision.durableContext, this.requireRun(decision.runId).loopsRunId as RunId);
     if (input.artifact.id !== decision.artifactId || input.artifact.runId !== decision.runId) {
       throw new ArtifactLedgerError("DECISION_ARTIFACT_MISMATCH", "validated decision artifact must bind the exact run and decision identity");
     }
@@ -1948,7 +2029,7 @@ export class ArtifactLedger {
     ) {
       throw new ArtifactLedgerError("DECISION_TASK_INVALID", "decision task is not bound to the exact run, offer, and decision artifact");
     }
-    assertWaitContext(decision.durableContext, decision.runId);
+    assertWaitContext(decision.durableContext, this.requireRun(decision.runId).loopsRunId as RunId);
     if (decision.durableContext.key !== `article.decision.${safeIdentity(task.cycleId)}`) {
       throw new ArtifactLedgerError("DECISION_PROVENANCE_INVALID", "decision wait key is not scoped to the exact review cycle");
     }
@@ -2059,6 +2140,35 @@ export class ArtifactLedger {
     return this.requireDecision(input.offerId);
   }
 
+  #recordEditorialDecision(input: {
+    readonly decision: LedgerEditorialDecision;
+    readonly artifact: LedgerArtifactInput;
+  }): LedgerEditorialDecision {
+    const decision = input.decision;
+    assertWaitContext(decision.durableContext, this.requireRun(decision.runId).loopsRunId as RunId);
+    const offer = this.requireOffer(decision.offerId);
+    if (offer.role !== "editorial_decision" || offer.runId !== decision.runId || offer.status !== "active" || offer.taskArtifactId !== decision.taskArtifactId || !sameStrings(offer.inputArtifactIds, decision.inputArtifactIds) || !offer.allowedChoices.includes(decision.choice)) {
+      throw new ArtifactLedgerError("OFFER_STALE", `Editorial decision offer ${decision.offerId} is stale or invalid`);
+    }
+    if (input.artifact.id !== decision.artifactId || input.artifact.runId !== decision.runId) throw new ArtifactLedgerError("DECISION_ARTIFACT_MISMATCH", "Editorial decision artifact is not bound to the exact offer");
+    const existing = this.#db.prepare("SELECT * FROM magazine_decisions WHERE offer_id = ?").get(decision.offerId) as DecisionRow | undefined;
+    if (existing !== undefined) {
+      const choice = existing.choice as LedgerEditorialDecision["choice"];
+      if (existing.principal_id !== decision.principalId || existing.credential_profile_id !== decision.credentialProfileId || choice !== decision.choice || existing.rationale !== decision.rationale || existing.artifact_id !== decision.artifactId) throw new ArtifactLedgerError("DECISION_ALREADY_RECORDED", `Offer ${decision.offerId} already has a different decision`);
+      return decision;
+    }
+    this.createArtifact(input.artifact);
+    this.#db.prepare(
+      `INSERT INTO magazine_decisions(
+        id, run_id, offer_id, task_artifact_id, input_artifact_ids_json,
+        principal_id, credential_profile_id, choice, rationale,
+        approved_finding_ids_json, additional_rewrite_budget, artifact_id, created_at,
+        durable_context_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?, ?)`,
+    ).run(decision.id, decision.runId, decision.offerId, decision.taskArtifactId, JSON.stringify(decision.inputArtifactIds), decision.principalId, decision.credentialProfileId, decision.choice, decision.rationale, decision.artifactId, decision.createdAt, JSON.stringify(contextObject(decision.durableContext)));
+    return decision;
+  }
+
   markOfferAnswered(offerId: string): LedgerOffer {
     const offer = this.requireOffer(offerId);
     if (offer.status === "active") {
@@ -2070,6 +2180,25 @@ export class ArtifactLedger {
   getDecision(offerId: string): LedgerDecision | undefined {
     const row = this.#db.prepare("SELECT * FROM magazine_decisions WHERE offer_id = ?").get(offerId) as DecisionRow | undefined;
     return row === undefined ? undefined : toDecision(row);
+  }
+
+  getEditorialDecision(offerId: string): LedgerEditorialDecision | undefined {
+    const row = this.#db.prepare("SELECT * FROM magazine_decisions WHERE offer_id = ?").get(offerId) as DecisionRow | undefined;
+    if (row === undefined || !["accept", "revise", "abort"].includes(row.choice)) return undefined;
+    return {
+      id: row.id,
+      runId: row.run_id,
+      offerId: row.offer_id,
+      taskArtifactId: row.task_artifact_id,
+      inputArtifactIds: JSON.parse(row.input_artifact_ids_json) as readonly ArtifactId[],
+      principalId: row.principal_id,
+      credentialProfileId: row.credential_profile_id,
+      choice: row.choice as LedgerEditorialDecision["choice"],
+      rationale: row.rationale,
+      artifactId: row.artifact_id,
+      durableContext: row.durable_context_json === null ? (() => { throw new ArtifactLedgerError("DECISION_PROVENANCE_REQUIRED", `Editorial decision ${row.id} has no durable context`); })() : JSON.parse(row.durable_context_json) as WorkflowWaitContext,
+      createdAt: row.created_at,
+    };
   }
 
   getDecisionByArtifactId(runId: RunId, artifactId: ArtifactId): LedgerDecision | undefined {
@@ -2649,12 +2778,14 @@ const humanDecisionAuthorityToken = Symbol("magazine.humanDecisionAuthority");
 class HumanDecisionAuthorityImpl implements HumanDecisionAuthority {
   readonly #ledger: ArtifactLedger;
   readonly #persist: (input: HumanDecisionPersistenceInput) => LedgerDecision;
+  readonly #persistEditorial: (input: { readonly decision: LedgerEditorialDecision; readonly artifact: LedgerArtifactInput }) => LedgerEditorialDecision;
   readonly #clock: { readonly now: () => Date };
 
   constructor(
     token: typeof humanDecisionAuthorityToken,
     ledger: ArtifactLedger,
     persist: (input: HumanDecisionPersistenceInput) => LedgerDecision,
+    persistEditorial: (input: { readonly decision: LedgerEditorialDecision; readonly artifact: LedgerArtifactInput }) => LedgerEditorialDecision,
     clock: { readonly now: () => Date },
   ) {
     if (token !== humanDecisionAuthorityToken) {
@@ -2662,6 +2793,7 @@ class HumanDecisionAuthorityImpl implements HumanDecisionAuthority {
     }
     this.#ledger = ledger;
     this.#persist = persist;
+    this.#persistEditorial = persistEditorial;
     this.#clock = clock;
   }
 
@@ -2769,6 +2901,49 @@ class HumanDecisionAuthorityImpl implements HumanDecisionAuthority {
     // The closure is the only path to persistence. Validation is rebuilt by
     // the ledger from its immutable evidence before the row is written.
     return this.#persist({ decision, artifact });
+  }
+
+  async decideEditorial(
+    human: AuthenticatedHuman,
+    request: EditorialDecisionRequest,
+    durableContext: WorkflowWaitContext,
+  ): Promise<LedgerEditorialDecision> {
+    if (!(human instanceof AuthorizedWorker)) throw new ArtifactLedgerError("HUMAN_AUTHORITY_REQUIRED", "A decision requires an AuthorizedWorker session minted by LocalAuthorityStore");
+    const description = await human.describe();
+    if (description.authority !== "human" || description.grantIds.length === 0 || description.capabilities.length === 0) throw new ArtifactLedgerError("HUMAN_AUTHORITY_REQUIRED", "Only an authenticated human with active capabilities may answer an editorial decision offer");
+    if (request.rationale.trim().length === 0) throw new ArtifactLedgerError("DECISION_INVALID", "A human editorial decision requires a rationale");
+    const offer = this.#ledger.requireOffer(request.offerId);
+    if (offer.role !== "editorial_decision" || offer.runId !== request.runId || offer.status !== "active" || offer.taskArtifactId !== request.taskArtifactId || !sameStrings(offer.inputArtifactIds, request.inputArtifactIds) || !offer.allowedChoices.includes(request.choice)) throw new ArtifactLedgerError("OFFER_STALE", `Editorial decision offer ${request.offerId} is stale or invalid`);
+    assertWaitContext(durableContext, this.#ledger.requireRun(request.runId).loopsRunId as RunId);
+    const rationale = request.rationale.trim();
+    const artifactId = `art-editorial-decision-${safeIdentity(request.offerId)}` as ArtifactId;
+    const decision = {
+      id: `decision-${safeIdentity(request.offerId)}`,
+      runId: request.runId,
+      offerId: request.offerId,
+      taskArtifactId: request.taskArtifactId,
+      inputArtifactIds: request.inputArtifactIds,
+      principalId: description.principalId,
+      credentialProfileId: description.credentialProfileId,
+      choice: request.choice,
+      rationale,
+      artifactId,
+      durableContext,
+      createdAt: this.#clock.now().toISOString(),
+    } satisfies LedgerEditorialDecision;
+    const artifact: LedgerArtifactInput = {
+      id: artifactId,
+      kind: "editorial_human_decision",
+      schemaVersion: "editorial-human-decision/1",
+      mediaType: "application/json",
+      origin: "human",
+      payload: { kind: "json", value: { schemaVersion: "editorial-human-decision/1", offerId: request.offerId, taskArtifactId: request.taskArtifactId, inputArtifactIds: request.inputArtifactIds, principalId: description.principalId, credentialProfileId: description.credentialProfileId, choice: request.choice, rationale } },
+      parents: [{ artifactId: request.taskArtifactId, relation: "editorial_decision_task" }, ...request.inputArtifactIds.map((artifactId) => ({ artifactId, relation: "editorial_decision_input" }))],
+      metadata: { offerId: request.offerId, principalId: description.principalId, credentialProfileId: description.credentialProfileId, choice: request.choice },
+      runId: request.runId,
+      durableContext,
+    };
+    return this.#persistEditorial({ decision, artifact });
   }
 
   #validate(route: ArticleReviewRoute, decision: ArticleEditorDecision): ValidatedArticleEditorDecision {
@@ -3028,7 +3203,7 @@ export class ArticleAttemptRunner {
 type OfferRow = {
   readonly id: string;
   readonly run_id: RunId;
-  readonly role: "article_decision";
+  readonly role: "article_decision" | "editorial_decision";
   readonly status: "active" | "answered";
   readonly task_artifact_id: ArtifactId;
   readonly input_artifact_ids_json: string;
@@ -3044,7 +3219,7 @@ type DecisionRow = {
   readonly input_artifact_ids_json: string;
   readonly principal_id: string;
   readonly credential_profile_id: string;
-  readonly choice: "accept" | "revise" | "drop";
+  readonly choice: "accept" | "revise" | "drop" | "abort";
   readonly rationale: string;
   readonly approved_finding_ids_json: string | null;
   readonly additional_rewrite_budget: number | null;
@@ -3268,20 +3443,19 @@ function assertWorkerIdentity(
 }
 
 function assertWaitContext(context: WorkflowWaitContext, runId: RunId): void {
-  if (
-    context.kind !== "wait" ||
-    context.runId !== runId ||
-    context.invocationId.length === 0 ||
-    context.workflowName.length === 0 ||
-    context.workflowVersion.length === 0 ||
-    context.callId.length === 0 ||
-    context.waitId.length === 0 ||
-    context.key.length === 0 ||
-    "attemptId" in (context as object) ||
-    "attemptNumber" in (context as object)
-  ) {
-    throw new ArtifactLedgerError("DECISION_PROVENANCE_INVALID", "Human decisions require exact wait provenance without attempt fields");
-  }
+  const mismatches = [
+    context.kind !== "wait" ? `kind=${context.kind}` : undefined,
+    context.runId !== runId ? `runId=${context.runId} expected=${runId}` : undefined,
+    context.invocationId.length === 0 ? "invocationId=empty" : undefined,
+    context.workflowName.length === 0 ? "workflowName=empty" : undefined,
+    context.workflowVersion.length === 0 ? "workflowVersion=empty" : undefined,
+    context.callId.length === 0 ? "callId=empty" : undefined,
+    context.waitId.length === 0 ? "waitId=empty" : undefined,
+    context.key.length === 0 ? "key=empty" : undefined,
+    "attemptId" in (context as object) ? "attemptId=present" : undefined,
+    "attemptNumber" in (context as object) ? "attemptNumber=present" : undefined,
+  ].filter((value): value is string => value !== undefined);
+  if (mismatches.length > 0) throw new ArtifactLedgerError("DECISION_PROVENANCE_INVALID", `Human decisions require exact wait provenance without attempt fields: ${mismatches.join(", ")}`);
 }
 
 function assertAttemptContextBinding(
@@ -3290,7 +3464,6 @@ function assertAttemptContextBinding(
 ): void {
   if (
     (context.kind !== "agent" && context.kind !== "step")
-    || context.runId !== input.rootRunId
     || context.invocationId.length === 0
     || context.workflowName.length === 0
     || context.workflowVersion.length === 0
@@ -3627,7 +3800,7 @@ function toOffer(row: OfferRow): LedgerOffer {
     status: row.status,
     taskArtifactId: row.task_artifact_id,
     inputArtifactIds: JSON.parse(row.input_artifact_ids_json) as readonly ArtifactId[],
-    allowedChoices: JSON.parse(row.allowed_choices_json) as readonly ("accept" | "revise" | "drop")[],
+    allowedChoices: JSON.parse(row.allowed_choices_json) as readonly ("accept" | "revise" | "drop" | "abort")[],
     createdAt: row.created_at,
   };
 }
@@ -3641,7 +3814,7 @@ function toDecision(row: DecisionRow): LedgerDecision {
     inputArtifactIds: JSON.parse(row.input_artifact_ids_json) as readonly ArtifactId[],
     principalId: row.principal_id,
     credentialProfileId: row.credential_profile_id,
-    choice: row.choice,
+    choice: row.choice as LedgerDecision["choice"],
     rationale: row.rationale,
     ...(row.approved_finding_ids_json === null ? {} : { approvedFindingIds: JSON.parse(row.approved_finding_ids_json) as readonly string[] }),
     ...(row.additional_rewrite_budget === null ? {} : { additionalRewriteBudget: row.additional_rewrite_budget }),

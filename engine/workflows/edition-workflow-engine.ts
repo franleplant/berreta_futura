@@ -11,7 +11,7 @@ import {
 } from "@loops/core";
 import { buildDurableWorkflowPin } from "@loops/workflow";
 
-import type { ArtifactId, JsonObject, RunId, RevisionId } from "../contracts/index.ts";
+import type { ArtifactId, JsonObject, JsonValue, RunId, RevisionId } from "../contracts/index.ts";
 import type { InputRevisionRef } from "../durable/types.ts";
 import {
   resolveAuthenticatedWritePipelineInputs,
@@ -60,6 +60,8 @@ export type EditionWorkflowEngineOptions = MagazineWorkflowEngineOptions & {
   readonly articlePorts?: import("./internal-types.ts").ArticleWorkflowPorts;
   /** Test-only renderer identity when the host supplies a stub article port. */
   readonly rendererIdentity?: RendererIdentity;
+  /** Test-only completed article workflow seam. */
+  readonly articleWorkflowStub?: (args: ArticleRuntimeStartArgs) => Promise<unknown> | unknown;
 };
 
 export type EditionChildView = {
@@ -84,6 +86,8 @@ export type EditionWorkflowView = {
   readonly articleExecutionIds: readonly string[];
   readonly selectedImageRevisions: EditionPlanCheckpoint["selectedImageRevisions"];
   readonly imageGenerationAllowed: false;
+  readonly acceptedEnglishInputsArtifactId?: ArtifactId;
+  readonly editorial?: unknown;
   readonly children: readonly EditionChildView[];
   readonly workflowVersion: string;
   readonly workflowPin?: JsonObject;
@@ -136,6 +140,7 @@ export class EditionWorkflowEngine {
   #pinPromise: Promise<DurableWorkflowPin> | undefined;
 
   constructor(options: EditionWorkflowEngineOptions) {
+    if (options.renderer === undefined || typeof options.renderer.workDirectory !== "string" || options.renderer.toolchain === undefined) throw new Error("EditionWorkflowEngine requires a pinned renderer resource");
     this.#options = options;
     this.#projectRoot = resolve(options.projectRoot);
     this.#repositoryRoot = resolve(options.repositoryRoot);
@@ -154,6 +159,8 @@ export class EditionWorkflowEngine {
       ...(options.articleReviewWorkers === undefined ? {} : { articleReviewWorkers: options.articleReviewWorkers }),
       ...(options.articleReviewCredentials === undefined ? {} : { articleReviewCredentials: options.articleReviewCredentials }),
       ...(options.articleWriter === undefined ? {} : { articleWriter: options.articleWriter }),
+      ...(options.editorialWriter === undefined ? {} : { editorialWriter: options.editorialWriter }),
+      ...(options.editorialReviewer === undefined ? {} : { editorialReviewer: options.editorialReviewer }),
     });
     this.#validateRuntimeResources = this.#ports.validateRuntimeResources ?? (async () => undefined);
     this.#store = new SQLiteDurableRunStore(resolve(options.loopsDatabasePath));
@@ -225,10 +232,13 @@ export class EditionWorkflowEngine {
         ...(result === undefined ? {} : { result }),
       };
     });
+    const rootResult = inspection.run.result as Partial<EditionWorkflowResult> | undefined;
+    const editorialInvocation = inspection.invocations.find((invocation) => invocation.workflowName === "magazine-opening-editorial");
+    const editorialResult = editorialInvocation?.result ?? rootResult?.editorial;
     const status = inspection.run.status === "waiting"
       ? "waiting"
       : inspection.run.status === "completed"
-        ? "complete"
+        ? rootResult?.status === "complete" || rootResult === undefined ? "complete" : "waiting"
         : inspection.run.status === "failed" || inspection.run.status === "canceled"
           ? "failed"
           : "running";
@@ -244,6 +254,8 @@ export class EditionWorkflowEngine {
       selectedImageRevisions: args.selectedImageRevisions,
       imageGenerationAllowed: false,
       children,
+      ...(rootResult?.acceptedEnglishInputsArtifactId === undefined ? {} : { acceptedEnglishInputsArtifactId: rootResult.acceptedEnglishInputsArtifactId }),
+      ...(editorialResult === undefined ? {} : { editorial: editorialResult }),
       workflowVersion: inspection.run.workflowVersion,
       ...(inspection.run.workflowPin === undefined ? {} : { workflowPin: inspection.run.workflowPin as unknown as JsonObject }),
       invocations: inspection.invocations.map((invocation) => ({
@@ -302,6 +314,7 @@ export class EditionWorkflowEngine {
       workflowResolver: createMagazineWorkflowResolver({
         projectRoot: this.#projectRoot,
         articlePorts: this.#ports,
+        ...(this.#options.articleWorkflowStub === undefined ? {} : { articleWorkflowStub: this.#options.articleWorkflowStub }),
       }),
     });
     try {
@@ -328,6 +341,14 @@ export class EditionWorkflowEngine {
     if (root.workflowPin === undefined) throw new Error("Edition root run has no frozen workflow pin");
     const planArtifact = this.#ledger.requireArtifact(args.planArtifactId);
     if (
+      args.selectedImageRevisions.length !== 13 ||
+      args.imageGenerationAllowed !== false ||
+      args.plan.imageGenerationAllowed !== false ||
+      !isDeepStrictEqual(args.selectedImageRevisions, args.plan.selectedImageRevisions)
+    ) {
+      throw new Error("Edition 4 image selection is not pinned with generation disabled");
+    }
+    if (
       planArtifact.kind !== "edition_plan" ||
       planArtifact.schemaVersion !== "edition-plan-checkpoint/1" ||
       planArtifact.mediaType !== "application/json" ||
@@ -337,12 +358,23 @@ export class EditionWorkflowEngine {
       planArtifact.metadata.pipelineRevisionId !== args.plan.pipelineRef.revisionId ||
       planArtifact.metadata.pipelineDigest !== args.plan.pipelineDigest ||
       planArtifact.metadata.imageGenerationAllowed !== false ||
-      !sameParents(planArtifact.parents, uniqueSourceArtifactIdsFromPlan(args.plan).map((artifactId) => ({ artifactId, relation: "source_lineage" })))
+      !sameParents(planArtifact.parents, [
+        ...uniqueSourceArtifactIdsFromPlan(args.plan).map((artifactId) => ({ artifactId, relation: "source_lineage" })),
+        { artifactId: args.plan.editorial.profileArtifactId, relation: "source_lineage" },
+        { artifactId: args.plan.editorial.reviewPlanArtifactId, relation: "source_lineage" },
+        { artifactId: args.plan.editorial.measurementProfileArtifactId, relation: "source_lineage" },
+      ])
     ) {
-      throw new Error("Edition plan artifact is not the exact immutable source-bound plan");
+      throw new Error("Edition plan artifact has an inexact materialized artifact set or changed identity");
     }
     const planPayload = readJsonArtifact(this.#ledger, planArtifact.id, "Edition plan artifact");
     if (!isDeepStrictEqual(planPayload, args.plan)) throw new Error("Edition plan payload does not match workflow args");
+    const editorialProfile = this.#ledger.requireArtifact(args.plan.editorial.profileArtifactId);
+    if (editorialProfile.kind !== "resolved_editorial_profile" || editorialProfile.schemaVersion !== "resolved-editorial-profile/1" || editorialProfile.payloadKind !== "json" || editorialProfile.metadata.editionId !== "004") throw new Error("Edition editorial profile pin changed identity");
+    const reviewProfile = this.#ledger.requireArtifact(args.plan.editorial.reviewPlanArtifactId);
+    if (reviewProfile.kind !== "editorial_review_plan" || reviewProfile.schemaVersion !== "editorial-review-plan/1" || reviewProfile.payloadKind !== "json" || reviewProfile.metadata.editionId !== "004") throw new Error("Edition editorial review profile pin changed identity");
+    const measurementProfile = this.#ledger.requireArtifact(args.plan.editorial.measurementProfileArtifactId);
+    if (measurementProfile.kind !== "editorial_measurement_profile" || measurementProfile.schemaVersion !== "editorial-measurement-profile/1" || measurementProfile.payloadKind !== "json" || measurementProfile.metadata.editionId !== "004") throw new Error("Edition editorial measurement profile pin changed identity");
     const entryArtifact = this.#ledger.requireArtifact(args.entryArtifactId);
     if (
       entryArtifact.kind !== "edition_workflow_entry" ||
@@ -358,14 +390,6 @@ export class EditionWorkflowEngine {
     }
     const entryPayload = readJsonArtifact(this.#ledger, entryArtifact.id, "Edition entry artifact");
     if (!isDeepStrictEqual(entryPayload, args)) throw new Error("Edition entry payload does not match workflow args");
-    if (
-      args.selectedImageRevisions.length !== 13 ||
-      args.imageGenerationAllowed !== false ||
-      args.plan.imageGenerationAllowed !== false ||
-      !isDeepStrictEqual(args.selectedImageRevisions, args.plan.selectedImageRevisions)
-    ) {
-      throw new Error("Edition 4 image selection is not pinned with generation disabled");
-    }
     for (const image of args.selectedImageRevisions) {
       if (image.kind !== "image" || image.editionId !== "004" || !isText(image.logicalId) || !isText(image.revisionId)) {
         throw new Error("Edition 4 selected image is not an immutable image revision");
@@ -458,6 +482,77 @@ export class EditionWorkflowEngine {
       });
     }
     const selectedImageRevisions = pipeline.document.images;
+    const editorialInputRefs = [pipeline.document.editionSpec, pipeline.document.editorial.writerPrompt, ...pipeline.document.editorial.inputRevisions];
+    const editorialInputArtifactIds: readonly ArtifactId[] = [...new Set<ArtifactId>(editorialInputRefs.flatMap((ref) => artifactIdsForRef(materialized, ref)))];
+    const editorialProfileArtifactId = `art-resolved-editorial-profile-${safeIdentity(runId)}` as ArtifactId;
+    const editorialReviewPlanArtifactId = `art-editorial-review-plan-${safeIdentity(runId)}` as ArtifactId;
+    const editorialMeasurementProfileArtifactId = `art-editorial-measurement-profile-base-${safeIdentity(runId)}` as ArtifactId;
+    const rendererInputs = pipeline.document.rendererInputs.map((input) => ({ artifactId: materialized.inputArtifact(input.input, input.payloadPath), targetPath: input.rendererTargetPath }));
+    const editionTarget = rendererInputs.find((input) => /^editions\/[^/]+\/edition\.yaml$/u.test(input.targetPath))?.targetPath;
+    const editionPackageId = editionTarget?.split("/")[1];
+    if (pipeline.document.render.primaryLanguage !== "en" || editionPackageId === undefined) throw new Error("Opening editorial measurement requires one English committed edition renderer input");
+    this.#ledger.createArtifact({
+      id: editorialProfileArtifactId,
+      kind: "resolved_editorial_profile",
+      schemaVersion: "resolved-editorial-profile/1",
+      mediaType: "application/json",
+      origin: "machine",
+      payload: { kind: "json", value: {
+        schemaVersion: "resolved-editorial-profile/1",
+        editionId: "004",
+        editorialId: pipeline.document.editorial.editorialId,
+        brief: pipeline.document.editorial.brief,
+        promptRevision: pipeline.document.editorial.writerPrompt,
+        inputRevisions: pipeline.document.editorial.inputRevisions,
+        editionSpecRevision: pipeline.document.editionSpec,
+        modelPolicy: pipeline.document.editorial.modelPolicy,
+        maximumReaderPages: 1,
+        maximumRewrites: 0,
+        articleInputPolicy: "accepted_english_manuscripts_only",
+      } as unknown as JsonObject },
+      parents: editorialInputArtifactIds.map((artifactId) => ({ artifactId, relation: "editorial_profile_input" })),
+      metadata: { editionId: "004", editorialId: "opening", pipelineRevisionId: request.pipelineRef.revisionId, pipelineDigest: pipeline.revision.manifestDigest },
+    });
+    this.#ledger.createArtifact({
+      id: editorialReviewPlanArtifactId,
+      kind: "editorial_review_plan",
+      schemaVersion: "editorial-review-plan/1",
+      mediaType: "application/json",
+      origin: "machine",
+      payload: { kind: "json", value: {
+        schemaVersion: "editorial-review-plan/1",
+        editionId: "004",
+        promptArtifactId: artifactIdsForRef(materialized, pipeline.document.editorial.writerPrompt)[0],
+        modelPolicy: pipeline.document.editorial.modelPolicy,
+        maximumRewrites: 0,
+      } as unknown as JsonObject },
+      parents: editorialInputArtifactIds.map((artifactId) => ({ artifactId, relation: "editorial_review_input" })),
+      metadata: { editionId: "004", pipelineRevisionId: request.pipelineRef.revisionId, pipelineDigest: pipeline.revision.manifestDigest },
+    });
+    this.#ledger.createArtifact({
+      id: editorialMeasurementProfileArtifactId,
+      kind: "editorial_measurement_profile",
+      schemaVersion: "editorial-measurement-profile/1",
+      mediaType: "application/json",
+      origin: "machine",
+      payload: { kind: "json", value: {
+        schemaVersion: "editorial-measurement-profile/1",
+        rendererContractVersion: "magazine-renderer/1",
+        editionId: "004",
+        editorialId: "opening",
+        editionPackageId,
+        primaryLanguage: "en",
+        publicationName: pipeline.document.render.publicationName,
+        renderer: pipeline.document.render.renderer,
+        inputs: rendererInputs,
+        editorialTargetPath: `editions/${editionPackageId}/manuscript/editorial.md`,
+        articleTargets: pipeline.document.articles.map((article) => ({ articleId: article.articleId, targetPath: `editions/${editionPackageId}/articles/${article.articleId}.md` })),
+        rendererIdentity,
+        maximumReaderPages: 1,
+      } as unknown as JsonObject },
+      parents: rendererInputs.map((input) => ({ artifactId: input.artifactId, relation: "renderer_input" })),
+      metadata: { editionId: "004", editorialId: "opening", pipelineRevisionId: request.pipelineRef.revisionId, pipelineDigest: pipeline.revision.manifestDigest },
+    });
     const plan: EditionPlanCheckpoint = {
       schemaVersion: "edition-plan-checkpoint/1",
       editionId: "004",
@@ -473,10 +568,26 @@ export class EditionWorkflowEngine {
       })),
       selectedImageRevisions,
       imageGenerationAllowed: false,
+      editorial: {
+        schemaVersion: "edition-editorial-plan/1",
+        editorialId: "opening",
+        brief: pipeline.document.editorial.brief,
+        maximumReaderPages: 1,
+        maximumRewrites: 1,
+        profileArtifactId: editorialProfileArtifactId,
+        reviewPlanArtifactId: editorialReviewPlanArtifactId,
+        measurementProfileArtifactId: editorialMeasurementProfileArtifactId,
+        reviewInputArtifactIds: editorialInputArtifactIds,
+      },
     };
     const planArtifactId = `art-edition-plan-${safeIdentity(runId)}` as ArtifactId;
     const entryArtifactId = `art-edition-workflow-entry-${safeIdentity(runId)}` as ArtifactId;
-    const sourceParents = uniqueSourceArtifactIds(plan.children);
+    const sourceParents = [...new Set([
+      ...uniqueSourceArtifactIds(plan.children),
+      editorialProfileArtifactId,
+      editorialReviewPlanArtifactId,
+      editorialMeasurementProfileArtifactId,
+    ])];
     this.#ledger.createArtifact({
       id: planArtifactId,
       kind: "edition_plan",
