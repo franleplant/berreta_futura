@@ -229,6 +229,7 @@ export async function runArticleWorkflow(
     },
     { input: {
       runId,
+      articleExecutionId: args.articleExecutionId,
       articleId: args.articleId,
       manuscriptArtifactId: acceptedManuscriptArtifactId,
       measurementArtifactId: measurementId(runId),
@@ -263,6 +264,7 @@ export async function runArticleWorkflow(
     return {
       schemaVersion: "magazine-article-workflow-result/1",
       runId,
+      articleExecutionId: args.articleExecutionId,
       articleId: args.articleId,
       status: "dropped",
       manuscriptArtifactId: acceptedManuscriptArtifactId,
@@ -287,6 +289,7 @@ export async function runArticleWorkflow(
   return await context.step(
     "article.promotion",
     () => ports.promote({
+      articleExecutionId: args.articleExecutionId,
       request,
       reviewer: decision.principalId,
       rationale: decision.rationale,

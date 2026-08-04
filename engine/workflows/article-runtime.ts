@@ -77,6 +77,7 @@ export function createArticleWorkflowPorts(options: {
       return {
         schemaVersion: "magazine-article-workflow-result/1",
         runId: input.request.runId,
+        articleExecutionId: input.articleExecutionId,
         articleId: input.request.logicalItem.kind === "article" ? input.request.logicalItem.logicalId : "",
         status: "complete",
         manuscriptArtifactId: input.request.acceptedArtifactIds[0]!,

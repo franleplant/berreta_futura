@@ -87,7 +87,9 @@ export async function measureArticle(input: {
     requireSafeTargetPath(candidate.targetPath, `article measurement input ${index}`);
   }
 
-  const attemptId = input.durableContext?.attemptId ?? `measurement-${input.measurementProfileArtifactId}`;
+  const attemptId = input.durableContext !== undefined && (input.durableContext.kind === "agent" || input.durableContext.kind === "step")
+    ? input.durableContext.attemptId
+    : `measurement-${input.measurementProfileArtifactId}`;
   const workspaces = new AdapterWorkspaceOwner(input.workDirectory);
   const workspace = await workspaces.create(attemptId, `measure-article-${safeIdentity(input.articleId)}`);
   try {

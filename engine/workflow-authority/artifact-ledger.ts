@@ -2,8 +2,10 @@ import Database from "better-sqlite3";
 import { createHash } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { mkdirSync } from "node:fs";
+import { durableContext as loopsDurableContext } from "@loops/core";
 
 import type {
+  ArticleExecutionId,
   ArtifactId,
   ArtifactOrigin,
   ArtifactParent,
@@ -11,11 +13,28 @@ import type {
   DecisionView,
   JsonObject,
   JsonValue,
+  ManuscriptRevisionId,
   RunView,
   RunId,
+  AttemptId,
   WorkOfferView,
 } from "../contracts/index.ts";
-import type { WorkflowDurableContext } from "../workflows/internal-types.ts";
+import { newId } from "../contracts/ids.ts";
+import { AuthorizedWorker, type AuthorizedWorkerDescription } from "../authority/local-authority.ts";
+import type {
+  ArticleAttemptClaim,
+  ArticleAttemptArtifactSeed,
+  WorkflowDurableContext,
+  WorkflowAttemptContext,
+  WorkflowWaitContext,
+} from "../workflows/internal-types.ts";
+import {
+  assertArticleExecutionMaterials,
+  assertPrincipalExposureIsolated,
+  type ArticleMaterialAccess,
+  type ArticleMaterialSet,
+  SourceExposureConflictError,
+} from "../article-production/materials.ts";
 
 export type LedgerPayload =
   | { readonly kind: "text"; readonly text: string }
@@ -43,6 +62,7 @@ export type LedgerArtifact = ArtifactView & {
 
 export type LedgerRun = {
   readonly runId: RunId;
+  readonly articleExecutionId: ArticleExecutionId;
   readonly articleId: string;
   readonly editionId?: string;
   readonly workflowVersion: string;
@@ -55,6 +75,79 @@ export type LedgerRun = {
   readonly argsDigest: string;
   readonly workflowPin?: JsonObject;
   readonly loopsContext?: WorkflowDurableContext;
+};
+
+export type ArticleAttemptClaimInput = {
+  readonly articleExecutionId: ArticleExecutionId;
+  readonly rootRunId: RunId;
+  readonly articleId: string;
+  readonly operationKey: string;
+  readonly role: "model" | "tool";
+  readonly access: "source_aware" | "source_blind" | "tool";
+  readonly manuscriptArtifactId: ArtifactId;
+  readonly principalId: string;
+  readonly credentialProfileId: string;
+  readonly authority: "model" | "tool";
+  readonly capabilities: readonly string[];
+  readonly durableContext: WorkflowAttemptContext;
+  readonly leaseMs?: number;
+};
+
+export type ArticleAttemptCommit =
+  | { readonly selected: true; readonly status: "selected" | "already_selected"; readonly artifactIds: readonly ArtifactId[] }
+  | { readonly selected: false; readonly status: "stale" | "already_selected"; readonly artifactIds: readonly [] };
+
+type ArticleAttemptStoreInternal = {
+  readonly requireArtifact: (artifactId: ArtifactId) => LedgerArtifact;
+  readonly registerManuscriptRevision: (input: { readonly manuscriptArtifactId: ArtifactId; readonly articleId: string }) => ManuscriptRevisionId;
+  readonly claimArticleAttempt: (input: ArticleAttemptClaimInput) => ArticleAttemptClaim;
+  readonly heartbeatArticleAttempt: (claim: ArticleAttemptClaim) => ArticleAttemptClaim;
+  readonly createArticleAttemptArtifact: (input: {
+    readonly claim: ArticleAttemptClaim;
+    readonly key: string;
+    readonly artifact: Omit<LedgerArtifactInput, "id" | "runId" | "durableContext">;
+  }) => LedgerArtifact;
+  readonly completeArticleAttempt: (claim: ArticleAttemptClaim, artifactIds: readonly ArtifactId[]) => ArticleAttemptCommit;
+  readonly failArticleAttempt: (claim: ArticleAttemptClaim) => void;
+};
+
+export type ArticleAttemptRequest = {
+  readonly rootRunId: RunId;
+  readonly articleExecutionId: ArticleExecutionId;
+  readonly articleId: string;
+  readonly operationKey: string;
+  readonly manuscriptArtifactId: ArtifactId;
+  /** Deprecated caller hint. The runner derives and verifies this from the artifact. */
+  readonly manuscriptRevisionId?: string;
+  readonly access: Extract<ArticleMaterialAccess, "source_aware" | "source_blind" | "tool">;
+  readonly materials: ArticleMaterialSet;
+  readonly leaseMs?: number;
+};
+
+export type ArticleAttemptOperationInput = {
+  readonly claim: ArticleAttemptClaim;
+  readonly materials: ArticleMaterialSet;
+};
+
+export type ArticleAttemptOperationResult<T> = {
+  readonly value: T;
+  readonly artifacts?: readonly ArticleAttemptArtifactSeed[];
+};
+
+export type ArticleAttemptOperation<T> = (
+  input: ArticleAttemptOperationInput,
+) => Promise<ArticleAttemptOperationResult<T>> | ArticleAttemptOperationResult<T>;
+
+export type ArticleAttemptExecutionResult<T> = {
+  readonly selected: true;
+  readonly value: T;
+  readonly claim: ArticleAttemptClaim;
+  readonly artifacts: readonly LedgerArtifact[];
+} | {
+  readonly selected: false;
+  readonly reason: "already_selected" | "stale";
+  readonly claim?: ArticleAttemptClaim;
+  readonly artifacts: readonly LedgerArtifact[];
 };
 
 export type LedgerOffer = {
@@ -79,6 +172,7 @@ export type LedgerDecision = {
   readonly choice: "accept" | "drop";
   readonly rationale: string;
   readonly artifactId: ArtifactId;
+  readonly durableContext?: WorkflowWaitContext;
   readonly createdAt: string;
 };
 
@@ -131,6 +225,7 @@ type ArtifactRow = {
 
 type RunRow = {
   readonly run_id: RunId;
+  readonly article_execution_id: ArticleExecutionId | null;
   readonly article_id: string;
   readonly edition_id: string | null;
   readonly workflow_version: string;
@@ -153,10 +248,14 @@ type RunRow = {
 export class ArtifactLedger {
   readonly #db: Database.Database;
   readonly #clock: { readonly now: () => Date };
+  readonly #articleAttemptLeaseMs: number;
 
   constructor(
     databasePath: string,
-    options: { readonly clock?: { readonly now: () => Date } } = {},
+    options: {
+      readonly clock?: { readonly now: () => Date };
+      readonly articleAttemptLeaseMs?: number;
+    } = {},
   ) {
     mkdirSync(dirname(resolve(databasePath)), { recursive: true, mode: 0o700 });
     this.#db = new Database(resolve(databasePath));
@@ -164,6 +263,10 @@ export class ArtifactLedger {
     this.#db.pragma("journal_mode = WAL");
     this.#db.pragma("synchronous = FULL");
     this.#clock = options.clock ?? { now: () => new Date() };
+    this.#articleAttemptLeaseMs = options.articleAttemptLeaseMs ?? 5 * 60_000;
+    if (!Number.isSafeInteger(this.#articleAttemptLeaseMs) || this.#articleAttemptLeaseMs <= 0) {
+      throw new ArtifactLedgerError("ATTEMPT_INVALID", "Article attempt lease must be a positive integer");
+    }
     this.#applySchema();
   }
 
@@ -171,8 +274,26 @@ export class ArtifactLedger {
     this.#db.close();
   }
 
+  /**
+   * Return the authenticated article-attempt facade. The persistence port is
+   * captured here in closures over private ledger methods; it is never exposed
+   * as a property, symbol, or caller-supplied identity store.
+   */
+  createArticleAttemptRunner(): ArticleAttemptRunner {
+    return new ArticleAttemptRunner(articleAttemptRunnerToken, {
+      requireArtifact: (artifactId) => this.requireArtifact(artifactId),
+      registerManuscriptRevision: (input) => this.#registerManuscriptRevision(input),
+      claimArticleAttempt: (input) => this.#claimArticleAttempt(input),
+      heartbeatArticleAttempt: (claim) => this.#heartbeatArticleAttempt(claim),
+      createArticleAttemptArtifact: (input) => this.#createArticleAttemptArtifact(input),
+      completeArticleAttempt: (claim, artifactIds) => this.#completeArticleAttempt(claim, artifactIds),
+      failArticleAttempt: (claim) => this.#failArticleAttempt(claim),
+    });
+  }
+
   createRun(input: {
     readonly runId: RunId;
+    readonly articleExecutionId?: ArticleExecutionId;
     readonly articleId: string;
     readonly editionId?: string;
     readonly workflowVersion: string;
@@ -183,9 +304,12 @@ export class ArtifactLedger {
     readonly loopsContext?: WorkflowDurableContext;
   }): LedgerRun {
     const argsDigest = digestJson(input.args);
+    const articleExecutionId = input.articleExecutionId ?? (`article-execution-${safeIdentity(input.runId)}` as ArticleExecutionId);
     const existing = this.#db.prepare("SELECT * FROM magazine_runs WHERE run_id = ?").get(input.runId) as RunRow | undefined;
     if (existing !== undefined) {
       if (
+        (existing.article_execution_id ?? (`article-execution-${safeIdentity(existing.run_id)}` as ArticleExecutionId)) !== articleExecutionId
+        ||
         existing.article_id !== input.articleId
         || existing.workflow_version !== input.workflowVersion
         || existing.loops_run_id !== input.loopsRunId
@@ -199,12 +323,13 @@ export class ArtifactLedger {
     }
     this.#db.prepare(
       `INSERT INTO magazine_runs(
-        run_id, article_id, edition_id, workflow_version, loops_run_id,
+        run_id, article_execution_id, article_id, edition_id, workflow_version, loops_run_id,
         manuscript_artifact_id, measurement_artifact_id, decision_artifact_id,
         promotion_id, args_digest, args_json, workflow_pin_json, loops_context_json
-      ) VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, NULL, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, ?, ?, ?, ?)`,
     ).run(
       input.runId,
+      articleExecutionId,
       input.articleId,
       input.editionId ?? null,
       input.workflowVersion,
@@ -391,6 +516,325 @@ export class ArtifactLedger {
     return rows.map((row) => this.#toArtifact(row));
   }
 
+  /** Register the revision identity carried by an immutable manuscript. */
+  #registerManuscriptRevision(input: {
+    readonly manuscriptArtifactId: ArtifactId;
+    readonly articleId: string;
+  }): ManuscriptRevisionId {
+    const artifact = this.requireArtifact(input.manuscriptArtifactId);
+    if (artifact.metadata.articleId !== input.articleId) {
+      throw new ArtifactLedgerError("ATTEMPT_ARTICLE_MISMATCH", "Manuscript artifact belongs to another article");
+    }
+    const rawRevision = artifact.metadata.revisionId;
+    if (typeof rawRevision !== "string" || rawRevision.trim().length === 0) {
+      throw new ArtifactLedgerError("ATTEMPT_REVISION_REQUIRED", `Manuscript ${input.manuscriptArtifactId} has no immutable revisionId metadata`);
+    }
+    const revisionId = rawRevision as ManuscriptRevisionId;
+    const existing = this.#db.prepare(
+      "SELECT * FROM magazine_manuscript_revisions WHERE revision_id = ? OR manuscript_artifact_id = ?",
+    ).all(revisionId, input.manuscriptArtifactId) as readonly ManuscriptRevisionRow[];
+    for (const row of existing) {
+      if (row.revision_id !== revisionId || row.manuscript_artifact_id !== input.manuscriptArtifactId) {
+        throw new ArtifactLedgerError("ATTEMPT_REVISION_CONFLICT", `Revision ${revisionId} is bound to another manuscript artifact`);
+      }
+      if (row.article_id !== input.articleId) {
+        throw new ArtifactLedgerError("ATTEMPT_ARTICLE_MISMATCH", `Revision ${revisionId} belongs to another article`);
+      }
+      return row.revision_id;
+    }
+    this.#db.prepare(
+      `INSERT INTO magazine_manuscript_revisions(
+        revision_id, manuscript_artifact_id, article_id, registered_at
+      ) VALUES (?, ?, ?, ?)`,
+    ).run(revisionId, input.manuscriptArtifactId, input.articleId, this.#clock.now().toISOString());
+    return revisionId;
+  }
+
+  /**
+   * Atomically claim one magazine-owned model/tool operation. This mirrors the
+   * old RunEngine claim fence without importing Loops persistence into the
+   * artifact authority.
+   */
+  #claimArticleAttempt(input: ArticleAttemptClaimInput): ArticleAttemptClaim {
+    const nowMs = this.#clock.now().getTime();
+    const leaseMs = input.leaseMs ?? this.#articleAttemptLeaseMs;
+    if (!Number.isSafeInteger(leaseMs) || leaseMs <= 0) {
+      throw new ArtifactLedgerError("ATTEMPT_INVALID", "Article attempt lease must be a positive integer");
+    }
+    if (input.operationKey.trim().length === 0) {
+      throw new ArtifactLedgerError("ATTEMPT_INVALID", "Article attempt operation key is required");
+    }
+    const claim = this.#db.transaction(() => {
+      const run = this.requireRun(input.rootRunId);
+      if (run.articleExecutionId !== input.articleExecutionId || run.articleId !== input.articleId) {
+        throw new ArtifactLedgerError("ATTEMPT_EXECUTION_MISMATCH", "Article attempt is not bound to the exact execution");
+      }
+      const selection = this.#db.prepare(
+        `SELECT claim_id FROM magazine_article_operation_selections
+         WHERE article_execution_id = ? AND operation_key = ?`,
+      ).get(input.articleExecutionId, input.operationKey) as { readonly claim_id: AttemptId } | undefined;
+      if (selection !== undefined) {
+        throw new ArtifactLedgerError("ATTEMPT_ALREADY_SELECTED", `Article operation ${input.operationKey} already has a selected result`);
+      }
+      const manuscript = this.requireArtifact(input.manuscriptArtifactId);
+      const manuscriptRevisionId = this.#registerManuscriptRevision({
+        manuscriptArtifactId: input.manuscriptArtifactId,
+        articleId: input.articleId,
+      });
+      const active = this.#db.prepare(
+        `SELECT * FROM magazine_article_attempts
+         WHERE article_execution_id = ? AND operation_key = ? AND status = 'active'`,
+      ).get(input.articleExecutionId, input.operationKey) as ArticleAttemptRow | undefined;
+      if (active !== undefined) {
+        if (active.lease_expires_at_ms <= nowMs) {
+          this.#db.prepare(
+            `UPDATE magazine_article_attempts
+             SET status = 'stale', finished_at = ?
+             WHERE claim_id = ? AND status = 'active'`,
+          ).run(this.#clock.now().toISOString(), active.claim_id);
+        } else {
+          throw new ArtifactLedgerError("ATTEMPT_UNAVAILABLE", `Article operation ${input.operationKey} is already claimed`);
+        }
+      }
+      assertAttemptAccess(input);
+      const exposure = input.access === "tool" ? undefined : input.access;
+      if (exposure !== undefined) {
+        const previous = this.#db.prepare(
+          `SELECT principal_id, manuscript_revision_id, manuscript_artifact_id, access
+           FROM magazine_article_exposures
+           WHERE principal_id = ? AND manuscript_revision_id = ?`,
+        ).all(input.principalId, manuscriptRevisionId) as readonly {
+          readonly principal_id: string;
+          readonly manuscript_revision_id: ManuscriptRevisionId;
+          readonly manuscript_artifact_id: ArtifactId;
+          readonly access: "source_aware" | "source_blind";
+        }[];
+        try {
+          assertPrincipalExposureIsolated(
+            previous.map((row) => ({
+              principalId: row.principal_id,
+              manuscriptRevisionId: row.manuscript_revision_id,
+              manuscriptArtifactId: row.manuscript_artifact_id,
+              access: row.access,
+            })),
+            { principalId: input.principalId, manuscriptRevisionId, manuscriptArtifactId: input.manuscriptArtifactId, access: exposure },
+          );
+        } catch (error) {
+          if (error instanceof SourceExposureConflictError) {
+            throw new ArtifactLedgerError("ATTEMPT_EXPOSURE_CONFLICT", error.message, { cause: error });
+          }
+          throw error;
+        }
+      }
+      const claimId = newId<AttemptId>("article-attempt");
+      const claimNumber = (
+        this.#db.prepare(
+          `SELECT COALESCE(MAX(attempt_number), 0) + 1 AS value
+           FROM magazine_article_attempts
+           WHERE article_execution_id = ? AND operation_key = ?`,
+        ).get(input.articleExecutionId, input.operationKey) as { readonly value: number }
+      ).value;
+      const fence = (
+        this.#db.prepare(
+          `SELECT COALESCE(MAX(fence), 0) + 1 AS value
+           FROM magazine_article_attempts
+           WHERE article_execution_id = ? AND operation_key = ?`,
+        ).get(input.articleExecutionId, input.operationKey) as { readonly value: number }
+      ).value;
+      const context = articleAttemptContext(input, run);
+      const expiresAtMs = nowMs + leaseMs;
+      this.#db.prepare(
+        `INSERT INTO magazine_article_attempts(
+          claim_id, article_execution_id, run_id, article_id, operation_key,
+          role, access, manuscript_artifact_id, manuscript_revision_id,
+          attempt_id, attempt_number, fence, principal_id, credential_profile_id,
+          authority, capabilities_json, status, lease_expires_at_ms,
+          durable_context_json, output_artifact_ids_json, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, NULL, ?)`,
+      ).run(
+        claimId,
+        input.articleExecutionId,
+        run.runId,
+        input.articleId,
+        input.operationKey,
+        input.role,
+        input.access,
+        input.manuscriptArtifactId,
+        manuscriptRevisionId,
+        context.attemptId,
+        claimNumber,
+        fence,
+        input.principalId,
+        input.credentialProfileId,
+        input.authority,
+        JSON.stringify([...new Set(input.capabilities)].sort()),
+        expiresAtMs,
+        JSON.stringify(contextObject(context)),
+        this.#clock.now().toISOString(),
+      );
+      if (exposure !== undefined) {
+        this.#db.prepare(
+          `INSERT OR IGNORE INTO magazine_article_exposures(
+             principal_id, manuscript_revision_id, manuscript_artifact_id,
+             access, first_claim_id, exposed_at
+           ) VALUES (?, ?, ?, ?, ?, ?)`,
+        ).run(input.principalId, manuscriptRevisionId, input.manuscriptArtifactId, exposure, claimId, this.#clock.now().toISOString());
+      }
+      const attemptId = context.attemptId;
+      const attemptNumber = context.attemptNumber;
+      return {
+        schemaVersion: "article-attempt-claim/1",
+        articleExecutionId: input.articleExecutionId,
+        articleId: input.articleId,
+        operationKey: input.operationKey,
+        role: input.role,
+        access: input.access,
+        manuscriptArtifactId: input.manuscriptArtifactId,
+        manuscriptRevisionId,
+        claimId,
+        claimSequence: claimNumber,
+        attemptId,
+        attemptNumber,
+        fence,
+        principalId: input.principalId,
+        credentialProfileId: input.credentialProfileId,
+        authority: input.authority,
+        capabilities: Object.freeze([...new Set(input.capabilities)].sort()),
+        leaseExpiresAt: new Date(expiresAtMs).toISOString(),
+        durableContext: context,
+      } satisfies ArticleAttemptClaim;
+    })();
+    return claim;
+  }
+
+  #heartbeatArticleAttempt(claim: ArticleAttemptClaim): ArticleAttemptClaim {
+    const nowMs = this.#clock.now().getTime();
+    const row = this.#requireArticleAttempt(claim.claimId);
+    if (!matchesArticleAttempt(row, claim) || row.status !== "active" || row.lease_expires_at_ms <= nowMs) {
+      if (row.status === "active" && row.lease_expires_at_ms <= nowMs) this.#markArticleAttemptStale(row.claim_id);
+      throw new ArtifactLedgerError("ATTEMPT_STALE", `Article attempt ${claim.claimId} is stale`);
+    }
+    const expiresAtMs = nowMs + this.#articleAttemptLeaseMs;
+    this.#db.prepare(
+      `UPDATE magazine_article_attempts SET lease_expires_at_ms = ?
+       WHERE claim_id = ? AND status = 'active' AND fence = ?`,
+    ).run(expiresAtMs, claim.claimId, claim.fence);
+    return { ...claim, leaseExpiresAt: new Date(expiresAtMs).toISOString() };
+  }
+
+  #createArticleAttemptArtifact(input: {
+    readonly claim: ArticleAttemptClaim;
+    readonly key: string;
+    readonly artifact: Omit<LedgerArtifactInput, "id" | "runId" | "durableContext">;
+  }): LedgerArtifact {
+    if (input.key.trim().length === 0) throw new ArtifactLedgerError("ARTIFACT_INVALID", "Attempt artifact key is required");
+    const row = this.#requireArticleAttempt(input.claim.claimId);
+    if (!matchesArticleAttempt(row, input.claim)) {
+      throw new ArtifactLedgerError("ATTEMPT_STALE", `Article attempt ${input.claim.claimId} does not match its fence`);
+    }
+    const run = this.requireRun(input.claim.durableContext.runId as RunId);
+    const authorityMetadata: JsonObject = {
+      articleExecutionId: input.claim.articleExecutionId,
+      operationKey: input.claim.operationKey,
+      claimId: input.claim.claimId,
+      attemptId: input.claim.attemptId,
+      attemptNumber: input.claim.durableContext.attemptNumber,
+      principalId: input.claim.principalId,
+      access: input.claim.access,
+      loopsRunId: input.claim.durableContext.runId,
+      invocationId: input.claim.durableContext.invocationId,
+      callId: input.claim.durableContext.callId,
+      ...(input.claim.durableContext.workflowName === undefined ? {} : { workflowName: input.claim.durableContext.workflowName }),
+      ...(input.claim.durableContext.workflowVersion === undefined ? {} : { workflowVersion: input.claim.durableContext.workflowVersion }),
+    };
+    return this.createArtifact({
+      ...input.artifact,
+      id: articleAttemptArtifactId(input.claim, input.key),
+      metadata: { ...(input.artifact.metadata ?? {}), ...authorityMetadata },
+      runId: run.runId,
+      durableContext: input.claim.durableContext,
+    });
+  }
+
+  #completeArticleAttempt(
+    claim: ArticleAttemptClaim,
+    artifactIds: readonly ArtifactId[],
+  ): ArticleAttemptCommit {
+    const nowMs = this.#clock.now().getTime();
+    const now = this.#clock.now().toISOString();
+    const result = this.#db.transaction(() => {
+      const row = this.#requireArticleAttempt(claim.claimId);
+      const existingIds = row.output_artifact_ids_json === null ? undefined : JSON.parse(row.output_artifact_ids_json) as readonly ArtifactId[];
+      if (!matchesArticleAttempt(row, claim)) throw new ArtifactLedgerError("ATTEMPT_STALE", `Article attempt ${claim.claimId} does not match its fence`);
+      const selected = this.#db.prepare(
+        `SELECT claim_id, artifact_ids_json FROM magazine_article_operation_selections
+         WHERE article_execution_id = ? AND operation_key = ?`,
+      ).get(claim.articleExecutionId, claim.operationKey) as { readonly claim_id: AttemptId; readonly artifact_ids_json: string } | undefined;
+      if (selected !== undefined) {
+        const selectedIds = JSON.parse(selected.artifact_ids_json) as readonly ArtifactId[];
+        if (selected.claim_id === claim.claimId) {
+          if (!sameStrings(selectedIds, artifactIds) && existingIds !== undefined && !sameStrings(selectedIds, existingIds)) {
+            throw new ArtifactLedgerError("ATTEMPT_RESULT_CONFLICT", `Article attempt ${claim.claimId} already has a different result`);
+          }
+          return { selected: true as const, status: "already_selected" as const, artifactIds: selectedIds };
+        }
+        return { selected: false as const, status: "already_selected" as const, artifactIds: [] as const };
+      }
+      if (row.status === "completed") {
+        if (existingIds === undefined) throw new ArtifactLedgerError("ATTEMPT_RESULT_INVALID", `Completed article attempt ${claim.claimId} has no result`);
+        this.#db.prepare(
+          `INSERT INTO magazine_article_operation_selections(
+             article_execution_id, operation_key, claim_id, artifact_ids_json, selected_at
+           ) VALUES (?, ?, ?, ?, ?)`,
+        ).run(claim.articleExecutionId, claim.operationKey, claim.claimId, JSON.stringify(existingIds), now);
+        if (!sameStrings(existingIds, artifactIds)) throw new ArtifactLedgerError("ATTEMPT_RESULT_CONFLICT", `Article attempt ${claim.claimId} already has a different result`);
+        return { selected: true as const, status: "already_selected" as const, artifactIds: existingIds };
+      }
+      if (row.status !== "active" || row.lease_expires_at_ms <= nowMs) {
+        if (row.status === "active") this.#db.prepare("UPDATE magazine_article_attempts SET status = 'stale', finished_at = ? WHERE claim_id = ? AND status = 'active'").run(now, claim.claimId);
+        return { selected: false as const, status: "stale" as const, artifactIds: [] as const };
+      }
+      for (const artifactId of artifactIds) {
+        const artifact = this.requireArtifact(artifactId);
+        if (artifact.producingRunId !== row.run_id || artifact.metadata.claimId !== claim.claimId) {
+          throw new ArtifactLedgerError("ATTEMPT_RESULT_INVALID", `Artifact ${artifactId} is not produced by article attempt ${claim.claimId}`);
+        }
+      }
+      this.#db.prepare(
+        `INSERT INTO magazine_article_operation_selections(
+           article_execution_id, operation_key, claim_id, artifact_ids_json, selected_at
+         ) VALUES (?, ?, ?, ?, ?)`,
+      ).run(claim.articleExecutionId, claim.operationKey, claim.claimId, JSON.stringify(artifactIds), now);
+      this.#db.prepare(
+        `UPDATE magazine_article_attempts
+         SET status = 'completed', output_artifact_ids_json = ?, finished_at = ?
+         WHERE claim_id = ? AND status = 'active' AND fence = ?`,
+      ).run(JSON.stringify(artifactIds), now, claim.claimId, claim.fence);
+      return { selected: true as const, status: "selected" as const, artifactIds };
+    })();
+    return result;
+  }
+
+  #failArticleAttempt(claim: ArticleAttemptClaim): void {
+    const now = this.#clock.now().toISOString();
+    this.#db.prepare(
+      `UPDATE magazine_article_attempts SET status = 'failed', finished_at = ?
+       WHERE claim_id = ? AND status = 'active' AND fence = ?`,
+    ).run(now, claim.claimId, claim.fence);
+  }
+
+  #requireArticleAttempt(claimId: AttemptId): ArticleAttemptRow {
+    const row = this.#db.prepare("SELECT * FROM magazine_article_attempts WHERE claim_id = ?").get(claimId) as ArticleAttemptRow | undefined;
+    if (row === undefined) throw new ArtifactLedgerError("ATTEMPT_NOT_FOUND", `Article attempt ${claimId} does not exist`);
+    return row;
+  }
+
+  #markArticleAttemptStale(claimId: AttemptId): void {
+    this.#db.prepare(
+      "UPDATE magazine_article_attempts SET status = 'stale', finished_at = ? WHERE claim_id = ? AND status = 'active'",
+    ).run(this.#clock.now().toISOString(), claimId);
+  }
+
   createOffer(input: {
     readonly id: string;
     readonly runId: RunId;
@@ -454,12 +898,27 @@ export class ArtifactLedger {
     return row === undefined ? undefined : toOffer(row);
   }
 
-  recordDecision(input: Omit<LedgerDecision, "createdAt"> & { readonly createdAt?: string }): LedgerDecision {
+  recordDecision(
+    input: Omit<LedgerDecision, "createdAt" | "durableContext"> & {
+      readonly durableContext: WorkflowWaitContext;
+      readonly createdAt?: string;
+    },
+  ): LedgerDecision {
+    assertWaitContext(input.durableContext, input.runId);
+    return this.#recordDecision(input);
+  }
+
+  #recordDecision(
+    input: Omit<LedgerDecision, "createdAt"> & { readonly createdAt?: string },
+  ): LedgerDecision {
     const existing = this.#db.prepare("SELECT * FROM magazine_decisions WHERE offer_id = ?").get(input.offerId) as DecisionRow | undefined;
     if (existing !== undefined) {
       const decision = toDecision(existing);
       if (decision.principalId !== input.principalId || decision.choice !== input.choice || decision.rationale !== input.rationale) {
         throw new ArtifactLedgerError("DECISION_ALREADY_RECORDED", `Offer ${input.offerId} already has a different decision`);
+      }
+      if (JSON.stringify(decision.durableContext ?? null) !== JSON.stringify(input.durableContext ?? null)) {
+        throw new ArtifactLedgerError("DECISION_ALREADY_RECORDED", `Offer ${input.offerId} already has different wait provenance`);
       }
       return decision;
     }
@@ -473,7 +932,8 @@ export class ArtifactLedger {
         `INSERT INTO magazine_decisions(
           id, run_id, offer_id, task_artifact_id, input_artifact_ids_json,
           principal_id, credential_profile_id, choice, rationale, artifact_id, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          , durable_context_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).run(
         input.id,
         input.runId,
@@ -486,6 +946,7 @@ export class ArtifactLedger {
         input.rationale,
         input.artifactId,
         createdAt,
+        input.durableContext === undefined ? null : JSON.stringify(contextObject(input.durableContext)),
       );
     });
     transaction();
@@ -602,6 +1063,7 @@ export class ArtifactLedger {
     this.#db.exec(`
       CREATE TABLE IF NOT EXISTS magazine_runs (
         run_id TEXT PRIMARY KEY,
+        article_execution_id TEXT,
         article_id TEXT NOT NULL,
         edition_id TEXT,
         workflow_version TEXT NOT NULL,
@@ -631,6 +1093,63 @@ export class ArtifactLedger {
         created_at TEXT NOT NULL,
         digest TEXT NOT NULL,
         FOREIGN KEY (run_id) REFERENCES magazine_runs(run_id)
+      );
+      CREATE TABLE IF NOT EXISTS magazine_article_attempts (
+        claim_id TEXT PRIMARY KEY,
+        article_execution_id TEXT NOT NULL,
+        run_id TEXT NOT NULL,
+        article_id TEXT NOT NULL,
+        operation_key TEXT NOT NULL,
+        role TEXT NOT NULL CHECK (role IN ('model', 'tool')),
+        access TEXT NOT NULL CHECK (access IN ('source_aware', 'source_blind', 'tool')),
+        manuscript_artifact_id TEXT NOT NULL,
+        manuscript_revision_id TEXT,
+        attempt_id TEXT NOT NULL,
+        attempt_number INTEGER NOT NULL CHECK (attempt_number > 0),
+        fence INTEGER NOT NULL CHECK (fence > 0),
+        principal_id TEXT NOT NULL,
+        credential_profile_id TEXT NOT NULL,
+        authority TEXT NOT NULL CHECK (authority IN ('model', 'tool')),
+        capabilities_json TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN ('active', 'completed', 'failed', 'stale')),
+        lease_expires_at_ms INTEGER NOT NULL,
+        durable_context_json TEXT NOT NULL,
+        output_artifact_ids_json TEXT,
+        created_at TEXT NOT NULL,
+        finished_at TEXT,
+        FOREIGN KEY (run_id) REFERENCES magazine_runs(run_id),
+        FOREIGN KEY (manuscript_artifact_id) REFERENCES magazine_artifacts(id),
+        UNIQUE (article_execution_id, operation_key, attempt_number),
+        UNIQUE (article_execution_id, operation_key, fence)
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS magazine_one_active_article_attempt
+        ON magazine_article_attempts(article_execution_id, operation_key) WHERE status = 'active';
+      CREATE TABLE IF NOT EXISTS magazine_article_exposures (
+        principal_id TEXT NOT NULL,
+        manuscript_revision_id TEXT NOT NULL,
+        manuscript_artifact_id TEXT NOT NULL,
+        access TEXT NOT NULL CHECK (access IN ('source_aware', 'source_blind')),
+        first_claim_id TEXT NOT NULL,
+        exposed_at TEXT NOT NULL,
+        PRIMARY KEY (principal_id, manuscript_revision_id),
+        FOREIGN KEY (manuscript_artifact_id) REFERENCES magazine_artifacts(id),
+        FOREIGN KEY (first_claim_id) REFERENCES magazine_article_attempts(claim_id)
+      );
+      CREATE TABLE IF NOT EXISTS magazine_manuscript_revisions (
+        revision_id TEXT PRIMARY KEY,
+        manuscript_artifact_id TEXT NOT NULL UNIQUE,
+        article_id TEXT NOT NULL,
+        registered_at TEXT NOT NULL,
+        FOREIGN KEY (manuscript_artifact_id) REFERENCES magazine_artifacts(id)
+      );
+      CREATE TABLE IF NOT EXISTS magazine_article_operation_selections (
+        article_execution_id TEXT NOT NULL,
+        operation_key TEXT NOT NULL,
+        claim_id TEXT NOT NULL,
+        artifact_ids_json TEXT NOT NULL,
+        selected_at TEXT NOT NULL,
+        PRIMARY KEY (article_execution_id, operation_key),
+        FOREIGN KEY (claim_id) REFERENCES magazine_article_attempts(claim_id)
       );
       CREATE TABLE IF NOT EXISTS magazine_artifact_edges (
         child_artifact_id TEXT NOT NULL,
@@ -666,6 +1185,7 @@ export class ArtifactLedger {
         choice TEXT NOT NULL,
         rationale TEXT NOT NULL,
         artifact_id TEXT NOT NULL,
+        durable_context_json TEXT,
         created_at TEXT NOT NULL,
         FOREIGN KEY (run_id) REFERENCES magazine_runs(run_id),
         FOREIGN KEY (offer_id) REFERENCES magazine_offers(id),
@@ -700,6 +1220,12 @@ export class ArtifactLedger {
     `);
     this.#ensureColumn("magazine_runs", "workflow_pin_json", "TEXT");
     this.#ensureColumn("magazine_runs", "loops_context_json", "TEXT");
+    this.#ensureColumn("magazine_runs", "article_execution_id", "TEXT");
+    this.#ensureColumn("magazine_decisions", "durable_context_json", "TEXT");
+    this.#db.prepare(
+      "UPDATE magazine_runs SET article_execution_id = ? || run_id WHERE article_execution_id IS NULL",
+    ).run("article-execution-");
+    this.#db.exec("CREATE UNIQUE INDEX IF NOT EXISTS magazine_runs_article_execution_id ON magazine_runs(article_execution_id)");
     this.#ensureColumn("magazine_promotions", "manifest_digest", "TEXT");
     this.#ensureColumn("magazine_promotions", "git_commit_oid", "TEXT");
     this.#ensureColumn("magazine_promotions", "git_blob_oids_json", "TEXT");
@@ -709,6 +1235,7 @@ export class ArtifactLedger {
     this.#ensureColumn("magazine_promotions", "accepted_artifact_ids_json", "TEXT");
     this.#ensureColumn("magazine_promotions", "decision_artifact_ids_json", "TEXT");
     this.#ensureColumn("magazine_promotions", "input_artifact_ids_json", "TEXT");
+    this.#migrateArticleExposureSchema();
   }
 
   #ensureColumn(table: string, column: string, definition: string): void {
@@ -718,10 +1245,272 @@ export class ArtifactLedger {
     }
   }
 
+  /**
+   * Upgrade the first-slice exposure table without ever leaving a nullable
+   * revision key behind. Every legacy row must resolve to the immutable
+   * manuscript revision table or to the artifact's revision metadata.
+   */
+  #migrateArticleExposureSchema(): void {
+    const columns = this.#db.prepare("PRAGMA table_info(magazine_article_exposures)").all() as readonly {
+      readonly name: string;
+      readonly notnull: number;
+      readonly pk: number;
+    }[];
+    const revisionColumn = columns.find((column) => column.name === "manuscript_revision_id");
+    if (revisionColumn !== undefined && revisionColumn.notnull === 1 && revisionColumn.pk === 2) return;
+    if (this.#db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'magazine_article_exposures_legacy'").get() !== undefined) {
+      throw new ArtifactLedgerError("SCHEMA_MIGRATION_REQUIRED", "Article exposure migration left a legacy table behind");
+    }
+    type LegacyExposureRow = {
+      readonly principal_id?: unknown;
+      readonly manuscript_revision_id?: unknown;
+      readonly manuscript_artifact_id?: unknown;
+      readonly access?: unknown;
+      readonly first_claim_id?: unknown;
+      readonly exposed_at?: unknown;
+    };
+    const migrate = this.#db.transaction(() => {
+      const rows = this.#db.prepare("SELECT * FROM magazine_article_exposures").all() as LegacyExposureRow[];
+      this.#db.exec("ALTER TABLE magazine_article_exposures RENAME TO magazine_article_exposures_legacy");
+      this.#db.exec(`
+        CREATE TABLE magazine_article_exposures (
+          principal_id TEXT NOT NULL,
+          manuscript_revision_id TEXT NOT NULL,
+          manuscript_artifact_id TEXT NOT NULL,
+          access TEXT NOT NULL CHECK (access IN ('source_aware', 'source_blind')),
+          first_claim_id TEXT NOT NULL,
+          exposed_at TEXT NOT NULL,
+          PRIMARY KEY (principal_id, manuscript_revision_id),
+          FOREIGN KEY (manuscript_artifact_id) REFERENCES magazine_artifacts(id),
+          FOREIGN KEY (first_claim_id) REFERENCES magazine_article_attempts(claim_id)
+        );
+      `);
+      const seen = new Set<string>();
+      for (const row of rows) {
+        const principalId = requireMigrationText(row.principal_id, "principal_id");
+        const manuscriptArtifactId = requireMigrationText(row.manuscript_artifact_id, "manuscript_artifact_id") as ArtifactId;
+        const access = requireMigrationText(row.access, "access");
+        if (access !== "source_aware" && access !== "source_blind") {
+          throw new ArtifactLedgerError("SCHEMA_MIGRATION_INVALID", `Article exposure ${manuscriptArtifactId} has invalid access ${access}`);
+        }
+        const claimId = requireMigrationText(row.first_claim_id, "first_claim_id");
+        const exposedAt = requireMigrationText(row.exposed_at, "exposed_at");
+        const manuscriptRevisionId = this.#resolveExposureRevision(
+          manuscriptArtifactId,
+          row.manuscript_revision_id,
+        );
+        const key = `${principalId}\u0000${manuscriptRevisionId}`;
+        if (seen.has(key)) {
+          throw new ArtifactLedgerError("SCHEMA_MIGRATION_CONFLICT", `Article exposure has duplicate principal/revision ${principalId}/${manuscriptRevisionId}`);
+        }
+        seen.add(key);
+        this.#db.prepare(
+          `INSERT INTO magazine_article_exposures(
+             principal_id, manuscript_revision_id, manuscript_artifact_id,
+             access, first_claim_id, exposed_at
+           ) VALUES (?, ?, ?, ?, ?, ?)`,
+        ).run(principalId, manuscriptRevisionId, manuscriptArtifactId, access, claimId, exposedAt);
+      }
+      this.#db.exec("DROP TABLE magazine_article_exposures_legacy");
+    });
+    try {
+      migrate();
+    } catch (error) {
+      if (error instanceof ArtifactLedgerError) throw error;
+      throw new ArtifactLedgerError("SCHEMA_MIGRATION_INVALID", "Article exposure schema migration failed", { cause: error });
+    }
+  }
+
+  #resolveExposureRevision(manuscriptArtifactId: ArtifactId, supplied: unknown): ManuscriptRevisionId {
+    const suppliedRevision = typeof supplied === "string" && supplied.trim().length > 0 ? supplied : undefined;
+    const registered = this.#db.prepare(
+      "SELECT revision_id FROM magazine_manuscript_revisions WHERE manuscript_artifact_id = ?",
+    ).get(manuscriptArtifactId) as { readonly revision_id: ManuscriptRevisionId } | undefined;
+    if (registered !== undefined) {
+      if (suppliedRevision !== undefined && suppliedRevision !== registered.revision_id) {
+        throw new ArtifactLedgerError("SCHEMA_MIGRATION_CONFLICT", `Exposure revision for ${manuscriptArtifactId} disagrees with registered revision`);
+      }
+      return registered.revision_id;
+    }
+    const artifact = this.#db.prepare(
+      "SELECT metadata_json FROM magazine_artifacts WHERE id = ?",
+    ).get(manuscriptArtifactId) as { readonly metadata_json: string } | undefined;
+    if (artifact === undefined) {
+      throw new ArtifactLedgerError("SCHEMA_MIGRATION_UNBACKFILLABLE", `Article exposure references missing manuscript ${manuscriptArtifactId}`);
+    }
+    let metadata: JsonObject;
+    try {
+      metadata = JSON.parse(artifact.metadata_json) as JsonObject;
+    } catch (error) {
+      throw new ArtifactLedgerError("SCHEMA_MIGRATION_UNBACKFILLABLE", `Manuscript ${manuscriptArtifactId} has invalid metadata`, { cause: error });
+    }
+    const rawRevision = metadata.revisionId;
+    if (typeof rawRevision !== "string" || rawRevision.trim().length === 0) {
+      throw new ArtifactLedgerError("SCHEMA_MIGRATION_UNBACKFILLABLE", `Exposure for ${manuscriptArtifactId} has no immutable revision metadata`);
+    }
+    const revisionId = rawRevision as ManuscriptRevisionId;
+    if (suppliedRevision !== undefined && suppliedRevision !== revisionId) {
+      throw new ArtifactLedgerError("SCHEMA_MIGRATION_CONFLICT", `Exposure revision for ${manuscriptArtifactId} disagrees with artifact metadata`);
+    }
+    const articleId = metadata.articleId;
+    if (typeof articleId !== "string" || articleId.trim().length === 0) {
+      throw new ArtifactLedgerError("SCHEMA_MIGRATION_UNBACKFILLABLE", `Manuscript ${manuscriptArtifactId} has no article identity`);
+    }
+    const conflicting = this.#db.prepare(
+      "SELECT manuscript_artifact_id FROM magazine_manuscript_revisions WHERE revision_id = ?",
+    ).get(revisionId) as { readonly manuscript_artifact_id: ArtifactId } | undefined;
+    if (conflicting !== undefined && conflicting.manuscript_artifact_id !== manuscriptArtifactId) {
+      throw new ArtifactLedgerError("SCHEMA_MIGRATION_CONFLICT", `Revision ${revisionId} is already bound to another manuscript`);
+    }
+    this.#db.prepare(
+      `INSERT INTO magazine_manuscript_revisions(
+         revision_id, manuscript_artifact_id, article_id, registered_at
+       ) VALUES (?, ?, ?, ?)`,
+    ).run(revisionId, manuscriptArtifactId, articleId, this.#clock.now().toISOString());
+    return revisionId;
+  }
+
   private parentRows(artifactId: ArtifactId): readonly ArtifactParent[] {
     return this.#db.prepare(
       "SELECT parent_artifact_id AS artifactId, relation FROM magazine_artifact_edges WHERE child_artifact_id = ? ORDER BY ordinal",
     ).all(artifactId) as readonly ArtifactParent[];
+  }
+}
+
+const articleAttemptRunnerToken = Symbol("magazine.articleAttemptRunner");
+
+/**
+ * Magazine-owned model/tool seam. It authenticates through LocalAuthorityStore,
+ * claims through the magazine ledger, and never calls Loops agent(). A caller
+ * wraps this ordinary function in a durable Loops step when it needs a
+ * checkpoint. The constructor token is module-private; callers obtain this
+ * facade only from ArtifactLedger.createArticleAttemptRunner().
+ */
+export class ArticleAttemptRunner {
+  readonly #store: ArticleAttemptStoreInternal;
+
+  constructor(token: typeof articleAttemptRunnerToken, store: ArticleAttemptStoreInternal) {
+    if (token !== articleAttemptRunnerToken) {
+      throw new ArtifactLedgerError("ATTEMPT_AUTHORITY_REQUIRED", "Article attempt runners must be created by ArtifactLedger");
+    }
+    this.#store = store;
+  }
+
+  async claimModel(worker: AuthorizedWorker, request: ArticleAttemptRequest): Promise<ArticleAttemptClaim> {
+    return await this.#claim(worker, { ...request, role: "model" });
+  }
+
+  async claimTool(worker: AuthorizedWorker, request: ArticleAttemptRequest): Promise<ArticleAttemptClaim> {
+    return await this.#claim(worker, { ...request, role: "tool" });
+  }
+
+  async executeModel<T>(
+    worker: AuthorizedWorker,
+    request: ArticleAttemptRequest,
+    operation: ArticleAttemptOperation<T>,
+  ): Promise<ArticleAttemptExecutionResult<T>> {
+    return await this.#execute(worker, { ...request, role: "model" }, operation);
+  }
+
+  async executeTool<T>(
+    worker: AuthorizedWorker,
+    request: ArticleAttemptRequest,
+    operation: ArticleAttemptOperation<T>,
+  ): Promise<ArticleAttemptExecutionResult<T>> {
+    return await this.#execute(worker, { ...request, role: "tool" }, operation);
+  }
+
+  heartbeat(claim: ArticleAttemptClaim): ArticleAttemptClaim {
+    return this.#store.heartbeatArticleAttempt(claim);
+  }
+
+  async #claim(
+    worker: AuthorizedWorker,
+    input: ArticleAttemptRequest & { readonly role: "model" | "tool" },
+  ): Promise<ArticleAttemptClaim> {
+    if (!(worker instanceof AuthorizedWorker)) {
+      throw new Error("Article attempts require an AuthorizedWorker session minted by LocalAuthorityStore");
+    }
+    assertArticleExecutionMaterials({
+      articleId: input.articleId,
+      manuscriptArtifactId: input.manuscriptArtifactId,
+      access: input.access,
+      materials: input.materials,
+    });
+    const manuscript = this.#requireManuscript(input.manuscriptArtifactId);
+    const rawRevision = manuscript.metadata.revisionId;
+    if (typeof rawRevision !== "string" || rawRevision.trim().length === 0) {
+      throw new ArtifactLedgerError("ATTEMPT_REVISION_REQUIRED", `Manuscript ${input.manuscriptArtifactId} has no immutable revisionId metadata`);
+    }
+    if (input.manuscriptRevisionId !== undefined && input.manuscriptRevisionId !== rawRevision) {
+      throw new ArtifactLedgerError("ATTEMPT_REVISION_MISMATCH", "Caller manuscriptRevisionId does not match immutable manuscript metadata");
+    }
+    const durableContext = readAttemptContext(input);
+    this.#store.registerManuscriptRevision({ manuscriptArtifactId: input.manuscriptArtifactId, articleId: input.articleId });
+    const identity = await worker.describe();
+    assertWorkerIdentity(identity, input.role, input.access);
+    const claimInput: ArticleAttemptClaimInput = {
+      articleExecutionId: input.articleExecutionId,
+      rootRunId: input.rootRunId,
+      articleId: input.articleId,
+      operationKey: input.operationKey,
+      role: input.role,
+      access: input.access,
+      manuscriptArtifactId: input.manuscriptArtifactId,
+      principalId: identity.principalId,
+      credentialProfileId: identity.credentialProfileId,
+      // This is the authenticated authority, never a role-derived guess.
+      authority: identity.authority,
+      capabilities: identity.capabilities,
+      durableContext,
+      ...(input.leaseMs === undefined ? {} : { leaseMs: input.leaseMs }),
+    };
+    return this.#store.claimArticleAttempt(claimInput);
+  }
+
+  async #execute<T>(
+    worker: AuthorizedWorker,
+    input: ArticleAttemptRequest & { readonly role: "model" | "tool" },
+    operation: ArticleAttemptOperation<T>,
+  ): Promise<ArticleAttemptExecutionResult<T>> {
+    let claim: ArticleAttemptClaim;
+    try {
+      claim = await this.#claim(worker, input);
+    } catch (error) {
+      // A replay after a committed winner is a normal no-value loser. Active
+      // contention is not a terminal result and must reach the durable retry
+      // policy as ATTEMPT_UNAVAILABLE.
+      if (error instanceof Error && "code" in error && (error as { readonly code?: unknown }).code === "ATTEMPT_ALREADY_SELECTED") {
+        return { selected: false, reason: "already_selected", artifacts: [] };
+      }
+      throw error;
+    }
+    try {
+      const result = await operation({ claim, materials: input.materials });
+      const artifacts: LedgerArtifact[] = [];
+      for (const artifact of result.artifacts ?? []) {
+        artifacts.push(this.#store.createArticleAttemptArtifact({
+          claim,
+          key: artifact.key,
+          artifact,
+        }));
+      }
+      const committed = this.#store.completeArticleAttempt(claim, artifacts.map((artifact) => artifact.id));
+      if (!committed.selected) {
+        return { selected: false, reason: committed.status === "stale" ? "stale" : "already_selected", claim, artifacts: Object.freeze(artifacts) };
+      }
+      return { selected: true, value: result.value, claim, artifacts: Object.freeze(artifacts) };
+    } catch (error) {
+      this.#store.failArticleAttempt(claim);
+      throw error;
+    }
+  }
+
+  #requireManuscript(_artifactId: ArtifactId): LedgerArtifact {
+    // The store closure validates and reads the artifact as part of claim. A
+    // dedicated reader is supplied by the factory to keep the runner unaware
+    // of the ledger's database and public query surface.
+    return this.#store.requireArtifact(_artifactId);
   }
 }
 
@@ -747,6 +1536,7 @@ type DecisionRow = {
   readonly choice: "accept" | "drop";
   readonly rationale: string;
   readonly artifact_id: ArtifactId;
+  readonly durable_context_json: string | null;
   readonly created_at: string;
 };
 
@@ -772,6 +1562,38 @@ type PromotionRow = {
   readonly created_at: string;
 };
 
+type ArticleAttemptRow = {
+  readonly claim_id: AttemptId;
+  readonly article_execution_id: ArticleExecutionId;
+  readonly run_id: RunId;
+  readonly article_id: string;
+  readonly operation_key: string;
+  readonly role: "model" | "tool";
+  readonly access: "source_aware" | "source_blind" | "tool";
+  readonly manuscript_artifact_id: ArtifactId;
+  readonly manuscript_revision_id: string | null;
+  readonly attempt_id: string;
+  readonly attempt_number: number;
+  readonly fence: number;
+  readonly principal_id: string;
+  readonly credential_profile_id: string;
+  readonly authority: "model" | "tool";
+  readonly capabilities_json: string;
+  readonly status: "active" | "completed" | "failed" | "stale";
+  readonly lease_expires_at_ms: number;
+  readonly durable_context_json: string;
+  readonly output_artifact_ids_json: string | null;
+  readonly created_at: string;
+  readonly finished_at: string | null;
+};
+
+type ManuscriptRevisionRow = {
+  readonly revision_id: ManuscriptRevisionId;
+  readonly manuscript_artifact_id: ArtifactId;
+  readonly article_id: string;
+  readonly registered_at: string;
+};
+
 function encodePayload(payload: LedgerPayload): Buffer {
   if (payload.kind === "text") return Buffer.from(payload.text, "utf8");
   if (payload.kind === "bytes") return Buffer.from(payload.bytes);
@@ -790,8 +1612,269 @@ function contextObject(context: WorkflowDurableContext): JsonObject {
   return Object.fromEntries(Object.entries(context).filter(([, value]) => value !== undefined)) as JsonObject;
 }
 
+function requireMigrationText(value: unknown, column: string): string {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new ArtifactLedgerError("SCHEMA_MIGRATION_UNBACKFILLABLE", `Article exposure migration cannot backfill ${column}`);
+  }
+  return value;
+}
+
 function sameStrings(left: readonly string[], right: readonly string[]): boolean {
   return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+function assertAttemptAccess(input: ArticleAttemptClaimInput): void {
+  if (input.role === "model" && input.authority !== "model") {
+    throw new ArtifactLedgerError("ATTEMPT_AUTHORITY_MISMATCH", "Model article work requires model authority");
+  }
+  if (input.role === "tool" && input.authority !== "tool") {
+    throw new ArtifactLedgerError("ATTEMPT_AUTHORITY_MISMATCH", "Tool article work requires tool authority");
+  }
+  const capabilities = new Set(input.capabilities);
+  if (input.role === "model" && !capabilities.has("text_model")) {
+    throw new ArtifactLedgerError("ATTEMPT_CAPABILITY_MISMATCH", "Model article work requires text_model capability");
+  }
+  if (input.role === "tool" && !capabilities.has("subprocess")) {
+    throw new ArtifactLedgerError("ATTEMPT_CAPABILITY_MISMATCH", "Tool article work requires subprocess capability");
+  }
+  if (input.access === "source_aware" && !capabilities.has("source_access")) {
+    throw new ArtifactLedgerError("ATTEMPT_CAPABILITY_MISMATCH", "Source-aware article work requires source_access capability");
+  }
+  if (input.access === "source_blind" && !capabilities.has("source_blind")) {
+    throw new ArtifactLedgerError("ATTEMPT_CAPABILITY_MISMATCH", "Source-blind article work requires source_blind capability");
+  }
+  if (input.role === "tool" && input.access !== "tool") {
+    throw new ArtifactLedgerError("ATTEMPT_ACCESS_INVALID", "Tool article work must use tool access");
+  }
+  if (input.role === "model" && input.access === "tool") {
+    throw new ArtifactLedgerError("ATTEMPT_ACCESS_INVALID", "Model article work cannot use tool access");
+  }
+}
+
+function assertWorkerIdentity(
+  identity: AuthorizedWorkerDescription,
+  role: "model" | "tool",
+  access: ArticleAttemptRequest["access"],
+): asserts identity is AuthorizedWorkerDescription & { readonly authority: "model" | "tool" } {
+  if (role === "model" && identity.authority !== "model") {
+    throw new ArtifactLedgerError("ATTEMPT_AUTHORITY_MISMATCH", "Model article work requires an authenticated model authority");
+  }
+  if (role === "tool" && identity.authority !== "tool") {
+    throw new ArtifactLedgerError("ATTEMPT_AUTHORITY_MISMATCH", "Tool article work requires an authenticated tool authority");
+  }
+  const capabilities = new Set(identity.capabilities);
+  if (role === "model" && !capabilities.has("text_model")) {
+    throw new ArtifactLedgerError("ATTEMPT_CAPABILITY_MISMATCH", "Model article work requires text_model capability");
+  }
+  if (role === "tool" && !capabilities.has("subprocess")) {
+    throw new ArtifactLedgerError("ATTEMPT_CAPABILITY_MISMATCH", "Tool article work requires subprocess capability");
+  }
+  if (access === "source_aware" && !capabilities.has("source_access")) {
+    throw new ArtifactLedgerError("ATTEMPT_CAPABILITY_MISMATCH", "Source-aware article work requires source_access capability");
+  }
+  if (access === "source_blind" && !capabilities.has("source_blind")) {
+    throw new ArtifactLedgerError("ATTEMPT_CAPABILITY_MISMATCH", "Source-blind article work requires source_blind capability");
+  }
+  if (role === "tool" && access !== "tool") {
+    throw new ArtifactLedgerError("ATTEMPT_ACCESS_INVALID", "Tool article work must use tool access");
+  }
+  if (role === "model" && access === "tool") {
+    throw new ArtifactLedgerError("ATTEMPT_ACCESS_INVALID", "Model article work cannot use tool access");
+  }
+}
+
+function assertWaitContext(context: WorkflowWaitContext, runId: RunId): void {
+  if (
+    context.kind !== "wait" ||
+    context.runId !== runId ||
+    context.invocationId.length === 0 ||
+    context.callId.length === 0 ||
+    context.waitId.length === 0 ||
+    context.key.length === 0 ||
+    "attemptId" in (context as object) ||
+    "attemptNumber" in (context as object)
+  ) {
+    throw new ArtifactLedgerError("DECISION_PROVENANCE_INVALID", "Human decisions require exact wait provenance without attempt fields");
+  }
+}
+
+function assertAttemptContextBinding(
+  context: WorkflowAttemptContext,
+  input: ArticleAttemptRequest,
+): void {
+  if (
+    (context.kind !== "agent" && context.kind !== "step")
+    || context.runId !== input.rootRunId
+    || context.invocationId.length === 0
+    || context.workflowName.length === 0
+    || context.workflowVersion.length === 0
+    || context.callId.length === 0
+    || context.attemptId.length === 0
+    || context.key.length === 0
+    || context.key !== input.operationKey
+    || !Number.isSafeInteger(context.attemptNumber)
+    || context.attemptNumber < 1
+  ) {
+    throw new ArtifactLedgerError(
+      "ATTEMPT_PROVENANCE_INVALID",
+      "Article attempts require exact Loops run, invocation, call, attempt, and operation provenance",
+    );
+  }
+}
+
+/**
+ * Read attempt provenance from Loops' own async-local context.  Magazine does
+ * not install or accept a caller-supplied equivalent: outside a real Loops
+ * call the public primitive throws, which is deliberately reported as a
+ * missing provenance failure.
+ */
+function readAttemptContext(input: ArticleAttemptRequest): WorkflowAttemptContext {
+  let raw: ReturnType<typeof loopsDurableContext>;
+  try {
+    raw = loopsDurableContext();
+  } catch {
+    throw new ArtifactLedgerError(
+      "ATTEMPT_PROVENANCE_REQUIRED",
+      "Article attempts may run only inside a real Loops step or agent callback",
+    );
+  }
+  if (raw === undefined) {
+    throw new ArtifactLedgerError(
+      "ATTEMPT_PROVENANCE_REQUIRED",
+      "Article attempts require exact Loops attempt provenance",
+    );
+  }
+  const {
+    runId,
+    invocationId,
+    workflowName,
+    workflowVersion,
+    workflowPin,
+    callId,
+    attemptId,
+    attemptNumber: rawAttemptNumber,
+    key,
+    kind,
+  } = raw;
+  if (
+    typeof runId !== "string" || runId.length === 0
+    || typeof invocationId !== "string" || invocationId.length === 0
+    || typeof workflowName !== "string" || workflowName.length === 0
+    || typeof workflowVersion !== "string" || workflowVersion.length === 0
+    || (workflowPin !== undefined && (
+      typeof workflowPin !== "object"
+      || workflowPin === null
+      || Array.isArray(workflowPin)
+    ))
+    || (kind !== "agent" && kind !== "step")
+    || typeof callId !== "string" || callId.length === 0
+    || typeof attemptId !== "string" || attemptId.length === 0
+    || typeof rawAttemptNumber !== "number" || !Number.isSafeInteger(rawAttemptNumber) || rawAttemptNumber < 1
+    || typeof key !== "string" || key.length === 0
+  ) {
+    throw new ArtifactLedgerError(
+      "ATTEMPT_PROVENANCE_INVALID",
+      "Article attempts require exact Loops invocation, call, attempt, and workflow provenance",
+    );
+  }
+  const context: WorkflowAttemptContext = {
+    runId,
+    invocationId,
+    workflowName,
+    workflowVersion,
+    ...(workflowPin === undefined ? {} : { workflowPin: workflowPin as JsonObject }),
+    callId,
+    attemptId,
+    attemptNumber: rawAttemptNumber,
+    key,
+    kind,
+  };
+  assertAttemptContextBinding(context, input);
+  return context;
+}
+
+function articleAttemptContext(
+  input: ArticleAttemptClaimInput,
+  run: LedgerRun,
+): WorkflowAttemptContext {
+  const supplied = input.durableContext;
+  if (supplied === undefined || supplied === null || typeof supplied !== "object") {
+    throw new ArtifactLedgerError("ATTEMPT_PROVENANCE_INVALID", "Article attempts require exact Loops attempt provenance");
+  }
+  if (supplied.runId !== run.loopsRunId) {
+    throw new ArtifactLedgerError("ATTEMPT_PROVENANCE_INVALID", "Article attempt Loops run does not match the magazine run");
+  }
+  if (
+    supplied.kind !== "agent" && supplied.kind !== "step"
+  ) {
+    throw new ArtifactLedgerError("ATTEMPT_PROVENANCE_INVALID", "Article attempt requires an agent or step context, not a wait or workflow context");
+  }
+  if (
+    supplied.invocationId.length === 0 ||
+    supplied.workflowName.length === 0 ||
+    supplied.workflowVersion.length === 0 ||
+    supplied.callId.length === 0 ||
+    supplied.attemptId.length === 0 ||
+    supplied.key.length === 0 ||
+    supplied.key !== input.operationKey ||
+    !Number.isSafeInteger(supplied.attemptNumber) || supplied.attemptNumber < 1
+  ) {
+    throw new ArtifactLedgerError("ATTEMPT_PROVENANCE_INVALID", "Article attempt requires exact Loops invocation, call, attempt, and workflow provenance");
+  }
+  return supplied;
+}
+
+function matchesArticleAttempt(row: ArticleAttemptRow, claim: ArticleAttemptClaim): boolean {
+  return row.claim_id === claim.claimId
+    && row.article_execution_id === claim.articleExecutionId
+    && row.operation_key === claim.operationKey
+    && row.fence === claim.fence
+    && row.attempt_id === claim.attemptId
+    && row.manuscript_revision_id === claim.manuscriptRevisionId
+    && row.principal_id === claim.principalId;
+}
+
+function articleAttemptArtifactId(claim: ArticleAttemptClaim, key: string): ArtifactId {
+  const canonicalTuple = JSON.stringify([
+    "article-attempt-artifact/1",
+    claim.articleExecutionId,
+    claim.operationKey,
+    key,
+    claim.attemptId,
+  ]);
+  return `art-attempt-${createHash("sha256").update(canonicalTuple, "utf8").digest("hex")}` as ArtifactId;
+}
+
+function articleAttemptFromRow(row: ArticleAttemptRow): ArticleAttemptClaim {
+  const durableContext = JSON.parse(row.durable_context_json) as WorkflowDurableContext;
+  return {
+    schemaVersion: "article-attempt-claim/1",
+    articleExecutionId: row.article_execution_id,
+    articleId: row.article_id,
+    operationKey: row.operation_key,
+    role: row.role,
+    access: row.access,
+    manuscriptArtifactId: row.manuscript_artifact_id,
+    manuscriptRevisionId: row.manuscript_revision_id as ManuscriptRevisionId,
+    claimId: row.claim_id,
+    claimSequence: row.attempt_number,
+    attemptId: row.attempt_id,
+    attemptNumber: durableContext.kind === "workflow" || durableContext.kind === "wait"
+      ? (() => { throw new ArtifactLedgerError("ATTEMPT_PROVENANCE_INVALID", `Article attempt ${row.claim_id} has non-attempt durable context`); })()
+      : durableContext.attemptNumber,
+    fence: row.fence,
+    principalId: row.principal_id,
+    credentialProfileId: row.credential_profile_id,
+    authority: row.authority,
+    capabilities: JSON.parse(row.capabilities_json) as readonly string[],
+    leaseExpiresAt: new Date(row.lease_expires_at_ms).toISOString(),
+    durableContext,
+  };
+}
+
+function safeIdentity(value: string): string {
+  const normalized = value.replace(/[^A-Za-z0-9_.:-]/gu, "_");
+  return normalized.length > 180 ? normalized.slice(0, 180) : normalized;
 }
 
 function sameJsonOptional(serialized: string | null, value: JsonValue | undefined): boolean {
@@ -837,6 +1920,7 @@ function sameParents(left: readonly ArtifactParent[], right: readonly ArtifactPa
 function toRun(row: RunRow): LedgerRun {
   return {
     runId: row.run_id,
+    articleExecutionId: row.article_execution_id ?? (`article-execution-${safeIdentity(row.run_id)}` as ArticleExecutionId),
     articleId: row.article_id,
     ...(row.edition_id === null ? {} : { editionId: row.edition_id }),
     workflowVersion: row.workflow_version,
@@ -877,6 +1961,7 @@ function toDecision(row: DecisionRow): LedgerDecision {
     choice: row.choice,
     rationale: row.rationale,
     artifactId: row.artifact_id,
+    ...(row.durable_context_json === null ? {} : { durableContext: JSON.parse(row.durable_context_json) as WorkflowWaitContext }),
     createdAt: row.created_at,
   };
 }
