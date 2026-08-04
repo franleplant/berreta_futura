@@ -56,7 +56,7 @@ fn writer_prompt_file(mode: &str) -> Result<&'static str> {
     }
 }
 
-fn section(title: &str, body: &str) -> String {
+pub(crate) fn section(title: &str, body: &str) -> String {
     format!("\n\n========== {title} ==========\n\n{}\n", body.trim())
 }
 
