@@ -81,8 +81,8 @@ fn source_text(source_id: &str) -> Result<String> {
 }
 
 fn writing_pack() -> Result<String> {
-    Ok(section("docs/WRITING_RULES.md", &read(&docs_path("WRITING_RULES.md"))?)
-        + &section("docs/WRITING_EXEMPLARS.md", &read(&docs_path("WRITING_EXEMPLARS.md"))?))
+    Ok(section("docs/WRITING_STYLE.md", &read(&docs_path("WRITING_STYLE.md"))?)
+        + &section("docs/WRITING_RULES.md", &read(&docs_path("WRITING_RULES.md"))?))
 }
 
 fn value_to_string(v: &serde_yaml::Value) -> Option<String> {

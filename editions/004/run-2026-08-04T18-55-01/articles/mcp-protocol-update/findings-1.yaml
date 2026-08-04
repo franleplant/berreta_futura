@@ -1,0 +1,119 @@
+worth:
+  result: approved
+  findings: []
+  scores:
+    value_over_source: 4
+    length_earned: 3
+    retention: 4
+  notes: |
+    The manuscript reorders the source as a consequence-ordered briefing—what breaks
+    at the wire level (session, handshake), the mechanisms that replace it (explicit
+    handles, elicitation, routing), what requires operational decisions (authorization
+    validation, Tasks migration), and governance going forward. This is genuine
+    editorial work. A reader gets guidance on "what to do this week" rather than the
+    specification's own section order.
+
+    Length runs to 60% of source (above the one-third target for faithful_synthesis
+    but below the two-thirds threshold for blocking). The excess is earned: each
+    section—handshake removal, explicit-handle pattern, elicitation restructuring,
+    routable headers, caching metadata, authorization failure modes, deprecation
+    paths, lifecycle policy—explains operational consequence, not just states a fact.
+    Cuts are defensible: JSON Schema 2020-12 is tool-builder-facing, not operator-
+    facing; four authorization SEPs cover advanced use cases that a reader doing
+    basic hardening does not need this week; boilerplate is removed.
+
+    Code blocks retain identifiers (MCP-Protocol-Version, Mcp-Method, Mcp-Name,
+    InputRequiredResult, error codes -32602 and -32002). Reference test passes: an
+    operator who needs to migrate authorization validation or Tasks usage has the
+    action items named. An operator building advanced auth features will open the
+    source anyway.
+
+    The piece has a position: consequence first, specification order second. This
+    ordering judgment is clear and earned by the structure.
+
+    Scratch section shows detailed reasoning. All major cuts and rewording decisions
+    are documented with justification.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: How the protocol evolves from here | at least twelve months between the first two | 1
+    category: number_or_name_error
+    disposition: fix
+    note: "The manuscript states the 12-month requirement applies between \"the first two\" \nstages (Active and Deprecated), but the source specifies: \"with at least twelve \nmonths between deprecation and the earliest possible removal,\" placing the \nrequirement between the Deprecated and Removed stages. This changes when a \ndeveloper would expect a deprecated feature to be removable.\n"
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Stateless protocol, stateful applications | ways a session hidden in transport metadata never allowed | 1
+    category: qualification_loss
+    disposition: fix
+    note: "The source hedges this claim with \"never really allowed,\" but the manuscript \nomits the hedging adverb, stating simply \"never allowed.\" The substantive meaning \nis preserved, but the hedge is lost and the claim reads slightly stronger than \nin the source.\n"
+  scores:
+    claim_support: 4
+    qualification_survival: 4
+    quote_accuracy: 5
+    attribution: 5
+  notes: "The manuscript faithfully conveys claims against the source extraction, including \nthe session removal mechanisms, state management patterns, authorization hardening, \nextensions framework, and MCP Apps. Two findings were identified: one major error \nin the feature lifecycle policy's timing specification, and one minor loss of a \nhedging adverb that subtly strengthens a claim.\n"
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: The handshake and the session are gone | The sticky routing and shared session store a horizontal deployment needed | 1
+    category: grammar
+    disposition: editor_decision
+    note: |
+      The relative clause "a horizontal deployment needed under the old handshake" modifies "sticky routing and shared session store" but lacks a relative pronoun to connect it to the main clause. The sentence structure is ambiguous as written: "store a horizontal deployment" reads as an unintended verb phrase.
+    suggestion: The sticky routing and shared session store that a horizontal deployment needed under the old handshake have no home in the protocol layer anymore.
+  scores:
+    grammar: 2
+    typography: 4
+    consistency: 4
+  notes: |
+    One major grammar error survives in the author's retained sentence.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    category: missing_transition
+    article: mcp-protocol-update
+    locator: An extension gets its own name, repository, and version number | SEP-2133 gives extensions the formal process they lacked in 2025-11-25 | 1
+    repair_from: An extension gets its own name, repository, and version number | SEP-2133 gives extensions the formal process they lacked in 2025-11-25 | 1
+    disposition: fix
+    note: |
+      The piece moves from authorization-specific protocol fixes (section 5, with concrete action items and timeline-bound changes: iss validation and application_type) to the extensions framework (section 6, which is governance and infrastructure). This is a jump from "here's what you must do this week" to "here's how the system evolves," and the bridge between them is missing. A reader understands each section independently but not why this particular moment in the piece is the right place to shift from fixes to frameworks.
+    suggestion: 'Bridge into section 6 with a sentence that establishes the connection: perhaps ''With the core protocol stabilized, the release formalizes how new features can arrive safely'' or ''Beyond these fixes, the release restructures how capabilities evolve.'''
+  scores:
+    order: 3
+    coherence: 3
+    opening: 4
+    ending: 5
+  notes: |
+    The piece moves coherently through protocol-level changes (session/handshake removal, state handling, elicitation, operational routing and tracing) but fractures at the jump from specific authorization action items into the extensions governance framework. Opening is strong—it leads with operational payoff ("can now run behind a plain round-robin load balancer") and earns its claim of being the largest revision. Ending lands solidly with concrete dates and a genuine thank you from the maintainers. The running thread of "what changed and why it matters for deployment" holds through section 4, but sections 6 onward broaden to architecture and governance without that same tether to reader action.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: mcp-protocol-update
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      The pattern "[SEP-number] [action verb]" opens 11 sentences across the
+      piece, beginning major claims: "SEP-2575 removes", "SEP-2567 removes",
+      "SEP-2260 makes", "SEP-2322 changes", "SEP-2243 requires", "SEP-2549
+      puts", "SEP-414 fixes", "SEP-2468 makes", "SEP-837 fixes", "SEP-2133
+      gives", "SEP-2577's...gives". The rhythm becomes audible to a reader,
+      particularly in "Routable, cacheable, traceable" where three occur
+      consecutively. While SEP references are necessary for readers, the
+      sentence openings could vary: some sections could open on consequence
+      instead, some could embed the SEP reference mid-sentence, or
+      low-informational-gain citations could move to trailing references.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 4
+  notes: |
+    Clear voice and logically ordered ideas, but repetitive sentence openings
+    undermine variety and create a mechanical cadence. The pattern is the
+    author's editorial choice rather than source-driven; the remedy belongs
+    with an editor.

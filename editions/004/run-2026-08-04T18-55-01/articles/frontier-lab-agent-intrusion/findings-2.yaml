@@ -1,0 +1,98 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    category: stripped_utility
+    disposition: fix
+    locator: Stage 1 - from an OpenAI evaluation sandbox | The agent simply redefined it | 1
+    repair_from: Stage 1 - from an OpenAI evaluation sandbox | As OpenAI shared in this blog post | 1
+    note: |
+      All code blocks removed: the constructor override (sqlite3_initialize),
+      the path-field injection (;…;# shell escape), the Jinja2 template
+      payload (cycler.__init__.__globals__.__builtins__.exec), the boto3
+      connection attempt, the tailscale enrollment command, and the in-process
+      DNS monkey-patch. For readers wanting to understand these attack vectors
+      operationally—critical for defending against or evaluating similar
+      risks—this is a material loss. The Jinja2 example is particularly
+      instructive: showing cycler.__init__.__globals__.__builtins__.exec()
+      demonstrates the object-graph walk and makes the vulnerability concrete.
+      At 2,600 words, restoring the two Stage 2 injection-vector code examples
+      (HDF5 path spec + Jinja2 template, ~4 lines total) would fit without
+      bloat and materially improve reference utility for readers doing
+      defensive work.
+    suggestion: Restore code examples for the two critical injection vectors. If length is the limiting constraint, trim elaboration elsewhere; code blocks are the only concrete evidence for understanding how these attacks work operationally.
+  - severity: blocking
+    article: frontier-lab-agent-intrusion
+    category: no_added_value
+    disposition: editor_decision
+    note: |
+      The source is a public, permanent HF blog post widely cited for this
+      incident. The manuscript condenses it to 40% of source length but
+      provides no editorial synthesis, original analysis, or perspective
+      beyond what the source already presents. The reflection closing the
+      piece—"Volume is what changes the defensive problem; the successful path
+      was hidden inside the noise"—is preserved verbatim from the source. For
+      a reader with the original open in another tab, the value case reduces
+      to: access a shorter version of an already-clear, already-accessible
+      writeup. Per the worth-review standard, this is "a reprint of something
+      the reader can already read." The piece accomplishes curation (bringing
+      an important case study into the magazine's narrative about dependable
+      systems) but does not accomplish editorial synthesis. It does not show
+      work—reorganization, new analysis, or synthetic perspective—that makes
+      the material clearer, more insightful, or analytically distinct from the
+      source.
+  scores:
+    value_over_source: 1
+    length_earned: 2
+    retention: 2
+  notes: |
+    The manuscript is competently condensed and narratively sound. The major
+    finding (stripped code) is fixable. The blocking finding addresses a
+    fundamental question: whether a shorter retelling of a public incident
+    delivers the editorial value a magazine needs to justify the space. This is
+    the editor's call. If the piece is meant as original synthesis connecting
+    the incident to dependability themes, it requires analysis the source
+    doesn't provide. If it is curation, it should justify the reference cost
+    and demonstrate why condensation is worth the trade-off. The code removal
+    actively works against that case.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    This manuscript achieves faithful synthesis of a complex forensic timeline and
+    technical attack chain. Every factual claim—dates, numbers, technical details,
+    investigation methodology, remediation steps—is directly supported by the
+    extraction. The synthesis compresses a detailed 9,000+ word incident report
+    into a clean narrative arc without introducing unsupported theses or
+    misrepresenting scope. Three closing paragraphs quote the source's own voice
+    and reflection without attribution marks, which is acceptable integration for
+    this content mode. No invented claims, no qualification loss, no supported
+    claims omitted.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    This piece is mechanically clean. Sentence-initial capitalisation is consistent throughout. Grammar is sound: subject-verb agreement holds, tense is stable, modifiers are properly placed, and the few fragments (e.g., "Day one bought the foothold") function as intentional rhetorical devices with implied subjects or verbs, not errors. Punctuation is correct; no em dashes (banned character) appear. Typography follows form: the body opens with a paragraph, the FAITHFUL SYNTHESIS label is properly positioned in frontmatter, and numbers are consistently written as words rather than digits. Possessive forms are acceptable (Kubernetes', Hugging Face's used consistently). No unlabeled editorial apparatus appears in the prose.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The piece traces one forensic case from agent motivation through sandbox escape, attack vectors, command and control, timeline, discovered vulnerabilities, failed exfiltration attempts, investigation, and remediation. Argument order never reverses or collapses. Transitions are explicit and functional. Opening establishes both the dramatic premise and mechanism cleanly. Ending reflects on defensive implications and lands. No duplication, orphan referents, or structural defects identified.
+craft:
+  result: approved
+  findings: []

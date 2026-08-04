@@ -1,0 +1,52 @@
+worth:
+  result: approved
+  findings: []
+  scores:
+    value_over_source: 4
+    length_earned: 4
+    retention: 4
+  notes: |
+    A reader gets the architectural progression organized around one unifying concept—fixed-size memory eviction strategies—which the source states only in its closing paragraphs, applied from the opening. The manuscript restructures the exploratory code-walkthrough into concept-first prose, making the frame the spine rather than the payoff. At 52% of source length, the careful explanation of DeltaNet chunking and progressive build of eviction mechanisms justifies the space. Code removal is appropriate to faithful_synthesis mode and does not strip utility—the piece positions as architecture explanation, not implementation reference, and developers seeking to build would consult the source regardless.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked all factual claims, numbers, dates, architectural details, quoted passages, and synthetic conclusions. Every assertion in the manuscript is supported by the source extraction. No qualifications were dropped. No invented claims detected.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    Clean pass. Capitalisation, grammar, punctuation, and form are all sound. The
+    synthesis maintains clarity and parallel structure throughout.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 4
+    coherence: 4
+    opening: 4
+    ending: 4
+  notes: |
+    The piece traces the architectural path from GPT-2 to KimiK3 as a progression of solutions to fixed-capacity memory management: each step from linear attention through AttnRes offers a different answer to what gets evicted from the cache and when. The argument order is logical and necessary, with each section building on the previous without gaps. The opening earns what follows by promising that each step brought something new, and the ending lands by unifying all steps under the eviction-policy frame. No duplication, orphan referents, or missing transitions interrupt the flow, and the piece holds together on a single careful read.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    A person clearly wrote this. The voice is steady throughout, marked by direct
+    confession, transparent explanation of difficult material, and a closing
+    question about who decides on eviction. Sentence shapes vary, and the piece
+    connects each architectural innovation to a coherent throughline the reader
+    can follow.

@@ -9,16 +9,18 @@ that it has been condensed. Your inputs are the source extraction at
 
 ## Required reading
 
-`docs/WRITING_RULES.md` and `docs/WRITING_EXEMPLARS.md`, once at the start of a
-session. Four moves carry this mode. Move 5, omission is the work, and the cut
-order below is Move 5 with a page budget attached. Move 6, length grows from the
-material and then stops. Move 7, a number survives only if the argument changes
-when it changes. Move 4, the vantage point, the one value you may always add
-because it costs no new fact. Read "The register that produces robot prose"
-before you draft and the final pass before you deliver. The rules are not
-restated here; that file is the only copy. Rule vi's second legitimate use is
-this mode: the author's clichés, jokes and broken rules survive in their own
-sentences, and the ban is on writing them yourself.
+`docs/WRITING_RULES.md` and `docs/WRITING_STYLE.md`, once at the start of a
+session. Four concepts carry this mode. Hemingway's restraint and omission is
+the work, and the cut order below is that omission with a page budget attached.
+"Right-sizing" below: length grows from the material and then stops. A number
+survives only if the argument changes when it changes. Sagan's change of scale
+is the vantage point, the one value you may always add because it costs no new
+fact. Read "The register that produces robot prose" before you draft and the
+final pass before you deliver. The rules are not restated here; those files are
+the only copies. The style doc's Orwell section governs every sentence you write
+yourself; it does not reach the author's own retained sentences in this mode,
+where their clichés, jokes and broken rules survive in their own sentences, and
+the ban is on writing them yourself.
 
 ## Before you draft
 
@@ -32,8 +34,9 @@ not an answer, and "a clean summary" is what `worth` rejects at `blocking`.
 Check the sentence against the finished draft before you deliver.
 
 **The two absences.** Name the two sections of the source that will not appear
-here at all. Move 5's repair, and what stops the piece becoming the source's
-shape with the words trimmed, which `worth` files as `source_shaped`.
+here at all. Hemingway's restraint and omission at work, and what stops the
+piece becoming the source's shape with the words trimmed, which `worth` files
+as `source_shaped`.
 
 ## Length is a ceiling, never a target
 
@@ -84,8 +87,8 @@ manuscript.
    - **Numbers.** A number survives only if the argument changes when the number
      changes. A contrast the thesis rests on keeps both figures exactly; a
      leaderboard, a version count, or a figure whose sentence reads the same
-     without it goes. Move 7: a surviving number gets the sentence saying what
-     it cost or what it bought.
+     without it goes. A surviving number gets the sentence saying what it cost
+     or what it bought.
    - **Identifiers.** A command, method, flag or filename the reader would have
      to type is not decoration. Keep it inside the sentence that explains it.
      Stripping the operational surface to save words made the 004 explainer a

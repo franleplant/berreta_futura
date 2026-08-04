@@ -1,0 +1,76 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: mcp-protocol-update
+    category: no_added_value
+    disposition: fix
+    note: |
+      The manuscript is a condensed republication of the freely available blog
+      post from the same authors. Step 2 produces no concrete sentence: the
+      article does not synthesize scattered sources, does not make an ephemeral
+      or paywalled source legible, does not order rambling material, and does
+      not force a conclusion the source does not already state. The blog post
+      is authoritative, free, well-structured, and durable. Condensation alone
+      without synthesis, position, or analysis cannot constitute value-add.
+
+      For faithful_synthesis, the remedy is editorial: either drop the piece
+      if republication is the only goal, reformat it as news/announcement, or
+      ask the authors to add analytical interpretation of what the changes
+      mean for implementers and the MCP ecosystem. The article as written
+      competes directly with a superior source (the original) and loses.
+  scores:
+    value_over_source: 1
+    length_earned: 2
+    retention: 5
+  notes: |
+    The manuscript is accurate, well-written, and technically sound. It fails
+    on worth. A reader needing to understand the protocol changes reads the
+    freely available, authoritative source by the same authors. This piece
+    provides access to something already accessible.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Verified all factual claims, numbers, dates, versions, SEP citations, technical terms, and three quotations against the source extraction. All assertions are supported by the source text. Qualifications about breaking changes, deprecation timelines, and the extension framework are preserved. No invented claims, missing numbers, transposed facts, or accuracy issues found. The synthesis accurately represents the protocol changes, technical procedures, governance framework, and timeline from the source.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: An extension gets its own name, repository, and version number | identified by a reverse-DNS ID, negotiated through an extensions map in client and server capabilities, lives in its own ext-* repository under its own maintainers, and versions independently | 1
+    category: grammar
+    disposition: fix
+    note: |
+      The list of extension characteristics has broken parallelism. 'identified' and 'negotiated' are passive participles; 'lives' is an active verb; and 'versions' is neither clearly passive nor active as written. All items in the list following 'is' must match grammatically. Either all should be passive participles (identified, negotiated, placed, versioned) or all active verbs with matching mood.
+    suggestion: an extension is identified by a reverse-DNS ID, negotiated through an extensions map in client and server capabilities, placed in its own ext-* repository under its own maintainers, and versioned independently of the specification
+  scores:
+    grammar: 3
+    typography: 5
+    consistency: 4
+  notes: |
+    One broken parallelism in a list of extension characteristics. Otherwise clean on grammar, spelling, and typography.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 4
+    coherence: 4
+    opening: 4
+    ending: 4
+  notes: |
+    The piece's argument is coherent: from what the release removed (handshake, session) through why that change enables stateless deployment (explicit state management) to how the new mechanisms work (InputRequiredResult, cached headers) to the governance structure that prevents future breaking changes. The opening scenario motivates the entire explanation, and sections progress from protocol mechanics to operational benefits to governance philosophy. No structural defects found.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 5
+    economy: 4
+  notes: |
+    Authorial voice remains clear and present throughout, with no register shifts into robotic phrasing. The author structures complex protocol changes into logical sections with purposeful transitions. Sentence shapes vary appropriately—complex constructions where consequence-chains demand them, shorter emphatic statements for rules. Parallelism and inversion are used for emphasis, not tic. No dead sentences or reading defects detected.

@@ -1,0 +1,100 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: eval-engineering
+    category: no_added_value
+    disposition: fix
+    note: |
+      The manuscript delivers the source's argument faithfully—same structure (5 steps), same claims, same voice, same examples—but provides nothing a reader cannot get from the source itself. For faithful synthesis to justify condensation, it must extract something the source obscures, restructure an argument, or state a conclusion the source material forces but never voices. This does none of those. The source is already well-ordered and coherent.
+  - severity: major
+    article: eval-engineering
+    locator: Installing the examiner | Installing all of it takes three lines | 1
+    category: stripped_utility
+    disposition: fix
+    note: |
+      Exact commands (`npx skills add langchain-ai/langchain-skills`, `evalkit init`, etc.) become "three lines." The folder structure (`evals/<task-id>/task.toml`, `instruction.md`, `environment/`, `tests/`) disappears entirely. Five trace categories collapse to three. Tool names (LangChain, AWS, Arize, Braintrust Loop, LangSmith) are gone. A reader wanting to build this must return to the source for every concrete step. Reference utility is stripped.
+    suggestion: Restore exact commands (or show one full command, compress the rest), folder structure, full trace taxonomy, and tool names.
+  - severity: major
+    article: eval-engineering
+    locator: Installing the examiner | Codex, on a coding-agent subscription most of these teams already pay for, scored above two dedicated evaluation platforms built for exactly this job | 1
+    repair_from: Installing the examiner | A blind test showed how cheap that layer has become | 1
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The blind test removes specific numbers (Codex 84.6% recall/82.8% precision vs. Braintrust Loop 87.2%, LangSmith 79.5%, Arize 74.4% recall). These are evidence that evaluation is now competitively available, supporting the central claim that "it is now cheap enough that skipping it is a choice." The vendor-response narrative—four platforms shipping skills within four weeks—is also cut, demonstrating this was a genuine market shift, not vendor marketing. Without evidence, the claim stands on assertion alone.
+    suggestion: Restore platform names and at minimum the 84.6% vs. 87.2% comparison showing Codex outperforms dedicated platforms.
+  scores:
+    value_over_source: 1
+    length_earned: 2
+    retention: 1
+  notes: |
+    This is skillfully condensed but condensation is not synthesis. Every word saved comes from removing things the reader needs: concrete reference material (commands, schema, trace categories), evidence for central claims (blind test numbers and the competitive move), and alternative implementations (code-scoring for code agents). A reader interested in evals leaves with the 5-step framework but must return to the source to build anything or verify that this technology is now accessible and competitive.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Verified all checkable assertions in the manuscript against the source extraction: facts, numbers (83.9%/32.3%, 19 of 20, four weeks, three measurements, 100 traces, 25 traces, etc.), dates, quotes (including the "score that never changes behavior" line and the 1,500-PR statement), attributions (21-year-old founder, the company that changed nothing but evals), and the structure of the argument (thermometer/thermostat, loops→graphs→evals, the five judge-hygiene principles, the four confidence signals, the five-step mining process). The manuscript condenses the source for length—reducing hygiene rules from five to two, three failure-trace types from five to three, six verdicts to two examples—but all condensations preserve the core claims and principles. Omissions are justified: repeated examples of the same meta-principle (38-green-tests alongside 83.9%/32.3%), supporting operational details (exact folder schema, rollout procedures), and explanatory asides. No invented claims, no reversed conclusions, no fabricated quotes, no material distortions of scope. The "faithful_synthesis" mode is honored.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: Teaching the judge | and never a reward for the shape of an answer | 1
+    category: grammar
+    disposition: editor_decision
+    note: |
+      The sentence lists what the judge needs but breaks parallel structure when it shifts from noun phrases ("the shape of an answer, its length, its keyword count") to a consequence clause ("or the agent learns...") without clear punctuation to mark the transition.
+    suggestion: never reward the shape of an answer, its length, or keyword count; otherwise the agent learns to perform the shape instead of the work
+  scores:
+    grammar: 3
+    typography: 5
+    consistency: 4
+  notes: |
+    One major grammar error—broken parallel structure in the judge-hygiene sentence—prevents approval. The piece is otherwise clean: all headings correctly formatted, consistent voice throughout, no typography issues.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: Letting the graph merge itself | Every pull request an agent opened used to land in one queue | 1
+    repair_from: Mining your own failures | If either comes back wrong, the rubric is broken, not the agent. | 1
+    category: missing_transition
+    disposition: fix
+    note: "The piece shifts from building evals (mining production traces, testing the verifier) \nto applying evals (automating PR merging) without an explicit bridge. The connection \nis implicit but a reader needs a sentence to move smoothly from \"here's how to build \nthem\" to \"here's what to do with them once they work.\"\n"
+    suggestion: 'Add a transition after the verifier testing paragraph, something like: ''Once your evals are routing the traces and training your judge, you can put them to work controlling your automation.'''
+  - severity: minor
+    article: eval-engineering
+    locator: '- | What eval engineering is | 1'
+    repair_from: '- | What eval engineering is | 1'
+    category: heading_not_a_claim
+    disposition: fix
+    note: "All six section headings name actions or topics rather than what each section argues. \n\"What eval engineering is\" interrogates the topic. \"Installing the examiner,\" \"Teaching \nthe judge,\" \"Mining your own failures,\" \"Letting the graph merge itself,\" and \"The evals \nto build this week\" are action-based, not argument-based. Each heading should name its \nsection's claim, not its action.\n"
+    suggestion: |
+      Reframe each heading to name its section's argument. Examples:
+      - "The evaluator, not the model, is the product" (vs. "What eval engineering is")
+      - "Installing is easy; trace collection is what teams miss" (vs. "Installing the examiner")
+      - "Judge hygiene is your real leverage" (vs. "Teaching the judge")
+      - "Your logs are better than imagination" (vs. "Mining your own failures")
+      - "Evals enable autonomous PR merging" (vs. "Letting the graph merge itself")
+      - "Start with three measurements" (vs. "The evals to build this week")
+  scores:
+    order: 4
+    coherence: 4
+    opening: 5
+    ending: 5
+  notes: "The piece builds an argument logically from its paradox (identical models, wider gaps) \nthrough to the solution (eval engineering as the permanent product layer). The opening \nhooks immediately and the closing lands well (turn your failures into permanent tests \nthat outlast model replacements). A missing transition at the shift to PR automation \nweakens flow, and headings throughout favor actions over arguments, reducing their \nclarity as signposts for the piece's claims.\n"
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    The piece maintains confident, specific voice throughout, grounding technical instruction with concrete examples (the 83.9%/32.3% split, the 1,500-PR quote) that hold reader attention and establish author credibility.
