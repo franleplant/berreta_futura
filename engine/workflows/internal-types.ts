@@ -3,6 +3,7 @@ import type {
   ArticleDecisionAnswer,
   ArticleInputBinding,
   ArticleWorkflowResult,
+  ArticleWorkflowRouteResult,
 } from "../contracts/workflow-run.ts";
 import type { DurablePromotionRequest } from "../durable/types.ts";
 import type {
@@ -80,6 +81,8 @@ export type WorkflowDurableContext =
  */
 export type ArticleExecutionContext = {
   readonly articleExecutionId: ArticleExecutionId;
+  /** Number of writer rewrites already consumed by this article execution. */
+  readonly rewriteOrdinal?: number;
   readonly articleId: string;
   readonly manuscriptArtifactId: ArtifactId;
   readonly manuscriptRevisionId?: string;
@@ -185,6 +188,8 @@ export type ArticleWorkflowPorts = {
 export type ArticleRuntimeStartArgs = {
   readonly runId: RunId;
   readonly articleExecutionId: ArticleExecutionId;
+  /** Number of writer rewrites already consumed by this execution. */
+  readonly rewriteOrdinal?: number;
   readonly articleId: string;
   readonly editionId: string;
   readonly language: string;
@@ -241,7 +246,7 @@ export type MagazineLoopsInspection = {
   readonly status: "running" | "waiting" | "completed" | "failed" | "canceled";
   readonly workflowVersion: string;
   readonly workflowPin?: JsonObject;
-  readonly result?: ArticleWorkflowResult;
+  readonly result?: ArticleWorkflowResult | ArticleWorkflowRouteResult;
   readonly invocations: readonly MagazineLoopsInvocation[];
   readonly calls: readonly MagazineLoopsCall[];
   readonly waits: readonly MagazineLoopsWait[];

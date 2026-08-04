@@ -175,6 +175,10 @@ export type ArticleReviewPanelInput = {
   readonly manuscriptRevisionId: ManuscriptRevisionId;
   /** Monotonic ordinal for diagnostics. It is not a key or identity source. */
   readonly manuscriptOrdinal: number;
+  /** Exact review-cycle identity used to namespace every durable panel call. */
+  readonly cycleId?: string;
+  /** Monotonic writer-rewrite ordinal used to prevent cross-cycle replay. */
+  readonly rewriteOrdinal?: number;
   readonly rendererIdentity: RendererIdentity;
   readonly materialContext: ArticleMaterialContext;
   readonly materialSelection?: ArticleMaterialSelectionContext;
@@ -207,6 +211,8 @@ export const articleReviewStepInputSchema = z.object({
   articleExecutionId: z.string().min(1),
   articleId: z.string().min(1),
   manuscriptOrdinal: z.number().int().nonnegative(),
+  cycleId: z.string().min(1).optional(),
+  rewriteOrdinal: z.number().int().nonnegative().optional(),
   manuscriptArtifactId: z.string().min(1),
   manuscriptRevisionId: z.string().min(1),
   reviewPlanArtifactId: z.string().min(1),
@@ -304,6 +310,8 @@ export async function runArticleReviewPanel(
           articleExecutionId: input.articleExecutionId,
           reviewPlanArtifactId: input.materialContext.reviewPlan.reviewPlanArtifactId,
           manuscriptRevisionId: input.manuscriptRevisionId,
+          ...(input.cycleId === undefined ? {} : { cycleId: input.cycleId }),
+          ...(input.rewriteOrdinal === undefined ? {} : { rewriteOrdinal: input.rewriteOrdinal }),
           waveId: wave.id,
           checkId: check.id,
         });
@@ -366,13 +374,22 @@ export type ReviewKeyParts = {
   readonly articleExecutionId: ArticleExecutionId;
   readonly reviewPlanArtifactId: ArtifactId;
   readonly manuscriptRevisionId: ManuscriptRevisionId;
+  readonly cycleId?: string;
+  readonly rewriteOrdinal?: number;
   readonly waveId: string;
   readonly checkId: string;
 };
 
 /** Stable key for one exact manuscript/check in one frozen review plan. */
 export function reviewKey(parts: ReviewKeyParts): string {
-  const values = [parts.articleExecutionId, parts.reviewPlanArtifactId, parts.manuscriptRevisionId, parts.waveId, parts.checkId];
+  if (parts.cycleId !== undefined && (parts.cycleId.trim().length === 0 || parts.cycleId.includes("\u0000"))) {
+    throw new ArticleReviewPanelError("REVIEW_KEY_INVALID", "review cycle ID must be non-empty and cannot contain NUL");
+  }
+  if (parts.rewriteOrdinal !== undefined && (!Number.isSafeInteger(parts.rewriteOrdinal) || parts.rewriteOrdinal < 0)) {
+    throw new ArticleReviewPanelError("REVIEW_KEY_INVALID", "review rewrite ordinal must be a non-negative safe integer");
+  }
+  const cycleIdentity = parts.cycleId ?? `rewrite-${parts.rewriteOrdinal ?? 0}`;
+  const values = [parts.articleExecutionId, parts.reviewPlanArtifactId, parts.manuscriptRevisionId, cycleIdentity, parts.waveId, parts.checkId];
   if (values.some((value) => value.trim().length === 0 || value.includes("\u0000"))) {
     throw new ArticleReviewPanelError("REVIEW_KEY_INVALID", "review key components must be non-empty and cannot contain NUL");
   }
@@ -612,6 +629,8 @@ function preloadMeasurementArtifacts(
 function validatePanelInput(input: ArticleReviewPanelInput, ledger: ArtifactLedger): void {
   if (input.articleId !== input.materialContext.articleId) throw new ArticleReviewPanelError("REVIEW_ARTICLE_MISMATCH", "review panel article does not match its material context");
   if (!Number.isSafeInteger(input.manuscriptOrdinal) || input.manuscriptOrdinal < 0) throw new ArticleReviewPanelError("REVIEW_ORDINAL_INVALID", "manuscript ordinal must be a non-negative integer");
+  if (input.cycleId !== undefined && (input.cycleId.trim().length === 0 || input.cycleId.includes("\u0000"))) throw new ArticleReviewPanelError("REVIEW_IDENTITY_INVALID", "review cycle ID must be non-empty and cannot contain NUL");
+  if (input.rewriteOrdinal !== undefined && (!Number.isSafeInteger(input.rewriteOrdinal) || input.rewriteOrdinal < 0)) throw new ArticleReviewPanelError("REVIEW_ORDINAL_INVALID", "rewrite ordinal must be a non-negative integer");
   if (input.runId.trim().length === 0 || input.articleExecutionId.trim().length === 0) throw new ArticleReviewPanelError("REVIEW_IDENTITY_INVALID", "review panel requires run and article execution identities");
   const manuscript = ledger.requireArtifact(input.manuscriptArtifactId);
   if (manuscript.kind !== "article_manuscript" || manuscript.mediaType !== "text/markdown") throw new ArticleReviewPanelError("REVIEW_MANUSCRIPT_INVALID", "review panel manuscript must be an article Markdown artifact");
@@ -939,6 +958,8 @@ function reviewMetadata(input: ArticleReviewPanelInput, check: ReviewCheckDefini
     manuscriptRevisionId: input.manuscriptRevisionId,
     reviewPlanArtifactId: input.materialContext.reviewPlan.reviewPlanArtifactId,
     materialArtifactIds: reviewMaterialArtifactIds(materials) as unknown as JsonValue,
+    ...(input.cycleId === undefined ? {} : { cycleId: input.cycleId }),
+    ...(input.rewriteOrdinal === undefined ? {} : { rewriteOrdinal: input.rewriteOrdinal }),
   };
 }
 
@@ -951,6 +972,8 @@ function reviewStepInput(input: ArticleReviewPanelInput, check: ReviewCheckDefin
     articleExecutionId: input.articleExecutionId,
     articleId: input.articleId,
     manuscriptOrdinal: input.manuscriptOrdinal,
+    ...(input.cycleId === undefined ? {} : { cycleId: input.cycleId }),
+    ...(input.rewriteOrdinal === undefined ? {} : { rewriteOrdinal: input.rewriteOrdinal }),
     manuscriptArtifactId: input.manuscriptArtifactId,
     manuscriptRevisionId: input.manuscriptRevisionId,
     reviewPlanArtifactId: input.materialContext.reviewPlan.reviewPlanArtifactId,
@@ -969,6 +992,8 @@ function skippedResult(input: ArticleReviewPanelInput, check: ReviewCheckDefinit
     articleExecutionId: input.articleExecutionId,
     reviewPlanArtifactId: input.materialContext.reviewPlan.reviewPlanArtifactId,
     manuscriptRevisionId: input.manuscriptRevisionId,
+    ...(input.cycleId === undefined ? {} : { cycleId: input.cycleId }),
+    ...(input.rewriteOrdinal === undefined ? {} : { rewriteOrdinal: input.rewriteOrdinal }),
     waveId,
     checkId: check.id,
   });

@@ -21,13 +21,24 @@ import {
 } from "../durable/index.ts";
 import { articleMaterialContextFromLoops } from "../article-production/materials.ts";
 import { ArtifactLedger, ArtifactLedgerError } from "../workflow-authority/artifact-ledger.ts";
-import { HumanDecisionAuthority } from "../workflow-authority/human-decisions.ts";
+import type { HumanDecisionAuthority } from "../workflow-authority/human-decisions.ts";
 import { createArticleWorkflowPorts } from "./article-runtime.ts";
 import {
   decisionArtifactId,
+  articleDecisionWaitKey,
   manuscriptId,
   measurementProfileId,
 } from "./article-workflow.ts";
+import {
+  articleDecisionTaskSchema,
+  articleReviewRouteSchema,
+  assertValidatedArticleEditorDecision,
+  revisionBriefParents,
+  revisionBriefSchema,
+  type ArticleDecisionTask,
+  type ArticleReviewRoute,
+  type RevisionBrief,
+} from "../article-production/review-cycle.ts";
 import type {
   ArticleRuntimeStartArgs,
   MagazineLoopsInspection,
@@ -81,7 +92,7 @@ export class MagazineWorkflowEngine {
       toolchain: options.renderer.toolchain,
       runtime: ports,
     });
-    this.#decisions = new HumanDecisionAuthority({ ledger: this.#ledger, clock: this.#clock });
+    this.#decisions = this.#ledger.createHumanDecisionAuthority({ clock: this.#clock });
   }
 
   #repositoryRoot(): string {
@@ -130,6 +141,7 @@ export class MagazineWorkflowEngine {
     const args: ArticleRuntimeStartArgs = {
       runId,
       articleExecutionId,
+      rewriteOrdinal: 0,
       articleId,
       editionId: resolved.document.editionId,
       language,
@@ -290,7 +302,7 @@ export class MagazineWorkflowEngine {
     }
     this.#ledger.recordLoopsObservation(runId, observation);
     const offer = this.#ledger.activeOffer(runId);
-    const pending = pendingWait(loops);
+    const pending = pendingWaitForOffer(loops, offer?.id);
     const result = loops.result;
     const status = statusFromLoops(loops, result);
     const current = this.#ledger.requireRun(runId);
@@ -308,7 +320,7 @@ export class MagazineWorkflowEngine {
       ...(current.measurementArtifactId === undefined ? {} : { measurementArtifactId: current.measurementArtifactId }),
       ...(current.decisionArtifactId === undefined ? {} : { decisionArtifactId: current.decisionArtifactId }),
       ...(current.promotionId === undefined ? {} : { promotionId: current.promotionId as never }),
-      ...(result?.durableRevisionId === undefined ? {} : { durableRevisionId: result.durableRevisionId }),
+      ...(result?.schemaVersion !== "magazine-article-workflow-result/1" || result.durableRevisionId === undefined ? {} : { durableRevisionId: result.durableRevisionId }),
       ...(offer === undefined ? {} : {
         activeOffer: {
           id: offer.id,
@@ -335,23 +347,26 @@ export class MagazineWorkflowEngine {
     const run = this.#ledger.requireRun(request.runId);
     const loops = await this.#loops.inspect(request.runId);
     this.#reconcileAnsweredWait(request.runId, loops);
+    const offer = this.#ledger.requireOffer(request.offerId);
+    if (offer.runId !== run.runId) throw new MagazineWorkflowError("OFFER_RUN_MISMATCH", `Offer ${request.offerId} belongs to another run`);
     const existing = this.#ledger.getDecision(request.offerId);
-    const pending = pendingWait(loops);
+    const pending = pendingWaitForOffer(loops, request.offerId);
     if (pending === undefined) {
       if (existing !== undefined && waitAnsweredForDecision(loops, existing.artifactId)) {
+        await assertReplayMatches(existing, request, human);
         return await this.resume(request.runId);
       }
       throw new MagazineWorkflowError("WAIT_NOT_PENDING", `Article decision wait for ${run.runId} is not pending`);
     }
-    if (pending.key !== "article.decision" || pendingDecisionArtifactId(pending.request) !== decisionArtifactId(request.offerId)) {
-      throw new MagazineWorkflowError("WAIT_NOT_PENDING", `Run ${run.runId} has no exact article decision wait`);
-    }
+    validateEditorOfferBoundary(this.#ledger, run, offer, request, pending);
     if (existing === undefined) {
-      const context = contextForDecision(request.runId, loops);
+      const context = contextForDecision(request.runId, loops, pending);
       const decision = await this.#decisions.decide(human, request, context);
       this.#ledger.recordDecisionArtifact(request.runId, decision.artifactId);
     } else {
       await assertReplayMatches(existing, request, human);
+      const context = contextForDecision(request.runId, loops, pending);
+      await this.#decisions.decide(human, request, context);
     }
     const decision = this.#ledger.requireDecision(request.offerId);
     try {
@@ -379,7 +394,7 @@ export class MagazineWorkflowEngine {
 
   #reconcileAnsweredWait(runId: RunId, inspection: MagazineLoopsInspection): void {
     for (const wait of inspection.waits) {
-      if (wait.key !== "article.decision" || wait.status !== "answered") continue;
+      if (!isArticleDecisionWait(wait) || wait.status !== "answered") continue;
       const request = wait.request;
       const offerId = typeof request === "object" && request !== null && typeof (request as { offerId?: unknown }).offerId === "string"
         ? (request as { offerId: string }).offerId
@@ -396,6 +411,34 @@ export class MagazineWorkflowEngine {
       const decision = this.#ledger.getDecision(offerId);
       if (decision === undefined || decision.artifactId !== answeredArtifact) {
         throw new MagazineWorkflowError("DECISION_RECONCILIATION_REQUIRED", `Answered wait ${wait.waitId} has no matching ledger decision`);
+      }
+      if (decision.artifactId !== decisionArtifactId(offer.id)) {
+        throw new MagazineWorkflowError("DECISION_RECONCILIATION_REQUIRED", `Answered wait ${wait.waitId} names an unexpected decision artifact`);
+      }
+      const requestFromDecision: ArticleDecisionRequest = {
+        runId,
+        offerId,
+        taskArtifactId: decision.taskArtifactId,
+        inputArtifactIds: decision.inputArtifactIds,
+        choice: decision.choice,
+        rationale: decision.rationale,
+        ...(decision.approvedFindingIds === undefined ? {} : { approvedFindingIds: decision.approvedFindingIds }),
+        ...(decision.additionalRewriteBudget === undefined ? {} : { additionalRewriteBudget: decision.additionalRewriteBudget }),
+      };
+      const run = this.#ledger.requireRun(runId);
+      const boundary = validateEditorOfferBoundary(this.#ledger, run, offer, requestFromDecision, wait);
+      try {
+        assertValidatedArticleEditorDecision(boundary.route, {
+          choice: decision.choice,
+          ...(decision.approvedFindingIds === undefined ? {} : { approvedFindingIds: decision.approvedFindingIds }),
+          ...(decision.additionalRewriteBudget === undefined ? {} : { additionalRewriteBudget: decision.additionalRewriteBudget }),
+          ...(decision.validatorVersion === undefined ? {} : { validatorVersion: decision.validatorVersion }),
+          ...(decision.canonicalApprovedFindingIds === undefined ? {} : { canonicalApprovedFindingIds: decision.canonicalApprovedFindingIds }),
+          ...(decision.rewriteBudget === undefined ? {} : { rewriteBudget: decision.rewriteBudget }),
+        });
+        assertDecisionArtifactMatches(this.#ledger, decision);
+      } catch (error) {
+        throw new MagazineWorkflowError("DECISION_RECONCILIATION_REQUIRED", `Answered wait ${wait.waitId} has an invalid persisted editor decision`, { cause: error });
       }
       this.#ledger.recordDecisionArtifact(runId, decision.artifactId);
       this.#ledger.markOfferAnswered(offerId);
@@ -423,25 +466,29 @@ function validateStart(request: ArticleStartRequest, ledger: ArtifactLedger): vo
   }
 }
 
-function statusFromLoops(loops: MagazineLoopsInspection, result: ArticleWorkflowResult | undefined): ArticleWorkflowView["status"] {
+function statusFromLoops(loops: MagazineLoopsInspection, result: ArticleWorkflowResult | import("../contracts/workflow-run.ts").ArticleWorkflowRouteResult | undefined): ArticleWorkflowView["status"] {
   if (loops.status === "waiting") return "waiting";
   if (loops.status === "running") return "running";
   if (loops.status === "failed" || loops.status === "canceled") return "failed";
-  if (loops.status === "completed") return result?.status === "dropped" ? "dropped" : "complete";
+  if (loops.status === "completed") return result?.status === "dropped" ? "dropped" : result?.status === "rewrite_pending" ? "waiting" : "complete";
   return "running";
 }
 
-function pendingWait(inspection: MagazineLoopsInspection): MagazineLoopsInspection["waits"][number] | undefined {
-  return inspection.waits.find((wait) => wait.key === "article.decision" && wait.status === "pending");
+function pendingWaitForOffer(inspection: MagazineLoopsInspection, offerId?: string): MagazineLoopsInspection["waits"][number] | undefined {
+  return inspection.waits.find((wait) => {
+    if (wait.status !== "pending" || !isArticleDecisionWait(wait)) return false;
+    if (offerId === undefined) return true;
+    return typeof wait.request === "object" && wait.request !== null && (wait.request as { readonly offerId?: unknown }).offerId === offerId;
+  });
 }
 
 function waitAnsweredForDecision(inspection: MagazineLoopsInspection, decisionArtifactIdValue: ArtifactId): boolean {
-  return inspection.waits.some((wait) => wait.key === "article.decision" && wait.status === "answered" && typeof wait.answer === "object" && wait.answer !== null && (wait.answer as { decisionArtifactId?: unknown }).decisionArtifactId === decisionArtifactIdValue)
-    || inspection.result?.decisionArtifactId === decisionArtifactIdValue;
+  return inspection.waits.some((wait) => isArticleDecisionWait(wait) && wait.status === "answered" && typeof wait.answer === "object" && wait.answer !== null && (wait.answer as { decisionArtifactId?: unknown }).decisionArtifactId === decisionArtifactIdValue)
+    || (inspection.result?.schemaVersion === "magazine-article-workflow-result/1" && inspection.result.decisionArtifactId === decisionArtifactIdValue);
 }
 
-function contextForDecision(runId: RunId, inspection: MagazineLoopsInspection): import("./internal-types.ts").WorkflowWaitContext {
-  const wait = pendingWait(inspection);
+function contextForDecision(runId: RunId, inspection: MagazineLoopsInspection, expectedWait?: MagazineLoopsInspection["waits"][number]): import("./internal-types.ts").WorkflowWaitContext {
+  const wait = expectedWait ?? pendingWaitForOffer(inspection);
   if (wait === undefined) {
     throw new MagazineWorkflowError("DECISION_PROVENANCE_REQUIRED", `Run ${runId} has no pending decision wait`);
   }
@@ -466,6 +513,173 @@ function contextForDecision(runId: RunId, inspection: MagazineLoopsInspection): 
   };
 }
 
+function isArticleDecisionWait(wait: MagazineLoopsInspection["waits"][number]): boolean {
+  return wait.key === "article.decision" || wait.key.startsWith("article.decision.");
+}
+
+type EditorOfferBoundary = {
+  readonly task: ArticleDecisionTask;
+  readonly brief: RevisionBrief;
+  readonly route: ArticleReviewRoute;
+  readonly pending: MagazineLoopsInspection["waits"][number];
+};
+
+function validateEditorOfferBoundary(
+  ledger: ArtifactLedger,
+  run: import("../workflow-authority/artifact-ledger.ts").LedgerRun,
+  offer: import("../workflow-authority/artifact-ledger.ts").LedgerOffer,
+  request: ArticleDecisionRequest,
+  pending: MagazineLoopsInspection["waits"][number],
+): EditorOfferBoundary {
+  const taskArtifact = ledger.requireArtifact(offer.taskArtifactId);
+  const task = parseTaskArtifact(ledger, offer.taskArtifactId);
+  const briefArtifact = ledger.requireArtifact(task.revisionBriefArtifactId);
+  const routeArtifact = ledger.requireArtifact(task.routeArtifactId);
+  const brief = parseJsonArtifact(ledger, task.revisionBriefArtifactId, revisionBriefSchema, "revision brief") as RevisionBrief;
+  const route = parseJsonArtifact(ledger, task.routeArtifactId, articleReviewRouteSchema, "review route") as ArticleReviewRoute;
+  if (taskArtifact.kind !== "article_decision_request" || taskArtifact.schemaVersion !== "article-decision-request/1") {
+    throw new MagazineWorkflowError("DECISION_TASK_INVALID", "active decision task has the wrong artifact contract");
+  }
+  if (briefArtifact.kind !== "article_revision_brief" || routeArtifact.kind !== "article_review_route") {
+    throw new MagazineWorkflowError("DECISION_LINEAGE_INVALID", "decision task references the wrong brief or route artifact kind");
+  }
+  if (run.articleExecutionId !== task.articleExecutionId || run.articleId !== task.articleId || run.runId !== task.runId) {
+    throw new MagazineWorkflowError("DECISION_TASK_INVALID", "decision task is not bound to the exact article run");
+  }
+  if (task.expectedDecisionArtifactId !== decisionArtifactId(offer.id)) {
+    throw new MagazineWorkflowError("DECISION_TASK_INVALID", "decision task expected decision artifact does not match the offer");
+  }
+  if (!sameStrings(task.inputArtifactIds, offer.inputArtifactIds) || !sameStrings(task.inputArtifactIds, request.inputArtifactIds)) {
+    throw new MagazineWorkflowError("DECISION_INPUT_MISMATCH", "decision task, offer, and answer do not share the exact immutable inputs");
+  }
+  // The task ID is represented by the ledger key; an answer cannot name a
+  // different task and still use this active offer.
+  if (request.taskArtifactId !== offer.taskArtifactId) throw new MagazineWorkflowError("DECISION_TASK_INVALID", "answer names a different decision task");
+  if (!sameStrings(offer.allowedChoices, task.allowedChoices) || !sameStrings(task.allowedChoices, ["accept", "revise", "drop"])) {
+    throw new MagazineWorkflowError("DECISION_CHOICES_INVALID", "decision offer choices are not the canonical editor choices");
+  }
+  if (route.outcome !== "editor_wait" || !sameStrings(route.allowedChoices, task.allowedChoices)) {
+    throw new MagazineWorkflowError("DECISION_ROUTE_INVALID", "decision task does not reference an editor-wait route with the exact choices");
+  }
+  if (
+    brief.articleId !== task.articleId || brief.manuscriptArtifactId !== task.manuscriptArtifactId
+    || brief.iterationId !== task.iterationId
+    || route.articleId !== brief.articleId || route.manuscriptArtifactId !== brief.manuscriptArtifactId || route.iterationId !== brief.iterationId
+    || brief.cycleId !== task.cycleId || route.cycleId !== task.cycleId
+    || brief.manuscriptRevisionId !== task.manuscriptRevisionId || route.manuscriptRevisionId !== task.manuscriptRevisionId
+    || brief.reviewPlanArtifactId !== task.reviewPlanArtifactId || route.reviewPlanArtifactId !== task.reviewPlanArtifactId
+    || brief.rewriteOrdinal !== task.rewriteOrdinal || route.rewriteOrdinal !== task.rewriteOrdinal
+  ) {
+    throw new MagazineWorkflowError("DECISION_LINEAGE_INVALID", "decision task, brief, and route cross-references do not match");
+  }
+  if (!sameParents(taskArtifact.parents, task.inputArtifactIds, "decision_evidence")) {
+    throw new MagazineWorkflowError("DECISION_LINEAGE_INVALID", "decision task parents do not equal its canonical immutable inputs");
+  }
+  if (!sameParents(routeArtifact.parents, [task.revisionBriefArtifactId], "revision_brief")) {
+    throw new MagazineWorkflowError("DECISION_LINEAGE_INVALID", "review route does not name exactly its revision brief parent");
+  }
+  if (!sameStrings(briefArtifact.parents.map((parent) => parent.artifactId), revisionBriefParents({ brief }))) {
+    throw new MagazineWorkflowError("DECISION_LINEAGE_INVALID", "revision brief parents do not match its declared evidence");
+  }
+  const waitRequest = pending.request;
+  if (
+    typeof waitRequest !== "object" || waitRequest === null
+    || (waitRequest as { readonly offerId?: unknown }).offerId !== offer.id
+    || (waitRequest as { readonly taskArtifactId?: unknown }).taskArtifactId !== offer.taskArtifactId
+    || (waitRequest as { readonly decisionArtifactId?: unknown }).decisionArtifactId !== task.expectedDecisionArtifactId
+    || (waitRequest as { readonly cycleId?: unknown }).cycleId !== task.cycleId
+    || pending.key !== articleDecisionWaitKey(task.cycleId)
+  ) {
+    throw new MagazineWorkflowError("DECISION_PROVENANCE_INVALID", "pending wait is not the exact scoped decision wait for this task");
+  }
+  if (request.offerId !== offer.id || request.taskArtifactId !== offer.taskArtifactId) {
+    throw new MagazineWorkflowError("DECISION_TASK_INVALID", "answer does not name the exact active offer task");
+  }
+  return { task, brief, route, pending };
+}
+
+function parseTaskArtifact(ledger: ArtifactLedger, artifactId: ArtifactId): ArticleDecisionTask {
+  const artifact = ledger.requireArtifact(artifactId);
+  const value = parseArtifactJson(ledger, artifactId);
+  const parsed = articleDecisionTaskSchema.safeParse(value);
+  if (!parsed.success) throw new MagazineWorkflowError("DECISION_TASK_INVALID", "article decision task is not a strict article-decision-task/1 payload");
+  return parsed.data as unknown as ArticleDecisionTask;
+}
+
+function parseJsonArtifact(
+  ledger: ArtifactLedger,
+  artifactId: ArtifactId,
+  schema: { readonly safeParse: (value: unknown) => { readonly success: boolean; readonly data?: unknown } },
+  label: string,
+): unknown {
+  const value = parseArtifactJson(ledger, artifactId);
+  const parsed = schema.safeParse(value);
+  if (!parsed.success) throw new MagazineWorkflowError("DECISION_LINEAGE_INVALID", `${label} does not match its strict schema`);
+  return parsed.data;
+}
+
+function parseArtifactJson(ledger: ArtifactLedger, artifactId: ArtifactId): unknown {
+  const artifact = ledger.requireArtifact(artifactId);
+  if (artifact.payloadKind !== "json" || artifact.mediaType !== "application/json") throw new MagazineWorkflowError("DECISION_LINEAGE_INVALID", `Artifact ${artifactId} is not canonical JSON evidence`);
+  try {
+    return JSON.parse(Buffer.from(ledger.readArtifact(artifactId).bytes).toString("utf8")) as unknown;
+  } catch (error) {
+    throw new MagazineWorkflowError("DECISION_LINEAGE_INVALID", `Artifact ${artifactId} is not valid JSON`, { cause: error });
+  }
+}
+
+/** Verify that the immutable decision artifact still carries the ledger row's
+ * exact validated facts before reconciliation can close the offer. */
+function assertDecisionArtifactMatches(
+  ledger: ArtifactLedger,
+  decision: import("../workflow-authority/artifact-ledger.ts").LedgerDecision,
+): void {
+  const artifact = ledger.requireArtifact(decision.artifactId);
+  if (
+    artifact.kind !== "article_human_decision"
+    || artifact.schemaVersion !== "article-human-decision/1"
+    || artifact.payloadKind !== "json"
+    || artifact.mediaType !== "application/json"
+    || artifact.producingRunId !== decision.runId
+  ) {
+    throw new MagazineWorkflowError("DECISION_ARTIFACT_INVALID", "persisted editor decision artifact is not the exact run-owned contract");
+  }
+  const value = parseArtifactJson(ledger, decision.artifactId);
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new MagazineWorkflowError("DECISION_ARTIFACT_INVALID", "persisted editor decision artifact payload is not an object");
+  }
+  const payload = value as Record<string, unknown>;
+  if (
+    payload.offerId !== decision.offerId
+    || payload.taskArtifactId !== decision.taskArtifactId
+    || !sameStrings(readStringArray(payload.inputArtifactIds), decision.inputArtifactIds)
+    || payload.principalId !== decision.principalId
+    || payload.credentialProfileId !== decision.credentialProfileId
+    || payload.choice !== decision.choice
+    || payload.rationale !== decision.rationale
+    || JSON.stringify(payload.approvedFindingIds ?? null) !== JSON.stringify(decision.approvedFindingIds ?? null)
+    || (payload.additionalRewriteBudget as number | undefined) !== decision.additionalRewriteBudget
+    || payload.validatorVersion !== decision.validatorVersion
+    || !sameStrings(readStringArray(payload.canonicalApprovedFindingIds), decision.canonicalApprovedFindingIds ?? [])
+    || JSON.stringify(payload.rewriteBudget ?? null) !== JSON.stringify(decision.rewriteBudget ?? null)
+  ) {
+    throw new MagazineWorkflowError("DECISION_ARTIFACT_INVALID", "persisted editor decision artifact does not match its validated ledger decision");
+  }
+}
+
+function readStringArray(value: unknown): readonly string[] {
+  if (!Array.isArray(value) || value.some((candidate) => typeof candidate !== "string")) return [];
+  return value as readonly string[];
+}
+
+function sameParents(
+  actual: readonly { readonly artifactId: ArtifactId; readonly relation: string }[],
+  expectedIds: readonly ArtifactId[],
+  relation: string,
+): boolean {
+  return actual.length === expectedIds.length && actual.every((parent, index) => parent.artifactId === expectedIds[index] && parent.relation === relation);
+}
+
 function pendingDecisionArtifactId(value: unknown): ArtifactId | undefined {
   if (typeof value !== "object" || value === null) return undefined;
   const candidate = (value as { readonly decisionArtifactId?: unknown }).decisionArtifactId;
@@ -477,7 +691,7 @@ async function assertReplayMatches(
   request: ArticleDecisionRequest,
   human: AuthenticatedHuman,
 ): Promise<void> {
-  if (existing.runId !== request.runId || existing.offerId !== request.offerId || existing.taskArtifactId !== request.taskArtifactId || !sameStrings(existing.inputArtifactIds, request.inputArtifactIds) || existing.choice !== request.choice || existing.rationale !== request.rationale.trim()) {
+  if (existing.runId !== request.runId || existing.offerId !== request.offerId || existing.taskArtifactId !== request.taskArtifactId || !sameStrings(existing.inputArtifactIds, request.inputArtifactIds) || existing.choice !== request.choice || existing.rationale !== request.rationale.trim() || JSON.stringify(existing.approvedFindingIds ?? null) !== JSON.stringify(request.approvedFindingIds ?? null) || existing.additionalRewriteBudget !== request.additionalRewriteBudget) {
     throw new ArtifactLedgerError("DECISION_ALREADY_RECORDED", `Offer ${request.offerId} already has a different decision`);
   }
   const description = await human.describe();

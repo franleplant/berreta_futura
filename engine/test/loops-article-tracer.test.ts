@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import { chmod, cp, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from "node:fs/promises";
 import { promisify } from "node:util";
-import { execFile as execFileCallback } from "node:child_process";
-import { spawnSync } from "node:child_process";
+import { execFile as execFileCallback, spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { delimiter, join, resolve } from "node:path";
 import test, { type TestContext } from "node:test";
@@ -14,7 +13,6 @@ import { materializeNativeInputRevision } from "../durable/native-input-revision
 import type { InputRevisionRef } from "../durable/types.ts";
 import { SQLiteDurableRunStore } from "@loops/core";
 import { ArtifactLedger } from "../workflow-authority/artifact-ledger.ts";
-import { HumanDecisionAuthority } from "../workflow-authority/human-decisions.ts";
 import { MagazineWorkflowEngine, MagazineWorkflowError } from "../workflows/magazine-workflow-engine.ts";
 import type { WorkflowWaitContext } from "../workflows/internal-types.ts";
 import { inspectRendererToolchain } from "../renderer-adapter/toolchain.ts";
@@ -48,7 +46,7 @@ function guardedTest(name: string, fn: (context: TestContext) => Promise<void>):
 }
 
 if (process.env.MAGAZINE_TRACER_REVIEWER_CHILD !== "1") {
-  test("tracer workflow integration runs in one isolated reviewer child", () => {
+  test("tracer workflow integration runs in one isolated reviewer child", { timeout: 150_000 }, async () => {
     const secret = "magazine-tracer-reviewer-secret";
     const childEnvironment: NodeJS.ProcessEnv = {
       ...process.env,
@@ -58,18 +56,73 @@ if (process.env.MAGAZINE_TRACER_REVIEWER_CHILD !== "1") {
       NODE_TLS_REJECT_UNAUTHORIZED: "0",
     };
     delete childEnvironment.NODE_TEST_CONTEXT;
-    const child = spawnSync(process.execPath, [
+    const child = await runTracerReviewerChild([
       "--require",
       join(process.cwd(), "engine/test/fixtures/closed-reviewer-static-preload.cjs"),
       "--test",
+      "--test-reporter=tap",
       new URL(import.meta.url).pathname,
-    ], {
+    ], childEnvironment, 150_000);
+    const output = `${child.stdout}\n${child.stderr}`;
+    assert.equal(child.timedOut, false, output);
+    assert.equal(child.error, undefined, output);
+    assert.equal(child.exitCode, 0, output);
+    // A clean exit is not enough: the parent must prove the isolated child
+    // actually discovered and ran its TAP tests.
+    assert.match(child.stdout, /^TAP version 13\s*$/mu, output);
+    const plan = [...child.stdout.matchAll(/^1\.\.(\d+)\s*$/gmu)].at(-1)?.[1];
+    assert.ok(plan !== undefined && Number(plan) > 0, output);
+    const results = [...child.stdout.matchAll(/^(ok|not ok) \d+ - /gmu)];
+    assert.equal(results.length, Number(plan), output);
+    assert.equal(results.filter((match) => match[1] === "not ok").length, 0, output);
+  });
+}
+
+type TracerChildResult = {
+  readonly stdout: string;
+  readonly stderr: string;
+  readonly exitCode: number | null;
+  readonly signal: NodeJS.Signals | null;
+  readonly error?: Error;
+  readonly timedOut: boolean;
+};
+
+function runTracerReviewerChild(
+  args: readonly string[],
+  env: NodeJS.ProcessEnv,
+  timeoutMs: number,
+): Promise<TracerChildResult> {
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, [...args], {
       cwd: process.cwd(),
-      encoding: "utf8",
-      env: childEnvironment,
-      timeout: 180_000,
+      env,
+      stdio: ["ignore", "pipe", "pipe"],
     });
-    assert.equal(child.status, 0, `${child.stdout}\n${child.stderr}`);
+    let stdout = "";
+    let stderr = "";
+    let error: Error | undefined;
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      child.kill("SIGKILL");
+    }, timeoutMs);
+    child.stdout.on("data", (chunk: Buffer | string) => {
+      const text = String(chunk);
+      stdout += text;
+      process.stdout.write(text);
+    });
+    child.stderr.on("data", (chunk: Buffer | string) => {
+      const text = String(chunk);
+      stderr += text;
+      process.stderr.write(text);
+    });
+    child.once("error", (cause) => {
+      error = cause instanceof Error ? cause : new Error(String(cause));
+    });
+    child.once("close", (exitCode, signal) => {
+      clearTimeout(timer);
+      resolve({ stdout, stderr, exitCode, signal, ...(error === undefined ? {} : { error }), timedOut });
+    });
   });
 }
 
@@ -447,7 +500,7 @@ guardedTest("inspect reconciles a wait answered just before a worker crash", asy
   try {
     const waiting = await start(f);
     const offer = waiting.activeOffer!;
-    const authority = new HumanDecisionAuthority({ ledger: f.ledger });
+    const authority = f.ledger.createHumanDecisionAuthority();
     const loops = new SQLiteDurableRunStore(join(f.root, "loops.sqlite"));
     const inspection = loops.inspectRun(waiting.runId)!;
     const pending = inspection.waits.find((candidate) => candidate.waitId === offer.waitId);

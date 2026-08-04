@@ -204,7 +204,8 @@ const noAgentBackend = {
   },
 };
 
-function isArticleResult(value: unknown): value is import("../contracts/workflow-run.ts").ArticleWorkflowResult {
+function isArticleResult(value: unknown): value is import("../contracts/workflow-run.ts").ArticleWorkflowResult | import("../contracts/workflow-run.ts").ArticleWorkflowRouteResult {
   return typeof value === "object" && value !== null &&
-    (value as { readonly schemaVersion?: unknown }).schemaVersion === "magazine-article-workflow-result/1";
+    ((value as { readonly schemaVersion?: unknown }).schemaVersion === "magazine-article-workflow-result/1"
+      || (value as { readonly schemaVersion?: unknown }).schemaVersion === "magazine-article-route-result/1");
 }
