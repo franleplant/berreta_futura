@@ -19,6 +19,12 @@ import type {
   ResolvedArticleProductionProfile,
   ResolvedReviewPlan,
 } from "../../contracts/production-plan.ts";
+import {
+  articleRevisionContextParents,
+  parseArticleRevisionContext,
+  type ArticleRevisionContext,
+} from "../../article-production/revision.ts";
+import { articleReviewRouteSchema, type ArticleReviewRoute } from "../../article-production/review-cycle.ts";
 import type { LoopsArticleEntryInput } from "../../durable/write-pipeline.ts";
 import type { InputRevisionRef } from "../../durable/types.ts";
 import type { ArticleAttemptExecutionResult, ArticleAttemptRunner } from "../../article-production/attempts.ts";
@@ -89,14 +95,24 @@ export type ClosedWriterProfileEnvelope = {
   readonly writerReviewMaterialArtifacts?: Readonly<Record<string, ArtifactId>>;
 };
 
-export type ClosedWriterExecutionRequest = {
+type ClosedWriterExecutionRequestBase = {
   readonly worker: AuthorizedWorker;
   readonly articleExecutionId: ArticleExecutionId;
   readonly operationKey: string;
   readonly currentManuscriptArtifactId: ArtifactId;
   readonly productionProfileArtifactId: ArtifactId;
-  readonly revisionBriefArtifactId?: ArtifactId;
 };
+
+export type ClosedWriterExecutionRequest = ClosedWriterExecutionRequestBase & ({
+  /** Initial writer calls have no prior revision package. */
+  readonly mode?: "initial";
+  readonly revisionContextArtifactId?: never;
+} | {
+  /** Rewrites must name the exact immutable ID-only revision context. */
+  readonly mode: "rewrite";
+  /** ID-only package containing the exact current brief, route, and carry set. */
+  readonly revisionContextArtifactId: ArtifactId;
+});
 
 export type ClosedWriterStep = <T>(
   key: string,
@@ -194,6 +210,8 @@ type LoadedWriterPackage = {
   readonly entry: LoopsArticleEntryInput;
   readonly materials: ArticleMaterialSet;
   readonly materialBytes: readonly { readonly artifact: LedgerArtifact; readonly classification: string; readonly bytes: Uint8Array }[];
+  readonly revisionContext?: { readonly artifact: LedgerArtifact; readonly bytes: Uint8Array; readonly value: ArticleRevisionContext };
+  readonly route?: { readonly artifact: LedgerArtifact; readonly bytes: Uint8Array; readonly value: ArticleReviewRoute };
   readonly revisionBrief?: { readonly artifact: LedgerArtifact; readonly bytes: Uint8Array; readonly value: RevisionBrief };
   readonly findings: readonly RevisionFinding[];
 };
@@ -216,6 +234,39 @@ function loadWriterPackage(ledger: ArtifactLedger, request: ClosedWriterExecutio
   assertFixedModelPolicy(entry);
   assertProfileParents(ledger, profileArtifact, entry);
 
+  const revisionContext = request.revisionContextArtifactId === undefined
+    ? undefined
+    : readRevisionContext(
+      ledger,
+      request.revisionContextArtifactId,
+      run.runId,
+      request.articleExecutionId,
+      request.currentManuscriptArtifactId,
+    );
+  const revisionBrief = revisionContext === undefined
+    ? undefined
+    : readRevisionBrief(
+      ledger,
+      revisionContext.value.revisionBriefArtifactId,
+      run.runId,
+      entry.articleId,
+      request.currentManuscriptArtifactId,
+    );
+  const route = revisionContext === undefined
+    ? undefined
+    : readRevisionRoute(
+      ledger,
+      revisionContext.value.routeArtifactId,
+      run.runId,
+      entry.articleId,
+      request.currentManuscriptArtifactId,
+      revisionContext.value.cycleId,
+      revisionContext.value.revisionBriefArtifactId,
+    );
+  if (revisionContext !== undefined && revisionBrief !== undefined && route !== undefined && (revisionBrief.value.cycleId !== revisionContext.value.cycleId || revisionBrief.value.rewriteOrdinal !== revisionContext.value.rewriteOrdinal || route.value.rewriteOrdinal !== revisionContext.value.rewriteOrdinal)) {
+    throw new ClosedWriterError("WRITER_REVISION_CONTEXT_INVALID", "writer revision context, brief, and route disagree on the current cycle");
+  }
+
   const context: ArticleMaterialContext = {
     articleId: entry.articleId,
     contentMode: entry.contentMode,
@@ -226,16 +277,21 @@ function loadWriterPackage(ledger: ArtifactLedger, request: ClosedWriterExecutio
     materializedInputs: entry.materializedInputs,
     ...(envelope.articleBriefArtifactId === undefined ? {} : { articleBriefArtifactId: envelope.articleBriefArtifactId }),
     ...(envelope.editionContextArtifactId === undefined ? {} : { editionContextArtifactId: envelope.editionContextArtifactId }),
+    ...(revisionContext === undefined ? {} : {
+      revisionContextArtifactId: request.revisionContextArtifactId,
+      revisionBriefArtifactId: revisionContext.value.revisionBriefArtifactId,
+      routeArtifactId: revisionContext.value.routeArtifactId,
+      ...(revisionContext.value.priorWorkingNotesArtifactId === undefined ? {} : { priorWorkingNotesArtifactId: revisionContext.value.priorWorkingNotesArtifactId }),
+      ...(revisionContext.value.priorFindingDispositionsArtifactId === undefined ? {} : { priorFindingDispositionsArtifactId: revisionContext.value.priorFindingDispositionsArtifactId }),
+      priorReviewMaterialArtifactIds: revisionContext.value.priorReviewMaterialArtifactIds,
+      humanRulingArtifactIds: revisionContext.value.humanRulingArtifactIds,
+      ...(revisionContext.value.editorDecisionArtifactId === undefined ? {} : { editorDecisionArtifactId: revisionContext.value.editorDecisionArtifactId }),
+    }),
     ...(envelope.sourceApprovalArtifactIds === undefined ? {} : { sourceApprovalArtifactIds: envelope.sourceApprovalArtifactIds }),
     ...(envelope.writerReviewMaterialArtifacts === undefined ? {} : { writerReviewMaterialArtifacts: envelope.writerReviewMaterialArtifacts }),
   };
-  const revisionBrief = request.revisionBriefArtifactId === undefined
-    ? undefined
-    : readRevisionBrief(ledger, request.revisionBriefArtifactId, run.runId, entry.articleId, request.currentManuscriptArtifactId);
   const selection: ArticleMaterialSelectionContext = {
     manuscriptArtifactId: request.currentManuscriptArtifactId,
-    ...(request.revisionBriefArtifactId === undefined ? {} : { findingArtifacts: [request.revisionBriefArtifactId] }),
-    ...(revisionBrief === undefined || revisionBrief.value.humanRulings.length === 0 ? {} : { rulingArtifacts: revisionBrief.value.humanRulings }),
     ...(envelope.writerReviewMaterialArtifacts === undefined ? {} : { writerReviewMaterialArtifacts: envelope.writerReviewMaterialArtifacts }),
   };
   const materials = selectArticleWriterMaterials(context, selection);
@@ -246,15 +302,29 @@ function loadWriterPackage(ledger: ArtifactLedger, request: ClosedWriterExecutio
     materials,
   });
   const profileParents = new Set(profileArtifact.parents.map((parent) => parent.artifactId));
+  const declaredMaterialIds = new Set(entry.materializedInputs.flatMap((input) => input.artifacts.map((artifact) => artifact.artifactId)));
+  const revisionParents = new Set(revisionContext?.artifact.parents.map((parent) => parent.artifactId) ?? []);
   const materialBytes = materials.artifacts.map((material) => {
     const read = ledger.readArtifact(material.artifactId);
-    if (material.artifactId !== request.currentManuscriptArtifactId && material.artifactId !== request.revisionBriefArtifactId && !profileParents.has(material.artifactId)) {
+    if (material.artifactId !== request.currentManuscriptArtifactId && material.artifactId !== request.revisionContextArtifactId && !revisionParents.has(material.artifactId) && !profileParents.has(material.artifactId) && !declaredMaterialIds.has(material.artifactId)) {
       throw new ClosedWriterError("WRITER_MATERIAL_LINEAGE_INVALID", "writer material is not bound by the resolved profile lineage");
     }
     return { artifact: read.artifact, classification: material.classification, bytes: read.bytes };
   });
   const findings = revisionBrief === undefined ? [] : revisionFindings(revisionBrief.value);
-  return { run, profileArtifact, profileBytes: profileRead.bytes, envelope, entry, materials, materialBytes, ...(revisionBrief === undefined ? {} : { revisionBrief }), findings };
+  return {
+    run,
+    profileArtifact,
+    profileBytes: profileRead.bytes,
+    envelope,
+    entry,
+    materials,
+    materialBytes,
+    ...(revisionContext === undefined ? {} : { revisionContext }),
+    ...(route === undefined ? {} : { route }),
+    ...(revisionBrief === undefined ? {} : { revisionBrief }),
+    findings,
+  };
 }
 
 function buildCanonicalPrompt(loaded: LoadedWriterPackage): string {
@@ -309,6 +379,7 @@ function resultArtifacts(
     loaded.profileArtifact.id,
     ...loaded.materials.artifactIds,
   ]).map((artifactId) => ({ artifactId, relation: "writer_input" }));
+  const writerInputArtifactIds = parents.map((parent) => parent.artifactId);
   const metadata: JsonObject = {
     articleId: loaded.entry.articleId,
     revisionId: `writer-revision:${claim.articleExecutionId}:${claim.operationKey}`,
@@ -317,8 +388,13 @@ function resultArtifacts(
     access: claim.access,
     writerExecutionClass: CLOSED_WRITER_EXECUTION_CLASS,
     writerRuntimeIdentity: CLOSED_WRITER_RUNTIME_IDENTITY as unknown as JsonObject,
+    writerInputArtifactIds: writerInputArtifactIds as unknown as JsonValue,
     writerPromptDigest: `sha256:${createHash("sha256").update(prompt, "utf8").digest("hex")}`,
     providerResponseId: responseId,
+    ...(loaded.revisionContext === undefined ? {} : { revisionContextArtifactId: loaded.revisionContext.artifact.id }),
+    ...(loaded.revisionBrief === undefined ? {} : { revisionBriefArtifactId: loaded.revisionBrief.artifact.id }),
+    ...(loaded.route === undefined ? {} : { routeArtifactId: loaded.route.artifact.id }),
+    ...(loaded.revisionContext === undefined ? {} : { cycleId: loaded.revisionContext.value.cycleId, rewriteOrdinal: loaded.revisionContext.value.rewriteOrdinal }),
   };
   return [
     {
@@ -424,7 +500,70 @@ type RevisionBrief = {
   readonly reviewResultArtifactIds: readonly ArtifactId[];
   readonly measurementArtifactId: ArtifactId;
   readonly reviewOutputArtifactIds: readonly ArtifactId[];
+  readonly iterationId: string;
+  readonly cycleId?: string;
+  readonly manuscriptRevisionId?: string;
+  readonly reviewPlanArtifactId?: ArtifactId;
+  readonly rewriteOrdinal?: number;
 };
+
+function readRevisionContext(
+  ledger: ArtifactLedger,
+  artifactId: ArtifactId,
+  runId: string,
+  articleExecutionId: ArticleExecutionId,
+  manuscriptArtifactId: ArtifactId,
+): { readonly artifact: LedgerArtifact; readonly bytes: Uint8Array; readonly value: ArticleRevisionContext } {
+  const read = ledger.readArtifact(artifactId);
+  if (read.artifact.kind !== "article_revision_context" || read.artifact.schemaVersion !== "article-revision-context/1" || read.artifact.mediaType !== "application/json" || read.artifact.payloadKind !== "json" || read.artifact.producingRunId !== runId) {
+    throw new ClosedWriterError("WRITER_REVISION_CONTEXT_INVALID", "writer revision context is not the exact run-owned artifact");
+  }
+  let value: ArticleRevisionContext;
+  try {
+    value = parseArticleRevisionContext(parseJsonBytes(read.bytes, "revision context"));
+  } catch (error) {
+    if (error instanceof ClosedWriterError) throw error;
+    throw new ClosedWriterError("WRITER_REVISION_CONTEXT_INVALID", "writer revision context does not match its strict schema", { cause: error });
+  }
+  if (value.articleExecutionId !== articleExecutionId || value.previousManuscriptArtifactId !== manuscriptArtifactId || read.artifact.metadata.articleExecutionId !== articleExecutionId || read.artifact.metadata.cycleId !== value.cycleId || read.artifact.metadata.rewriteOrdinal !== value.rewriteOrdinal) {
+    throw new ClosedWriterError("WRITER_REVISION_CONTEXT_INVALID", "writer revision context does not match the current article execution");
+  }
+  const expectedParents = articleRevisionContextParents(value);
+  if (!sameParents(read.artifact.parents, expectedParents)) {
+    throw new ClosedWriterError("WRITER_REVISION_CONTEXT_LINEAGE_INVALID", "revision context parents do not equal its exact immutable references");
+  }
+  for (const parent of expectedParents) ledger.requireArtifact(parent.artifactId);
+  return { artifact: read.artifact, bytes: read.bytes, value };
+}
+
+function readRevisionRoute(
+  ledger: ArtifactLedger,
+  artifactId: ArtifactId,
+  runId: string,
+  articleId: string,
+  manuscriptArtifactId: ArtifactId,
+  cycleId: string,
+  revisionBriefArtifactId: ArtifactId,
+): { readonly artifact: LedgerArtifact; readonly bytes: Uint8Array; readonly value: ArticleReviewRoute } {
+  const read = ledger.readArtifact(artifactId);
+  if (read.artifact.kind !== "article_review_route" || read.artifact.schemaVersion !== "article-review-route/1" || read.artifact.mediaType !== "application/json" || read.artifact.payloadKind !== "json" || read.artifact.producingRunId !== runId) {
+    throw new ClosedWriterError("WRITER_REVIEW_ROUTE_INVALID", "writer route is not the exact run-owned artifact");
+  }
+  let raw: unknown;
+  try { raw = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(read.bytes)); } catch (error) {
+    throw new ClosedWriterError("WRITER_REVIEW_ROUTE_INVALID", "writer route is not valid JSON", { cause: error });
+  }
+  const parsed = articleReviewRouteSchema.safeParse(raw);
+  if (!parsed.success) throw new ClosedWriterError("WRITER_REVIEW_ROUTE_INVALID", "writer route does not match its strict schema");
+  const value = parsed.data as unknown as ArticleReviewRoute;
+  if (value.articleId !== articleId || value.manuscriptArtifactId !== manuscriptArtifactId || value.cycleId !== cycleId || read.artifact.parents.length !== 1 || read.artifact.parents[0]?.artifactId !== revisionBriefArtifactId) {
+    throw new ClosedWriterError("WRITER_REVIEW_ROUTE_INVALID", "writer route does not match the current revision context");
+  }
+  if (read.artifact.parents.length !== 1 || read.artifact.parents[0]?.relation !== "revision_brief") {
+    throw new ClosedWriterError("WRITER_REVIEW_ROUTE_LINEAGE_INVALID", "writer route parent is not the exact revision brief");
+  }
+  return { artifact: read.artifact, bytes: read.bytes, value };
+}
 
 function readRevisionBrief(
   ledger: ArtifactLedger,
@@ -438,7 +577,7 @@ function readRevisionBrief(
     throw new ClosedWriterError("WRITER_REVISION_BRIEF_INVALID", "writer revision brief is not the exact run-owned artifact");
   }
   const raw = parseJsonBytes(read.bytes, "revision brief");
-  exactKeys(raw, ["schemaVersion", "articleId", "iterationId", "manuscriptArtifactId", "mustFix", "consider", "humanRulings", "reviewResultArtifactIds", "measurementArtifactId", "reviewOutputArtifactIds"], "revision brief");
+  exactKeys(raw, ["schemaVersion", "articleId", "iterationId", "manuscriptArtifactId", "mustFix", "consider", "humanRulings", "reviewResultArtifactIds", "measurementArtifactId", "reviewOutputArtifactIds", "cycleId", "manuscriptRevisionId", "reviewPlanArtifactId", "rewriteOrdinal"], "revision brief");
   if (raw.schemaVersion !== REVISION_BRIEF_VERSION || raw.articleId !== articleId || raw.manuscriptArtifactId !== manuscriptArtifactId || !text(raw.iterationId) || !text(raw.measurementArtifactId)) {
     throw new ClosedWriterError("WRITER_REVISION_BRIEF_INVALID", "writer revision brief does not match the current manuscript");
   }
@@ -464,6 +603,11 @@ function readRevisionBrief(
       reviewResultArtifactIds,
       measurementArtifactId: raw.measurementArtifactId as ArtifactId,
       reviewOutputArtifactIds,
+      iterationId: raw.iterationId as string,
+      ...(raw.cycleId === undefined ? {} : { cycleId: raw.cycleId as string }),
+      ...(raw.manuscriptRevisionId === undefined ? {} : { manuscriptRevisionId: raw.manuscriptRevisionId as string }),
+      ...(raw.reviewPlanArtifactId === undefined ? {} : { reviewPlanArtifactId: raw.reviewPlanArtifactId as ArtifactId }),
+      ...(raw.rewriteOrdinal === undefined ? {} : { rewriteOrdinal: raw.rewriteOrdinal as number }),
     },
   };
 }
@@ -497,14 +641,21 @@ function stepInput(request: ClosedWriterExecutionRequest): JsonObject {
     operationKey: request.operationKey,
     currentManuscriptArtifactId: request.currentManuscriptArtifactId,
     productionProfileArtifactId: request.productionProfileArtifactId,
-    ...(request.revisionBriefArtifactId === undefined ? {} : { revisionBriefArtifactId: request.revisionBriefArtifactId }),
+    ...(request.revisionContextArtifactId === undefined ? {} : { revisionContextArtifactId: request.revisionContextArtifactId }),
     writerRuntimeIdentity: CLOSED_WRITER_RUNTIME_IDENTITY as unknown as JsonObject,
   };
 }
 
 function validateRequest(request: ClosedWriterExecutionRequest): void {
-  if (!text(request.articleExecutionId) || !text(request.operationKey) || !text(request.currentManuscriptArtifactId) || !text(request.productionProfileArtifactId)) {
+  if (!text(request.articleExecutionId) || !text(request.operationKey) || !text(request.currentManuscriptArtifactId) || !text(request.productionProfileArtifactId) || request.revisionContextArtifactId !== undefined && !text(request.revisionContextArtifactId)) {
     throw new ClosedWriterError("WRITER_REQUEST_INVALID", "closed writer request requires exact immutable IDs");
+  }
+  const mode = request.mode ?? "initial";
+  if (mode === "rewrite" && request.revisionContextArtifactId === undefined) {
+    throw new ClosedWriterError("WRITER_MODE_INVALID", "rewrite writer requests require an exact revision context artifact");
+  }
+  if (mode === "initial" && request.revisionContextArtifactId !== undefined) {
+    throw new ClosedWriterError("WRITER_MODE_INVALID", "initial writer requests cannot carry a revision context artifact");
   }
 }
 
@@ -609,4 +760,10 @@ function optionalArtifactMap(value: unknown, label: string): Readonly<Record<str
 function artifactIdsValue(value: unknown, label: string): readonly ArtifactId[] { if (!stringArray(value) || new Set(value).size !== value.length) throw new ClosedWriterError("WRITER_REVISION_BRIEF_INVALID", `${label} is invalid`); return value as ArtifactId[]; }
 function jsonObjectArray(value: unknown, label: string): readonly JsonObject[] { if (!Array.isArray(value) || value.some((item) => typeof item !== "object" || item === null || Array.isArray(item))) throw new ClosedWriterError("WRITER_REVISION_BRIEF_INVALID", `${label} is invalid`); return value as JsonObject[]; }
 function sameStrings(left: readonly string[], right: readonly string[]): boolean { return left.length === right.length && left.every((value, index) => value === right[index]); }
+function sameParents(left: readonly { readonly artifactId: ArtifactId; readonly relation: string }[], right: readonly { readonly artifactId: ArtifactId; readonly relation: string }[]): boolean {
+  return left.length === right.length && left.every((parent, index) => {
+    const expected = right[index];
+    return expected !== undefined && expected.artifactId === parent.artifactId && expected.relation === parent.relation;
+  });
+}
 function uniqueIds(values: readonly ArtifactId[]): readonly ArtifactId[] { return [...new Set(values)]; }

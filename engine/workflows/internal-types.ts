@@ -25,6 +25,7 @@ import type {
 import type { RendererIdentity } from "./renderer-identity.ts";
 import type { ScopedArticleMeasurementArtifactReader } from "../renderer-adapter/article-measurement.ts";
 import type { ArticleReviewPanelInput, ArticleReviewPanelResult } from "./article-review-panel.ts";
+import type { WriterResult } from "../executors/closed-writer/writer-result.ts";
 import type {
   ArticleMaterialContext,
   ArticleMaterialSelectionContext,
@@ -173,6 +174,18 @@ export type ArticleWorkflowPorts = {
     input: ArticleReviewPanelInput,
     context: MagazineWorkflowContext,
   ) => Promise<ArticleReviewPanelResult>;
+  /** Closed, source-aware writer. The durable adapter owns its retry policy. */
+  readonly runWriter?: (
+    input: {
+      readonly articleExecutionId: ArticleExecutionId;
+      readonly operationKey: string;
+      readonly mode?: "initial" | "rewrite";
+      readonly currentManuscriptArtifactId: ArtifactId;
+      readonly productionProfileArtifactId: ArtifactId;
+      readonly revisionContextArtifactId: ArtifactId;
+    },
+    context: MagazineWorkflowContext,
+  ) => Promise<ArticleAttemptExecutionResult<WriterResult>>;
   readonly requireDecision: (decisionArtifactId: ArtifactId) => LedgerDecision;
   readonly promote: (input: {
     readonly articleExecutionId: ArticleExecutionId;
@@ -198,6 +211,8 @@ export type ArticleRuntimeStartArgs = {
   readonly measurementProfileArtifactId: ArtifactId;
   readonly expectedParentRevisionId: RevisionId | null;
   readonly promotionId: PromotionId;
+  /** Exact run-owned resolved profile envelope consumed by the closed writer. */
+  readonly productionProfileArtifactId?: ArtifactId;
   readonly revisionId: RevisionId;
   readonly entryArtifactId: ArtifactId;
   /** Exact immutable profile-backed workflow input. */

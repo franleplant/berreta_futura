@@ -91,8 +91,11 @@ export class ArticlePromotionAuthority {
 
   async promote(request: ArticlePromotionRequest): Promise<ArticlePromotion> {
     const run = this.#ledger.requireRun(request.runId);
-    const decision = this.#ledger.requireDecisionForRun(request.runId);
-    if (decision.artifactId !== request.request.decisionArtifactIds[0]) {
+    const decisionArtifactId = request.request.decisionArtifactIds[0];
+    const decision = decisionArtifactId === undefined
+      ? undefined
+      : this.#ledger.getDecisionByArtifactId(request.runId, decisionArtifactId);
+    if (decision === undefined) {
       throw new ArtifactLedgerError("PROMOTION_INVALID", "Durable promotion decision artifact does not match the accepted offer");
     }
     const decisionEvidence = request.request.decisionEvidenceArtifactIds ?? decision.inputArtifactIds;

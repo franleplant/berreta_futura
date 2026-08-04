@@ -26,7 +26,6 @@ import { createArticleWorkflowPorts } from "./article-runtime.ts";
 import {
   decisionArtifactId,
   articleDecisionWaitKey,
-  manuscriptId,
   measurementProfileId,
 } from "./article-workflow.ts";
 import {
@@ -84,6 +83,7 @@ export class MagazineWorkflowEngine {
       projectRoot: options.projectRoot,
       ...(options.articleReviewWorkers === undefined ? {} : { articleReviewWorkers: options.articleReviewWorkers }),
       ...(options.articleReviewCredentials === undefined ? {} : { articleReviewCredentials: options.articleReviewCredentials }),
+      ...(options.articleWriter === undefined ? {} : { articleWriter: options.articleWriter }),
     });
     this.#validateRuntimeResources = ports.validateRuntimeResources ?? (async () => undefined);
     this.#loops = createDurableLoopsAdapter({
@@ -138,6 +138,7 @@ export class MagazineWorkflowEngine {
     const seedId = `art-input-manuscript-${safeIdentity(runId)}` as ArtifactId;
     const measurementProfileArtifactId = `art-input-measurement-profile-${safeIdentity(runId)}` as ArtifactId;
     const entryArtifactId = `art-article-workflow-entry-${safeIdentity(runId)}` as ArtifactId;
+    const productionProfileArtifactId = `art-resolved-production-profile-${safeIdentity(runId)}` as ArtifactId;
     const args: ArticleRuntimeStartArgs = {
       runId,
       articleExecutionId,
@@ -152,6 +153,7 @@ export class MagazineWorkflowEngine {
       promotionId: options.promotionId ?? (`promotion-${safeIdentity(runId)}` as import("../contracts/index.ts").PromotionId),
       revisionId: options.revisionId ?? newRevisionId(this.#clock.now()),
       entryArtifactId,
+      productionProfileArtifactId,
       entry: profile.loopsInput,
       rendererIdentity,
       review: {
@@ -221,6 +223,27 @@ export class MagazineWorkflowEngine {
       payload: { kind: "json", value: profile.loopsInput as unknown as JsonObject },
       parents: profile.loopsInput.materializedInputs.flatMap((input) => input.artifacts.map((artifact) => ({ artifactId: artifact.artifactId, relation: "entry_input" }))),
       metadata: { articleId, entrySchemaVersion: profile.loopsInput.schemaVersion },
+      runId,
+    });
+    this.#ledger.createArtifact({
+      id: productionProfileArtifactId,
+      kind: "resolved_article_production_profile",
+      schemaVersion: "resolved-article-production-profile/1",
+      mediaType: "application/json",
+      origin: "machine",
+      payload: {
+        kind: "json",
+        value: {
+          schemaVersion: "resolved-article-production-profile/1",
+          entry: profile.loopsInput,
+        } as unknown as JsonObject,
+      },
+      parents: profile.loopsInput.inputBindings.map((binding) => ({ artifactId: binding.artifactId, relation: "input_binding" })),
+      metadata: {
+        articleId,
+        profileArtifactId: productionProfileArtifactId,
+        resolvedProfileId: profile.productionProfile.profileId,
+      },
       runId,
     });
     try {
@@ -306,7 +329,6 @@ export class MagazineWorkflowEngine {
     const result = loops.result;
     const status = statusFromLoops(loops, result);
     const current = this.#ledger.requireRun(runId);
-    const accepted = this.#ledger.getArtifact(manuscriptId(runId));
     const args = current.args as unknown as ArticleStartRequest;
     const decision = current.decisionArtifactId === undefined ? undefined : this.#ledger.getDecision(offer?.id ?? "");
     return {
@@ -315,7 +337,8 @@ export class MagazineWorkflowEngine {
       articleId: current.articleId,
       editionId: current.editionId ?? "",
       status,
-      manuscriptArtifactId: accepted?.id ?? current.manuscriptArtifactId,
+      manuscriptArtifactId: current.manuscriptArtifactId,
+      ...(current.currentRevisionRecordArtifactId === undefined ? {} : { currentRevisionRecordArtifactId: current.currentRevisionRecordArtifactId }),
       measurementProfileArtifactId: args.measurementProfileArtifactId,
       ...(current.measurementArtifactId === undefined ? {} : { measurementArtifactId: current.measurementArtifactId }),
       ...(current.decisionArtifactId === undefined ? {} : { decisionArtifactId: current.decisionArtifactId }),

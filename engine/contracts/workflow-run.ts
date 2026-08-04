@@ -71,6 +71,7 @@ export type ArticleWorkflowResult = {
   readonly articleId: string;
   readonly status: Exclude<ArticleWorkflowStatus, "running" | "waiting">;
   readonly manuscriptArtifactId: ArtifactId;
+  readonly currentRevisionRecordArtifactId?: ArtifactId;
   readonly measurementArtifactId: ArtifactId;
   readonly decisionArtifactId: ArtifactId;
   readonly promotionId?: PromotionId;
@@ -97,6 +98,7 @@ export type ArticleWorkflowView = {
   readonly editionId: string;
   readonly status: ArticleWorkflowStatus;
   readonly manuscriptArtifactId: ArtifactId;
+  readonly currentRevisionRecordArtifactId?: ArtifactId;
   readonly measurementProfileArtifactId: ArtifactId;
   readonly measurementArtifactId?: ArtifactId;
   readonly decisionArtifactId?: ArtifactId;
@@ -175,6 +177,8 @@ export type MagazineWorkflowEngineOptions = {
     readonly sourceBlindReviewer: import("../authority/local-authority.ts").AuthorizedWorker;
     readonly measurementTool: import("../authority/local-authority.ts").AuthorizedWorker;
   };
+  /** Optional distinct authenticated source-aware writer identity. */
+  readonly articleWriter?: import("../authority/local-authority.ts").AuthorizedWorker;
   /** Owner-private OpenAI credential resource used by the closed reviewer. */
   readonly articleReviewCredentials?: import("../executors/closed-writer/credentials.ts").ClosedWriterCredentialResource;
   /** Operational lease time is separate from the domain timestamp clock. */
