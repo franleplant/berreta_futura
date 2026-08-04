@@ -278,6 +278,16 @@ function validateRequest(request: DurablePromotionRequest): void {
     (request.inputRevisions ?? []).map((ref) => `${ref.kind}:${ref.editionId ?? ""}:${ref.logicalId}:${ref.revisionId}`),
     "InputRevision references",
   );
+  if (request.dependencies !== undefined) {
+    const ids = request.dependencies.map((dependency) => dependency.artifactId);
+    if (!sameSequence(ids, request.inputArtifactIds) || new Set(ids).size !== ids.length) {
+      throw new DurableStoreError("DURABLE_INPUT_MISMATCH", "durable dependencies do not equal the exact input artifact projection");
+    }
+    const inputDependencies = request.dependencies.filter((dependency) => dependency.kind === "input_revision");
+    if (!sameRevisionSequence(request.inputRevisions, uniqueInputRevisions(inputDependencies.map((dependency) => dependency.revision)))) {
+      throw new DurableStoreError("DURABLE_INPUT_MISMATCH", "durable dependencies do not equal the exact input revision projection");
+    }
+  }
 }
 
 /** Convert the public binding shape to the historical internal projections. */
@@ -288,6 +298,32 @@ type NormalizedDurablePromotionRequest = DurablePromotionRequest & {
 };
 
 function normalizePromotionRequest(request: DurablePromotionRequest): NormalizedDurablePromotionRequest {
+  if (request.dependencies !== undefined) {
+    const dependencies = request.dependencies;
+    if (dependencies.length === 0 || dependencies.some((dependency) => typeof dependency !== "object" || dependency === null || typeof dependency.artifactId !== "string")) {
+      throw new DurableStoreError("DURABLE_REQUEST_INVALID", "durable checkpoint dependencies are invalid");
+    }
+    const dependencyIds = dependencies.map((dependency) => dependency.artifactId);
+    if (!sameSequence(request.inputArtifactIds ?? [], dependencyIds) || new Set(dependencyIds).size !== dependencyIds.length) {
+      throw new DurableStoreError("DURABLE_INPUT_MISMATCH", "dependency artifact IDs must equal the exact parent projection");
+    }
+    const inputDependencies = dependencies.filter((dependency): dependency is Extract<typeof dependency, { readonly kind: "input_revision" }> => dependency.kind === "input_revision");
+    if (dependencies.some((dependency) => dependency.kind !== "artifact" && dependency.kind !== "input_revision")) {
+      throw new DurableStoreError("DURABLE_REQUEST_INVALID", "durable checkpoint dependency kind is invalid");
+    }
+    const derivedRevisions = uniqueInputRevisions(inputDependencies.map((dependency) => dependency.revision));
+    if (request.inputRevisions !== undefined && !sameRevisionSequence(request.inputRevisions, derivedRevisions)) {
+      throw new DurableStoreError("DURABLE_INPUT_MISMATCH", "dependency input revisions disagree with the request");
+    }
+    const inputBindings = inputDependencies.map((dependency) => ({ artifactId: dependency.artifactId, revision: dependency.revision }));
+    return {
+      ...request,
+      inputArtifactIds: [...dependencyIds],
+      inputRevisions: [...derivedRevisions],
+      inputBindings,
+      dependencies: dependencies.map((dependency) => ({ ...dependency })),
+    } as NormalizedDurablePromotionRequest;
+  }
   if (request.inputBindings !== undefined) {
     const inputArtifactIds = request.inputBindings.map((binding) => binding.artifactId);
     const inputRevisions = request.inputRevisions ?? uniqueInputRevisions(request.inputBindings.map((binding) => binding.revision));
@@ -329,6 +365,10 @@ function uniqueInputRevisions(values: readonly import("./types.ts").InputRevisio
 
 function sameSequence(left: readonly string[], right: readonly string[]): boolean {
   return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+function sameRevisionSequence(left: readonly import("./types.ts").InputRevisionRef[], right: readonly import("./types.ts").InputRevisionRef[]): boolean {
+  return left.length === right.length && left.every((value, index) => inputRevisionKey(value) === inputRevisionKey(right[index]!));
 }
 
 function validateEngineReferences(

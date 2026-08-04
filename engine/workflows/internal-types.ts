@@ -15,7 +15,7 @@ import type {
   RevisionId,
   RunId,
 } from "../contracts/ids.ts";
-import type { DurableLogicalItem } from "../durable/types.ts";
+import type { DurableLogicalItem, InputRevisionRef } from "../durable/types.ts";
 import type { LoopsArticleEntryInput } from "../durable/write-pipeline.ts";
 import type {
   ArtifactLedger,
@@ -30,6 +30,7 @@ import type {
   ArticleMaterialContext,
   ArticleMaterialSelectionContext,
 } from "../article-production/materials.ts";
+import type { TranslationWriterExecutionResult } from "../executors/closed-translation-writer/result.ts";
 
 /** Provenance copied from Loops, stored as evidence but never as authority. */
 export type WorkflowAttemptContext = {
@@ -214,6 +215,27 @@ export type EditorialPromotionResult = {
   readonly gitCommitOid: string;
 };
 
+export type TranslationWriterInput = {
+  readonly translationExecutionId: string;
+  readonly operationKey: string;
+  readonly pieceKind: "article" | "editorial";
+  readonly pieceId: string;
+  readonly language: string;
+  readonly englishArtifactId: ArtifactId;
+  readonly englishDigest: string;
+  readonly promptArtifactId: ArtifactId;
+  readonly inputArtifactIds: readonly ArtifactId[];
+};
+
+export type TranslationPromotionResult = {
+  readonly durableRevisionId: string;
+  readonly manifestDigest: string;
+  readonly gitCommitOid: string;
+  readonly gitBlobOids: Readonly<Record<string, string>>;
+};
+
+export type CompositionPromotionResult = TranslationPromotionResult;
+
 /** Private ports used by the fixed article workflow source graph. */
 export type ArticleWorkflowPorts = {
   readonly ledger: ArtifactLedger;
@@ -297,6 +319,39 @@ export type ArticleWorkflowPorts = {
     readonly measurementArtifactId: ArtifactId;
     readonly durableContext?: WorkflowDurableContext;
   }) => Promise<EditorialPromotionResult>;
+  /** Closed, source-blind Spanish translation worker. */
+  readonly runTranslationWriter?: (
+    input: TranslationWriterInput,
+    context: MagazineWorkflowContext,
+  ) => Promise<TranslationWriterExecutionResult>;
+  /** Git-backed promotion of one exact translated manuscript. */
+  readonly promoteTranslation?: (input: {
+    readonly runId: RunId;
+    readonly pieceKind: "article" | "editorial";
+    readonly pieceId: string;
+    readonly language: string;
+    readonly manuscriptArtifactId: ArtifactId;
+    readonly englishArtifactId: ArtifactId;
+    readonly promptArtifactId: ArtifactId;
+    readonly inputArtifactIds: readonly ArtifactId[];
+    readonly inputArtifactBindings: readonly { readonly artifactId: ArtifactId; readonly revision: InputRevisionRef }[];
+    readonly inputRevisions: readonly InputRevisionRef[];
+    readonly expectedParentRevisionId: RevisionId | null;
+    readonly decisionArtifactId: ArtifactId;
+    readonly durableContext?: WorkflowDurableContext;
+  }) => Promise<TranslationPromotionResult>;
+  /** Git-backed promotion of the exact root composition document. */
+  readonly promoteComposition?: (input: {
+    readonly runId: RunId;
+    readonly compositionArtifactId: ArtifactId;
+    readonly compositionId: string;
+    readonly revisionId: RevisionId;
+    readonly inputArtifactIds: readonly ArtifactId[];
+    readonly inputRevisions: readonly InputRevisionRef[];
+    readonly layoutInputBindings: readonly { readonly artifactId: ArtifactId; readonly revision: InputRevisionRef }[];
+    readonly decisionArtifactId: ArtifactId;
+    readonly durableContext?: WorkflowDurableContext;
+  }) => Promise<CompositionPromotionResult>;
   readonly requireDecision: (decisionArtifactId: ArtifactId) => LedgerDecision;
   readonly promote: (input: {
     readonly articleExecutionId: ArticleExecutionId;

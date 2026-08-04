@@ -196,6 +196,8 @@ export type MagazineWorkflowEngineOptions = {
   readonly editorialWriter?: import("../authority/local-authority.ts").AuthorizedWorker;
   /** Optional distinct authenticated source-blind opening-editorial reviewer identity. */
   readonly editorialReviewer?: import("../authority/local-authority.ts").AuthorizedWorker;
+  /** Optional distinct authenticated source-blind Spanish translation identity. */
+  readonly translationWriter?: import("../authority/local-authority.ts").AuthorizedWorker;
   /** Owner-private OpenAI credential resource used by the closed reviewer. */
   readonly articleReviewCredentials?: import("../executors/closed-writer/credentials.ts").ClosedWriterCredentialResource;
   /** Operational lease time is separate from the domain timestamp clock. */
