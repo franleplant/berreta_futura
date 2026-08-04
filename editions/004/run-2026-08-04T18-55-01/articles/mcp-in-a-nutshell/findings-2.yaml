@@ -1,0 +1,129 @@
+worth:
+  result: approved
+  findings: []
+  notes: |
+    This manuscript trades away 2,200+ words of JSON-RPC payloads, pseudo-code
+    examples, and the Scope section listing to serve readers who need the
+    architecture and what a server can expose, without reading the full protocol
+    spec. At 25% of source length, it's below faithful_synthesis's ~33% target,
+    but justified because the source is heavily laden with implementation examples
+    that the argument survives without. A reader learns the six moving pieces
+    (host, client, server, data layer, transport layer, primitive), what a server
+    exposes (tools, resources, prompts) with naming convention and schema
+    validation, how client primitives work, why extensions are optional, and that
+    notifications are best-effort—exactly what someone deciding what their server
+    should expose needs, without JSON fields or pseudo-code. The manuscript
+    preserves method names a reader would reference (tools/list, tools/call,
+    subscriptions/listen, elicitation/create). It reorders lightly for clarity
+    without following the source's structure. It carries the source's voice:
+    candid scope and limits admissions rather than personality. The source does
+    not explain why sampling and logging deprecations share a rationale; the
+    manuscript correctly reports what's there without inferring.
+  scores:
+    value_over_source: 5
+    length_earned: 5
+    retention: 4
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: "Verified every factual assertion against the extraction: architecture (host, client, server), \nlayers (data/transport), statelessness protocol, all three server primitives (tools, resources, \nprompts) and their discovery/execution mechanics, client primitives (elicitation current; \nsampling and logging deprecated as of protocol version 2026-07-28 with stated replacements), \nTasks extension, notification system with best-effort guarantees. All method names \n(server/discover, tools/list, tools/call, subscriptions/listen, elicitation/create), field \nnames (_meta, inputSchema, name), error types (UnsupportedProtocolVersionError), transport \nmechanisms (stdio, Streamable HTTP, OAuth), and the VS Code + Sentry + filesystem example \nare accurate. Qualifications preserved: discovery optional not mandatory, caching \"typically\" \navailable, notifications no guarantee particularly across reconnects, clients must still poll. \nThe manuscript preserves the source's scope admissions and limitations throughout. No claims \ninvented; no quotes fabricated; no numbers altered. Minor punctuation change (semicolon for \nem dash in the scope sentence) acknowledged in manuscript notes as mechanical edit, sense \nunchanged. Clean pass.\n"
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: 'What a server can offer | A server exposes context through three primitives: tools it can execute, resources it can hand over, and prompts, reusable templates for structuring an interaction with a model | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      The first two items in the list follow a grammatical pattern (noun + relative clause: "tools it can execute", "resources it can hand over") while the third shifts to an appositive structure ("prompts, reusable templates..."). This breaks parallelism across the three-item series.
+    suggestion: tools it can execute, resources it can hand over, and prompts that are reusable templates for structuring an interaction with a model
+  scores:
+    grammar: 3
+    typography: 5
+    consistency: 4
+  notes: |
+    One parallelism error in a three-item list of server primitives. Grammar, typography, and consistency are otherwise clean.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: What a server can offer | A server exposes context through three primitives | 1
+    repair_from: '- | What a server can offer | 1'
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The heading names the topic (what servers expose) rather than the claim
+      (that servers expose three specific primitives). Claim-based headings guide
+      the reader through the argument; topic-based headings leave the structure
+      implicit.
+    suggestion: Servers expose three primitives for context exchange
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: What a client can offer back | A client has its own primitive to offer | 1
+    repair_from: '- | What a client can offer back | 1'
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      Topic-based heading. The section argues that clients offer elicitation and
+      that two older primitives (sampling, logging) are deprecated with stated
+      replacements.
+    suggestion: Clients offer elicitation; sampling and logging are deprecated
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: Extensions on top of the core | Optional extensions build on top of the core primitives | 1
+    repair_from: '- | Extensions on top of the core | 1'
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      Topic-based heading. The claim is that optional extensions add capabilities
+      without modifying core primitives, with Tasks as an example.
+    suggestion: Optional extensions add capabilities without changing the core
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Changes nobody has to poll for | Notifications are opt-in | 1
+    repair_from: '- | Changes nobody has to poll for | 1'
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      Misleading heading. "Nobody has to poll" suggests notifications eliminate
+      the need for polling, but the section argues the opposite: notifications are
+      opt-in, best-effort, and clients still need to poll. The heading sets up a
+      false expectation that the section contradicts.
+    suggestion: Notifications are opt-in and don't replace polling
+  scores:
+    order: 5
+    coherence: 4
+    opening: 4
+    ending: 5
+  notes: |
+    The piece traces MCP as a stateless protocol through its architecture
+    (VS Code + Sentry + filesystem examples), two layers (data and transport),
+    statelessness and discovery, server and client primitives, optional extensions,
+    and notifications. Argument flows logically throughout one read. Opening example
+    earns the piece and starts at the point of interest. Ending lands with a
+    definitive scope qualification (notifications don't guarantee delivery, so
+    polling is still needed). Four section headings do not state claims; three name
+    topics, and one contradicts its section content.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: mcp-in-a-nutshell
+    category: repeated_shape
+    disposition: editor_decision
+    locator: 'VS Code is what the protocol calls the host: | 1'
+    note: |
+      Nine sentences use the colon-definition pattern: [assertion]: [elaboration]. Instances: "VS Code is what the protocol calls the host: the application that opens and manages"; "The data layer is a JSON-RPC 2.0 exchange: the message format, the request and response shapes"; "The transport layer carries those messages between processes: stdio for two processes"; "A server exposes context through three primitives: tools it can execute"; "Each primitive follows the same pattern: a client calls `tools/list`"; "A tool's `name` is... `calculate`: the name has to stay unique"; "A client has its own primitive to offer: elicitation"; "The Tasks extension is one already shipping: it lets a server hand back"; "None of it is guaranteed: there are no guarantees that every notification will be sent." The pattern makes the piece read as a series of definitions rather than narrative explanation. Remedy is editorial: redistribute content as flowing prose, cut definitions, or reconsider scope.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 4
+  notes: |
+    Technically clear synthesis with institutional precision and candid scope-statements. The colon-definition pattern dominates the prose rhythm, creating a procedural feel even though each sentence is contextually appropriate. An editor should decide whether to vary the structure, abbreviate sections, or accept definition-driven explanation as necessary for accessibility.

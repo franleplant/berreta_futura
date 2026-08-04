@@ -12,11 +12,12 @@ article's row in the edition manifest.
 
 ## Required reading
 
-`docs/WRITING_RULES.md` and `docs/WRITING_EXEMPLARS.md`, once at the start of a
+`docs/WRITING_RULES.md` and `docs/WRITING_STYLE.md`, once at the start of a
 session. Here they govern only the words you write yourself, which are captions
-and nothing else. Never apply them to the author's sentences: rule vi's second
-legitimate use is this mode, where the author's clichés, jokes, profanity and
-broken rules survive intact.
+and nothing else. Never apply them to the author's sentences: the style doc's
+Orwell section, like the six rules it draws on, never reaches the author's own
+sentences in this mode, where their clichés, jokes, profanity and broken rules
+survive intact.
 
 ## Before you edit: why is this a reprint?
 

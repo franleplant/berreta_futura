@@ -1,0 +1,119 @@
+worth:
+  result: approved
+  findings: []
+  scores:
+    value_over_source: 4
+    length_earned: 5
+    retention: 5
+  notes: "This piece gives a reader permanent access to an ephemeral X article. The \nmanuscript faithfully preserves the author's argument—that realistic leverage \ncomes from planning and alignment, not code generation—and maintains voice, \njudgment calls, and informal tone. All substantive content is retained; only \nX interface chrome was removed per magazine format.\n"
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked all factual claims (25-50% code-writing proportion, 2-4 hour to 10-20
+    minute coding acceleration, 2-3x overall speedup claim), all numbers and
+    percentages (50% rework chance, 10% redo chance, 80% pain elimination in 10
+    minutes), all quotations and blockquotes (the weighted probability definition,
+    the expected-pain formula), all attributions to source. All forward and
+    reverse pass requirements met: no qualifications or hedges dropped, source
+    conclusions preserved. No invented claims, no fabricated quotes, no number
+    errors, no attribution errors, no unsupported assertions.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Lets assume if you yolo | 1
+    category: spelling
+    disposition: editor_decision
+    note: |
+      The contraction "let's" is misspelled without an apostrophe. The sentence is the author's own, so an editor chooses the remedy.
+    suggestion: Let's assume if you yolo a two-sentence prompt
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Now lets say you are | 1
+    category: spelling
+    disposition: editor_decision
+    note: |
+      The contraction "let's" is misspelled without an apostrophe and appears with lowercase "l" at a sentence opening. The sentence is the author's own, so an editor chooses the remedy.
+    suggestion: Let's say you are a principal engineer with 10 years of experience
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | its possible you may need | 1
+    category: spelling
+    disposition: editor_decision
+    note: |
+      The contraction "it's" (for "it is") is misspelled without an apostrophe. The sentence is the author's own, so an editor chooses the remedy.
+    suggestion: it's possible you may need to end it where you are
+  scores:
+    grammar: 4
+    typography: 4
+    consistency: 2
+  notes: |
+    Three instances of missing apostrophes in contractions survive in the author's retained text: "Lets assume", "lets say", and "its possible" should be "Let's assume", "Let's say", and "it's possible". All other mechanics are sound.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | You need to do this without overindexing on questions you won't be able to answer without going down a level. | 1
+    repair_from: The 80/20 rule in AI coding leverage | If you draw this out, there's an inverse relationship between effort invested up front and expected pain. | 1
+    category: missing_transition
+    disposition: fix
+    note: |
+      The section transitions from the inverse relationship (effort up front reduces pain) to a warning against over-planning, then to "you need to do this without overindexing." The connector is missing: "you need to do this" has no clear antecedent. The reader understands the pieces separately but not how they fit together.
+    suggestion: 'Bridge the trade-off to the practice: ''To navigate this trade-off, find where additional planning stops reducing expected pain—and don''t go deeper. You can do this without overindexing on questions you can''t answer at your current level.'''
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | zooming in from 50kft view all the way to the 10kft view | 1
+    repair_from: The 80/20 rule in AI coding leverage | For example, if you've done some work at the 'Product' level and have not answered all the open questions yet, its possible you may need to end it where you are and zoom down a level to the technical details to understand what's feasible. | 1
+    category: orphan_referent
+    disposition: fix
+    note: |
+      The piece establishes one planning-depth model—"Product level" zooming to "technical details"—then later invokes a different-sounding model: "50kft view all the way to the 10kft view." These frameworks may be equivalent or different, but the piece never clarifies which. A reader cannot be certain what mental model the author is describing.
+    suggestion: 'Introduce the framework once with consistent naming: establish that you zoom ''from high-level (Product, 50kft view) down to technical details (10kft view)'' to answer progressively more concrete questions.'
+  - severity: minor
+    article: pragmatic-leverage
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      Both headings name topics rather than claims. "Seeking Leverage" introduces a concept; "The 80/20 rule in AI coding leverage" names a framework. Neither expresses what the section argues.
+    suggestion: 'Reframe as claims: ''Leverage multiplies when you optimize planning, not just code'' and ''Calculate the effort-to-rework trade-off for each task'' or similar.'
+  scores:
+    order: 3
+    coherence: 3
+    opening: 4
+    ending: 3
+  notes: |
+    The piece establishes a clear argument about planning-effort versus rework likelihood and navigating the trade-off pragmatically. Flow breaks where analysis transitions to practice: an unclear pronoun and an undefined framework create local confusion about what "pragmatic zooming" means and requires.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: Pragmatic Leverage | If you're only using AI to write the code | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Five "If..., then..." conditional constructions in approximately 500 words,
+      first appearing as: "If you're only using AI to write the code, then you're
+      taking"; "If you draw this out, there's an inverse relationship"; "If the
+      model is 50% likely to get a button style wrong, ... then our combined
+      'expected pain'"; "If you've done some work at the 'Product' level"; "If
+      you're doing multiple phases of planning, ... you want to do a little bit
+      of steering at each phase". The shape is the author's own reasoning structure
+      in faithful edit, so the remedy is editorial: cut one instance or restructure
+      one section.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 3
+  notes: |
+    A pragmatic engineer reasoning through planning decisions with clear examples,
+    building understanding through conditional scenarios. The repeated conditional
+    structure becomes rhythmically noticeable by the fourth instance.

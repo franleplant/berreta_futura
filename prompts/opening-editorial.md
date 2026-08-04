@@ -7,13 +7,14 @@ or a contents page. Your inputs are every article manuscript in the edition plus
 
 ## Required reading
 
-`docs/WRITING_RULES.md` and `docs/WRITING_EXEMPLARS.md`, once at the start of a
+`docs/WRITING_RULES.md` and `docs/WRITING_STYLE.md`, once at the start of a
 session. This is the magazine's own voice, so every rule reaches every sentence.
-Three moves carry the piece. Move 4, the vantage point that makes a known fact
-astonishing, which is the only value an editorial can add without a new fact and
-so is the whole job. Move 2, the physical detail carrying the idea while the
-idea goes unnamed. Move 1, the concrete word where the abstract one wants to go.
-Then read "The register that produces robot prose" twice: an editorial is 200
+Three concepts carry the piece. Sagan's change of scale, the vantage point that
+makes a known fact astonishing, which is the only value an editorial can add
+without a new fact and so is the whole job. Hemingway's physical detail
+carrying the idea while the idea goes unnamed. Orwell's concrete word where the
+abstract one wants to go. Then read "The register that produces robot prose"
+twice: an editorial is 200
 words of pure authorial voice with no source holding it down, which is why every
 specimen of the balanced clause, the definite-article equation and false
 profundity in that section is one of ours.
@@ -85,17 +86,17 @@ reply, before you draft a sentence. None of it goes into the manuscript.
 
 ## Two half-exemplars
 
-Neither is the standard. `docs/WRITING_RULES.md` bans modelling on our published
-work except where the passage is quoted in `docs/WRITING_EXEMPLARS.md`, so take
-from each only the one thing named here.
+Neither is the standard, and modelling on our published work is banned outside
+this prompt's own examples: take from each only the one thing named here.
 
 `editions/004-the-systems-around-the-model/prototypes/editorial-emergent-narrative.md`
 ("Autonomy Must Leave a Trace") gets the ambition right: one claim the sources do not make, argued in five short
 paragraphs and 196 words, naming no article. Take the shape and the nerve to
 make an argument that small. Take not one of its sentences.
 `docs/WRITING_RULES.md` quotes five of them as the house's worst habit at its
-most fluent, under "the balanced clause that sounds like insight", and
-`docs/WRITING_EXEMPLARS.md` quotes a sixth as Move 2 failing.
+most fluent, under "the balanced clause that sounds like insight", and a sixth
+line in the same piece fails the same test as Hemingway's physical detail: it
+states the idea outright instead of letting an object carry it, unnamed.
 
 `editions/rerun-004-the-systems-around-the-model/manuscript/editorial.md`
 ("Wrong for Free") has the best cold open in the archive: an intruder attaching `DryRun=True` to every destructive call it

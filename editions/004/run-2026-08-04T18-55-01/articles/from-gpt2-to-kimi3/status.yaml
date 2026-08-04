@@ -1,0 +1,12 @@
+piece: from-gpt2-to-kimi3
+rounds:
+- round: 1
+  words: 1700
+  loop_findings: 1
+  all_findings: 1
+- round: 2
+  words: 1755
+  loop_findings: 0
+  all_findings: 0
+state: clean
+open_findings: []

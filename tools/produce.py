@@ -184,8 +184,8 @@ def loop_findings(reports: dict[str, dict]) -> list[dict]:
 
 def writing_pack() -> str:
     return (
-        section("docs/WRITING_RULES.md", read(DOCS / "WRITING_RULES.md"))
-        + section("docs/WRITING_EXEMPLARS.md", read(DOCS / "WRITING_EXEMPLARS.md"))
+        section("docs/WRITING_STYLE.md", read(DOCS / "WRITING_STYLE.md"))
+        + section("docs/WRITING_RULES.md", read(DOCS / "WRITING_RULES.md"))
     )
 
 

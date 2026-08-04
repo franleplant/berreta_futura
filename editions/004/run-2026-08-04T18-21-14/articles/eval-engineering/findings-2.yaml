@@ -1,0 +1,79 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: eval-engineering
+    locator: The entire piece | The technical detail is scattered across the source.
+    repair_from: The entire piece
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The source is overwhelmingly rich with actionable, hard-won technical detail, including multiple command-line examples (e.g., npx skills add, /evalkit.report), specific vendor names and performance metrics (e.g., LangSmith, Arize AX, 83.9% vs 32.3%), and explicit structural workflows. The manuscript translates this into a flowing, elegant narrative, but in doing so, strips out nearly every concrete reference point. For a piece whose entire subject is *engineering* and *implementation*, the loss of these technical identifiers and specific processes (the "how-to") renders the argument highly valuable conceptually, but operationally useless for a reader trying to adopt the techniques described.
+    suggestion: Integrate the key technical references and command examples back into the narrative where they are first introduced. The reader needs to see the specific tooling and commands that define the 'examiner' layer to ground the argument.
+  scores:
+    value_over_source: 3
+    length_earned: 2
+    retention: 1
+  notes: |
+    Changes required because the piece cannot state one thing it gives a reader that its source does not: it provides a cohesive, persuasive, and highly readable conceptual framework for the field of evaluation engineering, synthesizing scattered social media threads, technical documents, and anecdotal evidence into a unified narrative.
+evidence:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: eval-engineering
+    locator: The blind test | Two researchers ran the honest test. They took 100 real production traces from a live voice agent, had a human expert mark every failure by hand, built a taxonomy of 39 labeled failures, then hid the labels and handed the same pile to every evaluation system on the market.
+    repair_from: The blind test | Two researchers ran the honest test. They took 100 real production traces from a live voice agent, had a human expert mark every failure by hand, built a taxonomy of 39 labeled failures, then hid the labels and handed the same pile to every evaluation system on the market.
+    category: invented_claim
+    disposition: fix
+    note: |
+      The source extraction confirms the overall test setup (100 real production traces from a live voice agent) but does not contain the specific numerical detail that the process involved building a taxonomy of "39 labeled failures." This specific count is not supported by the provided source material.
+  scores:
+    claim_support: 3
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Changes required because the piece introduces a specific, non-sourced numerical detail (39 labeled failures) regarding the test setup.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: deterministic checks—guardrails, recent performance trends, and historical failure rates—rather than
+    category: typography
+    disposition: editor_decision
+    note: |
+      The em dash character (U+2014) is banned throughout the piece. I replaced the instance with parentheses to maintain the intended parenthetical break and list structure.
+    suggestion: deterministic checks (guardrails, recent performance trends, and historical failure rates) rather than
+  scores:
+    grammar: 5
+    typography: 1
+    consistency: 5
+  notes: |
+    One typographical issue was found regarding the use of the em dash character, which violates a standing rule.
+shape:
+  result: changes_required
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The article presents a remarkably cohesive and well-paced argument, successfully guiding the reader from a visible, empirical problem (hallucination) to a complex, structural solution (the advanced evaluation layer).
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: eval-engineering
+    locator: A system that enforces these rigorous structural principles can be engineered to do far more than what the model's raw power suggests.
+    category: weak_close
+    disposition: suggested
+    note: |
+      The closing sentence restates the premise that the system is better than raw model power, which has already been established in the previous paragraph and throughout the piece. The final sentence should instead land on the profound *consequence* or *implication* of the examiner layer—what does this structural change fundamentally empower the user or the field to do?
+  scores:
+    voice: 5
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    The writing maintains a strong, expert voice and manages complex, technical concepts clearly. The piece is well-written and authoritative. The only structural concern is the closing sentence, which fails to provide a powerful, summarizing thought, instead ending on a slightly generic declaration of potential.

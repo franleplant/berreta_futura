@@ -1,0 +1,125 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | software factories are super real | 1'
+    category: stripped_utility
+    disposition: fix
+    note: "The first source post originally contained three reference markers [1] [2] [3] \ninterspersed through the text, pointing to attached images that did not survive \nthe text-only DOM extraction. The editor removed the markers to avoid broken \ntypesetting rather than leaving bare, undefined citations. While the manuscript \nreads coherently and the arguments stand without the images, a reader who wants \nthe full visual context would need to refer back to the original posts. The editor \nhas appropriately flagged this for investigation in a future pass if the images \nare recoverable from the source bundle.\n"
+    suggestion: If the images are available in the source bundle, recover and embed them as figures to provide the complete context Huntley intended in the original post.
+  scores:
+    value_over_source: 4
+    length_earned: 5
+    retention: 4
+  notes: "This manuscript collects three of Huntley's scattered posts into a coherent \nargument that factories are systems and culture problems, not model or token \nproblems. Readers gain substantive value: unified access to all three posts in \none continuous read, with the edition's central thesis clearly stated in the \npiece's second section, rather than navigating across three separate platforms.\n"
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked all assertions in the manuscript against the three source extractions. Every
+    factual claim, list item, and conclusion is directly supported by the sources and
+    presented without alteration to meaning or scope. Reference markers [1][2][3] in the
+    first source appear to index images not captured in the text-only extraction; the
+    editor removed them rather than leaving broken citations, an appropriate choice.
+    Footnote formatting normalized to markdown syntax. Paragraph breaks added for print
+    legibility do not affect claims. Qualifications and limitations from sources are
+    preserved in full.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | the best practices right now are to build abstractions/pieces needed which entails solving non-agent topics. | 1'
+    category: agreement
+    disposition: editor_decision
+    note: |
+      "Abstractions/pieces" is plural, but the verb "entails" is singular. The relative clause should agree with its plural subject. Should be "entail".
+    suggestion: the best practices right now are to build abstractions/pieces needed which entail solving non-agent topics.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | ie. | 1'
+    category: spelling
+    disposition: fix
+    note: |
+      The Latin abbreviation is written as "ie." with one period. The standard form is "i.e." with periods separating the letters.
+    suggestion: i.e.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | over the last two years. they are selling bullshit. | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      Incomplete if-clause. The period after "last two years" breaks the conditional structure. The if-condition extends through "two years" but has no connected consequence; "they are selling bullshit" is meant to follow as the consequence. Needs a comma, not a period, to connect condition to result.
+    suggestion: '...over the last two years, they are selling bullshit.'
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | who are all in on the LLM craze who have never worked in corporate in their life thus didn''t have the knowledge | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      Two consecutive "who" clauses lack coordination and should be joined. Additionally, "thus didn't have the knowledge" lacks punctuation and clear subject reference after "in their life". Restructure to connect the two modifiers and clarify the consequence.
+    suggestion: who are all in on the LLM craze and have never worked in corporate in their life, so they didn't have the knowledge
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | i must stress that factories is not a token or llm problem. | 1'
+    category: agreement
+    disposition: editor_decision
+    note: |
+      Subject-verb disagreement. "Factories" is plural but "is" is singular. Should be "factories are".
+    suggestion: i must stress that factories are not a token or llm problem.
+  scores:
+    grammar: 2
+    typography: 4
+    consistency: 2
+  notes: |
+    Changes required: one agreement error in the core claim sentence, three additional grammar errors spanning incomplete conditional phrasing and uncoordinated relative clauses, and one spelling error in a Latin abbreviation.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | second hot take, as it seems the first hot take landed | 1'
+    repair_from: software factories are super real but we need to be realistic | 1
+    category: orphan_referent
+    disposition: fix
+    note: |
+      The three posts are stitched with thematic breaks but no headings. The author's
+      reference in post 3 to the "first hot take" of post 1 has no visible antecedent
+      in the assembled piece. This is the same defect from edition 004. The editor's
+      deliberate choice not to invent headings creates the orphan. Repair requires
+      either adding a heading to the first section framing it as the "first hot take"
+      or rewording the reference in post 3 to not depend on that label.
+    suggestion: Add a heading or label to the first section framing it as the "first hot take," or reword the opening of the third section to eliminate the orphan reference.
+  scores:
+    order: 3
+    coherence: 3
+    opening: 4
+    ending: 3
+  notes: |
+    The piece assembles three related arguments about factories as a systems problem
+    with clear logical progression: problem introduction, systems reframing, practical
+    tool. Each section reads clearly and the thematic coherence holds, but the three
+    are loosely integrated with no bridging prose between the thematic breaks. The
+    opening strongly hooks; the ending is specific rather than synthetic.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: factory-systems-problem
+    category: jargon
+    disposition: editor_decision
+    locator: '- | almost lights out | 1'
+    note: |
+      "Lights out" (enterprise jargon for unattended automation) is used without prior explanation or context. The fragment "almost lights out" appears between two complete thoughts without a clear grammatical or semantic bridge, leaving the reader guessing whether it means "almost fully automated," "nearly solved," or something else. A reader unfamiliar with operations terminology would have to infer the intent.
+  scores:
+    voice: 5
+    sentence_variety: 4
+    economy: 3
+  notes: |
+    Clear, distinctive voice from an author confident in their argument and audience; unmistakable personality throughout. One fragment relies on unexplained technical jargon from a different domain.

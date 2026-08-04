@@ -1,0 +1,125 @@
+worth:
+  result: approved
+  findings: []
+  scores:
+    value_over_source: 4
+    length_earned: 4
+    retention: 5
+  notes: |
+    Collects three of Huntley's own posts on software factories into a single
+    article, providing reader access and reading continuity. A reader learns
+    Huntley's complete argument on factories—from the reality of the problem
+    through systems engineering and corporate culture to specific enterprise
+    patterns—without hunting through his timeline or context-switching between
+    posts. All identifiers, tool names, and operational recommendations are
+    preserved intact. The use of faithful_edit mode is correct for consolidating
+    ephemeral social media posts into a durable reference.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    All assertions in the manuscript are supported by the source extractions. The
+    three posts are presented in their original words with only typographical
+    normalization (i.e. vs ie.) and markdown formatting adjustments. All
+    qualifications, hedges, and caveats survive intact: the limitation that
+    factory aspects "haven't been cracked yet," the caveat that tokens are "a
+    piece of the puzzle" but not a solution, and the specific distinction about
+    WCF's poor implementation against sound theoretical foundations. No claims are
+    invented, no numbers or dates are altered, no attributions are misplaced, and
+    no furniture appears in the manuscript to verify.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | abstractions/pieces needed which entails | 1'
+    category: agreement
+    disposition: editor_decision
+    note: |
+      "Abstractions/pieces" is plural (plural form on the left side of the slash),
+      but the verb "entails" is singular. The sentence is the author's own, so an
+      editor chooses the remedy.
+    suggestion: abstractions/pieces needed which entail solving
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | i must stress that factories is not | 1'
+    category: agreement
+    disposition: editor_decision
+    note: |
+      "Factories" is plural, but the verb "is" is singular. The sentence is the
+      author's own, so an editor chooses the remedy.
+    suggestion: factories are not a token or llm problem
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | over the last two years. they are selling bullshit | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      The period after "years" creates an unclear sentence boundary. The conditional
+      structure appears incomplete: "if someone is selling you a factory rn and they
+      aren't in the super small cohort... over the last two years" lacks a consequent
+      before the break, leaving "they are selling bullshit" dangling or detached. The
+      author's own punctuation choice; an editor decides whether to join the clauses
+      or restructure.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | who are all in on the LLM craze who have never worked | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      Two relative clauses with "who" appear in succession without a conjunction:
+      "who are all in on the LLM craze who have never worked in corporate". This reads
+      as a fused clause. The sentence is the author's own, so an editor chooses the remedy.
+    suggestion: who are all in on the LLM craze and who have never worked
+  scores:
+    grammar: 2
+    typography: 4
+    consistency: 3
+  notes: |
+    Four grammatical defects in the author's retained text require editorial decision:
+    two subject-verb agreement errors, one sentence-boundary issue, and unjoined
+    relative clauses.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | i must stress that factories is not a token or llm problem | 1'
+    repair_from: i must stress that factories is not a token or llm problem
+    category: missing_transition
+    disposition: editor_decision
+    note: |
+      The jump from paragraph two (career advice about learning the infrastructure
+      stack) to paragraph three (reframing what the problem is not) lacks a bridge.
+      The "i must stress" is emphatic but doesn't signal the transition from
+      practical guidance to conceptual argument. This is the cost of combining
+      three separate posts in manifest order: thematic intent is consistent, but
+      textual transitions are implicit.
+  scores:
+    order: 3
+    coherence: 3
+    opening: 3
+    ending: 3
+  notes: |
+    The piece assembles three independent source posts with a clear thematic arc
+    (factories are real but unsolved → actual work is systems infrastructure → here is
+    the systems pattern) but the textual handoff between the practical career advice
+    and the problem-definition reframing requires interpolation. No other structural
+    issues.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    A person wrote this throughout. The voice is direct and consistent—casual,
+    opinionated, self-assured in technical territory, unafraid of bluntness.
+    Sentences vary in shape and length. No dead words, no system-generated idiom,
+    no passages where register shifts to robotic.

@@ -1,0 +1,61 @@
+worth:
+  result: approved
+  findings: []
+  notes: |
+    The manuscript establishes the unifying eviction-policy principle from the opening, whereas the source reveals this only in its final paragraphs. Each architectural step is now legible as a different answer to what a fixed-capacity memory must evict and when. At roughly 67% of source length, positioned at the two-thirds threshold, the length is justified: the DeltaNet section (335 words, ~22% of total) explains the parallelization challenge that the source author acknowledged took seven hours to master, and removing significant content would leave readers without understanding of how the chunked reformulation enables hardware-efficient computation. The piece gains coherence through organizing principle, maintains depth without slack, and appropriately removes code blocks standard to synthesis mode.
+  scores:
+    value_over_source: 4
+    length_earned: 4
+    retention: 5
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked all quantitative claims (dates, model parameters, architecture counts, performance figures), all quoted passages (Schlag, Flash Attention observation, seven hours), and all technical assertions. Every verifiable claim is supported by and accurate to the extraction. Trade-offs and caveats are preserved. The synthesis structure (framing around eviction policies) is a legitimate synthesis choice grounded in the extraction's closing argument. No invented claims or unsupported furniture detected.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: '- | fixes... then I saw that it was released in 2020 | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      An ellipsis after "fixes" creates ambiguity: if "then I saw" is a new sentence, the standing
+      rule requires it to open capitalised. If it is a continuation within one sentence, the ellipsis
+      is an unconventional choice; a semicolon or period would clarify the boundary. By the magazine's
+      standing rule that sentences open capitalised regardless of the source author's stylistic intent,
+      "then" should be capitalised. This is the author's retained text, so an editor decides whether
+      to capitalise "then" or to repunctuate the sentence.
+    suggestion: That's what Flash Attention fixes. Then I saw that it was released in 2020.
+  scores:
+    grammar: 4
+    typography: 5
+    consistency: 4
+  notes: |
+    One capitalisation anomaly where an ellipsis precedes a lowercase "then" that should be
+    capitalised by standing rule. The ellipsis creates sentence-boundary ambiguity that editing can
+    resolve.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 4
+  notes: |
+    The piece traces a clear architectural progression from GPT-2 through KimiK3, with each section explaining both a problem and its solution. The argument order is recoverable in one read: scale is not the differentiator; instead, each architectural step solves a specific constraint (bandwidth, overcapacity, forgetting, signal dilution). The opening earns the piece by posing a sharp question ("whether that gap is just scale") and answering it with a throughline the reader can follow. Transitions are smooth, each section building on the prior, especially the movement from linear attention (solves growth; costs accuracy) to DeltaNet (solves interference via replacement, not addition). The ending lands by revealing the unifying frame—every step is a different eviction policy—which retroactively organizes all preceding content. No duplication, no orphan referents, no argument-order collapse. The piece holds its structure despite the density of technical detail, and the voice (particularly the O(N²) confession and the "seven hours" acknowledgment) keeps the reader engaged throughout.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 4
+    economy: 4
+  notes: "A competent piece written in a clear, personal voice. The author maintains \nauthenticity throughout (\"threw me off,\" the seven-hour confession), explains \ndense technical material without sounding assembled, and closes with the \nunifying insight (eviction policies as the through-line) rather than restatement. \nSentence shapes are varied and natural to the explanation; no dead sentences or \nmonotonous construction. The opening scales from concrete numbers into a claim, \nand the closing lands the insight that ties every architectural step together.\n"

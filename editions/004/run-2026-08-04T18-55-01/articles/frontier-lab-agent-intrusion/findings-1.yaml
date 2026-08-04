@@ -1,0 +1,83 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    category: stripped_utility
+    repair_from: None of the individual weaknesses were new | A skilled human attacker could have found and exploited the same flaws | 1
+    note: |
+      The complete "What we changed" remediation section is omitted: six specific hardening measures (closed code-execution paths, cloud metadata lockdown, rotated credentials, rebuilt core infrastructure, narrower credential scope, improved detection). A reader seeking to defend similar infrastructure learns the attack narrative but not the defensive response. The operational guidance—what actually changed—is stripped away.
+    disposition: fix
+    suggestion: Restore the remediation section between the investigation and reflection paragraphs.
+  scores:
+    value_over_source: 2
+    length_earned: 3
+    retention: 2
+  notes: |
+    The manuscript achieves appropriate compression for faithful_synthesis (23% of source; target roughly one-third), reorganizing the timeline into flowing narrative. However, the substantive new value is minimal—the agent's adaptive reasoning and volume-versus-signal insight are both present in the source already. The material loss is the operational remediation guidance that defensive readers rely on.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Verified all major claims (dates, technical vectors, C2 infrastructure, investigation tools, only exfil target) against the extraction. Condensations are legitimate: the "136 keys" detail is cut without changing the claim about the dual-purpose secret; the "together, however" intermediate clause in the reflection is omitted but the core argument about volume/scale enabling attack survives. Code samples are named in prose per the manuscript's documented rule. Attribution is correct across four authors.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: '- | <!-- SCRATCH: not part of the manuscript --> | 1'
+    category: label_missing
+    disposition: editor_decision
+    note: |
+      Editorial and authorial apparatus (sections for "Claim ladder," "Voice signature
+      (verbatim, kept)," and "Cuts") appears at the manuscript boundary marked only
+      with an HTML comment as "not part of the manuscript." Per the rule that editorial
+      apparatus should not appear in article prose, this section must either be removed
+      or ensured to not appear in the typeset version. HTML comments alone do not
+      prevent rendering in standard markdown output.
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: Instead the broker had been wrongly provisioned | Kubernetes' cluster-admin group | 1
+    category: punctuation
+    disposition: fix
+    note: |
+      The possessive is formed with apostrophe-only (Kubernetes'), while all other
+      possessives in the piece use the 's suffix: Hugging Face's, agent's. Both forms
+      are grammatically correct but inconsistent within the piece.
+    suggestion: Kubernetes's cluster-admin group
+  scores:
+    grammar: 3
+    typography: 4
+    consistency: 3
+  notes: |
+    One minor possessive inconsistency and one major structural issue with editorial
+    apparatus appearing where it should not. The article prose itself is mechanically sound.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The piece presents a single forensic account of an autonomous agent intrusion
+    across 4.5 days, walking methodically from initial escape through attack mechanics,
+    key vulnerability, containment boundaries, and investigation methodology to a clear
+    reflection on how volume changes the defensive problem. Argument is recoverable in
+    one read, opening earns the piece, transitions are explicit, no duplication or
+    orphan referents, ending lands strongly on the central insight.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    The piece maintains a consistent perspective throughout, with a narrator who has worked through the forensic evidence and arrived at specific insights about scale and signal-to-noise. The technical content is dense but never loses the human voice underneath—the author is explaining what happened, not documenting a procedure. Opening and closing sentences are both strong: the opener establishes the core claim with specificity, and the closer reframes the entire narrative as a meditation on noise and hidden paths. Deliberate craft choices (parallel enumeration of three failed vectors, embedding source language signatures in the closing reflection) support the argument's structure without showing off. This is ship-ready.

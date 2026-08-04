@@ -1,0 +1,108 @@
+worth:
+  result: approved
+  findings: []
+  scores:
+    value_over_source: 4
+    length_earned: 4
+    retention: 4
+  notes: |
+    The manuscript delivers clear value by reorganizing the architecture documentation into a
+    decision-focused explainer. It carries all major method names (server/discover, tools/list,
+    resources/list, prompts/list, tools/call, elicitation/create, subscriptions/listen) and essential
+    field names (name, inputSchema, _meta), omits JSON-RPC payloads and pseudo-code without
+    losing method identifiers, and orders the material to prioritize the architectural decisions
+    before operational details. At 27% of source length, the compression is justified by removing
+    repetitive field-by-field explanations, contributor-oriented sections (Scope), and pedagogical
+    aids rather than by stripping reference utility. A magazine reader and MCP implementer both
+    gain from this: the reader gets the conceptual model and shared vocabulary the issue assumes;
+    the implementer gains the architectural roadmap before consulting the spec for schema details.
+    The editorial reordering (participants and layers first, then statelessness, then capabilities,
+    then notifications) represents genuine editorial judgment about the order someone deciding what
+    a server should expose needs these ideas, and is clearly distinguished from the source's
+    layer-then-example structure.
+evidence:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: mcp-in-a-nutshell
+    locator: What a client can offer back | Both went in the same release, and both point the same direction | 1
+    category: invented_claim
+    disposition: fix
+    note: |
+      The manuscript states that the sampling and logging deprecations "both point the same
+      direction: a server should reach the infrastructure it needs on its own rather than
+      borrowing the client's." The source deprecates both as of protocol version 2026-07-28
+      and lists their replacements (integrate with LLM APIs; log to stderr or OpenTelemetry),
+      but nowhere states they point the same direction or provides this synthesized explanation
+      for the correlation between them. The logical inference is the author's own, not a claim
+      the source reaches.
+  scores:
+    claim_support: 4
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Reviewed every checkable assertion, number, name, date, and quotation in the manuscript.
+    All match the source except one synthesized conclusion about what the two deprecations
+    point toward. All qualifications in the source are preserved: optional discovery, typically
+    cacheable responses, best-effort notification delivery, necessity of polling. All direct
+    quotations are accurate. The faithful synthesis omitted JSON-RPC request/response payloads,
+    pseudo-code examples, and organizational scope information per the author's documented
+    reasoning, which is allowed omission.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | exchange—it does not dictate | 1'
+    category: typography
+    disposition: fix
+    note: |
+      Em dash (U+2014) is forbidden. Use a semicolon, colon, comma, period, or
+      parentheses instead to separate independent clauses.
+    suggestion: MCP focuses solely on the protocol for context exchange; it does not dictate how AI applications use LLMs or manage the provided context.
+  scores:
+    grammar: 5
+    typography: 3
+    consistency: 5
+  notes: |
+    One em dash in the opening paragraph requires replacement; the rest of the
+    manuscript maintains consistent capitalization, grammar, and editorial style.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: Changes nobody has to poll for | A client still has to poll on its own to keep results fresh | 1
+    category: heading_not_a_claim
+    disposition: fix
+    suggestion: 'Rename to reflect that notifications are optional, best-effort, and clients must still poll. For example: ''Opt-In Notifications (Still Polling Underneath)'' or ''Changes via Notifications Without Guarantees''.'
+  scores:
+    order: 4
+    coherence: 4
+    opening: 4
+    ending: 4
+  notes: |
+    The piece clearly explains MCP's architecture, mechanisms, and design constraints. Opening is concrete and well-developed. Argument order is logical from architecture through primitives to features. Ending is firm. One heading misnames its section's argument by suggesting a benefit—polling-free change notifications—that the section explicitly contradicts.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: 'Changes nobody has to poll for | None of it is guaranteed: there are no guarantees that | 1'
+    category: dead_words
+    disposition: editor_decision
+    note: |
+      "None of it is guaranteed" is throat-clearing that restates the idea already
+      delivered by "there are no guarantees that every notification will be sent or
+      received". The opening provides emphasis but no new information; either the
+      principle or the specificity would suffice.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 3
+  notes: |
+    This is a clear synthesis of technical documentation with appropriate institutional
+    register. The piece has strong sentence work, no jargon problems, and a landing close.
+    One minor instance of throat-clearing redundancy that the editor can tighten or keep
+    for emphasis.

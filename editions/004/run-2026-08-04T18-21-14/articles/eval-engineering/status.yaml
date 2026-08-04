@@ -1,0 +1,32 @@
+piece: eval-engineering
+rounds:
+- round: 1
+  words: 582
+  loop_findings: 3
+  all_findings: 3
+- round: 2
+  words: 586
+  loop_findings: 3
+  all_findings: 4
+- round: 3
+  words: 691
+  loop_findings: 2
+  all_findings: 3
+state: rounds_exhausted
+open_findings:
+- lens: craft
+  severity: blocking
+  article: eval-engineering
+  locator: The build process is technical. The evaluation kit can be initialized using commands like `evalkit init my-agent-evaluation`.
+  category: no_voice
+  disposition: editor_decision
+  note: |
+    The piece shifts abruptly from a highly metaphorical and argumentative voice ("Everyone is renting the same brain now") to a purely procedural, sterile recitation of technical commands and processes. The voice disappears entirely when the text enters the mode of describing how the system is built and run using specific, uncontextualized shell commands. To restore the human voice, the writer must frame these technical steps with more interpretive language, explaining *why* this process is revolutionary, not just *how* it is executed.
+- lens: craft
+  severity: major
+  article: eval-engineering
+  locator: 'When 100 real sessions were measured, the gap between raw output quality and factual grounding became jarring: 83.9% for the quality of the answer, but only 32.3% for the answers grounded in the tools that had actually returned information.'
+  category: repeated_shape
+  disposition: editor_decision
+  note: |
+    The argument consistently follows a predictable pattern: 1) Identify a high-level, compelling problem (the gap in intelligence/grounding). 2) Quantify the failure (the low percentage). 3) Introduce a technical layer/solution (the "examiner" or "evaluation layer") to fix the quantified gap. The piece gains mechanical momentum from this structure, making it feel like a checklist rather than a flowing argument. Consider varying the introduction of solutions—sometimes the solution should be a conceptual breakthrough, not just a layer.
