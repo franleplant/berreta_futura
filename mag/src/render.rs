@@ -424,7 +424,8 @@ pub fn run(edition: &str, operation: &str, article: Option<&str>, langs: Option<
         inputs: staging.rows,
     };
 
-    let run_dir = PathBuf::from("runs").join(&edition_id).join(format!("render-{}", crate::caller::now_stamp()));
+    // Renders live beside the edition's runs: editions/<ed>/render-<ts>/
+    let run_dir = edition_dir.join(format!("render-{}", crate::caller::now_stamp()));
     let out_dir = run_dir.join("out");
     fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
     let request_path = run_dir.join("request.json");

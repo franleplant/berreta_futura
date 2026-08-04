@@ -1,5 +1,5 @@
 schema_version: 1
-edition_id: rerun-004-the-systems-around-the-model
+edition_id: "004"
 piece_id: eval-engineering
 content_mode: faithful_synthesis
 status: drafting
@@ -19,7 +19,7 @@ rounds:
     argv:
     - mag
     - produce
-    - rerun-004-the-systems-around-the-model
+    - "004"
     - --backend
     - agent
     - --submit

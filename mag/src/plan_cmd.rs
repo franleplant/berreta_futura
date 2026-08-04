@@ -111,9 +111,9 @@ articles:\n- id: <slug>\n  title: ...\n  short_title: ...\n\
     prompt += &section("past edition specs (for used sources and tone)", &past.join("\n---\n"));
     prompt += &excerpts;
 
-    let run_dir = PathBuf::from("runs").join(edition);
-    fs::create_dir_all(&run_dir)?;
-    let caller = Caller::new(&run_dir);
+    // The plan call logs into the edition dir itself.
+    fs::create_dir_all(&out_dir)?;
+    let caller = Caller::new(&out_dir);
     let reply = caller.llm(&format!("plan {edition}"), model, &prompt)?;
 
     let re = Regex::new(r"(?s)<plan>(.*?)</plan>").unwrap();

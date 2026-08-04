@@ -1,5 +1,5 @@
 schema_version: 1
-edition_id: rerun-004-the-systems-around-the-model
+edition_id: "004"
 findings:
 - piece: factory-systems-problem
   status: open

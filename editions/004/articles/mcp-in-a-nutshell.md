@@ -43,10 +43,10 @@ A client that only ever sends `tools/list` and `tools/call` is a working client.
 
 ```yaml
 comprehension_questions:
-- What does MCP define, and what does it deliberately leave to the AI application?
-- One AI application is connected to three servers. How many clients exist, and who manages them?
-- Which request asks a server what protocol versions and capabilities it supports? Must every server implement it, and must every client send it?
-- Which two calls take a client from knowing nothing about a server to holding a result, and what must match exactly between them?
-- What must a client do to be told when a server's tool list changes, and why should it keep polling anyway?
-- Since no session is held open, what does every request have to carry, and in which field?
+- What does MCP define, and what is left to the host?
+- Three connected servers means how many clients?
+- Which request negotiates versions and capabilities?
+- Which two calls go from nothing to a held result?
+- How does a client learn the tool list changed?
+- With no open session, what must every request carry?
 ```

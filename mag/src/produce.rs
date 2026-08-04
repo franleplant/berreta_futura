@@ -419,7 +419,10 @@ pub fn run_edition(
         .and_then(value_to_string)
         .ok_or_else(|| anyhow!("plan.edition.id missing or not a string/number"))?;
 
-    let run_dir = resume.unwrap_or_else(|| PathBuf::from("runs").join(&edition_id).join(crate::caller::now_stamp()));
+    // Runs live inside the edition dir, name-sortable: editions/<ed>/run-<ts>/
+    let edition_dir = plan_path.parent().map(PathBuf::from).unwrap_or_default();
+    let run_dir = resume
+        .unwrap_or_else(|| edition_dir.join(format!("run-{}", crate::caller::now_stamp())));
     fs::create_dir_all(&run_dir)?;
     fs::write(run_dir.join("plan.yaml"), serde_yaml::to_string(&plan)?)?;
     let caller = Arc::new(Caller::new(&run_dir));

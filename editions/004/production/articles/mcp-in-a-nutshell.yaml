@@ -1,5 +1,5 @@
 schema_version: 1
-edition_id: rerun-004-the-systems-around-the-model
+edition_id: "004"
 piece_id: mcp-in-a-nutshell
 content_mode: in_a_nutshell
 status: drafting
@@ -19,7 +19,7 @@ rounds:
     argv:
     - mag
     - produce
-    - rerun-004-the-systems-around-the-model
+    - "004"
     - --backend
     - agent
     - --submit
@@ -29,11 +29,11 @@ rounds:
     duration_seconds: 0.0
     output_sha256: 2c19b81e741f06debae5ec126937863cd4fae2dfaa296bc31e5a8581cf4bd97a
   gate_failures:
-  - 'code_blocks: /Users/franguijarro/code/magazine/editions/rerun-004-the-systems-around-the-model/articles/mcp-in-a-nutshell.md:
+  - 'code_blocks: /Users/franguijarro/code/magazine/editions/004/articles/mcp-in-a-nutshell.md:
     code block 1 does not appear in any pinned source extraction (architecture-overview-ce5cb1d1); its
     first line is ''comprehension_questions:''. Code in the magazine is copied and run by readers, so
     every fenced block must be the source''s own lines, character for character.'
-  - 'validate: /Users/franguijarro/code/magazine/editions/rerun-004-the-systems-around-the-model/articles/mcp-in-a-nutshell.md:
+  - 'validate: /Users/franguijarro/code/magazine/editions/004/articles/mcp-in-a-nutshell.md:
     code block 1 does not appear in any pinned source extraction (architecture-overview-ce5cb1d1); its
     first line is ''comprehension_questions:''. Code in the magazine is copied and run by readers, so
     every fenced block must be the source''s own lines, character for character.'
