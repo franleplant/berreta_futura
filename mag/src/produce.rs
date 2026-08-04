@@ -102,6 +102,10 @@ fn severity_of(finding: &serde_yaml::Value) -> String {
     }
 }
 
+/// The writer prompts end replies with working notes below this marker;
+/// everything from it on is scratch and never reaches disk, judges, or print.
+const SCRATCH_MARKER: &str = "<!-- SCRATCH: not part of the manuscript -->";
+
 fn extract_manuscript(reply: &str, label: &str) -> Result<String> {
     let re = Regex::new(r"(?s)<manuscript>(.*?)</manuscript>").unwrap();
     let last = re
@@ -109,7 +113,8 @@ fn extract_manuscript(reply: &str, label: &str) -> Result<String> {
         .last()
         .map(|c| c[1].to_string())
         .ok_or_else(|| anyhow!("{label}: reply contained no <manuscript> block"))?;
-    Ok(format!("{}\n", last.trim()))
+    let body = last.split(SCRATCH_MARKER).next().unwrap_or(&last);
+    Ok(format!("{}\n", body.trim()))
 }
 
 /// A lens's yaml report — a mapping guaranteed to have a `findings` sequence

@@ -1,0 +1,76 @@
+worth:
+  result: approved
+  findings: []
+  notes: |
+    This piece narrates the actual attack progression from initial exploit through
+    lateral movement to internal access, extracting the three defensive shapes
+    (node impersonation via cloud credentials, forged identity tokens, supply-chain
+    write access) as the machine-speed attack patterns that matter for defenders.
+    It completes its prior revision against length and positioning, delivering
+    forensic facts without forensic-investigation overhead. At 11% of source length,
+    it is lean but justified—the source's bulk is enumerated actions and forensic
+    methodology, not narrative content. The restructuring from phase-by-phase to
+    escalation-by-escalation is appropriate editorial work.
+  scores:
+    value_over_source: 4
+    length_earned: 5
+    retention: 4
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Verified every major checkable claim against extraction: dates, numbers, technical
+    specifics, three harvested credentials, lateral-movement techniques, and the source's
+    own conclusions about reusable attack shapes. Qualifications and hedges preserved
+    throughout (metadata reach without cluster compromise, DryRun-only mutations, database
+    read without write). No unsupported claims; all compressions maintain source meaning.
+    Synthesis appropriately includes source's own "three lateral-movement techniques"
+    generalization and concluding sentence.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    Manuscript is mechanically clean. Capitalization is consistent throughout (all
+    sentences capitalized). Grammar is correct with clear subject-verb agreement,
+    proper tense usage, and unambiguous pronoun antecedents throughout complex
+    nested constructions. Code fences are properly opened and closed with correct
+    inline code formatting. List items maintain parallel structure. No em-dashes,
+    no doubled spaces, no stray markup in the prose. Quotes and apostrophes are
+    consistent.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The piece executes a forensic narrative of a single intrusion from initial
+    compromise through defensive pattern extraction, with clean transitions
+    between attack phases and code examples well-placed at the point of
+    relevance. The synthesis paragraph that generalizes three lateral-movement
+    techniques from the specific intrusion details is well-positioned to reframe
+    narrative beats as reusable defensive patterns.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 5
+    economy: 5
+  notes: |
+    Forensic voice throughout, moving through the incident with precision and
+    authentic perspective. Strong specificity (04:01 UTC, uid=0, explicit API
+    names) prevents abstraction. The closing sentence reframes the entire
+    incident as a lesson about asymmetry and the speed of machine exploration,
+    which is the hardest work prose can do. No blocking findings.

@@ -1,0 +1,8 @@
+piece: editorial
+rounds:
+- round: 1
+  words: 582
+  loop_findings: 0
+  all_findings: 0
+state: clean
+open_findings: []
