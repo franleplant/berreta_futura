@@ -256,7 +256,7 @@ fn print_summary(value: &serde_json::Value, out_dir: &Path) {
     println!("  out dir: {}", out_dir.display());
 }
 
-pub fn run(edition: &str, operation: &str, article: Option<&str>) -> Result<i32> {
+pub fn run(edition: &str, operation: &str, article: Option<&str>, langs: Option<&str>) -> Result<i32> {
     if !OPERATIONS.contains(&operation) {
         bail!("unknown operation '{operation}': expected one of {}", OPERATIONS.join(", "));
     }
@@ -333,10 +333,11 @@ pub fn run(edition: &str, operation: &str, article: Option<&str>) -> Result<i32>
         staging.add(&design_toml);
     }
 
-    // D. ES translation, if present.
+    // D. ES translation, if present (skipped when --langs excludes es).
     let translation_dir = edition_dir.join("translations/es");
     let translation_yaml_path = translation_dir.join("edition.yaml");
-    let has_translation = translation_yaml_path.exists();
+    let has_translation = translation_yaml_path.exists()
+        && langs.map(|l| l.split(',').any(|x| x.trim() == "es")).unwrap_or(true);
     let languages: Vec<String> = if has_translation {
         vec!["en".to_string(), "es".to_string()]
     } else {
@@ -433,10 +434,11 @@ pub fn run(edition: &str, operation: &str, article: Option<&str>) -> Result<i32>
     println!("request: {}", request_path.display());
     println!("out dir: {}", out_dir.display());
 
+    // The bridge requires absolute request and destination paths.
     let mut child = Command::new("uv")
         .args(["run", "mag-render-adapter"])
-        .arg(&request_path)
-        .arg(&out_dir)
+        .arg(request_path.canonicalize()?)
+        .arg(out_dir.canonicalize()?)
         .current_dir(&repo_root)
         .stdout(Stdio::piped())
         .spawn()
