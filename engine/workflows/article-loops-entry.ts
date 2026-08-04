@@ -1,7 +1,9 @@
-import { createRequire } from "node:module";
-import { dirname } from "node:path";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { isDeepStrictEqual } from "node:util";
 import type { WorkflowGlobals } from "@loops/core";
+import type { WorkflowContext } from "loops";
+import { invokeWorkflow } from "loops";
+import { z } from "zod/v3";
 
 import type { ArticleDecisionAnswer } from "../contracts/workflow-run.ts";
 import type {
@@ -20,33 +22,47 @@ export const meta = {
 };
 
 /**
- * The function hashed by Loops is the same function executed by the durable
- * adapter. Ports are injected by the private adapter and never serialized.
+ * Run the fixed article script with host-owned ports. Ports are process-local
+ * capabilities and never become part of the immutable workflow args.
+ * AsyncLocalStorage keeps concurrent root and child invocations isolated.
  */
-export default async function articleLoopsEntry(
+export function invokeArticleWorkflowWithPorts(
   globals: WorkflowGlobals,
   ports: ArticleWorkflowPorts,
+  args: ArticleRuntimeStartArgs = globals.args as ArticleRuntimeStartArgs,
 ): Promise<unknown> {
+  const scopedGlobals = args === globals.args ? globals : { ...globals, args };
+  return articleWorkflowPortsStorage.run(ports, () => invokeWorkflow(
+    scopedGlobals,
+    run,
+  ));
+}
+
+/**
+ * Explicit Loops workflow entry. The host adapter binds ports around this
+ * function; the workflow itself receives only its immutable `ctx.input`.
+ */
+export default async function run(
+  context: WorkflowContext<ArticleRuntimeStartArgs>,
+): Promise<unknown> {
+  const ports = articleWorkflowPortsStorage.getStore();
+  if (ports === undefined) throw new Error("Magazine article workflow requires host-bound ports");
   if (ARTICLE_RUNTIME_GRAPH !== "magazine-article-runtime/1") {
     throw new Error("Magazine article runtime graph identity is invalid");
   }
-  const args = globals.args as ArticleRuntimeStartArgs | undefined;
-  if (args === undefined) throw new Error("Magazine article workflow requires immutable args");
+  const args = context.input;
   assertEntryBinding(args, ports);
-  const context: MagazineWorkflowContext = {
-    durableContext: () => globals.durableContext?.() as WorkflowDurableContext | undefined,
+  const workflowContext: MagazineWorkflowContext = {
+    durableContext: () => context.durableContext?.() as WorkflowDurableContext | undefined,
     reviewStepResultSchema: reviewStepCheckpointSchema,
-    step: async (key, fn, options) => {
-      if (options.retry === undefined && options.schema === undefined && options.label === undefined) {
-        return await globals.step(key, fn, { input: options.input });
-      }
+    step: async <T>(key: string, fn: () => Promise<T> | T, options: Parameters<MagazineWorkflowContext["step"]>[2]): Promise<T> => {
       const retryOptions = options.retry;
       const retryOn: "always" | "never" | "retryable" | string[] | undefined = retryOptions === undefined
         ? undefined
         : typeof retryOptions.retryOn === "string" || retryOptions.retryOn === undefined
           ? retryOptions.retryOn
           : [...retryOptions.retryOn];
-      return await globals.step(key, fn, {
+      return await context.step(key, fn, {
         input: options.input,
         ...(options.schema === undefined ? {} : { schema: options.schema as never }),
         ...(options.label === undefined ? {} : { label: options.label }),
@@ -56,14 +72,14 @@ export default async function articleLoopsEntry(
           ...(retryOptions?.backoffMultiplier === undefined ? {} : { backoffMultiplier: retryOptions.backoffMultiplier }),
           ...(retryOn === undefined ? {} : { retryOn }),
         },
-      });
+      }) as T;
     },
     parallel: async <T>(thunks: readonly (() => Promise<T> | T)[], options?: { readonly failureMode?: "fail-fast" | "collect" }): Promise<readonly (T | null)[]> => {
-      if (options === undefined) return await globals.parallel([...thunks]);
-      return await globals.parallel([...thunks], options) as unknown as readonly (T | null)[];
+      if (options === undefined) return await context.parallel([...thunks]);
+      return await context.parallel([...thunks], options) as unknown as readonly (T | null)[];
     },
     wait: async (key, options): Promise<ArticleDecisionAnswer> => {
-      const answer = await globals.wait(key, {
+      const answer = await context.wait(key, {
         schema: decisionSchema as never,
         request: options.request,
       });
@@ -73,8 +89,10 @@ export default async function articleLoopsEntry(
       return answer as ArticleDecisionAnswer;
     },
   };
-  return await runArticleWorkflow(args, context, ports);
+  return await runArticleWorkflow(args, workflowContext, ports);
 }
+
+const articleWorkflowPortsStorage = new AsyncLocalStorage<ArticleWorkflowPorts>();
 
 function assertEntryBinding(args: ArticleRuntimeStartArgs, ports: ArticleWorkflowPorts): void {
   const artifact = ports.ledger.requireArtifact(args.entryArtifactId);
@@ -99,32 +117,20 @@ function assertEntryBinding(args: ArticleRuntimeStartArgs, ports: ArticleWorkflo
   }
 }
 
-// Loops currently ships its durable-schema converter with its own Zod major.
-// Resolve that exact copy instead of the magazine application's renderer Zod.
-const require = createRequire(import.meta.url);
-const loopsZod = (require(require.resolve("zod", { paths: [dirname(require.resolve("@loops/core"))] })) as {
-  readonly z: {
-    readonly object: (shape: Record<string, unknown>) => { readonly strict: () => unknown };
-    readonly string: () => { readonly optional: () => unknown };
-    readonly literal: (value: string) => unknown;
-    readonly enum: (values: readonly string[]) => unknown;
-    readonly array: (value: unknown) => unknown;
-  };
-});
-const decisionSchema = loopsZod.z.object({ decisionArtifactId: loopsZod.z.string() });
-const reviewStepCheckpointSchema = loopsZod.z.object({
-  schemaVersion: loopsZod.z.literal("article-review-checkpoint/1"),
-  status: loopsZod.z.enum(["completed", "skipped"]),
-  waveId: loopsZod.z.string(),
-  checkId: loopsZod.z.string(),
-  kind: loopsZod.z.enum(["model_review", "article_measurement"]),
-  key: loopsZod.z.string(),
-  manuscriptArtifactId: loopsZod.z.string(),
-  manuscriptRevisionId: loopsZod.z.string(),
-  materialArtifactIds: loopsZod.z.array(loopsZod.z.string()),
-  outputArtifactIds: loopsZod.z.array(loopsZod.z.string()),
-  resultArtifactId: loopsZod.z.string().optional(),
-  reviewerId: loopsZod.z.string().optional(),
-  assessment: loopsZod.z.enum(["pass", "findings", "human_required", "not_applicable"]),
-  findingArtifactIds: loopsZod.z.array(loopsZod.z.string()),
+const decisionSchema = z.object({ decisionArtifactId: z.string() });
+const reviewStepCheckpointSchema = z.object({
+  schemaVersion: z.literal("article-review-checkpoint/1"),
+  status: z.enum(["completed", "skipped"]),
+  waveId: z.string(),
+  checkId: z.string(),
+  kind: z.enum(["model_review", "article_measurement"]),
+  key: z.string(),
+  manuscriptArtifactId: z.string(),
+  manuscriptRevisionId: z.string(),
+  materialArtifactIds: z.array(z.string()),
+  outputArtifactIds: z.array(z.string()),
+  resultArtifactId: z.string().optional(),
+  reviewerId: z.string().optional(),
+  assessment: z.enum(["pass", "findings", "human_required", "not_applicable"]),
+  findingArtifactIds: z.array(z.string()),
 }).strict();
