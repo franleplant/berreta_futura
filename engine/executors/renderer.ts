@@ -19,6 +19,7 @@ import {
   type RendererAdapter,
   type RenderExecutionProfile,
   type RenderManifest,
+  type RenderResult,
 } from "../renderer-adapter/index.ts";
 import {
   AdapterWorkspaceOwner,
@@ -65,6 +66,18 @@ export type RendererExecutorOptions = {
   readonly workDirectory: string;
 };
 
+export type DirectEditionMeasurementInput = {
+  readonly attemptId: string;
+  readonly editionPackageId: string;
+  readonly primaryLanguage: "en";
+  readonly publicationName: string;
+  readonly renderer: "reportlab" | "weasyprint";
+  readonly inputs: readonly { readonly artifactId: ArtifactId; readonly targetPath: string }[];
+  readonly readBytes: (artifactId: ArtifactId) => Promise<Uint8Array> | Uint8Array;
+  readonly rendererIdentity: JsonObject;
+  readonly design?: string;
+};
+
 export class RendererExecutor implements Executor {
   readonly id: string;
   readonly worker: WorkerIdentity;
@@ -86,6 +99,48 @@ export class RendererExecutor implements Executor {
 
   accepts(offer: WorkOfferView): boolean {
     return offer.role === "measure_edition" || offer.role === "render";
+  }
+
+  /**
+   * The Loops editorial child uses the same pinned adapter operation without
+   * manufacturing a legacy RunEngine offer. The outer magazine attempt owns
+   * authentication, claim fencing, and result selection.
+   */
+  async measureEdition(input: DirectEditionMeasurementInput): Promise<RenderResult> {
+    if (input.inputs.length === 0 || new Set(input.inputs.map((item) => item.artifactId)).size !== input.inputs.length || new Set(input.inputs.map((item) => item.targetPath)).size !== input.inputs.length) throw permanentAdapterError("direct measure_edition inputs must be non-empty and unique");
+    input.inputs.forEach((item, index) => requireSafeTargetPath(item.targetPath, `direct measure_edition inputs[${index}].targetPath`));
+    const editionManifest = input.inputs.filter((item) => item.targetPath === `editions/${input.editionPackageId}/edition.yaml`);
+    if (editionManifest.length !== 1) throw permanentAdapterError("direct measure_edition must bind the exact committed edition manifest");
+    const workspace = await this.workspaces.create(input.attemptId, `measure-edition-${input.attemptId}`);
+    try {
+      const staged = await Promise.all(input.inputs.map(async (item, index) => ({
+        artifactId: item.artifactId,
+        sourcePath: await stageArtifact({ readBytes: async (artifactId) => await input.readBytes(artifactId), readText: async (artifactId) => new TextDecoder("utf-8", { fatal: true }).decode(await input.readBytes(artifactId)) }, item.artifactId, workspace.inputRoot, index),
+        targetPath: item.targetPath,
+      })));
+      const manifest: RenderManifest = {
+        schemaVersion: 1,
+        rendererContractVersion: RENDERER_CONTRACT_VERSION,
+        operation: "measure_edition",
+        editionId: input.editionPackageId,
+        primaryLanguage: "en",
+        languages: ["en"],
+        publicationName: input.publicationName,
+        renderer: input.renderer,
+        artifactRoot: workspace.inputRoot,
+        inputs: staged,
+        ...(input.design === undefined ? {} : { design: input.design }),
+        metadata: { rendererIdentity: input.rendererIdentity, attemptId: input.attemptId },
+      };
+      await writeAdapterRequest(workspace.requestPath, manifest);
+      const result = await this.adapter.render(workspace.requestPath, workspace.outputRoot, new AbortController().signal);
+      if (result.schemaVersion !== 1 || result.rendererContractVersion !== RENDERER_CONTRACT_VERSION || result.editionId !== input.editionPackageId || result.files.length !== 0) throw permanentAdapterError("direct measure_edition returned the wrong renderer contract");
+      requireExactSequence(input.inputs.map((item) => item.artifactId), result.inputArtifactIds, "direct measure_edition result");
+      requireExactSequence(["en"], result.layouts.map((layout) => layout.language), "direct measure_edition layouts");
+      return result;
+    } finally {
+      await this.workspaces.release(input.attemptId);
+    }
   }
 
   async execute(context: ExecutorContext): Promise<WorkAnswer> {

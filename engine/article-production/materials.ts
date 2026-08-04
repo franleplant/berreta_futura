@@ -220,6 +220,7 @@ const sourceBlindRoles = new Set<WorkRole>(["mechanics", "shape", "craft"]);
 const sourceBlindClasses = new Set<ArticleArtifactClassification>([
   "judge_prompt",
   "manuscript",
+  "measurement_input",
   "writing_rules",
 ]);
 

@@ -1,24 +1,28 @@
 import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import { execFile as execFileCallback } from "node:child_process";
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
 import test from "node:test";
 import Database from "better-sqlite3";
-import { canonicalizeDurableValue, hashDurableValue } from "@loops/core";
+import { canonicalizeDurableValue, hashDurableValue, SQLiteDurableRunStore } from "@loops/core";
 
-import type { ArtifactId, JsonObject, RevisionId } from "../contracts/index.ts";
+import type { ArtifactId, JsonObject, JsonValue, ManuscriptRevisionId, RevisionId } from "../contracts/index.ts";
+import { LocalAuthorityStore } from "../authority/local-authority.ts";
 import type { InputRevisionRef } from "../durable/types.ts";
 import { materializeNativeInputRevision } from "../durable/native-input-revision.ts";
 import { GitCliDurableGit } from "../durable/git-cli.ts";
 import { ArtifactLedger } from "../workflow-authority/artifact-ledger.ts";
-import type { ArticleAttemptExecutionResult, ArticleWorkflowPorts } from "../workflows/internal-types.ts";
+import type { ArticleAttemptExecutionResult, ArticleRuntimeStartArgs, ArticleWorkflowPorts, WorkflowWaitContext } from "../workflows/internal-types.ts";
 import type { RendererIdentity } from "../workflows/renderer-identity.ts";
 import { EditionWorkflowEngine } from "../workflows/edition-workflow-engine.ts";
 import type { EditionWorkflowArgs } from "../workflows/edition-workflow.ts";
 import { resolveAuthenticatedWritePipelineInputs } from "../durable/write-pipeline.ts";
+import { createArticleWorkflowPorts } from "../workflows/article-runtime.ts";
+import { articleRevisionRecordParents, type ArticleRevisionRecord } from "../article-production/revision.ts";
+import type { RenderManifest, RendererAdapter } from "../renderer-adapter/protocol.ts";
 
 const execFile = promisify(execFileCallback);
 const PROJECT_ROOT = resolve(process.cwd());
@@ -274,6 +278,124 @@ test("Edition 4 Loops root plans seven children with exact source lineage and re
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test("public edition root measures and promotes the opening editorial through the pinned renderer operation", async () => {
+  const root = await mkdtemp(join(tmpdir(), "mag-edition-editorial-root-"));
+  const repositoryRoot = join(root, "repo");
+  const workRoot = join(root, "work");
+  const databasePath = join(root, "magazine.sqlite");
+  const loopsDatabasePath = join(root, "loops.sqlite");
+  await mkdir(workRoot, { recursive: true });
+  const pipelineRef = await createProfilePipeline(repositoryRoot, workRoot);
+  const ledger = new ArtifactLedger(databasePath);
+  const manifests: RenderManifest[] = [];
+  const adapter: RendererAdapter = {
+    render: async (manifestPath) => {
+      const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as RenderManifest;
+      manifests.push(manifest);
+      return { schemaVersion: 1, rendererContractVersion: "magazine-renderer/1", editionId: manifest.editionId, files: [], layouts: [{ language: "en", totalPages: 8, editorialPages: 1, articlePages: Object.fromEntries(Array.from({ length: 7 }, (_, index) => [`article-${index + 1}`, 1])), figureCount: 0, criticResult: "not_run" }], inputArtifactIds: manifest.inputs.map((input) => input.artifactId), tailArtFacts: {} };
+    },
+  };
+  const authority = await LocalAuthorityStore.init(join(root, "authority"));
+  const worker = async (principalId: string, authorityKind: "model" | "tool", capabilities: readonly string[]) => {
+    await authority.enrollWorker({ principalId, authority: authorityKind, capabilities: [...capabilities] as never });
+    const credential = await authority.createCredentialProfile({ principalId, credentialProfileId: `${principalId}-profile` });
+    await authority.grant({ credentialProfileId: credential.credentialProfileId, capabilities: [...capabilities] as never });
+    return await authority.authenticate({ credentialProfileId: credential.credentialProfileId, secret: credential.secret });
+  };
+  const sourceAware = await worker("source-aware", "model", ["text_model", "source_access"]);
+  const sourceBlind = await worker("source-blind", "model", ["text_model", "source_blind"]);
+  const measurementTool = await worker("measurement-tool", "tool", ["subprocess"]);
+  await authority.enrollHuman({ principalId: "editor", capabilities: ["text_model"] });
+  const humanCredential = await authority.createCredentialProfile({ principalId: "editor", credentialProfileId: "editor-profile" });
+  await authority.grant({ credentialProfileId: humanCredential.credentialProfileId, capabilities: ["text_model"] });
+  const human = await authority.authenticate({ credentialProfileId: humanCredential.credentialProfileId, secret: humanCredential.secret });
+  const rendererIdentity = testRendererIdentity();
+  const renderer = { workDirectory: join(root, "renderer"), adapter, toolchain: { uvExecutable: process.execPath, pythonExecutable: process.execPath, expected: { uvSha256: "sha256:test" as const, uvVersion: "test", pythonSha256: "sha256:test" as const, pythonVersion: "test", pythonImplementation: "test", pythonCacheTag: "test", platform: "darwin-arm64" as const } } };
+  const base = createArticleWorkflowPorts({ ledger, repositoryRoot, workRoot, renderer, projectRoot: PROJECT_ROOT, articleReviewWorkers: { sourceAwareReviewer: sourceAware, sourceBlindReviewer: sourceBlind, measurementTool }, articleReviewCredentials: { schemaVersion: "closed-writer-credential-resource/1", read: () => ({ OPENAI_API_KEY: "test-key" }) } });
+  let writerOrdinal = 0;
+  const ports: ArticleWorkflowPorts = {
+    ...base,
+    runEditorialWriter: async (input) => {
+      writerOrdinal += 1;
+      const title = "A Complete Issue";
+      const manuscriptText = `---\nlabel: Opening\ntitle: ${title}\nbyline: Magazine\n---\n\nOne unifying idea.`;
+      const inputs = [input.profileArtifactId, ...input.articleArtifactIds, input.currentManuscriptArtifactId, ...(input.revisionContextArtifactIds ?? [])];
+      const metadata = { writerExecutionClass: "closed_editorial_writer/1", editorialExecutionId: input.editorialExecutionId, articleId: "opening", access: "source_blind", operationKey: input.operationKey, operationInputDigest: `writer-digest-${writerOrdinal}`, claimId: `writer-claim-${writerOrdinal}`, attemptId: `writer-attempt-${writerOrdinal}`, attemptNumber: 1, principalId: "editorial-writer", writerInputArtifactIds: inputs as unknown as JsonValue };
+      const parents = inputs.map((artifactId) => ({ artifactId, relation: "editorial_writer_input" }));
+      const manuscript = `stub-editorial-manuscript-${writerOrdinal}` as ArtifactId;
+      const notes = `stub-editorial-notes-${writerOrdinal}` as ArtifactId;
+      const dispositions = `stub-editorial-dispositions-${writerOrdinal}` as ArtifactId;
+      ledger.createArtifact({ id: manuscript, kind: "editorial_manuscript", schemaVersion: "editorial-manuscript/1", mediaType: "text/markdown", origin: "model", payload: { kind: "text", text: manuscriptText }, parents, metadata: { ...metadata, label: "Opening", title, byline: "Magazine", revisionId: `editorial-revision-${writerOrdinal}` }, runId: ledger.requireRunByArticleExecutionId(input.editorialExecutionId as never).runId });
+      ledger.createArtifact({ id: notes, kind: "editorial_working_notes", schemaVersion: "editorial-working-notes/1", mediaType: "text/plain", origin: "model", payload: { kind: "text", text: "notes" }, parents, metadata, runId: ledger.requireRunByArticleExecutionId(input.editorialExecutionId as never).runId });
+      ledger.createArtifact({ id: dispositions, kind: "editorial_finding_dispositions", schemaVersion: "editorial-finding-dispositions/1", mediaType: "application/json", origin: "model", payload: { kind: "json", value: { schemaVersion: "editorial-finding-dispositions/1", dispositions: [] } }, parents, metadata, runId: ledger.requireRunByArticleExecutionId(input.editorialExecutionId as never).runId });
+      return { selected: true, value: { schemaVersion: "editorial-writer-result/1", label: "Opening", title, byline: "Magazine", manuscript: manuscriptText, workingNotes: "notes", dispositions: [] }, claim: { claimId: metadata.claimId, operationKey: input.operationKey }, artifacts: [ledger.requireArtifact(manuscript), ledger.requireArtifact(notes), ledger.requireArtifact(dispositions)] };
+    },
+    runEditorialReview: async (input) => {
+      const ids = [input.manuscriptArtifactId, input.reviewPlanArtifactId, input.measurementArtifactId];
+      const id = `stub-editorial-review-${input.reviewCycleId}` as ArtifactId;
+      const value = { schemaVersion: "editorial-review-result/1", editionId: "004", editorialId: "opening", target: "editorial:opening", manuscriptArtifactId: input.manuscriptArtifactId, measurementArtifactId: input.measurementArtifactId, reviewPlanArtifactId: input.reviewPlanArtifactId, reviewCycleId: input.reviewCycleId, assessment: "pass", findings: [] } as const;
+      const childRun = ledger.requireArtifact(input.manuscriptArtifactId).producingRunId!;
+      ledger.createArtifact({ id, kind: "editorial_review_result", schemaVersion: "editorial-review-result/1", mediaType: "application/json", origin: "model", payload: { kind: "json", value: value as unknown as JsonValue }, parents: ids.map((artifactId) => ({ artifactId, relation: "editorial_review_input" })), metadata: { reviewerExecutionClass: "closed_editorial_reviewer/1", access: "source_blind", claimId: "review-claim", attemptId: "review-attempt", principalId: "reviewer", operationInputDigest: "review-digest", reviewerInputArtifactIds: ids as unknown as JsonValue }, runId: childRun });
+      return { selected: true, findings: [], artifacts: [ledger.requireArtifact(id)] };
+    },
+    promoteEditorial: async (input) => {
+      const id = "stub-editorial-promotion" as ArtifactId;
+      ledger.createArtifact({ id, kind: "editorial_durable_promotion", schemaVersion: "editorial-durable-promotion/1", mediaType: "application/json", origin: "machine", payload: { kind: "json", value: { schemaVersion: "editorial-durable-promotion/1" } }, parents: [{ artifactId: input.request.acceptedArtifactIds[0]!, relation: "editorial_manuscript" }], runId: input.runId });
+      return { promotionArtifactId: id, durableRevisionId: input.request.revisionId, manifestDigest: "sha256:promotion", gitCommitOid: "commit" };
+    },
+  };
+  const completedArticle = (args: ArticleRuntimeStartArgs) => createCompletedArticleStub(ledger, args);
+  const engineOptions = { databasePath, loopsDatabasePath, projectRoot: PROJECT_ROOT, repositoryRoot, workRoot, renderer, articlePorts: ports, articleWorkflowStub: completedArticle, rendererIdentity } as const;
+  assert.throws(() => new EditionWorkflowEngine({ ...engineOptions, renderer: undefined as never }), /pinned renderer/iu);
+  const engine = new EditionWorkflowEngine(engineOptions);
+  const editionRunId = "edition-editorial-integration" as import("../contracts/index.ts").RunId;
+  try {
+    const waiting = await engine.startEdition({ pipelineRef, runId: editionRunId });
+    assert.equal(waiting.status, "waiting");
+    const store = new SQLiteDurableRunStore(loopsDatabasePath);
+    try {
+      const inspection = store.inspectRun(editionRunId)!;
+      const wait = inspection.waits.find((item) => item.status === "pending" && (item.request as { offerId?: unknown } | undefined)?.offerId !== undefined);
+      assert.ok(wait, JSON.stringify({ runStatus: inspection.run.status, waits: inspection.waits.map((item) => ({ key: item.key, status: item.status })), failedCalls: inspection.calls.filter((call) => call.status === "failed").map((call) => ({ key: call.key, status: call.status, failure: call.failure })) }));
+      const invocation = inspection.invocations.find((item) => item.invocationId === wait.invocationId)!;
+      const offer = ledger.requireOffer((wait.request as { offerId: string }).offerId);
+      const durableContext: WorkflowWaitContext = { runId: editionRunId, invocationId: invocation.invocationId, workflowName: invocation.workflowName, workflowVersion: invocation.workflowVersion, ...(invocation.workflowPin === undefined ? {} : { workflowPin: invocation.workflowPin as unknown as JsonObject }), callId: wait.callId, waitId: wait.waitId, key: wait.key, kind: "wait" };
+      const decision = await ledger.createHumanDecisionAuthority().decideEditorial(human, { runId: offer.runId, offerId: offer.id, taskArtifactId: offer.taskArtifactId, inputArtifactIds: offer.inputArtifactIds, choice: "accept", rationale: "Ready" }, durableContext);
+      await store.answerWait({ runId: editionRunId, waitId: wait.waitId, answer: { decisionArtifactId: decision.artifactId } });
+    } finally { store.close(); }
+    const complete = await engine.resume(editionRunId);
+    assert.equal(complete.status, "complete");
+    assert.equal((complete.editorial as { status?: unknown }).status, "complete");
+    assert.equal(manifests.length, 1);
+    assert.equal(manifests[0]!.operation, "measure_edition");
+    assert.deepEqual(manifests[0]!.languages, ["en"]);
+    const editorial = complete.editorial as { readonly manuscriptArtifactId: ArtifactId; readonly articleArtifactIds: readonly ArtifactId[] };
+    for (const id of [editorial.manuscriptArtifactId, ...editorial.articleArtifactIds]) assert.ok(manifests[0]!.inputs.some((input) => input.artifactId === id));
+  } finally {
+    engine.close();
+    ledger.close();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+function createCompletedArticleStub(ledger: ArtifactLedger, args: ArticleRuntimeStartArgs) {
+  // The stub completes the launch seed in place. A real article workflow
+  // would advance the run to its selected revision; this fixture keeps the
+  // immutable launch manuscript identity so the root binding remains exact.
+  const manuscript = args.manuscriptArtifactId;
+  const seed = ledger.requireArtifact(manuscript);
+  const revision = (typeof seed.metadata.revisionId === "string" ? seed.metadata.revisionId : `completed-revision-${args.articleId}`) as ManuscriptRevisionId;
+  const recordId = `completed-record-${args.articleId}` as ArtifactId;
+  const record: ArticleRevisionRecord = { schemaVersion: "article-revision-record/1", ordinal: 0, manuscriptArtifactId: manuscript, manuscriptRevisionId: revision, reviewMaterialArtifactIds: [], humanRulingArtifactIds: [], trigger: "initial" };
+  ledger.createArtifact({ id: recordId, kind: "article_revision_record", schemaVersion: "article-revision-record/1", mediaType: "application/json", origin: "machine", payload: { kind: "json", value: record as unknown as JsonValue }, parents: articleRevisionRecordParents(record), metadata: { articleId: args.articleId, manuscriptArtifactId: manuscript, manuscriptRevisionId: revision }, runId: args.runId });
+  ledger.recordCurrentRevisionRecord(args.runId!, recordId);
+  const measurement = `completed-measurement-${args.articleId}` as ArtifactId;
+  const decision = `completed-decision-${args.articleId}` as ArtifactId;
+  ledger.createArtifact({ id: measurement, kind: "article_measurement", schemaVersion: "article-measurement/1", mediaType: "application/json", origin: "subprocess", payload: { kind: "json", value: {} }, runId: args.runId });
+  ledger.createArtifact({ id: decision, kind: "article_human_decision", schemaVersion: "article-human-decision/1", mediaType: "application/json", origin: "human", payload: { kind: "json", value: {} }, runId: args.runId });
+  return { schemaVersion: "magazine-article-workflow-result/1", runId: args.runId, articleExecutionId: args.articleExecutionId, articleId: args.articleId, status: "complete", manuscriptArtifactId: manuscript, currentRevisionRecordArtifactId: recordId, measurementArtifactId: measurement, decisionArtifactId: decision, durableRevisionId: `durable-${args.articleId}` };
+}
 
 function waitingArticlePorts(ledger: ArtifactLedger, waitCalls: string[]): ArticleWorkflowPorts {
   return {

@@ -3,7 +3,7 @@ import { ArticlePromotionAuthority, DurableStoreArticlePromotionSink } from "../
 import { ArtifactLedger, ArtifactLedgerError } from "../workflow-authority/artifact-ledger.ts";
 import { measureArticle } from "../renderer-adapter/article-measurement.ts";
 import { PythonRendererAdapter } from "../renderer-adapter/python-renderer.ts";
-import type { ArticleMeasurement, ArticleWorkflowPorts } from "./internal-types.ts";
+import type { ArticleMeasurement, ArticleWorkflowPorts, EditorialMeasurement, EditorialReviewExecutionResult, EditorialPromotionResult } from "./internal-types.ts";
 import type { MagazineWorkflowEngineOptions } from "../contracts/workflow-run.ts";
 import type { ArticleWorkflowResult } from "../contracts/workflow-run.ts";
 import { measurementId } from "./article-workflow.ts";
@@ -13,6 +13,11 @@ import type { AuthorizedWorker } from "../authority/local-authority.ts";
 import { createClosedReviewerExecutor, type ClosedReviewerExecutor } from "../executors/closed-reviewer/runtime.ts";
 import { createClosedWriterExecutor, type ClosedWriterExecutor } from "../executors/closed-writer/runtime.ts";
 import { readOpenAIAPIKey } from "../executors/closed-writer/credentials.ts";
+import { createClosedEditorialWriterExecutor, type ClosedEditorialWriterExecutor } from "../executors/closed-editorial-writer/runtime.ts";
+import { createClosedEditorialReviewerExecutor, type ClosedEditorialReviewerExecutor } from "../executors/closed-editorial-reviewer/runtime.ts";
+import { parseEditorialReviewResult } from "../executors/closed-editorial-reviewer/result.ts";
+import { RendererExecutor } from "../executors/renderer.ts";
+import type { JsonObject } from "../contracts/index.ts";
 
 /** Included in the fixed Loops source graph. */
 export const ARTICLE_RUNTIME_GRAPH = "magazine-article-runtime/1" as const;
@@ -25,15 +30,19 @@ export function createArticleWorkflowPorts(options: {
   readonly projectRoot: string;
   readonly articleReviewWorkers?: NonNullable<MagazineWorkflowEngineOptions["articleReviewWorkers"]>;
   readonly articleWriter?: MagazineWorkflowEngineOptions["articleWriter"];
+  readonly editorialWriter?: MagazineWorkflowEngineOptions["editorialWriter"];
+  readonly editorialReviewer?: MagazineWorkflowEngineOptions["editorialReviewer"];
   readonly articleReviewCredentials?: NonNullable<MagazineWorkflowEngineOptions["articleReviewCredentials"]>;
 }): ArticleWorkflowPorts {
+  if (options.renderer === undefined || typeof options.renderer.workDirectory !== "string" || options.renderer.toolchain === undefined) throw new Error("Magazine workflow construction requires a pinned renderer resource");
   const rendererProjectRoot = options.renderer.projectRoot ?? options.projectRoot;
-  const adapter = new PythonRendererAdapter(
+  const adapter = options.renderer.adapter ?? new PythonRendererAdapter(
     rendererProjectRoot,
     options.renderer.timeoutMs,
     () => readVerifiedRendererIdentity(rendererProjectRoot, undefined, options.renderer.toolchain),
     options.renderer.toolchain,
   );
+  const editionRenderer = new RendererExecutor(adapter, { id: "editorial-measure-edition", principalId: "editorial-measure-edition", workDirectory: options.renderer.workDirectory });
   const promotionSink = new DurableStoreArticlePromotionSink({
     repositoryRoot: options.repositoryRoot,
     workRoot: options.workRoot,
@@ -52,6 +61,8 @@ export function createArticleWorkflowPorts(options: {
   }> | undefined;
   let reviewerExecutor: ClosedReviewerExecutor | undefined;
   let writerExecutor: ClosedWriterExecutor | undefined;
+  let editorialWriterExecutor: ClosedEditorialWriterExecutor | undefined;
+  let editorialReviewerExecutor: ClosedEditorialReviewerExecutor | undefined;
   const ensureReviewWorkers = async () => {
     reviewWorkers ??= (async () => {
       const workers = options.articleReviewWorkers;
@@ -62,7 +73,14 @@ export function createArticleWorkflowPorts(options: {
         workers.measurementTool.describe(),
       ]);
       const writerDescription = options.articleWriter === undefined ? undefined : await options.articleWriter.describe();
-      const allDescriptions = writerDescription === undefined ? descriptions : [...descriptions, writerDescription];
+      const editorialWriterDescription = options.editorialWriter === undefined ? undefined : await options.editorialWriter.describe();
+      const editorialReviewerDescription = options.editorialReviewer === undefined ? undefined : await options.editorialReviewer.describe();
+      const allDescriptions = [
+        ...descriptions,
+        ...(writerDescription === undefined ? [] : [writerDescription]),
+        ...(editorialWriterDescription === undefined ? [] : [editorialWriterDescription]),
+        ...(editorialReviewerDescription === undefined ? [] : [editorialReviewerDescription]),
+      ];
       const principalIds = allDescriptions.map((description) => description.principalId);
       const credentialIds = allDescriptions.map((description) => description.credentialProfileId);
       if (new Set(principalIds).size !== principalIds.length || new Set(credentialIds).size !== credentialIds.length) {
@@ -83,6 +101,12 @@ export function createArticleWorkflowPorts(options: {
       if (writerDescription !== undefined && (writerDescription.authority !== "model" || !exactCapabilities(writerDescription.capabilities, ["source_access", "text_model"]))) {
         throw new Error("Article writer must be an authenticated source-aware model with text_model and source_access only");
       }
+      if (editorialWriterDescription !== undefined && (editorialWriterDescription.authority !== "model" || !exactCapabilities(editorialWriterDescription.capabilities, ["source_blind", "text_model"]))) {
+        throw new Error("Editorial writer must be an authenticated source-blind model with text_model and source_blind only");
+      }
+      if (editorialReviewerDescription !== undefined && (editorialReviewerDescription.authority !== "model" || !exactCapabilities(editorialReviewerDescription.capabilities, ["source_blind", "text_model"]))) {
+        throw new Error("Editorial reviewer must be an authenticated source-blind model with text_model and source_blind only");
+      }
       return workers;
     })();
     return await reviewWorkers;
@@ -100,6 +124,8 @@ export function createArticleWorkflowPorts(options: {
       // own authenticated worker identity when supplied. Existing clean
       // review runs do not need to construct a writer until a rewrite route.
       if (options.articleWriter !== undefined) await options.articleWriter.describe();
+      if (options.editorialWriter !== undefined) await options.editorialWriter.describe();
+      if (options.editorialReviewer !== undefined) await options.editorialReviewer.describe();
     },
     measureArticle: async (input): Promise<ArticleMeasurement> => {
       const result = await measureArticle({
@@ -190,6 +216,114 @@ export function createArticleWorkflowPorts(options: {
         writerRequest,
       );
     },
+    runEditorialWriter: async (input, context) => {
+      const worker = options.editorialWriter;
+      const credentials = options.articleReviewCredentials;
+      if (worker === undefined) throw new Error("Opening editorial requires an authenticated closed editorial writer worker");
+      if (credentials === undefined) throw new Error("Opening editorial requires a closed writer credential resource");
+      editorialWriterExecutor ??= createClosedEditorialWriterExecutor({ ledger: options.ledger, credentials });
+      return await editorialWriterExecutor.executeInStep(
+        async (key, operation, stepOptions) => await context.step(key, operation, {
+          input: stepOptions.input,
+          retry: stepOptions.retry,
+          label: "opening.editorial.writer",
+        }),
+        {
+          worker,
+          editorialExecutionId: input.editorialExecutionId,
+          operationKey: input.operationKey,
+          currentManuscriptArtifactId: input.currentManuscriptArtifactId,
+          profileArtifactId: input.profileArtifactId,
+          articleArtifactIds: input.articleArtifactIds,
+          ...(input.mode === undefined ? {} : { mode: input.mode }),
+          ...(input.revisionContextArtifactIds === undefined ? {} : { revisionContextArtifactIds: input.revisionContextArtifactIds }),
+        },
+      );
+    },
+    measureEditorial: async (input) => {
+      if (input.durableContext?.kind !== "step") throw new Error("Opening editorial measurement requires a durable Loops step context");
+      const workers = await ensureReviewWorkers();
+      const expectedContent = [input.manuscriptArtifactId, ...input.articleArtifactIds];
+      if (input.articleArtifactIds.length !== 7 || new Set(expectedContent).size !== 8) throw new Error("Opening editorial measurement requires the editorial and exactly seven articles");
+      const manuscript = options.ledger.requireArtifact(input.manuscriptArtifactId);
+      if (manuscript.producingRunId === undefined) throw new Error("Editorial measurement manuscript has no producing run");
+      const run = options.ledger.requireRun(manuscript.producingRunId);
+      const measurementProfile = readEditorialMeasurementProfile(options.ledger, input.measurementProfileArtifactId);
+      const contentTargets = [measurementProfile.editorialTargetPath, ...measurementProfile.articleTargets.map((target) => target.targetPath)];
+      const targetSet = new Set(contentTargets);
+      const effectiveInputs = [
+        ...measurementProfile.inputs.filter((item) => !targetSet.has(item.targetPath)),
+        ...expectedContent.map((artifactId, index) => ({ artifactId, targetPath: contentTargets[index]! })),
+      ];
+      const materialIds = [...expectedContent, input.measurementProfileArtifactId] as import("../contracts/index.ts").ArtifactId[];
+      return await attemptRunner.executeTool(workers.measurementTool, {
+        rootRunId: run.runId,
+        articleExecutionId: run.articleExecutionId,
+        articleId: "opening",
+        operationKey: input.durableContext.key,
+        manuscriptArtifactId: input.manuscriptArtifactId,
+        access: "tool",
+        materials: {
+          schemaVersion: "article-material-set/1",
+          articleId: "opening",
+          role: "measure_article",
+          access: "tool",
+          manuscriptArtifactId: input.manuscriptArtifactId,
+          artifacts: [
+            ...expectedContent.map((artifactId) => ({ artifactId, articleId: "opening", classification: "manuscript" as const })),
+            { artifactId: input.measurementProfileArtifactId, articleId: "opening", classification: "measurement_profile" as const },
+          ],
+          artifactIds: materialIds,
+        },
+        ...(input.durableContext === undefined ? {} : { durableContext: input.durableContext }),
+      } as never, async ({ claim }) => {
+        const rendered = await editionRenderer.measureEdition({ attemptId: claim.attemptId, editionPackageId: measurementProfile.editionPackageId, primaryLanguage: "en", publicationName: measurementProfile.publicationName, renderer: measurementProfile.renderer, inputs: effectiveInputs, readBytes: (artifactId) => new Uint8Array(options.ledger.readArtifact(artifactId).bytes), rendererIdentity: measurementProfile.rendererIdentity });
+        const layout = rendered.layouts[0]!;
+        const chromeFits = layout.editorialPages === 1 && layout.criticResult !== "fail";
+        const value: EditorialMeasurement = { schemaVersion: "editorial-measurement/1", operation: "measure_edition", editionId: "004", editorialId: "opening", language: "en", manuscriptArtifactId: input.manuscriptArtifactId, contentArtifactIds: expectedContent, inputArtifactIds: rendered.inputArtifactIds, pageCount: layout.editorialPages, maximumReaderPages: 1, fits: chromeFits, labelVisible: chromeFits, labelFits: chromeFits, titleVisible: chromeFits, titleFits: chromeFits, bylineVisible: chromeFits, bylineFits: chromeFits };
+        validateEditorialMeasurement(value, expectedContent);
+        return { value, artifacts: [{ key: "result", kind: "editorial_measurement", schemaVersion: "editorial-measurement/1", mediaType: "application/json", origin: "subprocess", payload: { kind: "json", value: value as unknown as JsonObject }, parents: materialIds.map((artifactId) => ({ artifactId, relation: "editorial_measurement_input" })), metadata: { editionId: "004", editorialId: "opening", language: "en", operation: "measure_edition", measurementExecutionClass: "authenticated_measure_edition/1", measurementInputArtifactIds: rendered.inputArtifactIds as unknown as JsonObject, contentArtifactIds: expectedContent as unknown as JsonObject, operationInputDigest: claim.operationInputDigest } }] };
+      });
+    },
+    runEditorialReview: async (input, context): Promise<EditorialReviewExecutionResult> => {
+      const worker = options.editorialReviewer;
+      const credentials = options.articleReviewCredentials;
+      if (worker === undefined) throw new Error("Opening editorial requires an authenticated closed editorial reviewer worker");
+      if (credentials === undefined) throw new Error("Opening editorial requires a closed reviewer credential resource");
+      const manuscript = options.ledger.requireArtifact(input.manuscriptArtifactId);
+      if (manuscript.producingRunId === undefined) throw new Error("Editorial review manuscript has no producing run");
+      const run = options.ledger.requireRun(manuscript.producingRunId);
+      editorialReviewerExecutor ??= createClosedEditorialReviewerExecutor({ ledger: options.ledger, credentials, attemptRunner });
+      const execution = await editorialReviewerExecutor.executeInStep(
+        async (key, operation, stepOptions) => await context.step(key, operation, { input: stepOptions.input, retry: stepOptions.retry, label: "opening.editorial.reviewer" }),
+        { worker, editorialExecutionId: run.articleExecutionId, operationKey: `editorial.reviewer.${safeIdentity(input.reviewCycleId)}`, manuscriptArtifactId: input.manuscriptArtifactId, reviewPlanArtifactId: input.reviewPlanArtifactId, measurementArtifactId: input.measurementArtifactId, reviewCycleId: input.reviewCycleId },
+      );
+      if (!execution.selected) return { selected: false, reason: execution.reason, artifacts: execution.artifacts };
+      const artifact = execution.artifacts.length === 1 ? execution.artifacts[0] : undefined;
+      if (artifact === undefined || artifact.kind !== "editorial_review_result" || artifact.schemaVersion !== "editorial-review-result/1" || artifact.origin !== "model") throw new Error("Editorial reviewer did not select one authenticated result artifact");
+      let payload: unknown;
+      try { payload = JSON.parse(Buffer.from(options.ledger.readArtifact(artifact.id).bytes).toString("utf8")); } catch (error) { throw new Error("Editorial review result is invalid JSON", { cause: error }); }
+      const value = parseEditorialReviewResult(payload);
+      if (value.manuscriptArtifactId !== input.manuscriptArtifactId || value.measurementArtifactId !== input.measurementArtifactId || value.reviewPlanArtifactId !== input.reviewPlanArtifactId || value.reviewCycleId !== input.reviewCycleId) throw new Error("Editorial review result is not bound to the exact review input");
+      return { selected: true, findings: value.findings, artifacts: execution.artifacts };
+    },
+    promoteEditorial: async (input): Promise<EditorialPromotionResult> => {
+      const promoted = await promotionSink.promote({ request: input.request, reviewer: input.reviewer, rationale: input.rationale });
+      const promotionArtifactId = `art-editorial-promotion-${safeIdentity(input.runId)}` as import("../contracts/index.ts").ArtifactId;
+      options.ledger.createArtifact({
+        id: promotionArtifactId,
+        kind: "editorial_durable_promotion",
+        schemaVersion: "editorial-durable-promotion/1",
+        mediaType: "application/json",
+        origin: "machine",
+        payload: { kind: "json", value: { schemaVersion: "editorial-durable-promotion/1", promotionId: input.request.promotionId, durableRevisionId: promoted.revisionId, manifestDigest: promoted.manifestDigest, gitCommitOid: promoted.gitCommitOid, runId: input.runId, editorialId: "opening", manuscriptArtifactId: input.request.acceptedArtifactIds[0]!, measurementArtifactId: input.measurementArtifactId, decisionArtifactId: input.decisionArtifactId, reviewer: input.reviewer, rationale: input.rationale } as unknown as JsonObject },
+        parents: [{ artifactId: input.decisionArtifactId, relation: "editorial_decision" }, { artifactId: input.measurementArtifactId, relation: "editorial_measurement" }, ...input.request.acceptedArtifactIds.map((artifactId) => ({ artifactId, relation: "editorial_manuscript" }))],
+        metadata: { editionId: "004", editorialId: "opening", promotionId: input.request.promotionId, durableRevisionId: promoted.revisionId },
+        runId: input.runId,
+        ...(input.durableContext === undefined ? {} : { durableContext: input.durableContext }),
+      });
+      return { promotionArtifactId, durableRevisionId: promoted.revisionId, manifestDigest: promoted.manifestDigest, gitCommitOid: promoted.gitCommitOid };
+    },
     requireDecision: (artifactId) => {
       const artifact = options.ledger.requireArtifact(artifactId);
       const runId = artifact.producingRunId;
@@ -232,5 +366,48 @@ function exactCapabilities(actual: readonly string[], expected: readonly string[
   const wanted = new Set(expected);
   return actual.every((capability) => wanted.has(capability));
 }
+
+function safeIdentity(value: string): string {
+  return value.replace(/[^A-Za-z0-9._-]/gu, "_");
+}
+
+function validateEditorialMeasurement(value: EditorialMeasurement, expectedInputs: readonly string[]): void {
+  const chromeFits = value.labelVisible && value.labelFits && value.titleVisible && value.titleFits && value.bylineVisible && value.bylineFits;
+  if (value.schemaVersion !== "editorial-measurement/1" || value.operation !== "measure_edition" || value.editionId !== "004" || value.editorialId !== "opening" || value.language !== "en" || value.manuscriptArtifactId !== expectedInputs[0] || !sameSequence(value.contentArtifactIds, expectedInputs) || expectedInputs.some((id) => !value.inputArtifactIds.includes(id as never)) || !Number.isSafeInteger(value.pageCount) || value.pageCount < 0 || value.maximumReaderPages !== 1 || value.fits !== (value.pageCount === 1 && chromeFits)) throw new Error("Full-English measureEdition result does not match the strict opening-editorial contract");
+}
+
+function sameSequence(actual: readonly string[], expected: readonly string[]): boolean {
+  return actual.length === expected.length && actual.every((value, index) => value === expected[index]);
+}
+
+type EditorialMeasurementProfile = {
+  readonly editionPackageId: string;
+  readonly publicationName: string;
+  readonly renderer: "reportlab" | "weasyprint";
+  readonly inputs: readonly { readonly artifactId: import("../contracts/index.ts").ArtifactId; readonly targetPath: string }[];
+  readonly editorialTargetPath: string;
+  readonly articleTargets: readonly { readonly articleId: string; readonly targetPath: string }[];
+  readonly rendererIdentity: JsonObject;
+};
+
+function readEditorialMeasurementProfile(ledger: ArtifactLedger, artifactId: import("../contracts/index.ts").ArtifactId): EditorialMeasurementProfile {
+  const artifact = ledger.requireArtifact(artifactId);
+  if (artifact.kind !== "editorial_measurement_profile" || artifact.schemaVersion !== "editorial-measurement-profile/1" || artifact.payloadKind !== "json") throw new Error("Opening editorial measurement profile has the wrong artifact contract");
+  let value: unknown;
+  try { value = JSON.parse(Buffer.from(ledger.readArtifact(artifactId).bytes).toString("utf8")); } catch (error) { throw new Error("Opening editorial measurement profile is invalid JSON", { cause: error }); }
+  if (!record(value) || value.schemaVersion !== "editorial-measurement-profile/1" || value.rendererContractVersion !== "magazine-renderer/1" || value.editionId !== "004" || value.editorialId !== "opening" || value.primaryLanguage !== "en" || typeof value.editionPackageId !== "string" || typeof value.publicationName !== "string" || !["reportlab", "weasyprint"].includes(value.renderer as string) || typeof value.editorialTargetPath !== "string" || !Array.isArray(value.inputs) || !Array.isArray(value.articleTargets) || value.articleTargets.length !== 7 || !record(value.rendererIdentity)) throw new Error("Opening editorial measurement profile does not match the pinned renderer contract");
+  const inputs = value.inputs.map((item) => {
+    if (!record(item) || typeof item.artifactId !== "string" || typeof item.targetPath !== "string") throw new Error("Opening editorial renderer input is invalid");
+    ledger.requireArtifact(item.artifactId as import("../contracts/index.ts").ArtifactId);
+    return { artifactId: item.artifactId as import("../contracts/index.ts").ArtifactId, targetPath: item.targetPath };
+  });
+  const articleTargets = value.articleTargets.map((item) => {
+    if (!record(item) || typeof item.articleId !== "string" || typeof item.targetPath !== "string") throw new Error("Opening editorial article target is invalid");
+    return { articleId: item.articleId, targetPath: item.targetPath };
+  });
+  return { editionPackageId: value.editionPackageId, publicationName: value.publicationName, renderer: value.renderer as "reportlab" | "weasyprint", inputs, editorialTargetPath: value.editorialTargetPath, articleTargets, rendererIdentity: value.rendererIdentity as JsonObject };
+}
+
+function record(value: unknown): value is Record<string, unknown> { return typeof value === "object" && value !== null && !Array.isArray(value); }
 
 void ARTICLE_RUNTIME_GRAPH;

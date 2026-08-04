@@ -1,6 +1,7 @@
 import type { ArtifactId, JsonObject, RunId, RevisionId } from "../contracts/index.ts";
 import type {
   ArticleDecisionRequest,
+  ArticleHumanChoice,
   ArticleStartRequest,
   ArticleWorkflowResult,
   ArticleWorkflowView,
@@ -52,6 +53,7 @@ export class MagazineWorkflowEngine {
   readonly #validateRuntimeResources: () => Promise<void>;
 
   constructor(options: MagazineWorkflowEngineOptions) {
+    if (options.renderer === undefined || typeof options.renderer.workDirectory !== "string" || options.renderer.toolchain === undefined) throw new Error("MagazineWorkflowEngine requires a pinned renderer resource");
     // Capture the default wall clock outside the Loops deterministic runtime.
     // Calling `new Date()` from a workflow body is forbidden by Loops, while
     // the ledger still needs a stable operational timestamp for run facts.
@@ -71,6 +73,8 @@ export class MagazineWorkflowEngine {
       ...(options.articleReviewWorkers === undefined ? {} : { articleReviewWorkers: options.articleReviewWorkers }),
       ...(options.articleReviewCredentials === undefined ? {} : { articleReviewCredentials: options.articleReviewCredentials }),
       ...(options.articleWriter === undefined ? {} : { articleWriter: options.articleWriter }),
+      ...(options.editorialWriter === undefined ? {} : { editorialWriter: options.editorialWriter }),
+      ...(options.editorialReviewer === undefined ? {} : { editorialReviewer: options.editorialReviewer }),
     });
     this.#validateRuntimeResources = ports.validateRuntimeResources ?? (async () => undefined);
     this.#loops = createDurableLoopsAdapter({
@@ -157,6 +161,9 @@ export class MagazineWorkflowEngine {
     }
     this.#ledger.recordLoopsObservation(runId, observation);
     const offer = this.#ledger.activeOffer(runId);
+    if (offer?.role !== undefined && offer.role !== "article_decision") {
+      throw new MagazineWorkflowError("ARTICLE_OFFER_INVALID", `Run ${runId} has a non-article offer`);
+    }
     const pending = pendingWaitForOffer(loops, offer?.id);
     const result = loops.result;
     const status = statusFromLoops(loops, result);
@@ -184,7 +191,7 @@ export class MagazineWorkflowEngine {
           status: offer.status,
           taskArtifactId: offer.taskArtifactId,
           inputArtifactIds: offer.inputArtifactIds,
-          allowedChoices: offer.allowedChoices,
+          allowedChoices: offer.allowedChoices as readonly ArticleHumanChoice[],
           createdAt: offer.createdAt,
           decisionArtifactId: decisionArtifactId(offer.id),
           ...(pending === undefined ? {} : { waitId: pending.waitId }),

@@ -155,6 +155,65 @@ export type ArticleMeasurement = {
   readonly rendererOutputArtifactIds?: readonly ArtifactId[];
 };
 
+export type EditorialMeasurement = {
+  readonly schemaVersion: "editorial-measurement/1";
+  readonly operation: "measure_edition";
+  readonly editionId: "004";
+  readonly editorialId: "opening";
+  readonly language: "en";
+  readonly manuscriptArtifactId: ArtifactId;
+  readonly contentArtifactIds: readonly ArtifactId[];
+  readonly inputArtifactIds: readonly ArtifactId[];
+  readonly pageCount: number;
+  readonly maximumReaderPages: 1;
+  readonly fits: boolean;
+  readonly labelVisible: boolean;
+  readonly labelFits: boolean;
+  readonly titleVisible: boolean;
+  readonly titleFits: boolean;
+  readonly bylineVisible: boolean;
+  readonly bylineFits: boolean;
+  readonly rendererOutputArtifactIds?: readonly ArtifactId[];
+};
+
+export type EditorialReviewFinding = {
+  readonly findingId: string;
+  readonly target: "editorial:opening";
+  readonly severity: "must_fix" | "should_fix";
+  readonly problem: string;
+  readonly requestedOutcome: string;
+};
+
+export type EditorialReviewResult = {
+  readonly schemaVersion: "editorial-review-result/1";
+  readonly editionId: "004";
+  readonly editorialId: "opening";
+  readonly target: "editorial:opening";
+  readonly manuscriptArtifactId: ArtifactId;
+  readonly measurementArtifactId: ArtifactId;
+  readonly reviewPlanArtifactId: ArtifactId;
+  readonly reviewCycleId: string;
+  readonly assessment: "pass" | "findings" | "human_required";
+  readonly findings: readonly EditorialReviewFinding[];
+};
+
+export type EditorialReviewExecutionResult = {
+  readonly selected: true;
+  readonly findings: readonly EditorialReviewFinding[];
+  readonly artifacts: readonly import("../workflow-authority/artifact-ledger.ts").LedgerArtifact[];
+} | {
+  readonly selected: false;
+  readonly reason: "already_selected" | "stale";
+  readonly artifacts: readonly import("../workflow-authority/artifact-ledger.ts").LedgerArtifact[];
+};
+
+export type EditorialPromotionResult = {
+  readonly promotionArtifactId: ArtifactId;
+  readonly durableRevisionId: string;
+  readonly manifestDigest: string;
+  readonly gitCommitOid: string;
+};
+
 /** Private ports used by the fixed article workflow source graph. */
 export type ArticleWorkflowPorts = {
   readonly ledger: ArtifactLedger;
@@ -192,6 +251,52 @@ export type ArticleWorkflowPorts = {
     }),
     context: MagazineWorkflowContext,
   ) => Promise<ArticleAttemptExecutionResult<WriterResult>>;
+  /** Closed, source-blind writer for the opening editorial child. */
+  readonly runEditorialWriter?: (
+    input: {
+      readonly editorialExecutionId: string;
+      readonly operationKey: string;
+      readonly currentManuscriptArtifactId: ArtifactId;
+      readonly profileArtifactId: ArtifactId;
+      readonly articleArtifactIds: readonly ArtifactId[];
+      readonly mode?: "initial" | "rewrite";
+      readonly revisionContextArtifactIds?: readonly ArtifactId[];
+    },
+    context: MagazineWorkflowContext,
+  ) => Promise<import("../executors/closed-editorial-writer/result.ts").EditorialWriterExecutionResult>;
+  /** Renderer-backed measurement for the current opening editorial revision. */
+  readonly measureEditorial?: (input: {
+    readonly editionId: "004";
+    readonly editorialId: "opening";
+    readonly manuscriptArtifactId: ArtifactId;
+    readonly articleArtifactIds: readonly ArtifactId[];
+    readonly measurementProfileArtifactId: ArtifactId;
+    readonly maximumReaderPages: 1;
+    readonly rendererIdentity?: RendererIdentity;
+    readonly durableContext?: WorkflowDurableContext;
+  }) => Promise<ArticleAttemptExecutionResult<EditorialMeasurement>>;
+  /** Source-blind editorial review over one exact manuscript revision. */
+  readonly runEditorialReview?: (
+    input: {
+      readonly editionId: "004";
+      readonly editorialId: "opening";
+      readonly manuscriptArtifactId: ArtifactId;
+      readonly reviewPlanArtifactId: ArtifactId;
+      readonly measurementArtifactId: ArtifactId;
+      readonly reviewCycleId: string;
+    },
+    context: MagazineWorkflowContext,
+  ) => Promise<EditorialReviewExecutionResult>;
+  /** Git-backed promotion of the exact accepted editorial revision. */
+  readonly promoteEditorial?: (input: {
+    readonly runId: RunId;
+    readonly request: DurablePromotionRequest;
+    readonly reviewer: string;
+    readonly rationale: string;
+    readonly decisionArtifactId: ArtifactId;
+    readonly measurementArtifactId: ArtifactId;
+    readonly durableContext?: WorkflowDurableContext;
+  }) => Promise<EditorialPromotionResult>;
   readonly requireDecision: (decisionArtifactId: ArtifactId) => LedgerDecision;
   readonly promote: (input: {
     readonly articleExecutionId: ArticleExecutionId;

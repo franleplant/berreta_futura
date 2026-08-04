@@ -26,7 +26,7 @@ export default async function run(
 ): Promise<unknown> {
   const ports = editionPortsStorage.getStore();
   if (ports === undefined) throw new Error("Magazine edition workflow requires host-bound article ports");
-  return await runEditionWorkflow(context);
+  return await runEditionWorkflow(context, ports);
 }
 
 const editionPortsStorage = new AsyncLocalStorage<ArticleWorkflowPorts>();

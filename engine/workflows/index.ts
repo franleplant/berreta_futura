@@ -14,3 +14,13 @@ export type {
   EditionWorkflowEngineOptions,
   EditionWorkflowView,
 } from "./edition-workflow-engine.ts";
+export type {
+  AcceptedEnglishIssueInputs,
+  AcceptedEnglishArticle,
+  EditionEditorialPlan,
+} from "./edition-workflow.ts";
+export { invokeEditorialWorkflowWithPorts } from "./editorial-loops-entry.ts";
+export type {
+  OpeningEditorialWorkflowArgs,
+  OpeningEditorialWorkflowResult,
+} from "./editorial-workflow.ts";
