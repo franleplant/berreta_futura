@@ -13,6 +13,7 @@ import { newArticleExecutionId, newId } from "../contracts/ids.ts";
 import {
   GitCliDurableGit,
   materializeWritePipelineInputs,
+  type AuthenticatedWritePipelineInputs,
   resolveProfileBackedArticleInput,
   resolveWritePipeline,
   type InputRevisionRef,
@@ -62,10 +63,32 @@ export async function buildAuthenticatedArticleLaunchArgs(
   articleId: string,
   options: ArticleLaunchOptions = {},
 ): Promise<BuiltArticleLaunch> {
-  await dependencies.validateRuntimeResources();
   const git = new GitCliDurableGit(dependencies.repositoryRoot);
   const resolved = await resolveWritePipeline(dependencies.repositoryRoot, pipelineRef, git);
-  const materialized = materializeWritePipelineInputs(resolved);
+  return await buildAuthenticatedArticleLaunchArgsFromMaterialized(
+    dependencies,
+    materializeWritePipelineInputs(resolved),
+    articleId,
+    options,
+  );
+}
+
+/**
+ * Build a child launch from an already authenticated pipeline projection.
+ *
+ * Edition roots call this after resolving and materializing their committed
+ * write pipeline once.  It deliberately accepts only the materialized
+ * projection, so a child cannot silently re-resolve Git or recapture sources
+ * while the parent is being planned or replayed.
+ */
+export async function buildAuthenticatedArticleLaunchArgsFromMaterialized(
+  dependencies: ArticleLaunchBuilderDependencies,
+  materialized: AuthenticatedWritePipelineInputs,
+  articleId: string,
+  options: ArticleLaunchOptions = {},
+): Promise<BuiltArticleLaunch> {
+  await dependencies.validateRuntimeResources();
+  const resolved = materialized.pipeline;
   const article = resolved.document.articles.find((candidate) => candidate.articleId === articleId);
   if (article === undefined) throw new Error(`write pipeline has no article ${articleId}`);
   const profile = await resolveProfileBackedArticleInput(materialized, article);

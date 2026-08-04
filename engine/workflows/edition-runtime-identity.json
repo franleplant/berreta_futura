@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "magazine-edition-runtime-identity/1",
+  "defaultBackend": "magazine-no-agent",
+  "defaultModel": "none",
+  "budget": {
+    "total": null,
+    "unit": "calls"
+  },
+  "imageGenerationAllowed": false
+}

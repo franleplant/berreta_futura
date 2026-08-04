@@ -2220,7 +2220,8 @@ export class ArtifactLedger {
         article_id TEXT NOT NULL,
         edition_id TEXT,
         workflow_version TEXT NOT NULL,
-        loops_run_id TEXT NOT NULL UNIQUE,
+        /* One Loops root owns many Magazine article child runs. */
+        loops_run_id TEXT NOT NULL,
         manuscript_artifact_id TEXT NOT NULL,
         current_revision_record_artifact_id TEXT,
         measurement_artifact_id TEXT,
@@ -2404,8 +2405,85 @@ export class ArtifactLedger {
     this.#ensureColumn("magazine_promotions", "accepted_artifact_ids_json", "TEXT");
     this.#ensureColumn("magazine_promotions", "decision_artifact_ids_json", "TEXT");
     this.#ensureColumn("magazine_promotions", "input_artifact_ids_json", "TEXT");
+    this.#migrateLoopsRunIdentitySchema();
     this.#migrateArticleExposureSchema();
     this.#migrateRevisionRecordPointers();
+  }
+
+  /**
+   * A Loops root may own several Magazine child executions.  Early ledgers
+   * incorrectly encoded that relationship as a UNIQUE column, so rebuild the
+   * parent table once while preserving rows, foreign-key definitions, and
+   * explicit indexes.  Foreign keys are disabled only for this SQLite schema
+   * transaction; no workflow data is read or written through the migration.
+   */
+  #migrateLoopsRunIdentitySchema(): void {
+    const indexes = this.#db.prepare("PRAGMA index_list(magazine_runs)").all() as readonly {
+      readonly name: string;
+      readonly unique: number;
+    }[];
+    const uniqueLoopsIndex = indexes.find((index) => {
+      if (index.unique !== 1) return false;
+      const columns = this.#db.prepare(`PRAGMA index_info(${quoteIdentifier(index.name)})`).all() as readonly { readonly name: string | null }[];
+      return columns.length === 1 && columns[0]?.name === "loops_run_id";
+    });
+    if (uniqueLoopsIndex === undefined) return;
+    if (this.#db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'magazine_runs_legacy'").get() !== undefined) {
+      throw new ArtifactLedgerError("SCHEMA_MIGRATION_REQUIRED", "Loops run identity migration left a legacy table behind");
+    }
+    const explicitIndexes = this.#db.prepare(
+      "SELECT name, sql FROM sqlite_master WHERE type = 'index' AND tbl_name = 'magazine_runs' AND sql IS NOT NULL",
+    ).all() as readonly { readonly name: string; readonly sql: string }[];
+    const columns = [
+      "run_id", "article_execution_id", "article_id", "edition_id", "workflow_version", "loops_run_id",
+      "manuscript_artifact_id", "current_revision_record_artifact_id", "measurement_artifact_id",
+      "decision_artifact_id", "promotion_id", "args_digest", "args_json", "workflow_pin_json",
+      "loops_context_json", "created_at", "updated_at",
+    ] as const;
+    const migrate = this.#db.transaction(() => {
+      this.#db.exec("ALTER TABLE magazine_runs RENAME TO magazine_runs_legacy");
+      this.#db.exec(`
+        CREATE TABLE magazine_runs (
+          run_id TEXT PRIMARY KEY,
+          article_execution_id TEXT,
+          article_id TEXT NOT NULL,
+          edition_id TEXT,
+          workflow_version TEXT NOT NULL,
+          loops_run_id TEXT NOT NULL,
+          manuscript_artifact_id TEXT NOT NULL,
+          current_revision_record_artifact_id TEXT,
+          measurement_artifact_id TEXT,
+          decision_artifact_id TEXT,
+          promotion_id TEXT UNIQUE,
+          args_digest TEXT NOT NULL,
+          args_json TEXT NOT NULL,
+          workflow_pin_json TEXT,
+          loops_context_json TEXT,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+      `);
+      const columnSql = columns.join(", ");
+      this.#db.exec(`INSERT INTO magazine_runs(${columnSql}) SELECT ${columnSql} FROM magazine_runs_legacy`);
+      this.#db.exec("DROP TABLE magazine_runs_legacy");
+      for (const index of explicitIndexes) {
+        if (index.name === uniqueLoopsIndex.name) continue;
+        // The SQL was captured before the rename and still targets the new
+        // table name.  Recreating it preserves any non-inline caller index.
+        this.#db.exec(index.sql);
+      }
+    });
+    const foreignKeysWereEnabled = Number(this.#db.pragma("foreign_keys", { simple: true })) === 1;
+    try {
+      if (foreignKeysWereEnabled) this.#db.pragma("foreign_keys = OFF");
+      this.#db.pragma("legacy_alter_table = ON");
+      migrate();
+    } catch (error) {
+      throw new ArtifactLedgerError("SCHEMA_MIGRATION_INVALID", "Loops run identity schema migration failed", { cause: error });
+    } finally {
+      this.#db.pragma("legacy_alter_table = OFF");
+      if (foreignKeysWereEnabled) this.#db.pragma("foreign_keys = ON");
+    }
   }
 
   /** Validate persisted pointers when opening an older or copied ledger. */
@@ -3416,6 +3494,10 @@ function articleAttemptFromRow(row: ArticleAttemptRow): ArticleAttemptClaim {
 function safeIdentity(value: string): string {
   const normalized = value.replace(/[^A-Za-z0-9_.:-]/gu, "_");
   return normalized.length > 180 ? normalized.slice(0, 180) : normalized;
+}
+
+function quoteIdentifier(value: string): string {
+  return `"${value.replaceAll('"', '""')}"`;
 }
 
 function sameJsonOptional(serialized: string | null, value: JsonValue | undefined): boolean {
