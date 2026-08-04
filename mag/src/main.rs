@@ -1,0 +1,83 @@
+// mag — sources in, edition content out. Port of tools/produce.py's shape:
+// no database, no run state, fail loud, plain output files.
+
+mod caller;
+mod plan_cmd;
+mod produce;
+
+use anyhow::Result;
+use clap::{Parser, Subcommand};
+use std::collections::HashSet;
+use std::path::{Path, PathBuf};
+
+#[derive(Parser)]
+#[command(name = "mag", about = "sources in, edition content out")]
+struct Cli {
+    #[command(subcommand)]
+    cmd: Cmd,
+}
+
+#[derive(Subcommand)]
+enum Cmd {
+    /// Propose a plan.yaml for an edition (one model call; human edits it)
+    Plan {
+        edition: String,
+        #[arg(long, default_value = "opus")]
+        model: String,
+    },
+    /// Produce an edition from a plan.yaml
+    Produce {
+        plan: PathBuf,
+        /// Existing run dir; pieces with final.md are skipped
+        #[arg(long)]
+        resume: Option<PathBuf>,
+        /// Comma-separated article ids
+        #[arg(long)]
+        only: Option<String>,
+        #[arg(long = "writer-model", default_value = "opus")]
+        writer_model: String,
+        #[arg(long = "judge-model", default_value = "sonnet")]
+        judge_model: String,
+    },
+    /// Translate accepted pieces of a run (not implemented yet)
+    Translate { run_dir: PathBuf },
+    /// Generate and select cover/figure art for an edition (not implemented yet)
+    Art { edition: String },
+    /// Render an edition to PDF/booklet/web (not implemented yet)
+    Render { edition: String },
+}
+
+fn main() {
+    let cli = Cli::parse();
+    match run(cli) {
+        Ok(code) => std::process::exit(code),
+        Err(e) => {
+            eprintln!("error: {e:#}");
+            std::process::exit(1);
+        }
+    }
+}
+
+fn run(cli: Cli) -> Result<i32> {
+    if !Path::new("prompts").is_dir() {
+        anyhow::bail!("must run from the repo root: no ./prompts directory found in the current directory");
+    }
+
+    match cli.cmd {
+        Cmd::Plan { edition, model } => {
+            let spec = caller::ModelSpec::parse(&model)?;
+            plan_cmd::propose_plan(&edition, &spec)
+        }
+        Cmd::Produce { plan, resume, only, writer_model, judge_model } => {
+            let writer = caller::ModelSpec::parse(&writer_model)?;
+            let judge = caller::ModelSpec::parse(&judge_model)?;
+            let only_set: Option<HashSet<String>> =
+                only.map(|s| s.split(',').map(|x| x.trim().to_string()).collect());
+            produce::run_edition(&plan, resume, only_set, &writer, &judge)
+        }
+        Cmd::Translate { .. } | Cmd::Art { .. } | Cmd::Render { .. } => {
+            eprintln!("not implemented yet");
+            Ok(2)
+        }
+    }
+}
