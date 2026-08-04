@@ -490,6 +490,7 @@ test("configured resolver follows frozen per-role model policy and rejects ambig
 
 test("every declared work role has one intentional execution owner", () => {
   assert.deepEqual(Object.keys(WORK_ROLE_EXECUTION).sort(), [...KNOWN_WORK_ROLES].sort());
+  assert.equal(WORK_ROLE_EXECUTION.writer, "closed_writer");
   const rendererAdapter: RendererAdapter = {
     render: async () => {
       throw new Error("not executed by inventory test");
@@ -529,6 +530,15 @@ test("every declared work role has one intentional execution owner", () => {
       continue;
     }
     const offer = inventoryOffer(role, owner);
+    if (owner === "closed_writer") {
+      assert.equal(role, "writer");
+      assert.equal(
+        executors.some((executor) => executor.accepts(offer)),
+        false,
+        "writer must only run through createClosedWriterExecutor, never a generic Executor adapter",
+      );
+      continue;
+    }
     assert.equal(
       executors.some((executor) => executor.accepts(offer)),
       true,
@@ -550,6 +560,8 @@ function inventoryOffer(
 ): WorkOfferView {
   const capability = owner === "text_model"
     ? "text_model"
+    : owner === "closed_writer"
+      ? "text_model"
     : owner === "image_model"
       ? "image_model"
       : owner === "source_archive"

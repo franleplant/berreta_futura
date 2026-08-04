@@ -354,6 +354,17 @@ export class ArtifactLedger {
     return run;
   }
 
+  /** Resolve the root run from the article identity carried by an ID-only worker request. */
+  requireRunByArticleExecutionId(articleExecutionId: ArticleExecutionId): LedgerRun {
+    const row = this.#db.prepare(
+      "SELECT * FROM magazine_runs WHERE article_execution_id = ?",
+    ).get(articleExecutionId) as RunRow | undefined;
+    if (row === undefined) {
+      throw new ArtifactLedgerError("RUN_NOT_FOUND", `Article execution ${articleExecutionId} does not exist`);
+    }
+    return toRun(row);
+  }
+
   #recordRunFacts(
     runId: RunId,
     patch: {
