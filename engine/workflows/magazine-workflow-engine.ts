@@ -7,7 +7,7 @@ import type {
   AuthenticatedHuman,
   MagazineWorkflowEngineOptions,
 } from "../contracts/workflow-run.ts";
-import { newId } from "../contracts/ids.ts";
+import { newArticleExecutionId, newId } from "../contracts/ids.ts";
 import { newRevisionId } from "../durable/revision-id.ts";
 import { ArtifactLedger, ArtifactLedgerError } from "../workflow-authority/artifact-ledger.ts";
 import { HumanDecisionAuthority } from "../workflow-authority/human-decisions.ts";
@@ -62,10 +62,12 @@ export class MagazineWorkflowEngine {
   async startArticle(request: ArticleStartRequest): Promise<ArticleWorkflowView> {
     validateStart(request, this.#ledger);
     const runId = request.runId ?? newId<RunId>("run");
+    const articleExecutionId = request.articleExecutionId ?? newArticleExecutionId();
     const rendererIdentity = await this.#loops.getRendererIdentity();
     const args = {
       ...request,
       runId,
+      articleExecutionId,
       promotionId: request.promotionId ?? (`promotion-${safeIdentity(runId)}` as never),
       revisionId: request.revisionId ?? newRevisionId(this.#clock.now()),
       rendererIdentity,
@@ -73,6 +75,7 @@ export class MagazineWorkflowEngine {
     const workflowVersion = await this.#loops.getWorkflowVersion();
     this.#ledger.createRun({
       runId,
+      articleExecutionId,
       articleId: request.articleId,
       editionId: request.editionId,
       workflowVersion,
@@ -111,6 +114,7 @@ export class MagazineWorkflowEngine {
         invocationId: root.invocationId,
         workflowName: root.workflowName,
         workflowVersion: root.workflowVersion,
+        kind: "workflow",
         ...(root.parentInvocationId === undefined ? {} : { parentInvocationId: root.parentInvocationId }),
         ...(root.workflowPin === undefined ? {} : { workflowPin: root.workflowPin }),
       };
@@ -126,6 +130,7 @@ export class MagazineWorkflowEngine {
     const decision = current.decisionArtifactId === undefined ? undefined : this.#ledger.getDecision(offer?.id ?? "");
     return {
       runId,
+      articleExecutionId: current.articleExecutionId,
       articleId: current.articleId,
       editionId: current.editionId ?? "",
       status,
@@ -266,13 +271,18 @@ function waitAnsweredForDecision(inspection: MagazineLoopsInspection, decisionAr
     || inspection.result?.decisionArtifactId === decisionArtifactIdValue;
 }
 
-function contextForDecision(runId: RunId, inspection: MagazineLoopsInspection): WorkflowDurableContext | undefined {
+function contextForDecision(runId: RunId, inspection: MagazineLoopsInspection): import("./internal-types.ts").WorkflowWaitContext {
   const wait = pendingWait(inspection);
-  if (wait === undefined) return undefined;
-  const call = inspection.calls.find((candidate) => candidate.callId === wait.callId);
+  if (wait === undefined) {
+    throw new MagazineWorkflowError("DECISION_PROVENANCE_REQUIRED", `Run ${runId} has no pending decision wait`);
+  }
   const invocation = inspection.invocations.find((candidate) => candidate.invocationId === wait.invocationId);
-  if (invocation === undefined) return undefined;
-  const attempt = call?.attempts.at(-1);
+  if (invocation === undefined) {
+    throw new MagazineWorkflowError("DECISION_PROVENANCE_REQUIRED", `Pending decision wait ${wait.waitId} has no exact workflow invocation`);
+  }
+  if (invocation.workflowName.length === 0 || invocation.workflowVersion.length === 0 || wait.callId.length === 0 || wait.waitId.length === 0 || wait.key.length === 0) {
+    throw new MagazineWorkflowError("DECISION_PROVENANCE_INVALID", `Pending decision wait ${wait.waitId} has incomplete workflow provenance`);
+  }
   return {
     runId,
     invocationId: invocation.invocationId,
@@ -281,7 +291,7 @@ function contextForDecision(runId: RunId, inspection: MagazineLoopsInspection): 
     ...(invocation.parentInvocationId === undefined ? {} : { parentInvocationId: invocation.parentInvocationId }),
     ...(invocation.workflowPin === undefined ? {} : { workflowPin: invocation.workflowPin }),
     callId: wait.callId,
-    ...(attempt === undefined ? {} : { attemptId: attempt.attemptId, attemptNumber: attempt.attemptNumber }),
+    waitId: wait.waitId,
     key: wait.key,
     kind: "wait",
   };

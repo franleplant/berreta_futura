@@ -3,6 +3,7 @@ import type {
   ArticleContentMode,
   ArticleRunSpec,
   JudgeLens,
+  ManuscriptRevisionId,
   WorkRole,
 } from "../contracts/index.ts";
 import type {
@@ -108,9 +109,49 @@ export type LegacyArticleMaterialSelectionInput = {
 
 export type ArticleExposure = {
   readonly principalId: string;
+  readonly manuscriptRevisionId?: ManuscriptRevisionId;
   readonly manuscriptArtifactId: ArtifactId;
   readonly access: "source_aware" | "source_blind";
 };
+
+/**
+ * Validate the exact material boundary before a magazine-owned execution is
+ * claimed. Keeping this check beside material selection prevents a Loops
+ * workflow or an adapter from widening source access by accident.
+ */
+export function assertArticleExecutionMaterials(input: {
+  readonly articleId: string;
+  readonly manuscriptArtifactId: ArtifactId;
+  readonly access: ArticleMaterialAccess;
+  readonly materials: ArticleMaterialSet;
+}): void {
+  if (input.materials.articleId !== input.articleId) {
+    throw new ArticleMaterialPolicyError(
+      "ARTICLE_MATERIAL_ARTICLE_MISMATCH",
+      `material set belongs to ${input.materials.articleId}, not ${input.articleId}`,
+    );
+  }
+  if (input.materials.access !== input.access) {
+    throw new ArticleMaterialPolicyError(
+      "ARTICLE_MATERIAL_ACCESS_MISMATCH",
+      `material set access ${input.materials.access} does not match execution access ${input.access}`,
+    );
+  }
+  assertOneArticle(input.articleId, input.materials.artifacts);
+  assertMaterialAccess(input.access, input.materials.artifacts, input.materials.role);
+  if (input.materials.manuscriptArtifactId !== undefined && input.materials.manuscriptArtifactId !== input.manuscriptArtifactId) {
+    throw new ArticleMaterialPolicyError(
+      "ARTICLE_MATERIAL_MANUSCRIPT_MISMATCH",
+      `material set is bound to manuscript ${input.materials.manuscriptArtifactId}, not ${input.manuscriptArtifactId}`,
+    );
+  }
+  if (!input.materials.artifactIds.includes(input.manuscriptArtifactId)) {
+    throw new ArticleMaterialPolicyError(
+      "ARTICLE_MATERIAL_MANUSCRIPT_MISSING",
+      `material set does not include manuscript ${input.manuscriptArtifactId}`,
+    );
+  }
+}
 
 export class SourceIsolationError extends Error {
   readonly role: WorkRole | string;
@@ -231,7 +272,8 @@ export function assertPrincipalExposureIsolated(
   for (const exposure of previous) {
     if (
       exposure.principalId === requested.principalId &&
-      exposure.manuscriptArtifactId === requested.manuscriptArtifactId &&
+      ((exposure.manuscriptRevisionId !== undefined && requested.manuscriptRevisionId !== undefined && exposure.manuscriptRevisionId === requested.manuscriptRevisionId) ||
+        (exposure.manuscriptRevisionId === undefined && requested.manuscriptRevisionId === undefined && exposure.manuscriptArtifactId === requested.manuscriptArtifactId)) &&
       exposure.access !== requested.access
     ) {
       throw new SourceExposureConflictError({

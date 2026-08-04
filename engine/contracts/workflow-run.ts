@@ -1,4 +1,4 @@
-import type { ArtifactId, PromotionId, RevisionId, RunId } from "./ids.ts";
+import type { ArticleExecutionId, ArtifactId, PromotionId, RevisionId, RunId } from "./ids.ts";
 import type { JsonObject } from "./json.ts";
 import type { InputRevisionRef, DurableLogicalItem } from "../durable/types.ts";
 
@@ -44,6 +44,8 @@ export type RendererToolchainResource = {
  */
 export type ArticleStartRequest = {
   readonly runId?: RunId;
+  /** Optional stable magazine identity. It must not be derived from the Loops root run. */
+  readonly articleExecutionId?: ArticleExecutionId;
   readonly articleId: string;
   readonly editionId: string;
   readonly logicalItem: Extract<DurableLogicalItem, { readonly kind: "article" }>;
@@ -65,6 +67,7 @@ export type ArticleDecisionAnswer = {
 export type ArticleWorkflowResult = {
   readonly schemaVersion: "magazine-article-workflow-result/1";
   readonly runId: RunId;
+  readonly articleExecutionId: ArticleExecutionId;
   readonly articleId: string;
   readonly status: Exclude<ArticleWorkflowStatus, "running" | "waiting">;
   readonly manuscriptArtifactId: ArtifactId;
@@ -89,6 +92,7 @@ export type ArticleOfferView = {
 
 export type ArticleWorkflowView = {
   readonly runId: RunId;
+  readonly articleExecutionId: ArticleExecutionId;
   readonly articleId: string;
   readonly editionId: string;
   readonly status: ArticleWorkflowStatus;

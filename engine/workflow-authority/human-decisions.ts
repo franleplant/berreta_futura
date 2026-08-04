@@ -3,7 +3,7 @@ import type {
   ArticleDecisionRequest,
   AuthenticatedHuman,
 } from "../contracts/workflow-run.ts";
-import type { WorkflowDurableContext } from "../workflows/internal-types.ts";
+import type { WorkflowWaitContext } from "../workflows/internal-types.ts";
 import { AuthorizedWorker } from "../authority/local-authority.ts";
 import {
   ArtifactLedgerError,
@@ -34,8 +34,11 @@ export class HumanDecisionAuthority {
   async decide(
     human: AuthenticatedHuman,
     request: ArticleDecisionRequest,
-    durableContext?: WorkflowDurableContext,
+    durableContext: WorkflowWaitContext,
   ): Promise<LedgerDecision> {
+    if (durableContext === undefined) {
+      throw new ArtifactLedgerError("DECISION_PROVENANCE_REQUIRED", "Workflow human decisions require the exact pending wait context");
+    }
     if (!(human instanceof AuthorizedWorker)) {
       throw new ArtifactLedgerError(
         "HUMAN_AUTHORITY_REQUIRED",
@@ -59,10 +62,23 @@ export class HumanDecisionAuthority {
         || existing.rationale !== request.rationale.trim()
         || existing.principalId !== description.principalId
         || existing.credentialProfileId !== description.credentialProfileId
+        || JSON.stringify(existing.durableContext ?? null) !== JSON.stringify(durableContext ?? null)
       ) {
         throw new ArtifactLedgerError("DECISION_ALREADY_RECORDED", `Offer ${request.offerId} already has a different decision`);
       }
       return existing;
+    }
+    if (
+      durableContext.kind !== "wait" ||
+      durableContext.waitId.length === 0 ||
+      durableContext.callId.length === 0 ||
+      durableContext.key.length === 0 ||
+      durableContext.invocationId.length === 0 ||
+      durableContext.runId !== request.runId ||
+      "attemptId" in (durableContext as object) ||
+      "attemptNumber" in (durableContext as object)
+    ) {
+      throw new ArtifactLedgerError("DECISION_PROVENANCE_INVALID", "Human decisions require the exact pending wait context");
     }
     const offer = this.#ledger.requireOffer(request.offerId);
     assertExactOffer(offer, request);
@@ -102,7 +118,7 @@ export class HumanDecisionAuthority {
       runId: request.runId,
       ...(durableContext === undefined ? {} : { durableContext }),
     });
-    return this.#ledger.recordDecision({
+    const decisionInput = {
       id: decisionRecordId(request.offerId),
       runId: request.runId,
       offerId: request.offerId,
@@ -113,8 +129,10 @@ export class HumanDecisionAuthority {
       choice: request.choice,
       rationale,
       artifactId,
+      ...(durableContext === undefined ? {} : { durableContext }),
       createdAt: this.#clock.now().toISOString(),
-    });
+    };
+    return this.#ledger.recordDecision({ ...decisionInput, durableContext });
   }
 }
 

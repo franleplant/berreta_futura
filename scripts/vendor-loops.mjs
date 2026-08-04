@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 const sourceDirectory = resolve(process.env.LOOPS_SOURCE_DIR ?? "/Users/franguijarro/code/loopsv2");
-const requestedCommit = process.env.LOOPS_COMMIT ?? "44ffb8370eeb0ee85ba799dff6dbaa0b8e744b40";
+const requestedCommit = process.env.LOOPS_COMMIT ?? "19f03c7ba2c1f21062891aaa1f0213fb514b6631";
 const repositoryRoot = resolve(new URL("..", import.meta.url).pathname);
 
 const status = execFileSync("git", ["status", "--porcelain"], { cwd: sourceDirectory, encoding: "utf8" });
@@ -13,8 +13,9 @@ if (status.trim() !== "") {
   throw new Error(`Loops source is dirty; refusing to vendor ${sourceDirectory}`);
 }
 const commit = execFileSync("git", ["rev-parse", "HEAD"], { cwd: sourceDirectory, encoding: "utf8" }).trim();
-if (commit !== requestedCommit) {
-  throw new Error(`Loops source is ${commit}; expected pinned commit ${requestedCommit}`);
+const expectedCommit = execFileSync("git", ["rev-parse", requestedCommit], { cwd: sourceDirectory, encoding: "utf8" }).trim();
+if (commit !== expectedCommit) {
+  throw new Error(`Loops source is ${commit}; expected pinned commit ${expectedCommit}`);
 }
 const nodeVersion = process.version;
 const npmVersion = execFileSync("npm", ["--version"], { cwd: sourceDirectory, encoding: "utf8" }).trim();
@@ -22,28 +23,41 @@ const temporary = await mkdtemp(join(tmpdir(), "magazine-loops-vendor-"));
 const destination = join(repositoryRoot, "vendor", "loops", commit);
 try {
   await mkdir(temporary, { recursive: true, mode: 0o700 });
-  execFileSync(
+  const packedOutput = execFileSync(
     "npm",
-    ["pack", "--workspace", "@loops/core", "--workspace", "loops", "--workspace", "@loops/workflow", "--pack-destination", temporary],
+    ["pack", "--workspace", "@loops/core", "--workspace", "loops", "--workspace", "@loops/workflow", "--pack-destination", temporary, "--json"],
     {
       cwd: sourceDirectory,
-      stdio: "inherit",
+      encoding: "utf8",
       env: { ...process.env, npm_config_cache: join(temporary, "npm-cache") },
     },
   );
   await rm(destination, { recursive: true, force: true });
   await mkdir(destination, { recursive: true, mode: 0o755 });
-  const packageFiles = ["loops-core-0.0.0.tgz", "loops-0.0.0.tgz", "loops-workflow-0.0.0.tgz"];
+  const packed = JSON.parse(packedOutput);
+  if (!Array.isArray(packed) || packed.length !== 3) {
+    throw new Error("Loops npm pack did not return exactly the three expected packages");
+  }
   const packageEntries = [];
-  for (const file of packageFiles) {
+  for (const packageInfo of packed) {
+    const name = packageInfo.name;
+    const version = packageInfo.version;
+    const file = packageInfo.filename;
+    if (
+      (name !== "@loops/core" && name !== "loops" && name !== "@loops/workflow")
+      || typeof version !== "string"
+      || typeof file !== "string"
+      || !/^[A-Za-z0-9._-]+\.tgz$/u.test(file)
+    ) {
+      throw new Error("Loops npm pack returned an unexpected package descriptor");
+    }
     const source = join(temporary, file);
     const target = join(destination, file);
     const bytes = await readFile(source);
     await writeFile(target, bytes, { mode: 0o644 });
-    const name = file.startsWith("loops-core") ? "@loops/core" : file.startsWith("loops-workflow") ? "@loops/workflow" : "loops";
     packageEntries.push({
       name,
-      version: "0.0.0",
+      version,
       file,
       sha256: createHash("sha256").update(bytes).digest("hex"),
     });

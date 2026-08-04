@@ -19,13 +19,13 @@
     "update:article-runtime-identity": "node scripts/update-article-runtime-identity.mjs"
   },
   "dependencies": {
-    "@loops/core": "file:vendor/loops/44ffb8370eeb0ee85ba799dff6dbaa0b8e744b40/loops-core-0.0.0.tgz",
-    "@loops/workflow": "file:vendor/loops/44ffb8370eeb0ee85ba799dff6dbaa0b8e744b40/loops-workflow-0.0.0.tgz",
+    "@loops/core": "file:vendor/loops/19f03c7ba2c1f21062891aaa1f0213fb514b6631/loops-core-0.0.1.tgz",
+    "@loops/workflow": "file:vendor/loops/19f03c7ba2c1f21062891aaa1f0213fb514b6631/loops-workflow-0.0.1.tgz",
     "@resvg/resvg-js": "2.6.2",
     "@xyflow/react": "12.11.2",
     "better-sqlite3": "13.0.1",
     "elkjs": "0.12.0",
-    "loops": "file:vendor/loops/44ffb8370eeb0ee85ba799dff6dbaa0b8e744b40/loops-0.0.0.tgz",
+    "loops": "file:vendor/loops/19f03c7ba2c1f21062891aaa1f0213fb514b6631/loops-0.0.1.tgz",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "xstate": "5.32.5",

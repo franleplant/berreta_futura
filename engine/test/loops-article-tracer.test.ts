@@ -14,6 +14,7 @@ import { SQLiteDurableRunStore } from "@loops/core";
 import { ArtifactLedger } from "../workflow-authority/artifact-ledger.ts";
 import { HumanDecisionAuthority } from "../workflow-authority/human-decisions.ts";
 import { MagazineWorkflowEngine, MagazineWorkflowError } from "../workflows/magazine-workflow-engine.ts";
+import type { WorkflowWaitContext } from "../workflows/internal-types.ts";
 import { inspectRendererToolchain } from "../renderer-adapter/toolchain.ts";
 
 const execFile = promisify(execFileCallback);
@@ -253,6 +254,11 @@ test("a human decision resumes the same durable run and promotes through Durable
     });
     assert.equal(complete.status, "complete");
     assert.equal(complete.durableRevisionId, f.request.revisionId ?? complete.durableRevisionId);
+    assert.ok(complete.decisionArtifactId);
+    const decisionArtifact = f.ledger.requireArtifact(complete.decisionArtifactId);
+    assert.equal(decisionArtifact.durableContext?.kind, "wait");
+    assert.equal(decisionArtifact.durableContext && "waitId" in decisionArtifact.durableContext, true);
+    assert.equal(decisionArtifact.durableContext && "attemptId" in decisionArtifact.durableContext, false);
     const revisionRoot = join(f.root, "repo", "durable", "editions", "004", "articles", "tracer", "en", "revisions", complete.durableRevisionId!);
     assert.match(await readFile(join(revisionRoot, "manifest.yaml"), "utf8"), /engine_promotion/u);
   } finally {
@@ -266,6 +272,24 @@ test("inspect reconciles a wait answered just before a worker crash", async () =
     const waiting = await f.engine.startArticle(f.request);
     const offer = waiting.activeOffer!;
     const authority = new HumanDecisionAuthority({ ledger: f.ledger });
+    const loops = new SQLiteDurableRunStore(join(f.root, "loops.sqlite"));
+    const inspection = loops.inspectRun(waiting.runId)!;
+    const pending = inspection.waits.find((candidate) => candidate.waitId === offer.waitId);
+    const invocation = pending === undefined
+      ? undefined
+      : inspection.invocations.find((candidate) => candidate.invocationId === pending.invocationId);
+    if (pending === undefined || invocation === undefined) throw new Error("expected pending article decision wait");
+    const durableContext: WorkflowWaitContext = {
+      runId: waiting.runId,
+      invocationId: invocation.invocationId,
+      workflowName: invocation.workflowName,
+      workflowVersion: invocation.workflowVersion,
+      ...(invocation.workflowPin === undefined ? {} : { workflowPin: invocation.workflowPin as unknown as JsonObject }),
+      callId: pending.callId,
+      waitId: pending.waitId,
+      key: pending.key,
+      kind: "wait",
+    };
     const decision = await authority.decide(f.human, {
       runId: waiting.runId,
       offerId: offer.id,
@@ -273,8 +297,7 @@ test("inspect reconciles a wait answered just before a worker crash", async () =
       inputArtifactIds: offer.inputArtifactIds,
       choice: "drop",
       rationale: "crash replay",
-    });
-    const loops = new SQLiteDurableRunStore(join(f.root, "loops.sqlite"));
+    }, durableContext);
     try {
       await loops.answerWait({ runId: waiting.runId, waitId: offer.waitId!, answer: { decisionArtifactId: decision.artifactId } });
     } finally {
