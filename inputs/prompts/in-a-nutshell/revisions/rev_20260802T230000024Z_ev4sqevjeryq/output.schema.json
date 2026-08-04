@@ -1,6 +1,0 @@
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "in-a-nutshell output",
-  "type": "string",
-  "contentMediaType": "text/markdown"
-}
