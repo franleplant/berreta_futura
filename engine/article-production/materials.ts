@@ -222,6 +222,7 @@ const sourceBlindClasses = new Set<ArticleArtifactClassification>([
   "manuscript",
   "measurement_input",
   "writing_rules",
+  "writer_prompt",
 ]);
 
 const sourceClasses = new Set<ArticleArtifactClassification>(["source"]);

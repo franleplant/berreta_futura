@@ -1,4 +1,6 @@
+import { createHash } from "node:crypto";
 import { GitCliDurableGit } from "../durable/git-cli.ts";
+import { DurableStore, type DurablePromotionRequest, type DurablePromotionDependency } from "../durable/index.ts";
 import { ArticlePromotionAuthority, DurableStoreArticlePromotionSink } from "../workflow-authority/article-promotion.ts";
 import { ArtifactLedger, ArtifactLedgerError } from "../workflow-authority/artifact-ledger.ts";
 import { measureArticle } from "../renderer-adapter/article-measurement.ts";
@@ -15,9 +17,10 @@ import { createClosedWriterExecutor, type ClosedWriterExecutor } from "../execut
 import { readOpenAIAPIKey } from "../executors/closed-writer/credentials.ts";
 import { createClosedEditorialWriterExecutor, type ClosedEditorialWriterExecutor } from "../executors/closed-editorial-writer/runtime.ts";
 import { createClosedEditorialReviewerExecutor, type ClosedEditorialReviewerExecutor } from "../executors/closed-editorial-reviewer/runtime.ts";
+import { createClosedTranslationWriterExecutor, type ClosedTranslationWriterExecutor } from "../executors/closed-translation-writer/runtime.ts";
 import { parseEditorialReviewResult } from "../executors/closed-editorial-reviewer/result.ts";
 import { RendererExecutor } from "../executors/renderer.ts";
-import type { JsonObject } from "../contracts/index.ts";
+import type { ArtifactId, DecisionView, JsonObject, RunView, WorkOfferView } from "../contracts/index.ts";
 
 /** Included in the fixed Loops source graph. */
 export const ARTICLE_RUNTIME_GRAPH = "magazine-article-runtime/1" as const;
@@ -32,6 +35,7 @@ export function createArticleWorkflowPorts(options: {
   readonly articleWriter?: MagazineWorkflowEngineOptions["articleWriter"];
   readonly editorialWriter?: MagazineWorkflowEngineOptions["editorialWriter"];
   readonly editorialReviewer?: MagazineWorkflowEngineOptions["editorialReviewer"];
+  readonly translationWriter?: MagazineWorkflowEngineOptions["translationWriter"];
   readonly articleReviewCredentials?: NonNullable<MagazineWorkflowEngineOptions["articleReviewCredentials"]>;
 }): ArticleWorkflowPorts {
   if (options.renderer === undefined || typeof options.renderer.workDirectory !== "string" || options.renderer.toolchain === undefined) throw new Error("Magazine workflow construction requires a pinned renderer resource");
@@ -52,6 +56,18 @@ export function createArticleWorkflowPorts(options: {
       readArtifact: async (artifactId) => options.ledger.readArtifact(artifactId),
     },
   });
+  const durableStore = new DurableStore({
+    repositoryRoot: options.repositoryRoot,
+    workRoot: options.workRoot,
+    git: new GitCliDurableGit(options.repositoryRoot),
+  });
+  const promotionEngine = (runId: import("../contracts/index.ts").RunId, decisionArtifactId: ArtifactId, inputArtifactIds: readonly ArtifactId[]) => ({
+    inspect: async (): Promise<RunView> => {
+      const base = options.ledger.durableEvidence(runId);
+      return withMachinePromotionDecision(base, decisionArtifactId, inputArtifactIds);
+    },
+    readArtifact: async (artifactId: ArtifactId) => options.ledger.readArtifact(artifactId),
+  });
   const promotions = new ArticlePromotionAuthority({ ledger: options.ledger, sink: promotionSink });
   const attemptRunner = options.ledger.createArticleAttemptRunner();
   let reviewWorkers: Promise<{
@@ -63,6 +79,7 @@ export function createArticleWorkflowPorts(options: {
   let writerExecutor: ClosedWriterExecutor | undefined;
   let editorialWriterExecutor: ClosedEditorialWriterExecutor | undefined;
   let editorialReviewerExecutor: ClosedEditorialReviewerExecutor | undefined;
+  let translationWriterExecutor: ClosedTranslationWriterExecutor | undefined;
   const ensureReviewWorkers = async () => {
     reviewWorkers ??= (async () => {
       const workers = options.articleReviewWorkers;
@@ -75,11 +92,13 @@ export function createArticleWorkflowPorts(options: {
       const writerDescription = options.articleWriter === undefined ? undefined : await options.articleWriter.describe();
       const editorialWriterDescription = options.editorialWriter === undefined ? undefined : await options.editorialWriter.describe();
       const editorialReviewerDescription = options.editorialReviewer === undefined ? undefined : await options.editorialReviewer.describe();
+      const translationWriterDescription = options.translationWriter === undefined ? undefined : await options.translationWriter.describe();
       const allDescriptions = [
         ...descriptions,
         ...(writerDescription === undefined ? [] : [writerDescription]),
         ...(editorialWriterDescription === undefined ? [] : [editorialWriterDescription]),
         ...(editorialReviewerDescription === undefined ? [] : [editorialReviewerDescription]),
+        ...(translationWriterDescription === undefined ? [] : [translationWriterDescription]),
       ];
       const principalIds = allDescriptions.map((description) => description.principalId);
       const credentialIds = allDescriptions.map((description) => description.credentialProfileId);
@@ -107,6 +126,9 @@ export function createArticleWorkflowPorts(options: {
       if (editorialReviewerDescription !== undefined && (editorialReviewerDescription.authority !== "model" || !exactCapabilities(editorialReviewerDescription.capabilities, ["source_blind", "text_model"]))) {
         throw new Error("Editorial reviewer must be an authenticated source-blind model with text_model and source_blind only");
       }
+      if (translationWriterDescription !== undefined && (translationWriterDescription.authority !== "model" || !exactCapabilities(translationWriterDescription.capabilities, ["source_blind", "text_model"]))) {
+        throw new Error("Translation writer must be an authenticated source-blind model with text_model and source_blind only");
+      }
       return workers;
     })();
     return await reviewWorkers;
@@ -126,6 +148,7 @@ export function createArticleWorkflowPorts(options: {
       if (options.articleWriter !== undefined) await options.articleWriter.describe();
       if (options.editorialWriter !== undefined) await options.editorialWriter.describe();
       if (options.editorialReviewer !== undefined) await options.editorialReviewer.describe();
+      if (options.translationWriter !== undefined) await options.translationWriter.describe();
     },
     measureArticle: async (input): Promise<ArticleMeasurement> => {
       const result = await measureArticle({
@@ -307,6 +330,104 @@ export function createArticleWorkflowPorts(options: {
       if (value.manuscriptArtifactId !== input.manuscriptArtifactId || value.measurementArtifactId !== input.measurementArtifactId || value.reviewPlanArtifactId !== input.reviewPlanArtifactId || value.reviewCycleId !== input.reviewCycleId) throw new Error("Editorial review result is not bound to the exact review input");
       return { selected: true, findings: value.findings, artifacts: execution.artifacts };
     },
+    runTranslationWriter: async (input, context) => {
+      const worker = options.translationWriter;
+      const credentials = options.articleReviewCredentials;
+      if (worker === undefined) throw new Error("Spanish translation requires an authenticated closed translation writer");
+      if (credentials === undefined) throw new Error("Spanish translation requires a closed writer credential resource");
+      translationWriterExecutor ??= createClosedTranslationWriterExecutor({ ledger: options.ledger, credentials });
+      return await translationWriterExecutor.executeInStep(
+        async (key, operation, stepOptions) => await context.step(key, operation, { input: stepOptions.input, retry: stepOptions.retry, label: "translation.writer" }),
+        { worker, ...input },
+      );
+    },
+    promoteTranslation: async (input) => {
+      if (input.language !== "es") throw new Error("Spanish translation promotion requires language es");
+      if (input.inputArtifactIds[0] !== input.englishArtifactId || input.inputArtifactIds[1] !== input.promptArtifactId) {
+        throw new Error("Spanish translation promotion must bind English and prompt artifacts first");
+      }
+      if (input.inputArtifactBindings.length !== input.inputArtifactIds.length - 1) {
+        throw new Error("Spanish translation promotion has an incomplete InputRevision projection");
+      }
+      if (!sameSequence(input.inputArtifactIds.slice(1), input.inputArtifactBindings.map((binding) => binding.artifactId))) {
+        throw new Error("Spanish translation promotion input artifacts disagree with their InputRevision bindings");
+      }
+      const dependencies: DurablePromotionDependency[] = [
+        { kind: "artifact", artifactId: input.englishArtifactId },
+        ...input.inputArtifactBindings.map((binding) => ({
+          kind: "input_revision" as const,
+          artifactId: binding.artifactId,
+          revision: binding.revision,
+        })),
+      ];
+      const promotionId = `promotion-translation-${safeIdentity(input.runId)}` as import("../contracts/index.ts").PromotionId;
+      const revisionId = stableDurableRevision(`${input.runId}:translation:${input.pieceKind}:${input.pieceId}:${input.manuscriptArtifactId}`);
+      const checkpoint = await durableStore.promote(
+        promotionEngine(input.runId, input.decisionArtifactId, input.inputArtifactIds),
+        {
+          schemaVersion: "durable-checkpoint-request/1",
+          promotionId,
+          revisionId,
+          runId: input.runId,
+          logicalItem: { kind: input.pieceKind, editionId: "004", logicalId: input.pieceId, language: input.language },
+          expectedParentRevisionId: input.expectedParentRevisionId,
+          acceptedArtifactIds: [input.manuscriptArtifactId],
+          decisionArtifactIds: [input.decisionArtifactId],
+          decisionEvidenceArtifactIds: [input.decisionArtifactId],
+          inputArtifactIds: [...input.inputArtifactIds],
+          inputRevisions: [...input.inputRevisions],
+          dependencies,
+        },
+      );
+      return {
+        durableRevisionId: checkpoint.result.revisionId,
+        manifestDigest: checkpoint.result.manifestDigest,
+        gitCommitOid: checkpoint.result.gitCommitOid,
+        gitBlobOids: checkpoint.result.gitBlobOids,
+      };
+    },
+    promoteComposition: async (input) => {
+      if (input.inputRevisions.length === 0 || input.layoutInputBindings.length === 0) {
+        throw new Error("Composition promotion requires exact layout InputRevision pins");
+      }
+      const layoutArtifactIds = input.layoutInputBindings.map((binding) => binding.artifactId);
+      if (!sameSequence(layoutArtifactIds, input.inputArtifactIds.slice(-layoutArtifactIds.length))) {
+        throw new Error("Composition layout artifacts are not the exact trailing input projection");
+      }
+      const layoutStart = input.inputArtifactIds.length - layoutArtifactIds.length;
+      const dependencies: DurablePromotionDependency[] = [
+        ...input.inputArtifactIds.slice(0, layoutStart).map((artifactId) => ({ kind: "artifact" as const, artifactId })),
+        ...input.layoutInputBindings.map((binding) => ({
+          kind: "input_revision" as const,
+          artifactId: binding.artifactId,
+          revision: binding.revision,
+        })),
+      ];
+      const promotionId = `promotion-composition-${safeIdentity(input.runId)}` as import("../contracts/index.ts").PromotionId;
+      const checkpoint = await durableStore.promote(
+        promotionEngine(input.runId, input.decisionArtifactId, input.inputArtifactIds),
+        {
+          schemaVersion: "durable-checkpoint-request/1",
+          promotionId,
+          revisionId: input.revisionId,
+          runId: input.runId,
+          logicalItem: { kind: "composition", editionId: "004", compositionId: input.compositionId },
+          expectedParentRevisionId: null,
+          acceptedArtifactIds: [input.compositionArtifactId],
+          decisionArtifactIds: [input.decisionArtifactId],
+          decisionEvidenceArtifactIds: [input.decisionArtifactId],
+          inputArtifactIds: [...input.inputArtifactIds],
+          inputRevisions: [...input.inputRevisions],
+          dependencies,
+        },
+      );
+      return {
+        durableRevisionId: checkpoint.result.revisionId,
+        manifestDigest: checkpoint.result.manifestDigest,
+        gitCommitOid: checkpoint.result.gitCommitOid,
+        gitBlobOids: checkpoint.result.gitBlobOids,
+      };
+    },
     promoteEditorial: async (input): Promise<EditorialPromotionResult> => {
       const promoted = await promotionSink.promote({ request: input.request, reviewer: input.reviewer, rationale: input.rationale });
       const promotionArtifactId = `art-editorial-promotion-${safeIdentity(input.runId)}` as import("../contracts/index.ts").ArtifactId;
@@ -369,6 +490,79 @@ function exactCapabilities(actual: readonly string[], expected: readonly string[
 
 function safeIdentity(value: string): string {
   return value.replace(/[^A-Za-z0-9._-]/gu, "_");
+}
+
+/**
+ * Translation and composition are machine-owned checkpoint transitions, not
+ * human waits. DurableStore still requires the same answered-offer evidence
+ * as every other promotion, so this adapter projects the immutable machine
+ * decision artifact into that narrow evidence shape without adding workflow
+ * authority to the projection.
+ */
+function withMachinePromotionDecision(
+  base: RunView,
+  decisionArtifactId: ArtifactId,
+  inputArtifactIds: readonly ArtifactId[],
+): RunView {
+  const artifact = base.artifacts.find((candidate) => candidate.id === decisionArtifactId);
+  if (artifact === undefined || artifact.producingRunId !== base.id) {
+    throw new Error(`Durable promotion decision ${decisionArtifactId} is not owned by run ${base.id}`);
+  }
+  const suffix = `${safeIdentity(base.id)}-${safeIdentity(decisionArtifactId)}`;
+  const offer: WorkOfferView = {
+    id: `offer-durable-promotion-${suffix}` as WorkOfferView["id"],
+    runId: base.id,
+    actorId: `actor-durable-promotion-${suffix}` as WorkOfferView["actorId"],
+    actorKey: "durable-promotion",
+    state: "durable_promotion",
+    stateVisitId: `visit-durable-promotion-${suffix}` as WorkOfferView["stateVisitId"],
+    role: "editor_decision",
+    slot: "durable_promotion",
+    subjectArtifactId: decisionArtifactId,
+    inputArtifacts: [...inputArtifactIds],
+    taskArtifactId: decisionArtifactId,
+    contractVersion: "durable-checkpoint/1",
+    requirements: { authority: "machine", capabilities: [], minimumAssurance: "local_bearer" },
+    allowedWorkerCapabilities: [],
+    status: "answered",
+    createdAt: artifact.createdAt,
+  };
+  const decision: DecisionView = {
+    id: `decision-durable-promotion-${suffix}` as DecisionView["id"],
+    actorId: offer.actorId,
+    offerId: offer.id,
+    subjectArtifactId: decisionArtifactId,
+    principalId: "magazine-durable-promotion",
+    choice: "accept",
+    authority: "machine",
+    artifactId: decisionArtifactId,
+    details: {
+      schemaVersion: "durable-checkpoint-decision/1",
+      inputArtifactIds: [...inputArtifactIds],
+      decisionArtifactId,
+    } as unknown as JsonObject,
+    createdAt: artifact.createdAt,
+  };
+  return { ...base, offers: [...base.offers, offer], decisions: [...base.decisions, decision] };
+}
+
+function stableDurableRevision(identity: string): import("../contracts/index.ts").RevisionId {
+  const digest = createHash("sha256").update(identity, "utf8").digest();
+  const alphabet = "abcdefghijklmnopqrstuvwxyz234567";
+  let accumulator = 0;
+  let bits = 0;
+  let suffix = "";
+  for (const byte of digest) {
+    accumulator = (accumulator << 8) | byte;
+    bits += 8;
+    while (bits >= 5 && suffix.length < 12) {
+      bits -= 5;
+      suffix += alphabet[(accumulator >>> bits) & 31];
+      accumulator &= (1 << bits) - 1;
+    }
+    if (suffix.length === 12) break;
+  }
+  return `rev_20260804T000000000Z_${suffix}` as import("../contracts/index.ts").RevisionId;
 }
 
 function validateEditorialMeasurement(value: EditorialMeasurement, expectedInputs: readonly string[]): void {

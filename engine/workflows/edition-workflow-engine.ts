@@ -161,6 +161,7 @@ export class EditionWorkflowEngine {
       ...(options.articleWriter === undefined ? {} : { articleWriter: options.articleWriter }),
       ...(options.editorialWriter === undefined ? {} : { editorialWriter: options.editorialWriter }),
       ...(options.editorialReviewer === undefined ? {} : { editorialReviewer: options.editorialReviewer }),
+      ...(options.translationWriter === undefined ? {} : { translationWriter: options.translationWriter }),
     });
     this.#validateRuntimeResources = this.#ports.validateRuntimeResources ?? (async () => undefined);
     this.#store = new SQLiteDurableRunStore(resolve(options.loopsDatabasePath));
@@ -363,6 +364,11 @@ export class EditionWorkflowEngine {
         { artifactId: args.plan.editorial.profileArtifactId, relation: "source_lineage" },
         { artifactId: args.plan.editorial.reviewPlanArtifactId, relation: "source_lineage" },
         { artifactId: args.plan.editorial.measurementProfileArtifactId, relation: "source_lineage" },
+        ...args.plan.layoutInputArtifactIds.map((artifactId) => ({ artifactId, relation: "source_lineage" })),
+        ...args.plan.translations.flatMap((translation) => [
+          { artifactId: translation.promptArtifactId, relation: "source_lineage" },
+          ...translation.inputArtifactIds.map((artifactId) => ({ artifactId, relation: "source_lineage" })),
+        ]),
       ])
     ) {
       throw new Error("Edition plan artifact has an inexact materialized artifact set or changed identity");
@@ -375,6 +381,18 @@ export class EditionWorkflowEngine {
     if (reviewProfile.kind !== "editorial_review_plan" || reviewProfile.schemaVersion !== "editorial-review-plan/1" || reviewProfile.payloadKind !== "json" || reviewProfile.metadata.editionId !== "004") throw new Error("Edition editorial review profile pin changed identity");
     const measurementProfile = this.#ledger.requireArtifact(args.plan.editorial.measurementProfileArtifactId);
     if (measurementProfile.kind !== "editorial_measurement_profile" || measurementProfile.schemaVersion !== "editorial-measurement-profile/1" || measurementProfile.payloadKind !== "json" || measurementProfile.metadata.editionId !== "004") throw new Error("Edition editorial measurement profile pin changed identity");
+    if (args.plan.translations.length !== 1 || args.plan.translations[0]!.language !== "es" || args.plan.translations[0]!.sourceLanguage !== "en") throw new Error("Edition translation plan is not the exact English to Spanish contract");
+    if (!isDeepStrictEqual(args.plan.layoutInputBindings.map((binding) => binding.artifactId), args.plan.layoutInputArtifactIds)) throw new Error("Edition layout input bindings changed identity");
+    for (const translation of args.plan.translations) {
+      this.#ledger.requireArtifact(translation.promptArtifactId);
+      for (const artifactId of translation.inputArtifactIds) this.#ledger.requireArtifact(artifactId);
+      if (!isDeepStrictEqual(translation.inputArtifactBindings.map((binding) => binding.artifactId), translation.inputArtifactIds)) throw new Error("Edition translation input bindings changed identity");
+      if (translation.inputArtifactIds.includes(translation.promptArtifactId)) {
+        // The prompt is also a declared translation input; retain the exact
+        // order so the closed worker cannot silently substitute a policy.
+      }
+    }
+    for (const artifactId of args.plan.layoutInputArtifactIds) this.#ledger.requireArtifact(artifactId);
     const entryArtifact = this.#ledger.requireArtifact(args.entryArtifactId);
     if (
       entryArtifact.kind !== "edition_workflow_entry" ||
@@ -445,6 +463,7 @@ export class EditionWorkflowEngine {
       throw new Error("Edition 4 Loops root requires exactly seven pipeline articles");
     }
     if (pipeline.document.images.length !== 13) throw new Error("Edition 4 Loops root requires thirteen selected image revisions");
+    if (pipeline.document.translations.length !== 1 || pipeline.document.translations[0]?.language !== "es" || pipeline.document.translations[0]?.sourceLanguage !== "en") throw new Error("Edition 4 Loops root requires exactly one Spanish translation from English");
     const editionExecutionId = request.editionExecutionId ?? stableIdentity("edition-execution", runId);
     const articleWorkflowVersion = await this.#articleWorkflowVersion();
     const rendererIdentity = await this.#rendererIdentity();
@@ -567,6 +586,9 @@ export class EditionWorkflowEngine {
         sourceLineage: child.sourceLineage,
       })),
       selectedImageRevisions,
+      layoutInputRevisions: pipeline.document.layoutInputs,
+      layoutInputArtifactIds: pipeline.document.layoutInputs.flatMap((ref) => artifactIdsForRef(materialized, ref)),
+      layoutInputBindings: pipeline.document.layoutInputs.flatMap((ref) => artifactIdsForRef(materialized, ref).map((artifactId) => ({ artifactId, revision: ref }))),
       imageGenerationAllowed: false,
       editorial: {
         schemaVersion: "edition-editorial-plan/1",
@@ -579,6 +601,24 @@ export class EditionWorkflowEngine {
         measurementProfileArtifactId: editorialMeasurementProfileArtifactId,
         reviewInputArtifactIds: editorialInputArtifactIds,
       },
+      translations: pipeline.document.translations.map((translation) => {
+        if (translation.language !== "es" || translation.sourceLanguage !== "en") throw new Error("Edition 4 Loops root requires one Spanish translation from English");
+        const pieceIds = [...pipeline.document.articles.map((article) => article.articleId), pipeline.document.editorial.editorialId];
+        const parentRevisionIds = Object.fromEntries(pieceIds.map((pieceId) => [pieceId, translation.parents[pieceId] === null ? null : translation.parents[pieceId]!.revisionId]));
+        return {
+          schemaVersion: "edition-translation-plan/1" as const,
+          language: "es" as const,
+          sourceLanguage: "en" as const,
+          promptRevision: translation.prompt,
+          promptArtifactId: materialized.inputArtifact(translation.prompt, "prompt.md"),
+          inputRevisions: translation.inputRevisions,
+          inputArtifactIds: translation.inputRevisions.flatMap((ref) => artifactIdsForRef(materialized, ref)),
+          inputArtifactBindings: translation.inputRevisions.flatMap((ref) => artifactIdsForRef(materialized, ref).map((artifactId) => ({ artifactId, revision: ref }))),
+          maximumReaderPages: 7 as const,
+          pieceIds,
+          parentRevisionIds,
+        };
+      }),
     };
     const planArtifactId = `art-edition-plan-${safeIdentity(runId)}` as ArtifactId;
     const entryArtifactId = `art-edition-workflow-entry-${safeIdentity(runId)}` as ArtifactId;
@@ -587,6 +627,8 @@ export class EditionWorkflowEngine {
       editorialProfileArtifactId,
       editorialReviewPlanArtifactId,
       editorialMeasurementProfileArtifactId,
+      ...plan.layoutInputArtifactIds,
+      ...plan.translations.flatMap((translation) => [translation.promptArtifactId, ...translation.inputArtifactIds]),
     ])];
     this.#ledger.createArtifact({
       id: planArtifactId,

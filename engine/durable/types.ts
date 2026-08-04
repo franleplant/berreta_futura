@@ -94,6 +94,23 @@ export type DurablePromotionRequest = {
   /** Legacy projections retained for old durable records; new callers omit them. */
   readonly inputRevisions: readonly InputRevisionRef[];
   readonly inputArtifactIds: readonly ArtifactId[];
+  /**
+   * Exact dependency classes for a newly promoted revision.  Input-revision
+   * dependencies are Git-resolved; artifact dependencies are immutable
+   * run-local context (for example the English manuscript consumed by a
+   * translation).  The accepted artifact's parent list must equal this list
+   * exactly and in order.
+   */
+  readonly dependencies?: readonly DurablePromotionDependency[];
+};
+
+export type DurablePromotionDependency = {
+  readonly kind: "input_revision";
+  readonly artifactId: ArtifactId;
+  readonly revision: InputRevisionRef;
+} | {
+  readonly kind: "artifact";
+  readonly artifactId: ArtifactId;
 };
 
 export type DurableInputBinding = {
