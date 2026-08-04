@@ -1,0 +1,42 @@
+result: changes_required
+findings:
+- severity: blocking
+  article: edition
+  category: thin_derivation
+  disposition: fix
+  note: |
+    One article supplied against a floor of three. The editorial derives 100%
+    of body words from frontier-lab-agent-intrusion, violating the 25% ceiling
+    for any single source. The thesis cannot be verified as emergent from the
+    edition.
+- severity: blocking
+  article: editorial
+  category: prose_table_of_contents
+  disposition: fix
+  note: |
+    With one article available, the editorial cannot demonstrate whether it
+    presents an original thought or a summary of available material. The
+    procedure requires three articles minimum to distinguish a thesis from a
+    tour of contents.
+- severity: blocking
+  article: edition
+  category: cover_promise
+  disposition: fix
+  note: |
+    Cover and subtitle promise "Protocols, evaluations, architectures, and the
+    operational work that turns model capability into dependable systems."
+    The submitted material is a single incident case study. The edition does
+    not deliver the systemic scope or breadth promised.
+scores:
+  through_line: 1
+  editorial_strength: 1
+  running_order: 1
+  balance: 1
+  cover_promise: 1
+notes: |
+  The edition cannot be reviewed per procedure: one article supplied against a
+  three-article minimum; the editorial derives entirely from that source; the
+  cover's promise of systemic protocols and architectures is unfunded by an
+  incident-specific case study. The editorial acknowledges these constraints
+  plainly. Do not patch with invented tensions. Re-run once remaining articles
+  are available.

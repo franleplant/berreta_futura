@@ -1,0 +1,23 @@
+{"attempt":0,"label":"frontier-lab-agent-intrusion r1 write","model":"sonnet","seconds":346.7,"usd":0.6855}
+{"attempt":0,"label":"frontier-lab-agent-intrusion r1 judge:craft","model":"haiku","seconds":61.3,"usd":0.0508}
+{"attempt":0,"label":"frontier-lab-agent-intrusion r1 judge:worth","model":"haiku","seconds":107.1,"usd":0.0935}
+{"attempt":0,"label":"frontier-lab-agent-intrusion r1 judge:mechanics","model":"haiku","seconds":109.1,"usd":0.0671}
+{"attempt":0,"label":"frontier-lab-agent-intrusion r1 judge:shape","model":"haiku","seconds":120.4,"usd":0.0786}
+{"attempt":0,"label":"frontier-lab-agent-intrusion r1 judge:evidence","model":"haiku","seconds":190.0,"usd":0.1317}
+{"attempt":0,"label":"frontier-lab-agent-intrusion r2 rewrite","model":"sonnet","seconds":47.9,"usd":0.2903}
+{"attempt":0,"label":"frontier-lab-agent-intrusion r2 judge:craft","model":"haiku","seconds":84.0,"usd":0.0526}
+{"attempt":0,"label":"frontier-lab-agent-intrusion r2 judge:mechanics","model":"haiku","seconds":89.5,"usd":0.0545}
+{"attempt":0,"label":"frontier-lab-agent-intrusion r2 judge:shape","model":"haiku","seconds":136.1,"usd":0.0699}
+{"attempt":0,"label":"frontier-lab-agent-intrusion r2 judge:worth","model":"haiku","seconds":139.2,"usd":0.1022}
+{"attempt":0,"label":"frontier-lab-agent-intrusion r2 judge:evidence","model":"haiku","seconds":203.8,"usd":0.1324}
+{"attempt":0,"label":"frontier-lab-agent-intrusion r3 rewrite","model":"sonnet","seconds":218.2,"usd":0.548}
+{"attempt":0,"label":"frontier-lab-agent-intrusion r3 judge:evidence","model":"haiku","seconds":84.0,"usd":0.0743}
+{"attempt":0,"label":"frontier-lab-agent-intrusion r3 judge:shape","model":"haiku","seconds":90.4,"usd":0.0554}
+{"attempt":0,"label":"frontier-lab-agent-intrusion r3 judge:mechanics","model":"haiku","seconds":97.1,"usd":0.0592}
+{"attempt":0,"label":"frontier-lab-agent-intrusion r3 judge:craft","model":"haiku","seconds":113.0,"usd":0.0655}
+{"attempt":0,"label":"frontier-lab-agent-intrusion r3 judge:worth","model":"haiku","seconds":113.2,"usd":0.0847}
+{"attempt":0,"label":"editorial r1 write","model":"sonnet","seconds":104.2,"usd":0.2499}
+{"attempt":0,"label":"editorial r1 judge:mechanics","model":"haiku","seconds":56.5,"usd":0.0399}
+{"attempt":0,"label":"editorial r1 judge:shape","model":"haiku","seconds":70.5,"usd":0.0432}
+{"attempt":0,"label":"editorial r1 judge:craft","model":"haiku","seconds":90.6,"usd":0.0544}
+{"attempt":0,"label":"edition-review","model":"haiku","seconds":24.9,"usd":0.0254}

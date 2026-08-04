@@ -155,11 +155,14 @@ class Caller:
         raise RuntimeError(f"{label}: model call failed after retries — {last_error}")
 
 
+SCRATCH_MARKER = "<!-- SCRATCH: not part of the manuscript -->"
+
+
 def extract_manuscript(reply: str, label: str) -> str:
     matches = re.findall(r"<manuscript>(.*?)</manuscript>", reply, re.DOTALL)
     if not matches:
         raise RuntimeError(f"{label}: reply contained no <manuscript> block")
-    return matches[-1].strip() + "\n"
+    return matches[-1].split(SCRATCH_MARKER)[0].strip() + "\n"
 
 
 def extract_findings(reply: str, label: str) -> dict:

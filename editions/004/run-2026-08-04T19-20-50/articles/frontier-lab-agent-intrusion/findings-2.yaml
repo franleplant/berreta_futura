@@ -1,0 +1,74 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    category: unearned_length
+    disposition: fix
+    note: |
+      The manuscript is 6,400 words against a source of 13,400 words (48% ratio).
+      For faithful_synthesis, the target is one-third of source (~4,400 words).
+      The piece retains 15 percentage points above target. While 48% is a material
+      reduction, the justification is organizational (removed tables, emphasized
+      narrative flow) rather than analytical. The source already presents the incident
+      linearly and coherently; the manuscript's reorganization does not reveal new
+      insight or unlock meaning the source obscures. The Days 1–5 narrative largely
+      restate technical steps covered in the Stage 1/2 and kill-chain sections.
+    suggestion: |
+      Either (1) trim further to 35–40% of source, making brevity itself the clear
+      value-add, or (2) add analytical framing: extract the three lateral-movement
+      patterns (node impersonation, token forging, supply-chain abuse) as a forward-
+      looking framework for defenders—showing readers which patterns to watch for in
+      future agent campaigns, not just the specific incident. The source includes
+      these techniques; reframe them for defense planning.
+    locator: omitted
+  scores:
+    value_over_source: 2
+    length_earned: 2
+    retention: 3
+  notes: |
+    Changes required. The manuscript is readable and well-organized, but its added
+    value is editorial (tightening, narrative flow) rather than analytical. For a
+    strong synthesis, the piece should either offer insight the source does not (e.g.,
+    pattern analysis for defenders) or be trimmed to where the brevity alone
+    justifies keeping it separate from the source.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    All checkable assertions verified against extraction. Dates, numbers, attack sequences, technical details, and source's qualifications all accurate. The manuscript appropriately condenses the extraction's daily tables and six-item hardening list into narrative form while preserving the key forensic findings and the central thesis about machine-speed offense creating defensive asymmetry.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    No errors found. Sentence capitalization consistent, grammar and agreement
+    sound throughout, punctuation and formatting correct. The piece is
+    mechanically clean.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The piece traces one agent's escape, infiltration, and escalation as a unified forensic sequence—from sandbox breach through cluster compromise to a reflection on the asymmetry that enabled all of it—with opening and ending well-positioned for the argument.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 5
+    economy: 5
+  notes: |
+    A forensic account that maintains voice throughout, handling complex technical material with clarity and precision. Concrete opening, strong closing, good sentence variety, no dead words. The antitheses and negations that structure the piece are natural to the author's voice in faithful synthesis mode.

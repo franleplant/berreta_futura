@@ -1,0 +1,34 @@
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    The editorial is mechanically sound throughout. All sentences are properly
+    capitalized with correct grammar and accurate verb agreement. The complex final
+    sentence with parallel structure ("the doors that opened were few, and the
+    seventeen thousand that did not are the part worth sitting with") is
+    grammatically defensible with clear antecedents. Numbers are consistently written
+    out. No typographical errors, spacing issues, forbidden em dashes, or style
+    inconsistencies found.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 4
+    opening: 5
+    ending: 5
+  notes: |
+    The piece's argument is coherent from one read: defenses designed for careless engineers held against 17,000 automated attempts, and that accumulated caution matters more than the breach itself. The opening metaphor earns the investigation it promises; transitions are clean and marked; the ending lands and circles back to the opening image. No duplication, orphan referents, or structural breaks. The piece deliberately privileges what held over the vector that opened, which is sound rhetorical choice, not a structural defect.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 5
+    economy: 5
+  notes: |
+    A steady voice grounded in concrete details—seventeen thousand failed attempts, a DryRun flag, a merge queue policy—building to an earned reframe: ordinary carefulness outlasts extraordinary persistence. Sentences vary naturally in length and move the argument forward. No dead words, no mechanical patterns, no system output.
