@@ -29,7 +29,7 @@ const revision = { kind: "source_extraction", logicalId: "source", revisionId: "
 test("article workflow rewrites with fresh cycle keys and promotes the final manuscript", async () => {
   const root = await mkdtemp(join(tmpdir(), "mag-article-loop-"));
   const ledger = new ArtifactLedger(join(root, "magazine.sqlite"));
-  let writerStore: SQLiteDurableRunStore | undefined;
+  const writerStores: SQLiteDurableRunStore[] = [];
   try {
     const source = id("source-artifact");
     const seed = id("seed-manuscript");
@@ -114,6 +114,7 @@ test("article workflow rewrites with fresh cycle keys and promotes the final man
     const stepAttempts = new Map<string, number>();
     let panels = 0;
     let writes = 0;
+    let initialWriterInputIds: readonly ArtifactId[] | undefined;
     let decisionRequest: { readonly offerId: string; readonly taskArtifactId: ArtifactId; readonly inputArtifactIds: readonly ArtifactId[] } | undefined;
     const context: MagazineWorkflowContext = {
       step: async (key, fn) => {
@@ -168,7 +169,8 @@ test("article workflow rewrites with fresh cycle keys and promotes the final man
       measureArticle: async ({ articleId, manuscriptArtifactId }) => ({ schemaVersion: "article-measurement/1", articleId, manuscriptArtifactId, pageCount: 1, maximumReaderPages: 7, fits: true, openerFits: true, layouts: [], inputArtifactIds: [manuscriptArtifactId] }),
       runWriter: async (input, _writerContext) => {
         writes += 1;
-        writerStore ??= new SQLiteDurableRunStore(join(root, "writer-loops.sqlite"));
+        const writerStore = new SQLiteDurableRunStore(join(root, `writer-loops-${writes}.sqlite`));
+        writerStores.push(writerStore);
         const runtime = createRuntime({
           backend: writerBackend,
           defaultBackend: writerBackend.name,
@@ -191,13 +193,16 @@ test("article workflow rewrites with fresh cycle keys and promotes the final man
               },
               async () => {
                 if (writerAttempts === 1) throw new Error("provider retry");
-                const writerInputArtifactIds = [source, input.currentManuscriptArtifactId, input.revisionContextArtifactId] as const;
+                const writerInputArtifactIds = input.revisionContextArtifactId === undefined
+                  ? [source, input.currentManuscriptArtifactId] as const
+                  : [source, input.currentManuscriptArtifactId, input.revisionContextArtifactId] as const;
+                if (input.mode === "initial") initialWriterInputIds = writerInputArtifactIds;
                 const parents = writerInputArtifactIds.map((artifactId) => ({ artifactId, relation: "writer_input" }));
                 const writerContractMetadata = {
                   writerExecutionClass: "closed_writer/1",
                   writerRuntimeIdentity: CLOSED_WRITER_RUNTIME_IDENTITY,
                   writerInputArtifactIds,
-                  revisionContextArtifactId: input.revisionContextArtifactId,
+                  ...(input.revisionContextArtifactId === undefined ? {} : { revisionContextArtifactId: input.revisionContextArtifactId }),
                 } as const;
                 return {
                   value: { schemaVersion: "article-writer-result/1", manuscript: "rewritten", workingNotes: "notes", dispositions: [], reviewMaterials: [] },
@@ -218,13 +223,15 @@ test("article workflow rewrites with fresh cycle keys and promotes the final man
     };
     const result = await runArticleWorkflow(args, context, ports);
     assert.equal(result.status, "complete");
-    assert.equal(writes, 1);
-    assert.equal(writerAttempts, 2);
+    assert.equal(writes, 2);
+    assert.equal(writerAttempts, 3);
     assert.equal(panels, 2);
-    assert.equal(writes, 1);
+    assert.equal(writes, 2);
+    assert.deepEqual(initialWriterInputIds, [source, seed]);
+    assert.notEqual(Buffer.from(ledger.readArtifact(result.manuscriptArtifactId).bytes).toString("utf8"), "source");
     assert.ok(stepKeys.filter((key) => key.startsWith("article.review-routing.")).length === 2);
   } finally {
-    writerStore?.close();
+    for (const store of writerStores) store.close();
     ledger.close();
     await rm(root, { recursive: true, force: true });
   }
@@ -315,13 +322,15 @@ test("real Loops restart replays a committed writer revision and returns the sam
         input.operationKey,
         async () => {
           writerAttempts += 1;
-          const writerInputArtifactIds = [source, input.currentManuscriptArtifactId, input.revisionContextArtifactId] as const;
+          const writerInputArtifactIds = input.revisionContextArtifactId === undefined
+            ? [source, input.currentManuscriptArtifactId] as const
+            : [source, input.currentManuscriptArtifactId, input.revisionContextArtifactId] as const;
           const parents = writerInputArtifactIds.map((artifactId) => ({ artifactId, relation: "writer_input" }));
           const writerContractMetadata = {
             writerExecutionClass: "closed_writer/1",
             writerRuntimeIdentity: CLOSED_WRITER_RUNTIME_IDENTITY,
             writerInputArtifactIds,
-            revisionContextArtifactId: input.revisionContextArtifactId,
+            ...(input.revisionContextArtifactId === undefined ? {} : { revisionContextArtifactId: input.revisionContextArtifactId }),
           } as const;
           return await runner.executeModel(writerWorker, { rootRunId: restartRunId, articleExecutionId: restartExecutionId, articleId: "article", operationKey: input.operationKey, manuscriptArtifactId: input.currentManuscriptArtifactId, access: "source_aware", materials: writerMaterials(source, input.currentManuscriptArtifactId) }, async () => ({
             value: { schemaVersion: "article-writer-result/1", manuscript: "rewritten", workingNotes: "notes", dispositions: [], reviewMaterials: [] },
