@@ -9,9 +9,10 @@ or a contents page. Your inputs are every article manuscript in the edition plus
 
 `docs/WRITING_RULES.md` and `docs/WRITING_STYLE.md`, once at the start of a
 session. This is the magazine's own voice, so every rule reaches every sentence.
-Three concepts carry the piece. Sagan's change of scale, the vantage point that
-makes a known fact astonishing, which is the only value an editorial can add
-without a new fact and so is the whole job. Hemingway's physical detail
+Three concepts carry the piece. The vantage point: the arrangement that makes a
+known fact land, which is the only value an editorial can add without a new fact
+and so is the whole job. Get it from selection and order, in plain declaratives,
+not from raised diction. Hemingway's physical detail
 carrying the idea while the idea goes unnamed. Orwell's concrete word where the
 abstract one wants to go. Then read "The register that produces robot prose"
 twice: an editorial is 200
