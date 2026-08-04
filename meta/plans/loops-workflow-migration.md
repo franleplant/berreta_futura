@@ -1,6 +1,6 @@
 # Loops workflow migration
 
-Status: **in progress**. Revision 2, 2026-08-03.
+Status: **in progress**. Revision 3, 2026-08-03.
 
 This plan supersedes
 [`article-review-and-writer-execution.md`](article-review-and-writer-execution.md)
@@ -82,6 +82,14 @@ The durable tracer landed in commit `5e3f2d5`. It proves pinned Loops execution,
 checkpointed measurement, a human wait, exact promotion, resume, and public
 inspection. It is not the full article workflow.
 
+Completed checkpoints are preserved in commits `f1f44df` (profiles), `fd761ed`
+(material isolation), `cb97135` (attempt authority), `a99b8b8` (closed writer),
+`85bc465` (review panel), `f478175` (routing), and `61754b0` (revision loop).
+The last checkpoint completes durable revision and rewrite control flow, but it
+does not yet satisfy fresh initial writing: the first manuscript is still a copy
+of the source-extraction bundle and the closed writer runs only after a rewrite
+route.
+
 Finish the article workflow in these dependency-ordered slices:
 
 1. Add immutable production-profile and review-plan contracts. Extract one
@@ -101,11 +109,15 @@ Finish the article workflow in these dependency-ordered slices:
    Validate each result against the exact manuscript and exact material set.
 6. Build the revision brief and route as pure deterministic functions. Preserve
    every finding and result identity without semantic deduplication.
-7. Replace the tracer body with the full write, review, route, rewrite, and
-   editor-decision loop. A rewrite consumes rewrite budget; an execution retry
-   does not. Every manuscript revision receives a fresh review panel.
-8. Launch the workflow from the authenticated write-pipeline seam. Callers
-   cannot invent or omit production materials.
+7. Replace the tracer body with the review, route, rewrite, and editor-decision
+   loop. A rewrite consumes rewrite budget; an execution retry does not. Every
+   manuscript revision receives a fresh review panel. This landed in `61754b0`.
+8. Close the initial-writing gap. Treat committed source extractions as writer
+   evidence, not as a manuscript. Run the closed writer in `initial` mode and
+   atomically create revision zero from its selected outputs before review.
+9. Launch from the authenticated write-pipeline seam. Extract one immutable
+   article-args builder that works both for a standalone root and for an edition
+   child. Callers cannot invent or omit production materials.
 
 Use an article execution identity that is separate from the root Loops run
 identity. The same article function runs alone in this phase and can run as an
@@ -126,24 +138,46 @@ Run the existing article durability, authority, provenance, and retry tests
 through the new public seam. Do not dual-write a live run through XState and
 Loops.
 
-### Phase 2: compose the edition in Loops
+### Phase 2: compose Edition 4 in Loops
 
-Add workflow scripts for:
+Deliver Phase 2 as dependency-ordered vertical slices:
 
-- source collection and preparation;
-- planning;
-- articles and opening editorial;
-- cover and interior art selection;
-- edition review;
-- translation;
-- measurement and rendering;
-- visual review;
-- release.
+1. **Enable child workflows.** Configure Magazine with a fixed workflow
+   resolver that returns source-hashed child descriptors. Fix Loops' shared
+   child-workflow queue and suspension behavior so parallel children have
+   distinct invocation scopes and one waiting child does not prevent siblings
+   from reaching their waits. Prove crash-safe replay before using children in
+   an edition.
+2. **Add the edition root.** Add one Loops edition entry and public edition
+   engine. Resolve the committed write pipeline once. Source preparation
+   authenticates the already committed captures and extractions; it does not
+   recapture them. Planning is checkpointed from that immutable pipeline.
+3. **Produce the English issue.** Run all seven articles as durable children,
+   freshly written from their assigned source extractions. Produce and measure
+   the opening editorial from the accepted English article revisions. Run
+   edition review and route findings to named article or editorial successor
+   workflows before downstream work begins.
+4. **Translate and compose.** Translate all seven articles and the opening
+   editorial to Spanish from their exact accepted English artifacts. Validate
+   the English digest and Markdown structure. Create a new immutable
+   CompositionRevision from the fresh English and Spanish revisions.
+5. **Reuse selected art.** Pin exactly the 13 image revisions selected by the
+   existing Edition 4 `fresh-v2` composition. Set image generation to false,
+   create no art-generation offer, and do not register an image executor.
+6. **Measure, render, inspect, and export.** Run `measureEdition`, then invoke
+   the Python renderer only through the TypeScript renderer adapter. Persist
+   exact reader, booklet, preflight, and critic artifacts. Human visual review
+   must name the exact current render artifact IDs. Atomically export the
+   approved files.
+7. **Release as a successor.** Edition 4 is already released. A new release is
+   a successor release revision of the same edition identity, not a second
+   unrelated edition. Preserve the old release and keep each source identity
+   assigned to Edition 4 only.
 
-The edition workflow composes these as child workflows and normal TypeScript
-functions. It may use `parallel()` and `pipeline()` where useful. Renderer and
-source operations remain ordinary Node.js functions, wrapped in `step()` only
-when Loops must checkpoint their results.
+The edition workflow composes article and editorial scripts as child workflows
+and uses normal TypeScript functions for Magazine policy. Renderer and source
+operations remain ordinary Node.js functions wrapped in `step()` only when
+Loops must checkpoint their results.
 
 ### Phase 3: make Loops the only authority for new runs
 
@@ -200,6 +234,23 @@ Before removing XState, prove:
 - render approval names the exact current render artifacts;
 - release remains atomic and source identities remain unique;
 - the normal Node verification suite passes without Python workflow code.
+
+Edition 4 final acceptance additionally requires:
+
+- one pinned Loops root with seven fresh English article executions whose
+  manuscripts were written from the committed source extractions;
+- one fresh one-page opening editorial and complete English and Spanish issue
+  revisions;
+- exact reuse of the 13 selected committed image revisions, with zero image
+  generation calls, offers, or artifacts;
+- visual approval bound to the exact current render artifacts;
+- these approved exported PDFs under `output/004/<run-name>`:
+  - `en/reader.pdf`;
+  - `en/home/booklet-a4.pdf`;
+  - `es/reader.pdf`;
+  - `es/home/booklet-a4.pdf`;
+- exported PDF digests equal their approved immutable render artifact digests;
+- the Edition 4 production run never reads or writes XState workflow state.
 
 ## Acceptance criteria
 
