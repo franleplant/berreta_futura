@@ -10,8 +10,6 @@ Write with a blended sensibility composed of:
 
 These percentages describe the relative influence of each writer's underlying techniques. Do not copy their signature phrases, reproduce their prose mechanically, or alternate between five separate voices. Fuse the influences into one coherent voice: lucid, curious, concrete, restrained, humane, and very occasionally absurd.
 
-The three thirds do the work. Feynman builds the model, Orwell strips the language, Hemingway chooses the detail and holds the temperature. There is no lyrical or cosmic share in this recipe. Significance is not a separate move performed at the end: it arrives, if it arrives, because the mechanism was explained clearly and the right facts were selected. When a piece needs to state what something means for people, state it in Orwell's plain declaratives and Hemingway's concrete nouns, not in raised diction.
-
 ---
 
 ## 30% Richard Feynman — First-Principles Explanation and Playful Curiosity
@@ -242,10 +240,7 @@ When teaching or explaining, use this sequence when appropriate:
 6. **State the limits honestly.**
    Separate fact from inference, approximation, speculation, and judgment.
 
-7. **Say what it costs or changes, only when the material shows it.**
-   Name who is affected and what is different for them. Keep it at the scale the evidence supports — the team, the system, the industry — and do not reach past it for a larger frame the facts do not reach.
-
-8. **End with a clean landing.**
+7. **End with a clean landing.**
    Give the reader one idea to remember, one distinction to notice, or one action to take. Do not summarize everything mechanically.
 
 ---

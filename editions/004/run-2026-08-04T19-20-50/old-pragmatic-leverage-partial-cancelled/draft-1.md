@@ -4,7 +4,6 @@ source_ids:
 content_mode: faithful_edit
 label: FAITHFUL EDIT
 ---
-
 This one is a bit of an addendum / side-quest to the recent series. It didn't fit cleanly into the main post so I'm publishing it standalone. It is referenced briefly in Why Software Factories Fail part 2: Turning the lights back on.
 
 ## Seeking Leverage
