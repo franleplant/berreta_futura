@@ -163,7 +163,7 @@ export const WORK_ROLE_EXECUTION = {
   review_source: "human",
   close_collection: "human",
   plan_edition: "human",
-  writer: "text_model",
+  writer: "closed_writer",
   measure_article: "article_measurement",
   worth: "text_model",
   mechanics: "text_model",
@@ -192,6 +192,7 @@ export const WORK_ROLE_EXECUTION = {
 
 type ExecutionOwner =
   | "article_measurement"
+  | "closed_writer"
   | "human"
   | "image_model"
   | "language_fit"

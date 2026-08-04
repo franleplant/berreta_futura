@@ -3,7 +3,6 @@ import { SubprocessExecutor, type SubprocessCommand } from "./subprocess.ts";
 
 const TEXT_ROLES = new Set([
   "extract_source",
-  "writer",
   "worth",
   "mechanics",
   "evidence",
