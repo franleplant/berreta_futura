@@ -21,3 +21,8 @@
 {"attempt":0,"label":"editorial r1 judge:shape","model":"haiku","seconds":70.5,"usd":0.0432}
 {"attempt":0,"label":"editorial r1 judge:craft","model":"haiku","seconds":90.6,"usd":0.0544}
 {"attempt":0,"label":"edition-review","model":"haiku","seconds":24.9,"usd":0.0254}
+{"attempt":0,"label":"pragmatic-leverage r1 write","model":"sonnet","seconds":50.7,"usd":0.2053}
+{"attempt":0,"label":"pragmatic-leverage r1 judge:evidence","model":"haiku","seconds":20.9,"usd":0.0204}
+{"attempt":0,"label":"pragmatic-leverage r1 judge:worth","model":"haiku","seconds":36.5,"usd":0.0492}
+{"attempt":0,"label":"pragmatic-leverage r1 judge:craft","model":"haiku","seconds":106.6,"usd":0.0799}
+{"attempt":0,"label":"pragmatic-leverage r1 judge:mechanics","model":"haiku","seconds":126.6,"usd":0.0949}
