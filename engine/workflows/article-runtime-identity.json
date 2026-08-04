@@ -1,0 +1,222 @@
+{
+  "schemaVersion": "magazine-article-runtime-identity/1",
+  "graphHash": "sha256:142190882797c9c0dba11d560ef21bd6ada39d0864d4ea2795257d94fcb12494",
+  "rendererAdapter": "python-uv-locked/1",
+  "rendererEntrypoint": "magazine.engine_render_bridge:main",
+  "rendererContractVersion": "magazine-renderer/1",
+  "authorityPolicy": "local-authority-exact-offer/1",
+  "promotionAdapter": "durable-store-git-cli/1",
+  "defaultBackend": "magazine-no-agent",
+  "defaultModel": "none",
+  "budget": {
+    "total": null,
+    "unit": "calls"
+  },
+  "files": [
+    {
+      "path": "pyproject.toml",
+      "sizeBytes": 793,
+      "sha256": "sha256:5dff181c6122bbbb5c51ad95e6b5464eeb052516bf282822786e6f11b219d861"
+    },
+    {
+      "path": "src/magazine/__init__.py",
+      "sizeBytes": 191,
+      "sha256": "sha256:40f1808c539e6f4706f0abcf04819daa1ba290b09506f839a39c70f3b35bd1b2"
+    },
+    {
+      "path": "src/magazine/assets/fonts/README.md",
+      "sizeBytes": 811,
+      "sha256": "sha256:8371b7f341e11788f94d84c83f674f7ca877ed4b3effd1be9c3416f7c2537bea"
+    },
+    {
+      "path": "src/magazine/assets/fonts/inter/Inter-Bold.ttf",
+      "sizeBytes": 420428,
+      "sha256": "sha256:288316099b1e0a47a4716d159098005eef7c0066921f34e3200393dbdb01947f"
+    },
+    {
+      "path": "src/magazine/assets/fonts/inter/Inter-Medium.ttf",
+      "sizeBytes": 417300,
+      "sha256": "sha256:97ad806f526e41546d46365bb3a393145f75b7b1568913db74549ad8b8dba872"
+    },
+    {
+      "path": "src/magazine/assets/fonts/inter/Inter-Regular.ttf",
+      "sizeBytes": 411640,
+      "sha256": "sha256:40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82"
+    },
+    {
+      "path": "src/magazine/assets/fonts/inter/Inter-SemiBold.ttf",
+      "sizeBytes": 419744,
+      "sha256": "sha256:78a843fade9d4612a5567302fb595b56976eb5fcebf4fea5a5912d638bafcde3"
+    },
+    {
+      "path": "src/magazine/assets/fonts/inter/LICENSE.txt",
+      "sizeBytes": 4380,
+      "sha256": "sha256:262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a"
+    },
+    {
+      "path": "src/magazine/assets/fonts/source-serif-4/LICENSE.md",
+      "sizeBytes": 4492,
+      "sha256": "sha256:75784a295293a8992f5a8d99210566e0064a012e6dab6731305e3787f15896c7"
+    },
+    {
+      "path": "src/magazine/assets/fonts/source-serif-4/SourceSerif4Display-Semibold.ttf",
+      "sizeBytes": 302412,
+      "sha256": "sha256:ba711c7443224e9c95bc5fcd24a98f3d921e50b3873c27667884351067927a03"
+    },
+    {
+      "path": "src/magazine/assets/fonts/source-serif-4/SourceSerif4SmText-Bold.ttf",
+      "sizeBytes": 270136,
+      "sha256": "sha256:072c77a0dbffbcb7e99dda31de16e096bd99d1345fd6037d3e153ea315547c25"
+    },
+    {
+      "path": "src/magazine/assets/fonts/source-serif-4/SourceSerif4SmText-It.ttf",
+      "sizeBytes": 188964,
+      "sha256": "sha256:74963111a9dc458611e6eaa62a6bff8811855f67e015f91b728fb52567020c5e"
+    },
+    {
+      "path": "src/magazine/assets/fonts/source-serif-4/SourceSerif4SmText-Regular.ttf",
+      "sizeBytes": 262532,
+      "sha256": "sha256:54379656e8fa22bfbb7a783f8fe4269c9ae4eb966c1c3fcb17ee3b50cba95813"
+    },
+    {
+      "path": "src/magazine/assets/screen-edition.css",
+      "sizeBytes": 27806,
+      "sha256": "sha256:44e7dcda28cf50b8c9f11d35aa85a4a1f89ebe571cf9bd063a9e4a8302e05b51"
+    },
+    {
+      "path": "src/magazine/assets/weasyprint-a5.css",
+      "sizeBytes": 79453,
+      "sha256": "sha256:0a02f365bf0108096a4b1be5f2a8d14ec86dafbc46fa6ac879d48fdd35640710"
+    },
+    {
+      "path": "src/magazine/booklet.py",
+      "sizeBytes": 4480,
+      "sha256": "sha256:d1b093624a9781487b8721a710b90f61e6485d98e6eecf027d990801411d9517"
+    },
+    {
+      "path": "src/magazine/concurrency.py",
+      "sizeBytes": 6838,
+      "sha256": "sha256:dfd1806156b896f3635392c66a971460b47806eb3ad89e991f54348b1d288f7d"
+    },
+    {
+      "path": "src/magazine/cover.py",
+      "sizeBytes": 59464,
+      "sha256": "sha256:2e13bdf4ccf802d78d4c9228cb4c63964f131832f2b8ff841def672e5943426e"
+    },
+    {
+      "path": "src/magazine/document_structure.py",
+      "sizeBytes": 5454,
+      "sha256": "sha256:707639004f757e844e4df13046c3dec742dc4ee903c4963474dc90b26c8e2756"
+    },
+    {
+      "path": "src/magazine/engine_render_bridge.py",
+      "sizeBytes": 17714,
+      "sha256": "sha256:6431e24ea25368164bb294bcca7f7a3df7e16e622c8037f8bbac76379992024a"
+    },
+    {
+      "path": "src/magazine/errors.py",
+      "sizeBytes": 1042,
+      "sha256": "sha256:5fa907d0b28496be747e62516b54d026426826aa66991592835ffbb76f729e2f"
+    },
+    {
+      "path": "src/magazine/extraction.py",
+      "sizeBytes": 10802,
+      "sha256": "sha256:24ec8eb43f19990b9e954992bced1b939b5620de5afbd8340d4d9e08b997a80d"
+    },
+    {
+      "path": "src/magazine/html_edition.py",
+      "sizeBytes": 35408,
+      "sha256": "sha256:2c315164352ddc601855ef2a051c697dfbbbcbeb42d79b6b55cf742c848ab8df"
+    },
+    {
+      "path": "src/magazine/image_contrast.py",
+      "sizeBytes": 12321,
+      "sha256": "sha256:da5675185c78349ea9a80212f9553906182142072e65afeff793f2327eba8912"
+    },
+    {
+      "path": "src/magazine/io.py",
+      "sizeBytes": 1149,
+      "sha256": "sha256:ac7c61ed297a1bd5c123de2334aee4c9fb003f5f152f0b82494425bc97c9599b"
+    },
+    {
+      "path": "src/magazine/manifest.py",
+      "sizeBytes": 49414,
+      "sha256": "sha256:e0dc6e4045214ae17e1feca1d508832276340057ce202385cf665b6b2667df78"
+    },
+    {
+      "path": "src/magazine/media_schema.py",
+      "sizeBytes": 19329,
+      "sha256": "sha256:999151fe085ef6e1cc963525d0d0fa767b5e62415c643f443e0b83ac1a67359c"
+    },
+    {
+      "path": "src/magazine/package.py",
+      "sizeBytes": 11797,
+      "sha256": "sha256:3353e3a9b2145676bd534965e5d91a71abf87d77f52b082acd4ef7e4ef9ddb4e"
+    },
+    {
+      "path": "src/magazine/preflight.py",
+      "sizeBytes": 11968,
+      "sha256": "sha256:84d89212ae364023bd8ede736793fe05ec4814b264b3fec2866bbe0ef0513675"
+    },
+    {
+      "path": "src/magazine/publication_document.py",
+      "sizeBytes": 11012,
+      "sha256": "sha256:a9d22508e43ac0dfeac923e9ea401a3038e3379df2e60f5c8d6deda63238ffbc"
+    },
+    {
+      "path": "src/magazine/reader_layout.py",
+      "sizeBytes": 4432,
+      "sha256": "sha256:c3b3ff1dc98687efcfc79fb81341664483711d3acf4847a33cd125ca82923f1a"
+    },
+    {
+      "path": "src/magazine/reader_text.py",
+      "sizeBytes": 7585,
+      "sha256": "sha256:3bb52b6618e17280d5672a24f0043449bf6399610b090057c5b00ed3ee3947b6"
+    },
+    {
+      "path": "src/magazine/records.py",
+      "sizeBytes": 12739,
+      "sha256": "sha256:c3d3c7ce2c3e652350124829a3ba850bc7451c0fd715005232774878851ee415"
+    },
+    {
+      "path": "src/magazine/render.py",
+      "sizeBytes": 89523,
+      "sha256": "sha256:903ae133c7cbdcd39a4808ca5f9d88ae13d3696cbc1ad0602e0ea84f7a73177f"
+    },
+    {
+      "path": "src/magazine/render_critic.py",
+      "sizeBytes": 84858,
+      "sha256": "sha256:cf5d99142457e0780959796d44c6e03afe16f961a996cf2b7927cb07cb109232"
+    },
+    {
+      "path": "src/magazine/render_engine.py",
+      "sizeBytes": 5596,
+      "sha256": "sha256:59fd45561c80727cce1ed0ac0e1fe3cf21dd18159a3ec898cf6942f64ed044bf"
+    },
+    {
+      "path": "src/magazine/weasyprint_adapter.py",
+      "sizeBytes": 238269,
+      "sha256": "sha256:1a4585c5669039e83e7280c8cce182aea27ce8357f2a03277eda05670b7df052"
+    },
+    {
+      "path": "src/magazine/web_edition.py",
+      "sizeBytes": 42908,
+      "sha256": "sha256:c1ec32f1a3384d23ba72a3900875a5b88902fd5955a8f817447134f506f6f07f"
+    },
+    {
+      "path": "uv.lock",
+      "sizeBytes": 170064,
+      "sha256": "sha256:51c3b693a29c5a9b78cebc7f0081c18add707051cb62502db6db180ff5df8ae7"
+    }
+  ],
+  "toolchain": {
+    "uvSha256": "sha256:16b94f4af20f485089c841eadb6280cf5d71af17ff1982fd798d41fcf9523031",
+    "uvVersion": "0.8.17 (10960bc13 2025-09-10)",
+    "pythonSha256": "sha256:179301dcb41ea78accc3fa0048a7e6f6710d891945a751a34addd622020c1818",
+    "pythonVersion": "3.9.6",
+    "pythonImplementation": "CPython",
+    "pythonCacheTag": "cpython-39",
+    "platform": "darwin-arm64"
+  },
+  "manifestHash": "sha256:7a595215f70e8526a6f8dcf0f067ded2d67041183dd8d8efc4a50352f5f11b80"
+}

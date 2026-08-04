@@ -12,6 +12,7 @@ import type {
   WorkerCapability,
   WorkerIdentity,
 } from "../contracts/index.ts";
+import type { RendererToolchainResource } from "../contracts/workflow-run.ts";
 import {
   PythonRendererAdapter,
 } from "../renderer-adapter/index.ts";
@@ -84,6 +85,19 @@ const rendererSchema = z.object({
   projectRoot: z.string().min(1),
   workDirectory: z.string().min(1),
   adapterTimeoutMs: z.number().int().positive().optional(),
+  toolchain: z.object({
+    uvExecutable: z.string().min(1),
+    pythonExecutable: z.string().min(1),
+    expected: z.object({
+      uvSha256: z.string().regex(/^sha256:[0-9a-f]{64}$/u),
+      uvVersion: z.string().min(1),
+      pythonSha256: z.string().regex(/^sha256:[0-9a-f]{64}$/u),
+      pythonVersion: z.string().min(1),
+      pythonImplementation: z.string().min(1),
+      pythonCacheTag: z.string().min(1),
+      platform: z.string().regex(/^[a-z0-9_]+-[a-z0-9_.-]+$/iu),
+    }).strict(),
+  }).strict(),
 }).strict();
 
 const sourceSchema = z.object({
@@ -307,6 +321,8 @@ function createRegistrations(
       const adapter = new PythonRendererAdapter(
         resolve(value.projectRoot),
         value.adapterTimeoutMs,
+        undefined,
+        value.toolchain as RendererToolchainResource,
       );
       const workDirectory = resolve(value.workDirectory);
       const principalId = value.principalId ?? value.id;

@@ -302,7 +302,9 @@ test("an approved production plan resolves ready source names before spawning ar
 
     const planDecision = view.decisions.find((decision) => decision.offerId === ready.planOffer.id);
     assert.ok(planDecision);
-    const planView = await engine.readArtifact(planDecision.artifactId);
+    const planDecisionArtifactId = planDecision.artifactId;
+    assert.ok(planDecisionArtifactId);
+    const planView = await engine.readArtifact(planDecisionArtifactId);
     assert.ok(planView.artifact.parents.some((parent) => parent.artifactId === ready.extraction));
     const manuscriptView = await engine.readArtifact(manuscript);
     assert.ok(

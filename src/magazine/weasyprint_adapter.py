@@ -3952,6 +3952,7 @@ def _measure_layout(
     plan: ReaderPlan | None = None,
 ) -> RenderLayout:
     article_pages: dict[str, set[int]] = {}
+    article_opener_pages: dict[str, set[int]] = {}
     editorial_pages: set[int] = set()
     destinations: dict[str, int] = {}
     image_boxes: list[tuple[HtmlAsset, int, Any, Any]] = []
@@ -3977,6 +3978,12 @@ def _measure_layout(
             article_id = attributes.get("data-article-id")
             if article_id and getattr(box, "element_tag", None) == "article":
                 article_pages.setdefault(article_id, set()).add(page_number)
+            if (
+                article_id
+                and getattr(box, "element_tag", None) == "header"
+                and "article-opener" in _element_classes(element)
+            ):
+                article_opener_pages.setdefault(article_id, set()).add(page_number)
             if attributes.get("id") == "editorial" and getattr(box, "element_tag", None) == "section":
                 editorial_pages.add(page_number)
             identifier = attributes.get("id")
@@ -4049,6 +4056,7 @@ def _measure_layout(
         article_frame_usage={},
         article_terminal_balance={},
         figure_placements=placements,
+        article_opener_fits={key: len(value) == 1 for key, value in article_opener_pages.items()},
     )
 
 

@@ -111,7 +111,20 @@ work package on stdin and must return one `WorkAnswer` JSON object on stdout.
       "kind": "python_renderer",
       "id": "mag-renderer",
       "projectRoot": ".",
-      "workDirectory": ".magazine/004/worker-temp"
+      "workDirectory": ".magazine/004/worker-temp",
+      "toolchain": {
+        "uvExecutable": "/absolute/path/to/uv",
+        "pythonExecutable": "/absolute/path/to/python",
+        "expected": {
+          "uvSha256": "sha256:<64 hex characters>",
+          "uvVersion": "0.9.0",
+          "pythonSha256": "sha256:<64 hex characters>",
+          "pythonVersion": "3.12.11",
+          "pythonImplementation": "CPython",
+          "pythonCacheTag": "cpython-312",
+          "platform": "darwin-arm64"
+        }
+      }
     },
     {
       "kind": "render_inspection",

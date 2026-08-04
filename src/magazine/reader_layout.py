@@ -13,7 +13,7 @@ leaves the other, and these facts, intact.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -113,3 +113,4 @@ class RenderLayout:
     article_frame_usage: dict[str, tuple[FrameUsage, ...]]
     article_terminal_balance: dict[str, float]
     figure_placements: tuple[FigurePlacement, ...] = ()
+    article_opener_fits: dict[str, bool] = field(default_factory=dict)

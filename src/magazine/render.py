@@ -375,6 +375,7 @@ class _Typesetter:
         self.section = ""
         self.toc: dict[str, int] = {}
         self.article_pages: dict[str, int] = {}
+        self.article_opener_fits: dict[str, bool] = {}
         self.article_frame_usage: dict[str, tuple[FrameUsage, ...]] = {}
         self.figure_placements: list[FigurePlacement] = []
         self.editorial_pages: int | None = None
@@ -2103,6 +2104,9 @@ class _Typesetter:
                 start_page = self.page
                 self.toc[article.id] = self.page
                 self._render_article_opener(article, article_index, article_total)
+                # The opener is measured from the actual page transition, not
+                # inferred from text length or a fixed policy constant.
+                self.article_opener_fits[article.id] = self.page == start_page
                 self.markdown(
                     article.manuscript,
                     lead=True,
@@ -2254,6 +2258,7 @@ def _render_pass(
         # derived from it must not change bytes.  See reader_layout.RenderLayout.
         {},
         tuple(typesetter.figure_placements),
+        dict(typesetter.article_opener_fits),
     )
 
 
