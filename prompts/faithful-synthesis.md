@@ -13,9 +13,10 @@ that it has been condensed. Your inputs are the source extraction at
 session. Four concepts carry this mode. Hemingway's restraint and omission is
 the work, and the cut order below is that omission with a page budget attached.
 "Right-sizing" below: length grows from the material and then stops. A number
-survives only if the argument changes when it changes. Sagan's change of scale
-is the vantage point, the one value you may always add because it costs no new
-fact. Read "The register that produces robot prose" before you draft and the
+survives only if the argument changes when it changes. Choosing the vantage
+point is the one value you may always add because it costs no new fact: the
+order the facts arrive in, and which one the piece makes the reader stand next
+to. Keep it at the scale the evidence supports. Read "The register that produces robot prose" before you draft and the
 final pass before you deliver. The rules are not restated here; those files are
 the only copies. The style doc's Orwell section governs every sentence you write
 yourself; it does not reach the author's own retained sentences in this mode,
