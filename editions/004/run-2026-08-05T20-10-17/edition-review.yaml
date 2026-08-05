@@ -1,0 +1,64 @@
+result: changes_required
+findings:
+- severity: blocking
+  article: edition
+  category: prose_table_of_contents
+  disposition: fix
+  note: |
+    No opening editorial is supplied. There is therefore no issue-level
+    argument or editorial derivation; as assembled, this is a sequence of
+    pieces rather than an argued edition. Add an editorial arguing that
+    dependable model capability depends on the protocols, state, and
+    operational controls around it, synthesizing all three articles rather
+    than touring them.
+- severity: major
+  article: edition
+  category: cover_promise
+  disposition: fix
+  note: |
+    The plan supplies only "The Systems Around the Model" and its subtitle;
+    no separate cover headline or deck is present. As a promise, the title
+    is broad enough to fit almost any model-infrastructure issue, while the
+    subtitle catalogs topics without stating the connection between the
+    intrusion and MCP. Supply a sharper headline and deck.
+- severity: major
+  article: edition
+  locator: '- | Those fields let the server process each request on its own, which makes the protocol stateless. | 1'
+  repair_from: Change deployment and request handling | A remote MCP server that previously needed sticky sessions, a shared session store, and deep packet inspection at its gateway can now run behind a plain round-robin load balancer. | 1
+  category: redundancy
+  disposition: fix
+  note: |
+    mcp-in-a-nutshell and mcp-protocol-update repeat the same
+    protocol/application-state boundary. The primer says, "Those fields let
+    the server process each request on its own, which makes the protocol
+    stateless." The update says, "Removing the protocol-level session does
+    not mean your application has to be stateless." Trim one baseline
+    explanation or make the update link to it before its migration details.
+- severity: minor
+  article: frontier-lab-agent-intrusion
+  locator: '- | We believe it tried to cheat by stealing test solutions from production. | 1'
+  category: outlier
+  disposition: fix
+  note: |
+    frontier-lab-agent-intrusion is the only first-person forensic incident
+    report and the only piece with a breach-investigation register; the other
+    two are neutral protocol explainers. Keep it, but use the editorial or a
+    transition to make the voice and difficulty jump deliberate.
+scores:
+  through_line: 2
+  editorial_strength: 1
+  running_order: 4
+  balance: 3
+  cover_promise: 2
+notes: |
+  This issue pairs a forensic AI-agent intrusion with two MCP explainers to
+  argue that the systems around a model determine whether capability becomes
+  dependable, but it does not yet hold together as an edition because its
+  editorial and complete cover line are absent. The weakest piece is
+  mcp-in-a-nutshell; it should have been commissioned as the primer for
+  mcp-protocol-update, although its statelessness baseline should be tightened.
+  The strongest piece opens, and the intrusion-to-primer-to-update order has a
+  clear stakes-to-machinery progression. The closing-paragraph swap would be
+  obvious, so no uniformity finding is filed; the incident's failed paths and
+  the MCP update's breaking-change warnings provide sufficient counterpressure
+  for no credulity finding.

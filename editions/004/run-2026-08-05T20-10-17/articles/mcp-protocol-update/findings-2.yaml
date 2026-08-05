@@ -1,0 +1,299 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The announcement that the release candidate was available on May 21, rather than only locked that day
+    reader_loses: The publication-state nuance, not any implementation guidance.
+    verdict: defensible
+  - fact: The statement that six SEPs complete the plan from The Future of MCP Transports in December
+    reader_loses: Roadmap provenance and the count of proposals, not the changes themselves.
+    verdict: defensible
+  - fact: The exact old session-bound tools/call POST, including its sample session UUID and request id 2
+    reader_loses: A second before-and-after wire example; the new request and prose establish the migration.
+    verdict: defensible
+  - fact: The explicit statement that the Mcp-Session-Id header itself is removed
+    reader_loses: An explicit migration checkbox, though the session-free request and surrounding explanation make the removal clear.
+    verdict: defensible
+  - fact: SEP-2575, the identifier for removing the initialize/initialized handshake
+    reader_loses: A lookup reference only; the rule is retained.
+    verdict: defensible
+  - fact: SEP-2567, the identifier for removing the protocol session
+    reader_loses: A lookup reference only; the rule is retained.
+    verdict: defensible
+  - fact: The browser_id example and the create_basket/add_item worked sequence
+    reader_loses: A second illustration of explicit handles; basket_id still teaches the pattern.
+    verdict: defensible
+  - fact: The note that earlier specifications recommended server-initiated requests before making them required
+    reader_loses: Historical nuance; the current restriction and its user-facing consequence remain.
+    verdict: defensible
+  - fact: SEP-2243, the identifier for the routing headers
+    reader_loses: A lookup reference only; the headers and their behavior are retained.
+    verdict: defensible
+  - fact: The HTTP Cache-Control analogy and the statement that SSE is no longer the only way to learn that a list changed
+    reader_loses: Motivating context for cache metadata, not its freshness and sharing semantics.
+    verdict: defensible
+  - fact: SEP-2549, the identifier for ttlMs and cacheScope
+    reader_loses: A lookup reference only; both fields and their meaning remain.
+    verdict: defensible
+  - fact: SEP-414, the identifier for W3C Trace Context propagation
+    reader_loses: A lookup reference only; the key names and trace path remain.
+    verdict: defensible
+  - fact: The statement that extensions existed in 2025-11-25 but had no formal process
+    reader_loses: Historical contrast; the new formal process is fully described.
+    verdict: defensible
+  - fact: SEP-2133, the identifier for the formal extensions process
+    reader_loses: A lookup reference only; reverse-DNS IDs, negotiation, repositories, and independent versioning remain.
+    verdict: defensible
+  - fact: The explicit count that this release contains two official extensions
+    reader_loses: A count; MCP Apps and Tasks are both covered.
+    verdict: defensible
+  - fact: SEP-1865, the identifier for MCP Apps
+    reader_loses: A lookup reference only; the UI behavior and security path remain.
+    verdict: defensible
+  - fact: RFC 9207, the cited standard for iss validation
+    reader_loses: A standards citation, not the validation requirement.
+    verdict: defensible
+  - fact: SEP-2468, the identifier for iss validation
+    reader_loses: A lookup reference only; the attack and mitigation remain.
+    verdict: defensible
+  - fact: SEP-837, the identifier for application_type during registration
+    reader_loses: A lookup reference only; the interoperability problem and fix remain.
+    verdict: defensible
+  - fact: SEP-2352, the identifier for issuer binding and re-registration
+    reader_loses: A lookup reference only; the issuer behavior remains.
+    verdict: defensible
+  - fact: SEP-2207, the identifier for refresh-token requests
+    reader_loses: A lookup reference only; the clarification is retained.
+    verdict: defensible
+  - fact: SEP-2350, the identifier for scope accumulation during step-up
+    reader_loses: A lookup reference only; the scope clarification is retained.
+    verdict: defensible
+  - fact: SEP-2351, the identifier for the .well-known discovery suffix
+    reader_loses: A lookup reference only; the suffix clarification is retained.
+    verdict: defensible
+  - fact: SEP-2577, the identifier for the deprecation lifecycle
+    reader_loses: A lookup reference only; replacements and the grace period remain.
+    verdict: defensible
+  - fact: SEP-2106, the identifier for full JSON Schema 2020-12
+    reader_loses: A lookup reference only; the schema rules and safety limits remain.
+    verdict: defensible
+  - fact: SEP-2164, the identifier for the missing-resource error change
+    reader_loses: A lookup reference only; both error codes and the migration instruction remain.
+    verdict: defensible
+  - fact: The statement that three governance SEPs are included, including SEP-2484 for the conformance gate
+    reader_loses: The count and lookup identifier, not the lifecycle, extension, or conformance rules.
+    verdict: defensible
+  - fact: The explanation that the stateless rework specifically required a clean break
+    reader_loses: Some rationale for the breaking change; the change and future compatibility policy remain.
+    verdict: defensible
+  - fact: The draft-specification location and promise that the changelog will enumerate every difference from 2025-11-25
+    reader_loses: A validation pointer, not the substance of the changes.
+    verdict: defensible
+  - fact: The instruction to file specification issues in the repository and use the contributor Discord Working Group channel
+    reader_loses: Support and escalation paths, not protocol behavior.
+    verdict: defensible
+  retentions:
+  - passage: A remote MCP server that previously needed sticky sessions...
+    costs: A short setup paragraph, but it establishes the practical stakes, release scale, and planning dates.
+    verdict: earns_place
+  - passage: In 2025-11-25, calling a tool over Streamable HTTP...
+    costs: Two HTTP examples consume a code block, but show exactly what the old and new wire contracts require.
+    verdict: earns_place
+  - passage: Streamable HTTP now requires Mcp-Method and Mcp-Name headers...
+    costs: Dense operational prose, but it preserves routing, caching, and distributed-tracing details an implementer needs.
+    verdict: earns_place
+  - passage: Removing the protocol-level session does not make an application stateless...
+    costs: A full paragraph, but it explains the explicit-handle migration and the model-visible state model.
+    verdict: earns_place
+  - passage: The protocol no longer manages that state for you...
+    costs: A few reinforcing lines, but they prevent the stateless-core change from being misread as a ban on application state.
+    verdict: earns_place
+  - passage: Server-initiated requests may now be issued only while actively processing...
+    costs: A paragraph, but it states the causality and consent boundary for elicitation.
+    verdict: earns_place
+  - passage: Multi Round-Trip Requests (SEP-2322) no longer hold an SSE stream open...
+    costs: A JSON example, but it is the concrete retry contract and shows why any instance can resume the call.
+    verdict: earns_place
+  - passage: Long-running work has an immediate migration...
+    costs: A dense paragraph, but it preserves every task method, server-directed creation, and removed method an implementer must migrate.
+    verdict: earns_place
+  - passage: Authorization now follows OAuth 2.0 and OpenID Connect deployments more closely...
+    costs: A substantial paragraph, but it carries the validation, registration, issuer, refresh-token, scope, and discovery changes.
+    verdict: earns_place
+  - passage: Schema and error handling bring another compatibility check...
+    costs: A compact technical paragraph, but it retains the schema vocabulary, validation limits, and exact error-code migration.
+    verdict: earns_place
+  - passage: Extensions now have a formal path...
+    costs: A paragraph, but it explains how future capabilities are negotiated, housed, maintained, and versioned.
+    verdict: earns_place
+  - passage: MCP Apps lets servers ship interactive HTML...
+    costs: A paragraph, but it preserves sandboxing, prefetch and review, and the audit path for UI actions.
+    verdict: earns_place
+  - passage: Three core features are annotation-only deprecations...
+    costs: A paragraph, but it names all replacements and the one-year compatibility guarantee.
+    verdict: earns_place
+  - passage: The ten-week period between the May 21 lock...
+    costs: A short timeline paragraph, but it gives maintainers the validation window and Tier 1 expectation.
+    verdict: earns_place
+  - passage: This release contains breaking changes. We don't intend for that to be the norm...
+    costs: A governance paragraph, but it preserves the twelve-month lifecycle rule, extension path, and conformance gate.
+    verdict: earns_place
+  - passage: With the stateless rework landed...
+    costs: A concluding paragraph that repeats the direction, but it states the payoff for future transport and lifecycle upgrades.
+    verdict: earns_place
+  notes: |
+    The piece gives an implementer a migration sequence—stateless transport, explicit handles and payload retries, then Tasks/auth/schema changes and extension/deprecation guardrails—rather than merely repeating the announcement.
+    It is materially shorter than the source while retaining the method names, headers, fields, JSON exchanges, error code, schema constraints, and lifecycle thresholds needed to act. Every omission is a defensible citation, history, support pointer, or secondary illustration; no omission cuts past the bone. Every listed retention earns its place, so no section carries inert weight.
+    Shape: the manuscript runs Change deployment and request handling | Keep application state and retries explicit | Migrate calls, authorization, and schemas | Use extensions and deprecation windows | Build on the compatibility suite. The source runs A Stateless Protocol | Extensions Become First-Class | Authorization Hardening | Roots, Sampling, and Logging Are Deprecated | Full JSON Schema 2020-12 for Tools | How the Protocol Evolves From Here | Release Timeline and Validation | Looking Ahead. The regrouping is editorial rather than source-shaped.
+    Position: the opening instruction to start with transport and the claim that model-visible handles can be more powerful than hidden session state give the synthesis its own ordering and judgment.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every factual assertion in the title, standfirst, headings, body, code blocks, JSON example, and conclusion against the complete pinned extraction; I did not assess the piece's worth, ordering, readability, or grammar.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: Keep application state and retries explicit | Server-initiated requests may now be issued only while actively processing a client request (SEP-2260). | 1
+    category: grammar
+    disposition: fix
+    note: |
+      "While actively processing a client request" has no explicit subject and dangles from "Server-initiated requests"; requests cannot do the processing. This is synthesized prose, so the editors should repair it.
+    suggestion: A server may now issue server-initiated requests only while it is actively processing a client request (SEP-2260).
+  scores:
+    grammar: 4
+    typography: 5
+    consistency: 5
+  notes: |
+    Changes required because one dangling modifier remains; sentence openings, headings, punctuation, typography, and code samples are otherwise clean.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: Keep application state and retries explicit | A tool can mint an explicit handle such as `basket_id`, and the model passes it as an ordinary argument on later calls. | 1
+    repair_from: '- | A remote MCP server that previously needed sticky sessions, a shared session store, and deep packet inspection at its gateway can now run behind a plain round-robin load balancer. | 1'
+    category: running_example
+    disposition: fix
+    note: |
+      The opening's remote-server scenario and the transport search call are abandoned as the piece moves to a basket handle, a file-deletion elicitation, task polling, OAuth, and MCP Apps. Each section introduces a fresh illustration, so no concrete case carries the argument through the protocol changes.
+    suggestion: Choose one implementer scenario and thread it through the transport, state, retry, migration, and extension sections, retaining at most one contrast.
+  scores:
+    order: 5
+    coherence: 3
+    opening: 5
+    ending: 5
+  notes: |
+    The piece moves in a recoverable order from stateless transport through explicit state, migrations, extensions, and compatibility policy, but its concrete examples do not form a continuous thread.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: Use extensions and deprecation windows | Roots, the feature represented by root declarations, moves toward tool parameters, resource URIs, or server configuration. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three consecutive sentences use the same shape: feature name, explanatory clause, then "moves" plus destination. The instances are "Roots, the feature represented by root declarations, moves toward tool parameters, resource URIs, or server configuration.", "Sampling, which lets MCP call an LLM provider, moves toward direct provider integration.", and "Logging, which emits log output, moves to `stderr` for stdio transports and OpenTelemetry for structured observability." The sequence is monotonous enough to sound like a changelog.
+    suggestion: Vary the openings and predicates of the three migration sentences.
+  - severity: major
+    article: mcp-protocol-update
+    locator: Use extensions and deprecation windows | Three core features are annotation-only deprecations. | 1
+    category: no_voice
+    disposition: fix
+    note: |
+      The paragraph beginning here is where the person drops out: it inventories feature states, destinations, deprecation windows, and expected shipments with no reader-facing consequence or observed workload. Its grammatical certainty and noun-heavy transitions sound like system output rather than maintainers explaining a choice.
+    suggestion: Tie each deprecation and the release window to the implementer decision it changes.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: '- | For an implementer, start with the transport: change deployment and request handling around a stateless protocol core, move application state and long-running work into explicit handles or extensions, and separate immediate migrations from changes with a grace period. | 1'
+    category: passive
+    disposition: fix
+    note: |
+      "For an implementer" names an audience, not an actor; the sentence then issues four imperatives without a subject. That ownerless command gives the opening a manual-like register.
+    suggestion: Name the implementer as the actor in the migration guidance.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: '- | The `2026-07-28` release candidate is the largest revision since launch. | 1'
+    category: ai_phrasing
+    disposition: fix
+    note: |
+      "Largest revision since launch" asks a superlative to announce scale before the concrete changes establish it, making the sentence sound like significance-signalling.
+    suggestion: Replace the ranking with the concrete change that makes this revision different.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Change deployment and request handling | The `initialize`/`initialized` handshake and protocol-level session are gone. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      Four stand-alone declarations use the portentous short-sentence register: "The `initialize`/`initialized` handshake and protocol-level session are gone.", "Any instance can handle any request.", "Task creation is server-directed.", and "This release contains breaking changes." Each is understandable, but their clipped certainty makes the release read like system output.
+    suggestion: Fold each declaration into the sentence that supplies its mechanism or consequence.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Change deployment and request handling | A trace can follow a call from the host application through the client SDK, MCP server, and downstream services as one span tree in an OpenTelemetry-compatible backend. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "Span tree" and "OpenTelemetry-compatible backend" are subfield terms with no plain-language gloss, so the tracing claim is not legible to a competent engineer outside this specialty.
+    suggestion: Define the trace structure and backend in plain language before relying on those terms.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Migrate calls, authorization, and schemas | Long-running work has an immediate migration. | 1
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The section opens on two abstractions, "long-running work" and "migration", while the concrete Tasks change appears later. It announces a category instead of putting the reader in the change.
+    suggestion: Open with the Tasks API moving from the core specification to an extension.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Migrate calls, authorization, and schemas | Schema and error handling bring another compatibility check. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This is an abstraction stack ending in a generic noun phrase. It delays the actual schema and error changes that follow.
+    suggestion: Lead with the specific schema or error change instead of a compatibility-check abstraction.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Migrate calls, authorization, and schemas | The specification also clarifies refresh-token requests, scope accumulation during step-up, and the `.well-known` discovery suffix. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "Step-up" and the `.well-known` discovery suffix are subfield terms left unexplained; the list reads like a changelog for OAuth insiders.
+    suggestion: Gloss both terms before listing them.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Keep application state and retries explicit | Server-initiated requests may now be issued only while actively processing a client request (SEP-2260). | 1
+    category: passive
+    disposition: fix
+    note: |
+      The server is the known actor, but "may now be issued" hides it behind a passive construction without a clear reason to foreground the requests.
+    suggestion: Make the server the grammatical subject of this restriction.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Use extensions and deprecation windows | Extensions now have a formal path. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Formal path" is process abstraction: it says a path exists without naming the negotiation and repository mechanism described in the next sentence.
+    suggestion: Name the extension mechanism directly in the opening sentence.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Use extensions and deprecation windows | Roots, the feature represented by root declarations, moves toward tool parameters, resource URIs, or server configuration. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      The appositive "the feature represented by root declarations" defines Roots by repeating the term, leaving the feature's behavior unexplained.
+    suggestion: Explain what roots do before describing where they move.
+  scores:
+    voice: 3
+    sentence_variety: 2
+    economy: 3
+  notes: |
+    I hear a technically fluent synthesis that is most human when it explains handles and retries, then flattens into a changelog around deprecations and release policy. The piece needs changes for the repeated migration syntax, abstract release-note sentences, and unglossed tracing and authorization terms.

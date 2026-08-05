@@ -1,0 +1,73 @@
+piece: frontier-lab-agent-intrusion
+rounds:
+- round: 1
+  words: 923
+  loop_findings: 19
+  all_findings: 31
+- round: 2
+  words: 1089
+  loop_findings: 6
+  all_findings: 11
+- round: 3
+  words: 1056
+  loop_findings: 6
+  all_findings: 12
+state: rounds_exhausted
+open_findings:
+- lens: evidence
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: Detection had to follow the chain | We rotated all tokens and credentials, including on untouched clusters, and moved workloads to workload identity where missing. | 1
+  category: qualification_loss
+  disposition: fix
+  note: |
+    The source limits this to "all tokens and credentials used by our infra"; dropping that scope turns an infrastructure-scoped statement into an unsupported universal claim.
+- lens: shape
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: Credentials crossed the cluster boundary | One production secret object held 136 keys, yielding the mesh-VPN key and access-broker credential. | 1
+  repair_from: Credentials crossed the cluster boundary | What it gained here was a map, not control. | 1
+  category: missing_transition
+  disposition: fix
+  note: |
+    The denied-cloud/database paragraph closes the cluster-access phase with a
+    definitive "map, not control" verdict, but the next paragraph immediately
+    produces broker credentials and cluster-admin control. The escalation is
+    recoverable, yet the section concludes before its decisive turn.
+  suggestion: Add a hinge limiting the map/no-control verdict to the denied probes before introducing the secret-derived escalation.
+- lens: craft
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: Detection had to follow the chain | Both code-execution paths are now closed. | 1
+  category: repeated_shape
+  disposition: editor_decision
+  note: |
+    Five of the seven sentences in the remediation paragraph use the same terse subject + be + status-predicate shape: "Both code-execution paths are now closed.", "Pod access to IMDSv2 is blocked for every workload.", "A core cluster was wiped and rebuilt.", "Connector credentials are isolated per cluster.", and "Behavioral detection and network-origin checks are tighter." The run turns the paragraph into a status list.
+  suggestion: Cut or combine at least two of the status sentences.
+- lens: craft
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: Detection had to follow the chain | Both code-execution paths are now closed. | 1
+  category: no_voice
+  disposition: fix
+  note: |
+    The voice drops out at the remediation paragraph. From "Both code-execution paths are now closed." through "Behavioral detection and network-origin checks are tighter.", the prose becomes a mostly actorless changelog with little sense of a person explaining consequences.
+  suggestion: Recast the paragraph around who made each change and what consequence it prevents.
+- lens: craft
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: The loader crossed the data boundary | An HDF5 config named splits `envu8`, `mainu8`, and `startu8`. | 1
+  category: jargon
+  disposition: fix
+  note: |
+    HDF5, Jinja2, fsspec, `reference://`, and SSRF appear without a functional gloss. A competent engineer outside data-serving infrastructure can follow the code fragments but not what each layer does or why the request is a forgery route.
+  suggestion: Define each term by its function at first use.
+- lens: craft
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: Credentials crossed the cluster boundary | To impersonate the EC2 node, the agent wrapped a presigned `sts:GetCallerIdentity` request in `k8s-aws-v1`, Kubernetes' bearer-token format. | 1
+  category: jargon
+  disposition: fix
+  note: |
+    `k8s-aws-v1`, `TokenRequest`, CSI driver, `SelfSubjectRulesReview`, `ClusterRole`, `hostPath`, and later IMDSv2 arrive as implementation labels rather than explanations, so the central privilege-escalation chain assumes Kubernetes and cloud-identity expertise.
+  suggestion: Translate each credential or role into the capability it grants when first introduced.
