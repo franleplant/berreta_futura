@@ -1,0 +1,55 @@
+result: changes_required
+findings:
+- severity: major
+  article: pragmatic-leverage
+  category: weak_piece
+  disposition: fix
+  note: |
+    pragmatic-leverage is the weakest piece in the issue. Its source explicitly marks
+    it as "an addendum / side-quest to the recent series" that "didn't fit cleanly
+    into the main post." While the editorial successfully connects it to the
+    through-line, pragmatic-leverage is tangential to the edition's focus on
+    dependable systems. It emphasizes developer productivity and planning leverage
+    rather than system evaluation, testing, or resilience.
+  suggestion: |
+    Replace pragmatic-leverage with a piece more directly addressing system testing,
+    protocol evaluation, or resilience engineering. Alternatively, substantially
+    deepen it to address how software development practices affect system reliability
+    at scale.
+- severity: minor
+  article: pragmatic-leverage
+  locator: '- | good luck | 1'
+  category: uniformity
+  disposition: fix
+  note: |
+    The closing paragraphs show voice discontinuity. frontier-lab-agent-intrusion
+    closes with technical remediation: "Hugging Face has since blocked pod-level
+    access to cloud metadata outright, rebuilt the pivoted cluster from scratch..."
+    pragmatic-leverage closes with: "good luck." The tonal break violates house
+    voice consistency standards.
+  suggestion: |
+    Revise the closing to match the technical depth of the other pieces. Replace
+    "good luck" with a substantive closing echoing the piece's core argument.
+- severity: minor
+  article: pragmatic-leverage
+  category: outlier
+  disposition: fix
+  note: |
+    pragmatic-leverage is an outlier in voice (conversational/advisory vs.
+    technical/investigative), content_mode (faithful_edit vs. faithful_synthesis),
+    and register (lighter tactical vs. deep technical). Realign to match the other
+    pieces' standard.
+scores:
+  through_line: 4
+  editorial_strength: 4
+  running_order: 4
+  balance: 3
+  cover_promise: 4
+notes: |
+  Changes required. pragmatic-leverage is the weakest piece in the edition and a
+  weak fit for an issue focused on dependable systems. The editorial is strong and
+  creates a clear through-line (individual optimization misses systemic effects),
+  but pragmatic-leverage disrupts voice consistency and emphasizes developer
+  productivity rather than system evaluation or reliability. All pieces support the
+  theme, but the issue would be stronger with a piece more directly addressing
+  system testing, resilience, or protocol evaluation.

@@ -1,0 +1,75 @@
+piece: pragmatic-leverage
+rounds:
+- round: 1
+  words: 500
+  loop_findings: 12
+  all_findings: 15
+- round: 2
+  words: 496
+  loop_findings: 6
+  all_findings: 7
+- round: 3
+  words: 480
+  loop_findings: 6
+  all_findings: 8
+state: rounds_exhausted
+open_findings:
+- lens: mechanics
+  severity: major
+  article: pragmatic-leverage
+  locator: The 80/20 rule in AI coding leverage | your chance of getting a fully-mergeable result is ~50%, the chance you have to rework it is 50% | 1
+  category: grammar
+  disposition: editor_decision
+  note: |
+    A comma splice joins two independent clauses: "your chance of getting a fully-mergeable result is ~50%" and "the chance you have to rework it is 50%" are separated only by a comma.
+  suggestion: your chance of getting a fully-mergeable result is ~50%, and the chance you have to rework it is 50%
+- lens: mechanics
+  severity: major
+  article: pragmatic-leverage
+  locator: The 80/20 rule in AI coding leverage | **note** For this example I'm gonna blur | 1
+  category: markup
+  disposition: fix
+  note: |
+    Labeled editorial apparatus (**note**) appears inside article prose. The magazine does not print labeled notes within the body; restructure this section without the note label.
+- lens: mechanics
+  severity: major
+  article: pragmatic-leverage
+  locator: '- | good luck | 1'
+  category: capitalisation
+  disposition: editor_decision
+  note: |
+    The opening word is lowercase, inconsistent with the capitalization convention throughout the piece where all sentence openings are capitalised.
+  suggestion: Good luck.
+- lens: shape
+  severity: major
+  article: pragmatic-leverage
+  locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+  repair_from: '- | This one is a bit of an addendum / side-quest to the recent series. It didn''t fit cleanly into the main post so I''m publishing it standalone. It is referenced briefly in Why Software Factories Fail part 2: Turning the lights back on. | 1'
+  category: orphan_referent
+  disposition: editor_decision
+  note: |
+    "the recent series" is undefined; readers cannot recover what side-quest this piece is.
+    Either add a deck establishing context (this is part 3 of software factory coverage) or
+    remove the introductory framing and start fresh with the substantive argument.
+- lens: shape
+  severity: major
+  article: pragmatic-leverage
+  locator: Seeking leverage | Using AI to help you plan and align, though, gets you closer to 2–3x faster. | 1
+  repair_from: Using AI to help you plan and align, though, gets you closer to 2–3x faster.
+  category: missing_transition
+  disposition: fix
+  note: |
+    The jump to the 80/20 section introduces a probabilistic model without connective
+    explanation. Why move from speedup claim to mathematics? A bridge sentence would
+    clarify the connection.
+- lens: shape
+  severity: major
+  article: pragmatic-leverage
+  locator: '- | There''s no perfect process for this. good luck. | 1'
+  repair_from: You need to do this without overindexing on questions you won't be able to answer without going down a level.
+  category: ending
+  disposition: fix
+  note: |
+    After two sections of analytical argument, the ending deflates. "There's no perfect
+    process for this. good luck." is a shrug, not a landing. The piece should conclude
+    the operational judgment it builds, not abandon it.

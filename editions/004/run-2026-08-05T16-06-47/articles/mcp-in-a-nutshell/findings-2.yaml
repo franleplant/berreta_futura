@@ -1,0 +1,101 @@
+worth:
+  result: approved
+  findings: []
+  notes: "A reader gets MCP's architecture and essential protocol shape: one client per \nserver, stateless JSON-RPC discovery and execution, three composable server \nprimitives with dynamic list methods, client elicitation, real-time \nnotifications, and extension points—condensed into narrative form. This is \nthe shared vocabulary the issue assumes, with better accessibility than the \noriginal architecture overview.\n"
+  omissions:
+  - fact: Complete JSON-RPC message structure and field names (cacheScope, ttlMs, resultType, supportsListChanged, etc.)
+    reader_loses: Implementation reference; essential for writing servers/clients, not for understanding the protocol.
+    verdict: defensible
+  - fact: Explicit method names for resources and prompts (resources/list, resources/get, prompts/list, prompts/get)
+    reader_loses: Can infer from pattern 'each kind has list and get', and the semantic distinction (resources are 'readable', tools are 'executable') is clear.
+    verdict: defensible
+  - fact: Pseudo-code examples for how AI applications integrate with MCP
+    reader_loses: Illustration of workflow; the protocol concepts stand alone.
+    verdict: defensible
+  - fact: 'Scope: MCP Specification, SDKs, Development Tools, Reference Implementations'
+    reader_loses: Project structure; not needed to understand how the protocol works.
+    verdict: defensible
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: "Checked every checkable assertion in the manuscript against the pinned extraction: \nall protocol versions, method names, field names, transport types, authentication \nmechanisms, core and client primitives, examples, and technical details match the \nsource. Verified that qualifications and hedges (protocols are \"typically\" used in \ncertain ways, no guarantees on notification delivery, discovery is optional) survive \nthrough to the manuscript. The manuscript's elaborations—explaining why the protocol \nis designed the way it is, synthesizing the rationale for layer separation—stay within \nthe source's own stated purposes and do not introduce unsupported theses. No invented \nclaims, fabricated quotes, or omitted counterarguments.\n"
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Primitives | Sampling let a server | 1
+    category: agreement
+    disposition: fix
+    note: |
+      "Sampling" is a singular noun and requires the singular verb form "lets", not the plural "let".
+    suggestion: Sampling lets a server request a completion from the client's own model through `sampling/createMessage`, so a server author could get LLM access without shipping an LLM SDK; new servers are expected to call a model provider's API directly instead.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Primitives | Logging let a server | 1
+    category: agreement
+    disposition: fix
+    note: |
+      "Logging" is a singular noun and requires the singular verb form "lets", not the plural "let".
+    suggestion: Logging lets a server send debug messages to the client; new servers should write to stderr over stdio or use OpenTelemetry.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Primitives | Cache this list | 1
+    category: capitalisation
+    disposition: fix
+    note: |
+      The imperative phrase after the colon should be lowercase to match the piece's consistent style. Compare: "Tools are executable functions: a database query..." and "nothing is hardcoded..."
+    suggestion: cache this list for five minutes before asking again
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Primitives | The server acknowledges | 1
+    category: capitalisation
+    disposition: fix
+    note: |
+      After a semicolon joining independent clauses within a single sentence, the second clause should not begin with a capital letter.
+    suggestion: the server acknowledges with whichever subset it actually supports
+  scores:
+    grammar: 2
+    typography: 3
+    consistency: 2
+  notes: |
+    Two subject-verb agreement errors where singular feature names take the plural verb form "let" instead of "lets". Two capitalization errors: an imperative phrase capitalized after a colon (inconsistent with other colons in the piece), and a dependent clause capitalized after a semicolon within a single sentence.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: Primitives | Everything a server offers comes through three primitives | 1
+    category: heading_not_a_claim
+    disposition: fix
+    suggestion: Rephrase the heading to name the argument rather than the topic. For instance, 'Three Primitives' or 'What Servers Expose.'
+  scores:
+    order: 5
+    coherence: 4
+    opening: 5
+    ending: 4
+  notes: |
+    The piece establishes its fundamental architecture pattern clearly through a vivid opening example (VS Code connecting to filesystem and Sentry servers) and develops the argument logically from architecture through protocol mechanics through what primitives servers offer and how that design enables growth.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    This piece is technically sound and clearly voiced. The writer uses concrete examples
+    (VS Code, Sentry, Tasks extension) to ground abstract protocol concepts, and moves
+    logically from architecture through primitives to extensibility. Sentence variety is
+    good—the intentional Local/Remote server parallel adds clarity without becoming
+    monotonous. The voice remains present and personal throughout ("acting as the host,"
+    "which is the point of drawing the lines") rather than drifting into the abstraction
+    stack or balanced-clause register. No dead words, no jargon left undefined, no
+    repetitive shapes. The closing pulls back from the Tasks example to state the
+    extensibility principle explicitly—which adds clarity and perspective rather than
+    mere restatement.

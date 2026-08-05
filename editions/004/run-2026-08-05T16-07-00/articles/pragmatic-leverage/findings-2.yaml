@@ -1,0 +1,108 @@
+worth:
+  result: approved
+  findings: []
+  notes: 'The author''s strategic account of how to extract real AI leverage through planning and alignment (not code generation alone), with operational judgment on managing the tradeoff between upfront effort and rework pain. This faithful edit of an X thread is justified by access and permanence: the source is ephemeral and platform-dependent, while this form gives readers preserved, searchable, permanent access to substantive founder guidance they would otherwise need to source from the original platform.'
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    All factual claims, numbers, attributions, and quotations verified against source.
+    Every assertion grounds in the extraction. All source qualifications and hedges carried.
+    No invented claims, misquotations, or altered figures detected.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | leverage - and it requires | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      Em dash character U+2014 is banned. Use a comma, semicolon, or parentheses
+      instead.
+    suggestion: leverage, and it requires
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking leverage | only 25-50% of the time | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      Ranges use en dashes, not hyphens.
+    suggestion: 25–50%
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking leverage | taking the 2-4 hours of coding | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      Ranges use en dashes, not hyphens.
+    suggestion: 2–4 hours
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking leverage | get closer to 2-3x faster | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      Ranges use en dashes, not hyphens.
+    suggestion: 2–3x
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | its possible you may need | 1
+    category: spelling
+    disposition: editor_decision
+    note: |
+      "its" is the possessive pronoun; "it's" is the contraction of "it is".
+    suggestion: it's possible
+  scores:
+    grammar: 3
+    typography: 2
+    consistency: 4
+  notes: |
+    Five mechanics errors found: one banned em dash, three range notations using
+    hyphens instead of en dashes, and one its/it's spelling error. All appear in
+    source text (faithful_edit mode).
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking leverage | Seeking leverage | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The heading names the topic but not what the section argues. The section argues
+      that accelerating code delivery alone does not significantly improve shipping
+      time; the real leverage comes from accelerating planning and alignment, yielding
+      2-3x faster results.
+    suggestion: Rename to claim what the section argues, such as 'Why accelerating planning beats accelerating code.'
+  scores:
+    order: 4
+    coherence: 4
+    opening: 4
+    ending: 4
+  notes: |
+    The piece unfolds in clear logical steps: why code acceleration alone is insufficient,
+    how planning effort trades against rework pain, and how to pragmatically optimize
+    planning across phases. One heading names a topic rather than the argument itself,
+    but the content is well arranged and coherent.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: Seeking leverage | If you're only using AI to write the code | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Six if-conditional sentence openings in ~500 words: "If you're only using AI to write," "But if you use AI," "if you yolo," "If the model is 50%," "if you've done some work," and "If you're doing multiple phases." The shape carries the argument across the entire piece, reducing the reader's attention from the reasoning to the pattern. The remedy is an editor's decision: revise several conditionals to different structures, condense sections, or reconsider scope.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 4
+  notes: |
+    Voice and characterization are strong—asides like "yolo" and the closing shrug deliver authorial personality. The writing is economical and jargon-free. The cost is sentence shape: the same conditional structure carries too much of the argument, and by the piece's middle the reader is pattern-matching rather than following reasoning.

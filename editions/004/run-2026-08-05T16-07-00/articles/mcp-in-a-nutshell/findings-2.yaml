@@ -1,0 +1,91 @@
+worth:
+  result: approved
+  findings: []
+  notes: |
+    The manuscript delivers what its rationale commits to: an accessible explanation of MCP
+    architecture that establishes shared vocabulary. It accurately conveys the core protocol
+    concepts—stateless JSON-RPC, the host-client-server model, two-layer design, discovery
+    mechanism, three composable primitives, and notifications—in narrative form rather than
+    reference-level detail. For readers whose only alternative is not the source but nothing,
+    this succeeds completely. The omission of implementation pseudo-code and full JSON
+    structures is defensible for a piece focused on vocabulary and concepts rather than
+    implementation; someone needing those details would open the source anyway, and the
+    method names and protocol structure are sufficient for understanding the landscape the
+    rest of the issue assumes.
+evidence:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: mcp-in-a-nutshell
+    locator: '- | It carries bearer tokens, API keys, or OAuth tokens over an ordinary HTTP connection. | 1'
+    category: number_or_name_error
+    disposition: fix
+    note: |
+      The extraction specifies that Streamable HTTP transport "supports standard HTTP authentication methods including bearer tokens, API keys, and custom headers." It separately states "MCP recommends using OAuth to obtain authentication tokens," describing OAuth as a mechanism for obtaining tokens, not a token type itself. The manuscript's statement lists "OAuth tokens" as if it is a third distinct supported method alongside bearer tokens and API keys, which misrepresents the actual supported authentication methods and could mislead readers.
+  - severity: blocking
+    article: mcp-in-a-nutshell
+    locator: '- | Retrieval follows the same pattern: `resources/read` for a resource, `prompts/get` for a prompt. | 1'
+    category: number_or_name_error
+    disposition: fix
+    note: |
+      The extraction consistently states that retrieval methods follow the pattern `*/get` (for example, "retrieval ( */get )"). The manuscript incorrectly specifies `resources/read` instead of `resources/get` for resource retrieval.
+  scores:
+    claim_support: 2
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked all factual assertions including method names, authentication mechanisms, protocol terms, versions, and attributions against the extraction. The manuscript is otherwise faithful to the source. Two blocking errors found: one misrepresenting supported HTTP authentication methods (conflating the OAuth mechanism with a distinct "OAuth token" method), and one specifying an incorrect method name for resource retrieval. No qualification loss, attribution errors, or unreached conclusions detected.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    Clean passage. Imperative-declarative coordinations follow established conversational convention. Technical terminology and code formatting consistent throughout.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The piece moves logically from a vivid opening that establishes the host/client/server model through increasingly abstract explanation of the two-layer architecture, the three primitives, extensions, and subscription lifecycle, concluding with a complete concrete exchange that synthesizes everything explained. Every section follows from the last without orphan referents or duplication. The opening earns its second paragraph and the ending lands on the core insight.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: 'MCP in a Nutshell | That is the whole protocol: a shape for asking what is on offer, and a shape for taking it. | 1'
+    category: weak_close
+    disposition: editor_decision
+    note: |
+      The closing line restates the protocol pattern demonstrated in the example
+      just above it, leaving the reader with no new clarity, perspective, or
+      curiosity. The remedy is an editor's: tighten the ending or let the example
+      carry the final thought.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: MCP in a Nutshell | A remote server, reached over Streamable HTTP, typically serves many clients at once | 1
+    category: jargon
+    disposition: fix
+    suggestion: |
+      Either expand "Streamable HTTP" to its full name if it is a specific MCP
+      transport variant, or use "HTTP" alone. If "Streamable" carries technical
+      meaning, define it for readers outside the protocol community.
+    note: |
+      "Streamable HTTP" is not standard terminology. Since HTTP natively supports
+      streaming, the phrase is either imprecise or specialized; either way, it
+      needs clarification.
+  scores:
+    voice: 5
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    A clear, well-grounded explanation of a complex protocol with consistent voice
+    and strong concrete imagery. The writing stays observational and concrete
+    throughout. One structural closing issue and one terminology clarification needed.

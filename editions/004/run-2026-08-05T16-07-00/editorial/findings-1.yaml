@@ -1,0 +1,36 @@
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    Sentence capitalization is consistent throughout, all capitals at sentence
+    openings. Grammar is sound across complex constructions with metaphorical
+    language; punctuation and spelling are correct; no typography violations or
+    unlabeled editorial additions detected. The piece is mechanically clean.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 4
+    coherence: 4
+    opening: 5
+    ending: 5
+  notes: |
+    The rivet metaphor carries the argument from opening through supporting examples to a decisive conclusion about systemic oversight, with no structural gaps or orphan referents.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 5
+    economy: 5
+  notes: |
+    The voice is consistently present and human throughout. The metaphor of the
+    rivet and the wing is well-earned, running coherently from the opening concrete
+    scenario through its technical applications (stateless protocols, agent actions,
+    plan phases) and back to the final image. Sentence structure is varied and
+    purposeful, and the prose contains no wasted words. The closing advances rather
+    than restates.

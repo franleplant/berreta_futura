@@ -1,0 +1,99 @@
+worth:
+  result: approved
+  findings: []
+  notes: |
+    A reader learns MCP's architecture, layers, and vocabulary—host-client-server model,
+    discovery, three primitives, methods, and notifications—through a concrete example at
+    roughly 35% of the source's length, trading the JSON and pseudo-code a developer needs
+    for the narrative clarity magazine readers need to read other articles in the issue.
+  omissions:
+  - fact: JSON-RPC request and response structures (server/discover, tools/list, tools/call, subscriptions/listen)
+    reader_loses: Nothing; the prose walkthrough conveys what happens without the syntax a developer would type.
+    verdict: defensible
+  - fact: Pseudo-code examples showing how AI applications discover, list, and call tools
+    reader_loses: Nothing; magazine readers don't implement MCP servers or clients.
+    verdict: defensible
+  - fact: Detailed explanation of caching directives (ttlMs and cacheScope) shown in context
+    reader_loses: Nothing; the narrative conveys that caching is available without showing the field structure.
+    verdict: defensible
+  - fact: 'The MCP Scope section (four MCP projects: specification, SDKs, tools, reference implementations)'
+    reader_loses: Context about what MCP encompasses; not load-bearing for understanding the protocol itself.
+    verdict: defensible
+  - fact: Diagram of host-client-server relationships
+    reader_loses: Visual reinforcement of an architecture explained clearly in prose.
+    verdict: defensible
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Verified all factual claims, protocol versions, technical definitions, and the weather_current example against the extraction. The manuscript faithfully synthesizes the source architecture overview without inventing claims or misrepresenting technical details. All three primitives, both transport mechanisms, the two-layer model, statelessness semantics, notification subscription patterns, and deprecation directives are accurately represented with proper scoping.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | protocol for context exchange—it does not dictate | 1'
+    category: typography
+    disposition: fix
+    note: |
+      The em dash character (U+2014) is banned. Replace with a semicolon, colon,
+      period, or comma.
+    suggestion: MCP focuses solely on the protocol for context exchange; it does not dictate how AI applications use LLMs or manage the provided context.
+  scores:
+    grammar: 5
+    typography: 4
+    consistency: 5
+  notes: |
+    One em dash found where the protocol prohibits it; otherwise clean.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | What a server actually offers comes down to three primitives | 1'
+    repair_from: '- | Each has its own discovery method, `tools/list` or `resources/list`, and tools alone add an execution method, `tools/call` | 1'
+    category: running_example
+    disposition: fix
+    note: |
+      Three server primitives are introduced (tools, resources, prompts), and the text claims "a client that lists all three learns the shape of the whole server in one round trip." Yet discovery methods are named only for tools (`tools/list`) and resources (`resources/list`). Prompts appear in the database illustration but never receive a discovery method, are never called in action, and are absent from the final protocol exchange. The running example covers only two of the three primitives despite introducing all three.
+    suggestion: Add the prompts discovery method to the primitives explanation (likely `prompts/list` or similar), and incorporate a prompts example into the final exchange to show how clients discover and use all three primitive types symmetrically.
+  scores:
+    order: 4
+    coherence: 3
+    opening: 5
+    ending: 4
+  notes: |
+    The piece builds a clear, progressive understanding of MCP's architecture and protocol layers, but the treatment of prompts is incomplete—introduced as a first-class primitive but neither demonstrated nor explained in terms of discovery and interaction, unlike tools and resources.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | Under that host/client/server shape sit two layers | 1'
+    category: no_voice
+    disposition: editor_decision
+    note: |
+      The piece opens with an engaged, concrete voice ("Open Visual Studio Code,
+      connect it to the Sentry MCP server, and something quietly assembles") but
+      loses it in the data/transport layer explanation, becoming grammatical,
+      even, and specification-like—"The data layer is the inner one: a JSON-RPC
+      message format that defines discovery, tools, resources, prompts, and
+      notifications, the actual shape of every exchange." The voice returns by
+      "Put the pieces together" and the worked example. A reader would notice the
+      shift from a person explaining to technical documentation. Remedy is an
+      editor choice: deepen the voice in technical sections with concrete
+      language or worked examples, restructure, or accept the shift as necessary
+      for clarity.
+  scores:
+    voice: 2
+    sentence_variety: 3
+    economy: 3
+  notes: |
+    The piece reads as human explanation in the opening and closing, but the
+    middle technical explanation becomes mechanical. The content is clear but the
+    register shift is perceptible.
