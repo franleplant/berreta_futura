@@ -1,0 +1,63 @@
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    The prose, punctuation, typography, and editorial labeling are clean and consistent.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The piece moves cleanly from the time cost of shipping, through specification
+    and uncertainty, to the concluding claim that expertise is knowing which
+    decision deserves attention before coding.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: The Ten-Minute Question | The useful question is where a mistake would hurt. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Four copular "X is Y" constructions cluster across the final two paragraphs:
+      "The useful question is where a mistake would hurt", "The engineer's job is to
+      spend attention where it removes the most expensive uncertainty", "Sometimes
+      the bottleneck is a blank file", and "Often it is the decision before it".
+      The pattern becomes audible; vary or cut one of these constructions.
+    suggestion: Recast at least one of the four copular sentences as an active sentence with a concrete subject and verb.
+  - severity: minor
+    article: editorial
+    locator: The Ten-Minute Question | That changes the shape of expertise. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Changes the shape of expertise" is an abstraction stack that announces a
+      transition without naming the change; the following sentence supplies the
+      actual point.
+    suggestion: Replace the abstraction with the concrete change in expertise, or cut the sentence and move directly to the codebase example.
+  - severity: minor
+    article: editorial
+    locator: The Ten-Minute Question | A loose prompt may leave half the expected pain in place. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Expected pain" is a vague metaphor for the unresolved cost of a mistake,
+      and "half" has no stated basis; the sentence makes the risk sound measured
+      without giving the reader a measure.
+    suggestion: Name the specific rework or uncertainty a loose prompt leaves behind instead of quantifying 'expected pain'.
+  scores:
+    voice: 4
+    sentence_variety: 3
+    economy: 4
+  notes: |
+    I heard a thoughtful, human editorial whose concrete queue-and-bottleneck images
+    occasionally give way to abstract phrasing and a noticeable run of copular sentences.

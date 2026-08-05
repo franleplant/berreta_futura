@@ -1,0 +1,25 @@
+piece: editorial
+rounds:
+- round: 1
+  words: 181
+  loop_findings: 1
+  all_findings: 3
+- round: 2
+  words: 159
+  loop_findings: 3
+  all_findings: 5
+- round: 3
+  words: 170
+  loop_findings: 1
+  all_findings: 3
+state: rounds_exhausted
+open_findings:
+- lens: craft
+  severity: major
+  article: the-ten-minute-question
+  locator: The Ten-Minute Question | The feature moves when the engineer answers the question whose wrong answer would force the most rework. | 1
+  category: weak_close
+  disposition: fix
+  note: |
+    The closing sentence restates the preceding paragraph's rule instead of leaving the reader with a sharper consequence or question.
+  suggestion: End with the practical consequence of choosing the highest-cost unanswered question.

@@ -1,0 +1,75 @@
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    The editorial text is mechanically clean, with consistent capitalization, punctuation, typography, headings, and number formatting verified.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The piece's progression from faster coding to downstream bottlenecks, then to specification and judgment, holds together cleanly from opening through ending.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: the-ten-minute-question
+    locator: The Ten-Minute Question | Ask where a mistake will cost most. | 1
+    category: passive
+    disposition: fix
+    note: |
+      The ownerless imperative gives the advice no person or team to act.
+    suggestion: Name the actor responsible for asking the question.
+  - severity: minor
+    article: the-ten-minute-question
+    locator: The Ten-Minute Question | A loose prompt leaves much of the expected pain in place. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Expected pain" is an abstract placeholder for the concrete review, rework,
+      testing, and verification queues named earlier.
+    suggestion: Replace 'expected pain' with the specific downstream work a loose prompt leaves unresolved.
+  - severity: major
+    article: the-ten-minute-question
+    locator: The Ten-Minute Question | Expertise now includes knowing which unanswered question deserves ten minutes and which can wait until the next level down. | 1
+    category: no_voice
+    disposition: fix
+    note: |
+      The paragraph shifts from a person explaining a bottleneck to an aphoristic,
+      ownerless register; "expertise" and "the next level down" abstract away the
+      actual decision-maker and situation.
+    suggestion: Anchor the paragraph in a named practitioner deciding which question to answer now.
+  - severity: minor
+    article: the-ten-minute-question
+    locator: The Ten-Minute Question | Move the bottleneck and the work moves with it. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      The balanced clause performs a general insight instead of showing how the
+      bottleneck changes in this workflow.
+    suggestion: State the specific queue that moves when the decision is clarified.
+  - severity: major
+    article: the-ten-minute-question
+    locator: The Ten-Minute Question | More often, the decision before it holds the line. | 1
+    category: weak_close
+    disposition: fix
+    note: |
+      The closing sentence repeats the bottleneck metaphor and leaves "it" and
+      "holds the line" vague, so it closes on atmosphere rather than a clearer
+      consequence.
+    suggestion: End by naming the decision that most often delays the feature and what resolving it unlocks.
+  scores:
+    voice: 3
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    I heard a crisp, concrete argument give way in the final paragraph to abstract
+    aphorisms and a vague metaphorical close.

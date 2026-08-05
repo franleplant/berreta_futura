@@ -231,6 +231,7 @@ impl Caller {
         parse: impl Fn(&str) -> Result<T>,
     ) -> Result<T> {
         let mut last_error: Option<String> = None;
+        let mut last_reply: Option<String> = None;
         for attempt in 0..=CALL_RETRIES {
             let sent = match &last_error {
                 None => prompt.to_string(),
@@ -262,14 +263,39 @@ impl Caller {
                 }
                 Err(e) => {
                     last_error = Some(e.to_string());
+                    last_reply = Some(result_text);
                     continue;
                 }
             }
         }
+        // Keep the reply that could not be parsed: a failure you cannot read is
+        // a failure you cannot fix.
+        let saved = match &last_reply {
+            Some(reply) => self.save_failed_reply(label, spec, reply),
+            None => None,
+        };
         bail!(
-            "{label}: model call failed after retries — {}",
-            last_error.unwrap_or_else(|| "unknown error".to_string())
+            "{label}: model call failed after retries — {}{}",
+            last_error.unwrap_or_else(|| "unknown error".to_string()),
+            match saved {
+                Some(path) => format!(" (unparsed reply saved to {})", path.display()),
+                None => String::new(),
+            }
         )
+    }
+
+    /// Write an unparsable reply next to the run's log so it can be read.
+    fn save_failed_reply(&self, label: &str, spec: &ModelSpec, reply: &str) -> Option<PathBuf> {
+        let dir = self.log_path.parent()?.join("failed-replies");
+        std::fs::create_dir_all(&dir).ok()?;
+        let slug: String = label
+            .chars()
+            .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
+            .collect();
+        let path = dir.join(format!("{slug}.txt"));
+        let header = format!("# {label}\n# model: {}\n\n", spec.full);
+        std::fs::write(&path, header + reply).ok()?;
+        Some(path)
     }
 
     fn log_and_print(

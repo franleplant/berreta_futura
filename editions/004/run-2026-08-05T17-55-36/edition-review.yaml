@@ -1,0 +1,51 @@
+result: changes_required
+findings:
+- severity: blocking
+  article: editorial
+  locator: '- | The code can arrive in twenty minutes while the feature waits. | 1'
+  repair_from: '- | The code can arrive in twenty minutes while the feature waits. | 1'
+  category: single_source_editorial
+  disposition: fix
+  note: |
+    Nearly the entire editorial body derives from pragmatic-leverage: faster
+    coding, exposed rework, expected pain and planning depth all restate that
+    article. The editorial is a summary wearing an editorial's hat rather
+    than an argument produced by the issue.
+- severity: major
+  article: pragmatic-leverage
+  locator: '- | Even before AI, only 25–50% of the time to ship a feature was writing the code itself. | 1'
+  repair_from: '- | Even before AI, only 25–50% of the time to ship a feature was writing the code itself. | 1'
+  category: weak_piece
+  disposition: fix
+  note: |
+    This is the only piece and should not have been commissioned for this
+    issue as assembled: its narrow advice about planning software tasks cannot
+    carry a cover about protocols, evaluations, architectures and dependable
+    systems.
+- severity: blocking
+  article: edition
+  category: cover_promise
+  disposition: fix
+  note: |
+    The title and subtitle promise a broad systems issue—"Protocols,
+    evaluations, architectures, and the operational work that turns model
+    capability into dependable systems"—but the contents deliver only one
+    narrow piece about planning and leverage in AI coding.
+- severity: minor
+  article: edition
+  category: credulity
+  disposition: fix
+  note: |
+    With only one article, the issue contains no counterpressure or
+    disagreement: every element assumes that better steering and planning are
+    the answer, so nothing tests the editorial's claim.
+scores:
+  through_line: 2
+  editorial_strength: 1
+  running_order: 3
+  balance: 1
+  cover_promise: 1
+notes: |
+  This issue is a narrow argument about planning leverage, but it does not hold
+  together under its broad systems cover because one article supplies nearly
+  all of the editorial and the entire contents.
