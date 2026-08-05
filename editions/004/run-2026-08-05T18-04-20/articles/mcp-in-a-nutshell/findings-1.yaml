@@ -1,0 +1,179 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: MCP is a stateless protocol | A client may begin with the mandatory `server/discover` request | 1
+    repair_from: MCP is a stateless protocol | Every request carries the protocol version and the capabilities relevant to that request in its `_meta` field | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source gives the discovery request's concrete metadata fields, the supportedVersions response, and the UnsupportedProtocolVersionError-and-retry behavior. The manuscript describes these concepts but leaves out the fields and recovery sequence a reader implementing discovery would need.
+    suggestion: Add a compact description of supportedVersions, clientInfo, clientCapabilities, and the retry-on-UnsupportedProtocolVersionError flow.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: MCP defines three server primitives | Clients discover them with methods such as `tools/list`, `resources/list`, and `prompts/list` | 1
+    repair_from: MCP defines three server primitives | Clients discover them with methods such as `tools/list`, `resources/list`, and `prompts/list` | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source specifies that tools/list accepts an optional pagination cursor and that each returned tool has name, title, description, and inputSchema fields, plus cache TTL and scope metadata. The manuscript names the method but omits these operational details, so a reader cannot reproduce or properly consume a listing.
+    suggestion: Carry the pagination cursor, tool metadata fields, and the five-minute ttlMs/cacheScope example in a sentence or compact table.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: When the model chooses a tool | A tool name must match the name returned by discovery | 1
+    repair_from: When the model chooses a tool | A tool name must match the name returned by discovery | 1
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The source's worked weather_current exchange shows the exact tools/call JSON shape, required location argument, optional units argument, JSON-RPC id, and per-request _meta. The manuscript preserves the general rule but drops the concrete exchange that makes the call actionable.
+    suggestion: Include one abbreviated tools/call example, retaining weather_current, location, units, and the _meta envelope.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: A client opts in by opening a long-lived `subscriptions/listen` stream | 1
+    repair_from: A client opts in by opening a long-lived `subscriptions/listen` stream and naming the changes it wants | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source shows the toolsListChanged filter, the notifications/subscriptions/acknowledged response, the subscriptionId, and the notifications/tools/list_changed message. The manuscript explains the behavior but omits the acknowledgment and filter details needed to wire up subscriptions correctly.
+    suggestion: Name the filter and acknowledgment method, and show that later notifications carry the subscriptionId and no id.
+  omissions:
+  - fact: 'The overview''s scope list: the specification, SDKs, development tools including MCP Inspector, and reference server implementations'
+    reader_loses: No understanding of what the MCP project includes beyond the wire protocol.
+    verdict: defensible
+  - fact: Remote Streamable HTTP servers typically serve many MCP clients, while local STDIO servers typically serve one
+    reader_loses: The practical difference in server fan-out expectations.
+    verdict: defensible
+  - fact: The transport layer is conceptually the outer layer and the data layer the inner layer
+    reader_loses: A useful mental model for how the layers relate.
+    verdict: defensible
+  - fact: The data layer also supports progress tracking for long-running operations
+    reader_loses: One utility feature available for monitoring work in progress.
+    verdict: defensible
+  - fact: MCP recommends OAuth for obtaining Streamable HTTP authentication tokens
+    reader_loses: The source's concrete authentication recommendation.
+    verdict: defensible
+  - fact: The discovery response's supportedVersions field and UnsupportedProtocolVersionError retry sequence
+    reader_loses: Cannot implement version negotiation or know how to recover from an unsupported version.
+    verdict: needed
+  - fact: The tools/list pagination cursor, tool name/title/description/inputSchema fields, and ttlMs/cacheScope caching metadata
+    reader_loses: Cannot reproduce pagination or correctly interpret and cache a tool listing.
+    verdict: needed
+  - fact: The concrete weather_current tools/call exchange, including location, optional units defaulting to metric, and JSON-RPC correlation id
+    reader_loses: Lacks an actionable example of constructing a type-safe tool call.
+    verdict: needed
+  - fact: The elicitation/create method name
+    reader_loses: Knows elicitation exists but not the method a client/server integration invokes.
+    verdict: defensible
+  - fact: Sampling's sampling/createMessage method and its model-independence rationale
+    reader_loses: The exact deprecated interface and why it existed.
+    verdict: defensible
+  - fact: The notifications/subscriptions/acknowledged message and notifications/tools/list_changed payloads
+    reader_loses: Cannot implement subscription acknowledgment or correlate change events to a stream.
+    verdict: needed
+  - fact: The source's four pseudo-code examples for discovery, tool aggregation, tool execution, and notification handling
+    reader_loses: ' loses the concrete application control flow connecting protocol messages to an AI application''s registry and conversation.'
+    verdict: needed
+  - fact: 'The source''s explicit reasons notifications matter: dynamic environments, efficiency, consistency, and real-time collaboration'
+    reader_loses: Nothing essential; the manuscript already explains freshness and best-effort limits.
+    verdict: defensible
+  - fact: The source notes that notification patterns extend beyond tools to other MCP primitives
+    reader_loses: The broader applicability of the notification mechanism.
+    verdict: defensible
+  retentions:
+  - passage: MCP gives an AI application a common way to reach tools and data
+    costs: A framing paragraph, but it establishes the protocol's scope and the host/client/server vocabulary used throughout.
+    verdict: earns_place
+  - passage: A local filesystem server may run as a process
+    costs: Transport examples that make local-versus-remote server location concrete.
+    verdict: earns_place
+  - passage: MCP is a stateless protocol
+    costs: A compact explanation of per-request metadata and optional discovery that prevents a common misconception about connection state.
+    verdict: earns_place
+  - passage: Consider a database server
+    costs: One short worked scenario tying tools, resources, prompts, discovery, routing, schemas, and content objects together.
+    verdict: earns_place
+  - passage: Servers can also ask the user for more information
+    costs: A concise coverage of elicitation, deprecated primitives, logging guidance, and the Tasks extension.
+    verdict: earns_place
+  - passage: Notifications keep a client's view current
+    costs: The operational narrative explaining opt-in subscriptions, acknowledgments, change events, and refresh behavior.
+    verdict: earns_place
+  - passage: These updates are best effort
+    costs: A necessary caveat about reconnects and polling, followed by the manuscript's central boundary between protocol and application responsibility.
+    verdict: earns_place
+  notes: |
+    Changes required because the synthesis explains MCP's concepts well but drops several source details—especially version negotiation, listing schemas and caching, a concrete tool-call exchange, and subscription payloads—that a reader implementing the protocol would need.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Notifications | the server acknowledges the subscription and later sends a notification when its available tools change | 1
+    repair_from: Notifications | A client opts in by opening a long-lived `subscriptions/listen` stream and naming the changes it wants, such as tool-list updates. | 1
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source limits these notifications to types the server agrees to honor and, for tool-list changes, to servers that declare the corresponding capability. The manuscript presents acknowledgement and later delivery as unconditional. The source says: "Its notifications field reflects the subset of the requested filter the server agreed to honor" and "This notification is only sent to clients that requested 'toolsListChanged': true ... and it is only available from servers that declared 'listChanged': true in their tools capability."
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | so the client can poll for a result later | 1'
+    repair_from: '- | The Tasks extension, for example, lets a server return a durable handle for a long-running request | 1'
+    category: invented_claim
+    disposition: fix
+    note: |
+      The source says clients can poll for status and retrieve the result later, not poll for the result itself. This wording conflates status polling with result retrieval.
+  scores:
+    claim_support: 3
+    qualification_survival: 3
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every assertion in the title and manuscript against the complete pinned extraction; I could not check any material outside that extraction.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    No mechanical errors found; sentence openings, grammar, punctuation, typography, and form are consistent throughout.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 4
+    coherence: 4
+    opening: 5
+    ending: 4
+  notes: |
+    The piece moves coherently from MCP's purpose and architecture through discovery,
+    primitives, application flow, extensions, notifications, and its concluding boundary.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | The data layer defines the JSON-RPC 2.0 messages, capability and version discovery, and the primitives that servers and clients can offer. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      “JSON-RPC 2.0” and “capability and version discovery” arrive without a plain-language explanation. A competent engineer outside this subfield may not know what these terms mean.
+    suggestion: |
+      Briefly explain JSON-RPC 2.0 as the message format and describe discovery as the handshake that identifies supported versions and features.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | That small qualification describes the boundary MCP keeps throughout: the protocol supplies a shared vocabulary and message flow, while the application remains responsible for deciding what the model may do with the context it receives. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      “That small qualification describes the boundary MCP keeps throughout” is an abstract, balanced setup for the useful point that follows. The sentence sounds like a packaged insight rather than a person naming the distinction directly.
+    suggestion: |
+      State the distinction directly: MCP defines the messages and available capabilities; the application decides which actions the model may take.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    I heard a clear, technically minded explainer whose voice briefly recedes into protocol jargon and an abstract concluding formulation.

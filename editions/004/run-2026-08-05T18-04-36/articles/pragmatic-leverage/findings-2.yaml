@@ -1,0 +1,126 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: '- | Even before AI, only 25-50% of the time to ship a feature was writing the code itself. | 1'
+    repair_from: '- | Even before AI, only 25-50% of the time to ship a feature was writing the code itself. | 1'
+    category: no_position
+    disposition: fix
+    note: |
+      The manuscript is a faithful condensation of the source's argument, but supplies no distinct magazine judgment: it does not defend a particular cut, reorder the material, or make a claim beyond Horthy's original account.
+    suggestion: Add a concise editorial claim about where pragmatic leverage matters most, or explain why this operational account is being foregrounded.
+  omissions:
+  - fact: The piece is introduced as an addendum or side-quest to a recent series.
+    reader_loses: The article's relationship to the author's larger series and its standalone status.
+    verdict: defensible
+  - fact: 'It is referenced in ''Why Software Factories Fail part 2: Turning the lights back on.'''
+    reader_loses: A pointer to related context, but not information needed to understand the leverage argument.
+    verdict: defensible
+  - fact: The source calls the two-sentence prompt approach 'yolo.'
+    reader_loses: A colloquial label for the low-investment prompting strategy, but not its meaning or consequence.
+    verdict: defensible
+  - fact: The source's note marker explicitly introduces the expected-pain simplification.
+    reader_loses: Only the typographic indication that the following qualification is a note; the qualification itself is retained.
+    verdict: defensible
+  - fact: The source says the model may be '50% likely' to get a button style wrong, while the fix is one cheap prompt.
+    reader_loses: Nothing substantive; the manuscript preserves the same example and expected-pain point.
+    verdict: defensible
+  - fact: The source ends with the lower-case sign-off 'good luck.'
+    reader_loses: Nothing substantive; the manuscript retains the sign-off in normalized capitalization.
+    verdict: defensible
+  retentions:
+  - passage: Good luck.
+    costs: A closing sign-off that carries no argument; this space could instead support the omitted series context or a distinct editorial judgment.
+    verdict: cut
+  - passage: For this example, I'm gonna blur
+    costs: The qualification occupies space, but it prevents readers from mistaking expected pain for a single literal probability and earns its place.
+    verdict: earns_place
+  - passage: You need to do this without overindexing
+    costs: A practical caveat about zooming from product to technical detail; it makes the leverage advice actionable.
+    verdict: earns_place
+  - passage: This is what we mean by leverage
+    costs: The concluding synthesis restates the core principle, but connects the examples to the pragmatic planning method.
+    verdict: earns_place
+  notes: |
+    Changes required because the manuscript condenses the source competently but offers no identifiable magazine position beyond reproducing the author's argument.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every claim, number, quote, heading, and conclusion against the complete extraction; I could not identify any assertion that was uncheckable from it.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    No mechanical errors found; sentence openings, headings, grammar, punctuation,
+    typography, form, and number styles are consistent and correct.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking leverage | Seeking leverage | 1
+    repair_from: Seeking leverage | Seeking leverage | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      "Seeking leverage" is an empty heading: the next heading begins immediately,
+      so the reader encounters a label without a section argument.
+    suggestion: Remove the empty heading or replace it with a claim-bearing heading for the following argument.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | The 80/20 rule in AI coding leverage | 1
+    repair_from: The 80/20 rule in AI coding leverage | The 80/20 rule in AI coding leverage | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The heading names a topic, while the section argues that targeted upfront
+      planning reduces expected rework pain.
+    suggestion: Rename the heading to state the section's claim about upfront effort and expected pain.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 4
+    ending: 3
+  notes: |
+    The piece's progression from coding-time savings to planning leverage, expected pain, and pragmatic zooming is coherent, but two headings do not clearly carry section arguments.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | This is what we mean by leverage - and it requires being pragmatic. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This sentence turns a concrete argument into an abstract definition, then repeats
+      the title's idea without adding understanding.
+    suggestion: |
+      Replace the definition with the specific planning behavior that makes the leverage pragmatic.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Good luck. | 1
+    category: weak_close
+    disposition: fix
+    note: |
+      "Good luck." is a generic sign-off, so the piece ends without leaving the reader
+      with a final piece of clarity, perspective, or curiosity.
+    suggestion: |
+      End on the practical implication of choosing where to invest planning effort.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 3
+  notes: |
+    I heard a practical, conversational voice that becomes abstract near the end and then
+    gives way to a throwaway sign-off.

@@ -1,0 +1,128 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's title heading, 'Pragmatic Leverage in the Software Factory'
+    reader_loses: Nothing substantive; the edition metadata supplies the title.
+    verdict: defensible
+  - fact: The source's author handle, '@dexhorthy'
+    reader_loses: Nothing substantive; the manuscript metadata identifies Dex Horthy.
+    verdict: defensible
+  retentions:
+  - passage: This one is a bit of an addendum / side-quest
+    costs: A short orientation to the surrounding series; it explains why the piece is standalone and earns its place.
+    verdict: earns_place
+  - passage: good luck.
+    costs: A closing sign-off with no information or argument.
+    verdict: cut
+  notes: |
+    This faithful edit gives readers a durable, standalone rendering of an ephemeral X post, including its quantitative examples, expected-pain formula, and pragmatic planning guidance. Its length is legitimate because access and preservation are the added value, and it follows the source's structure as faithful_edit requires.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every factual assertion, quotation, attribution, qualification, and conclusion against the complete pinned extraction, and could not identify any claim that could not be checked in this piece.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking Leverage | Seeking Leverage | 1
+    category: heading_form
+    disposition: fix
+    note: |
+      This heading uses title case, while headings in the piece should use sentence case.
+    suggestion: Seeking leverage
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Let's assume if you yolo a two-sentence prompt into your factory, your chance of getting a fully-mergeable result is ~50%, the chance you have to rework it is 50%. | 1
+    category: grammar
+    disposition: editor_decision
+    note: |
+      "Let's assume if" is an incomplete construction. The sentence is retained verbatim from the source, so the editor must choose the remedy.
+    suggestion: Let's assume that if you yolo a two-sentence prompt into your factory, your chance of getting a fully-mergeable result is ~50%, and the chance you have to rework it is 50%.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | good luck. | 1
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      Most sentences in the body open with capitals, so this lowercase opening is inconsistent and is treated as a typo. The sentence is retained verbatim from the source.
+    suggestion: Good luck.
+  scores:
+    grammar: 2
+    typography: 4
+    consistency: 3
+  notes: |
+    Changes required because one heading uses title case, one source sentence has a grammatical construction error, and one sentence opens lowercase against the piece's prevailing convention.
+shape:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    repair_from: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: opening
+    disposition: editor_decision
+    note: |
+      The opening is publication context and a cross-reference rather than the
+      leverage question the piece develops, so it clears its throat before the
+      argument begins.
+    suggestion: Open with the claim that AI leverage comes from accelerating planning and verification as well as coding.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | Seeking Leverage | 1
+    repair_from: Seeking Leverage | Seeking Leverage | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The heading names a broad topic but does not state the section's claim
+      about where leverage comes from.
+    suggestion: Rename the heading to state that leverage comes from accelerating more than code writing.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 2
+    ending: 4
+  notes: |
+    The piece's leverage argument moves coherently from coding-time limits through
+    expected pain and pragmatic planning, but its opening delays that argument and
+    its first heading remains generic.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: Seeking Leverage | If you're only using AI to write the code, then you're taking the 2–4 hours of coding time down to 10–20 minutes, but you haven't accelerated anything else here. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Six conditional "If..." constructions create the dominant rhythm: "If you're only using AI...", "But if you use AI...", "Let's assume if you yolo...", "If you draw this out...", "if you've done some work...", and "If you're doing multiple phases...". The pattern becomes audible before the argument develops; cut or combine at least two of these passages.
+    suggestion: Remove at least two conditional constructions and recast the surrounding claims as varied declarative sentences.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The opening announces the article's relationship to an earlier series instead of giving the reader the practical claim that follows.
+    suggestion: Open with the 25–50% breakdown of feature-shipping time.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | This is what we mean by leverage - and it requires being pragmatic. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This balanced abstraction restates the section's conclusion without adding a concrete mechanism; "leverage" and "pragmatic" do not do work here.
+    suggestion: Cut the sentence and let the preceding planning example establish the point.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 3
+  notes: |
+    I heard a personable, practical voice that gradually gives way to a repeated conditional rhythm, with a few sentences explaining abstractions after the examples have already made them clear.

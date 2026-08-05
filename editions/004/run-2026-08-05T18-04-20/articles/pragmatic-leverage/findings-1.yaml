@@ -1,0 +1,141 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's X handle, @dexhorthy
+    reader_loses: Nothing substantive; the byline still identifies Dex Horthy.
+    verdict: defensible
+  retentions:
+  - passage: This one is a bit of an addendum / side-quest
+    costs: A short contextual preamble, but it explains the piece's relationship to the series.
+    verdict: earns_place
+  - passage: good luck.
+    costs: One line that adds no information; space could carry a minor caveat or example.
+    verdict: cut
+  notes: |
+    Approved because this preserves the source's practical leverage model and planning guidance in a stable, magazine-readable version of an otherwise ephemeral X article. The omissions are nonessential, and the retained sections carry the source's argument.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked every manuscript assertion, including title, headings, note, quotations, figures, and conclusions, against the complete pinned extraction; nothing in the piece could not be checked.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking Leverage | Seeking Leverage | 1
+    category: heading_form
+    disposition: fix
+    note: |
+      This heading is title case, but headings in this piece must be sentence case.
+    suggestion: Seeking leverage
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | your chance of getting a fully-mergeable result is ~50%, the chance you have to rework it is 50% | 1
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      Two independent clauses are joined by a comma, creating a comma splice.
+      The sentence is retained source text, so an editor chooses the remedy.
+    suggestion: your chance of getting a fully-mergeable result is ~50%; the chance you have to rework it is 50%
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | note For this example I'm gonna blur | 1
+    category: markup
+    disposition: fix
+    note: |
+      A labeled editor's note appears inside the article prose. The magazine
+      does not print editorial apparatus in the body.
+    suggestion: Remove the note label and integrate the sentence into the prose.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | there's an inverse relationship between effort invested up front and expected pain | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      This uses a curly apostrophe while the rest of the piece uses straight
+      apostrophes. The sentence is retained source text.
+    repair_from: there’s
+    suggestion: there's
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | good luck. | 1
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      Sentence openings are capitalised throughout the body; this closing
+      sentence is the lone lowercase opening. The sentence is retained source
+      text, so an editor chooses the remedy.
+    suggestion: Good luck.
+  scores:
+    grammar: 2
+    typography: 3
+    consistency: 3
+  notes: |
+    Changes required because the piece contains one heading-case error, a comma
+    splice, an in-body editorial note, one apostrophe-style inconsistency, and
+    one lowercase sentence opening.
+shape:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    repair_from: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: opening
+    disposition: editor_decision
+    note: |
+      The piece opens with publication context rather than its argument about where AI-assisted delivery gains leverage. The substantive second paragraph has to restart the piece, so the opening does not earn the argument that follows.
+    suggestion: Cut or relocate the addendum preamble so the piece opens on the time spent beyond writing code.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | Even before AI, only 25–50% of the time to ship a feature was writing the code itself. | 1
+    repair_from: Seeking Leverage | Even before AI, only 25–50% of the time to ship a feature was writing the code itself. | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      "Seeking Leverage" names the section's topic but not the claim it makes: most delivery time lies outside code-writing, so planning and verification are leverage points.
+    suggestion: Make the heading state that delivery leverage comes from the work beyond writing code.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 2
+    ending: 4
+  notes: |
+    I verified that the argument progresses from delivery-time allocation to expected pain and then to pragmatic planning depth, with the main structural weakness concentrated in the preamble and first heading.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: Seeking Leverage | If you're only using AI to write the code, then you're taking the 2–4 hours of coding time down to 10–20 minutes, but you haven't accelerated anything else here. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Seven conditional constructions make the piece sound patterned: "If you're only using AI to write the code, then you're taking the 2–4 hours of coding time down to 10–20 minutes, but you haven't accelerated anything else here"; "But if you use AI to help you plan and align, then you actually get closer to 2–3x faster"; "Let's assume if you yolo a two-sentence prompt into your factory, your chance of getting a fully-mergeable result is ~50%, the chance you have to rework it is 50%"; "If the model is 50% likely to get a button style wrong, but the fix is one cheap prompt, then our combined 'expected pain' is low"; "If you draw this out, there's an inverse relationship between effort invested up front and expected pain"; "For example, if you've done some work at the 'Product' level and have not answered all the open questions yet, it's possible you may need to end it where you are and zoom down a level to the technical details to understand what's feasible"; and "If you're doing multiple phases of planning, zooming in from 50kft view all the way to the 10kft view, you want to do a little bit of steering at each phase to ensure you are eliminating as much expected pain as possible." The remedy is editorial: cut or recast several of these sentences.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The opening announces the article's relationship to earlier posts before giving the reader a reason to continue.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | This is what we mean by leverage - and it requires being pragmatic. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This balanced abstraction restates the title's idea without adding a concrete observation.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 3
+  notes: |
+    I hear an experienced practitioner speaking plainly, but the repeated conditional syntax eventually becomes louder than the argument.

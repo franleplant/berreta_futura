@@ -1,0 +1,304 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Transport layer | Streamable HTTP, which supports ordinary HTTP authentication | 1
+    repair_from: Transport layer | The protocol has two layers | 1
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The source specifies that Streamable HTTP uses HTTP POST and optional
+      Server-Sent Events, while the manuscript only names the transport and its
+      authentication. A reader implementing a remote connection still has to
+      return to the source for the channel mechanics.
+    suggestion: Add the POST/SSE behavior when introducing Streamable HTTP.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Primitives | Imagine a database server | 1
+    repair_from: Primitives | The useful part of the data layer is its primitives | 1
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The source's worked example contains four JSON-RPC exchanges and
+      implementation pseudocode for discovery, tool listing, tool execution,
+      and notification handling. The manuscript summarizes the flows and gives
+      one call in prose, but omits the exact request envelopes, response fields,
+      and client-side control flow that make the example actionable.
+    suggestion: Retain at least one complete discovery or subscription exchange and the essential refresh loop.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Discovery | That request lets the server report its supported versions, capabilities, and identity | 1
+    repair_from: Discovery | A client may call server/discover before anything else | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source names the concrete metadata fields supportedVersions,
+      serverCapabilities, and serverInfo, and the UnsupportedProtocolVersionError
+      retry behavior. The manuscript describes these concepts but leaves out the
+      field names and the version-negotiation response a reader would need to
+      implement discovery.
+    suggestion: Include the response field names and briefly state the retry-on-unsupported-version flow.
+  - severity: defensible
+    article: mcp-in-a-nutshell
+    locator: '- | MCP defines the protocol for exchanging context | 1'
+    repair_from: MCP defines the protocol for exchanging context | It does not decide how an AI application uses a language model | 1
+    category: lost_essential_fact
+    disposition: fix
+    note: |
+      The source's scope also lists the specification, SDKs, development tools
+      such as MCP Inspector, and reference server implementations. Those project
+      categories are omitted, so a reader does not learn the broader MCP
+      ecosystem, though they are not needed for the protocol explanation itself.
+    suggestion: Add one short sentence identifying the SDKs, development tools, and reference implementations.
+  - severity: defensible
+    article: mcp-in-a-nutshell
+    locator: Participants | Local servers commonly use standard input and output | 1
+    repair_from: Participants | Servers may run on the same machine or on another platform | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source notes that local STDIO servers typically serve one client while
+      remote Streamable HTTP servers typically serve many. The manuscript
+      explains local versus remote placement but drops this useful deployment
+      distinction.
+    suggestion: Mention the usual one-client local versus many-client remote serving pattern.
+  - severity: defensible
+    article: mcp-in-a-nutshell
+    locator: Discovery | The response is usually cacheable | 1
+    repair_from: Discovery | The response is usually cacheable | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source gives concrete caching metadata for discovery and tool listings,
+      including resultType, ttlMs, and cacheScope. The manuscript keeps only the
+      general idea that discovery is cacheable, which is sufficient for an
+      overview but less useful as a reference.
+    suggestion: Name ttlMs and cacheScope once, without reproducing the full response.
+  - severity: defensible
+    article: mcp-in-a-nutshell
+    locator: Client primitives | Sampling and logging are deprecated as of protocol version 2026-07-28 | 1
+    repair_from: Client primitives | Sampling and logging are deprecated as of protocol version 2026-07-28 | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source names the deprecated sampling/createMessage method and explains
+      its former model-independent purpose. The manuscript preserves the
+      deprecation and replacement guidance but omits the method identifier.
+    suggestion: Include sampling/createMessage parenthetically if deprecated client primitives are mentioned.
+  - severity: defensible
+    article: mcp-in-a-nutshell
+    locator: Notifications | Notifications are best effort, especially across reconnects | 1
+    repair_from: Notifications | The client usually sends tools/list again | 1
+    category: lost_essential_fact
+    disposition: fix
+    note: |
+      The source explains that notifications can be extended beyond tool lists
+      to other primitives and gives four concrete reasons they matter, including
+      dynamic environments and consistency. The manuscript keeps best-effort
+      polling guidance but omits that broader motivation.
+    suggestion: Add one sentence that the same pattern synchronizes other primitives and handles changing permissions or dependencies.
+  - severity: major
+    article: mcp-in-a-nutshell
+    category: over_compressed
+    disposition: fix
+    note: |
+      The needed omissions are concentrated in the source's implementation
+      example: transport framing, concrete discovery response fields, and the
+      JSON-RPC exchanges and refresh pseudocode. Restoring those three elements
+      would preserve the manuscript's accessibility while making it a usable
+      teaching reference rather than a conceptual summary only.
+    suggestion: Restore one complete exchange, the key discovery fields, and the transport/refresh mechanics.
+  - severity: major
+    article: mcp-in-a-nutshell
+    category: source_shaped
+    disposition: fix
+    note: |
+      The manuscript follows the source's sequence almost exactly: participants,
+      layers, stateless discovery, primitives, the database example, client
+      primitives, notifications, and the concluding architecture claim. It
+      synthesizes wording but performs little structural editorial work.
+    suggestion: Reorganize around the reader's workflow—connect, discover, call, and refresh—before covering edge primitives and transport details.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: Conclusion | These boundaries let an application replace or add servers without changing the message format the model receives | 1
+    repair_from: Conclusion | These boundaries let an application replace or add servers | 1
+    category: section_does_not_pay
+    disposition: fix
+    note: |
+      The closing paragraph restates the modularity point already established in
+      the opening and transport discussion. Its space could carry one of the
+      omitted JSON-RPC or implementation details.
+    suggestion: Trim the conclusion to one sentence and use the recovered space for a concrete protocol detail.
+  omissions:
+  - fact: The Scope list of the MCP Specification, SDKs, Development Tools including MCP Inspector, and Reference Server Implementations
+    reader_loses: Does not learn what the broader MCP project comprises.
+    verdict: defensible
+  - fact: Local STDIO servers typically serve a single client, while remote Streamable HTTP servers typically serve many clients
+    reader_loses: Misses a useful deployment and scaling distinction.
+    verdict: defensible
+  - fact: Streamable HTTP uses HTTP POST with optional Server-Sent Events for streaming
+    reader_loses: Cannot implement the remote transport from this overview alone.
+    verdict: needed
+  - fact: The concrete discovery response fields supportedVersions, serverCapabilities, and serverInfo
+    reader_loses: Lacks the field names needed to parse and negotiate discovery.
+    verdict: needed
+  - fact: UnsupportedProtocolVersionError lists supported versions and causes a retry with a mutually supported version
+    reader_loses: Does not know the operational version-negotiation failure path.
+    verdict: needed
+  - fact: The complete server/discover JSON-RPC request and response
+    reader_loses: Cannot see the exact _meta envelope or discovery exchange.
+    verdict: needed
+  - fact: The complete tools/list request and response, including resultType, ttlMs, and cacheScope
+    reader_loses: Cannot reproduce listing, pagination, or caching behavior precisely.
+    verdict: needed
+  - fact: The source's tool metadata example showing a unique name, title, description, and JSON Schema inputSchema in a response object
+    reader_loses: The prose names the fields but does not show their wire representation.
+    verdict: defensible
+  - fact: The pseudo-code that aggregates tools from every MCP client into one registry
+    reader_loses: Misses the practical federation step that makes tools available to the model.
+    verdict: needed
+  - fact: The complete tools/call JSON-RPC exchange and its response structure
+    reader_loses: Cannot see the exact request envelope or how the content array is returned.
+    verdict: needed
+  - fact: The pseudo-code routing a model-selected tool call to the matching MCP client and adding result.content to the conversation
+    reader_loses: Misses the application-side control flow connecting model choice to server execution.
+    verdict: needed
+  - fact: The sampling/createMessage method name and its former model-independent purpose
+    reader_loses: Cannot identify the deprecated method when reading older implementations.
+    verdict: defensible
+  - fact: The complete subscriptions/listen request and notifications/subscriptions/acknowledged response
+    reader_loses: Cannot reproduce the subscription handshake or inspect the agreed filter.
+    verdict: needed
+  - fact: The acknowledgment's rule that unsupported notification types are omitted from the accepted filter
+    reader_loses: May assume every requested notification is active.
+    verdict: defensible
+  - fact: 'The source''s four explicit reasons notifications matter: dynamic environments, efficiency, consistency, and real-time collaboration'
+    reader_loses: Gets the mechanism but less of the case for using it.
+    verdict: defensible
+  - fact: The pseudo-code loop that refreshes tools and notifies an active conversation after a change
+    reader_loses: Lacks the concrete refresh behavior after notifications arrive.
+    verdict: needed
+  - fact: The Tasks extension for durable handles on long-running requests
+    reader_loses: Does not know that MCP has an optional long-running-operation extension.
+    verdict: defensible
+  retentions:
+  - passage: Visual Studio Code connects to a Sentry server
+    costs: A concrete host/client/server example that establishes the architecture and makes the one-client-per-connection rule memorable; it earns its space.
+    verdict: earns_place
+  - passage: Imagine a database server
+    costs: The example ties tools, resources, and prompts together and motivates the subsequent tool-call flow; it earns its space.
+    verdict: earns_place
+  - passage: Sampling and logging are deprecated as of protocol version 2026-07-28
+    costs: A timely compatibility warning and replacement guidance that prevents readers from implementing obsolete features; it earns its space.
+    verdict: earns_place
+  - passage: These boundaries let an application replace or add servers without changing the message format
+    costs: A concluding restatement of modularity that could instead carry an omitted JSON-RPC exchange or refresh loop.
+    verdict: cut
+  notes: |
+    Changes required because the piece gives a clear conceptual synthesis, but its source-shaped compression removes several implementation-critical exchanges and transport details that readers would need to act on the explanation.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked every assertion in the manuscript against the complete pinned architecture extraction; nothing in the piece was outside that extraction, so nothing remained unchecked.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    The piece is mechanically clean: sentence openings, grammar, punctuation,
+    typography, form, and number styles are consistent.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | For example, a request has JSON-RPC version `2.0`, request ID `3`, method `tools/call`, and parameters containing | 1'
+    repair_from: '- | Imagine a database server. | 1'
+    category: running_example
+    disposition: fix
+    note: |
+      The piece establishes a database server as its running example, then switches
+      without explanation to a weather request. That break makes the example's
+      purpose and the relationship between the primitives harder to follow.
+    suggestion: Keep the concrete request within the database example or clearly label the weather request as a contrast.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 5
+    ending: 4
+  notes: |
+    This review verified a clear progression from host architecture through protocol layers, primitives, and change notifications, with one broken running example.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The useful part of the data layer is its primitives. | A tool is an executable function, such as a file operation, API call, or database query. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three consecutive definition sentences use the same "A X is Y" shape:
+      "A tool is an executable function", "A resource supplies context", and
+      "A prompt is a reusable interaction template." The pattern makes the
+      explanation sound assembled rather than written. Recast or cut one of
+      these definitions.
+    suggestion: Vary the sentence openings so the three primitives do not arrive as a definition list in prose.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: MCP defines the protocol for exchanging context. | MCP defines the protocol for exchanging context. | 1
+    category: no_voice
+    disposition: fix
+    note: |
+      The voice disappears at the second paragraph: the prose becomes evenly
+      abstract, impersonal, and system-generated through the protocol-layer
+      explanation. It remains grammatical and clear, but no longer sounds like
+      one curious person guiding the reader.
+    suggestion: Ground this passage in a concrete interaction or consequence before returning to the abstractions.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: The useful part of the data layer is its primitives. | The useful part of the data layer is its primitives. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "The useful part" is an abstract throat-clearing judgment, and "its
+      primitives" introduces terminology before showing what the primitives do.
+      The sentence adds little beyond announcing the next paragraph.
+    suggestion: Remove this sentence and begin directly with the tool, resource, and prompt examples.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: MCP defines the protocol for exchanging context. | Local servers commonly use standard input and output. Remote servers commonly use Streamable HTTP, which supports ordinary HTTP authentication such as bearer tokens and API keys. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "Streamable HTTP", "_meta", JSON-RPC 2.0, bearer tokens, OAuth, cursors,
+      elicitation, and OpenTelemetry are terms a competent engineer outside
+      this subfield may not know; several are used without an operational
+      gloss.
+    suggestion: Define the unfamiliar transport and message terms at first use, or remove the implementation details that the explainer does not need.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: These boundaries let an application replace or add servers without changing the message format the model receives. | Each action still has a named tool, a declared input schema, and a connection whose responsibility remains visible. | 1
+    category: weak_close
+    disposition: fix
+    note: |
+      The final sentence restates the article's earlier tool/schema/connection
+      inventory instead of leaving the reader with a new implication or useful
+      question.
+    suggestion: End on the practical consequence for someone choosing, replacing, or debugging an MCP server.
+  scores:
+    voice: 2
+    sentence_variety: 2
+    economy: 3
+  notes: |
+    I heard a clear technical explainer whose middle turns into an impersonal
+    protocol inventory and whose ending repeats that inventory.

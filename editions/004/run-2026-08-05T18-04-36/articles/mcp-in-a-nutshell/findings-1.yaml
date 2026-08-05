@@ -1,0 +1,178 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The useful part of the data layer is its primitives. Servers can expose tools, resources, and prompts. | The useful part of the data layer is its primitives. Servers can expose tools, resources, and prompts. | 1
+    repair_from: The useful part of the data layer is its primitives. | 1
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The source's worked section contains four concrete JSON-RPC exchanges and
+      implementation pseudo-code for discovery, tool listing, tool execution, and
+      change notifications. The manuscript gives the concepts and method names
+      but no request or response shape, so a reader who wants to implement or
+      debug MCP must return to the source for the operational part.
+    suggestion: Carry at least one complete discovery or tools/call exchange and a compact notification refresh example.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Clients find these through methods such as `tools/list`, `resources/list`, and `prompts/list`, then retrieve or execute them with the matching methods. | 1
+    repair_from: Clients find these through methods such as `tools/list`, `resources/list`, and `prompts/list` | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source names the retrieval methods (`resources/read` and the
+      corresponding `*/get` methods), explains pagination for tools/list, and
+      specifies the tool metadata fields `name`, `title`, `description`, and
+      `inputSchema`. Those are the identifiers and fields a reader would need
+      when inspecting or calling a server, but the manuscript only says
+      “matching methods.”
+    suggestion: Name the retrieval methods and retain the tool metadata fields, preferably alongside the worked call.
+  omissions:
+  - fact: 'The overview''s scope list: the MCP specification, SDKs, development tools including MCP Inspector, and reference server implementations'
+    reader_loses: They do not know what the MCP project includes beyond the wire protocol.
+    verdict: defensible
+  - fact: Local STDIO servers typically serve one client, while remote Streamable HTTP servers typically serve many clients
+    reader_loses: They lose a useful deployment and scaling distinction.
+    verdict: defensible
+  - fact: The transport layer uses HTTP POST with optional Server-Sent Events for streaming
+    reader_loses: They cannot distinguish the concrete Streamable HTTP exchange shape.
+    verdict: defensible
+  - fact: The server/discover response lists supportedVersions and can trigger an UnsupportedProtocolVersionError followed by a retry
+    reader_loses: They do not know how version negotiation actually recovers from incompatibility.
+    verdict: needed
+  - fact: 'The source''s explicit per-request capability examples, including `tools: {listChanged: true}` and `resources: {}`'
+    reader_loses: They understand that capabilities exist but not how a client advertises or tests them.
+    verdict: defensible
+  - fact: The retrieval method names `resources/read` and the `*/get` methods for primitives
+    reader_loses: A reader cannot look up the concrete method to retrieve a resource or prompt.
+    verdict: needed
+  - fact: Tool metadata fields `name`, `title`, `description`, and JSON-Schema `inputSchema`
+    reader_loses: They cannot tell what a tools/list response contains or how arguments are validated.
+    verdict: needed
+  - fact: The optional cursor parameter for paginating `tools/list`
+    reader_loses: They may assume one request always returns every tool.
+    verdict: defensible
+  - fact: The `resultType`, `ttlMs`, and `cacheScope` fields in the tool-list response
+    reader_loses: They lose the source's concrete caching and completeness semantics.
+    verdict: defensible
+  - fact: The worked `weather_current` call, including exact name, `location`, and `units` arguments and the default from imperial to metric
+    reader_loses: They see that tools are called by name but not the exact argument contract or the danger of using an undiscovered shorthand.
+    verdict: needed
+  - fact: The notification acknowledgment `notifications/subscriptions/acknowledged` and its subscription ID
+    reader_loses: They cannot implement the source's subscription handshake or correlate events to a stream.
+    verdict: needed
+  - fact: Notifications carry `io.modelcontextprotocol/subscriptionId`, are sent only when the server advertises `listChanged`, and can omit unsupported filters
+    reader_loses: They lose the protocol rules that make a notification stream safe to interpret.
+    verdict: needed
+  - fact: The Tasks extension for durable handles to long-running requests
+    reader_loses: Nothing essential to the core explainer; this is an optional extension.
+    verdict: defensible
+  - fact: 'The source''s four pseudo-code integrations: registering discovered servers, aggregating tools across clients, routing a model tool call, and refreshing the model after a notification'
+    reader_loses: They lose the application-side control flow that connects the protocol primitives to an AI product.
+    verdict: needed
+  - fact: 'The source''s four reasons notifications matter: dynamic environments, efficiency, consistency, and real-time collaboration'
+    reader_loses: They lose supporting rationale, but the manuscript preserves the mechanism and freshness caveat.
+    verdict: defensible
+  retentions:
+  - passage: Visual Studio Code connects to a Sentry server. | 1
+    costs: A concrete opening example occupies several sentences, but it establishes host, client, server, and one-client-per-connection before the abstractions.
+    verdict: earns_place
+  - passage: MCP defines the protocol for exchanging context. | 1
+    costs: The scope boundary takes a paragraph, but it prevents the reader from mistaking MCP for an LLM orchestration framework.
+    verdict: earns_place
+  - passage: The protocol has two layers. | 1
+    costs: The data/transport distinction costs a paragraph, but it supplies the organizing model for the rest of the piece.
+    verdict: earns_place
+  - passage: Imagine a database server. | 1
+    costs: The database example uses a full paragraph, but it makes the three server primitives concrete in one scenario.
+    verdict: earns_place
+  - passage: Sampling and logging are deprecated as of protocol version 2026-07-28. | 1
+    costs: The deprecation note adds a paragraph, but it prevents readers from treating obsolete client primitives as current guidance.
+    verdict: earns_place
+  - passage: 'That is the shape of MCP: one host, one client per server | 1'
+    costs: The closing synthesis repeats the model in a few sentences, but it gives the reader a durable summary of the architecture.
+    verdict: earns_place
+  notes: |
+    The piece gives a compact, reorganized mental model of MCP's participants,
+    layers, primitives, authentication, and update flow that is substantially
+    easier to consume than the source's long reference walkthrough. Its omissions
+    are mostly defensible background cuts, but it also removes the source's
+    implementation-bearing method details, JSON exchanges, and application control
+    flow. The manuscript's sequence is reorganized around the mental model rather
+    than copying the source's Scope, Participants, Layers, Data Layer, and
+    four-step Example sequence, so it is not source-shaped.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every assertion in the manuscript against the complete pinned extraction, including protocol details, examples, versions, transport claims, and notification behavior; there was nothing in this piece that could not be checked against the extraction.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    No mechanical errors found; sentence openings, grammar, punctuation, typography, and form are consistent throughout.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    Verified that the piece establishes MCP's host-client-server shape, explains its layers and primitives, illustrates their use, then closes with change reporting and a concise synthesis.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | The useful part of the data layer is its primitives. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Useful part" and "primitives" stack abstractions before the concrete list
+      that follows, making this sentence sound like a definition assembled from
+      labels rather than a person leading the reader to the mechanism.
+    suggestion: |
+      Name the three exposed capabilities directly in this sentence, then explain
+      what each one does.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | Both transports carry the same JSON-RPC 2.0 messages, so the protocol does not change when a server moves from a local process to a remote service. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "JSON-RPC 2.0" is central but never defined for an engineer outside this
+      subfield.
+    suggestion: |
+      Add a brief gloss identifying JSON-RPC 2.0 as the message format used by
+      both transports.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | That is the shape of MCP: one host, one client per server, a stable message layer carried by different transports, and primitives that let servers offer actions and context. | 1'
+    category: weak_close
+    disposition: fix
+    note: |
+      The closing sentence restates the article's opening architecture and list of
+      primitives, so the piece ends by recapping rather than leaving the reader
+      with a sharper implication or question.
+    suggestion: |
+      Close on what these visible boundaries enable for the application or model,
+      rather than repeating the protocol's components.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    I heard a clear, technically grounded explainer whose voice thins briefly when
+    it names abstractions and then closes with a recap instead of a final insight.

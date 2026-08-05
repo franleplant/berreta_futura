@@ -1,0 +1,207 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | The useful part of the data layer is its primitives. | 1'
+    repair_from: '- | Start with discovery. | 1'
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The source's worked example contains the complete JSON-RPC exchanges for discovery, tool listing, tool execution, subscription acknowledgement, change notification, and refresh, plus pseudocode showing how an application performs each step. The manuscript names the methods and summarizes their purpose, but omits the request envelopes, response fields, subscription identifier, and implementation flow. A reader can understand MCP conceptually but cannot use this as the operational reference the source provides.
+    suggestion: Carry at least one complete request/response exchange and compact pseudocode for discovery, tool execution, and notification refresh.
+  omissions:
+  - fact: The scope statement that MCP covers context exchange only and does not dictate how AI applications use LLMs or manage context
+    reader_loses: The boundary of the protocol and what MCP deliberately leaves to the host application.
+    verdict: defensible
+  - fact: 'The four surrounding MCP projects: the specification, SDKs, development tools including MCP Inspector, and reference server implementations'
+    reader_loses: A map of the broader MCP ecosystem.
+    verdict: defensible
+  - fact: Local STDIO servers typically serve one client, while remote Streamable HTTP servers typically serve many clients
+    reader_loses: A useful deployment distinction.
+    verdict: defensible
+  - fact: The utility feature for progress tracking on long-running operations
+    reader_loses: Awareness that the protocol includes progress reporting beyond notifications.
+    verdict: defensible
+  - fact: The Tasks extension, which returns a durable handle that clients can poll and later retrieve
+    reader_loses: A concrete mechanism for durable long-running requests.
+    verdict: defensible
+  - fact: The full server/discover JSON-RPC request and response, including the example client identity, capability object, and supportedVersions/serverInfo fields
+    reader_loses: An implementer cannot reproduce the discovery exchange exactly without returning to the source.
+    verdict: needed
+  - fact: The discovery pseudocode that registers a connected server when tools are supported and marks it ready
+    reader_loses: The application-level sequence for turning discovery results into a usable server registration.
+    verdict: defensible
+  - fact: The complete tools/list request and response, including resultType, ttlMs, cacheScope, and the response's tools array
+    reader_loses: Exact response and caching fields needed for a complete client implementation.
+    verdict: needed
+  - fact: The source's progressive tool-discovery advice for clients federating many servers
+    reader_loses: A strategy for avoiding loading every tool into the model at once.
+    verdict: defensible
+  - fact: The complete tools/call JSON envelope, including request id 3 and all per-request _meta fields
+    reader_loses: The exact wire representation of the call, even though the manuscript preserves the method, tool name, and arguments in prose.
+    verdict: needed
+  - fact: The tool-execution pseudocode that locates the client, calls the tool, and adds result.content to the conversation
+    reader_loses: The concrete host-side routing and result-insertion flow.
+    verdict: needed
+  - fact: The complete subscriptions/listen request, acknowledgement, notifications/tools/list_changed notification, and subsequent tools/list request
+    reader_loses: The exact filter, subscription ID propagation, notification shape, and refresh request required to implement change tracking.
+    verdict: needed
+  - fact: 'The source''s four explicit reasons notifications matter: dynamic environments, efficiency, consistency, and real-time collaboration'
+    reader_loses: The source's fuller explanation of why change notifications are valuable.
+    verdict: defensible
+  - fact: The notification pseudocode that refreshes tools and informs an active LLM conversation
+    reader_loses: A concrete implementation of the final update loop.
+    verdict: needed
+  - fact: The statement that the notification pattern extends beyond tools to other MCP primitives
+    reader_loses: The generality of the synchronization mechanism.
+    verdict: defensible
+  omissions_summary:
+    verdict: over_compressed
+    severity: major
+    note: The needed omissions are operational rather than conceptual. Restoring one compact JSON-RPC exchange, the subscription/notification payloads, and the host-side refresh pseudocode would preserve the manuscript's accessibility while making it actionable.
+  retentions:
+  - passage: Visual Studio Code connects to a Sentry server.
+    costs: Several sentences of participant and connection setup; they establish the host/client/server vocabulary with a concrete example.
+    verdict: earns_place
+  - passage: MCP gives those connections a shared language for exchanging context.
+    costs: A paragraph explaining both layers and both transports; it prevents the later method names from becoming ungrounded jargon.
+    verdict: earns_place
+  - passage: Start with discovery.
+    costs: A full paragraph on metadata, version negotiation, caching, and UnsupportedProtocolVersionError; this is the workflow's necessary first step.
+    verdict: earns_place
+  - passage: The useful part of the data layer is its primitives.
+    costs: The definitions of tools, resources, prompts, and their list/get/call method families; this is the core teaching payload.
+    verdict: earns_place
+  - passage: Imagine a database server.
+    costs: A short worked mapping of a tool, resource, and prompt to one server; it makes the three primitive types concrete.
+    verdict: earns_place
+  - passage: The source's concrete request shows the envelope.
+    costs: The weather_current example and its argument rules; it clarifies exact-name and schema matching.
+    verdict: earns_place
+  - passage: Clients can expose a primitive too.
+    costs: The elicitation and deprecation guidance; it distinguishes server-facing and client-facing capabilities.
+    verdict: earns_place
+  - passage: A server can also report changes.
+    costs: The subscription, notification, and polling workflow; it covers the protocol's dynamic behavior.
+    verdict: earns_place
+  - passage: After receiving the notification, the client sends tools/list again
+    costs: The replacement and active-conversation update behavior; it explains what a client actually does after an event.
+    verdict: earns_place
+  - passage: This workflow gives an application a stable way to connect, discover, call, and refresh.
+    costs: A concise troubleshooting sequence and the manuscript's only explicit synthesis of the end-to-end workflow.
+    verdict: earns_place
+  retentions_summary:
+    verdict: All retained passages earn their place; none is the primary source of the missing operational detail.
+  shape:
+    source:
+    - Scope
+    - Concepts of MCP: Participants
+    - Layers
+    - Data layer
+    - Transport layer
+    - Data Layer Protocol
+    - Statelessness and discovery
+    - Primitives
+    - Notifications
+    - Example: Discovery
+    - Example: Tool Discovery
+    - Example: Tool Execution
+    - Example: Real-time Updates
+    manuscript:
+    - Participants and connections
+    - Layers and transports
+    - Discovery
+    - Primitives
+    - Tool discovery and execution
+    - Weather request example
+    - Elicitation and deprecated features
+    - Notifications and refresh
+    - Troubleshooting workflow
+    verdict: not source_shaped
+  position:
+    verdict: present
+    note: The closing connect-discover-call-refresh troubleshooting sequence gives the synthesis a practical diagnostic stance.
+  notes: |
+    Changes required because the manuscript gives a strong conceptual condensation but strips the source's worked wire examples and implementation flows that make the protocol actionable.
+evidence:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | Remote messages use HTTP POST, with optional Server-Sent Events for streaming. | 1'
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source limits HTTP POST to client-to-server messages; server-to-client
+      streaming uses optional Server-Sent Events. The manuscript's broader
+      wording makes all remote messages sound like HTTP POST messages.
+  scores:
+    claim_support: 4
+    qualification_survival: 4
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked every manuscript assertion against the pinned architecture extraction;
+    no external sources or additional materials were available to check.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | MCP in a Nutshell | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      The article title uses title case. Headings must use sentence case, so
+      "Nutshell" should be lowercase.
+    suggestion: MCP in a nutshell
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 4
+  notes: |
+    The prose is grammatically and typographically clean, but the article title
+    uses title case instead of the required sentence case.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 4
+  notes: |
+    I verified that the piece moves coherently from host and client architecture
+    through protocol layers, discovery, primitives, examples, notifications, and
+    diagnostic closure.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | The host coordinates clients. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three consecutive subject-verb-object sentences — "The host coordinates clients.", "A server provides context.", and "A client obtains it for the host." — make the explanation sound schematic. Cut one sentence or combine the relationship into a less repetitive construction.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | Start with discovery. | 1'
+    category: passive
+    disposition: fix
+    note: |
+      The ownerless imperative gives the paragraph a procedural, system-generated voice. Name the actor and action, such as having the client begin discovery by sending the request.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | New implementations should call language-model providers directly for sampling and should write logs to standard error or use OpenTelemetry. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "OpenTelemetry" is unexplained infrastructure terminology for readers outside observability work. Define it briefly as a telemetry standard or remove the named product.
+  scores:
+    voice: 4
+    sentence_variety: 3
+    economy: 4
+  notes: |
+    I heard a clear, useful technical explainer whose voice briefly turns schematic in the discovery instructions and the compact host-server-client triad.

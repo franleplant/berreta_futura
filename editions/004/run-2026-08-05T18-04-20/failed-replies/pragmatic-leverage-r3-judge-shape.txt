@@ -1,0 +1,23 @@
+# pragmatic-leverage r3 judge:shape
+# model: codex:gpt-5.6-luna
+
+result: changes_required
+findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: "- | This one is a bit of an addendum / side-quest to the recent series. | 1"
+    repair_from: "- | This one is a bit of an addendum / side-quest to the recent series. | 1"
+    category: opening
+    disposition: fix
+    note: |
+      The opening discusses the piece's relationship to a previous series rather
+      than earning the argument that follows. The reader reaches the substantive
+      leverage claim only after publication-context throat-clearing.
+    suggestion: "Open with the feature-delivery time split and introduce the addendum context later, if needed."
+scores:
+  order: 4
+  coherence: 4
+  opening: 2
+  ending: 4
+notes: |
+  I verified that the piece's argument progresses from delivery-time leverage to expected pain, planning effort, and zooming between levels, but its opening delays that argument with contextual framing.

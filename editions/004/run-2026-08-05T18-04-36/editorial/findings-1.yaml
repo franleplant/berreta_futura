@@ -1,0 +1,113 @@
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | The Cost of a Shortcut | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      The title is in title case, but headings in this magazine use sentence case.
+    suggestion: The cost of a shortcut
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    One title-case heading requires correction; the body’s grammar, punctuation, typography, and number styling are clean.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | That same multiplication appears in quieter work. | 1'
+    repair_from: '- | A one-line credential gave an intruder cluster-admin access to two Kubernetes clusters within one second. | 1'
+    category: missing_transition
+    disposition: fix
+    note: |
+      The piece moves from a concrete Kubernetes intrusion to software-planning
+      advice without establishing why the two belong together. The later MCP
+      discussion eventually supplies the bridge, but the opening shift makes the
+      argument feel assembled from separate threads.
+    suggestion: Establish the shared idea of context and reach before pivoting from the intrusion to coding work.
+  scores:
+    order: 3
+    coherence: 3
+    opening: 4
+    ending: 4
+  notes: |
+    The piece verifies a strong progression from exposed permissions to the need
+    for trustworthy execution boundaries, but its central analogy needs an earlier
+    bridge.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: the-cost-of-a-shortcut
+    locator: The intrusion followed a darker version of that path. | The intrusion followed a darker version of that path. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Darker version" decorates the comparison without showing what mechanism differs.
+    suggestion: |
+      Name the specific difference between the protocol flow and the intrusion.
+  - severity: major
+    article: the-cost-of-a-shortcut
+    locator: The scarce resource is not faster execution. | So the scarce resource is not faster execution. | 1
+    category: banned_tic
+    disposition: fix
+    note: |
+      The "not X. It is Y." antithesis is an assistant tic in editor-owned prose.
+    suggestion: |
+      State the scarce resource directly in one sentence.
+  - severity: major
+    article: the-cost-of-a-shortcut
+    locator: Good context narrows a tool before use. | Good context narrows a tool before use. | 1
+    category: no_voice
+    disposition: fix
+    note: |
+      The voice disappears in the fifth paragraph, where paired abstractions and aphoristic claims replace a person speaking concretely.
+    suggestion: |
+      Replace one abstract claim with a specific actor, action, and consequence.
+  - severity: major
+    article: the-cost-of-a-shortcut
+    locator: Each local success enlarged the next decision. | Each local success enlarged the next decision. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Local success" and "the next decision" form an abstraction stack that hides the agent's actual progression.
+    suggestion: |
+      Identify what permission or capability each success added.
+  - severity: major
+    article: the-cost-of-a-shortcut
+    locator: Good context narrows a tool before use. | Good context narrows a tool before use. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      The fourth and fifth paragraphs rely on a run of compact subject-verb-object declarations: "The intrusion followed...", "Each local success enlarged...", "Good context narrows...", and "Bad context turns...". The pattern becomes audible before the conclusion.
+    suggestion: |
+      Cut or structurally recast at least one of these declarations.
+  - severity: minor
+    article: the-cost-of-a-shortcut
+    locator: An MCP client discovers a tool, reads its schema, sends named arguments, and refreshes its registry when the server changes. | An MCP client discovers a tool, reads its schema, sends named arguments, and refreshes its registry when the server changes. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "MCP" is unexplained jargon for engineers outside this subfield.
+    suggestion: |
+      Expand MCP or give a brief plain-language gloss at first mention.
+  - severity: minor
+    article: the-cost-of-a-shortcut
+    locator: Its reach came from the way systems had been joined around it. | Its reach came from the way systems had been joined around it. | 1
+    category: passive
+    disposition: fix
+    note: |
+      "Had been joined" hides the actor responsible for connecting the systems.
+    suggestion: |
+      Name who connected the systems or state the connection directly.
+  scores:
+    voice: 3
+    sentence_variety: 2
+    economy: 3
+  notes: |
+    I heard a sharp, concrete opening give way to abstract aphorisms and repeated declarative patterns in the final half.
