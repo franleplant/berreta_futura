@@ -1,0 +1,18 @@
+result: approved
+findings: []
+scores:
+  through_line: 4
+  editorial_strength: 4
+  running_order: 5
+  balance: 3
+  cover_promise: 4
+notes: |
+  The editorial articulates a thesis: safety gates fail in opposite directions because they
+  respond to request shape rather than intent. Frontier-lab-agent-intrusion supplies detailed
+  evidence. The running order is clean—editorial frames the principle, then the article
+  demonstrates its cost in practice. Both fit the edition theme of "systems around the
+  model." The editorial derives heavily from the article's facts (approximately 70% of its
+  body), but this is synthesis rather than summary; the meta-argument about gate design is
+  editorial work, not article recap. The analytical voice of the article and the
+  argumentative urgency of the editorial complement each other appropriately. No structural
+  defects found.

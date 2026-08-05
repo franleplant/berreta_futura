@@ -1,0 +1,29 @@
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    The piece is mechanically clean throughout, with consistent sentence
+    capitalization, no grammar or agreement errors, and proper punctuation and
+    typography.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The piece argues that a single principle—gates respond to request shape, not intent—manifests consistently across distinct incidents and remains unresolved. The opening establishes this principle through a compelling incident (models refusing to read breach logs), the second paragraph traces it backward to an earlier precedent (classifiers switched off for benchmarking) and names the design flaw explicitly, and the ending reveals that subsequent fixes treated symptoms rather than the root gate. The running example of the intent-blind gate carries throughout all three paragraphs, and the structure moves logically from concrete incident to pattern to unresolved problem. No duplications, orphan referents, or missing transitions.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 4
+    economy: 5
+  notes: This editorial speaks with a clear, present voice and uses antithetical structure purposefully—each "not X, but Y" construction clarifies a paradox in the argument rather than decorating it—with a strong opening that dives into action and a closing line that leaves the reader with perspective on an unresolved problem.

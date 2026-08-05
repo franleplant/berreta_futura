@@ -1,0 +1,25 @@
+piece: frontier-lab-agent-intrusion
+rounds:
+- round: 1
+  words: 1089
+  loop_findings: 1
+  all_findings: 1
+- round: 2
+  words: 1090
+  loop_findings: 5
+  all_findings: 6
+- round: 3
+  words: 1323
+  loop_findings: 1
+  all_findings: 1
+state: rounds_exhausted
+open_findings:
+- lens: mechanics
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: '- | Recon alone accounts for 6,191 of them, and the dropper mechanics, staging URLs, encoded blobs, dataset interactions, for another 6,972 | 1'
+  category: grammar
+  disposition: fix
+  note: |
+    The second independent clause after "and" lacks a main verb. The phrase "the dropper mechanics, staging URLs, encoded blobs, dataset interactions, for another 6,972" is meant to parallel "Recon alone accounts for 6,191 of them," but "for" is a preposition. No verb connects the subject to the number. The list also omits the final "and" before "dataset interactions," breaking parallelism. The sentence cannot be parsed as written.
+  suggestion: Recon alone accounts for 6,191 of them; the dropper mechanics, staging URLs, encoded blobs, and dataset interactions account for another 6,972; direct shell execution took 2,911 more.

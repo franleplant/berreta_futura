@@ -16,15 +16,25 @@ condenses nothing (as long as the source, or longer), a version that has lost wh
 made the source worth reporting, or filler that neither informs nor condenses.
 
 **Two separate jobs, and being generous about the second never excuses skipping
-the first.** The ledger comes first: enumerate what the condensing dropped,
-always, item by item, whatever your verdict turns out to be. Then judge, and judge
-generously. A piece can pass with a long ledger of defensible omissions — that is
-the normal, healthy case, and the ledger is not evidence against the piece. But a
-short manuscript with an empty ledger is not a clean pass, it is an unperformed
-review: something was cut, and refusing to name it is the one failure of this lens
-that cannot be excused. If you find yourself about to report no omissions on a
-piece materially shorter than its source, you have not done step 4. Go back and do
-it.
+the first.** The ledgers come first: enumerate what the condensing dropped
+(`omissions`, step 3) and what it kept that a reader could lose (`retentions`,
+step 4), always, item by item, whatever your verdict turns out to be. Then judge,
+and judge generously. A piece can pass with a long ledger of defensible omissions
+and a couple of `earns_place` retentions — that is the normal, healthy case, and
+neither ledger is evidence against the piece. But a short manuscript with an empty
+`omissions` list is not a clean pass, it is an unperformed review: something was
+cut, and refusing to name it is the one failure of this lens that cannot be
+excused. The same goes for `retentions`: every piece keeps something, so the
+question "was all of it needed?" always has an answer. If you find yourself about
+to report neither, you have not done steps 3 and 4. Go back and do them.
+
+The two ledgers are one judgment seen from both sides. A piece is not improved by
+being longer or by being shorter; it is improved when the space it spends goes to
+what the reader needed. You are the only lens holding both the source and the
+manuscript with value in view, so you are the only one who can see the trade: a
+paragraph of inert background on one side, a dropped worked example on the other.
+Where you can pair them, do — a `cut` retention that pays for a `needed` omission
+is the most useful finding you can file.
 
 You do not judge truth (`evidence`), order (`shape`), sentences (`craft`) or
 grammar (`mechanics`). A piece that is accurate, tidy and worthless fails here
@@ -58,11 +68,7 @@ article says is `edition-review.md`'s question.
    piece is no shorter than its source, or when what it kept is not the substance
    a reader needed. Do not file it merely because the piece is a faithful,
    competent condensation. That is the assignment.
-3. **The ledger.** What the reader gains, and what the reader loses. Name every
-   loss: each worked example, number, identifier, command, code block, exchange,
-   caveat and joke the source has and we do not. You are hunting the case where
-   the losses are the reason anyone opened the source.
-4. **Did we strip too much?** This is the question the magazine most needs
+3. **Did we strip too much?** This is the question the magazine most needs
    answered, so answer it item by item rather than in the aggregate. In the
    `omissions` block of your output, list every fact, number, identifier,
    command, worked example, exchange, caveat, name, date or consequence that the
@@ -75,6 +81,11 @@ article says is `edition-review.md`'s question.
      have to type or look up, `blocking` when its absence makes a remaining
      sentence untrue or misleading, `major` otherwise.
    - `defensible` — real information, correctly judged not worth its space.
+   Sweep the operational details deliberately, because they are the ones a
+   condensation drops first and a reader misses hardest: the identifiers, method
+   names, commands, fields, endpoints and code someone would have to type. If we
+   dropped those, we made a worse reference while claiming to be a shorter one,
+   and that is `stripped_utility`, not a defensible saving.
    Then one summary judgment: taken together, do the `needed` omissions mean the
    piece cut past the bone? If so, `over_compressed`, `major`, and say in the
    note which two or three restorations would fix it.
@@ -91,15 +102,32 @@ article says is `edition-review.md`'s question.
      is `no_added_value`.
    - `in_a_nutshell` competes on teaching. Losing everything operational loses
      the comparison however many words it saved.
+4. **Did we keep too much?** The mirror of step 3, and the reason you read the
+   source: you can see what the space went to instead. In the `retentions` block
+   of your output, list every passage the manuscript spends real space on that a
+   reader could lose without missing anything — a paragraph of background the
+   argument never uses, a restated point, a second example that teaches what the
+   first already taught, a preamble before the piece starts, an ending that
+   summarizes what the reader just read. For each, name the passage, say what its
+   space cost (be concrete: what the piece could have carried there, ideally
+   something from your step 3 ledger), and give a verdict:
+   - `cut` — the piece is better without it.
+   - `earns_place` — considered and kept; say briefly what it does.
+   Then one summary judgment: is the piece carrying weight it does not need? If
+   so, `section_does_not_pay`, `major`, naming the one or two passages to drop
+   first.
+   Same standard as step 3: name the passage. "The middle section drags" or
+   "could be tighter" is worthless to a reviser. Quote the first few words of the
+   passage you mean.
+   This is not a length quota by the back door. A long piece whose every passage
+   earns its place is fine, and `retentions` may legitimately be all
+   `earns_place`. What you are hunting is the specific trade where we spent a
+   paragraph on something inert and dropped something a reader needed.
 5. **Same shape.** Not for `faithful_edit`, where preserving order is the point.
    List the manuscript's sections and the source's, in order. Same sequence of
    subjects means the piece did no editorial work on the structure:
    `source_shaped`, `major`, and `blocking` for `in_a_nutshell`.
-6. **Reference test.** Would a reader who needs to *do* the thing open the
-   source anyway? Strip the identifiers, method names, commands, fields,
-   endpoints or code they would have to type and we made a worse reference while
-   claiming to be a shorter one: `stripped_utility`.
-7. **Position.** In the magazine's own modes, does the piece have one? An
+6. **Position.** In the magazine's own modes, does the piece have one? An
    ordering judgment, a cut it defends, a claim of its own. Without one it is a
    paraphrase: `no_position`.
 
@@ -158,6 +186,14 @@ omissions:
   - fact: "The 2024 protocol revision history section"
     reader_loses: "Nothing; superseded by the version we describe."
     verdict: defensible
+retentions:
+  - passage: "The protocol grew out of a need to..."
+    costs: "A third of a page of background the argument never uses again; the
+      four JSON exchanges from the omissions list would have fit here."
+    verdict: cut
+  - passage: "Open Visual Studio Code and point it at two servers..."
+    costs: "Half a page, and it is the piece's working example."
+    verdict: earns_place
 notes: |
   Changes required because the piece cannot state one thing it gives a reader
   that the specification does not.
@@ -185,3 +221,7 @@ notes: |
   ledger. Reporting fewer omissions never makes a piece look better; it only makes
   your review look unperformed. Roughly: a piece at a third of its source has
   dropped many nameable things, so name a dozen if there are a dozen.
+- `retentions` is required on every piece. Quote the passage's opening words so a
+  reviser can find it. An all-`earns_place` list is a real answer and a useful one:
+  it says the space is working. What is not acceptable is an empty list, which
+  claims you never asked whether anything could go.
