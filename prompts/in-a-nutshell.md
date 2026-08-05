@@ -98,32 +98,6 @@ the manuscript (see Format); nothing else from either step reaches the page.
 5. Edit with the method in `docs/WRITING_RULES.md`, then run its paragraph
    deletion pass and its final pass.
 
-## Prose style: Simplified Technical English
-
-The explainer body is written in the spirit of Simplified Technical English
-(ASD-STE100), in addition to and not instead of the moves above. Concretely:
-
-- Short sentences. Aim for twenty words or fewer.
-- One instruction or one idea per sentence. Never two joined by "and" or "which"
-  to save a sentence break.
-- Active voice throughout: an actor does something to an object.
-- One name per concept, used the same way every time it appears. Do not vary the
-  term for elegance; a reader learning the concept needs to recognize the same
-  word twice, not admire a synonym.
-- Simple, consistent verb tenses. Do not shift tense mid-explanation.
-- No idioms and no figurative language in a procedural or definitional
-  passage: the mental model's mechanics, the walkthrough's steps, a term's
-  definition. Say the thing plainly.
-
-**Where Simplified Technical English conflicts with `docs/WRITING_STYLE.md`'s
-voice guidance, Simplified Technical English wins, but only inside the
-explainer's procedural and definitional prose.** `docs/WRITING_STYLE.md` still
-governs everything else in the piece: its opening, its closing, and any
-narrative aside, such as the running example's frame or the vantage point that
-opens a section. A sentence telling the reader what to call, what a field
-means, or what a step does follows Simplified Technical English first; a
-sentence setting the scene or landing the piece follows the blended voice.
-
 ## Required reading
 
 `docs/WRITING_RULES.md` and `docs/WRITING_STYLE.md`, once at the start of a
