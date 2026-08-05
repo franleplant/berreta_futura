@@ -1,0 +1,385 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: '- | The AWS kit''s `evalkit init` lays out the evaluation folder, and `/evalkit.report` returns prioritized recommendations tied to locations in your code. | 1'
+    repair_from: '- | That workflow no longer requires a platform contract. | 1'
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The source supplies executable entry points: the two global `npx skills add` commands, the AWS `uv tool install evalkit` command, the Claude Code plugin commands, the vendor names, and the ordered `/evalkit.plan`, `/evalkit.data`, `/evalkit.trace`, `/evalkit.run_agent`, `/evalkit.eval`, and `/evalkit.report` workflow. The manuscript names only `evalkit init` and `/evalkit.report`, so a reader cannot reproduce the installation or run sequence from this piece.
+    suggestion: Add a compact install block, identify the relevant vendors, and show the ordered evalkit commands.
+  - severity: major
+    article: eval-engineering
+    locator: '- | One capability becomes a task folder whose instruction and environment are visible to the target agent, while the expected outcome, rubric, and judge credentials stay hidden. | 1'
+    repair_from: '- | Tests you invent from imagination protect you from failures you already imagined. | 1'
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source gives a concrete Harbor task layout: `evals/<task-id>/task.toml`, `instruction.md`, `environment/`, and `tests/`, plus a ready-to-paste instruction beginning `Use the eval-engineering skill.` The manuscript preserves the visible-versus-hidden principle but omits the scaffold and starter instruction, leaving the reader unable to create the expected task reproducibly.
+    suggestion: Carry the task tree and a shortened version of the starter instruction into the trace-mining section.
+  - severity: major
+    article: eval-engineering
+    locator: '- | A first suite has three measurements, not twelve: faithfulness to tool returns, tool-parameter accuracy, and response quality. | 1'
+    repair_from: '- | Every pull request an agent opens lands in the same human queue. | 1'
+    category: lost_essential_fact
+    disposition: fix
+    note: |
+      The source explicitly branches for code-shipping agents: score the change on intent and decision, execution and artifact, completeness and usefulness, instruction and boundary, and efficiency. Because the manuscript also presents eval-gated pull-request merges, omitting this boundary can send a reader to apply the three tool-agent measurements to code changes.
+    suggestion: Add the five-dimension code-change branch before presenting the three-measurement default.
+  omissions:
+  - fact: The source's '$200 model to $200,000 system' frame, including the claim that a couple-hundred-dollar model is comparable to one run by a thousand engineers.
+    reader_loses: The economic scale of the model-versus-harness contrast, but not the eval mechanism.
+    verdict: defensible
+  - fact: The claim that the gap between two teams renting the same brain is wider than the gap between two models.
+    reader_loses: A sharper motivation for evals as the durable differentiator.
+    verdict: defensible
+  - fact: 'The assumption being displaced: a platform contract, per-seat price, and a quarter of setup before the first useful number.'
+    reader_loses: The concrete shape of the old platform alternative.
+    verdict: defensible
+  - fact: Braintrust Loop recovered 87.2% of human-flagged failures, LangSmith scored 79.5%, and Arize AX had 74.4% recall and 91.0% precision; the coding-agent result was not the winner.
+    reader_loses: The full vendor trade-off and the fact that the coding agent was competitive rather than best overall.
+    verdict: defensible
+  - fact: 'The four vendor identities: LangChain, Galileo, AWS, and Arize.'
+    reader_loses: Which skills or vendors to look up when following the installation advice.
+    verdict: needed
+  - fact: LangChain shipped on 22 July and the AWS kit was released under Apache 2.0.
+    reader_loses: The timing and licensing context, not the core workflow.
+    verdict: defensible
+  - fact: The conclusion that the evaluation category is unbundling itself into the terminal already open.
+    reader_loses: A concise interpretation of the vendor movement.
+    verdict: defensible
+  - fact: The global `npx skills add langchain-ai/langchain-skills --skill '*' --yes --g` command.
+    reader_loses: Cannot install the LangChain skill from the manuscript.
+    verdict: needed
+  - fact: The global `npx skills add langchain-ai/langsmith-skills --skill '*' --yes --g` command.
+    reader_loses: Cannot install the LangSmith trace-mining skill from the manuscript.
+    verdict: needed
+  - fact: The AWS `uv tool install evalkit` command from the awslabs Git repository.
+    reader_loses: Cannot install the AWS evaluation kit.
+    verdict: needed
+  - fact: Claude Code's `/plugin marketplace add langchain-ai/langchain-skills` and `/plugin install langchain-skills@langchain-skills` commands.
+    reader_loses: Cannot use the alternate plugin installation path.
+    verdict: needed
+  - fact: The distinction that langchain-skills builds evals while langsmith-skills pulls real production runs to build them from.
+    reader_loses: May install the wrong repository and have no source material for the evals.
+    verdict: needed
+  - fact: The open-skills specification makes the same files load in Codex, Cursor, Windsurf, and Goose.
+    reader_loses: Portability context across coding agents.
+    verdict: defensible
+  - fact: '`evalkit init my-agent-evaluation` followed by the ordered `/evalkit.plan`, `/evalkit.data`, `/evalkit.trace`, `/evalkit.run_agent`, `/evalkit.eval`, and `/evalkit.report` phases.'
+    reader_loses: Cannot run the AWS workflow or know the required phase order.
+    verdict: needed
+  - fact: The score-versus-engineering line came from a 21-year-old founder in Tokyo with 258 followers whose post received two likes.
+    reader_loses: Color and provenance, not the principle itself.
+    verdict: defensible
+  - fact: The concrete judge-family example of Sonnet grading Haiku, and the warning that same-family generation and grading share blind spots.
+    reader_loses: A memorable rationale for using another model family.
+    verdict: defensible
+  - fact: The explicit five-step loop `mine traces -> identify a failure -> build an eval -> improve the ...`.
+    reader_loses: A compact mnemonic; the manuscript retains the constituent workflow.
+    verdict: defensible
+  - fact: Independent answer keys should come from tests, source records, policy, known state, or a person rather than treating the recorded answer as truth.
+    reader_loses: The source's concrete list of where ground truth can come from.
+    verdict: defensible
+  - fact: The Harbor task tree `evals/<task-id>/task.toml`, `instruction.md`, `environment/`, and `tests/`.
+    reader_loses: Cannot create the evaluation in the expected file layout.
+    verdict: needed
+  - fact: The ready-to-paste instruction beginning `Use the eval-engineering skill.` that maps the repository, reads `./traces`, proposes candidates, recommends one, waits for a choice, and tests the verifier.
+    reader_loses: A reproducible first request and the safeguard against one-shot implementation.
+    verdict: needed
+  - fact: The skill team's finding that questioning the user beats one-shot generation because the definition of correct lives in the user's head.
+    reader_loses: The rationale for an interview before fixing the rubric.
+    verdict: defensible
+  - fact: The claim that the trust track record gets sharper every week whether or not the models improve.
+    reader_loses: The compounding-history framing of evals.
+    verdict: defensible
+  - fact: Across top agents, about three quarters of merged work needed no human edit, reverts stayed in the low single digits, and Guardrails rejected one pull request in five.
+    reader_loses: Additional evidence about the observed operating range.
+    verdict: defensible
+  - fact: The example of approving and merging around 1,500 pull requests in 90 days without looking at a line, while trusting constraints rather than agents or personal code review.
+    reader_loses: A vivid proof and caveat for constraint-based trust.
+    verdict: defensible
+  - fact: The result of 285 self-improvement iterations producing 1,094 merged pull requests and zero regressions.
+    reader_loses: A second empirical result supporting the autonomous-merge claim.
+    verdict: defensible
+  - fact: 'The two-person-shop consequence: opening the boring 80% lets the team quote contracts it previously declined, while the model bill does not move.'
+    reader_loses: The concrete business payoff of the gate.
+    verdict: defensible
+  - fact: For code-shipping agents, the five scoring dimensions are intent and decision, execution and artifact, completeness and usefulness, instruction and boundary, and efficiency.
+    reader_loses: The correct evaluation dimensions for the pull-request branch.
+    verdict: needed
+  - fact: The claim that three measurements, one dataset type, and five evals are an afternoon of work whose value compounds each week.
+    reader_loses: A cadence and effort estimate.
+    verdict: defensible
+  - fact: The closing claim that the model will be replaced twice before year-end, while the examiner and its permanent tests survive replacement.
+    reader_loses: A time-bound statement of why the harness matters.
+    verdict: defensible
+  - fact: The closing contrast between a $200 card statement producing a demo or a business, and an agent that cannot break the same thing twice.
+    reader_loses: A memorable economic and recurrence consequence.
+    verdict: defensible
+  - fact: The follow-me-on-X and Telegram promotion, URLs, timestamp, view count, reactions, and replies.
+    reader_loses: Nothing needed to understand or use eval engineering.
+    verdict: defensible
+  retentions:
+  - passage: Everyone is renting the same brain now. A software travel agent answered
+    costs: The opening paragraph; it supplies the concrete hallucination and the 83.9% versus 32.3% contrast that makes evals necessary rather than merely desirable.
+    verdict: earns_place
+  - passage: One company running agents in production changed no model
+    costs: A paragraph; the thermostat metaphor and loops-then-graphs-then-evals sequence define the causal role of a verdict.
+    verdict: earns_place
+  - passage: The graph was the last upgrade that made you faster.
+    costs: Two sentences; they distinguish speed from correctness and make the examiner's role memorable.
+    verdict: earns_place
+  - passage: You will build your first evaluation, get a number
+    costs: The routing and judge-hygiene paragraph; it carries the six structural actions, independent-family rule, rubric form, and objective checks.
+    verdict: earns_place
+  - passage: Tests you invent from imagination protect you from failures
+    costs: The trace-mining paragraph; it gives the 25-trace sample, attribution rule, hidden verifier, and simulation rule.
+    verdict: earns_place
+  - passage: That workflow no longer requires a platform contract.
+    costs: The blind-test paragraph; it supplies the evidence for the no-platform claim and bridges into the installation discussion.
+    verdict: earns_place
+  - passage: Every pull request an agent opens lands in the same human queue.
+    costs: The merge-gate paragraph; the four signals and shadow-mode thresholds are the article's safety case for autonomy.
+    verdict: earns_place
+  - passage: A first suite has three measurements, not twelve
+    costs: The closing checklist paragraph; it gives the reader a bounded starting suite, dataset units, runtime target, and first five evals.
+    verdict: earns_place
+  - passage: You can install one skill, build one eval today
+    costs: One sentence; it turns the synthesis into a concrete next action and is short enough to keep.
+    verdict: earns_place
+  notes: |
+    Changes are required: the piece gives a reader a compact causal map from tool-grounding failures to eval-routed runs, plus a starter trace-mining and merge-gating checklist, but omits executable setup and the code-agent scoring branch.
+
+    Manuscript sections in order: travel-agent failure and case for evals; thermometer, loops, and graphs; score-to-edge routing and judge hygiene; production-trace mining and hidden verification; blind test and skill installation; confidence-gated pull-request merges; starter suite; call to action.
+
+    Source sections in order: opening travel-agent contrast; What eval engineering is; Step 1 · The eval engine you already own; Step 2 · Make the score change the next edge; Step 3 · Turn a failed run into an eval; Step 4 · Let the graph merge its own work; Step 5 · The evals to build this week; The people who go first.
+
+    The manuscript is not source_shaped: it deliberately moves the blind-test and installation material after routing and trace mining. It has a position: correctness is encoded in the evaluator, a verdict must change the next edge, and constraints rather than trust make autonomy safe. The needed omissions are serious utility and scope gaps but do not remove the conceptual argument, so this is not over_compressed; restoring the install/run block, Harbor scaffold and starter prompt, and code-scoring branch repairs it. Every substantive retained passage earns its space, so no section_does_not_pay finding is warranted.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: '- | The gate runs in shadow for at least four hours, stays closed when its verdict disagrees with a human verdict by more than 2%, and samples 1% to 5% of traces. | 1'
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source requires shadow mode to score every pull request for "at least 4 hours of real traffic." The manuscript drops the real-traffic and every-PR conditions, so an idle or partial four-hour run could be treated as sufficient.
+  - severity: major
+    article: eval-engineering
+    locator: '- | A first suite has three measurements, not twelve: faithfulness to tool returns, tool-parameter accuracy, and response quality. | 1'
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source calls these measures "a working default for any agent that calls tools" and then says, "If your agent ships code, score the change instead," using five different dimensions. The manuscript presents the three-measurement prescription without that scope or code-agent exception.
+  scores:
+    claim_support: 4
+    qualification_survival: 3
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every checkable assertion in the manuscript and edition row against the complete pinned extraction; this piece has no separately labelled deck, caption, pull quote, key-ideas box, glossary, or cheat sheet to check. The remaining factual claims, numbers, quotations, and attributions are supported.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: '- | Specific, clean, useful-sounding. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      This standalone body sentence is a verbless adjective fragment, not a
+      list label or caption. It needs a finite verb.
+    suggestion: The answer was specific, clean, and useful-sounding.
+  - severity: major
+    article: eval-engineering
+    locator: '- | All of it invented. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      This standalone sentence has no finite verb. The implied auxiliary does
+      not make the typeset sentence grammatically complete.
+    suggestion: All of it was invented.
+  - severity: major
+    article: eval-engineering
+    locator: '- | Loops, then graphs, then evals. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      This body sentence is a verbless noun-phrase fragment rather than a
+      complete sentence.
+    suggestion: The progression runs from loops to graphs to evals.
+  - severity: major
+    article: eval-engineering
+    locator: '- | Pinning and logging the judge version keeps scores comparable. | 1'
+    category: agreement
+    disposition: fix
+    note: |
+      "Pinning and logging" is a compound subject naming two coordinated
+      actions, so it takes the plural verb "keep."
+    suggestion: Pinning and logging the judge version keep scores comparable.
+  - severity: major
+    article: eval-engineering
+    locator: '- | A coding agent reached 84.6% recall and 82.8% precision, above two dedicated platforms. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      The closing comparison is incomplete: the percentages can exceed the
+      platforms' scores, but the sentence says they are above the platforms
+      themselves.
+    suggestion: A coding agent reached 84.6% recall and 82.8% precision, surpassing the scores of two dedicated platforms.
+  - severity: major
+    article: eval-engineering
+    locator: '- | Three of the four are history or deterministic checks, and exactly one touches the model. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      "History" does not parallel the adjective "deterministic" in this
+      coordination and can read as the idiom "are history." Use the adjective
+      "historical" or recast the phrase.
+    suggestion: Three of the four are historical or deterministic checks, and exactly one touches the model.
+  - severity: minor
+    article: eval-engineering
+    locator: '- | 1% to 5% | 1'
+    category: typography
+    disposition: fix
+    note: |
+      This range is written with "to"; the house rule requires an en dash for
+      ranges.
+    suggestion: 1%–5%
+  - severity: minor
+    article: eval-engineering
+    locator: '- | 300 to 800 cases | 1'
+    category: typography
+    disposition: fix
+    note: |
+      This numeric range uses "to" instead of the required en dash.
+    suggestion: 300–800 cases
+  scores:
+    grammar: 2
+    typography: 3
+    consistency: 4
+  notes: |
+    Changes are required for three verbless body sentences, one agreement error, an incomplete comparison, a nonparallel modifier, and two ranges that use "to" instead of en dashes.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: '- | One company running agents in production changed no model, prompts, or human nudges across successive versions. | 1'
+    repair_from: '- | A software travel agent answered a trip question with an exchange rate to one decimal place, a week''s temperature, and museum hours. | 1'
+    category: running_example
+    disposition: fix
+    note: |
+      The opening's travel-agent trace is abandoned as soon as paragraph two introduces an unnamed production company. Later sections switch again to a voice-agent study, pull requests, and generic suite cases, so no concrete case carries the argument from failure through eval construction and deployment.
+    suggestion: Carry the travel-agent trace through the construction and gate sections, reserving one other case for a single contrast.
+  - severity: major
+    article: eval-engineering
+    locator: '- | verified completion | 2'
+    repair_from: '- | verified completion | 1'
+    category: duplication
+    disposition: fix
+    note: |
+      The phrase appears first in "verified completion terminates the run" and again in "verified completion, where a real signal says done, never the agent's own word for it." Both passages define the same eval, so the later list repeats an earlier example and explanation.
+    suggestion: Define verified completion once, then reference that definition in the first-five list without restating it.
+  - severity: major
+    article: eval-engineering
+    locator: '- | A first suite has three measurements, not twelve: faithfulness to tool returns, tool-parameter accuracy, and response quality. | 1'
+    repair_from: '- | The risky slice stays closed while the boring 80% opens. | 1'
+    category: missing_transition
+    disposition: fix
+    note: |
+      After the detailed runtime and pull-request gate rollout, paragraph seven returns to suite contents and data sizes without saying how this suite feeds the gate. The relationship is inferable, but the jump makes the reader reorient.
+    suggestion: Add a bridge identifying the minimal suite as the gate's input before listing its measurements and cases.
+  scores:
+    order: 4
+    coherence: 3
+    opening: 4
+    ending: 4
+  notes: |
+    The piece moves from a travel-agent hallucination to eval design, platform validation, autonomous gating, and a starter suite, while the opening case is abandoned and verified completion is repeated. Changes are required for the broken running example, duplicated eval explanation, and unbridged return to suite design.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: eval-engineering
+    locator: '- | That layer is the whole distance between an AI that impresses people and an AI that gets paid. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Fourteen sentences use the same copular equation or aphoristic "X is Y" landing: "That layer is the whole distance between an AI that impresses people and an AI that gets paid"; "It is the cheapest line in the stack and the only one nobody can sell you, because it encodes your own definition of correct"; "Eval engineering is the wiring from the reading to the furnace"; "The graph was the last upgrade that made you faster"; "The model is a rental"; "The examiner is yours, and every failure you feed it stays there permanently"; "That feeling is correct"; "A score that never changes behavior is analytics"; "An eval that changes the next edge is engineering"; "Each verdict is a routing decision"; "Attribution is where beginners lose a week"; "The examiner is installed"; "Trust in an agent is an actuarial calculation"; and "Its first five evals are an empty tool result that forces the agent to admit it has no number; a repeated call that fails a loop; a boundary refusal; a handoff-integrity check; and verified completion, where a real signal says done, never the agent's own word for it." The reader hears the equation before the mechanism.
+    suggestion: Cut or consolidate at least half of these equation sentences, retaining only the ones that name a necessary distinction.
+  - severity: blocking
+    article: eval-engineering
+    locator: '- | Search had returned nothing; the model filled the hole and handed its invention over as a fact it had looked up. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Nine sentences use the same semicolon-linked compound or inventory shape: "Search had returned nothing; the model filled the hole and handed its invention over as a fact it had looked up"; "One agent in a loop tries, inspects the return, and tries again; a graph runs independent work side by side"; "Low context recall rejects a handoff; bad tool use retries or swaps a node; hallucination quarantines a branch; schema failure blocks an edge; compliance risk routes to human review; verified completion terminates the run"; "The judge handles semantic calls; plain code checks whether a test passed, a file exists, or state changed"; "The skill starts with 25 complete traces, no more, with good and bad behavior sitting next to each other: a finished normal request; a user-confirmed request; a correction or rephrase; a failed, empty, or repeated tool call; and an external timeout or rate limit"; "The same lookup twice with identical arguments is your loop; a 429 is the dependency's limit unless your agent should recover"; "Above a threshold the change merges itself; below it, a human gets the named failing signal"; "A useful suite holds out 300 to 800 cases and keeps 500 running in under five minutes; a suite longer than a coffee break stops being run"; and "Its first five evals are an empty tool result that forces the agent to admit it has no number; a repeated call that fails a loop; a boundary refusal; a handoff-integrity check; and verified completion, where a real signal says done, never the agent's own word for it." The repeated hinge makes the piece feel assembled from inventories.
+    suggestion: Keep the single routing list that earns its density and recast or cut the remaining semicolon-packed sentences.
+  - severity: major
+    article: eval-engineering
+    locator: '- | A thermometer tells you the room is cold. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      The paragraph stacks thermometer/thermostat, wiring/furnace, return-arrow, and rental/examiner metaphors onto the same eval concept. The heating system maps measurement to action, but the later figures switch systems and decorate rather than clarify.
+    suggestion: Keep one coherent metaphor system, preferably the thermostat and wiring, and remove the later rental and return-arrow figures.
+  - severity: major
+    article: eval-engineering
+    locator: '- | Low context recall rejects a handoff; bad tool use retries or swaps a node; hallucination quarantines a branch; schema failure blocks an edge; compliance risk routes to human review; verified completion terminates the run. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      Six eval-specific labels arrive in one sentence without being defined: "context recall," "handoff," "schema failure," "compliance risk," "verified completion," and the use of "node" and "branch." A competent engineer outside this subfield cannot reliably infer the distinctions from the labels alone.
+    suggestion: Define each term through one concrete trace outcome, or replace the labels with plain-language behavior.
+  - severity: major
+    article: eval-engineering
+    locator: '- | The examiner is installed. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "The examiner is installed. Now the score has to reach the run." is a pair of portentous short sentences built from abstractions; "reach the run" names no operation and the transition loses the article's otherwise concrete voice.
+    suggestion: Replace the pair with one concrete statement showing how the eval result is wired into execution.
+  - severity: major
+    article: eval-engineering
+    locator: '- | You can install one skill, build one eval today, and add another whenever something breaks. | 1'
+    category: weak_close
+    disposition: fix
+    note: |
+      The closing line turns into generic advice. "Today" and "whenever something breaks" are empty motivational language, and the sentence repeats the build-and-add instruction without leaving a new consequence, perspective, or question.
+    suggestion: End on a concrete consequence of wiring an eval to a run, rather than a general call to action.
+  - severity: minor
+    article: eval-engineering
+    locator: '- | That feeling is correct. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This portentous two-word verdict tells the reader that their reaction is correct instead of letting the absence of feedback establish the point.
+    suggestion: Delete the sentence and let the surrounding concrete behavior carry the argument.
+  - severity: minor
+    article: eval-engineering
+    locator: '- | That layer is the whole distance between an AI that impresses people and an AI that gets paid. | 1'
+    category: ai_phrasing
+    disposition: fix
+    note: |
+      "The whole distance" and "the only one" make a universal significance claim that the example and percentages do not establish; the confidence outruns the demonstrated mechanism.
+    suggestion: Qualify the sentence to evals' demonstrated role in separating surface quality from tool-grounded correctness.
+  - severity: minor
+    article: eval-engineering
+    locator: '- | The dataset type sets the unit: `final_response` for the answer, `single_step` for one decision, `trajectory` for the whole path, or `RAG` for retrieval. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      The internal labels and "RAG" are never defined, so the reader must already know the dataset taxonomy to understand the distinctions.
+    suggestion: Spell out RAG and give one short example for each dataset type before using the field names.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 3
+  notes: |
+    I heard a vivid, technically grounded voice that repeatedly turns its argument into copular aphorisms and semicolon-packed inventories.
+    Changes required because those two shape runs dominate the rhythm, several transitions revert to abstract or undefined terminology, and the final sentence settles for generic encouragement.

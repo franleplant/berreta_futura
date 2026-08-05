@@ -1,0 +1,272 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: from-gpt2-to-kimi3
+    locator: '- | DeltaNet makes the write corrective. | 1'
+    repair_from: '- | DeltaNet makes the write corrective. | 1'
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source scales DeltaNet's correction by a learned per-token write strength,
+      beta = sigmoid(w_beta(x)). Only beta=1 gives exact replacement; smaller values
+      interpolate with the existing state. Without that qualifier, the manuscript's
+      claim that the old association is removed and the new one takes its place is
+      misleading.
+    suggestion: Name beta and explain that exact replacement occurs only at full write strength.
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: '- | KimiK3 keeps this memory system and adds other ways to retrieve and spend capacity. | 1'
+    repair_from: '- | KimiK3 keeps this memory system and adds other ways to retrieve and spend capacity. | 1'
+    category: lost_essential_fact
+    disposition: fix
+    note: |
+      The source's KimiK3 account includes blockwise Attention Residuals every
+      12 decoder layers, forming eight depth blocks across the 23 macrocycles.
+      Learned query-key weights selectively retrieve earlier residual states,
+      addressing residual dilution and hidden-state growth, with a stated
+      latency/compute trade-off. Omitting AttnRes leaves out a central retrieval
+      mechanism in the manuscript's own memory argument and makes the KimiK3
+      description incomplete.
+    suggestion: Add a concise AttnRes paragraph covering its frequency, selective depth retrieval, and purpose.
+  - severity: major
+    article: from-gpt2-to-kimi3
+    repair_from: '- | The useful question is what each model does with memory: what it stores, how it updates that store, and how it retrieves information after the store fills. | 1'
+    category: source_shaped
+    disposition: fix
+    note: |
+      The manuscript's implicit sequence is scale/question, GPT-2 and KV cache,
+      linear attention, DeltaNet, gating and Kimi Linear, KimiK3, conclusion.
+      That is the source's retained subject order, even though the manuscript
+      announces a memory lens. A faithful synthesis needs a distinct problem-led
+      structure rather than the source's lineage spine.
+    suggestion: Make store, update, forgetting, and retrieval the actual section architecture, with each model introduced under the limitation it solves.
+  omissions:
+  - fact: The GPT-2 code-level module map (wte/wpe embeddings, dropout, h block loop, ln_f, lm_head) and pre-LayerNorm residual order
+    reader_loses: An implementation-level mapping from the prose to the source's shown baseline code; the conceptual pipeline remains.
+    verdict: defensible
+  - fact: 'The baseline dimensions: a 50,304 padded vocabulary from 50,257, 12 layers, 12 heads, and 768-dimensional embeddings'
+    reader_loses: The concrete dimensions needed to reproduce the roughly 124M-parameter baseline, but not the memory argument.
+    verdict: defensible
+  - fact: The attention kernel's q/k/v head reshaping, 1/sqrt(d) scaling, causal mask, softmax, dropout, and output projection
+    reader_loses: Low-level mechanics behind causal self-attention; no conceptual claim in the manuscript depends on them.
+    verdict: defensible
+  - fact: 'The source''s FlashAttention caveat: its 2020 release changed the materialized O(N²) picture, while older reference decoding often recomputed history without a KV cache'
+    reader_loses: Historical complexity context and the distinction between training and uncached autoregressive implementations; the manuscript makes no contrary claim.
+    verdict: defensible
+  - fact: The decode traffic detail of two ND HBM reads and two 1D writes per step while the KV cache grows O(N)
+    reader_loses: The quantitative reason bandwidth becomes the bottleneck; the manuscript still gives the directional explanation.
+    verdict: defensible
+  - fact: Linear attention's explicit cache pair (S, z), updates S += k @ v and z += k, and output normalization q @ S / (q @ z)
+    reader_loses: The exact fixed-state recurrence and the separate normalizer vector, but the manuscript preserves the high-level attention contract.
+    verdict: defensible
+  - fact: DeltaNet's learned per-token write strength beta = sigmoid(w_beta(x)), scaling u = beta * (v - v_old)
+    reader_loses: Without beta, the corrective write is incorrectly understood as an unconditional exact replacement rather than a partial update.
+    verdict: needed
+  - fact: The DeltaNet readback derivation (k @ k.T) v and the learned Q/K pointer interpretation
+    reader_loses: Why key normalization recovers a stored value and how queries point to associations; the result is still stated.
+    verdict: defensible
+  - fact: 'The parallel-prefill treatment: DeltaNet''s reparameterized recurrence, chunkwise formulation, C=1 and C=N endpoints, typical C=64/128, UMMA, and the 2Ld^2 + 2LCd cost split'
+    reader_loses: How corrective updates become hardware-efficient and how chunk size trades within-chunk work against state work; this is implementation context outside the memory-level thesis.
+    verdict: defensible
+  - fact: Mamba-2's explicit alpha * S_old + S_new update and Gated Delta's cumulative product of decay factors across timesteps
+    reader_loses: The exact bounded-decay and multiplicative-prefix implementation, while the selective-versus-global forgetting distinction remains.
+    verdict: defensible
+  - fact: 'The historical hybrid step combining Gated DeltaNet with Mamba and Kimi Linear''s three named changes: interleaved MLA, MoE replacing the MLP, and the alpha projection'
+    reader_loses: Lineage and an explicit checklist, though the surrounding progression covers the resulting mechanisms.
+    verdict: defensible
+  - fact: KimiK3's SiTU activation, including its tanh/beta gate formula, and the caveat that an unfused implementation is nearly 3x slower
+    reader_loses: One activation change and its speed trade-off; neither is needed for the manuscript's memory thesis.
+    verdict: defensible
+  - fact: MLA query LoRA, the separate output-gating refinement, and the down/up projections around the shared experts
+    reader_loses: The remaining low-level KimiK3 refinements needed for full reproduction, but not the progression being synthesized.
+    verdict: defensible
+  - fact: Blockwise Attention Residuals every 12 layers, with learned query-key mixing of earlier residual states, eight blocks, and the stated roughly 2% latency and 1.25x compute trade-off
+    reader_loses: A central KimiK3 retrieval and capacity mechanism, including how it compensates for information lost by constant-state KDA.
+    verdict: needed
+  - fact: The source's final comparative claim that attention is the most effective selective-read mechanism
+    reader_loses: The source's strongest justification for periodic MLA, though the manuscript still explains that MLA supplies full-context retrieval.
+    verdict: defensible
+  retentions:
+  - passage: Twenty-two thousand five hundred and eighty. That's how many GPT-2 (2019) models fit inside KimiK3 (2026).
+    costs: A short scale hook that establishes the seven-year and 22,580-to-one stakes; it earns its space.
+    verdict: earns_place
+  - passage: 'The useful question is what each model does with memory:'
+    costs: One sentence that supplies the manuscript's organizing lens and gives the lineage a reason to be read.
+    verdict: earns_place
+  - passage: 'The MoE has 898 experts: two shared experts process every token'
+    costs: A compact set of concrete capacity numbers that makes sparse routing legible.
+    verdict: earns_place
+  - passage: In essence, a fixed-capacity associative memory (fixed dimensions) needs an eviction policy
+    costs: A restatement of the earlier finite-cache diagnosis; the sentence could instead carry the omitted AttnRes mechanism.
+    verdict: cut
+  notes: |
+    Changes required because the DeltaNet paragraph overstates exact replacement, KimiK3 omits AttnRes, and the faithful synthesis follows the source's subject order.
+    The two needed omissions are local repairs rather than evidence of piece-wide over-compression; the other cuts are defensible implementation or historical detail. The final eviction restatement is the only cut-worthy retention, so no section-level dead weight finding is needed. The manuscript has a real position in arguing that each capacity increase answers a concrete memory limitation, and it is shorter than its source.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: '- | In essence, a fixed-capacity associative memory (fixed dimensions) needs an eviction policy, since a purely additive linear operation eventually adds interference once at capacity. | 1'
+    category: unreached_conclusion
+    disposition: fix
+    note: |
+      The extraction's final conclusion adds that learned selection such as gating, routing, or decay is necessary, and that attention is the most effective selective-read mechanism. The manuscript ends before carrying either claim.
+  scores:
+    claim_support: 5
+    qualification_survival: 4
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked the title, body, and labelled furniture against the pinned extraction; every claim present is supported, but the piece omits the extraction's final prescriptive conclusion.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: '- | ali works on inference at Baseten and studies engineering at the University of Waterloo. | 1'
+    category: capitalisation
+    disposition: fix
+    note: |
+      The author note begins with the lowercase name "ali". This is editor-written
+      furniture, so the sentence-initial proper name must be capitalised.
+    suggestion: Ali works on inference at Baseten and studies engineering at the University of Waterloo.
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: '- | The baseline model is about 124 million parameters. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      The copula "is" incorrectly makes "parameters" a complement of "model".
+      Use a possessive verb to state the parameter count.
+    suggestion: The baseline model has about 124 million parameters.
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: '- | Each block applies causal self-attention and an MLP through residual connections, then a final hidden state is mapped to vocabulary logits. | 1'
+    category: punctuation
+    disposition: fix
+    note: |
+      The comma before "then" joins two independent clauses without a
+      coordinating conjunction.
+    suggestion: Each block applies causal self-attention and an MLP through residual connections, and then a final hidden state is mapped to vocabulary logits.
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: '- | In essence, a fixed-capacity associative memory (fixed dimensions) needs an eviction policy, since a purely additive linear operation eventually adds interference once at capacity. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      The reduced clause "once at capacity" grammatically attaches to the
+      additive operation, which is not the thing with a capacity. State the
+      memory or state explicitly.
+    suggestion: In essence, a fixed-capacity associative memory (fixed dimensions) needs an eviction policy, since a purely additive linear operation eventually adds interference once the memory reaches capacity.
+  scores:
+    grammar: 2
+    typography: 4
+    consistency: 4
+  notes: |
+    Changes required because the author note is uncapitalised, the parameter-count
+    sentence uses the wrong predicate, one sentence contains a comma splice, and
+    the closing capacity clause dangles. The opening number phrase reads as an
+    intentional rhetorical fragment, so it is not filed.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: '- | KimiK3 has 2.8 trillion, roughly the same as 22,580 GPT-2 models. | 1'
+    repair_from: '- | Twenty-two thousand five hundred and eighty. | 1'
+    category: duplication
+    disposition: editor_decision
+    note: |
+      The scale comparison appears twice: "Twenty-two thousand five hundred and eighty." in the opening and "KimiK3 has 2.8 trillion, roughly the same as 22,580 GPT-2 models." in the GPT-2 paragraph. The later occurrence repeats an already established number.
+    suggestion: Keep the 22,580 figure in the opening and cut the later numerical restatement.
+  scores:
+    order: 5
+    coherence: 4
+    opening: 5
+    ending: 5
+  notes: |
+    The piece advances cleanly from GPT-2's KV cache through linear attention and gating to KimiK3's hybrid memory, but it repeats the 22,580 scale figure.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: '- | Twenty-two thousand five hundred and eighty. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The opener is a standalone number; until the next sentence, the reader does not know what is being counted. It creates suspense by withholding the comparison rather than giving it a first foothold.
+    suggestion: Put the comparison and its object in the first sentence.
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: '- | GPT-2 is a decoder-only architecture. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Five main clauses use the equation-shaped "X is Y" frame: "GPT-2 is a decoder-only architecture.", "That storage is the KV cache.", "The baseline model is about 124 million parameters.", "The trade-off is expressiveness.", and "The feature map is a less expressive approximation of the softmax kernel, so practical accuracy loss depends on the architecture and workload." Three are enough for a major repetition finding; the cadence makes the explanation sound catalogued. The shape is the author's own, so the remedy is editorial.
+    suggestion: Recast at least two of the five equation-shaped sentences as clauses inside the surrounding mechanism.
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: '- | Each block applies causal self-attention and an MLP through residual connections, then a final hidden state is mapped to vocabulary logits. | 1'
+    repair_from: '- | GPT-2 is a decoder-only architecture. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      The opening architecture paragraph stacks "decoder-only", "causal self-attention", "MLP", "residual connections", "hidden state", "vocabulary logits", and "autoregressive decoding" without defining them. A competent engineer outside this subfield must already know the vocabulary to reach the KV-cache point.
+    suggestion: Add a plain-language gloss before introducing the transformer stack.
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: '- | Softmax attention applies its nonlinearity after the q·k product, coupling each query to every key. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "q", "k", "ELU+1", "D×D", and "re-associable" arrive as notation rather than explained ideas. The paragraph's central claim about compressing memory is therefore gated by terminology a non-specialist cannot decode.
+    suggestion: Define q and k as query and key vectors before using the notation.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: '- | At a high level, both methods make scores non-negative, divide by their sum, and compute a weighted average of values. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "At a high level" is throat-clearing; the three following verbs already state the comparison. It makes a precise mechanism sound like a summary of a summary.
+    suggestion: Delete the 'At a high level' preface.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: '- | The trade-off is expressiveness. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "The trade-off is expressiveness" is a definite-article equation with an abstract noun; the next sentence carries the actual claim about accuracy loss.
+    suggestion: State the concrete accuracy cost directly.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: '- | Gated MLA controls how much of each retrieved feature reaches the residual stream through element-wise multiplication with a gate projected from the input. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      The late architecture inventory assumes "macrocycle", "residual stream", "latent space", and "FLOPs" without explaining why those details matter. The acronyms are expanded, but the reader still gets a component list rather than a usable picture.
+    suggestion: Add plain-language glosses for macrocycle and FLOPs at first use.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: '- | Scaling laws remain relevant, but capacity must be added in the right place and in a form the system can use. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      The sentence stacks abstractions—"scaling laws", "capacity", "the right place", and "a form the system can use"—without naming an architectural choice. It smooths the transition but adds little beyond the concrete limitation in the next sentence.
+    suggestion: Name the specific capacity placement the paragraph means.
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: '- | In essence, a fixed-capacity associative memory (fixed dimensions) needs an eviction policy, since a purely additive linear operation eventually adds interference once at capacity. | 1'
+    category: weak_close
+    disposition: fix
+    note: |
+      "In essence" introduces a restating summary. The fixed-capacity/interference claim has already appeared in "A finite cache must overwrite or combine with information already stored." and "Additive updates eventually interfere"; the final sentence repeats the premise instead of leaving a new implication.
+    suggestion: End on the architectural consequence of periodic full-attention retrieval.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 3
+  notes: |
+    I heard a technically confident synthesis that keeps memory concrete through a sustained store-and-forgetting metaphor, but the middle turns into equation-shaped cataloguing and assumes more specialist vocabulary than it earns; the final line repeats an earlier premise instead of opening a new perspective.
