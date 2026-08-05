@@ -1,0 +1,213 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: '- | Everyone is renting the same brain now. | 1'
+    repair_from: '- | Everyone is renting the same brain now. | 1'
+    category: lost_essential_fact
+    disposition: fix
+    note: |
+      The source frames the entire argument as turning a roughly $200/month model
+      into a $200,000 system. The manuscript keeps the rental metaphor but drops
+      both figures and the economic contrast, so the reader loses the stakes that
+      make eval engineering the subject of the piece.
+    suggestion: Restore the $200 model versus $200,000 system framing in the opening.
+  - severity: major
+    article: eval-engineering
+    locator: Install the examiner | The category responded by moving into the terminal. | 1
+    repair_from: Install the examiner | The category responded by moving into the terminal. | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source gives the exact Claude Code installation commands:
+      `/plugin marketplace add langchain-ai/langchain-skills` and
+      `/plugin install langchain-skills@langchain-skills`. The manuscript only
+      says to add the marketplace and install the skill, forcing a reader who
+      wants to reproduce the setup back to the source.
+    suggestion: Carry the two exact Claude Code commands into the installation section.
+  - severity: major
+    article: eval-engineering
+    locator: Install the examiner | AWS's kit scaffolds a project with `evalkit init my-agent-evaluation`, then runs `/evalkit.plan` | 1
+    repair_from: Install the examiner | AWS's kit scaffolds a project with `evalkit init my-agent-evaluation`, then runs `/evalkit.plan` | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source includes the actual `/evalkit.plan` invocation and its instruction
+      to evaluate `./my_agent` for grounding, followed by the phase commands.
+      The manuscript lists the phase names but not the plan's required arguments,
+      so it does not give a reader enough to execute the first phase.
+    suggestion: Include the concrete `/evalkit.plan Evaluate my agent at ./my_agent ...` invocation or an equivalent complete command.
+  - severity: major
+    article: eval-engineering
+    locator: ''
+    repair_from: '- | Everyone is renting the same brain now. | 1'
+    category: over_compressed
+    disposition: fix
+    note: |
+      The synthesis remains valuable and is not source-shaped, but the combination
+      of the missing economic frame and the missing executable installation and
+      planning commands cuts away utility the source explicitly promises as a
+      complete build. Restoring those two pieces would bring the condensation back
+      above the bone.
+    suggestion: Restore the economic stakes and the two concrete command details before publication.
+  omissions:
+  - fact: The source's explicit contrast between a roughly $200/month model and a $200,000 system
+    reader_loses: The economic stakes and the reason the examiner, rather than the model, is the product.
+    verdict: needed
+  - fact: The exact Claude Code commands `/plugin marketplace add langchain-ai/langchain-skills` and `/plugin install langchain-skills@langchain-skills`
+    reader_loses: A reader using Claude Code cannot reproduce the installation without returning to the source.
+    verdict: needed
+  - fact: The full `/evalkit.plan Evaluate my agent at ./my_agent for grounding and ...` invocation
+    reader_loses: The reader knows the phase name but not the concrete input needed to start the AWS kit.
+    verdict: needed
+  - fact: Arize AX's 74.4% recall and 91.0% precision in the blind test
+    reader_loses: One comparison point and the fact that the cleanest precision belonged to a different system.
+    verdict: defensible
+  - fact: The four-week rollout by LangChain, Galileo, AWS under Apache 2.0, and Arize
+    reader_loses: The timing and breadth of the category's move into coding-agent skills.
+    verdict: defensible
+  - fact: The source's explanation that the evalkit commands write successive phases into an `eval/` folder
+    reader_loses: Some understanding of how the phases pass artifacts between one another.
+    verdict: defensible
+  - fact: The five-step loop diagram's explicit `improve the ...` continuation
+    reader_loses: A compact visual statement of the mine-failure-eval-improve cycle.
+    verdict: defensible
+  - fact: The anecdote of approving and merging around 1,500 pull requests without looking at a line of code
+    reader_loses: A vivid personal example of constraint-based trust.
+    verdict: defensible
+  - fact: 'The source''s closing three rules: measure the path, make verdicts change the next edge, and turn every failure into a permanent test'
+    reader_loses: A concise final mnemonic, though the manuscript states each principle throughout.
+    verdict: defensible
+  - fact: The X and Telegram follow prompts and URLs
+    reader_loses: Promotional information unrelated to the engineering argument.
+    verdict: defensible
+  retentions:
+  - passage: Everyone is renting the same brain now.
+    costs: Opening space, but it establishes the central model-versus-harness premise that the rest of the piece develops.
+    verdict: earns_place
+  - passage: A software travel agent answered a simple trip question
+    costs: The opening example occupies several sentences, but it makes the faithfulness problem concrete and supplies the 83.9% versus 32.3% evidence.
+    verdict: earns_place
+  - passage: A better model would not have caught this.
+    costs: A short transition, but it identifies the missing evaluative layer and gives the piece its thesis.
+    verdict: earns_place
+  - passage: The useful order is simple. Loops came first, then graphs, then evals.
+    costs: A framing paragraph, but it gives the reader a causal sequence for the system architecture.
+    verdict: earns_place
+  - passage: That wiring turns verdicts into routing decisions.
+    costs: The routing examples take space, but they show exactly what it means for an eval to change the next edge.
+    verdict: earns_place
+  - passage: 'The choice is practical: one set helps write the examiner'
+    costs: A synthesis paragraph, but it distinguishes the jobs of the three tools and prevents a misleading one-tool prescription.
+    verdict: earns_place
+  - passage: The cautious rollout is shadow mode for at least four hours
+    costs: Operational rollout guidance, but it turns the autonomy claim into a safe, bounded procedure.
+    verdict: earns_place
+  - passage: What survives model replacement is the examiner
+    costs: The conclusion restates the thesis, but it connects permanent tests, routing rules, and merge history into the piece's lasting takeaway.
+    verdict: earns_place
+  notes: |
+    Changes required because the synthesis gives a reader a coherent, reordered build
+    of eval engineering, but omits the source's economic stakes and several commands
+    needed to reproduce the setup. The source sections run Step 1 install, Step 2
+    score routing, Step 3 failed runs, Step 4 autonomous merging, Step 5 suite design;
+    the manuscript deliberately moves score routing before installation, so it is
+    not source-shaped. It also has a clear position: the examiner and its feedback
+    loop, not the rented model, determine whether the system is trustworthy.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: '- | A company that changed no model, prompts, or human nudges across successive versions of its agent still saw scores improve across every dimension. | 1'
+    repair_from: '- | A company that changed no model, prompts, or human nudges across successive versions of its agent still saw scores improve across every dimension. | 1'
+    category: invented_claim
+    disposition: fix
+    note: |
+      The source says that scores "moved across every dimension" after only the evals changed. It does not say that every score improved; the manuscript strengthens movement into improvement.
+  scores:
+    claim_support: 4
+    qualification_survival: 4
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every assertion and furniture element in the manuscript against the pinned extraction; I could not check any claim against material outside that extraction.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    No mechanics errors were found; sentence openings, headings, grammar, punctuation, typography, and numeric styles are consistent.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: Install the examiner around the case | A new platform is optional. | 1
+    repair_from: Make the score change the run | Optimize against a judge long enough and the agent learns to look right rather than be right. | 1
+    category: missing_transition
+    disposition: fix
+    note: |
+      The piece moves from judge design and evaluator gaming directly into a catalogue of platforms and installation commands. The reader is not told why tooling follows, or how these tools operationalize the examiner just defined.
+    suggestion: Add a bridge explaining that, once the judge and routing rules are specified, the next decision is how to install that examiner against real production cases.
+  - severity: major
+    article: eval-engineering
+    locator: The evals that repay the afternoon | Install one skill, pull 25 traces, and build one eval today. | 1
+    repair_from: 'Turn failures into permanent tests | A useful first set contains 25 complete traces with good and bad behavior beside each other: a normal request, a user-confirmed success, a correction or rephrasing, a failed or repeated tool call, and an external failure such as a timeout or rate limit. | 1'
+    category: duplication
+    disposition: fix
+    note: |
+      The prescribed number of traces appears in the testing section and again in the closing call to action. The second occurrence repeats an earlier concrete instruction without adding structure.
+    suggestion: Keep the detailed 25-trace prescription in the testing section and make the closing call to action refer to starting from production traces without repeating the number.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 5
+    ending: 5
+  notes: |
+    I verified the article's argument order, opening, transitions, repetition, referents, running example, headings, furniture, and ending; the main repairs are the tooling transition and repeated trace count.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: eval-engineering
+    locator: The useful order is simple. Loops came first, then graphs, then evals. | The useful order is simple. | 1
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      "The useful order is simple" is throat-clearing before the actual sequence. Start with "Loops came first, then graphs, then evals" so the paragraph begins with its claim.
+    suggestion: Cut the opener and begin with the sequence.
+  - severity: minor
+    article: eval-engineering
+    locator: 'The evals that repay the afternoon | The dataset type matters: `final_response` measures the answer alone, `single_step` measures one decision, `trajectory` measures the whole path, and RAG measures retrieval quality. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "RAG" is specialized terminology that the piece does not define, unlike the surrounding dataset types.
+    suggestion: Spell out retrieval-augmented generation and explain what it measures at first use.
+  - severity: minor
+    article: eval-engineering
+    locator: Let safe work merge itself | The constraint is the product. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "The constraint is the product" is a portentous definite-article equation that sounds like a slogan rather than an explanation.
+    suggestion: Replace it with the concrete point that the gate's constraints determine what the system can safely automate.
+  - severity: minor
+    article: eval-engineering
+    locator: 'The evals that repay the afternoon | What survives model replacement is the examiner: the failures turned into tests, the rules that change the next edge, and the track record that lets a machine merge its own work. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      The sentence stacks abstractions into a balanced summary, making the conclusion sound more declarative than observed.
+    suggestion: Name the specific artifacts that remain useful after a model swap, then let the final instruction carry the close.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 3
+  notes: |
+    This is a confident, technically grounded synthesis with a human voice, though a few slogan-like abstractions and one undefined acronym interrupt its otherwise concrete movement.

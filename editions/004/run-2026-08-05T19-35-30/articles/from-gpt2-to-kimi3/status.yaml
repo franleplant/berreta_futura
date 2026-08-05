@@ -1,0 +1,26 @@
+piece: from-gpt2-to-kimi3
+rounds:
+- round: 1
+  words: 993
+  loop_findings: 5
+  all_findings: 10
+- round: 2
+  words: 998
+  loop_findings: 1
+  all_findings: 7
+- round: 3
+  words: 991
+  loop_findings: 1
+  all_findings: 5
+state: rounds_exhausted
+open_findings:
+- lens: worth
+  severity: major
+  article: from-gpt2-to-kimi3
+  locator: '- | Twenty-two thousand five hundred and eighty GPT-2 models fit inside KimiK3. | 1'
+  repair_from: '- | Twenty-two thousand five hundred and eighty GPT-2 models fit inside KimiK3. | 1'
+  category: source_shaped
+  disposition: fix
+  note: |
+    The manuscript follows the extraction's subject order almost exactly: GPT-2, linear attention, DeltaNet's memory limitation, chunked DeltaNet, gated DeltaNet, Kimi Linear, KimiK3's components, AttnRes, and the conclusion. Its storage-limits thesis is useful, but the structure does not reorganize the material around that thesis, so the synthesis performs little editorial work on shape.
+  suggestion: Reorder around the governing problem—finite-state memory, update and eviction mechanisms, periodic full retrieval, sparse capacity, and depth-wise retrieval—while preserving the technical progression inside those sections.

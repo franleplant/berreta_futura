@@ -23,46 +23,18 @@ profundity in that section is one of ours.
 
 ## Procedure
 
-Step 1 is mandatory and comes first. Do it in your working notes, in your
-reply, before you draft a sentence. None of it goes into the manuscript.
-
-1. **Concept graph.**
-   a. For each article, write its central claim in one sentence. Not its
-      subject. Its claim.
-   b. Write at least three tensions and at least two throughlines. A tension is
-      where two articles would disagree if they met. A throughline is an
-      assumption several of them make without arguing for it, and it must be
-      written so that it could be false: "context quality now matters more than
-      model choice" is a throughline; "agents need context" is a category name
-      and does not count.
-   c. Write the single idea that emerges only from the collision: the edition's
-      emergent narrative. This is the editorial's thesis. It comes out of the
-      tensions, and the throughlines are what it has to contradict, qualify, or
-      earn, so name the throughline your thesis argues with.
-   d. Name the articles the thesis needs, and say for each what it contributes.
-   Test the thesis before you continue: if it could have been written from one
-   article alone, or if it is a category name for what the articles have in
-   common, it fails. Go back to (b).
-2. Draft the essay as an argument for that thesis. Cold open on something
-   concrete. Move by reasoning, not by article order.
-3. **Re-run the count against the finished draft.** Step 1d was a prediction.
-   The draft is the evidence, and nobody has ever checked one against the other:
-   the last editorial's graph claimed its thesis required four pieces, one of
-   which never reached the manuscript, and the piece shipped anyway. Go through
-   your draft sentence by sentence and mark which article's material each one
-   rests on. An article is required only if deleting it from the edition would
-   leave a sentence here unsupported or pointless; sharing a topic is not
-   contributing. Then check three numbers and put them in your working notes.
-   - Fewer than three articles required: the thesis is not emergent. Return to
-     step 1b and rebuild it, do not patch the draft.
-   - An article named in step 1d that the finished draft does not actually rest
-     on, or that is not in the manuscript at all: your graph was wrong. Recount.
-   - More than a quarter of the body words resting on one article: this is that
-     article's summary in an editorial's hat, whatever its prose is like.
-     `edition` files it at `blocking` and the 004 rerun editorial shipped at 35%.
-     Rebuild from a tension that article is only one side of.
+1. Read every article. For each, hold its central claim, not its subject.
+2. Find what the edition produces that no single piece does: where two articles
+   would disagree if they met, and what several assume without arguing for it.
+   The editorial's argument comes from there.
+3. Write it as an argument. Cold open on something concrete. Move by reasoning,
+   not by article order.
 4. Cut to length, then edit with the method in `docs/WRITING_RULES.md` and run
    its final pass.
+
+You choose the argument. Nothing here prescribes how many articles it should
+rest on or how the material should be distributed between them: an argument that
+needs two pieces and uses them well beats one assembled to satisfy a quota.
 
 ## Hard rules
 
@@ -116,10 +88,9 @@ End your reply with a line containing exactly:
 
     <!-- SCRATCH: not part of the manuscript -->
 
-and put your working notes below it: the concept graph (the claim each piece
-contributed, the tensions and throughlines between them, and the emergent claim
-you drew from those edges), and step 3's recount against the finished draft with
-its three numbers. Everything above that line is the
+and put your working notes below it: the claim each piece makes, the tensions
+and shared assumptions you found between them, and how you got from those to the
+argument you wrote. Everything above that line is the
 manuscript and is written to disk as it stands; everything below it is stripped
 before the file is written and is never shown to a judge or to a reader.
 
@@ -137,11 +108,9 @@ detail. The editorial meets five.
 
 - `worth` does not run here, because the editorial has no source of its own.
   `edition` asks the harder version: does this say anything no single article
-  says. `single_source_editorial` at `blocking` when more than a quarter of your
-  body words derive from one article, `thin_derivation` when two or more
-  articles contributed nothing, `prose_table_of_contents` at `blocking` when the
-  argument amounts to "this issue has pieces about X" or when three pieces are
-  introduced in sequence.
+  says, and `prose_table_of_contents` at `blocking` when the argument amounts to
+  "this issue has pieces about X" or when three pieces are introduced in
+  sequence.
 - `evidence` fact-checks the editorial against the edition's own manuscripts:
   every claim here must be supported by a piece in this issue. `shape` judges
   order, opening and ending. `mechanics` reads the English as typeset. `craft`

@@ -1,0 +1,16 @@
+piece: frontier-lab-agent-intrusion
+rounds:
+- round: 1
+  words: 1244
+  loop_findings: 4
+  all_findings: 6
+- round: 2
+  words: 1279
+  loop_findings: 10
+  all_findings: 10
+- round: 3
+  words: 1223
+  loop_findings: 0
+  all_findings: 5
+state: clean
+open_findings: []

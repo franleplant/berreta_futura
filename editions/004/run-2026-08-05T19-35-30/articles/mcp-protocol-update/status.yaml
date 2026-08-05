@@ -1,0 +1,88 @@
+piece: mcp-protocol-update
+rounds:
+- round: 1
+  words: 856
+  loop_findings: 5
+  all_findings: 8
+- round: 2
+  words: 923
+  loop_findings: 3
+  all_findings: 6
+- round: 3
+  words: 861
+  loop_findings: 7
+  all_findings: 11
+state: rounds_exhausted
+open_findings:
+- lens: worth
+  severity: major
+  article: mcp-protocol-update
+  locator: In the 2025-11-25 protocol, a client began with an `initialize` handshake. | In the 2025-11-25 protocol, a client began with an `initialize` handshake. | 1
+  repair_from: In the 2025-11-25 protocol, a client began with an `initialize` handshake. | In the 2025-11-25 protocol, a client began with an `initialize` handshake. | 1
+  category: lost_operational_detail
+  disposition: fix
+  note: |
+    The source gives the concrete POST /mcp requests, JSON-RPC bodies, Mcp-Session-Id header, and the stateless 2026-07-28 replacement request. The manuscript names the headers and methods but omits the exchanges a reader would need when migrating an implementation.
+  suggestion: Retain one compact before-and-after request pair, including the endpoint, headers, and representative JSON body.
+- lens: worth
+  severity: major
+  article: mcp-protocol-update
+  locator: Removing protocol state does not remove application state. | A server can mint an explicit handle, such as a `basket_id` or `browser_id`, and have the model pass it back as an ordinary argument on later calls. | 1
+  repair_from: Removing protocol state does not remove application state. | A server can mint an explicit handle, such as a `basket_id` or `browser_id`, and have the model pass it back as an ordinary argument on later calls. | 1
+  category: lost_operational_detail
+  disposition: fix
+  note: |
+    The source's create_basket() then add_item(basket_id: "b_123", sku: …) worked example shows exactly how state is threaded across calls. Without it, the pattern is understandable but less useful as an implementation reference.
+  suggestion: Include the two-call basket example or an equivalent compact pair of tool calls.
+- lens: worth
+  severity: major
+  article: mcp-protocol-update
+  locator: Tasks move out of the core and become an extension. | Tasks move out of the core and become an extension. | 1
+  repair_from: Tasks move out of the core and become an extension. | Tasks move out of the core and become an extension. | 1
+  category: lost_operational_detail
+  disposition: fix
+  note: |
+    The source specifies that the client advertises the Tasks extension before the server decides whether a call becomes a task. The manuscript lists the task methods but omits this prerequisite, leaving an implementer with an incomplete lifecycle.
+  suggestion: State that clients advertise the extension and servers then decide when to return a task handle.
+- lens: worth
+  severity: major
+  article: mcp-protocol-update
+  repair_from: The 2026-07-28 release candidate removes MCP’s protocol-level session, so a remote server that needed sticky sessions and a shared session store can run behind a plain round-robin load balancer. | The 2026-07-28 release candidate removes MCP’s protocol-level session, so a remote server that needed sticky sessions and a shared session store can run behind a plain round-robin load balancer. | 1
+  category: source_shaped
+  disposition: fix
+  note: |
+    The manuscript follows the source's subject sequence almost exactly: stateless transport, explicit application handles, elicitation, routing and caching, extensions, Tasks, authorization, deprecations, schemas, governance, and timeline. That is acceptable for a faithful edit, but this is labeled faithful_synthesis and supplies no reordering or other structural editorial work.
+  suggestion: Reorganize around implementer decisions or migration tasks, or explain a distinct ordering that serves the reader.
+- lens: shape
+  severity: major
+  article: mcp-protocol-update
+  locator: '- | Extensions now have reverse-DNS identifiers, negotiation in the capabilities map, delegated maintainers, their own repositories, and a path from experimental to official. | 1'
+  repair_from: '- | Those transport changes also make traffic easier to operate. | 1'
+  category: missing_transition
+  disposition: fix
+  note: |
+    The piece moves from transport operations into extensions, then into tasks,
+    authorization, deprecations, and schemas as an unmarked feature catalogue.
+    The central stateless-session argument becomes difficult to track once this
+    sequence begins.
+  suggestion: Add a clear signpost that the piece is leaving the core transport changes and surveying the remaining specification updates.
+- lens: craft
+  severity: major
+  article: mcp-protocol-update
+  locator: '- | Extensions now have reverse-DNS identifiers, negotiation in the capabilities map, delegated maintainers, their own repositories, and a path from experimental to official. | 1'
+  category: dead_words
+  disposition: fix
+  note: |
+    This is an abstraction stack and inventory: several institutional properties arrive in one balanced list without showing what any of them changes for a reader.
+  suggestion: |
+    Cut the list to the extension changes that alter implementation or governance, and connect each to its consequence.
+- lens: craft
+  severity: major
+  article: mcp-protocol-update
+  locator: '- | Three older features are deprecated: Roots moves to tool parameters, resource URIs, or server configuration; Sampling moves to direct LLM-provider integration; and Logging moves to `stderr` for stdio transports or OpenTelemetry for structured observability. | 1'
+  category: dead_words
+  disposition: fix
+  note: |
+    The sentence is a changelog with no reader in the room: three feature migrations, separated by semicolons, ask the reader to decode a policy inventory rather than follow an argument.
+  suggestion: |
+    Split the sentence and state the practical migration consequence for each deprecated feature.
