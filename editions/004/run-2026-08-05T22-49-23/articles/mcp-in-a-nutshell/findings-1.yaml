@@ -1,0 +1,165 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | Servers expose three core primitives. | 1'
+    repair_from: '- | Clients discover them with methods such as `tools/list` and retrieve or execute them with methods such as `resources/read` and `tools/call`. | 1'
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The source's central worked example includes the complete server/discover,
+      tools/list, tools/call, and subscriptions/listen JSON-RPC exchanges, including
+      _meta, inputSchema, arguments, response content, subscription IDs, and the
+      notification refresh cycle. The manuscript names several methods but removes
+      the concrete fields and exchanges a reader would need to implement or debug
+      the protocol, so it loses the source's main operational teaching value.
+    suggestion: Carry at least one compact request/response exchange and the essential fields for discovery, tool execution, and notifications.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | The data layer keeps each request understandable on its own. | 1'
+    repair_from: '- | A client may send `server/discover` before doing anything else to learn the server''s supported versions, capabilities, and identity. | 1'
+    category: lost_essential_fact
+    disposition: fix
+    note: |
+      The source makes server/discover mandatory for servers and explains the
+      version-negotiation behavior: an unsupported version produces an
+      UnsupportedProtocolVersionError listing supported versions, after which the
+      client retries with a mutually supported version. The manuscript calls
+      discovery optional without stating that every server must implement it or
+      explaining the failure-and-retry contract, leaving an important
+      interoperability rule unavailable to readers.
+    suggestion: State that servers must implement server/discover and summarize the version-error retry path.
+  omissions:
+  - fact: 'The scope list: the MCP Specification, SDKs, Development Tools including MCP Inspector, and Reference Server Implementations'
+    reader_loses: Cannot tell what parts of the MCP project ecosystem the overview covers.
+    verdict: defensible
+  - fact: The warning that MCP does not dictate how AI applications use LLMs or manage context
+    reader_loses: Little; the final boundary sentence conveys the same limitation.
+    verdict: defensible
+  - fact: Local STDIO servers typically serve one client while remote Streamable HTTP servers typically serve many
+    reader_loses: A useful deployment-scale distinction.
+    verdict: defensible
+  - fact: The source's explicit definitions of MCP Host, MCP Client, and MCP Server
+    reader_loses: Some precision about the client as the context-obtaining component and the server as the context provider.
+    verdict: defensible
+  - fact: The conceptual inner-data-layer and outer-transport-layer relationship
+    reader_loses: A simple mental model for how the layers relate.
+    verdict: defensible
+  - fact: The exact server/discover JSON-RPC request and its protocolVersion, clientInfo, and clientCapabilities fields
+    reader_loses: Cannot see the wire shape of discovery or reproduce the request.
+    verdict: needed
+  - fact: UnsupportedProtocolVersionError and the retry with a mutually supported version
+    reader_loses: Cannot implement the documented version-negotiation behavior.
+    verdict: needed
+  - fact: 'The detailed capability examples: tools.listChanged, resources, and elicitation capability objects'
+    reader_loses: Cannot see how parties declare support for primitives and change notifications.
+    verdict: needed
+  - fact: The tools/list pagination cursor, tool fields (title, description, inputSchema), resultType, ttlMs, and cacheScope
+    reader_loses: Cannot validate inputs, paginate listings, or apply the documented caching hints.
+    verdict: needed
+  - fact: The database example exposing query tools, a schema resource, and a few-shot prompt
+    reader_loses: A concrete demonstration of all three primitive types working together.
+    verdict: defensible
+  - fact: The elicitation/create method name and its multi-round-trip delivery pattern
+    reader_loses: Cannot look up or implement the server request for user input or confirmation.
+    verdict: needed
+  - fact: The sampling/createMessage method name and the explanation that sampling avoids embedding an LLM SDK in a server
+    reader_loses: Loses the historical rationale and the exact deprecated operation.
+    verdict: defensible
+  - fact: The Tasks extension's name and its poll-for-status/retrieve-result workflow
+    reader_loses: Cannot identify the extension or understand how durable handles are used operationally.
+    verdict: defensible
+  - fact: The notification acknowledgment message, subscriptionId correlation, and notifications/tools/list_changed method
+    reader_loses: Cannot implement the subscription handshake or associate events with a stream.
+    verdict: needed
+  - fact: The guarantee that notifications have no id and no response, are opt-in, and are best effort across reconnects
+    reader_loses: Could incorrectly wait for responses or rely on notifications for freshness.
+    verdict: needed
+  - fact: The source's four pseudo-code blocks for discovery, federated tool registration, tool execution routing, and notification handling
+    reader_loses: Loses the application-side sequence that turns protocol messages into an integrated tool registry and conversation flow.
+    verdict: needed
+  - fact: The source's four complete JSON-RPC exchanges
+    reader_loses: A reader cannot use the article as a practical protocol reference without returning to the source.
+    verdict: needed
+  retentions:
+  - passage: MCP lets an AI application reach tools and data through a shared protocol.
+    costs: A short framing paragraph, but it gives the reader the article's central model and earns its place.
+    verdict: earns_place
+  - passage: An MCP host is the application, such as Visual Studio Code, Claude Code, or Claude Desktop.
+    costs: Several sentences of participant and local/remote examples; they make the abstract topology concrete.
+    verdict: earns_place
+  - passage: MCP has two layers.
+    costs: A compact explanation of JSON-RPC, transports, authentication, and OAuth; this is necessary orientation.
+    verdict: earns_place
+  - passage: The data layer keeps each request understandable on its own.
+    costs: The statelessness and discovery explanation supplies an important interoperability concept.
+    verdict: earns_place
+  - passage: Imagine a server that exposes a weather tool.
+    costs: The worked weather example explains discovery, exact naming, arguments, routing, and model context flow; it earns its space.
+    verdict: earns_place
+  - passage: Servers can also ask users for information or confirmation through elicitation.
+    costs: A concise survey of elicitation, deprecations, and extensions; useful boundary-setting rather than filler.
+    verdict: earns_place
+  - passage: The protocol supports real-time notifications to enable dynamic updates between servers and clients.
+    costs: The subscription, best-effort, and refresh behavior explains a distinct protocol capability.
+    verdict: earns_place
+  - passage: 'That is MCP''s boundary: one protocol for exchanging context, actions, and interaction patterns...'
+    costs: A brief concluding synthesis that distinguishes protocol exchange from application-level model decisions.
+    verdict: earns_place
+  notes: |
+    Changes required because the manuscript gives a clear conceptual condensation but
+    removes the source's concrete JSON-RPC exchanges and several interoperability
+    details that make the overview usable as a protocol explainer.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked every assertion in the title-equivalent opening, body, technical examples, protocol details, qualifications, and conclusion against the complete extraction; nothing in the piece could not be checked against the extraction.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    No mechanical defects were found; the prose, punctuation, typography, and form are consistent throughout.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The piece moves coherently from MCP's purpose and architecture through primitives, an example, extensions, notifications, and its boundary.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | MCP has two layers. The data layer defines the JSON-RPC 2.0 messages and the things clients and servers can offer. The transport layer handles connection setup, message framing, authentication, and the channel itself. The same JSON-RPC messages can travel over either transport. Stdio is direct process communication with no network overhead. Streamable HTTP uses HTTP POST, can stream with Server-Sent Events, and supports normal HTTP authentication methods. MCP recommends OAuth for obtaining tokens. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      This paragraph introduces a dense run of unexplained specialist terms—JSON-RPC 2.0, stdio, Streamable HTTP, Server-Sent Events, and OAuth—before the reader has enough context to understand them. Define the few terms needed for the explanation in plain language or remove the implementation detail.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | Sampling and logging are deprecated as of protocol version `2026-07-28`; new implementations should call language-model providers directly and send logs to stderr or use OpenTelemetry. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      `OpenTelemetry` is introduced without explanation and is not necessary to understand the protocol's main boundary. Briefly identify it as a standard observability system or omit the name.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    I heard a lucid, technically minded explainer whose main craft problem is the accumulation of undefined implementation vocabulary in an otherwise reader-facing piece.

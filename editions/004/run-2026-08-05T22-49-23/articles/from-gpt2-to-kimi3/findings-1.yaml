@@ -1,0 +1,155 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: from-gpt2-to-kimi3
+    repair_from: GPT-2 | GPT-2 is a decoder-only transformer. | 1
+    category: source_shaped
+    disposition: fix
+    note: |
+      The manuscript follows the source's sequence almost exactly: GPT-2, KV cache, Linear Attention, DeltaNet, chunking, Gated DeltaNet, Kimi Linear, KimiK3, and AttnRes. That preserves the source's shape rather than doing editorial work on the progression. Reorganize around the central problem of fixed-capacity memory and the successive solutions, or make the structural intervention explicit.
+    suggestion: Lead with the memory-capacity problem, then introduce each architecture as the answer to a specific failure.
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: KimiK3 keeps the Kimi Linear shape while enlarging and specializing it. | KimiK3 keeps the Kimi Linear shape while enlarging and specializing it. | 1
+    repair_from: Linear Attention | Linear attention changes the storage problem. | 1
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The source includes implementation-level material a reader could use: the KV-cache and linear-attention forward methods, the DeltaNet update, the chunk_delta_rule_forward reparameterization, and the block_attn_res pseudocode. The manuscript names the concepts but supplies none of these concrete state-update forms, so a reader who wants to implement or verify the mechanisms must return to the source.
+    suggestion: Keep at least one compact cache update, one delta/chunking equation or pseudocode block, and the AttnRes retrieval computation.
+  omissions:
+  - fact: The GPT-2 forward path and block code, including token and positional embeddings, layer normalization, causal self-attention, MLP, and lm_head
+    reader_loses: Cannot see the exact computation that defines the decoder-only baseline.
+    verdict: defensible
+  - fact: The explicit causal-attention implementation with q, k, v projections, masking, softmax, and y = attn @ v
+    reader_loses: Loses the worked reference against which the later attention variants are compared.
+    verdict: defensible
+  - fact: The GPT-2 configuration values vocab_size 50304, n_layer 12, n_head 12, and n_embd 768
+    reader_loses: The headline parameter estimate remains understandable, but the exact reproducible configuration is gone.
+    verdict: defensible
+  - fact: The source's explanation that FlashAttention was released in 2020 and that the O(N²) framing reflects older materialized attention and uncached decoding
+    reader_loses: Loses the historical qualification that prevents an overly broad reading of the quadratic-cost claim.
+    verdict: defensible
+  - fact: The KV-cache forward method that concatenates past_kv and returns (k, v)
+    reader_loses: Cannot implement the cache behavior from the manuscript alone.
+    verdict: needed
+  - fact: The linear-attention cache state S,z and the updates S = S + k @ v, z = z + k, followed by o = q @ S and normalization by q @ z
+    reader_loses: Cannot reproduce the fixed-state mechanism or its normalization.
+    verdict: needed
+  - fact: The source's explicit statement that linear attention's approximation replaces the exponential softmax kernel with ELU+1 and that accuracy loss depends on architecture and workload
+    reader_loses: The manuscript mentions reduced expressiveness and variable accuracy loss, so no essential claim is lost.
+    verdict: defensible
+  - fact: The DeltaNet code's normalized SiLU q and k, sigmoid beta write strength, v_old lookup, and delta update
+    reader_loses: Cannot see how selective replacement is actually computed.
+    verdict: needed
+  - fact: The unit-norm explanation showing that reading k.T @ v with the same key recovers v up to the key norm
+    reader_loses: Loses the worked justification for why a written association can be retrieved.
+    verdict: defensible
+  - fact: 'The chunked DeltaNet details: chunk size C, the C=1 and C=N limits, typical C values of 64 or 128, and the UMMA hardware example'
+    reader_loses: Cannot connect the recurrence to the claimed hardware-efficient training trade-off.
+    verdict: needed
+  - fact: The reparameterized DeltaNet recurrence S_t = S_(t-1)(I − beta_t k_t k_t^T) + beta_t v_t k_t^T and the vectorized forward-substitution construction
+    reader_loses: The manuscript says reparameterization enables chunking but omits the mathematical reason it does.
+    verdict: needed
+  - fact: The cumulative-decay explanation for Gated DeltaNet, where an old token is multiplied by alpha_x through alpha_(x+t)
+    reader_loses: Loses how per-step forgetting compounds over time.
+    verdict: defensible
+  - fact: 'Kimi Linear''s three enumerated architectural changes: interleaved MLA, MoE replacing the MLP, and the alpha projection adding capacity to DeltaNet'
+    reader_loses: The manuscript states all three changes in prose, so the content is retained.
+    verdict: defensible
+  - fact: KimiK3's Gated MLA, MLA query LoRA, and the claim that AttnRes adds roughly 2% inference latency while providing a 1.25x compute advantage
+    reader_loses: Cannot assess two named KimiK3 modifications or the reported cost-benefit of AttnRes.
+    verdict: defensible
+  - fact: The SiTU pseudocode, including beta-scaled tanh gates and the optional linear_beta path
+    reader_loses: The activation change is named but not operationally specified.
+    verdict: defensible
+  - fact: The explanation that latent-space experts nearly halve FLOPs and that unfused SiTU is almost 3x slower
+    reader_loses: Loses the concrete inference trade-off behind the latent-space design.
+    verdict: defensible
+  - fact: The AttnRes equations, query-key score normalization, eight block count, and block_attn_res pseudocode
+    reader_loses: Cannot reproduce selective depth-wise retrieval or its block-level implementation.
+    verdict: needed
+  - fact: The source's final social-post replies, view count, and engagement metrics
+    reader_loses: Nothing needed to understand the architectural argument.
+    verdict: defensible
+  retentions:
+  - passage: Twenty-two thousand five hundred and eighty. That's how many GPT-2 (2019) models fit inside KimiK3 (2026).
+    costs: A short opening that frames the scale question and gives the reader a reason to follow the lineage.
+    verdict: earns_place
+  - passage: The basic contract remains recognizable.
+    costs: A compact bridge that preserves the common attention abstraction while explaining what changes.
+    verdict: earns_place
+  - passage: Scaling laws remain relevant, but capacity must be added in the right place
+    costs: A concise interpretive claim that gives the chronology an argument.
+    verdict: earns_place
+  - passage: The result is a model that spends different kinds of capacity on different failures.
+    costs: A useful synthesis connecting recurrent memory, MLA, routing, and residual attention.
+    verdict: earns_place
+  - passage: A fixed-capacity associative memory eventually needs an eviction policy.
+    costs: The final paragraph restates the central conclusion after it has already been established; the omitted implementation details above could occupy this space.
+    verdict: cut
+  notes: |
+    Changes required because the piece gives a clear conceptual account of why each architectural step addresses a limitation, but it largely preserves the source's section order and drops the concrete update equations and pseudocode that make several mechanisms implementable.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: I checked every title, body assertion, and conclusion against the pinned extraction; nothing in the piece was outside that extraction to check.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: '- | Twenty-two thousand five hundred and eighty. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      This standalone sentence has no verb and is therefore a sentence fragment. Although it creates emphasis, the prose is a faithful synthesis written by the editors, so the fragment requires repair.
+    suggestion: The number is twenty-two thousand five hundred and eighty.
+  scores:
+    grammar: 3
+    typography: 5
+    consistency: 5
+  notes: One sentence fragment requires correction; capitalization, punctuation, typography, headings, labels, and number usage are otherwise mechanically sound.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    I verified that the piece moves in a clear progression from GPT-2's constraints through successive architectural responses to KimiK3's integrated design, with a resolved ending.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: '- | Scaling laws remain relevant, but capacity must be added in the right place and in a form the system can use. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Right place" and "in a form the system can use" are abstract placeholders rather than a claim the reader can test; the next sentence supplies the concrete lineage.
+    suggestion: |
+      Name the specific kinds of capacity being added, or cut this sentence and let the following sentence carry the transition.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: '- | KimiK3 also gates the output of MLA, changes the expert activation to SiTU, and adds Attention Residuals every twelve layers. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "SiTU" is an unexplained activation name that a competent engineer outside this subfield is unlikely to recognize, and the sentence gives no reason the name matters.
+    suggestion: |
+      Define SiTU briefly by describing what the activation changes, or remove the name and state its relevant effect.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    I hear a technically confident explainer whose personal asides and concrete mechanism-first comparisons keep the prose human, with only a brief slide into abstraction and one unexplained component name.

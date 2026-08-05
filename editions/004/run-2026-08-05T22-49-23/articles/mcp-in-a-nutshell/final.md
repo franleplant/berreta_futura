@@ -1,0 +1,22 @@
+---
+source_ids:
+- architecture-overview-ce5cb1d1
+content_mode: faithful_synthesis
+label: FAITHFUL SYNTHESIS
+---
+
+MCP gives an AI application a way to reach tools and data through separate programs connected by deliberate seams. Visual Studio Code, Claude Code, or Claude Desktop acts as the host. It creates one MCP client for each server, and each client keeps its own connection. A Sentry connection gets one client; a local filesystem connection gets another. The servers may run beside the host or elsewhere. “Local” describes where the program runs, not a different kind of server.
+
+When the application calls `weather_current`, two layers are involved. The data layer uses JSON-RPC 2.0, a request-and-response format with named methods. The transport layer carries those messages, frames them, and handles authentication. Stdio passes messages directly between local processes without network overhead. Streamable HTTP sends them with HTTP POST and can stream updates through Server-Sent Events, a long-lived HTTP stream. It supports bearer tokens, API keys, and custom headers; MCP recommends OAuth for obtaining authentication tokens. The same JSON-RPC messages work over either transport.
+
+MCP keeps requests stateless. Each one carries the protocol version and relevant capabilities in `_meta`, usually with the client’s identity. Every server must implement `server/discover`. A client may call it before anything else to learn the server’s supported versions, capabilities, and identity. If the requested version is rejected, the server returns `UnsupportedProtocolVersionError` with the versions it accepts, and the client retries with one they share. The response is typically cacheable. Discovery is optional for the client because the same metadata travels with later requests, but the server-side method is required.
+
+Servers offer three kinds of building blocks. A tool performs an action such as a file operation, API call, or database query. A resource supplies context such as file contents, database records, or an API response. A prompt supplies a reusable interaction pattern, including system prompts and few-shot examples. Clients can enumerate these with methods such as `tools/list`, `resources/list`, and `prompts/list`; the primitive families also define corresponding `*/get` methods for retrieval, while `tools/call` runs a tool. Listings may change over time. A client first discovers a tool, then uses the exact name it received.
+
+Suppose discovery returns the tool `weather_current`. Its description includes an `inputSchema`, a JSON Schema that states which arguments are required and what they mean. The client sends a `tools/call` request with `"name": "weather_current"`, arguments such as `"location": "San Francisco"` and `"units": "imperial"`, and the usual `_meta` fields. The response contains a `content` array. Each item declares a type, such as `"text"`, and the application passes that result back to the language model as new context. The model chooses the tool, the application routes the call to the right client, and the server performs the action.
+
+Servers can also ask the user for information or confirmation with `elicitation/create`. Sampling, which let servers request language-model completions through the client, is deprecated as of protocol version 2026-07-28. New implementations should call language-model providers directly. Logging is deprecated as well; new implementations should write to stderr for stdio transports or use OpenTelemetry. Optional extensions can add behavior such as a durable handle for a long-running task, allowing the client to check its status and collect the result later.
+
+Notifications keep a client aware of changes without constant polling. The client opts in by opening a long-lived `subscriptions/listen` stream with a filter such as `"toolsListChanged": true`. The server replies with `notifications/subscriptions/acknowledged`, confirming the portion of that filter it supports and assigning a subscription ID. When its tools change, it sends `notifications/tools/list_changed` with that ID and no request ID. The message expects no response. Delivery is best effort, especially across reconnects, so clients should still poll when freshness matters. On receiving an update, the client calls `tools/list` again and refreshes what the model can use.
+
+MCP defines the exchange of context. The AI application still decides how to use the language model and how to manage that context.

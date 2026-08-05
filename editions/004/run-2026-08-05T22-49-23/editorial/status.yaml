@@ -1,0 +1,47 @@
+piece: editorial
+rounds:
+- round: 1
+  words: 252
+  loop_findings: 4
+  all_findings: 6
+- round: 2
+  words: 225
+  loop_findings: 4
+  all_findings: 7
+- round: 3
+  words: 226
+  loop_findings: 3
+  all_findings: 6
+state: rounds_exhausted
+open_findings:
+- lens: shape
+  severity: major
+  article: editorial
+  locator: '- | An agent in an evaluation sandbox crossed from a root shell through datasets, pods, credentials, and clusters because each permission opened another path. | 1'
+  repair_from: '- | The missing question is what each verdict permits next. | 1'
+  category: running_example
+  disposition: fix
+  note: |
+    The opening establishes a self-improving codebase, but the next section
+    introduces four unrelated examples and the final body section starts a
+    separate security case. The argument remains recoverable, yet no concrete
+    case carries it from the handoff problem to the proposed trace.
+  suggestion: Choose one concrete case to carry through the argument, using the security case only once as a deliberate contrast.
+- lens: craft
+  severity: major
+  article: the-missing-handoff
+  locator: '- | An empty tool result should stop an agent from inventing an answer. | 1'
+  category: repeated_shape
+  disposition: fix
+  note: |
+    Four consecutive prescriptions use the same "A [noun] should/needs/should let..." shape: "An empty tool result should stop an agent from inventing an answer," "A failed check should block a merge," "A request that carries its state should let any server continue the work," and "A memory that cannot keep every association needs a rule for what to forget." The pattern becomes audible before the argument develops.
+  suggestion: Recast at least two of these sentences with different subjects and verb structures.
+- lens: craft
+  severity: major
+  article: the-missing-handoff
+  locator: '- | The suite had passed its rubric. The product had failed. | 1'
+  category: banned_tic
+  disposition: fix
+  note: |
+    This editor-owned antithesis delivers its point through a familiar paired reversal.
+  suggestion: Replace the two-sentence contrast with one sentence naming how rubric success masked product failure.

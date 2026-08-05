@@ -1,0 +1,143 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's @dexhorthy handle and display name
+    reader_loses: A direct social identifier for locating the original author and post, though the manuscript retains the full byline Dex Horthy.
+    verdict: defensible
+  retentions:
+  - passage: This one is a bit of an addendum / side-quest...
+    costs: A short contextual preamble that could be cut, but it explains why the piece stands alone and where it came from.
+    verdict: earns_place
+  - passage: good luck.
+    costs: A two-word sign-off that adds no information.
+    verdict: cut
+  - passage: note For this example I'm gonna blur
+    costs: A brief qualification that prevents readers from mistaking expected pain for a literal probability.
+    verdict: earns_place
+  notes: |
+    Approved because it gives readers a durable, standalone copy of an ephemeral X post while preserving the complete practical framework, examples, caveats, numbers, and equation. The manuscript and source use the same section sequence: Seeking Leverage; The 80/20 rule in AI coding leverage. As a faithful_edit, preserving that order is appropriate.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked every manuscript assertion and furniture element against the complete pinned extraction; nothing in this piece could not be checked.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | **note** For this example I'm gonna blur | 1
+    category: label_missing
+    disposition: editor_decision
+    note: |
+      The labeled note is editorial apparatus inside the article prose. It should not appear as an in-article note label.
+    suggestion: Remove the note label and integrate the explanation into the surrounding prose.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | 25-50% | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      The percentage range uses a hyphen instead of an en dash. Ranges should use en dashes consistently.
+    suggestion: 25–50%
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | 2-4 hours | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      The range uses a hyphen instead of an en dash. Ranges should use en dashes consistently.
+    suggestion: 2–4 hours
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | 10-20 minutes | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      The range uses a hyphen instead of an en dash. Ranges should use en dashes consistently.
+    suggestion: 10–20 minutes
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | 2-3x faster | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      The range uses a hyphen instead of an en dash. Ranges should use en dashes consistently.
+    suggestion: 2–3x faster
+  scores:
+    grammar: 4
+    typography: 3
+    consistency: 3
+  notes: |
+    Changes required because one labeled note appears in the prose and four numeric ranges use hyphens instead of en dashes.
+shape:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    repair_from: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: opening
+    disposition: editor_decision
+    note: |
+      The opening is publication context rather than the piece's point of interest. It delays the argument about where AI-assisted delivery gains leverage and does not earn the first substantive section.
+    suggestion: Open with the 25-50% shipping-time split, and move the addendum context into furniture or remove it.
+  - severity: major
+    article: pragmatic-leverage
+    locator: '- | It is referenced briefly in Why Software Factories Fail part 2: Turning the lights back on. | 1'
+    repair_from: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: orphan_referent
+    disposition: editor_decision
+    note: |
+      The standalone piece points readers to an external series and a specifically named prior post that it does not contain, leaving the opening dependent on material outside the argument.
+    suggestion: Remove the external-reference sentence from the body or relocate it to non-body furniture.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | Seeking Leverage | 1
+    repair_from: Seeking Leverage | Seeking Leverage | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The heading names an aspiration rather than the section's argument: coding is only part of delivery time, and planning and alignment are where additional leverage appears.
+    suggestion: Rename the heading to state that planning and alignment, not coding alone, create the leverage.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 2
+    ending: 4
+  notes: The piece moves from the share of delivery time spent beyond coding, through expected pain and planning depth, to pragmatic steering; its main structural problems are the contextual opening, dangling external references, and one non-argument heading.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking Leverage | If you're only using AI to write the code, then you're taking the 2-4 hours of coding time down to 10-20 minutes, but you haven't accelerated anything else here. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Conditional openings recur throughout the piece: "If you're only using AI...", "But if you use AI...", "Let's assume if you yolo...", "If you draw this out...", "if you've done some work...", "If you're doing multiple phases...", and "If the model is 50% likely...". The pattern becomes audible before the argument develops. Because this is the author's rhythm, the remedy is editorial: cut or restructure several conditional sentences.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | This is what we mean by leverage - and it requires being pragmatic. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "This is what we mean by leverage" restates the term abstractly before the sentence adds another abstraction. Replace it with the concrete operational consequence of the preceding planning phases.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The opening announces the article's publishing context instead of giving the reader the leverage claim. Start with the feature-shipping time split or the practical problem the piece will solve.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 3
+  notes: I hear a candid practitioner explaining a useful model, but the repeated conditional sentence shape starts carrying the prose and makes the later guidance feel patterned rather than discovered.

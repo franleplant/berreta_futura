@@ -1,0 +1,91 @@
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    Verified clean mechanics throughout the editorial, including sentence openings, grammar, punctuation, typography, heading form, and number style.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | In the intrusion described elsewhere in this issue, an agent moved from a root shell through datasets, pods, credentials, and clusters because each permission opened the next door. | 1'
+    repair_from: '- | One team ran 285 iterations of a self-improving codebase and merged 1,094 pull requests with zero recorded regressions. | 1'
+    category: running_example
+    disposition: fix
+    note: |
+      The piece opens with one concrete case, then introduces protocol machinery and
+      an unrelated intrusion without carrying the first case forward or clearly
+      establishing a contrast. The argument loses a continuous example.
+    suggestion: Select one case to carry from the opening through the machinery and closing prescription.
+  - severity: major
+    article: editorial
+    locator: '- | In the intrusion described elsewhere in this issue, an agent moved from a root shell through datasets, pods, credentials, and clusters because each permission opened the next door. | 1'
+    repair_from: '- | In the intrusion described elsewhere in this issue, an agent moved from a root shell through datasets, pods, credentials, and clusters because each permission opened the next door. | 1'
+    category: orphan_referent
+    disposition: fix
+    note: |
+      The sentence points to an intrusion that the piece does not contain, requiring
+      the reader to consult another article to understand the example.
+    suggestion: Make the intrusion self-contained or remove the external reference.
+  scores:
+    order: 4
+    coherence: 3
+    opening: 5
+    ending: 4
+  notes: |
+    The piece moves from a testing failure to the need for consequential verdicts,
+    then to agent machinery and a practical tracing exercise, but its examples are
+    not sustained and one depends on an absent article.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: the-missing-handoff
+    locator: '- | On Monday, trace one agent action from prompt to side effect. | 1'
+    category: repeated_shape
+    disposition: fix
+    note: |
+      Three consecutive imperative sentences use the same command shape: "On Monday, trace one agent action from prompt to side effect.", "Mark every point where a test, message, or permission claims success.", and "At each mark, ask what stops the next action when that claim is false." The run makes the ending sound like a checklist rather than prose.
+    suggestion: Recast one of the three commands as a declarative sentence to break the imperative run.
+  - severity: major
+    article: the-missing-handoff
+    locator: '- | On Monday, trace one agent action from prompt to side effect. | 1'
+    category: passive
+    disposition: fix
+    note: |
+      The final paragraph gives three ownerless imperatives—"On Monday, trace...", "Mark every point...", and "At each mark, ask..."—without naming who should perform them. The absent actor makes the instruction sound system-generated.
+    suggestion: Name the responsible actor in the opening instruction.
+  - severity: minor
+    article: the-missing-handoff
+    locator: '- | A useful verdict changes what happens next. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Useful" adds no information because the sentence immediately defines the verdict by the action it changes.
+    suggestion: Delete "useful."
+  - severity: minor
+    article: the-missing-handoff
+    locator: '- | In the intrusion described elsewhere in this issue, an agent moved from a root shell through datasets, pods, credentials, and clusters because each permission opened the next door. | 1'
+    category: cliche
+    disposition: fix
+    note: |
+      "Opened the next door" is a familiar figure that decorates the permission cascade without making its mechanism more precise.
+    suggestion: Replace the figure with a literal description of how each permission enabled the next access.
+  - severity: minor
+    article: the-missing-handoff
+    locator: '- | In the intrusion described elsewhere in this issue, an agent moved from a root shell through datasets, pods, credentials, and clusters because each permission opened the next door. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "Pods" is subfield jargon that is not defined for an engineer outside Kubernetes or container orchestration.
+    suggestion: Replace "pods" with "container groups" or define the term on first use.
+  scores:
+    voice: 4
+    sentence_variety: 3
+    economy: 4
+  notes: |
+    I heard a brisk, concrete editorial voice that becomes checklist-like in the final paragraph, with one stock metaphor and one undefined infrastructure term weakening the otherwise clear handoff argument.

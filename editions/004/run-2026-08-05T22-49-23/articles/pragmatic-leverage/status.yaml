@@ -1,0 +1,32 @@
+piece: pragmatic-leverage
+rounds:
+- round: 1
+  words: 496
+  loop_findings: 4
+  all_findings: 11
+- round: 2
+  words: 439
+  loop_findings: 2
+  all_findings: 9
+- round: 3
+  words: 455
+  loop_findings: 2
+  all_findings: 10
+state: rounds_exhausted
+open_findings:
+- lens: craft
+  severity: major
+  article: pragmatic-leverage
+  locator: The 80/20 rule in AI coding leverage | Assume that when you yolo a two-sentence prompt into your factory, your chance of getting a fully-mergeable result is ~50%, and the chance you have to rework it is 50%. | 1
+  category: repeated_shape
+  disposition: editor_decision
+  note: |
+    Three sentences use the same when-clause-then-main-clause construction: "Assume that when you yolo...", "When the model is 50% likely...", and "when you've done some work... it's possible...". The repeated conditional framing becomes audible before the argument develops; vary or cut one of these sentences.
+- lens: craft
+  severity: major
+  article: pragmatic-leverage
+  locator: The 80/20 rule in AI coding leverage | Good luck. | 1
+  category: weak_close
+  disposition: fix
+  note: |
+    The sign-off leaves the reader with no final clarity, perspective, or question after the practical argument.

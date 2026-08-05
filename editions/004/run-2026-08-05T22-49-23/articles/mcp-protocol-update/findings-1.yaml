@@ -1,0 +1,170 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: '- | A remote MCP server that previously needed sticky sessions | 1'
+    repair_from: '- | A remote MCP server that previously needed sticky sessions | 1'
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source's stateless request requires the MCP-Protocol-Version header in addition to Mcp-Method and Mcp-Name. The manuscript explains the routing headers but omits the protocol-version header, leaving an implementer without one required wire-level field.
+    suggestion: Name MCP-Protocol-Version alongside Mcp-Method and Mcp-Name in the opening deployment example.
+  - severity: major
+    article: mcp-protocol-update
+    locator: '- | Instead of holding an SSE stream open | 1'
+    repair_from: '- | Instead of holding an SSE stream open | 1'
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source gives the InputRequiredResult envelope, including resultType, inputRequests, the elicitation schema, and requestState. The manuscript names the result and retry fields but omits the payload structure a reader would need to implement the exchange.
+    suggestion: Include a compact JSON example or enumerate the resultType, inputRequests, schema, and requestState fields.
+  omissions:
+  - fact: The final specification is scheduled to ship on July 28, 2026, after the release candidate was locked on May 21
+    reader_loses: Cannot tell the validation window or when the described wire changes become final.
+    verdict: defensible
+  - fact: The stateless plan completes six SEPs and follows the December transport roadmap
+    reader_loses: Loses provenance for why the redesign is a coordinated change rather than a single feature.
+    verdict: defensible
+  - fact: The old initialize request and Mcp-Session-Id-bearing tools/call request examples
+    reader_loses: Loses concrete before-and-after wire syntax for migrating an implementation.
+    verdict: defensible
+  - fact: The required MCP-Protocol-Version header on the new request
+    reader_loses: An implementer could omit a required protocol-version field.
+    verdict: needed
+  - fact: The browser_id example alongside basket_id
+    reader_loses: Loses a second illustration that explicit handles generalize beyond shopping state.
+    verdict: defensible
+  - fact: The InputRequiredResult JSON envelope with resultType and inputRequests
+    reader_loses: Cannot construct the server's input-required response from the prose alone.
+    verdict: needed
+  - fact: The concrete elicitation example, 'Delete 3 files?', with a boolean schema
+    reader_loses: Loses the worked example showing how a prompt and validation schema travel together.
+    verdict: defensible
+  - fact: Cache-Control as the model for ttlMs and cacheScope
+    reader_loses: Loses the familiar HTTP analogy that explains the cache semantics.
+    verdict: defensible
+  - fact: The statement that fixed trace keys produce a single span tree in an OpenTelemetry-compatible backend
+    reader_loses: Loses the operational payoff of trace propagation.
+    verdict: defensible
+  - fact: Extensions' ext-* repository naming convention and the experimental-to-official Extensions Track
+    reader_loses: Loses concrete repository and governance details for extension authors.
+    verdict: defensible
+  - fact: The Tasks extension's origin as an experimental core feature in 2025-11-25
+    reader_loses: Loses the migration context for existing adopters.
+    verdict: defensible
+  - fact: Authorization guidance for refresh-token requests, scope accumulation during step-up, and the .well-known discovery suffix
+    reader_loses: Loses three implementation clarifications in the authorization update.
+    verdict: defensible
+  - fact: The future expectation that clients should eventually reject authorization responses omitting iss
+    reader_loses: Loses the urgency signal for authorization-server implementers.
+    verdict: defensible
+  - fact: The JSON Schema implementation cautions not to auto-dereference external $ref URIs and to bound schema depth and validation time
+    reader_loses: Loses two security and resource-exhaustion safeguards.
+    verdict: needed
+  - fact: Tier 1 SDKs are expected to ship support during the ten-week validation window, with issues filed in the specification repository and implementation questions handled in Working Group Discord channels
+    reader_loses: Loses the concrete validation expectations and support paths.
+    verdict: defensible
+  - fact: The closing thanks to Working Groups and reviewers
+    reader_loses: Nothing needed to understand or implement the revision.
+    verdict: defensible
+  retentions:
+  - passage: A remote MCP server that previously needed sticky sessions
+    costs: A short deployment-level hook that gives the reader an immediate practical consequence and frames the rest of the synthesis.
+    verdict: earns_place
+  - passage: The application may still need state
+    costs: The explicit basket_id example occupies several sentences, but it prevents readers from mistaking protocol statelessness for application statelessness.
+    verdict: earns_place
+  - passage: The same stateless design changes how a server asks for input
+    costs: The transition and retry explanation take space, but they connect the architectural change to a second operational workflow.
+    verdict: earns_place
+  - passage: Three operational changes follow
+    costs: The grouped headers, caching, and tracing paragraph spends a full paragraph, but it supplies three distinct deployment consequences.
+    verdict: earns_place
+  - passage: Extensions now have a formal home
+    costs: The MCP Apps explanation uses space that could have carried repository-process details, but it establishes the first official extension and its security/audit implications.
+    verdict: earns_place
+  - passage: Tasks also leave the core specification
+    costs: The lifecycle names and migration warning occupy a paragraph, but they are the actionable part of the Tasks change.
+    verdict: earns_place
+  - passage: This release contains breaking changes
+    costs: The conclusion repeats the breaking-change theme, but it states the article's judgment about why the break is justified and how governance will contain future disruption.
+    verdict: earns_place
+  notes: |
+    Changes required because the synthesis gives a clear account of the stateless redesign and its operational consequences but omits two wire-level details an implementer needs: MCP-Protocol-Version and the InputRequiredResult envelope.
+evidence:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: mcp-protocol-update
+    locator: Extensions now have a formal home | MCP Apps is the first official example | 1
+    repair_from: Extensions now have a formal home | MCP Apps is the first official example | 1
+    category: invented_claim
+    disposition: fix
+    note: |
+      The extraction says only that the release includes two official extensions and then describes MCP Apps; it does not call MCP Apps the first official example. Remove or substantiate the unsupported ordering claim.
+  scores:
+    claim_support: 4
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every assertion in the title, manuscript body, and labelled material against the pinned extraction; I could not check any external material because none is in scope.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: '- | The MCP Protocol Update | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      The heading is in title case. Headings in this publication use sentence case.
+    suggestion: The MCP protocol update
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 4
+  notes: Changes required because the article title is in title case; the body otherwise reads cleanly.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: The piece's progression from stateless transport through application state, operational changes, extensions, breaking changes, deprecations, and lifecycle policy holds together in a clear order.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-protocol-update
+    locator: '- | Three operational changes follow. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This portentous signpost sounds like system prose rather than a person
+      entering the explanation.
+    suggestion: |
+      Name the three changes directly or begin with the first one.
+  - severity: major
+    article: mcp-protocol-update
+    locator: '- | A remote MCP server that previously needed sticky sessions, a shared session store, and deep packet inspection at the gateway can now run behind a plain round-robin load balancer, route traffic on an Mcp-Method header, and let clients cache tools/list responses for as long as the server''s ttlMs permits. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      The opening stacks unexplained protocol and infrastructure terms,
+      including sticky sessions, deep packet inspection, Mcp-Method, tools/list,
+      and ttlMs, before giving the reader a foothold.
+    suggestion: |
+      Define the few terms needed for the argument in plain language and move
+      the remaining identifiers into later technical detail.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 3
+  notes: |
+    I heard a technically confident, human explanation whose opening assumes too
+    much protocol vocabulary and whose later signpost briefly slips into system
+    prose.

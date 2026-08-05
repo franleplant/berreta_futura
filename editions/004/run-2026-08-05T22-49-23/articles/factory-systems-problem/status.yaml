@@ -1,0 +1,82 @@
+piece: factory-systems-problem
+rounds:
+- round: 1
+  words: 374
+  loop_findings: 10
+  all_findings: 16
+- round: 2
+  words: 365
+  loop_findings: 11
+  all_findings: 14
+- round: 3
+  words: 385
+  loop_findings: 7
+  all_findings: 10
+state: rounds_exhausted
+open_findings:
+- lens: worth
+  severity: blocking
+  article: factory-systems-problem
+  repair_from: '- | Software factories are super real, but we need to be realistic. | 1'
+  category: longer_than_source
+  disposition: fix
+  note: |
+    The manuscript's body is at least as long as the combined pinned
+    extractions. A faithful edit may preserve length for access or
+    legibility, but this is a collection of three short, freely readable
+    posts and adds connective prose rather than shortening them.
+  suggestion: Remove connective and rhetorical padding until the piece is shorter than the combined sources.
+- lens: evidence
+  severity: major
+  article: factory-systems-problem
+  locator: '- | The service-bus question makes this concrete: n8n was a silly idea | 1'
+  repair_from: '- | The service-bus question makes this concrete: n8n was a silly idea | 1'
+  category: unreached_conclusion
+  disposition: fix
+  note: |
+    None of the pinned sources says that the service-bus example makes the factory thesis concrete. The sentence introduces an editorial conclusion not reached by the sources.
+- lens: mechanics
+  severity: major
+  article: factory-systems-problem
+  locator: '- | or among the circa <10 people in the who’s-who who have been trying | 1'
+  category: punctuation
+  disposition: editor_decision
+  note: |
+    The parenthetical is followed directly by the interjection "ugh" without punctuation, leaving the sentence improperly formed. The sentence is retained from the author's text, so an editor chooses the remedy.
+  suggestion: …through how you apply them (but it is a piece of the puzzle). Ugh.
+- lens: mechanics
+  severity: major
+  article: factory-systems-problem
+  locator: '- | who have never worked in corporate in their life thus didn’t have the knowledge | 1'
+  category: agreement
+  disposition: editor_decision
+  note: |
+    "Folks" is plural, so "their life" should be plural; the clause also needs clearer coordination before "thus." The sentence is retained from the author's text, so an editor chooses the remedy.
+  suggestion: who have never worked in corporate in their lives and thus didn’t have the knowledge
+- lens: mechanics
+  severity: major
+  article: factory-systems-problem
+  locator: '- | (ie. they are likely startups created in the last six months!) | 1'
+  category: punctuation
+  disposition: editor_decision
+  note: |
+    The abbreviation is punctuated incorrectly: it should be "i.e.," before the parenthetical explanation. The sentence is retained from the author's text, so an editor chooses the remedy.
+  suggestion: (i.e., they are likely startups created in the last six months!)
+- lens: shape
+  severity: major
+  article: factory-systems-problem
+  locator: '- | The highest ROI you can have right now is learning the entire damn stack, automating it and showing it at your next interview/doing a recorded talk at a meetup. | 1'
+  repair_from: '- | At home, in your homelab, you should be cracking on this problem space in your free time and showing it at your next interview or in a recorded talk at a meetup. | 1'
+  category: duplication
+  disposition: fix
+  note: |
+    The recommendation to learn or build the stack and present it at an interview or meetup appears twice in the opening paragraph, first as homelab advice and then as the highest-ROI advice.
+  suggestion: Keep one version of the interview-and-meetup recommendation and use the space to advance the systems argument.
+- lens: craft
+  severity: blocking
+  article: factory-systems-problem
+  locator: '- | Software factories are super real, but we need to be realistic. | 1'
+  category: repeated_shape
+  disposition: editor_decision
+  note: |
+    Six sentences rely on the same copular "X is Y" shape: "Software factories are super real", "It isn't cracked, but it's a puzzle", "The best practices right now are to build", "The work is almost lights out", "It's a systems engineering and corporate culture problem", and "It's time for a blog post." The repetition makes the argument sound assembled from declarations; cut or recast several of these sentences.

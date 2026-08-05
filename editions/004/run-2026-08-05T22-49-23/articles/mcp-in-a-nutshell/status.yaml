@@ -1,0 +1,41 @@
+piece: mcp-in-a-nutshell
+rounds:
+- round: 1
+  words: 612
+  loop_findings: 3
+  all_findings: 4
+- round: 2
+  words: 686
+  loop_findings: 8
+  all_findings: 8
+- round: 3
+  words: 649
+  loop_findings: 2
+  all_findings: 4
+state: rounds_exhausted
+open_findings:
+- lens: mechanics
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: '- | Sampling, which let servers request language-model completions through the client | 1'
+  category: agreement
+  disposition: fix
+  note: |
+    "Sampling" is singular, so the relative-clause verb must be "lets," not "let." This is editorial prose in a faithful synthesis.
+  suggestion: Sampling, which lets servers request language-model completions through the client
+- lens: craft
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: '- | Servers offer three kinds of building blocks. | 1'
+  category: repeated_shape
+  disposition: editor_decision
+  note: |
+    Three consecutive definition sentences use the same subject-verb-object
+    shape: "A tool performs an action such as a file operation, API call, or
+    database query." "A resource supplies context such as file contents,
+    database records, or an API response." "A prompt supplies a reusable
+    interaction pattern, including system prompts and few-shot examples."
+    The repetition makes this paragraph sound catalogued rather than written.
+  suggestion: |
+    Recast or cut one of the three definitions so the paragraph does not march
+    through identical sentence shapes.

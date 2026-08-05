@@ -106,6 +106,17 @@ impl Staging {
     }
 }
 
+/// `## ` headings in a manuscript, which is what a figure anchor must match.
+fn manuscript_headings(path: &Path) -> Vec<String> {
+    fs::read_to_string(path)
+        .map(|t| {
+            t.lines()
+                .filter_map(|l| l.strip_prefix("## ").map(|h| h.trim().to_string()))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
 /// The newest run dir under the edition that ran fully: editorial/final.md
 /// plus articles/<id>/final.md for every article edition.yaml declares.
 fn latest_complete_run(edition_dir: &Path, article_ids: &[String]) -> Option<PathBuf> {
@@ -343,6 +354,8 @@ pub fn run(
         }
     }
 
+    // Renders live beside the edition's runs: editions/<ed>/render-<ts>/
+    let render_dir = edition_dir.join(format!("render-{}", crate::caller::now_stamp()));
     let mut staging = Staging::new(repo_root.clone());
 
     // Content comes from a run: --run <dir>, else the newest complete run,
@@ -370,7 +383,45 @@ pub fn run(
     }
 
     // A. Base edition manuscript + editorial + article manuscripts.
-    staging.add(&edition_yaml_path);
+    // Figure anchors name a heading in the manuscript, and every run writes its
+    // own headings — so an anchor pinned to a previous run's prose stops the
+    // build. Stage a patched edition.yaml with unresolvable figures dropped
+    // rather than making a human re-anchor by hand after every run.
+    let mut staged_edition_path = edition_yaml_path.clone();
+    if let Some(run) = &content_run {
+        let mut patched = edition_yaml.clone();
+        let mut dropped: Vec<String> = Vec::new();
+        if let Some(list) = patched.get_mut("articles").and_then(|v| v.as_sequence_mut()) {
+            for article in list.iter_mut() {
+                let Some(id) = str_field(article, "id").map(str::to_string) else { continue };
+                let headings = manuscript_headings(&run.join("articles").join(&id).join("final.md"));
+                let Some(figs) = article.get_mut("figures").and_then(|v| v.as_sequence_mut()) else {
+                    continue;
+                };
+                figs.retain(|f| {
+                    match str_field(f, "anchor") {
+                        Some(a) if headings.iter().any(|h| h == a) => true,
+                        Some(a) => {
+                            dropped.push(format!("{id}: '{a}'"));
+                            false
+                        }
+                        None => true,
+                    }
+                });
+            }
+        }
+        if !dropped.is_empty() {
+            println!("  dropped {} figure(s) with no matching heading in this run:", dropped.len());
+            for d in &dropped {
+                println!("    {d}");
+            }
+            let patched_path = render_dir.join("edition.yaml");
+            fs::create_dir_all(&render_dir)?;
+            fs::write(&patched_path, serde_yaml::to_string(&patched)?)?;
+            staged_edition_path = patched_path;
+        }
+    }
+    staging.add_mapped(&staged_edition_path, &edition_yaml_path);
     if let Some(editorial) = str_field(&edition_yaml, "editorial") {
         let declared = resolve_field(editorial, &edition_dir);
         match &content_run {
@@ -508,8 +559,7 @@ pub fn run(
         inputs: staging.rows,
     };
 
-    // Renders live beside the edition's runs: editions/<ed>/render-<ts>/
-    let run_dir = edition_dir.join(format!("render-{}", crate::caller::now_stamp()));
+    let run_dir = render_dir;
     let out_dir = run_dir.join("out");
     fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
     let request_path = run_dir.join("request.json");

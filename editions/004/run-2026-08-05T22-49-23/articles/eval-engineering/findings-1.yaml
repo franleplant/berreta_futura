@@ -1,0 +1,346 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: '- | The entry cost has changed. | 1'
+    repair_from: '- | The entry cost has changed. | 1'
+    category: lost_essential_fact
+    disposition: fix
+    note: |
+      The source supplies the blind-test evidence that makes this claim persuasive:
+      100 production traces, 39 labeled failure types, and the recall and precision
+      results for Braintrust Loop, Codex, LangSmith, and Arize. The manuscript keeps
+      only the conclusion, so the reader cannot judge why the category supposedly
+      unbundled.
+    suggestion: Keep the 100-trace/39-failure setup and the key comparative results, even if the full leaderboard is shortened.
+  - severity: major
+    article: eval-engineering
+    locator: '- | The useful detail is what the tools do after installation. | 1'
+    repair_from: '- | The useful detail is what the tools do after installation. | 1'
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source gives the installation commands, including the LangChain and
+      LangSmith skill repositories, the AWS evalkit install, and the Claude Code
+      plugin commands. The manuscript names only evalkit init and report, so a
+      reader cannot reproduce the setup from this version.
+    suggestion: Carry at least one complete installation path and identify the two repositories' distinct jobs.
+  - severity: major
+    article: eval-engineering
+    locator: '- | The useful detail is what the tools do after installation. | 1'
+    repair_from: '- | The useful detail is what the tools do after installation. | 1'
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The source's evalkit workflow is a six-phase sequence: evalkit.plan,
+      evalkit.data, evalkit.trace, evalkit.run_agent, evalkit.eval, and
+      evalkit.report. The manuscript retains only init and report, removing the
+      actual commands a reader would have to run.
+    suggestion: Include the phase commands inline or as a compact code block.
+  - severity: major
+    article: eval-engineering
+    locator: '- | The best tests are already in the logs. | 1'
+    repair_from: '- | The best tests are already in the logs. | 1'
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source gives a reusable four-line trace template: observed behavior,
+      comparison, attribution, and eval candidate. Without it, the reader knows to
+      pull traces but not how to turn each trace into a test candidate.
+    suggestion: Restore the four fields, especially attribution and the capability to preserve or improve.
+  - severity: major
+    article: eval-engineering
+    locator: '- | Turn the finding into a folder such as `evals/<task-id>/`, with an instruction, an environment, and tests. | 1'
+    repair_from: '- | Turn the finding into a folder such as `evals/<task-id>/`, with an instruction, an environment, and tests. | 1'
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source specifies the Harbor task layout, including task.toml,
+      instruction.md, environment/, and tests/, and explains which artifacts are
+      visible to the tested agent and which remain hidden. The manuscript's
+      abbreviated folder description is not enough to build the task correctly.
+    suggestion: Name the files and explicitly separate visible task inputs from the hidden expected outcome, rubric, and credentials.
+  - severity: major
+    article: eval-engineering
+    locator: '- | A better model would not have caught this. | 1'
+    repair_from: '- | A better model would not have caught this. | 1'
+    category: lost_essential_fact
+    disposition: fix
+    note: |
+      The source reports a production result in which successive agent versions
+      changed no model, prompts, or human nudges, yet eval scores moved across
+      every dimension, with the conclusion that evals should have been present on
+      day one. That evidence is omitted, weakening the manuscript's central claim
+      that evaluation itself changes product performance.
+    suggestion: Add the same-agent, same-prompts result in one sentence.
+  - severity: major
+    article: eval-engineering
+    locator: '- | At one company, 19 of every 20 pull requests from a fully autonomous agent merged without human involvement. | 1'
+    repair_from: '- | The careful path is to run the gate in shadow mode for at least four hours, merging nothing. | 1'
+    category: lost_essential_fact
+    disposition: fix
+    note: |
+      The source includes the key caution that 285 iterations produced 1,094
+      merged pull requests and zero regressions while 38 green tests coexisted
+      with a completely broken product. The manuscript reports success rates but
+      drops this warning, leaving the gate practice less safely qualified.
+    suggestion: Restore the broken-product/green-tests caveat before presenting the rollout procedure.
+  - severity: major
+    article: eval-engineering
+    locator: '- | Everyone is renting the same brain now. | 1'
+    repair_from: '- | Everyone is renting the same brain now. | 1'
+    category: source_shaped
+    disposition: fix
+    note: |
+      The manuscript's subjects follow the source's sequence almost exactly:
+      travel-agent failure, eval definition, loops and graphs, vendor test and
+      installation, routing rules, judge hygiene, trace mining, autonomous
+      merging, rollout, starter evals, and conclusion. The travel-agent thread
+      and compact thesis add framing, but the piece does not materially
+      restructure the source's progression.
+    suggestion: Rebuild around the travel-agent failure or the score-to-next-edge loop, moving the installation and rollout material under that organizing claim.
+  - severity: minor
+    article: eval-engineering
+    locator: '- | A score in a report still changes nothing. | 1'
+    repair_from: '- | A score in a report still changes nothing. | 1'
+    category: section_does_not_pay
+    disposition: fix
+    note: |
+      The two consecutive passages beginning “A score in a report still changes
+      nothing” and “A score that never changes behavior is analytics” repeat the
+      same distinction. One sentence would preserve the point and free space for
+      the omitted trace template or installation commands.
+    suggestion: Keep the sharper formulation and cut the preceding restatement.
+  omissions:
+  - fact: The same-agent experiment in which only the evals changed and scores moved across every dimension, with the conclusion that evals belonged in the system on day one
+    reader_loses: The strongest evidence that eval engineering itself, rather than a better model or prompt, improves the product.
+    verdict: needed
+  - fact: The blind test used 100 production traces labeled across 39 failure types
+    reader_loses: The basis for trusting the comparison between evaluation approaches.
+    verdict: needed
+  - fact: Braintrust Loop recovered 87.2% of flagged failures; Codex recovered 84.6% with 82.8% precision; LangSmith 79.5%; Arize 74.4% recall and 91.0% precision
+    reader_loses: The concrete evidence behind the claim that a general coding agent can match or beat dedicated platforms.
+    verdict: needed
+  - fact: npx skills add langchain-ai/langchain-skills --skill '*' --yes --global
+    reader_loses: A reproducible command for installing the eval-building skill.
+    verdict: needed
+  - fact: npx skills add langchain-ai/langsmith-skills --skill '*' --yes --global
+    reader_loses: The command that supplies production traces, a distinct operational job from building evals.
+    verdict: needed
+  - fact: uv tool install evalkit --from git+https://github.com/awslabs/Agent...
+    reader_loses: The actual AWS evalkit installation step.
+    verdict: needed
+  - fact: /evalkit.plan, /evalkit.data, /evalkit.trace, /evalkit.run_agent, and /evalkit.eval
+    reader_loses: The phases required to progress from an initialized folder to a scored evaluation.
+    verdict: needed
+  - fact: The Claude Code plugin marketplace and install commands
+    reader_loses: The alternative installation path for readers using Claude Code.
+    verdict: defensible
+  - fact: 'The four-line trace write-up fields: Observed behavior, Comparison, Attribution, and Eval candidate'
+    reader_loses: A concrete method for converting a production trace into a testable capability.
+    verdict: needed
+  - fact: The Harbor task files task.toml, instruction.md, environment/, and tests/
+    reader_loses: The exact structure needed to implement the evaluation folder.
+    verdict: needed
+  - fact: Expected outcome, rubric, and judge credentials remain hidden from the tested agent
+    reader_loses: The boundary that makes the evaluation score meaningful rather than leaked.
+    verdict: defensible
+  - fact: 285 self-improving-codebase iterations produced 1,094 merged pull requests and zero regressions, while 38 green tests coexisted with a broken product
+    reader_loses: The concrete warning that passing tests can diverge from a working product.
+    verdict: needed
+  - fact: Guardrails alone bounced one pull request in five before a person saw it
+    reader_loses: A useful quantitative indication of the deterministic gate's role.
+    verdict: defensible
+  - fact: A practitioner approved and merged around 1,500 pull requests in 90 days without looking at a line, relying on constraints rather than trust
+    reader_loses: A vivid example of the operating model behind autonomous merging.
+    verdict: defensible
+  - fact: 'The source''s three closing principles: measure the path, make verdicts change the next edge, and turn every failure into a permanent test'
+    reader_loses: A compact restatement of the operational discipline.
+    verdict: defensible
+  - fact: The source's promotional X and Telegram calls to action and interface metadata
+    reader_loses: Nothing material to the evaluation argument.
+    verdict: defensible
+  retentions:
+  - passage: 'The sentence: A reader gets a working path from a polished but ungrounded answer...'
+    costs: Editorial meta-text before the article begins; the space could carry one of the omitted installation commands.
+    verdict: cut
+  - passage: 'The two absences: the vendor-by-vendor leaderboard...'
+    costs: A meta-list announcing omissions rather than teaching evaluation; the space could carry the missing blind-test numbers.
+    verdict: cut
+  - passage: A thermometer tells you the room is cold. A thermostat turns the heat on.
+    costs: A short metaphor, but it gives the reader an immediate model for the score-to-action distinction.
+    verdict: earns_place
+  - passage: Twenty agents reporting to one frozen judge create twenty times as many places...
+    costs: A rhetorical amplification of the judge-risk point; it clarifies why evaluation matters as agent count grows.
+    verdict: earns_place
+  - passage: A score in a report still changes nothing.
+    costs: This repeats the immediately following analytics-versus-engineering formulation; the space could carry the omitted trace template.
+    verdict: cut
+  - passage: The model bill does not move. Everything else does.
+    costs: A rhetorical closing to the rollout section that adds emphasis but no new operational information.
+    verdict: cut
+  - passage: Install one skill. Pull 25 traces. Build one eval today, then add one whenever something breaks.
+    costs: A concise actionable ending that turns the synthesis into a first step.
+    verdict: earns_place
+  notes: Changes required because the synthesis gives a useful travel-agent-to-eval-loop explanation but strips the source's reproducible installation workflow, comparative evidence, and key safety caveat, while largely preserving the source's section sequence. The needed omissions cut past the bone; restore the blind-test evidence, one complete installation path, the trace/task structure, and the green-tests/broken-product warning first.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: '- | At one company, 19 of every 20 pull requests from a fully autonomous agent merged without human involvement. | 1'
+    repair_from: '- | At one company, 19 of every 20 pull requests from a fully autonomous agent merged without human involvement. | 1'
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The manuscript reports the favorable autonomous-merging results but omits the source's counterargument: a self-improving codebase achieved 38 green tests while the product was completely broken. That qualification limits how confidently the reported gate results can be generalized.
+  scores:
+    claim_support: 5
+    qualification_survival: 3
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked the manuscript's factual claims, figures, quotations, attributions, and furniture against the pinned extraction; I could not check claims against anything outside that extraction.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: '- | Eval Engineering | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      The article title is in title case; headings and title furniture should use sentence case.
+    suggestion: Eval engineering
+  - severity: major
+    article: eval-engineering
+    locator: '- | Specific, clean, useful-sounding. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      This is a sentence fragment with no verb.
+    suggestion: It was specific, clean, and useful-sounding.
+  - severity: major
+    article: eval-engineering
+    locator: '- | All of it invented. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      This is a sentence fragment with no verb.
+    suggestion: All of it was invented.
+  scores:
+    grammar: 2
+    typography: 4
+    consistency: 4
+  notes: |
+    Changes required because the title uses title case and two prose sentences are fragments.
+shape:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: eval-engineering
+    locator: '- | The sentence: A reader gets a working path from a polished but ungrounded answer to an evaluation loop that changes the agent''s next action, using the travel agent as the thread. | 1'
+    repair_from: '- | The sentence: A reader gets a working path from a polished but ungrounded answer to an evaluation loop that changes the agent''s next action, using the travel agent as the thread. | 1'
+    category: opening
+    disposition: fix
+    note: |
+      The manuscript opens with editorial process notes rather than the argument itself. The reader must pass through a statement of intent and a list of omissions before reaching the actual point of interest.
+    suggestion: Remove the process notes and open directly with the travel-agent failure or the model-parity claim.
+  - severity: major
+    article: eval-engineering
+    locator: 'The model will be replaced. The examiner remains: the failures turned into tests, the rules that change the next edge, and the track record that lets a machine merge its own work. | 1'
+    repair_from: The software travel agent answered a simple trip question with an exchange rate, the week's temperature, and a museum's opening hours. | 1
+    category: running_example
+    disposition: fix
+    note: |
+      The opening promises the travel agent as the thread, but the concrete case disappears after the initial diagnosis. The later sections introduce general examples and procedures without returning to that agent, so the piece reads as a sequence of explanations rather than one carried-through case.
+    suggestion: Return to the travel agent when introducing the eval loop, routing verdicts, and gate, showing how each mechanism changes that run.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 1
+    ending: 4
+  notes: |
+    The piece moves coherently from model parity to a hallucinating travel agent, then to evaluation loops, judges, routing, and autonomous gates, but its opening is occupied by process notes and its promised running example is not sustained.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: '- | The sentence: A reader gets a working path from a polished but ungrounded answer to an evaluation loop that changes the agent''s next action, using the travel agent as the thread. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The piece opens with editorial summary and omission notes rather than an article sentence. The framing announces the argument before the reader encounters it.
+    suggestion: |
+      Remove the two setup lines and begin with "Everyone is renting the same brain now."
+  - severity: minor
+    article: eval-engineering
+    locator: ' | Specific, clean, useful-sounding. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This decorative triad and fragment labels the answer instead of showing its effect.
+    suggestion: |
+      Replace the triad with one concrete sentence describing why the answer appeared trustworthy.
+  - severity: minor
+    article: eval-engineering
+    locator: ' | That layer is the distance between an AI that impresses people and one that gets paid. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      The balanced clause performs a ready-made insight and compresses several different outcomes into a slogan.
+    suggestion: |
+      State the operational distinction directly: evaluation determines whether failures alter the agent's next action.
+  - severity: minor
+    article: eval-engineering
+    locator: ' | The wiring is direct. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This portentous short sentence announces a transition without adding information.
+    suggestion: |
+      Delete it and let the following routing examples make the connection.
+  - severity: minor
+    article: eval-engineering
+    locator: ' | The category was unbundling itself into the terminal already open. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Unbundling" is corporate abstraction, and the terminal metaphor decorates a point that the preceding facts already establish.
+    suggestion: |
+      Say plainly that evaluation capabilities were moving into coding-agent workflows.
+  - severity: major
+    article: eval-engineering
+    locator: ' | Start with 25 complete traces, chosen so good and bad behavior sit beside each other: a normal request, a user-confirmed success, a correction or rephrasing, a failed or repeated tool call, and an external failure such as a timeout or rate limit. | 1'
+    category: passive
+    disposition: fix
+    note: |
+      The article repeatedly issues ownerless imperatives: "Start with 25 complete traces", "Turn the finding into a folder", "Keep the suite alive", "Begin with five evals", and "Install one skill." The unnamed actor makes the procedure sound like system output.
+    suggestion: |
+      Name the responsible team or role once, then vary the remaining instructions or fold them into prose.
+  - severity: minor
+    article: eval-engineering
+    locator: ' | Choose the dataset type deliberately: `final_response`, `single_step`, `trajectory`, or `RAG`. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "Trajectory" and especially "RAG" arrive as unexplained taxonomy; a competent engineer outside evaluation work cannot infer the distinctions reliably from this sentence.
+    suggestion: |
+      Define each term briefly at first use or replace the list with the behavior each dataset captures.
+  - severity: minor
+    article: eval-engineering
+    locator: ' | That is what decides whether the $200 on the card statement produces a demo or a business. | 1'
+    category: ai_phrasing
+    disposition: fix
+    note: |
+      The closing claim assigns a sweeping business verdict to the evaluation layer without demonstrating that certainty, turning a useful conclusion into a slogan.
+    suggestion: |
+      End on the narrower demonstrated claim: the loop determines whether the model's failures become tests and alter future runs.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 3
+  notes: |
+    I heard a vivid, technically grounded argument whose voice thins when the prose shifts into editorial framing, taxonomic lists, and procedural imperatives.

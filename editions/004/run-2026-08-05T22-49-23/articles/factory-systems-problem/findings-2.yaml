@@ -1,0 +1,233 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The warning that startups created in the last six months are unlikely to belong to the small expert cohort
+    reader_loses: Less specific evidence for skepticism toward vendors claiming to have solved factory systems.
+    verdict: defensible
+  - fact: The cohort is described as the who's-who of roughly ten people
+    reader_loses: The social-expertise qualifier, though the manuscript preserves the approximate size and two-year effort.
+    verdict: defensible
+  - fact: A homelab project could earn a super-fast promotion and red-carpet treatment at an interview
+    reader_loses: The source's explicit career upside, beyond the manuscript's retained highest-ROI advice.
+    verdict: defensible
+  - fact: The post is introduced as a second hot take because the first apparently landed
+    reader_loses: Context about the author's sequence of posts and audience response.
+    verdict: defensible
+  - fact: The service-bus prior art is described as being in the 'spooky land of enterprise'
+    reader_loses: A rhetorical characterization, not operational or argumentative substance.
+    verdict: defensible
+  - fact: The source calls this a second hot take
+    reader_loses: A framing label only; the substantive service-bus argument remains.
+    verdict: defensible
+  omissions_summary:
+    verdict: defensible
+    note: The manuscript drops contextual and rhetorical details but keeps the systems-engineering thesis, the concrete stack components, the service-bus technologies, and the Temporal recommendation.
+  retentions:
+  - passage: Software factories are super real but we need to be realistic.
+    costs: A brief framing sentence, but it establishes the piece's central caution.
+    verdict: earns_place
+  - passage: The work is almost lights out.
+    costs: A short, somewhat opaque characterization, but it conveys the source's claim about the intensity of the work.
+    verdict: earns_place
+  - passage: Blog post time.
+    costs: A transition with no information; the space could support one of the omitted contextual details.
+    verdict: cut
+  - passage: 'I have lots of bad memories here:'
+    costs: Personal setup without a specific example; the following technical assessment already carries the useful point.
+    verdict: cut
+  retentions_summary:
+    verdict: section_does_not_pay
+    severity: major
+    note: The 'Blog post time' transition and 'I have lots of bad memories here' preamble are expendable, though most retained passages carry the argument or its concrete recommendations.
+  shape:
+    source_sections:
+    - Software factories are super real but we need to be realistic
+    - Factories are not a token or LLM problem
+    - Do not make the service bus non-deterministic
+    manuscript_sections:
+    - Software factories are super real but we need to be realistic
+    - Factories are not a token or LLM problem
+    - Do not make the service bus non-deterministic
+    verdict: source_shaped
+    severity: major
+    note: As a faithful edit collecting three posts, preserving their sequence is appropriate.
+  position:
+    verdict: has_position
+    note: It argues directly that factory reliability is a systems and corporate-culture problem and recommends deterministic, established service-bus infrastructure.
+  notes: |
+    Approved because it collects three scattered posts into one readable argument while preserving the central thesis, concrete infrastructure checklist, named service-bus options, and Temporal recommendation.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: ' | If someone is selling you a factory rn and isn’t in the very small cohort of roughly ten people who have been trying, and realistically failing, to solve this over the last two years, they are selling bullshit. | 1'
+    repair_from: ' | Software factories are super real but we need to be realistic. | 1'
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source describes a super-small cohort, likely including startups created
+      in the last six months, or circa fewer than ten people in the who's-who.
+      The manuscript turns this into a single cohort of roughly ten people and
+      drops the source's alternative and qualification.
+  scores:
+    claim_support: 4
+    qualification_survival: 3
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked the title, body assertions, examples, numbers, attributions, and
+    conclusions against all three pinned extractions; the cohort qualification is
+    materially narrowed in the manuscript.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Software factories are super real but we need to be realistic. | 1'
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      Two independent clauses are joined by "but" without a comma. The sentence
+      is retained source text, so the editor decides the remedy.
+    suggestion: Software factories are super real, but we need to be realistic.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | The factory aspects haven’t been cracked yet, the innovators are toying around | 1'
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      The comma joins two independent clauses and creates a comma splice. The
+      sentence is retained source text, so the editor decides the remedy.
+    suggestion: The factory aspects haven’t been cracked yet. The innovators are toying around...
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | It isn’t cracked but it’s a puzzle that’s being solved daily. | 1'
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      Two independent clauses are joined by "but" without a comma. The sentence
+      is retained source text, so the editor decides the remedy.
+    suggestion: It isn’t cracked, but it’s a puzzle that’s being solved daily.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | It won’t be solved through tokens or how you apply the tokens | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      The coordinated elements are not parallel: "tokens" is a noun while "how
+      you apply the tokens" is a clause. The sentence is retained source text,
+      so the editor decides the remedy.
+    suggestion: It won’t be solved through token counts or through how you apply them
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Blog post time. | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      This is a sentence fragment with no verb. It is retained source text, so
+      the editor decides whether to recast it.
+    suggestion: It’s time for a blog post.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | service busses are a solved problem | 1'
+    category: spelling
+    disposition: editor_decision
+    note: |
+      The plural of "bus" is "buses"; "busses" is a different word. The sentence
+      is retained source text, so the editor decides the remedy.
+    suggestion: service buses are a solved problem
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | The Factory Is a Systems Problem | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      The article title is in title case rather than the required sentence case.
+      This is editorial furniture.
+    suggestion: The factory is a systems problem
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | the theory / education is generally on point | 1'
+    category: typography
+    disposition: editor_decision
+    note: |
+      Slash spacing is inconsistent within the piece: other slash constructions
+      use no surrounding spaces. The sentence is retained source text.
+    repair_from: abstractions/pieces
+    suggestion: the theory/education is generally on point
+  scores:
+    grammar: 2
+    typography: 3
+    consistency: 3
+  notes: |
+    Changes required because the piece contains punctuation and grammar defects,
+    a misspelling, a title-case heading, and inconsistent slash spacing.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | At home, in your homelab, you should be cracking on this problem space in your free time and showing it at your next interview or in a recorded talk at a meetup. | 1'
+    repair_from: '- | At home, in your homelab, you should be cracking on this problem space in your free time and showing it at your next interview or in a recorded talk at a meetup. | 1'
+    category: duplication
+    disposition: editor_decision
+    note: |
+      The first paragraph gives the same career-and-demonstration advice twice. It
+      first says, "At home, in your homelab, you should be cracking on this problem
+      space in your free time and showing it at your next interview or in a
+      recorded talk at a meetup." It then repeats the idea as, "The highest ROI you
+      can have right now is learning the entire damn stack, automating it and
+      showing it at your next interview/doing a recorded talk at a meetup."
+    suggestion: Keep one version of the interview-and-talk recommendation.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | n8n was a silly idea, which I’ve always suspected was developed by young folks in Silicon Valley who are all in on the LLM craze who have never worked in corporate in their life thus didn’t have the knowledge that service busses are a solved problem and there’s deep prior art in the spooky land of enterprise. | 1'
+    repair_from: '- | I must stress that factories are not a token or LLM problem. | 1'
+    category: missing_transition
+    disposition: fix
+    note: |
+      The piece moves from its general systems-engineering thesis directly into a
+      hostile evaluation of n8n. The reader has to infer that n8n is the concrete
+      case illustrating the preceding claim.
+    suggestion: Add a transition that frames n8n and service-bus determinism as the thesis’s concrete example.
+  scores:
+    order: 4
+    coherence: 3
+    opening: 4
+    ending: 3
+  notes: |
+    I verified that the piece proceeds from the state of software factories, to its
+    systems-engineering thesis, to a service-bus example, but repetition and the
+    unmarked jump into n8n weaken the arrangement.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: ' | Look up anything in the @dotnet space such as MassTransit, NServiceBus, WCF if you wanna steal ideas for prompting. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three consecutive imperative sentences—"Look up anything...", "Use it and have a job invoke an agent as a process.", and "Don't make the entire service bus non-deterministic."—create a noticeable command pattern. The remedy is editorial: cut or recast one of the commands.
+  - severity: minor
+    article: factory-systems-problem
+    locator: ' | DevEx | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "DevEx" is unexplained specialist shorthand. Define it on first use or replace it with plain language.
+  - severity: minor
+    article: factory-systems-problem
+    locator: ' | The work is almost lights out. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Almost lights out" is an opaque metaphor here; it does not clarify what the work entails or why it matters.
+  scores:
+    voice: 4
+    sentence_variety: 3
+    economy: 2
+  notes: |
+    I heard a forceful, opinionated person throughout, but the piece loses economy when its commands and broad shorthand accumulate faster than the argument can sharpen.

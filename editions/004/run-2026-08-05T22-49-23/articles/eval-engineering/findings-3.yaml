@@ -1,0 +1,182 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: One installation path starts with | One installation path starts with `npx skills add langchain-ai/langchain-skills --skill '*' --yes --global` | 1
+    repair_from: One installation path starts with | One installation path starts with `npx skills add langchain-ai/langchain-skills --skill '*' --yes --global` | 1
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The manuscript's evalkit installation ends with `https://github.com/awslabs/Agent...`, so a reader cannot type the command or know the repository it refers to. The source presents this as a concrete installation path, and omitting the usable repository identifier strips the operational value from that part of the piece.
+    suggestion: Carry the complete evalkit repository URL, or omit the command and state plainly that the path is illustrative.
+  - severity: major
+    article: eval-engineering
+    repair_from: '- | Everyone is renting the same brain now | 1'
+    category: source_shaped
+    disposition: fix
+    note: |
+      The manuscript follows the source's sequence almost exactly: shared models and the travel-agent failure, what eval engineering is, installation and benchmark results, verdict-driven routing, trace mining and Harbor tasks, autonomous merging, then the starter suite and conclusion. The synthesis clarifies and compresses that sequence but does not make an editorial decision about its shape.
+    suggestion: Reorder the material around the central claim that verdicts change the next edge—for example, lead with the thermostat/routing loop, then supply the benchmark, installation, and implementation steps as support.
+  omissions:
+  - fact: 'The source''s full title, ''Eval Engineering: the step that turns a $200 model into a $200,000 system'''
+    reader_loses: The explicit scale claim that the harness, rather than the model, is what turns a cheap capability into a much larger system.
+    verdict: defensible
+  - fact: The source's warning that this is not a skim and should be read with a terminal beside it
+    reader_loses: Nothing essential; the manuscript supplies the actual setup and commands without the promotional framing.
+    verdict: defensible
+  - fact: 'The benchmark''s construction: human experts labeled a taxonomy of 39 failures in 100 voice-agent traces before systems were tested blind'
+    reader_loses: Some of the evidence that makes the recall and precision comparison credible.
+    verdict: defensible
+  - fact: 'The vendor timing and licensing details: LangChain on 22 July, Galileo, AWS under Apache 2.0, and Arize''s trace-extraction skills'
+    reader_loses: The chronology and open-license context behind the claim that the category is unbundling.
+    verdict: defensible
+  - fact: The complete evalkit repository URL in `uv tool install evalkit --from git+https://github.com/awslabs/Agent...`
+    reader_loses: Cannot install evalkit from the manuscript's command.
+    verdict: needed
+  - fact: 'The source''s concrete cross-model judging example: Sonnet judging Haiku output'
+    reader_loses: A memorable illustration of why the judge should come from another model family.
+    verdict: defensible
+  - fact: The source's attribution of the six routing rules to a 21-year-old founder in Tokyo with 258 followers
+    reader_loses: The provenance and anecdotal texture of the rule set, not the rules themselves.
+    verdict: defensible
+  - fact: The source's explicit instruction that questioning the user beats one-shot generation because the definition of correct lives in the user's head
+    reader_loses: The reason the interview step precedes implementation.
+    verdict: defensible
+  - fact: The source's observation that three of the four merge signals are historical or deterministic and exactly one touches the model
+    reader_loses: A useful qualification about why the confidence score is not simply another model opinion.
+    verdict: defensible
+  - fact: The report of roughly 1,500 pull requests approved without looking at a line of code, with trust placed in constraining agents
+    reader_loses: A vivid first-person explanation of the operational meaning of the autonomous-merge statistics.
+    verdict: defensible
+  - fact: Guardrails alone bounced one pull request in five before human review
+    reader_loses: A concrete measure of how much deterministic filtering can remove from the human queue.
+    verdict: defensible
+  - fact: 'The two-person-shop comparison: keeping the risky slice closed and the boring 80 percent open lets the same people quote contracts they previously declined'
+    reader_loses: The practical business consequence of the gate policy.
+    verdict: defensible
+  - fact: 'The source''s final three-line discipline: measure the path, make verdicts change the next edge, and turn every failure into a permanent test'
+    reader_loses: A compact checklist of the article's closing principles.
+    verdict: defensible
+  - fact: The author's X and Telegram calls to action and post metadata
+    reader_loses: Nothing needed to understand or apply the argument.
+    verdict: defensible
+  retentions:
+  - passage: Everyone is renting the same brain now
+    costs: A short opening frame that establishes why evaluation, rather than model access, is the differentiator.
+    verdict: earns_place
+  - passage: A software travel agent answered a trip question
+    costs: The concrete hallucination example that makes the 83.9 percent versus 32.3 percent gap intelligible.
+    verdict: earns_place
+  - passage: A thermometer tells you the room is cold
+    costs: The central metaphor distinguishing passive measurement from a verdict that changes execution.
+    verdict: earns_place
+  - passage: The entry cost is lower than it looks
+    costs: The transition into the blind benchmark and installation path, which justifies the claim that evaluation is accessible.
+    verdict: earns_place
+  - passage: The judge needs rules of its own
+    costs: The practical safeguards against self-grading, proxy optimization, and incomparable scores.
+    verdict: earns_place
+  - passage: The model will be replaced
+    costs: 'A concise closing statement of what persists across model upgrades: tests, routing rules, and the track record.'
+    verdict: earns_place
+  notes: |
+    Changes required because the installation path is not fully usable and the manuscript largely preserves the source's section order rather than imposing a distinct editorial shape.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: ' | Before collecting data, run /evalkit.plan with an instruction to map the repository''s entrypoint, tools, backing data, and result shape, read the 25 traces in ./traces, propose eval candidates grounded in what actually failed, and recommend one before implementation. | 1'
+    repair_from: ' | Before collecting data, run /evalkit.plan with an instruction to map the repository''s entrypoint, tools, backing data, and result shape, read the 25 traces in ./traces, propose eval candidates grounded in what actually failed, and recommend one before implementation. | 1'
+    category: invented_claim
+    disposition: fix
+    note: |
+      The extraction shows an /evalkit.plan command, but its displayed instruction is truncated after "for grounding and to". The detailed repository-mapping, 25-trace, candidate-proposal, and recommendation instructions appear separately as a generic skill prompt, not as the documented /evalkit.plan command. The manuscript presents those details as belonging to that command without support in the pinned extraction.
+  scores:
+    claim_support: 4
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 4
+  notes: |
+    I checked the title, headings, body claims, figures, commands, numbers, attributions, quotations, and conclusions against the pinned extraction; external material and the truncated remainder of the /evalkit.plan command could not be checked.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    No mechanical defects found; sentence openings, grammar, punctuation, typography, headings, labels, numbers, and code samples are consistent and typeset-safe.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: '- | The travel agent should fail the first when its search returns nothing | 1'
+    repair_from: '- | For the travel agent, an empty tool result is a separate failure | 1'
+    category: duplication
+    disposition: fix
+    note: |
+      The travel-agent empty-result example is explained twice: first as a routing
+      failure requiring acknowledgment, then again as the first test the suite
+      should contain. The later repetition weakens the progression from method to
+      durable test.
+    suggestion: Keep the first explanation and refer back to it briefly when introducing the initial test suite.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 5
+    ending: 5
+  notes: |-
+    I verified that the piece progresses from the evaluation problem through routing,
+    implementation, judging, and operational safeguards, with one repeated travel-agent
+    failure example interrupting an otherwise coherent arc.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: eval-engineering
+    locator: '- | Run the gate in shadow mode for at least four hours of real traffic, merging nothing. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      The piece uses at least seven imperative sentences in a concentrated run: "Run the gate in shadow mode for at least four hours of real traffic, merging nothing", "Keep it closed when automated and human verdicts differ by more than 2 percent", "Sample 1 to 5 percent of traces", "Open the gate on the boring 80 percent and keep the risky slice under review", "Keep the suite alive", "Hold out 300 to 800 cases and keep 500 running in under five minutes", and "Begin with an empty tool result, a repeated call, a boundary refusal, handoff integrity, and verified completion." The reader hears a procedure manual rather than a person. The remedy is editorial: cut or consolidate several commands.
+  - severity: minor
+    article: eval-engineering
+    locator: '- | Low context recall can reject a handoff. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "Context recall" is specialized evaluation terminology and is not defined for a competent engineer outside this subfield.
+    suggestion: Define context recall in plain language at its first use.
+  - severity: minor
+    article: eval-engineering
+    locator: '- | Choose the dataset type deliberately: `final_response`, `single_step`, `trajectory`, or `RAG`. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "RAG" is presented as a dataset type without expansion, leaving a reader outside the immediate field to infer its meaning.
+    suggestion: Expand RAG on first use.
+  - severity: major
+    article: eval-engineering
+    locator: '- | A score can describe the past. | 1'
+    category: weak_close
+    disposition: fix
+    note: |
+      The final pair, "A score can describe the past. The examiner decides what happens next.", restates the earlier score-versus-routing contrast and ends in a slogan rather than leaving a new consequence or question.
+    suggestion: Replace the closing pair with one concrete implication for how a team should use its next evaluation result.
+  - severity: minor
+    article: eval-engineering
+    locator: '- | The order matters. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "The order matters." is a portentous signpost whose meaning is supplied immediately by the following sentences.
+    suggestion: Cut the sentence and begin directly with the sequence it introduces.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 4
+  notes: I heard a vivid, technically grounded voice that gradually turns into a dense sequence of procedural imperatives, with a closing contrast that sounds more like a maxim than a final discovery.

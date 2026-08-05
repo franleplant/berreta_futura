@@ -1,0 +1,229 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: '- | Tool schemas now use full JSON Schema 2020-12, including composition, conditionals, and references. | 1'
+    repair_from: '- | Tool schemas now use full JSON Schema 2020-12, including composition, conditionals, and references. | 1'
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source also retains the inputSchema object-root constraint, permits unrestricted output schemas and arbitrary structuredContent values, forbids automatic dereferencing of external $ref URIs, and requires bounds on schema depth and validation time. Omitting these constraints leaves implementers without important behavior and safety requirements.
+    suggestion: Add the input/output schema constraints and the external-reference and validation-limit rules.
+  - severity: major
+    article: mcp-protocol-update
+    locator: '- | Authorization clients must validate the iss parameter, declare their OpenID Connect application_type, bind credentials to the issuing server, and re-register when a resource moves. | 1'
+    repair_from: '- | Authorization clients must validate the iss parameter, declare their OpenID Connect application_type, bind credentials to the issuing server, and re-register when a resource moves. | 1'
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source also specifies refresh-token requests for OpenID Connect-style authorization servers, scope accumulation during step-up authorization, and the .well-known discovery suffix. These are concrete authorization behaviors a reader implementing the update would otherwise have to recover from the source.
+    suggestion: Add a compact sentence covering refresh tokens, step-up scope accumulation, and discovery.
+  omissions:
+  - fact: The six SEPs that jointly deliver the stateless core
+    reader_loses: Less ability to trace the change set to the specification proposals.
+    verdict: defensible
+  - fact: The old initialize request and the Mcp-Session-Id response/request examples
+    reader_loses: The precise wire format of the removed handshake is not reproduced.
+    verdict: defensible
+  - fact: The new POST /mcp request example with Content-Type and JSON-RPC parameters
+    reader_loses: A reader cannot copy the complete new request from this article alone.
+    verdict: defensible
+  - fact: The browser_id example alongside basket_id
+    reader_loses: One additional illustration of explicit application handles is absent.
+    verdict: defensible
+  - fact: The SEP numbers for server-initiated requests and multi-round-trip requests
+    reader_loses: Proposal identifiers for lookup are missing.
+    verdict: defensible
+  - fact: The requirement that server-initiated requests were merely recommended before becoming mandatory
+    reader_loses: The precise change in normative status is less explicit.
+    verdict: defensible
+  - fact: The full retry payload containing inputResponses and echoed requestState
+    reader_loses: A client implementer still needs the source to construct the retry body.
+    verdict: defensible
+  - fact: The Cache-Control modeling of ttlMs and cacheScope
+    reader_loses: The cache semantics' relationship to an existing HTTP mechanism is not stated.
+    verdict: defensible
+  - fact: The Extensions Track path from experimental to official
+    reader_loses: The formal promotion route for extensions is omitted.
+    verdict: defensible
+  - fact: The ext-* repository naming convention
+    reader_loses: A maintainer lacks the repository naming detail.
+    verdict: defensible
+  - fact: The authorization refresh-token request guidance
+    reader_loses: An implementer using an OpenID Connect-style authorization server may not know how the specification expects refresh tokens to be requested.
+    verdict: needed
+  - fact: Scope accumulation during authorization step-up
+    reader_loses: A client may implement step-up authorization with the wrong scope behavior.
+    verdict: needed
+  - fact: The .well-known discovery suffix clarification
+    reader_loses: A client may query the wrong discovery endpoint.
+    verdict: needed
+  - fact: 'The inputSchema type: object root constraint'
+    reader_loses: A tool implementation could incorrectly accept non-object input schemas.
+    verdict: needed
+  - fact: Output schemas are unrestricted and structuredContent may be any JSON value
+    reader_loses: Readers may incorrectly retain the old object-only assumption.
+    verdict: needed
+  - fact: Implementations must not auto-dereference external $ref URIs
+    reader_loses: A reader could implement unsafe or non-conforming external reference resolution.
+    verdict: needed
+  - fact: Schema depth and validation-time bounds
+    reader_loses: The operational protection against pathological schemas is absent.
+    verdict: needed
+  - fact: The ten-week validation window, Tier 1 SDK expectation, and issue/Discord guidance
+    reader_loses: Readers lack the release-candidate adoption timetable and support path.
+    verdict: defensible
+  - fact: The conformance suite is also used by the SDK tier system
+    reader_loses: The relationship between conformance scenarios and SDK scoring is omitted.
+    verdict: defensible
+  retentions:
+  - passage: A remote MCP server that once needed sticky routing...
+    costs: A short opening summary, but it gives the reader the practical deployment consequence before protocol details.
+    verdict: earns_place
+  - passage: In practice, we’ve found this pattern more than a workable substitute...
+    costs: A paragraph of maintainers' interpretation, but it explains why explicit handles are more than a mechanical replacement for sessions.
+    verdict: earns_place
+  - passage: A user is never prompted out of nowhere...
+    costs: A brief safety explanation, but it makes the user-initiated boundary clear.
+    verdict: earns_place
+  - passage: This release includes MCP Apps...
+    costs: A concrete description of sandboxing, prefetching, and audit behavior that could otherwise be reduced to a name-only mention.
+    verdict: earns_place
+  - passage: This release contains breaking changes. The maintainers do not intend that to become normal.
+    costs: A concluding governance paragraph, but it states the article's forward-looking judgment about why this break is exceptional.
+    verdict: earns_place
+  notes: |
+    Changes required because the synthesis gives a strong operational overview but drops several concrete authorization and JSON Schema rules that implementers need to act on it without returning to the source.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: '- | Clients must validate the `iss` parameter, declare their OpenID Connect `application_type`, bind credentials to the issuing server, and re-register when a resource moves. | 1'
+    repair_from: '- | Clients must validate the `iss` parameter, declare their OpenID Connect `application_type`, bind credentials to the issuing server, and re-register when a resource moves. | 1'
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source limits re-registration to when a resource migrates between authorization servers. The manuscript broadens this to any resource move.
+  - severity: major
+    article: mcp-protocol-update
+    locator: '- | With it landed, future revisions can evolve through deprecation windows, extensions, and tested scenarios instead of asking every deployment to rebuild its transport. | 1'
+    repair_from: '- | This release contains breaking changes. | 1'
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source says implementers targeting 2026-07-28 are expected to adopt future revisions without rewriting transport or lifecycle code. The manuscript broadens that expectation to every deployment and drops the targeting qualification.
+  scores:
+    claim_support: 3
+    qualification_survival: 3
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked the title, deck, body, code example, operational details, governance claims, and conclusion against the complete pinned extraction; I could not find support for two broadened qualifications.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: '- | This release includes MCP Apps, which lets a server provide | 1'
+    category: agreement
+    disposition: fix
+    note: |
+      "MCP Apps" is a plural subject, so the relative verb must be plural.
+      This is the editors' sentence in faithful_synthesis.
+    suggestion: This release includes MCP Apps, which let a server provide an interactive HTML interface for a sandboxed iframe.
+  scores:
+    grammar: 4
+    typography: 5
+    consistency: 5
+  notes: |
+    One subject-verb agreement error requires correction; the remaining prose, typography, formatting, and number styles are clean.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: '- | A shopping tool can return `basket_id: "b_123"`, and the model can pass that handle to `add_item` on a later call. | 1'
+    repair_from: '- | A remote MCP server that once needed sticky routing, a shared session store, and a gateway inspecting request bodies can now sit behind a plain round-robin load balancer. | 1'
+    category: running_example
+    disposition: fix
+    note: |
+      The piece introduces several unrelated concrete cases: a remote server behind a load balancer, a shopping basket, and a file-deletion elicitation. No single case carries the explanation through the protocol changes, so the article reads as a sequence of examples rather than one coherent demonstration.
+    suggestion: Establish one representative server scenario in the opening and reuse it through the state, elicitation, task, and operational changes.
+  scores:
+    order: 4
+    coherence: 3
+    opening: 4
+    ending: 5
+  notes: |
+    The protocol changes progress in a recoverable order from stateless transport through lifecycle, authorization, deprecations, and policy, but the examples do not form a sustained thread.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: '- | Each request identifies its protocol version and operation with `MCP-Protocol-Version`, `Mcp-Method`, and `Mcp-Name`; clients can cache `tools/list` responses for as long as the server''s `ttlMs` permits. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      The sentence introduces several protocol-specific headers and fields without
+      telling an engineer outside this subfield what each controls. Add a short
+      plain-language gloss for the headers and `ttlMs` at first use.
+    suggestion: Add one brief parenthetical explaining the headers and the cache lifetime field.
+  - severity: major
+    article: mcp-protocol-update
+    locator: '- | Extensions now have a formal home. They use reverse-DNS identifiers, are negotiated through an `extensions` map, live in separate repositories with delegated maintainers, and can version independently of the specification. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "Reverse-DNS identifiers," an `extensions` map, and delegated maintainers
+      assume protocol-extension knowledge the piece never supplies. Give the reader
+      a compact explanation of how an extension is named and negotiated.
+    suggestion: Define reverse-DNS naming and negotiation in one plain-language clause.
+  - severity: major
+    article: mcp-protocol-update
+    locator: '- | Authorization clients must validate the `iss` parameter, declare their OpenID Connect `application_type`, bind credentials to the issuing server, and re-register when a resource moves. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      The authorization paragraph stacks OpenID Connect and registration terms with
+      no orientation, so readers outside identity infrastructure must decode the
+      requirements before they can understand the breaking change.
+    suggestion: Explain what `iss` and `application_type` identify and why a moved resource requires re-registration.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: '- | In practice, we''ve found this pattern more than a workable substitute for session state. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "In practice" is throat-clearing, and "more than a workable substitute" is an
+      abstract, awkward comparative that blurs the claim.
+    suggestion: State directly that the handle pattern has proved a better substitute for protocol-managed session state.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: '- | Three operational changes follow. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This is a changelog-style transition with no reader in the room; the next
+      sentence already names the first change.
+    suggestion: Cut the sentence and begin directly with the Streamable HTTP change.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: '- | The stateless rework in this release is the kind of foundational change that needed a clean break. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Stateless rework," "foundational change," and "clean break" form an
+      abstraction stack that gestures at importance without naming the operational
+      reason.
+    suggestion: Replace the abstraction with the concrete reason the session removal required a breaking release.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    I heard a clear, technically engaged synthesis whose voice holds through the
+    operational examples, but several passages switch into unexplained protocol and
+    identity jargon, with a few mechanical or abstract transition sentences.
