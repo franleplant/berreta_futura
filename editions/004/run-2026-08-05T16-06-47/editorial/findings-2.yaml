@@ -1,0 +1,45 @@
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    Sentence-initial capitalisation consistent throughout. Grammar, agreement, punctuation, and spelling are sound. Typography is clean: no em dashes, quotes and apostrophes are consistent. The body opens with a paragraph. Parallelism and logical flow are strong across the four-part argumentative structure.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | Seventeen thousand six hundred actions moved through a dataset loader and a hijacked sandbox until the few tries that mattered were buried inside thousands that weren''t | 1'
+    repair_from: '- | It assumes the guesser pays; an agent doesn''t | 1'
+    category: missing_transition
+    disposition: fix
+    note: |
+      The piece shifts directly from the principle ("It assumes the guesser pays; an agent doesn't") to a concrete security incident without a connective phrase. The reader cannot immediately see why the incident is being introduced—it feels abrupt, forcing reorientation mid-read.
+    suggestion: Add a bridge at the end of sentence 4 or the beginning of sentence 5, such as 'Here's what that looks like when an agent guesses:' or 'In practice, when the guesser doesn't pay:'
+  scores:
+    order: 4
+    coherence: 3
+    opening: 5
+    ending: 4
+  notes: |
+    The piece argues that planning requires making guesses costly to the guesser, supported by a vault metaphor, a security breach incident, and a successful system design. The missing transition between principle and example creates one moment of disorientation.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: The Price of Being Wrong
+    locator: The Price of Being Wrong | It assumes the guesser pays; an agent doesn't. | 1
+    category: banned_tic
+    disposition: fix
+    suggestion: |
+      Remove or restructure to eliminate the antithetical construction. This parallel contrast form is a banned tic in house style.
+  scores:
+    voice: 5
+    sentence_variety: 5
+    economy: 5
+  notes: |
+    A knowledgeable voice building a system design principle through specific
+    examples and sustained reasoning. One construction violates house style.

@@ -1,0 +1,67 @@
+result: changes_required
+findings:
+- severity: major
+  article: pragmatic-leverage
+  locator: Seeking leverage | Even before AI, only 25-50% of the time to ship a feature was writing the code itself | 1
+  category: running_order
+  disposition: fix
+  note: |
+    pragmatic-leverage, the weakest piece, sits sequenced between two stronger
+    pieces (frontier-lab and mcp-in-a-nutshell). The arrangement reads strong-weak-strong
+    and disrupts momentum. pragmatic-leverage should either open the issue as an
+    accessible introduction to cost-pricing, or be removed entirely. Currently it
+    breaks the reading flow between the motivating case study and the successful
+    architecture example.
+- severity: major
+  article: pragmatic-leverage
+  locator: The tradeoff between planning depth and expected rework | For this example I'm gonna blur | 1
+  repair_from: '- | This one is a bit of an addendum | 1'
+  category: weak_piece
+  disposition: fix
+  note: |
+    pragmatic-leverage is the weakest piece in the issue. The author admits the
+    analysis is incomplete: "I'm gonna blur...into a single percentage number but
+    obviously they're two separate variables." The reasoning wavers—"There's no
+    perfect process for this"—and the close is provisional: "Good luck." The piece
+    is self-positioned as a "side-quest" and reads as draft material. While the
+    concept (planning reduces expected pain by paying upfront cost) does support
+    the editorial's argument, the execution is underdeveloped. Should not have been
+    commissioned in this incomplete state; either develop it fully or commission a
+    more rigorous piece on planning or design principles.
+- severity: major
+  article: edition
+  category: cover_promise
+  disposition: fix
+  note: |
+    The cover subtitle—"Protocols, evaluations, architectures, and the operational
+    work that turns model capability into dependable systems"—is generic enough to
+    apply to almost any infrastructure issue. It doesn't specifically promise the
+    editorial's actual argument: that systems designed to make the cost of errors
+    high are more secure than systems that price guessing cheaply. The cover
+    underpromises the issue's specific thesis about cost structures in design.
+    Revise to match the editorial's claim.
+- severity: minor
+  article: pragmatic-leverage
+  locator: The tradeoff between planning depth and expected rework | Good luck | 1
+  category: uniformity
+  disposition: fix
+  note: |
+    The closing of pragmatic-leverage uses a conversational, uncertain cadence
+    ("There's no perfect process for this. Good luck.") distinctly different from
+    the technical, principle-based closings of frontier-lab and mcp-in-a-nutshell.
+    The house style requires uniform register and cadence across pieces in the same
+    section. Rewrite the close to match the confidence and technical register of
+    the other two.
+scores:
+  through_line: 4
+  editorial_strength: 3
+  running_order: 2
+  balance: 3
+  cover_promise: 2
+notes: |
+  This issue articulates a clear and specific editorial argument about cost
+  structures in system design, with three distinct illustrations. However, the middle
+  piece is underdeveloped draft material sequenced in the wrong position, and the
+  cover promises generic infrastructure content rather than the specific thesis. Fix:
+  strengthen or remove pragmatic-leverage, reposition it if kept, and revise the
+  cover headline to match the editorial's actual claim.

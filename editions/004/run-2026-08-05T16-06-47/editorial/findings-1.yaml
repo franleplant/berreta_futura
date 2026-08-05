@@ -1,0 +1,69 @@
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | one lucky secrets read | 1'
+    category: agreement
+    disposition: fix
+    note: |
+      The singular article "one" does not agree in number with "secrets read".
+      The phrase should use the singular form to maintain agreement.
+    suggestion: one lucky secret read
+  scores:
+    grammar: 4
+    typography: 5
+    consistency: 5
+  notes: |
+    One agreement error where a singular article precedes a plural noun form.
+    Capitalization is consistent throughout, punctuation is clean, typography
+    is correct, and no unlabeled editor apparatus appears in the prose.
+shape:
+  result: changes_required
+  findings:
+  - severity: blocking
+    category: ending
+    article: editorial
+    locator: '- | Only the price on the guess itself can. | 1'
+    repair_from: Only the price on the guess itself can.
+    note: |
+      The final sentence is grammatically incomplete. "Can" what? The structure
+      "no spec closes the gap. Only the price on the guess itself can" sets up
+      parallel completion, but the piece stops without stating the verb object.
+      The reader is left hanging, and the ending does not land.
+    suggestion: 'Complete the clause: ''Only the price on the guess itself can close the gap'' or ''can fill the role no spec can,'' echoing the preceding sentence.'
+  - severity: major
+    category: orphan_referent
+    article: editorial
+    locator: '- | two of its founding ideas have retired without breaking anything beside them | 1'
+    repair_from: it lets every request carry its own version number, so a bad one costs a single retry, never a redesign, and two of its founding ideas have retired without breaking anything beside them.
+    note: |
+      The piece refers to "two founding ideas" that are never named or explained.
+      The reader cannot identify what these are from the text. Additionally, "without
+      breaking anything beside them" is ambiguous—beside what?
+    suggestion: Name the two ideas explicitly (e.g., 'immutable versioning and single-retry cost') or reformulate to avoid the undefined reference.
+  scores:
+    order: 4
+    coherence: 2
+    opening: 5
+    ending: 1
+  notes: |
+    The piece establishes a clear metaphorical argument about cost and guesser
+    behavior, and the contrast between two systems illustrates the principle
+    effectively. The argument's logic survives intact, but an undefined referent
+    and an incomplete final sentence prevent coherent closure.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: The Price of Being Wrong
+    locator: The Price of Being Wrong | no spec closes the gap | 1
+    category: banned_tic
+    disposition: fix
+    suggestion: Replace the antithetical close ('no spec closes the gap. Only the price...') with a direct statement. This 'It is not X. It is Y.' pattern is flagged in house guidelines.
+  scores:
+    voice: 4
+    sentence_variety: 3
+    economy: 4
+  notes: |
+    Competent voice with a controlling metaphor that stays functional throughout. The vault dial image clearly maps onto system design cost structures, and the piece develops its argument through concrete examples (dataset loader, sandbox, connector credential). The main issue is the close: the antithetical construction ('no spec closes the gap. Only the price...') is a banned tic in editor-owned text that appeared repeatedly in edition 004. Remedy is editorial revision to a direct statement.
