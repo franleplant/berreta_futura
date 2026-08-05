@@ -1,0 +1,191 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    category: stripped_utility
+    disposition: fix
+    repair_from: Server-to-client requests, restructured | Servers can still ask clients for input during a call, but only while actively processing a client request. | 1
+    note: |
+      The source gives the implementable multi-round-trip payload: InputRequiredResult,
+      inputRequests, resultType, requestState, inputResponses, and the echoed state on
+      retry. The manuscript names these concepts but omits the field structure and the
+      concrete exchange, so an implementer cannot use this as a practical reference.
+    suggestion: Carry the field names and a compact request/response example into the explanation.
+  - severity: major
+    article: mcp-protocol-update
+    category: lost_operational_detail
+    disposition: fix
+    repair_from: The release is a deliberate break, with machinery intended to make the next one less disruptive. | The release is a deliberate break, with machinery intended to make the next one less disruptive. | 1
+    note: |
+      The source states that the candidate was locked on May 21, that the final
+      specification ships on July 28, and that the ten-week window is for workload
+      validation with Tier 1 SDK support expected during it. Omitting this rollout
+      timeline leaves readers without the adoption and validation dates they need.
+    suggestion: Add the candidate lock date, final publication date, and validation-window expectations.
+  - severity: major
+    article: mcp-protocol-update
+    category: source_shaped
+    disposition: fix
+    repair_from: A remote MCP server that previously needed sticky sessions, a shared session store, and deep packet inspection at the gateway can now run behind a plain round-robin load balancer. | 1
+    note: |
+      The manuscript follows the source's section sequence almost exactly: stateless
+      core, stateful applications, server-to-client requests, routing and caching,
+      extensions, Tasks, authorization, deprecations, schemas, governance. It
+      condenses but does not impose a new order or organizing argument.
+    suggestion: Reorder around the implementer's migration decisions rather than reproducing the source's progression.
+  - severity: major
+    article: mcp-protocol-update
+    category: no_position
+    disposition: fix
+    repair_from: A remote MCP server that previously needed sticky sessions, a shared session store, and deep packet inspection at the gateway can now run behind a plain round-robin load balancer. | 1
+    note: |
+      The piece reports the maintainers' changes but supplies no magazine-level
+      ordering judgment, defended cut, or independent claim about what implementers
+      should prioritize.
+    suggestion: Add an explicit editorial judgment about the most consequential migration or who should act first.
+  omissions:
+  - fact: The InputRequiredResult JSON shape, including resultType, inputRequests, the elicitation schema, requestState, and the echoed state plus inputResponses on retry
+    reader_loses: Cannot implement or verify the stateless elicitation round trip from this piece alone.
+    verdict: needed
+  - fact: The release candidate was locked on May 21, 2026; the final specification ships July 28, 2026; the ten-week window is for validation and Tier 1 SDKs are expected to support it
+    reader_loses: Loses the adoption deadline and the concrete validation schedule.
+    verdict: needed
+  - fact: The source's concrete before-and-after HTTP exchanges, including the full initialize request, Mcp-Session-Id response usage, and self-contained tools/call request
+    reader_loses: Cannot see the wire-level migration in a form that can be copied or tested.
+    verdict: needed
+  - fact: The exact six-SEP framing and the December 'Future of MCP Transports' roadmap reference
+    reader_loses: Little; it supplies provenance rather than a necessary implementation rule.
+    verdict: defensible
+  - fact: The RFC 9207 mix-up-attack rationale and the future expectation that clients reject authorization responses omitting iss
+    reader_loses: Some security rationale and forward-looking urgency, but the required validation is retained.
+    verdict: defensible
+  - fact: The application_type default-to-web localhost redirect failure scenario
+    reader_loses: A concrete explanation of why the registration requirement matters.
+    verdict: defensible
+  - fact: The .well-known discovery suffix clarification
+    reader_loses: A niche discovery detail most readers do not need for the overview.
+    verdict: defensible
+  - fact: The ext-* repository naming convention and the Extensions Track's experimental-to-official path
+    reader_loses: Some process detail; the existence of independent extension governance remains.
+    verdict: defensible
+  - fact: The MCP Apps requirement that tools declare UI templates ahead of time for host prefetch and security review
+    reader_loses: A useful host-integration constraint, though the manuscript retains the broader prefetch, caching, and review behavior.
+    verdict: defensible
+  - fact: The explanation that tasks/list cannot be scoped safely without sessions
+    reader_loses: The reason for the removal, while the removal and migration requirement remain.
+    verdict: defensible
+  - fact: The cache behavior is modeled on HTTP Cache-Control and removes the long-lived SSE stream as the only way to learn that a list changed
+    reader_loses: Some operational rationale, but ttlMs and cacheScope are named.
+    verdict: defensible
+  - fact: The trace can appear as a single span tree in an OpenTelemetry-compatible backend
+    reader_loses: A concrete observability outcome, not the core propagation rule.
+    verdict: defensible
+  - fact: The new SDK tier system scores official SDKs against the conformance suite
+    reader_loses: Governance context rather than a protocol behavior.
+    verdict: defensible
+  - fact: Instructions to open specification-repository issues and use the relevant Working Group Discord channel
+    reader_loses: Support and feedback paths, not substantive protocol knowledge.
+    verdict: defensible
+  - fact: The source's explicit JSON Schema $defs example
+    reader_loses: A minor example of references; the manuscript retains composition and references generally.
+    verdict: defensible
+  - fact: The source's explicit SEP numbers for each change
+    reader_loses: Traceability to the specification proposals, but not the substance of the update.
+    verdict: defensible
+  retentions:
+  - passage: A remote MCP server that previously needed sticky sessions
+    costs: A repeated practical summary of the stateless change; the space could carry the omitted wire-level exchange or rollout dates.
+    verdict: cut
+  - passage: In practice, we've found this pattern
+    costs: Several sentences restating the source's endorsement of explicit handles; the core handle mechanism is already established immediately before it.
+    verdict: cut
+  - passage: Three operational headers make the traffic easier to handle
+    costs: A compact, concrete explanation of routing, caching, and tracing; it earns its space.
+    verdict: earns_place
+  - passage: MCP Apps lets a server provide an interactive HTML interface
+    costs: The principal new extension and its security/audit implications; it earns its space.
+    verdict: earns_place
+  - passage: Authorization changes follow ordinary OAuth and OpenID Connect deployments more closely
+    costs: A useful migration checklist of requirements; it earns its space.
+    verdict: earns_place
+  - passage: Three older features are deprecated
+    costs: The replacement mapping and one-year compatibility guarantee; it earns its space.
+    verdict: earns_place
+  - passage: Tool schemas now support full JSON Schema 2020-12
+    costs: Several compatibility-critical schema and error-code changes; it earns its space.
+    verdict: earns_place
+  - passage: The release is a deliberate break
+    costs: A concluding restatement of the lifecycle and extension safeguards already described; it could be shortened, but the forward-looking synthesis earns some space.
+    verdict: earns_place
+  notes: |
+    Changes required because the condensation omits the elicitation wire format and rollout schedule, while also following the source's shape without an independent editorial position.
+evidence:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: mcp-protocol-update
+    locator: Stateless protocol, stateful applications | Three operational headers make the traffic easier to handle. | 1
+    repair_from: Stateless protocol, stateful applications | Three operational headers make the traffic easier to handle. | 1
+    category: invented_claim
+    disposition: fix
+    note: |
+      The source describes three operational changes, but only two required headers: Mcp-Method and Mcp-Name. The other changes concern cache metadata and W3C trace context in _meta; it does not claim three operational headers.
+  scores:
+    claim_support: 4
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every factual assertion and every piece of furniture against the pinned extraction; I could not check anything outside that extraction.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: No mechanics defects were found in this faithful synthesis.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 4
+    opening: 5
+    ending: 5
+  notes: |
+    The piece moves coherently from the transport reset through application state, operational features, extensions, authorization, deprecations, schemas, and lifecycle. The opening earns the explanation, the arrangement holds, and the conclusion lands.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Stateless protocol, stateful applications | Stateless protocol, stateful applications | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      The heading is a balanced contrast that sounds like a packaged insight rather than a concrete description.
+    suggestion: Replace it with a concrete heading naming the mechanism, such as 'Application state still needs an explicit handle'.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: '- | The explicit-handle pattern simply makes the state visible to the model rather than hidden away. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Simply" adds emphasis without changing the claim; the sentence is clearer without it.
+    suggestion: Delete 'simply'.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: '- | a Standards Track SEP cannot reach Final status until a matching scenario enters the conformance suite. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "SEP" is MCP-specific jargon and is not expanded for an engineer outside this subfield.
+    suggestion: Spell out SEP on first use or briefly identify it as a protocol enhancement proposal.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    I heard a confident, technically grounded synthesis whose voice remains present, with a few compressed labels and one disposable intensifier creating the only friction.

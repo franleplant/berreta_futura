@@ -1,0 +1,145 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The author's X handle, @dexhorthy
+    reader_loses: Nothing substantive; the edition supplies the author's name and the handle is not needed to understand or apply the argument.
+    verdict: defensible
+  retentions:
+  - passage: This one is a bit of an addendum / side-quest
+    costs: A short framing paragraph, but it identifies the piece's relationship to the preceding series and explains why it stands alone.
+    verdict: earns_place
+  - passage: note For this example I'm gonna blur
+    costs: The caveat takes space, but without it the expected-pain percentages could be mistaken for literal probabilities rather than a combined heuristic.
+    verdict: earns_place
+  - passage: good luck.
+    costs: A sign-off with no informational content; the space is negligible and cannot carry a meaningful omitted detail.
+    verdict: cut
+  notes: |
+    This faithful edit gives readers the complete planning-and-verification argument of an ephemeral X post in a stable, readable article, including its numerical examples, expected-pain formula, and pragmatic guidance. The manuscript preserves the source's sections and sequence, and every substantive passage earns its place.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked every claim, quotation, number, heading, and furniture item against the pinned extraction; I could not check anything beyond that extraction, and none was present.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking Leverage | Seeking Leverage | 1
+    category: heading_form
+    disposition: fix
+    note: |
+      This heading is in title case; headings in this piece should use sentence case.
+    suggestion: Seeking leverage
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | good luck. | 1
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      "good luck." opens lowercase while the piece otherwise opens sentences with capitals. This is a sentence-level inconsistency, not an established convention. The sentence is retained source text in faithful_edit, so an editor chooses the remedy.
+    suggestion: Good luck.
+  scores:
+    grammar: 4
+    typography: 4
+    consistency: 3
+  notes: |
+    I found one title-case heading and one inconsistent lowercase sentence opening; the remaining grammar, punctuation, typography, and number formatting are clean.
+shape:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    repair_from: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: opening
+    disposition: editor_decision
+    note: |
+      The piece opens with publication context instead of its argument about where AI-assisted delivery gains leverage. The first paragraph does not earn the discussion that follows.
+    suggestion: Cut the meta preface and open on the claim that coding is only part of shipping time.
+  - severity: major
+    article: pragmatic-leverage
+    locator: '- | It is referenced briefly in Why Software Factories Fail part 2: Turning the lights back on. | 1'
+    repair_from: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: orphan_referent
+    disposition: editor_decision
+    note: |
+      The opening points to an external series and a numbered installment that the piece does not contain, leaving the reader without the referenced context.
+    suggestion: Remove the external-series reference from the opening.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | Seeking Leverage | 1
+    repair_from: Seeking Leverage | Seeking Leverage | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      This heading names the topic rather than the section's argument about where planning and verification create leverage.
+    suggestion: Rename the heading to state the section's claim about leverage beyond code generation.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | The 80/20 rule in AI coding leverage | 1
+    repair_from: The 80/20 rule in AI coding leverage | The 80/20 rule in AI coding leverage | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The section develops an effort-versus-expected-pain tradeoff, but its heading labels a rule instead of stating that argument.
+    suggestion: Rename the heading to state the inverse relationship between upfront effort and expected pain.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 2
+    ending: 3
+  notes: |
+    I verified that the core argument progresses from shipping-time allocation to expected pain and pragmatic planning, but the opening context and non-contained references delay and distract from that progression.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: Seeking Leverage | If you're only using AI to write the code, then you're taking the 2–4 hours of coding time down to 10–20 minutes, but you haven't accelerated anything else here. | 1
+    repair_from: Seeking Leverage | If you're only using AI to write the code, then you're taking the 2–4 hours of coding time down to 10–20 minutes, but you haven't accelerated anything else here. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Seven conditional constructions make the piece sound patterned: "If you're only using AI to write the code, then you're taking the 2–4 hours of coding time down to 10–20 minutes, but you haven't accelerated anything else here"; "But if you use AI to help you plan and align, then you actually get closer to 2–3× faster"; "Let's assume if you yolo a two-sentence prompt into your factory, your chance of getting a fully-mergeable result is ~50%, the chance you have to rework it is 50%"; "If the model is 50% likely to get a button style wrong, but the fix is one cheap prompt, then our combined 'expected pain' is low"; "If you draw this out, there's an inverse relationship between effort invested up front and expected pain"; "For example, if you've done some work at the 'Product' level and have not answered all the open questions yet, it's possible you may need to end it where you are and zoom down a level to the technical details to understand what's feasible"; and "If you're doing multiple phases of planning, zooming in from 50kft view all the way to the 10kft view, you want to do a little bit of steering at each phase to ensure you are eliminating as much expected pain as possible." The remedy is editorial: cut or recast several of these constructions.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | You need to do this without overindexing on questions you won't be able to answer without going down a level. | 1
+    category: no_voice
+    disposition: fix
+    note: |
+      The voice fades here into abstract process language: "overindexing," "questions," and "going down a level" could have come from any system describing planning.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The opening clears its throat by explaining the article's publication history before giving the reader a reason to continue.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | This is what we mean by leverage – and it requires being pragmatic. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This balanced, definitional sentence restates the title's premise without adding a concrete consequence.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | If you're doing multiple phases of planning, zooming in from 50kft view all the way to the 10kft view, you want to do a little bit of steering at each phase to ensure you are eliminating as much expected pain as possible. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "50kft view" and "10kft view" are unexplained planning jargon for readers outside this subfield.
+  scores:
+    voice: 3
+    sentence_variety: 1
+    economy: 3
+  notes: |
+    I heard a conversational, useful argument become increasingly procedural and patterned, with conditional sentences carrying too much of the piece.

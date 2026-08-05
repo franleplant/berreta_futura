@@ -1,0 +1,245 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The extraction marker [3] after 'innovators are toying around with discovering practices and pieces'
+    reader_loses: Nothing substantive; this is an extraction annotation rather than source content.
+    verdict: defensible
+  - fact: The extraction marker [2] after 'non-agent topics'
+    reader_loses: Nothing substantive; this is an extraction annotation rather than source content.
+    verdict: defensible
+  - fact: The extraction marker [1] before 'almost lights out'
+    reader_loses: Nothing substantive; this is an extraction annotation rather than source content.
+    verdict: defensible
+  - fact: The extraction marker [2] before 'sandboxing'
+    reader_loses: Nothing substantive; this is an extraction annotation rather than source content.
+    verdict: defensible
+  - fact: The extraction marker [3] before 'at home, in your homelab'
+    reader_loses: Nothing substantive; this is an extraction annotation rather than source content.
+    verdict: defensible
+  - fact: The extraction marker [1] before 'WCF'
+    reader_loses: Nothing substantive; this is an extraction annotation rather than source content.
+    verdict: defensible
+  - fact: The extraction marker [1] before 'lots of bad memories here'
+    reader_loses: Nothing substantive; this is an extraction annotation rather than source content.
+    verdict: defensible
+  retentions:
+  - passage: Software factories are super real but we need to be realistic.
+    costs: Necessary framing for the warning that factory practices remain immature.
+    verdict: earns_place
+  - passage: If someone is selling you a factory rn...
+    costs: The source's practical credibility test for distinguishing real experience from salesmanship.
+    verdict: earns_place
+  - passage: Almost lights out. Sandboxing, monorepo, reproducible builds...
+    costs: The concrete systems checklist that makes the thesis operational.
+    verdict: earns_place
+  - passage: At home, in your homelab...
+    costs: The source's career and practice recommendation.
+    verdict: earns_place
+  - passage: I must stress that factories is not a token or LLM problem.
+    costs: The central thesis, retained as the bridge between the collected posts.
+    verdict: earns_place
+  - passage: Second hot take, as it seems the first hot take landed.
+    costs: A brief transition identifying the service-bus argument as a related follow-up.
+    verdict: earns_place
+  - passage: n8n was a silly idea...
+    costs: The concrete architectural criticism and its enterprise context.
+    verdict: earns_place
+  - passage: Look up anything in the .NET space...
+    costs: Specific prior art and named alternatives a reader can investigate.
+    verdict: earns_place
+  - passage: If you want a modern plug and play choice, @temporalio exists.
+    costs: The actionable recommendation to keep orchestration deterministic while invoking agents as processes.
+    verdict: earns_place
+  notes: |
+    This piece gives a reader one accessible, coherent edit of three ephemeral posts: a systems-engineering thesis, the stack it requires, and concrete service-bus guidance with named prior art and Temporal as an option. The manuscript is a legitimate faithful edit because it collects scattered posts into a single readable argument while preserving their substance and order; the only omissions are extraction annotations, and every retained passage carries the source's argument, examples, recommendations, or voice.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: I checked every assertion in the title and manuscript against all three pinned extractions; no claim in this piece could not be checked.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | The factory aspects haven''t been cracked yet, the innovators are toying around with discovering practices and pieces. | 1'
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      Two independent clauses are joined by a comma, creating a comma splice. The sentence is retained source text, so the editor decides the repair.
+    suggestion: The factory aspects haven't been cracked yet; the innovators are toying around with discovering practices and pieces.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | If someone is selling you a factory rn and they aren''t in the super small cohort (i.e. they are likely startups created in last six months!) or circa <10 people in the who''s-who, who have been trying (and realistically failing) over the last two years. | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      This is a subordinate if-clause left without its result clause; the following sentence does not grammatically complete it. The source sentence is retained verbatim.
+    suggestion: If someone is selling you a factory rn and they aren't in the super small cohort ... or among the circa <10 people in the who's-who who have been trying (and realistically failing) over the last two years, they are selling bullshit.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | created in last six months | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      The phrase is missing the definite article before "last six months."
+    suggestion: created in the last six months
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Almost lights out. | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      This is a sentence fragment with no finite verb. It is retained source text, so the editor decides whether to recast it.
+    suggestion: It's almost lights out.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Sandboxing, monorepo, reproducible builds, CI/CD, identity/secret management, smashing corporate friction in the realm of DevEx for agents. | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      This standalone list is a sentence fragment with no finite verb. It is retained source text.
+    suggestion: These include sandboxing, monorepo management, reproducible builds, CI/CD, identity and secret management, and smashing corporate friction in the realm of DevEx for agents.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Highest ROI you can have right now is learning the entire damn stack, automating it and showing it at your next interview/doing a recorded talk at a meetup. | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      The superlative noun phrase requires a definite article.
+    suggestion: The highest ROI you can have right now is learning the entire damn stack, automating it, and showing it at your next interview or doing a recorded talk at a meetup.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | I must stress that factories is not a token or LLM problem. | 1'
+    category: agreement
+    disposition: editor_decision
+    note: |
+      "Factories" is plural and requires "are," independent of the piece's capitalization convention. The sentence is retained source text.
+    suggestion: I must stress that factories are not a token or LLM problem.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Second hot take, as it seems the first hot take landed. | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      This is a sentence fragment: "Second hot take" has no finite verb. It is retained source text.
+    suggestion: Here's a second hot take, now that the first hot take seems to have landed.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | who have never worked in corporate in their life | 1'
+    category: agreement
+    disposition: editor_decision
+    note: |
+      The plural antecedent "folks" requires the plural possessive noun "lives."
+    suggestion: who have never worked in corporate in their lives
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Lots of bad memories here, not great tech impl but the theory / education is generally on point. | 1'
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      The sentence begins with a fragment and then uses a comma splice before "but." The source text is retained verbatim.
+    suggestion: Lots of bad memories here. The tech implementation isn't great, but the theory and education are generally on point.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | theory / education | 1'
+    category: typography
+    disposition: editor_decision
+    note: |
+      Slash spacing is inconsistent within the piece: "abstractions/pieces" is closed up, while "theory / education" has spaces.
+    repair_from: abstractions/pieces
+    suggestion: theory/education
+  scores:
+    grammar: 1
+    typography: 3
+    consistency: 3
+  notes: |
+    Changes required because the retained prose contains multiple fragments, a comma splice, article and agreement errors, and inconsistent slash spacing.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Second hot take | 1'
+    repair_from: '- | Second hot take | 1'
+    category: orphan_referent
+    disposition: fix
+    note: |
+      "Second hot take" refers to a first hot take that does not appear in the piece. The reference sends the reader backward and interrupts the otherwise recoverable progression from the factory thesis to the service-bus example.
+    suggestion: Replace the ordinal reference with a transition that introduces the service-bus example directly.
+  scores:
+    order: 4
+    coherence: 3
+    opening: 4
+    ending: 3
+  notes: |
+    This piece advances from the unfinished state of software factories to a systems-engineering thesis and then to service-bus architecture, with one orphaned ordinal reference disrupting the transition.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | If someone is selling you a factory rn and they aren''t in the super small cohort (i.e. they are likely startups created in last six months!) or circa <10 people in the who''s-who, who have been trying (and realistically failing) over the last two years. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three conditional openings repeat the same setup: "If someone is selling you a factory rn...", "if you want a super fast promotion...", and "If you want a modern plug and play choice...". The pattern becomes audible; cut or restructure one of the conditional sentences.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Look up anything in the .NET space such as MassTransit, NServiceBus, WCF if you wanna steal ideas for prompting. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three consecutive imperatives—"Look up...", "Use it and have a job invoke...", and "Don't make the entire service bus..."—give the final paragraph a checklist cadence. Vary or cut one.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Software factories are super real but we need to be realistic. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      "Super real" and "realistic" announce the stance while repeating the same word family. Open on the concrete systems claim instead.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | The best practices right now are to build abstractions/pieces needed which entails solving non-agent topics. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This is an abstraction stack ("best practices", "abstractions/pieces", "non-agent topics") that delays the actual examples. Name the work directly or move to the sandboxing and build details.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | The factory aspects haven''t been cracked yet, the innovators are toying around with discovering practices and pieces. | 1'
+    category: passive
+    disposition: fix
+    note: |
+      "Haven't been cracked" and later "It won't be solved through tokens..." hide the actor who must do the solving. Name the people or teams where that matters.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Almost lights out. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      The fragment is a portentous shorthand whose meaning is unclear without the following list. Let the concrete list carry the emphasis.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | smashing corporate friction in the realm of DevEx for agents. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "DevEx" is left undefined, and the surrounding abstraction makes the sentence harder to parse for an engineer outside this niche. Expand the term or state the friction plainly.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | n8n was a silly idea, which I''ve always suspected was developed by young folks in Silicon Valley who are all in on the LLM craze who have never worked in corporate in their life thus didn''t have the knowledge that service buses are a solved problem and there''s deep prior art in the spooky land of enterprise. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "Service buses" and the named products that follow assume specialist background without a brief definition of the architectural role. Add the function before the product names.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 3
+  notes: I heard a vivid, impatient personal voice, but the conditional and imperative cadences recur loudly, while a few abstract or undefined technical phrases blur otherwise concrete advice.

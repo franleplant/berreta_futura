@@ -1,0 +1,174 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: Install the examiner | The important distinction is between the repositories. | 1
+    repair_from: Install the examiner | You do not need to begin with a new platform. | 1
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The source gives the installation command for langsmith-skills, which pulls
+      real production runs, as well as the langchain-skills command. The manuscript
+      explains that distinction but supplies no command for installing langsmith-skills,
+      so a reader following its setup cannot reproduce the stated workflow.
+    suggestion: Include the missing npx skills add langchain-ai/langsmith-skills command.
+  - severity: major
+    article: eval-engineering
+    category: source_shaped
+    disposition: fix
+    note: |
+      The manuscript follows the source's sequence almost exactly: travel-agent
+      problem, eval-engineering definition, installation, score-to-routing rules,
+      trace mining, autonomous merging, weekly eval checklist, and conclusion.
+      Its compression is competent, but it performs little structural editorial work.
+    suggestion: Reorder around the central claim or make the manuscript's own decision about which implementation path to prioritize.
+  omissions:
+  - fact: The installation command npx skills add langchain-ai/langsmith-skills --skill '*' --yes --global
+    reader_loses: Cannot install the repository that supplies real production runs for eval construction without returning to the source.
+    verdict: needed
+  - fact: Arize AX's result of 74.4% recall and 91.0% precision in the blind test
+    reader_loses: Loses one comparative data point, but the retained results still establish the main conclusion.
+    verdict: defensible
+  - fact: The claim that the evals should have been in the system on day one rather than month nine
+    reader_loses: Loses a vivid adoption-timing example, not a necessary instruction.
+    verdict: defensible
+  - fact: The source's explicit four-week timing for the vendors' move into coding-agent skills
+    reader_loses: Loses the speed of the category shift, but not the practical recommendation.
+    verdict: defensible
+  - fact: The Arize trace-extraction skill and Galileo's participation in the vendor move
+    reader_loses: Loses two names from the vendor landscape; the retained examples convey the same capability.
+    verdict: defensible
+  - fact: The source's statement that the examiner costs almost nothing while the model costs about $200 a month
+    reader_loses: Loses a cost framing detail already implied by the opening and conclusion.
+    verdict: defensible
+  - fact: The anecdote of a developer approving and merging around 1,500 pull requests without looking at code
+    reader_loses: Loses a memorable illustration of constraint-based trust, while the quantitative evidence remains.
+    verdict: defensible
+  - fact: The source's five-step shorthand loop, 'mine traces -> identify a failure -> build an eval -> improve the...'
+    reader_loses: Loses a compact mnemonic, but the manuscript explains each stage in full.
+    verdict: defensible
+  - fact: The source's warning that a recorded trace answer is what happened, not what should have happened
+    reader_loses: The manuscript retains the operational rule not to treat recorded answers as truth, so no substantive guidance is lost.
+    verdict: defensible
+  - fact: The source's explicit statement that exactly one of the four merge signals touches the model
+    reader_loses: Loses a useful emphasis about deterministic controls, but the four signals themselves remain.
+    verdict: defensible
+  - fact: 'The closing three principles: measure the path, make verdicts change edges, and turn every failure into a test'
+    reader_loses: Loses a concise recap, while all three principles appear throughout the manuscript.
+    verdict: defensible
+  retentions:
+  - passage: Everyone is renting the same brain now.
+    costs: Several opening paragraphs, but they establish the article's central economic contrast and motivate why evaluation—not model access—is the differentiator.
+    verdict: earns_place
+  - passage: A software travel agent answered a simple trip question
+    costs: A full worked example and its two measured scores, but it makes the faithfulness problem concrete and memorable.
+    verdict: earns_place
+  - passage: Loops came first, then graphs, then evals.
+    costs: A short historical transition, but it explains why evaluation is the control layer for increasingly parallel agents.
+    verdict: earns_place
+  - passage: The important distinction is between the repositories.
+    costs: A paragraph of setup detail, but it prevents the reader from installing the wrong skill and explains where production data comes from.
+    verdict: earns_place
+  - passage: The interview is deliberate.
+    costs: A short methodological aside, but it explains why the proposed workflow waits for the team's definition of correctness.
+    verdict: earns_place
+  - passage: The model bill does not move. Everything else does.
+    costs: A rhetorical closing line, but it crystallizes the article's claim that operational leverage, not model price, changes.
+    verdict: earns_place
+  notes: |
+    Changes required because the manuscript is a strong condensation but omits the
+    langsmith-skills installation command and otherwise preserves the source's
+    section sequence with little independent structural shaping.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every assertion and furniture item against the complete pinned extraction; nothing in this piece could not be checked.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: eval-engineering
+    locator: Make the score change the run | "A score that never changes behavior is analytics. An eval that changes the next edge is engineering." | 1
+    category: typography
+    disposition: fix
+    note: |
+      The quotation uses curly double quotation marks while the piece uses straight apostrophes elsewhere. Quotes and apostrophes should follow one typographic style throughout.
+    suggestion: Use straight quotation marks throughout, or convert apostrophes to the corresponding curly style.
+  scores:
+    grammar: 5
+    typography: 3
+    consistency: 5
+  notes: |
+    One mixed quotation-and-apostrophe style inconsistency requires correction; grammar, headings, punctuation, spelling, markup, and number formatting are otherwise clean.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: Install the examiner | Two researchers tested 100 production traces from a voice agent, had a human expert label 39 kinds of failure, hid those labels, and gave the same cases to evaluation systems. | 1
+    repair_from: '- | A software travel agent answered a simple trip question with an exchange rate, a weekly temperature, and museum hours. | 1'
+    category: running_example
+    disposition: fix
+    note: |
+      The opening establishes a software travel agent as the concrete case, but the next sections switch to a voice-agent benchmark, generic traces, and autonomous pull requests without returning to that case. The argument remains recoverable, but the piece loses a carrying example and each section begins to feel newly illustrated.
+    suggestion: Choose one agent case and thread it through installation, routing, failure tests, and the merge gate, using the other examples only as a brief contrast.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 4
+    ending: 4
+  notes: |
+    I verified that the piece progresses from the need for evaluation through installation, behavioral routing, permanent tests, and autonomous merging, but its concrete examples do not form one continuous case.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: eval-engineering
+    locator: Make the score change the run | Use a model from another family when possible | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      The piece uses 23 ownerless imperative sentences. They include:
+      "Use a model from another family when possible", "Write one observable success condition",
+      "Let the judge handle semantic calls", "Do not reward response length", "Pin the judge and log its version",
+      "Optimize against a judge long enough", "Start with 25 complete traces", "Write each finding in four lines",
+      "Then give each capability its own folder", "Never treat the recorded answer as truth",
+      "Test the verifier with one clearly correct result", "Make sure the environment does not reveal the answer",
+      "Simulate anything that costs money or writes to production", "Run this loop often enough",
+      "Run the gate in shadow mode for at least four hours", "Keep it closed when automated and human verdicts differ",
+      "Sample only 1% to 5% of traces", "Start this week with faithfulness, tool-parameter accuracy, and response quality",
+      "Choose the dataset deliberately", "Keep 300 to 800 held-out cases", "Begin with five failures",
+      "Install one skill, pull 25 traces, and build one eval today", and "Add another whenever something breaks".
+      The repeated shape becomes the article's governing rhythm. Because it is the author's own construction,
+      the remedy is an editor's: cut or substantially compress the instructional runs.
+  - severity: minor
+    article: eval-engineering
+    locator: Let safe work merge itself | The model bill does not move. Everything else does. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Everything else does" is a vague balanced-clause punchline. It gestures at broad consequences
+      without naming them, so the sentence adds emphasis more than understanding.
+  - severity: minor
+    article: eval-engineering
+    locator: 'Let safe work merge itself | Choose the dataset deliberately: `final_response`, `single_step`, `trajectory`, or RAG. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "Trajectory" and especially "RAG" are unexplained evaluation terms for a competent engineer outside
+      this subfield. Define them or give the concrete dataset behavior each names.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 3
+  notes: |
+    The piece has a vivid opening and a useful central examiner metaphor, but its voice gradually yields
+    to a long sequence of commands, making the article sound more like an operational checklist than a person
+    reasoning through the stakes.
