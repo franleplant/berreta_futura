@@ -72,7 +72,17 @@ one summary: a writer fixes what is quoted at them.
 ## Categories
 
 `capitalisation`, `agreement`, `grammar`, `punctuation`, `spelling`,
-`typography`, `heading_form`, `label_missing`, `markup`.
+`typography`, `heading_form`, `label_missing`, `markup`, `unsettable_sample`.
+
+`unsettable_sample` is the one defect you can catch that stops the build rather
+than embarrassing it. Scan every code sample, inline span and identifier for a
+run of characters with no break opportunity — no space, hyphen or dash — longer
+than about 60 characters: a minified JSON object, a base64 value, a hash, a long
+URL. Set wider than its column, it overflows the measure and the renderer
+refuses the edition outright. File it `blocking`, quote the first characters of
+the offending run, and say in the suggestion how to fix it: respace the JSON,
+elide the opaque value with an ellipsis inside its quotes, or drop the sample.
+Do not treat this as cosmetic and do not file it `minor`.
 
 Severity: `blocking` when a sentence cannot be read as written, or means the
 opposite of what it should. `major` for any error of grammar, agreement,

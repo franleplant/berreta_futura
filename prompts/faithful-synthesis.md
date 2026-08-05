@@ -96,8 +96,19 @@ manuscript.
      worse reference than its source, and `worth` files that as
      `stripped_utility`.
    - **Code.** Reproduce a fenced block character for character or drop it
-     whole. Validation matches every fence against the source's own lines, so a
-     trimmed, re-indented, or stitched block fails the build.
+     whole: a trimmed, re-indented or stitched block misrepresents the source.
+   - **Machine-readable samples.** JSON, headers and query strings are the one
+     exception, because a minified sample is unreadable on a page and often
+     unprintable: a single unbroken run of characters wider than the column
+     refuses the build outright. You may respace such a sample — whitespace
+     after commas and colons, or one field per line — and you may elide a long
+     opaque value with a single ellipsis inside its quotes, as
+     `"requestState": "eyJzdGVwIjox…"`. Never change a key, a value that
+     carries meaning, or the structure. Reformatting is a typesetting act on
+     the same content; anything that alters what the sample says is a
+     fabrication and `evidence` treats it as one.
+     No token in a manuscript may exceed roughly 60 characters without a break
+     opportunity. Longer identifiers, hashes and base64 get elided.
 4. **Write it continuously.** One paragraph must follow from the last. A reader
    must never find the seam where two source passages met. Cold open on
    something concrete. End on a line that lands.
