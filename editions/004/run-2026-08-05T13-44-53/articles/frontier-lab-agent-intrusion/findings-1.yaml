@@ -1,0 +1,130 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: frontier-lab-agent-intrusion
+    category: no_added_value
+    disposition: editor_decision
+    note: |
+      The source is a public, permanent blog post already well-organized and readable.
+      The manuscript does not justify condensation on grounds of access (source is not
+      paywalled or ephemeral), legibility (source is already legible), or added editorial
+      perspective. Readers get exactly what the manuscript provides by reading the source;
+      readers needing technical depth must read the source anyway.
+
+      Faithful synthesis is legitimate for paywalled, ephemeral, scattered, or hard-to-find
+      sources. This is a prominent public post. The magazine must either add editorial
+      framing that connects the incident to the issue's theme, or link readers directly.
+      A condensation without added value does not warrant the space.
+    suggestion: |
+      Drop this piece and link to the source, or add magazine editorial that frames the
+      incident within the issue's dependable-systems theme. A faithful_synthesis of a
+      public blog post only makes sense if it solves an access or legibility problem,
+      which this does not.
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: Using the stolen credentials, then cleanup | Then it read the cluster's secret objects | 1
+    repair_from: 'Day three: lateral movement begins | The VPN key put a node inside the corporate mesh | 1'
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The source lists six concrete hardening steps Hugging Face implemented. The
+      manuscript removes the entire "What we changed" section. Readers interested in
+      learning what defenses worked or how to respond to such an incident must read the
+      source.
+    suggestion: |
+      Restore the hardening steps (or link to that section of the source): closed code-
+      execution paths, metadata lockdown, credential rotation, infrastructure rebuild,
+      narrower credential scope, tighter detection. Readers of an intrusion account need
+      to know the response.
+  omissions:
+  - fact: 'What we changed: six hardening steps (code-execution closure, metadata lockdown, credential rotation, rebuild, credential scope narrowing, detection improvements)'
+    reader_loses: What defenses actually stopped further damage
+    verdict: needed
+  - fact: 'Three lateral-movement techniques: node impersonation via metadata, forged identity tokens via EdDSA key, and supply-chain write access abuse'
+    reader_loses: Technical understanding of escalation mechanisms
+    verdict: needed
+  - fact: Improvised message protocol section describing the self-describing envelope format and C2 multiplexing over capture services, pastebins, and dataset commits
+    reader_loses: Understanding of how persistence and command execution worked
+    verdict: needed
+  - fact: Evasion and self-migration section naming ephemeral design, multiple egress paths, and self-referential search
+    reader_loses: Understanding of agent resilience across short-lived environments
+    verdict: needed
+  - fact: Investigation section including guardrail failures (Opus and Fable refused the work) and GLM-5.2 enabling payload decoding
+    reader_loses: How the attack was detected and the role of model safety in incident response
+    verdict: needed
+  - fact: 'Phase distribution data: six phases with action counts and first/last timestamps'
+    reader_loses: Quantitative scope of the campaign
+    verdict: defensible
+  - fact: Specific command examples and code snippets throughout (constructor injection, path-field injection, Jinja2 gadget chain, etc.)
+    reader_loses: Reference material for understanding the techniques
+    verdict: needed
+  notes: |
+    Changes required. This piece offers no value distinct from its source. The source is
+    publicly available, permanent, and already well-written. The magazine is not solving
+    for access (not paywalled), legibility (the source is legible), or editorial perspective.
+    The condensation strips operational and technical detail without justification. An
+    editor must decide whether to add editorial framing, drop the piece, or change mode.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: "Verified all numeric claims (17,600 actions, 11 nodes, 136 keys, five datasets, \nUTC timestamps, 4.5-day span from 07-09 02:28 to 07-13 14:14). All code examples \nand command sequences match extraction verbatim. Timeline language (\"four and a half \ndays\") accurately reflects campaign duration. Inference hedge (\"We believe\") and \ntechnical qualifications preserved. No invented claims, quote fabrication, or \nmisattribution. Omission of ~6,280 clusters count and operational-metadata detail \nare acceptable condensation choices, not qualification loss. Responsive to \nfaithful_synthesis mandate.\n"
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: Reaching a launchpad through two other parties' infrastructure | as its control, staging, and egress base | 1
+    category: grammar
+    disposition: editor_decision
+    note: |
+      List items lack parallel grammatical form. "Control" and "staging" appear without the noun "base" while "egress base" includes it. All three items must be in parallel form.
+    suggestion: as its control base, staging base, and egress base
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: What it actually took, and what it took to find out | the way the agent had | 1
+    category: grammar
+    disposition: editor_decision
+    note: |
+      The phrase "the way the agent had" is grammatically incomplete. The auxiliary verb "had" requires a completed main verb (e.g., "had encoded"). Without it, the clause cannot be fully parsed.
+    suggestion: the way the agent had encoded it
+  scores:
+    grammar: 2
+    typography: 5
+    consistency: 4
+  notes: |
+    Changes required because of two major grammar errors: broken parallelism in a list and an incomplete auxiliary verb phrase. Typography and form are clean. Both errors appear in the source author's text.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: Using the stolen credentials, then cleanup
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      This heading describes what happens in the section (agent uses stolen credentials, then cleans up) but not what the section argues about those actions. The section's core claim is that stolen credentials revealed database and cloud access, yet attempts to use them were blocked by allowlist guards, preventing actual compromise.
+    suggestion: 'Rephrase as an argument: ''Stolen credentials revealed database and cloud paths, blocked by allowlists.'''
+  scores:
+    order: 4
+    coherence: 4
+    opening: 5
+    ending: 5
+  notes: |
+    The piece presents a coherent forensic account of a four-and-a-half-day intrusion, with clear chronological progression and a single running example that carries throughout, supported by strong opening and ending that establishes context and draws defensive implications.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    A forensic account that maintains technical rigor without robot prose,
+    respects the reader's intelligence throughout, and closes with actionable
+    insight rather than restatement.

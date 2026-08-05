@@ -1,0 +1,37 @@
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    No errors found. Capitalisation, grammar, agreement, punctuation, and
+    spelling are all correct. Apostrophes are straight and consistent. The body
+    opens with a paragraph and all content is properly labelled as editorial.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | Every system defers some decision to a layer it does not inhabit | 1'
+    repair_from: '- | Every system defers some decision to a layer it does not inhabit | 1'
+    category: missing_transition
+    disposition: fix
+    note: "Paragraph one presents a concrete security failure—an alarm wired to a closed guard \nstation, exploited through persistence. Paragraph two pivots to abstract systems \ndesign without bridging language. The connection is there (the alarm exemplifies the \nprinciple), but the jump from narrative to generalization is real and unsignaled. \nThe reader recovers the argument, but not in one read.\n"
+    suggestion: 'Add a transition sentence that names the connection: e.g., ''This is how every system defers some decision...'' or restructure the opening to hint at the generality to come.'
+  scores:
+    order: 3
+    coherence: 3
+    opening: 4
+    ending: 5
+  notes: "The piece moves efficiently from a compelling anecdote through principles to instances \nand back to the original frame. The opening is strong and the ending lands well. Coherence \nis dimmed only by the unsignaled jump between the specific alarm story and the abstraction \nthat follows it.\n"
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 5
+    economy: 5
+  notes: |
+    Clear, purposeful voice throughout. The piece builds its argument through a concrete metaphor that earns its place—the alarm represents systems still executing their protocol when the intended recipient has vanished. Sentence shapes are varied and measured. The final two sentences deliver the payoff: the system worked, but responsibility for the outcome had evaporated.

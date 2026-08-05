@@ -1,0 +1,158 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    category: no_added_value
+    disposition: editor_decision
+    note: |
+      This is a verbatim republication of a publicly accessible X thread. The
+      worth-review prompt defines faithful_edit as justified only when the
+      source is paywalled, ephemeral, or scattered—creating real value through
+      access or legibility. This thread meets none of these criteria. It is a
+      complete, coherent post readable without authentication, republished
+      unchanged. A reader in the magazine gains nothing that the source does
+      not provide. To publish it, the magazine would need to either drop the
+      piece, add substantial editorial framing that connects it to adjacent
+      reporting, or ask the author to expand it with reasoning beyond the
+      thread's scope.
+  omissions: []
+  notes: |
+    The manuscript is identical to the source. Republication without added value
+    does not justify inclusion.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    All assertions checked: time allocation percentages, time savings figures, rework probabilities, the expected pain formula, the 80% threshold, and all procedural guidance matched exactly to source text. No invented claims, fabricated quotes, altered numbers, or unsupported assertions. All qualifications and hedges preserved. Formatting differences (em-dashes vs hyphens) are normalizations only.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Lets assume if you yolo | 1
+    category: grammar
+    disposition: fix
+    note: |
+      "Lets assume" should be "Let's assume"—a contraction of "let us" requires
+      an apostrophe.
+    suggestion: Let's assume if you yolo a two-sentence prompt into your factory,
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Now lets say you are | 1
+    category: grammar
+    disposition: fix
+    note: |
+      "Now lets say you are" should be "Now let's say you are"—a contraction
+      of "let us" requires an apostrophe.
+    suggestion: Now let's say you are a principal engineer with 10 years of experience.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | and have not answered all the open questions yet, its possible | 1
+    category: agreement
+    disposition: fix
+    note: |
+      "its possible" should be "it's possible"—the contraction "it is" requires
+      an apostrophe.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | your chance of getting a fully-mergeable result is ~50%, the chance you have to rework it is 50% | 1
+    category: punctuation
+    disposition: fix
+    note: |
+      Two independent clauses are separated by a comma only. "Your chance of
+      getting a fully-mergeable result is ~50%" and "the chance you have to rework
+      it is 50%" need a semicolon or conjunction.
+    suggestion: '...your chance of getting a fully-mergeable result is ~50%; the chance you have to rework it is 50%.'
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | good luck | 1
+    category: capitalisation
+    disposition: fix
+    note: |
+      The final sentence opens with a lowercase letter, departing from the piece's
+      consistent convention of capitalizing all other sentence openings.
+    suggestion: Good luck.
+  scores:
+    grammar: 2
+    typography: 5
+    consistency: 2
+  notes: |
+    Five mechanical errors require fixing: two missing apostrophes in contractions,
+    one incorrect pronoun form, one comma splice between independent clauses, and
+    one inconsistent sentence-initial capitalization. The piece is otherwise clean
+    in form and typography.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | If you draw this out, there's an inverse relationship between effort invested up front and expected pain. | 1
+    repair_from: The 80/20 rule in AI coding leverage | If you draw this out, there's an inverse relationship between effort invested up front and expected pain. | 1
+    category: missing_transition
+    disposition: fix
+    note: |
+      The piece explains the inverse relationship between planning effort and rework pain, then jumps to "what you don't want to do" without articulating the principle that connects them: match planning investment to the pain it eliminates. Without this bridge, the advice to avoid over-planning seems to contradict the earlier point that planning reduces pain.
+    suggestion: 'After the inverse-relationship sentence, insert an explanation of the strategic principle: identify tasks where planning delivers high value in pain reduction, and invest accordingly. This connects the analysis to the pragmatic planning advice that follows.'
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | good luck. | 1
+    repair_from: '- | good luck. | 1'
+    category: ending
+    disposition: fix
+    note: |
+      The piece stops with a dismissal rather than concluding. The piece builds to an insight about multi-phase planning with steering at each phase, and that needs to land as a conclusion that reinforces the thesis about where leverage comes from.
+    suggestion: Replace 'good luck.' with a substantive closing that ties back to the opening, such as reinforcing that leverage is in the intelligence applied to planning, not in code-writing speed.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | Seeking Leverage | 1'
+    repair_from: '- | Seeking Leverage | 1'
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The heading names a topic rather than the claim of the section, which is that planning and alignment—not code writing—is where AI leverage actually comes from.
+    suggestion: Retitle to a claim-based heading such as 'The Leverage Is in Planning' or 'Why Code Writing Isn't the Bottleneck'.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | The 80/20 rule in AI coding leverage | 1'
+    repair_from: '- | The 80/20 rule in AI coding leverage | 1'
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The heading names a concept rather than the argument of the section. The section argues that the effort-pain tradeoff requires pragmatic allocation of planning effort to maximize pain reduction per task.
+    suggestion: Retitle to a claim-based heading such as 'Match Planning Effort to Impact' or 'Where Planning Investment Pays Off'.
+  scores:
+    order: 2
+    coherence: 2
+    opening: 3
+    ending: 1
+  notes: |
+    The piece contains a sound argument about pragmatic planning for AI leverage, but the flow is broken by a missing transition between analysis and application. The jump from explaining the effort-pain tradeoff to advising against over-planning lacks the connecting principle, and the ending does not land. Headings name topics and concepts rather than the claims their sections assert.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: Seeking Leverage | If you're only using AI to write | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Six conditional sentences—all opening with "if/If" and presenting a condition-consequence structure—appear across roughly 480 words. They occur at: "If you're only using AI to write the code, then you're taking...", "But if you use AI to help you plan and align, then you actually get closer...", "Lets assume if you yolo a two-sentence prompt...", "If you draw this out, there's an inverse relationship...", "if you've done some work at the Product level...", and "If you're doing multiple phases of planning...". The reader hears the pattern before the argument. This exact finding appeared in Edition 004. The remedy is an editor's: cut two of these sentences, restructure to vary the shape, or reconsider the piece.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | good luck. | 1
+    category: weak_close
+    disposition: editor_decision
+    note: |
+      The closing line is a sign-off, not a sentence that passes the Final Editing Test. It leaves the reader with neither clarity, perspective, nor curiosity about what precedes it. The piece would close stronger with a final sentence that reframes the central insight or poses a lingering question.
+  scores:
+    voice: 4
+    sentence_variety: 1
+    economy: 4
+  notes: |
+    Dex's voice is sharp throughout—honest and conversational in exactly the way faithful_edit should sound. But the piece relies on one sentence shape six times, and "good luck" at the end is too thin a closing line.

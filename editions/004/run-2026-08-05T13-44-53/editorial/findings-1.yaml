@@ -1,0 +1,62 @@
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: That same bet shows up again, with teeth | judgment two cautious models refused to lend | 1
+    category: grammar
+    disposition: fix
+    note: |
+      The relative clause "two cautious models refused to lend" lacks both an
+      article and a relative pronoun clearly marking its attachment to "judgment".
+      The sentence reads "took judgment two cautious models refused to lend" but
+      requires "took the judgment that two cautious models refused to lend" or
+      similar to establish clear grammatical boundaries between noun and clause.
+    suggestion: took the judgment that two cautious models refused to lend
+  scores:
+    grammar: 3
+    typography: 5
+    consistency: 5
+  notes: |
+    One major grammar issue: a missing article and relative pronoun obscuring the
+    relationship between noun and clause. Otherwise the piece has no spelling,
+    punctuation, or typography errors. Capitalisation is consistent throughout.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | Volume changes what counts as a working key | 1'
+    repair_from: '- | One argument here treats failure as bought down in advance | 1'
+    category: missing_transition
+    disposition: fix
+    note: |
+      The opening metaphor establishes that volume changes what counts as
+      working, and paragraph two presents one argument about failure reduction
+      through upfront specs. But the jump lacks an explicit bridge. The reader
+      must infer that this argument exemplifies the principle from the opening.
+    suggestion: 'Connect the lock metaphor to the spec-driven approach: indicate that planning upfront is one response when volume creates new failure modes.'
+  scores:
+    order: 3
+    coherence: 3
+    opening: 3
+    ending: 4
+  notes: |
+    The piece argues that volume changes failure management and presents three
+    approaches (upfront spec investment, stateless protocols, downstream judgment)
+    before concluding that judgment shifts from planning time to watching time. The
+    argument is traceable but the first transition—from the opening metaphor to the
+    first example—is abrupt.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 5
+    economy: 5
+  notes: |
+    Strong editorial voice throughout. The lock metaphor works structurally and
+    makes the invisible relationships visible without becoming ornamental. Sentence
+    variety prevents monotony across the piece. No dead words; every phrase earns
+    its place. The opening engages without announcing, the closing advances without
+    restating. Consistent with the house Unified Voice across all twelve dimensions.

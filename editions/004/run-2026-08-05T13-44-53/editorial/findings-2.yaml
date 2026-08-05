@@ -1,0 +1,41 @@
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    The editorial is mechanically sound. Sentence-initial capitals are consistent
+    throughout, grammar is correct including complex subordinate structures,
+    punctuation is precise, and typography is clean with no banned characters,
+    spacing errors, or stray markup. All apostrophes are straight characters.
+    The piece is properly labeled as original editor text and the title follows
+    sentence case.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 4
+    opening: 4
+    ending: 5
+  notes: |
+    The piece moves clearly through a single argument: judgment can be spent upfront to
+    reduce downstream failures, or deferred and left to chance. The opening metaphor
+    (locks, volume, scale) earns the second paragraph by establishing the problem before
+    its solution. Transitions are explicit and well-placed, especially "That same bet
+    shows up again, with teeth", which signals the protocol example and intrusion as
+    pattern repetition rather than independent cases. The ending lands decisively.
+craft:
+  result: approved
+  findings: []
+  notes: |
+    A person wrote this. The voice is clear and philosophical, the lock-and-key
+    metaphor maps onto engineering judgment and holds across multiple sentences,
+    and the closing line advances perspective rather than restating the opening.
+    No defects.
+  scores:
+    voice: 5
+    sentence_variety: 5
+    economy: 5

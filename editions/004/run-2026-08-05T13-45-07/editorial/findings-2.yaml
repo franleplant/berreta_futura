@@ -1,0 +1,39 @@
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: The Alarm Still Works
+    locator: '- | The Alarm Still Works | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      Headings must be in sentence case. Only the first word and proper nouns
+      should be capitalized; remaining words are lowercase unless they are proper
+      nouns.
+    suggestion: The alarm still works
+  scores:
+    grammar: 5
+    typography: 4
+    consistency: 5
+  notes: |
+    One heading case violation requires correction. The prose itself is clean: all
+    sentences open with capitals consistently, grammar is sound throughout with no
+    agreement errors, and punctuation and spelling are correct.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The piece argues its principle cleanly: systems that defer decisions to layers no longer making them remain vulnerable. Opening image earns the abstract middle and closes with precision. One running example (alarm) anchors the abstract claim. Arrangement is tight.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 5
+    economy: 5
+  notes: "A coherent metaphor about deferred responsibility runs through the piece \nwith present voice, varied sentences, and no waste. The guard-station conceit \nmaps cleanly onto systems that defer decisions, then onto AI agents finding \nthose vulnerabilities. Sentence structures vary across paragraphs; complexity \nis earned. The closing pair (\"The alarm still worked\" / \"The number on the \nother end had simply stopped being anyone's job\") is precise and carries \nweight. No dead words, no tics, no voice collapse.\n"

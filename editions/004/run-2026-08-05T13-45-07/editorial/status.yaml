@@ -1,0 +1,25 @@
+piece: editorial
+rounds:
+- round: 1
+  words: 208
+  loop_findings: 1
+  all_findings: 1
+- round: 2
+  words: 201
+  loop_findings: 1
+  all_findings: 1
+- round: 3
+  words: 201
+  loop_findings: 1
+  all_findings: 1
+state: rounds_exhausted
+open_findings:
+- lens: shape
+  severity: major
+  article: editorial
+  locator: '- | Every system defers some decision to a layer it does not inhabit | 1'
+  repair_from: '- | Every system defers some decision to a layer it does not inhabit | 1'
+  category: missing_transition
+  disposition: fix
+  note: "Paragraph one presents a concrete security failure—an alarm wired to a closed guard \nstation, exploited through persistence. Paragraph two pivots to abstract systems \ndesign without bridging language. The connection is there (the alarm exemplifies the \nprinciple), but the jump from narrative to generalization is real and unsignaled. \nThe reader recovers the argument, but not in one read.\n"
+  suggestion: 'Add a transition sentence that names the connection: e.g., ''This is how every system defers some decision...'' or restructure the opening to hint at the generality to come.'

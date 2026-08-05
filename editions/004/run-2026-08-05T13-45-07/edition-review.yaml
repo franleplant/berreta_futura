@@ -1,0 +1,28 @@
+result: changes_required
+findings:
+- severity: minor
+  article: edition
+  category: uniformity
+  disposition: fix
+  note: |
+    Closing paragraphs lack consistent register. pragmatic-leverage ends
+    casually with "Good luck" while frontier-lab closes with formal
+    architectural prescription: "strict isolation around evaluations, narrower
+    trust boundaries, credentials that expire fast, metadata locked away from
+    workloads that do not need it, and detection quick enough to find the one
+    path that worked before it disappears inside everything that failed."
+    A reader notices the tonal drop. Pragmatic-leverage's closing must
+    match the formality and completeness of the house style.
+scores:
+  through_line: 5
+  editorial_strength: 4
+  running_order: 4
+  balance: 4
+  cover_promise: 5
+notes: |
+  A well-assembled issue with a sharp through-line: systems that defer decisions
+  require clear responsibility downstream; when responsibility is ambiguous,
+  vulnerability opens. Editorial states the principle, frontier-lab demonstrates
+  its failure (credential nobody owned), pragmatic-leverage shows how to succeed
+  (decide where effort goes), mcp shows the architecture (defer to the host).
+  The pieces cohere. One uniformity issue in the closings.

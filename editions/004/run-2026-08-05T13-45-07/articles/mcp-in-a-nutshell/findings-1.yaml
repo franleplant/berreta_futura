@@ -1,0 +1,157 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: mcp-in-a-nutshell
+    category: no_added_value
+    disposition: editor_decision
+    note: |
+      The source is accessible, publicly documented, already well-organized official
+      material. The manuscript condenses it but cannot articulate what a reader gains
+      that they do not get more efficiently from the source. Faithful synthesis is
+      legitimate for paywalled, ephemeral, scattered, or hard-to-parse sources; this
+      source is none of those. The rationale claims "accessible explainer," but the
+      source is already accessible.
+  - severity: major
+    article: mcp-in-a-nutshell
+    category: source_shaped
+    disposition: fix
+    note: |
+      Manuscript follows source's structure and section sequence without editorial
+      reorganization: Scope, Concepts, Participants, Layers, Data Layer Protocol,
+      Statelessness, Primitives, Notifications, Example. No argument about emphasis
+      or order.
+  - severity: major
+    article: mcp-in-a-nutshell
+    category: stripped_utility
+    disposition: fix
+    note: |
+      A developer wanting to implement MCP cannot look up method or field names here.
+      All operational reference material is removed: method names (server/discover,
+      tools/list, tools/call, subscriptions/listen, etc.), all JSON-RPC examples,
+      all pseudo-code, field names (_meta, io.modelcontextprotocol/*), parameter
+      names (location, units), and actual tool names (weather_current). The result is
+      worse than either reading only the source or having both, because we made a
+      smaller reference that still sends readers back to the source for every
+      technical detail.
+  omissions:
+  - fact: 'Method names: server/discover, tools/list, tools/call, subscriptions/listen, elicitation/create, notifications/tools/list_changed, resources/list, resources/read'
+    reader_loses: Cannot call any MCP method without returning to the source.
+    verdict: needed
+  - fact: 'Field names: _meta, io.modelcontextprotocol/protocolVersion, io.modelcontextprotocol/clientCapabilities, io.modelcontextprotocol/subscriptionId'
+    reader_loses: Cannot build or debug a request without the source.
+    verdict: needed
+  - fact: All four JSON request/response exchanges (discover, tools/list, tools/call, subscriptions/listen)
+    reader_loses: No concrete protocol examples; must go to source to see what data flows look like.
+    verdict: needed
+  - fact: All three pseudo-code examples (discovery, tool discovery, tool execution, notification handling)
+    reader_loses: No code patterns; cannot see how to integrate MCP into an application.
+    verdict: needed
+  - fact: 'Concrete values: weather_current, location/units parameters, example-client, elicitation capabilities'
+    reader_loses: Abstract explanation without instances; harder to anchor understanding.
+    verdict: needed
+  - fact: 'Caching fields and mechanics: ttlMs, cacheScope, cursor parameter, resultType'
+    reader_loses: Loses how to build stateful clients and cache refreshes correctly.
+    verdict: needed
+  - fact: UnsupportedProtocolVersionError retry logic
+    reader_loses: Does not understand how version negotiation works in practice.
+    verdict: needed
+  notes: |
+    The manuscript cannot be salvaged as-is. Faithful synthesis of public, accessible,
+    well-structured documentation without adding access, legibility, or editorial
+    insight is not justified. This mirrors the previous mcp-in-a-nutshell rejection
+    (ed 4 run): loses all method names, all examples, all operational detail, source
+    structure, no position. The piece should either be dropped (the source is better),
+    or converted to editorial with genuine reorganization and judgment about what
+    matters first. Restoring method names, one JSON example showing the discover →
+    list → call pattern, and one pseudo-code example would not fix the core issue:
+    the source is not the problem we are solving.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Notifications | Even the answer carries its own expiration, a `ttlMs` of five minutes for a weather lookup | 1
+    repair_from: Primitives | Each primitive has its own `list` method for discovery and its own `get` method for retrieval | 1
+    category: scope_error
+    disposition: fix
+    note: "The manuscript attributes a ttlMs (time-to-live) of five minutes to the weather_current \ntool call response: \"Even the answer carries its own expiration, a ttlMs of five minutes \nfor a weather lookup.\" The extraction documents ttlMs only for the tools/list discovery \nresponse: \"ttlMs is a freshness hint in milliseconds, so this tool list can be cached \nfor five minutes.\" The extraction's section on tool execution responses (Understanding \nthe Tool Execution Response) does not mention ttlMs or caching at all. The manuscript \nconflates tool list discovery caching with tool call result caching, which could mislead \nreaders about how the caching feature actually applies in the MCP protocol.\n"
+  scores:
+    claim_support: 4
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 4
+  notes: "Checked all factual claims about MCP architecture, protocol mechanics, transport layers, \nprimitives, discovery, notifications, and the example sequence. All claims are grounded \nin the extraction except for one scope error: a caching mechanism (ttlMs) documented for \ntool discovery responses is incorrectly attributed to a tool execution response.\n"
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: What the model does with that reply | is left to the host | 1
+    category: agreement
+    disposition: editor_decision
+    note: |
+      The subject comprises two noun clauses joined by "and": "What the
+      model does with that reply, and whether it trusts a five-minute-old
+      temperature". Compound subjects with "and" take plural verbs. The
+      singular "is" should be plural "are".
+    suggestion: are left to the host it was built to serve
+  scores:
+    grammar: 3
+    typography: 5
+    consistency: 5
+  notes: |
+    One subject-verb agreement error in the final paragraph; otherwise the
+    piece is mechanically sound with consistent style throughout.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | Transport layer | 1'
+    category: heading_not_a_claim
+    disposition: fix
+    suggestion: 'Reframe as what the section argues: ''Local servers connect over stdio, remote servers over HTTP, but both use the same protocol''.'
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | Primitives | 1'
+    category: heading_not_a_claim
+    disposition: fix
+    suggestion: 'Reframe as what the section argues: ''Servers expose tools, resources, and prompts''.'
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | Notifications | 1'
+    category: heading_not_a_claim
+    disposition: fix
+    suggestion: 'Reframe as what the section argues: ''Clients stay updated through opt-in subscriptions''.'
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The piece flows logically from a concrete opening through systematic explanation of MCP's architecture to a worked example. Argument order is clear, transitions are smooth, and the ending lands with proper boundary-setting between MCP's scope and host responsibility. Three section headings are topic-based rather than claim-based.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: mcp-in-a-nutshell
+    locator: 'Primitives | A server can expose three things: tools, resources, and prompts. A tool is a function | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      The definite-article equation—"A [noun] is/can [definition]"—appears 15+ times
+      throughout the piece, with 6 consecutive instances in the Primitives section.
+      This creates monotony that makes the piece sound like a reference manual
+      rather than conversational explanation. The opening and close work well; the
+      middle registers as mechanical. The remedy is editorial: restructure these
+      sections, tighten the piece, or decide whether it belongs in the issue as is.
+  scores:
+    voice: 3
+    sentence_variety: 2
+    economy: 4
+  notes: |
+    The piece explains MCP's architecture clearly and structurally, but the heavy
+    repetition of one sentence shape—particularly the string of "A [noun] is/can"
+    definitions—undermines the voice present in the opening. A reader hears the
+    pattern before the argument.

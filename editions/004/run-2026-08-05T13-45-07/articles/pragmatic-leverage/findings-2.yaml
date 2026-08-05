@@ -1,0 +1,139 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    category: no_added_value
+    disposition: editor_decision
+    note: "This is a faithful transcription of a freely accessible Twitter thread.\nThe content itself is substantively valuable to the issue. But in this \nformat, a reader gains nothing from our version they cannot get from \nopening the original: the argument is identical, the structure is \npreserved, and the only difference is that we removed the context \nexplaining this as an addendum to Why Software Factories Fail part 2.\n\nFaithful_edit justifies itself for paywalled, ephemeral, or scattered \nsources where access or legibility is the value. Here, the original is \nfreely available on X, the legibility gain is marginal, and removing \nits place in Dex's series actually cost readers information. \n\nConsider: add editorial framing that connects this to your other pieces, \nrestore the addendum context to explain where it lives, or change the \nmode to one that adds perspective.\n"
+  omissions:
+  - fact: 'The opening context: ''This one is a bit of an addendum / side-quest to the recent series... referenced briefly in Why Software Factories Fail part 2: Turning the lights back on.'''
+    reader_loses: Understanding where this piece fits in Dex's broader series on software factories, and where to find related material.
+    verdict: defensible
+  notes: "This faithful_edit of freely accessible content cannot state what our \nversion gives a reader that the original X thread does not.\n"
+evidence:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Good luck. | 1
+    category: quote_accuracy
+    disposition: fix
+    note: |
+      The source ends with "good luck." (lowercase). The manuscript capitalizes
+      this to "Good luck." In faithful_edit mode, source wording including
+      capitalization should be preserved exactly.
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 4
+    attribution: 5
+  notes: |
+    Verified all factual claims, figures, attributions, and textual references
+    against the source extraction. All substantive claims are sourced accurately.
+    One minor wording variance: capitalization of the final phrase.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Lets assume | 1
+    category: spelling
+    disposition: editor_decision
+    note: |
+      "Lets" should be "Let's". The imperative form "let us" must be contracted
+      as "Let's".
+    suggestion: Let's assume if you yolo a two-sentence prompt
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Now lets say | 1
+    category: spelling
+    disposition: editor_decision
+    note: |
+      "Lets" should be "Let's". The imperative form "let us" must be contracted
+      as "Let's".
+    suggestion: Let's say you are a principal engineer
+  - severity: major
+    article: pragmatic-leverage
+    locator: You need to do this | its possible | 1
+    category: spelling
+    disposition: editor_decision
+    note: |
+      "Its" should be "it's". The possessive pronoun "its" is incorrect here;
+      the contraction of "it is" is required.
+    suggestion: it's possible you may need to end it
+  scores:
+    grammar: 2
+    typography: 5
+    consistency: 4
+  notes: |
+    Three spelling errors in the author's retained text: two instances where the verb
+    "lets" should be contracted as "Let's", and one where the possessive "its" should
+    be the contraction "it's".
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    category: heading_not_a_claim
+    locator: The 80/20 rule in AI coding leverage | The 80/20 rule in AI coding leverage | 1
+    disposition: fix
+    note: |
+      The heading names a topic (an economic principle about planning effort) rather than
+      stating what the section argues about it. A reader doesn't learn until reading the
+      body whether the section will explain the rule, apply it, or critique it.
+    suggestion: Reframe as a claim, e.g., "Finding the Right Balance Between Planning and Rework" or "When Extra Planning Effort Stops Paying Off."
+  - severity: major
+    article: pragmatic-leverage
+    category: ending
+    locator: The 80/20 rule in AI coding leverage | Good luck. | 1
+    repair_from: The 80/20 rule in AI coding leverage | This is what we mean by leverage | 1
+    disposition: fix
+    note: |
+      The piece stops rather than lands. After reiterating the core insight—pragmatic
+      steering through planning phases to minimize expected pain—it abruptly ends with
+      "Good luck." The reader gets no direction on what to do with these ideas and no
+      reconnection to the opening's promise of 2-3x faster delivery.
+    suggestion: Conclude by telling the reader what changes when they apply this thinking, or reinforce why this balance matters to the speedup the piece promised.
+  scores:
+    order: 3
+    coherence: 3
+    opening: 4
+    ending: 2
+  notes: |
+    The piece's argument is coherent: planning beats code-generation, the benefit follows
+    an inverse cost curve, and pragmatism governs the right planning investment at each
+    phase. The opening earns the piece effectively, but the ending provides no closure or
+    reconnection to the initial claim about 2-3x leverage.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | If you're only using AI to write | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Six conditional constructions within 495 words: "If you're only using AI
+      to write the code, then you're taking", "if you use AI to help you plan
+      and align, then you actually get closer", "If the model is 50% likely to
+      get a button style wrong, but the fix is one cheap prompt, then our
+      combined 'expected pain' is low", "If you draw this out, there's an
+      inverse relationship", "if you've done some work at the 'Product' level
+      and have not answered all the open questions yet, its possible you may need
+      to end it where you are", and "If you're doing multiple phases of
+      planning, zooming in from 50kft view all the way to the 10kft view, you
+      want to do a little bit of steering at each phase". The conditional frame
+      recurs more than once per 80 words, making the reader aware of the
+      structure before processing the argument. Remedies are an editor's call:
+      cut two of the constructions, restructure some as imperatives or
+      assertions, or reconsider the piece's place in the issue.
+  scores:
+    voice: 4
+    sentence_variety: 1
+    economy: 3
+  notes: |
+    This piece has a clear, direct voice and makes its leverage argument with
+    concrete examples and specific numbers, but the conditional-clause pattern
+    becomes visible as a structure rather than a transparent thought process by
+    the third repetition.

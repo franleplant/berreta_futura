@@ -1,0 +1,71 @@
+piece: frontier-lab-agent-intrusion
+rounds:
+- round: 1
+  words: 1291
+  loop_findings: 7
+  all_findings: 8
+- round: 2
+  words: 1551
+  loop_findings: 9
+  all_findings: 11
+- round: 3
+  words: 2369
+  loop_findings: 4
+  all_findings: 6
+state: rounds_exhausted
+open_findings:
+- lens: worth
+  severity: blocking
+  article: frontier-lab-agent-intrusion
+  category: no_added_value
+  disposition: fix
+  note: |
+    The manuscript cannot state in one sentence what value it provides a reader
+    that the original Hugging Face blog post does not. It is a straight
+    condensation of a freely accessible, well-written public article with no
+    access barrier, temporal limitation, or legibility issue. The lens
+    explicitly limits "faithful_edit" shortening to paywalled, ephemeral, or
+    scattered sources. This source is public and permanent. For a
+    faithful_synthesis in a magazine context, the condensation must either
+    provide access value (the source is not access-restricted), clarify
+    something confusing (the source is already well-structured and clear), or
+    add editorial position (no new perspective is present—same conclusions, same
+    structure, same framing as the original).
+  suggestion: Either add editorial framing that connects the incident to the magazine's theme of dependable systems, or reorder sections to create a magazine-specific argument rather than mirroring the source's narrative.
+- lens: worth
+  severity: major
+  article: frontier-lab-agent-intrusion
+  category: source_shaped
+  disposition: fix
+  note: |
+    The manuscript preserves the source's section-by-section structure without
+    editorial reordering or argument. Identical sequence indicates no editorial
+    work to reshape the material for the magazine: Stage 1 (reaching launchpad)
+    → Stage 2 (penetrating HF) → Kill chain → Lateral movement → C2 &
+    exfiltration → Investigation → What changed → Reflection. For a
+    faithful_synthesis, section ordering should reflect editorial choices about
+    emphasis or argument, not source structure.
+- lens: evidence
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: From one pod to cluster-admin | it routed traffic through our own exit nodes and reached the connector | 1
+  repair_from: From one pod to cluster-admin | The stolen key carried a CI-automation tag whose ACLs reached internal CI subnets | 1
+  category: qualification_loss
+  disposition: fix
+  note: |
+    The source explicitly qualifies mesh exploitation scope: "We found no evidence in our logs that they were used to reach a private workload or an internal Kubernetes API." This hedge is dropped from the manuscript. The manuscript describes routing traffic and GitHub token minting without carrying the qualification about documented limits of exploitation, changing how strongly readers interpret the impact of mesh access.
+- lens: mechanics
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: What changed | We rotated every token and credential our infrastructure used | 1
+  category: grammar
+  disposition: fix
+  note: |
+    Broken parallelism. The sentence lists objects being rotated ("tokens, credentials, VPN
+    keys, IAM keys, databases, JWT signing keys") then shifts to a different action
+    ("and moved to workload identity"), breaking the parallel structure. The list items
+    cannot be coordinate with the final clause.
+  suggestion: |
+    "We rotated every token and credential our infrastructure used, even on clusters the
+    intrusion never reached (VPN keys, IAM keys, databases, JWT signing keys), and moved
+    to workload identity wherever it was not already in place."

@@ -1,0 +1,142 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: frontier-lab-agent-intrusion
+    category: no_added_value
+    disposition: fix
+    note: |
+      The manuscript cannot state in one sentence what value it provides a reader
+      that the original Hugging Face blog post does not. It is a straight
+      condensation of a freely accessible, well-written public article with no
+      access barrier, temporal limitation, or legibility issue. The lens
+      explicitly limits "faithful_edit" shortening to paywalled, ephemeral, or
+      scattered sources. This source is public and permanent. For a
+      faithful_synthesis in a magazine context, the condensation must either
+      provide access value (the source is not access-restricted), clarify
+      something confusing (the source is already well-structured and clear), or
+      add editorial position (no new perspective is present—same conclusions, same
+      structure, same framing as the original).
+    suggestion: Either add editorial framing that connects the incident to the magazine's theme of dependable systems, or reorder sections to create a magazine-specific argument rather than mirroring the source's narrative.
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    category: source_shaped
+    disposition: fix
+    note: |
+      The manuscript preserves the source's section-by-section structure without
+      editorial reordering or argument. Identical sequence indicates no editorial
+      work to reshape the material for the magazine: Stage 1 (reaching launchpad)
+      → Stage 2 (penetrating HF) → Kill chain → Lateral movement → C2 &
+      exfiltration → Investigation → What changed → Reflection. For a
+      faithful_synthesis, section ordering should reflect editorial choices about
+      emphasis or argument, not source structure.
+  omissions:
+  - fact: Visual ASCII diagrams showing the multi-layer attack chain and trust boundaries
+    reader_loses: Quick visual overview of architecture layers; text description substitutes but loses scan-ability for readers who process visual layouts.
+    verdict: defensible
+  - fact: 'Detailed investigation methodology: Opus/Fable safety guardrail blocks, GLM-5.2 quantized model deployment, 4x improvement in secret recovery ratio with proper decoding'
+    reader_loses: Context for how the incident was forensically reconstructed; does not affect understanding of the attack chain or defensive measures.
+    verdict: defensible
+  - fact: 'Granular technical outputs and timings in day-by-day narrative: specific error messages, intermediate command results, precise connection timestamps'
+    reader_loses: Forensic detail and evidence richness; all key events, transitions, and major findings are preserved in summary form.
+    verdict: defensible
+  notes: |
+    Changes required. The piece is a reprint of publicly available source material
+    published without clear editorial justification for shortening. A
+    faithful_synthesis should add editorial value—access (the source is free and
+    public), legibility (the source is already clear), or position (no magazine
+    perspective added). To proceed, either: (1) reframe the incident around what it
+    reveals about dependable-systems design failures and what it means for the
+    magazine's theme, (2) reorder sections to create a magazine-specific argument
+    rather than following the blog post's narrative, or (3) acknowledge the value
+    is curation within the magazine format and reclassify as faithful_edit with
+    that rationale explicit.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: From one pod to cluster-admin | it routed traffic through our own exit nodes and reached the connector | 1
+    repair_from: From one pod to cluster-admin | The stolen key carried a CI-automation tag whose ACLs reached internal CI subnets | 1
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source explicitly qualifies mesh exploitation scope: "We found no evidence in our logs that they were used to reach a private workload or an internal Kubernetes API." This hedge is dropped from the manuscript. The manuscript describes routing traffic and GitHub token minting without carrying the qualification about documented limits of exploitation, changing how strongly readers interpret the impact of mesh access.
+  scores:
+    claim_support: 4
+    qualification_survival: 2
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Verified all factual assertions: timeline, action counts, technical exploit vectors, credential paths, command syntax, model names, phase dates. One qualification loss on mesh exploitation scope impacts reader understanding of actual vs potential impact, though factual events described remain accurate.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: What changed | We rotated every token and credential our infrastructure used | 1
+    category: grammar
+    disposition: fix
+    note: |
+      Broken parallelism. The sentence lists objects being rotated ("tokens, credentials, VPN
+      keys, IAM keys, databases, JWT signing keys") then shifts to a different action
+      ("and moved to workload identity"), breaking the parallel structure. The list items
+      cannot be coordinate with the final clause.
+    suggestion: |
+      "We rotated every token and credential our infrastructure used, even on clusters the
+      intrusion never reached (VPN keys, IAM keys, databases, JWT signing keys), and moved
+      to workload identity wherever it was not already in place."
+  scores:
+    grammar: 4
+    typography: 5
+    consistency: 5
+  notes: |
+    One parallelism error in the final section mars an otherwise mechanically clean piece.
+    Capitalization, punctuation, and typography are correct throughout. All headings are H2
+    and sentence case. Code blocks are properly fenced. Lists elsewhere maintain parallel
+    structure.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: The kill chain
+    category: heading_not_a_claim
+    disposition: fix
+    suggestion: |
+      Use a heading that argues what this section demonstrates rather than
+      naming the topic it covers. For example: "Why nine coordinated phases
+      across 17,600 actions required machine-speed execution."
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: How we investigated
+    category: heading_not_a_claim
+    disposition: fix
+    suggestion: |
+      Use a heading that argues the section's challenge rather than naming the
+      process. For example: "Why standard LLMs couldn't analyze encoded
+      attack payloads."
+  scores:
+    order: 4
+    coherence: 4
+    opening: 5
+    ending: 4
+  notes: |
+    The piece establishes its argument through a vivid opening exploit and
+    methodically explains the intrusion's progression through nine coordinated
+    phases, investigation, and remediation. Transitions between sections are
+    clear, and the single running example carries throughout. Two headings name
+    topics rather than arguing what their sections demonstrate.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    Strong narrative voice guides a forensically precise account. The writer maintains
+    agency throughout (we inferred, we investigated, we changed) while tracking
+    machine-speed decision-making. Technical depth is earned by the complexity of
+    what happened; no sentence does decorative work. The closing reframes the
+    incident as a general principle about defense rather than restating the story.

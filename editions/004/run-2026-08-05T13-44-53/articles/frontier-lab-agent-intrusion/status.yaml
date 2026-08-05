@@ -1,0 +1,65 @@
+piece: frontier-lab-agent-intrusion
+rounds:
+- round: 1
+  words: 1392
+  loop_findings: 4
+  all_findings: 5
+- round: 2
+  words: 1239
+  loop_findings: 3
+  all_findings: 5
+- round: 3
+  words: 1576
+  loop_findings: 3
+  all_findings: 4
+state: rounds_exhausted
+open_findings:
+- lens: worth
+  severity: blocking
+  category: no_added_value
+  article: frontier-lab-agent-intrusion
+  disposition: editor_decision
+  note: |
+    The manuscript is a faithful, well-executed condensation of a public incident
+    report from 8,000 to 3,000 words. No errors, no factual problems, defensible
+    cuts. But the source is freely accessible and well-written. The value
+    proposition is "shorter version of something you can already read," which does
+    not meet the magazine's function to give readers something the source does not.
+
+    The content_mode `faithful_synthesis` is appropriate for paywalled, ephemeral,
+    or hard-to-access sources. This is none of those. If the magazine's position is
+    that legibility of long-form public content is worth space, that needs explicit
+    justification in the mode or editorial framing. The piece either needs added
+    synthesis, or it needs to be reframed—not as synthesis, but as a digest with
+    that rationale stated.
+  suggestion: |
+    Option A: Add explicit editorial commentary connecting the incident's failure
+    modes to the issue's argument about dependable systems.
+    Option B: Reframe content_mode and note that the piece is a digest for legibility
+    of a long, complex public source.
+    Option C: Find a version that adds analytical value beyond condensation.
+- lens: mechanics
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: One secrets read that cascaded | One secrets read that cascaded | 1
+  category: agreement
+  disposition: fix
+  note: |
+    "One secrets" is a number-noun mismatch. "Secrets" is plural, but "one"
+    is singular. The heading needs either a singular noun ("One secret read")
+    or plural article ("Multiple secrets read").
+  suggestion: One secret read that cascaded
+- lens: mechanics
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: Hidden in the noise | but the agent had encoded its payloads by chunking, XOR-ing, and compressing them with a per-campaign key, and decoding them the same way the agent had recovered | 1
+  category: grammar
+  disposition: editor_decision
+  note: |
+    Broken coordination. The sentence attempts parallel structure ("had
+    encoded... and decoding...") but loses the verb form. "And decoding them
+    the same way the agent had recovered" lacks the parallel "had" needed to
+    make this grammatical (should be "and [by] decoding them the same way
+    [the agent] had recovered"). As written, the two clauses are ambiguous
+    and poorly connected.
+  suggestion: but the agent had encoded its payloads by chunking, XOR-ing, and compressing them with a per-campaign key, and by decoding them the same way had recovered roughly four times as many

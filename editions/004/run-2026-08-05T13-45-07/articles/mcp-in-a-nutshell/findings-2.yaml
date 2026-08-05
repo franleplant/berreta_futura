@@ -1,0 +1,91 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: mcp-in-a-nutshell
+    locator: Primitives | Call tools/list first, and a server hands back | 1
+    repair_from: '- | Open Visual Studio Code and point it at two servers | 1'
+    category: stripped_utility
+    disposition: fix
+    note: "The source contains seven complete JSON-RPC request/response examples \nshowing tools/list, tools/call, server/discover, subscriptions/listen, \nacknowledgment, and notifications in their actual format. The manuscript \nnames these methods but does not show what they look like. A reader trying \nto understand the protocol's actual structure must return to the source, \nmaking this a shorter reference that delegates its reference work.\n"
+    suggestion: Include at least one complete JSON-RPC example pair to show readers what a request and response actually contain.
+  - severity: major
+    article: mcp-in-a-nutshell
+    category: stripped_utility
+    note: "All four pseudo-code examples are omitted: discovery, tool discovery, tool \nexecution, and notification handling. These show the application-level \npattern for using MCP. For an \"accessible explainer,\" operational patterns \nin code are as important as concept names.\n"
+    suggestion: Restore at least the discovery pseudo-code showing the pattern of reading client capabilities and server capabilities.
+  - severity: major
+    article: mcp-in-a-nutshell
+    category: no_added_value
+    note: "The source is public, findable documentation that is already an accessible \nexplainer. The manuscript reorganizes and shortens it without offering \neditorial perspective, a different teaching approach, or access value \n(the source is not paywalled or ephemeral). Simplified language alone \ndoes not justify republishing a public explanation—the rationale must \nname what this version teaches that the source does not. No such value \nis evident: the VS Code example, the concept order, and the definitions \nare all from the source.\n"
+  omissions:
+  - fact: 'Seven complete JSON-RPC examples: server/discover request/response, tools/list request/response, tools/call request/response, subscriptions/listen request, acknowledgment response, notification response, and follow-up tools/list request'
+    reader_loses: Cannot see the actual protocol message structure; must open the source to learn what to type or parse
+    verdict: needed
+  - fact: Four pseudo-code examples for client discovery, tool discovery, tool execution, and notification handling
+    reader_loses: No concrete sense of how AI applications use MCP; patterns must be inferred from prose or sourced from the original
+    verdict: needed
+  - fact: Four 'How This Works in AI Applications' sections bridging protocol concepts to application code
+    reader_loses: Cannot connect protocol mechanics (e.g., subscriptions, ttlMs) to what an application actually does with them
+    verdict: needed
+  - fact: ttlMs and cacheScope explanation showing how tool lists stay fresh and how clients reuse them
+    reader_loses: Doesn't understand caching behavior; must go to source to learn when to call tools/list again
+    verdict: needed
+  - fact: Scope section (Specification, SDKs, Development Tools, Reference Implementations)
+    reader_loses: No ecosystem context, but defensible for space in a magazine focused on protocol details
+    verdict: defensible
+  - fact: Detailed Participants and architecture diagram explanation of local vs. remote servers, multiple client instantiation
+    reader_loses: The opening VS Code example covers the core; detailed instantiation mechanics are secondary
+    verdict: defensible
+  notes: "Changes required because the manuscript strips all executed examples and \napplication-level patterns from a publicly accessible source without offering \nnew perspective, better pedagogy, or access value. This is a shorter version \nof something the reader can already access, not a different way of teaching it.\n"
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Verified all checkable assertions in the manuscript against the architecture overview extraction. Every factual claim about MCP concepts, methods, responses, defaults, and deprecated features is grounded in the source. The manuscript faithfully synthesizes the original without introducing claims the source does not reach.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    The piece maintains consistent sentence-initial capitalization, clean grammar
+    throughout, and proper typography. All headings are correctly formed and marked.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: 'Primitives | A server built around a database can expose all three at once: query tools, a resource holding the schema, and a prompt showing how to use both together. | 1'
+    repair_from: 'Primitives | A client can expose one thing back to a server: elicitation. | 1'
+    category: missing_transition
+    disposition: fix
+    note: |
+      The paragraph shifts from describing server-side primitives (tools, resources, prompts exemplified by a database server) to client-side primitives (elicitation) without a bridge. A reader follows "servers expose three things" and then encounters "clients expose one thing" with no sentence signaling the shift in direction.
+    suggestion: 'Before ''A client can expose one thing back to a server,'' insert a transitional sentence marking the shift: ''Servers expose three primitives. Clients can play one active role: elicitation.'''
+  scores:
+    order: 4
+    coherence: 3
+    opening: 5
+    ending: 5
+  notes: |
+    The piece establishes a clear pattern in the opening (discover, ask, listen) and delivers on it across five sections with sound logical structure. The opening is concrete and strong, the ending lands by returning to that pattern and reinforcing scope. One mid-section transition from server-side to client-side primitives is unannounced.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 4
+    economy: 5
+  notes: |
+    A clear, person-written explanation of the protocol that grounds abstraction in
+    concrete examples and maintains consistent voice. The teaching structure (opening
+    imperatives, procedural "Call... and..." patterns) is deliberate and effective.
+    Scope boundaries are explicit throughout. Clean pass.

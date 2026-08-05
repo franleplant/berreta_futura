@@ -1,0 +1,65 @@
+worth:
+  result: approved
+  findings: []
+  notes: |
+    A reader gains a scattered thread collected into continuous, professionally formatted prose. The source thread (public, on X) becomes legible as a magazine article rather than tweets; copyediting improves flow and removes casual typos without altering substance or argument. The piece carries its author's thesis completely: planning and alignment are where leverage actually lives, and pragmatism, not perfection, is what makes the difference.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Verified all factual claims (figures, scenarios, the 100-repos example, the 10% rework
+    chance, the 50/50 baseline, the 6-hour planning figure, the 50kft-to-10kft framing)
+    against extraction. All checkable assertions are supported. Qualifications and hedges
+    (the "~50%", "probably", "obviously separate variables", "no perfect process") are
+    intact. Quote accuracy verified on both blockquotes. No discrepancies found.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    All sentences open capitalized per established convention; headings are sentence case with ## only; grammar and agreement are sound throughout; en dashes are used consistently for ranges; no typography or punctuation issues detected.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | You need to do this without overindexing on questions you won't be able to answer without going down a level | 1
+    repair_from: What you don't want to do is spend 6 hours planning a task for which you could have eliminated 80% of the expected pain in the first 10 minutes.
+    category: missing_transition
+    disposition: fix
+    note: |
+      The piece jumps from "don't over-plan" to "you may need to zoom between abstraction levels" without connecting them. The practical warning about spending 6 hours is advice to avoid over-planning, but the next sentence introduces a constraint—that you can't answer all questions at one level—which partially explains why people over-plan in the first place. These are related, but the connection is omitted, leaving the transition abrupt.
+    suggestion: Explicitly state that the reason to avoid over-planning is that some questions cannot be answered at your current abstraction level, or move the zoom concept earlier to set up why the 80/20 rule matters.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | This is what we mean by leverage; it requires being pragmatic | 1
+    repair_from: This is what we mean by leverage; it requires being pragmatic.
+    category: ending
+    disposition: fix
+    note: |
+      After establishing that leverage requires pragmatism, the piece continues with an explanation of zooming between a 50kft and 10kft view—a model never introduced earlier in the piece. Then it closes with "Good luck," which feels dismissive and incomplete. The ending doesn't land; it either needs to establish the multi-level abstraction model much earlier, or conclude solidly on the pragmatism insight without introducing new concepts.
+    suggestion: Move the abstraction-level model into the body of the piece and develop it, or conclude on the pragmatism insight with a stronger close than 'Good luck.'
+  scores:
+    order: 3
+    coherence: 2
+    opening: 4
+    ending: 2
+  notes: |
+    The piece's opening is strong and the core insight is clear: code writing is only 25–50% of ship time, so apply AI leverage to planning, and use the 80/20 rule to optimize upfront effort against rework pain. However, the piece introduces an important complication—the need to zoom between abstraction levels when planning—too late and without prior grounding, breaking the coherence of the ending.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 4
+    economy: 5
+  notes: |
+    Pragmatic and direct voice throughout. The author walks the reader through scenarios using deliberate imperative and conditional structures that engage without becoming mechanical. Writing is economical, free of dead words and jargon, and makes clear architectural arguments about optimization trade-offs in AI-assisted development.

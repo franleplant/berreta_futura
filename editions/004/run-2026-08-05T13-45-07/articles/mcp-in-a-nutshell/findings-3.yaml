@@ -1,0 +1,95 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The Scope section identifying four official MCP projects (specification, SDKs, development tools, reference implementations)
+    reader_loses: Context on the ecosystem and how the official documentation relates to available tools
+    verdict: defensible
+  - fact: The Tasks extension for long-running operations, which returns a durable handle and lets clients poll for status
+    reader_loses: Knowledge of handling requests beyond a few seconds; legitimate edge case for an explainer
+    verdict: defensible
+  - fact: Complete server/discover response JSON showing serverInfo, supportedVersions, and full capabilities structure
+    reader_loses: Full reference material for implementation; basic concepts and examples are preserved
+    verdict: defensible
+  - fact: Progressive tool discovery pattern for federating many MCP servers
+    reader_loses: Knowledge of an optimization technique; not core to understanding MCP
+    verdict: defensible
+  - fact: Detailed explanation of sampling (servers requesting LLM completions from client) before deprecation in 2026-07-28
+    reader_loses: Understanding of legacy integration patterns when encountering old servers
+    verdict: defensible
+  notes: |
+    The manuscript gives a reader an accessible, narrative introduction that opens with a concrete VSCode example and reorganizes the official docs' architecture-first structure into a learning path around how developers actually interact with MCP: discover what's available, ask for something, listen for changes. It adds value through editorial clarity and a running example, not a problematic compression. All callable methods (tools/list, tools/call, server/discover, subscriptions/listen) and three core primitives remain present.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Verified claim-by-claim against the extraction: all assertions about participants, layers,
+    discovery, primitives (tools, resources, prompts, elicitation), deprecated features (sampling,
+    logging), notifications, transport mechanisms, and the protocol's scope are supported. The
+    introduction's characterization of "three requests" (discover, ask, listen) is a
+    simplification of the protocol's architecture but accurately reflects the three-part
+    capability structure in the extraction. JSON-RPC examples match the extraction exactly;
+    metadata field names, method names, protocol version (2026-07-28), and behavioral details
+    (five-minute TTL, notification best-effort delivery, statelessness) are all confirmed. The
+    manuscript maintains the extraction's qualifications: that discovery is optional (every
+    request carries metadata), that notifications are opt-in and not guaranteed, that MCP's
+    scope ends at the reply. No invented claims, no quote distortions, no unsupported
+    furniture.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    This piece is mechanically clean. Sentence capitalization is consistent
+    throughout; agreement, tense, and punctuation are sound; code fences are
+    properly opened and closed; headings follow sentence case; no em dashes or
+    typography violations found. Imperative fragments ("Discover what it offers,"
+    "Ask it for something") are used intentionally for pedagogical effect and
+    match the piece's stated convention. The semicolon joining independent clauses
+    ("so the server never had to bundle a model SDK of its own; build that today
+    by calling a model provider directly instead") employs imperative mood
+    stylistically to connect deprecated capability with modern practice; this is
+    grammatically sound and not a finding.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Primitives | Two older client primitives, sampling and logging, were deprecated in protocol version 2026-07-28. | 1
+    repair_from: 'Statelessness and discovery | MCP''s core protocol, the data layer, is stateless: a server does not remember the last request. | 1'
+    category: missing_transition
+    disposition: fix
+    note: |
+      The Primitives section closes by listing what was deprecated (sampling and logging), then the next section opens on statelessness and discovery. These are unrelated concepts and the jump is unexplained. The reader understands what primitives exist, but doesn't grasp why the next section pivots to how servers announce those primitives. The defect shows when you finish reading about deprecated features and suddenly confront the discovery mechanism.
+    suggestion: 'Before Statelessness and discovery, add a transition sentence that connects the primitives to how servers expose them, such as: ''Now that you understand what primitives exist, here''s how servers announce which ones they support.'''
+  scores:
+    order: 3
+    coherence: 3
+    opening: 4
+    ending: 4
+  notes: |
+    The piece establishes what MCP is through a clear opening scenario and walks the reader through the primitives and messaging patterns with a concrete weather_current example that returns in the closing. The argument is traceable in one read but falters at the transition between sections.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | Discover what it offers. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three consecutive bare imperatives in the opening paragraph ("Discover what it offers," "Ask it for something," "Listen for when the answer changes") create rhythmic monotony. The reader hears the pattern before the argument. Remedy is editorial: reword one sentence to vary the shape, cut one, or reconsider whether the opening needs the pattern.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 4
+  notes: |
+    The piece has strong voice and clarity throughout, with concrete examples and clear scope-setting about MCP's role. The three consecutive imperatives in the opening paragraph noticeably reduce sentence variety and rhythm, but this is the primary issue.

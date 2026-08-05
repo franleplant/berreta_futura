@@ -82,9 +82,19 @@ of style inside a piece where both forms are correct.
 
 `disposition: fix` for everything the editors wrote: headings, captions, labels,
 notes, decks, and every word in `in_a_nutshell` and `original_editorial`.
-`disposition: editor_decision` for a defect inside the source author's own
-retained sentence in `faithful_edit` or `faithful_synthesis`. Same severity
-either way.
+`disposition: editor_decision` for a defect inside a sentence **retained
+verbatim** from the source. Same severity either way.
+
+"Retained verbatim" means the sentence appears in the pinned extraction, word for
+word, and you have checked that it does. It is not a guess from register or
+subject matter, and it is not the default. In `faithful_synthesis` the prose is
+almost entirely the editors' own — the mode retells a source in our sentences —
+so a grammatical error there is ours and takes `disposition: fix`. In
+`faithful_edit`, where the source's sentences are the body of the piece, most
+prose is the author's and takes `editor_decision`; the editors' additions in that
+mode are still theirs to fix. When you cannot find the sentence in the extraction,
+it is the editors' sentence. Do not excuse our own subject-verb disagreement as
+the author's voice.
 
 ## Output
 

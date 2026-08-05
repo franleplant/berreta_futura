@@ -1,0 +1,87 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: JSON-RPC example exchanges (discovery, tools/list, tools/call, subscriptions/listen requests and responses)
+    reader_loses: Cannot see the actual structure of JSON-RPC messages, only conceptual descriptions
+    verdict: defensible
+  - fact: Pseudo-code examples for AI application patterns (discovery, tool listing, tool execution, notification handling)
+    reader_loses: Cannot see code patterns for integrating MCP into applications
+    verdict: defensible
+  - fact: Architecture diagram showing MCP Host with multiple MCP Clients connecting to MCP Servers
+    reader_loses: Cannot see a visual representation of the host/client/server relationships
+    verdict: defensible
+  - fact: System prompts as an example type for the Prompts primitive (only few-shot examples mentioned)
+    reader_loses: May not realize Prompts can serve as system prompts, not just few-shot examples
+    verdict: defensible
+  notes: |
+    This manuscript presents MCP through narrative explanation with clear
+    progression from architecture to primitives, making the concepts accessible
+    for readers who need the shared vocabulary the issue assumes, whereas the
+    source presents them in specification-reference format with implementation
+    details and code examples. The explanation faithfully captures what matters
+    for understanding the protocol.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Verified every checkable assertion in the manuscript against the source extraction. All factual claims—names, versions, dates (2026-07-28 deprecation), primitives, message types, authentication mechanisms, and architectural relationships—are grounded in the source. Qualifications about "typically," optionality, and notification unreliability are preserved. The scope statement is quoted verbatim. No invented claims, no omitted hedges that alter meaning.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | Sampling, which let a server | 1'
+    category: agreement
+    disposition: fix
+    note: |
+      "Sampling" is singular and requires the third-person singular verb form
+      "lets", not the base form "let".
+    suggestion: Sampling, which lets a server ask the client's own AI application...
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | context exchange—it does | 1'
+    category: typography
+    disposition: fix
+    note: |
+      The em dash character (U+2014) is banned. Replace with a semicolon or
+      colon to separate the two independent clauses.
+    suggestion: MCP focuses solely on the protocol for context exchange; it does not dictate how AI applications use LLMs or manage the provided context.
+  scores:
+    grammar: 3
+    typography: 3
+    consistency: 5
+  notes: |
+    Two changes required: one subject-verb agreement error and one instance of the
+    banned em dash. The piece maintains consistent capitalization convention and
+    technical terminology throughout.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 4
+    coherence: 4
+    opening: 4
+    ending: 4
+  notes: |
+    The piece maintains logical argument order and closes with a clean scope
+    boundary. Multiple illustrative examples (VSCode, database, notifications) are
+    each apt for their concept rather than forming a single running case, which is
+    appropriate for a technical protocol explanation. No duplication or orphan
+    referents found.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 4
+    economy: 5
+  notes: |
+    Clear technical explainer that holds voice and precision throughout. The parallel
+    structure in the three primitives section (tools/resources/prompts) is controlled
+    and serves pedagogical purpose. Opening and closing are both strong.

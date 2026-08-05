@@ -1,0 +1,34 @@
+piece: mcp-in-a-nutshell
+rounds:
+- round: 1
+  words: 815
+  loop_findings: 6
+  all_findings: 9
+- round: 2
+  words: 897
+  loop_findings: 4
+  all_findings: 4
+- round: 3
+  words: 1078
+  loop_findings: 2
+  all_findings: 2
+state: rounds_exhausted
+open_findings:
+- lens: shape
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: Primitives | Two older client primitives, sampling and logging, were deprecated in protocol version 2026-07-28. | 1
+  repair_from: 'Statelessness and discovery | MCP''s core protocol, the data layer, is stateless: a server does not remember the last request. | 1'
+  category: missing_transition
+  disposition: fix
+  note: |
+    The Primitives section closes by listing what was deprecated (sampling and logging), then the next section opens on statelessness and discovery. These are unrelated concepts and the jump is unexplained. The reader understands what primitives exist, but doesn't grasp why the next section pivots to how servers announce those primitives. The defect shows when you finish reading about deprecated features and suddenly confront the discovery mechanism.
+  suggestion: 'Before Statelessness and discovery, add a transition sentence that connects the primitives to how servers expose them, such as: ''Now that you understand what primitives exist, here''s how servers announce which ones they support.'''
+- lens: craft
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: '- | Discover what it offers. | 1'
+  category: repeated_shape
+  disposition: editor_decision
+  note: |
+    Three consecutive bare imperatives in the opening paragraph ("Discover what it offers," "Ask it for something," "Listen for when the answer changes") create rhythmic monotony. The reader hears the pattern before the argument. Remedy is editorial: reword one sentence to vary the shape, cut one, or reconsider whether the opening needs the pattern.
