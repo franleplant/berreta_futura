@@ -1,0 +1,60 @@
+piece: mcp-in-a-nutshell
+rounds:
+- round: 1
+  words: 659
+  loop_findings: 13
+  all_findings: 16
+- round: 2
+  words: 848
+  loop_findings: 4
+  all_findings: 7
+- round: 3
+  words: 847
+  loop_findings: 4
+  all_findings: 6
+state: rounds_exhausted
+open_findings:
+- lens: shape
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: '- | Clients can expose one primitive of their own. | 1'
+  repair_from: '- | Clients can expose one primitive of their own. | 1'
+  category: missing_transition
+  disposition: fix
+  note: |
+    The piece moves from the client's normal discovery-and-execution path into
+    reverse-direction primitives, deprecated features, and long-running tasks
+    without explaining how this branch relates to the main flow.
+  suggestion: Add a transition framing elicitation, sampling, logging, and Tasks as optional extensions that change who initiates the interaction.
+- lens: craft
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: '- | A tool performs an action such as a file operation, API call, or database query. | 1'
+  category: repeated_shape
+  disposition: editor_decision
+  note: |
+    Three consecutive sentences use the same "A [noun] [verb]" shape:
+    "A tool performs...", "A resource supplies...", and "A prompt provides...".
+    The repetition makes the taxonomy sound mechanically assembled; vary the
+    construction or compress the three definitions.
+- lens: craft
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: '- | With those connections in place, the client and server exchange JSON-RPC messages. | 1'
+  category: no_voice
+  disposition: fix
+  note: |
+    The voice disappears here into an even, procedural register. The following
+    sentences ("MCP is a stateless protocol", "Every request carries...", and
+    "Because each request carries...") stack abstractions and protocol rules
+    without a human point of attention.
+- lens: craft
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: '- | It chooses the server, sends the call, and decides how a change enters the conversation. | 1'
+  category: weak_close
+  disposition: fix
+  note: |
+    The final sentence restates the preceding claim that the application is
+    "the gatekeeper" and closes with another balanced list. End on the practical
+    implication of that control instead of repeating the summary.

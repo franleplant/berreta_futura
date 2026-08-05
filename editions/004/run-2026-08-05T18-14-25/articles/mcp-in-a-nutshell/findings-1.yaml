@@ -1,0 +1,265 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | The data layer is where an application learns what a server can do. | 1'
+    repair_from: '- | MCP covers context exchange only. | 1'
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The source gives the concrete discovery contract: protocolVersion, clientInfo,
+      clientCapabilities, supportedVersions, server capabilities, identity exchange,
+      and UnsupportedProtocolVersionError retry behavior. The manuscript names the
+      fields generally but omits the identifiers and failure path a reader would need
+      to implement or debug discovery.
+    suggestion: Carry the key _meta field names and the version-error retry rule into the discovery explanation.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Servers expose three core primitives. | Each primitive type has associated methods for discovery ( */list ), retrieval ( */get ), and in some cases, execution ( tools/call ). | 1
+    repair_from: Servers expose three core primitives. | Servers expose three core primitives. | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source specifies that a tools/list response contains name, title,
+      description, and inputSchema, and explains pagination, resultType, ttlMs,
+      cacheScope, and progressive discovery. The manuscript tells readers to
+      discover tools and call them but leaves out the response fields and caching
+      details that make the mechanism actionable.
+    suggestion: Include the tool metadata fields and at least the cursor/cache caveat.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: MCP also supports notifications. | A client opens a long-lived `subscriptions/listen` stream and names the changes it wants, such as tool-list updates. | 1
+    repair_from: MCP also supports notifications. | MCP also supports notifications. | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source shows the acknowledgement message, subscription ID, the
+      notifications/tools/list_changed event, and the client's follow-up
+      tools/list refresh. The manuscript keeps opt-in and best-effort behavior
+      but omits the wire-level exchange needed to build or troubleshoot a
+      subscription.
+    suggestion: Retain the acknowledgement/subscription-ID sequence and the refresh request.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: MCP also supports notifications. | Notifications are best effort, especially across reconnects, so clients should still poll when freshness matters. | 1
+    repair_from: '- | MCP covers context exchange only. | 1'
+    category: source_shaped
+    disposition: fix
+    note: |
+      The manuscript follows the source's sequence from participants to layers,
+      discovery, primitives, notifications, and conclusion without reorganizing
+      the material around a reader's question or making an independent editorial
+      cut. It is a competent condensation, but it performs little structural work.
+    suggestion: 'Reorder around the practical flow: connect, discover, invoke, and stay synchronized.'
+  - severity: major
+    article: mcp-in-a-nutshell
+    category: no_position
+    disposition: fix
+    note: |
+      The piece supplies shared vocabulary and a concise working summary, but it
+      makes no claim about why the architecture is consequential, which details
+      it deliberately prioritizes, or how readers should use the model. Without
+      that editorial stance it remains a paraphrase of the overview.
+    suggestion: Add a clear framing claim, such as why MCP's stateless discovery-and-primitives model matters to application builders.
+  omissions:
+  - fact: 'The overview''s list of MCP projects: specification, SDKs, development tools, and reference server implementations'
+    reader_loses: They do not learn what the MCP ecosystem includes beyond the protocol itself.
+    verdict: defensible
+  - fact: Local STDIO servers typically serve one client, while remote Streamable HTTP servers typically serve many clients
+    reader_loses: They miss an important deployment and scaling distinction.
+    verdict: defensible
+  - fact: The data and transport layers are conceptually inner and outer layers
+    reader_loses: Little; the manuscript still explains both layers and their responsibilities.
+    verdict: defensible
+  - fact: The `server/discover` exchange's `io.modelcontextprotocol/protocolVersion`, `clientInfo`, `clientCapabilities`, `supportedVersions`, and `serverInfo` fields
+    reader_loses: They cannot reproduce the discovery exchange or understand exactly how identity and capability negotiation work.
+    verdict: needed
+  - fact: An unsupported version produces `UnsupportedProtocolVersionError`, after which the client retries with a mutually supported version
+    reader_loses: They miss the concrete failure and recovery path for version negotiation.
+    verdict: needed
+  - fact: The `tools/list` response fields `name`, `title`, `description`, and `inputSchema`
+    reader_loses: They cannot know what metadata a client receives or how input validation is described.
+    verdict: needed
+  - fact: The optional pagination cursor and the response's `resultType`, `ttlMs`, and `cacheScope` caching fields
+    reader_loses: Implementers may assume listings are unpaginated and lack freshness or reuse semantics.
+    verdict: needed
+  - fact: 'The worked `weather_current` call with `location: San Francisco`, `units: imperial`, and the default-to-metric behavior'
+    reader_loses: They lose the concrete example showing exact tool-name matching, required versus optional arguments, and defaults.
+    verdict: needed
+  - fact: The source's JSON-RPC request IDs and complete `_meta` payloads in the discovery, listing, and call examples
+    reader_loses: They understand the concepts but not the complete message shape needed to send a request.
+    verdict: needed
+  - fact: The `notifications/subscriptions/acknowledged` response and its `io.modelcontextprotocol/subscriptionId`
+    reader_loses: They cannot correlate later notifications with the stream that requested them.
+    verdict: needed
+  - fact: The `notifications/tools/list_changed` message has no `id`, carries the subscription ID, and is followed by a refreshed `tools/list` request
+    reader_loses: They miss how a client receives and acts on a tool-list change.
+    verdict: needed
+  - fact: The source's four pseudo-code blocks showing discovery registration, federated tool collection, tool-call routing, and notification handling
+    reader_loses: They lose implementation-oriented demonstrations of how an AI application wires the protocol into a conversation.
+    verdict: defensible
+  - fact: The `sampling/createMessage` method name and the source's explanation that sampling is deprecated
+    reader_loses: Nothing essential; the manuscript preserves the deprecation and recommended direct provider API approach.
+    verdict: defensible
+  - fact: 'The source''s detailed reasons notifications matter: dynamic environments, efficiency, consistency, and real-time collaboration'
+    reader_loses: They lose motivation, but the mechanism and best-effort caveat remain.
+    verdict: defensible
+  retentions:
+  - passage: Visual Studio Code is an MCP host. When it connects to the Sentry MCP server...
+    costs: A full opening paragraph repeats the source's participant diagram and examples, but it concretely establishes host/client/server relationships and earns its space.
+    verdict: earns_place
+  - passage: A database server might expose a query tool, a resource containing the database schema...
+    costs: A second example after the abstract primitive definitions; it makes the three primitive types and their sequence memorable.
+    verdict: earns_place
+  - passage: Clients can expose elicitation. A server uses `elicitation/create`...
+    costs: A compact treatment of client features and deprecations; it prevents the explainer from implying that only servers expose capabilities.
+    verdict: earns_place
+  - passage: 'That is the working shape: one host, one client per server...'
+    costs: A recap paragraph whose space could carry the omitted subscription acknowledgement or tool-schema details.
+    verdict: cut
+  notes: |
+    Changes required because the piece gives a useful vocabulary-level map of MCP, but omits several concrete discovery, tool-schema, and notification exchanges that make the protocol actionable. The needed omissions do not make the remaining prose false, but they materially reduce its reference utility; restoring the _meta/version negotiation fields, tool response metadata, and subscription acknowledgement flow would repair the main loss.
+evidence:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: mcp-in-a-nutshell
+    locator: Statelessness and discovery | A client may send the mandatory `server/discover` request before other requests | 1
+    repair_from: Statelessness and discovery | A client may send the mandatory `server/discover` request before other requests | 1
+    category: invented_claim
+    disposition: fix
+    note: |
+      The source says that every server must implement `server/discover`, but that clients may send it optionally. Calling the request mandatory reverses the source's qualification.
+  scores:
+    claim_support: 4
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every assertion in the manuscript against the pinned architecture extraction; I could not check external corroboration, which this lens excludes.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | Sampling, which let servers request model completions from the client, and logging are deprecated as of protocol version 2026-07-28. | 1'
+    category: agreement
+    disposition: fix
+    note: |
+      "Sampling" is singular, so the relative clause requires "lets," not "let."
+      This is editors' prose in a faithful synthesis.
+    suggestion: Sampling, which lets servers request model completions from the client, and logging are deprecated as of protocol version 2026-07-28.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | The official Sentry MCP server runs on the Sentry platform, and uses the Streamable HTTP transport. | 1'
+    category: punctuation
+    disposition: fix
+    note: |
+      The comma unnecessarily separates two predicates sharing the subject.
+    suggestion: The official Sentry MCP server runs on the Sentry platform and uses the Streamable HTTP transport.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | same _meta fields | 1'
+    category: markup
+    disposition: fix
+    note: |
+      The unpaired underscore is stray markup in the rendered text. The protocol
+      field is formatted as inline code earlier and should be formatted the same
+      way here.
+    suggestion: same `_meta` fields
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | associated methods for discovery ( */list ), retrieval ( */get ), and in some cases, execution ( tools/call ). | 1'
+    category: markup
+    disposition: fix
+    note: |
+      The method patterns contain stray asterisks and inconsistent spacing rather
+      than clear inline-code formatting.
+    suggestion: associated methods for discovery (`*/list`), retrieval (`*/get`), and, in some cases, execution (`tools/call`).
+  scores:
+    grammar: 2
+    typography: 3
+    consistency: 3
+  notes: |
+    Changes required because one agreement error, one unnecessary comma, and two
+    instances of inconsistent or stray inline markup remain in the editors' prose.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | Visual Studio Code is an MCP host. | 1'
+    repair_from: '- | Visual Studio Code is an MCP host. | 1'
+    category: duplication
+    disposition: fix
+    note: |
+      The opening introduces Visual Studio Code connecting to Sentry and a local
+      filesystem server, then the next paragraph repeats those same examples
+      through Claude Desktop, the filesystem server, and Sentry. The repetition
+      interrupts the progression from roles into transports.
+    suggestion: Keep the opening example and remove the repeated Sentry/filesystem setup.
+  scores:
+    order: 4
+    coherence: 3
+    opening: 4
+    ending: 5
+  notes: |
+    I verified that the piece progresses from architecture roles through layers,
+    discovery, primitives, extensions, and notifications, but its early examples
+    repeat before the technical explanation advances.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | Tools are executable functions for actions such as file operations, API calls, and database queries. | 1'
+    category: repeated_shape
+    disposition: fix
+    note: |
+      Three consecutive primitive definitions use the same "X are/provide..." shape:
+      "Tools are executable functions...", "Resources provide context...", and
+      "Prompts are reusable interaction templates...". The parallelism is clear but
+      mechanically uniform.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | MCP covers context exchange only. | 1'
+    category: no_voice
+    disposition: fix
+    note: |
+      The voice disappears here, as the piece shifts from concrete examples into
+      an even abstraction stack of layers, messages, capabilities, and primitives.
+      The prose becomes technically correct but could have been generated by any
+      competent system.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | The data layer is where an application learns what a server can do. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This is a definite-article equation that restates the function of the data
+      layer in abstract terms. Replace it with a concrete account of what the
+      application actually does.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | That is the working shape: one host, one client per server, a stateless JSON-RPC exchange, and primitives that let an application discover context and actions before it uses them. | 1'
+    category: weak_close
+    disposition: fix
+    note: |
+      The closing sentence restates the architecture already established instead
+      of leaving the reader with a new implication or question. End on what this
+      arrangement enables or constrains.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | Prompts are reusable interaction templates, including system prompts and few-shot examples. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "Few-shot examples" is unexplained terminology for readers outside the
+      subfield. Define it briefly or use plainer language.
+  scores:
+    voice: 3
+    sentence_variety: 3
+    economy: 4
+  notes: |
+    I heard a clear, useful technical explainer whose voice thins into system-like abstraction in the architecture section and returns as a compressed summary at the close.

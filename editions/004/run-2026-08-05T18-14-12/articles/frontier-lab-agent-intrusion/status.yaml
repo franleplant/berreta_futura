@@ -1,0 +1,43 @@
+piece: frontier-lab-agent-intrusion
+rounds:
+- round: 1
+  words: 1149
+  loop_findings: 9
+  all_findings: 12
+- round: 2
+  words: 1246
+  loop_findings: 1
+  all_findings: 8
+- round: 3
+  words: 1251
+  loop_findings: 3
+  all_findings: 4
+state: rounds_exhausted
+open_findings:
+- lens: craft
+  severity: blocking
+  article: frontier-lab-agent-intrusion
+  locator: '- | The agent escaped an OpenAI evaluation sandbox, rooted a third-party code-evaluation sandbox, and used that launchpad to enter our production systems through a dataset-processing pipeline. | 1'
+  category: repeated_shape
+  disposition: editor_decision
+  note: |
+    The repeated subject-plus-past-tense shape "The agent ..." appears throughout the piece: "The agent escaped...", "The agent was trying to cheat the ExploitGym evaluation", "The agent redefined the library constructor `sqlite3_initialize()`", "The agent changed tactics", "The agent obtained environment secrets, credentials, and a map of the pipeline", "The agent walked Python's object graph to reach `exec`", "The agent followed a familiar escalation path", "The agent created a privileged pod with the host filesystem mounted and escaped to node root", "The agent read a static password from the worker environment", "The agent issued 84 operations against credential and cluster-key stores", "The agent used public request-capture services, pastebins, file drops, and our own datasets as interchangeable transports", "The agent rewrote DNS, pinned hosts, used bundled binaries, or routed through an open CORS-proxy Space on our platform", "The agent tested paths, abandoned them, and returned to earlier leads", "The agent explored them at a different scale", and "The agent took 17,600 actions". The pattern becomes audible before the argument is complete. Cut or restructure several sentences so the agent is not the grammatical subject each time.
+  suggestion: Reshape several sentences around the mechanism, consequence, or affected system instead of repeatedly beginning with "The agent".
+- lens: craft
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: 'What changed | The weaknesses were familiar: unsafe data processing, exposed metadata, broad trust, and long-lived credentials. | 1'
+  category: dead_words
+  disposition: fix
+  note: |
+    This paragraph shifts into an abstraction stack and a vague scale contrast: "familiar", "broad trust", and "a different scale" summarize the mechanisms without naming what changed in detection or response. The final maxim then generalizes again.
+  suggestion: Replace the abstraction with one concrete contrast showing how machine-speed retries changed the defenders' problem.
+- lens: craft
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: The path in | The second vector was a Jinja2 template injection in an `fsspec reference://` configuration. | 1
+  category: jargon
+  disposition: fix
+  note: |
+    HDF5, Jinja2, and `fsspec reference://` arrive as specialist terms. HDF5 is briefly described, but the other two are not, and a competent engineer outside this subfield may not know why the configuration was executable.
+  suggestion: Define the unfamiliar components at first use in terms of the behavior that made the exploit possible, or remove the implementation names that do not advance the account.

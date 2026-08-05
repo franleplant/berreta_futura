@@ -1,0 +1,79 @@
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | The Shape of Speed | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      The title is in title case. Headings in this magazine use sentence case.
+    suggestion: The shape of speed
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 4
+  notes: |
+    One title-case heading requires correction; the body is grammatically and typographically clean.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | MCP gives an application a live registry of tools, resources, and prompts. | 1'
+    repair_from: '- | A short plan can cut expected pain before code exists, if it asks the next useful question instead of pretending to specify everything. | 1'
+    category: missing_transition
+    disposition: fix
+    note: |
+      The piece moves from planning's role in reducing software queues to MCP's
+      tool registry without showing why the protocol belongs in that argument.
+      The reader can follow each paragraph, but the central line from planning
+      to tool reach and security has to be inferred.
+    suggestion: Add a transition that connects useful planning questions to the live tool map an agent must navigate.
+  scores:
+    order: 4
+    coherence: 3
+    opening: 5
+    ending: 4
+  notes: |
+    I verified a strong opening and a landing that returns to the intrusion, but
+    the bridge between planning and MCP is underbuilt.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: the-shape-of-speed
+    locator: The Shape of Speed | MCP gives an application a live registry of tools, resources, and prompts. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "MCP" is used as if the reader already knows the acronym. The sentence describes
+      its function but never names the term.
+    suggestion: |
+      Spell out the acronym on first use.
+  - severity: minor
+    article: the-shape-of-speed
+    locator: The Shape of Speed | That context helps the model act. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This portentous short sentence makes a broad claim without saying what the
+      context enables; the surrounding paragraph already demonstrates the point.
+    suggestion: |
+      Specify the concrete capability enabled by the context, or cut the sentence.
+  - severity: minor
+    article: the-shape-of-speed
+    locator: The Shape of Speed | Limit each tool's reach, refresh the map, and record every call. | 1
+    category: passive
+    disposition: fix
+    note: |
+      The ownerless imperative gives the reader instructions without naming who should
+      carry them out.
+    suggestion: |
+      Name the responsible actor for these controls.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    The piece sounds like a careful technical editor: concrete, restrained, and alert to mechanism, with a few generic or ownerless sentences that need sharpening.

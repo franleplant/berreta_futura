@@ -1,0 +1,179 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's author handle, @dexhorthy
+    reader_loses: A direct platform identifier for the author, though the manuscript retains the byline.
+    verdict: defensible
+  - fact: The source's standalone Markdown title heading
+    reader_loses: Nothing substantive; the article title is supplied in the edition metadata.
+    verdict: defensible
+  retentions:
+  - passage: This one is a bit of an addendum / side-quest
+    costs: A short orientation paragraph, but it explains why the piece is standalone and earns its space.
+    verdict: earns_place
+  - passage: note For this example I'm gonna blur
+    costs: The caveat clarifies that probability and repair cost are being combined into expected pain; it prevents misreading the numerical example.
+    verdict: earns_place
+  - passage: good luck.
+    costs: A sign-off with no informational content; the space is negligible but the piece is cleaner without it.
+    verdict: cut
+  notes: |
+    This faithful edit gives readers a searchable, standalone version of an otherwise ephemeral X article while preserving its complete argument, numerical examples, caveat, and planning guidance. The manuscript follows the source's section order intentionally, and the retained passages carry the source's substance; only the author handle, title markup, and sign-off were omitted.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: I checked every assertion, quotation, heading, number, qualification, and conclusion against the complete pinned extraction; I could not check claims outside that extraction, and none were present in the manuscript.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking Leverage | Seeking Leverage | 1
+    category: heading_form
+    disposition: fix
+    note: |
+      This heading is in title case; headings in this magazine use sentence case.
+    suggestion: Seeking leverage
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Let's assume if you yolo a two-sentence prompt into your factory | 1
+    category: grammar
+    disposition: editor_decision
+    note: |
+      "Let's assume if" is an incomplete construction. The sentence is retained
+      source prose, so the editor chooses the remedy.
+    suggestion: Let's assume that if you yolo a two-sentence prompt into your factory
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | **note** For this example I'm gonna blur | 1
+    category: label_missing
+    disposition: editor_decision
+    note: |
+      The inline "**note**" is editorial apparatus inside the article rather than
+      prose that can be printed as written. The passage is retained source text,
+      so the editor decides whether to remove or recast it.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | good luck. | 1
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      This sentence opens lowercase while the piece otherwise opens sentences
+      with capitals. It reads as a typo, not a convention. The sentence is
+      retained source prose, so the editor chooses the remedy.
+    suggestion: Good luck.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | 25-50% | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      The range uses a hyphen instead of the en dash used for ranges in typeset
+      copy. This is a consistency correction in retained source prose.
+    suggestion: 25–50%
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | 2-4 hours | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      The range uses a hyphen instead of an en dash. This is a consistency
+      correction in retained source prose.
+    suggestion: 2–4 hours
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | 10-20 minutes | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      The range uses a hyphen instead of an en dash. This is a consistency
+      correction in retained source prose.
+    suggestion: 10–20 minutes
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | 2-3x faster | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      The range uses a hyphen instead of an en dash. This is a consistency
+      correction in retained source prose.
+    suggestion: 2–3x faster
+  scores:
+    grammar: 3
+    typography: 3
+    consistency: 3
+  notes: |
+    Changes required for one heading-case error, one grammatical construction,
+    an inline note label, one lowercase sentence opening, and four range-dash
+    inconsistencies.
+shape:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    repair_from: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: opening
+    disposition: editor_decision
+    note: |
+      The piece opens with publication context and references to an earlier series before stating
+      its argument. That delays the point of interest and makes the opening clear its throat.
+    suggestion: Open with the claim that coding is only part of delivery time, then place the addendum context later or remove it.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 2
+    ending: 3
+  notes: |-
+    I verified that the piece progresses from delivery-time allocation to expected pain, planning leverage,
+    and pragmatic zooming, but its opening delays that argument with meta-publication context.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: Seeking Leverage | If you're only using AI to write the code, then you're taking the 2-4 hours of coding time down to 10-20 minutes, but you haven't accelerated anything else here. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Seven conditional constructions make the prose announce its pattern: "If you're only using AI to write the code, then you're taking the 2-4 hours of coding time down to 10-20 minutes, but you haven't accelerated anything else here"; "But if you use AI to help you plan and align, then you actually get closer to 2-3x faster"; "Let's assume if you yolo a two-sentence prompt into your factory, your chance of getting a fully-mergeable result is ~50%, the chance you have to rework it is 50%"; "If you draw this out, there's an inverse relationship between effort invested up front and expected pain"; "if you've done some work at the \"Product\" level and have not answered all the open questions yet, it's possible you may need to end it where you are and zoom down a level"; "If you're doing multiple phases of planning, zooming in from 50kft view all the way to the 10kft view, you want to do a little bit of steering at each phase"; and "If the model is 50% likely to get a button style wrong, but the fix is one cheap prompt, then our combined \"expected pain\" is low." The author's construction is the defect, so cut or consolidate several instances.
+  - severity: major
+    article: pragmatic-leverage
+    locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The opening clears its throat with publication context instead of beginning with the leverage claim.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | This is what we mean by leverage - and it requires being pragmatic. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This balanced abstraction restates the section's point without adding a concrete consequence.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | If you're doing multiple phases of planning, zooming in from 50kft view all the way to the 10kft view, you want to do a little bit of steering at each phase to ensure you are eliminating as much expected pain as possible. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "50kft view" and "10kft view" are unexplained planning jargon for readers outside this management vocabulary.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | It is referenced briefly in Why Software Factories Fail part 2: Turning the lights back on. | 1'
+    category: passive
+    disposition: fix
+    note: |
+      The passive construction hides the relevant actor and makes the opening furniture more indirect than necessary.
+  scores:
+    voice: 4
+    sentence_variety: 1
+    economy: 3
+  notes: |
+    I heard a personable, practical voice get caught in a repeated conditional mold, with the opening and a few abstract sentences supplying avoidable editorial drag.

@@ -1,0 +1,70 @@
+edition:
+  id: '004'
+  title: The Systems Around the Model
+  subtitle: Protocols, evaluations, architectures, and the operational work that turns model capability into dependable systems
+articles:
+- id: frontier-lab-agent-intrusion
+  title: Anatomy of a Frontier Lab Agent Intrusion
+  short_title: Agent Intrusion
+  author: Hugo Larcher, Adrien Carreira, raphael g, Christophe Rannou
+  author_note: Hugo Larcher, Adrien Carreira, raphael g, and Christophe Rannou are contributors publishing through Hugging Face.
+  content_mode: faithful_synthesis
+  source_ids:
+  - anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
+  rationale: A forensic account of an actual agent-driven intrusion grounds the issue's theme of dependable systems in the failure mode that motivates the rest of the operational machinery.
+- id: eval-engineering
+  title: Eval Engineering
+  short_title: Eval Engineering
+  author: Argona
+  author_note: Argona is the publishing name of @Argona0x, an AI-focused X account.
+  content_mode: faithful_synthesis
+  source_ids:
+  - eval-engineering-the-step-that-turns-a-200-model-9f6f868f
+  rationale: Evaluation is the feedback loop that turns raw model capability into something legible and trustworthy, the evidentiary backbone of the issue's argument.
+- id: pragmatic-leverage
+  title: Pragmatic Leverage in the Software Factory
+  short_title: Pragmatic Leverage
+  author: Dex Horthy
+  author_note: Dex Horthy is the founder of HumanLayer, a YC-backed developer-tools company.
+  content_mode: faithful_edit
+  source_ids:
+  - pragmatic-leverage-in-the-software-factory-09879736
+  rationale: A practical account of where planning and verification actually pay off in AI-assisted delivery, showing the operational judgment that connects model output to shipped work.
+- id: from-gpt2-to-kimi3
+  title: From GPT-2 to KimiK3
+  short_title: GPT-2 to KimiK3
+  author: ali
+  author_note: ali works on inference at Baseten and studies engineering at the University of Waterloo.
+  content_mode: faithful_synthesis
+  source_ids:
+  - 22580-from-gpt2-to-kimi3-explained-8f01b0fe
+  rationale: Tracing the architectural path from GPT-2 to a modern frontier model supplies the issue's grounding in what the underlying machinery actually is.
+- id: factory-systems-problem
+  title: The Factory Is a Systems Problem
+  short_title: Factory Is a Systems Problem
+  author: Geoffrey Huntley
+  author_note: Geoffrey Huntley is the creator of the Ralph loop.
+  content_mode: faithful_edit
+  source_ids:
+  - software-factories-are-super-real-but-the-factor-ab8ad3ab
+  - factories-are-not-a-token-or-llm-problem-ba5fabbf
+  - do-not-make-the-service-bus-non-deterministic-3a92442c
+  rationale: Argues that reliability at scale is a systems and architecture problem rather than a model or token problem, the issue's central thesis stated directly.
+- id: mcp-in-a-nutshell
+  title: MCP in a Nutshell
+  short_title: MCP in a Nutshell
+  author: Model Context Protocol
+  author_note: Model Context Protocol is a Series of LF Projects, LLC.
+  content_mode: faithful_synthesis
+  source_ids:
+  - architecture-overview-ce5cb1d1
+  rationale: An accessible explainer of the protocol that lets models reach tools and data, giving readers the shared vocabulary the rest of the issue assumes.
+- id: mcp-protocol-update
+  title: The MCP Protocol Update
+  short_title: MCP Protocol Update
+  author: David Soria Parra, Den Delimarsky
+  author_note: David Soria Parra and Den Delimarsky are lead maintainers of the Model Context Protocol.
+  content_mode: faithful_synthesis
+  source_ids:
+  - the-2026-07-28-mcp-specification-release-candida-1a1752b8
+  rationale: Covers the protocol's latest revision straight from its maintainers, showing the standard itself evolving under the same operational pressures the issue documents.

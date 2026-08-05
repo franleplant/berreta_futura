@@ -1,0 +1,81 @@
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | The Work Between the Prompt and the Result | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      The title is in title case. Headings in this publication use sentence case.
+    suggestion: The work between the prompt and the result
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 4
+  notes: |
+    Changes required because the title uses title case instead of the publication's sentence-case heading convention.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | The lesson crosses the factory and the security desk. | 1'
+    repair_from: '- | A two-sentence prompt can save an afternoon. | 1'
+    category: running_example
+    disposition: fix
+    note: |
+      The piece moves from prompts to MCP schemas to a security campaign and then to a factory metaphor without one concrete case carrying the argument. The reader can follow the thesis, but the examples do not accumulate into a single illustrative thread.
+    suggestion: Use the prompt-to-result workflow as the running case and make the security campaign one explicit contrast.
+  scores:
+    order: 4
+    coherence: 3
+    opening: 4
+    ending: 4
+  notes: |
+    I verified that the argument progresses from context and planning to autonomy risks and visibility, but its examples do not form a sustained running case.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | The difference is not eloquence. It is what the system knows before it moves, and what the people around it can see while it moves. | 1'
+    category: banned_tic
+    disposition: fix
+    note: |
+      The editor-owned antithesis ("It is not X. It is Y.") is a banned tic and announces a constructed insight.
+    suggestion: |
+      Recast the contrast as one direct sentence that names the operative difference.
+  - severity: minor
+    article: editorial
+    locator: '- | An MCP client does this through explicit schemas, capabilities, and results. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "MCP client" and its associated terms are unexplained jargon for a competent engineer outside this subfield.
+    suggestion: |
+      Briefly define MCP in terms of the client's role before naming schemas and capabilities.
+  - severity: minor
+    article: editorial
+    locator: '- | Good planning reduces expected rework because it removes uncertainty early. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This abstraction stack ("planning," "expected rework," and "uncertainty") states a general principle without a concrete scene or mechanism.
+    suggestion: |
+      Name the specific planning detail that prevents a later retry or misstep.
+  - severity: major
+    article: editorial
+    locator: '- | The useful agent is therefore less like a clever employee than a fast colleague working under glass. | 1'
+    category: banned_tic
+    disposition: fix
+    note: |
+      The closing paragraph uses a second editor-owned antithetical comparison, "less like X than Y," repeating the banned contrast pattern.
+    suggestion: |
+      Keep the observability image but state the agent's relationship to oversight without the binary comparison.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    I heard a compact, confident editorial with a clear governing image, interrupted by abstract explanation and two conspicuous antithetical constructions that make the editor's hand audible.

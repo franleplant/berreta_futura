@@ -1,0 +1,70 @@
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    Verified that this editorial text is mechanically clean throughout.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | Software teams meet a smaller version of this problem. | 1'
+    repair_from: '- | A conversion worker opened a dataset file whose bytes lived at /proc/self/environ and handed back its own secrets. | 1'
+    category: missing_transition
+    disposition: fix
+    note: |
+      The piece jumps from a concrete security intrusion to software-planning
+      statistics without establishing the structural connection between speed,
+      queues, and exposure. The later MCP discussion depends on that connection,
+      so the pivot weakens the argument's continuity.
+    suggestion: Add an explicit bridge in the opening that frames the intrusion as a lesson about the shape and cost of agent speed.
+  scores:
+    order: 3
+    coherence: 3
+    opening: 4
+    ending: 4
+  notes: |
+    I verified the piece's incident-to-productivity-to-MCP progression, its transitions, example continuity, and conclusion; the central pivot needs a clearer bridge.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: the-shape-of-speed
+    locator: The shape of speed | The agent made 17,600 actions. | 1
+    category: repeated_shape
+    disposition: fix
+    note: |
+      Three simple declarative sentences arrive in sequence: "The agent made
+      17,600 actions.", "Most failed.", and "One path reached Kubernetes and
+      source control." The compressed rhythm is effective once, but the run
+      makes the passage sound arranged rather than spoken.
+    suggestion: Combine two sentences or vary one with a subordinate clause.
+  - severity: minor
+    article: the-shape-of-speed
+    locator: The shape of speed | MCP gives an application a live registry of tools, resources, and prompts. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "MCP" is introduced without expansion, leaving a competent engineer
+      outside this subfield to infer the term from its surrounding description.
+    suggestion: Expand MCP at first use or identify it as a protocol in plain language.
+  - severity: minor
+    article: the-shape-of-speed
+    locator: The shape of speed | Keep the map current, narrow each door, and leave a trail the next engineer can follow. | 1
+    category: passive
+    disposition: fix
+    note: |
+      The closing imperative has no named actor. "Keep", "narrow", and "leave"
+      tell the reader what to do without saying who owns those actions.
+    suggestion: Name the responsible actor, such as the software team or system owner.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 4
+  notes: |
+    I heard a vivid, controlled voice that briefly becomes overly compressed in
+    the intrusion account, then ends with an unowned instruction.
