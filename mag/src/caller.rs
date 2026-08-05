@@ -17,13 +17,19 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 pub const CALL_RETRIES: u32 = 2;
 pub const CONCURRENCY: usize = 8;
 
-/// Call timeout in seconds; MAG_CALL_TIMEOUT_SECS overrides the 600s default
-/// (local models with long prompts can legitimately need more).
-pub fn call_timeout_secs() -> u64 {
-    std::env::var("MAG_CALL_TIMEOUT_SECS")
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(600)
+/// Call timeout in seconds. MAG_CALL_TIMEOUT_SECS overrides everything;
+/// otherwise high reasoning efforts get a longer default, because they earn it:
+/// luna at `max` runs a median 419s per call against medium's 41s, so a 600s
+/// limit kills work that was still going rather than work that was stuck.
+pub fn call_timeout_secs_for(spec: Option<&ModelSpec>) -> u64 {
+    if let Some(v) = std::env::var("MAG_CALL_TIMEOUT_SECS").ok().and_then(|v| v.parse().ok()) {
+        return v;
+    }
+    match spec.and_then(|s| s.effort.as_deref()) {
+        Some("max") | Some("xhigh") => 2700,
+        Some("high") => 1500,
+        _ => 600,
+    }
 }
 
 /// Context window requested from ollama; MAG_OLLAMA_NUM_CTX overrides.
@@ -396,7 +402,7 @@ impl Caller {
                 c.args([
                     "-s",
                     "--max-time",
-                    &call_timeout_secs().to_string(),
+                    &call_timeout_secs_for(Some(spec)).to_string(),
                     "-X",
                     "POST",
                     "http://localhost:11434/api/generate",
@@ -449,7 +455,7 @@ impl Caller {
             buf
         });
 
-        let timeout = Duration::from_secs(call_timeout_secs());
+        let timeout = Duration::from_secs(call_timeout_secs_for(Some(spec)));
         let status = loop {
             match child.try_wait() {
                 Ok(Some(status)) => break Some(status),
@@ -472,7 +478,7 @@ impl Caller {
 
         let status = match status {
             Some(s) => s,
-            None => return Err(format!("timeout after {}s", call_timeout_secs())),
+            None => return Err(format!("timeout after {}s", call_timeout_secs_for(Some(spec)))),
         };
 
         match spec.backend {

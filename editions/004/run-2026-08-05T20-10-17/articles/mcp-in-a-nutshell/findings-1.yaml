@@ -1,0 +1,269 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: 'The scope inventory: MCP Specification, SDKs, MCP Development Tools including MCP Inspector, and reference server implementations.'
+    reader_loses: The surrounding MCP ecosystem is not mapped, but the protocol itself remains understandable.
+    verdict: defensible
+  - fact: The note that SDKs abstract many concerns and that language-specific SDK documentation contains implementation details.
+    reader_loses: No pointer to implementation follow-up material; this is outside the shared-vocabulary brief.
+    verdict: defensible
+  - fact: 'Named participant examples: Claude Code, Claude Desktop, Visual Studio Code, Sentry, and the local filesystem server.'
+    reader_loses: Concrete mental anchors for host, client, and server roles, not the roles themselves.
+    verdict: defensible
+  - fact: The diagram showing four MCP clients, three servers, and one dedicated connection per client.
+    reader_loses: A visual scale example, not the one-client-per-server connection rule.
+    verdict: defensible
+  - fact: The concrete deployment examples of Claude Desktop launching a local filesystem server and Sentry hosting a remote server.
+    reader_loses: A platform-specific local-versus-remote illustration; the transport distinction remains.
+    verdict: defensible
+  - fact: The data layer as the conceptual inner layer and the transport layer as the outer layer, plus the explicit discovery/server/client/utility feature taxonomy.
+    reader_loses: The nesting metaphor and labels, while the manuscript explains the layer responsibilities directly.
+    verdict: defensible
+  - fact: 'Non-database primitive examples: file operations and API calls; file contents, database records, and API responses; and system prompts.'
+    reader_loses: Breadth of examples, not the meaning of tools, resources, or prompts.
+    verdict: defensible
+  - fact: Elicitation's Multi Round-Trip Requests delivery pattern.
+    reader_loses: The detailed elicitation exchange, while the ability to request information or confirmation is retained.
+    verdict: defensible
+  - fact: The deprecated sampling/createMessage flow and logging's former role in sending debugging and monitoring messages to clients.
+    reader_loses: Historical implementation context; the current deprecation and replacement guidance remains.
+    verdict: defensible
+  - fact: The full server/discover JSON-RPC request, including id 1, the example client identity, protocol date, and exact io.modelcontextprotocol metadata keys.
+    reader_loses: A copyable request envelope, not the discovery purpose or version-negotiation behavior.
+    verdict: defensible
+  - fact: The exact discovery response identifiers supportedVersions, serverInfo, and UnsupportedProtocolVersionError.
+    reader_loses: Field and error names needed for a wire-level implementation, while the behavior is accurately summarized.
+    verdict: defensible
+  - fact: The exact capability objects elicitation, tools.listChanged, resources, and the toolsListChanged subscription filter.
+    reader_loses: The literal capability shapes, not the fact that capabilities and notification support are negotiated.
+    verdict: defensible
+  - fact: The AI-application discovery manager behavior and Python SDK pseudo-code that registers a ready server.
+    reader_loses: An SDK integration recipe; the article is an architectural explainer rather than an SDK guide.
+    verdict: defensible
+  - fact: The optional cursor parameter and pagination behavior of tools/list.
+    reader_loses: How to page a large tool catalog, not the purpose of tool discovery.
+    verdict: defensible
+  - fact: Tool-list title and description fields, resultType complete, the five-minute ttlMs freshness hint, and cacheScope.
+    reader_loses: UI metadata and cache-policy details; name and inputSchema remain.
+    verdict: defensible
+  - fact: Unified tool-registry aggregation across servers, progressive discovery for federated clients, and the corresponding pseudo-code.
+    reader_loses: A federation implementation strategy, not the fact that clients discover tools for the model.
+    verdict: defensible
+  - fact: The complete weather_current tools/call example, including JSON-RPC id 3, San Francisco, imperial units, and the metric default.
+    reader_loses: A copyable worked payload and a parameter default, while exact tool naming and inputSchema compliance remain.
+    verdict: defensible
+  - fact: The explicit JSON-RPC request-id correlation rule and the tool-call routing pseudo-code.
+    reader_loses: Code for locating a client and correlating a response, not the request/response and conversation-result flow.
+    verdict: defensible
+  - fact: The concrete resources/read method named in the source's capability example.
+    reader_loses: One wire-level retrieval spelling; the manuscript retains the general list/retrieval method vocabulary.
+    verdict: defensible
+  - fact: The complete subscriptions/listen request, notifications/subscriptions/acknowledged response, subscriptionId 4, and notification metadata envelope.
+    reader_loses: Literal stream-wiring and subscription-correlation payloads, while opt-in behavior, acknowledgement of a subset, and no-response notifications remain.
+    verdict: defensible
+  - fact: The notification-handling pseudo-code, explicit temporary-unavailability example, four separate reasons notifications matter, and the statement that the pattern extends beyond tools.
+    reader_loses: Additional illustrations and rationale; dynamic refresh, best-effort delivery, and polling are retained.
+    verdict: defensible
+  retentions:
+  - passage: A database MCP server can expose a tool for querying the database...
+    costs: The opening supplies a concrete thread for tools, resources, and prompts and makes the later architecture legible.
+    verdict: earns_place
+  - passage: An AI application reaches that server through an MCP host...
+    costs: Defines the host/client relationship and dedicated connections, which the rest of the piece relies on.
+    verdict: earns_place
+  - passage: Two layers carry that exchange.
+    costs: Provides the organizing distinction between protocol semantics and transport mechanics.
+    verdict: earns_place
+  - passage: STDIO uses standard input and output...
+    costs: Carries the practical local/remote, streaming, and authentication differences a reader needs.
+    verdict: earns_place
+  - passage: MCP is a stateless protocol.
+    costs: Introduces the per-request metadata and discovery rules rather than repeating them later.
+    verdict: earns_place
+  - passage: Those capabilities are expressed through primitives.
+    costs: Connects capability discovery to the concrete tools, resources, prompts, and call methods.
+    verdict: earns_place
+  - passage: A client can also expose elicitation...
+    costs: Keeps client-side input, deprecations, and long-running Tasks in the protocol map.
+    verdict: earns_place
+  - passage: The protocol supports real-time notifications...
+    costs: Explains the opt-in stream, acknowledgement, refresh cycle, and best-effort caveat.
+    verdict: earns_place
+  - passage: The application updates the model's available capabilities...
+    costs: States the consequence for the model and the next tool call, completing the end-to-end story.
+    verdict: earns_place
+  notes: |
+    It gives a reader a compact, end-to-end map of how a database server's tools, resources, and prompts move through host/client connections, transports, discovery, calls, and live refreshes—an integrated vocabulary that the source presents across separate conceptual sections and long examples.
+    The manuscript is substantially shorter than the extraction. Its sequence is database anchor, participants and scope, layers and transports, stateless discovery, primitives and calls, client features, then notifications; the source proceeds from scope and participants through layers, statelessness, primitives, notifications, and finally four detailed walkthroughs. Moving the database anchor to the opening and folding the walkthrough into lifecycle prose is an editorial ordering choice, so the piece is not source-shaped and has a position.
+    The omitted payloads, pseudo-code, pagination, cache fields, and named examples are implementation illustrations rather than load-bearing facts for this shared-vocabulary brief. The manuscript retains the core method names, transport behavior, version and capability rules, exact tool-name/inputSchema constraint, deprecation date, and refresh caveat; no needed omission or non-paying section remains.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | The application updates the model''s available capabilities when the database server changes, and the next call follows the new list. | 1'
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source limits the update to "When one arrives" (a notification) and warns that notifications are not guaranteed to be sent or received, especially across transport reconnects. The manuscript makes the update unconditional whenever the database server changes and implies that the next call necessarily uses the new list.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | The application updates the model''s available capabilities when the database server changes, and the next call follows the new list. | 1'
+    category: unreached_conclusion
+    disposition: fix
+    note: |
+      The source concludes that this notification pattern extends beyond tools to other MCP primitives and enables comprehensive real-time synchronization between clients and servers. The manuscript ends with the database server's tool-list refresh and never carries that broader conclusion.
+  scores:
+    claim_support: 4
+    qualification_survival: 3
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every checkable assertion in this piece, including its protocol identifiers, version number, qualifiers, and closing notification claims, against the complete pinned extraction; I could not check any external source or any claim outside that extraction. Most of the manuscript is grounded and terminology-accurate, but the final paragraph overstates update reliability and narrows the source's conclusion.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    The supplied prose and furniture follow the stated mechanics conventions throughout.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The piece moves from MCP architecture and transport through discovery, primitives, client capabilities, and notifications, while carrying one database example to a clear close.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | MCP in a Nutshell | 1'
+    category: cliche
+    disposition: fix
+    note: |
+      The title uses the stock "in a nutshell" formula; it promises compression rather than giving this protocol a distinctive angle.
+    suggestion: Retitle around the protocol's concrete job.
+  - severity: blocking
+    article: mcp-in-a-nutshell
+    locator: '- | A database MCP server can expose a tool for querying the database, a resource that contains its schema, and a prompt with few-shot examples for interacting with those tools. | 1'
+    repair_from: '- | A database MCP server can expose a tool for querying the database, a resource that contains its schema, and a prompt with few-shot examples for interacting with those tools. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Seven sentences use the same "Subject can + verb" capability shape: "A database MCP server can expose...", "MCP servers can execute...", "a client can send...", "Servers can expose...", "the client can list...", "A client can also expose...", and "Optional extensions such as Tasks can return...". The modal cadence becomes audible before the explanation accumulates.
+    suggestion: Cut or structurally recast at least two of the seven capability sentences.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | An AI application reaches that server through an MCP host, which creates one MCP client for each server; each client maintains a dedicated connection. | 1'
+    repair_from: '- | An AI application reaches that server through an MCP host, which creates one MCP client for each server; each client maintains a dedicated connection. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Four sentences use an independent-clause semicolon join: "An AI application reaches...; each client maintains...", "Streamable HTTP uses...; MCP recommends OAuth...", "A client may send...; every server must implement...", and "Sampling and logging are deprecated...; new implementations should...". Each pair appends another protocol fact in the same beat, flattening the rhythm.
+    suggestion: Recast at least two of the four semicolon joins.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | The discovery response is typically cacheable, so the initial exchange need not happen for every request. | 1'
+    repair_from: '- | The discovery response is typically cacheable, so the initial exchange need not happen for every request. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Four sentences use the "clause, so consequence" shape: "The discovery response is typically cacheable, so...", "A result arrives as a content array..., so...", "When the database server's available tools change..., so...", and "Notifications are best effort..., so...". The repeated causal tail makes paragraph endings sound mechanical.
+    suggestion: Recast at least two of the four causal joins.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | MCP is a stateless protocol. | 1'
+    repair_from: '- | Two layers carry that exchange. | 1'
+    category: no_voice
+    disposition: fix
+    note: |
+      Paragraph 3 is where I stop hearing a person: "MCP is a stateless protocol" opens a sequence of version and capability rules that reads like a protocol dump. The concrete database frame disappears and the register becomes an even checklist.
+    suggestion: Reintroduce the database scenario at the start of paragraph 3.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | Two layers carry that exchange. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Two layers carry that exchange." is a portentous short sentence; "carry" is a decorative metaphor, and the next sentence already names the layers and their mechanism.
+    suggestion: Cut the sentence and let the next sentence name the two layers.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | MCP is a stateless protocol. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "MCP is a stateless protocol." is a definite-article equation. It labels a property without showing why the request behavior matters, adding to the spec-register shift.
+    suggestion: Tie statelessness directly to the request behavior before the version rules.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | Those capabilities are expressed through primitives. | 1'
+    category: passive
+    disposition: fix
+    note: |
+      "Those capabilities are expressed through primitives." hides the actor and introduces an abstraction before the following sentence supplies the concrete tools, resources, and prompts.
+    suggestion: Name the servers as the actor in this transition.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | Sampling and logging are deprecated client primitives as of protocol version 2026-07-28; new implementations should integrate directly with LLM provider APIs and log to stderr when using STDIO or use OpenTelemetry. | 1'
+    category: passive
+    disposition: fix
+    note: |
+      "New implementations should..." is an ownerless imperative: implementations do not choose, and the people responsible for the change are unnamed.
+    suggestion: Name the implementers responsible for the deprecation decision.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | A database MCP server can expose a tool for querying the database, a resource that contains its schema, and a prompt with few-shot examples for interacting with those tools. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      The opening never expands MCP; the title gives only the acronym, so an engineer outside the subfield has to guess the central noun.
+    suggestion: Expand MCP on first use.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | Every request carries the protocol version and the capabilities relevant to that request in its `_meta` field. | 1'
+    repair_from: '- | Every request carries the protocol version and the capabilities relevant to that request in its `_meta` field. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      `_meta` appears as a protocol-specific field with no gloss, and later identifiers such as `server/discover`, `*/list`, `tools/call`, and `inputSchema` arrive as syntax a non-MCP reader cannot reliably parse.
+    suggestion: Define the field-and-method naming convention before introducing `_meta`.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | This design allows listings to be dynamic. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "This design allows listings to be dynamic." is an abstraction-stack summary. "This design" names nothing and "dynamic" adds no operational detail after the Tasks explanation.
+    suggestion: State the concrete listing change and its client consequence.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | The protocol supports real-time notifications to enable dynamic updates between servers and clients. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "The protocol supports real-time notifications to enable dynamic updates..." stacks abstractions before the event mechanics and repeats "dynamic" instead of giving the reader a concrete actor and event.
+    suggestion: Open with the specific notification event and its recipient.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | The application updates the model''s available capabilities when the database server changes, and the next call follows the new list. | 1'
+    repair_from: '- | The client normally calls `tools/list` again and updates the tool registry available to the model. | 1'
+    category: weak_close
+    disposition: fix
+    note: |
+      The final sentence restates the preceding update-and-next-call behavior. It closes on a summary loop rather than adding clarity, perspective, or curiosity.
+    suggestion: End on the consequence for the model's next turn.
+  scores:
+    voice: 2
+    sentence_variety: 1
+    economy: 3
+  notes: |
+    I heard a careful technical explainer whose concrete database frame gives way to a protocol-spec register, with modal capability sentences and summary clauses carrying the cadence. Changes are required because the modal pattern is blocking and the final line loops back over the preceding sentence; the remaining findings are local repairs to voice, jargon, abstraction, and passive agency.

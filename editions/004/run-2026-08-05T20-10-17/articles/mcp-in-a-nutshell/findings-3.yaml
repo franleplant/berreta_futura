@@ -1,0 +1,256 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: 'The source''s four-part project scope: the Specification, SDKs, Development Tools including MCP Inspector, and reference server implementations.'
+    reader_loses: A map of the surrounding MCP ecosystem, but not the protocol mental model this piece teaches.
+    verdict: defensible
+  - fact: The source's note that SDKs abstract most concerns and that language-specific SDK documentation contains implementation details.
+    reader_loses: Guidance about where to pursue implementation specifics.
+    verdict: defensible
+  - fact: 'Concrete host examples: Claude Code, Claude Desktop, Visual Studio Code, Sentry, and the local filesystem server.'
+    reader_loses: Anchoring examples for host, client, local server, and remote server.
+    verdict: defensible
+  - fact: The source's Visual Studio Code walkthrough showing a new MCP client for each additional server.
+    reader_loses: A concrete illustration of one-client-per-server behavior.
+    verdict: defensible
+  - fact: The explicit distinction that a server is local or remote according to where and how it runs, illustrated by Claude Desktop's filesystem server and Sentry's hosted server.
+    reader_loses: Examples clarifying that 'server' names the program regardless of location.
+    verdict: defensible
+  - fact: The source's conceptual description of the data layer as the inner layer and the transport layer as the outer layer.
+    reader_loses: A visual metaphor for the relationship between the two layers.
+    verdict: defensible
+  - fact: Progress tracking as a separate utility feature of the data layer.
+    reader_loses: One utility capability not central to the database-to-tool lifecycle.
+    verdict: defensible
+  - fact: 'General primitive examples beyond the database case: file operations and API calls for tools, file contents and API responses for resources, and reusable interaction templates for prompts.'
+    reader_loses: Broader examples of where each primitive applies.
+    verdict: defensible
+  - fact: Concrete prompt methods such as `prompts/list` and `prompts/get`.
+    reader_loses: A ready-made prompt retrieval spelling, although the `*/list` and `*/get` rule remains.
+    verdict: defensible
+  - fact: The Multi Round-Trip Requests pattern used by elicitation.
+    reader_loses: The named interaction pattern behind an elicitation exchange.
+    verdict: defensible
+  - fact: Sampling's former purpose of keeping servers model-independent, its `sampling/createMessage` method, and its Multi Round-Trip delivery.
+    reader_loses: Historical implementation detail for a deprecated primitive.
+    verdict: defensible
+  - fact: Logging's former role in sending debugging and monitoring messages to clients.
+    reader_loses: The reason the deprecated logging primitive existed.
+    verdict: defensible
+  - fact: The exact discovery metadata keys `io.modelcontextprotocol/protocolVersion`, `io.modelcontextprotocol/clientInfo`, `io.modelcontextprotocol/clientCapabilities`, `io.modelcontextprotocol/serverInfo`, and `supportedVersions`.
+    reader_loses: The wire-level spelling of fields, while the manuscript preserves their meanings and the `_meta` location.
+    verdict: defensible
+  - fact: The complete `server/discover` JSON-RPC request and response example, including request id 1, the example client identity, protocol version, and elicitation capability.
+    reader_loses: A copyable discovery exchange, but not the discovery sequence or its purpose.
+    verdict: defensible
+  - fact: The exact `UnsupportedProtocolVersionError` name.
+    reader_loses: The protocol's specific error identifier for version mismatch.
+    verdict: defensible
+  - fact: The client-manager and Python SDK example that discovers capabilities while connecting and registers a ready server.
+    reader_loses: One SDK-shaped implementation sketch.
+    verdict: defensible
+  - fact: The discovery pseudo-code using `Client(stdio_client(server_config))` and `client.server_capabilities.tools`.
+    reader_loses: Concrete SDK syntax for capability registration.
+    verdict: defensible
+  - fact: The optional cursor parameter accepted by `tools/list` for pagination.
+    reader_loses: The pagination mechanism for unusually large tool lists.
+    verdict: defensible
+  - fact: The tool naming example `calculator_arithmetic` rather than `calculate`, and the uniqueness requirement within a server namespace.
+    reader_loses: A naming convention and its illustrative contrast.
+    verdict: defensible
+  - fact: 'The tool-list cache fields `resultType: complete`, `ttlMs` with a five-minute freshness example, and `cacheScope`.'
+    reader_loses: Detailed cache freshness and reuse controls.
+    verdict: defensible
+  - fact: The source's pseudo-code that combines tools from every connected server into one conversation registry and lets the language model generate calls.
+    reader_loses: A concrete federated-registry implementation sketch.
+    verdict: defensible
+  - fact: The complete `tools/call` weather example with JSON-RPC id 3, the exact name `weather_current`, and `San Francisco` and `imperial` arguments.
+    reader_loses: A worked invocation and response shape, while the manuscript retains the exact-name rule, schema requirement, and content-array behavior.
+    verdict: defensible
+  - fact: The example's `units` parameter defaulting to `metric` when omitted.
+    reader_loses: One example-specific default.
+    verdict: defensible
+  - fact: The source's explicit explanation that JSON-RPC ids correlate requests and responses.
+    reader_loses: A low-level correlation detail implicit in JSON-RPC 2.0.
+    verdict: defensible
+  - fact: The tool-execution pseudo-code that finds the owning client, calls the tool, and adds `result.content` to the conversation.
+    reader_loses: Concrete routing code for a host implementation.
+    verdict: defensible
+  - fact: The complete `subscriptions/listen` request JSON, including request id 4 and the nested `notifications.toolsListChanged` filter.
+    reader_loses: A copyable subscription request, while the method and filter semantics remain.
+    verdict: defensible
+  - fact: The acknowledgement rule that the first acknowledgement carries the subscription id and reports only the subset of requested notification types the server accepts.
+    reader_loses: The acknowledgement's filtering and ordering edge cases.
+    verdict: defensible
+  - fact: The example's subscription id being the JSON-RPC id of the `subscriptions/listen` request.
+    reader_loses: The numeric correlation shown by the example.
+    verdict: defensible
+  - fact: The complete `notifications/tools/list_changed` notification and follow-up `tools/list` JSON exchanges.
+    reader_loses: Copyable refresh messages, but not the no-response rule, opt-in condition, or refresh consequence.
+    verdict: defensible
+  - fact: 'The source''s four explicit reasons notifications matter: dynamic environments, efficiency, consistency, and real-time collaboration.'
+    reader_loses: A named rationale list; the manuscript retains the freshness consequence.
+    verdict: defensible
+  - fact: The notification-handling pseudo-code that refreshes the registry and notifies an active language model of new capabilities.
+    reader_loses: Concrete SDK handling for an incoming change event.
+    verdict: defensible
+  retentions:
+  - passage: Start with a database request.
+    costs: A full opening paragraph that could have held a wire example, but it supplies the concrete database anchor and establishes host, client, local, remote, and scope before the protocol details.
+    verdict: earns_place
+  - passage: Inside that connection, JSON-RPC 2.0 supplies the message format.
+    costs: Several sentences on transports and authentication, but they distinguish the data layer from STDIO and Streamable HTTP and preserve the security vocabulary.
+    verdict: earns_place
+  - passage: Now let the host ask the database server what it supports.
+    costs: A full discovery paragraph, but it carries statelessness, version negotiation, capability exchange, identity, optional discovery, and caching.
+    verdict: earns_place
+  - passage: With discovery in hand, the client sends `tools/list` and builds a registry from the response.
+    costs: A full paragraph on listing and invocation, but it preserves the method names, schema contract, exact-name rule, response content types, and progressive discovery.
+    verdict: earns_place
+  - passage: If the database server needs more information or confirmation before running a query
+    costs: Space on elicitation, deprecated sampling and logging, and Tasks that is not reused later, but it prevents obsolete guidance and covers an important long-running-request extension.
+    verdict: earns_place
+  - passage: Tool availability can change while the conversation runs.
+    costs: A dense paragraph on subscriptions and acknowledgements, but it explains opt-in updates, capability gating, identifiers, best effort, reconnect loss, and the required refresh.
+    verdict: earns_place
+  notes: |
+    This piece gives a reader a single end-to-end database-centered path—from context setup through discovery, tool invocation, and live registry refresh—that the source's separate concept and example sections leave the reader to assemble.
+    Manuscript sequence: database and participants; JSON-RPC and transports; discovery; tools/list and tools/call; elicitation, deprecations, and Tasks; subscriptions and refresh. Source sequence: scope; participants; layers; data layer; transport; data-layer protocol; statelessness and discovery; primitives; notifications; then the four-part example. The deliberate reordering supplies an editorial position, so the piece is not source-shaped or a mere paraphrase.
+    The omitted wire exchanges, pseudo-code, ecosystem examples, cache hints, and deprecated-method internals are defensible for this accessible shared-vocabulary synthesis: the manuscript keeps the load-bearing concepts and the method names a reader needs. No needed omission remains, and every retained paragraph earns its place.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | For logging, new STDIO implementations should write to stderr, while other implementations should use OpenTelemetry. | 1'
+    repair_from: '- | For logging, new STDIO implementations should write to stderr, while other implementations should use OpenTelemetry. | 1'
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The extraction limits both recommendations to new implementations: "New implementations should log to stderr (stdio transport) or use OpenTelemetry." The manuscript drops "new" for the non-STDIO branch, broadening the recommendation to existing implementations.
+  scores:
+    claim_support: 4
+    qualification_survival: 4
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked the title, byline, and every body assertion against the complete pinned extraction; this piece has no captions, pull quotes, key-idea boxes, glossary entries, or cheat-sheet lines to check. The logging sentence broadens a source-limited recommendation.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    No mechanical defects are present; the prose and article furniture are consistent throughout.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | Tool availability can change while the conversation runs. | 1'
+    repair_from: '- | Tool listings can change. | 1'
+    category: missing_transition
+    disposition: fix
+    note: |
+      The piece raises changing tool listings, detours through elicitation, deprecations, and Tasks, then returns to subscriptions without signaling the return. The reader must reconstruct why the earlier thread has reopened.
+    suggestion: Move the subscriptions discussion directly after the mutable-tool-list point, then present elicitation, deprecations, and Tasks as the remaining optional features.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | Tool availability can change while the conversation runs. | 1'
+    repair_from: '- | Tool listings can change. | 1'
+    category: duplication
+    disposition: fix
+    note: |
+      The premise appears twice: paragraph four says "Tool listings can change," and paragraph six says "Tool availability can change while the conversation runs." The second occurrence repeats the setup before advancing to the subscription mechanism.
+    suggestion: State the mutable-list premise once and begin the subscription paragraph with its mechanism.
+  scores:
+    order: 3
+    coherence: 3
+    opening: 4
+    ending: 4
+  notes: |
+    This piece moves from a database request through transport, discovery, tool calls, and optional runtime behavior, but its tool-list thread is split and restated.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | Start with a database request. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The first line tells the reader how to begin instead of opening on the mechanism; the database request has no consequence until the next sentence.
+    suggestion: Lead with the database server exposing the query tool rather than with an instruction.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | Start with a database request. | 1'
+    category: passive
+    disposition: fix
+    note: |
+      "Start with" is an ownerless imperative: no actor is named for the action, so the opening sounds like a procedure issued by nobody.
+    suggestion: Name the actor who initiates the example.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | A remote server typically serves many clients over Streamable HTTP. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "Streamable HTTP" arrives as a protocol-specific name before the reader sees what the transport does; the later POST and Server-Sent Events description is a delayed gloss.
+    suggestion: Gloss Streamable HTTP when it first appears.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | Inside that connection, JSON-RPC 2.0 supplies the message format. | 1'
+    category: no_voice
+    disposition: fix
+    note: |
+      This is where I stop hearing a person: the second paragraph becomes an even inventory of formats, transports, and capabilities, with no human-scale actor or consequence.
+    suggestion: Anchor the transport paragraph in one concrete message exchange.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | If the client asks for an unsupported version, the server returns an error listing the versions it accepts. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three sentences use the same "If X, Y" construction: "If the client asks for an unsupported version, the server returns an error listing the versions it accepts.", "If the database server needs more information or confirmation before running a query, it can request it with `elicitation/create`.", and "If the client skips that poll, the model may continue with an old tool list." The conditional template is audible across the piece.
+    suggestion: Keep the clearest conditional and recast the other two as direct consequences.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | To call one, the client passes that exact name to `tools/call` and supplies arguments matching the schema. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three sentences use the same purpose-opener shape: "To call one, the client passes that exact name to `tools/call` and supplies arguments matching the schema.", "To get a language-model completion, a new server should integrate directly with a provider's API.", and "To hear about those changes, the client opens a long-lived `subscriptions/listen` stream and sends a `toolsListChanged: true` filter." The repeated procedural cadence is conspicuous in a piece this compact.
+    suggestion: Recast the later two purpose-openers as continuations of their preceding sentences.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | The protocol marks sampling and logging as deprecated client primitives as of protocol version 2026-07-28. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This reads like a changelog entry: "deprecated client primitives" and a version date arrive without explaining the practical change the reader should understand.
+    suggestion: State the practical replacement before the deprecation date.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | For logging, new STDIO implementations should write to stderr, while other implementations should use OpenTelemetry. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "OpenTelemetry" arrives as implementation jargon with no explanation of what role it plays in logging.
+    suggestion: Gloss OpenTelemetry as the telemetry system used for logging.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | The same subscription pattern can cover the other primitives. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "The same subscription pattern" and "the other primitives" stack abstractions and make a general claim without an example; the sentence mostly restates reusability.
+    suggestion: Name one concrete non-tool subscription in place of 'other primitives'.
+  scores:
+    voice: 3
+    sentence_variety: 2
+    economy: 3
+  notes: |
+    I heard a concrete first paragraph give way to an even protocol inventory, with procedural transitions and unexplained implementation shorthand. Changes are required for the loss of voice, repeated sentence templates, and reader-facing gaps in the jargon and deprecation material.

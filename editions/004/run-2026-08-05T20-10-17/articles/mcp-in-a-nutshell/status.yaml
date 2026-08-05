@@ -1,0 +1,72 @@
+piece: mcp-in-a-nutshell
+rounds:
+- round: 1
+  words: 649
+  loop_findings: 8
+  all_findings: 16
+- round: 2
+  words: 735
+  loop_findings: 12
+  all_findings: 17
+- round: 3
+  words: 651
+  loop_findings: 6
+  all_findings: 12
+state: rounds_exhausted
+open_findings:
+- lens: evidence
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: '- | For logging, new STDIO implementations should write to stderr, while other implementations should use OpenTelemetry. | 1'
+  repair_from: '- | For logging, new STDIO implementations should write to stderr, while other implementations should use OpenTelemetry. | 1'
+  category: qualification_loss
+  disposition: fix
+  note: |
+    The extraction limits both recommendations to new implementations: "New implementations should log to stderr (stdio transport) or use OpenTelemetry." The manuscript drops "new" for the non-STDIO branch, broadening the recommendation to existing implementations.
+- lens: shape
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: '- | Tool availability can change while the conversation runs. | 1'
+  repair_from: '- | Tool listings can change. | 1'
+  category: missing_transition
+  disposition: fix
+  note: |
+    The piece raises changing tool listings, detours through elicitation, deprecations, and Tasks, then returns to subscriptions without signaling the return. The reader must reconstruct why the earlier thread has reopened.
+  suggestion: Move the subscriptions discussion directly after the mutable-tool-list point, then present elicitation, deprecations, and Tasks as the remaining optional features.
+- lens: shape
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: '- | Tool availability can change while the conversation runs. | 1'
+  repair_from: '- | Tool listings can change. | 1'
+  category: duplication
+  disposition: fix
+  note: |
+    The premise appears twice: paragraph four says "Tool listings can change," and paragraph six says "Tool availability can change while the conversation runs." The second occurrence repeats the setup before advancing to the subscription mechanism.
+  suggestion: State the mutable-list premise once and begin the subscription paragraph with its mechanism.
+- lens: craft
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: '- | Inside that connection, JSON-RPC 2.0 supplies the message format. | 1'
+  category: no_voice
+  disposition: fix
+  note: |
+    This is where I stop hearing a person: the second paragraph becomes an even inventory of formats, transports, and capabilities, with no human-scale actor or consequence.
+  suggestion: Anchor the transport paragraph in one concrete message exchange.
+- lens: craft
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: '- | If the client asks for an unsupported version, the server returns an error listing the versions it accepts. | 1'
+  category: repeated_shape
+  disposition: editor_decision
+  note: |
+    Three sentences use the same "If X, Y" construction: "If the client asks for an unsupported version, the server returns an error listing the versions it accepts.", "If the database server needs more information or confirmation before running a query, it can request it with `elicitation/create`.", and "If the client skips that poll, the model may continue with an old tool list." The conditional template is audible across the piece.
+  suggestion: Keep the clearest conditional and recast the other two as direct consequences.
+- lens: craft
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: '- | To call one, the client passes that exact name to `tools/call` and supplies arguments matching the schema. | 1'
+  category: repeated_shape
+  disposition: editor_decision
+  note: |
+    Three sentences use the same purpose-opener shape: "To call one, the client passes that exact name to `tools/call` and supplies arguments matching the schema.", "To get a language-model completion, a new server should integrate directly with a provider's API.", and "To hear about those changes, the client opens a long-lived `subscriptions/listen` stream and sends a `toolsListChanged: true` filter." The repeated procedural cadence is conspicuous in a piece this compact.
+  suggestion: Recast the later two purpose-openers as continuations of their preceding sentences.

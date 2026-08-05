@@ -1,0 +1,54 @@
+piece: mcp-protocol-update
+rounds:
+- round: 1
+  words: 935
+  loop_findings: 19
+  all_findings: 29
+- round: 2
+  words: 1248
+  loop_findings: 4
+  all_findings: 14
+- round: 3
+  words: 1304
+  loop_findings: 4
+  all_findings: 18
+state: rounds_exhausted
+open_findings:
+- lens: evidence
+  severity: major
+  article: mcp-protocol-update
+  locator: Migrate calls, authorization, and schemas | Clients bind credentials to the issuing server's `issuer` and re-register when a resource moves. | 1
+  category: qualification_loss
+  disposition: fix
+  note: |
+    The source limits re-registration to when a resource "migrates between authorization servers" and refers to the "issuing authorization server's issuer." The manuscript drops those limits and makes any resource move sound like a trigger.
+- lens: shape
+  severity: major
+  article: mcp-protocol-update
+  locator: Keep application state and retries explicit | A basket tool can mint an explicit handle, `basket_id`, and the model can pass it as an ordinary argument on later calls. | 1
+  repair_from: 'Change deployment and request handling | Keep the opening server''s search call in view: | 1'
+  category: running_example
+  disposition: fix
+  note: |
+    The piece starts with a search request, then switches to a basket handle and a file-deletion confirmation, while later sections introduce tasks and MCP Apps. No concrete case carries the argument across sections, so the reader must repeatedly reset the frame.
+  suggestion: Carry the opening search request through the later state, retry, and compatibility sections, retaining at most one contrasting example.
+- lens: shape
+  severity: major
+  article: mcp-protocol-update
+  locator: Use extensions and deprecation windows | During the ten-week candidate window, SDK maintainers and client implementers validate the changes against real workloads. | 1
+  repair_from: '- | The candidate was locked on May 21, 2026; the final specification ships July 28 after ten weeks of validation. | 1'
+  category: duplication
+  disposition: fix
+  note: |
+    The opening says the final specification ships after ten weeks of validation, then this paragraph repeats the same ten-week candidate-window fact. The second occurrence adds no new structural step.
+  suggestion: Keep the ten-week validation fact in the opening timeline and use this paragraph for the validation consequence instead.
+- lens: craft
+  severity: major
+  article: mcp-protocol-update
+  locator: Use extensions and deprecation windows | The release marks three core features as annotation-only deprecations. | 1
+  category: no_voice
+  disposition: fix
+  note: |
+    This paragraph becomes a flat deprecation catalogue: "annotation-only deprecations," "the replacement," "log output," and "a separate SEP" arrive as labels, with no person making a choice or showing the implementer's consequence. The voice disappears here.
+  suggestion: |
+    Anchor each deprecation to the implementer's decision or consequence before listing the replacement.
