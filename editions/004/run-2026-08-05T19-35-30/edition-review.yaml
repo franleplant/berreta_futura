@@ -1,0 +1,53 @@
+result: changes_required
+findings:
+- severity: major
+  article: editorial
+  locator: '- | An eval earns its keep when a failed result changes the next edge. | 1'
+  repair_from: '- | An eval earns its keep when a failed result changes the next edge. | 1'
+  category: thin_derivation
+  disposition: fix
+  note: |
+    The editorial's thesis is clear, but from-gpt2-to-kimi3, factory-systems-problem
+    and mcp-in-a-nutshell contribute nothing to its body. Three of seven pieces
+    therefore sit outside the argument the issue produces.
+- severity: major
+  article: factory-systems-problem
+  locator: '- | Software factories are super real but we need to be realistic. | 1'
+  repair_from: '- | Software factories are super real but we need to be realistic. | 1'
+  category: weak_piece
+  disposition: fix
+  note: |
+    This should not have been commissioned for this issue. Its unsupported,
+    antagonistic hot takes and short treatment do not develop the edition's
+    systems argument and leave it weaker than the surrounding pieces.
+- severity: major
+  article: eval-engineering
+  locator: Make the score change the run | A score that never changes behavior is analytics. An eval that changes the next edge is engineering. | 1
+  category: redundancy
+  disposition: fix
+  note: |
+    eval-engineering and frontier-lab-agent-intrusion make the same point:
+    operational signals matter only when they change the next action.
+    eval-engineering says, "A score that never changes behavior is analytics.
+    An eval that changes the next edge is engineering." frontier-lab-agent-intrusion
+    says, "The lesson sits in that trail: when every failed route is replaced
+    immediately, a defensive signal must join events across systems before the
+    next route appears."
+- severity: minor
+  article: factory-systems-problem
+  locator: '- | I must stress that factories are not a token or LLM problem. It’s a systems engineering and corporate culture problem. | 1'
+  category: outlier
+  disposition: fix
+  note: |
+    The piece's ranting, conversational voice and faithful-edit mode sit outside
+    the otherwise explanatory, evidence-led family of the issue.
+scores:
+  through_line: 4
+  editorial_strength: 4
+  running_order: 4
+  balance: 3
+  cover_promise: 4
+notes: |
+  This issue mostly holds together around the claim that systems become dependable
+  when state and evidence can change what happens next, but three pieces do not
+  feed that thesis and one piece is an unsuitable commission.
