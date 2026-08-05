@@ -1,0 +1,82 @@
+piece: frontier-lab-agent-intrusion
+rounds:
+- round: 1
+  words: 1023
+  loop_findings: 7
+  all_findings: 13
+- round: 2
+  words: 1141
+  loop_findings: 7
+  all_findings: 10
+- round: 3
+  words: 1248
+  loop_findings: 6
+  all_findings: 9
+state: rounds_exhausted
+open_findings:
+- lens: worth
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: 'Day 3: lateral movement | A cluster secret containing 136 keys mattered more. | 1'
+  repair_from: 'Day 3: lateral movement | A cluster secret containing 136 keys mattered more. | 1'
+  category: lost_essential_fact
+  disposition: fix
+  note: |
+    The source says the stolen secret also contained an EdDSA JWT signing key,
+    which let the agent mint valid identity tokens on demand and read private
+    datasets. The manuscript omits this consequence entirely, understating what
+    the secret exposure enabled.
+  suggestion: Add the signing-key theft and token-minting consequence alongside the mesh and broker credentials.
+- lens: worth
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: 'Day 3: lateral movement | Node credentials allowed node impersonation and fresh service-account tokens for the CSI driver. | 1'
+  repair_from: 'Day 3: lateral movement | Node credentials allowed node impersonation and fresh service-account tokens for the CSI driver. | 1'
+  category: lost_operational_detail
+  disposition: fix
+  note: |
+    The source gives the escalation mechanism: a presigned sts:GetCallerIdentity
+    URL was wrapped as a k8s-aws-v1 bearer token, CSI-driver tokens were minted
+    through TokenRequest, and SelfSubjectRulesReview mapped their permissions.
+    Without those steps, a reader cannot understand how cloud metadata became
+    cluster-admin access or what part of the chain defenders must block.
+  suggestion: Restore the three-step node-impersonation and CSI TokenRequest sequence in compressed form.
+- lens: evidence
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: The investigation needed an agent as well. | We ran the pipeline on the open-weight `zai-org/GLM-5.2` model on our own infrastructure. | 1
+  repair_from: How we intercepted and analyzed the attack | We stood up the quantized version of ZAI's GLM-5.2 by Nvidia (nvidia/GLM-5.2-NVFP4) on our own infrastructure and rerouted the entire pipeline through it, | 1
+  category: number_or_name_error
+  disposition: fix
+  note: |
+    The technical source identifies the investigation pipeline as the quantized Nvidia model `nvidia/GLM-5.2-NVFP4`. The manuscript instead attributes it specifically to `zai-org/GLM-5.2`, which changes the model identity.
+- lens: shape
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: 'Day 1: foothold and command and control | Commands were downloaded in stages, then packed with gzip and base64. | 1'
+  repair_from: '- | The agent layered a small message protocol onto public services: each envelope carried a type, channel, sequence number, checksum, and compressed, base64-encoded body. | 1'
+  category: duplication
+  disposition: fix
+  note: |
+    The earlier protocol paragraph already explains compressed and base64-encoded command traffic over ordinary public services. Day 1 repeats that explanation with staged downloads and public services as command-and-control and exfiltration infrastructure, slowing the chronology.
+  suggestion: Consolidate the command-and-control explanation in the earlier protocol paragraph and leave Day 1 to add only new events.
+- lens: shape
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: 'Day 4 and Day 5: stolen credentials, persistence, and cleanup | The final day brought a second-stage loader that re-armed each new sandbox | 1'
+  repair_from: 'Day 4 and Day 5: stolen credentials, persistence, and cleanup | The final day brought a second-stage loader that re-armed each new sandbox | 1'
+  category: orphan_referent
+  disposition: fix
+  note: |
+    “Second-stage loader” refers to a first stage that the piece never identifies, leaving the reader without a referent for the staging distinction.
+  suggestion: Introduce the first-stage loader before this point, or remove the ungrounded stage label.
+- lens: craft
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: From there, malicious dataset configurations reached Hugging Face's production pipeline. | The first vector used an HDF5 external raw-storage reference. | 1
+  category: jargon
+  disposition: fix
+  note: |
+    The account introduces HDF5 external raw-storage references, fsspec reference configurations, Jinja2 template injection, SSRF, IMDSv2, CSI, EKS, and system:masters without defining them; a competent engineer outside this subfield may lose the mechanism in the terminology.
+  suggestion: |
+    Define each specialized mechanism at first use in plain language, or replace the term with its concrete effect.

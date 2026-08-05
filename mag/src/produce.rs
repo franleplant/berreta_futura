@@ -129,13 +129,16 @@ fn extract_manuscript(reply: &str, label: &str) -> Result<String> {
 /// (never null, per extract_findings normalization below).
 fn extract_findings(reply: &str, label: &str) -> Result<serde_yaml::Value> {
     let re = Regex::new(r"(?s)```ya?ml\s*\n(.*?)```").unwrap();
-    let fence = re
-        .captures_iter(reply)
-        .last()
-        .map(|c| c[1].to_string())
-        .ok_or_else(|| anyhow!("{label}: reply contained no yaml findings block"))?;
-    let mut data: serde_yaml::Value =
-        serde_yaml::from_str(&fence).with_context(|| format!("{label}: invalid yaml in findings block"))?;
+    // Prefer the last fenced block, but accept a bare yaml document: a reply
+    // that is a valid, complete report is not worth rejecting over a missing
+    // fence, and some models simply do not add one.
+    let body = match re.captures_iter(reply).last() {
+        Some(c) => c[1].to_string(),
+        None => reply.trim().to_string(),
+    };
+    let mut data: serde_yaml::Value = serde_yaml::from_str(&body).map_err(|e| {
+        anyhow!("{label}: reply is neither a yaml findings block nor a yaml document ({e})")
+    })?;
     let map = data
         .as_mapping_mut()
         .ok_or_else(|| anyhow!("{label}: yaml block has no findings key"))?;

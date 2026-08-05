@@ -1,0 +1,51 @@
+# mcp-in-a-nutshell r3 judge:craft
+# model: codex:gpt-5.6-luna
+
+result: changes_required
+findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: "- | Tools let an AI application perform actions such as file operations, API calls, or database queries. | 1"
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three consecutive subject-verb-definition sentences give the paragraph a catalog cadence: "Tools let...", "Resources supply...", and "Prompts package...". The remedy is editorial: combine or cut one of these sentences so the reader hears the distinctions rather than the template.
+    suggestion: Vary the sentence shapes by turning one definition into an example or subordinate clause.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: "- | MCP is stateless. Think of each request carrying its own small passport. | 1"
+    category: dead_words
+    disposition: fix
+    note: |
+      "Small passport" is a decorative metaphor that lasts one sentence and does not clarify the protocol mechanism.
+    suggestion: Replace the metaphor with a literal statement that each request carries the metadata needed to identify protocol state and capabilities.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: "- | The useful question is what a server can offer. | 1"
+    category: dead_words
+    disposition: fix
+    note: |
+      This is a throat-clearing transition; the following sentences already answer the question directly.
+    suggestion: Delete the sentence and begin with "Tools let an AI application perform actions..."
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: "- | Sampling, through sampling/createMessage, and logging are deprecated client primitives as of protocol version 2026-07-28. | 1"
+    category: jargon
+    disposition: fix
+    note: |
+      "Client primitives" and the sampling method name arrive without a plain-language explanation, despite the piece presenting itself as an accessible vocabulary primer.
+    suggestion: Briefly explain what sampling and logging do before giving their deprecation status and method name.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: "- | ...and should write logs to stderr for stdio transport or use OpenTelemetry. | 1"
+    category: jargon
+    disposition: fix
+    note: |
+      "OpenTelemetry" is an unexplained implementation term that a competent engineer outside observability work may not know.
+    suggestion: Identify OpenTelemetry as a standard for exporting application telemetry, or omit the name.
+scores:
+  voice: 4
+  sentence_variety: 3
+  economy: 3
+notes: |
+  I heard a clear, technically confident explainer, but its catalog definitions briefly become templated and a few implementation terms outrun the promised accessible vocabulary.

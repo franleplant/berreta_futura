@@ -167,9 +167,9 @@ def extract_manuscript(reply: str, label: str) -> str:
 
 def extract_findings(reply: str, label: str) -> dict:
     fences = re.findall(r"```ya?ml\s*\n(.*?)```", reply, re.DOTALL)
-    if not fences:
-        raise RuntimeError(f"{label}: reply contained no yaml findings block")
-    data = yaml.safe_load(fences[-1])
+    # A bare yaml document is accepted: a complete report is not worth
+    # rejecting over a missing fence.
+    data = yaml.safe_load(fences[-1] if fences else reply.strip())
     if not isinstance(data, dict) or "findings" not in data:
         raise RuntimeError(f"{label}: yaml block has no findings key")
     data["findings"] = data.get("findings") or []

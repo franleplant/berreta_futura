@@ -1,0 +1,41 @@
+result: changes_required
+findings:
+- severity: blocking
+  article: editorial
+  category: weak_through_line
+  disposition: fix
+  note: |
+    No opening editorial is supplied, so the issue has no stated argument or
+    derivation connecting its contents. With only frontier-lab-agent-intrusion
+    present, the edition cannot establish an emergent through-line beyond the
+    article's own account.
+- severity: major
+  article: edition
+  category: running_order
+  disposition: fix
+  note: |
+    The contents contain only frontier-lab-agent-intrusion. A single-piece
+    edition cannot demonstrate adjacency logic, progression, or balance;
+    commission and place additional pieces so the running order can carry an
+    argument.
+- severity: major
+  article: edition
+  category: credulity
+  disposition: fix
+  note: |
+    The issue offers no other piece to push back on the intrusion narrative.
+    The article itself concludes that "Machine-speed offense made them
+    expensive," but no companion perspective tests that claim or its
+    implications.
+  suggestion: |
+    Add a piece that challenges, qualifies, or supplies a contrasting
+    operational perspective on the article's conclusion.
+scores:
+  through_line: 1
+  editorial_strength: 1
+  running_order: 1
+  balance: 1
+  cover_promise: 2
+notes: |
+  This issue is a detailed intrusion account but does not hold together as an
+  edition because its editorial and supporting pieces are absent.

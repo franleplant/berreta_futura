@@ -1,0 +1,43 @@
+# pragmatic-leverage r3 judge:mechanics
+# model: codex:gpt-5.6-luna
+
+result: changes_required
+findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: "- | Seeking Leverage | 1"
+    category: heading_form
+    disposition: fix
+    note: |
+      This heading is title case; headings in the piece should use sentence case.
+    suggestion: "Seeking leverage"
+  - severity: major
+    article: pragmatic-leverage
+    locator: "The 80/20 rule in AI coding leverage | its possible you may need to end it where you are and zoom down a level | 1"
+    category: spelling
+    disposition: editor_decision
+    note: |
+      "its possible" requires the contraction "it's". The sentence is retained from the author's text, so the editor chooses the remedy.
+    suggestion: "it's possible you may need to end it where you are and zoom down a level"
+  - severity: major
+    article: pragmatic-leverage
+    locator: "The 80/20 rule in AI coding leverage | good luck. | 1"
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      This sentence opens lowercase while the piece otherwise opens sentences with capitals. The inconsistency is a slip, and the sentence is retained from the author's text.
+    suggestion: "Good luck."
+  - severity: major
+    article: pragmatic-leverage
+    locator: "The 80/20 rule in AI coding leverage | note | 1"
+    category: markup
+    disposition: editor_decision
+    note: |
+      The labeled note is editorial apparatus inside the article's prose. The label and following sentence are retained in the pinned extraction, so the editor must decide how to remove or recast it.
+    suggestion: "Remove the note label and integrate the explanation into the prose."
+scores:
+  grammar: 2
+  typography: 4
+  consistency: 3
+notes: |
+  Changes required because the piece contains a title-case heading, a spelling error, one inconsistent lowercase sentence opening, and an in-text note label.

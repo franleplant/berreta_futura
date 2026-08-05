@@ -1,0 +1,177 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking leverage | But if you use AI to help you plan and align, then you actually get closer to 2–3x faster. | 1
+    repair_from: '- | Even before AI, only 25–50% of the time to ship a feature was writing the code itself. | 1'
+    category: lost_essential_fact
+    disposition: fix
+    note: |
+      The source quantifies the contrast the argument depends on: using AI only for coding cuts 2–4 hours of coding to 10–20 minutes while leaving planning, review, and testing unchanged. Without that fact, the claim that planning and alignment produce leverage loses its clearest evidence.
+    suggestion: Add the 2–4-hours-to-10–20-minutes comparison before the 2–3x conclusion.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | This is what we mean by leverage - and it requires being pragmatic. | 1
+    repair_from: The 80/20 rule in AI coding leverage | What you don't want to do is spend 6 hours planning a task for which you could have eliminated 80% of the expected pain in the first 10 minutes. | 1
+    category: lost_essential_fact
+    disposition: fix
+    note: |
+      The source adds an important operating caveat: do not overinvest in questions that cannot be answered until you zoom down a level; unresolved product questions may require technical investigation, and there is no perfect process. Omitting this makes the steering advice sound more linear and certain than the source supports.
+    suggestion: Restore the product-to-technical zoom example and the sentence acknowledging that no process is perfect.
+  omissions:
+  - fact: 'The article is an addendum or side-quest to a recent series and is referenced in Why Software Factories Fail part 2: Turning the lights back on.'
+    reader_loses: They lose the piece's publication context and connection to the broader series, but not the practical argument.
+    verdict: defensible
+  - fact: Using AI only to write code cuts 2–4 hours of coding to 10–20 minutes while accelerating nothing else.
+    reader_loses: They lose the quantitative contrast that motivates using AI for planning and alignment.
+    verdict: needed
+  - fact: Drawing expected pain shows an inverse relationship between effort invested up front and expected pain.
+    reader_loses: The general relationship is omitted, though the surrounding examples still convey it.
+    verdict: defensible
+  - fact: Planning should not overindex on questions that cannot be answered without going down a level.
+    reader_loses: They may treat planning as a one-way sequence instead of investigating technical details when product-level questions remain open.
+    verdict: needed
+  - fact: A product-level planning pass may need to end so the team can zoom into technical details to understand feasibility.
+    reader_loses: They lose the concrete example of when to change planning levels.
+    verdict: needed
+  - fact: There is no perfect process.
+    reader_loses: The advice sounds more definitive than the source's pragmatic qualification.
+    verdict: needed
+  - fact: The closing 'good luck.'
+    reader_loses: Nothing substantive.
+    verdict: defensible
+  retentions:
+  - passage: '## Seeking leverage'
+    costs: An empty section heading spends a line without introducing content; that space could carry the omitted coding-time comparison.
+    verdict: cut
+  - passage: Even before AI, only 25–50% of the time to ship a feature was writing the code itself.
+    costs: The opening establishes the work breakdown that the rest of the argument relies on.
+    verdict: earns_place
+  - passage: Let's assume if you yolo a two-sentence prompt into your factory
+    costs: The concrete 50% rework baseline makes the leverage calculation legible.
+    verdict: earns_place
+  - passage: Now let's say you are a principal engineer with 10 years of experience.
+    costs: The expert-spec example demonstrates diminishing rework risk without pretending it reaches zero.
+    verdict: earns_place
+  - passage: 'And at the far end: write every line yourself.'
+    costs: The zero-rework endpoint defines the other side of the tradeoff.
+    verdict: earns_place
+  - passage: For this example I'm gonna blur
+    costs: The expected-pain qualification prevents readers from treating every change probability as equally costly.
+    verdict: earns_place
+  - passage: What you don't want to do is spend 6 hours planning a task
+    costs: The 6-hour/10-minute example is the article's clearest practical rule.
+    verdict: earns_place
+  - passage: Good luck.
+    costs: A closing sign-off adds no information; the space could carry the omitted caveat about changing planning levels.
+    verdict: cut
+  notes: |
+    Changes required because the condensation drops the source's strongest quantitative motivation and its caveat about zooming between product and technical planning levels. The manuscript is materially shorter and preserves the source's central expected-pain argument, but it has no distinct editorial ordering judgment, defended cut, or claim beyond the source itself.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | This is what we mean by leverage - and it requires being pragmatic. | 1
+    repair_from: The 80/20 rule in AI coding leverage | What you don't want to do is spend 6 hours planning a task for which you could have eliminated 80% of the expected pain in the first 10 minutes. | 1
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source limits this recommendation by warning against overindexing on questions that require going down a level and stating that there is no perfect process. The manuscript omits that qualification while retaining an unqualified recommendation to steer at every planning phase.
+  scores:
+    claim_support: 5
+    qualification_survival: 3
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every assertion, heading, and quotation against the complete pinned extraction; I could not check material outside the supplied manuscript and extraction, and none was presented.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Let's assume if you yolo a two-sentence prompt into your factory, your chance of getting a fully-mergeable result is ~50%; the chance you have to rework it is 50%. | 1
+    category: grammar
+    disposition: editor_decision
+    note: |
+      "Let's assume if" is an ungrammatical construction. Add "that" before the conditional clause. The sentence is retained verbatim from the source, so the editor must choose the remedy.
+    suggestion: Let's assume that if you yolo a two-sentence prompt into your factory, your chance of getting a fully-mergeable result is ~50%; the chance you have to rework it is 50%.
+  scores:
+    grammar: 3
+    typography: 5
+    consistency: 4
+  notes: |
+    One grammatical error appears in the retained prose; capitalization, punctuation, typography, headings, and numeric styles are otherwise consistent.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking leverage | Seeking leverage | 1
+    repair_from: Seeking leverage | Seeking leverage | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      "Seeking leverage" is an empty section heading and states a topic rather than an argument, interrupting the movement from the opening claim into the 80/20 framework.
+    suggestion: Remove the empty heading or replace it with a claim that introduces the expected-pain framework.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Good luck. | 1
+    repair_from: The 80/20 rule in AI coding leverage | This is what we mean by leverage - and it requires being pragmatic. | 1
+    category: ending
+    disposition: fix
+    note: |
+      The preceding paragraph states the article's practical conclusion, but "Good luck." makes the piece stop abruptly instead of landing on that principle.
+    suggestion: End on the pragmatic steering principle and connect it directly to the reader's next action.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 4
+    ending: 3
+  notes: |
+    I verified that the piece moves from shipping-time overhead to expected pain and then to pragmatic planning, with a minor empty heading and an abrupt final sign-off weakening the shape.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | But if you use AI to help you plan and align, then you actually get closer to 2–3x faster. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three conditional setup-and-result sentences create the same cadence: "But if you use AI to help you plan and align, then you actually get closer to 2–3x faster", "Let's assume if you yolo a two-sentence prompt into your factory, your chance of getting a fully-mergeable result is ~50%; the chance you have to rework it is 50%", and "If you're doing multiple phases of planning, zooming in from 50kft view all the way to the 10kft view, you want to do a little bit of steering at each phase". The pattern becomes audible before the argument develops; vary or cut one of these setups.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | This is what we mean by leverage - and it requires being pragmatic. | 1
+    category: no_voice
+    disposition: fix
+    note: |
+      The voice disappears into an abstract, balanced definition: "This is what we mean by leverage - and it requires being pragmatic." The surrounding prose has a specific speaker and concrete examples; this sentence sounds like a system-generated summary. Replace the abstraction with a concrete consequence of the expected-pain calculation.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | But if you use AI to help you plan and align, then you actually get closer to 2–3x faster. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Actually" adds emphasis without adding information, and "get closer to 2–3x faster" is padded phrasing. Remove the intensifier and state the speed comparison directly.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | For this example I'm gonna blur into a single percentage number but obviously they're two separate variables. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Obviously" is a needless hedge about the reader's understanding. State the distinction between probability and cost without announcing that it should already be obvious.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Good luck. | 1
+    category: weak_close
+    disposition: fix
+    note: |
+      "Good luck" is a sign-off, not a final piece of understanding. End on the practical implication of steering effort where it reduces expected pain.
+  scores:
+    voice: 3
+    sentence_variety: 2
+    economy: 3
+  notes: |
+    I heard a lively, technically grounded speaker give way to abstract summary language in the leverage definition, while repeated conditional setups and a few empty intensifiers flatten the delivery.
