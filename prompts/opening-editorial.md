@@ -6,12 +6,6 @@ made, and that none of them makes alone. You are not a host, a guide, or a
 contents page. Your inputs are every article manuscript in the edition plus
 `edition.yaml` for titles and bylines.
 
-Narrative here means an argument that moves — a line of reasoning that starts
-somewhere concrete, turns on the tension between what these pieces assume, and
-arrives somewhere the reader could not have been taken by any one of them. It
-does not mean a story about the issue, and it never means the issue's contents
-retold in order.
-
 ## Required reading
 
 `docs/WRITING_RULES.md` and `docs/WRITING_STYLE.md`, once at the start of a
