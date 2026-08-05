@@ -1,0 +1,295 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's @dexhorthy X handle
+    reader_loses: A direct identifier for locating or following the original author, though the Dex Horthy byline remains.
+    verdict: defensible
+  retentions:
+  - passage: This one is a bit of an addendum / side-quest
+    costs: One short framing paragraph, which preserves the source's standalone context and connection to the series.
+    verdict: earns_place
+  - passage: Even before AI, only 25-50% of the time
+    costs: One paragraph, but it establishes the work breakdown that makes the leverage argument intelligible.
+    verdict: earns_place
+  - passage: If you're only using AI to write the code
+    costs: One paragraph, but its 2-4-hour to 10-20-minute comparison distinguishes coding speed from delivery speed.
+    verdict: earns_place
+  - passage: But if you use AI to help you plan and align
+    costs: One sentence, but it states the central 2-3x leverage claim.
+    verdict: earns_place
+  - passage: Lets assume if you yolo a two-sentence prompt
+    costs: One paragraph, but it supplies the baseline 50% mergeability and rework probabilities.
+    verdict: earns_place
+  - passage: Now lets say you are a principal engineer
+    costs: One paragraph, but the 10-year, 100-repo, afternoon-spec example shows that detailed planning reduces rather than eliminates rework.
+    verdict: earns_place
+  - passage: 'And at the far end: write every line yourself'
+    costs: One sentence, but it completes the effort-versus-rework range with the zero-rework boundary.
+    verdict: earns_place
+  - passage: '**note** For this example I''m gonna blur'
+    costs: The note and its qualification prevent the percentages from being mistaken for a single literal probability.
+    verdict: earns_place
+  - passage: If the model is 50% likely to get a button style wrong
+    costs: One concrete example, but it makes the distinction between likelihood and repair cost usable.
+    verdict: earns_place
+  - passage: expected pain = P(you'll have to change it)
+    costs: One displayed formula, but it gives the reader the article's reusable model.
+    verdict: earns_place
+  - passage: If you draw this out, there's an inverse relationship
+    costs: One sentence, but it states the governing relationship between up-front effort and expected pain.
+    verdict: earns_place
+  - passage: What you don't want to do is spend 6 hours
+    costs: One paragraph, but the 6-hour versus first-10-minutes example supplies the practical anti-overplanning rule.
+    verdict: earns_place
+  - passage: You need to do this without overindexing
+    costs: One paragraph, but it explains when to zoom from product questions into technical feasibility.
+    verdict: earns_place
+  - passage: This is what we mean by leverage
+    costs: The closing paragraph, but it turns the model into the actionable 50kft-to-10kft steering advice.
+    verdict: earns_place
+  notes: |
+    This faithful edit gives readers a durable, legible standalone version of an ephemeral X article while preserving its 25-50% work split, expected-pain equation, and 50kft-to-10kft steering advice.
+    The source-length treatment is justified by access and legibility. The only omission is the original author handle, which does not impair understanding or action; no needed omission makes the piece over-compressed, and every substantive passage earns its place.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: Checked the title, byline, headings, body, note, quotations, and equation against the pinned extraction; this piece has no separate deck, captions, key-idea box, glossary, cheat sheet, or labelled editor addition to check.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: '- | It didn''t fit cleanly into the main post so I''m publishing it standalone. | 1'
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      Two independent clauses are joined by "so" without the required comma.
+      This is a punctuation error in the faithful-edit body.
+    suggestion: It didn't fit cleanly into the main post, so I'm publishing it standalone.
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking Leverage | Seeking Leverage | 1
+    category: heading_form
+    disposition: fix
+    note: |
+      Section headings use sentence case. "Leverage" is not a proper noun and
+      should not be capitalised.
+    suggestion: Seeking leverage
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking Leverage | The rest was aligning/planning, code-review/rework, and testing/verifying the solution. | 1
+    category: grammar
+    disposition: editor_decision
+    note: |
+      The list mixes gerund forms with noun compounds, breaking grammatical
+      parallelism in the faithful-edit body.
+    suggestion: The rest was aligning/planning, reviewing/reworking code, and testing/verifying the solution.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Lets assume | 1
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      "Lets" is missing the apostrophe in the contraction "Let's." This is an
+      error in the retained source sentence.
+    suggestion: Let's assume
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | is ~50%, the chance you have to rework it is 50% | 1
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      Two independent clauses are joined by a comma alone, creating a comma
+      splice in the retained source sentence.
+    suggestion: is ~50%, and the chance you have to rework it is 50%
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Now lets say | 1
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      "lets" is missing the apostrophe in the contraction "let's." This is an
+      error in the retained source sentence.
+    suggestion: Now let's say
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | note | 1
+    category: label_missing
+    disposition: fix
+    note: |
+      The bold "note" marker identifies a labeled author's or editor's note
+      inside the article body. The magazine does not print editorial apparatus
+      in prose; remove the marker and integrate or cut the material.
+    suggestion: Remove the in-body note label and integrate or delete the material.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | note | 1
+    category: capitalisation
+    disposition: fix
+    note: |
+      Labels are editor text and must be capitalised; this label is lower-case.
+      Removing the prohibited note resolves the issue, or it should read
+      "Note" if a label remains.
+    suggestion: Note
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | single percentage number but obviously they're two separate variables. | 1
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      The sentence joins the independent clause beginning "obviously they're"
+      to the preceding clause with "but" but omits the comma. This is an error
+      in the retained source sentence.
+    suggestion: single percentage number, but obviously they're two separate variables.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | its possible you may need to end it where you are | 1
+    category: spelling
+    disposition: editor_decision
+    note: |
+      "its possible" uses the possessive; the intended contraction is "it's
+      possible." This is an error in the retained source sentence.
+    suggestion: it's possible
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | "Product" | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      Earlier quoted phrases use curly double quotation marks, but "Product"
+      uses straight marks. Both forms are valid, so this is a consistency
+      defect in the retained source sentence.
+    suggestion: the “Product” level
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | good luck. | 1
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The body otherwise opens sentences with capitals, so this lone lowercase
+      opening is a typo rather than a convention. It occurs in retained source
+      prose.
+    suggestion: Good luck.
+  scores:
+    grammar: 2
+    typography: 3
+    consistency: 3
+  notes: |
+    Changes required because the piece contains a title-case heading, three
+    missing contraction apostrophes, one lowercase sentence opening, multiple
+    clause-punctuation errors, a parallelism defect, mixed quotation styles, and
+    a labeled note in the body.
+shape:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    repair_from: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: opening
+    disposition: editor_decision
+    note: |
+      The piece opens with publication context and a cross-reference, so the
+      first substantive paragraph arrives without being earned. The leverage
+      argument itself starts only after this throat-clearing paragraph.
+    suggestion: Move the addendum and cross-reference paragraph after the final substantive paragraph so the piece opens on the time-to-ship breakdown.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | Seeking Leverage | 1
+    repair_from: Seeking Leverage | Even before AI, only 25–50% of the time to ship a feature was writing the code itself. | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The heading names a broad topic, while the section argues that planning
+      and alignment are where AI creates leverage beyond code generation.
+    suggestion: Rename the heading to state that planning and alignment create the leverage that code generation alone misses.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | The 80/20 rule in AI coding leverage | 1
+    repair_from: The 80/20 rule in AI coding leverage | Lets assume if you yolo a two-sentence prompt into your factory, your chance of getting a fully-mergeable result is ~50%, the chance you have to rework it is 50%. | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The heading labels a concept, but the section's actual argument is that
+      modest up-front steering reduces expected rework and pain.
+    suggestion: Rename the heading to state that small up-front steering cuts expected rework.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 2
+    ending: 4
+  notes: |
+    The piece moves from the limited payoff of code-only acceleration to an
+    expected-pain model and then to pragmatic, iterative planning. Its central
+    sequence is recoverable, but the publication-context opening delays the point
+    and both section headings label topics instead of the claims they advance.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: Seeking Leverage | If you're only using AI to write the code, then you're taking the 2–4 hours of coding time down to 10–20 minutes, but you haven't accelerated anything else here. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Six full conditional scaffolds recur: "If you're only using AI to write the code, then you're taking the 2–4 hours of coding time down to 10–20 minutes, but you haven't accelerated anything else here."; "But if you use AI to help you plan and align, then you actually get closer to 2–3x faster."; "If the model is 50% likely to get a button style wrong, but the fix is one cheap prompt, then our combined 'expected pain' is low."; "If you draw this out, there's an inverse relationship between effort invested up front and expected pain."; "if you've done some work at the 'Product' level and have not answered all the open questions yet, its possible you may need to end it where you are and zoom down a level to the technical details to understand what's feasible."; and "If you're doing multiple phases of planning, zooming in from 50kft view all the way to the 10kft view, you want to do a little bit of steering at each phase to ensure you are eliminating as much expected pain as possible." The "Lets assume if you yolo a two-sentence prompt into your factory" sentence adds a seventh embedded variant. The shape is the author's rhythm, so the remedy is an editor's: cut or consolidate the repeated setups.
+  - severity: major
+    article: pragmatic-leverage
+    locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: weak_opening_sentence
+    disposition: author_decision
+    note: |
+      The first three sentences are publication logistics—an addendum, a note about fit, and a cross-reference—before the useful 25–50% shipping-time split. The opening announces a post instead of giving the reader the argument.
+    suggestion: Open with the 25–50% shipping-time split.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | If you draw this out, there's an inverse relationship between effort invested up front and expected pain. | 1
+    category: dead_words
+    disposition: author_decision
+    note: |
+      "draw this out" plus "inverse relationship" is a balanced abstraction that labels the tradeoff after the examples have already shown it; the sentence adds little reader-facing guidance.
+    suggestion: Use the concrete 6-hour/10-minute comparison to state the tradeoff directly.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | This is what we mean by leverage - and it requires being pragmatic. | 1
+    category: dead_words
+    disposition: author_decision
+    note: |
+      "This is what we mean by leverage" is a definite-article, balanced-clause summary that repeats the section's premise, while "requires being pragmatic" adds no mechanism.
+    suggestion: Cut the summary sentence and let the concrete planning guidance carry the transition.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | You need to do this without overindexing on questions you won't be able to answer without going down a level. | 1
+    category: dead_words
+    disposition: author_decision
+    note: |
+      "Overindexing" is corporate planning shorthand, and the sentence never states plainly what to do with the unanswered questions.
+    suggestion: Name the questions to defer instead of using "overindexing."
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | If you're doing multiple phases of planning, zooming in from 50kft view all the way to the 10kft view, you want to do a little bit of steering at each phase to ensure you are eliminating as much expected pain as possible. | 1
+    category: jargon
+    disposition: author_decision
+    note: |
+      "50kft view" and "10kft view" are unexplained altitude shorthand; a competent engineer outside product-planning culture may not know which decisions each level denotes.
+    suggestion: Spell out the product and technical levels.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | It is referenced briefly in Why Software Factories Fail part 2: Turning the lights back on. | 1'
+    category: passive
+    disposition: author_decision
+    note: |
+      "It is referenced briefly" hides the actor in a sentence that contributes only publication metadata; the passive has no reader-facing reason.
+    suggestion: Cut this cross-reference from the opening.
+  scores:
+    voice: 3
+    sentence_variety: 1
+    economy: 3
+  notes: |
+    I hear a candid engineer explaining a real delivery tradeoff; the voice is strongest in the concrete examples and thins into formula when the planning advice turns abstract. Changes are required because the conditional scaffold is blocking and the opening, summary language, jargon, and passive metadata all make the reader work harder than the mechanism warrants.

@@ -9,11 +9,11 @@ This one is a bit of an addendum / side-quest to the recent series. It didn't fi
 
 ## Seeking Leverage
 
-Even before AI, only 25-50% of the time to ship a feature was writing the code itself. The rest was aligning/planning, code-review/rework, and testing/verifying the solution.
+Even before AI, only 25–50% of the time to ship a feature was writing the code itself. The rest was aligning/planning, code-review/rework, and testing/verifying the solution.
 
-If you're only using AI to write the code, then you're taking the 2-4 hours of coding time down to 10-20 minutes, but you haven't accelerated anything else here.
+If you're only using AI to write the code, then you're taking the 2–4 hours of coding time down to 10–20 minutes, but you haven't accelerated anything else here.
 
-But if you use AI to help you plan and align, then you actually get closer to 2-3x faster.
+But if you use AI to help you plan and align, then you actually get closer to 2–3x faster.
 
 ## The 80/20 rule in AI coding leverage
 
@@ -25,9 +25,9 @@ And at the far end: write every line yourself. Nothing's left for the agent to g
 
 **note** For this example I'm gonna blur
 
-> "chance you'll have to change something" weighted by "how painful the change will be"
+> “chance you'll have to change something” weighted by “how painful the change will be”
 
-into a single percentage number but obviously they're two separate variables. If the model is 50% likely to get a button style wrong, but the fix is one cheap prompt, then our combined "expected pain" is low.
+into a single percentage number but obviously they're two separate variables. If the model is 50% likely to get a button style wrong, but the fix is one cheap prompt, then our combined “expected pain” is low.
 
 > expected pain = P(you'll have to change it) × how painful the change is
 

@@ -1,0 +1,522 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: 'The seven inline numeric extraction markers: [3] before ''innovators''; [2] before ''non-agent topics''; [1] before ''almost lights out''; [2] before ''sandboxing''; [3] before ''at home, in your homelab''; [1] before ''wcf''; and [1] before ''lots of bad memories here''.'
+    reader_loses: Nothing substantive; these are extraction annotations, not facts, instructions, or explained links.
+    verdict: defensible
+  retentions:
+  - passage: software factories are super real but we need to be realistic.
+    costs: The maturity warning and anti-hype frame; without it, the later systems prescription loses its scope.
+    verdict: earns_place
+  - passage: the best practices right now are to build abstractions/pieces needed
+    costs: The concrete sandboxing, monorepo, reproducible-build, CI/CD, identity, and secret-management checklist; cutting it would strip utility.
+    verdict: earns_place
+  - passage: at home, in your homelab, you should be cracking on this problem space
+    costs: Specific next actions and the promotion/interview consequence; it turns the diagnosis into advice.
+    verdict: earns_place
+  - passage: i must stress that factories is not a token or llm problem.
+    costs: The governing systems-engineering and corporate-culture thesis, including the qualification that token use is still one piece.
+    verdict: earns_place
+  - passage: second hot take, as it seems the first hot take landed.
+    costs: A short transition identifying the service-bus paragraph as a follow-on post; it helps orient this collected-post sequence.
+    verdict: earns_place
+  - passage: look up anything in the @dotnet space such as mass transit, nservicebus, wcf
+    costs: Actionable prior-art names plus the Temporal recommendation; removing them would make the architecture warning non-operational.
+    verdict: earns_place
+  - passage: which i've always suspected was developed by young folks in silicon valley
+    costs: Speculation about the creators rather than the service-bus design; the argument survives without it.
+    verdict: cut
+  - passage: ugh. blog post time.
+    costs: A four-word meta aside with no information.
+    verdict: cut
+  notes: |
+    By collecting three otherwise separate posts into one legible sequence, this piece gives the reader a single systems-and-corporate-culture diagnosis with the concrete stack and deterministic-service-bus/Temporal prescription attached. It is a faithful_edit at source length, justified by scattered-post collection. The manuscript and sources run in the same order: factory maturity and stack, systems/culture thesis, then n8n/service-bus advice. The title supplies a clear synthesizing position, and no section-level weight problem or substantive omission remains.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked the title and every body assertion against all three pinned extractions; there were no additional furniture elements or verbatim quotations in this piece, so none remained unchecked.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | The Factory Is a Systems Problem | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      This title is in title case; headings in the edition are sentence case.
+    suggestion: The factory is a systems problem
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Factory Is a Systems Problem | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      This short title is in title case; headings in the edition are sentence case.
+    suggestion: Factory is a systems problem
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | software factories are super real but we need to be realistic. | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The magazine's standing ruling requires sentence-initial capitals even when the author's lowercase convention is uniform.
+    suggestion: Capitalize the opening word.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | the factory aspects haven''t been cracked yet, the innovators are toying around with discovering practices and pieces. | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The magazine's standing ruling requires sentence-initial capitals even when the author's lowercase convention is uniform.
+    suggestion: Capitalize the opening word.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | the factory aspects haven''t been cracked yet, the innovators are toying around with discovering practices and pieces. | 1'
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      The comma splice joins two independent clauses without a conjunction or stronger boundary.
+    suggestion: The factory aspects haven't been cracked yet; the innovators are toying around with discovering practices and pieces.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | if someone is selling you a factory rn and they aren''t in the super small cohort (ie. they are likely startups created in last six months!) or circa <10 people in the who''s-who, who have been trying (and realistically failing) over the last two years. | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The magazine's standing ruling requires sentence-initial capitals even when the author's lowercase convention is uniform.
+    suggestion: Capitalize the opening word.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | ie. | 1'
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      The abbreviation is punctuated incorrectly; i.e. takes a period after each initial.
+    suggestion: i.e.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | created in last six months | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      The defined period needs the article the before last six months.
+    suggestion: created in the last six months
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | or circa <10 people in the who''s-who | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      After aren't in, this is not a parallel complement; in circa <10 people is not grammatical.
+    suggestion: or among the circa 10 people in the who's-who
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | if someone is selling you a factory rn and they aren''t in the super small cohort (ie. they are likely startups created in last six months!) or circa <10 people in the who''s-who, who have been trying (and realistically failing) over the last two years. | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      This if-clause ends at years. without its main clause; the following sentence supplies the predicate after a full stop.
+    suggestion: Join this clause to they are selling bullshit with a comma.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | they are selling bullshit. | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The magazine's standing ruling requires sentence-initial capitals even when the author's lowercase convention is uniform.
+    suggestion: Capitalize the opening word.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | it isn''t cracked but it''s a puzzle that''s being solved daily. | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The magazine's standing ruling requires sentence-initial capitals even when the author's lowercase convention is uniform.
+    suggestion: Capitalize the opening word.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | the best practices right now are to build abstractions/pieces needed which entails solving non-agent topics. | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The magazine's standing ruling requires sentence-initial capitals even when the author's lowercase convention is uniform.
+    suggestion: Capitalize the opening word.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | pieces needed which entails | 1'
+    category: agreement
+    disposition: editor_decision
+    note: |
+      On the local reading, which modifies plural pieces, so entails disagrees; if it modifies the whole action, a comma is required.
+    suggestion: pieces needed, which entails
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | almost lights out. | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The magazine's standing ruling requires sentence-initial capitals even when the author's lowercase convention is uniform.
+    suggestion: Capitalize the opening word.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | almost lights out. | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      This is a verbless fragment, not a heading or label; read it as a sentence-level grammar defect.
+    suggestion: We are almost at lights-out.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | sandboxing, monorepo, reproducible builds, ci/cd, identity/secret management, smashing corporate friction in the realm of devex for agents. | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The magazine's standing ruling requires sentence-initial capitals even when the author's lowercase convention is uniform.
+    suggestion: Capitalize the opening word.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | sandboxing, monorepo, reproducible builds, ci/cd, identity/secret management, smashing corporate friction in the realm of devex for agents. | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      This standalone list has no finite verb; read it as a sentence fragment rather than a deliberate heading.
+    suggestion: The stack needs sandboxing, a monorepo, reproducible builds, ci/cd, identity/secret management, and less corporate friction.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | at home, in your homelab, you should be cracking on this problem space in your free time if you want a super fast promotion and red carpet service at your next interview. | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The magazine's standing ruling requires sentence-initial capitals even when the author's lowercase convention is uniform.
+    suggestion: Capitalize the opening word.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | highest roi you can have right now is learning the entire damn stack, automating it and showing it at your next interview/doing a recorded talk at a meetup. | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The magazine's standing ruling requires sentence-initial capitals even when the author's lowercase convention is uniform.
+    suggestion: Capitalize the opening word.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | highest roi you can have | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      A superlative noun phrase here requires the definite article the.
+    suggestion: the highest ROI you can have
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | i must stress that factories is not a token or llm problem. | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The magazine's standing ruling requires sentence-initial capitals even when the author's lowercase convention is uniform.
+    suggestion: I must stress that factories is not a token or llm problem.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | i must stress that factories is not a token or llm problem. | 1'
+    category: agreement
+    disposition: editor_decision
+    note: |
+      Factories is does not agree. The sentence is retained source text, so the editor chooses the remedy.
+    suggestion: factories are not a token or llm problem
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | it’s a systems engineering and corporate culture problem. | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The magazine's standing ruling requires sentence-initial capitals even when the author's lowercase convention is uniform.
+    suggestion: Capitalize the opening word.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | it won’t be solved through tokens or how you apply the tokens (but it is a piece of the puzzle) ugh. | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The magazine's standing ruling requires sentence-initial capitals even when the author's lowercase convention is uniform.
+    suggestion: Capitalize the opening word.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | (but it is a piece of the puzzle) ugh. | 1'
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      The interjection ugh is appended to the parenthetical without a separating mark, creating a malformed sentence boundary.
+    suggestion: (but it is a piece of the puzzle). Ugh.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | blog post time. | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The magazine's standing ruling requires sentence-initial capitals even when the author's lowercase convention is uniform.
+    suggestion: Capitalize the opening word.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | blog post time. | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      This is a verbless fragment; read it as a sentence-level grammar defect rather than a deliberate label.
+    suggestion: It is time for a blog post.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | second hot take, as it seems the first hot take landed. | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The magazine's standing ruling requires sentence-initial capitals even when the author's lowercase convention is uniform.
+    suggestion: Capitalize the opening word.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | second hot take, as it seems the first hot take landed. | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      Second hot take is a noun phrase without a main predicate; read this as a sentence fragment.
+    suggestion: The second hot take is that the first hot take landed.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | n8n was a silly idea, which i''ve always suspected was developed by young folks in silicon valley who are all in on the LLM craze who have never worked in corporate in their life thus didn''t have the knowledge that service busses are a solved problem and there''s deep prior art in the spooky land of enterprise. | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The house ruling requires a capitalised sentence opening, but n8n is a correctly lowercase product name; recast the sentence while preserving the brand.
+    suggestion: The n8n project was a silly idea...
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | in their life | 1'
+    category: agreement
+    disposition: editor_decision
+    note: |
+      The plural noun folks takes lives, not singular life.
+    suggestion: in their lives
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | who are all in on the LLM craze who have never worked | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      The two relative modifiers are stacked without a coordinator, leaving the description of young folks structurally ambiguous.
+    suggestion: Add and before the second who.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | their life thus didn’t have the knowledge | 1'
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      Thus links the result clause without punctuation or a coordinator.
+    suggestion: Add punctuation before thus.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | service busses are a solved problem | 1'
+    category: spelling
+    disposition: editor_decision
+    note: |
+      The standard plural of bus in this technical context is buses.
+    suggestion: service buses are a solved problem
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | look up anything in the @dotnet space such as mass transit, nservicebus, wcf if you wanna steal ideas for prompting. | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The magazine's standing ruling requires sentence-initial capitals even when the author's lowercase convention is uniform.
+    suggestion: Capitalize the opening word.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | if you want a modern plug and play choice, @temporalio exists. | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The magazine's standing ruling requires sentence-initial capitals even when the author's lowercase convention is uniform.
+    suggestion: Capitalize the opening word.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | plug and play choice | 1'
+    category: typography
+    disposition: editor_decision
+    note: |
+      Before choice, plug-and-play is a compound modifier and needs hyphens.
+    suggestion: plug-and-play choice
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | use it and have a job invoke an agent as a process. | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The magazine's standing ruling requires sentence-initial capitals even when the author's lowercase convention is uniform.
+    suggestion: Capitalize the opening word.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | don’t make the entire service bus non-deterministic. | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The magazine's standing ruling requires sentence-initial capitals even when the author's lowercase convention is uniform.
+    suggestion: Capitalize the opening word.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | lots of bad memories here, not great tech impl but the theory / education is generally on point. | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The magazine's standing ruling requires sentence-initial capitals even when the author's lowercase convention is uniform.
+    suggestion: Capitalize the opening word.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | lots of bad memories here, not great tech impl but the theory / education is generally on point. | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      The opening noun phrase has no verb and is joined by a comma to an elliptical clause; read this as a fragment/run-on defect.
+    suggestion: There are lots of bad memories here; the tech implementation is not great, but the theory and education are generally on point.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | theory / education | 1'
+    category: typography
+    disposition: editor_decision
+    note: |
+      This piece closes slashes in abstractions/pieces, identity/secret and interview/doing, but spaces this one; choose one style.
+    suggestion: theory/education
+  scores:
+    grammar: 1
+    typography: 2
+    consistency: 2
+  notes: |
+    The article violates the standing sentence-capitalisation ruling in every body sentence and also contains two title-case furniture headings plus multiple grammar, punctuation, spelling and typography defects. Body findings are retained source sentences in faithful_edit and therefore go to editor_decision; title and short-title repairs are editorial fixes, and no blocking sample run is present.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | second hot take, as it seems the first hot take landed. | 1'
+    repair_from: '- | second hot take, as it seems the first hot take landed. | 1'
+    category: orphan_referent
+    disposition: fix
+    note: |
+      "Second hot take" presupposes a first hot take that the piece never presents, leaving the reader without an antecedent for the ordinal.
+    suggestion: Drop 'second' so the n8n section stands without a missing predecessor.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | n8n was a silly idea | 1'
+    repair_from: '- | blog post time. | 1'
+    category: missing_transition
+    disposition: fix
+    note: |
+      The piece jumps from general factory infrastructure and career advice to a service-bus critique without identifying n8n as a concrete consequence of the systems thesis.
+    suggestion: Add a bridge identifying n8n's non-deterministic bus as the concrete systems failure under discussion.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | lots of bad memories here, not great tech impl but the theory / education is generally on point. | 1'
+    repair_from: '- | lots of bad memories here, not great tech impl but the theory / education is generally on point. | 1'
+    category: ending
+    disposition: fix
+    note: |
+      The final aside endorses the theory but does not return the service-bus recommendation to the factory-as-systems thesis, so the piece stops rather than lands.
+    suggestion: Close by tying deterministic orchestration back to the broader systems-engineering argument.
+  scores:
+    order: 3
+    coherence: 3
+    opening: 3
+    ending: 2
+  notes: |
+    This piece moves from an uncracked factory premise to infrastructure practices and then to an n8n/service-bus prescription; the latter shift is under-bridged and the close does not synthesize the thesis.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | The Factory Is a Systems Problem | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      The editor-supplied title is a bare definite-article equation. It states the thesis but offers no mechanism, tension, or image.
+    suggestion: |
+      Retitle around the concrete systems failure the piece will explain.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | software factories are super real but we need to be realistic. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The first sentence announces a posture and repeats "real" and "realistic" instead of putting the unresolved factory failure on the page.
+    suggestion: |
+      Open with the unsolved factory practice, then let the realism qualification follow.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | software factories are super real but we need to be realistic. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Five balanced contrast turns repeat: "software factories are super real but we need to be realistic."; "it isn't cracked but it's a puzzle that's being solved daily."; "i must stress that factories is not a token or llm problem. it's a systems engineering and corporate culture problem."; "it won't be solved through tokens or how you apply the tokens (but it is a piece of the puzzle) ugh."; and "lots of bad memories here, not great tech impl but the theory / education is generally on point." The construction is the author's rhythm, but five turns make the pattern audible; an editor should cut or structurally vary the passage.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | the best practices right now are to build abstractions/pieces needed which entails solving non-agent topics. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "the best practices", "abstractions/pieces", and "non-agent topics" stack abstractions, then the next sentence supplies a changelog: "sandboxing, monorepo, reproducible builds, ci/cd, identity/secret management, smashing corporate friction in the realm of devex for agents." The nouns are not tied to a failure or mechanism.
+    suggestion: |
+      Replace the inventory with one concrete failure-and-fix example, then name the abstraction it exemplifies.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | almost lights out. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      The isolated, portentous fragment "almost lights out" announces a threshold without saying what is nearly finished, so it reads as a decorative beat.
+    suggestion: |
+      Delete the fragment or attach the claim to the concrete systems list.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | at home, in your homelab, you should be cracking on this problem space in your free time if you want a super fast promotion and red carpet service at your next interview. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "problem space", "super fast promotion", and "red carpet service" turn a concrete homelab invitation into corporate and motivational filler; the following "highest roi you can have right now is learning the entire damn stack, automating it and showing it at your next interview/doing a recorded talk at a meetup." repeats the promise.
+    suggestion: |
+      Keep the concrete invitation to build and demonstrate the stack, and remove the career-payoff language.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | it won''t be solved through tokens or how you apply the tokens (but it is a piece of the puzzle) ugh. | 1'
+    category: cliche
+    disposition: fix
+    note: |
+      "piece of the puzzle" is a stock figure that does not map the mechanism; the parenthetical softens the sharper systems claim while "ugh" already supplies the aside.
+    suggestion: |
+      Cut the parenthetical and state the qualification in concrete systems terms.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | look up anything in the @dotnet space such as mass transit, nservicebus, wcf if you wanna steal ideas for prompting. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      The recommendation names @dotnet, MassTransit, NServiceBus, WCF, and later @temporalio without explaining what kind of systems they are or what design to borrow. A competent engineer outside this niche has to leave the article to parse the argument.
+    suggestion: |
+      Give each named system a short functional gloss tied to the deterministic service-bus boundary.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | look up anything in the @dotnet space such as mass transit, nservicebus, wcf if you wanna steal ideas for prompting. | 1'
+    category: passive
+    disposition: fix
+    note: |
+      The final paragraph stacks three ownerless imperatives: "look up anything in the @dotnet space such as mass transit, nservicebus, wcf if you wanna steal ideas for prompting.", "use it and have a job invoke an agent as a process.", and "don't make the entire service bus non-deterministic." No service owner, job, or team is named, so the prose sounds like an instruction stream rather than an accountable recommendation.
+    suggestion: |
+      Name the actor responsible for each action before issuing the command.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 2
+  notes: |
+    I hear a sharp, unmistakably human systems rant—lowercase, slang, and dry asides intact—but the thesis keeps arriving as repeated contrasts and abstract inventories. Changes are required for the editorial title, the abstraction-heavy middle, and the final paragraph's undefined references and commands.
