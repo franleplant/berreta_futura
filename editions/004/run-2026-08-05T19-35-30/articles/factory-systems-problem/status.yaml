@@ -1,0 +1,68 @@
+piece: factory-systems-problem
+rounds:
+- round: 1
+  words: 376
+  loop_findings: 13
+  all_findings: 20
+- round: 2
+  words: 383
+  loop_findings: 6
+  all_findings: 19
+- round: 3
+  words: 349
+  loop_findings: 5
+  all_findings: 14
+state: rounds_exhausted
+open_findings:
+- lens: mechanics
+  severity: major
+  article: factory-systems-problem
+  locator: '- | At home, in your homelab, you should be cracking on this problem space in your free time if you want a super fast promotion and red carpet service at your next interview/doing a recorded talk at a meetup. | 1'
+  category: grammar
+  disposition: editor_decision
+  note: |
+    "At your next interview/doing a recorded talk" joins unlike grammatical
+    forms and leaves the alternatives malformed. The sentence is retained
+    source text, so the editor chooses the remedy.
+  suggestion: at your next interview or when doing a recorded talk at a meetup
+- lens: mechanics
+  severity: major
+  article: factory-systems-problem
+  locator: '- | It won’t be solved through tokens or how you apply the tokens (but it is a piece of the puzzle), ugh. | 1'
+  category: grammar
+  disposition: editor_decision
+  note: |
+    "Through tokens" and "how you apply the tokens" are not parallel objects
+    of "through". The sentence is retained source text, so the editor chooses
+    the remedy.
+  suggestion: It won’t be solved through tokens or through how you apply them (but that is a piece of the puzzle), ugh.
+- lens: shape
+  severity: major
+  article: factory-systems-problem
+  locator: '- | Second hot take, as it seems the first hot take landed. | 1'
+  repair_from: '- | Second hot take, as it seems the first hot take landed. | 1'
+  category: orphan_referent
+  disposition: fix
+  note: |
+    "Second hot take" refers to a first hot take that the piece does not contain, making the opening of the final paragraph depend on missing material.
+  suggestion: Remove the ordinal reference or establish the first hot take before this paragraph.
+- lens: shape
+  severity: major
+  article: factory-systems-problem
+  locator: '- | doing a recorded talk at a meetup | 2'
+  repair_from: '- | doing a recorded talk at a meetup | 1'
+  category: duplication
+  disposition: fix
+  note: |
+    The phrase "doing a recorded talk at a meetup" appears twice in adjacent advice, creating a visible stitch and repeating the same incentive.
+  suggestion: Keep the phrase in only one of the two adjacent recommendations.
+- lens: craft
+  severity: major
+  article: factory-systems-problem
+  locator: '- | Sandboxing, monorepo, reproducible builds, CI/CD, identity/secret management, smashing corporate friction in the realm of DevEx for agents. | 1'
+  category: jargon
+  disposition: fix
+  note: |
+    This catalogue assumes several unexplained terms and abbreviations,
+    especially DevEx, so a competent engineer outside this niche cannot
+    follow the proposed stack.

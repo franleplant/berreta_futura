@@ -1,0 +1,99 @@
+piece: eval-engineering
+rounds:
+- round: 1
+  words: 1360
+  loop_findings: 4
+  all_findings: 7
+- round: 2
+  words: 1380
+  loop_findings: 6
+  all_findings: 13
+- round: 3
+  words: 1450
+  loop_findings: 7
+  all_findings: 11
+state: rounds_exhausted
+open_findings:
+- lens: worth
+  severity: major
+  article: eval-engineering
+  locator: '- | Everyone is renting the same brain now. | 1'
+  repair_from: '- | Everyone is renting the same brain now. | 1'
+  category: lost_essential_fact
+  disposition: fix
+  note: |
+    The source frames the entire argument as turning a roughly $200/month model
+    into a $200,000 system. The manuscript keeps the rental metaphor but drops
+    both figures and the economic contrast, so the reader loses the stakes that
+    make eval engineering the subject of the piece.
+  suggestion: Restore the $200 model versus $200,000 system framing in the opening.
+- lens: worth
+  severity: major
+  article: eval-engineering
+  locator: Install the examiner | The category responded by moving into the terminal. | 1
+  repair_from: Install the examiner | The category responded by moving into the terminal. | 1
+  category: lost_operational_detail
+  disposition: fix
+  note: |
+    The source gives the exact Claude Code installation commands:
+    `/plugin marketplace add langchain-ai/langchain-skills` and
+    `/plugin install langchain-skills@langchain-skills`. The manuscript only
+    says to add the marketplace and install the skill, forcing a reader who
+    wants to reproduce the setup back to the source.
+  suggestion: Carry the two exact Claude Code commands into the installation section.
+- lens: worth
+  severity: major
+  article: eval-engineering
+  locator: Install the examiner | AWS's kit scaffolds a project with `evalkit init my-agent-evaluation`, then runs `/evalkit.plan` | 1
+  repair_from: Install the examiner | AWS's kit scaffolds a project with `evalkit init my-agent-evaluation`, then runs `/evalkit.plan` | 1
+  category: lost_operational_detail
+  disposition: fix
+  note: |
+    The source includes the actual `/evalkit.plan` invocation and its instruction
+    to evaluate `./my_agent` for grounding, followed by the phase commands.
+    The manuscript lists the phase names but not the plan's required arguments,
+    so it does not give a reader enough to execute the first phase.
+  suggestion: Include the concrete `/evalkit.plan Evaluate my agent at ./my_agent ...` invocation or an equivalent complete command.
+- lens: worth
+  severity: major
+  article: eval-engineering
+  locator: ''
+  repair_from: '- | Everyone is renting the same brain now. | 1'
+  category: over_compressed
+  disposition: fix
+  note: |
+    The synthesis remains valuable and is not source-shaped, but the combination
+    of the missing economic frame and the missing executable installation and
+    planning commands cuts away utility the source explicitly promises as a
+    complete build. Restoring those two pieces would bring the condensation back
+    above the bone.
+  suggestion: Restore the economic stakes and the two concrete command details before publication.
+- lens: evidence
+  severity: major
+  article: eval-engineering
+  locator: '- | A company that changed no model, prompts, or human nudges across successive versions of its agent still saw scores improve across every dimension. | 1'
+  repair_from: '- | A company that changed no model, prompts, or human nudges across successive versions of its agent still saw scores improve across every dimension. | 1'
+  category: invented_claim
+  disposition: fix
+  note: |
+    The source says that scores "moved across every dimension" after only the evals changed. It does not say that every score improved; the manuscript strengthens movement into improvement.
+- lens: shape
+  severity: major
+  article: eval-engineering
+  locator: Install the examiner around the case | A new platform is optional. | 1
+  repair_from: Make the score change the run | Optimize against a judge long enough and the agent learns to look right rather than be right. | 1
+  category: missing_transition
+  disposition: fix
+  note: |
+    The piece moves from judge design and evaluator gaming directly into a catalogue of platforms and installation commands. The reader is not told why tooling follows, or how these tools operationalize the examiner just defined.
+  suggestion: Add a bridge explaining that, once the judge and routing rules are specified, the next decision is how to install that examiner against real production cases.
+- lens: shape
+  severity: major
+  article: eval-engineering
+  locator: The evals that repay the afternoon | Install one skill, pull 25 traces, and build one eval today. | 1
+  repair_from: 'Turn failures into permanent tests | A useful first set contains 25 complete traces with good and bad behavior beside each other: a normal request, a user-confirmed success, a correction or rephrasing, a failed or repeated tool call, and an external failure such as a timeout or rate limit. | 1'
+  category: duplication
+  disposition: fix
+  note: |
+    The prescribed number of traces appears in the testing section and again in the closing call to action. The second occurrence repeats an earlier concrete instruction without adding structure.
+  suggestion: Keep the detailed 25-trace prescription in the testing section and make the closing call to action refer to starting from production traces without repeating the number.

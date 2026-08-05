@@ -1,0 +1,214 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The GPT-2 top-level and block pseudocode, including LayerNorm, residual additions, and the lm_head call
+    reader_loses: Cannot see the exact computation graph or reproduce the baseline implementation from this article alone.
+    verdict: defensible
+  - fact: 'The explicit causal-attention implementation: q/k/v reshaping, masking, softmax, and output projection'
+    reader_loses: Loses the concrete worked example that makes decoder self-attention operational.
+    verdict: defensible
+  - fact: The vocabulary size is 50,304, padded from GPT-2's 50,257
+    reader_loses: Only a minor implementation-level distinction; the approximate vocabulary scale remains.
+    verdict: defensible
+  - fact: The KV-cache pseudocode, including concatenating past keys and values along the sequence dimension
+    reader_loses: Cannot implement the cache directly without consulting the source.
+    verdict: defensible
+  - fact: Each decode step performs two N-dimensional reads and two one-dimensional writes to HBM
+    reader_loses: Loses a concrete explanation of why the cache becomes memory-bandwidth bound.
+    verdict: defensible
+  - fact: The linear-attention cache consists of S and z, with ELU+1 applied separately to q and k
+    reader_loses: The mechanism remains described conceptually, but the exact state update and normalization are not reproducible.
+    verdict: defensible
+  - fact: The source's worked example showing readback as (k kᵀ)v and the role of key normalization
+    reader_loses: Loses the clearest demonstration of why associative replacement works.
+    verdict: defensible
+  - fact: The quoted overcapacity argument that finite memory must learn which key-value associations to keep or delete
+    reader_loses: The manuscript preserves the conclusion but not the source's explicit formulation of the problem.
+    verdict: defensible
+  - fact: The generalized Householder transition-matrix description of DeltaNet
+    reader_loses: Loses a technical characterization of the recurrence being parallelized.
+    verdict: defensible
+  - fact: The chunk-complexity expression 2Ld² + 2LCd and the explanation that C=1 is cheapest in FLOPs but not always fastest on hardware
+    reader_loses: The trade-off is stated qualitatively, but the reader cannot quantify how chunk size changes work.
+    verdict: defensible
+  - fact: The reparameterized Delta update S_t = S_(t-1)(I − beta_t k_t k_tᵀ) + beta_t v_t k_tᵀ
+    reader_loses: Cannot connect the sequential delta correction to the chunk-parallel formulation mathematically.
+    verdict: defensible
+  - fact: The cumulative-decay product explaining how gated DeltaNet attenuates an association over later timesteps
+    reader_loses: The forgetting mechanism is understandable, but its time-compositional behavior is omitted.
+    verdict: defensible
+  - fact: The Kimi Linear code-level per-channel alpha reshape and the query-LoRA/output-gating details
+    reader_loses: Cannot reproduce the fine-grained gating or distinguish the remaining implementation changes.
+    verdict: defensible
+  - fact: The SiTU activation pseudocode and its beta and linear_beta parameters
+    reader_loses: Learns that SiTU is slower and why compression helps, but not how the activation is computed.
+    verdict: defensible
+  - fact: The AttnRes equations, query-key weighting procedure, and block_attn_res pseudocode
+    reader_loses: Understands selective depth retrieval conceptually but cannot implement or inspect the weighting scheme.
+    verdict: defensible
+  - fact: The reported 1.25x compute advantage attributed to AttnRes
+    reader_loses: Loses a quantitative benefit claimed by the source.
+    verdict: defensible
+  - fact: The source's social-post reactions and view/engagement counts
+    reader_loses: Nothing needed to understand the architecture or argument.
+    verdict: defensible
+  retentions:
+  - passage: Twenty-two thousand five hundred and eighty GPT-2 models fit inside KimiK3.
+    costs: A short opening comparison that gives scale and frames the article's central question.
+    verdict: earns_place
+  - passage: GPT-2 is a decoder-only transformer.
+    costs: The baseline architectural grounding needed to make the later storage changes intelligible.
+    verdict: earns_place
+  - passage: The original architecture has an obvious inference inefficiency.
+    costs: Explains why the KV cache exists before introducing alternatives.
+    verdict: earns_place
+  - passage: The linear-attention paper's O(N²) framing threw me off.
+    costs: A compact historical and technical caveat that prevents an overly simple complexity claim.
+    verdict: earns_place
+  - passage: A finite state must eventually combine or overwrite information.
+    costs: The causal bridge from constant memory to DeltaNet's selective replacement.
+    verdict: earns_place
+  - passage: That repair introduces a different limit.
+    costs: Preserves the prefill-parallelization problem and the chunk-size trade-off rather than presenting DeltaNet as a free improvement.
+    verdict: earns_place
+  - passage: The gated Delta rule adds the missing general forgetting mechanism.
+    costs: Explains the distinct role of decay versus selective replacement.
+    verdict: earns_place
+  - passage: Kimi Linear also interleaves Multi-head Latent Attention layers and replaces the ordinary MLP with a Mixture-of-Experts layer.
+    costs: Connects each added component to a functional capacity problem.
+    verdict: earns_place
+  - passage: The model also adds Gated MLA and Attention Residuals.
+    costs: Covers the remaining architectural changes and their purpose.
+    verdict: earns_place
+  - passage: The progression from GPT-2 to KimiK3 is therefore a progression through storage limits.
+    costs: Provides the article's own organizing thesis rather than merely repeating the source's section sequence.
+    verdict: earns_place
+  - passage: A fixed-capacity associative memory eventually needs an eviction policy.
+    costs: A concise concluding synthesis that makes the architectural lineage memorable.
+    verdict: earns_place
+  notes: |
+    The piece gives readers a coherent storage-limit narrative linking GPT-2's KV cache, linear attention, DeltaNet, gated memory, MLA, MoE, and AttnRes—an architectural progression the source's long worklog presents more diffusely. The omissions are chiefly code, equations, and implementation-level demonstrations; they reduce the article's value as a programming reference but do not cut the conceptual substance needed to understand why each generation changed.
+evidence:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: – | A KV cache preserves exact token history but grows with context. | 1
+    repair_from: – | A KV cache preserves exact token history but grows with context. | 1
+    category: invented_claim
+    disposition: fix
+    note: |
+      The source says the KV cache retains key and value vectors for previous tokens. It does not claim that the cache preserves the exact token history; that wording overstates what is stored.
+  scores:
+    claim_support: 4
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every title and body assertion against the supplied extraction; I could not check any external material because none was provided or permitted.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: '- | It''s not true that "the cost per time-step for transformers scales with the square of the current sequence length." | 1'
+    category: typography
+    disposition: fix
+    note: |
+      The piece uses curly apostrophes elsewhere ("paper’s", "position’s", and
+      "KimiK3’s") but a straight apostrophe in "It's". Use one apostrophe style
+      throughout.
+    suggestion: It’s not true that "the cost per time-step for transformers scales with the square of the current sequence length."
+  scores:
+    grammar: 5
+    typography: 3
+    consistency: 4
+  notes: |
+    One apostrophe-style inconsistency requires correction; sentence grammar,
+    capitalization, punctuation, headings, markup, and number usage are otherwise
+    clean.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: '- | KimiK3 has 2.8 trillion parameters, roughly as many as 22,580 GPT-2 models. | 1'
+    repair_from: '- | Twenty-two thousand five hundred and eighty GPT-2 models fit inside KimiK3. | 1'
+    category: duplication
+    disposition: fix
+    note: |
+      The 22,580-model comparison appears in both the opening sentence and the
+      second paragraph: "Twenty-two thousand five hundred and eighty GPT-2
+      models fit inside KimiK3." and "KimiK3 has 2.8 trillion parameters,
+      roughly as many as 22,580 GPT-2 models." The second occurrence repeats
+      the opening's central number without advancing the argument.
+    suggestion: Keep the opening comparison and remove the repeated 22,580-model comparison from the second paragraph.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 5
+    ending: 5
+  notes: |
+    I verified that the piece moves coherently from GPT-2's growing storage
+    limits through linear attention, DeltaNet, gating, MLA, MoE, and AttnRes to
+    its concluding eviction-policy frame, with one repeated numerical comparison
+    requiring removal.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: From GPT-2 to KimiK3 | The progression from GPT-2 to KimiK3 is therefore a progression through storage limits. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This balanced abstraction restates the preceding account instead of naming
+      the concrete architectural tradeoffs it has just established.
+    suggestion: |
+      Replace the abstract “progression through storage limits” formulation with
+      a direct statement about how each mechanism changes memory, retrieval, or
+      capacity.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: From GPT-2 to KimiK3 | The experts operate in compressed space, which nearly halves their forward-pass FLOPs and offsets some of the cost of the new SiTU activation. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      “SiTU” is introduced as a technical name without explanation, leaving an
+      engineer outside this subfield unable to understand what the activation
+      does or why it costs more.
+    suggestion: |
+      Give SiTU a brief functional gloss at first mention, or explain the
+      relevant computational property instead of leaving the acronym unexplained.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: From GPT-2 to KimiK3 | KimiK3’s backbone contains 23 four-layer macrocycles. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      “Macrocycles” is a specialized architectural term that the piece uses
+      without defining, so the reader must infer what the four-layer grouping is.
+    suggestion: |
+      Define “macrocycle” in place as a repeated four-layer block before using
+      it to count the backbone.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: From GPT-2 to KimiK3 | Scaling laws still matter, but capacity has to arrive in a form the system can use. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      “Still matter” and “a form the system can use” are vague abstractions at
+      the close, weakening an otherwise concrete argument about storage and
+      retrieval.
+    suggestion: |
+      Tie the closing claim explicitly to the selection, routing, decay, and
+      retrieval mechanisms described in the preceding paragraph.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    I heard a technically fluent, occasionally personal explanatory voice, with
+    the main losses coming from a few abstract summary sentences and undefined
+    architectural terms.

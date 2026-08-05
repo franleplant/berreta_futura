@@ -1,0 +1,161 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: mcp-protocol-update
+    locator: '- | Protocol version, client information, and capabilities travel in `_meta` on each request | 1'
+    repair_from: '- | For implementers, the first decision is transport: the 2026-07-28 release candidate removes MCP''s protocol-level session | 1'
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The source's concrete 2026 wire example requires the `MCP-Protocol-Version` header alongside `Mcp-Method` and `Mcp-Name`, with the request sent to `/mcp`. The manuscript names only the latter two headers and says the protocol version travels in `_meta`, leaving an implementer without the complete request contract and potentially implying that the required version header is unnecessary.
+    suggestion: Include the complete required header set and clarify how the version header relates to the per-request `_meta` fields.
+  omissions:
+  - fact: 'The 2026 request wire format: `POST /mcp`, `Content-Type: application/json`, `MCP-Protocol-Version: 2026-07-28`, `Mcp-Method`, and `Mcp-Name`'
+    reader_loses: Cannot configure or verify a conforming stateless HTTP request from the synthesis alone.
+    verdict: needed
+  - fact: The legacy `initialize`/`initialized` exchange's full JSON request and the example `Mcp-Session-Id` UUID
+    reader_loses: No concrete before-and-after request pair for planning migration, but the prose still explains the old handshake and session.
+    verdict: defensible
+  - fact: The six SEP references and the December transport-plan provenance
+    reader_loses: Cannot jump directly to the individual proposals or historical rationale, but the behavior changes themselves remain clear.
+    verdict: defensible
+  - fact: 'The worked `create_basket()` → `{basket_id: "b_123"}` → `add_item(basket_id: "b_123")` exchange'
+    reader_loses: The explicit-handle pattern is less immediately concrete, though `basket_id` and `browser_id` are named.
+    verdict: defensible
+  - fact: The `Cache-Control` model and the statement that SSE is no longer the only way to learn that a list changed
+    reader_loses: Less guidance on how to interpret `ttlMs` and `cacheScope`, but their purpose is stated.
+    verdict: defensible
+  - fact: The `ext-*` repository naming convention and independent extension versioning
+    reader_loses: Less repository and release-management detail for extension maintainers.
+    verdict: defensible
+  - fact: Tools declare MCP Apps UI templates ahead of time so hosts can prefetch, cache, and security-review them before execution
+    reader_loses: The host-side review workflow is slightly less explicit, though prefetching, caching, and review are retained.
+    verdict: defensible
+  - fact: The `iss`-omission future-version rejection warning and its mix-up-attack rationale
+    reader_loses: Less urgency and security context, but the current validation requirement remains.
+    verdict: defensible
+  - fact: The `$defs` keyword alongside the listed JSON Schema composition features
+    reader_loses: One schema vocabulary detail, without changing the stated support for references.
+    verdict: defensible
+  - fact: The conformance-suite requirement's SEP number and the explicit statement that the SDK tier system scores official SDKs against that same suite
+    reader_loses: Cannot locate the governing proposal as quickly, but the policy consequence is retained.
+    verdict: defensible
+  - fact: Instructions to consult the changelog, open specification-repository issues, and use the contributor Discord Working Group channel
+    reader_loses: No direct support route for implementation questions.
+    verdict: defensible
+  omissions_summary:
+    verdict: over_compressed
+    severity: major
+    note: The missing required version-header/request shape is the restoration that matters; adding it near the opening transport decision would restore operational completeness without materially enlarging the piece.
+  retentions:
+  - passage: 'For implementers, the first decision is transport:'
+    costs: Opening framing and the explicit migration order consume space, but they give the synthesis its implementation-oriented position.
+    verdict: earns_place
+  - passage: In practice, we've found this pattern
+    costs: The maintainers' judgment about explicit handles takes several sentences, but it explains why the design is more than a compatibility workaround.
+    verdict: earns_place
+  - passage: Those transport changes also make traffic easier to operate.
+    costs: The cache and tracing paragraph could be shortened, but it covers two distinct operational consequences that implementers need.
+    verdict: earns_place
+  - passage: Once the transport is updated, the next migration choices are extensions and lifecycle.
+    costs: The transition sentence spends little space and supplies a useful migration structure.
+    verdict: earns_place
+  - passage: The release is a deliberate break, with machinery intended to make the next one less disruptive.
+    costs: The governance synthesis repeats some policy details, but it connects the changes to a forward-looking rationale.
+    verdict: earns_place
+  - passage: Implementers targeting 2026-07-28 should use the window first
+    costs: The closing recommendation occupies a short paragraph, but converts the source's timeline into an actionable sequence.
+    verdict: earns_place
+  retentions_summary:
+    verdict: section_pays
+    severity: none
+    note: The retained passages provide framing, interpretation, operational consequences, or an implementation sequence; none is inert enough to cut before restoring the missing wire-format detail.
+  notes: |
+    Changes required because the synthesis gives implementers a clear transport-first migration plan and the release's major behavioral changes, but omits a required header from the concrete stateless request contract.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: '- | The transport work comes first because it changes where every request may land; the other changes can then be adopted around it. | 1'
+    repair_from: '- | The transport work comes first because it changes where every request may land; the other changes can then be adopted around it. | 1'
+    category: invented_claim
+    disposition: fix
+    note: |
+      The extraction describes the transport changes and their effects but does not prescribe transport work as the first migration step or claim that other changes should follow it.
+  - severity: major
+    article: mcp-protocol-update
+    locator: Release Timeline and Validation | Implementers targeting 2026-07-28 should use the window first to remove session assumptions, then test the new lifecycle and extension paths before the final specification arrives. | 1
+    repair_from: Release Timeline and Validation | Implementers targeting 2026-07-28 should use the window first to remove session assumptions, then test the new lifecycle and extension paths before the final specification arrives. | 1
+    category: invented_claim
+    disposition: fix
+    note: |
+      The extraction says the ten-week window is for validating changes against real workloads and that Tier 1 SDKs are expected to ship support; it does not establish this ordered implementation plan.
+  scores:
+    claim_support: 4
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every factual assertion in the title, headings, body, examples, protocol details, lifecycle claims, deprecations, authorization changes, schema changes, and timeline against the complete extraction; the extraction does not support the two added sequencing recommendations.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: The piece is mechanically clean, with no actionable errors found.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 4
+    opening: 5
+    ending: 4
+  notes: |
+    The piece presents a clear progression from transport changes through lifecycle,
+    authorization, deprecations, schemas, and implementation guidance.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-protocol-update
+    locator: '- | It''s often a more powerful one. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "More powerful" is an unearned generic intensifier; the preceding paragraph
+      already names the concrete advantages of explicit handles.
+    suggestion: |
+      Replace the evaluation with the specific advantage the pattern provides.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: '- | The release is a deliberate break, with machinery intended to make the next one less disruptive. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Deliberate break" and "machinery" stack abstractions without adding
+      information, producing the balanced, portentous register the house rules
+      identify as robotic.
+    suggestion: |
+      State directly which mechanisms make future changes easier to adopt.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: '- | A Standards Track SEP cannot reach Final status until a matching scenario enters the conformance suite. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "SEP" is used as an unexplained protocol-specific acronym, leaving a
+      competent engineer outside this subfield to infer its meaning.
+    suggestion: |
+      Expand SEP at first use or briefly identify what kind of document it is.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 4
+  notes: |-
+    I heard a confident, concrete technical synthesis with a clear human presence,
+    interrupted briefly by a few abstract evaluations and one unexplained acronym.

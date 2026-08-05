@@ -1,0 +1,200 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: In the 2025-11-25 protocol, a client began with an `initialize` handshake. | In the 2025-11-25 protocol, a client began with an `initialize` handshake. | 1
+    repair_from: In the 2025-11-25 protocol, a client began with an `initialize` handshake. | In the 2025-11-25 protocol, a client began with an `initialize` handshake. | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source gives the concrete POST /mcp requests, JSON-RPC bodies, Mcp-Session-Id header, and the stateless 2026-07-28 replacement request. The manuscript names the headers and methods but omits the exchanges a reader would need when migrating an implementation.
+    suggestion: Retain one compact before-and-after request pair, including the endpoint, headers, and representative JSON body.
+  - severity: major
+    article: mcp-protocol-update
+    locator: Removing protocol state does not remove application state. | A server can mint an explicit handle, such as a `basket_id` or `browser_id`, and have the model pass it back as an ordinary argument on later calls. | 1
+    repair_from: Removing protocol state does not remove application state. | A server can mint an explicit handle, such as a `basket_id` or `browser_id`, and have the model pass it back as an ordinary argument on later calls. | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source's create_basket() then add_item(basket_id: "b_123", sku: …) worked example shows exactly how state is threaded across calls. Without it, the pattern is understandable but less useful as an implementation reference.
+    suggestion: Include the two-call basket example or an equivalent compact pair of tool calls.
+  - severity: major
+    article: mcp-protocol-update
+    locator: Tasks move out of the core and become an extension. | Tasks move out of the core and become an extension. | 1
+    repair_from: Tasks move out of the core and become an extension. | Tasks move out of the core and become an extension. | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source specifies that the client advertises the Tasks extension before the server decides whether a call becomes a task. The manuscript lists the task methods but omits this prerequisite, leaving an implementer with an incomplete lifecycle.
+    suggestion: State that clients advertise the extension and servers then decide when to return a task handle.
+  - severity: major
+    article: mcp-protocol-update
+    repair_from: The 2026-07-28 release candidate removes MCP’s protocol-level session, so a remote server that needed sticky sessions and a shared session store can run behind a plain round-robin load balancer. | The 2026-07-28 release candidate removes MCP’s protocol-level session, so a remote server that needed sticky sessions and a shared session store can run behind a plain round-robin load balancer. | 1
+    category: source_shaped
+    disposition: fix
+    note: |
+      The manuscript follows the source's subject sequence almost exactly: stateless transport, explicit application handles, elicitation, routing and caching, extensions, Tasks, authorization, deprecations, schemas, governance, and timeline. That is acceptable for a faithful edit, but this is labeled faithful_synthesis and supplies no reordering or other structural editorial work.
+    suggestion: Reorganize around implementer decisions or migration tasks, or explain a distinct ordering that serves the reader.
+  omissions:
+  - fact: The six SEPs that jointly deliver the stateless core and the December 'Future of MCP Transports' plan
+    reader_loses: A useful map of which proposals make up the headline transport change, but not the substance of the change itself.
+    verdict: defensible
+  - fact: The concrete 2025-11-25 POST /mcp initialize request and its JSON-RPC body
+    reader_loses: The exact legacy handshake shape needed to identify and replace old client code.
+    verdict: needed
+  - fact: The concrete legacy tools/call request carrying a UUID-valued Mcp-Session-Id
+    reader_loses: A precise picture of the stateful request clients must stop sending.
+    verdict: needed
+  - fact: The concrete 2026-07-28 self-contained POST /mcp tools/call request body
+    reader_loses: The exact combination of MCP-Protocol-Version, Mcp-Method, Mcp-Name, and _meta in the replacement request.
+    verdict: needed
+  - fact: 'The create_basket() then add_item(basket_id: "b_123", sku: …) worked example'
+    reader_loses: A directly reusable demonstration of threading explicit state between calls.
+    verdict: needed
+  - fact: The statement that two SEPs rebuild server-to-client requests without a persistent connection
+    reader_loses: Proposal-level attribution, but the resulting InputRequiredResult flow remains described.
+    verdict: defensible
+  - fact: The exact explanation that several SDKs and tools already propagated W3C trace keys before standardization
+    reader_loses: Historical context, not the operational traceparent/tracestate/baggage names or their purpose.
+    verdict: defensible
+  - fact: The ext-* repository naming convention for extensions
+    reader_loses: A repository-naming detail, while reverse-DNS identifiers, negotiation, delegated maintainers, and independent versioning remain.
+    verdict: defensible
+  - fact: The requirement that a client advertise the Tasks extension before task creation
+    reader_loses: A prerequisite for implementing the new Tasks lifecycle correctly.
+    verdict: needed
+  - fact: RFC 9207 attribution and the future expectation that clients reject authorization responses omitting iss
+    reader_loses: The security rationale and forward-looking migration warning; the current iss validation requirement remains.
+    verdict: defensible
+  - fact: The exact SEP identifiers attached to authorization, deprecation, schema, and error-code changes
+    reader_loses: Convenient lookup references, but the substantive requirements and replacements are present.
+    verdict: defensible
+  - fact: The source's instructions to consult the draft specification, open repository issues, and use the contributor Discord Working Group channel
+    reader_loses: Support and feedback routes for implementers, not protocol behavior.
+    verdict: defensible
+  - fact: The closing thanks to working groups and reviewers
+    reader_loses: Acknowledgment only.
+    verdict: defensible
+  retentions:
+  - passage: The candidate is the largest revision since MCP launched, and it contains breaking changes.
+    costs: A framing sentence that repeats the later breaking-change warning; the space could carry part of the omitted before-and-after request pair.
+    verdict: cut
+  - passage: In practice, we’ve found this pattern (the model threading an identifier from one tool call to the next) to be more than just a workable substitute for session state.
+    costs: Several sentences, but they state the maintainers' own judgment that explicit handles are more composable and visible to models; cutting them would remove the piece's clearest interpretive position.
+    verdict: earns_place
+  - passage: A response can look like `{"resultType":"input_required"...
+    costs: A full operational exchange, but it makes the stateless elicitation retry concrete and earns its space.
+    verdict: earns_place
+  - passage: The release is a deliberate break, with machinery intended to make the next one less disruptive.
+    costs: A governance synthesis that repeats some earlier feature-lifecycle material, but it connects the individual changes to an editorial conclusion about future compatibility.
+    verdict: earns_place
+  notes: |
+    Changes required because the synthesis is useful but drops the concrete migration requests, the explicit-handle worked example, and the Tasks advertisement prerequisite, while also retaining the source's section sequence without enough structural editorial shaping.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every assertion in the title and manuscript against the pinned extraction; I could not identify any uncheckable claim.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    The synthesis is mechanically clean, with consistent capitalization, grammar, punctuation, typography, and form.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: '- | Extensions now have reverse-DNS identifiers, negotiation in the capabilities map, delegated maintainers, their own repositories, and a path from experimental to official. | 1'
+    repair_from: '- | Those transport changes also make traffic easier to operate. | 1'
+    category: missing_transition
+    disposition: fix
+    note: |
+      The piece moves from transport operations into extensions, then into tasks,
+      authorization, deprecations, and schemas as an unmarked feature catalogue.
+      The central stateless-session argument becomes difficult to track once this
+      sequence begins.
+    suggestion: Add a clear signpost that the piece is leaving the core transport changes and surveying the remaining specification updates.
+  scores:
+    order: 4
+    coherence: 3
+    opening: 5
+    ending: 4
+  notes: |
+    This review verified that the piece opens with the session-removal argument,
+    develops its operational consequences, and ends with the release timeline;
+    changes are required because the later feature catalogue lacks a clear
+    structural transition from that argument.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-protocol-update
+    locator: '- | The candidate is the largest revision since MCP launched, and it contains breaking changes. | 1'
+    category: ai_phrasing
+    disposition: fix
+    note: |
+      "Largest revision since MCP launched" is a significance claim the prose does not establish; it sounds like release-note emphasis rather than observed description.
+    suggestion: |
+      Replace the superlative with the specific scope of the breaking changes.
+  - severity: major
+    article: mcp-protocol-update
+    locator: '- | Extensions now have reverse-DNS identifiers, negotiation in the capabilities map, delegated maintainers, their own repositories, and a path from experimental to official. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This is an abstraction stack and inventory: several institutional properties arrive in one balanced list without showing what any of them changes for a reader.
+    suggestion: |
+      Cut the list to the extension changes that alter implementation or governance, and connect each to its consequence.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: '- | Extensions now have reverse-DNS identifiers, negotiation in the capabilities map, delegated maintainers, their own repositories, and a path from experimental to official. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "Reverse-DNS identifiers" is unexplained jargon for engineers outside this protocol community.
+    suggestion: |
+      Add a short parenthetical defining reverse-DNS identifiers as names derived from an organization's domain.
+  - severity: major
+    article: mcp-protocol-update
+    locator: '- | Three older features are deprecated: Roots moves to tool parameters, resource URIs, or server configuration; Sampling moves to direct LLM-provider integration; and Logging moves to `stderr` for stdio transports or OpenTelemetry for structured observability. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      The sentence is a changelog with no reader in the room: three feature migrations, separated by semicolons, ask the reader to decode a policy inventory rather than follow an argument.
+    suggestion: |
+      Split the sentence and state the practical migration consequence for each deprecated feature.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: '- | A Standards Track SEP cannot reach Final status until a matching scenario enters the conformance suite. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "SEP" and "Standards Track" are protocol-governance terms the piece never defines.
+    suggestion: |
+      Expand SEP on first use and briefly explain what the Standards Track status controls.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: '- | The candidate was locked on May 21, 2026; the final specification ships on July 28. | 1'
+    category: passive
+    disposition: fix
+    note: |
+      "Was locked" hides who made the decision; the actor is relevant because the sentence describes the release process.
+    suggestion: |
+      Name the group that locked the candidate, or recast the sentence around the decision date.
+  scores:
+    voice: 3
+    sentence_variety: 4
+    economy: 3
+  notes: |
+    I heard a technically confident synthesis that becomes release-note inventory in its extension and deprecation passages, with a few undefined governance terms and one unsupported superlative.

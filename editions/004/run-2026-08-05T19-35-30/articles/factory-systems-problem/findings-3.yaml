@@ -1,0 +1,188 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The statement that the factory is an unsolved puzzle being solved daily
+    reader_loses: The ongoing-progress qualification softens the otherwise blunt claim that the work has not been cracked.
+    verdict: defensible
+  - fact: The closing phrase 'blog post time'
+    reader_loses: Nothing substantive; it is a casual transition.
+    verdict: defensible
+  - fact: The caveat that WCF has bad memories and is not great technology, though its theory and educational value are useful
+    reader_loses: A qualification about the WCF recommendation, but not one needed to understand the service-bus argument.
+    verdict: defensible
+  retentions:
+  - passage: Software factories are super real but we need to be realistic.
+    costs: A brief framing sentence, but it establishes the piece's governing caution.
+    verdict: earns_place
+  - passage: Second hot take, as it seems the first hot take landed.
+    costs: A short transition preserving the relationship between the collected posts; it costs little and orients the reader.
+    verdict: earns_place
+  - passage: At home, in your homelab, you should be cracking on this problem space
+    costs: Advice that could be omitted without weakening the thesis, but it turns the argument into a concrete career and practice recommendation.
+    verdict: earns_place
+  notes: |
+    The piece gives the reader one searchable, continuous account that combines three scattered and likely ephemeral posts into a single argument about factory reliability, systems engineering, and deterministic service buses. Its faithful-edit mode is justified because it collects those separate posts while retaining the operational names and recommendations a reader may need.
+evidence:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Look up anything in the @dotnet space such as MassTransit, NServiceBus, WCF if you wanna steal ideas for prompting. | 1'
+    repair_from: '- | Look up anything in the @dotnet space such as MassTransit, NServiceBus, WCF if you wanna steal ideas for prompting. | 1'
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source qualifies WCF: its implementation is described as not great, while its theory and educational value are generally on point. The manuscript recommends looking up WCF without carrying that limitation, making the recommendation broader than the source.
+  scores:
+    claim_support: 4
+    qualification_survival: 3
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked every sentence, title, and attribution against the three pinned extractions; there was no additional furniture or external sourcing in this piece to check.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Software factories are super real but we need to be realistic. | 1'
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      Two independent clauses are joined without the expected comma before "but".
+      The sentence is retained source text, so the editor chooses the remedy.
+    suggestion: Software factories are super real, but we need to be realistic.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | At home, in your homelab, you should be cracking on this problem space in your free time if you want a super fast promotion and red carpet service at your next interview/doing a recorded talk at a meetup. | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      "At your next interview/doing a recorded talk" joins unlike grammatical
+      forms and leaves the alternatives malformed. The sentence is retained
+      source text, so the editor chooses the remedy.
+    suggestion: at your next interview or when doing a recorded talk at a meetup
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | It won’t be solved through tokens or how you apply the tokens (but it is a piece of the puzzle), ugh. | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      "Through tokens" and "how you apply the tokens" are not parallel objects
+      of "through". The sentence is retained source text, so the editor chooses
+      the remedy.
+    suggestion: It won’t be solved through tokens or through how you apply them (but that is a piece of the puzzle), ugh.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Look up anything in the @dotnet space such as MassTransit, NServiceBus, WCF if you wanna steal ideas for prompting. | 1'
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      A comma is needed after the final item in the "such as" list to separate
+      it from the following conditional clause. The sentence is retained source
+      text, so the editor chooses the remedy.
+    suggestion: Look up anything in the @dotnet space such as MassTransit, NServiceBus, WCF, if you wanna steal ideas for prompting.
+  scores:
+    grammar: 3
+    typography: 4
+    consistency: 4
+  notes: |
+    Changes required because three retained sentences contain punctuation or
+    parallelism defects; the lowercase product and technical terms are used
+    consistently, and the rhetorical fragments read as an established convention.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Second hot take, as it seems the first hot take landed. | 1'
+    repair_from: '- | Second hot take, as it seems the first hot take landed. | 1'
+    category: orphan_referent
+    disposition: fix
+    note: |
+      "Second hot take" refers to a first hot take that the piece does not contain, making the opening of the final paragraph depend on missing material.
+    suggestion: Remove the ordinal reference or establish the first hot take before this paragraph.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | doing a recorded talk at a meetup | 2'
+    repair_from: '- | doing a recorded talk at a meetup | 1'
+    category: duplication
+    disposition: fix
+    note: |
+      The phrase "doing a recorded talk at a meetup" appears twice in adjacent advice, creating a visible stitch and repeating the same incentive.
+    suggestion: Keep the phrase in only one of the two adjacent recommendations.
+  scores:
+    order: 4
+    coherence: 3
+    opening: 3
+    ending: 4
+  notes: |
+    This review verifies a clear progression from the factory problem to its systems thesis and then to a service-bus recommendation, with an orphaned ordinal reference and a duplicated phrase disrupting the arrangement.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Almost lights out. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This portentous fragment stops the argument without adding a concrete
+      idea; it sounds like a slogan rather than a person clarifying the system.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Highest ROI you can have right now is learning the entire damn stack, automating it and showing it at your next interview/doing a recorded talk at a meetup. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Highest ROI" imports corporate language, while the repeated interview/
+      recorded-talk ending makes the advice feel padded and promotional.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | I must stress that factories are not a token or LLM problem. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "I must stress" is throat-clearing; the sentence can begin with the
+      claim itself.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | It won’t be solved through tokens or how you apply the tokens (but it is a piece of the puzzle), ugh. | 1'
+    category: passive
+    disposition: fix
+    note: |
+      The passive construction leaves the responsible actors unnamed in a
+      sentence about what must change.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Sandboxing, monorepo, reproducible builds, CI/CD, identity/secret management, smashing corporate friction in the realm of DevEx for agents. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      This catalogue assumes several unexplained terms and abbreviations,
+      especially DevEx, so a competent engineer outside this niche cannot
+      follow the proposed stack.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Look up anything in the @dotnet space such as MassTransit, NServiceBus, WCF if you wanna steal ideas for prompting. | 1'
+    category: passive
+    disposition: fix
+    note: |
+      The imperative has no named actor and reads as an ownerless instruction
+      rather than a sentence grounded in who should perform the research.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Use it and have a job invoke an agent as a process. | 1'
+    category: passive
+    disposition: fix
+    note: |
+      This ownerless imperative gives the reader an instruction without naming
+      who owns the job or the integration.
+  scores:
+    voice: 4
+    sentence_variety: 3
+    economy: 2
+  notes: |
+    I heard a forceful, recognizably personal argument whose voice fades when
+    compressed into jargon lists, slogans, and instructions with no actor named.

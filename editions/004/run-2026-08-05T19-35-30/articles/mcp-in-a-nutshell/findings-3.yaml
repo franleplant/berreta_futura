@@ -1,0 +1,183 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The primitives carry context and action | Each primitive type has a discovery method in the `*/list` family. | 1
+    repair_from: The primitives carry context and action | Suppose the local database server connected to Visual Studio Code exposes a query tool, a resource containing the database schema, and a prompt with examples of using that tool. | 1
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The manuscript names the broad primitives and methods, but omits the concrete discovery contract: tools/list response fields (name, title, description, inputSchema), pagination via cursor, and the ttlMs/cacheScope caching fields. A reader understands that discovery exists but cannot implement or correctly cache it without returning to the source.
+    suggestion: Carry the key tools/list response fields and cursor/caching behavior into the explanation.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The primitives carry context and action | A tool request has the ordinary JSON-RPC shape. | 1
+    repair_from: The primitives carry context and action | A tool request has the ordinary JSON-RPC shape. | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source's worked exchanges and pseudo-code show the exact server/discover, tools/list, tools/call, and notification-refresh sequence, including request IDs, the weather_current identifier, required versus optional arguments, and the content response shape. The manuscript keeps method names and a small argument example but drops the details a reader would type or map into an implementation.
+    suggestion: Retain one compact JSON exchange or pseudo-code fragment, especially the tool name/inputSchema and response fields.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The protocol also supports opt-in notifications for dynamic updates. | 1
+    repair_from: The protocol also supports opt-in notifications for dynamic updates. | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The manuscript omits the notification mechanics that make the example actionable: the acknowledgement's subscription ID, the fact that notifications carry that ID for correlation, the absence of a JSON-RPC response id, and the refresh request that follows a change. Without these, a reader cannot reproduce the subscription reliably.
+    suggestion: Add the acknowledgement/correlation details and the tools/list refresh step.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Visual Studio Code can connect to a local database server and a remote Sentry server, then present both through one conversation. | 1
+    repair_from: Visual Studio Code can connect to a local database server and a remote Sentry server, then present both through one conversation. | 1
+    category: no_position
+    disposition: fix
+    note: |
+      The piece is an accessible paraphrase and reordering of the overview, but it makes no editorial claim about what matters most or what the reader should understand beyond the protocol's component list. Add a clear thesis that MCP's essential design is per-server isolation combined with a shared, transport-independent data layer.
+    suggestion: State the piece's governing takeaway in the opening paragraph and use it to justify the order.
+  omissions:
+  - fact: 'The overview''s scope list: the MCP Specification, SDKs, development tools such as MCP Inspector, and reference server implementations'
+    reader_loses: They do not learn what the MCP project encompasses beyond the wire protocol.
+    verdict: defensible
+  - fact: The explicit definitions of MCP Host, MCP Client, and MCP Server, including that a server is the context-providing program regardless of where it runs
+    reader_loses: The roles are understandable from context, but the vocabulary is less precise for readers using the specification.
+    verdict: defensible
+  - fact: Streamable HTTP's optional Server-Sent Events and STDIO's no-network-overhead performance characteristic
+    reader_loses: They miss two transport trade-offs that are useful when choosing a deployment.
+    verdict: defensible
+  - fact: The exact _meta keys io.modelcontextprotocol/protocolVersion, io.modelcontextprotocol/clientInfo, and io.modelcontextprotocol/clientCapabilities
+    reader_loses: A reader cannot construct the per-request envelope without looking up the field names.
+    verdict: needed
+  - fact: UnsupportedProtocolVersionError and the supportedVersions negotiation/retry behavior
+    reader_loses: They know versions are exchanged but not how an incompatible request is recovered.
+    verdict: needed
+  - fact: The tools/list response fields name, title, description, and inputSchema
+    reader_loses: They cannot tell what metadata the model receives or how inputs are validated.
+    verdict: needed
+  - fact: The optional cursor parameter for paginated tools/list responses
+    reader_loses: They may assume one listing is complete and fail with a server exposing many tools.
+    verdict: needed
+  - fact: The resultType, ttlMs freshness hint, and cacheScope fields on a tool listing
+    reader_loses: They lose the protocol's concrete caching controls and freshness semantics.
+    verdict: needed
+  - fact: The worked weather_current tool example, including imperial as optional and metric as the default
+    reader_loses: They have no concrete illustration of exact tool-name matching or defaulted versus required arguments.
+    verdict: needed
+  - fact: The four JSON-RPC exchanges and three pseudo-code examples covering discovery, tool execution, and notification handling
+    reader_loses: The conceptual flow is present, but the implementation path and message sequencing are not.
+    verdict: needed
+  - fact: The notification acknowledgement's rule that the subscription ID is first introduced there and equals the subscriptions/listen request ID
+    reader_loses: They cannot reliably correlate events to the stream that requested them.
+    verdict: needed
+  - fact: 'The source''s four explicit reasons notifications matter: dynamic environments, efficiency, consistency, and real-time collaboration'
+    reader_loses: The benefits are implied but not enumerated.
+    verdict: defensible
+  - fact: Sampling's model-independence rationale and the detailed sampling/createMessage behavior
+    reader_loses: They know the feature is deprecated but not why it existed.
+    verdict: defensible
+  - fact: The source's advice that discovery responses are typically cacheable and need not be fetched for every request
+    reader_loses: They miss a practical optimization for clients.
+    verdict: defensible
+  retentions:
+  - passage: Visual Studio Code can connect to a local database server and a remote Sentry server
+    costs: A short introductory scenario, but it establishes the local/remote and multi-server problem the rest of the piece explains.
+    verdict: earns_place
+  - passage: A local server commonly uses STDIO
+    costs: Transport detail that could have been spent on omitted JSON fields, but it is necessary to distinguish local and remote connections.
+    verdict: earns_place
+  - passage: Suppose the local database server connected to Visual Studio Code exposes a query tool
+    costs: A worked example occupying several sentences; it makes the abstract tools/resources/prompts distinction concrete.
+    verdict: earns_place
+  - passage: Sampling and logging are deprecated as of protocol version `2026-07-28`
+    costs: A current-version caveat that could be shortened, but it prevents readers from treating deprecated primitives as recommended design.
+    verdict: earns_place
+  - passage: Discovery is the convenient single exchange for learning what the server supports.
+    costs: This restates the preceding explanation of optional discovery and could make room for the exact negotiation behavior.
+    verdict: cut
+  - passage: The model's available actions can therefore follow the database server's current capabilities
+    costs: A concluding restatement of the notification flow; the preceding sentences already establish the refresh behavior.
+    verdict: cut
+  notes: |
+    Changes required because the piece gives a useful mental model but drops several implementation-critical field names, message details, and correlation rules, while offering no explicit editorial thesis. The needed omissions make it less useful as a standalone reference, though the overall compression is not excessive and the remaining sections generally earn their space.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Requests carry their own context | The model's available actions can therefore follow the database server's current capabilities, with polling as the backstop when the update stream goes quiet. | 1
+    repair_from: Requests carry their own context | The model's available actions can therefore follow the database server's current capabilities, with polling as the backstop when the update stream goes quiet. | 1
+    category: unreached_conclusion
+    disposition: fix
+    note: |
+      The source concludes that the notification pattern extends beyond tools to other MCP primitives and enables broader real-time synchronization between clients and servers. The manuscript's conclusion narrows the result to the model's available actions and tool capabilities, leaving the source's stated broader conclusion unreached.
+  scores:
+    claim_support: 4
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every assertion against the supplied pinned extraction; I could not check material outside that extraction.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: The piece is mechanically clean, with consistent sentence-case headings, punctuation, typography, grammar, and formatting.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: One host, several dedicated connections | The host can therefore keep its connection to the local database server separate from its connection to remote Sentry while combining what they provide. | 1
+    repair_from: '- | Visual Studio Code can connect to a local database server and a remote Sentry server, then present both through one conversation. | 1'
+    category: duplication
+    disposition: fix
+    note: |
+      The opening and the first section repeat the same Visual Studio Code, local database, and remote Sentry setup. The opening says, "Visual Studio Code can connect to a local database server and a remote Sentry server, then present both through one conversation." The later section says, "The host can therefore keep its connection to the local database server separate from its connection to remote Sentry while combining what they provide."
+    suggestion: Keep the two-server setup in the opening and remove the repeated explanation from the connections section.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 4
+    ending: 4
+  notes: |
+    The piece builds a coherent progression from host connections through primitives to stateless notifications, but repeats its opening two-server example.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The primitives carry context and action | A tool request has the ordinary JSON-RPC shape. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Four consecutive subject-led declarative sentences flatten the paragraph's rhythm:
+      "A tool request has the ordinary JSON-RPC shape."
+      "Its method is `tools/call`; its parameters name the tool and carry arguments such as `"location": "San Francisco"` and `"units": "imperial"`."
+      "The response contains a `content` array that may hold text, images, resources, or other supported forms."
+      "The application adds that result to the conversation."
+      The remedy is editorial: vary or cut one of the sentences.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: The primitives carry context and action | Discovery is the convenient single exchange for learning what the server supports. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Convenient" is an unearned evaluation; the sentence works without it.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: Requests carry their own context | new implementations should call language-model provider APIs directly and send logs to stderr for STDIO or use OpenTelemetry. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "OpenTelemetry" is a specialized term left undefined for readers outside observability and MCP implementation work.
+  scores:
+    voice: 4
+    sentence_variety: 3
+    economy: 4
+  notes: |
+    The piece sounds like a careful engineer explaining a protocol until the tool-request paragraph settles into a repeated, catalog-like cadence.

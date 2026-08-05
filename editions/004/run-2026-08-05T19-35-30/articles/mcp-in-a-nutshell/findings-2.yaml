@@ -1,0 +1,158 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: 'The source''s scope list: the specification, SDKs, development tools such as MCP Inspector, and reference server implementations'
+    reader_loses: A reader does not see the broader project ecosystem surrounding the protocol.
+    verdict: defensible
+  - fact: The source's explicit definitions of MCP host, MCP client, and MCP server as separate participants
+    reader_loses: The roles are understandable from context, but their formal distinctions are less explicit.
+    verdict: defensible
+  - fact: Streamable HTTP uses HTTP POST with optional Server-Sent Events for streaming
+    reader_loses: A reader implementing the remote transport lacks those concrete transport details.
+    verdict: defensible
+  - fact: The complete JSON-RPC discovery, tools/list, tools/call, and subscription request and response envelopes
+    reader_loses: The article teaches the exchange conceptually but is not a copyable protocol reference.
+    verdict: defensible
+  - fact: The optional cursor parameter for paginating tools/list
+    reader_loses: A reader handling a large tool catalog would need to consult the source for pagination.
+    verdict: defensible
+  - fact: Tool-list metadata fields such as name, title, description, inputSchema, resultType, ttlMs, and cacheScope
+    reader_loses: The reader knows tools are discoverable but not the metadata and caching contract used to present them.
+    verdict: defensible
+  - fact: The weather_current example's exact tool identifier and the default of metric when units is omitted
+    reader_loses: The general tool-call pattern remains clear, but these example-specific operational details are unavailable.
+    verdict: defensible
+  - fact: The source's tool-execution pseudo-code that routes a model call to the correct MCP client and adds result.content to the conversation
+    reader_loses: The application integration step is described in prose rather than shown as an implementation pattern.
+    verdict: defensible
+  - fact: Discovery responses are typically cacheable and can be reused without repeating discovery for every request
+    reader_loses: A reader misses a practical optimization for connection setup.
+    verdict: defensible
+  - fact: UnsupportedProtocolVersionError lists supported versions and lets the client retry with a mutually supported version
+    reader_loses: Version negotiation is less actionable than in the source, though the manuscript still explains the fallback concept.
+    verdict: defensible
+  - fact: The server's tools capability must advertise listChanged for tool-change subscriptions to be available
+    reader_loses: A reader may not know the server-side prerequisite for receiving tool notifications.
+    verdict: defensible
+  - fact: The acknowledgement echoes only the supported subset of requested notification filters, and the subscription ID equals the subscriptions/listen request ID
+    reader_loses: The subscription lifecycle is understandable, but its correlation and negotiation rules are not fully specified.
+    verdict: defensible
+  - fact: 'The source''s four explicit reasons notifications matter: dynamic environments, efficiency, consistency, and real-time collaboration'
+    reader_loses: The manuscript conveys freshness and responsiveness without enumerating those distinct benefits.
+    verdict: defensible
+  - fact: The deprecated sampling/createMessage method name and the source's explanation that sampling previously kept servers model-independent
+    reader_loses: Readers learn the feature is deprecated but not its former protocol entry point or rationale.
+    verdict: defensible
+  retentions:
+  - passage: The useful way to read the Model Context Protocol is as a boundary with a vocabulary.
+    costs: A framing paragraph, but it gives the piece its own mental model and position.
+    verdict: earns_place
+  - passage: MCP follows a client-server architecture.
+    costs: Several paragraphs of participant and transport explanation, but they establish the shared vocabulary the issue assumes.
+    verdict: earns_place
+  - passage: The data layer is the useful center of MCP because it defines what can cross the boundary.
+    costs: A section transition and emphasis, but it correctly directs attention to the protocol's load-bearing concepts.
+    verdict: earns_place
+  - passage: Imagine a database server exposing a query tool...
+    costs: A worked example, but it connects tools, resources, prompts, schemas, arguments, and content results in one pass.
+    verdict: earns_place
+  - passage: 'A discovery flow in the Python SDK looks like this:'
+    costs: A short code block, but it preserves the source's only concrete SDK integration example.
+    verdict: earns_place
+  - passage: MCP also supports richer interaction in the other direction.
+    costs: A compact paragraph on elicitation, deprecations, and Tasks, but these are distinct capabilities and caveats.
+    verdict: earns_place
+  - passage: The protocol also supports opt-in notifications for dynamic updates.
+    costs: A substantial closing section, but it explains subscriptions, acknowledgements, refresh, and best-effort delivery as a coherent lifecycle.
+    verdict: earns_place
+  notes: |
+    The piece gives readers a boundary-first mental model and a reorganized explanation linking hosts, transports, primitives, stateless requests, and dynamic updates; the source presents those same materials as a longer reference walkthrough. The omissions are implementation-level examples and protocol-field details, but the manuscript retains the substance needed for an accessible shared-vocabulary explainer. No retained passage is inert, and the piece is not over-compressed.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The primitives carry context and action | Each primitive has discovery and retrieval methods in the `*/list` and `*/get` families | 1
+    repair_from: The primitives carry context and action | Each primitive has discovery and retrieval methods in the `*/list` and `*/get` families | 1
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source says primitive types have discovery methods (`*/list`), retrieval methods (`*/get`) only where applicable, and execution methods in some cases. It specifically identifies `resources/read` as the resource retrieval method and does not establish a retrieval method for every primitive. The manuscript's wording implies that every primitive has retrieval methods in a `*/get` family, while listing `resources/read` as an example.
+  scores:
+    claim_support: 3
+    qualification_survival: 4
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every assertion in the title, headings, body, code block, and inline method examples against the pinned extraction; there were no additional captions, decks, pull quotes, glossaries, or external sources in this piece to check.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    The piece is mechanically clean: sentence openings, grammar, punctuation,
+    typography, headings, markup, and labels are consistent and correctly formed.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The primitives carry context and action | Imagine a database server exposing a query tool, a resource containing the database schema, and a prompt with examples of using that tool. | 1
+    repair_from: '- | The useful way to read the Model Context Protocol is as a boundary with a vocabulary. | 1'
+    category: running_example
+    disposition: fix
+    note: |
+      The piece introduces several unrelated examples—a VS Code connection pair,
+      a database server, a Python SDK flow, and subscription notifications—but
+      none carries the reader through the argument. The architecture remains
+      understandable, yet the examples do not accumulate into one concrete case.
+    suggestion: Establish one representative host-and-server scenario in the opening and reuse it through the architecture, primitives, and update-notification sections.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 4
+    ending: 4
+  notes: |
+    I verified that the piece moves coherently from MCP's boundary, to connections,
+    primitives, and request context, but its examples do not form a continuous
+    running case.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | The useful way to read the Model Context Protocol is as a boundary with a vocabulary. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      "The useful way to read" clears its throat before the protocol appears; the
+      sentence announces a reading method instead of beginning with the protocol's
+      concrete function.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: The primitives carry context and action | The data layer is the useful center of MCP because it defines what can cross the boundary. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "The useful center" is abstract evaluative language that adds no mechanism;
+      the sentence already explains what the data layer does without ranking it.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Requests carry their own context | The result is a protocol in which tools and data stay in their own servers while one conversation can discover them, use them, and notice when they change. | 1
+    category: weak_close
+    disposition: fix
+    note: |
+      The closing sentence restates the opening promise—separate servers, shared
+      discovery, use, and change notification—without leaving the reader with a
+      new consequence or question.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 3
+  notes: |
+    I heard a clear, technically minded explainer whose opening and closing lean on
+    abstract summary language, with one evaluative phrase that can be removed.

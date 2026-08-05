@@ -1,0 +1,41 @@
+piece: pragmatic-leverage
+rounds:
+- round: 1
+  words: 496
+  loop_findings: 6
+  all_findings: 11
+- round: 2
+  words: 323
+  loop_findings: 6
+  all_findings: 8
+- round: 3
+  words: 453
+  loop_findings: 3
+  all_findings: 5
+state: rounds_exhausted
+open_findings:
+- lens: worth
+  severity: major
+  article: pragmatic-leverage
+  category: no_position
+  disposition: fix
+  note: |
+    The manuscript is a faithful, competent condensation of the source, but it adds no ordering judgment, defended cut, or claim of its own. Its rationale describes the source's practical account rather than stating what this magazine wants the reader to conclude.
+  suggestion: Add a brief editorial frame naming the practical judgment this piece wants the reader to carry away.
+- lens: mechanics
+  severity: major
+  article: pragmatic-leverage
+  locator: The 80/20 rule in AI coding leverage | its possible you may need to end it where you are | 1
+  category: grammar
+  disposition: editor_decision
+  note: |
+    "its possible" requires the contraction "it's possible." The sentence is retained verbatim from the source, so an editor chooses the remedy.
+  suggestion: it's possible you may need to end it where you are
+- lens: craft
+  severity: blocking
+  article: pragmatic-leverage
+  locator: '- | If you''re only using AI to write the code, then you''re taking the 2–4 hours of coding time down to 10–20 minutes, but you haven''t accelerated anything else here. | 1'
+  category: repeated_shape
+  disposition: editor_decision
+  note: |
+    Six conditional constructions make the piece sound patterned: "If you're only using AI...", "But if you use AI...", "If the model is 50% likely...", "If you draw this out...", "if you've done some work...", and "If you're doing multiple phases...". The author's idiom is protected in faithful_edit, so the remedy is editorial: cut or restructure enough of these sentences to restore variation.

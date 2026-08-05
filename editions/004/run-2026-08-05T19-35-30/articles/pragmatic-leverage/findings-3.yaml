@@ -1,0 +1,136 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    category: no_position
+    disposition: fix
+    note: |
+      The manuscript is a faithful, competent condensation of the source, but it adds no ordering judgment, defended cut, or claim of its own. Its rationale describes the source's practical account rather than stating what this magazine wants the reader to conclude.
+    suggestion: Add a brief editorial frame naming the practical judgment this piece wants the reader to carry away.
+  omissions:
+  - fact: The opening framing that this is an addendum or side-quest to a recent series, published standalone because it did not fit the main post
+    reader_loses: The piece's relationship to the author's broader series and why it appears independently.
+    verdict: defensible
+  - fact: 'The note that the piece is referenced in Why Software Factories Fail part 2: Turning the lights back on'
+    reader_loses: A cross-reference for readers who want the surrounding argument.
+    verdict: defensible
+  - fact: The author's @dexhorthy handle
+    reader_loses: A direct identifier for finding the author on X.
+    verdict: defensible
+  - fact: The source's explicit note label before the explanation of expected pain
+    reader_loses: Only a structural cue; the explanatory content remains.
+    verdict: defensible
+  retentions:
+  - passage: Even before AI, only 25-50% of the time...
+    costs: A paragraph, but it establishes the baseline that coding is only 25-50% of shipping time; it earns its place.
+    verdict: earns_place
+  - passage: If you're only using AI to write the code...
+    costs: A paragraph, but it defines the failure of code-only acceleration; it earns its place.
+    verdict: earns_place
+  - passage: But if you use AI to help you plan and align...
+    costs: A short paragraph containing the central 2-3x leverage claim; it earns its place.
+    verdict: earns_place
+  - passage: Let's assume that if you yolo a two-sentence prompt...
+    costs: The baseline probability example needed for the leverage comparison; it earns its place.
+    verdict: earns_place
+  - passage: Now let's say you are a principal engineer...
+    costs: The detailed-spec counterexample makes the diminishing rework risk concrete; it earns its place.
+    verdict: earns_place
+  - passage: 'And at the far end: write every line yourself.'
+    costs: The zero-rework endpoint completes the comparison; it earns its place.
+    verdict: earns_place
+  - passage: For this example I'm gonna blur...
+    costs: The caveat separating probability from change cost prevents the expected-pain model from being misread; it earns its place.
+    verdict: earns_place
+  - passage: If you draw this out, there's an inverse relationship...
+    costs: This states the general relationship the examples establish; it earns its place.
+    verdict: earns_place
+  - passage: What you don't want to do is spend 6 hours...
+    costs: The 6-hour/10-minute rule supplies an actionable planning heuristic; it earns its place.
+    verdict: earns_place
+  - passage: You need to do this without overindexing...
+    costs: The product-to-technical zoom example explains how to apply the heuristic under uncertainty; it earns its place.
+    verdict: earns_place
+  - passage: This is what we mean by leverage...
+    costs: The closing synthesis connects phased planning to steering and expected-pain reduction; it earns its place.
+    verdict: earns_place
+  - passage: Good luck.
+    costs: A non-informational sign-off that could be removed without losing substance.
+    verdict: cut
+  notes: Changes required because the edit preserves the source's operational argument but gives the magazine no explicit editorial position of its own. The piece is shorter than the source and the omitted framing and cross-reference are defensible for an ephemeral X article; every substantive retained passage earns its place.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked every factual assertion, quotation, number, attribution, and furniture item against the pinned extraction; nothing in this piece could not be checked.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | its possible you may need to end it where you are | 1
+    category: grammar
+    disposition: editor_decision
+    note: |
+      "its possible" requires the contraction "it's possible." The sentence is retained verbatim from the source, so an editor chooses the remedy.
+    suggestion: it's possible you may need to end it where you are
+  scores:
+    grammar: 2
+    typography: 5
+    consistency: 5
+  notes: |
+    One subject-independent contraction error survives in the author's retained prose; headings, typography, and formatting are otherwise consistent.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking leverage | Seeking leverage | 1
+    repair_from: Seeking leverage | Seeking leverage | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      "Seeking leverage" is an empty section heading. It interrupts the opening
+      and names an intention rather than an argument.
+    suggestion: Remove the empty heading or replace it with a claim that introduces the expected-pain model.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | The 80/20 rule in AI coding leverage | 1
+    repair_from: The 80/20 rule in AI coding leverage | The 80/20 rule in AI coding leverage | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The section argues that incremental upfront steering reduces expected
+      rework pain, but its heading presents an 80/20 rule that the section
+      never directly establishes.
+    suggestion: Rename the heading to state the inverse relationship between upfront steering and expected rework pain.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 4
+    ending: 4
+  notes: |
+    The piece moves from the limits of code-generation speedups to an expected-pain
+    model and then to pragmatic planning depth; its main structural weakness is
+    heading placement and claim alignment.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: '- | If you''re only using AI to write the code, then you''re taking the 2–4 hours of coding time down to 10–20 minutes, but you haven''t accelerated anything else here. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Six conditional constructions make the piece sound patterned: "If you're only using AI...", "But if you use AI...", "If the model is 50% likely...", "If you draw this out...", "if you've done some work...", and "If you're doing multiple phases...". The author's idiom is protected in faithful_edit, so the remedy is editorial: cut or restructure enough of these sentences to restore variation.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 3
+  notes: I hear a clear, conversational practitioner voice, but the argument is carried by a repeated conditional sentence shape that becomes audible before the piece ends.

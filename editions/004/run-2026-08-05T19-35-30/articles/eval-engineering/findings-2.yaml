@@ -1,0 +1,236 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The claim that identical rented models widened the gap between teams rather than between models
+    reader_loses: The opening economic and organizational stakes behind eval engineering.
+    verdict: defensible
+  - fact: The source's explicit framing of the missing layer as the cheapest line in the stack and the only one encoding a company's own definition of correct
+    reader_loses: Why evaluation is strategically distinct from buying a better model.
+    verdict: defensible
+  - fact: The source's report that one company changed only its evals across successive agent versions and saw every score dimension move, concluding evals should have existed at month one rather than month nine
+    reader_loses: A concrete longitudinal demonstration that evals themselves improve a product.
+    verdict: defensible
+  - fact: 'Arize AX''s benchmark result: 74.4% recall and 91.0% precision'
+    reader_loses: The full comparison and the precision/recall tradeoff in the blind test.
+    verdict: defensible
+  - fact: 'The names and dates of the four vendors that shipped their expertise as skills: LangChain, Galileo, AWS, and Arize'
+    reader_loses: Evidence for the claim that the evaluation category was unbundling into the terminal.
+    verdict: defensible
+  - fact: The source's warning that most users install langchain-skills first and then wonder where the production material comes from
+    reader_loses: A practical distinction between the repository that builds evals and the one that supplies traces.
+    verdict: defensible
+  - fact: The source's attribution of the six routing rules to a 21-year-old founder in Tokyo whose post received two likes
+    reader_loses: The provenance and illustrative oddity of the operating principle.
+    verdict: defensible
+  - fact: 'The explicit five-step loop wording: mine traces, identify a failure, build an eval, improve the agent, and repeat'
+    reader_loses: A compact mnemonic for the incident-to-test workflow.
+    verdict: defensible
+  - fact: The instruction that each trace write-up should record what the user asked and what the agent actually did, what worked and did not, attribution, and the capability to preserve or improve
+    reader_loses: The exact four-field template for turning observations into eval candidates.
+    verdict: defensible
+  - fact: The example quotation from an operator who merged around 1,500 pull requests in 90 days without inspecting code
+    reader_loses: A vivid account of how constraint-based trust feels in practice.
+    verdict: defensible
+  - fact: The source's statement that three of the four merge signals are history or deterministic checks and exactly one touches the model
+    reader_loses: Why the proposed confidence score is less model-dependent than it may appear.
+    verdict: defensible
+  - fact: 'The source''s final three-line discipline: measure the path, make verdicts change the next edge, and turn every failure into a permanent test'
+    reader_loses: A concise closing formulation of the article's operating principles.
+    verdict: defensible
+  retentions:
+  - passage: Everyone is renting the same brain now.
+    costs: Opening framing that establishes the model-versus-harness thesis; it earns its space.
+    verdict: earns_place
+  - passage: A thermometer tells you the room is cold.
+    costs: The central metaphor makes the distinction between measurement and control immediately legible.
+    verdict: earns_place
+  - passage: The useful order is simple. Loops came first, then graphs, then evals.
+    costs: A compact organizing claim that gives the synthesis a clearer progression than the source's transitions.
+    verdict: earns_place
+  - passage: Optimize against a judge long enough and the agent learns to look right rather than be right.
+    costs: A memorable caveat explaining why rubric and judge hygiene matter.
+    verdict: earns_place
+  - passage: The constraint is the product.
+    costs: A short thesis that connects confidence gating, guardrails, and autonomous merging.
+    verdict: earns_place
+  - passage: The model bill does not move. Everything else does.
+    costs: Rhetorical close to the rollout section; the surrounding operational guidance already carries the argument.
+    verdict: cut
+  - passage: What survives model replacement is the examiner
+    costs: Restates the rental/examiner thesis from the opening and earlier sections, but also provides a useful conclusion.
+    verdict: earns_place
+  - passage: Install one skill, pull 25 traces, and build one eval today.
+    costs: A concrete call to action that turns the synthesis into an immediately usable next step.
+    verdict: earns_place
+  notes: |
+    This piece gives a reader the source's actionable eval-engineering workflow—routing verdicts into execution, installing the tooling, mining 25 traces, building hidden-rubric tests, and gating merges—without requiring the full source's promotional context and benchmark miscellany. Its sections broadly follow the source, but the synthesis adds a clear thermostat metaphor, a tighter progression from measurement to autonomous merging, and concrete operational commands.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: — | A better model would not have caught this. | 1
+    repair_from: — | A better model would not have caught this. | 1
+    category: unreached_conclusion
+    disposition: fix
+    note: |
+      The source reports that successive agent versions changed no model, prompts, or human nudges, yet scores improved across every dimension, and concludes that evals should have been installed on day one rather than month nine. The manuscript omits that source conclusion.
+  scores:
+    claim_support: 4
+    qualification_survival: 4
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every factual assertion, quotation, number, attribution, and furniture element against the pinned extraction; I could not check claims against any external source because none is in scope.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: 'The evals that repay the afternoon | The dataset type matters: `final_response` measures the answer alone, `single_step` one decision, `trajectory` the whole path, and RAG retrieval quality. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      The list is not grammatically parallel: `single_step`, `trajectory`, and RAG retrieval quality lack the verb supplied for `final_response`.
+    suggestion: 'The dataset type matters: `final_response` measures the answer alone, `single_step` measures one decision, `trajectory` measures the whole path, and RAG measures retrieval quality.'
+  - severity: minor
+    article: eval-engineering
+    locator: The evals that repay the afternoon | A living suite holds 300 to 800 cases, with 500 running in under five minutes. | 1
+    category: typography
+    disposition: fix
+    note: |
+      The range uses “to”; ranges are set with en dashes throughout the piece.
+    suggestion: A living suite holds 300–800 cases, with 500 running in under five minutes.
+  - severity: minor
+    article: eval-engineering
+    locator: Let safe work merge itself | Sampling 1% to 5% of traces avoids the cost of full capture. | 1
+    category: typography
+    disposition: fix
+    note: |
+      The range uses “to”; ranges are set with en dashes throughout the piece.
+    suggestion: Sampling 1%–5% of traces avoids the cost of full capture.
+  scores:
+    grammar: 2
+    typography: 3
+    consistency: 4
+  notes: |
+    Changes required because one list is grammatically nonparallel and two numeric ranges use “to” instead of en dashes.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: Make the score change the run | For the travel agent, an empty search result should force an admission of uncertainty rather than another polished invention. | 1
+    repair_from: '- | The search tool had returned nothing, so the model filled the gap and passed its invention off as a lookup. | 1'
+    category: duplication
+    disposition: fix
+    note: |
+      The empty-search travel-agent failure is introduced in the opening, then restated as "For the travel agent, an empty search result should force an admission of uncertainty rather than another polished invention" and again as "For the travel agent, the empty search result becomes a test of whether the response stays faithful to the tool output." The repeated example slows the argument.
+    suggestion: State the travel-agent failure once, then let later sections advance its implications without restating it.
+  - severity: major
+    article: eval-engineering
+    locator: Let safe work merge itself | Every pull request an agent opens otherwise lands in a human queue. | 1
+    repair_from: Let safe work merge itself | Every pull request an agent opens otherwise lands in a human queue. | 1
+    category: running_example
+    disposition: fix
+    note: |
+      The travel-agent case carries the opening and the first three sections, but the merge section switches to pull requests, production systems, and a self-improving codebase. The concrete thread is abandoned before the conclusion, so later claims feel like a new piece.
+    suggestion: Carry the travel-agent case through the merge-gating discussion, using the coding examples only once as an explicit contrast.
+  - severity: minor
+    article: eval-engineering
+    locator: The evals that repay the afternoon | Faithfulness, tool-parameter accuracy, and response quality are a working default for any tool-using agent. | 1
+    repair_from: The evals that repay the afternoon | Faithfulness, tool-parameter accuracy, and response quality are a working default for any tool-using agent. | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The heading promises a claim about which evaluations repay the time, but the section primarily catalogs default dimensions, dataset types, suite size, and starter failures. Its promise does not match the section's argument.
+    suggestion: Rename the heading to state the section's claim about a compact, high-yield starter suite.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 5
+    ending: 4
+  notes: |
+    The piece moves from a travel-agent failure to routing, tooling, test construction, merge gates, and a closing suite prescription. The main sequence holds, but repeated treatment of the same failure, abandonment of the running example, and one non-claim heading require changes.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: '- | A better model would not have caught this. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three consecutive sentences in the paragraph use the same "A [noun] [verb]" shape:
+      "A better model would not have caught this," "A thermometer tells you the room is cold,"
+      and "A thermostat turns the heat on." The pattern becomes audible before the analogy
+      finishes. Vary or cut one of these openings.
+    suggestion: |
+      Combine the thermometer and thermostat comparison into one sentence or recast one
+      sentence around the missing layer rather than another "A [noun]" subject.
+  - severity: major
+    article: eval-engineering
+    locator: Install the examiner around the case | The repositories have different jobs. | 1
+    category: no_voice
+    disposition: fix
+    note: |
+      The voice disappears in the paragraph beginning "The repositories have different jobs."
+      The commands and product-by-product descriptions read like a changelog with no reader
+      in the room, replacing the piece's earlier concrete, observant voice with a catalog.
+    suggestion: |
+      Reframe the tools through the reader's decision—what each one lets a team do and when—
+      before presenting the commands.
+  - severity: minor
+    article: eval-engineering
+    locator: Let safe work merge itself | The constraint is the product. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "The constraint is the product" is a balanced, portentous clause that sounds like a
+      prefabricated insight rather than a sentence explaining the specific lesson of the
+      preceding example.
+    suggestion: |
+      State which constraint—specification, guardrails, or evaluation target—makes the
+      autonomous loop safe.
+  - severity: minor
+    article: eval-engineering
+    locator: Let safe work merge itself | Everything else does. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Everything else does" is a portentous short sentence whose referent is vague; it
+      gestures at scale without naming what changes.
+    suggestion: |
+      Name the concrete consequence for the team or workflow instead of ending with the
+      elliptical contrast.
+  - severity: minor
+    article: eval-engineering
+    locator: 'The evals that repay the afternoon | The dataset type matters: `final_response` measures the answer alone, `single_step` one decision, `trajectory` the whole path, and RAG retrieval quality. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "RAG" is unexplained subfield jargon, and its compressed placement beside the dataset
+      types makes the sentence harder for an engineer outside this area to parse.
+    suggestion: |
+      Expand RAG on first use as retrieval-augmented generation and state what its eval
+      measures.
+  - severity: minor
+    article: eval-engineering
+    locator: The evals that repay the afternoon | Install one skill, pull 25 traces, and build one eval today. | 1
+    category: passive
+    disposition: fix
+    note: |
+      The closing call to action uses an ownerless imperative: no actor is named, so the
+      instruction floats above the reader and the team that would carry it out.
+    suggestion: |
+      Name the actor and context, such as "Your team can install one skill, pull 25 traces,
+      and build one eval today."
+  scores:
+    voice: 3
+    sentence_variety: 3
+    economy: 3
+  notes: |
+    I heard a vivid, concrete voice in the opening and core argument, then a catalog-like
+    register in the tooling section and several slogan-shaped sentences that blur otherwise
+    useful specificity.

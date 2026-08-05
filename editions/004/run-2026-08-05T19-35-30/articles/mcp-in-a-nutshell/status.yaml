@@ -1,0 +1,88 @@
+piece: mcp-in-a-nutshell
+rounds:
+- round: 1
+  words: 850
+  loop_findings: 10
+  all_findings: 13
+- round: 2
+  words: 782
+  loop_findings: 3
+  all_findings: 5
+- round: 3
+  words: 756
+  loop_findings: 7
+  all_findings: 9
+state: rounds_exhausted
+open_findings:
+- lens: worth
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: The primitives carry context and action | Each primitive type has a discovery method in the `*/list` family. | 1
+  repair_from: The primitives carry context and action | Suppose the local database server connected to Visual Studio Code exposes a query tool, a resource containing the database schema, and a prompt with examples of using that tool. | 1
+  category: stripped_utility
+  disposition: fix
+  note: |
+    The manuscript names the broad primitives and methods, but omits the concrete discovery contract: tools/list response fields (name, title, description, inputSchema), pagination via cursor, and the ttlMs/cacheScope caching fields. A reader understands that discovery exists but cannot implement or correctly cache it without returning to the source.
+  suggestion: Carry the key tools/list response fields and cursor/caching behavior into the explanation.
+- lens: worth
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: The primitives carry context and action | A tool request has the ordinary JSON-RPC shape. | 1
+  repair_from: The primitives carry context and action | A tool request has the ordinary JSON-RPC shape. | 1
+  category: lost_operational_detail
+  disposition: fix
+  note: |
+    The source's worked exchanges and pseudo-code show the exact server/discover, tools/list, tools/call, and notification-refresh sequence, including request IDs, the weather_current identifier, required versus optional arguments, and the content response shape. The manuscript keeps method names and a small argument example but drops the details a reader would type or map into an implementation.
+  suggestion: Retain one compact JSON exchange or pseudo-code fragment, especially the tool name/inputSchema and response fields.
+- lens: worth
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: The protocol also supports opt-in notifications for dynamic updates. | 1
+  repair_from: The protocol also supports opt-in notifications for dynamic updates. | 1
+  category: lost_operational_detail
+  disposition: fix
+  note: |
+    The manuscript omits the notification mechanics that make the example actionable: the acknowledgement's subscription ID, the fact that notifications carry that ID for correlation, the absence of a JSON-RPC response id, and the refresh request that follows a change. Without these, a reader cannot reproduce the subscription reliably.
+  suggestion: Add the acknowledgement/correlation details and the tools/list refresh step.
+- lens: worth
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: Visual Studio Code can connect to a local database server and a remote Sentry server, then present both through one conversation. | 1
+  repair_from: Visual Studio Code can connect to a local database server and a remote Sentry server, then present both through one conversation. | 1
+  category: no_position
+  disposition: fix
+  note: |
+    The piece is an accessible paraphrase and reordering of the overview, but it makes no editorial claim about what matters most or what the reader should understand beyond the protocol's component list. Add a clear thesis that MCP's essential design is per-server isolation combined with a shared, transport-independent data layer.
+  suggestion: State the piece's governing takeaway in the opening paragraph and use it to justify the order.
+- lens: evidence
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: Requests carry their own context | The model's available actions can therefore follow the database server's current capabilities, with polling as the backstop when the update stream goes quiet. | 1
+  repair_from: Requests carry their own context | The model's available actions can therefore follow the database server's current capabilities, with polling as the backstop when the update stream goes quiet. | 1
+  category: unreached_conclusion
+  disposition: fix
+  note: |
+    The source concludes that the notification pattern extends beyond tools to other MCP primitives and enables broader real-time synchronization between clients and servers. The manuscript's conclusion narrows the result to the model's available actions and tool capabilities, leaving the source's stated broader conclusion unreached.
+- lens: shape
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: One host, several dedicated connections | The host can therefore keep its connection to the local database server separate from its connection to remote Sentry while combining what they provide. | 1
+  repair_from: '- | Visual Studio Code can connect to a local database server and a remote Sentry server, then present both through one conversation. | 1'
+  category: duplication
+  disposition: fix
+  note: |
+    The opening and the first section repeat the same Visual Studio Code, local database, and remote Sentry setup. The opening says, "Visual Studio Code can connect to a local database server and a remote Sentry server, then present both through one conversation." The later section says, "The host can therefore keep its connection to the local database server separate from its connection to remote Sentry while combining what they provide."
+  suggestion: Keep the two-server setup in the opening and remove the repeated explanation from the connections section.
+- lens: craft
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: The primitives carry context and action | A tool request has the ordinary JSON-RPC shape. | 1
+  category: repeated_shape
+  disposition: editor_decision
+  note: |
+    Four consecutive subject-led declarative sentences flatten the paragraph's rhythm:
+    "A tool request has the ordinary JSON-RPC shape."
+    "Its method is `tools/call`; its parameters name the tool and carry arguments such as `"location": "San Francisco"` and `"units": "imperial"`."
+    "The response contains a `content` array that may hold text, images, resources, or other supported forms."
+    "The application adds that result to the conversation."
+    The remedy is editorial: vary or cut one of the sentences.
