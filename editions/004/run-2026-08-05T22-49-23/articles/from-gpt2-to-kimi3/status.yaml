@@ -1,0 +1,32 @@
+piece: from-gpt2-to-kimi3
+rounds:
+- round: 1
+  words: 831
+  loop_findings: 3
+  all_findings: 5
+- round: 2
+  words: 1093
+  loop_findings: 4
+  all_findings: 8
+- round: 3
+  words: 913
+  loop_findings: 2
+  all_findings: 4
+state: rounds_exhausted
+open_findings:
+- lens: craft
+  severity: blocking
+  article: from-gpt2-to-kimi3
+  locator: '- | Linear attention replaces those reads and writes with state updates, but its feature map is a less expressive approximation to the softmax kernel, so the practical accuracy loss depends on the architecture and workload. | 1'
+  category: repeated_shape
+  disposition: editor_decision
+  note: |
+    Six contrast constructions make the prose sound templated: "Linear attention replaces those reads and writes with state updates, but its feature map is a less expressive approximation to the softmax kernel, so the practical accuracy loss depends on the architecture and workload"; "The fixed state is cheaper, but it cannot preserve every earlier association as a separate record"; "DeltaNet can replace one association, but memory also needs a way to fade when the context changes"; "This frees capacity, but it forgets every association together"; "Scaling laws remain relevant, but capacity must be added in the right place and in a form the system can use"; and "A growing cache avoids recomputation but consumes bandwidth." The remedy is editorial: cut or recast enough of these sentences to break the pattern.
+- lens: craft
+  severity: major
+  article: from-gpt2-to-kimi3
+  locator: '- | GPT-2 keeps a separate key and value for each earlier token in its KV cache. | 1'
+  category: jargon
+  disposition: fix
+  note: |
+    The piece introduces several unexplained specialist terms and acronyms, including KV cache, D×D state, ELU+1, softmax kernel, MLA, MLP, FLOPs, SiTU, AttnRes, and KDA. A competent engineer outside this subfield may follow the narrative but not the machinery. Define the essential terms at first use and remove or gloss the rest.

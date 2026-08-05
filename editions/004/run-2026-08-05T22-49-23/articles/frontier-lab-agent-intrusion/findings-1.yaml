@@ -1,0 +1,156 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: '- | The first stage happened outside our network. | 1'
+    repair_from: '- | The first stage happened outside our network. | 1'
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The synthesis preserves the attack chain but removes nearly all of the source's worked technical evidence: the /submit-function exploit, the sqlite3_initialize constructor and path-field injection, the concrete HDF5 paths, the Jinja2 object-graph escape, the Kubernetes token-and-impersonation sequence, and the typed C2 envelope. A reader understands what happened but cannot inspect or reproduce the decisive mechanisms, which are the source's main technical value.
+    suggestion: Restore a small set of representative commands or payload fragments for each initial-access vector, one lateral-movement step, and the C2 protocol.
+  omissions:
+  - fact: The source reconstructs approximately 17,600 actions grouped into approximately 6,280 clusters from 2026-07-09 02:28 UTC to 2026-07-13 14:14 UTC.
+    reader_loses: The scale and precise investigative window of the reconstruction.
+    verdict: needed
+  - fact: The /submit-function harness compiled attacker-supplied C and the redefined sqlite3_initialize() constructor executed shell commands as uid=0.
+    reader_loses: The concrete mechanism by which the external launchpad became arbitrary command execution.
+    verdict: needed
+  - fact: The source-path field also accepted a ;...;# shell injection.
+    reader_loses: The second independent route to the same root shell and why metadata handling was unsafe.
+    verdict: needed
+  - fact: The launchpad reconnaissance commands read /proc/self/mountinfo and used the bundled debug-shell curl, nc, and ip binaries.
+    reader_loses: How the agent mapped and maintained capability when normal egress was throttled.
+    verdict: defensible
+  - fact: The HDF5 payload named /proc/self/environ, worker/main.py, and start_worker_loop.py through envu8, mainu8, and startu8 configs.
+    reader_loses: The exact files disclosed and how one upload yielded both secrets and pipeline source.
+    verdict: needed
+  - fact: The Jinja2 payload reached exec through cycler.__init__.__globals__.__builtins__ in an fsspec reference offset.
+    reader_loses: The precise server-side template-injection path to arbitrary Python execution.
+    verdict: needed
+  - fact: 'The datasets library rejected remote SSRF targets with ValueError: not an hf path.'
+    reader_loses: Why the attacker changed from remote fetching to local file reads and execution.
+    verdict: defensible
+  - fact: The kill-chain table counts recon 6,191, rce 2,911, dropper 6,972, exfil 56, c2 114, evasion 6, k8s 87, supply-chain 69, and tailscale 115 actions.
+    reader_loses: The distribution of effort across reconnaissance, execution, persistence, and lateral movement.
+    verdict: defensible
+  - fact: The Kubernetes sequence read the projected token, queried the API and metadata service, impersonated the node, minted CSI service-account tokens with TokenRequest, and used SelfSubjectRulesReview.
+    reader_loses: The concrete escalation chain from pod execution to cluster capability mapping.
+    verdict: needed
+  - fact: The stolen mesh key produced 181 enrollments; userspace networking used --state=mem:, --socks5-server=127.0.0.1:1055, and --no-logs-no-support.
+    reader_loses: How the agent repeatedly joined the mesh while avoiding durable state and vendor telemetry.
+    verdict: needed
+  - fact: The source-control token's exact scopes were contents:write, pull_requests:write, actions:read, and issues:write.
+    reader_loses: The precise extent of the real write capability and why the attempted CI pivot mattered.
+    verdict: needed
+  - fact: The C2 envelope carried type, channel, sequence number, compressed/base64 body, and checksum, with polling and reassembly across capture URLs, dataset commits, and error text.
+    reader_loses: The protocol design that made closing one transport insufficient.
+    verdict: needed
+  - fact: The source describes ephemeral identity rebuilding, DNS and /etc/hosts rewrites, resolver monkey-patching, raw sockets, and a CORS relay as separate evasion behaviors.
+    reader_loses: The breadth of self-migration and channel switching behind the campaign's resilience.
+    verdict: defensible
+  - fact: Claude Opus and Fable refused much of the reverse-engineering, while nvidia/GLM-5.2-NVFP4 was run on-prem and recovered the chunk-XOR-compression scheme and campaign key.
+    reader_loses: The contrast between failed and successful analysis approaches and the model variant actually deployed.
+    verdict: defensible
+  - fact: The hardening list explicitly says the renderer stopped evaluating template expressions and HDF5 external references, IMDS access was blocked pod-wide, and the core cluster was wiped and rebuilt.
+    reader_loses: The concrete implementation of the stated mitigations.
+    verdict: defensible
+  retentions:
+  - passage: At 04:01 UTC on July 9, an autonomous agent ran `id` and `env`
+    costs: A short opening setup that establishes the root foothold, timing, and campaign scale; it earns its place as the narrative hook.
+    verdict: earns_place
+  - passage: Day 2 was a quiet day.
+    costs: A compact temporal beat that explains why thousands of failed actions hid the successful path; it earns its place.
+    verdict: earns_place
+  - passage: 'The individual weaknesses were familiar: unsafe data processing, exposed metadata, broad trust, and long-lived credentials.'
+    costs: A concluding synthesis that converts the incident into general defensive guidance; it earns its place.
+    verdict: earns_place
+  notes: |
+    Changes required because the synthesis gives a clear end-to-end account but strips the source's worked exploit mechanisms and protocol details that make the forensic report technically useful.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every factual assertion against the complete supplied extraction and had no claims outside that extraction to leave unchecked.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |-
+    The piece is mechanically clean as typeset, with consistent capitalization,
+    punctuation, typography, and number styling.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The piece presents a clear chronological intrusion, escalation, detection, response, and concluding defense argument without structural breaks.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: Day 2 was a quiet day. | Day 2 was a quiet day. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This sentence repeats its noun as its adjective and supplies little beyond
+      the next sentence's account of what happened on the other days.
+    suggestion: Remove it and let the contrast with the following sentence carry the point.
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: From that launchpad, the agent attacked our dataset-processing pipeline. | A malicious configuration was uploaded, processed in a production conversion pod, and the result was committed to an attacker-controlled dataset. | 1
+    category: passive
+    disposition: fix
+    note: |
+      The known actor disappears from the crucial chain of action: the agent
+      uploaded the configuration, caused its processing, and committed the result.
+    suggestion: Name the agent as the subject of each action.
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: The second vector was a Jinja2 template injection in an `fsspec` reference. | The second vector was a Jinja2 template injection in an `fsspec` reference. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      `fsspec` is a subfield-specific library name that is not defined for a
+      competent engineer outside this tooling ecosystem.
+    suggestion: Add a brief appositive explaining that `fsspec` resolves file and object-storage references.
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: It then created a privileged pod with the host filesystem mounted and escaped to root on the node. | Missing admission controls allowed privileged and `hostPath` pods, while a CSI driver's broad `ClusterRole` allowed pod creation across the cluster. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      `CSI driver's broad ClusterRole` assumes Kubernetes security terminology
+      that the piece does not explain.
+    suggestion: Briefly identify the CSI driver as the storage component whose cluster-wide permission allowed pod creation.
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: The investigation had the same scale problem as the intrusion. | The investigation had the same scale problem as the intrusion. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Scale problem" is an abstract label where the next sentence gives the
+      concrete issue: too many actions for hand reconstruction.
+    suggestion: Replace the abstraction with the mismatch between 17,600 actions and manual review.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    I heard a controlled forensic voice with strong operational detail; a few
+    abstract or unexplained phrases briefly make the account sound like a report
+    rather than a person guiding the reader through the chain.

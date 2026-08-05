@@ -1,0 +1,74 @@
+piece: eval-engineering
+rounds:
+- round: 1
+  words: 1228
+  loop_findings: 16
+  all_findings: 23
+- round: 2
+  words: 1421
+  loop_findings: 8
+  all_findings: 18
+- round: 3
+  words: 1486
+  loop_findings: 6
+  all_findings: 9
+state: rounds_exhausted
+open_findings:
+- lens: worth
+  severity: major
+  article: eval-engineering
+  locator: One installation path starts with | One installation path starts with `npx skills add langchain-ai/langchain-skills --skill '*' --yes --global` | 1
+  repair_from: One installation path starts with | One installation path starts with `npx skills add langchain-ai/langchain-skills --skill '*' --yes --global` | 1
+  category: stripped_utility
+  disposition: fix
+  note: |
+    The manuscript's evalkit installation ends with `https://github.com/awslabs/Agent...`, so a reader cannot type the command or know the repository it refers to. The source presents this as a concrete installation path, and omitting the usable repository identifier strips the operational value from that part of the piece.
+  suggestion: Carry the complete evalkit repository URL, or omit the command and state plainly that the path is illustrative.
+- lens: worth
+  severity: major
+  article: eval-engineering
+  repair_from: '- | Everyone is renting the same brain now | 1'
+  category: source_shaped
+  disposition: fix
+  note: |
+    The manuscript follows the source's sequence almost exactly: shared models and the travel-agent failure, what eval engineering is, installation and benchmark results, verdict-driven routing, trace mining and Harbor tasks, autonomous merging, then the starter suite and conclusion. The synthesis clarifies and compresses that sequence but does not make an editorial decision about its shape.
+  suggestion: Reorder the material around the central claim that verdicts change the next edge—for example, lead with the thermostat/routing loop, then supply the benchmark, installation, and implementation steps as support.
+- lens: evidence
+  severity: major
+  article: eval-engineering
+  locator: ' | Before collecting data, run /evalkit.plan with an instruction to map the repository''s entrypoint, tools, backing data, and result shape, read the 25 traces in ./traces, propose eval candidates grounded in what actually failed, and recommend one before implementation. | 1'
+  repair_from: ' | Before collecting data, run /evalkit.plan with an instruction to map the repository''s entrypoint, tools, backing data, and result shape, read the 25 traces in ./traces, propose eval candidates grounded in what actually failed, and recommend one before implementation. | 1'
+  category: invented_claim
+  disposition: fix
+  note: |
+    The extraction shows an /evalkit.plan command, but its displayed instruction is truncated after "for grounding and to". The detailed repository-mapping, 25-trace, candidate-proposal, and recommendation instructions appear separately as a generic skill prompt, not as the documented /evalkit.plan command. The manuscript presents those details as belonging to that command without support in the pinned extraction.
+- lens: shape
+  severity: major
+  article: eval-engineering
+  locator: '- | The travel agent should fail the first when its search returns nothing | 1'
+  repair_from: '- | For the travel agent, an empty tool result is a separate failure | 1'
+  category: duplication
+  disposition: fix
+  note: |
+    The travel-agent empty-result example is explained twice: first as a routing
+    failure requiring acknowledgment, then again as the first test the suite
+    should contain. The later repetition weakens the progression from method to
+    durable test.
+  suggestion: Keep the first explanation and refer back to it briefly when introducing the initial test suite.
+- lens: craft
+  severity: blocking
+  article: eval-engineering
+  locator: '- | Run the gate in shadow mode for at least four hours of real traffic, merging nothing. | 1'
+  category: repeated_shape
+  disposition: editor_decision
+  note: |
+    The piece uses at least seven imperative sentences in a concentrated run: "Run the gate in shadow mode for at least four hours of real traffic, merging nothing", "Keep it closed when automated and human verdicts differ by more than 2 percent", "Sample 1 to 5 percent of traces", "Open the gate on the boring 80 percent and keep the risky slice under review", "Keep the suite alive", "Hold out 300 to 800 cases and keep 500 running in under five minutes", and "Begin with an empty tool result, a repeated call, a boundary refusal, handoff integrity, and verified completion." The reader hears a procedure manual rather than a person. The remedy is editorial: cut or consolidate several commands.
+- lens: craft
+  severity: major
+  article: eval-engineering
+  locator: '- | A score can describe the past. | 1'
+  category: weak_close
+  disposition: fix
+  note: |
+    The final pair, "A score can describe the past. The examiner decides what happens next.", restates the earlier score-versus-routing contrast and ends in a slogan rather than leaving a new consequence or question.
+  suggestion: Replace the closing pair with one concrete implication for how a team should use its next evaluation result.

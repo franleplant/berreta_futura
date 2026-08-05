@@ -1,0 +1,127 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: GPT-2 is explicitly a decoder-only model with token and positional embeddings, 12 layers, 12 heads, 768-dimensional states, and about 124M parameters.
+    reader_loses: The baseline's concrete scale and the decoder-only computation pattern are less grounded.
+    verdict: defensible
+  - fact: GPT-2's attention applies causal masking, softmax, dropout, and an output projection after forming q, k, and v.
+    reader_loses: Some implementation context for what later attention variants are changing.
+    verdict: defensible
+  - fact: Without caching, autoregressive decoding recomputes all prior-token projections and representations at every step.
+    reader_loses: The precise source of the KV-cache saving.
+    verdict: defensible
+  - fact: Each decode step makes two N-dimensional reads and two one-dimensional writes to HBM, while the cache grows linearly in sequence length.
+    reader_loses: A concrete hardware explanation for the bandwidth bottleneck.
+    verdict: defensible
+  - fact: Linear attention maintains both the D-by-D state S and the normalization vector z, computing qS divided by qz.
+    reader_loses: The operational denominator needed to implement normalized linear attention.
+    verdict: defensible
+  - fact: The source distinguishes the paper's misleading O(N^2) framing from FlashAttention and from historical implementations that recomputed token history.
+    reader_loses: A clearer account of which quadratic costs were real and which optimization changed them.
+    verdict: defensible
+  - fact: DeltaNet's chunking cost separates a fixed 2Ld^2 state term from a 2LCd within-chunk term; C=1 is linear attention, C=N is full attention, and practical chunks are often 64 or 128.
+    reader_loses: The quantitative reason chunk size interpolates between the two extremes and why hardware-friendly intermediate chunks matter.
+    verdict: defensible
+  - fact: The source gives the vectorized forward-substitution construction that computes all DeltaNet corrections within a chunk.
+    reader_loses: A reader could understand the recurrence but not reproduce the parallel algorithm.
+    verdict: defensible
+  - fact: Mamba-2 is identified as the contribution supplying the uniform decay update, and Gated Delta's cumulative decay is described as a multiplicative prefix-sum analogue.
+    reader_loses: Attribution and the exact mechanism by which decay propagates through time.
+    verdict: defensible
+  - fact: Kimi Linear's three changes are listed as interleaved MLA, MoE replacing the MLP, and the alpha projection providing fine-grained decay control.
+    reader_loses: The explicit decomposition of what distinguishes Kimi Linear from DeltaNet.
+    verdict: defensible
+  - fact: KimiK3's AttnRes adds roughly 2% inference latency, provides a reported 1.25x compute advantage, and forms eight blocks across the macrocycles.
+    reader_loses: The quantitative trade-off and scale of the blockwise residual design.
+    verdict: defensible
+  - fact: The source includes the SiTU activation equations, MLA query LoRA, and the detailed Gated MLA/output-gating changes.
+    reader_loses: The exact implementation of several KimiK3 refinements is unavailable without consulting the source.
+    verdict: defensible
+  - fact: The post's publication time and social response are omitted.
+    reader_loses: Only provenance and reception context, not architectural understanding.
+    verdict: defensible
+  retentions:
+  - passage: A language model must keep useful information somewhere.
+    costs: A short framing paragraph, but it establishes the memory-centered question that organizes the entire lineage.
+    verdict: earns_place
+  - passage: 'The basic attention contract remains:'
+    costs: A compact teaching aside that makes the linear-attention approximation intelligible before the later mechanisms.
+    verdict: earns_place
+  - passage: Scaling laws remain relevant, but capacity must be added in the right place
+    costs: A transition that restates the progression, but it states the manuscript's synthesis rather than merely repeating a source section.
+    verdict: earns_place
+  - passage: The progression from GPT-2 to KimiK3 is a set of repairs to memory failure.
+    costs: A concluding synthesis paragraph, justified because it names the causal relationship among the mechanisms.
+    verdict: earns_place
+  - passage: A fixed-capacity associative memory eventually needs an eviction policy.
+    costs: A final restatement of the thesis, but it leaves the reader with the general principle connecting gating, routing, decay, and retrieval.
+    verdict: earns_place
+  notes: |
+    The piece gives a reader a compact causal map from KV-cache bandwidth limits through fixed-state interference to Delta updates, gating, hybrid retrieval, sparse experts, and selective residual access, making the source's architectural lineage legible as a sequence of repairs.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every assertion, heading, code example, number, and conclusion against the complete extraction; no claim in this piece could not be checked.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    Verified that the piece has no mechanics defects requiring changes.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 4
+    opening: 4
+    ending: 4
+  notes: |
+    The piece presents a recoverable progression from GPT-2's growing cache through successive memory, retrieval, routing, and residual-capacity repairs to KimiK3.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: from-gpt2-to-kimi3
+    locator: '- | Linear attention replaces those reads and writes with state updates, but its feature map is a less expressive approximation to the softmax kernel, so the practical accuracy loss depends on the architecture and workload. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Six contrast constructions make the prose sound templated: "Linear attention replaces those reads and writes with state updates, but its feature map is a less expressive approximation to the softmax kernel, so the practical accuracy loss depends on the architecture and workload"; "The fixed state is cheaper, but it cannot preserve every earlier association as a separate record"; "DeltaNet can replace one association, but memory also needs a way to fade when the context changes"; "This frees capacity, but it forgets every association together"; "Scaling laws remain relevant, but capacity must be added in the right place and in a form the system can use"; and "A growing cache avoids recomputation but consumes bandwidth." The remedy is editorial: cut or recast enough of these sentences to break the pattern.
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: '- | GPT-2 keeps a separate key and value for each earlier token in its KV cache. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      The piece introduces several unexplained specialist terms and acronyms, including KV cache, D×D state, ELU+1, softmax kernel, MLA, MLP, FLOPs, SiTU, AttnRes, and KDA. A competent engineer outside this subfield may follow the narrative but not the machinery. Define the essential terms at first use and remove or gloss the rest.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: '- | The update is simple: | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "The update is simple" is an empty assessment before the code and adds no information. Replace it with a direct description of what the snippet updates.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: '- | Scaling laws remain relevant, but capacity must be added in the right place and in a form the system can use. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This abstraction stack ("remain relevant", "the right place", "a form the system can use") postpones the concrete claim. State which kinds of capacity the lineage adds and what limitation each addresses.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 4
+  notes: |
+    I heard a technically assured explainer whose concrete mechanisms and occasional first-person aside keep it human, but six contrast sentences create a detectable template and several abstractions leave the reader to supply definitions.

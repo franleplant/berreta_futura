@@ -1,0 +1,317 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: Install one skill. Pull 25 traces. Build one eval today, then add one whenever something breaks. | One complete path starts with `npx skills add langchain-ai/langchain-skills --skill '*' --yes --global` | 1
+    repair_from: Install one skill. Pull 25 traces. Build one eval today, then add one whenever something breaks. | One complete path starts with `npx skills add langchain-ai/langchain-skills --skill '*' --yes --global` | 1
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The manuscript preserves the three-line setup and the evalkit phases, but it
+      drops the source's alternate Claude Code installation commands and the
+      concrete `/evalkit.plan` instruction that maps a repository's entrypoint,
+      tools, backing data, and result shape before proposing an eval. A reader can
+      follow the main path, but loses a practical setup option and the diagnostic
+      step that makes the workflow usable on an unfamiliar agent.
+    suggestion: Add the Claude Code plugin commands or explicitly explain why the main installation path is sufficient, and retain the repository-mapping instruction before `/evalkit.data`.
+  - severity: major
+    article: eval-engineering
+    locator: The entry cost has changed. | The entry cost has changed. The researchers took 100 production traces from a live voice agent | 1
+    repair_from: The entry cost has changed. | The entry cost has changed. Researchers took 100 production traces from a live voice agent | 1
+    category: lost_essential_fact
+    disposition: fix
+    note: |
+      The source says the researchers labeled a taxonomy of 39 distinct failures
+      before hiding the labels and testing each evaluation system. The manuscript
+      keeps the sample size and benchmark scores but omits the 39-failure taxonomy,
+      which is important context for what those recall and precision numbers
+      actually measure.
+    suggestion: Restore the 39 labeled failure types when introducing the benchmark.
+  - severity: major
+    article: eval-engineering
+    locator: The best tests are already in the logs. | Pull 25 complete traces, chosen so good and bad behavior sit beside each other | 1
+    repair_from: The best tests are already in the logs. | Pull 25 complete traces, chosen so good and bad behavior sit beside each other | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source's five-step loop explicitly runs from mining traces to identifying
+      a failure, building an eval, improving the agent, and rerunning the test.
+      The manuscript gives the trace-selection categories and the four-line
+      template, but omits that complete loop statement. The workflow's iteration
+      and feedback endpoint are therefore less explicit than the source's.
+    suggestion: State the full mine-traces -> identify failure -> build eval -> improve agent -> rerun loop.
+  - severity: defensible
+    article: eval-engineering
+    locator: '- | Before we get into it, follow me on X and join my Telegram channel where I post more AI content every day. | 1'
+    repair_from: '- | Before we get into it, follow me on X and join my Telegram channel where I post more AI content every day. | 1'
+    category: no_added_value
+    disposition: fix
+    note: |
+      The promotional follow and Telegram request, including the URLs, carries no
+      instructional substance for the evaluation-engineering argument.
+    suggestion: Keep this material out of the article.
+  - severity: defensible
+    article: eval-engineering
+    locator: The entry cost has changed. | Inside four weeks, four evaluation vendors shipped their expertise | 1
+    repair_from: The entry cost has changed. | Within about four weeks, LangChain, Galileo, AWS, and Arize had shipped their expertise as skills | 1
+    category: major
+    disposition: fix
+    note: |
+      The manuscript names the four vendors but omits the source's specific dates
+      (LangChain on 22 July, followed by Galileo, AWS under Apache 2.0, and Arize)
+      and AWS's Apache 2.0 licensing detail. Those details are useful evidence for
+      the claim that the category was rapidly unbundling.
+    suggestion: Restore the July 22 date and AWS's Apache 2.0 detail if the timing and licensing support the thesis.
+  - severity: defensible
+    article: eval-engineering
+    locator: The judge needs rules of its own. | Use a different model family when possible | 1
+    repair_from: The judge needs rules of its own. | Use a different model family when possible | 1
+    category: defensible
+    disposition: fix
+    note: |
+      The source's Sonnet-for-Haiku example and the quoted explanation that shared
+      model families share blind spots are omitted. The manuscript preserves the
+      actionable rule and its rationale, so this is a reasonable compression.
+    suggestion: No restoration required unless a concrete example of judge bias is desired.
+  - severity: defensible
+    article: eval-engineering
+    locator: Then the graph can decide what to do with its own work. | A pull request supplies a deterministic guardrail result | 1
+    repair_from: Then the graph can decide what to do with its own work. | A pull request supplies a deterministic guardrail result | 1
+    category: defensible
+    disposition: fix
+    note: |
+      The source's additional example of approving and merging roughly 1,500 pull
+      requests without reading a line of code is omitted. The manuscript retains
+      the stronger comparative statistics and the central constraint argument, so
+      the anecdote is nonessential.
+    suggestion: No restoration required.
+  - severity: defensible
+    article: eval-engineering
+    locator: Keep the suite alive. | Hold out 300 to 800 cases and keep 500 running in under five minutes | 1
+    repair_from: Keep the suite alive. | Hold out 300 to 800 cases and keep 500 running in under five minutes | 1
+    category: defensible
+    disposition: fix
+    note: |
+      The source's explanation that a suite longer than a coffee break stops being
+      run is omitted. The manuscript keeps both concrete performance constraints,
+      which carry the operational point.
+    suggestion: No restoration required.
+  - severity: defensible
+    article: eval-engineering
+    locator: The model will be replaced. | Most people will go back to scrolling outputs on a Friday | 1
+    repair_from: The model will be replaced. | Most people will go back to scrolling outputs on a Friday | 1
+    category: defensible
+    disposition: fix
+    note: |
+      The source's longer closing contrast about spending one afternoon wiring the
+      thermostat and then preventing repeated failures is compressed into the
+      manuscript's shorter conclusion. The retained ending still conveys the
+      durable-examiner thesis and the practical next step.
+    suggestion: No restoration required.
+  - severity: defensible
+    article: eval-engineering
+    locator: A software travel agent answered a simple trip question with an exchange rate | Specific, clean, useful-sounding. All of it invented. | 1
+    repair_from: A software travel agent answered a simple trip question with an exchange rate | Specific, clean, useful-sounding. All of it invented. | 1
+    category: defensible
+    disposition: fix
+    note: |
+      The source's accompanying chart caption contrasting the demo with the
+      customer experience is omitted. The manuscript states the two measured
+      percentages and explains their significance directly, so the caption adds no
+      necessary substance.
+    suggestion: No restoration required.
+  retentions:
+  - passage: Everyone is renting the same brain now.
+    costs: |
+      Several opening paragraphs spend space establishing the model-price
+      comparison and the travel-agent anecdote before the evaluation layer is
+      named. They earn their place by making the problem concrete and motivating
+      the thesis.
+    verdict: earns_place
+  - passage: A thermometer tells you the room is cold.
+    costs: |
+      The thermostat metaphor occupies a full paragraph and is then used again
+      when the verdict routes the graph. It earns its place because it supplies
+      the article's organizing model for eval engineering.
+    verdict: earns_place
+  - passage: The entry cost has changed.
+    costs: |
+      The benchmark statistics and vendor-unbundling paragraph take substantial
+      space, but they establish that the workflow is accessible now rather than
+      merely theoretical.
+    verdict: earns_place
+  - passage: One complete path starts with `npx skills add
+    costs: |
+      The command block and explanation of the two repositories consume a dense
+      paragraph, but these are the article's promised hands-on setup and prevent
+      the piece from becoming general advice.
+    verdict: earns_place
+  - passage: Inside the project, `evalkit init my-agent-evaluation` creates the folder.
+    costs: |
+      The phase-by-phase command list is operational detail that could otherwise
+      be cut, but it lets a reader reproduce the workflow and connects scores to
+      code locations.
+    verdict: earns_place
+  - passage: The judge needs rules of its own.
+    costs: |
+      The rubric, objective-check, anti-proxy, and version-pinning rules occupy a
+      long section. Each prevents a distinct evaluation failure, so the section
+      carries weight.
+    verdict: earns_place
+  - passage: The best tests are already in the logs.
+    costs: |
+      The five trace categories and four-field template take considerable space,
+      but they are the article's most actionable method for generating tests from
+      real failures.
+    verdict: earns_place
+  - passage: Turn the finding into a Harbor task under `evals/<task-id>/`
+    costs: |
+      The folder layout and verifier-safety rules are lengthy, yet they preserve
+      the hidden-answer and reproducibility details a reader needs to build a
+      meaningful eval.
+    verdict: earns_place
+  - passage: Then the graph can decide what to do with its own work.
+    costs: |
+      The four-signal confidence-gate explanation and rollout safeguards occupy
+      several paragraphs, but they explain how evaluation becomes an operational
+      merge decision rather than a dashboard.
+    verdict: earns_place
+  - passage: Start with three measurements for a tool-using agent
+    costs: |
+      The metrics, dataset types, suite-size constraints, and five starter evals
+      form a substantial checklist. They earn their space as the article's
+      concrete implementation plan.
+    verdict: earns_place
+  - passage: The model will be replaced.
+    costs: |
+      The final synthesis repeats the examiner-versus-model distinction and ends
+      with a three-line discipline plus a call to action. It earns its place by
+      turning the preceding method into a memorable operating rule.
+    verdict: earns_place
+  notes: |
+    Changes required because the manuscript is a strong, substantially shorter
+    synthesis but loses the source's 39-failure benchmark context and some practical
+    setup and iteration details that would help a reader reproduce the workflow.
+evidence:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: eval-engineering
+    locator: '- | The travel agent''s empty search should have produced a verdict that changed the run. Low context recall rejects the handoff. | 1'
+    repair_from: '- | The travel agent''s empty search should have produced a verdict that changed the run. Low context recall rejects the handoff. | 1'
+    category: invented_claim
+    disposition: fix
+    note: |
+      The source separately says that an empty tool result should cause the agent to acknowledge the missing result rather than invent an answer, and that low context recall can reject a handoff. It does not identify the travel agent's empty search as low context recall or state that this specific verdict should reject its handoff.
+  scores:
+    claim_support: 4
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every assertion in the manuscript against the complete pinned extraction; I could not check claims against anything beyond that extraction.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: '- | Specific, clean, useful-sounding. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      "Specific, clean, useful-sounding." is a sentence fragment with no verb.
+      Because this piece is a faithful synthesis, the sentence is editorial prose
+      and requires repair.
+    suggestion: It was specific, clean, and useful-sounding.
+  scores:
+    grammar: 3
+    typography: 5
+    consistency: 5
+  notes: |
+    One sentence fragment requires repair; capitalization, typography, headings,
+    and number style are otherwise consistent.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: '- | A score that never changes behavior is analytics. An eval that changes the next edge is engineering. | 1'
+    repair_from: '- | A score in a report still changes nothing unless it has a path back to the run it measured. | 1'
+    category: duplication
+    disposition: fix
+    note: |
+      The same explanation appears twice: first as a report score that changes nothing, then as a score that never changes behavior. The second occurrence restates the first rather than advancing the argument.
+    suggestion: Keep one formulation and use the freed space to connect evalkit's report directly to the routing decisions described earlier.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 5
+    ending: 5
+  notes: |
+    The piece carries one travel-agent example from failure through eval design to gated deployment and lands on a concrete action. Changes are required because the report-score explanation is duplicated.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: The entry cost has changed. | The entry cost has changed. | 1
+    category: no_voice
+    disposition: fix
+    note: |
+      The voice disappears here and stays absent through the benchmark scores,
+      product names, and shipping chronology. The paragraph reads like a changelog
+      with no reader in the room: grammatical, even, and interchangeable with a
+      system-generated report.
+    suggestion: |
+      Re-anchor this paragraph in one concrete reader-facing consequence before
+      presenting the benchmark results.
+  - severity: minor
+    article: eval-engineering
+    locator: The entry cost has changed. | The entry cost has changed. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This portentous short sentence announces a transition without adding
+      information; the following sentence supplies the actual claim.
+    suggestion: |
+      Cut the sentence and begin with the production traces and what they show.
+  - severity: minor
+    article: eval-engineering
+    locator: Turn the finding into a Harbor task under `evals/<task-id>/` | Turn the finding into a Harbor task under `evals/<task-id>/`. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "Harbor task" is a subfield term that the piece never defines, so a
+      competent engineer outside this area cannot tell what artifact is meant.
+    suggestion: |
+      Define Harbor at first mention as the benchmark task format used here.
+  - severity: minor
+    article: eval-engineering
+    locator: The careful path names who may trust the gate. | Run it in shadow mode for at least four hours of real traffic, merging nothing. | 1
+    category: passive
+    disposition: fix
+    note: |
+      The procedural run switches to ownerless imperatives. "Run it" leaves the
+      responsible actor unnamed, which makes the advice sound like system output.
+    suggestion: |
+      Name the actor responsible for running the gate in shadow mode.
+  - severity: major
+    article: eval-engineering
+    locator: The model will be replaced. | Install one skill. Pull 25 traces. Build one eval today, then add one whenever something breaks. | 1
+    category: weak_close
+    disposition: fix
+    note: |
+      The final line collapses into a checklist that repeats the piece's earlier
+      instructions instead of leaving the reader with a new implication or
+      question.
+    suggestion: |
+      End on the distinction between a score and a system that changes behavior,
+      without repeating the installation and trace-count steps.
+  scores:
+    voice: 3
+    sentence_variety: 4
+    economy: 3
+  notes: |
+    I heard a vivid, confident piece lose its human voice when it turned from the
+    travel-agent failure into a catalog of benchmarks, tools, and operating steps.

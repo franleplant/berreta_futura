@@ -1,0 +1,147 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: factory-systems-problem
+    repair_from: '- | Software factories are super real, but we need to be realistic. | 1'
+    category: longer_than_source
+    disposition: fix
+    note: |
+      The manuscript's body is at least as long as the combined pinned
+      extractions. A faithful edit may preserve length for access or
+      legibility, but this is a collection of three short, freely readable
+      posts and adds connective prose rather than shortening them.
+    suggestion: Remove connective and rhetorical padding until the piece is shorter than the combined sources.
+  omissions:
+  - fact: The claim that a homelab project can earn a super-fast promotion and a red-carpet service at the next interview
+    reader_loses: They lose one concrete consequence offered as motivation for doing this work.
+    verdict: defensible
+  - fact: The framing that this is a second hot take whose first hot take had landed
+    reader_loses: They lose the conversational context linking the service-bus post to the earlier argument.
+    verdict: defensible
+  - fact: The source's exact 'look up anything in the @dotnet space' invitation
+    reader_loses: Nothing material; the manuscript keeps the actionable .NET examples and names them directly.
+    verdict: defensible
+  retentions:
+  - passage: It’s time for a blog post.
+    costs: A meta-level closing that adds no technical information; its space could help bring the piece below the combined source length.
+    verdict: cut
+  - passage: 'The service-bus question makes this concrete:'
+    costs: A connective sentence that consumes space but does orient the reader from the general systems claim to the concrete example.
+    verdict: earns_place
+  - passage: At home, in your homelab, you should be cracking on this problem space
+    costs: Space that delivers the source's practical recommendation and interview-ready application.
+    verdict: earns_place
+  - passage: The @dotnet space offers MassTransit, NServiceBus, and WCF
+    costs: Space that preserves the operational names a reader can investigate, plus Temporal as the modern choice.
+    verdict: earns_place
+  notes: |
+    Changes required because the faithful edit does not actually condense the three
+    source posts; it is longer while adding only connective framing.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | The service-bus question makes this concrete: n8n was a silly idea | 1'
+    repair_from: '- | The service-bus question makes this concrete: n8n was a silly idea | 1'
+    category: unreached_conclusion
+    disposition: fix
+    note: |
+      None of the pinned sources says that the service-bus example makes the factory thesis concrete. The sentence introduces an editorial conclusion not reached by the sources.
+  scores:
+    claim_support: 4
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked the title, body, and all supplied furniture against all three pinned extractions; no material outside the supplied manuscript and extractions was available to check.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | or among the circa <10 people in the who’s-who who have been trying | 1'
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      The parenthetical is followed directly by the interjection "ugh" without punctuation, leaving the sentence improperly formed. The sentence is retained from the author's text, so an editor chooses the remedy.
+    suggestion: …through how you apply them (but it is a piece of the puzzle). Ugh.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | who have never worked in corporate in their life thus didn’t have the knowledge | 1'
+    category: agreement
+    disposition: editor_decision
+    note: |
+      "Folks" is plural, so "their life" should be plural; the clause also needs clearer coordination before "thus." The sentence is retained from the author's text, so an editor chooses the remedy.
+    suggestion: who have never worked in corporate in their lives and thus didn’t have the knowledge
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | (ie. they are likely startups created in the last six months!) | 1'
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      The abbreviation is punctuated incorrectly: it should be "i.e.," before the parenthetical explanation. The sentence is retained from the author's text, so an editor chooses the remedy.
+    suggestion: (i.e., they are likely startups created in the last six months!)
+  scores:
+    grammar: 2
+    typography: 3
+    consistency: 3
+  notes: |
+    Changes required because the body contains an agreement error and two punctuation errors in retained prose.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | The highest ROI you can have right now is learning the entire damn stack, automating it and showing it at your next interview/doing a recorded talk at a meetup. | 1'
+    repair_from: '- | At home, in your homelab, you should be cracking on this problem space in your free time and showing it at your next interview or in a recorded talk at a meetup. | 1'
+    category: duplication
+    disposition: fix
+    note: |
+      The recommendation to learn or build the stack and present it at an interview or meetup appears twice in the opening paragraph, first as homelab advice and then as the highest-ROI advice.
+    suggestion: Keep one version of the interview-and-meetup recommendation and use the space to advance the systems argument.
+  scores:
+    order: 4
+    coherence: 3
+    opening: 4
+    ending: 4
+  notes: |
+    I verified the piece's argument from the limits of current software factories through its systems-and-culture thesis to the service-bus example and final recommendation.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: factory-systems-problem
+    locator: '- | Software factories are super real, but we need to be realistic. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Six sentences rely on the same copular "X is Y" shape: "Software factories are super real", "It isn't cracked, but it's a puzzle", "The best practices right now are to build", "The work is almost lights out", "It's a systems engineering and corporate culture problem", and "It's time for a blog post." The repetition makes the argument sound assembled from declarations; cut or recast several of these sentences.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | The innovators are toying around with discovering practices and pieces. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Toying around with discovering practices and pieces" is vague abstraction that does not tell the reader what the innovators are actually doing. Replace it with the specific practice or experiment being discovered.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | which entails solving non-agent topics | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "Non-agent topics" is undefined shorthand for a competent engineer outside this niche. Name the concrete systems concerns meant here.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | smashing corporate friction in the realm of DevEx for agents | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "DevEx" arrives as unexplained insider shorthand. Spell out the term or describe the developer-experience problems directly.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 2
+  notes: |
+    I hear a forceful, opinionated engineer, but the piece leans on repeated declarative constructions and several abstractions that blur its strongest systems argument.

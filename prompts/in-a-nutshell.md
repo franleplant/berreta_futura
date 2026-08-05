@@ -171,8 +171,15 @@ page. It does not wrap onto page two: a first paragraph too long for the space
 left over makes the build refuse the edition outright. The exact limit depends
 on how many lines this article's title and byline take, so it is measured per
 article and stated in the assignment below as an "Opening paragraph budget";
-aim under it and put the rest of the thought in your second paragraph. When no
-budget is stated the piece has no illustrated opener and no such limit.
+aim under it and put the rest of the thought in your second paragraph.
+
+**When no budget is stated, assume 90 words.** Every article in an edition with
+`article_opener: illustrated_paper_spots_v1` has an illustrated opener whether or
+not a number reaches you, and the fallback is not "no limit": a 195-word opening
+paragraph has refused this edition's build twice. Ninety words is safely inside
+the smallest real budget. A paragraph break costs the author nothing — in a
+faithful mode the words stay exactly as written, and where the break falls is
+the editors' call.
 
 Return step 1's six questions so the operator can hand the writer's model of
 comprehension to the `teaching` lens rather than letting it die with the draft.

@@ -1,0 +1,82 @@
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    The editorial text is mechanically clean: sentence openings, grammar, punctuation, typography, headings, and number usage are consistent.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | An agent in an evaluation sandbox crossed from a root shell through datasets, pods, credentials, and clusters because each permission opened another path. | 1'
+    repair_from: '- | The missing question is what each verdict permits next. | 1'
+    category: running_example
+    disposition: fix
+    note: |
+      The opening establishes a self-improving codebase, but the next section
+      introduces four unrelated examples and the final body section starts a
+      separate security case. The argument remains recoverable, yet no concrete
+      case carries it from the handoff problem to the proposed trace.
+    suggestion: Choose one concrete case to carry through the argument, using the security case only once as a deliberate contrast.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 5
+    ending: 4
+  notes: |
+    I verified that the editorial moves from green tests to the handoff thesis,
+    then to boundaries and a practical tracing recommendation; its main structural
+    weakness is the absence of a sustained running example.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: the-missing-handoff
+    locator: '- | An empty tool result should stop an agent from inventing an answer. | 1'
+    category: repeated_shape
+    disposition: fix
+    note: |
+      Four consecutive prescriptions use the same "A [noun] should/needs/should let..." shape: "An empty tool result should stop an agent from inventing an answer," "A failed check should block a merge," "A request that carries its state should let any server continue the work," and "A memory that cannot keep every association needs a rule for what to forget." The pattern becomes audible before the argument develops.
+    suggestion: Recast at least two of these sentences with different subjects and verb structures.
+  - severity: major
+    article: the-missing-handoff
+    locator: '- | The suite had passed its rubric. The product had failed. | 1'
+    category: banned_tic
+    disposition: fix
+    note: |
+      This editor-owned antithesis delivers its point through a familiar paired reversal.
+    suggestion: Replace the two-sentence contrast with one sentence naming how rubric success masked product failure.
+  - severity: minor
+    article: the-missing-handoff
+    locator: '- | That truth also needs a boundary. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This portentous short sentence announces a transition without specifying what boundary does or where it lies.
+    suggestion: Name the concrete boundary or join the sentence to the example that follows.
+  - severity: minor
+    article: the-missing-handoff
+    locator: '- | These are the same design problem at different scales: the handoff must carry enough truth for the next action. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      The sentence stacks abstractions ("design problem," "scales," "truth," "action") and restates the preceding examples at a higher level.
+    suggestion: State the shared mechanism directly in terms of what information the next step receives.
+  - severity: minor
+    article: the-missing-handoff
+    locator: '- | An agent in an evaluation sandbox crossed from a root shell through datasets, pods, credentials, and clusters because each permission opened another path. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "Pods" is subfield jargon and is not defined for an engineer outside the Kubernetes ecosystem.
+    suggestion: Replace "pods" with "running workloads" or define the term on first use.
+  scores:
+    voice: 4
+    sentence_variety: 3
+    economy: 4
+  notes: |
+    The piece sounds deliberate and concrete at its best, but the middle paragraph falls into repeated prescription shapes and abstract editorial summary.

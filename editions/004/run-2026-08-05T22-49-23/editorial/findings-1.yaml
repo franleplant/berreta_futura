@@ -1,0 +1,82 @@
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    Verified no mechanics defects in the editorial text; its prose, punctuation, and metadata are internally consistent.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | A score matters when it changes the next edge: retry, quarantine, hand off, or stop. | 1'
+    repair_from: '- | A green test suite can sit beside a broken product. | 1'
+    category: running_example
+    disposition: fix
+    note: |
+      The opening introduces three unrelated agent scenarios, then the piece
+      shifts into separate score, protocol, memory, and factory examples. No
+      concrete case carries the argument through to the closing directive, so
+      the middle reads as a catalogue rather than a developing demonstration.
+    suggestion: Choose one opening scenario as the running case and return to it as each hidden decision becomes visible.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 5
+    ending: 5
+  notes: |
+    The piece moves clearly from model failures to the surrounding system and
+    lands with a practical directive, but its examples do not form one sustained
+    case.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: the-parts-around-the-model
+    locator: '- | A score matters when it changes the next edge: retry, quarantine, hand off, or stop. | 1'
+    category: repeated_shape
+    disposition: fix
+    note: |
+      Four consecutive sentences in the third paragraph use the same "A [system] becomes/stays/matters when..." construction: "A score matters when...", "A protocol becomes easier to run when...", "A memory system stays useful when...", and "A factory becomes plausible when...". The pattern makes the paragraph sound assembled rather than written.
+    suggestion: Vary the sentence openings and give at least one idea a concrete actor or action.
+  - severity: major
+    article: the-parts-around-the-model
+    locator: '- | A score matters when it changes the next edge: retry, quarantine, hand off, or stop. | 1'
+    category: no_voice
+    disposition: fix
+    note: |
+      The voice disappears in the third paragraph, where abstract systems are described in evenly balanced definitions without a person, scene, or specific consequence in the room.
+    suggestion: Anchor the paragraph in one observed failure or decision before naming the general pattern.
+  - severity: minor
+    article: the-parts-around-the-model
+    locator: '- | A factory becomes plausible when its service bus remains deterministic and its credentials, builds, and sandboxes have somewhere to stand. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "Service bus" is subfield jargon and is not defined for a competent engineer outside this area.
+    suggestion: Replace it with the concrete coordination mechanism or briefly explain what the bus does.
+  - severity: minor
+    article: the-parts-around-the-model
+    locator: '- | The common job is making hidden decisions visible. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This is an abstraction stack that sounds like a balanced insight while postponing the actual actors and decisions.
+    suggestion: Name the specific hidden decisions the surrounding examples expose.
+  - severity: major
+    article: the-parts-around-the-model
+    locator: '- | That is where the machine begins to become a system. | 1'
+    category: weak_close
+    disposition: fix
+    note: |
+      The closing line collapses into a portentous, generic transformation claim instead of leaving the reader with a sharper consequence from the tracing exercise.
+    suggestion: End on the concrete change made at the permission boundary, test, or message.
+  scores:
+    voice: 3
+    sentence_variety: 2
+    economy: 4
+  notes: |
+    I heard a vivid, human opening give way to a polished systems register, then close on a generic claim about becoming a system.

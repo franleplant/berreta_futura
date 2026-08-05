@@ -1,0 +1,91 @@
+piece: mcp-protocol-update
+rounds:
+- round: 1
+  words: 779
+  loop_findings: 5
+  all_findings: 6
+- round: 2
+  words: 834
+  loop_findings: 9
+  all_findings: 12
+- round: 3
+  words: 930
+  loop_findings: 7
+  all_findings: 14
+state: rounds_exhausted
+open_findings:
+- lens: worth
+  severity: major
+  article: mcp-protocol-update
+  locator: '- | A remote MCP server that once needed sticky routing, a shared session store, and inspection of request bodies can now sit behind a plain round-robin load balancer. | 1'
+  repair_from: '- | A remote MCP server that once needed sticky routing, a shared session store, and inspection of request bodies can now sit behind a plain round-robin load balancer. | 1'
+  category: source_shaped
+  disposition: fix
+  note: |
+    The manuscript follows the source's sequence almost exactly: stateless transport, application state, server-to-client requests, routing and caching, extensions, Tasks, authorization, schemas, deprecations, and governance. The synthesis adds a useful thesis, but it has not substantially reshaped the material around that thesis.
+  suggestion: Reorganize around implementer decisions—transport migration, interaction patterns, extension adoption, authorization and schema breaking changes, then governance—instead of mirroring the source sections.
+- lens: worth
+  severity: major
+  article: mcp-protocol-update
+  locator: The release candidate for the 2026-07-28 specification removes the protocol-level session. | The new protocol removes that handshake and header. | 1
+  repair_from: A remote MCP server that once needed sticky routing, a shared session store, and inspection of request bodies can now sit behind a plain round-robin load balancer. | A remote MCP server that once needed sticky routing, a shared session store, and inspection of request bodies can now sit behind a plain round-robin load balancer. | 1
+  category: lost_operational_detail
+  disposition: fix
+  note: |
+    The source supplies complete old and new Streamable HTTP requests, including the JSON-RPC payload, the exact _meta client-information key, and the placement of MCP-Protocol-Version, Mcp-Method, and Mcp-Name. The manuscript names the headers but does not show the wire shape an implementer must reproduce.
+  suggestion: Carry a compact before/after request example, or at least the exact _meta key and representative JSON-RPC structure.
+- lens: worth
+  severity: major
+  article: mcp-protocol-update
+  locator: This release contains breaking changes. | The maintainers do not intend that to become normal. | 1
+  repair_from: This release contains breaking changes. | This release contains breaking changes. | 1
+  category: over_compressed
+  disposition: fix
+  note: |
+    Two omissions cut past the implementation bone: the exact stateless request shape and the release-validation timetable. Without the former a reader cannot confidently implement the new handshake replacement; without the latter they miss that the candidate locked on May 21, the final ships July 28, the window is ten weeks, and Tier 1 SDKs are expected to support it during that window.
+  suggestion: Restore the compact request example and the May 21–July 28 validation timeline.
+- lens: evidence
+  severity: major
+  article: mcp-protocol-update
+  locator: '- | ttlMs tells clients how long a cached response remains fresh. | 1'
+  repair_from: '- | ttlMs tells clients how long a cached response remains fresh. | 1'
+  category: qualification_loss
+  disposition: fix
+  note: |
+    The source limits ttlMs and cacheScope to list and resource-read results.
+    The manuscript broadens this to cached responses generally, dropping the
+    source's scope limitation.
+- lens: evidence
+  severity: blocking
+  article: mcp-protocol-update
+  locator: '- | application_type, which tells the authorization server whether the client is a web, native, or other application. | 1'
+  repair_from: '- | application_type, which tells the authorization server whether the client is a web, native, or other application. | 1'
+  category: invented_claim
+  disposition: fix
+  note: |
+    The source says clients declare application_type during Dynamic Client
+    Registration and that this avoids an authorization server defaulting a
+    desktop or CLI client to "web"; it does not state the manuscript's
+    broader web/native/other explanation.
+- lens: evidence
+  severity: major
+  article: mcp-protocol-update
+  locator: '- | implementers targeting 2026-07-28 are expected to adopt future revisions without rewriting their transport or lifecycle code. | 1'
+  repair_from: '- | implementers targeting 2026-07-28 are expected to adopt future revisions without rewriting their transport or lifecycle code. | 1'
+  category: qualification_loss
+  disposition: fix
+  note: |
+    The source presents this as the maintainers' expectation that implementers
+    will be able to adopt future revisions without rewriting transport or
+    lifecycle code. "Are expected to adopt" changes that forecast into a
+    stronger expectation or obligation.
+- lens: craft
+  severity: major
+  article: mcp-protocol-update
+  locator: Authorization | Authorization clients must validate `iss`, the issuer identifier in an authorization response, and declare their OpenID Connect `application_type`, which tells the authorization server whether the client is a web, native, or other application. | 1
+  category: no_voice
+  disposition: fix
+  note: |
+    The voice thins into a changelog in the authorization paragraph: a sequence of requirements and protocol terms with no concrete actor, situation, or consequence for the reader.
+  suggestion: |
+    Anchor the paragraph in one authorization flow, then attach each requirement to the step where an implementer encounters it.

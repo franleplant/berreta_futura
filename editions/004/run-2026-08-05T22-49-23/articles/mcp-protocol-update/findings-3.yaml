@@ -1,0 +1,219 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: '- | A remote MCP server that once needed sticky routing, a shared session store, and inspection of request bodies can now sit behind a plain round-robin load balancer. | 1'
+    repair_from: '- | A remote MCP server that once needed sticky routing, a shared session store, and inspection of request bodies can now sit behind a plain round-robin load balancer. | 1'
+    category: source_shaped
+    disposition: fix
+    note: |
+      The manuscript follows the source's sequence almost exactly: stateless transport, application state, server-to-client requests, routing and caching, extensions, Tasks, authorization, schemas, deprecations, and governance. The synthesis adds a useful thesis, but it has not substantially reshaped the material around that thesis.
+    suggestion: Reorganize around implementer decisions—transport migration, interaction patterns, extension adoption, authorization and schema breaking changes, then governance—instead of mirroring the source sections.
+  - severity: major
+    article: mcp-protocol-update
+    locator: The release candidate for the 2026-07-28 specification removes the protocol-level session. | The new protocol removes that handshake and header. | 1
+    repair_from: A remote MCP server that once needed sticky routing, a shared session store, and inspection of request bodies can now sit behind a plain round-robin load balancer. | A remote MCP server that once needed sticky routing, a shared session store, and inspection of request bodies can now sit behind a plain round-robin load balancer. | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source supplies complete old and new Streamable HTTP requests, including the JSON-RPC payload, the exact _meta client-information key, and the placement of MCP-Protocol-Version, Mcp-Method, and Mcp-Name. The manuscript names the headers but does not show the wire shape an implementer must reproduce.
+    suggestion: Carry a compact before/after request example, or at least the exact _meta key and representative JSON-RPC structure.
+  - severity: major
+    article: mcp-protocol-update
+    locator: This release contains breaking changes. | The maintainers do not intend that to become normal. | 1
+    repair_from: This release contains breaking changes. | This release contains breaking changes. | 1
+    category: over_compressed
+    disposition: fix
+    note: |
+      Two omissions cut past the implementation bone: the exact stateless request shape and the release-validation timetable. Without the former a reader cannot confidently implement the new handshake replacement; without the latter they miss that the candidate locked on May 21, the final ships July 28, the window is ten weeks, and Tier 1 SDKs are expected to support it during that window.
+    suggestion: Restore the compact request example and the May 21–July 28 validation timeline.
+  omissions:
+  - fact: The exact new Streamable HTTP request, including the _meta key io.modelcontextprotocol/clientInfo and the JSON-RPC tools/call payload
+    reader_loses: Cannot implement the stateless handshake replacement from the synthesis alone.
+    verdict: needed
+  - fact: The release candidate was locked on May 21, 2026; the final specification ships July 28, 2026; the validation window is ten weeks and Tier 1 SDKs are expected to ship support within it
+    reader_loses: Misses the concrete migration and validation schedule.
+    verdict: needed
+  - fact: The source's complete 2025-11-25 initialize request and Mcp-Session-Id example
+    reader_loses: Loses a precise before-state wire reference, but the prose still explains the old handshake.
+    verdict: defensible
+  - fact: The six SEPs that work together to deliver statelessness
+    reader_loses: Cannot map the change back to the individual proposals, but the combined behavior is preserved.
+    verdict: defensible
+  - fact: The browser_id alternative in the explicit-handle example
+    reader_loses: Loses one example of state handles beyond baskets.
+    verdict: defensible
+  - fact: The SEP identifiers for transport, elicitation, caching, tracing, authorization, schema, and lifecycle changes
+    reader_loses: Makes individual changes harder to look up, but does not alter their substance.
+    verdict: defensible
+  - fact: The source's explanation that iss mitigates a mix-up attack and that future clients will reject responses omitting it
+    reader_loses: Loses the security rationale and urgency behind the issuer validation.
+    verdict: defensible
+  - fact: Cache behavior is modeled on HTTP Cache-Control and removes the need for an SSE stream as the only way to learn that a list changed
+    reader_loses: Loses useful operational context for adopting ttlMs and cacheScope.
+    verdict: defensible
+  - fact: Extensions use ext-* repositories and have an Extensions Track in the SEP process
+    reader_loses: Loses repository naming and the formal path from experimental to official.
+    verdict: defensible
+  - fact: The source's guidance to open specification issues and use the relevant Working Group Discord channel for implementation questions
+    reader_loses: Loses the concrete support route for adopters.
+    verdict: defensible
+  - fact: The closing Looking Ahead section's explicit framing of 2026-07-28 as the long-term foundation
+    reader_loses: Little; the manuscript's final governance paragraph carries that conclusion.
+    verdict: defensible
+  retentions:
+  - passage: A remote MCP server that once needed sticky routing
+    costs: A short practical framing paragraph, but it gives the reader the deployment consequence before the protocol mechanics.
+    verdict: earns_place
+  - passage: In practice, we’ve found this pattern more than a workable substitute
+    costs: Several sentences of maintainer judgment, but they explain why visible handles are more powerful than hidden session state.
+    verdict: earns_place
+  - passage: The client gathers the answer and re-issues the original call
+    costs: A short explanation around the JSON example, but it makes the retry mechanism actionable.
+    verdict: earns_place
+  - passage: This release contains breaking changes. The maintainers do not intend that to become normal.
+    costs: A concluding governance paragraph, but it tells implementers how this break relates to future compatibility.
+    verdict: earns_place
+  notes: Changes required because the synthesis is useful and substantially shorter, but it mirrors the source's structure and omits the exact stateless wire example and concrete release-validation timetable that implementers need. The needed omissions mean it is over-compressed until those details are restored.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: '- | ttlMs tells clients how long a cached response remains fresh. | 1'
+    repair_from: '- | ttlMs tells clients how long a cached response remains fresh. | 1'
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source limits ttlMs and cacheScope to list and resource-read results.
+      The manuscript broadens this to cached responses generally, dropping the
+      source's scope limitation.
+  - severity: blocking
+    article: mcp-protocol-update
+    locator: '- | application_type, which tells the authorization server whether the client is a web, native, or other application. | 1'
+    repair_from: '- | application_type, which tells the authorization server whether the client is a web, native, or other application. | 1'
+    category: invented_claim
+    disposition: fix
+    note: |
+      The source says clients declare application_type during Dynamic Client
+      Registration and that this avoids an authorization server defaulting a
+      desktop or CLI client to "web"; it does not state the manuscript's
+      broader web/native/other explanation.
+  - severity: major
+    article: mcp-protocol-update
+    locator: '- | implementers targeting 2026-07-28 are expected to adopt future revisions without rewriting their transport or lifecycle code. | 1'
+    repair_from: '- | implementers targeting 2026-07-28 are expected to adopt future revisions without rewriting their transport or lifecycle code. | 1'
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source presents this as the maintainers' expectation that implementers
+      will be able to adopt future revisions without rewriting transport or
+      lifecycle code. "Are expected to adopt" changes that forecast into a
+      stronger expectation or obligation.
+  scores:
+    claim_support: 3
+    qualification_survival: 3
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every assertion in the manuscript against the complete pinned extraction; I could not check claims against any source outside that extraction.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    Verified that the manuscript has no mechanical defects requiring changes.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 4
+    coherence: 4
+    opening: 4
+    ending: 4
+  notes: |
+    The piece's progression from stateless transport through extensions, authorization, schemas, deprecations, and lifecycle policy is orderly and coherent, with no structural defects requiring changes.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: Authorization | Authorization clients must validate `iss`, the issuer identifier in an authorization response, and declare their OpenID Connect `application_type`, which tells the authorization server whether the client is a web, native, or other application. | 1
+    category: no_voice
+    disposition: fix
+    note: |
+      The voice thins into a changelog in the authorization paragraph: a sequence of requirements and protocol terms with no concrete actor, situation, or consequence for the reader.
+    suggestion: |
+      Anchor the paragraph in one authorization flow, then attach each requirement to the step where an implementer encounters it.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: 'The same stateless design changes how a server asks for input during a call | Instead of holding an SSE stream open, the server returns an `InputRequiredResult` with a `resultType`, an `inputRequests` entry describing the prompt and its schema, and a `requestState` value: | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      `SSE` is not defined, so a competent engineer outside this subfield may not know which streaming mechanism is meant.
+    suggestion: |
+      Expand `SSE` to “Server-Sent Events (SSE)” on first use.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: The release includes breaking changes beyond transport and lifecycle | The specification also describes refresh-token requests for OpenID Connect-style servers, scope accumulation during step-up authorization, and the `.well-known` discovery suffix. | 2
+    category: jargon
+    disposition: fix
+    note: |
+      “Step-up authorization” arrives without definition, leaving a key authorization behavior opaque to readers outside identity work.
+    suggestion: |
+      Add a short gloss such as “authorization that asks the user for stronger credentials or consent.”
+  - severity: minor
+    article: mcp-protocol-update
+    locator: The release includes breaking changes beyond transport and lifecycle | The specification also describes refresh-token requests for OpenID Connect-style servers, scope accumulation during step-up authorization, and the `.well-known` discovery suffix. | 2
+    category: jargon
+    disposition: fix
+    note: |
+      `OpenID Connect` is named as if familiar, but the piece never identifies it as an identity layer built on OAuth.
+    suggestion: |
+      Briefly identify OpenID Connect as the identity layer involved in these authorization flows.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: This release contains breaking changes. The maintainers do not intend that to become normal. | The feature lifecycle policy sets Active, Deprecated, and Removed stages with at least twelve months between deprecation and the earliest possible removal. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      “The maintainers do not intend that to become normal” is an abstract, institutional reassurance that says less than the concrete twelve-month policy that follows.
+    suggestion: |
+      Cut the reassurance and let the stated lifecycle rule carry the point.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: The release includes breaking changes beyond transport and lifecycle | The release includes breaking changes beyond transport and lifecycle. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This sentence is an abstraction-stack introduction: “breaking changes,” “transport,” and “lifecycle” name categories before showing what changed.
+    suggestion: |
+      Replace the category summary with the first concrete authorization change, or move this sentence after the examples.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: This release contains breaking changes. The maintainers do not intend that to become normal. | With it landed, implementers targeting 2026-07-28 are expected to adopt future revisions without rewriting their transport or lifecycle code. | 2
+    category: ai_phrasing
+    disposition: fix
+    note: |
+      The closing claim projects certainty about future revisions and “without rewriting” beyond what the piece has established; “With it landed” also has the impersonal cadence of system prose.
+    suggestion: |
+      Attribute the expectation to the maintainers and qualify the promise about future rewrites.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Three operational changes follow | Streamable HTTP now requires `Mcp-Method` and `Mcp-Name` headers, so load balancers, gateways, and rate limiters can route on the operation without inspecting the body; requests are rejected when the headers and body disagree. | 1
+    category: passive
+    disposition: fix
+    note: |
+      “Requests are rejected” hides the actor responsible for enforcement; the protocol, server, or gateway could each be doing it.
+    suggestion: |
+      Name the enforcing component, such as “the server rejects requests when the headers and body disagree.”
+  scores:
+    voice: 3
+    sentence_variety: 4
+    economy: 4
+  notes: I heard a clear, technically confident synthesis whose voice thins into a protocol changelog in the authorization passage and whose close makes a stronger future promise than the body supports. The concrete examples and operational detail keep the piece readable, but several undefined identity terms and abstract transitions interrupt that clarity.

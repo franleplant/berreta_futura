@@ -1,0 +1,186 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | Servers can ask users for information or confirmation through elicitation. | 1'
+    repair_from: '- | Servers can ask users for information or confirmation through elicitation. | 1'
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source names the method as elicitation/create. Without that identifier, a reader who wants to implement an elicitation request must return to the source.
+    suggestion: Name elicitation/create in the sentence introducing elicitation.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | Clients discover them with methods such as tools/list, retrieve resources with resources/read, and execute tools with tools/call. | 1'
+    repair_from: '- | Clients discover them with methods such as tools/list, retrieve resources with resources/read, and execute tools with tools/call. | 1'
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source specifies the */list and */get method families, including discovery and retrieval for prompts and resources. The manuscript names only tools/list, resources/read, and tools/call, so it does not give a reader the method vocabulary needed to work with prompts or enumerate resources.
+    suggestion: Add resources/list and the relevant prompt/resource retrieval methods, while keeping the existing tools example.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | The server acknowledges it with a subscription ID. | 1'
+    repair_from: '- | A client opts in by opening a long-lived subscriptions/listen stream with a filter such as "toolsListChanged": true. | 1'
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source identifies the acknowledgment as notifications/subscriptions/acknowledged and explains that the acknowledged filter may be a subset of the request. The manuscript gives the concept but not the message name an implementer must recognize.
+    suggestion: Name notifications/subscriptions/acknowledged and briefly note that the server confirms the supported filter.
+  omissions:
+  - fact: The scope list of the MCP Specification, SDKs, Development Tools, and Reference Server Implementations
+    reader_loses: The ecosystem boundaries and where implementation guidance and tooling live.
+    verdict: defensible
+  - fact: The distinction that local STDIO servers typically serve one client while remote Streamable HTTP servers typically serve many
+    reader_loses: A useful deployment and scaling expectation.
+    verdict: defensible
+  - fact: The data layer is conceptually the inner layer and the transport layer the outer layer
+    reader_loses: A compact mental model for how the layers relate.
+    verdict: defensible
+  - fact: Progress tracking as an additional utility feature
+    reader_loses: Awareness of the protocol's support for long-running operation progress.
+    verdict: defensible
+  - fact: The generic */list and */get method families for all primitives
+    reader_loses: The complete method pattern for discovering and retrieving prompts and resources.
+    verdict: needed
+  - fact: The elicitation/create method
+    reader_loses: The method name required to request user input or confirmation.
+    verdict: needed
+  - fact: The optional cursor parameter on tools/list for pagination
+    reader_loses: How to retrieve a complete tool registry when listings are paginated.
+    verdict: defensible
+  - fact: Tool title, ttlMs, and cacheScope fields in the tools/list response
+    reader_loses: Display metadata and the source's caching controls.
+    verdict: defensible
+  - fact: The units argument defaults to metric when omitted in the weather example
+    reader_loses: The example's precise default behavior.
+    verdict: defensible
+  - fact: The JSON-RPC request id's role in correlating tool-call responses
+    reader_loses: One implementation detail of matching responses to requests.
+    verdict: defensible
+  - fact: The notifications/subscriptions/acknowledged method and the server's possibly reduced notification filter
+    reader_loses: The exact acknowledgment message an implementation must handle.
+    verdict: needed
+  - fact: The source's explicit examples of tools changing because functionality is added, modified, or temporarily unavailable
+    reader_loses: Concrete reasons a notification may arrive.
+    verdict: defensible
+  - fact: The source's pseudo-code for discovery, tool execution, and notification handling
+    reader_loses: Illustrative SDK-shaped control flow, but not the protocol concepts themselves.
+    verdict: defensible
+  - fact: The statement that notification synchronization extends beyond tools to other primitives
+    reader_loses: The broader applicability of the notification pattern.
+    verdict: defensible
+  retentions:
+  - passage: MCP lets an AI application reach tools and data through a shared protocol.
+    costs: A short framing paragraph, but it gives the reader the central purpose and the deliberate-seams mental model.
+    verdict: earns_place
+  - passage: An MCP host is the application, such as Visual Studio Code, Claude Code, or Claude Desktop.
+    costs: Several sentences of participant and local/remote explanation, but the concrete Sentry/filesystem example makes the client-per-server architecture legible.
+    verdict: earns_place
+  - passage: MCP has two layers.
+    costs: A compact transport/data-layer explanation, but it prevents the protocol from being confused with its connection mechanisms.
+    verdict: earns_place
+  - passage: A compact exchange makes the shape concrete.
+    costs: A paragraph of metadata and response fields, but it supplies the operational vocabulary that the abstract description alone would lack.
+    verdict: earns_place
+  - passage: Suppose the discovered tool is named `weather_current`.
+    costs: A worked tool-call example, but it teaches exact-name matching, arguments, metadata, routing, and returned content in one place.
+    verdict: earns_place
+  - passage: Servers can ask users for information or confirmation through elicitation.
+    costs: A brief treatment of client-facing features and deprecations, but it tells readers which capabilities are current and which are obsolete.
+    verdict: earns_place
+  - passage: Notifications let servers report changes without being polled constantly.
+    costs: A substantial notification explanation, but it covers opt-in subscriptions, identifiers, best-effort delivery, and refresh behavior.
+    verdict: earns_place
+  - passage: MCP focuses solely on the protocol for context exchange
+    costs: A closing scope boundary, but it prevents readers from attributing LLM orchestration responsibilities to MCP.
+    verdict: earns_place
+  notes: |
+    Changes are required because the synthesis gives a strong conceptual and tool-call overview but omits several method identifiers needed to use elicitation, prompt/resource discovery, and subscription acknowledgments. The needed omissions do not make the whole piece over-compressed, and every retained passage contributes either framing, a working example, or an important protocol boundary.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every assertion in the manuscript against the complete pinned extraction and found no claims that could not be supported.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | MCP in a Nutshell | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      The title uses title case. Headings and title furniture should use sentence case.
+    suggestion: MCP in a nutshell
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | 2026-07-28 . | 1'
+    category: typography
+    disposition: fix
+    note: |
+      There is an extra space before the full stop.
+    suggestion: 2026-07-28.
+  scores:
+    grammar: 5
+    typography: 3
+    consistency: 4
+  notes: Changes required because the title is in title case and one sentence has a space before its full stop.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 4
+  notes: |
+    The piece presents a coherent progression from MCP's purpose and architecture through discovery, primitives, a concrete exchange, extensions, notifications, and scope.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | MCP has two layers. | 1'
+    category: no_voice
+    disposition: fix
+    note: |
+      The voice disappears here into an even, system-produced register: layered abstractions,
+      protocol terminology, and declarative explanations continue without a human angle or
+      concrete tension.
+    suggestion: Recast this paragraph around one concrete exchange or reader-facing problem before introducing the layers.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | Tools are executable functions for actions such as file operations, API calls, and database queries. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three consecutive primitive definitions use the same cataloging shape:
+      "Tools are executable functions", "Resources provide context", and
+      "Prompts are reusable interaction templates." The repetition makes the passage
+      sound like documentation rather than written explanation.
+    suggestion: Combine or substantially vary these three definitions, cutting one if necessary.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | The data layer defines JSON-RPC 2.0, a format in which one side sends a named request and the other returns a response. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      The piece leaves a dense cluster of specialist terms underexplained, including
+      JSON-RPC 2.0, Streamable HTTP, Server-Sent Events, bearer tokens, OpenTelemetry,
+      durable handles, and several protocol method names.
+    suggestion: Define or remove the first unfamiliar implementation term in each cluster, prioritizing the concepts a general engineer needs to follow the example.
+  scores:
+    voice: 2
+    sentence_variety: 3
+    economy: 3
+  notes: |-
+    I heard a technically competent explainer whose human voice fades into protocol documentation,
+    especially in the layers and primitives passages, while a repeated catalog shape and dense
+    unexplained terminology reinforce that effect.

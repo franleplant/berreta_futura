@@ -1,0 +1,146 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The opening context that this is an addendum or side-quest to a recent series
+    reader_loses: Some publication context, but not any part of the leverage argument.
+    verdict: defensible
+  - fact: 'The reference to Why Software Factories Fail part 2: Turning the lights back on'
+    reader_loses: A pointer to related reading, not information needed to understand this piece.
+    verdict: defensible
+  - fact: The source's separate 'Seeking Leverage' section heading
+    reader_loses: Only a navigational label; the manuscript's opening sentence supplies the section's framing.
+    verdict: defensible
+  - fact: The note label introducing the expected-pain qualification
+    reader_loses: The qualification itself remains, so no substantive caveat is lost.
+    verdict: defensible
+  - fact: The closing 'good luck' sign-off
+    reader_loses: Nothing informational.
+    verdict: defensible
+  retentions:
+  - passage: The practical leverage in AI-assisted delivery comes from planning and alignment
+    costs: One framing sentence, but it gives the reader the article's thesis before the supporting numbers.
+    verdict: earns_place
+  - passage: For this example I'm gonna blur
+    costs: A short qualification that preserves the distinction between probability and repair cost and prevents misuse of the formula.
+    verdict: earns_place
+  - passage: You need to do this without overindexing
+    costs: A paragraph of practical guidance, but it turns the expected-pain model into an actionable planning principle.
+    verdict: earns_place
+  notes: Approved because this faithful edit gives readers an accessible, tighter account of the source's leverage model—its 25-50% baseline, 2-3x planning gain, expected-pain formula, and phased zooming guidance—without requiring them to parse the ephemeral original post.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every assertion, quotation, heading, number, and formula against the pinned extraction; there were no captions, deck, pull quotes, glossary entries, or cheat-sheet elements to check.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | 25-50% of the time | 1'
+    category: typography
+    disposition: editor_decision
+    note: |
+      The numeric range uses a hyphen; ranges should use an en dash consistently.
+      This sentence is retained source text, so an editor chooses the remedy.
+    suggestion: 25–50% of the time
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | 2-4 hours of coding time | 1'
+    category: typography
+    disposition: editor_decision
+    note: |
+      The numeric range uses a hyphen; ranges should use an en dash consistently.
+      This sentence is retained source text, so an editor chooses the remedy.
+    suggestion: 2–4 hours of coding time
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | 2-3x faster | 1'
+    category: typography
+    disposition: editor_decision
+    note: |
+      The numeric range uses a hyphen; ranges should use an en dash consistently.
+      This sentence is retained source text, so an editor chooses the remedy.
+    suggestion: 2–3x faster
+  scores:
+    grammar: 5
+    typography: 3
+    consistency: 4
+  notes: Three numeric ranges use hyphens instead of the required en dash; capitalization, grammar, punctuation, spelling, headings, labels, and markup are otherwise clean.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Assume that when you yolo a two-sentence prompt into your factory, your chance of getting a fully-mergeable result is ~50%, and the chance you have to rework it is 50%. | 1
+    repair_from: The 80/20 rule in AI coding leverage | Assume that when you yolo a two-sentence prompt into your factory, your chance of getting a fully-mergeable result is ~50%, and the chance you have to rework it is 50%. | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The heading announces a topic but does not state the section's argument about diminishing expected pain through proportionate planning.
+    suggestion: Retitle the section so the heading states its claim about where planning effort produces leverage.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Good luck. | 1
+    repair_from: The 80/20 rule in AI coding leverage | This is what we mean by leverage - and it requires being pragmatic. | 1
+    category: ending
+    disposition: fix
+    note: |
+      The preceding paragraph reaches the practical conclusion, but the final sign-off stops the piece instead of giving that conclusion a firm landing.
+    suggestion: End with a concise takeaway that ties pragmatic, staged planning to the promised delivery leverage.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 4
+    ending: 3
+  notes: |
+    I verified that the piece moves coherently from the limits of coding-only acceleration through expected pain and staged planning, with a heading and final sign-off that weaken its structural landing.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Assume that when you yolo a two-sentence prompt into your factory, your chance of getting a fully-mergeable result is ~50%, and the chance you have to rework it is 50%. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three sentences use the same when-clause-then-main-clause construction: "Assume that when you yolo...", "When the model is 50% likely...", and "when you've done some work... it's possible...". The repeated conditional framing becomes audible before the argument develops; vary or cut one of these sentences.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Draw this out, and there's an inverse relationship between effort invested up front and expected pain. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This is an abstraction stack and balanced clause that announces an insight instead of showing the relationship more concretely.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | For this example I'm gonna blur | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      The throat-clearing caveat and "obviously" spend words defending the simplification before the useful distinction arrives.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Good luck. | 1
+    category: weak_close
+    disposition: fix
+    note: |
+      The sign-off leaves the reader with no final clarity, perspective, or question after the practical argument.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | With multiple phases of planning, zooming in from 50kft view all the way to the 10kft view, you want to do a little bit of steering at each phase to ensure you are eliminating as much expected pain as possible. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "50kft view" and "10kft view" are unexplained shorthand that a competent engineer outside this subfield may not recognize.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 3
+  notes: I hear a lively, conversational practitioner voice that periodically hardens into conditional templates and abstract management prose, then ends on an empty sign-off.

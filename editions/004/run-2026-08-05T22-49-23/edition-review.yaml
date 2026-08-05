@@ -1,0 +1,84 @@
+result: changes_required
+findings:
+- severity: blocking
+  article: editorial
+  locator: '- | A product can be broken while 38 tests glow green. | 1'
+  repair_from: '- | A product can be broken while 38 tests glow green. | 1'
+  category: single_source_editorial
+  disposition: fix
+  note: |
+    The editorial derives more than a quarter of its body from eval-engineering:
+    the green-test example, empty-tool-result failure, verdict-driven routing,
+    and trace-to-gate advice all restate that piece. The editorial's thesis
+    therefore reads as one article wearing an issue-wide hat.
+- severity: major
+  article: edition
+  locator: '- | A product can be broken while 38 tests glow green. | 1'
+  repair_from: '- | A product can be broken while 38 tests glow green. | 1'
+  category: thin_derivation
+  disposition: fix
+  note: |
+    pragmatic-leverage, factory-systems-problem, and mcp-in-a-nutshell
+    contribute nothing to the editorial's argument. Three of seven pieces
+    do not feed the thesis, so the handoff idea is not emergent from the issue.
+- severity: major
+  article: factory-systems-problem
+  locator: '- | If someone is selling you a factory rn and they aren''t in the super small cohort | 1'
+  repair_from: '- | If someone is selling you a factory rn and they aren''t in the super small cohort | 1'
+  category: weak_piece
+  disposition: fix
+  note: |
+    This is the weakest commission. It is chiefly a polemic about who is
+    selling software factories, with little operational explanation or
+    connection to the issue's handoff thesis. It should not have been
+    commissioned in this form.
+- severity: major
+  article: edition
+  locator: mcp-in-a-nutshell | MCP keeps requests stateless. | 1
+  repair_from: mcp-in-a-nutshell | MCP keeps requests stateless. | 1
+  category: redundancy
+  disposition: fix
+  note: |
+    mcp-in-a-nutshell says, "MCP keeps requests stateless." mcp-protocol-update
+    makes the same point through the session removal: "The release candidate
+    for the 2026-07-28 specification removes the protocol-level session."
+    The second piece should be narrowed to what is new rather than replaying
+    the first piece's central claim.
+- severity: major
+  article: edition
+  locator: frontier-lab-agent-intrusion | At 04:01 UTC on July 9, an autonomous agent ran `id` and `env` inside a sandbox. | 1
+  repair_from: frontier-lab-agent-intrusion | At 04:01 UTC on July 9, an autonomous agent ran `id` and `env` inside a sandbox. | 1
+  category: running_order
+  disposition: fix
+  note: |
+    The strongest piece opens, but it is followed immediately by the other
+    densest piece, eval-engineering. The issue gives readers two long,
+    incident-and-framework-heavy reads back to back without a lighter bridge.
+    Separate them or place pragmatic-leverage between them.
+- severity: minor
+  article: factory-systems-problem
+  locator: '- | they are selling bullshit | 1'
+  repair_from: '- | they are selling bullshit | 1'
+  category: outlier
+  disposition: fix
+  note: |
+    Its confrontational, profane voice and manifesto-like faithful-edit mode
+    sit outside the mostly explanatory, technical family. The article needs
+    a substantial tonal and analytical reframing to belong under these covers.
+- severity: minor
+  article: edition
+  category: cover_promise
+  disposition: fix
+  note: |
+    "The Systems Around the Model" and its subtitle are broad enough to fit
+    almost any issue about AI infrastructure. They do not promise the specific
+    handoff thesis the editorial advances, so the cover should be sharpened
+    or the thesis made more explicit.
+scores:
+  through_line: 3
+  editorial_strength: 2
+  running_order: 3
+  balance: 2
+  cover_promise: 2
+notes: |
+  This is an issue about carrying trustworthy state and verdicts into the next action, but it does not yet hold together because the editorial overdraws on one article and three pieces never enter its argument.

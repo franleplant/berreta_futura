@@ -1,0 +1,162 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The scope list of the specification, SDKs, development tools, and reference server implementations
+    reader_loses: No map of MCP's surrounding projects, but the protocol's purpose remains clear.
+    verdict: defensible
+  - fact: The note that SDKs abstract most concerns and that language-specific SDK documentation contains implementation details
+    reader_loses: Less guidance for choosing a next implementation reference.
+    verdict: defensible
+  - fact: 'The typical client-count difference: local STDIO servers usually serve one client, while remote Streamable HTTP servers usually serve many'
+    reader_loses: A useful deployment-scale distinction.
+    verdict: defensible
+  - fact: The explicit definition that the host coordinates and manages clients, the client obtains context, and the server provides it
+    reader_loses: Some formal role definitions, though the relationships are explained.
+    verdict: defensible
+  - fact: The conceptual description of the data layer as inner and the transport layer as outer
+    reader_loses: A visual metaphor for the layering.
+    verdict: defensible
+  - fact: Progress tracking as a utility feature
+    reader_loses: Awareness of one protocol facility for long-running operations.
+    verdict: defensible
+  - fact: The exact discovery metadata keys, including io.modelcontextprotocol/protocolVersion, clientInfo, clientCapabilities, and serverInfo
+    reader_loses: The exact field names needed to reproduce a discovery exchange.
+    verdict: defensible
+  - fact: The discovery response's supportedVersions and server capabilities object, including the concrete elicitation, tools.listChanged, and resources examples
+    reader_loses: Concrete capability negotiation details.
+    verdict: defensible
+  - fact: The discovery pseudo-code showing client.server_capabilities.tools and app.register_mcp_server
+    reader_loses: A direct implementation sketch for registering discovered servers.
+    verdict: defensible
+  - fact: The optional cursor parameter for paginating tools/list
+    reader_loses: The pagination mechanism needed for large tool catalogs.
+    verdict: defensible
+  - fact: The tool-list fields title, description, resultType, ttlMs, and cacheScope
+    reader_loses: Display metadata and explicit caching controls.
+    verdict: defensible
+  - fact: The source's database example combining query tools, a schema resource, and a few-shot prompt
+    reader_loses: A concrete illustration of all three server primitive families working together.
+    verdict: defensible
+  - fact: The sampling/createMessage method name and sampling's model-independence rationale
+    reader_loses: The former invocation method and why servers once used it.
+    verdict: defensible
+  - fact: The Tasks extension's name
+    reader_loses: The identifier for the durable-handle extension.
+    verdict: defensible
+  - fact: The notification acknowledgement's exact subscription ID and its guarantee that no earlier notification is sent
+    reader_loses: Some wire-level ordering and correlation detail.
+    verdict: defensible
+  - fact: 'The source''s four notification benefits: dynamic environments, efficiency, consistency, and real-time collaboration'
+    reader_loses: An explicit list of the practical reasons to use notifications.
+    verdict: defensible
+  - fact: The JSON-RPC request and response bodies and all four pseudo-code blocks
+    reader_loses: Copyable wire examples and implementation scaffolding, while the manuscript retains the method names and a representative tool call.
+    verdict: defensible
+  retentions:
+  - passage: MCP gives an AI application a way to reach tools and data through separate programs
+    costs: A short framing paragraph, but it establishes the host/client/server vocabulary needed for the rest.
+    verdict: earns_place
+  - passage: A Sentry connection gets one client; a local filesystem connection gets another
+    costs: A concrete example that could be cut for space, but it makes the dedicated-connection rule immediately usable.
+    verdict: earns_place
+  - passage: Local describes where the program runs, not a different kind of server
+    costs: One clarification that could be omitted, but removing it invites a common local-versus-remote misunderstanding.
+    verdict: earns_place
+  - passage: Suppose discovery returns the tool weather_current
+    costs: The longest worked example, but it preserves the exact discovery-to-tools/call sequence and argument shape.
+    verdict: earns_place
+  - passage: Servers can also ask the user for information or confirmation
+    costs: A brief feature inventory, but it records elicitation and the current deprecations that affect new implementations.
+    verdict: earns_place
+  - passage: Notifications keep a client aware of changes without constant polling
+    costs: Several sentences on subscriptions and refresh behavior, but they explain an otherwise non-obvious dynamic-update cycle.
+    verdict: earns_place
+  notes: This piece gives the reader a concise, usable mental model of MCP's architecture, transports, primitive method names, tool-call shape, and notification refresh cycle that the source presents across a long overview and a sequence of wire examples. The omissions are deliberate losses of ecosystem context, exhaustive JSON, and implementation scaffolding; no retained passage is inert, and the manuscript keeps the operational details most likely to matter to a reader learning the protocol.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every factual assertion, title-level claim, protocol detail, example, qualification, and conclusion against the pinned extraction; there were no claims I could not check against the extraction.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | Sampling, which let servers request language-model completions through the client | 1'
+    category: agreement
+    disposition: fix
+    note: |
+      "Sampling" is singular, so the relative-clause verb must be "lets," not "let." This is editorial prose in a faithful synthesis.
+    suggestion: Sampling, which lets servers request language-model completions through the client
+  scores:
+    grammar: 4
+    typography: 5
+    consistency: 5
+  notes: |
+    One subject-verb agreement error requires correction; capitalization, typography, and consistency are otherwise clean.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 4
+  notes: |
+    The piece's progression from MCP architecture through protocol mechanics,
+    primitives, a running tool example, optional capabilities, notifications,
+    and the concluding boundary between protocol and application holds together.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | Servers offer three kinds of building blocks. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three consecutive definition sentences use the same subject-verb-object
+      shape: "A tool performs an action such as a file operation, API call, or
+      database query." "A resource supplies context such as file contents,
+      database records, or an API response." "A prompt supplies a reusable
+      interaction pattern, including system prompts and few-shot examples."
+      The repetition makes this paragraph sound catalogued rather than written.
+    suggestion: |
+      Recast or cut one of the three definitions so the paragraph does not march
+      through identical sentence shapes.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | and the usual `_meta` fields. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "`_meta` fields" is protocol-specific jargon that the piece uses without
+      explaining what metadata they carry or why the reader needs them.
+    suggestion: |
+      Add a brief plain-language gloss for `_meta`, or remove the phrase from
+      this example.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | new implementations should write to stderr for stdio transports or use OpenTelemetry. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "OpenTelemetry" appears as an unexplained implementation term; a competent
+      engineer outside observability work may not know what role it plays here.
+    suggestion: |
+      Identify OpenTelemetry as a standard observability and tracing system, or
+      describe the needed logging destination without naming it.
+  scores:
+    voice: 4
+    sentence_variety: 3
+    economy: 4
+  notes: |
+    I heard a clear, patient technical explainer whose voice flattens briefly into
+    a catalogue in the building-blocks paragraph, with two small pockets of
+    unexplained implementation jargon.

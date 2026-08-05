@@ -1,0 +1,202 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: '-'
+    repair_from: '- | A language model must keep useful information somewhere. | 1'
+    category: source_shaped
+    disposition: fix
+    note: |
+      The manuscript follows the source's subject sequence almost exactly:
+      GPT-2, KV cache, linear attention, DeltaNet, chunking, gated decay,
+      Kimi Linear, KimiK3, and AttnRes. Its memory-failure thesis adds useful
+      connective tissue, but the structure still performs little editorial
+      reordering beyond compression.
+    suggestion: Rebuild around the recurring problem of fixed-capacity memory, grouping each architecture by the failure it repairs rather than retaining the source's section order.
+  omissions:
+  - fact: The GPT-2 forward path's layer normalization, dropout, and final lm_head details
+    reader_loses: A reader cannot reconstruct the complete decoder-block computation from the synthesis.
+    verdict: defensible
+  - fact: The exact padded GPT-2 vocabulary size of 50,304 rather than the approximate 50,000
+    reader_loses: Only a minor implementation-level precision about the parameter-count baseline.
+    verdict: defensible
+  - fact: FlashAttention was released in 2020 and corrected the source author's initial O(N²) framing
+    reader_loses: Some historical and complexity nuance about why the source's comparison is not a general statement about every transformer implementation.
+    verdict: defensible
+  - fact: The complete linear-attention cache, including the separate normalization state z and its update
+    reader_loses: A reader implementing the method would not know the exact denominator state or cache initialization.
+    verdict: needed
+  - fact: The source's explicit explanation that finite D×D storage prevents perfectly isolated retrieval of every earlier token
+    reader_loses: The manuscript conveys interference generally, but omits the concrete reason individual token associations lose separate slots.
+    verdict: defensible
+  - fact: The normalized-key derivation showing that reading kᵀv with the same unit key returns v exactly
+    reader_loses: The worked justification for why DeltaNet's replacement update can recover and overwrite an association.
+    verdict: defensible
+  - fact: The full sequential DeltaNet prefill loop and the vectorized chunk_delta_rule_forward implementation
+    reader_loses: A reader cannot implement the chunkwise correction or see how the reparameterization is realized in code.
+    verdict: needed
+  - fact: The explicit C=64 or 128 tensor-core motivation and the UMMA example
+    reader_loses: The hardware reason intermediate chunk sizes are chosen in practice.
+    verdict: defensible
+  - fact: The cumulative-product decay explanation for Gated DeltaNet
+    reader_loses: The reader misses how an association's strength changes across multiple later decay steps.
+    verdict: defensible
+  - fact: Kimi Linear's claim that it is a drop-in replacement, plus the detailed hybrid architecture comparison
+    reader_loses: Less context for how directly the model can replace full attention and what exactly changes beyond per-channel decay.
+    verdict: defensible
+  - fact: KimiK3's MLA query LoRA change
+    reader_loses: One of the named architectural changes in the source is absent from the account of KimiK3.
+    verdict: defensible
+  - fact: The reported roughly 2% AttnRes inference-latency cost and 1.25x compute advantage
+    reader_loses: The reader cannot weigh the claimed benefit against its concrete cost.
+    verdict: defensible
+  - fact: The source's count of eight AttnRes blocks across the KimiK3 backbone
+    reader_loses: The frequency is stated, but not the resulting number of block-level retrieval units.
+    verdict: defensible
+  - fact: The source's publication date, view count, and reader reactions
+    reader_loses: Nothing needed to understand the architectural argument.
+    verdict: defensible
+  retentions:
+  - passage: The number is twenty-two thousand five hundred and eighty.
+    costs: Several opening sentences establish the scale comparison before the architectural explanation begins, but they frame the central question and make the later design differences legible.
+    verdict: earns_place
+  - passage: GPT-2 is the baseline.
+    costs: The paragraph spends space on vocabulary, layers, heads, width, and parameter count, but those figures anchor the scale comparison and identify the baseline architecture.
+    verdict: earns_place
+  - passage: The basic attention contract remains recognizable
+    costs: This restates the preceding linear-attention explanation, but it gives the reader a compact conceptual invariant across all later variants.
+    verdict: earns_place
+  - passage: The same recurrence also creates a training problem.
+    costs: The recurrence and chunk-size discussion occupies substantial space, but it explains why DeltaNet needs reparameterization and what the performance trade-off means.
+    verdict: earns_place
+  - passage: Kimi Linear makes the control finer.
+    costs: The paragraph is brief and could be cut without breaking the lineage, but it supplies the bridge from gated Delta updates to KimiK3's per-channel memory control.
+    verdict: earns_place
+  - passage: Its remaining major change is Attention Residuals every twelve layers.
+    costs: The code block and explanation take space, but they make selective retrieval across depth concrete rather than leaving AttnRes as a slogan.
+    verdict: earns_place
+  - passage: The progression from GPT-2 to KimiK3 is therefore a progression through memory failures.
+    costs: This summarizes earlier sections, but it states the manuscript's organizing interpretation and gives the reader a usable mental model.
+    verdict: earns_place
+  - passage: A fixed-capacity associative memory eventually needs an eviction policy.
+    costs: The closing paragraph repeats the preceding synthesis, yet it generalizes the lineage into a clear design principle.
+    verdict: earns_place
+  notes: |
+    Changes required because the manuscript is largely source-shaped and omits
+    implementation-critical details for linear-attention normalization and
+    chunked DeltaNet computation. It nevertheless gives a reader a genuine
+    architectural through-line: each model is presented as a specific repair for
+    a preceding memory, retrieval, or capacity failure.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: KimiK3 | The experts operate in a compressed latent space, reducing the cost of a mechanism that would otherwise be almost three times slower without a fused kernel. | 1
+    repair_from: KimiK3 | The experts operate in a compressed latent space, reducing the cost of a mechanism that would otherwise be almost three times slower without a fused kernel. | 1
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source says the new SiTU activation is almost three times slower than the original path without a fused kernel. The manuscript broadens that comparison to the mechanism as a whole, overstating the source's scope.
+  scores:
+    claim_support: 4
+    qualification_survival: 4
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every factual assertion, conclusion, code-adjacent explanation, and labelled element against the pinned extraction; no claims outside that extraction were available for checking.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: '- | proj.weight.squeeze( | 1'
+    category: punctuation
+    disposition: fix
+    note: |
+      The final Python sample has an unmatched opening parenthesis in
+      `proj.weight.squeeze(`, leaving the code syntactically incomplete.
+    suggestion: Close the call with the intended argument and matching parenthesis.
+  scores:
+    grammar: 4
+    typography: 4
+    consistency: 4
+  notes: The final code sample has an unmatched opening parenthesis; sentence-initial capitalization and body typography are otherwise consistent.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: '- | The paper''s O(N²) framing threw me off. | 1'
+    repair_from: '- | Linear attention folds that growing history into a fixed D×D state. | 1'
+    category: orphan_referent
+    disposition: fix
+    note: |
+      "The paper" appears without an identified paper in the piece. The reader
+      cannot tell which source or claim the sentence refers to.
+    suggestion: Identify the paper when linear attention is first introduced.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 4
+    ending: 4
+  notes: |
+    The piece presents a coherent progression from GPT-2's cache through recurrent
+    memory mechanisms to KimiK3's hybrid architecture, with one unresolved
+    referent.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: '- | make the qk scores non-negative, divide by their sum, then compute a weighted average of the values. | 1'
+    category: passive
+    disposition: fix
+    note: |
+      This ownerless imperative gives the reader a procedure without naming who
+      performs it, producing the instructional register the house rules flag.
+    suggestion: |
+      Name the actor that applies these operations, such as the attention
+      mechanism.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: '- | Scaling laws remain relevant, but capacity must be added in the right place and in a form the system can use. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Capacity must be added in the right place and in a form the system can
+      use" is an abstraction stack that gestures at design constraints without
+      naming them.
+    suggestion: |
+      Replace the abstraction with the specific capacity-placement constraint
+      the surrounding examples demonstrate.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: '- | The progression from GPT-2 to KimiK3 is therefore a progression through memory failures. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      The sentence repeats "progression" and recasts the argument in a broad
+      abstraction instead of adding a sharper observation.
+    suggestion: |
+      State the concrete pattern across the named memory mechanisms directly.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: '- | The progression from GPT-2 to KimiK3 is therefore a progression through memory failures. | 1'
+    category: no_voice
+    disposition: fix
+    note: |
+      This is where the voice briefly disappears into a polished summary
+      register: grammatical, even, and interchangeable with a system-generated
+      conclusion.
+    suggestion: |
+      Anchor the synthesis in the author's own observed contrast between the
+      successive memory mechanisms.
+  scores:
+    voice: 3
+    sentence_variety: 4
+    economy: 3
+  notes: |-
+    I heard a technically engaged, mostly human explanation that occasionally
+    slips into abstract summary language and an ownerless instructional register.
