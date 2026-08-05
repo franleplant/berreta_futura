@@ -6,6 +6,7 @@
 // yields backend `ollama`, model `gemma4:e4b`.
 
 use anyhow::{bail, Context, Result};
+use std::path::PathBuf;
 use std::io::{Read, Write};
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -38,6 +39,7 @@ fn ollama_num_ctx() -> u64 {
 pub enum Backend {
     Claude,
     Ollama,
+    Codex,
 }
 
 #[derive(Debug, Clone)]
@@ -58,6 +60,7 @@ impl ModelSpec {
         let backend = match backend_str {
             "claude" => Backend::Claude,
             "ollama" => Backend::Ollama,
+            "codex" => Backend::Codex,
             other => bail!("unknown backend '{other}' in model spec '{spec}'"),
         };
         if model.is_empty() {
@@ -110,6 +113,30 @@ fn round1(x: f64) -> f64 {
 
 fn round4(x: f64) -> f64 {
     (x * 10000.0).round() / 10000.0
+}
+
+/// A per-call scratch directory for the codex backend: an empty cwd (so an
+/// agentic CLI has nothing to read even if it tries) plus the file its final
+/// message is written to. Removed when the call returns.
+struct CodexScratch {
+    dir: PathBuf,
+    out: PathBuf,
+}
+
+impl CodexScratch {
+    fn new() -> Result<Self, String> {
+        static N: AtomicUsize = AtomicUsize::new(0);
+        let n = N.fetch_add(1, Ordering::Relaxed);
+        let dir = std::env::temp_dir().join(format!("mag-codex-{}-{n}", std::process::id()));
+        std::fs::create_dir_all(&dir).map_err(|e| format!("creating codex scratch dir: {e}"))?;
+        Ok(Self { out: dir.join("last-message.txt"), dir })
+    }
+}
+
+impl Drop for CodexScratch {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.dir);
+    }
 }
 
 /// A simple counting semaphore capping in-flight subprocesses, acquired
@@ -279,6 +306,10 @@ impl Caller {
     fn run_once(&self, spec: &ModelSpec, prompt: &str) -> Result<(String, f64, f64), String> {
         let _permit = SemaphoreGuard::acquire(&self.sem);
         let started = Instant::now();
+        let scratch = match spec.backend {
+            Backend::Codex => Some(CodexScratch::new()?),
+            _ => None,
+        };
 
         let mut cmd = match spec.backend {
             Backend::Claude => {
@@ -293,6 +324,29 @@ impl Caller {
                     "--disallowedTools",
                     "*",
                 ]);
+                c
+            }
+            Backend::Codex => {
+                // codex exec is agentic: it can read files and run commands.
+                // Source-blindness here is the same construction as elsewhere —
+                // the prompt simply never contains the source — so the process
+                // is given an empty cwd and a read-only sandbox, leaving it
+                // nothing to find even if it goes looking. The final message
+                // goes to a file so we never parse the event stream.
+                let mut c = Command::new("codex");
+                c.args([
+                    "exec",
+                    "--model",
+                    &spec.model,
+                    "--sandbox",
+                    "read-only",
+                    "--skip-git-repo-check",
+                    "--color",
+                    "never",
+                    "-o",
+                ]);
+                c.arg(&scratch.as_ref().expect("codex scratch").out);
+                c.arg("-");
                 c
             }
             Backend::Ollama => {
@@ -313,8 +367,11 @@ impl Caller {
                 c
             }
         };
-        cmd.current_dir(&self.root)
-            .stdin(Stdio::piped())
+        cmd.current_dir(match &scratch {
+            Some(s) => s.dir.as_path(),
+            None => self.root.as_path(),
+        })
+        .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
 
@@ -323,7 +380,7 @@ impl Caller {
             .map_err(|e| format!("failed to spawn {:?}: {e}", spec.backend))?;
 
         let stdin_payload = match spec.backend {
-            Backend::Claude => prompt.to_string(),
+            Backend::Claude | Backend::Codex => prompt.to_string(),
             Backend::Ollama => serde_json::json!({
                 "model": spec.model,
                 "prompt": prompt,
@@ -406,6 +463,21 @@ impl Caller {
                     .ok_or_else(|| "call succeeded but had no 'result' field".to_string())?
                     .to_string();
                 Ok((result, cost, seconds))
+            }
+            Backend::Codex => {
+                let out_path = &scratch.as_ref().expect("codex scratch").out;
+                if !status.success() {
+                    let err_text = String::from_utf8_lossy(&err);
+                    let truncated: String = err_text.chars().take(300).collect();
+                    return Err(format!("codex exited with {status}: {truncated}"));
+                }
+                let reply = std::fs::read_to_string(out_path)
+                    .map_err(|e| format!("codex wrote no final message ({e})"))?;
+                if reply.trim().is_empty() {
+                    return Err("codex final message was empty".to_string());
+                }
+                // codex reports no per-call price; time is the honest signal.
+                Ok((reply, 0.0, seconds))
             }
             Backend::Ollama => {
                 if !status.success() {
