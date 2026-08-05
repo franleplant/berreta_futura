@@ -1,0 +1,114 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: tools/list request JSON; resources/list and prompts/list; resources/get and prompts/get methods
+    reader_loses: Explicit pattern for discovering resources and prompts; exact API surface for those primitives. Reader wanting implementation details goes to the source.
+    verdict: defensible
+  - fact: Pseudo-code 'How This Works in AI Applications' sections
+    reader_loses: Concrete implementation patterns for discovery, tool execution, notification handling in real applications. Reader wanting to implement goes to the source.
+    verdict: defensible
+  - fact: Scope section (MCP Specification, SDKs, Development Tools, Reference Servers)
+    reader_loses: Understanding of what the MCP ecosystem includes. Not essential for protocol understanding.
+    verdict: defensible
+  - fact: Detailed response structure explanations (cacheScope, ttlMs, resultType, inputSchema breakdown)
+    reader_loses: Implementation-level detail for reading/building JSON responses. Not essential for shared vocabulary.
+    verdict: defensible
+  notes: |
+    The manuscript succeeds at its purpose: giving readers the shared vocabulary that other articles in the issue assume. It trades breadth of reference material for narrative clarity and accessibility. Omissions are defensible given the stated rationale. A reader wanting implementation guidance or complete API coverage opens the (freely available) source; that's the correct design.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked every assertion in the manuscript against the pinned extraction: statelessness
+    and _meta-field design, server/discover as optional discovery, transport layers and
+    JSON-RPC 2.0, the three primitives (tools, resources, prompts) and their discovery
+    lifecycle, the two server-to-client primitives with sampling and logging deprecated
+    as of 2026-07-28, notifications as best-effort with required polling, and MCP's
+    stateless architecture enabling server swapping except for subscription channels.
+    Code examples match the extraction. All factual claims are grounded in the source.
+    No qualifications are dropped that alter the strength of claims. No invented claims
+    or unsupported furniture found.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | retrying with one the error names | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      Missing preposition. This phrase should read "retrying with one of the error names".
+    suggestion: retrying with one of the error names
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | the server never promised a `calculate`-shaped shortcut existed | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      Missing conjunction "that". This clause should read "the server never promised that a `calculate`-shaped shortcut existed".
+    suggestion: the server never promised that a `calculate`-shaped shortcut existed
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Notifications | rebuilding state a stateless request never had to carry in the first place | 1
+    category: grammar
+    disposition: fix
+    note: |
+      Missing conjunction "that". This clause should read "rebuilding state that a stateless request never had to carry in the first place".
+    suggestion: rebuilding state that a stateless request never had to carry in the first place
+  scores:
+    grammar: 1
+    typography: 5
+    consistency: 3
+  notes: |
+    Three major grammar errors: one missing preposition and two omitted conjunctions. Typography is clean and code formatting is correct. The piece maintains consistent capitalisation and terminology throughout.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    category: missing_transition
+    article: mcp-in-a-nutshell
+    locator: '- | Two layers carry this traffic | 1'
+    repair_from: Discovery exists for convenience, and because its answer barely changes, a client can cache it rather than ask again.
+    disposition: fix
+    note: |
+      The piece jumps from explaining server/discover to discussing protocol layers without establishing what "traffic" means or bridging the conceptual shift. The transition moves from mechanism ("how the protocol works") to structure ("how protocol messages are organized") without signaling this pivot.
+    suggestion: 'Add a bridge to prepare the reader: ''These requests and responses operate in two layers:'' or ''All of this protocol sits atop two layers:'' to mark the shift from design principle to structural organization.'
+  - severity: major
+    category: orphan_referent
+    article: mcp-in-a-nutshell
+    locator: '- | the one channel that has to remember something anyway | 1'
+    repair_from: That bookkeeping is also why notifications carry no promise.
+    disposition: fix
+    note: |
+      The phrase "the one channel" refers to subscriptions, which the Notifications section discusses extensively, but the piece never explicitly calls subscriptions "the channel." The reader must infer both the reference and the metaphor.
+    suggestion: 'Name the referent explicitly: ''right up until subscriptions, the one path that has to remember state'' or ''right up until the subscription channel that has to remember something anyway.'''
+  - severity: minor
+    category: running_example
+    article: mcp-in-a-nutshell
+    repair_from: Ask a weather server what it has and it may answer `weather_current`
+    disposition: fix
+    note: |
+      The piece opens with VS Code connecting to Sentry and a filesystem server, then switches to a weather server example in Primitives, then uses only hypothetical scenarios in Notifications. No concrete case carries through; each section restarts with a new illustration.
+    suggestion: Either thread the VS Code/Sentry example through all three sections to show how it handles tools, resources, and subscriptions, or introduce the weather server by stating what different aspect it illustrates.
+  scores:
+    order: 2
+    coherence: 2
+    opening: 4
+    ending: 2
+  notes: |
+    The piece conveys MCP's architecture and primitives clearly and opens strong with a concrete setup. The explanation is accurate and well-structured. However, a transition between the design principle (stateless requests) and protocol structure (layers) is missing at a real jump, and the ending statement requires the reader to infer a reference without explicit grounding. The piece would be stronger with one example carrying through, giving readers a single mental model to build.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 4
+    economy: 5
+  notes: |
+    This reads like a person clearly explaining a technical protocol. The voice stays present throughout—conversational touches like "the server does the talking," "the honest habit," and "the real thing" keep it from sliding into system prose. Sentence structure varies well: short imperatives ("Ask a weather server what it has"), dense explanations with multiple clauses, definitions with examples, and punchy counters ("Notifications are not."). The closing circles back to the core design principle (statelessness) while noting its one necessary exception, which distills rather than just restates. Technical jargon like OpenTelemetry and Server-Sent Events is appropriate for the audience and contextually situated.

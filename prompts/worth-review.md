@@ -1,7 +1,19 @@
 # Worth review prompt
 
-The reader has the original open in another tab. Your one question: what does
-our version give them that it does not? If the honest answer is nothing, reject.
+This magazine exists so that a reader can consume far more of what is being
+published than they could by reading the sources themselves. Condensing a source
+faithfully is therefore the product, not a shortfall in it. Assume the reader
+would not have read the original at all: the realistic alternative to our version
+is not the source, it is nothing.
+
+So the question is not "is this better than the source?" — it is: **does a reader
+who reads only this come away genuinely informed, or did the condensing cost them
+something they needed?** A piece that carries the source's substance in a third of
+the words has done exactly its job and passes here.
+
+Reject only for the failures that leave the reader worse off than that: prose that
+condenses nothing (as long as the source, or longer), a version that has lost what
+made the source worth reporting, or filler that neither informs nor condenses.
 
 You do not judge truth (`evidence`), order (`shape`), sentences (`craft`) or
 grammar (`mechanics`). A piece that is accurate, tidy and worthless fails here
@@ -24,13 +36,17 @@ article says is `edition-review.md`'s question.
    source is always one click away. A piece that is a tenth of its source is
    not thereby wrong, and a piece that keeps two thirds is not thereby padded.
    What matters is whether the cutting cost the reader something they needed.
-2. **The sentence.** In one sentence, what does the manuscript give a reader
-   that the source does not? Concrete answers only: materially shorter and still
-   carrying the argument; a rambling source put into the order the argument
-   needs; a conclusion the source's material forces and the source never states;
-   a thread, deck or spec made legible; scattered posts collected. Not answers:
-   "it is cleaner", "well written", "a good summary of X". If you cannot write
-   the sentence, file `no_added_value` at `blocking`.
+2. **The sentence.** In one sentence, what does a reader get from this piece?
+   "The source's argument and its load-bearing evidence, in a third of the words"
+   is a complete and sufficient answer — that is the magazine's whole promise, and
+   a piece that delivers it passes. Better answers exist and are welcome: a
+   rambling source put into the order the argument needs; a conclusion the
+   source's material forces and never states; a thread, deck or spec made legible;
+   scattered posts collected. Not answers: "it is cleaner", "well written".
+   File `no_added_value` at `blocking` only when none of that is true — when the
+   piece is no shorter than its source, or when what it kept is not the substance
+   a reader needed. Do not file it merely because the piece is a faithful,
+   competent condensation. That is the assignment.
 3. **The ledger.** What the reader gains, and what the reader loses. Name every
    loss: each worked example, number, identifier, command, code block, exchange,
    caveat and joke the source has and we do not. You are hunting the case where
@@ -81,9 +97,12 @@ article says is `edition-review.md`'s question.
 `mcp-in-a-nutshell` in the 004 rerun: 1,900 source words became 1,155, and for
 that 40% saving the reader lost every method name they would type, all four JSON
 exchanges and all four pseudo-code blocks. The sections run in the source's own
-order and the piece has no opinion about any of it. Not a shorter reference, not
-a deeper explanation. `no_added_value`, `source_shaped` and `stripped_utility`
-in one piece, and the old bench scored it a 5.
+order and the piece has no opinion about any of it. `stripped_utility` and
+`source_shaped`, and the old bench scored it a 5.
+
+Note what makes that piece a failure: not the 40% saving, which is the job, but
+that the 40% it dropped was the part a reader came for. Had it saved 70% and kept
+the method names and one exchange, it would have passed here.
 
 ## Categories
 

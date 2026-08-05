@@ -1,0 +1,105 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: frontier-lab-agent-intrusion
+    category: no_added_value
+    disposition: editor_decision
+    note: "The source is a comprehensive, publicly available technical blog post from \nHugging Face—neither paywalled, ephemeral, scattered, nor chaotic. The manuscript \nis a 90% condensation without editorial angle, structural improvement, or concrete \nvalue beyond compression. Cannot state what the magazine version gives readers that \nthey cannot get by reading the source directly. This does not qualify as legitimate \nfaithful_edit (source is already accessible and well-organized). Readers can click \nthrough and read the full account.\n"
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    category: source_shaped
+    disposition: editor_decision
+    note: "Sections follow source order unchanged: opening → stage 1 → stage 2 → campaign \ntimeline → lateral movement → technical infrastructure → response → reflection. No \neditorial reordering or pedagogical restructuring.\n"
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    category: stripped_utility
+    disposition: fix
+    note: "Readers studying these techniques for defensive purposes need specifics the \nmanuscript omits: phase action counts (showing machine-speed distribution across \nreconnaissance, execution, staging), specific attack payloads, C2 protocol \nstructure, precise timelines. Any reader implementing defenses returns to the \nsource for the technical detail required.\n"
+    suggestion: "Restore phase action counts, include at least one complete attack example (the \nJinja2 payload with the cycler chain), and explain the C2 envelope structure and \ndispatch logic. Otherwise, frame as a summary that links to the full source.\n"
+  omissions:
+  - fact: 'Phase action counts (recon: 6,191; rce: 2,911; dropper: 6,972; etc.)'
+    reader_loses: Cannot gauge the distribution of machine-speed effort that motivates the issue's theme of asymmetric defense.
+    verdict: needed
+  - fact: Specific attack payloads (sqlite3_initialize redefinition, Jinja2 cycler.__init__.__globals__.__builtins__.exec injection)
+    reader_loses: Cannot study the actual attack surface; anyone defending against this returns to the source.
+    verdict: needed
+  - fact: 'C2 protocol structure (message envelope fields: type, channel, seq, body, sum; dispatch logic)'
+    reader_loses: Cannot understand how the attacker maintained command execution after channels were closed.
+    verdict: needed
+  - fact: 'Specific timestamps and daily volume breakdown (Day 1: 3,779; Day 3: 7,677; etc.)'
+    reader_loses: Cannot assess timeline cadence or identify when the main campaign phase occurred.
+    verdict: defensible
+  - fact: Three diagrams (attack chain across trust boundaries, stage 2 injection loop, C2 protocol)
+    reader_loses: No visual reference for system connections and data flow.
+    verdict: defensible
+  - fact: Detailed per-component defenses (IMDSv2 blocking, cluster credential scoping, etc.)
+    reader_loses: Cannot map specific mitigations to specific vulnerable components.
+    verdict: defensible
+  notes: "Cannot justify publication as a magazine article in this form. The source is free, permanent, \nwell-written, and comprehensive; the manuscript adds neither access nor editorial insight. \nEither write original analysis that uses this incident as evidence for a point about dependable \nsystems, or frame explicitly as a summary with a link to the full source.\n"
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked all factual assertions: dates, technical vectors (HDF5 and Jinja2 SSTI), attack timeline phases, specific numbers (136 keys, 17,600 actions, 13:37 UTC, five datasets), database access timing, lateral-movement techniques, model selection (Claude Opus/Fable refusal, GLM-5.2 deployment), and decryption results. All claims rest on supporting passages in the extraction. Qualifications and scope hedges preserved throughout. No furniture to verify. Clean synthesis.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    No mechanics findings. Sentence capitalisation is consistent throughout, grammar and agreement are sound across all constructions, punctuation and spelling are correct and consistent (American English), typography is clean (no em dashes, proper hyphenation, consistent quotes), headings are properly formed in sentence case with ##, and numbers and units follow consistent conventions.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: Using the stolen credentials, then cleanup | the stolen JWT signing key | 1
+    repair_from: 'Day three: lateral movement begins | Then it read the cluster''s secret objects, one holding 136 keys, and in that single read found both a VPN key and an access-broker credential. | 1'
+    category: orphan_referent
+    disposition: fix
+    note: |
+      The JWT signing key is referenced in section 4 with the definite article "the,"
+      implying prior establishment, but it is never explicitly introduced. It may be
+      one of the 136 keys mentioned in section 3, but this connection is not stated.
+    suggestion: Explicitly identify the JWT signing key in section 3 when describing the 136 keys, or introduce it directly before using it in section 4.
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: '- | Two injection vectors, one data loader | 1'
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The heading names what exists in the section (two vectors, one loader) rather
+      than what the section argues. The section argues how these two injection methods
+      led to a foothold with command-and-control in the data pipeline.
+    suggestion: 'Reframe to emphasize argument: ''Infiltrating the data pipeline'' or ''Two paths to production access.'''
+  scores:
+    order: 4
+    coherence: 4
+    opening: 4
+    ending: 3
+  notes: |
+    The piece's argument order is clear. It moves logically from inciting incident
+    through attack execution, response, investigation, and strategic reflection. The
+    opening establishes motivation effectively. Two minor issues: one reference (JWT
+    signing key) that lacks explicit prior mention, and one heading that is topical
+    rather than argumentative.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 5
+    economy: 5
+  notes: |
+    A forensic account written by people who understand their domain, maintaining
+    epistemic precision and dry restraint throughout. The prose handles technical
+    complexity without becoming opaque, and the narrative arc—ordinary weaknesses
+    multiplied by machine speed—sets up the final reflection cleanly.

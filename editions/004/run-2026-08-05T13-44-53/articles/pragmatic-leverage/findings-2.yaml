@@ -1,0 +1,122 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    category: no_added_value
+    disposition: editor_decision
+    note: |
+      This is a direct transcription of a freely accessible X post by Dex
+      Horthy (@dexhorthy) with only minor grammar corrections. The faithful_edit
+      mode justifies republication only for paywalled or ephemeral sources,
+      slides, threads, or scattered posts collected. While X posts are somewhat
+      ephemeral, the manuscript itself adds no teaching value beyond the source.
+      A reader who wants this content can click and read the identical piece
+      immediately. Without editorial analysis or additional context, this is a
+      reprint of something already freely available.
+  omissions: []
+  notes: |
+    The verdict requires editorial judgment, not author revision. The question is
+    whether archive stability for an ephemeral source justifies faithful_edit
+    republication, or whether the piece should be dropped or reframed with
+    editorial value-add.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked all factual claims, numbers, percentages, examples, and hedges against
+    the extraction. Every assertion in the manuscript is present in the source
+    without alteration. All qualifications and limitations are preserved. Minor
+    formatting differences (em-dash vs. hyphen, capitalization) are stylistic and
+    appropriate for a faithful edit. No invented claims, quote inaccuracies, or
+    unsupported assertions found.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: This is what we mean | leverage - and it requires | 1
+    category: typography
+    disposition: fix
+    note: |
+      The em dash is banned. Replace with period, comma, colon, semicolon, or
+      parentheses.
+    suggestion: This is what we mean by leverage; it requires being pragmatic.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | **note** For this example | 1
+    category: markup
+    disposition: editor_decision
+    note: |
+      Editorial apparatus (labeled notes, asides) should not appear in the body
+      prose. An editor decides whether to move this to a separate element, a
+      footnote, or remove it entirely.
+  scores:
+    grammar: 5
+    typography: 3
+    consistency: 4
+  notes: |
+    Two issues require attention: em-dash punctuation that violates house style,
+    and a labeled editorial note in the prose body that needs editorial disposition.
+    Otherwise the piece is grammatically sound and well structured.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | If the model is 50% likely to get a button style wrong, but the fix is one cheap prompt, then our combined "expected pain" is low. | 1
+    repair_from: Let's assume if you yolo a two-sentence prompt into your factory, your chance of getting a fully-mergeable result is ~50%; the chance you have to rework it is 50%.
+    category: orphan_referent
+    disposition: fix
+    note: |
+      The button-style example appears without context. The piece has not established button styling as a familiar scenario or task class, so the reader must infer that this is a hypothetical illustration of a high-probability, low-pain rework. The note is explaining the expected pain concept, but the button example lacks grounding.
+    suggestion: Either introduce button styling as a familiar example earlier in the spectrum section, or add context here by noting this as a hypothetical class of task where the fix is straightforward.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Good luck. | 1
+    repair_from: If you're doing multiple phases of planning, zooming in from 50kft view all the way to the 10kft view, you want to do a little bit of steering at each phase to ensure you are eliminating as much expected pain as possible.
+    category: ending
+    disposition: fix
+    note: |
+      The piece articulates a clear principle (pragmatic steering at each phase to minimize pain) but closes with "Good luck", a casual sign-off. This undermines the conclusion and leaves the piece without a strong landing. The final principle deserves emphasis, not a casual goodbye.
+    suggestion: End with a restatement of the principle or remove the casual sign-off entirely.
+  scores:
+    order: 4
+    coherence: 3
+    opening: 4
+    ending: 2
+  notes: |
+    The piece's argument progresses from time allocation through the spectrum of planning effort to expected pain to pragmatic guidance. The opening effectively sets up the opportunity for leverage. One concrete example lacks grounding, and the ending is soft.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: Seeking Leverage | If you're only using AI to write the code | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Seven "If X, then Y" conditional constructions in ~430 words create the same
+      reading defect flagged in Edition 004. First instance: "If you're only using
+      AI to write the code, then you're taking"; then "if you use AI to help you
+      plan and align, then you actually get"; "if you yolo a two-sentence prompt
+      into your factory, your chance"; "if you've done some work at the Product
+      level, it's possible you may need to"; "If the model is 50% likely to get
+      a button style wrong, then our combined expected pain is low"; "If you draw
+      this out, there's an inverse relationship"; "If you're doing multiple phases
+      of planning, you want to do a little bit of steering". The shape becomes
+      audible. The remedy is an editor's choice: cut several instances, restructure,
+      or reconsider the piece scope.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 3
+  notes: |
+    The author's voice is consistent and present—direct, experienced, honest about
+    uncertainty. But one sentence shape dominates the piece, and the reader hears
+    the pattern before the argument sinks in.

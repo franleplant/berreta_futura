@@ -1,0 +1,122 @@
+worth:
+  result: approved
+  findings: []
+  notes: |
+    This manuscript makes Dex's practical playbook durable and discoverable,
+    preserving the thread's structure and argument while adding legibility
+    through grammar corrections—a legitimate faithful_edit of ephemeral content.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Verified all factual claims against the extraction: the 25-50% pre-AI time split
+    for feature shipping, the 2-4 hours to 10-20 minutes code-writing reduction, the
+    ~50% rework chance for unvetted prompts, the ~10% significant-redo chance for
+    a principal engineer with detailed specifications, the inverse relationship
+    between upfront effort and expected pain, and the 80% pain reduction in the
+    first 10 minutes of planning. The formula and all numerical figures match the
+    source. All qualifications and caveats (pilot scope, the pain variable being
+    weighted, the lack of a perfect process) are preserved. No invented claims,
+    misattributions, or dropped qualifications found. The piece faithfully
+    represents the source's argumentation and scope.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | is ~50%, the chance you have to rework it is 50% | 1
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      Two independent clauses are joined by a comma alone. The second clause
+      requires either a coordinating conjunction ("and") or a semicolon to separate
+      them properly.
+    suggestion: your chance of getting a fully-mergeable result is ~50%, and the chance you have to rework it is 50%
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | only 25-50% of the time | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      Ranges should use en dashes, not hyphens.
+    suggestion: only 25–50% of the time
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | the 2-4 hours of coding time | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      Ranges should use en dashes, not hyphens.
+    suggestion: the 2–4 hours of coding time
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | down to 10-20 minutes | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      Ranges should use en dashes, not hyphens.
+    suggestion: down to 10–20 minutes
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | closer to 2-3x faster | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      Ranges should use en dashes, not hyphens.
+    suggestion: closer to 2–3x faster
+  scores:
+    grammar: 3
+    typography: 2
+    consistency: 3
+  notes: |
+    One comma splice requires correction. Four instances of hyphens in ranges
+    should use en dashes for typographic consistency.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | You need to do this without overindexing on questions you won't be able to answer without going down a level. | 1
+    repair_from: The 80/20 rule in AI coding leverage | You need to do this without overindexing on questions you won't be able to answer without going down a level. | 1
+    category: missing_transition
+    disposition: fix
+    note: |
+      The piece establishes that planning effort and expected rework pain are inversely related, then warns against spending six hours planning when ten minutes could cut pain by 80%. It then introduces zooming to technical details as pragmatic, but without explaining how this technique prevents over-planning or fits the effort-pain framework. The reader must infer the connection; it's not stated.
+    suggestion: |
+      Bridge the jump by explaining when and why you'd zoom down. For example: "Being pragmatic means recognizing when high-level planning has hit its limits—when you can't answer the questions in front of you without understanding the technical constraints. That's when you zoom down."
+  scores:
+    order: 3
+    coherence: 3
+    opening: 4
+    ending: 3
+  notes: |
+    The piece establishes a clear thesis (planning matters for AI acceleration) and illustrates the effort-pain tradeoff with specific scenarios, but introduces a second principle (zooming levels) without bridging it to the first.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    category: repeated_shape
+    disposition: editor_decision
+    locator: Seeking Leverage | If you're only using AI to write | 1
+    note: |
+      Six "If you X, then/consequence Y" constructions establish structural
+      monotony: "If you're only using AI to write", "But if you use AI to help
+      you plan", "if you yolo a two-sentence prompt", "if you've done some work
+      at the 'Product' level", "If you draw this out", and "If you're doing
+      multiple phases of planning". In ~380 words, the pattern becomes visible
+      before the substance. The remedy is editorial: cut instances, vary the
+      sentence openings, or reconsider the piece's scope.
+  scores:
+    voice: 4
+    sentence_variety: 1
+    economy: 4
+  notes: |
+    The author's pragmatic voice is clear and authentic throughout, but one
+    conditional structure overwhelms the piece and erodes sentence variety.
+    Changes required due to the blocking repeated shape.

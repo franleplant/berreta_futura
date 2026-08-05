@@ -1,0 +1,126 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    category: no_added_value
+    disposition: fix
+    note: |
+      The manuscript is a neutral condensation of publicly available official
+      documentation. The source is already accessible, well-written, and free.
+      The manuscript removes examples and detail without adding a perspective,
+      interpretation, or distinct purpose that justifies its existence. For
+      faithful_synthesis, condensing alone is not value; the piece must offer
+      something the source does not: a way of thinking about MCP, a position
+      about what matters, or a purpose that shapes which details stay and why.
+  - severity: major
+    category: stripped_utility
+    disposition: fix
+    note: |
+      All four JSON-RPC message exchanges from the source are removed: discovery,
+      tools/list, tools/call, and subscriptions/listen. While method names appear
+      in prose, a developer implementing MCP must see the actual request/response
+      structure, field names, and _meta contents. Without examples, the reader
+      implementing this protocol must reference the source anyway, negating the
+      value of a condensed version.
+  - severity: major
+    category: no_position
+    disposition: fix
+    note: |
+      The piece expresses no opinion about MCP: not whether it is elegant,
+      necessary, complex, or useful; not a claim about what problem it solves.
+      It lists what MCP is without arguing anything, making it a paraphrase of
+      the documentation rather than an article with its own stake in the material.
+  omissions:
+  - fact: Four JSON-RPC message exchanges with field-level detail (discovery, tools/list, tools/call, subscriptions/listen)
+    reader_loses: Cannot understand request/response structure; must reference source to implement
+    verdict: needed
+  - fact: Four pseudo-code examples showing integration patterns (discovery, tool discovery, tool execution, notification handling)
+    reader_loses: Missing the patterns showing how to actually use MCP; must consult source
+    verdict: needed
+  - fact: Tool object fields (name, title, description, inputSchema) and caching fields (ttlMs, cacheScope, resultType)
+    reader_loses: Incomplete schema; cannot build or understand the full data model without source
+    verdict: needed
+  - fact: '''How This Works in AI Applications'' sections connecting each concept to implementation'
+    reader_loses: The bridge between protocol concepts and actual application code; must reference source
+    verdict: needed
+  notes: |
+    Changes required because this piece cannot articulate one concrete thing it
+    gives a reader that the official MCP documentation does not. It is a neutral
+    summary that loses operational detail without gaining clarity, perspective, or
+    purpose. To warrant publication, it must answer: why does this condensed
+    version exist? What does it teach, argue, or help a reader do that the source
+    does not? Until that question has an answer that shapes the work, the piece
+    has no claim on the reader's attention.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | An AI application never talks to a database, a filesystem, or a bug tracker directly | 1'
+    category: invented_claim
+    disposition: fix
+    note: |
+      The opening asserts that AI applications "never" talk directly to databases, filesystems,
+      or bug trackers. The source describes MCP's client-server architecture for context
+      exchange but does not explicitly state that direct connections are universally forbidden
+      or never occur. The manuscript adds an absoluteness the source does not reach.
+  - severity: blocking
+    article: mcp-in-a-nutshell
+    locator: '- | `*/get` or `*/read` to fetch it | 1'
+    category: invented_claim
+    disposition: fix
+    note: |
+      The manuscript states retrieval methods follow "`*/get` or `*/read`", but the source
+      extraction specifies only `*/get`: "Each primitive type has associated methods for
+      discovery ( */list ), retrieval ( */get ), and in some cases, execution ( tools/call
+      )." The `*/read` method does not appear in the provided source material.
+  scores:
+    claim_support: 4
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked all factual claims, technical specifications, quotations, and attributions against
+    the source extraction. Nearly all claims are accurately synthesized. Two issues prevent
+    approval: an opening absolute claim ("never") unsupported by the source, and a specific
+    technical method name (*/read) with no source basis. Qualifications about best-effort
+    notification delivery, cache stability, and the need for polling are preserved.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | Sampling, which lets a server ask the client''s own AI application for a model completion so the server didn''t have to embed | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      Tense mismatch in the relative clause. It begins with present tense "lets" but shifts to past tense "didn't have to embed," creating grammatical inconsistency. The two approaches would both work: either keep present tense throughout ("lets...doesn't have to embed") to describe the current function, or use past tense throughout ("was designed to let...wouldn't have to embed") if explaining the original design rationale. The mix of both is awkward.
+    suggestion: Sampling, which lets a server ask the client's own AI application for a model completion so the server doesn't have to embed an LLM SDK of its own, is deprecated as of protocol version 2026-07-28
+  scores:
+    grammar: 4
+    typography: 5
+    consistency: 5
+  notes: |
+    One tense inconsistency in the Sampling sentence; all capitalisation, punctuation, spelling, and form are correct.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 4
+  notes: |
+    The piece traces MCP from problem through architecture, protocol design, capabilities, and scope in a logical sequence that holds together well. Opening is strong, argument recoverable in one read, ending lands with clarity.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    This is competent technical writing with a steady voice and clear structure.
+    Information density is high and intentional; the compression serves precision,
+    not decoration. Epistemic style is honest. Opening and closing sentences both
+    do their work without announcing it. The piece does not waver.

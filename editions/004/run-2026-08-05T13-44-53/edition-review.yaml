@@ -1,0 +1,45 @@
+result: changes_required
+findings:
+- severity: blocking
+  article: editorial
+  category: prose_table_of_contents
+  disposition: fix
+  note: |
+    The editorial introduces three pieces in sequence rather than building an emergent argument. Paragraphs 2, 3, and 4 each name what the next piece argues: "Spend before the volume arrives" (pragmatic-leverage's planning investment), "Elsewhere in this issue a protocol is built on the opposite bet" (mcp-in-a-nutshell's statelessness), "That same bet shows up again, with teeth" (frontier-lab-agent-intrusion's volume attack). The editorial reads as a tour of the contents, not an idea the issue produced.
+  suggestion: Rebuild the editorial to argue a coherent thesis that emerges from all three pieces, rather than naming them one after another.
+- severity: blocking
+  article: editorial
+  category: single_source_editorial
+  disposition: fix
+  note: |
+    Approximately 43% of the editorial's body derives from frontier-lab-agent-intrusion. Paragraph 4 ("An intruding agent ran seventeen thousand attempts...Untangling it after the fact took the judgment that two cautious models refused to lend") and the conclusion of paragraph 5 ("The judgment a spec spends beforehand doesn't vanish; it moves to whoever keeps looking anyway, at the failures nobody was supposed to have to remember") both draw entirely from the intrusion narrative. The 004 rerun editorial passed at 35% derivation from a single article; this edition exceeds that threshold significantly.
+  suggestion: Distribute the synthesis more evenly across all three articles, drawing equally on pragmatic-leverage and mcp-in-a-nutshell to frame the issue's argument.
+- severity: major
+  article: edition
+  category: running_order
+  disposition: fix
+  note: |
+    The pieces should be ordered to build the argument sequentially: first establish the judgment framework (pragmatic-leverage), then show a system that makes the opposite bet (mcp-in-a-nutshell), then show what happens when stateless design meets volume (frontier-lab-agent-intrusion). Current order jumps to the attack first, then explains the framework, then introduces the alternative design, which breaks the pedagogical flow and prevents the through-line from emerging naturally.
+  suggestion: Reorder to pragmatic-leverage, mcp-in-a-nutshell, frontier-lab-agent-intrusion.
+- severity: major
+  article: mcp-in-a-nutshell
+  category: weak_piece
+  disposition: fix
+  note: |
+    mcp-in-a-nutshell reads as protocol documentation rather than an argument about systems. While the editorial positions it as exemplifying stateless design, the piece itself never discusses the trade-offs, costs, or operational implications of that design choice. It explains how MCP works but not why the design decisions matter in a world where judgment, failure, and reliability trade against each other.
+  suggestion: Revise to explore the trade-offs inherent in stateless design, or commission a different piece that argues about the systems and architectures the issue addresses.
+- severity: minor
+  article: edition
+  category: uniformity
+  disposition: fix
+  note: |
+    The closing paragraphs lack consistent voice and cadence. frontier-lab-agent-intrusion closes factually: "No other customer's models, datasets, Spaces, or packages were touched." pragmatic-leverage closes conversationally: "Good luck." mcp-in-a-nutshell closes technically: "There, the protocol simply asks the client to keep polling." These closures are too different in tone to feel like part of the same publication.
+  suggestion: Align the closing voices to share a common cadence and register.
+scores:
+  through_line: 3
+  editorial_strength: 1
+  running_order: 2
+  balance: 3
+  cover_promise: 4
+notes: |
+  The issue contains an implicit coherent through-line—how systems trade judgment spent upfront against judgment spent downstream, and how volume attacks expose gaps in stateless designs. But the editorial tours the pieces rather than building this argument, leans disproportionately on frontier-lab-agent-intrusion (43% of body), and the current running order prevents the through-line from emerging naturally. All three pieces are strong individually, but they are not arranged to let the reader see what the issue argues.

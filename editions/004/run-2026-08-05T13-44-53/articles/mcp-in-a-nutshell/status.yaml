@@ -1,0 +1,63 @@
+piece: mcp-in-a-nutshell
+rounds:
+- round: 1
+  words: 830
+  loop_findings: 2
+  all_findings: 2
+- round: 2
+  words: 831
+  loop_findings: 6
+  all_findings: 6
+- round: 3
+  words: 897
+  loop_findings: 5
+  all_findings: 6
+state: rounds_exhausted
+open_findings:
+- lens: mechanics
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: '- | retrying with one the error names | 1'
+  category: grammar
+  disposition: fix
+  note: |
+    Missing preposition. This phrase should read "retrying with one of the error names".
+  suggestion: retrying with one of the error names
+- lens: mechanics
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: '- | the server never promised a `calculate`-shaped shortcut existed | 1'
+  category: grammar
+  disposition: fix
+  note: |
+    Missing conjunction "that". This clause should read "the server never promised that a `calculate`-shaped shortcut existed".
+  suggestion: the server never promised that a `calculate`-shaped shortcut existed
+- lens: mechanics
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: Notifications | rebuilding state a stateless request never had to carry in the first place | 1
+  category: grammar
+  disposition: fix
+  note: |
+    Missing conjunction "that". This clause should read "rebuilding state that a stateless request never had to carry in the first place".
+  suggestion: rebuilding state that a stateless request never had to carry in the first place
+- lens: shape
+  severity: major
+  category: missing_transition
+  article: mcp-in-a-nutshell
+  locator: '- | Two layers carry this traffic | 1'
+  repair_from: Discovery exists for convenience, and because its answer barely changes, a client can cache it rather than ask again.
+  disposition: fix
+  note: |
+    The piece jumps from explaining server/discover to discussing protocol layers without establishing what "traffic" means or bridging the conceptual shift. The transition moves from mechanism ("how the protocol works") to structure ("how protocol messages are organized") without signaling this pivot.
+  suggestion: 'Add a bridge to prepare the reader: ''These requests and responses operate in two layers:'' or ''All of this protocol sits atop two layers:'' to mark the shift from design principle to structural organization.'
+- lens: shape
+  severity: major
+  category: orphan_referent
+  article: mcp-in-a-nutshell
+  locator: '- | the one channel that has to remember something anyway | 1'
+  repair_from: That bookkeeping is also why notifications carry no promise.
+  disposition: fix
+  note: |
+    The phrase "the one channel" refers to subscriptions, which the Notifications section discusses extensively, but the piece never explicitly calls subscriptions "the channel." The reader must infer both the reference and the metaphor.
+  suggestion: 'Name the referent explicitly: ''right up until subscriptions, the one path that has to remember state'' or ''right up until the subscription channel that has to remember something anyway.'''

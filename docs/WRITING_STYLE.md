@@ -74,7 +74,9 @@ These are the rules the 30% actually means. Quoted, not paraphrased:
 5. Never use a foreign phrase, a scientific word or a jargon word if you can think of an everyday English equivalent.
 6. Break any of these rules sooner than say anything outright barbarous.
 
-Rule vi is not decoration and not permission to relax. It ranks the rules below the sentence: when obeying one of the first five would produce prose a person would not say, the rule loses. It also governs the faithful modes, where the words being set are the author's own: their clichés, jokes, jargon and broken rules survive in their own sentences, and rules i–v bind only the sentences you write yourself.
+Rule vi is not decoration and not permission to relax. It ranks the rules below the sentence: when obeying one of the first five would produce prose a person would not say, the rule loses.
+
+It also carries one narrow carve-out for the faithful modes, and the carve-out is narrower than it sounds: **a sentence retained verbatim from the source keeps the author's clichés, jokes, jargon and broken rules.** Verbatim means exactly that — the sentence is reproduced word for word from the source. Everything you compose yourself is yours and obeys every rule, including the sentences that retell the author's argument in your own words. In practice `faithful_edit` is mostly the author's sentences and `faithful_synthesis` is mostly yours. This carve-out never excuses a grammatical error in prose you wrote.
 
 ### What to take from Orwell
 

@@ -1,0 +1,41 @@
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    The editorial is mechanically sound throughout. Subject-verb agreement is
+    consistent across all sentences, including the complex structures in
+    paragraphs two and three. Punctuation is proper, all sentences are fully
+    formed, and capitalization follows the established convention. Typography
+    is clean, with no stray markup or formatting errors.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The piece builds a single argument about deferred decisions through one coherent example, with clear transitions between story, principle, application, and resolution.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | A protocol that hands a model''s answer to the host, and calls what happens next the host''s business, declines that judgment on purpose, so it stays small enough to be reused everywhere | 1'
+    category: repeated_shape
+    disposition: fix
+    note: |
+      Three consecutive sentences open with "A [noun] that..." constructions: "A protocol that hands a model's answer to the host, and calls what happens next the host's business, declines that judgment on purpose, so it stays small enough to be reused everywhere," "A team that spends its newly cheap coding hours steering a plan instead of typing code is making the same bet, on purpose, because the decision that decides whether the result needs reworking was never the typing," and "An agent that tried seventeen thousand things did not need to out-judge anyone." The repetition is noticeable to the reader; remedy at editorial discretion.
+  scores:
+    voice: 5
+    sentence_variety: 3
+    economy: 5
+  notes: |
+    Clear human voice throughout with a metaphor earned across the piece that illuminates the argument,
+    but three consecutive sentences opening with parallel "A [noun] that..." constructions create
+    noticeable monotony in the prose.

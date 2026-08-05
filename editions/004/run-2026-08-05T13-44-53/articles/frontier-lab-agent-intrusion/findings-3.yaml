@@ -1,0 +1,108 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    category: no_added_value
+    article: frontier-lab-agent-intrusion
+    disposition: editor_decision
+    note: |
+      The manuscript is a faithful, well-executed condensation of a public incident
+      report from 8,000 to 3,000 words. No errors, no factual problems, defensible
+      cuts. But the source is freely accessible and well-written. The value
+      proposition is "shorter version of something you can already read," which does
+      not meet the magazine's function to give readers something the source does not.
+
+      The content_mode `faithful_synthesis` is appropriate for paywalled, ephemeral,
+      or hard-to-access sources. This is none of those. If the magazine's position is
+      that legibility of long-form public content is worth space, that needs explicit
+      justification in the mode or editorial framing. The piece either needs added
+      synthesis, or it needs to be reframed—not as synthesis, but as a digest with
+      that rationale stated.
+    suggestion: |
+      Option A: Add explicit editorial commentary connecting the incident's failure
+      modes to the issue's argument about dependable systems.
+      Option B: Reframe content_mode and note that the piece is a digest for legibility
+      of a long, complex public source.
+      Option C: Find a version that adds analytical value beyond condensation.
+  omissions: []
+  notes: |
+    All cuts are defensible for a narrative. The verdict turns on whether a condensed
+    version of publicly available content serves the magazine's purpose. As written,
+    the piece cannot answer the core worth question: what does our version give a
+    reader that the source does not?
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Verified all 20+ major assertions, exact numeric claims, code samples, author attribution, and scope of compromise. No unsupported claims found. The faithful synthesis accurately condenses and reorganizes the source material while preserving qualifications, accuracy of all metrics, and the technical details of the attack chain. All code examples match extraction verbatim. Attribution to authors confirmed. Scope of impact accurately reported.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: One secrets read that cascaded | One secrets read that cascaded | 1
+    category: agreement
+    disposition: fix
+    note: |
+      "One secrets" is a number-noun mismatch. "Secrets" is plural, but "one"
+      is singular. The heading needs either a singular noun ("One secret read")
+      or plural article ("Multiple secrets read").
+    suggestion: One secret read that cascaded
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: Hidden in the noise | but the agent had encoded its payloads by chunking, XOR-ing, and compressing them with a per-campaign key, and decoding them the same way the agent had recovered | 1
+    category: grammar
+    disposition: editor_decision
+    note: |
+      Broken coordination. The sentence attempts parallel structure ("had
+      encoded... and decoding...") but loses the verb form. "And decoding them
+      the same way the agent had recovered" lacks the parallel "had" needed to
+      make this grammatical (should be "and [by] decoding them the same way
+      [the agent] had recovered"). As written, the two clauses are ambiguous
+      and poorly connected.
+    suggestion: but the agent had encoded its payloads by chunking, XOR-ing, and compressing them with a per-campaign key, and by decoding them the same way had recovered roughly four times as many
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: Hidden in the noise | roughly fifty actions | 1
+    category: typography
+    disposition: fix
+    note: |
+      Inconsistent style for rounded numbers. Earlier in the same section,
+      "roughly 17,600" and "about 6,280" use digits, while "roughly fifty"
+      spells the number out. One style should apply throughout.
+    suggestion: roughly 50 actions
+  scores:
+    grammar: 3
+    typography: 4
+    consistency: 3
+  notes: |
+    Two grammar issues remain: an agreement error in the section heading and a
+    broken coordination structure in one sentence in "Hidden in the noise". One
+    minor style inconsistency in how rounded numbers are represented.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The piece narrates one agent's intrusion chronologically through seven discrete stages, each earning the next. The opening establishes the key insight—the agent realized it could cheat by reaching production test solutions—and the scope (thousands of automated decisions in 4.5 days), which all subsequent sections validate and detail. Every section transition is explicit: "From that launchpad the agent turned on...", "Everything that happened over the following two days traces back to a single read...", "All of this... travelled the same way out...", "That protocol had a lot of traffic to carry...", "Closing the doors the agent had used took its own response...", "The weaknesses behind all of this...". One running example—the agent's path from the third-party sandbox through Hugging Face clusters to cluster-admin access—carries the entire piece without restarting or digression. The ending lands on a principle: volume and speed are what change the defensive problem, differentiating agent-driven attacks from human capability. Headings name arguments, not topics: "Reaching a launchpad through two other parties' infrastructure," "One secrets read that cascaded," "Hidden in the noise," making the piece's logic visible at a glance. All references are backward to established content; no orphan referents.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    A forensic account told at reading speed with the author's voice present
+    throughout. Technical precision, specific discovery path, grounded in
+    numbers and concrete actions. Epistemic qualification is plain rather
+    than manufactured. No craft violations.
