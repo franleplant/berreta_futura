@@ -1,0 +1,30 @@
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    Clean pass. Sentence-initial capitalisation consistent throughout. All
+    subject-verb agreement correct with no dangling modifiers or fragments.
+    Punctuation sound; no em dashes, semicolon usage correct. Spelling,
+    typography, and number formatting consistent. Pronoun references clear.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: The piece establishes a clear central claim in the opening and maintains it throughout, using two concrete examples to explore how costless attempts distribute cost differently. All references ground within the text; transitions between the sandbox example, the coding agent example, and the comparative analysis are smooth; and the closing circles back to the opening with earned specificity about how cost gets distributed, not erased.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 4
+    economy: 5
+  notes: |
+    Thoughtful paradox-driven argument with clear voice throughout: the opening negation ("costs nothing...still costs something") opens and frames the entire piece, concrete examples escalate the stakes, and the closing mechanism reframes the premise without restating it. No dead sentences, no register slip, no decorator language. The metaphor of cost moving "downstream" survives intact through the whole piece and maps precisely onto the two failure modes being distinguished.

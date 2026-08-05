@@ -15,7 +15,7 @@ If you're only using AI to write the code, then you're taking the 2-4 hours of c
 
 But if you use AI to help you plan and align, then you actually get closer to 2-3x faster.
 
-## The 80/20 Rule in AI Coding Leverage
+## The 80/20 rule in AI coding leverage
 
 Lets assume if you yolo a two-sentence prompt into your factory, your chance of getting a fully-mergeable result is ~50%, the chance you have to rework it is 50%.
 
@@ -23,7 +23,11 @@ Now lets say you are a principal engineer with 10 years of experience. You have 
 
 And at the far end: write every line yourself. Nothing's left for the agent to get wrong, so the rework chance goes to zero.
 
-**Note.** For this example I'm gonna blur "chance you'll have to change something" weighted by "how painful the change will be" into a single percentage number, but obviously they're two separate variables. If the model is 50% likely to get a button style wrong, but the fix is one cheap prompt, then our combined "expected pain" is low.
+**note** For this example I'm gonna blur
+
+> "chance you'll have to change something" weighted by "how painful the change will be"
+
+into a single percentage number but obviously they're two separate variables. If the model is 50% likely to get a button style wrong, but the fix is one cheap prompt, then our combined "expected pain" is low.
 
 > expected pain = P(you'll have to change it) × how painful the change is
 

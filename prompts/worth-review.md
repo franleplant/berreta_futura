@@ -18,8 +18,12 @@ article says is `edition-review.md`'s question.
 
 ## Procedure
 
-1. Read every extraction in full, then the manuscript. Count the body words of
-   each and write the ratio down before you judge anything.
+1. Read every extraction in full, then the manuscript. Do not judge by ratio.
+   There is no target length and no compression quota: the magazine exists to
+   let a reader consume more information than they otherwise could, and the
+   source is always one click away. A piece that is a tenth of its source is
+   not thereby wrong, and a piece that keeps two thirds is not thereby padded.
+   What matters is whether the cutting cost the reader something they needed.
 2. **The sentence.** In one sentence, what does the manuscript give a reader
    that the source does not? Concrete answers only: materially shorter and still
    carrying the argument; a rambling source put into the order the argument
@@ -31,19 +35,35 @@ article says is `edition-review.md`'s question.
    loss: each worked example, number, identifier, command, code block, exchange,
    caveat and joke the source has and we do not. You are hunting the case where
    the losses are the reason anyone opened the source.
-4. **The price of length.** Name the section that pays least for its words and
-   say what it costs the reader.
+4. **Did we strip too much?** This is the question the magazine most needs
+   answered, so answer it item by item rather than in the aggregate. In the
+   `omissions` block of your output, list every fact, number, identifier,
+   command, worked example, exchange, caveat, name, date or consequence that the
+   source carries and the manuscript does not. For each, give one line on what a
+   reader loses without it, and a verdict:
+   - `needed` — a reader who only reads us is now misinformed, cannot act, or
+     would change their mind if they knew it. File a finding for each of these:
+     `lost_essential_fact` when the missing thing is load-bearing for the
+     argument, `lost_operational_detail` when it is something the reader would
+     have to type or look up, `blocking` when its absence makes a remaining
+     sentence untrue or misleading, `major` otherwise.
+   - `defensible` — real information, correctly judged not worth its space.
+   Then one summary judgment: taken together, do the `needed` omissions mean the
+   piece cut past the bone? If so, `over_compressed`, `major`, and say in the
+   note which two or three restorations would fix it.
+   Be exact and be specific. A finding that says "loses nuance" or "omits
+   detail" without naming the detail is worthless to a reviser and worthless to
+   us; name the thing or do not file it.
    - Manuscript body words at or above the source's: `longer_than_source`,
-     `blocking`, always. A 350-word source may not become a 500-word article.
-   - `faithful_synthesis` targets roughly a third of its source. Above
-     two-thirds with no reason you can state: `unearned_length`, `major`.
+     `blocking`, always. Our version being longer than the thing it condenses
+     defeats the point of publishing it.
    - `faithful_edit` runs at the source's length by design, which is legitimate
      only where the value is access or legibility: a paywalled or ephemeral
      source, slides, a thread, scattered posts collected. Name which. If none
      applies it is a reprint of something the reader can already read, and that
      is `no_added_value`.
-   - `in_a_nutshell` competes on teaching, not length. Saving 40% of the words
-     and losing everything operational loses the comparison.
+   - `in_a_nutshell` competes on teaching. Losing everything operational loses
+     the comparison however many words it saved.
 5. **Same shape.** Not for `faithful_edit`, where preserving order is the point.
    List the manuscript's sections and the source's, in order. Same sequence of
    subjects means the piece did no editorial work on the structure:
@@ -67,14 +87,16 @@ in one piece, and the old bench scored it a 5.
 
 ## Categories
 
-`no_added_value`, `longer_than_source`, `unearned_length`, `source_shaped`,
+`no_added_value`, `longer_than_source`, `lost_essential_fact`,
+`lost_operational_detail`, `over_compressed`, `source_shaped`,
 `stripped_utility`, `no_position`, `section_does_not_pay`.
 
 Severity: `blocking` when you cannot write the sentence in step 2, when the
-manuscript is not shorter than its source, or when the piece is the source's
-shape and the source's content in fewer words. `major` for a section that does
-not pay for itself, for stripped utility, for length above the mode's
-expectation with no reason you can state. `minor` for one paragraph.
+manuscript is not shorter than its source, when an omission leaves a remaining
+sentence untrue or misleading, or when the piece is the source's shape and the
+source's content in fewer words. `major` for a needed omission, for a piece cut
+past the bone, for a section that does not pay for itself, for stripped utility.
+`minor` for one paragraph. Never file a length finding on ratio alone.
 
 Findings here are almost always `disposition: fix`: what a piece is worth is the
 editors' doing, not the author's. Use `editor_decision` only where the remedy is
@@ -99,10 +121,13 @@ findings:
       names none of them, so a reader who wants to call a tool goes back to the
       source and we have cost them a detour.
     suggestion: "Carry the three call names inside the sentences that explain them."
-scores:
-  value_over_source: 1
-  length_earned: 2
-  retention: 2
+omissions:
+  - fact: "tools/list and tools/call, the two method names"
+    reader_loses: "Cannot call a tool without going back to the source."
+    verdict: needed
+  - fact: "The 2024 protocol revision history section"
+    reader_loses: "Nothing; superseded by the version we describe."
+    verdict: defensible
 notes: |
   Changes required because the piece cannot state one thing it gives a reader
   that the specification does not.
@@ -121,4 +146,7 @@ notes: |
 - `notes` opens with one sentence. On an approval that sentence must name, in
   concrete terms, what this piece gives a reader that its source does not. An
   approval you cannot warrant that way is `changes_required`.
-- Scores are integers 1-5 and advisory. Never soften a finding to protect one.
+- `omissions` is required and never empty on a piece shorter than its source:
+  something was cut, so say what. Name the thing itself, not its category. It is
+  the most useful thing you produce, and it is read by a human as well as by the
+  reviser.

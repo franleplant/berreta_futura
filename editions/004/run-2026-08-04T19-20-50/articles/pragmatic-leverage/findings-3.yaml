@@ -1,0 +1,100 @@
+worth:
+  result: approved
+  findings: []
+  scores:
+    value_over_source: 4
+    length_earned: 4
+    retention: 5
+  notes: |
+    Successfully preserves an ephemeral X thread with legitimate legibility improvements.
+    This piece gives a reader sustained access to Dex's operational judgment about planning
+    leverage, with grammar fixed and flow tightened. The removal of one visualization
+    sentence (inverse relationship) is minor; the formula and subsequent guidance carry
+    the concept.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    All factual claims, numbers, dates, and quotations in the manuscript are supported
+    by the source extraction. All qualifications, hedges, and source language are preserved
+    faithfully. Two explanatory passages (button-style example and inverse-relationship
+    observation) are omitted as condensation; these are illustrative content, not
+    qualifications or conclusions, so their omission is within scope.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | your chance of getting a fully-mergeable result is ~50%, the chance you have to rework it is 50% | 1
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      Two independent clauses joined with a comma only. The sentence is the author's own; an editor should choose the remedy.
+    suggestion: your chance of getting a fully-mergeable result is ~50%, and the chance you have to rework it is 50%.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking leverage | 25-50% | 1
+    category: typography
+    disposition: fix
+    note: |
+      All ranges use hyphens instead of en dashes. Update throughout: 25–50%, 2–4 hours, 10–20 minutes, 2–3x.
+  scores:
+    grammar: 3
+    typography: 3
+    consistency: 4
+  notes: |
+    One comma splice in the author's text requires editorial judgment, and four ranges need en-dash formatting for house style consistency.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | This one is a bit of an addendum / side-quest to the recent series | 1'
+    category: opening
+    disposition: fix
+    note: |
+      The preamble contextualizes the piece's relationship to a prior series but does not set up why the reader should care about seeking leverage. The opening clears its throat before reaching the point of interest, which arrives with the "Seeking leverage" section.
+    suggestion: Either strengthen the preamble to introduce the leverage concept, or move directly to the first section heading.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The heading describes the topic rather than stating what the section argues. It names what will be discussed (the 80/20 rule) but not what the piece claims about leverage (the trade-off between planning effort and rework risk).
+    suggestion: Rephrase to a claim-based heading such as 'Finding the leverage sweet spot' or 'When planning pays off.'
+  - severity: major
+    article: pragmatic-leverage
+    locator: Good luck. | 1
+    repair_from: If you're doing multiple phases of planning, zooming in from 50kft view all the way to the 10kft view, you want to do a little bit of steering at each phase to ensure you are eliminating as much expected pain as possible.
+    category: ending
+    disposition: fix
+    note: |
+      The piece establishes the concept of pragmatic leverage and describes the mechanics of multi-phase planning with steering, but then ends with a standalone "Good luck" that does not land or affirm the main argument. The ending stops rather than resolves.
+    suggestion: Replace the send-off with a sentence that affirms the core insight about pragmatic leverage—that it requires judgment about where to spend planning effort to eliminate the most pain.
+  scores:
+    order: 4
+    coherence: 3
+    opening: 2
+    ending: 2
+  notes: |
+    The piece argues that AI leverage comes from planning and verification, not just code generation, and requires pragmatic judgment about where to spend effort. The argument order is clear and the transitions within sections work, but the opening defers the real premise and the ending fails to land it.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 4
+    economy: 5
+  notes: |
+    Dex's voice is clear and consistent throughout: conversational, pragmatic, self-aware
+    without affectation. The piece moves logically from constraint (most shipping time is
+    not code-writing) through analysis (expected pain as a function of planning depth) to
+    pragmatic judgment (eliminate the high-impact work early, without over-planning). Every
+    sentence earns its place. The opening establishes a stake; the closing respects the
+    reader's intelligence by leaving the execution to them.
