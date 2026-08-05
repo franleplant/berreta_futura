@@ -1,0 +1,43 @@
+piece: mcp-in-a-nutshell
+rounds:
+- round: 1
+  words: 929
+  loop_findings: 3
+  all_findings: 3
+- round: 2
+  words: 963
+  loop_findings: 3
+  all_findings: 4
+- round: 3
+  words: 954
+  loop_findings: 2
+  all_findings: 2
+state: rounds_exhausted
+open_findings:
+- lens: worth
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: Put the pieces together | A client sends `tools/list` | 1
+  repair_from: What a server actually offers comes down to three primitives | Tools are functions | 1
+  category: stripped_utility
+  disposition: fix
+  note: |
+    The source provides four detailed JSON-RPC exchange examples showing discovery, tool list, tool call, and subscriptions with their actual request and response payloads. The manuscript narrates these interactions but never displays them. A reader trying to understand what an MCP message looks like, or to recognize one in the wild, must return to the source. The anti-exemplar precedent teaches: at least one complete exchange is essential. Show the tools/call example with full JSON structure (the weather_current request and response) to bridge concept to practice.
+  suggestion: After 'Each primitive has its own discovery method', insert one complete tools/call JSON-RPC exchange example with both request and response, exactly as shown in the source.
+- lens: craft
+  severity: blocking
+  article: mcp-in-a-nutshell
+  locator: '- | The data layer is the inner layer | 1'
+  category: repeated_shape
+  disposition: editor_decision
+  note: |
+    Seven instances of definitional equations concentrate through the explanation
+    section: "The data layer is the inner layer", "This is the actual shape of
+    every exchange", "The transport layer is the outer layer", "The data layer is
+    also stateless", "Tools are functions the AI application can call to do
+    something", "Resources are data the application can read", "Prompts are
+    templates for structuring a conversation with the model". The pattern reads
+    like a system naming categories rather than a person explaining. This is a
+    reading defect whoever caused it, and the remedy is editorial: condense these
+    definitions into a unified section, restructure to distribute the pattern
+    across paragraphs, or reconsider whether all seven are necessary.

@@ -1,0 +1,16 @@
+piece: mcp-in-a-nutshell
+rounds:
+- round: 1
+  words: 1072
+  loop_findings: 6
+  all_findings: 7
+- round: 2
+  words: 1085
+  loop_findings: 4
+  all_findings: 5
+- round: 3
+  words: 1085
+  loop_findings: 0
+  all_findings: 2
+state: clean
+open_findings: []

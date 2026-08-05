@@ -1,0 +1,71 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: JSON-RPC 2.0 request/response examples (discovery, tool list, tool call, subscriptions)
+    reader_loses: Concrete syntax for implementing clients or servers; without them, an implementer must consult the source.
+    verdict: defensible
+  - fact: Scope section (MCP SDKs, Development Tools, Reference Implementations)
+    reader_loses: Context about what comprises the MCP ecosystem; not essential for understanding protocol mechanics.
+    verdict: defensible
+  - fact: Field name 'io.modelcontextprotocol/protocolVersion' and other _meta field details
+    reader_loses: Implementation reference; the concept of _meta carrying version and capabilities is preserved.
+    verdict: defensible
+  - fact: Pseudo-code examples showing how applications use MCP in practice
+    reader_loses: Concrete usage patterns; the explanation covers the concepts that code would implement.
+    verdict: defensible
+  notes: |
+    A reader gains a clear conceptual framework for MCP's architecture and design principles. The manuscript transforms a technical specification into accessible narrative prose, reorders content to foreground the host-client-server model before diving into protocol mechanics, and synthesizes key ideas (the separation of data and transport layers, statelessness, deprecation rationale) that are scattered across the source. The piece successfully delivers on its stated rationale: shared vocabulary about how MCP works. No essential facts are omitted that would leave the reader misinformed or unable to grasp the system's purpose, and all operational details needed for conceptual understanding (method names, field names, caching behavior, examples) are retained.
+evidence:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: Primitives | cache this list for five minutes before asking again | 1
+    repair_from: Primitives | plus a freshness hint on the response itself | 1
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source explains that ttlMs is "a freshness hint in milliseconds," presented with a five-minute example to illustrate the concept. The manuscript states "cache this list for five minutes before asking again," losing the source's emphasis that ttlMs is a variable field specified by each server in milliseconds. A reader could misinterpret this as a fixed five-minute caching requirement rather than understanding that servers set their own freshness hints via ttlMs. While the phrase "a freshness hint on the response itself" partially preserves that it comes from the response, omitting "in milliseconds" obscures that the duration is variable per server and response.
+  scores:
+    claim_support: 5
+    qualification_survival: 3
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Verified all checkable assertions: architecture, participant roles, transport mechanisms, data layer protocol, statefulness, discovery, three primitives, client primitives, deprecations, tool discovery response format, tool execution with exact names, content arrays, list change notifications, and extensions. All claims are supported by the source. One qualification loss identified: the variability of the ttlMs caching field (specified "in milliseconds" by the server) is not made explicit when the manuscript presents the five-minute example as a specific instruction.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: Clean pass. All sentences open with capital letters; grammar, punctuation, and spelling are correct throughout; typography follows house style with proper heading level (`##`) and no markup artifacts.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: Primitives | Everything a server offers comes through three primitives | 1
+    repair_from: Primitives | Primitives | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The heading names the topic but not the section's argument. The section
+      establishes that "Everything a server offers comes through three
+      primitives" but the heading does not state this as a claim.
+    suggestion: 'Reframe as a claim about what primitives do: ''Three primitives structure everything'' or ''Everything flows through three primitives.'''
+  scores:
+    order: 4
+    coherence: 4
+    opening: 5
+    ending: 4
+  notes: |
+    The piece establishes MCP's architecture through a concrete example, flows
+    logically from protocol mechanics through data models to extensibility
+    principles, and lands with a strong statement of how the design enables growth.
+craft:
+  result: approved
+  findings: []
+  notes: This reads as someone who knows MCP deeply explaining it patiently to developers who don't yet. Concrete examples (VS Code, filesystem, Sentry) ground abstract concepts, sentence structures vary to match each idea, and the writing is precise without sterility—it earns its technical vocabulary through use.

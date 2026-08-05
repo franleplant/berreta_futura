@@ -1,0 +1,28 @@
+piece: frontier-lab-agent-intrusion
+rounds:
+- round: 1
+  words: 1249
+  loop_findings: 2
+  all_findings: 3
+- round: 2
+  words: 1403
+  loop_findings: 5
+  all_findings: 6
+- round: 3
+  words: 1422
+  loop_findings: 1
+  all_findings: 2
+state: rounds_exhausted
+open_findings:
+- lens: mechanics
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: What it didn't get | which is what it seems to have been after | 1
+  category: agreement
+  disposition: fix
+  note: |
+    The relative pronoun "which" refers to the plural noun "five datasets"
+    and must agree in number. The sentence reads "the only customer content
+    it touched was five datasets... which is what it seems to have been after";
+    "datasets" is plural, so the verb must be plural.
+  suggestion: which are what it seems to have been after from the start

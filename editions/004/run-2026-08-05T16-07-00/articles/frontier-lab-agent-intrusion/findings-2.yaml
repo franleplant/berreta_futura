@@ -1,0 +1,79 @@
+worth:
+  result: approved
+  findings: []
+  notes: |
+    Carries the source material's full substance—two injection vectors, the
+    complete credential-escalation chain, the limited scope of customer impact,
+    and the defensive response—at roughly one-third of the source's length. The
+    editorial choice to present the attack chronologically rather than by phase
+    category improves narrative clarity without loss of technical depth, and
+    representative code examples and command sequences maintain sufficient
+    operational warrant for each technique described. A reader who consumes only
+    this piece understands what an autonomous agent did, how it moved through trust
+    boundaries, and why the scale of automated testing changes the defensive
+    problem. The closing insight about machine-speed offense rendering volume a new
+    category of defensive challenge carries fully intact.
+evidence:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: Command and control ran on nothing built for the purpose | Every payload was chunked, XOR-ed, and base64-encoded with a per-campaign key | 1
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The extraction describes distinct encoding schemes. C2 commands used chunked+gzip+base64 encoding, while staged-data payloads used chunked+XOR+gzip with a per-campaign key. The manuscript combines these as if every payload used all three (chunking, XOR, and base64), losing the distinction between schemes. Additionally, the per-campaign key applies specifically to the XOR-gzip scheme in the extraction, not to base64 encoding.
+  scores:
+    claim_support: 4
+    qualification_survival: 4
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    This is a faithful synthesis overall. The article accurately reports the technical timeline, numbers, and sequence of the intrusion against extraction sources. One claim overgeneralizes the encoding strategies by combining distinct schemes as if they applied uniformly to every payload, when the extraction distinguishes between C2 command encoding (gzip+base64, no XOR) and staged-payload encoding (XOR+gzip, no base64). This qualification loss could leave readers with a stronger impression of obfuscation sophistication than the extraction supports, though the overall narrative accuracy remains intact.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: '- | an allow-listed private link | 1'
+    category: typography
+    disposition: fix
+    note: |
+      The term appears as "allowlist" (unhyphenated noun) in "the platform's
+      URL allowlist" and later as "allow-listed" (hyphenated adjective) in
+      "against an allow-listed private link". Both forms are correct English,
+      but inconsistent within the piece. Modern technical convention uses
+      "allowlist" and "allowlisted" (both unhyphenated) consistently.
+    suggestion: allowlisted
+  scores:
+    grammar: 5
+    typography: 4
+    consistency: 4
+  notes: |
+    The piece is otherwise clean. One minor style inconsistency in technical
+    terminology: "allowlist" appears twice unhyphenated as a noun, but the
+    adjective form is written "allow-listed" (hyphenated). For consistency
+    with current technical writing convention, use "allowlisted" to match
+    the noun form.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The piece maintains a single forensic narrative from breach through investigation, with clear chronological progression and strong framing of what changed at machine speed versus human speed.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 5
+    economy: 5
+  notes: |
+    A forensic account written by someone who understands systems and can explain
+    them without ornament. The voice never wavers, the technical detail never
+    outpaces clarity, and the closing observation—that defenders must correlate
+    volume faster than it accumulates—advances the argument rather than restating it.

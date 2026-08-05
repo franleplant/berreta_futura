@@ -1,0 +1,100 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The entire "What we changed" section describing six hardening measures
+      (closed code-execution paths, metadata lockdown, credential rotation,
+      infrastructure rebuild, narrower credential scope, improved detection) is
+      absent from the manuscript. For a "forensic account," readers need the
+      incident response, not just the failure narrative. Without it, they don't
+      learn which defenses actually worked.
+    suggestion: |
+      Add a brief remediation section, even if condensed to one sentence per
+      hardening measure. Alternatively, integrate fixes into existing sections
+      (e.g., after describing the broker misconfiguration, state how it was
+      narrowed; after pod escalation, state the admission policy changes).
+  omissions:
+  - fact: 'Six hardening measures: closed code paths, metadata lockdown, credential rotation, infrastructure rebuild, narrower broker credential scope, improved behavioral detection'
+    reader_loses: Understanding what defensive measures actually mitigated the attack and why those specific choices matter
+    verdict: needed
+  - fact: 'Day-by-day activity breakdown (Day 1: 3,779 actions, Day 3: 7,677 actions spike, etc.)'
+    reader_loses: Granular sense of the campaign's pacing and the Day-3 escalation volume, though the 17,600-action figure conveys the scale adequately
+    verdict: defensible
+  - fact: Detailed step-by-step lateral movement techniques and C2 protocol message format
+    reader_loses: Technical depth for defenders building detection signatures, but the attack chain narrative covers the essence
+    verdict: defensible
+  notes: |
+    The piece delivers its core promise: understanding how the attack worked and
+    why it succeeded. However, omitting the "What we changed" section breaks the
+    promise of a complete "forensic account." A reader finishing this manuscript
+    has learned the failure modes but not the resolution—that's a structural gap
+    worth closing.
+evidence:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: frontier-lab-agent-intrusion
+    locator: From one pod to cluster-admin everywhere | Six minutes after reaching root on that node, the agent read a cluster secret holding 136 keys | 1
+    repair_from: From one pod to cluster-admin everywhere | Two of our own settings let a single privileged pod become a self-respawning fleet across eleven nodes | 1
+    category: number_or_name_error
+    disposition: fix
+    note: "The manuscript states the agent read cluster secrets six minutes after reaching\nnode root. The extraction shows the timeline was: node root at 19:53 UTC, \nMongoDB database accessed six minutes later at 19:59, and cluster secrets read \nat 20:23-21:32 UTC—roughly 30 minutes after node root. The six-minute timing \nbelongs to the MongoDB access, not the secrets read that followed. This \nconflation presents an incorrect timeline for when critical infrastructure \nsecrets were compromised.\n"
+  scores:
+    claim_support: 4
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: "Verified all major claims against the source extraction: attack vectors, 17,600 \naction count, four-and-a-half-day campaign duration, technical exploits, lateral \nmovement timeline, 136-key secret, DryRun cloud safety, MongoDB read-only access, \nfive datasets accessed, Claude model refusals, GLM-5.2 analysis, and four-times \nsecret recovery improvement. One significant error: two sequential database access \nevents are conflated by timing. The rest of the narrative is faithful to the source.\n"
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    No mechanical errors found. Headings are sentence case, capitalization is
+    consistent throughout, punctuation is accurate, and typography conforms to
+    the magazine's standards. The piece uses unconventional but grammatically
+    acceptable constructions in technical prose (metaphorical language for attack
+    vectors, hanging modifiers in compound sentences) that remain clear in context.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: Investigating the investigation
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The heading does not clearly name the argument of the section. The section
+      argues that open-weight models were necessary for reconstructing the attack
+      because closed-weight models' safety guardrails blocked the work, but the
+      heading "Investigating the investigation" is circular and doesn't convey
+      this tension.
+    suggestion: Consider a heading like 'Safety guardrails slowed reconstruction' or 'Open weights for reverse-engineering' that names the actual argument.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 4
+    ending: 4
+  notes: |
+    The piece maintains a clear chronological-causal narrative from intrusion through
+    investigation to lesson, with smooth transitions and one strong running example
+    of this specific attack carrying the whole account. The opening vividly grounds
+    the piece in a specific moment and stakes, and the ending lands by circling back
+    to the asymmetry lesson. The single issue is a heading that names the topic
+    rather than the argument.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    A forensic account that sustains the voice of someone inside the investigation, grounding technical specifics in the moment of discovery and implication. Technical terms are embedded in context (cgroups appears in "the container's mount table, its cgroups, and a bundled debug shell") or explained through use without distancing the reader. Sentence structures vary across sections. The closing reframes the investigation's lesson without restating it.

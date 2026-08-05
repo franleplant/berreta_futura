@@ -1,0 +1,79 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Put the pieces together | A client sends `tools/list` | 1
+    repair_from: What a server actually offers comes down to three primitives | Tools are functions | 1
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The source provides four detailed JSON-RPC exchange examples showing discovery, tool list, tool call, and subscriptions with their actual request and response payloads. The manuscript narrates these interactions but never displays them. A reader trying to understand what an MCP message looks like, or to recognize one in the wild, must return to the source. The anti-exemplar precedent teaches: at least one complete exchange is essential. Show the tools/call example with full JSON structure (the weather_current request and response) to bridge concept to practice.
+    suggestion: After 'Each primitive has its own discovery method', insert one complete tools/call JSON-RPC exchange example with both request and response, exactly as shown in the source.
+  omissions:
+  - fact: All four JSON-RPC request-response examples (discovery, tools/list, tools/call, subscriptions/listen with notifications)
+    reader_loses: Cannot see what an actual protocol message looks like; cannot recognize or debug exchanges in the wild
+    verdict: needed
+  - fact: The four 'How This Works in AI Applications' pseudo-code sections
+    reader_loses: No implementation patterns for integrating MCP; a reader wanting to build would need to consult the source
+    verdict: defensible
+  notes: |
+    The manuscript successfully makes the architecture legible and names all core concepts and method names. But it provides no concrete example of what the protocol actually sends and receives, leaving readers able to describe MCP in words but unable to see it work. A faithful synthesis at 40% compression can omit implementation code but cannot omit evidence that the protocol exists—it needs at least one real exchange to make the narrative substance visible.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked every claim from title through the final example against the extraction. All factual assertions—architecture patterns, method names, deprecated features with version stamp, notification guarantees and limitations, tool metadata fields—are grounded in source. The manuscript compresses without distorting: server/host context management, stateless per-request capabilities, the optional nature of discovery. No invented claims, no quote misrepresentation, no dropped qualifications that change meaning.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: "The piece passes all mechanics checks. Sentence-initial capitalization is \nconsistent throughout, grammar is sound with no subject-verb agreement errors \nor dangling modifiers, punctuation and spelling follow American English \nconventions uniformly, and typography adheres to all standards—no em dashes, \nstraight quotes, no stray markup. Lists maintain parallel grammatical form, \nthe body opens with a paragraph, and there are no embedded editorial apparatus. \nThe faithful synthesis retelling is well-structured.\n"
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 4
+  notes: |
+    The piece establishes its topology through concrete example, progresses clearly
+    through layers, primitives, and capabilities, and lands with an instance that
+    recalls statelessness from earlier. The Sentry/filesystem pair carries the
+    argument effectively as a running example.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: mcp-in-a-nutshell
+    locator: '- | The data layer is the inner layer | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Seven instances of definitional equations concentrate through the explanation
+      section: "The data layer is the inner layer", "This is the actual shape of
+      every exchange", "The transport layer is the outer layer", "The data layer is
+      also stateless", "Tools are functions the AI application can call to do
+      something", "Resources are data the application can read", "Prompts are
+      templates for structuring a conversation with the model". The pattern reads
+      like a system naming categories rather than a person explaining. This is a
+      reading defect whoever caused it, and the remedy is editorial: condense these
+      definitions into a unified section, restructure to distribute the pattern
+      across paragraphs, or reconsider whether all seven are necessary.
+  scores:
+    voice: 3
+    sentence_variety: 1
+    economy: 3
+  notes: |
+    The piece explains a technical protocol with clarity and concrete examples, but
+    the concentration of definitional equations exhausts the reader with category
+    naming before the practical illustration lands.

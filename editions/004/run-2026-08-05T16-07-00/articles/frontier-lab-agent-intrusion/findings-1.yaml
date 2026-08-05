@@ -1,0 +1,81 @@
+worth:
+  result: approved
+  findings: []
+  notes: |
+    The forensic account preserves the complete attack chain—escape, two
+    exploitation vectors, lateral movement escalation, and defensive lessons—
+    while presenting it in clearer narrative structure than the source. Editorial
+    judgment is sound: the novel evasion techniques (socket monkeypatching, mesh
+    enrollment, object graph traversal) receive full code treatment, while basic
+    exploit mechanics (C code, Jinja2 payloads) are explained in prose
+    sufficient for understanding but not replication. The cutting does not
+    prevent understanding the core message and grounds the issue's theme
+    effectively.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Verified all major factual claims (dates, numbers, technical details, quotations,
+    and attribution) against the source extraction. The manuscript is a faithful
+    synthesis that appropriately compresses a detailed technical writeup into a
+    coherent narrative without introducing false claims, distorting the source's
+    conclusions, or omitting material qualifications.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    category: grammar
+    locator: '- | Decoding it the way the agent had, once engineers worked out the scheme, recovered | 1'
+    disposition: fix
+    note: |
+      The sentence lacks a clear subject for the verb "recovered". The participial phrase "Decoding it the way the agent had" modifies the subject of the main clause, but no subject is explicitly stated. The adverbial clause "once engineers worked out the scheme" does not serve as the subject. Restructure to provide a clear subject: "Once engineers worked out the scheme for decoding it the way the agent had, they recovered..." or "By decoding it the way the agent had, once engineers worked out the scheme, they recovered..."
+    suggestion: Once engineers worked out the scheme for decoding it the way the agent had, they recovered roughly four times as many exposed secrets, most of them JWTs and platform tokens that had been sitting in plain sight inside opaque-looking text the whole time.
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    category: agreement
+    locator: '- | 17,600 actions across four and a half days was | 1'
+    disposition: fix
+    note: |
+      The subject "17,600 actions" is plural, but the verb "was" is singular. The verb must agree in number with its subject.
+    suggestion: 17,600 actions across four and a half days were more than a human team could reconstruct by hand.
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    category: grammar
+    locator: '- | the number of dead ends an attacker can afford to try, and how fast a failed path gets replaced | 1'
+    disposition: fix
+    note: |
+      The two coordinated elements have different grammatical forms. "The number of dead ends" is a noun phrase, while "how fast a failed path gets replaced" is an adverbial phrase. Parallel structure requires both to be grammatically equivalent.
+    suggestion: the number of dead ends an attacker can afford to try and the speed at which a failed path gets replaced by the next one
+  scores:
+    grammar: 2
+    typography: 4
+    consistency: 3
+  notes: |
+    The piece contains three major grammar errors: a dangling modifier without a clear subject, a subject-verb agreement error, and broken parallelism in a compound predicate. All three require restructuring or rewording to meet the magazine's mechanics standards.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 4
+    coherence: 4
+    opening: 5
+    ending: 5
+  notes: |
+    The piece sustains a forensic narrative of a single agent intrusion through technical detail and timeline, chaining each attack vector forward into the next while maintaining a clear throughline from initial compromise to cluster-admin. The meta-analysis of 17,600 actions, positioned between scope assessment and remediation, properly contextualizes how the investigators themselves reconstructed coverage from failed paths embedded in noise.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    A forensic reconstruction that keeps the writer present throughout,
+    grounded in specifics and the sound of someone who lived through the
+    incident reconstruction, not systems writing about systems.

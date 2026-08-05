@@ -1,0 +1,61 @@
+piece: pragmatic-leverage
+rounds:
+- round: 1
+  words: 500
+  loop_findings: 10
+  all_findings: 10
+- round: 2
+  words: 501
+  loop_findings: 9
+  all_findings: 15
+- round: 3
+  words: 492
+  loop_findings: 4
+  all_findings: 7
+state: rounds_exhausted
+open_findings:
+- lens: mechanics
+  severity: major
+  article: pragmatic-leverage
+  locator: The tradeoff between planning depth and expected rework | ~50%, the chance you have to rework it | 1
+  category: punctuation
+  disposition: editor_decision
+  note: |
+    Two independent clauses are joined by a comma: "your chance of getting a
+    fully-mergeable result is ~50%" and "the chance you have to rework it is
+    50%." This is a comma splice and requires either a conjunction, semicolon,
+    colon, or separate sentences. Assuming this is verbatim from the source
+    (faithful_edit mode), the editor determines the remedy.
+  suggestion: 'Let''s assume if you yolo a two-sentence prompt into your factory: your chance of getting a fully-mergeable result is ~50%; the chance you have to rework it is 50%.'
+- lens: shape
+  severity: major
+  article: pragmatic-leverage
+  locator: Seeking leverage | But if you use AI to help you plan and align, then you actually get closer to 2-3x faster. | 1
+  repair_from: The tradeoff between planning depth and expected rework | Let's assume if you yolo a two-sentence prompt into your factory | 1
+  category: missing_transition
+  disposition: fix
+  note: |
+    The jump from establishing planning's payoff to analyzing the planning-depth spectrum
+    lacks a bridge. The reader must infer that the second section answers "but how much
+    planning is optimal?" without being told the connection.
+  suggestion: 'Add a transition before the second section: ''But how much planning is enough? That depends on a tradeoff...'''
+- lens: shape
+  severity: major
+  article: pragmatic-leverage
+  locator: The tradeoff between planning depth and expected rework | Good luck. | 1
+  repair_from: The tradeoff between planning depth and expected rework | This is what we mean by leverage, and it requires being pragmatic. | 1
+  category: ending
+  disposition: fix
+  note: |
+    The piece ends with a dismissal rather than a landing. After discussing multi-phase
+    planning and steering, "Good luck" leaves the reader hanging instead of reinforcing
+    how pragmatic planning delivers the promised 2-3x improvement.
+  suggestion: Extend the final thought to connect pragmatic planning back to the leverage benefit promised at the start.
+- lens: craft
+  severity: major
+  article: pragmatic-leverage
+  locator: The tradeoff between planning depth and expected rework | This is what we mean by leverage, and it requires being pragmatic. | 1
+  category: weak_close
+  disposition: editor_decision
+  note: |
+    The final section restates the thesis without advancing it. "This is what we mean by leverage, and it requires being pragmatic" simply re-announces what the reader has just finished understanding through fourteen preceding sentences. The long sentence that follows elaborates the application ("If you're doing multiple phases of planning, zooming in from 50kft view all the way to the 10kft view...") but adds no new perspective beyond what was already demonstrated. "Good luck." offers nothing—no clarity, curiosity, or sense of earned perspective. Against the Final Editing Test, the closing does not leave the reader with more clarity, perspective, or curiosity; it retreads ground. The remedy is an editor's: cut the restatement entirely and either end on a line that grounds the planning principle in the reader's own decision-making, or remove the final section entirely.

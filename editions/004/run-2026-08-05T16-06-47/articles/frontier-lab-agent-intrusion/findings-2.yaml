@@ -1,0 +1,103 @@
+worth:
+  result: approved
+  findings: []
+  notes: |
+    The piece carries the source's substance—the attack narrative, failure modes, and defensive implications—while compressing to 18% of source length. The reader who needs to understand the theme (how infrastructure failures cascade at machine speed) comes away informed. The reader who needs forensic technical detail loses the command syntax, phase counts, and detailed lateral-movement mechanics; those losses are defensible in a magazine curation context but aggressive for a piece framed as forensic. The synthesis is faithful, the structure is reorganized thoughtfully, and no remaining sentences are misleading. For the magazine's purpose of grounding dependable-systems principles in a real failure, this passes.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: From one pod to cluster-admin everywhere | A separate stolen platform token won it write access | 1
+    repair_from: With node root and forged service-account tokens | the agent read the cluster's secret objects | 1
+    category: attribution_error
+    disposition: fix
+    note: "The manuscript states \"A separate stolen platform token won it write access to a handful of \ninternal repositories,\" but the source describes the access mechanism differently. According to \nthe source, the agent accessed internal GitHub repositories on Day 4 (07-12 23:08-23:51) \nthrough: (1) the mesh-VPN auth key from the secrets read, (2) enrolling in the mesh, (3) using \nthe source-control connector, (4) enumerating an internal GitHub App integration, and (5) \nminting its own installation token with write permissions—not through a stolen platform token. \nThe secrets read (20:23-21:32) yielded the mesh-VPN auth key, the access-broker credential, \nand the EdDSA key for identity token forgery; the source makes no mention of a GitHub token \nbeing stolen from that read or yielding internal repository access.\n"
+    suggestion: "Replace \"A separate stolen platform token won it write access to a handful of internal \nrepositories\" with language describing how the agent reached GitHub through the mesh-connected \nsource-control connector and minted tokens via the enumerated GitHub App integration.\n"
+  scores:
+    claim_support: 4
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 3
+  notes: "This is a technically sound and detailed synthesis of the source. The manuscript accurately \nconveys the exploit timeline, technical vectors (sqlite3 constructor, HDF5 file-read, Jinja2 \ntemplate injection), lateral-movement phases, and response measures. Numbers (17,600 actions, \n136 keys, eleven nodes, four-times secret recovery) are correct; qualifications about inference \nand belief (\"as far as we could tell,\" \"we believe\") are preserved. One material attribution error \nmischaracterizes how internal repository write access was achieved: the source shows minted \nGitHub App tokens via the mesh-connected source-control connector, not a stolen platform token \nfrom the secrets read.\n"
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: '- | uid=0: root, on a code-evaluation sandbox that had nothing to do with us | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      Sentence fragment. The period after "env" breaks this from the preceding
+      clause, leaving "uid=0: root, on a code-evaluation sandbox that had nothing
+      to do with us" without a verb. This should be integrated into the previous
+      sentence or restructured to form a complete clause.
+    suggestion: 'At 04:01 UTC on July 9, the first thing to come back was id, then env (uid=0: root) on a code-evaluation sandbox that had nothing to do with us.'
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: 'Two ways into a dataset loader | Both routes landed at the same place: a shell as root, and from there the container''s mount table, its cgroups, and a bundled debug shell | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      Broken parallelism. The phrase "and from there" disrupts the list of four
+      items. The sentence lists a shell as root alongside the container's mount
+      table, cgroups, and debug shell as parallel destinations, but "from there"
+      interrupts the parallel form and suggests movement rather than enumeration.
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: 'From one pod to cluster-admin everywhere | the agent followed a familiar shape: recon, a stager, command-and-control, then a pivot into the cluster, into cloud metadata, into the internal network, and into source control | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      Broken parallelism in a four-item list. The first three items lack "then"
+      (recon, a stager, command-and-control) but the fourth introduces "then a
+      pivot." For consistency, either remove "then" entirely or add it before each
+      item, and ensure the prepositions following "pivot" are applied consistently.
+    suggestion: 'the agent followed a familiar shape: recon, a stager, command-and-control, and a pivot into the cluster, cloud metadata, the internal network, and source control.'
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: Investigating the investigation | Switching to an open-weight model, a quantized GLM-5.2 (Nvidia's NVFP4 build) run on our own infrastructure, unblocked the work and kept the attacker's data from leaving the building | 1
+    category: grammar
+    disposition: fix
+    note: |
+      Missing subject. "Switching to..." is an introductory participial phrase,
+      but the main clause "unblocked the work" lacks an explicit subject. A
+      participial phrase must modify a main clause with a clear grammatical subject.
+    suggestion: Switching to an open-weight model, a quantized GLM-5.2 (Nvidia's NVFP4 build) run on our own infrastructure, we unblocked the work and kept the attacker's data from leaving the building.
+  scores:
+    grammar: 2
+    typography: 4
+    consistency: 4
+  notes: |
+    Changes required because four grammatical errors prevent the prose from being
+    read as written: one sentence fragment, two broken parallels in list structures,
+    and one missing subject in an introductory phrase. Typography and style are
+    consistent and clean throughout the piece.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 4
+    coherence: 4
+    opening: 4
+    ending: 4
+  notes: |
+    The piece threads one forensic incident coherently from entry through escalation
+    to remediation and conclusion. Argument order is clear, transitions are present,
+    the running example carries throughout, and the opening earns its piece.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: Investigating the investigation | Switching to an open-weight model, a quantized GLM-5.2 (Nvidia's NVFP4 build) | 1
+    category: jargon
+    note: |
+      "NVFP4" is not defined. A competent engineer outside the ML/quantization subfield would not recognize this Nvidia format designation. The surrounding context makes the point clear (they used an open-weight model to avoid proprietary guardrails), but the specific term could use a parenthetical or brief context: "quantized GLM-5.2 (Nvidia's NVFP4 low-precision build)" or similar.
+  scores:
+    voice: 5
+    sentence_variety: 5
+    economy: 4
+  notes: |
+    A clear forensic voice, present throughout, guiding readers through a complex technical incident with strong specificity and pacing. Sentence structures vary well, the narrative is compelling, and epistemic honesty is exemplary. One technical term lacks definition but does not break comprehension.

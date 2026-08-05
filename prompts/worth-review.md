@@ -15,6 +15,17 @@ Reject only for the failures that leave the reader worse off than that: prose th
 condenses nothing (as long as the source, or longer), a version that has lost what
 made the source worth reporting, or filler that neither informs nor condenses.
 
+**Two separate jobs, and being generous about the second never excuses skipping
+the first.** The ledger comes first: enumerate what the condensing dropped,
+always, item by item, whatever your verdict turns out to be. Then judge, and judge
+generously. A piece can pass with a long ledger of defensible omissions — that is
+the normal, healthy case, and the ledger is not evidence against the piece. But a
+short manuscript with an empty ledger is not a clean pass, it is an unperformed
+review: something was cut, and refusing to name it is the one failure of this lens
+that cannot be excused. If you find yourself about to report no omissions on a
+piece materially shorter than its source, you have not done step 4. Go back and do
+it.
+
 You do not judge truth (`evidence`), order (`shape`), sentences (`craft`) or
 grammar (`mechanics`). A piece that is accurate, tidy and worthless fails here
 and only here.
@@ -169,3 +180,8 @@ notes: |
   something was cut, so say what. Name the thing itself, not its category. It is
   the most useful thing you produce, and it is read by a human as well as by the
   reviser.
+- The ledger's length is not a score. Ten `defensible` omissions and
+  `result: approved` is a perfectly ordinary report, and more useful than a short
+  ledger. Reporting fewer omissions never makes a piece look better; it only makes
+  your review look unperformed. Roughly: a piece at a third of its source has
+  dropped many nameable things, so name a dozen if there are a dozen.

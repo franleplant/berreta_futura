@@ -1,0 +1,119 @@
+worth:
+  result: approved
+  findings: []
+  notes: |
+    The source's core concepts and architectural reasoning, distilled to give readers
+    the vocabulary that the rest of the issue assumes. A reader comes away understanding
+    the client-server pattern, why data and transport are separate, what the three
+    primitives do, and how the protocol stays flexible through statelessness and
+    extensions. For readers who will encounter MCP again in this edition, this provides
+    the shared language they need.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked every claim against the extraction: VS Code architecture, transports (stdio
+    and Streamable HTTP), JSON-RPC 2.0 data layer, statelessness and discovery,
+    three core primitives (tools, resources, prompts), client primitives (elicitation,
+    deprecated sampling and logging), tool list discovery and execution patterns,
+    notification mechanics, and extensions. All factual assertions—names, method
+    calls, version numbers (2026-07-28), qualifications (optional discovery, no
+    notification delivery guarantees, still-required polling), and examples
+    (filesystem, Sentry, weather server, database schema)—are supported. The
+    manuscript's synthesis connects the source's separate discussions of statelessness
+    and layered design to reach conclusions about extensibility and the philosophy
+    behind deprecated primitives; these syntheses are faithful to the source's
+    reasoning. No claim found without supporting passage.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | context exchange—it does not dictate | 1'
+    category: typography
+    disposition: fix
+    note: |
+      The em dash character (U+2014) is banned. Replace with a semicolon, period, comma,
+      colon, or parentheses.
+    suggestion: context exchange; it does not dictate
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | naming which event types it wants; the server acknowledges | 1'
+    category: capitalisation
+    disposition: fix
+    note: |
+      Independent clauses following a semicolon should be capitalized, consistent with
+      the piece's established convention of capital openings throughout.
+    suggestion: it wants; The server acknowledges with whichever subset...
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | the response itself: cache this list | 1'
+    category: capitalisation
+    disposition: fix
+    note: |
+      Imperative clauses after a colon should be capitalized.
+    suggestion: 'the response itself: Cache this list for five minutes...'
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | one dedicated line to the filesystem process, another to Sentry''s server | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      List items must be parallel in structure. "Another to Sentry's server" omits the
+      noun phrase "dedicated line" that appears in "one dedicated line to the filesystem
+      process."
+    suggestion: another dedicated line to Sentry's server running on Sentry's own infrastructure
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | cache this list for five minutes, and a cacheScope field states | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      Parallel coordinate clauses must maintain the same grammatical form. This mixes
+      an imperative clause ("cache this list") with a declarative clause ("a cacheScope
+      field states"). Restructure to keep both parallel.
+    suggestion: cache this list for five minutes before asking again, and note the cacheScope field that states who may reuse it
+  scores:
+    grammar: 2
+    typography: 2
+    consistency: 4
+  notes: |
+    Four major issues require changes: one banned em dash, two capitalisation errors
+    following punctuation (semicolon and colon), and two broken parallelism errors in
+    grammatical structure affecting clarity.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: Primitives | Primitives | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: "The heading names the topic rather than the section's argument. The section \nargues that servers expose capabilities through three primitives with \nspecific methods, and that design patterns show servers taking ownership of \ntheir own responsibilities. A claim-based heading would clarify what the \nsection argues, not just its subject.\n"
+  scores:
+    order: 4
+    coherence: 4
+    opening: 5
+    ending: 5
+  notes: "The piece establishes MCP's architecture with a concrete example, then builds \nout to protocols, primitives, and extensions in a logical progression. Each \nexplanation is anchored with appropriate examples. The section on primitives \ncould signal its argument more clearly through its heading.\n"
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: 'Primitives | Tools are executable functions: a database query, a file write, an API call. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three consecutive definition sentences follow the shape "[Noun] are [description]: [list/examples]" — Tools, Resources, and Prompts. The structure serves clarity, but monotony across three sentences is a reading defect. Remedy: vary one definition's structure, restructure the section, or accept the pattern for organizational clarity. Editor's call.
+  scores:
+    voice: 4
+    sentence_variety: 3
+    economy: 4
+  notes: |
+    Clear, concrete technical exposition with human voice throughout. The piece successfully explains a complex protocol through example and logical development, maintaining the sense of a person explaining rather than a system documenting. One structural repetition in the definitions section is the only reading defect.

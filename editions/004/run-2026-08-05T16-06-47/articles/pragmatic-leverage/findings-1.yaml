@@ -1,0 +1,158 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    category: no_added_value
+    disposition: editor_decision
+    note: |
+      This is a faithful reproduction of a single X post. The manuscript is identical
+      to the source except for one clarification (adding "Why Software Factories Fail"
+      before "series" in the opening). Faithful edit is legitimate where the value is
+      access or legibility: paywalled sources, scattered posts collected, ephemeral
+      content. A single X post is none of these. It is publicly accessible, not
+      paywalled, and not scattered across multiple sources. While X posts can be
+      deleted, they are not systematically ephemeral in the way the prompt envisions
+      (they persist unless actively removed). The reader gains nothing from the
+      magazine version that they do not already have from reading the X post directly.
+      The piece contradicts the magazine's core value: condensing sources so readers
+      consume more material than they otherwise could. Here, there is no condensation,
+      no reorganization, no added legibility—only a same-length reprint. The stated
+      rationale emphasizes substance and operational judgment, not preservation, which
+      would be the only legitimate reason for a faithful reproduction of a publicly
+      accessible source.
+    suggestion: |
+      Condense the piece to extract the operational core (the 80/20 principle and the
+      inverse relationship between upfront planning effort and rework pain) or weave
+      it into a synthesis piece that draws from multiple sources. Alternatively, publish
+      as editorial commentary that adds the magazine's perspective, or commission an
+      interview with Dex about the specific deployment decisions his team made.
+  omissions: []
+  notes: |
+    The piece is substantive and the reasoning is sound. The failure is editorial: a
+    faithful copy of a publicly available source does not advance the magazine's
+    condensation-driven mission.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Verified all factual claims, numerical figures, and attributions against the extraction. Every assertion—including the 25-50% time split, the 2-3x faster improvement, the ~50% rework probability, the 10% rework chance for a principal engineer, and the expected-pain formula—is grounded in the source. No invented claims, misquotations, or unsupported conclusions detected.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: '- | Seeking Leverage | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      First heading is in title case. Magazine headings use sentence case.
+    suggestion: Seeking leverage
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking Leverage | Lets assume if you yolo | 1
+    category: spelling
+    disposition: editor_decision
+    note: |
+      Missing apostrophe in contraction.
+    suggestion: Let's assume if you yolo
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Now lets say you are | 1
+    category: spelling
+    disposition: editor_decision
+    note: |
+      Missing apostrophe in contraction.
+    suggestion: Let's say you are a principal engineer
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | its possible you may need | 1
+    category: spelling
+    disposition: editor_decision
+    note: |
+      Possessive form used where contraction is required. "its" is possessive; "it's" (it is) is needed.
+    suggestion: it's possible you may need
+  - severity: major
+    article: pragmatic-leverage
+    locator: '- | good luck. | 1'
+    category: capitalization
+    disposition: editor_decision
+    note: |
+      Sentence opens with lowercase. Magazine convention is capitals at sentence start, consistent throughout this piece except here. This is the author's text but violates the standing orthographic rule.
+    suggestion: Good luck.
+  scores:
+    grammar: 2
+    typography: 3
+    consistency: 2
+  notes: |
+    Three missing contractions and one sentence-initial lowercase against magazine rules; one heading is title case instead of sentence case. All are straightforward repairs.
+shape:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: '- | good luck. | 1'
+    category: ending
+    disposition: fix
+    note: |
+      The piece stops rather than lands. The preceding paragraph—"This is what we mean by leverage - and it requires being pragmatic..."—delivers the insight and summarizes the entire argument. "good luck." breaks that moment and provides no meaningful closure.
+    suggestion: Either delete 'good luck.' and end on the pragmatic leverage paragraph, or rewrite the final line to return to the opening's framing of where leverage actually lives.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | You need to do this without overindexing on questions you won't be able to answer without going down a level | 1
+    repair_from: The 80/20 rule in AI coding leverage | What you don't want to do is spend 6 hours planning a task for which you could have eliminated 80% of the expected pain in the first 10 minutes. | 1
+    category: missing_transition
+    disposition: fix
+    note: |
+      The pivot from "What you don't want to do..." (the warning against over-planning) to "You need to do this..." (advice on zooming between product and technical levels) is abrupt. The subject "this" is ambiguous, and the connection between avoiding over-planning and iterating through zoom levels is not drawn.
+    suggestion: Add a sentence clarifying that pragmatic planning means iterating from product level through technical details to unblock unanswerable questions, rather than over-planning before you zoom down.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | The 80/20 rule in AI coding leverage | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The heading names the topic (a rule about leverage) but not the claim the section makes. The section shows a tradeoff curve—50% rework with a yolo prompt, 10% with a principal engineer's spec, 0% with manual work—but never explicitly states what the 80/20 principle means here or whether the optimal point falls at 80% risk reduction from 20% of the planning effort.
+    suggestion: 'Rename the heading to reflect the claim: ''The Tradeoff Between Planning Depth and Expected Rework'' or ''Finding the Leverage Point on the Effort Curve''.'
+  scores:
+    order: 3
+    coherence: 2
+    opening: 4
+    ending: 1
+  notes: |
+    The piece argues that real leverage in AI-assisted delivery comes from smart planning, not accelerating code-writing alone. The opening establishes this clearly and the middle sections develop the tradeoff between effort invested and rework risk. The ending fails to land, a critical transition is missing between the warning about over-planning and the advice on zooming levels, and a heading promises to explain the 80/20 rule without delivering the explanation.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: Seeking Leverage | If you're only using AI to write the code | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Six "If X, then Y" conditionals in 640 words, one roughly every 100 words.
+      First at "If you're only using AI to write the code, then you're taking...",
+      then "But if you use AI to help you plan and align, then you actually...",
+      "If the model is 50% likely to get a button style wrong, but the fix is one
+      cheap prompt, then...", "If you draw this out, there's an inverse
+      relationship...", "if you've done some work at the Product level and have
+      not answered all the open questions yet, its possible you may need to...",
+      and "If you're doing multiple phases of planning, zooming in from 50kft view
+      all the way to the 10kft view, you want to...". The pattern is cumulative
+      and pulls the reader out of the argument. Remedy: combine scenarios, cut one,
+      or rewrite a few constructions to restore rhythm.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 4
+  notes: |
+    A sharp, practical piece with strong direct voice and earned metaphors. The
+    author writes conversationally without filler. The repeated conditional
+    structure is the only defect: one "If" construction every hundred words becomes
+    a recognizable pattern that creates monotony despite the useful work each one
+    does.
