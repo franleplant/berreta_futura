@@ -25,7 +25,7 @@ enum Cmd {
     /// Propose a plan.yaml for an edition (one model call; human edits it)
     Plan {
         edition: String,
-        #[arg(long, default_value = "codex:gpt-5.6-luna")]
+        #[arg(long, default_value = "codex:gpt-5.6-luna@max")]
         model: String,
     },
     /// Produce an edition from a plan.yaml
@@ -37,9 +37,9 @@ enum Cmd {
         /// Comma-separated article ids
         #[arg(long)]
         only: Option<String>,
-        #[arg(long = "writer-model", default_value = "codex:gpt-5.6-luna")]
+        #[arg(long = "writer-model", default_value = "codex:gpt-5.6-luna@max")]
         writer_model: String,
-        #[arg(long = "judge-model", default_value = "codex:gpt-5.6-luna")]
+        #[arg(long = "judge-model", default_value = "codex:gpt-5.6-luna@max")]
         judge_model: String,
         /// Extra style doc appended to the writing pack (e.g. docs/styles/x.md)
         #[arg(long)]
@@ -48,7 +48,7 @@ enum Cmd {
     /// Translate a run's accepted pieces to Spanish
     Translate {
         run_dir: PathBuf,
-        #[arg(long, default_value = "codex:gpt-5.6-luna")]
+        #[arg(long, default_value = "codex:gpt-5.6-luna@max")]
         model: String,
     },
     /// Generate art candidate rounds for an edition (human selects)

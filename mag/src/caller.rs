@@ -46,6 +46,8 @@ pub enum Backend {
 pub struct ModelSpec {
     pub backend: Backend,
     pub model: String,
+    /// Reasoning effort, from a `@effort` suffix (`codex:gpt-5.6-luna@max`).
+    pub effort: Option<String>,
     /// The original spec string, exactly as given — logged as the "model"
     /// field so the run log always shows what was actually asked for.
     pub full: String,
@@ -63,12 +65,20 @@ impl ModelSpec {
             "codex" => Backend::Codex,
             other => bail!("unknown backend '{other}' in model spec '{spec}'"),
         };
+        let (model, effort) = match model.split_once('@') {
+            Some((m, e)) => (m.to_string(), Some(e.to_string())),
+            None => (model, None),
+        };
         if model.is_empty() {
             bail!("model spec '{spec}' has no model name");
+        }
+        if effort.is_some() && backend != Backend::Codex {
+            bail!("reasoning effort is only supported on the codex backend: '{spec}'");
         }
         Ok(Self {
             backend,
             model,
+            effort,
             full: spec.to_string(),
         })
     }
@@ -369,8 +379,11 @@ impl Caller {
                     "--skip-git-repo-check",
                     "--color",
                     "never",
-                    "-o",
                 ]);
+                if let Some(effort) = &spec.effort {
+                    c.arg("-c").arg(format!("model_reasoning_effort=\"{effort}\""));
+                }
+                c.arg("-o");
                 c.arg(&scratch.as_ref().expect("codex scratch").out);
                 c.arg("-");
                 c

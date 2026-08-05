@@ -194,6 +194,7 @@ fn writer_prompt(
     sources: &[(String, String)],
     draft: Option<&str>,
     findings: Option<&[serde_yaml::Value]>,
+    resolved: &[serde_yaml::Value],
 ) -> Result<String> {
     let mode = article
         .get("content_mode")
@@ -212,6 +213,7 @@ fn writer_prompt(
         out += &section("current manuscript (to revise)", draft);
         let findings_yaml = serde_yaml::to_string(&findings.unwrap_or(&[]))?;
         out += &section("review findings to address", &findings_yaml);
+        out += &resolved_section(resolved)?;
         out += "\nRevise the manuscript to resolve every finding above without breaking \
                 the writing rules. Return the complete revised manuscript between \
                 <manuscript> and </manuscript> tags.";
@@ -248,10 +250,28 @@ fn judge_prompt(
     Ok(out)
 }
 
+/// Findings from earlier rounds that the piece has already been revised for.
+/// Without this the reviser has no memory: round 3 undoes what round 2 fixed,
+/// and findings churn instead of converging.
+fn resolved_section(resolved: &[serde_yaml::Value]) -> Result<String> {
+    if resolved.is_empty() {
+        return Ok(String::new());
+    }
+    Ok(section(
+        "findings from earlier rounds, already addressed",
+        &serde_yaml::to_string(resolved)?,
+    ) + "\nThose were raised on earlier drafts and this manuscript was already \
+        revised for them. Do not undo those repairs while addressing the new \
+        findings, and do not overcorrect: a piece that was told it kept too \
+        much of its source, and then cuts past what a reader needs, has \
+        traded one finding for a worse one.")
+}
+
 fn editorial_prompt(
     draft: Option<&str>,
     findings: Option<&[serde_yaml::Value]>,
     articles_final: &[(String, String)],
+    resolved: &[serde_yaml::Value],
 ) -> Result<String> {
     let mut out = String::new();
     out += INLINE_PREAMBLE;
@@ -263,6 +283,7 @@ fn editorial_prompt(
     if let Some(draft) = draft {
         out += &section("current editorial (to revise)", draft);
         out += &section("review findings to address", &serde_yaml::to_string(&findings.unwrap_or(&[]))?);
+        out += &resolved_section(resolved)?;
         out += "\nRevise the editorial to resolve every finding. Return it between \
                 <manuscript> and </manuscript> tags.";
     } else {
@@ -361,6 +382,7 @@ fn produce_piece(
     };
     let mut draft: Option<String> = None;
     let mut findings: Option<Vec<serde_yaml::Value>> = None;
+    let mut resolved: Vec<serde_yaml::Value> = Vec::new();
     let mut round_no: u32 = 1;
     loop {
         let findings_nonempty = findings.as_ref().is_some_and(|f| !f.is_empty());
@@ -368,10 +390,14 @@ fn produce_piece(
             let verb = if draft.is_none() { "write" } else { "rewrite" };
             let label = format!("{piece_id} r{round_no} {verb}");
             let prompt = if let Some(article) = article {
-                writer_prompt(article, sources, draft.as_deref(), findings.as_deref())?
+                writer_prompt(article, sources, draft.as_deref(), findings.as_deref(), &resolved)?
             } else {
-                editorial_prompt(draft.as_deref(), findings.as_deref(), sources)?
+                editorial_prompt(draft.as_deref(), findings.as_deref(), sources, &resolved)?
             };
+            // What this round was asked to fix becomes next round's history.
+            if let Some(f) = findings.as_deref() {
+                resolved.extend(f.iter().cloned());
+            }
             let parse_label = label.clone();
             let new_draft = caller.call_with_parse(&label, writer_model, &prompt, |r| extract_manuscript(r, &parse_label))?;
             draft = Some(new_draft);
