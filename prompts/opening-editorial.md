@@ -85,32 +85,6 @@ reply, before you draft a sentence. None of it goes into the manuscript.
   must be a sentence you could not have written before the argument that
   precedes it.
 
-## Two half-exemplars
-
-Neither is the standard, and modelling on our published work is banned outside
-this prompt's own examples: take from each only the one thing named here.
-
-`editions/004-the-systems-around-the-model/prototypes/editorial-emergent-narrative.md`
-("Autonomy Must Leave a Trace") gets the ambition right: one claim the sources do not make, argued in five short
-paragraphs and 196 words, naming no article. Take the shape and the nerve to
-make an argument that small. Take not one of its sentences.
-`docs/WRITING_RULES.md` quotes five of them as the house's worst habit at its
-most fluent, under "the balanced clause that sounds like insight", and a sixth
-line in the same piece fails the same test as Hemingway's physical detail: it
-states the idea outright instead of letting an object carry it, unnamed.
-
-`editions/rerun-004-the-systems-around-the-model/manuscript/editorial.md`
-("Wrong for Free") has the best cold open in the archive: an intruder attaching `DryRun=True` to every destructive call it
-tried, then "Good engineering, from the wrong desk." An object first, the
-verdict withheld one beat, no article named. Take that move. It is also the
-editorial the owner rejected, because 35% of its body came from one article and
-three of seven fed it nothing, which is exactly what step 3 exists to catch.
-
-The failure with nothing to salvage is
-`editions/004-the-systems-around-the-model/manuscript/editorial.md`: its second
-paragraph tours six articles in six sentences and its last two sentences are the
-banned antithesis.
-
 ## Output
 
 Publication-ready Markdown, with frontmatter declaring a visible title, the

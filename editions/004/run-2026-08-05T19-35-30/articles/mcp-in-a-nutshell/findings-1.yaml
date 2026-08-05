@@ -1,0 +1,223 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The primitives are the useful part | The central primitives are tools, resources, and prompts. | 1
+    repair_from: The primitives are the useful part | The central primitives are tools, resources, and prompts. | 1
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The source's worked data-layer example includes the complete discovery, tool-call, and notification exchanges plus pseudocode. The manuscript explains the concepts but gives readers no concrete request shape or executable pattern, so it is a weaker reference for anyone trying to implement or inspect MCP.
+    suggestion: Retain at least one compact JSON-RPC exchange and one short pseudocode flow, preferably discovery followed by tools/call.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The primitives are the useful part | Clients discover these primitives with methods such as `tools/list` and then retrieve or execute them with methods such as `resources/read` and `tools/call`. | 1
+    repair_from: The primitives are the useful part | The central primitives are tools, resources, and prompts. | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source specifies the primitive method families (`*/list`, `*/get`, and `tools/call`), including methods such as `resources/list`, `prompts/list`, and `prompts/get`. The manuscript names only a subset, leaving a reader unable to discover or retrieve every primitive without returning to the source.
+    suggestion: Name the complete method pattern and give one concrete example for each primitive family.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Requests do not depend on a remembered connection | A client opts in by opening a long-lived `subscriptions/listen` stream and naming the changes it wants, such as a changed tool list. | 1
+    repair_from: Requests do not depend on a remembered connection | A client opts in by opening a long-lived `subscriptions/listen` stream and naming the changes it wants, such as a changed tool list. | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source gives the notification method names and protocol details: `notifications/subscriptions/acknowledged`, `notifications/tools/list_changed`, the subscription ID in `_meta`, and the follow-up `tools/list` request. Without these identifiers, the refresh cycle is understandable conceptually but not actionable.
+    suggestion: Include the notification event names and explain that the client refreshes with `tools/list` after receiving one.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | An AI application becomes more useful when it can reach tools and data outside its own model. | 1'
+    repair_from: '- | An AI application becomes more useful when it can reach tools and data outside its own model. | 1'
+    category: no_position
+    disposition: fix
+    note: |
+      The manuscript is a competent synthesis but offers no independent ordering judgment, defended cut, or claim beyond the source's explanation. It therefore reads as paraphrase rather than a magazine piece with a point of view.
+    suggestion: Add a brief framing claim about why MCP's boundary and primitive vocabulary are the useful way to understand tool-enabled AI.
+  omissions:
+  - fact: The scope list of the MCP Specification, SDKs, Development Tools including MCP Inspector, and reference server implementations
+    reader_loses: Does not learn what the broader MCP project includes beyond the wire protocol.
+    verdict: defensible
+  - fact: The distinction that local STDIO servers typically serve one client while remote Streamable HTTP servers typically serve many
+    reader_loses: Loses an explicit relationship between transport choice and expected client fan-out.
+    verdict: defensible
+  - fact: Streamable HTTP uses HTTP POST with optional Server-Sent Events, while STDIO has no network overhead
+    reader_loses: Cannot distinguish the concrete HTTP streaming mechanism or the performance tradeoff.
+    verdict: defensible
+  - fact: The source's `server/discover` response fields `supportedVersions`, server capabilities, and server identity
+    reader_loses: Understands discovery's purpose but not the concrete response data needed for compatibility handling.
+    verdict: needed
+  - fact: The `UnsupportedProtocolVersionError` retry flow when a server rejects the requested version
+    reader_loses: May not know how a client recovers from a version mismatch.
+    verdict: needed
+  - fact: The complete primitive method families `*/list` and `*/get`, including `resources/list`, `prompts/list`, and `prompts/get`
+    reader_loses: Cannot discover and retrieve all primitive types from the summary alone.
+    verdict: needed
+  - fact: The `sampling/createMessage` method name and the source's explanation that sampling lets servers request model completions
+    reader_loses: Loses the concrete deprecated API identifier and its former use.
+    verdict: defensible
+  - fact: The source's four JSON-RPC exchanges for discovery, tool listing, tool execution, and notification subscription
+    reader_loses: Cannot see the required `_meta`, IDs, parameters, or response structure in a form usable for implementation.
+    verdict: needed
+  - fact: The `weather_current` worked tool-call example with `location` and `units` arguments and the input-schema requirement
+    reader_loses: Loses the concrete demonstration that the tool name must match discovery and arguments must follow its schema.
+    verdict: needed
+  - fact: The response `content` array's support for text, images, and resources
+    reader_loses: The manuscript mentions these content forms but omits the response structure that carries them.
+    verdict: defensible
+  - fact: The notification acknowledgement message and subscription-ID correlation in `_meta`
+    reader_loses: Cannot implement or correlate events on a subscription stream.
+    verdict: needed
+  - fact: 'The source''s five notification properties: opt-in capability filtering, no response ID, best-effort delivery, subscription tagging, and event-driven delivery'
+    reader_loses: The manuscript keeps opt-in and best-effort behavior but drops the protocol conditions and correlation details.
+    verdict: needed
+  - fact: The discovery, tool-list, tool-call, and notification-handling pseudocode
+    reader_loses: Loses the shortest bridge from the protocol concepts to an application's control flow.
+    verdict: needed
+  retentions:
+  - passage: An AI application becomes more useful when it can reach tools and data outside its own model.
+    costs: A short restatement of the article's premise; the space could carry one of the omitted concrete exchanges.
+    verdict: cut
+  - passage: The data layer is the inner layer, while the transport layer is the outer layer.
+    costs: A compact mental model that clarifies why the same JSON-RPC messages work over STDIO and HTTP.
+    verdict: earns_place
+  - passage: Consider a server that exposes a database.
+    costs: The worked example makes the relationship among a tool, resource, prompt, listing, invocation, and returned content concrete.
+    verdict: earns_place
+  - passage: Sampling and logging are deprecated as of protocol version `2026-07-28`
+    costs: Current implementation guidance that prevents readers from adopting deprecated client primitives.
+    verdict: earns_place
+  - passage: 'MCP’s boundary is simple: one host coordinates clients...'
+    costs: A concluding restatement of the opening architecture; the space could carry the omitted notification acknowledgement or tool-call details.
+    verdict: cut
+  notes: |
+    This piece gives a reader a concise mental model of MCP's host/client/server architecture, transport and data layers, primitives, stateless requests, and notification refresh cycle, but it needs concrete protocol identifiers and an implementation example to avoid stripping the source's utility.
+evidence:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: mcp-in-a-nutshell
+    locator: '- | An AI application becomes more useful when it can reach tools and data outside its own model. | 1'
+    repair_from: '- | An AI application becomes more useful when it can reach tools and data outside its own model. | 1'
+    category: invented_claim
+    disposition: fix
+    note: |
+      The extraction explains MCP's scope as context exchange and says it does not dictate how applications use LLMs or manage context. It does not claim that reaching external tools and data makes an AI application more useful.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: One host, several dedicated connections | A remote server uses Streamable HTTP and can serve many clients. | 1
+    repair_from: One host, several dedicated connections | A remote server uses Streamable HTTP and can serve many clients. | 1
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source says remote MCP servers that use Streamable HTTP will typically serve many clients. The manuscript presents both the transport and client multiplicity as categorical properties of remote servers.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The primitives are the useful part | Servers advertise their supported versions and capabilities through the mandatory `server/discover` request. | 1
+    repair_from: The primitives are the useful part | Servers advertise their supported versions and capabilities through the mandatory `server/discover` request. | 1
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source says every server must implement `server/discover`, but calling discovery is optional: a client may send another request and handle a version error. Calling it a mandatory request reverses that distinction, although the next sentence partially restores it.
+  scores:
+    claim_support: 3
+    qualification_survival: 3
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked the title, headings, body assertions, and all furniture against the complete pinned extraction; I could not check any external corroboration because this review is limited to the supplied source. Three claims require correction: one unsupported usefulness claim and two distortions of source qualifications.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    The piece is mechanically clean: sentence openings, grammar, punctuation,
+    typography, headings, markup, and number-and-unit style are consistent.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 4
+    opening: 5
+    ending: 5
+  notes: |
+    The piece progresses clearly from MCP's purpose and architecture through its primitives, interaction model, update behavior, and concluding boundary summary; no structural duplication, orphan referents, or misplaced furniture are present.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | An AI application becomes more useful when it can reach tools and data outside its own model. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The opening announces general usefulness before giving the reader a concrete
+      problem or interaction.
+    suggestion: |
+      Open with the concrete exchange MCP enables between an application and an external tool or data source.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: One host, several dedicated connections | The architecture has two layers. | 1
+    category: no_voice
+    disposition: fix
+    note: |
+      The voice disappears into a neutral taxonomy here: the prose classifies layers
+      and transport behavior evenly, with no particular human angle or texture.
+    suggestion: |
+      Anchor the explanation in one concrete connection or request before naming the architectural layers.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The primitives are the useful part | Every request carries the protocol version and relevant capabilities in its `_meta` field, and clients normally identify themselves there as well. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      `_meta`, protocol capabilities, and client identification are introduced as
+      implementation terms without a gloss, making this nutshell harder to enter
+      for engineers outside the MCP subfield.
+    suggestion: |
+      Add a short plain-language explanation of `_meta` and capabilities, or remove those implementation details from this overview.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: One host, several dedicated connections | The data layer is the inner layer, while the transport layer is the outer layer. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This is a definite-article equation that repeats the layer names without
+      explaining what the distinction enables.
+    suggestion: |
+      Replace the equation with the practical consequence of separating message semantics from connection mechanics.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Requests do not depend on a remembered connection | The protocol is the part that lets them meet. | 1
+    category: weak_close
+    disposition: fix
+    note: |
+      The closing sentence restates the article's boundary metaphor instead of
+      leaving the reader with a new implication or useful perspective.
+    suggestion: |
+      End on the concrete benefit of keeping tools and data in their own systems while making them usable in one conversation.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: Requests do not depend on a remembered connection | The protocol is the part that lets them meet. | 1
+    category: cliche
+    disposition: fix
+    note: |
+      "Lets them meet" is a familiar personification that adds polish but no
+      mechanism at the point where the explanation should be most precise.
+    suggestion: |
+      Replace the personification with the specific action the protocol coordinates.
+  scores:
+    voice: 3
+    sentence_variety: 3
+    economy: 3
+  notes: |
+    I heard a clear technical explainer that gradually turns into an even taxonomy,
+    with its weakest moments coming when implementation jargon and summary metaphors
+    replace concrete explanation.
