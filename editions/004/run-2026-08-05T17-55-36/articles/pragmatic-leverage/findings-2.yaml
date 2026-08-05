@@ -1,0 +1,137 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The piece is an addendum or side-quest to a recent series, published standalone because it did not fit the main post.
+    reader_loses: No context for why this article exists or how it relates to the series.
+    verdict: defensible
+  - fact: 'It is briefly referenced in ''Why Software Factories Fail part 2: Turning the lights back on.'''
+    reader_loses: A cross-reference for readers following the broader series.
+    verdict: defensible
+  - fact: The source explicitly says there is an inverse relationship between upfront effort and expected pain.
+    reader_loses: A concise statement of the relationship illustrated by the surrounding examples.
+    verdict: defensible
+  - fact: The source uses a hyphenated 'fully-mergeable' formulation and lowercase note styling.
+    reader_loses: Nothing substantive; these are wording and formatting differences.
+    verdict: defensible
+  - fact: The source closes with 'good luck.'
+    reader_loses: Nothing substantive.
+    verdict: defensible
+  retentions:
+  - passage: Even before AI, only 25–50% of the time to ship a feature...
+    costs: The opening establishes the central time-allocation premise on which the rest of the argument depends.
+    verdict: earns_place
+  - passage: Using AI only to write the code takes...
+    costs: The concrete 2–4 hour to 10–20 minute comparison shows why coding speed alone is insufficient.
+    verdict: earns_place
+  - passage: Using AI to help you plan and align...
+    costs: States the practical leverage claim and its estimated 2–3× effect.
+    verdict: earns_place
+  - passage: Let's assume that if you yolo a two-sentence prompt...
+    costs: Provides the baseline probability against which planning effort is evaluated.
+    verdict: earns_place
+  - passage: Now let's say you are a principal engineer...
+    costs: Shows that even exceptional context and detailed planning do not eliminate rework.
+    verdict: earns_place
+  - passage: 'And at the far end: write every line yourself.'
+    costs: Completes the leverage spectrum by identifying the zero-rework extreme.
+    verdict: earns_place
+  - passage: 'Note: For this example I''m gonna blur...'
+    costs: Preserves the caveat distinguishing probability from the pain of correction.
+    verdict: earns_place
+  - passage: What you don't want to do is spend 6 hours planning...
+    costs: Turns the model into an actionable planning heuristic.
+    verdict: earns_place
+  - passage: You need to do this without overindexing...
+    costs: Retains the important qualification that planning may need to zoom into technical feasibility.
+    verdict: earns_place
+  - passage: This is what we mean by leverage...
+    costs: Synthesizes the argument into pragmatic steering across planning levels.
+    verdict: earns_place
+  notes: |
+    This edit gives a reader the source's practical argument that AI's real delivery leverage comes from planning and alignment, calibrated by expected rework pain, rather than from code generation alone. The omissions remove contextual framing and a restated relationship, but no load-bearing fact, operational detail, or caveat; every retained passage carries the explanation or its actionable heuristic.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked every assertion and piece of furniture against the complete pinned extraction; no unsupported or materially altered claims were found.
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    The piece is mechanically clean, with no actionable grammar, punctuation, typography, or heading-form defects.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking leverage | Seeking leverage | 1
+    repair_from: '- | Seeking leverage | 1'
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      "Seeking leverage" is an empty section heading, so it interrupts the opening without stating an argument or introducing content.
+    suggestion: Remove the heading or give it a substantive claim-led section.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Good luck. | 1
+    repair_from: The 80/20 rule in AI coding leverage | This is what we mean by leverage, and it requires being pragmatic. | 1
+    category: ending
+    disposition: fix
+    note: |
+      The piece stops with a generic sign-off after explaining the planning trade-off; it does not land the practical conclusion.
+    suggestion: End by synthesizing the rule for deciding where additional planning effort pays off.
+  scores:
+    order: 4
+    coherence: 3
+    opening: 4
+    ending: 2
+  notes: |
+    I verified that the piece moves from coding-time savings to expected pain and pragmatic planning leverage, but its empty heading interrupts the structure and its final sign-off does not complete the argument.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Let's assume that if you yolo a two-sentence prompt into your factory, your chance of getting a fully mergeable result is ~50%; the chance you have to rework it is 50%. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Four conditional "if..." constructions create a noticeable repeated shape:
+      "if you yolo a two-sentence prompt into your factory", "If the model is 50% likely to get a button style wrong", "if you've done some work at the \"Product\" level", and "If you're doing multiple phases of planning". The remedy is editorial: cut or recast at least one of these passages.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | You need to do this without overindexing on questions you won't be able to answer without going down a level. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Overindexing," "going down a level," and "what's feasible" stack abstractions without naming the concrete decision the reader should make.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | This is what we mean by leverage, and it requires being pragmatic. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This balanced clause restates the article's label instead of adding a sharper consequence.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | If you're doing multiple phases of planning, zooming in from 50kft view all the way to the 10kft view, you want to do a little bit of steering at each phase to ensure you are eliminating as much expected pain as possible. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "50kft view" and "10kft view" are undefined planning jargon for readers outside this engineering idiom.
+  scores:
+    voice: 3
+    sentence_variety: 2
+    economy: 3
+  notes: |
+    I hear a practical authorial voice, but it fades into planning abstractions and a repeated conditional pattern near the middle of the piece.

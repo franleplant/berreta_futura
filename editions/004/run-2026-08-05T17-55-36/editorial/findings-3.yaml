@@ -1,0 +1,57 @@
+mechanics:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: the-ten-minute-question
+    locator: '- | A principal engineer can spend an afternoon specifying a task and still leave a ten percent chance of significant rework. | 1'
+    category: typography
+    disposition: fix
+    note: |
+      Percentages use the symbol in "25–50%" but spell out "ten percent" later.
+      Use one percentage style consistently; the earlier symbol establishes the
+      piece's convention.
+    suggestion: A principal engineer can spend an afternoon specifying a task and still leave a 10% chance of significant rework.
+    repair_from: 25–50%
+  scores:
+    grammar: 5
+    typography: 4
+    consistency: 3
+  notes: |
+    One percentage-style inconsistency requires correction; grammar, punctuation,
+    spelling, and form are otherwise clean.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The piece moves cleanly from the coding-speed premise to planning economics,
+    then lands on a focused decision rule without structural gaps or duplication.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: the-ten-minute-question
+    locator: The Ten-Minute Question | The useful question is where the next ten minutes will remove the most expected pain. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "The useful question" and "expected pain" stack abstractions and make the sentence sound manufactured rather than observed.
+    suggestion: Name the concrete decision or rework risk that those ten minutes would resolve.
+  - severity: major
+    article: the-ten-minute-question
+    locator: The Ten-Minute Question | The feature moves when the engineer answers the question whose wrong answer would force the most rework. | 1
+    category: weak_close
+    disposition: fix
+    note: |
+      The closing sentence restates the preceding paragraph's rule instead of leaving the reader with a sharper consequence or question.
+    suggestion: End with the practical consequence of choosing the highest-cost unanswered question.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    I heard a compact, lucid argument that turns abstract in its middle and closes by repeating its thesis.

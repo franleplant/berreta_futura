@@ -1,0 +1,173 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: '-'
+    repair_from: '- | Even before AI, only 25–50% of the time to ship a feature was writing the code itself. | 1'
+    category: no_position
+    disposition: fix
+    note: |
+      The manuscript is a faithful condensation of the source's argument, but it
+      adds no ordering judgment, defended cut, or claim of its own. Without that
+      editorial position it remains a paraphrase, even though its access value as
+      an X article edit is legitimate.
+    suggestion: Add a brief framing claim that tells the reader what practical judgment this edit wants them to take away.
+  omissions:
+  - fact: The article is an addendum or side-quest to a recent series.
+    reader_loses: No context for why this standalone piece exists.
+    verdict: defensible
+  - fact: 'It is referenced in Why Software Factories Fail part 2: Turning the lights back on.'
+    reader_loses: A cross-reference to the author's broader series.
+    verdict: defensible
+  - fact: The source explicitly says there is an inverse relationship between upfront effort and expected pain.
+    reader_loses: A concise statement of the relationship that the surrounding example and advice already imply.
+    verdict: defensible
+  - fact: The source ends with 'good luck.'
+    reader_loses: Nothing substantive.
+    verdict: defensible
+  retentions:
+  - passage: Even before AI, only 25–50% of the time
+    costs: Core quantitative setup for the leverage argument; it earns its place.
+    verdict: earns_place
+  - passage: Using AI only to write the code
+    costs: The concrete 2–4 hours versus 10–20 minutes comparison establishes why coding speed alone is insufficient; it earns its place.
+    verdict: earns_place
+  - passage: Let's assume that if you yolo a two-sentence prompt
+    costs: The 50% success/rework baseline makes the later planning tradeoff intelligible; it earns its place.
+    verdict: earns_place
+  - passage: Now let's say you are a principal engineer
+    costs: The 10-year, 100-repo, afternoon-spec example supplies the worked comparison; it earns its place.
+    verdict: earns_place
+  - passage: 'And at the far end: write every line yourself.'
+    costs: Defines the zero-rework endpoint of the spectrum; it earns its place.
+    verdict: earns_place
+  - passage: 'Note: For this example I''m gonna blur'
+    costs: The expected-pain caveat prevents the percentages from being read as literal probabilities; it earns its place.
+    verdict: earns_place
+  - passage: expected pain = P(you'll have to change it)
+    costs: The equation is the piece's operational definition of leverage; it earns its place.
+    verdict: earns_place
+  - passage: What you don't want to do is spend 6 hours
+    costs: The 6-hour versus first-10-minutes example turns the principle into a decision rule; it earns its place.
+    verdict: earns_place
+  - passage: You need to do this without overindexing
+    costs: The Product-to-technical zoom example supplies the key practical caveat; it earns its place.
+    verdict: earns_place
+  - passage: This is what we mean by leverage
+    costs: The closing steering guidance states how to apply the concept across planning phases; it earns its place.
+    verdict: earns_place
+  notes: |
+    Changes required because the manuscript gives readers a faithful, shorter account but no magazine-level position beyond the source's own framing.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | What you don't want to do is spend 6 hours planning a task for which you could have eliminated 80% of the expected pain in the first 10 minutes. | 1
+    repair_from: The 80/20 rule in AI coding leverage | expected pain = P(you'll have to change it) × how painful the change is | 1
+    category: unreached_conclusion
+    disposition: fix
+    note: |
+      The source explicitly concludes that there is an inverse relationship between effort invested up front and expected pain. The manuscript omits that conclusion, weakening the source's stated leverage argument.
+  scores:
+    claim_support: 4
+    qualification_survival: 4
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked the manuscript's title, headings, body assertions, numerical claims, formula, and quotations against the complete pinned extraction. I could not check any claims beyond that extraction.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: 'The 80/20 rule in AI coding leverage | Note: For this example I''m gonna blur | 1'
+    category: markup
+    disposition: editor_decision
+    note: |
+      The labeled "Note:" is editorial apparatus embedded in the article prose; the magazine does not print such notes inside an article. It appears in the pinned faithful-edit extraction, so an editor must decide how to remove or integrate it.
+    suggestion: Remove the Note label and integrate the explanation into the surrounding prose.
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    The prose, headings, punctuation, typography and number styles are mechanically clean, but the article contains one labeled Note that functions as editorial apparatus.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking leverage | Seeking leverage | 1
+    repair_from: Seeking leverage | Seeking leverage | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      "Seeking leverage" is an empty section heading immediately followed by
+      another heading, so it names a topic without identifying an argument or
+      giving the reader a reason to continue.
+    suggestion: Remove the empty heading or replace it with a heading that states the section's claim.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 4
+    ending: 4
+  notes: |
+    The piece presents the limits of code-only acceleration, quantifies expected
+    pain, and then connects planning effort to pragmatic leverage; the empty
+    "Seeking leverage" heading is the only structural weakness.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | but obviously they're two separate variables | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Obviously" is an empty intensifier: the sentence is clear without it.
+    suggestion: Remove "obviously".
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | You need to do this without overindexing on questions you won't be able to answer without going down a level. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      The sentence stacks abstractions ("this", "questions", "going down a level")
+      without naming the decision the reader should make.
+    suggestion: Name the concrete uncertainty that warrants moving from product planning to technical detail.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | There's no perfect process for this. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This is a generic disclaimer that adds no information after the preceding
+      explanation of changing planning depth.
+    suggestion: Cut the sentence or replace it with the specific tradeoff the process cannot resolve.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | This is what we mean by leverage, and it requires being pragmatic. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      The sentence restates the article's premise in abstract terms instead of
+      advancing the example.
+    suggestion: Connect the example directly to the planning decision it supports.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | 50kft view all the way to the 10kft view | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "50kft view" and "10kft view" are unexplained planning shorthand that a
+      competent engineer outside this subfield may not recognize.
+    suggestion: Replace the altitude shorthand with the actual levels of planning being contrasted.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 3
+  notes: |
+    I heard a practical, candid voice throughout, but several abstract transitions
+    and one unexplained planning shorthand blur the concrete leverage argument.

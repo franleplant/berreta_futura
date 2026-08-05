@@ -1,0 +1,5 @@
+{"attempt":0,"label":"pragmatic-leverage r1 write","model":"codex:gpt-5.6-luna","seconds":34.9,"usd":0.0}
+{"attempt":0,"label":"pragmatic-leverage r1 judge:evidence","model":"codex:gpt-5.6-luna","seconds":11.4,"usd":0.0}
+{"attempt":0,"label":"pragmatic-leverage r1 judge:shape","model":"codex:gpt-5.6-luna","seconds":34.9,"usd":0.0}
+{"attempt":0,"label":"pragmatic-leverage r1 judge:worth","model":"codex:gpt-5.6-luna","seconds":36.6,"usd":0.0}
+{"attempt":2,"label":"pragmatic-leverage r1 judge:mechanics","model":"codex:gpt-5.6-luna","seconds":43.0,"usd":0.0}
