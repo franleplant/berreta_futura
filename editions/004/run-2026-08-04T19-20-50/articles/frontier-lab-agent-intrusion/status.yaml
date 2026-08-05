@@ -1,0 +1,87 @@
+piece: frontier-lab-agent-intrusion
+rounds:
+- round: 1
+  words: 1101
+  loop_findings: 3
+  all_findings: 5
+- round: 2
+  words: 1210
+  loop_findings: 5
+  all_findings: 5
+- round: 3
+  words: 1253
+  loop_findings: 4
+  all_findings: 5
+state: rounds_exhausted
+open_findings:
+- lens: worth
+  severity: major
+  article: frontier-lab-agent-intrusion
+  category: stripped_utility
+  disposition: fix
+  note: |
+    The manuscript compresses to 11% of source length (1,400 words from
+    ~12,500); faithful_synthesis targets ~33%. While the narrative
+    reorganization is skillful—moving from day-by-day forensics into a
+    three-stage escalation arc—and the key insight about machine-speed
+    volume is cleanly drawn, the compression strips critical detail. Lost
+    entirely: the day-by-day timeline (source: hourly progression Day 1-5
+    with specific UTC times; manuscript: duration implied but unmarked), the
+    quantified phase action breakdown (source: 6,191 recon, 2,911 RCE, etc.;
+    manuscript: "thousands of ordinary ones" without counts), the three
+    lateral-movement techniques (source: detailed subsections on node
+    impersonation via cloud credentials, forged identity tokens, supply-chain
+    write access; manuscript: techniques not named), investigation
+    methodology (source: detailed how GLM-5.2 decoded payloads and recovered
+    ~4x more secrets; manuscript: one sentence), and representative commands
+    (source: ~30+ code examples; manuscript: ~4). A developer reading this in
+    the magazine gets the story and key insight, but lacks the operational
+    substance to understand how to defend against this attack pattern.
+  suggestion: |
+    Expand to ~33% target (~4,000-4,200 words) by restoring: (1) day-by-day
+    timeline markers showing progression, (2) phase action-count summary or
+    breakdown, (3) full explanation of three lateral-movement techniques with
+    technical specifics, (4) investigation methodology showing how GLM-5.2
+    decoded payloads and the recovery payoff, (5) representative command
+    examples from each escalation phase. Preserve the reorganized narrative
+    arc and volume-focused positioning while adding back technical substance.
+  scores:
+    value_over_source: 4
+    length_earned: 2
+    retention: 2
+- lens: mechanics
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: '- | None of the individual flaws that followed were new | 1'
+  category: agreement
+  disposition: editor_decision
+  note: |
+    "None" is a singular pronoun requiring a singular verb. The text reads
+    "None of the individual flaws that followed were new" but should be "was
+    new". The error appears in the author's own text.
+  suggestion: None of the individual flaws that followed was new
+- lens: mechanics
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: '- | No customer model, dataset, or Space were touched | 1'
+  category: agreement
+  disposition: editor_decision
+  note: |
+    The negative determiner "No" followed by a compound subject requires
+    singular agreement. The sentence reads "were touched" but should be "was
+    touched", as "no customer model, dataset, or Space" is a singular
+    negation of multiple items. The error appears in the author's own text.
+  suggestion: No customer model, dataset, or Space was touched
+- lens: mechanics
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: 'Two ways into the dataset pipeline | Three configs, three paths: the worker''s process environment, and two of its own source files | 1'
+  category: grammar
+  disposition: editor_decision
+  note: |
+    This line is formatted as a sentence (capital letter opening, terminal
+    period) but contains no main verb. It functions as a fragment introducing
+    the three configs and paths that follow. Either supply an explicit verb
+    ("These were three configs, three paths") or reformat as a list label.
+    The error appears in the author's text.
+  suggestion: 'These were three configs, three paths: the worker''s process environment, and two of its own source files'

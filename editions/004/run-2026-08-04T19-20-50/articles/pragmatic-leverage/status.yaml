@@ -1,0 +1,35 @@
+piece: pragmatic-leverage
+rounds:
+- round: 1
+  words: 495
+  loop_findings: 9
+  all_findings: 10
+- round: 2
+  words: 451
+  loop_findings: 5
+  all_findings: 13
+- round: 3
+  words: 450
+  loop_findings: 2
+  all_findings: 5
+state: rounds_exhausted
+open_findings:
+- lens: mechanics
+  severity: major
+  article: pragmatic-leverage
+  locator: The 80/20 rule in AI coding leverage | your chance of getting a fully-mergeable result is ~50%, the chance you have to rework it is 50% | 1
+  category: punctuation
+  disposition: editor_decision
+  note: |
+    Two independent clauses joined with a comma only. The sentence is the author's own; an editor should choose the remedy.
+  suggestion: your chance of getting a fully-mergeable result is ~50%, and the chance you have to rework it is 50%.
+- lens: shape
+  severity: major
+  article: pragmatic-leverage
+  locator: Good luck. | 1
+  repair_from: If you're doing multiple phases of planning, zooming in from 50kft view all the way to the 10kft view, you want to do a little bit of steering at each phase to ensure you are eliminating as much expected pain as possible.
+  category: ending
+  disposition: fix
+  note: |
+    The piece establishes the concept of pragmatic leverage and describes the mechanics of multi-phase planning with steering, but then ends with a standalone "Good luck" that does not land or affirm the main argument. The ending stops rather than resolves.
+  suggestion: Replace the send-off with a sentence that affirms the core insight about pragmatic leverage—that it requires judgment about where to spend planning effort to eliminate the most pain.

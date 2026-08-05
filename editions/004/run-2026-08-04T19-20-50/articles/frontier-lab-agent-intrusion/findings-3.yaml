@@ -1,0 +1,140 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The manuscript compresses to 11% of source length (1,400 words from
+      ~12,500); faithful_synthesis targets ~33%. While the narrative
+      reorganization is skillful—moving from day-by-day forensics into a
+      three-stage escalation arc—and the key insight about machine-speed
+      volume is cleanly drawn, the compression strips critical detail. Lost
+      entirely: the day-by-day timeline (source: hourly progression Day 1-5
+      with specific UTC times; manuscript: duration implied but unmarked), the
+      quantified phase action breakdown (source: 6,191 recon, 2,911 RCE, etc.;
+      manuscript: "thousands of ordinary ones" without counts), the three
+      lateral-movement techniques (source: detailed subsections on node
+      impersonation via cloud credentials, forged identity tokens, supply-chain
+      write access; manuscript: techniques not named), investigation
+      methodology (source: detailed how GLM-5.2 decoded payloads and recovered
+      ~4x more secrets; manuscript: one sentence), and representative commands
+      (source: ~30+ code examples; manuscript: ~4). A developer reading this in
+      the magazine gets the story and key insight, but lacks the operational
+      substance to understand how to defend against this attack pattern.
+    suggestion: |
+      Expand to ~33% target (~4,000-4,200 words) by restoring: (1) day-by-day
+      timeline markers showing progression, (2) phase action-count summary or
+      breakdown, (3) full explanation of three lateral-movement techniques with
+      technical specifics, (4) investigation methodology showing how GLM-5.2
+      decoded payloads and the recovery payoff, (5) representative command
+      examples from each escalation phase. Preserve the reorganized narrative
+      arc and volume-focused positioning while adding back technical substance.
+    scores:
+      value_over_source: 4
+      length_earned: 2
+      retention: 2
+  notes: |
+    The manuscript strips detail below faithful_synthesis target, losing the
+    day-by-day timeline, phase breakdown, three lateral-movement techniques,
+    investigation methodology, and representative commands. However, the
+    editorial reorganization is effective and the insight about volume asymmetry
+    is clearly drawn. Expansion to ~33% would preserve these strengths while
+    restoring the technical substance a developer audience expects.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    Checked all factual assertions (timeline, dates, command examples, technical
+    implementation details, investigation methodology, impact scope, and defensive
+    responses) against the source extraction. Every checkable claim is supported.
+    The manuscript condenses by omitting examples and asides (reconnaissance
+    commands, defensive fixes) but introduces no unsupported thesis. Qualifications
+    and uncertainty markers ("we believe," "as far as we could infer") are
+    preserved. All code examples and quoted output match the source exactly.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: '- | None of the individual flaws that followed were new | 1'
+    category: agreement
+    disposition: editor_decision
+    note: |
+      "None" is a singular pronoun requiring a singular verb. The text reads
+      "None of the individual flaws that followed were new" but should be "was
+      new". The error appears in the author's own text.
+    suggestion: None of the individual flaws that followed was new
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: '- | No customer model, dataset, or Space were touched | 1'
+    category: agreement
+    disposition: editor_decision
+    note: |
+      The negative determiner "No" followed by a compound subject requires
+      singular agreement. The sentence reads "were touched" but should be "was
+      touched", as "no customer model, dataset, or Space" is a singular
+      negation of multiple items. The error appears in the author's own text.
+    suggestion: No customer model, dataset, or Space was touched
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: 'Two ways into the dataset pipeline | Three configs, three paths: the worker''s process environment, and two of its own source files | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      This line is formatted as a sentence (capital letter opening, terminal
+      period) but contains no main verb. It functions as a fragment introducing
+      the three configs and paths that follow. Either supply an explicit verb
+      ("These were three configs, three paths") or reformat as a list label.
+      The error appears in the author's text.
+    suggestion: 'These were three configs, three paths: the worker''s process environment, and two of its own source files'
+  scores:
+    grammar: 3
+    typography: 4
+    consistency: 4
+  notes: |
+    Three major issues survive in the author's text: two subject-verb agreement
+    errors and one sentence fragment. The rest of the piece maintains clean
+    typography, consistent tense and voice, and strong technical precision
+    throughout the reconstruction.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: '- | Two ways into the dataset pipeline | 1'
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The heading names the topic (two dataset approaches) but not what the section argues
+      (that these approaches bypassed security and opened internal access). Other headings
+      like "Thirteen hours to cluster-admin" and "What the volume bought" state claims
+      about what happened. This heading could frame its argument the same way.
+    suggestion: 'Consider phrasing as a claim: ''Two dataset exploits bypassed the allowlist'' or ''How the dataset pipeline became a path to the network.'''
+  scores:
+    order: 5
+    coherence: 4
+    opening: 5
+    ending: 5
+  notes: |
+    The piece traces one agent's campaign across seven days with clean chronological progression
+    (rooting, reaching target, escalation, operations) and the agent as a consistent running
+    example throughout. Transitions are clear, referents are established, and the opening
+    hooks powerfully while the ending lands by echoing the opening's theme of volume.
+craft:
+  result: approved
+  findings: []
+  scores:
+    voice: 5
+    sentence_variety: 4
+    economy: 5
+  notes: |
+    Forensic narrative sustained throughout with strong technical voice that remains
+    engaged and clear. No monotony, no register collapse. Opening and closing both
+    do work. Appropriate complexity for the content and audience.

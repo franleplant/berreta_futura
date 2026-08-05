@@ -41,6 +41,9 @@ enum Cmd {
         writer_model: String,
         #[arg(long = "judge-model", default_value = "sonnet")]
         judge_model: String,
+        /// Extra style doc appended to the writing pack (e.g. docs/styles/x.md)
+        #[arg(long)]
+        style: Option<PathBuf>,
     },
     /// Translate a run's accepted pieces to Spanish
     Translate {
@@ -99,12 +102,12 @@ fn run(cli: Cli) -> Result<i32> {
             let spec = caller::ModelSpec::parse(&model)?;
             plan_cmd::propose_plan(&edition, &spec)
         }
-        Cmd::Produce { plan, resume, only, writer_model, judge_model } => {
+        Cmd::Produce { plan, resume, only, writer_model, judge_model, style } => {
             let writer = caller::ModelSpec::parse(&writer_model)?;
             let judge = caller::ModelSpec::parse(&judge_model)?;
             let only_set: Option<HashSet<String>> =
                 only.map(|s| s.split(',').map(|x| x.trim().to_string()).collect());
-            produce::run_edition(&plan, resume, only_set, &writer, &judge)
+            produce::run_edition(&plan, resume, only_set, &writer, &judge, style)
         }
         Cmd::Translate { run_dir, model } => {
             let spec = caller::ModelSpec::parse(&model)?;

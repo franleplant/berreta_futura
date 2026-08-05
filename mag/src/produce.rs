@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use std::thread;
 use std::time::Instant;
 
@@ -80,9 +80,17 @@ fn source_text(source_id: &str) -> Result<String> {
     read(&path)
 }
 
+/// An optional style overlay (`--style <path>`) appended to the writing pack,
+/// so a run can wear a different voice without editing the house docs.
+static STYLE_OVERLAY: OnceLock<Option<PathBuf>> = OnceLock::new();
+
 fn writing_pack() -> Result<String> {
-    Ok(section("docs/WRITING_STYLE.md", &read(&docs_path("WRITING_STYLE.md"))?)
-        + &section("docs/WRITING_RULES.md", &read(&docs_path("WRITING_RULES.md"))?))
+    let mut pack = section("docs/WRITING_STYLE.md", &read(&docs_path("WRITING_STYLE.md"))?)
+        + &section("docs/WRITING_RULES.md", &read(&docs_path("WRITING_RULES.md"))?);
+    if let Some(Some(path)) = STYLE_OVERLAY.get() {
+        pack += &section(&format!("style overlay: {}", path.display()), &read(path)?);
+    }
+    Ok(pack)
 }
 
 fn value_to_string(v: &serde_yaml::Value) -> Option<String> {
@@ -415,7 +423,14 @@ pub fn run_edition(
     only: Option<HashSet<String>>,
     writer_model: &ModelSpec,
     judge_model: &ModelSpec,
+    style: Option<PathBuf>,
 ) -> Result<i32> {
+    if let Some(path) = &style {
+        if !path.exists() {
+            bail!("style overlay not found: {}", path.display());
+        }
+    }
+    let _ = STYLE_OVERLAY.set(style.clone());
     let plan_text = read(plan_path)?;
     let plan: Plan = serde_yaml::from_str(&plan_text).context("parsing plan.yaml")?;
     let edition_id = plan
@@ -548,7 +563,8 @@ pub fn run_edition(
         format!("# Run summary — edition {edition_id}"),
         String::new(),
         format!("- {} model calls, ${:.2}, {:.1} minutes", caller.calls(), caller.total_cost(), minutes),
-        format!("- writer `{}`, judges `{}`", writer_model.full, judge_model.full),
+        format!("- writer `{}`, judges `{}`{}", writer_model.full, judge_model.full,
+            match &style { Some(p) => format!(", style overlay `{}`", p.display()), None => String::new() }),
         String::new(),
         "| piece | state | rounds | words | open findings |".to_string(),
         "|---|---|---|---|---|".to_string(),
