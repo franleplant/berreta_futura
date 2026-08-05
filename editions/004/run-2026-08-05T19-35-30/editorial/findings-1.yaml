@@ -1,0 +1,105 @@
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | The Parts That Remember | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      The title is in title case. Headings in this magazine use sentence case.
+    suggestion: The parts that remember
+  - severity: major
+    article: editorial
+    locator: '- | These are the same maneuver at different scales | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      The plural demonstrative "These" does not agree naturally with the singular predicate noun "maneuver." Revise the construction for clear number agreement.
+    suggestion: These maneuvers are the same at different scales
+  scores:
+    grammar: 2
+    typography: 5
+    consistency: 4
+  notes: |
+    Changes required because the title uses title case and one sentence has a number-agreement error.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: The intrusion report shows the cost of the opposite design. | The intrusion report shows the cost of the opposite design. | 1
+    repair_from: An evaluation becomes useful when a bad result changes the next edge in the run. | An evaluation becomes useful when a bad result changes the next edge in the run. | 1
+    category: running_example
+    disposition: fix
+    note: |
+      The piece introduces several independent examples—basket identifiers,
+      evaluation, factory planning, model memory, and an intrusion report—without
+      allowing one concrete case to carry the argument. The intrusion report
+      makes the accumulation of examples most visible.
+    suggestion: Choose one running example and use the others only once as a deliberate contrast.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 4
+    ending: 4
+  notes: |
+    I verified that the argument moves from explicit state, to examples of the
+    principle, to its opposite, and finally to the editorial conclusion; the main
+    structural weakness is the lack of a sustained running example.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: the-parts-that-remember
+    locator: '- | These are the same maneuver at different scales: move hidden state into explicit structures, then give those structures rules. | 1'
+    category: no_voice
+    disposition: fix
+    note: |
+      The second paragraph is where the voice disappears into a polished abstraction:
+      examples are compressed into a general principle without a person’s particular
+      angle or texture.
+    suggestion: Replace the cross-scale summary with one concrete transition showing how one example changes the next.
+  - severity: major
+    article: the-parts-that-remember
+    locator: '- | These are the same maneuver at different scales: move hidden state into explicit structures, then give those structures rules. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "The same maneuver at different scales" is a balanced, abstract clause that
+      sounds like a packaged insight rather than earned language.
+    suggestion: Name the specific shared operation directly instead of calling it a maneuver.
+  - severity: minor
+    article: the-parts-that-remember
+    locator: '- | The same choice appears across this edition: put memory, judgment, and limits where people and machines can inspect them. | 1'
+    category: passive
+    disposition: fix
+    note: |
+      The imperative "put memory, judgment, and limits" has no named actor, producing
+      the ownerless command identified by the house rules.
+    suggestion: Name who should place these records where they can be inspected.
+  - severity: minor
+    article: the-parts-that-remember
+    locator: '- | These are the same maneuver at different scales: move hidden state into explicit structures, then give those structures rules. | 1'
+    category: passive
+    disposition: fix
+    note: |
+      The sentence issues two ownerless imperatives, "move" and "give", without
+      identifying the responsible actor.
+    suggestion: State which builders or operators should move the state and assign the rules.
+  - severity: minor
+    article: the-parts-that-remember
+    locator: '- | An evaluation becomes useful when a bad result changes the next edge in the run. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "The next edge in the run" is unexplained specialist shorthand; a competent
+      engineer outside this subfield may not know which step it denotes.
+    suggestion: Replace 'next edge in the run' with the specific subsequent test, stage, or decision.
+  scores:
+    voice: 3
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    I heard a clear, concrete editorial voice at the opening and close, but the second
+    paragraph turns that voice into an abstract system summary and a few ownerless commands.

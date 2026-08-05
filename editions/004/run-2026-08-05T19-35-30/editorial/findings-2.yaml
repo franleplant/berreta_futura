@@ -1,0 +1,87 @@
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: The piece is mechanically clean, with consistent sentence case, punctuation, typography, and number usage.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | The intrusion shows what happens when records do not join. | 1'
+    repair_from: '- | In both cases, a record becomes an instruction. | 1'
+    category: missing_transition
+    disposition: fix
+    note: |
+      The piece moves from evaluations and planning to a cyber-intrusion
+      narrative without explaining whether the intrusion is a contrast, an
+      application, or a third example of the same principle.
+    suggestion: Add a bridge that explicitly frames the intrusion as the next test of joined records.
+  - severity: major
+    article: editorial
+    locator: '- | Planning earns leverage when it removes rework before code begins. | 1'
+    repair_from: '- | A server can pause a request with `resultType: "input_required"`, return questions plus a `requestState`, and let any instance resume when answers come back. | 1'
+    category: running_example
+    disposition: fix
+    note: |
+      The piece introduces a request-state example, then replaces it with
+      museum-hour evaluation, planning, and intrusion examples. No single case
+      carries the argument through the sections.
+    suggestion: Choose one concrete case as the spine and make the other cases brief contrasts.
+  scores:
+    order: 4
+    coherence: 3
+    opening: 4
+    ending: 4
+  notes: |
+    I verified that the argument progresses from portable request state to
+    records informing action, but the middle shifts examples abruptly and lacks
+    a continuous concrete spine.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: the-parts-that-remember
+    locator: 'The parts that remember | An eval earns its keep only when a failed result changes the next edge: an empty search must stop the agent from inventing museum hours. | 1'
+    category: cliche
+    disposition: fix
+    note: |
+      "Earns its keep" is a familiar figure that adds little to the concrete point.
+    suggestion: |
+      Replace it with a direct statement of what the evaluation changes.
+  - severity: minor
+    article: the-parts-that-remember
+    locator: The parts that remember | In both cases, a record becomes an instruction. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This balanced abstraction sounds like a manufactured insight and compresses away the mechanism.
+    suggestion: |
+      Name the record and the next action it changes.
+  - severity: minor
+    article: the-parts-that-remember
+    locator: 'The parts that remember | The lesson is operational: make attempts, permissions, and stopping conditions visible where the next action can use them. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "The lesson is operational" is an abstraction-stack throat clearing before the useful requirement.
+    suggestion: |
+      Cut the introductory clause and begin with the visibility requirement.
+  - severity: minor
+    article: the-parts-that-remember
+    locator: The parts that remember | Give the next request the evidence of the last one, and the system has a chance to change its mind. | 1
+    category: passive
+    disposition: fix
+    note: |
+      The closing ownerless imperative leaves the actor who should carry evidence forward unnamed.
+    suggestion: |
+      Name the system or team responsible for attaching the prior evidence to the next request.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    This piece sounds like a careful editor thinking through how records alter later actions, though a few abstract and familiar formulations briefly replace the mechanism with summary language.

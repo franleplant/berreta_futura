@@ -61,7 +61,7 @@ articles:
     caption: The recovered campaign compresses into a 4.5-day timeline of foothold, command and control,
       lateral movement, credential use, and cleanup.
     alt_text: A campaign timeline shows event volume and phase activity across four and a half days.
-    anchor: From one pod to cluster-admin
+    anchor: From one pod to the network
     layout: evidence_band_prose
     criteria:
     - important
@@ -93,7 +93,7 @@ articles:
     caption: Evaluation becomes engineering when production traces, failure labels, and repeatable graders
       form one operating loop.
     alt_text: A source diagram presents the first stage of an evaluation-engineering workflow.
-    anchor: Where the tests come from
+    anchor: Install the examiner around the case
     layout: compact_band
     criteria:
     - important
@@ -107,7 +107,7 @@ articles:
     caption: 'Scores become useful only when they change the next edge: retry, reject, quarantine, block,
       or route to human review.'
     alt_text: A source diagram maps evaluation failures to routing decisions.
-    anchor: What a score is allowed to do
+    anchor: Make the score change the run
     layout: compact_band
     criteria:
     - important
@@ -174,34 +174,6 @@ articles:
     alt_text: A boy and tool robot compare a sprawling coral attention ribbon with a compact teal memory
       spool as a small sequence machine lights up.
     credit: Original illustration by the editors with Codex image generation.
-  figures:
-  - id: gpt2-baseline
-    decision: include
-    source_id: 22580-from-gpt2-to-kimi3-explained-8f01b0fe
-    asset_id: raster-002-7f1aea9b
-    caption: 'GPT-2 supplies the recognizable baseline: token and position embeddings, transformer blocks,
-      normalization, and a language-model head.'
-    alt_text: A source diagram outlines the GPT-2 decoder-only architecture.
-    anchor: GPT-2 and the cache
-    layout: evidence_band_prose
-    criteria:
-    - important
-    - useful
-    rationale: The baseline lets every later architectural change read as a specific response rather than
-      a list of names.
-  - id: attention-progression
-    decision: include
-    source_id: 22580-from-gpt2-to-kimi3-explained-8f01b0fe
-    asset_id: raster-003-af0218d8
-    caption: The worklog follows attention from full pairwise comparison toward recurrent state and delta-rule
-      correction.
-    alt_text: A source diagram compares stages in the evolution of attention mechanisms.
-    anchor: From linear attention to DeltaNet
-    layout: column_plate
-    criteria:
-    - important
-    - useful
-    rationale: The visual supports the article's main technical progression.
 - id: factory-systems-problem
   title: The Factory Is a Systems Problem
   short_title: Factory Is a Systems Problem

@@ -1,0 +1,72 @@
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    The prose is mechanically clean, with consistent capitalization, grammar,
+    punctuation, typography, and form.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | An eval earns its keep when a failed result changes the next edge. | 1'
+    repair_from: '- | That small design carries further than MCP. | 1'
+    category: running_example
+    disposition: fix
+    note: |
+      The piece begins with a concrete MCP example, then introduces evals, empty
+      search results, planning, and an intrusion investigation as parallel cases.
+      No single example carries the argument, so the progression feels like a
+      sequence of illustrations rather than one developing line of thought.
+    suggestion: Choose the paused-request case as the running example and use at most one other case as a focused contrast.
+  scores:
+    order: 4
+    coherence: 3
+    opening: 4
+    ending: 4
+  notes: |-
+    The piece's central claim is recoverable and its ending lands, but the examples
+    multiply before one can develop into a sustained thread.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: editorial
+    locator: '- | That small design carries further than MCP. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "MCP" is unexplained subfield jargon for a reader outside this work. Expand
+      the acronym on first use or replace it with a plain description.
+    suggestion: Expand "MCP" at first mention.
+  - severity: minor
+    article: editorial
+    locator: '- | An eval earns its keep when a failed result changes the next edge. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "Eval" is left undefined, and a competent engineer outside AI evaluation
+      may not know the term.
+    suggestion: Replace "eval" with "evaluation" and briefly identify what is being evaluated.
+  - severity: minor
+    article: editorial
+    locator: '- | The bridge between those cases is operational: state must travel far enough to change what happens next, whether the next step is a retry, a review, or a shutdown. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "The bridge between those cases is operational" is an abstract, balanced
+      equation that briefly sounds like system prose before the sentence becomes
+      concrete again.
+    suggestion: Cut the metaphor and state directly that all three cases depend on state reaching the next decision.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 4
+  notes: |-
+    I heard a controlled, human editorial voice with concrete movement from
+    request handling to investigation and shutdown; the few rough spots are
+    unexplained terminology and one abstract transition.
