@@ -1,0 +1,209 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: factory-systems-problem
+    repair_from: '- | Software factories are super real, but we need to be realistic. | 1'
+    category: longer_than_source
+    disposition: fix
+    note: |
+      The manuscript is substantially longer than the combined pinned sources.
+      A faithful edit can justify source-length treatment when it makes
+      paywalled, ephemeral, or scattered material accessible; here, however,
+      the edit expands three short posts with added connective and rhetorical
+      wording, defeating the condensation promise.
+    suggestion: Cut the added connective language and preserve only the material needed to collect the three posts clearly.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Blog post time. | 1'
+    repair_from: '- | It won''t be solved through tokens or how you apply the tokens (but it is a piece of the puzzle), ugh. | 1'
+    category: section_does_not_pay
+    disposition: fix
+    note: |
+      "Ugh. Blog post time." is pure transition and does not inform the reader.
+      Its space could carry the omitted context that the service-bus post was a
+      second hot take prompted by the first one, or simply be removed to bring
+      the edit back under source length.
+    suggestion: Delete the transition and move directly into the service-bus argument.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Lots of bad memories here. | 1'
+    repair_from: '- | Making the entire service bus non-deterministic would be a mistake. | 1'
+    category: section_does_not_pay
+    disposition: fix
+    note: |
+      This personal aside adds no argument beyond the preceding warning that a
+      non-deterministic service bus is a mistake. It is expendable space in an
+      already overlong faithful edit.
+    suggestion: Cut the aside or retain only a concrete consequence if one is needed.
+  omissions:
+  - fact: The opening context, 'second hot take, as it seems the first hot take landed.'
+    reader_loses: The reader does not know that the service-bus post responds to the reception of an earlier hot take.
+    verdict: defensible
+  retentions:
+  - passage: Ugh. Blog post time.
+    costs: A transition with no information; the space could restore the omitted second-hot-take context or reduce the overlength.
+    verdict: cut
+  - passage: Lots of bad memories here. Not great tech impl, but the theory / education is generally on point.
+    costs: A personal aside that repeats the caution already made and occupies space in an already overlong edit.
+    verdict: cut
+  - passage: At home, in your homelab, you should be cracking on this problem space...
+    costs: Several lines of exhortation, but they give the reader concrete career and practice advice.
+    verdict: earns_place
+  notes: |
+    Changes required because the faithful edit is longer than the three source posts combined and spends avoidable space on transitions and personal asides. The collection does give a reader convenient access to three scattered posts and preserves their central systems-engineering, corporate-culture, and deterministic-service-bus arguments.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every manuscript assertion and furniture element against all three pinned extractions; I could not check external context, which is outside this review's evidence.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | The Factory Is a Systems Problem | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      The article title is in title case. Headings and title furniture should use sentence case.
+    suggestion: The factory is a systems problem
+  scores:
+    grammar: 4
+    typography: 5
+    consistency: 4
+  notes: One title requires conversion from title case to sentence case; the body otherwise has no mechanics errors requiring correction.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Software factories are super real, but we need to be realistic. | 1'
+    repair_from: '- | Software factories are super real, but we need to be realistic. | 1'
+    category: opening
+    disposition: editor_decision
+    note: |
+      The piece opens with a long credibility warning, promotional aside, and inventory of infrastructure concerns before stating its governing claim. The reader can follow the material, but the central systems argument arrives late and the opening does not efficiently earn the subsequent sections.
+    suggestion: Open with the systems-and-culture thesis, then use the factory reality and infrastructure list as its support.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | It isn’t cracked, but it’s a puzzle that’s being solved daily. | 1'
+    repair_from: '- | The factory aspects haven’t been cracked yet; the innovators are toying around with discovering practices and pieces. | 1'
+    category: duplication
+    disposition: fix
+    note: |
+      The piece states twice, in adjacent sentences, that factory practices are not yet solved. The second formulation repeats the first without advancing the argument.
+    suggestion: Keep one statement of the field's unfinished state and use the other sentence to advance the systems argument.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Not great tech impl, but the theory / education is generally on point. | 1'
+    repair_from: '- | Here is the service-bus hot take: n8n was a silly idea, | 1'
+    category: ending
+    disposition: fix
+    note: |
+      The final sentence evaluates the service-bus example but does not return to the article's central claim about systems engineering and deterministic architecture. The piece therefore stops after an aside rather than landing its argument.
+    suggestion: End by explicitly tying the service-bus example back to the systems problem the piece establishes.
+  scores:
+    order: 3
+    coherence: 3
+    opening: 2
+    ending: 2
+  notes: |
+    I verified that the piece moves from factory maturity, to its systems thesis, to a service-bus example, but its opening delays that thesis, repeats the unfinished-state claim, and ends without a concluding return to the main argument.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Software factories are super real, but we need to be realistic. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Super real" and "realistic" repeat the same assertion, so the sentence spends its opening on emphasis rather than information.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | The factory aspects haven''t been cracked yet; the innovators are toying around with discovering practices and pieces. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Factory aspects," "toying around," and "discovering practices and pieces" form an abstraction stack that obscures the concrete work being described.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | The best practices right now are to build abstractions/pieces needed, which entails solving non-agent topics. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      The sentence piles up abstractions and introduces "non-agent topics" without naming what those topics are.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | The highest ROI you can have right now is learning the entire damn stack, automating it, and showing it at your next interview or doing a recorded talk at a meetup. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Highest ROI" is corporate shorthand, and the sentence turns practical advice into a generalized value claim before specifying the actual payoff.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | I must stress that factories are not a token or LLM problem. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      "I must stress" is a throat-clearing opener; the claim itself can begin the paragraph.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | It''s a systems engineering and corporate culture problem. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This definite-article equation presents a broad label as insight without showing which systems or cultural mechanisms cause the failure.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | It won''t be solved through tokens or how you apply the tokens (but it is a piece of the puzzle), ugh. | 1'
+    category: passive
+    disposition: fix
+    note: |
+      "Won't be solved" leaves the actor and the actual corrective work unnamed, weakening an otherwise direct claim.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Blog post time. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This portentous fragment announces a transition without adding substance.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Here is the service-bus hot take: n8n was a silly idea, which I''ve always suspected was developed by young folks in Silicon Valley who are all in on the LLM craze who have never worked in corporate in their lives, thus didn''t have the knowledge that service buses are a solved problem and there''s deep prior art in the spooky land of enterprise. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      "Here is the ... take" is a throat-clearing frame before a very long sentence whose actual argument begins with the criticism of n8n.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Anything in the .NET space, such as MassTransit, NServiceBus, and WCF, is worth looking up if you wanna steal ideas for prompting. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      MassTransit, NServiceBus, and WCF are named without enough explanation for an engineer outside this subfield to understand what each contributes.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Making the entire service bus non-deterministic would be a mistake. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Would be a mistake" is a balanced-clause conclusion that asserts the judgment without identifying the concrete failure mode.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Lots of bad memories here. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      The sentence gestures at experience but withholds the memory or consequence that would let the reader understand it.
+  scores:
+    voice: 4
+    sentence_variety: 3
+    economy: 3
+  notes: I heard a forceful, lived-in voice throughout, but it repeatedly loses precision in abstract labels, throat-clearing transitions, and unexplained infrastructure terminology.

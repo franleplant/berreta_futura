@@ -1,0 +1,164 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | What you don't want to do is spend 6 hours planning a task for which you could have eliminated 80% of the expected pain in the first 10 minutes. | 1
+    repair_from: The 80/20 rule in AI coding leverage | What you don't want to do is spend 6 hours planning a task for which you could have eliminated 80% of the expected pain in the first 10 minutes. | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source explains how to apply pragmatic leverage: stop planning at one level when unanswered questions require zooming into technical detail, then steer a little at each planning phase to reduce expected pain. The manuscript keeps the warning against overplanning but drops this method, leaving the reader without the source's most actionable guidance.
+    suggestion: Restore a concise version of the zoom-down and phase-by-phase steering guidance.
+  - severity: major
+    article: pragmatic-leverage
+    category: over_compressed
+    disposition: fix
+    note: |
+      The central argument survives, but the cut removes the practical procedure that turns the expected-pain heuristic into a working planning practice. Restoring the zoom-down example and the instruction to steer at each phase would bring the piece back above the bone.
+    suggestion: Add the two omitted application points without restoring the source's introductory metadata.
+  omissions:
+  - fact: 'The post is an addendum to a recent series and is referenced in Why Software Factories Fail part 2: Turning the lights back on.'
+    reader_loses: No substantive loss; this publication context does not affect the argument.
+    verdict: defensible
+  - fact: The explicit statement that effort invested up front and expected pain have an inverse relationship.
+    reader_loses: Little loss; the expected-pain equation and the 6-hours-versus-10-minutes example convey the relationship.
+    verdict: defensible
+  - fact: The warning not to overindex on questions that cannot be answered without going down a level.
+    reader_loses: A reader may not know when to stop product-level planning and inspect technical feasibility.
+    verdict: needed
+  - fact: The example of ending Product-level work and zooming down to technical details to understand feasibility.
+    reader_loses: The concrete trigger for changing planning levels is missing.
+    verdict: needed
+  - fact: The instruction that, across multiple planning phases from 50kft to 10kft, you should do a little steering at each phase to eliminate as much expected pain as possible.
+    reader_loses: The reader loses the operational method for applying leverage continuously rather than only making one initial planning investment.
+    verdict: needed
+  - fact: The source's spelling and punctuation variants ('Lets', 'yolo', and '2-3x') are normalized in the manuscript.
+    reader_loses: Nothing substantive.
+    verdict: defensible
+  retentions:
+  - passage: Even before AI, only 25–50% of the time to ship a feature was writing the code itself.
+    costs: This compact baseline establishes why coding speed alone is insufficient; it earns its space.
+    verdict: earns_place
+  - passage: If you're only using AI to write the code
+    costs: This gives the concrete 2–4-hours-to-10–20-minutes comparison that makes the leverage claim legible; it earns its space.
+    verdict: earns_place
+  - passage: But if you use AI to help you plan and align
+    costs: This states the article's main practical conclusion and its 2–3× estimate; it earns its space.
+    verdict: earns_place
+  - passage: Let's assume if you yolo a two-sentence prompt into your factory
+    costs: The 50% rework baseline supplies the first endpoint of the thought experiment; it earns its space.
+    verdict: earns_place
+  - passage: Now let's say you are a principal engineer with 10 years of experience.
+    costs: The detailed-spec endpoint shows that even expert planning does not eliminate all rework; it earns its space.
+    verdict: earns_place
+  - passage: 'And at the far end: write every line yourself.'
+    costs: The zero-rework endpoint completes the leverage spectrum; it earns its space.
+    verdict: earns_place
+  - passage: note For this example I'm gonna blur
+    costs: The caveat distinguishes probability from expected pain and prevents the percentages from being misread; it earns its space.
+    verdict: earns_place
+  - passage: expected pain = P(you'll have to change it)
+    costs: The equation is the piece's reusable decision heuristic; it earns its space.
+    verdict: earns_place
+  - passage: good luck.
+    costs: A sign-off that adds no information; the omitted zooming and steering guidance could occupy this space.
+    verdict: cut
+  notes: |
+    Changes required because the manuscript preserves the leverage thesis but omits the source's concrete method for zooming into feasibility and steering across planning phases.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every assertion in the title, headings, note, quotation, and body against the pinned extraction; no assertion was uncheckable from the extraction.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Let's assume if you yolo a two-sentence prompt into your factory | 1
+    category: grammar
+    disposition: editor_decision
+    note: |
+      "Let's assume if" is grammatically incomplete; the construction needs
+      "that" before the conditional clause. This sentence is retained author
+      prose, so the editor chooses the remedy.
+    suggestion: Let's assume that if you yolo a two-sentence prompt into your factory
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | good luck. | 1
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      This sentence opens lowercase, unlike the capitalized sentence openings
+      established throughout the body. It is a capitalization error, not a
+      convention.
+    suggestion: Good luck.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | note For this example I'm gonna blur | 1
+    category: label_missing
+    disposition: fix
+    note: |
+      The standalone "note" label introduces editorial apparatus inside the
+      article. The magazine does not print an editor's or author's note in the
+      prose; remove the apparatus or integrate its content into the article.
+    suggestion: Remove the note label and integrate the explanation into the prose.
+  scores:
+    grammar: 2
+    typography: 5
+    consistency: 4
+  notes: |
+    Changes required because one grammatical error, one lowercase sentence opening,
+    and an inline note label survive in the typeset piece.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking leverage | Seeking leverage | 1
+    repair_from: Seeking leverage | Seeking leverage | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      "Seeking leverage" is a standalone heading with no section beneath it, creating a dead stop before the substantive argument begins.
+    suggestion: Remove the heading or attach it to the argument that follows with a claim-bearing title.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 4
+    ending: 4
+  notes: |
+    The piece moves from the limits of code-only acceleration to a quantitative model of planning leverage and closes with a clear pragmatic takeaway.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | But if you use AI to help you plan and align, then you actually get closer to 2–3× faster. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Actually" adds emphasis without adding meaning; the sentence is stronger
+      without it.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | This is what we mean by leverage, and it requires being pragmatic. | 1
+    category: weak_close
+    disposition: fix
+    note: |
+      The closing sentence restates the piece's premise in abstract terms instead
+      of leaving the reader with a sharper consequence or question.
+  scores:
+    voice: 4
+    sentence_variety: 3
+    economy: 3
+  notes: |
+    I heard a conversational practitioner explaining where AI-assisted work
+    actually slows down, but the final abstraction retreats from that voice into
+    a generic summary.
