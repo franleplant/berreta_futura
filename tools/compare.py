@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import argparse
 import html
-import json
 import re
 import sys
 from pathlib import Path
@@ -33,7 +32,15 @@ def load_yaml(path: Path):
     return yaml.safe_load(text) if text.strip() else None
 
 
-def run_label(run_dir: Path) -> tuple[str, str]:
+def split_label(arg: str) -> tuple[str | None, Path]:
+    """`label=path` gives the column a readable name; bare `path` uses the dir."""
+    if "=" in arg:
+        label, _, path = arg.partition("=")
+        return label.strip(), Path(path)
+    return None, Path(arg)
+
+
+def run_label(run_dir: Path, label: str | None = None) -> tuple[str, str]:
     """(name, subtitle) — subtitle carries model + style overlay from summary.md."""
     summary = read(run_dir / "summary.md")
     match = re.search(r"^- writer .*$", summary, re.MULTILINE)
@@ -41,7 +48,7 @@ def run_label(run_dir: Path) -> tuple[str, str]:
     calls = re.search(r"^- (\d+ model calls[^\n]*)$", summary, re.MULTILINE)
     if calls:
         subtitle = f"{subtitle} — {calls.group(1)}" if subtitle else calls.group(1)
-    return run_dir.name, subtitle
+    return label or run_dir.name, subtitle
 
 
 def strip_front_matter(md: str) -> str:
@@ -230,8 +237,8 @@ table.sum th { background:rgba(127,127,127,.1) }
 """
 
 
-def render(runs: list[Path], plan_path: Path) -> str:
-    data = [(run_label(r), collect(r), r) for r in runs]
+def render(runs: list[tuple[str | None, Path]], plan_path: Path) -> str:
+    data = [(run_label(r, label), collect(r), r) for label, r in runs]
     ids: list[str] = []
     for _, pieces, _ in data:
         for p in pieces:
@@ -315,15 +322,16 @@ def render(runs: list[Path], plan_path: Path) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("runs", nargs="+", type=Path)
+    ap.add_argument("runs", nargs="+", help="run dir, or label=run-dir for a readable column name")
     ap.add_argument("--plan", type=Path, default=ROOT / "editions/004/plan.yaml")
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()
 
-    runs = [r for r in args.runs if (r / "articles").exists() or (r / "editorial").exists()]
+    pairs = [split_label(a) for a in args.runs]
+    runs = [(lab, p) for lab, p in pairs if (p / "articles").exists() or (p / "editorial").exists()]
     if not runs:
-        sys.exit("no run dirs with content among: " + ", ".join(str(r) for r in args.runs))
-    out = args.out or (runs[0].parent / "compare.html")
+        sys.exit("no run dirs with content among: " + ", ".join(str(p) for _, p in pairs))
+    out = args.out or (runs[0][1].parent / "compare.html")
     out.write_text(render(runs, args.plan), encoding="utf-8")
     print(out)
     return 0

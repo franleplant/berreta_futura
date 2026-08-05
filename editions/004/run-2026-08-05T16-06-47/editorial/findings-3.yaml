@@ -1,0 +1,38 @@
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    All sentences follow consistent capitalization convention (capitals). Subject-verb
+    agreement is correct throughout. Punctuation is appropriate — colons introducing
+    descriptive clauses, comma + and in two-item list, em dash absent. No spelling
+    errors, no stray characters, no doubled spaces. Body opens with a paragraph. No
+    headings to check. Numbers are consistently written.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The piece establishes a principle through a vault analogy, shows what happens when the principle is violated with a concrete negative example, contrasts with a system where it's applied correctly, and restates the principle with a specific image. Argument flows logically from intuitive analogy to principle to negative and positive examples, with clear transitions throughout. Ends by landing on the principle with a concrete constraint ("one stolen credential can't open every door") that echoes the opening.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: editorial
+    locator: The Price of Being Wrong | Here is what happens when it doesn't | 1
+    category: dead_words
+    disposition: fix
+    suggestion: Remove this sentence. The concrete examples below carry the argument without announcement; this formulaic structure produces mechanical prose.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 5
+  notes: |
+    Sustained voice and metaphor throughout. One transition sentence uses the "Here is what happens" form (definite-article equation), which is mechanical prose to remove.
