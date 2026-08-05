@@ -1,0 +1,75 @@
+piece: mcp-in-a-nutshell
+rounds:
+- round: 1
+  words: 715
+  loop_findings: 7
+  all_findings: 8
+- round: 2
+  words: 671
+  loop_findings: 3
+  all_findings: 6
+- round: 3
+  words: 676
+  loop_findings: 6
+  all_findings: 10
+state: rounds_exhausted
+open_findings:
+- lens: worth
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: '- | Each type has methods for discovery and retrieval or execution, including `tools/list`, `resources/read`, and `tools/call`. | 1'
+  repair_from: '- | Each type has methods for discovery and retrieval or execution, including `tools/list`, `resources/read`, and `tools/call`. | 1'
+  category: stripped_utility
+  disposition: fix
+  note: |
+    The source gives the complete primitive method pattern, including listing and retrieving resources and prompts. The manuscript names only a partial set, so a reader who wants to use non-tool primitives must return to the source to find the callable method names.
+  suggestion: Name the corresponding list and retrieval methods for resources and prompts, or state the complete `*/list`, `*/get`, and `tools/call` pattern.
+- lens: worth
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: '- | Listings can change, so a client discovers a tool first, then calls it with the exact name and arguments described by its input schema. | 1'
+  repair_from: '- | Listings can change, so a client discovers a tool first, then calls it with the exact name and arguments described by its input schema. | 1'
+  category: lost_operational_detail
+  disposition: fix
+  note: |
+    The source makes the discovery-to-execution contract concrete: tool responses contain `name`, `title`, `description`, and `inputSchema`, and the example calls `weather_current` with `location` and `units`. The manuscript mentions an input schema but supplies none of the fields or worked call, leaving the operational contract abstract.
+  suggestion: Carry the tool metadata fields and one compact `weather_current` call example into the explanation.
+- lens: mechanics
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: '- | Standard input and output supports direct communication between local processes. | 1'
+  category: agreement
+  disposition: fix
+  note: |
+    "Standard input and output" is a compound subject referring to two streams, so it takes the plural verb "support."
+  suggestion: Standard input and output support direct communication between local processes.
+- lens: shape
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: '- | When a server''s tools change, the client can refresh its registry and notify an active conversation of the new capabilities. | 1'
+  repair_from: '- | The client then sends `tools/list` again and refreshes its registry. | 1'
+  category: duplication
+  disposition: fix
+  note: |
+    The notification section already explains that a tool-list change triggers a
+    fresh `tools/list` call and registry refresh; the ending repeats that
+    explanation before adding the conversation update.
+  suggestion: Keep the detailed refresh mechanics in the notifications section and make the ending land on the application's continuing responsibility.
+- lens: craft
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: '- | MCP has two layers. | 1'
+  category: no_voice
+  disposition: fix
+  note: |
+    The paragraph beginning here shifts into an even specification inventory of layers, message formats, and transports; the explanatory person disappears behind the taxonomy.
+  suggestion: Recast the paragraph around the concrete difference between a message and the channel carrying it.
+- lens: craft
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: '- | The protocol keeps that exchange current; the application still decides what the model does with it. | 1'
+  category: weak_close
+  disposition: fix
+  note: |
+    The closing sentence restates the notification mechanism and the application's role instead of leaving the reader with a new implication or question.
+  suggestion: End on a consequence of keeping capabilities current rather than repeating the division of responsibilities.

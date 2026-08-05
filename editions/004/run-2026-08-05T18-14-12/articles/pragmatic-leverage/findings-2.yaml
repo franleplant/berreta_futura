@@ -1,0 +1,128 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: 'The opening framing that this was an addendum or side-quest to a recent series, published standalone because it did not fit cleanly, and briefly referenced in ''Why Software Factories Fail part 2: Turning the lights back on.'''
+    reader_loses: Some publication context and a pointer to related work, but not the argument or its practical guidance.
+    verdict: defensible
+  - fact: The source's author handle, '@dexhorthy.'
+    reader_loses: Nothing substantive; the manuscript supplies the byline separately.
+    verdict: defensible
+  - fact: The source's explicit '**note**' label before the expected-pain caveat.
+    reader_loses: Only a label; the caveat and its example remain.
+    verdict: defensible
+  retentions:
+  - passage: Even before AI, only 25-50% of the time to ship a feature...
+    costs: Space spent establishing the central distinction between coding speed and the planning, review, and verification work that determines delivery speed.
+    verdict: earns_place
+  - passage: Let's assume that if you yolo a two-sentence prompt...
+    costs: Space spent on the concrete probability ladder from a loose prompt to detailed planning to writing every line.
+    verdict: earns_place
+  - passage: expected pain = P(you'll have to change it) × how painful the change is
+    costs: Space spent on the piece's key operational model for deciding how much up-front effort is worthwhile.
+    verdict: earns_place
+  - passage: You need to do this without overindexing on questions...
+    costs: Space spent on the practical steering rule for zooming from product questions into technical details only as needed.
+    verdict: earns_place
+  - passage: Good luck.
+    costs: A sign-off that adds no information; its space could be removed without loss.
+    verdict: cut
+  notes: |
+    Approved because the manuscript makes the ephemeral X article's argument directly readable while preserving its concrete percentages, expected-pain equation, planning trade-off, and pragmatic zooming guidance. The omissions are contextual or presentational, and the retained passages carry the source's full practical substance; only the closing sign-off could be cut. As a faithful edit, preserving the source's order is appropriate, and the piece retains a clear position: leverage comes from steering planning and alignment, not merely generating code.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every assertion, heading, equation, and quoted passage against the pinned extraction; I could not check claims beyond the supplied source because this review is limited to that extraction.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | 25-50% of the time | 1'
+    category: typography
+    disposition: editor_decision
+    note: |
+      The numeric range uses a hyphen instead of an en dash. Ranges should use
+      en dashes consistently throughout the piece.
+    suggestion: 25–50% of the time
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | 2-4 hours of coding time | 1'
+    category: typography
+    disposition: editor_decision
+    note: |
+      The numeric range uses a hyphen instead of an en dash. Ranges should use
+      en dashes consistently throughout the piece.
+    suggestion: 2–4 hours of coding time
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | 10-20 minutes | 1'
+    category: typography
+    disposition: editor_decision
+    note: |
+      The numeric range uses a hyphen instead of an en dash. Ranges should use
+      en dashes consistently throughout the piece.
+    suggestion: 10–20 minutes
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | 2-3x faster | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      The numeric range uses a hyphen instead of an en dash. Ranges should use
+      en dashes consistently throughout the piece.
+    suggestion: 2–3x faster
+  scores:
+    grammar: 5
+    typography: 2
+    consistency: 4
+  notes: |
+    Four numeric ranges use hyphens instead of required en dashes; sentence
+    grammar, headings, and markup are otherwise clean.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | Seeking leverage | 1'
+    repair_from: '- | Even before AI, only 25-50% of the time to ship a feature was writing the code itself. | 1'
+    category: heading_not_a_claim
+    disposition: editor_decision
+    note: |
+      The "Seeking leverage" heading is empty and names an aspiration rather than an argument. It interrupts the opening frame before the piece begins its 80/20 explanation.
+    suggestion: Remove the empty heading so the opening flows directly into the 80/20 argument.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 5
+    ending: 4
+  notes: |
+    I verified that the piece moves from the limits of code-only acceleration to expected pain, pragmatic planning, and a concise conclusion, with one empty heading disrupting that progression.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking leverage | If you're only using AI to write the code, then you're taking the 2-4 hours of coding time down to 10-20 minutes, but you haven't accelerated anything else here. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Five conditional constructions make the piece's reasoning sound patterned:
+      "If you're only using AI...", "But if you use AI...", "Let's assume that if
+      you yolo...", "If you draw this out...", "if you've done some work...", and
+      "If you're doing multiple phases...". The author's idiom is protected, but
+      this monotony is an editorial problem; cut or recast at least two of these
+      sentences.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 4
+  notes: |-
+    I heard a clear, practical person throughout, but the repeated conditional
+    sentence shape begins carrying the argument more visibly than the prose does.

@@ -1,0 +1,195 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The protocol supports real-time notifications to enable dynamic updates between servers and clients | A client opens a long-lived `subscriptions/listen` stream and names the events it wants, such as changes to the tool list. | 1
+    repair_from: The protocol supports real-time notifications to enable dynamic updates between servers and clients | A client opens a long-lived `subscriptions/listen` stream and names the events it wants, such as changes to the tool list. | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source's worked notification flow includes the acknowledgement message,
+      subscription ID, `notifications/tools/list_changed` event, and the client's
+      follow-up `tools/list` request. The manuscript names the stream and refresh
+      idea but omits the identifiers and exchange needed to implement or debug it.
+    suggestion: Include a compact description of the acknowledgement, subscription ID, notification method, and refresh request.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '-'
+    repair_from: '- | MCP is a protocol for exchanging context between an AI application and programs that provide data or actions. | 1'
+    category: source_shaped
+    disposition: fix
+    note: |
+      The manuscript follows the source's sequence almost exactly: scope, participants,
+      layers, JSON-RPC and discovery, primitives, extensions, and notifications.
+      The synthesis adds compression but no distinct ordering judgment.
+    suggestion: Reorder around the reader's task—for example, start with what an application can do, then explain the architecture that makes it possible.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '-'
+    repair_from: '- | MCP is a protocol for exchanging context between an AI application and programs that provide data or actions. | 1'
+    category: no_position
+    disposition: fix
+    note: |
+      The piece supplies a competent paraphrase and a closing recap, but makes no
+      claim of its own about how readers should understand, use, or evaluate MCP.
+      Its rationale promises shared vocabulary, yet the article does not state an
+      organizing takeaway beyond the source's architecture.
+    suggestion: Add an explicit thesis about MCP's practical boundary or the mental model readers should carry forward.
+  omissions:
+  - fact: 'The four projects in scope: the specification, SDKs, development tools including MCP Inspector, and reference server implementations'
+    reader_loses: They do not learn what belongs to the MCP project beyond the wire protocol.
+    verdict: defensible
+  - fact: The transport layer's conceptual role as the outer layer around the data layer
+    reader_loses: Little; the two-layer division and responsibilities remain clear.
+    verdict: defensible
+  - fact: HTTP POST as the Streamable HTTP message mechanism, and the recommendation to use OAuth for authentication tokens
+    reader_loses: A reader implementing a remote server lacks concrete transport and authentication guidance.
+    verdict: needed
+  - fact: The `*/get` retrieval method family alongside `*/list` and `tools/call`
+    reader_loses: They may not know the standard retrieval operation for primitives other than the examples named.
+    verdict: defensible
+  - fact: The optional cursor parameter for paginating `tools/list`
+    reader_loses: Nothing for the conceptual explainer; implementation details require the specification.
+    verdict: defensible
+  - fact: The tool-list caching fields `ttlMs` and `cacheScope`
+    reader_loses: They miss one optimization and its reuse rules.
+    verdict: defensible
+  - fact: The exact tool metadata fields `name`, `title`, `description`, and `inputSchema`
+    reader_loses: They understand that a schema exists but not the complete shape of a discovery record.
+    verdict: defensible
+  - fact: The worked `server/discover` JSON exchange, including protocol version, client identity, and capabilities
+    reader_loses: They cannot copy a valid discovery request without consulting the source.
+    verdict: defensible
+  - fact: The `UnsupportedProtocolVersionError` retry behavior and the distinction between supported and requested versions
+    reader_loses: They miss the concrete failure-and-retry path for version negotiation.
+    verdict: defensible
+  - fact: The worked `tools/call` example using `weather_current`, with `location` and optional `units` arguments
+    reader_loses: They learn the general call concept but lose a concrete request shape and argument example.
+    verdict: defensible
+  - fact: The `sampling/createMessage` method name and the source's explanation of sampling's model-independent use
+    reader_loses: Little; sampling is explicitly deprecated and the replacement direction is retained.
+    verdict: defensible
+  - fact: The notification acknowledgement's `subscriptionId` and the `notifications/tools/list_changed` method
+    reader_loses: They cannot implement the subscription handshake or correlate an event to a subscription.
+    verdict: needed
+  - fact: 'The source''s four reasons notifications matter: dynamic environments, efficiency, consistency, and real-time collaboration'
+    reader_loses: The manuscript conveys freshness and responsiveness but not the full rationale.
+    verdict: defensible
+  - fact: The source's pseudo-code flows for discovery, tool registry construction, tool execution, and notification handling
+    reader_loses: They lose implementation sketches, but the prose still explains each flow.
+    verdict: defensible
+  - fact: The statement that notification synchronization extends beyond tools to other MCP primitives
+    reader_loses: They may infer notifications are tool-specific.
+    verdict: defensible
+  - fact: The source's pointer to language-specific SDK documentation for implementation details
+    reader_loses: Nothing essential to this standalone overview.
+    verdict: defensible
+  - fact: The source's explicit distinction that MCP servers are programs providing context regardless of where they run
+    reader_loses: Little; the manuscript preserves the local-versus-remote distinction and examples.
+    verdict: defensible
+  - fact: The source's claim that STDIO provides optimal local performance with no network overhead
+    reader_loses: They miss a transport tradeoff.
+    verdict: defensible
+  - fact: The source's statement that remote authentication supports bearer tokens, API keys, and custom headers
+    reader_loses: They know authentication exists but not the concrete mechanisms available.
+    verdict: defensible
+  - fact: The source's explicit statement that MCP is stateless
+    reader_loses: The manuscript describes per-request metadata but does not name the statelessness property.
+    verdict: defensible
+  retentions:
+  - passage: MCP is a protocol for exchanging context between an AI application and programs that provide data or actions.
+    costs: A short framing paragraph, but it establishes the protocol boundary and prevents the rest from being mistaken for an LLM framework.
+    verdict: earns_place
+  - passage: Visual Studio Code might connect to a Sentry server and a local filesystem server
+    costs: Several sentences of participant and transport illustration, but they make dedicated clients and local-versus-remote servers concrete.
+    verdict: earns_place
+  - passage: A database server, for example, might expose a query tool
+    costs: A compact example spanning tools, resources, prompts, and routing; it carries the central primitives model.
+    verdict: earns_place
+  - passage: Sampling and logging are deprecated as of protocol version 2026-07-28.
+    costs: A paragraph on deprecated features and replacements, but it prevents readers from treating obsolete primitives as current API guidance.
+    verdict: earns_place
+  - passage: 'That is the shape of MCP: a host coordinates dedicated clients'
+    costs: A concluding restatement of the preceding paragraphs; the space could instead carry the omitted notification handshake or authentication details.
+    verdict: cut
+  notes: |
+    Changes required because the piece mirrors the source's structure, offers no distinct editorial position, and omits the concrete notification handshake and remote-authentication details that an implementer would need.
+evidence:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: Clients can expose primitives too. | New implementations should call language-model providers directly for completions, and should send logs to standard error or OpenTelemetry. | 1
+    repair_from: Clients can expose primitives too. | New implementations should call language-model providers directly for completions, and should send logs to standard error or OpenTelemetry. | 1
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source limits standard-error logging to the stdio transport: "New implementations should log to stderr (stdio transport) or use OpenTelemetry." The manuscript presents standard error as an unqualified alternative for all transports.
+  scores:
+    claim_support: 5
+    qualification_survival: 4
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every assertion in the title, headings, body, code identifiers, and concluding summary against the pinned architecture extraction; the only defect is the dropped transport qualification in the logging guidance.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | MCP primitives are the most important concept within MCP. | 1'
+    category: agreement
+    disposition: fix
+    note: |
+      The plural subject "MCP primitives" does not agree with the singular complement "concept." This is editor-written prose in faithful_synthesis.
+    suggestion: MCP primitives are the most important concepts within MCP.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | an MCP host — an AI application like Claude Code | 1'
+    category: typography
+    disposition: fix
+    note: |
+      The em dash character is banned in typeset copy.
+    suggestion: an MCP host (an AI application like Claude Code or Claude Desktop) establishes connections
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | Claude Desktop — establishes connections to one or more MCP servers. | 1'
+    category: typography
+    disposition: fix
+    note: |
+      The em dash character is banned in typeset copy.
+    suggestion: Claude Desktop) establishes connections to one or more MCP servers.
+  scores:
+    grammar: 2
+    typography: 2
+    consistency: 4
+  notes: Changes required because one subject-complement agreement error and two banned em dashes appear in the editor-written prose.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The piece moves cleanly from MCP's definition through architecture, transport, discovery, primitives, extensions, notifications, and a concluding synthesis.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | That is the shape of MCP: a host coordinates dedicated clients, transports carry the messages, discovery reveals what each server can do, primitives provide the useful surface, and notifications keep that surface from going stale. | 1'
+    category: weak_close
+    disposition: fix
+    note: |
+      The closing sentence restates the article's sequence of explanations instead
+      of leaving the reader with a new implication or question.
+  scores:
+    voice: 4
+    sentence_variety: 3
+    economy: 4
+  notes: |
+    I heard a clear, concrete technical explainer that loses force in its final
+    summary, where the prose switches from explanation to recap.

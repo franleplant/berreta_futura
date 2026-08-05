@@ -1,0 +1,29 @@
+piece: editorial
+rounds:
+- round: 1
+  words: 227
+  loop_findings: 4
+  all_findings: 6
+- round: 2
+  words: 189
+  loop_findings: 2
+  all_findings: 4
+- round: 3
+  words: 191
+  loop_findings: 1
+  all_findings: 3
+state: rounds_exhausted
+open_findings:
+- lens: craft
+  severity: major
+  article: the-work-between-the-prompt-and-the-result
+  locator: '- | The Model Context Protocol (MCP) gives that handoff a shape. | 1'
+  category: no_voice
+  disposition: fix
+  note: |
+    The voice disappears here into procedural system prose: abstract nouns,
+    evenly balanced clauses, and no person making a judgment. The paragraph
+    reads like a protocol description rather than an editor thinking aloud.
+  suggestion: |
+    Put a visible human decision or consequence into the paragraph before
+    continuing with the protocol mechanics.

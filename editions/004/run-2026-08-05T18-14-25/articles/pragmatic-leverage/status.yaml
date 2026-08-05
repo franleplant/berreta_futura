@@ -1,0 +1,12 @@
+piece: pragmatic-leverage
+rounds:
+- round: 1
+  words: 496
+  loop_findings: 7
+  all_findings: 14
+- round: 2
+  words: 427
+  loop_findings: 0
+  all_findings: 10
+state: clean
+open_findings: []

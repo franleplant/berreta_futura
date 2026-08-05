@@ -1,0 +1,80 @@
+result: changes_required
+findings:
+- severity: major
+  article: pragmatic-leverage
+  locator: '- | Even before AI, only 25-50% of the time to ship a feature was writing the code itself. | 1'
+  repair_from: '- | Even before AI, only 25-50% of the time to ship a feature was writing the code itself. | 1'
+  category: weak_piece
+  disposition: fix
+  note: |
+    This is a generic software-productivity essay, not a sufficiently specific
+    contribution to an issue about the systems around models. Its planning
+    advice does not connect concretely to the protocols, evaluations, or
+    operational controls carried by the other pieces. It should not have been
+    commissioned in this form.
+  suggestion: |
+    Recommission it around planning and verification as control surfaces for
+    model-driven software systems.
+- severity: minor
+  article: edition
+  locator: '- | A dependable system must make that chain visible and bounded before machine-speed retries turn ordinary weaknesses into a campaign. | 1'
+  repair_from: '- | A dependable system must make that chain visible and bounded before machine-speed retries turn ordinary weaknesses into a campaign. | 1'
+  category: redundancy
+  disposition: fix
+  note: |
+    frontier-lab-agent-intrusion and mcp-in-a-nutshell both make the point that
+    dependable systems require a current, bounded map of what an agent can
+    reach. The intrusion piece says, "A dependable system must make that chain
+    visible and bounded before machine-speed retries turn ordinary weaknesses
+    into a campaign." MCP says, "When a server's tools change, the client can
+    refresh its registry and notify an active conversation of the new
+    capabilities." The issue should distinguish security containment from
+    protocol freshness instead of repeating the same systems-map lesson.
+- severity: minor
+  article: edition
+  category: cover_promise
+  disposition: fix
+  note: |
+    The cover line "The Systems Around the Model" and subtitle are broad enough
+    to fit almost any systems issue, while promising protocols, evaluations,
+    architectures, and operational work that this small set only partially
+    delivers: MCP supplies protocol architecture, the intrusion supplies
+    operational security, and pragmatic-leverage is a general planning essay
+    rather than model-system work. Tighten the cover promise or commission the
+    missing evaluation/architecture coverage.
+- severity: major
+  article: pragmatic-leverage
+  locator: '- | Good luck. | 1'
+  repair_from: '- | Good luck. | 1'
+  category: outlier
+  disposition: fix
+  note: |
+    pragmatic-leverage is the only faithful_edit, uses an informal coaching
+    voice ("yolo", "Good luck"), and is much less technically difficult than
+    the faithful_synthesis pieces. It sits outside the edition's operational
+    and protocol register.
+- severity: minor
+  article: edition
+  category: uniformity
+  disposition: fix
+  note: |
+    The closing paragraphs fail the swap test. frontier-lab-agent-intrusion
+    closes, "The weaknesses were familiar: unsafe data processing, exposed
+    metadata, broad trust, and long-lived credentials. The agent explored them
+    at a different scale. It took 17,600 actions, replaced failed paths
+    quickly, and left defenders with a viable chain hidden inside the noise.
+    A dependable system must make that chain visible and bounded before
+    machine-speed retries turn ordinary weaknesses into a campaign." pragmatic-
+    leverage closes with the abrupt coaching line, "Good luck." A reader would
+    immediately notice the mismatch in cadence and register.
+scores:
+  through_line: 4
+  editorial_strength: 4
+  running_order: 4
+  balance: 3
+  cover_promise: 2
+notes: |
+  This issue argues that dependable speed comes from steering before action,
+  keeping capability maps current, and bounding the doors an agent can use; the
+  through-line holds, but the generic productivity essay and broad cover weaken
+  the assembled whole.

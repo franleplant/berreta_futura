@@ -1,0 +1,224 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's standalone @dexhorthy handle
+    reader_loses: The author's social identifier, though the manuscript retains the author's name.
+    verdict: defensible
+  retentions:
+  - passage: This one is a bit of an addendum / side-quest...
+    costs: A short preamble, but it explains the post's standalone status and connection to the series.
+    verdict: earns_place
+  - passage: Even before AI, only 25-50%...
+    costs: The quantitative premise that planning, review, and verification dominate coding time.
+    verdict: earns_place
+  - passage: If you're only using AI to write...
+    costs: The distinction between accelerating coding and accelerating delivery.
+    verdict: earns_place
+  - passage: But if you use AI to help...
+    costs: The central claim that planning and alignment produce roughly 2-3x speed.
+    verdict: earns_place
+  - passage: Lets assume if you yolo...
+    costs: The baseline 50% rework model.
+    verdict: earns_place
+  - passage: Now lets say you are a principal engineer...
+    costs: The contrast between detailed planning and residual significant rework.
+    verdict: earns_place
+  - passage: 'And at the far end: write every line...'
+    costs: The endpoint showing why removing agent contribution drives rework toward zero.
+    verdict: earns_place
+  - passage: For this example I'm gonna blur...
+    costs: The caveat distinguishing probability of change from the pain of change.
+    verdict: earns_place
+  - passage: expected pain = P(you'll have to change it)...
+    costs: The operational equation that defines expected pain.
+    verdict: earns_place
+  - passage: If you draw this out...
+    costs: The inverse relationship between upfront effort and expected pain.
+    verdict: earns_place
+  - passage: What you don't want to do...
+    costs: The concrete six-hour versus ten-minute planning tradeoff.
+    verdict: earns_place
+  - passage: You need to do this without overindexing...
+    costs: The guidance to zoom from product questions into technical feasibility when needed.
+    verdict: earns_place
+  - passage: This is what we mean by leverage...
+    costs: The practical steering rule for multi-phase planning.
+    verdict: earns_place
+  - passage: good luck.
+    costs: A negligible sign-off with no substantive burden.
+    verdict: earns_place
+  notes: 'This faithful edit gives readers a durable, legible version of an ephemeral X post while preserving its concrete leverage model: the 25-50% coding share, the 2-4-hour to 10-20-minute comparison, the expected-pain equation, and the product-to-technical planning example. The manuscript follows the source''s sequence by design, and every substantive passage earns its place.'
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    category: invented_claim
+    disposition: fix
+    note: |
+      The edition's author note identifies Dex Horthy as the founder of HumanLayer and describes the company as YC-backed. Neither biographical claim appears in the pinned source extraction, so it cannot be verified under this lens.
+  scores:
+    claim_support: 4
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: Checked every manuscript assertion against the pinned extraction; the author's biographical note is not stated in this piece's source.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking Leverage | Seeking Leverage | 1
+    category: heading_form
+    disposition: fix
+    note: |
+      This heading is in title case; headings in this piece should be sentence case.
+    suggestion: Seeking leverage
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | 25-50% | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      The range uses a hyphen instead of an en dash. Ranges should use en dashes consistently.
+    suggestion: 25–50%
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | 2-4 hours | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      The range uses a hyphen instead of an en dash.
+    suggestion: 2–4 hours
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | 10-20 minutes | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      The range uses a hyphen instead of an en dash.
+    suggestion: 10–20 minutes
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Let's assume if you yolo a two-sentence prompt into your factory | 1
+    category: grammar
+    disposition: editor_decision
+    note: |
+      "Let's assume if" is grammatically incomplete; the construction needs "that" before the conditional clause.
+    suggestion: Let's assume that if you yolo a two-sentence prompt into your factory
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | your chance of getting a fully-mergeable result is ~50%, the chance you have to rework it is 50% | 1
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      Two independent clauses are joined by a comma, creating a comma splice.
+    suggestion: your chance of getting a fully-mergeable result is ~50%; the chance you have to rework it is 50%
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | 2-3x faster | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      The range uses a hyphen instead of an en dash.
+    suggestion: 2–3x faster
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | **note** For this example I'm gonna blur | 1
+    category: label_missing
+    disposition: editor_decision
+    note: |
+      A labeled note appears inside the article prose. Editorial or authorial apparatus should not be printed as part of the article.
+    suggestion: Remove the note label and integrate the explanation into the prose.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | good luck. | 1
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      This sentence opens lowercase while the surrounding body sentences open capitalised. It reads as an isolated capitalization error, not a consistent convention.
+    suggestion: Good luck.
+  scores:
+    grammar: 2
+    typography: 2
+    consistency: 3
+  notes: |
+    Changes required because the piece contains one incorrect heading form, several hyphenated ranges, grammatical and punctuation errors, an in-body note label, and one lowercase sentence opening.
+shape:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    repair_from: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: opening
+    disposition: fix
+    note: |
+      The opening is publication context and a cross-reference rather than the
+      point of interest. The substantive argument begins only in the next
+      paragraph, so the piece clears its throat before making its case.
+    suggestion: Open with the leverage claim about planning, alignment, and verification.
+  - severity: major
+    article: pragmatic-leverage
+    locator: '- | It is referenced briefly in Why Software Factories Fail part 2: Turning the lights back on. | 1'
+    repair_from: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: orphan_referent
+    disposition: fix
+    note: |
+      The sentence points to a prior series and a named part that the piece
+      does not contain, leaving an external referent in the opening furniture.
+    suggestion: Remove the external cross-reference or establish the referenced material inside this piece.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | The 80/20 rule in AI coding leverage | 1
+    repair_from: The 80/20 rule in AI coding leverage | Let's assume if you yolo a two-sentence prompt into your factory, your chance of getting a fully-mergeable result is ~50%, the chance you have to rework it is 50%. | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The heading names the topic and invokes a rule, but it does not state the
+      section's argument about how planning effort changes expected rework pain.
+    suggestion: Make the heading state the leverage claim about planning effort and expected pain.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 2
+    ending: 3
+  notes: |
+    The piece progresses from the limits of coding-only acceleration through
+    expected pain and pragmatic planning, but its opening is meta-context and
+    contains an external referent before the argument begins.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The piece opens by explaining its publishing history rather than giving the
+      reader the argument. It is throat-clearing furniture before the useful claim.
+    suggestion: |
+      Open with the feature-shipping split or the leverage claim, and move this
+      context later or cut it.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | This is what we mean by leverage - and it requires being pragmatic. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This balanced, abstract clause announces an insight without adding a
+      concrete consequence; the surrounding examples have already shown what
+      leverage means.
+    suggestion: |
+      Replace it with the specific operational consequence of steering at each
+      planning phase, or remove it.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 3
+  notes: |
+    I heard a candid, technically grounded voice with useful examples, but the
+    opening pauses to explain the article's provenance and one later sentence
+    turns that concrete argument back into a generic definition.

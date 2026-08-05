@@ -56,3 +56,4 @@
 {"attempt":0,"label":"editorial r1 judge:shape","model":"codex:gpt-5.6-luna","seconds":23.7,"usd":0.0}
 {"attempt":0,"label":"editorial r1 judge:mechanics","model":"codex:gpt-5.6-luna","seconds":24.0,"usd":0.0}
 {"attempt":0,"label":"editorial r1 judge:craft","model":"codex:gpt-5.6-luna","seconds":47.8,"usd":0.0}
+{"attempt":0,"label":"editorial r2 rewrite","model":"codex:gpt-5.6-luna","seconds":32.5,"usd":0.0}

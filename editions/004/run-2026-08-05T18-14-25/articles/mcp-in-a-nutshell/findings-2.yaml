@@ -1,0 +1,192 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: 'The scope list: MCP Specification, SDKs, MCP Development Tools including MCP Inspector, and reference server implementations.'
+    reader_loses: Less awareness of the surrounding MCP ecosystem, but not the protocol's core operation.
+    verdict: defensible
+  - fact: MCP focuses only on context exchange and does not dictate how AI applications use LLMs or manage context.
+    reader_loses: A useful boundary around the protocol's scope.
+    verdict: defensible
+  - fact: The overview's advice to consult language-specific SDK documentation for implementation details.
+    reader_loses: A pointer for implementation work, not needed for this conceptual explainer.
+    verdict: defensible
+  - fact: Local STDIO servers typically serve one client, while remote Streamable HTTP servers typically serve many clients.
+    reader_loses: A scaling and deployment distinction.
+    verdict: defensible
+  - fact: The transport layer also handles connection establishment and message framing, and is conceptually the outer layer around the data layer.
+    reader_loses: Some architectural framing, while the manuscript still explains transport, authentication, and message format.
+    verdict: defensible
+  - fact: The exact JSON-RPC server/discover request and response exchanges, including supportedVersions and serverInfo fields.
+    reader_loses: Wire-level examples, but the manuscript names the method, metadata, response contents, version failure, and retry behavior.
+    verdict: defensible
+  - fact: The Python SDK discovery pseudo-code that registers a server when tools are available.
+    reader_loses: A concrete implementation sketch.
+    verdict: defensible
+  - fact: The example tool identifier calculator_arithmetic and the source's naming-pattern advice.
+    reader_loses: One naming example; the manuscript retains that the discovered name is the execution identifier.
+    verdict: defensible
+  - fact: 'The concrete tools/list response values resultType: complete and ttlMs indicating five-minute freshness, plus the detailed cache-scope rules.'
+    reader_loses: A precise caching example, while the manuscript retains the fields and their purpose.
+    verdict: defensible
+  - fact: The pseudo-code that aggregates tools from all MCP clients into a unified registry.
+    reader_loses: An implementation pattern for federated clients.
+    verdict: defensible
+  - fact: The complete weather_current tools/call exchange, including San Francisco, imperial units, the optional units default to metric, and the JSON-RPC request id.
+    reader_loses: A worked invocation and concrete argument semantics.
+    verdict: defensible
+  - fact: The source's exact tool-call response example and its explanatory distinction between plain text content and other content types.
+    reader_loses: A wire-level response example; the manuscript retains the content array and supported forms.
+    verdict: defensible
+  - fact: The pseudo-code routing a model-selected tool call to the appropriate MCP client.
+    reader_loses: A concrete application integration sketch.
+    verdict: defensible
+  - fact: The sampling/createMessage method name and the description of its former model-independent use.
+    reader_loses: A deprecated method identifier; the manuscript correctly states the deprecation and replacement guidance.
+    verdict: defensible
+  - fact: The exact subscriptions/listen request, including the JSON-RPC id and notifications filter structure.
+    reader_loses: A wire-format subscription example, while the manuscript preserves the method, stream, and filter concept.
+    verdict: defensible
+  - fact: The acknowledgement rule that unsupported notification types are omitted from the accepted filter.
+    reader_loses: A compatibility nuance.
+    verdict: defensible
+  - fact: The rule that the acknowledgement is the first message carrying the subscription ID, and that the ID equals the subscriptions/listen request's JSON-RPC id.
+    reader_loses: A precise correlation detail.
+    verdict: defensible
+  - fact: 'The source''s four explicit reasons notifications matter: dynamic environments, efficiency, consistency, and real-time collaboration.'
+    reader_loses: A categorized justification, while the manuscript retains best-effort freshness and refresh behavior.
+    verdict: defensible
+  - fact: The notification pseudo-code that refreshes tools and informs an active conversation's model.
+    reader_loses: An implementation sketch of the refresh loop.
+    verdict: defensible
+  - fact: The explicit statement that the notification pattern extends beyond tools to other primitives.
+    reader_loses: A broader generalization of the notification mechanism.
+    verdict: defensible
+  retentions:
+  - passage: Visual Studio Code is an MCP host.
+    costs: A concrete opening example occupies space, but it gives the abstract host/client/server split an immediately usable shape.
+    verdict: earns_place
+  - passage: The transport decides how those connections move.
+    costs: Transport detail takes a paragraph, but it lets readers distinguish local STDIO from remote HTTP and understand authentication.
+    verdict: earns_place
+  - passage: MCP is a stateless protocol.
+    costs: The metadata explanation costs space, but it is necessary to understand independent requests, discovery, and version recovery.
+    verdict: earns_place
+  - passage: Once the client knows what a server offers, it can inspect the primitives.
+    costs: The tools/resources/prompts taxonomy takes space, but it supplies the shared vocabulary the issue assumes.
+    verdict: earns_place
+  - passage: The client begins with tools/list.
+    costs: The listing paragraph is operational detail, but it identifies the method, schema, pagination, and caching concepts a reader needs to follow tool discovery.
+    verdict: earns_place
+  - passage: The client then sends tools/call.
+    costs: The execution paragraph spends space on metadata, exact names, arguments, and content responses; it is the core procedural example.
+    verdict: earns_place
+  - passage: A server can change its tools while a conversation is running.
+    costs: The subscription sequence takes substantial space, but it explains the otherwise easy-to-miss opt-in, acknowledgement, identifier, and refresh behavior.
+    verdict: earns_place
+  - passage: MCP's useful promise is therefore procedural.
+    costs: The closing synthesis restates the workflow, but it gives the article its own concise thesis and ties the pieces together.
+    verdict: earns_place
+  notes: |
+    This piece gives a reader a concise, procedural mental model of MCP—connect through a transport, carry per-request metadata, discover capabilities, call named primitives, and refresh them when they change—rather than making them assemble that workflow from the source's separate architecture and example sections.
+
+    The omissions are numerous but defensible for a faithful synthesis: the manuscript keeps the protocol's load-bearing concepts and operational method names while dropping wire-level JSON, pseudo-code, and secondary ecosystem context. No needed omission makes the remaining text misleading, so the piece is not over-compressed. The retained passages all earn their space; none is inert enough to trade for the omitted examples. The manuscript's section sequence (participants, transports, metadata/discovery, primitives, execution, elicitation/deprecations, notifications, synthesis) is a deliberate reorganization of the source's scope/layers/example structure, and its final procedural claim supplies a clear position.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every factual assertion, protocol term, version, example, and conclusion against the pinned architecture extraction; nothing in this piece was left unchecked.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | MCP in a Nutshell | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      The article title uses title case. Headings and titles should use sentence case; "Nutshell" should be lowercase.
+    suggestion: MCP in a nutshell
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 4
+  notes: |
+    One title uses title case instead of the required sentence case; the body is otherwise mechanically clean.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The piece presents a coherent progression from host and connection roles through transport, discovery, primitives, invocation, and capability updates, ending with a clear synthesis.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The data layer is where the practical work happens. | The data layer is where the practical work happens. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This is an abstraction stack and a definite-article equation: "the data layer"
+      is introduced as a place where "practical work happens" without naming the
+      work. Replace it with the concrete exchange this paragraph describes.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The data layer is where the practical work happens. | MCP is a stateless protocol. | 1
+    category: no_voice
+    disposition: fix
+    note: |
+      The voice disappears here as the prose shifts into an impersonal specification
+      recital. Re-enter through a concrete consequence for the client or reader
+      before stacking protocol rules.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: MCP's useful promise is therefore procedural. | MCP's useful promise is therefore procedural. | 1
+    category: weak_close
+    disposition: fix
+    note: |
+      The closing paragraph restates the article's procedure instead of leaving a
+      sharper consequence or question. End on the boundary between model access and
+      application control rather than announcing a summary.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: The client begins with `tools/list`. | The response can be paginated with a cursor and returns tool metadata including `name`, `title`, `description`, and `inputSchema`. | 1
+    category: passive
+    disposition: fix
+    note: |
+      "Can be paginated" hides the actor. Name the server or protocol behavior that
+      paginates the response.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: Clients that federate many servers can use progressive discovery instead of loading every tool at startup. | Clients that federate many servers can use progressive discovery instead of loading every tool at startup. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "Progressive discovery" is not defined for an engineer outside this subfield.
+      Explain the behavior in plain language when the term first appears.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: Clients that federate many servers can use progressive discovery instead of loading every tool at startup. | New implementations should call provider APIs directly for model access and use stderr or OpenTelemetry for logs. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "OpenTelemetry" arrives without definition. Add a brief identifier for the
+      logging and tracing system or remove the name.
+  scores:
+    voice: 3
+    sentence_variety: 3
+    economy: 3
+  notes: |
+    I heard a clear technical explainer become a specification recital in the data-layer
+    section, with a summary-heavy close and a few terms left inside the protocol's
+    vocabulary rather than the reader's.

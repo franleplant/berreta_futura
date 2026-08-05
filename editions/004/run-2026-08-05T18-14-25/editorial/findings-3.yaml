@@ -1,0 +1,63 @@
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    Verified clean mechanics: sentence case, grammar, punctuation, typography, and form are consistent.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The piece moves cleanly from prompt limits to MCP's boundary, security implications, and a concise concluding principle; its opening earns the argument and its ending lands.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: the-work-between-the-prompt-and-the-result
+    locator: '- | The Model Context Protocol (MCP) gives that handoff a shape. | 1'
+    category: no_voice
+    disposition: fix
+    note: |
+      The voice disappears here into procedural system prose: abstract nouns,
+      evenly balanced clauses, and no person making a judgment. The paragraph
+      reads like a protocol description rather than an editor thinking aloud.
+    suggestion: |
+      Put a visible human decision or consequence into the paragraph before
+      continuing with the protocol mechanics.
+  - severity: minor
+    article: the-work-between-the-prompt-and-the-result
+    locator: '- | Context becomes a boundary someone can inspect. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Context becomes a boundary" is an abstraction stack that sounds
+      declarative without showing what inspection enables.
+    suggestion: |
+      Name the concrete record, permission, or decision that makes the context
+      inspectable.
+  - severity: minor
+    article: the-work-between-the-prompt-and-the-result
+    locator: '- | Give an agent room to work, then make every opened door leave evidence. | 1'
+    category: passive
+    disposition: fix
+    note: |
+      The closing imperative has no named actor: it tells the reader to grant
+      room and impose evidence without saying who owns either action.
+    suggestion: |
+      Identify the operator or system responsible for granting access and
+      recording each action.
+  scores:
+    voice: 3
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    I heard a clear, compact argument that loses its human voice in the protocol
+    paragraph and ends with an ownerless imperative.

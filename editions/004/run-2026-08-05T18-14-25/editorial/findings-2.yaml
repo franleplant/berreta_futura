@@ -1,0 +1,66 @@
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    Verified clean grammar, punctuation, typography, heading form, and numerical
+    style throughout the editorial.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | Now run the same workflow at attack speed. | 1'
+    repair_from: '- | That pause turns context into a constraint. | 1'
+    category: missing_transition
+    disposition: fix
+    note: |
+      The piece jumps from a coding workflow shaped by MCP to an attack campaign without explaining how the example extends or contrasts with the preceding argument. The reader can infer the connection, but the pivot is abrupt.
+    suggestion: Add a sentence framing the attack-speed passage as a security contrast that demonstrates why every tool call needs constraints and records.
+  scores:
+    order: 4
+    coherence: 3
+    opening: 4
+    ending: 4
+  notes: |
+    The piece moves from prompt constraints through MCP to an attack-speed example and a closing security principle, but the transition into the attack example needs clarification.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: The work between the prompt and the result | MCP gives that handoff a shape. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "MCP" is central jargon that a competent engineer outside this subfield may
+      not know, and the editorial never expands or defines it.
+    suggestion: Define MCP on first use.
+  - severity: minor
+    article: editorial
+    locator: The work between the prompt and the result | Now run the same workflow at attack speed. | 1
+    category: passive
+    disposition: fix
+    note: |
+      The ownerless imperative tells the reader to run the workflow without naming
+      an actor, producing the house's instruction-like register.
+    suggestion: Name the actor who should run the workflow.
+  - severity: minor
+    article: editorial
+    locator: The work between the prompt and the result | Give an agent room to work, and leave a mark beside every door it opens. | 1
+    category: passive
+    disposition: fix
+    note: |
+      This second ownerless imperative shifts into advice without identifying who
+      should grant access or record the activity.
+    suggestion: Name the responsible operator in the sentence.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    I heard a concise, concrete editorial voice, with two unowned imperatives and
+    one undefined central acronym interrupting an otherwise human account.

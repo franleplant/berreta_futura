@@ -1,0 +1,54 @@
+result: changes_required
+findings:
+- severity: blocking
+  article: editorial
+  locator: '- | A two-sentence prompt can cut coding from hours to minutes. | 1'
+  repair_from: '- | A two-sentence prompt can cut coding from hours to minutes. | 1'
+  category: prose_table_of_contents
+  disposition: fix
+  note: |
+    The editorial introduces pragmatic-leverage, mcp-in-a-nutshell, and frontier-lab-agent-intrusion one after another. That three-piece tour makes the editorial a contents walk-through rather than a single governing argument.
+- severity: major
+  article: pragmatic-leverage
+  locator: Seeking leverage | Using AI only to write the code takes the 2-4 hours of coding time down to 10-20 minutes, but it does not accelerate anything else here. | 1
+  repair_from: Seeking leverage | Even before AI, only 25-50% of the time to ship a feature was writing the code itself. | 1
+  category: weak_piece
+  disposition: fix
+  note: |
+    pragmatic-leverage is the weakest commission for this issue. Its planning-and-rework advice does not substantially develop the edition's systems, protocols, or operational thesis, so it should not have been commissioned in this form.
+- severity: major
+  article: frontier-lab-agent-intrusion
+  locator: '- | The practical response remains concrete: isolate evaluations, narrow trust boundaries, use short-lived credentials, block metadata access, and correlate behavior quickly enough to keep up. | 1'
+  repair_from: '- | The practical response remains concrete: isolate evaluations, narrow trust boundaries, use short-lived credentials, block metadata access, and correlate behavior quickly enough to keep up. | 1'
+  category: redundancy
+  disposition: fix
+  note: |
+    frontier-lab-agent-intrusion says, "The practical response remains concrete: isolate evaluations, narrow trust boundaries, use short-lived credentials, block metadata access, and correlate behavior quickly enough to keep up." mcp-in-a-nutshell makes the same control-boundary point: "The model can reach tools and context through MCP, but the application remains the gatekeeper." Consolidate or differentiate these claims.
+- severity: minor
+  article: edition
+  category: cover_promise
+  disposition: fix
+  note: |
+    The cover line "The Systems Around the Model" and subtitle "Protocols, evaluations, architectures, and the operational work that turns model capability into dependable systems" are accurate but generic enough to fit almost any systems issue. The cover should promise the specific argument about the boundaries and operational controls between model intent and dependable results.
+- severity: minor
+  article: pragmatic-leverage
+  locator: The 80/20 rule in AI coding leverage | Good luck. | 1
+  repair_from: The 80/20 rule in AI coding leverage | Good luck. | 1
+  category: outlier
+  disposition: fix
+  note: |
+    pragmatic-leverage is the sole faithful_edit and uses a markedly conversational register, including "yolo," "I'm gonna," and the sign-off "Good luck." The other pieces are technical syntheses with operational prose, making this article an outlier in mode, voice, and difficulty.
+- severity: minor
+  article: edition
+  category: credulity
+  disposition: fix
+  note: |
+    Every piece treats its central proposition as important and actionable; none supplies a serious counterargument, cost, or failure case. Add one article or passage that pushes back on the controls-and-leverage thesis so the issue tests its argument rather than only affirming it.
+scores:
+  through_line: 4
+  editorial_strength: 2
+  running_order: 3
+  balance: 3
+  cover_promise: 2
+notes: |
+  This issue argues that dependable AI work is created by the boundaries and operational controls around a model, but it does not yet hold together as assembled because the editorial tours three pieces and one commission sits outside that argument.
