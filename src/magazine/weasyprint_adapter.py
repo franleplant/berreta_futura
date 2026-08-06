@@ -2296,15 +2296,9 @@ def _pin_opener_fields(tree: Element, edition: Edition) -> None:
                     title_lines=len(lines),
                     density=_ILLUSTRATED_OPENER_COMPACT,
                 )
-                if (
-                    compact_height + _ILLUSTRATED_OPENER_PANGO_RESERVE_POINTS
-                    > _ILLUSTRATED_OPENER_PAGE_HEIGHT_POINTS
-                ):
-                    raise ValidationError(
-                        f"Article {declared.id}'s opening paragraph cannot fit its "
-                        "illustrated opener page at compact density; shorten that "
-                        "paragraph rather than splitting the opener"
-                    )
+                # A paragraph too long even for compact density is not an
+                # error: it breaks onto the next page and the opener keeps
+                # its composition.
                 header.set("data-opener-density", "compact")
             _set_illustrated_opener_title(header, size)
             # This composition flows naturally and closes the page after its
