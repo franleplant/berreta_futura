@@ -1,8 +1,6 @@
 ---
 source_id: src-hassabis-frontier-ai-2026
 content_mode: faithful_edit
-source_body_sha256: b585b330faa6c961eb4e6eada869b782fb01396cbebe877842e7f1973da3c486
-rights_status: private_reference
 ---
 
 This is a pivotal moment in human history. Artificial General Intelligence (AGI), a system that exhibits all the cognitive capabilities the brain has, is probably only a few short years away. When we look back on this time in the decades to come, I think we will realise we were standing in the foothills of the singularity - nothing less than the dawning of a new age for humanity.

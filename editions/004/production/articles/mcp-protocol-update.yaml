@@ -4,16 +4,12 @@ piece_id: mcp-protocol-update
 content_mode: faithful_synthesis
 status: drafting
 produced_at: '2026-08-02T13:53:54+00:00'
-inputs_sha256: 7fa55b2b2b07b956c50395fb0187eaf47d72c5bd76b0f2f76d3625730a7e5e30
-manuscript_sha256: 1a9251b2aba432d981221a5eb61511a9352e11e15de63a1e2de0322dfceba410
 rounds:
 - round: 1
   result: changes_required
-  manuscript_sha256: 1a9251b2aba432d981221a5eb61511a9352e11e15de63a1e2de0322dfceba410
   writer:
     role: writer
     prompt_path: prompts/faithful-synthesis.md
-    prompt_sha256: 1bbcd7a51079b8540ee72c83f3410be3505cbe5afff9b1799f2e174ad87edd6a
     backend: agent
     model: null
     argv:
@@ -24,10 +20,7 @@ rounds:
     - agent
     - --submit
     - mcp-protocol-update/r1-writer
-    - --work-sha256
-    - 22be302464eedb3cd125ae6bc44a8aec4f45e548b06b846017f93aa70b311fae
     duration_seconds: 0.0
-    output_sha256: eb8df1cd6fcfd900cb9aea2534954687e8a4632905ec73070630aadb583fe9f1
   gate_failures: []
   anchors_reconciled: []
   judges: {}

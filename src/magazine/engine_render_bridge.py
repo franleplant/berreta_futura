@@ -240,7 +240,6 @@ def _render_manifest(
                     "effective_ppi": placement.effective_ppi,
                     "caption": placement.caption,
                     "credit": placement.credit,
-                    "rights_status": placement.rights_status,
                 }
                 for placement in layout.figure_placements
             ],

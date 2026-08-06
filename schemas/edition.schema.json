@@ -110,17 +110,6 @@
           "tail_art_path": {"type": "string", "minLength": 1},
           "minimum_reader_pages": {"type": "integer", "minimum": 1, "maximum": 7},
           "source_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}},
-          "source_body_sha256": {
-            "description": "SHA-256 of each source's committed extraction body: one hex digest for a single-source article, otherwise a mapping keyed by source id. Optional here because released editions predate committed extractions; the collecting edition must pin every source it declares, and validation enforces that.",
-            "oneOf": [
-              {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-              {
-                "type": "object",
-                "minProperties": 1,
-                "additionalProperties": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
-              }
-            ]
-          },
           "manuscript": {"type": "string"},
           "opener_art": {
             "type": "object",
@@ -137,23 +126,16 @@
             "maxItems": 3,
             "items": {
               "type": "object",
-              "required": ["id", "decision", "source_id", "asset_id", "caption", "alt_text", "anchor", "layout", "criteria", "rationale"],
+              "required": ["id", "source_id", "path", "caption", "alt_text", "anchor", "layout"],
               "properties": {
                 "id": {"type": "string", "minLength": 1},
-                "decision": {"const": "include"},
                 "source_id": {"type": "string", "minLength": 1},
-                "asset_id": {"type": "string", "minLength": 1},
+                "path": {"type": "string", "minLength": 1},
                 "caption": {"type": "string", "minLength": 1},
+                "credit": {"type": "string"},
                 "alt_text": {"type": "string", "minLength": 1},
                 "anchor": {"type": "string", "minLength": 1},
-                "layout": {"enum": ["evidence_band", "column_plate"]},
-                "criteria": {
-                  "type": "array",
-                  "minItems": 1,
-                  "uniqueItems": true,
-                  "items": {"enum": ["important", "useful", "beautiful", "cool"]}
-                },
-                "rationale": {"type": "string", "minLength": 1}
+                "layout": {"enum": ["evidence_band", "evidence_band_prose", "adaptive_band", "compact_band", "column_plate", "landscape_plate", "landscape_plate_after"]}
               }
             }
           }

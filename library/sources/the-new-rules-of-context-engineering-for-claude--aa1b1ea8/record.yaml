@@ -1,148 +1,15 @@
-schema_version: 1
 id: the-new-rules-of-context-engineering-for-claude--aa1b1ea8
 title: The New Rules of Context Engineering for Claude 5 Models
 author: Thariq
-canonical_url: https://x.com/trq212/status/2080710971228918066
-submitted_url: https://x.com/trq212/status/2080710971228918066
+url: https://x.com/trq212/status/2080710971228918066
 captured_at: '2026-07-26T22:12:40Z'
-publication_date: '2026-07-24'
-kind: web
-status: captured
-content_hash: null
-raw_captures:
-- id: 36ee6309f236ecd0506f76c973bb4eb64beaa1abbcdddf8bcc66b9bec8a4798d
-  path: raw/36ee6309f236ecd0506f76c973bb4eb64beaa1abbcdddf8bcc66b9bec8a4798d/manifest.json
-  method: authenticated_chrome_x_article_text_and_sanitized_media_views
-  captured_at: '2026-07-26T22:12:40Z'
-  artifact_count: 10
-  byte_count: 218966
-- id: 015ddd23f2024c92bf3f962dc71b6c532e39000a2b2fc284f4fd9d299e9b6fc0
-  path: raw/015ddd23f2024c92bf3f962dc71b6c532e39000a2b2fc284f4fd9d299e9b6fc0/manifest.json
-  method: authenticated_chrome_source_media_clean_crops
-  captured_at: '2026-07-26T22:17:28Z'
-  artifact_count: 10
-  byte_count: 549128
-- id: ea53bb693f7443c38bdd95c2199b072ae47de3e3f243482dcc39175a159eabf0
-  path: raw/ea53bb693f7443c38bdd95c2199b072ae47de3e3f243482dcc39175a159eabf0/manifest.json
-  method: browser_verified_x_article_original_media
-  captured_at: '2026-07-28T09:50:43Z'
-  artifact_count: 2
-  byte_count: 124250
-provenance:
-- relation: primary_material
-  url: https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
-- relation: primary_material
-  url: https://claude.com/blog/a-harness-for-every-task-dynamic-workflows-in-claude-code
-- relation: primary_material
-  url: https://claude.com/blog/a-field-guide-to-claude-fable-finding-your-unknowns
-rights:
-  status: unknown
-  intended_use: private_reference
-  attribution_required: true
-  public_reprint_allowed: false
-media_reviews:
-- capture_id: 015ddd23f2024c92bf3f962dc71b6c532e39000a2b2fc284f4fd9d299e9b6fc0
-  status: media_curated
-  assets:
-  - id: raster-002-0d7d13dc
-    artifact_path: media/002.png
-    artifact_sha256: 0d7d13dcd261944c722a7d1c794ee29be2332efdd0324122c9f122d078c0a4cc
-    mime_type: image/png
-    creator: Thariq
-    credit: 'Diagram by Thariq; source: The New Rules of Context Engineering for Claude 5 Models.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  - id: raster-003-8559f94f
-    artifact_path: media/003.png
-    artifact_sha256: 8559f94f6d0a577ef0707a463d6e09b82b577697f086b389113feca27dfb2453
-    mime_type: image/png
-    creator: Thariq
-    credit: 'Diagram by Thariq; source: The New Rules of Context Engineering for Claude 5 Models.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  - id: raster-004-5ac8f428
-    artifact_path: media/004.png
-    artifact_sha256: 5ac8f4280a26eeece31de1ed4f68ca162f1ae144356eda6822a6d3203c243c31
-    mime_type: image/png
-    creator: Thariq
-    credit: 'Diagram by Thariq; source: The New Rules of Context Engineering for Claude 5 Models.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  note: Automatic curation selected 3 of 5 candidates under editorial-impact-v4; decisions are hash-pinned
-    in 015ddd23f2024c92bf3f962dc71b6c532e39000a2b2fc284f4fd9d299e9b6fc0.curation.json.
-- capture_id: 36ee6309f236ecd0506f76c973bb4eb64beaa1abbcdddf8bcc66b9bec8a4798d
-  status: media_curated
-  assets:
-  - id: raster-002-cc72eed6
-    artifact_path: media/002.png
-    artifact_sha256: cc72eed6b40a3d1e7dfd60e4697c3347a7f1b8dde2cfba343c8b81f0da378dc8
-    mime_type: image/png
-    creator: Thariq
-    credit: 'Diagram by Thariq; source: The New Rules of Context Engineering for Claude 5 Models.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  - id: raster-003-06d54bf7
-    artifact_path: media/003.png
-    artifact_sha256: 06d54bf743f8c8928f08d2ae4a820b51efcf66f2809545c95c6656fb022c7390
-    mime_type: image/png
-    creator: Thariq
-    credit: 'Diagram by Thariq; source: The New Rules of Context Engineering for Claude 5 Models.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  - id: raster-004-2eeb472c
-    artifact_path: media/004.png
-    artifact_sha256: 2eeb472cc0477dd4ff1c8e91d748265f8487812e370ea5c0d98461e60a8a8f62
-    mime_type: image/png
-    creator: Thariq
-    credit: 'Diagram by Thariq; source: The New Rules of Context Engineering for Claude 5 Models.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  note: Automatic curation selected 3 of 5 candidates under editorial-impact-v4; decisions are hash-pinned
-    in 36ee6309f236ecd0506f76c973bb4eb64beaa1abbcdddf8bcc66b9bec8a4798d.curation.json.
-- capture_id: ea53bb693f7443c38bdd95c2199b072ae47de3e3f243482dcc39175a159eabf0
-  status: media_curated
-  assets:
-  - id: raster-001-7b66ba87
-    artifact_path: media/002.jpg
-    artifact_sha256: 7b66ba87ff76c4b19eab01343485df12cc0b42ce3b6f10a0e3236789aaa8b05a
-    mime_type: image/jpeg
-    creator: Thariq
-    credit: 'Diagram by Thariq; source: The New Rules of Context Engineering for Claude 5 Models.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  note: Automatic curation selected 1 of 1 candidates under editorial-impact-v4; decisions are hash-pinned
-    in ea53bb693f7443c38bdd95c2199b072ae47de3e3f243482dcc39175a159eabf0.curation.json.
-metadata:
-  tags:
-  - ai-agents
-  - claude
-  - context-engineering
-  - progressive-disclosure
-  - skills
-  synopsis: 'Thariq describes simplifying Claude Code context for newer models: replacing rigid rules
-    with judgment, examples with better interfaces, upfront context with progressive disclosure, repeated
-    instructions with clear tool descriptions, and monolithic memory with purpose-built mechanisms.'
-notes: Complete X Article captured through the user-authenticated session with source-ordered embedded
-  media evidence. Linked Anthropic and Claude primary references are preserved as provenance; raw artifacts
-  exclude browser-session data.
+published_at: '2026-07-24'
+tags:
+- ai-agents
+- claude
+- context-engineering
+- progressive-disclosure
+- skills
+synopsis: 'Thariq describes simplifying Claude Code context for newer models: replacing rigid rules with
+  judgment, examples with better interfaces, upfront context with progressive disclosure, repeated instructions
+  with clear tool descriptions, and monolithic memory with purpose-built mechanisms.'

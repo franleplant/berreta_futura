@@ -2,9 +2,6 @@
 source_id: open-weights-and-american-ai-leadership-7aa6038f
 content_mode: faithful_edit
 label: FAITHFUL EDIT
-source_body_sha256:
-  open-weights-and-american-ai-leadership-7aa6038f: ffdf007cce5434f26b3e23c8698a0c64665bd4afb5e04027715243b827981aaf
-  open-weight-models-are-essential-to-a-healthy-ai-e7845a41: 902ebece437a6156bb3e620db9dc7cd84c102a146c1f272f552add00a9591ec8
 ---
 
 > Open-weight models are essential to a healthy AI ecosystem. Together with others across our industry, we are outlining a path for open-weight models to strengthen American competitiveness and expand economic opportunity, while protecting national security.

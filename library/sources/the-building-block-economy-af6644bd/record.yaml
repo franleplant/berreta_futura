@@ -1,43 +1,12 @@
-schema_version: 1
 id: the-building-block-economy-af6644bd
 title: The Building Block Economy
 author: Mitchell Hashimoto
-canonical_url: https://x.com/mitchellh/status/2041566958681014418
-submitted_url: https://x.com/mitchellh/status/2041566958681014418
+url: https://x.com/mitchellh/status/2041566958681014418
 captured_at: '2026-07-21T14:47:11Z'
-publication_date: '2026-04-07'
-kind: web
-status: captured
-content_hash: null
-raw_captures:
-- id: 5f13c33cddb4dbc122a34aa6dacb44a8626ad45eaab3c7f5c7276728fc7258dc
-  path: raw/5f13c33cddb4dbc122a34aa6dacb44a8626ad45eaab3c7f5c7276728fc7258dc/manifest.json
-  method: Authenticated Chrome X Article plus rendered public primary blog and submitted-post captures;
-    sanitized, no session data.
-  captured_at: '2026-07-21T14:47:11Z'
-  artifact_count: 6
-  byte_count: 1538138
-provenance:
-- relation: primary_material
-  url: https://x.com/i/article/2041548775328829440
-- relation: primary_material
-  url: https://mitchellh.com/writing/building-block-economy
-rights:
-  status: unknown
-  intended_use: private_reference
-  attribution_required: true
-  public_reprint_allowed: false
-media_reviews:
-- capture_id: 5f13c33cddb4dbc122a34aa6dacb44a8626ad45eaab3c7f5c7276728fc7258dc
-  status: media_rejected
-  assets: []
-  note: 'Automatic curation rejected all candidates: no_semantic_source_context (3).'
-metadata:
-  tags:
-  - ai-agents
-  - open-source
-  - software-economics
-  synopsis: How agentic software factories increase the value of high-quality building blocks, accelerate
-    derivative software, outsource R&D, and disadvantage closed commercial components.
-notes: Submitted as an X post linking an X Article. The author also published the same primary essay on
-  mitchellh.com; both authenticated X text and the public canonical blog rendering are archived.
+published_at: '2026-04-07'
+tags:
+- ai-agents
+- open-source
+- software-economics
+synopsis: How agentic software factories increase the value of high-quality building blocks, accelerate
+  derivative software, outsource R&D, and disadvantage closed commercial components.

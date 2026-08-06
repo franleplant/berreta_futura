@@ -2,7 +2,6 @@ schema_version: 1
 language: es
 source_language: en
 locale: es
-base_copy_sha256: b0f516d8a8a1b4f2f49f1eb7ba4c3c2bf47578e350eba61931759f740c141ac5
 title: The Systems Around the Model
 subtitle: Protocols, evaluations, architectures, and the operational work that turns model capability into dependable
   systems
@@ -17,7 +16,6 @@ closing_plate_titles:
 - The Useful Boundary
 editorial:
   path: manuscript/editorial.md
-  source_sha256: d66061fd6afea62eb83f76c401a6ff0f836977a01567edb18407272bed5b47f2
 articles:
 - id: frontier-lab-agent-intrusion
   title: Anatomy of a Frontier Lab Agent Intrusion
@@ -26,7 +24,6 @@ articles:
   author_note: Hugo Larcher, Adrien Carreira, raphael g, and Christophe Rannou are contributors publishing through
     Hugging Face.
   manuscript: articles/frontier-lab-agent-intrusion.md
-  source_sha256: 88845887a4b1c81d8d677fb6086d42855faa7b74219fe4fd9978de115d88fd79
   figures:
   - id: campaign-timeline
     caption: The recovered campaign compresses into a 4.5-day timeline of foothold, command and control, lateral
@@ -35,15 +32,12 @@ articles:
       Lab Agent Intrusion: A Technical Timeline of the July 2026 Incident.'
     alt_text: A campaign timeline shows event volume and phase activity across four and a half days.
     anchor: The kill chain
-    source_caption_sha256: 4d10de4196ba1a89478cb37753dbbb502640d6444e28829f68bc2929727178b2
-    source_credit_sha256: c2d7ee9fa2fafa90c075dc70c409d9ce9b2ac011a98eb073cb6512b9bce11a43
 - id: eval-engineering
   title: Eval Engineering
   short_title: Eval Engineering
   display_emphasis: Eval
   author_note: Argona is the publishing name of @Argona0x, an AI-focused X account.
   manuscript: articles/eval-engineering.md
-  source_sha256: 19e3e3f9ea0aeb2397090c323df0bd5af4859bb94dcad93db033fb959d69a3ac
   figures:
   - id: eval-engine
     caption: Evaluation becomes engineering when production traces, failure labels, and repeatable graders form
@@ -51,23 +45,18 @@ articles:
     credit: 'Diagram by Argona; source: Eval Engineering: the step that turns a $200 model into a $200,000 system.'
     alt_text: A source diagram presents the first stage of an evaluation-engineering workflow.
     anchor: Thermometer, thermostat
-    source_caption_sha256: 849b740adb60433fcd49bcf483b7fa1ef65748bf1f86cb3624daf3fb85ecbfbc
-    source_credit_sha256: d7edf84b73f053caabd4715a7c3ddb39363237e244699803b8a728fcd7fbf3af
   - id: eval-routing
     caption: 'Scores become useful only when they change the next edge: retry, reject, quarantine, block, or route
       to human review.'
     credit: 'Diagram by Argona; source: Eval Engineering: the step that turns a $200 model into a $200,000 system.'
     alt_text: A source diagram maps evaluation failures to routing decisions.
     anchor: What a score is allowed to do
-    source_caption_sha256: cf47ae3c32fb691eee442fd77cd5b1b91f8e8f14a911cd4081c13d4f0805cf1f
-    source_credit_sha256: 1a297db745b0ea6eb13991421746ead4d1563b80fc2cf1e39ad627a794286d8b
 - id: pragmatic-leverage
   title: Pragmatic Leverage in the Software Factory
   short_title: Pragmatic Leverage
   display_emphasis: Leverage
   author_note: Dex Horthy is the founder of HumanLayer, a YC-backed developer-tools company.
   manuscript: articles/pragmatic-leverage.md
-  source_sha256: 5406f40e9aa11d55dfe2105ba025f01a93721bf6664283561a2ac04899388305
   figures:
   - id: delivery-time
     caption: Coding is only one fraction of feature delivery; alignment, review, rework, testing, and verification
@@ -75,22 +64,17 @@ articles:
     credit: 'Diagram by Dex Horthy; source: Pragmatic Leverage in the Software Factory.'
     alt_text: A source diagram breaks feature delivery time into coding and surrounding work.
     anchor: Seeking leverage
-    source_caption_sha256: e9050764d4735865af4f28cb33fc0aeac036eb2a7a4f1134cbdc93a9bd328f31
-    source_credit_sha256: c6aaa9e73f59451de8e9adae1419b0b8ef5ca37461c06ae57689952108444fec
   - id: minimal-prompt-risk
     caption: A minimal prompt saves preparation time but leaves a large chance of costly rework.
     credit: 'Diagram by Dex Horthy; source: Pragmatic Leverage in the Software Factory.'
     alt_text: A source diagram relates a two-sentence prompt to expected rework.
     anchor: The 80/20 rule in AI coding leverage
-    source_caption_sha256: 95277e9236e0b1c2f375ce2bd16e0c01e75d857da04223453d94323a87f68b5e
-    source_credit_sha256: 5f40f8afb785a81dd32f9e9b3ab025d2e05735c0ede822bb8eec925f873ee2f6
 - id: from-gpt2-to-kimi3
   title: From GPT-2 to KimiK3
   short_title: GPT-2 to KimiK3
   display_emphasis: KimiK3
   author_note: ali works on inference at Baseten and studies engineering at the University of Waterloo.
   manuscript: articles/from-gpt2-to-kimi3.md
-  source_sha256: 670c0340033bc79eae878a46b2bd2da44b59a9d7e35ebb7de950c08c59c3afdc
   figures:
   - id: gpt2-baseline
     caption: 'GPT-2 supplies the recognizable baseline: token and position embeddings, transformer blocks, normalization,
@@ -98,33 +82,26 @@ articles:
     credit: 'Diagram by ali; source: 22580: From GPT2 to Kimi3, Explained.'
     alt_text: A source diagram outlines the GPT-2 decoder-only architecture.
     anchor: GPT-2 and the cache
-    source_caption_sha256: 6d0a5d4ad46da8507d2a69f7a68141a9607119ee20b8b286950e1d65a335704d
-    source_credit_sha256: d2dc3b94c213628d4b463e88535f567f659c9188ca3bb098f0116581e1697189
   - id: attention-progression
     caption: The worklog follows attention from full pairwise comparison toward recurrent state and delta-rule correction.
     credit: 'Diagram by ali; source: 22580: From GPT2 to Kimi3, Explained.'
     alt_text: A source diagram compares stages in the evolution of attention mechanisms.
     anchor: From linear attention to DeltaNet
-    source_caption_sha256: bafc29791379bc8efe258dffc87fe5fc5c25183c34476bf24565e9505d28a540
-    source_credit_sha256: e8c40d323cd29dad7662e35d63be00efc2364d3bd9928d3355799e903dd8e9e4
 - id: factory-systems-problem
   title: The Factory Is a Systems Problem
   short_title: Factory Is a Systems Problem
   display_emphasis: Systems
   author_note: Geoffrey Huntley is the creator of the Ralph loop.
   manuscript: articles/factory-systems-problem.md
-  source_sha256: c95e0e817833c44a8698badf0ea832c05fc95998305d0dc19a83193c1244df3e
 - id: mcp-in-a-nutshell
   title: MCP in a Nutshell
   short_title: MCP in a Nutshell
   display_emphasis: MCP
   manuscript: articles/mcp-in-a-nutshell.md
-  source_sha256: 1c3fb05fe4cdb22b7561106eca61106599ed9fa80cbae69a5837f817427b9f0a
 - id: mcp-protocol-update
   title: The MCP Protocol Update
   short_title: MCP Protocol Update
   display_emphasis: Protocol
   author_note: David Soria Parra and Den Delimarsky are lead maintainers of the Model Context Protocol.
   manuscript: articles/mcp-protocol-update.md
-  source_sha256: 71e8cd2d3a067f2457dd7daf15bf1efb86fb1ea98e7fc56adc4fba53baa9bad3
 sections: []

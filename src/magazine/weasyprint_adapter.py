@@ -4149,7 +4149,6 @@ def _figure_placement(
         effective_ppi=round(ppi, 1),
         caption=str(asset.caption or asset.alt_text),
         credit=str(asset.credit or ""),
-        rights_status=str(asset.rights_status or "unknown"),
     )
 
 

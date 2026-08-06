@@ -2,7 +2,6 @@
 source_id: loop-engineering-f0ddfd76
 content_mode: faithful_synthesis
 label: SÍNTESIS FIEL
-source_body_sha256: 624d44585e591681ee548b14eab033af3804c66e68cae256d1b3e626203c86f0
 ---
 
 La ingeniería de ciclos consiste en reemplazarte como la persona que escribe los prompts del agente: diseñas el sistema que lo hace en tu lugar, una meta recursiva donde la IA itera hasta terminar. Creo que este puede ser el futuro de cómo trabajamos con agentes de programación; pero es temprano, soy escéptico y hay que vigilar el coste en tokens.

@@ -57,11 +57,6 @@ class HtmlAsset:
     credit: str | None = None
     anchor: str | None = None
     layout: str | None = None
-    rights_status: str | None = None
-    bundle_sha256: str | None = None
-    artifact_sha256: str | None = None
-    criteria: tuple[str, ...] = ()
-    rationale: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -334,7 +329,6 @@ def _render_article(
         asset = _asset(
             id=f"article-tail-{article.id}", role="article_tail", path=article.tail_art,
             alt_text=f"Tail art for {article.title}", article_id=article.id,
-            rights_status="author_owned",
         )
         assets.append(asset)
         lines.extend(
@@ -377,7 +371,6 @@ def _render_illustrated_article(
         alt_text=opener_art.alt_text,
         article_id=article.id,
         credit=opener_art.credit,
-        rights_status="author_owned",
     )
     assets: list[HtmlAsset] = [art_asset]
     source_link = _render_source_link(article)
@@ -453,7 +446,6 @@ def _render_illustrated_article(
             path=article.tail_art,
             alt_text=f"Tail art for {article.title}",
             article_id=article.id,
-            rights_status="author_owned",
         )
         assets.append(asset)
         lines.extend(
@@ -550,7 +542,7 @@ def _render_closing_plates(edition: Edition, assets: list[HtmlAsset]) -> tuple[s
     for index, plate in enumerate(edition.closing_plates, start=1):
         asset = _asset(
             id=f"closing-plate-{index}", role="closing_plate", path=plate.art_path,
-            alt_text=plate.title, rights_status="author_owned",
+            alt_text=plate.title,
         )
         assets.append(asset)
         plates.append(
@@ -576,19 +568,17 @@ def _render_figure(edition: Edition, article_id: str, figure: Figure) -> tuple[s
         id=f"figure-{article_id}-{figure.id}", role="figure", path=figure.path,
         alt_text=figure.alt_text, article_id=article_id, figure_id=figure.id,
         source_id=figure.source_id, caption=figure.caption, credit=figure.credit,
-        anchor=figure.anchor, layout=figure.layout, rights_status=figure.rights_status,
-        bundle_sha256=figure.bundle_sha256, artifact_sha256=figure.artifact_sha256,
-        criteria=figure.criteria, rationale=figure.rationale,
+        anchor=figure.anchor, layout=figure.layout,
     )
     return (
         '<figure data-figure-id="{id}" data-article-id="{article}" data-source-id="{source}" '
-        'data-anchor="{anchor}" data-layout="{layout}" data-rights-status="{rights}" '
+        'data-anchor="{anchor}" data-layout="{layout}" '
         'data-figure-label="{word}">'
         '<img src="{src}" alt="{alt}"><figcaption><span class="caption">{caption}</span>'
         '<span class="credit">{credit}</span></figcaption></figure>'.format(
             id=_attr(figure.id), article=_attr(article_id), source=_attr(figure.source_id),
             anchor=_attr(figure.anchor), layout=_attr(figure.layout),
-            rights=_attr(figure.rights_status), src=_attr(asset.src), alt=_attr(figure.alt_text),
+            src=_attr(asset.src), alt=_attr(figure.alt_text),
             caption=_text(figure.caption), credit=_text(figure.credit),
             word=_attr(_ui(edition, "figure")),
         ),

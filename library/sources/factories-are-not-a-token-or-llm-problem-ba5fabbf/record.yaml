@@ -1,55 +1,11 @@
-schema_version: 2
 id: factories-are-not-a-token-or-llm-problem-ba5fabbf
 title: Factories Are Not a Token or LLM Problem
 author: Geoffrey Huntley
-author_profile:
-  note: Geoffrey Huntley is the creator of the Ralph loop.
-  evidence:
-  - url: https://x.com/GeoffreyHuntley
-    capture_id: 5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88
-canonical_url: https://x.com/GeoffreyHuntley/status/2082526705160478906
-submitted_url: https://x.com/GeoffreyHuntley/status/2082526705160478906
+url: https://x.com/GeoffreyHuntley/status/2082526705160478906
 captured_at: '2026-07-29T21:40:25-03:00'
-publication_date: '2026-07-29'
-kind: web
-status: captured
-content_hash: null
-raw_captures:
-- id: 28229f2cb0a62496b6d89fca809f7167f052c7378405e8cd671ce7c46d48c16e
-  path: raw/28229f2cb0a62496b6d89fca809f7167f052c7378405e8cd671ce7c46d48c16e/manifest.json
-  method: authenticated_browser_dom_export
-  purpose: article
-  source_url: https://x.com/GeoffreyHuntley/status/2082526705160478906
-  captured_at: '2026-07-29T21:40:25-03:00'
-  artifact_count: 1
-  byte_count: 452
-- id: 5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88
-  path: raw/5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88/manifest.json
-  method: author_identity_profile
-  purpose: author_identity
-  source_url: https://x.com/GeoffreyHuntley
-  captured_at: '2026-07-29T21:40:25-03:00'
-  artifact_count: 1
-  byte_count: 359
-provenance: []
-rights:
-  status: unknown
-  intended_use: private_reference
-  attribution_required: true
-  public_reprint_allowed: false
-media_reviews:
-- capture_id: 28229f2cb0a62496b6d89fca809f7167f052c7378405e8cd671ce7c46d48c16e
-  status: no_media
-  assets: []
-  note: Automatic curation found no source images or substantive inline diagrams.
-- capture_id: 5245f3c0dbd67cdda33fea07b21de4b8b4733eee03fbf0751860cdc373958c88
-  status: media_rejected
-  assets: []
-  note: Author identity evidence is provenance, not article artwork.
-metadata:
-  tags:
-  - agents
-  - software-factories
-  - systems-engineering
-  synopsis: ''
-notes: ''
+published_at: '2026-07-29'
+tags:
+- agents
+- software-factories
+- systems-engineering
+synopsis: ''

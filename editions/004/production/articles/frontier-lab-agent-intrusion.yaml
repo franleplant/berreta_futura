@@ -4,16 +4,12 @@ piece_id: frontier-lab-agent-intrusion
 content_mode: faithful_synthesis
 status: drafting
 produced_at: '2026-08-02T13:53:42+00:00'
-inputs_sha256: 52a46746f5c026151b3a7a5f91220b512acf1a70603b8359353fc024cf1944aa
-manuscript_sha256: 75453e42ceedb583a71eb31778b2db37fad2a920289a08a3d2f937f7e9e0e6dc
 rounds:
 - round: 1
   result: changes_required
-  manuscript_sha256: 75453e42ceedb583a71eb31778b2db37fad2a920289a08a3d2f937f7e9e0e6dc
   writer:
     role: writer
     prompt_path: prompts/faithful-synthesis.md
-    prompt_sha256: 1bbcd7a51079b8540ee72c83f3410be3505cbe5afff9b1799f2e174ad87edd6a
     backend: agent
     model: null
     argv:
@@ -24,10 +20,7 @@ rounds:
     - agent
     - --submit
     - frontier-lab-agent-intrusion/r1-writer
-    - --work-sha256
-    - feea5363346605a67c5189276965e9ff569b0eb1a648ac6f528704f740679519
     duration_seconds: 0.0
-    output_sha256: 85442d59aeba990c4f54a7c8efb9dce6b59423d12e38749ab7a4d305413cad4f
   gate_failures: []
   anchors_reconciled:
   - From one pod to cluster-admin

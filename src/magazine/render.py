@@ -787,7 +787,6 @@ class _Typesetter:
                 effective_ppi=round(ppi, 1),
                 caption=str(self._figure_value(figure, "caption")).strip(),
                 credit=str(self._figure_value(figure, "credit")).strip(),
-                rights_status=str(self._figure_value(figure, "rights_status", "unknown")),
             )
         )
         return top - total_height
@@ -1069,7 +1068,6 @@ class _Typesetter:
                 effective_ppi=round(ppi, 1),
                 caption=caption,
                 credit=credit,
-                rights_status=str(self._figure_value(figure, "rights_status", "unknown")),
             )
         )
         self.y = self.frame_bottom

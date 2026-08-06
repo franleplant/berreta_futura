@@ -1,122 +1,15 @@
-schema_version: 1
 id: why-software-factories-fail-f53679d7
 title: Why Software Factories Fail
 author: Dex Horthy
-canonical_url: https://x.com/dexhorthy/status/2080697380379427275
-submitted_url: https://x.com/dexhorthy/status/2080697380379427275
+url: https://x.com/dexhorthy/status/2080697380379427275
 captured_at: '2026-07-26T22:12:54Z'
-publication_date: '2026-07-24'
-kind: web
-status: captured
-content_hash: null
-raw_captures:
-- id: d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55
-  path: raw/d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55/manifest.json
-  method: authenticated_chrome_x_article_text_links_and_source_ordered_media
-  captured_at: '2026-07-26T22:12:54Z'
-  artifact_count: 31
-  byte_count: 1355822
-- id: 0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa
-  path: raw/0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa/manifest.json
-  method: authenticated_chrome_source_media_clean_crops
-  captured_at: '2026-07-26T22:17:35Z'
-  artifact_count: 31
-  byte_count: 5237465
-provenance:
-- relation: primary_material
-  url: https://x.com/dexhorthy/article/2080697380379427275
-rights:
-  status: unknown
-  intended_use: private_reference
-  attribution_required: true
-  public_reprint_allowed: false
-media_reviews:
-- capture_id: 0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa
-  status: media_curated
-  assets:
-  - id: raster-002-ff7a41f6
-    artifact_path: media/002.png
-    artifact_sha256: ff7a41f6423600e9300d95ee7f317fd671921eb312772c9fecc1b543bab5bbdd
-    mime_type: image/png
-    creator: Dex Horthy
-    credit: 'Diagram by Dex Horthy; source: Why Software Factories Fail.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  - id: raster-003-a2229a31
-    artifact_path: media/003.png
-    artifact_sha256: a2229a314f047d5c04a83ac24b68f9cfb5dce52fca9f32cc8937f0897f89995f
-    mime_type: image/png
-    creator: Dex Horthy
-    credit: 'Diagram by Dex Horthy; source: Why Software Factories Fail.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  - id: raster-004-cfb1f567
-    artifact_path: media/004.png
-    artifact_sha256: cfb1f567ce9a15a45f29ec2062b2a37e2ff4c1bed237f4c56220035183932fa2
-    mime_type: image/png
-    creator: Dex Horthy
-    credit: 'Diagram by Dex Horthy; source: Why Software Factories Fail.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  note: Automatic curation selected 3 of 26 candidates under editorial-impact-v4; decisions are hash-pinned
-    in 0871295890a26bda5436ae4676eb26027388ea1ff22071f88bcb118decba67fa.curation.json.
-- capture_id: d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55
-  status: media_curated
-  assets:
-  - id: raster-002-6b1bf860
-    artifact_path: media/002.png
-    artifact_sha256: 6b1bf8604684935678e303600ee94095dc162e306dd5c6f475e21bb0091d1cf4
-    mime_type: image/png
-    creator: Dex Horthy
-    credit: 'Diagram by Dex Horthy; source: Why Software Factories Fail.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  - id: raster-003-3df2d1b7
-    artifact_path: media/003.png
-    artifact_sha256: 3df2d1b7098245933a9c976400364e8485d4a7df3b77e3a3ea6d81cb6f226db1
-    mime_type: image/png
-    creator: Faros AI
-    credit: 'Chart by Faros AI; immediate source: Dex Horthy, Why Software Factories Fail.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  - id: raster-004-557cbba8
-    artifact_path: media/004.png
-    artifact_sha256: 557cbba86a87c4c443eefed64d8909d3353fe52f09a7ceefe193688cc95af88a
-    mime_type: image/png
-    creator: Dex Horthy
-    credit: 'Diagram by Dex Horthy; source: Why Software Factories Fail.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  note: Automatic curation selected 3 of 26 candidates under editorial-impact-v4; decisions are hash-pinned
-    in d28f96cfb505c6b3af76dbd81e302ca5412f0765adb9cd5aeeb64b4c4a490a55.curation.json.
-metadata:
-  tags:
-  - ai-agents
-  - evaluation
-  - harness-engineering
-  - maintainability
-  - software-factories
-  synopsis: 'Dex Horthy argues that faster agent loops and automated review cannot solve a model-training
-    gap around long-term codebase maintainability: today’s fast verifiers reward passing tests, while
-    architectural damage appears over months or years.'
-notes: Submitted X Article captured through the user-authenticated session. Complete rendered text, 89
-  source links, 24 article images, and two embedded video thumbnails are archived in source order; raw
-  artifacts exclude cookies, credentials, profiles, and browser-session storage.
+published_at: '2026-07-24'
+tags:
+- ai-agents
+- evaluation
+- harness-engineering
+- maintainability
+- software-factories
+synopsis: 'Dex Horthy argues that faster agent loops and automated review cannot solve a model-training
+  gap around long-term codebase maintainability: today’s fast verifiers reward passing tests, while architectural
+  damage appears over months or years.'
