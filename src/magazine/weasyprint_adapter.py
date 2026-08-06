@@ -4555,8 +4555,14 @@ def _collect_field_overflows(box: Any, page_number: int, failures: list[str]) ->
 
 
 def _validate_illustrated_opener_integrity(document: Any) -> None:
-    """Refuse an illustrated header that fragmented across reader pages."""
-    pages_by_header: dict[int, tuple[str, set[int]]] = {}
+    """Refuse an illustrated header whose *chrome* fragmented across pages.
+
+    The standfirst is exempt by design: a long opening paragraph continues on
+    the next page — the paragraph is the opener's only elastic part.  Art,
+    label, title, tick and credit block must still hold to the opener page,
+    and any of those reaching a later page is the refusal this gate keeps.
+    """
+    headers: dict[int, dict[str, Any]] = {}
     for page_number, page in enumerate(document.pages, start=1):
         for box in _walk_boxes(page._page_box):
             element = getattr(box, "element", None)
@@ -4567,20 +4573,41 @@ def _validate_illustrated_opener_integrity(document: Any) -> None:
                 or element is None
             ):
                 continue
+            entry = headers.setdefault(id(element), {"element": element, "pages": {}})
+            entry["pages"].setdefault(page_number, []).append(box)
+    split = []
+    for entry in headers.values():
+        pages = sorted(entry["pages"])
+        if len(pages) <= 1:
+            continue
+        element = entry["element"]
+        standfirst_ids = {
+            id(descendant)
+            for standfirst in element.iter()
+            if "standfirst" in (standfirst.get("class") or "").split()
+            for descendant in standfirst.iter()
+        }
+        chrome_fragmented = False
+        for page_number in pages[1:]:
+            for fragment in entry["pages"][page_number]:
+                for box in _walk_boxes(fragment):
+                    boxed = getattr(box, "element", None)
+                    if boxed is None or boxed is element:
+                        continue
+                    if id(boxed) not in standfirst_ids:
+                        chrome_fragmented = True
+        if chrome_fragmented:
             title = next(
                 ("".join(item.itertext()).strip() for item in element.iter("h1")),
                 "untitled article",
             )
-            pages_by_header.setdefault(id(element), (title, set()))[1].add(page_number)
-    split = [
-        f"{title!r} across pages {', '.join(str(page) for page in sorted(pages))}"
-        for title, pages in pages_by_header.values()
-        if len(pages) > 1
-    ]
+            split.append(
+                f"{title!r} across pages {', '.join(str(page) for page in pages)}"
+            )
     if split:
         raise ValidationError(
-            "An illustrated opener must keep its complete first paragraph on one "
-            "page: " + "; ".join(split)
+            "An illustrated opener may only continue its first paragraph onto the "
+            "next page; other header content fragmented: " + "; ".join(split)
         )
 
 
