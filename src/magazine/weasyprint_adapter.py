@@ -2298,7 +2298,14 @@ def _pin_opener_fields(tree: Element, edition: Edition) -> None:
                 )
                 # A paragraph too long even for compact density is not an
                 # error: it breaks onto the next page and the opener keeps
-                # its composition.
+                # its composition. Mark the overflow so the stylesheet lets
+                # the body follow the runover lines on that page instead of
+                # opening yet another one.
+                if (
+                    compact_height + _ILLUSTRATED_OPENER_PANGO_RESERVE_POINTS
+                    > _ILLUSTRATED_OPENER_PAGE_HEIGHT_POINTS
+                ):
+                    header.set("data-opener-overflow", "true")
                 header.set("data-opener-density", "compact")
             _set_illustrated_opener_title(header, size)
             # This composition flows naturally and closes the page after its
