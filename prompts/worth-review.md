@@ -81,11 +81,18 @@ article says is `edition-review.md`'s question.
      have to type or look up, `blocking` when its absence makes a remaining
      sentence untrue or misleading, `major` otherwise.
    - `defensible` — real information, correctly judged not worth its space.
-   Sweep the operational details deliberately, because they are the ones a
-   condensation drops first and a reader misses hardest: the identifiers, method
-   names, commands, fields, endpoints and code someone would have to type. If we
-   dropped those, we made a worse reference while claiming to be a shorter one,
-   and that is `stripped_utility`, not a defensible saving.
+   Sweep the operational details that carry meaning: a method name that makes a
+   mechanism legible, a field the argument turns on, a flag whose existence is
+   the point. Dropping those makes a worse reference while claiming to be a
+   shorter one, and that is `stripped_utility`.
+   Setup material is not that, and this is a print magazine. Install commands,
+   package URLs, CLI phase lists, directory layouts and copy-paste sequences
+   cannot be used from a page and the source is one click away for anyone who
+   wants them: they are `defensible` omissions by default. Name them in the
+   ledger, never demand them back, and never file `stripped_utility` because a
+   piece declined to print a setup manual. A truncated identifier is worse than
+   an absent one — if you see an elided URL or command, file it and say to drop
+   it whole.
    Then one summary judgment: taken together, do the `needed` omissions mean the
    piece cut past the bone? If so, `over_compressed`, `major`, and say in the
    note which two or three restorations would fix it.

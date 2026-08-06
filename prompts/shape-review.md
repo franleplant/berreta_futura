@@ -64,7 +64,15 @@ came from the source.
 
 `opening`, `argument_order`, `missing_transition`, `ending`, `duplication`,
 `orphan_referent`, `running_example`, `heading_not_a_claim`,
-`furniture_placement`.
+`furniture_placement`, `no_sections`.
+
+`no_sections`: a piece over roughly 600 words with no `##` headings runs as an
+unbroken column over several printed pages, where a reader cannot find their
+place, skim back, or see the argument's joints — and a figure has nothing to
+anchor to. File it `major`, and name in the suggestion the two or three places
+the piece already turns, because a heading belongs at a turn and not every three
+paragraphs by the clock. Count the headings before you judge anything else; it
+is the one defect here that is invisible in a manuscript and obvious on a page.
 
 Severity: `blocking` when the piece does not work as arranged: the argument's
 order cannot be recovered in one read, the opening does not earn the piece, the

@@ -39,6 +39,21 @@ here at all. Hemingway's restraint and omission at work, and what stops the
 piece becoming the source's shape with the words trimmed, which `worth` files
 as `source_shaped`.
 
+## When the source is half tutorial
+
+Some sources are an argument with a build guide bolted on: a thesis, then
+installation, configuration and step-by-step procedure. Retelling that whole
+shape at a third of its length produces the worst of both — too thin to build
+from, too cluttered to read — and it is how a good source becomes a pointless
+article.
+
+Take the argument. The procedure is what the source is for, and the reader who
+wants it has the link. You may keep the one or two steps the argument actually
+turns on, as prose inside the sentence that explains why they matter, and you
+name what you left behind so `worth` can see the choice was made rather than
+missed. A reader should finish knowing what the author believes, what convinced
+them, and what it would cost to act — not holding a half-copy of a manual.
+
 ## Length is a ceiling, never a target
 
 Seven A5 reader pages is the hard maximum, including the opener illustration,
@@ -90,11 +105,19 @@ manuscript.
      leaderboard, a version count, or a figure whose sentence reads the same
      without it goes. A surviving number gets the sentence saying what it cost
      or what it bought.
-   - **Identifiers.** A command, method, flag or filename the reader would have
-     to type is not decoration. Keep it inside the sentence that explains it.
-     Stripping the operational surface to save words made the 004 explainer a
-     worse reference than its source, and `worth` files that as
-     `stripped_utility`.
+   - **Identifiers.** Keep an identifier when the argument needs it: a method
+     name that makes a mechanism legible, a flag whose existence is the point,
+     a field the reader will meet again. Keep it inside the sentence that
+     explains it.
+     Setup material is the opposite and does not belong in print. Install
+     commands, package URLs, CLI phase lists, directory layouts and
+     copy-paste sequences cannot be used from a page — nobody types
+     `npx skills add ...` off A5 paper — and the source is one click away for
+     anyone who wants to build the thing. Drop them and spend the space on the
+     argument and its evidence. A piece that turns into a setup manual has
+     failed even when every command is accurate.
+     Never print a truncated identifier. An elided URL or command occupies
+     space and cannot be used: print it whole or drop it.
    - **Code.** Reproduce a fenced block character for character or drop it
      whole: a trimmed, re-indented or stitched block misrepresents the source.
    - **Machine-readable samples.** JSON, headers and query strings are the one
@@ -157,6 +180,12 @@ with a paragraph, never a heading, so the illustrated opener can set it. Use
 the author's own words where they exist, and may not assert a framing the author
 did not offer: if you cannot title a section without adding an idea, keep the
 source's heading.
+
+**Above roughly 600 words a piece must carry section headings**, one every two
+to four paragraphs. At this trim size that is several pages, and an unbroken
+column of prose over several pages is a wall: the reader cannot find their place,
+cannot skim back to a point, and cannot see the argument's joints. Headings are
+also where figures anchor, so a piece without them cannot carry one.
 
 That first paragraph is set on the illustrated opener page itself, beside the
 art, the title and the credit block, and it is the only elastic thing on that
