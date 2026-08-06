@@ -9,4 +9,6 @@ do not reference the articles I provided you, do not enumerate them, don't repea
 
 Use correct capitalization, punctuation, and spacing.
 
+Keep it under 200 words: it must fit one printed page.
+
 use less words.
