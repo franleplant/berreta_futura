@@ -1,0 +1,94 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The illustrative HTTP requests and JSON payloads for initialize, tools/call, and InputRequiredResult
+    reader_loses: Exact wire syntax, but not the concepts or field names needed to understand the change.
+    verdict: defensible
+  - fact: The individual SEP numbers and repository/channel references
+    reader_loses: Pointers for implementation research, not substance needed to grasp the revision.
+    verdict: defensible
+  - fact: The detailed authorization caveats, including the future rejection of responses missing iss
+    reader_loses: Forward-looking implementation nuance beyond the article's core summary.
+    verdict: defensible
+  - fact: Instructions to open specification issues or use the contributor Discord
+    reader_loses: Support routes that are one click away and not needed on a printed overview.
+    verdict: defensible
+  - fact: The full changelog and draft-specification navigation
+    reader_loses: Reference material rather than an idea necessary to understand the release.
+    verdict: defensible
+  retentions:
+  - passage: A remote MCP server that once needed sticky sessions... can now sit behind a plain round-robin load balancer.
+    costs: A short opening that translates the specification into an immediate deployment consequence.
+    verdict: earns_place
+  - passage: Removing protocol state does not prevent an application from keeping state...
+    costs: Space spent resolving the most likely misconception about statelessness.
+    verdict: earns_place
+  - passage: Extensions get a place to grow
+    costs: A dedicated section that makes MCP Apps, Tasks, and extension governance legible as one change.
+    verdict: earns_place
+  - passage: A protocol that can change without breaking every deployment
+    costs: A closing governance frame that explains why this breaking release is intended to reduce future disruption.
+    verdict: earns_place
+  - passage: 'For maintainers, the next step is concrete: run the candidate against your real workloads before July 28.'
+    costs: A final action readers can take immediately.
+    verdict: earns_place
+  notes: |
+    Approved because this piece gives readers the source's dense release announcement as an operational map: what becomes stateless, what must migrate, which extensions and schema changes matter, and what maintainers should test before the final release. The omissions are reference-level material, and every retained section earns its space.
+evidence:
+  result: approved
+  findings: []
+  notes: Checked every claim, quotation, number, heading, and furniture item against the complete pinned extraction; no unsupported or unverifiable assertion remained in the piece.
+mechanics:
+  result: approved
+  findings: []
+  notes: The manuscript is mechanically clean, with consistent capitalization, grammar, punctuation, spelling, typography, and sample formatting throughout.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: Authorization and schemas move closer to practice | Tool schemas now use full JSON Schema 2020-12. | 1
+    repair_from: Authorization and schemas move closer to practice | Removal requires a separate SEP. | 1
+    category: missing_transition
+    disposition: fix
+    note: |
+      The section jumps from the deprecation lifecycle to schema validation without
+      signaling the change in subject, making the section read as a catalog of
+      unrelated changes.
+    suggestion: Add a transition that marks the move from lifecycle policy to schema-validation changes, or separate the topics into distinct sections.
+  - severity: major
+    article: mcp-protocol-update
+    locator: Extensions get a place to grow | This release includes MCP Apps. | 1
+    repair_from: '- | A remote MCP server that once needed sticky sessions, a shared session store, and deep packet inspection at the gateway can now sit behind a plain round-robin load balancer. | 1'
+    category: running_example
+    disposition: fix
+    note: |
+      The opening server scenario disappears after the first section, while later
+      sections introduce MCP Apps, Tasks, authorization deployments, deprecations,
+      and schemas as separate examples. The argument therefore becomes a list of
+      features rather than one case carried through the revision.
+    suggestion: Carry the opening server scenario through the extensions, authorization, and governance changes, using at most one contrasting example.
+  notes: |
+    I verified that the piece has a recoverable overall progression and a landing
+    ending, but its middle section needs a clearer subject transition and its
+    examples do not form a sustained through-line.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Extensions get a place to grow | SEP-2133 gives them reverse-DNS identifiers, capability negotiation, independent versions, delegated maintainers, and an Extensions Track that can move an experiment toward official status. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "SEP-2133" is an unexplained internal proposal identifier. A competent engineer outside the MCP subfield cannot infer what it denotes from the sentence.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Authorization and schemas move closer to practice | The authorization specification now requires clients to validate the `iss` parameter in authorization responses, a mitigation for mix-up attacks that matter in MCP’s single-client, many-server deployments. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      The sentence introduces the `iss` parameter and "mix-up attacks" without defining either term, making the security change opaque to readers outside this protocol niche.
+  notes: |
+    I heard a confident, technically grounded account from maintainers, with a clear human voice throughout; two specialized security and governance terms arrive before the piece gives readers enough footing to understand them.

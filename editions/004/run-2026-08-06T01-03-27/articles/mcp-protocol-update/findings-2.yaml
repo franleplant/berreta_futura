@@ -1,0 +1,78 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The full before-and-after HTTP request examples, including the exact MCP-Protocol-Version header and JSON payloads
+    reader_loses: A reader cannot copy the wire-level examples, but the print synthesis still conveys the protocol changes and required operation headers.
+    verdict: defensible
+  - fact: The release candidate's draft-spec location, changelog instructions, issue tracker, and contributor Discord channel
+    reader_loses: No immediate pointer for implementation questions or reporting problems; those resources remain one click away in the source.
+    verdict: defensible
+  - fact: The source's framing that this is MCP's largest revision since launch and its list of roadmap deliverables
+    reader_loses: Some historical scale and roadmap context, without affecting understanding of the revision's substance.
+    verdict: defensible
+  retentions:
+  - passage: The opening paragraph's compact production-deployment summary
+    costs: A short setup that gives readers the practical stakes before the detailed sections.
+    verdict: earns_place
+  - passage: The closing paragraphs repeating the locked release candidate, validation window, and explicit-state question
+    costs: A brief recap, but it turns the technical summary into an implementer-facing deadline and action.
+    verdict: earns_place
+  notes: This piece gives a reader an implementation-oriented map of the specification's stateless redesign, operational consequences, extensions, authorization changes, schema rules, and migration timeline that the source's announcement presents in a less condensed form. Its explicit judgment is that state must move into application payloads before the breaking release, giving the synthesis a clear position.
+evidence:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Extensions have somewhere to grow | Production use exposed enough problems that it now belongs outside the specification. | 1
+    repair_from: Extensions have somewhere to grow | Production use exposed enough problems that it now belongs outside the specification. | 1
+    category: invented_claim
+    disposition: fix
+    note: |
+      The source says production use "surfaced enough redesign" for Tasks to move into an extension. It does not characterize that experience as exposing "problems."
+  - severity: major
+    article: mcp-protocol-update
+    locator: Deprecation becomes a schedule | The remaining question is whether your client and server can carry their state explicitly before July 28. | 1
+    repair_from: Deprecation becomes a schedule | The remaining question is whether your client and server can carry their state explicitly before July 28. | 1
+    category: unreached_conclusion
+    disposition: fix
+    note: |
+      The source explains the stateless redesign, explicit application handles, and the July 28 publication date, but it does not reach this deadline-framed conclusion that every client and server must carry state explicitly before that date.
+  notes: |
+    Checked the title, headings, body assertions, protocol details, numbers, names, qualifications, and conclusions against the complete pinned extraction; I could not check them against any source outside that extraction. Two unsupported or overstated conclusions require revision.
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    The manuscript is mechanically clean, with consistent grammar, punctuation, typography, heading form, and number styling.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    I verified that the piece presents a coherent progression from the stateless redesign through operational changes, extensions, authorization and schemas, deprecation, and the release call to action.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: Any request can reach any instance | Under the 2025-11-25 specification, a client first established a session with `initialize`. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three consecutive sentences use the same compound-explanatory shape: "Under the 2025-11-25 specification, a client first established a session with `initialize`." "The server returned an `Mcp-Session-Id`, and every later request carried it." "That identifier pinned the client to the server instance that issued it, which meant that a horizontally scaled deployment needed sticky routing and a shared session store." The technical explanation becomes audible as a template.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Deprecation becomes a schedule | The release candidate is locked. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "The release candidate is locked." is a portentous short sentence whose dramatic finality adds no information beyond the testing deadline in the next sentence.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Deprecation becomes a schedule | A Standards Track SEP cannot reach Final status until a matching scenario appears in the conformance suite, the same suite used to score official SDK tiers. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "SEP" is never expanded or defined, leaving a competent engineer outside the MCP standards process to infer the term from context.
+  notes: |
+    I heard a confident, concrete technical explainer whose voice briefly turns templated in the session-history paragraph and slightly theatrical at the close.

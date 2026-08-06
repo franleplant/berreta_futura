@@ -1,0 +1,44 @@
+piece: factory-systems-problem
+rounds:
+- round: 1
+  words: 377
+  loop_findings: 12
+  all_findings: 14
+- round: 2
+  words: 403
+  loop_findings: 13
+  all_findings: 14
+- round: 3
+  words: 371
+  loop_findings: 3
+  all_findings: 8
+state: rounds_exhausted
+open_findings:
+- lens: mechanics
+  severity: major
+  article: factory-systems-problem
+  locator: '- | sandboxing, a monorepo, reproducible builds, CI/CD, identity and secret management, and smashing corporate friction | 1'
+  category: grammar
+  disposition: fix
+  note: |
+    The list begins with noun phrases but ends with the gerund "smashing," breaking its grammatical parallelism. The prose is an editorial synthesis here, so the editors should repair the construction.
+  suggestion: sandboxing, a monorepo, reproducible builds, CI/CD, identity and secret management, and the smashing of corporate friction
+- lens: mechanics
+  severity: major
+  article: factory-systems-problem
+  locator: '- | Lots of bad memories here; the tech implementation is not great | 1'
+  category: grammar
+  disposition: fix
+  note: |
+    "Lots of bad memories here" is a sentence fragment with no verb. The semicolon does not make the fragment grammatical.
+  suggestion: There are lots of bad memories here; the tech implementation is not great
+- lens: shape
+  severity: major
+  article: factory-systems-problem
+  locator: '- | n8n was a silly idea, which I''ve always suspected was developed by young folks in Silicon Valley | 1'
+  repair_from: '- | I must stress that factories are not a token or LLM problem. | 1'
+  category: missing_transition
+  disposition: fix
+  note: |
+    The piece moves from the general systems-and-culture thesis into a specific attack on n8n without establishing why service-bus design is the relevant example. The argument can be followed, but the jump makes the final paragraph feel imported rather than earned.
+  suggestion: Add a transition that frames service-bus determinism as a concrete systems-engineering example of the thesis.

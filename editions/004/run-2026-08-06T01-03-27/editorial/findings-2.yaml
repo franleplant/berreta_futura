@@ -1,0 +1,78 @@
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | Different failures, one shape | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      "Different failures, one shape" is a sentence fragment with no verb. This is editorial text, so the editors should supply a complete construction.
+    suggestion: 'Different failures shared one shape:'
+  notes: |
+    Changes required because one sentence fragment appears in the editorial text.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | Evaluation engineering puts a verdict on the next edge of a run. | 1'
+    repair_from: '- | A dataset upload carried commands. | 1'
+    category: running_example
+    disposition: fix
+    note: |
+      The piece opens with several failures, then moves through evaluation,
+      planning, factory construction, an intrusion, MCP, and Kimi memory.
+      Because no concrete case carries from failure to remedy, the argument
+      reads as a catalogue rather than a single progression.
+    suggestion: Choose the dataset-upload failure as the running example and return to it as each remedy makes the next move legible.
+  notes: |
+    I verified the piece's opening, sequence of claims, transitions, examples, ending, and furniture placement; the central structural weakness is the absence of a carried example.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: make-the-next-move-legible
+    locator: Make the next move legible | A dataset upload carried commands. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      The opening stacks three subject-plus-finite-verb report sentences:
+      "A dataset upload carried commands." "Thirty-eight green tests still left
+      a product unusable." "Elsewhere, a service bus was being asked to make
+      every decision nondeterministic." The clipped cadence becomes audible as
+      a template before the fourth sentence breaks it.
+    suggestion: Vary or combine the first three sentences so the opening does not stack the same report shape.
+  - severity: minor
+    article: make-the-next-move-legible
+    locator: Make the next move legible | MCP carries continuity in an explicit argument instead of hiding it in a session. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "MCP" arrives as an unexplained acronym, although the paragraph depends
+      on the reader understanding what system it names.
+    suggestion: Spell out MCP on first use and briefly identify the mechanism it carries.
+  - severity: major
+    article: make-the-next-move-legible
+    locator: Make the next move legible | A smarter component may help. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "A smarter component may help." is an empty hedge, and the following
+      "durable advantage" keeps the conclusion abstract rather than naming the
+      concrete plumbing the piece has just described.
+    suggestion: Cut this sentence and state the specific advantage produced by the signal, revocation, or test.
+  - severity: minor
+    article: make-the-next-move-legible
+    locator: Make the next move legible | Before asking an agent to do more, ask what signal can stop it, what state can be revoked, and which failure will become a test. | 1
+    category: passive
+    disposition: fix
+    note: |
+      The ownerless imperative gives the reader an instruction without naming
+      who is responsible for defining the stop signal, revocation state, and
+      test.
+    suggestion: Name the actor responsible for defining those safeguards.
+  notes: |
+    I heard a sharp, technically literate editorial whose opening cadence and
+    closing metaphor hold, but whose middle leans on repeated declaratives and
+    a few vague abstractions.

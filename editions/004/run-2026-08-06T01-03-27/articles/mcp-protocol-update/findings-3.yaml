@@ -1,0 +1,79 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: mcp-protocol-update
+    locator: Any request can reach any instance | Protocol version, client information, and capabilities travel in `_meta` on each request, while a new `server/discover` method lets clients fetch server capabilities when they need them. | 1
+    repair_from: Any request can reach any instance | Protocol version, client information, and capabilities travel in `_meta` on each request, while a new `server/discover` method lets clients fetch server capabilities when they need them. | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source's request example carries `MCP-Protocol-Version` as a header, while client information and capabilities move into `_meta`. Saying that protocol version also travels in `_meta`, and omitting the version header, misinforms an implementer about how to construct a request.
+    suggestion: Distinguish the `MCP-Protocol-Version` header from the client information and capabilities in `_meta`, and retain the required header in the explanation.
+  omissions:
+  - fact: The concrete JSON request and response examples for initialize, tools/call, and InputRequiredResult
+    reader_loses: A reader cannot see the exact wire shape, though the surrounding prose and field names convey the conceptual change.
+    verdict: defensible
+  - fact: The SEP numbers attached to the protocol changes
+    reader_loses: A reader loses direct cross-reference identifiers for looking up each proposal.
+    verdict: defensible
+  - fact: The instructions to consult the draft specification, changelog, issue tracker, and contributor Discord
+    reader_loses: Readers lose the source's follow-up channels, which are useful online but not essential to this print explanation.
+    verdict: defensible
+  - fact: The source's explicit note that clients should eventually reject authorization responses missing `iss`
+    reader_loses: The forward-looking migration warning is absent, but the current validation requirement and its security reason remain.
+    verdict: defensible
+  retentions:
+  - passage: The release candidate is locked. SDK maintainers and client implementers have until July 28 to test it against real workloads, with Tier 1 SDKs expected to ship support during that window.
+    costs: A closing timeline recap repeats the opening date and validation window, but it turns them into an actionable implementation deadline.
+    verdict: earns_place
+  - passage: The protocol no longer manages that state for you, but it doesn’t prevent you from managing it yourself.
+    costs: A short qualification that prevents readers from mistaking protocol statelessness for application statelessness.
+    verdict: earns_place
+  - passage: These are annotation-only deprecations.
+    costs: A brief caveat that preserves the important fact that existing methods continue to work.
+    verdict: earns_place
+  notes: |
+    Changes required because the explanation of where protocol version information travels makes the implementation guidance misleading.
+evidence:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Extensions have somewhere to grow | Production use exposed enough problems that it now belongs outside the specification. | 1
+    category: invented_claim
+    disposition: fix
+    note: |
+      The source says production use "surfaced enough redesign" for Tasks to belong as an extension rather than in the specification. It does not characterize those findings as "problems."
+  notes: |
+    I checked every factual assertion and item of furniture against the pinned extraction; I could not verify anything outside that extraction.
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    No mechanics errors found in this faithful synthesis; capitalization, grammar, punctuation, typography, headings, labels, and formatting are clean.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    The piece presents a coherent progression from stateless transport through
+    operations, extensions, authorization, schemas, deprecation, and rollout.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Deprecation becomes a schedule | A Standards Track SEP cannot reach Final status until a matching scenario appears in the conformance suite, the same suite used to score official SDK tiers. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "SEP" is not defined, leaving a competent engineer outside the MCP community to infer the acronym.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Deprecation becomes a schedule | For implementers targeting `2026-07-28`, the expectation is that future revisions, using extensions and deprecation windows, can be adopted without rewriting transport or lifecycle code. | 1
+    category: passive
+    disposition: fix
+    note: |
+      "The expectation is that" and "can be adopted" hide the actor and turn the closing argument into abstract, ownerless prose.
+  notes: |
+    I heard a confident, technically fluent maintainer voice throughout, with two localized moments where unexplained terminology and abstract passive phrasing interrupt the otherwise direct account.

@@ -1,0 +1,38 @@
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    Mechanics are clean throughout the editorial, with consistent capitalization, grammar, punctuation, typography, and number style.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    I verified that the editorial moves clearly from a concrete failure to its broader pattern, practical guidance, and concluding principle.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: The Memory That Makes Speed Safe | An agent can test thousands of paths, but its useful path disappears among the failures unless each step leaves evidence and the next step can read it. | 1
+    category: repeated_shape
+    disposition: fix
+    note: |
+      Five consecutive subject-plus-verb explanatory sentences make the middle paragraph sound generated: "An agent can test thousands of paths...", "An evaluation loop turns a bad trace into a permanent test.", "A deterministic workflow keeps a wrong branch from becoming a company-wide habit.", "Explicit handles let a stateless protocol carry a relationship forward.", and "Even a model's internal memory now needs rules for what to retain, revise, and forget."
+    suggestion: Break the run by grounding at least one sentence in a specific observed failure or consequence.
+  - severity: major
+    article: editorial
+    locator: The Memory That Makes Speed Safe | Record the request, the action, the expected outcome, and the boundary that should have stopped it. | 1
+    category: passive
+    disposition: fix
+    note: |
+      The practical paragraph delivers four consecutive ownerless imperatives: "Record...", "Turn...", "Give...", and "Keep...". Without a named actor, the advice reads like system instructions rather than an editor addressing a responsible person.
+    suggestion: Name the actor responsible for carrying out these instructions.
+  - severity: minor
+    article: editorial
+    locator: The Memory That Makes Speed Safe | The failure was that nobody had taught the system which light mattered. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "The failure was that" is a definite-article equation that delays the concrete fact and gives the sentence a system-generated cadence.
+    suggestion: 'Lead directly with the actor and action: ''Nobody had taught the system which light mattered.'''
+  notes: I heard a confident, concrete editorial voice that briefly hardens into patterned explanation and ownerless advice.

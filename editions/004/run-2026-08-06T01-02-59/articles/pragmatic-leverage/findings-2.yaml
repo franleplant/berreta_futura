@@ -1,0 +1,53 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The post is an addendum to a prior series and is briefly referenced in Why Software Factories Fail part 2.
+    reader_loses: Background about the article's publication context, not needed to understand or apply its argument.
+    verdict: defensible
+  - fact: The section heading 'The 80/20 rule in AI coding leverage.'
+    reader_loses: A label for the section's theme, while the examples and conclusion remain intact.
+    verdict: defensible
+  - fact: The source's editorial note marker before the expected-pain caveat.
+    reader_loses: Only a formatting cue; the caveat itself is retained.
+    verdict: defensible
+  retentions:
+  - passage: The opening three paragraphs contrasting coding acceleration with planning and alignment.
+    costs: Several paragraphs, but they establish the practical thesis and quantify the claimed leverage.
+    verdict: earns_place
+  - passage: The expected-pain definition and button-style example.
+    costs: A short explanatory aside, but it prevents the percentages from being read as literal probabilities.
+    verdict: earns_place
+  - passage: The closing 'good luck.'
+    costs: A small amount of space that adds no argument or guidance.
+    verdict: cut
+  notes: |
+    Approved because the manuscript gives readers a compact operational model: AI's leverage comes from planning and incremental steering that reduce expected rework, not merely from faster code generation.
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    Checked every claim, quotation, number, heading, and conclusion against the pinned extraction; nothing in the manuscript could not be checked.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: '- | good luck. | 1'
+    category: capitalisation
+    disposition: fix
+    note: |
+      "good luck." opens a paragraph with a lowercase letter, while the piece's other sentences open capitalised. This is an inconsistent sentence-initial capitalisation.
+    suggestion: Good luck.
+  notes: |
+    One sentence-initial capitalisation error survives in an otherwise mechanically clean piece.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    The piece's argument moves coherently from coding-time limits through planning leverage, expected pain, and pragmatic steering.
+craft:
+  result: approved
+  findings: []
+  notes: |
+    I heard a brisk, candid operator thinking aloud, with a consistent voice from the opening calculation through the sign-off.

@@ -1,0 +1,26 @@
+piece: mcp-protocol-update
+rounds:
+- round: 1
+  words: 1103
+  loop_findings: 3
+  all_findings: 5
+- round: 2
+  words: 1106
+  loop_findings: 2
+  all_findings: 5
+- round: 3
+  words: 1079
+  loop_findings: 1
+  all_findings: 4
+state: rounds_exhausted
+open_findings:
+- lens: worth
+  severity: blocking
+  article: mcp-protocol-update
+  locator: Any request can reach any instance | Protocol version, client information, and capabilities travel in `_meta` on each request, while a new `server/discover` method lets clients fetch server capabilities when they need them. | 1
+  repair_from: Any request can reach any instance | Protocol version, client information, and capabilities travel in `_meta` on each request, while a new `server/discover` method lets clients fetch server capabilities when they need them. | 1
+  category: lost_operational_detail
+  disposition: fix
+  note: |
+    The source's request example carries `MCP-Protocol-Version` as a header, while client information and capabilities move into `_meta`. Saying that protocol version also travels in `_meta`, and omitting the version header, misinforms an implementer about how to construct a request.
+  suggestion: Distinguish the `MCP-Protocol-Version` header from the client information and capabilities in `_meta`, and retain the required header in the explanation.

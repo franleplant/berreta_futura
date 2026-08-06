@@ -1,0 +1,95 @@
+piece: factory-systems-problem
+rounds:
+- round: 1
+  words: 376
+  loop_findings: 11
+  all_findings: 12
+- round: 2
+  words: 406
+  loop_findings: 6
+  all_findings: 10
+- round: 3
+  words: 381
+  loop_findings: 8
+  all_findings: 10
+state: rounds_exhausted
+open_findings:
+- lens: evidence
+  severity: blocking
+  article: factory-systems-problem
+  locator: '- | The n8n discussion is a concrete case of that systems engineering and corporate culture problem. | 1'
+  repair_from: '- | The n8n discussion is a concrete case of that systems engineering and corporate culture problem. | 1'
+  category: invented_claim
+  disposition: fix
+  note: |
+    The extractions discuss n8n as a silly, non-deterministic service-bus idea and separately describe factories as a systems-engineering and corporate-culture problem, but do not state that the n8n discussion is a concrete case of that problem.
+- lens: mechanics
+  severity: major
+  article: factory-systems-problem
+  locator: '- | Almost lights out. | 1'
+  category: grammar
+  disposition: fix
+  note: |
+    "Almost lights out." is a sentence fragment with no verb.
+  suggestion: Rewrite as a complete sentence or attach it to the surrounding sentence.
+- lens: mechanics
+  severity: major
+  article: factory-systems-problem
+  locator: '- | Sandboxing, monorepo, reproducible builds, CI/CD, identity/secret management, smashing corporate friction in the realm of DevEx for agents. | 1'
+  category: grammar
+  disposition: fix
+  note: |
+    This standalone sentence is a verbless list fragment.
+  suggestion: Attach the list to a sentence with a finite verb.
+- lens: mechanics
+  severity: major
+  article: factory-systems-problem
+  locator: '- | Blog post time. | 1'
+  category: grammar
+  disposition: fix
+  note: |
+    "Blog post time." is a verbless sentence fragment.
+  suggestion: Rewrite as a complete sentence.
+- lens: shape
+  severity: major
+  article: factory-systems-problem
+  locator: '- | It isn''t cracked but it''s a puzzle that''s being solved daily. | 1'
+  repair_from: '- | The factory aspects haven''t been cracked yet; the innovators are toying around with discovering practices and pieces. | 1'
+  category: duplication
+  disposition: fix
+  note: |
+    The opening repeats the same claim that factories are not yet solved in
+    consecutive sentences, slowing the setup before the piece advances.
+  suggestion: State the unresolved-but-progressing status once, then move directly to the practical systems work.
+- lens: shape
+  severity: major
+  article: factory-systems-problem
+  locator: '- | Factories are not a token or LLM problem. | 1'
+  repair_from: '- | The best practices right now are to build abstractions/pieces needed which entails solving non-agent topics. | 1'
+  category: missing_transition
+  disposition: fix
+  note: |
+    The piece jumps from a list of infrastructure practices and interview
+    advice to its central systems-and-culture thesis without connecting those
+    practices to the thesis.
+  suggestion: Add a bridge explaining that the listed abstractions expose why factory reliability is a systems problem.
+- lens: shape
+  severity: major
+  article: factory-systems-problem
+  locator: '- | I have lots of bad memories here; the tech implementation is not great, but the theory and education are generally on point. | 1'
+  repair_from: '- | The n8n discussion is a concrete case of that systems engineering and corporate culture problem. | 1'
+  category: ending
+  disposition: fix
+  note: |
+    The final paragraph ends on a judgment about n8n's implementation and
+    education, without returning to the factory thesis or giving the reader a
+    concluding implication.
+  suggestion: Close by tying the deterministic service-bus lesson back to the systems architecture required for reliable factories.
+- lens: craft
+  severity: major
+  article: factory-systems-problem
+  locator: '- | The best practices right now are to build abstractions/pieces needed which entails solving non-agent topics. | 1'
+  category: dead_words
+  disposition: fix
+  note: |
+    This sentence stacks abstractions ("best practices," "abstractions/pieces," "non-agent topics") without naming the work that follows. The next fragment supplies the useful specifics, making this sentence mostly throat-clearing.

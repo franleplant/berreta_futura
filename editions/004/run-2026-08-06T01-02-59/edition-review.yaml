@@ -1,0 +1,52 @@
+result: changes_required
+findings:
+- severity: blocking
+  article: editorial
+  locator: '- | Six minutes after reaching node root, an autonomous agent had created a self-respawning fleet across eleven nodes. | 1'
+  repair_from: '- | Six minutes after reaching node root, an autonomous agent had created a self-respawning fleet across eleven nodes. | 1'
+  category: single_source_editorial
+  disposition: fix
+  note: |
+    The opening incident, the failed-probe path, and the security-stack failure all come from frontier-lab-agent-intrusion; roughly a third of the editorial body derives from that one article. The editorial's thesis is therefore dominated by one source.
+- severity: major
+  article: edition
+  category: thin_derivation
+  disposition: fix
+  note: |
+    This issue argues that dependable systems make agent speed inspectable and steerable, but pragmatic-leverage and mcp-in-a-nutshell contribute nothing to that editorial thesis. Two pieces in an eight-piece issue therefore sit outside the derivation.
+- severity: major
+  article: pragmatic-leverage
+  locator: '- | If you''re only using AI to write the code, then you''re taking the 2–4 hours of coding time down to 10–20 minutes, but you haven''t accelerated anything else here. | 1'
+  repair_from: '- | Even before AI, only 25–50% of the time to ship a feature was writing the code itself. | 1'
+  category: weak_piece
+  disposition: fix
+  note: |
+    pragmatic-leverage is a short, generic planning essay rather than a concrete contribution to the issue's systems argument. It should not have been commissioned for this edition because its leverage advice is neither operationally specific nor integrated with the issue's protocols, evaluations, or architectures.
+- severity: major
+  article: mcp-protocol-update
+  locator: Any instance can handle the request | The handshake and session are gone. Protocol version, client information, and capabilities now travel in `_meta` on each request. | 1
+  repair_from: Any instance can handle the request | Before this revision, a Streamable HTTP client established a session with an `initialize` handshake. | 1
+  category: redundancy
+  disposition: fix
+  note: |
+    mcp-in-a-nutshell and mcp-protocol-update make the same stateless-request point. mcp-in-a-nutshell says, "MCP is stateless. Every request carries the protocol version and the relevant capabilities in its `_meta` field," while mcp-protocol-update says, "The handshake and session are gone. Protocol version, client information, and capabilities now travel in `_meta` on each request." The update should focus on what materially changed beyond the nutshell explanation.
+- severity: major
+  article: edition
+  category: running_order
+  disposition: fix
+  note: |
+    frontier-lab-agent-intrusion is the strongest opener, but it is followed immediately by another dense, long synthesis in eval-engineering. The transition into the brief, generic pragmatic-leverage piece and then into the highly technical from-gpt2-to-kimi3 piece has no clear editorial hinge; reorder to create relief and a more legible progression from incident to operating practice to architecture and protocol.
+- severity: minor
+  article: edition
+  category: outlier
+  disposition: fix
+  note: |
+    pragmatic-leverage and factory-systems-problem are the only faithful edits and use markedly more conversational, combative language ("yolo", "bullshit", and "Good luck") than the explanatory synthesis that surrounds them. Their register and difficulty make them feel imported from a different publication.
+scores:
+  through_line: 4
+  editorial_strength: 2
+  running_order: 3
+  balance: 3
+  cover_promise: 4
+notes: |
+  This issue argues that memory, evidence, and explicit control paths turn agent speed into dependable systems, but it does not yet hold together because the editorial overweights one incident, leaves two pieces out of its thesis, and carries a weak commission.

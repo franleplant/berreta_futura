@@ -1,0 +1,95 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's PyTorch code and detailed tensor-shape walkthroughs for GPT-2, KV caching, linear attention, DeltaNet chunking, SiTU, and AttnRes.
+    reader_loses: Cannot reproduce the implementations directly from the article, but the manuscript preserves the mechanisms and their architectural purpose.
+    verdict: defensible
+  - fact: The source's aside that FlashAttention changes the usual O(N²) training framing.
+    reader_loses: Some historical and implementation nuance about where quadratic cost was reduced.
+    verdict: defensible
+  - fact: The generalized Householder-transition terminology used to describe DeltaNet's re-parameterization.
+    reader_loses: The formal name of the mathematical device, not the explanation of what it enables.
+    verdict: defensible
+  - fact: The source's description of Kimi Linear as a drop-in replacement.
+    reader_loses: That its authors present it as directly substitutable for full attention.
+    verdict: defensible
+  retentions:
+  - passage: The opening twenty-two-thousand-five-hundred-and-eighty comparison.
+    costs: A short opening hook that frames the scale change before the architectural explanation.
+    verdict: earns_place
+  - passage: The progression through fixed state, replacement, forgetting, and selective control.
+    costs: Several paragraphs, but it supplies the article's organizing argument and explains why each innovation follows.
+    verdict: earns_place
+  - passage: The final synthesis beginning 'The final model is large, but size alone is not the architectural story.'
+    costs: A concluding paragraph that restates the thesis.
+    verdict: earns_place
+  - passage: The standalone sentence 'There is a trade-off.'
+    costs: One line that adds little beyond the surrounding explanation.
+    verdict: cut
+  notes: |
+    The piece gives readers a coherent architectural progression—from KV-cache pressure through replacement, forgetting, routing, and selective retrieval—that the source's implementation-heavy worklog leaves scattered across code and digressions.
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    I checked every factual assertion, quotation, number, attribution, heading, and conclusion against the pinned extraction. I found no unsupported or materially distorted claims; no external sources were available or needed.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: '- | That''s how many GPT-2 (2019) models fit inside KimiK3 (2026). | 1'
+    category: typography
+    disposition: fix
+    note: |
+      The contraction uses a curly apostrophe, while the piece uses straight apostrophes in possessives such as "KimiK3's". Standardize apostrophe style throughout.
+    suggestion: Use straight apostrophes consistently, or convert all apostrophes to curly.
+  notes: |
+    One apostrophe-style inconsistency survives in an otherwise mechanically clean piece.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    The piece presents a coherent progression from GPT-2's scale to KimiK3's memory, retrieval, routing, and residual mechanisms, with clear section turns and a conclusion that lands on the central storage constraint.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: '- | The count is twenty-two thousand five hundred and eighty. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The opening announces a number and immediately repeats it in the next sentence, delaying the actual question about architectural change.
+    suggestion: |
+      Combine the count with the scale claim so the first sentence performs the comparison once.
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: The cache becomes the problem | A feature map such as ELU+1 can be applied to queries and keys separately, making the products re-associable. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      ELU+1 and re-associable arrive without definition, and later terms including D × D, MLA, SiTU, LoRA, AttnRes, and FLOPs accumulate faster than the reader is given working meanings.
+    suggestion: |
+      Define each nonstandard acronym or operation at its first appearance, or remove terms that do not carry the explanation.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: The cache becomes the problem | The gain comes with a cost. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      Generic trade-off announcements interrupt explanations that already state the cost directly; "There is a trade-off." repeats the same move later in the section.
+    suggestion: |
+      Cut both announcements and let the following sentences state the limitation.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: What scale is buying | Among them, attention remains the most effective selective-read mechanism. | 1
+    category: ai_phrasing
+    disposition: fix
+    note: |
+      "Most effective" is an unearned superlative: the piece explains attention's selective-read role but does not establish this ranking.
+    suggestion: |
+      Replace the superlative with the narrower capability the preceding discussion demonstrates.
+  notes: |
+    I heard a lucid technical walkthrough whose voice weakens at the opening, thins around generic transitions, and becomes harder to follow as undefined terminology accumulates.

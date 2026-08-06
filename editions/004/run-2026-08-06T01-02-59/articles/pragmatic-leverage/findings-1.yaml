@@ -1,0 +1,152 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    repair_from: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: no_added_value
+    disposition: fix
+    note: |
+      The manuscript reproduces the source's argument, examples, numbers, caveat, and conclusion almost verbatim. A reader gets no condensation, reordering, synthesis, or editorial judgment that the source alone does not provide.
+    suggestion: Rework the piece into a genuinely useful condensation or add a clear editorial frame and synthesis.
+  omissions:
+  - fact: the source account identifier @dexhorthy
+    reader_loses: A reader cannot identify the original publishing account from the printed piece.
+    verdict: defensible
+  - fact: no substantive argument, example, number, caveat, or consequence is omitted
+    reader_loses: Nothing material is lost; the manuscript retains the source's substance.
+    verdict: defensible
+  retentions:
+  - passage: This one is a bit of an addendum / side-quest to the recent series...
+    costs: A contextual preamble that the leverage argument never uses.
+    verdict: cut
+  - passage: good luck.
+    costs: A closing sign-off that adds no information.
+    verdict: cut
+  - passage: The expected-pain equation and the product-to-technical-level example
+    costs: Several paragraphs, but they make the planning-versus-rework tradeoff concrete.
+    verdict: earns_place
+  notes: |
+    Changes required because the manuscript gives the reader essentially the source itself, without a distinct condensation or editorial contribution.
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    I checked every manuscript claim, heading, quotation, equation, and furniture item against the pinned extraction; there were no claims I could not check.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking Leverage | Seeking Leverage | 1
+    category: heading_form
+    disposition: fix
+    note: |
+      This heading is title case, while headings should be sentence case.
+    suggestion: Seeking leverage
+  - severity: major
+    article: pragmatic-leverage
+    locator: '- | 25-50% | 1'
+    category: typography
+    disposition: editor_decision
+    note: |
+      This numeric range uses a hyphen; ranges should use an en dash. The sentence is retained verbatim from the source, so an editor chooses the remedy.
+    suggestion: 25–50%
+  - severity: major
+    article: pragmatic-leverage
+    locator: '- | 2-4 hours | 1'
+    category: typography
+    disposition: editor_decision
+    note: |
+      This numeric range uses a hyphen; ranges should use an en dash. The sentence is retained verbatim from the source, so an editor chooses the remedy.
+    suggestion: 2–4 hours
+  - severity: major
+    article: pragmatic-leverage
+    locator: '- | 10-20 minutes | 1'
+    category: typography
+    disposition: editor_decision
+    note: |
+      This numeric range uses a hyphen; ranges should use an en dash. The sentence is retained verbatim from the source, so an editor chooses the remedy.
+    suggestion: 10–20 minutes
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Let's assume if you yolo a two-sentence prompt into your factory, your chance of getting a fully-mergeable result is ~50%, the chance you have to rework it is 50%. | 1
+    category: grammar
+    disposition: editor_decision
+    note: |
+      The construction is missing "that" after "assume" and contains a comma splice between two independent clauses. The sentence is retained verbatim from the source, so an editor chooses the remedy.
+    suggestion: Let's assume that if you yolo a two-sentence prompt into your factory, your chance of getting a fully-mergeable result is ~50% and the chance you have to rework it is 50%.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | **note** | 1
+    category: markup
+    disposition: editor_decision
+    note: |
+      A labelled author/editor note appears inside the article prose. The magazine does not print editorial apparatus in the prose. The note label and sentence are retained verbatim from the source, so an editor chooses the remedy.
+    suggestion: Remove the note label and integrate the explanation into the surrounding prose.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | 2-3x | 1
+    category: typography
+    disposition: editor_decision
+    note: |
+      This numeric range uses a hyphen; ranges should use an en dash. The sentence is retained verbatim from the source, so an editor chooses the remedy.
+    suggestion: 2–3x
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | number but obviously they're two separate variables | 1
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      A comma is needed before "but" joining the independent clause "obviously they're two separate variables." The sentence is retained verbatim from the source, so an editor chooses the remedy.
+    suggestion: number, but obviously they're two separate variables
+  notes: Changes required because one heading, four range marks, one malformed sentence, one in-prose note label, and one missing comma remain.
+shape:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    repair_from: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: opening
+    disposition: editor_decision
+    note: |
+      The piece opens with publication context and an external-series reference before stating its actual argument about where AI-assisted delivery gains leverage. The lead does not earn the first section.
+    suggestion: Open with the feature-shipping time split and move the addendum context out of the lead.
+  - severity: major
+    article: pragmatic-leverage
+    locator: '- | It is referenced briefly in Why Software Factories Fail part 2: Turning the lights back on. | 1'
+    repair_from: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: orphan_referent
+    disposition: editor_decision
+    note: |
+      The opening points to a recent series and a specifically named post that the piece does not contain, leaving the reader without the referenced context.
+    suggestion: Remove the references to the unseen series and post, or supply the context they require.
+  notes: |
+    The piece's central progression from coding-time savings to pragmatic planning leverage is recoverable, but the lead and its external references interrupt that progression.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The piece opens by explaining its publishing history rather than giving the reader a reason to continue. This is throat-clearing before the argument begins.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | But if you use AI to help you plan and align, then you actually get closer to 2-3x faster. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Actually" adds emphasis without adding information, and the sentence is stronger without it.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | You need to do this without overindexing on questions you won't be able to answer without going down a level. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "Overindexing" is corporate jargon that interrupts the otherwise direct voice; the underlying advice is clear enough to state plainly.
+  notes: |
+    I heard a candid, practical voice with useful technical judgment, but the opening briefly sounds like publication furniture and a couple of later phrases slip into abstraction and jargon.

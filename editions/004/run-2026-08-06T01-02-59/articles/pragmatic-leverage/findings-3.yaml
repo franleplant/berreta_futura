@@ -1,0 +1,96 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    repair_from: '- | Even before AI, only 25-50% of the time to ship a feature was writing the code itself | 1'
+    category: no_position
+    disposition: fix
+    note: |
+      The manuscript is a close paraphrase in the source's original order. It gives readers a shorter version, but offers no magazine-specific ordering judgment, cut it defends, or claim beyond the source's own argument.
+    suggestion: Add a brief framing claim that explains what this account reveals or why its practical distinction matters.
+  omissions:
+  - fact: The introduction identifying this as an addendum to the recent series and referencing Why Software Factories Fail part 2
+    reader_loses: The piece's relationship to the author's broader argument and its standalone context.
+    verdict: defensible
+  - fact: The source heading 'The 80/20 rule in AI coding leverage'
+    reader_loses: A compact label for the section's governing idea.
+    verdict: defensible
+  - fact: The source's note marker and the closing 'good luck'
+    reader_loses: No substantive argument or actionable detail.
+    verdict: defensible
+  - fact: The source's explicit distinction between a fully mergeable result and the chance of rework
+    reader_loses: A small clarification of what the two 50% figures represent.
+    verdict: defensible
+  retentions:
+  - passage: Even before AI, only 25-50% of the time to ship a feature was writing the code itself...
+    costs: A short opening setup, but it establishes why planning and verification are the leverage target.
+    verdict: earns_place
+  - passage: Let's assume that if you yolo a two-sentence prompt into your factory...
+    costs: The central numerical example and its progression from prompting to hand-written code.
+    verdict: earns_place
+  - passage: For this example I'm gonna blur...
+    costs: A qualification plus the expected-pain equation.
+    verdict: earns_place
+  - passage: You need to do this without overindexing on questions...
+    costs: The practical caveat that planning must descend into technical detail when feasibility is unclear.
+    verdict: earns_place
+  - passage: This is what we mean by leverage - and it requires being pragmatic...
+    costs: The concluding operating principle for steering across planning phases.
+    verdict: earns_place
+  notes: Changes required because the manuscript efficiently condenses the source's leverage model but does not add a distinct editorial position or framing claim.
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    Checked every assertion, quotation, number, attribution, qualification, conclusion, and furniture element against the complete pinned extraction; nothing in the piece fell outside what could be checked from the supplied materials.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking leverage | fully-mergeable result | 1
+    category: typography
+    disposition: fix
+    note: |
+      "fully-mergeable" incorrectly hyphenates an adverb ending in "-ly" before the adjective it modifies. The editors should correct this compound modifier.
+    suggestion: fully mergeable result
+  notes: |
+    One hyphenation error appears in an otherwise mechanically clean piece.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking leverage | Seeking leverage | 1
+    repair_from: Seeking leverage | Let's assume that if you yolo a two-sentence prompt into your factory, your chance of getting a fully-mergeable result is ~50% and the chance you have to rework it is 50%. | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The section progresses from prompt quality through planning effort to the
+      definition of pragmatic leverage, but its heading names only the topic
+      rather than the argument.
+    suggestion: Rename the heading to state the claim, such as 'Spend planning effort where expected pain is highest.'
+  notes: |-
+    I verified that the piece moves coherently from delivery-time leverage to
+    expected pain and then to pragmatic planning; the section heading is the
+    only structural weakness.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking leverage | You need to do this without overindexing on questions you won't be able to answer without going down a level. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Overindexing" is corporate abstraction, and "going down a level" compounds it with an unexplained spatial metaphor. The sentence sounds like process language rather than this author's otherwise direct account.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking leverage | There's no perfect process for this. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This is a generic reassurance that adds no operational guidance. The surrounding paragraph already demonstrates the uncertainty; this sentence merely names it.
+  notes: |
+    I heard a strong, conversational voice with useful quantitative examples, but two process-language sentences briefly flatten that voice into abstraction.

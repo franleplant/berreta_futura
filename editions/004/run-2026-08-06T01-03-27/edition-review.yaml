@@ -1,0 +1,46 @@
+result: changes_required
+findings:
+- severity: blocking
+  article: editorial
+  locator: '- | One malicious dataset upload turned a data pipeline into a command channel. | 1'
+  repair_from: '- | One malicious dataset upload turned a data pipeline into a command channel. | 1'
+  category: single_source_editorial
+  disposition: fix
+  note: |
+    The intrusion supplies well over a quarter of the editorial's body: the malicious upload, worker foothold, broad permissions, public message bus, stolen credentials, and final remediation all derive from frontier-lab-agent-intrusion. The editorial is substantially that article's incident summary rather than an argument the issue produces.
+- severity: major
+  article: pragmatic-leverage
+  locator: '- | Even before AI, only 25–50% of the time to ship a feature was writing the code itself. | 1'
+  repair_from: '- | Even before AI, only 25–50% of the time to ship a feature was writing the code itself. | 1'
+  category: weak_piece
+  disposition: fix
+  note: |
+    This is the weakest commission: a short, generic planning essay that offers little distinctive evidence or connection to the issue's systems thesis and ends with “Good luck.” It should not have been commissioned in this form.
+- severity: major
+  article: edition
+  category: redundancy
+  disposition: fix
+  note: |
+    mcp-in-a-nutshell and mcp-protocol-update make the same core point about MCP's stateless operation. The first says “MCP is a stateless protocol.” The second says “The protocol no longer manages that state for you, but it doesn’t prevent you from managing it yourself.” Consolidate the explanation or give the two pieces distinct jobs.
+- severity: major
+  article: edition
+  category: running_order
+  disposition: fix
+  note: |
+    The strongest piece opens, but frontier-lab-agent-intrusion and eval-engineering are two dense, long pieces back to back. The adjacent transition offers no breathing space before another heavily technical argument; move a shorter or more accessible piece between them.
+- severity: minor
+  article: factory-systems-problem
+  locator: '- | Software factories are super real, but we need to be realistic. | 1'
+  repair_from: '- | Software factories are super real, but we need to be realistic. | 1'
+  category: outlier
+  disposition: fix
+  note: |
+    This is the edition's voice and mode outlier: a ranting, first-person faithful edit with profanity and insider address (“selling bullshit”) amid otherwise composed faithful syntheses. Its register and difficulty do not belong comfortably beside the other pieces.
+scores:
+  through_line: 4
+  editorial_strength: 2
+  running_order: 2
+  balance: 2
+  cover_promise: 4
+notes: |
+  This issue argues that dependable agent systems make the next move legible through evidence, constrained state, and explicit operational boundaries, and it holds together unevenly because the editorial overdraws one incident and the package has a weak, off-register middle.

@@ -1,0 +1,34 @@
+piece: pragmatic-leverage
+rounds:
+- round: 1
+  words: 496
+  loop_findings: 11
+  all_findings: 14
+- round: 2
+  words: 446
+  loop_findings: 1
+  all_findings: 1
+- round: 3
+  words: 446
+  loop_findings: 2
+  all_findings: 5
+state: rounds_exhausted
+open_findings:
+- lens: worth
+  severity: major
+  article: pragmatic-leverage
+  repair_from: '- | Even before AI, only 25-50% of the time to ship a feature was writing the code itself | 1'
+  category: no_position
+  disposition: fix
+  note: |
+    The manuscript is a close paraphrase in the source's original order. It gives readers a shorter version, but offers no magazine-specific ordering judgment, cut it defends, or claim beyond the source's own argument.
+  suggestion: Add a brief framing claim that explains what this account reveals or why its practical distinction matters.
+- lens: mechanics
+  severity: major
+  article: pragmatic-leverage
+  locator: Seeking leverage | fully-mergeable result | 1
+  category: typography
+  disposition: fix
+  note: |
+    "fully-mergeable" incorrectly hyphenates an adverb ending in "-ly" before the adjective it modifies. The editors should correct this compound modifier.
+  suggestion: fully mergeable result

@@ -1,0 +1,155 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Second hot take, as it seems the first hot take landed. | 1'
+    repair_from: '- | Second hot take, as it seems the first hot take landed. | 1'
+    category: section_does_not_pay
+    disposition: fix
+    note: |
+      This transition reports the thread's reception but contributes nothing to the systems argument. Its space could be reclaimed without losing an idea from the sources.
+    suggestion: Delete the sentence and begin directly with the n8n/service-bus claim.
+  omissions:
+  - fact: The extraction's bracketed annotation markers [1], [2], and [3]
+    reader_loses: Nothing; these are extraction artifacts rather than source ideas.
+    verdict: defensible
+  retentions:
+  - passage: Software factories are super real but we need to be realistic.
+    costs: A brief framing sentence that establishes the article's skeptical opening.
+    verdict: earns_place
+  - passage: Almost lights out.
+    costs: A short voice beat that costs negligible space and reinforces the urgency of the infrastructure list.
+    verdict: earns_place
+  - passage: Second hot take, as it seems the first hot take landed.
+    costs: A transition about the original thread's reception, with no explanatory or argumentative value.
+    verdict: cut
+  - passage: Lots of bad memories here, not great tech impl but the theory / education is generally on point.
+    costs: A brief caveat about the author's prior experience with the cited enterprise technologies.
+    verdict: earns_place
+  notes: Changes required because the piece's synthesis gives readers a coherent systems-and-architecture argument connecting factory reliability, corporate infrastructure, and deterministic service buses, but one thread-reception aside can be removed without loss.
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    Checked every assertion, title claim, qualification, attribution, and conclusion against all three pinned extractions; no unsupported claims were found.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | The Factory Is a Systems Problem | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      The title is in title case, while headings in this piece should be sentence case.
+    suggestion: The factory is a systems problem
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | ie. they are likely startups created in last six months! | 1'
+    category: punctuation
+    disposition: fix
+    note: |
+      The abbreviation is punctuated incorrectly, and the phrase is missing the article "the" before "last six months."
+    suggestion: i.e. they are likely startups created in the last six months!
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Highest roi you can have right now | 1'
+    category: capitalisation
+    disposition: fix
+    note: |
+      The established acronym is ROI, not lowercase "roi."
+    suggestion: Highest ROI you can have right now
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | factories is not a token or llm problem | 1'
+    category: agreement
+    disposition: fix
+    note: |
+      "Factories" is plural and requires "are." The acronym LLM is also incorrectly lowercased.
+    suggestion: factories are not a token or LLM problem
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | which i’ve always suspected was developed by young folks | 1'
+    category: capitalisation
+    disposition: fix
+    note: |
+      The first-person pronoun must be capitalised.
+    suggestion: which I’ve always suspected was developed by young folks
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | service busses are a solved problem | 1'
+    category: spelling
+    disposition: fix
+    note: |
+      The plural of the technical noun "bus" is "buses," not "busses."
+    suggestion: service buses are a solved problem
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Almost lights out. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      This is a sentence fragment with no verb.
+    suggestion: We are almost at lights-out.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Second hot take, as it seems the first hot take landed. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      "Second hot take" is a sentence fragment with no verb.
+    suggestion: Here is the second hot take, since the first one seems to have landed.
+  notes: |
+    Changes required because the title has the wrong case and the body contains agreement, capitalization, spelling, punctuation, and sentence-fragment errors.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Second hot take, as it seems the first hot take landed. | 1'
+    repair_from: '- | Software factories are super real but we need to be realistic. | 1'
+    category: orphan_referent
+    disposition: fix
+    note: |
+      "Second hot take" refers to a first hot take that the piece never identifies,
+      making the transition into the service-bus discussion depend on an absent frame.
+    suggestion: Label the opening claim as the first hot take before introducing the second.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Lots of bad memories here, not great tech impl but the theory / education is generally on point. | 1'
+    repair_from: '- | Second hot take, as it seems the first hot take landed. | 1'
+    category: ending
+    disposition: fix
+    note: |
+      The piece ends inside the service-bus aside and never returns to its central
+      claim that factory reliability is a systems-engineering and culture problem.
+    suggestion: Close by tying the service-bus example back to the systems-engineering thesis and stating the takeaway.
+  notes: |
+    I verified that the piece progresses from the factory claim through systems practices to a service-bus example, but its second-hot-take framing is orphaned and its ending does not synthesize the argument.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Software factories are super real but we need to be realistic. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The opening announces a general stance twice ("super real" and "realistic") before giving the reader a concrete problem or observation.
+  - severity: major
+    article: factory-systems-problem
+    locator: ' | The best practices right now are to build abstractions/pieces needed which entails solving non-agent topics. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This sentence stacks abstractions ("best practices," "abstractions/pieces," and "non-agent topics"), then the paragraph trails into the fragment list "Almost lights out. Sandboxing, monorepo, reproducible builds, ci/cd, identity/secret management, smashing corporate friction in the realm of devex for agents." The reader gets labels instead of a sequence of concrete actions.
+  - severity: major
+    article: factory-systems-problem
+    locator: ' | Look up anything in the @dotnet space such as mass transit, nservicebus, wcf if you wanna steal ideas for prompting. | 1'
+    category: repeated_shape
+    disposition: fix
+    note: |
+      Three consecutive reader-directed imperatives use the same command shape: "Look up anything in the @dotnet space such as mass transit, nservicebus, wcf if you wanna steal ideas for prompting." "Use it and have a job invoke an agent as a process." "Don’t make the entire service bus non-deterministic." The commands are rhetorically forceful, but the repeated construction becomes audible as a pattern.
+  notes: |
+    I heard a vivid, opinionated voice, but the piece repeatedly replaces concrete sequence with compressed labels and then shifts into a run of commands, while the opening spends its first sentence announcing its stance.

@@ -1,0 +1,113 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Staying current | A client opts in by opening a long-lived subscription and naming the event types it wants, such as changes to the tool list. | 1
+    repair_from: Staying current | A client opts in by opening a long-lived subscription and naming the event types it wants, such as changes to the tool list. | 1
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The source gives the subscription method `subscriptions/listen` and the notification method `notifications/tools/list_changed`; the manuscript explains the behavior but drops the protocol vocabulary that makes the mechanism identifiable and useful as a reference.
+    suggestion: Name `subscriptions/listen` and `notifications/tools/list_changed` parenthetically in the notification explanation.
+  omissions:
+  - fact: The scope list of the MCP specification, SDKs, development tools, and reference server implementations
+    reader_loses: Cannot see the broader project boundary around the architecture overview.
+    verdict: defensible
+  - fact: The detailed JSON-RPC discovery, listing, tool-call, and notification examples
+    reader_loses: Loses concrete wire-format illustrations, but the source remains available for implementation detail.
+    verdict: defensible
+  - fact: The `tools/list` pagination cursor and caching fields such as `ttlMs` and `cacheScope`
+    reader_loses: Loses implementation-level freshness and pagination details.
+    verdict: defensible
+  - fact: The notification acknowledgment, subscription ID, and exact notification payload semantics
+    reader_loses: Loses the correlation details needed for a full implementation; the core best-effort refresh behavior remains.
+    verdict: needed
+  - fact: Progress tracking as a utility feature
+    reader_loses: Does not learn that long-running operations can also report progress apart from the Tasks extension.
+    verdict: defensible
+  - fact: The recommendation to use OAuth to obtain HTTP authentication tokens
+    reader_loses: Misses a source-level authentication recommendation, though the supported mechanisms are named.
+    verdict: defensible
+  - fact: Language-specific SDK guidance and pseudo-code
+    reader_loses: Nothing essential for a print explainer; these are implementation follow-ups.
+    verdict: defensible
+  retentions:
+  - passage: Visual Studio Code connects to a Sentry server, then to a local filesystem server.
+    costs: Opening space, but it concretely establishes one client per server and local-versus-remote transport.
+    verdict: earns_place
+  - passage: 'The model receives three different kinds of help: an action it can perform, information that explains the world, and a pattern for asking.'
+    costs: A short explanatory example that makes the three primitives memorable.
+    verdict: earns_place
+  - passage: The subscription stream keeps an active conversation responsive, while polling supplies the less glamorous guarantee that the registry will eventually catch up.
+    costs: A rhetorical closing to the notification section, but it distinguishes responsiveness from eventual freshness.
+    verdict: earns_place
+  notes: |
+    Changes required because the manuscript makes the notification mechanism understandable but omits the source's identifying subscription and event method names. The piece otherwise gives readers a compact mental model connecting hosts, clients, servers, layers, stateless discovery, primitives, tool execution, and refresh behavior in a more usable progression than the source.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The primitives are the vocabulary | Sampling and logging are deprecated as of protocol version 2026-07-28. New implementations should call language-model providers directly for completions, and should write logs to standard error or use OpenTelemetry. | 1
+    repair_from: The primitives are the vocabulary | Sampling and logging are deprecated as of protocol version 2026-07-28. New implementations should call language-model providers directly for completions, and should write logs to standard error or use OpenTelemetry. | 1
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source limits standard-error logging to the stdio transport: "New implementations should log to stderr (stdio transport) or use OpenTelemetry." The manuscript drops that qualification and presents standard-error logging as a general recommendation.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Staying current | The subscription stream keeps an active conversation responsive, while polling supplies the less glamorous guarantee that the registry will eventually catch up. | 1
+    repair_from: Staying current | Notifications are best effort. Reconnects can lose them, so clients should also poll when they need freshness. | 1
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source says notifications are best effort and that clients should rely on polling to preserve freshness. It does not guarantee that polling will make the registry eventually catch up; the manuscript hardens this into a guarantee.
+  notes: |
+    I checked every body and furniture assertion against the pinned extraction; claims requiring any source beyond that extraction could not be checked.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | context exchange—it does not dictate | 1'
+    category: typography
+    disposition: fix
+    note: |
+      The em dash is banned by the mechanics ruling. Replace it with permitted punctuation; this prose is an editor-written faithful synthesis.
+    suggestion: context exchange; it does not dictate
+  notes: One banned em dash requires correction; capitalization, grammar, spelling, headings, markup, and number formatting are otherwise clean.
+shape:
+  result: approved
+  findings: []
+  notes: I verified that the piece opens with a concrete multi-server example, establishes the protocol's participants and layers, then proceeds through discovery, primitives, action, updates, and a concluding synthesis in a recoverable order. The headings, running example, transitions, and ending hold together without a structural defect.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Three participants, two layers | The host is the AI application, such as Claude Code, Claude Desktop, or Visual Studio Code. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three consecutive subject–copula definition sentences use the same shape:
+      "The host is the AI application, such as Claude Code, Claude Desktop, or Visual Studio Code."
+      "A client maintains a connection to one server and obtains context for the host."
+      "A server is simply the program that provides that context, wherever it runs."
+      The repeated definition pattern makes the paragraph sound system-generated.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | MCP''s achievement is modest in the useful sense. | 1'
+    category: weak_close
+    disposition: fix
+    note: |
+      The closing paragraph restates the article's opening architecture and summary instead of leaving the reader with a sharper implication or question.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: The primitives are the vocabulary | Sampling and logging are deprecated as of protocol version 2026-07-28. New implementations should call language-model providers directly for completions, and should write logs to standard error or use OpenTelemetry. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "OpenTelemetry" is a specialized term introduced without definition; a competent engineer outside observability work may not know what role it plays here.
+  notes: |
+    I heard a clear, confident technical explainer whose voice weakens mainly in the definition-heavy participant paragraph and the summary-like ending.

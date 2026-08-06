@@ -1,0 +1,121 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's framing that this was a 'second hot take' following the first one landing.
+    reader_loses: Nothing substantive; the manuscript preserves both arguments without the social-media framing.
+    verdict: defensible
+  - fact: The rhetorical phrase 'almost lights out.'
+    reader_loses: A flourish of emphasis, not an argument or operational detail.
+    verdict: defensible
+  retentions:
+  - passage: The opening's repeated qualification that factories are real, not yet cracked, and being solved daily.
+    costs: Several sentences, but they establish the piece's central judgment and calibrate its skepticism.
+    verdict: earns_place
+  - passage: The closing caveat about bad memories, imperfect implementation, and sound theory.
+    costs: A short closing sentence that preserves useful nuance about the cited enterprise tools.
+    verdict: earns_place
+  notes: |
+    Approved because the piece gives readers a usable synthesis: factory reliability is a systems-and-culture problem, with deterministic orchestration and foundational infrastructure—not merely model tokens—as the practical focus.
+evidence:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: factory-systems-problem
+    locator: '- | A service bus moves work between services while keeping the workflow predictable, so making the entire bus non-deterministic puts the model in charge of the workflow. | 1'
+    category: invented_claim
+    disposition: fix
+    note: |
+      The pinned extraction says that service buses are a solved problem, identifies prior art, recommends Temporal, and says not to make the entire service bus non-deterministic. It does not state that a service bus moves work between services, keeps workflow predictable, or that nondeterminism puts the model in charge of the workflow.
+  notes: |
+    I checked every factual assertion, attribution, named technology, conclusion, and piece of furniture against all three pinned extractions; the unsupported service-bus explanation and causal claim could not be checked in the sources.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Software factories are super real but we need to be realistic | 1'
+    category: punctuation
+    disposition: fix
+    note: |
+      Two independent clauses are joined without the required comma before "but", creating a run-on construction.
+    suggestion: Software factories are super real, but we need to be realistic.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Highest ROI you can have right now is learning the entire damn stack | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      The superlative noun phrase needs the definite article "The".
+    suggestion: The highest ROI you can have right now is learning the entire damn stack
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | through tokens or how you apply the tokens | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      The alternatives after "through" are not parallel: a noun phrase is coordinated with a clause introduced by "how".
+    suggestion: through tokens or through how you apply them
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Lots of bad memories here, not great tech impl but the theory / education is generally on point. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      "Lots of bad memories here" is a sentence fragment with no finite verb, and the following material is run together without punctuation before "but".
+    suggestion: I have lots of bad memories here; the tech implementation is not great, but the theory and education are generally on point.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | the theory / education | 1'
+    category: typography
+    disposition: fix
+    note: |
+      Slash spacing is inconsistent with the unspaced "abstractions/pieces" form used earlier in the piece.
+    suggestion: the theory/education
+  notes: |
+    Changes required because the piece contains a run-on, a missing article, a nonparallel construction, a sentence fragment, and inconsistent slash spacing.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | The first hot take | 1'
+    repair_from: '- | Factories are not a token or LLM problem. | 1'
+    category: orphan_referent
+    disposition: fix
+    note: |
+      The final paragraph calls its claim "the first hot take," but the piece
+      establishes no sequence of hot takes and never supplies a corresponding
+      second one. The reference makes the paragraph feel excerpted from a
+      larger argument.
+    suggestion: Remove the ordinal reference or establish an explicit sequence of hot takes before this paragraph.
+  notes: |-
+    I verified that the piece moves from factory skepticism to systems practices,
+    then states its thesis and applies it to n8n; the ending lands, but the
+    unexplained "first hot take" reference disrupts the structure.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Software factories are super real but we need to be realistic. | 1'
+    category: weak_opening_sentence
+    disposition: author_decision
+    note: |
+      The opening announces a stance with "super real" and "realistic" before giving the reader a concrete problem or scene. It has voice, but it does not yet do enough work as an entry point.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | The best practices right now are to build abstractions/pieces needed which entails solving non-agent topics. | 1'
+    category: dead_words
+    disposition: author_decision
+    note: |
+      "Best practices," "abstractions/pieces needed," and "non-agent topics" stack abstractions without naming the actual work. The next sentences supply concrete examples, so this sentence mostly delays the argument.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | smashing corporate friction in the realm of DevEx for agents | 1'
+    category: jargon
+    disposition: author_decision
+    note: |
+      "DevEx" arrives as unexplained terminology, and the surrounding phrase is too compressed to establish what friction is being removed or how it affects agents.
+  notes: |
+    I heard a vivid, impatient technical voice, but it briefly goes abstract at the opening and in the transition to the concrete stack, with one unexplained acronym adding friction.
