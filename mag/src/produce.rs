@@ -155,6 +155,40 @@ fn normalize_bold_labels(body: &str) -> String {
     out.join("\n")
 }
 
+/// The illustrated opener page sets the piece's first paragraph and refuses
+/// one that cannot fit (~90 words at compact density). A long intro is split
+/// at the latest sentence boundary that fits — every word kept, zero model
+/// calls; the remainder becomes the second paragraph.
+const INTRO_MAX_WORDS: usize = 90;
+
+fn split_long_intro(body: &str) -> String {
+    let first_len = body.find("\n\n").unwrap_or(body.len());
+    let (first, rest) = body.split_at(first_len);
+    if first.split_whitespace().count() <= INTRO_MAX_WORDS || first.contains('\n') {
+        return body.to_string();
+    }
+    let mut best: Option<usize> = None;
+    let mut fallback: Option<usize> = None;
+    let chars: Vec<char> = first.chars().collect();
+    let mut byte = 0;
+    for (i, c) in chars.iter().enumerate() {
+        byte += c.len_utf8();
+        let next_is_space = chars.get(i + 1).map(|n| *n == ' ').unwrap_or(false);
+        if matches!(c, '.' | '!' | '?') && next_is_space {
+            if fallback.is_none() {
+                fallback = Some(byte);
+            }
+            if first[..byte].split_whitespace().count() <= INTRO_MAX_WORDS {
+                best = Some(byte);
+            }
+        }
+    }
+    match best.or(fallback) {
+        Some(cut) => format!("{}\n\n{}{rest}", &first[..cut], first[cut..].trim_start()),
+        None => body.to_string(),
+    }
+}
+
 /// The reply is the manuscript body — no wrapper tags, no scratch markers.
 /// Bold-label paragraphs become `##` headings, then leading heading lines are
 /// dropped: the writer opens with an H1 title (edition.yaml owns titles) and
@@ -169,7 +203,7 @@ fn extract_body(reply: &str, label: &str) -> Result<String> {
     if body.is_empty() {
         bail!("{label}: reply was empty");
     }
-    Ok(format!("{}\n", body.trim_end()))
+    Ok(format!("{}\n", split_long_intro(body.trim_end())))
 }
 
 const TRIM_PASSES: usize = 3;
@@ -518,6 +552,18 @@ mod tests {
             extract_body(reply, "t").unwrap(),
             "Intro paragraph.\n\n## The curve\n\nMore prose with **inline bold** kept.\n\n**A full sentence ends with a period.**\n\nTail.\n"
         );
+    }
+
+    #[test]
+    fn long_intro_splits_at_a_sentence_boundary() {
+        let words = |n: usize| (0..n).map(|_| "word").collect::<Vec<_>>().join(" ");
+        let body = format!("{a}. {b}. Tail sentence!\n\nNext para.", a = words(60), b = words(50));
+        let split = split_long_intro(&body);
+        let first = split.split("\n\n").next().unwrap();
+        assert_eq!(first.split_whitespace().count(), 60);
+        assert!(split.ends_with("Next para."));
+        let short = "One short intro.\n\nBody.";
+        assert_eq!(split_long_intro(short), short);
     }
 
     #[test]
