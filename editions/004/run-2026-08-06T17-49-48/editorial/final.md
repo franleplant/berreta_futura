@@ -1,15 +1,15 @@
 ---
 label: 'EDITORIAL: ORIGINAL EDITOR TEXT'
-title: Rent the Model, Own the Room
+title: Write Down What You Refuse
 byline: The Editors
 ---
 
-The model is rented. Everyone rents the same one. It will be replaced twice before its manual is finished, and none of that is yours. What is yours is the room you put it in and the record of what it did there.
+The old dream was more room. More parameters, more context, another week. You build the thing and find the room was always finite, and the only question is what leaves.
 
-A store that grows forever is not a memory. It is a bill that arrives later. Every design that lasts is an eviction policy in a different coat. A credential without an expiry is a fact written and never overwritten.
+A memory that cannot grow must choose. Fade everything at one rate and you lose what you meant to hold. Fade nothing and you fill up and confuse yourself. Engineers who admit this write a policy for discarding. The rest build a pile. A credential that never expires is a room nobody cleans.
 
-Consider an attacker who fails seventeen thousand times without discouragement and never needs an idea that wasn't already in the textbooks. Wide credentials, keys that never rotate, one account that is administrator everywhere. All of it was wrong before. It survived because attackers were few and got tired. They are not tired now. Only the price has changed.
+The arithmetic changed, not the physics. Nothing new is being discovered about our weaknesses. Machines find the ordinary ones cheaply, thousands of times an hour, without memory and without discouragement, and the attempt that works hides in the noise of the ones that failed. Our defences are the ones we already knew about and did not fund.
 
-A score is a scoreboard. A rule is a referee. Only one stops play. The tests worth having are already in your logs, each a failure you paid for once. The catalogue outlives every model you rent.
+So the work moves to judgment. The machines write well. They write beautifully while lying. A thermometer says the room is cold; something has to turn on the heat. Wire the verdict to the next step, and grade the path, not the last sentence.
 
-Build the dull parts well. Then let it run.
+Borges imagined a library of every possible book. A catalogue of everything indexes nothing. Write down what you refuse to keep.

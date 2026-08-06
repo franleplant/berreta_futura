@@ -114,10 +114,13 @@ fn strip_frontmatter(text: &str) -> &str {
     }
 }
 
-/// The render caps the editorial at one printed page; every editorial that
-/// ever fit ran 161–214 words. Enforced through the caller's reject-and-retry
-/// channel, never in the initial prompt, which stays verbatim.
-const EDITORIAL_MAX_WORDS: usize = 220;
+/// The render caps the editorial at one printed page. The budget is weighted:
+/// a `##` heading spends vertical page space worth ~25 words of prose, so the
+/// piece keeps its sections and still fits. Calibrated on real renders — a
+/// 207-word/1-heading editorial fit (232 weighted), a 192-word/3-heading one
+/// did not (267 weighted).
+const EDITORIAL_MAX_WORDS: usize = 235;
+const HEADING_WORD_COST: usize = 25;
 
 /// The render caps an article at 7 reader pages (~260 words/page) and the
 /// opener art and figure bands eat into that; a 1459-word article has shipped
@@ -172,17 +175,19 @@ fn extract_body(reply: &str, label: &str) -> Result<String> {
     Ok(format!("{}\n", body.trim_end()))
 }
 
-fn strip_heading_lines(body: &str) -> String {
-    let kept: Vec<&str> = body.lines().filter(|l| !l.starts_with("## ")).collect();
-    kept.join("\n").replace("\n\n\n\n", "\n\n").replace("\n\n\n", "\n\n").trim().to_string() + "\n"
-}
-
 const TRIM_PASSES: usize = 3;
 
 /// Word budgets can need a 25% cut, which a bare "try again shorter" retry
 /// never achieves (opus resettled at 1981→1836 over six attempts). Handing
 /// the model its own draft to cut does: each pass re-sends the original
 /// verbatim prompt plus the draft and the budget.
+/// Prose words plus the page space headings spend, in word-equivalents.
+fn weighted_words(body: &str, heading_cost: usize) -> usize {
+    let headings = body.lines().filter(|l| l.starts_with("## ")).count();
+    body.split_whitespace().count() + headings * heading_cost
+}
+
+#[allow(clippy::too_many_arguments)]
 fn fit_to_budget(
     caller: &Caller,
     writer_model: &ModelSpec,
@@ -190,30 +195,38 @@ fn fit_to_budget(
     prompt: &str,
     mut body: String,
     max: usize,
+    heading_cost: usize,
 ) -> Result<String> {
     for pass in 1..=TRIM_PASSES {
-        let words = body.split_whitespace().count();
-        if words <= max {
+        let weighted = weighted_words(&body, heading_cost);
+        if weighted <= max {
             return Ok(body);
         }
+        let words = body.split_whitespace().count();
         let label = format!("{piece_id} trim{pass}");
         // Models overshoot word targets (asked for 220, opus lands ~260), so
         // the ask sits below the budget the reply is actually checked against.
         let ask = max - max / 8;
+        let heading_note = if heading_cost > 0 {
+            format!(" Every `##` heading line costs {heading_cost} words of the budget.")
+        } else {
+            String::new()
+        };
         let trim_prompt = format!(
             "{prompt}\n\n========== your draft ({words} words) ==========\n\n{body}\n\
-             \nThe print budget is {ask} words. Write the piece again in at most {ask} \
-             words: cut whole paragraphs or sections rather than compressing every \
-             sentence. Reply with the piece only — no notes about what you cut."
+             \nThe print budget is {ask} words.{heading_note} Write the piece again \
+             within the budget: cut whole paragraphs or sections rather than \
+             compressing every sentence. Reply with the piece only — no notes about \
+             what you cut."
         );
         let parse_label = label.clone();
         body = caller.call_with_parse(&label, writer_model, &trim_prompt, |r| {
             extract_body(r, &parse_label)
         })?;
     }
-    let words = body.split_whitespace().count();
-    if words > max {
-        bail!("{piece_id}: still {words} words after {TRIM_PASSES} trim passes (budget {max})");
+    let weighted = weighted_words(&body, heading_cost);
+    if weighted > max {
+        bail!("{piece_id}: still {weighted} weighted words after {TRIM_PASSES} trim passes (budget {max})");
     }
     Ok(body)
 }
@@ -300,15 +313,15 @@ fn produce_piece(
         Some(article) => (writer_prompt(article, sources)?, Some(article_frontmatter(article)?)),
         None => (editorial_prompt(sources)?, None),
     };
-    let max_words = if article.is_none() { EDITORIAL_MAX_WORDS } else { ARTICLE_MAX_WORDS };
+    let (max_words, heading_cost) = if article.is_none() {
+        (EDITORIAL_MAX_WORDS, HEADING_WORD_COST)
+    } else {
+        (ARTICLE_MAX_WORDS, 0)
+    };
     let parse_label = label.clone();
     let body =
         caller.call_with_parse(&label, writer_model, &prompt, |r| extract_body(r, &parse_label))?;
-    let body = fit_to_budget(caller, writer_model, piece_id, &prompt, body, max_words)?;
-    // Every editorial that ever shipped is continuous prose on its one page —
-    // headings spend lines the page does not have, and no figure anchors to
-    // them. Articles keep theirs.
-    let body = if article.is_none() { strip_heading_lines(&body) } else { body };
+    let body = fit_to_budget(caller, writer_model, piece_id, &prompt, body, max_words, heading_cost)?;
     let frontmatter = match frontmatter {
         Some(fm) => fm,
         None => editorial_frontmatter(caller, meta_model, &body)?,

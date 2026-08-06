@@ -856,8 +856,8 @@ code {
   font-size: 0.82em;
   font-weight: 500;
   background: rgb(95.5% 94.5% 97.5%);
-  padding: 0.2pt 1.6pt;
-  border-radius: 1.2pt;
+  padding: 1.2pt 3pt;
+  border-radius: 2pt;
 }
 pre code { font: inherit; background: none; padding: 0; border-radius: 0; }
 /* The reader strips a markdown link to its text and sets it as ordinary prose
@@ -1337,12 +1337,6 @@ article[data-article-opener="illustrated_paper_spots_v1"] > header.article-opene
   margin-left: -11.5pt;
   margin-right: -11.5pt;
   width: 348pt;
-}
-/* A standfirst the adapter measured as overflowing continues on the next
- * page; the body follows it there rather than opening yet another page. */
-article[data-article-opener="illustrated_paper_spots_v1"]
-  > header.article-opener[data-opener-overflow="true"] {
-  break-after: auto;
 }
 article[data-article-opener="illustrated_paper_spots_v1"] .article-opener-art {
   background: transparent;
