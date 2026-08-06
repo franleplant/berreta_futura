@@ -846,7 +846,20 @@ ul[data-reference-list] li::before { content: none; }
 }
 blockquote { border-left: 1.5pt solid rgb(25% 10% 43%); margin: 4mm 0; padding-left: 4mm; }
 pre { background: rgb(95.5% 94.5% 97.5%); font: 7.5pt/1.3 "Magazine Sans", monospace; padding: 3mm; white-space: pre-wrap; }
-code { font-family: "Magazine Sans", monospace; }
+/* An inline identifier sits inside serif prose: Inter's x-height runs large
+ * against Source Serif, so full-size code reads as a shout. Size-compensate,
+ * take the medium weight so thin strokes survive the size drop, and set the
+ * same tint as `pre` as a quiet chip so code reads as code, not as a random
+ * sans word. Inside `pre` the block already provides all of that. */
+code {
+  font-family: "Magazine Sans", monospace;
+  font-size: 0.82em;
+  font-weight: 500;
+  background: rgb(95.5% 94.5% 97.5%);
+  padding: 0.2pt 1.6pt;
+  border-radius: 1.2pt;
+}
+pre code { font: inherit; background: none; padding: 0; border-radius: 0; }
 /* The reader strips a markdown link to its text and sets it as ordinary prose
  * (render.py:`_plain`), so a link carries no colour and no rule of its own. */
 a { color: inherit; text-decoration: none; }
