@@ -1,0 +1,80 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's FlashAttention clarification and historical note about pre-cache autoregressive implementations
+    reader_loses: Some implementation history and nuance about how quadratic attention costs were understood.
+    verdict: defensible
+  - fact: The source's detailed Python implementations and tensor-shape comments
+    reader_loses: Copyable implementation guidance, which is setup material rather than necessary article content.
+    verdict: defensible
+  - fact: The source's exact chunking FLOP formulas and reparameterization pseudocode
+    reader_loses: Derivation detail beyond what the manuscript needs to explain the hardware trade-off.
+    verdict: defensible
+  - fact: The source's diagrams and visual architecture layouts
+    reader_loses: Visual aids, but the manuscript supplies the same relationships in prose.
+    verdict: defensible
+  retentions:
+  - passage: At 2.8 trillion parameters, KimiK3 contains roughly as many parameters as 22,580 GPT-2 models.
+    costs: A brief opening comparison that establishes scale and motivates the argument.
+    verdict: earns_place
+  - passage: The gain exposes the cost. A finite state has no separate slot for every earlier token.
+    costs: A compact transition from efficiency to interference.
+    verdict: earns_place
+  - passage: The progression from GPT-2 to KimiK3 is therefore a progression in memory management.
+    costs: A concise synthesis that makes the article's organizing claim explicit.
+    verdict: earns_place
+  - passage: At 2.8 trillion parameters, KimiK3 is vastly larger than GPT-2. Its additional capacity has jobs to do.
+    costs: A closing restatement that connects architectural detail back to the opening question.
+    verdict: earns_place
+  notes: |
+    The piece gives readers a coherent memory-management progression—from GPT-2's growing KV cache through fixed-state updates, learned forgetting, hybrid retrieval, routing, and depth-wise selection—that the source's implementation-by-implementation worklog does not state as clearly.
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    Checked every manuscript assertion and furniture item against the complete pinned extraction; no claim fell outside what could be checked.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: KimiK3 uses several kinds of memory | Without a fused kernel, the new activation is almost three times slower, while operating in a compressed latent space nearly halves the expert forward-pass FLOPs. | 1
+    category: grammar
+    disposition: fix
+    note: |
+      The "while operating" clause grammatically makes "the new activation" the subject of "nearly halves," producing an unintended or unclear attachment. The sentence is editors' prose in faithful_synthesis.
+    suggestion: Without a fused kernel, the new activation is almost three times slower; operating in a compressed latent space, however, nearly halves the expert forward-pass FLOPs.
+  notes: |
+    One grammatical attachment error requires correction; capitalization, punctuation, typography, headings, and number formatting are otherwise clean.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    The piece presents a coherent progression from GPT-2's growing cache to KimiK3's layered memory-management strategy, with clear section turns and a conclusive ending.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: The cache becomes the problem | The arithmetic comparison is startling | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This announces the reader's reaction instead of letting the scale comparison create it.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: Folding history into a fixed state | There is a trade-off. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This portentous summary sentence names a generic tension without adding mechanism; the surrounding sentences already show exactly what is exchanged.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: KimiK3 uses several kinds of memory | The experts use SiTU rather than the usual SiLU path. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      SiTU is introduced as a specialized activation without definition, leaving readers outside this subfield unable to understand what changed.
+  notes: |
+    The piece largely holds a clear, authored explanatory voice, but three small patches announce reactions, summarize mechanically, or leave a key term unexplained.

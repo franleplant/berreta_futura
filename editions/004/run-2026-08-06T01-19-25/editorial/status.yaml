@@ -1,0 +1,34 @@
+piece: editorial
+rounds:
+- round: 1
+  words: 220
+  loop_findings: 1
+  all_findings: 3
+- round: 2
+  words: 235
+  loop_findings: 3
+  all_findings: 4
+- round: 3
+  words: 205
+  loop_findings: 2
+  all_findings: 4
+state: rounds_exhausted
+open_findings:
+- lens: mechanics
+  severity: major
+  article: the-message-carries-its-own-passport
+  locator: '- | The Message Carries Its Own Passport | 1'
+  category: heading_form
+  disposition: fix
+  note: |
+    The title is in title case, but headings must use sentence case.
+  suggestion: The message carries its own passport
+- lens: craft
+  severity: major
+  article: editorial
+  locator: The Message Carries Its Own Passport | The transport moves the envelope; it does not own the meaning. | 1
+  category: dead_words
+  disposition: fix
+  note: |
+    The balanced "X; it does not Y" construction produces the house's flagged robot register. The contrast is useful, but this formulation sounds manufactured.
+  suggestion: Recast the sentence as a direct explanation of what the transport carries and what remains in the message.

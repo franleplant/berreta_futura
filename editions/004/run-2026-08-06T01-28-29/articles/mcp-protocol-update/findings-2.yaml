@@ -1,0 +1,87 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The exact HTTP and JSON request/response examples, including initialize, Mcp-Session-Id, InputRequiredResult, and inputResponses payloads
+    reader_loses: Cannot copy the wire shapes directly, but the article still conveys the protocol changes and their consequences.
+    verdict: defensible
+  - fact: Individual SEP numbers, repository naming conventions such as ext-* repositories, and the draft-specification/changelog links
+    reader_loses: Less traceability to the source's implementation documents.
+    verdict: defensible
+  - fact: The authorization guidance that clients should eventually reject responses omitting iss, plus the issue tracker and contributor Discord directions
+    reader_loses: Some forward-looking and support-oriented context.
+    verdict: defensible
+  - fact: The source's closing thanks and community-review context
+    reader_loses: No protocol or implementation knowledge.
+    verdict: defensible
+  retentions:
+  - passage: A remote MCP server once needed sticky sessions, a shared session store, and a gateway that inspected request bodies.
+    costs: Opening space, but it establishes the operational stakes for the stateless redesign.
+    verdict: earns_place
+  - passage: Stateless transport does not forbid stateful applications... The handle is visible to the model...
+    costs: Several sentences, but they explain the crucial explicit-handle migration pattern and its advantage.
+    verdict: earns_place
+  - passage: A user is never prompted out of nowhere, and every elicitation traces back to something they (or their agent) started.
+    costs: A short explanatory aside, but it states the safety consequence of the new request constraint.
+    verdict: earns_place
+  - passage: A plain round-robin load balancer can now distribute MCP requests... Applications may still keep state...
+    costs: A closing recap that repeats the opening theme.
+    verdict: earns_place
+  notes: |
+    This piece gives readers a compact implementation-oriented map of the release, connecting each protocol change to its deployment, migration, security, and governance consequence in a more efficient through-line than the source's release-note structure.
+evidence:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: mcp-protocol-update
+    locator: Extensions leave the basement | MCP Apps is one of the first official extensions. | 1
+    category: invented_claim
+    disposition: fix
+    note: |
+      The source says MCP Apps is one of two official extensions included in this release, but does not claim it was among the first official extensions.
+  notes: |
+    I checked every manuscript assertion and furniture item against the pinned extraction; I could not verify claims against sources outside that extraction.
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    The mechanics are clean throughout the piece.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Security and compatibility | Six authorization SEPs bring MCP closer to deployed OAuth 2.0 and OpenID Connect practice. | 1
+    repair_from: Security and compatibility | Six authorization SEPs bring MCP closer to deployed OAuth 2.0 and OpenID Connect practice. | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      This section combines authorization changes, deprecations, schema changes,
+      and an error-code change under a topic label. The heading does not tell the
+      reader what the section argues.
+    suggestion: Rename the heading to state the section's claim about security hardening and client migration.
+  notes: |
+    The piece presents a coherent progression from stateless transport through extensions, compatibility changes, and a controlled breaking release.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Extensions leave the basement | Extensions leave the basement | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      The heading's basement metaphor is not developed beyond the heading and does not name the concrete change: extensions now have a formal process, repositories, versioning, and maintainers.
+    suggestion: |
+      Replace it with a heading that names the formalization of extensions.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Security and compatibility | Six authorization SEPs bring MCP closer to deployed OAuth 2.0 and OpenID Connect practice. | 1
+    category: jargon
+    disposition: author_decision
+    note: |
+      "SEP" is used as a protocol-specific acronym before the piece explains what it means, leaving an engineer outside the MCP subfield to infer it.
+    suggestion: |
+      Expand "SEP" on first use or add a brief definition.
+  notes: |
+    I heard a precise, confident technical voice throughout, with two small places where the prose asks the reader to supply context or accept a decorative metaphor.

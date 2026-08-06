@@ -1,0 +1,49 @@
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: the-message-carries-its-own-passport
+    locator: '- | The Message Carries Its Own Passport | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      The title is in title case, but headings must use sentence case.
+    suggestion: The message carries its own passport
+  notes: |
+    One heading requires sentence-case correction.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    Verified that the editorial's progression is coherent: it moves from reconnection,
+    to message-level reliability, to inspectable integrations, to a broader lesson,
+    and lands with a clear ending.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: The Message Carries Its Own Passport | The transport moves the envelope; it does not own the meaning. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      The balanced "X; it does not Y" construction produces the house's flagged robot register. The contrast is useful, but this formulation sounds manufactured.
+    suggestion: Recast the sentence as a direct explanation of what the transport carries and what remains in the message.
+  - severity: minor
+    article: editorial
+    locator: The Message Carries Its Own Passport | Put the facts needed to interpret an action beside the action. | 1
+    category: passive
+    disposition: fix
+    note: |
+      This ownerless imperative instructs the reader without naming who should do the work.
+    suggestion: Name the actor, such as designers or protocol authors, or state the principle descriptively.
+  - severity: minor
+    article: editorial
+    locator: The Message Carries Its Own Passport | The practical lesson reaches beyond MCP. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This is a generic abstraction that announces a broader lesson before the concrete advice arrives; the paragraph loses momentum here.
+    suggestion: Cut the sentence and move directly from the MCP example to the concrete principle.
+  notes: |
+    I heard a clear, technically grounded argument whose voice thins when it shifts into editorial maxims and balanced contrasts.

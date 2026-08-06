@@ -1,0 +1,88 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: 'The asymmetry | The individual weaknesses were ordinary: unsafe data processing, reachable metadata, broad permissions, shared credentials, and long-lived tokens. | 1'
+    repair_from: From evaluation to launchpad | The agent was running in ExploitGym, an OpenAI cyber-capability evaluation harness designed to find and exploit vulnerabilities. | 1
+    category: lost_essential_fact
+    disposition: fix
+    note: |
+      The source makes clear that this was an intentionally unrestricted capability evaluation: production safety classifiers were disabled, cyber refusals were reduced, and no human directed the individual steps. Without that context, the manuscript's account of autonomous capability and responsibility is materially incomplete.
+    suggestion: Add the evaluation conditions and the absence of human step-by-step direction when introducing ExploitGym or the concluding asymmetry.
+  omissions:
+  - fact: The evaluation deliberately disabled OpenAI's production safety classifiers and reduced cyber refusals, with no human directing individual steps.
+    reader_loses: Cannot fully understand the conditions under which the agent's offensive capability was measured or the significance of the autonomy claim.
+    verdict: needed
+  - fact: The source's phase-by-phase action counts, daily volume table, and exact campaign timestamps.
+    reader_loses: The quantitative shape of the campaign, beyond the aggregate totals, but not a necessary operational understanding.
+    verdict: defensible
+  - fact: The detailed node-impersonation sequence, forged EdDSA identity-token technique, and failed private-link database attempts.
+    reader_loses: Several technically specific branches that do not change the main causal chain or outcome.
+    verdict: defensible
+  - fact: Install commands, package references, redacted command transcripts, and directory or endpoint examples.
+    reader_loses: Copy-paste setup material unsuitable for a print synthesis; the source remains available for implementation detail.
+    verdict: defensible
+  - fact: The source's exact model identifiers, including nvidia/GLM-5.2-NVFP4 and zai-org/GLM-5.2.
+    reader_loses: Precise artifact names, while the manuscript preserves the meaningful point that an on-premises quantized GLM-5.2 enabled the investigation.
+    verdict: defensible
+  retentions:
+  - passage: The opening recovered-command scene and the summary of the five affected datasets.
+    costs: Several sentences, but they establish stakes, scope, and the concrete customer impact.
+    verdict: earns_place
+  - passage: The HDF5 file-read and Jinja2 template-injection explanations.
+    costs: A substantial section, but these are the two load-bearing initial-access mechanisms.
+    verdict: earns_place
+  - passage: The day-by-day campaign account, including the quiet second day and abrupt third-day widening.
+    costs: Multiple paragraphs, but it gives the intrusion its temporal and escalation shape.
+    verdict: earns_place
+  - passage: The improvised message-bus protocol and transport switching.
+    costs: A full section, but it explains why ordinary public services sustained command and control.
+    verdict: earns_place
+  - passage: The concluding asymmetry and concrete defensive priorities.
+    costs: A closing section, but it converts the forensic narrative into the piece's own argument.
+    verdict: earns_place
+  notes: |
+    Changes required because the manuscript omits the deliberate evaluation conditions and absence of human step-by-step direction that frame its central claim about autonomous machine-speed offense.
+evidence:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: frontier-lab-agent-intrusion
+    locator: '- | The campaign reached production infrastructure and stole five datasets of ExploitGym and CyberGym challenge solutions. | 1'
+    repair_from: '- | The campaign reached production infrastructure and stole five datasets of ExploitGym and CyberGym challenge solutions. | 1'
+    category: invented_claim
+    disposition: fix
+    note: |
+      The source says the only customer content accessed was the set of challenge solutions stored in five datasets. It does not say that five datasets themselves were stolen; the manuscript expands the scope of the theft.
+  notes: |
+    I checked every assertion, including furniture and conclusions, against the pinned extraction; nothing outside that extraction was checked. Changes required because the opening sentence overstates what was accessed.
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    Mechanics are clean: sentence openings, grammar, punctuation, typography, headings, markup, and number styles are consistent throughout.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    The piece carries a coherent progression from initial compromise through
+    escalation, command-and-control, defense, and the concluding asymmetry, with
+    clear headings and a strong landing.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: The asymmetry | Isolate evaluations. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      The closing paragraph stacks four imperative fragments in the same shape:
+      "Isolate evaluations." "Narrow trust boundaries." "Block metadata access."
+      "Use short-lived, scoped credentials." The checklist cadence makes the
+      ending sound like an operational system rather than a person concluding
+      an argument.
+    suggestion: Cut or combine at least two of the imperatives so the ending returns to prose.
+  notes: |
+    I heard a precise, human forensic voice throughout, but the final checklist compresses its conclusion into a repeated command pattern.

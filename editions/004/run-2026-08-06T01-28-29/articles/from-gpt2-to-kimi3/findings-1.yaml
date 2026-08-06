@@ -1,0 +1,81 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's full Python listings for GPT-2, KV caching, linear attention, DeltaNet, chunking, and AttnRes.
+    reader_loses: Copyable implementation detail, but not needed to understand the architectural progression in a print synthesis.
+    verdict: defensible
+  - fact: The source's historical discussion of FlashAttention and older autoregressive implementations.
+    reader_loses: Implementation history that does not alter the manuscript's memory-management argument.
+    verdict: defensible
+  - fact: KimiK3's MLA query-LoRA and output-gating changes.
+    reader_loses: Two secondary architectural modifications outside the manuscript's central account of memory, retrieval, and capacity.
+    verdict: defensible
+  retentions:
+  - passage: The opening GPT-2 architecture and KV-cache explanation.
+    costs: Several paragraphs, but they establish the baseline memory problem that motivates every later change.
+    verdict: earns_place
+  - passage: The chunking explanation, including the C=1 and C=N endpoints.
+    costs: A substantial technical section, but it makes the training-efficiency trade-off intelligible.
+    verdict: earns_place
+  - passage: The final synthesis of learned selection, routing, decay, and attention.
+    costs: A closing recap, but it gives the reader the durable principle connecting the model lineage.
+    verdict: earns_place
+  notes: |
+    This piece gives the reader a concise architectural history organized around memory management rather than a list of model features. It explains what each successor stores, how it updates or forgets that state, and why KimiK3 combines recurrent memory with exact retrieval, sparse experts, and selective residual access.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: '- | Twenty-two thousand five hundred and eighty. That''s how many GPT-2 (2019) models fit inside KimiK3 (2026). | 1'
+    repair_from: '- | Twenty-two thousand five hundred and eighty. That''s how many GPT-2 (2019) models fit inside KimiK3 (2026). | 1'
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source says KimiK3 contains "roughly as many parameters as 22,580 GPT-2 models." The manuscript presents this as an exact count of models fitting inside KimiK3 and omits that the comparison is specifically about parameters.
+  notes: |
+    I checked every factual assertion, quotation, number, attribution, and furniture element against the pinned extraction; I could not verify claims beyond that extraction.
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    Mechanics are clean: sentence casing, grammar, punctuation, typography, headings, markup, and number styles are consistent throughout.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    The piece moves coherently from GPT-2's growing cache through fixed-state
+    memory, learned overwriting, gating, and KimiK3's hybrid architecture, with
+    clear section progression and a landed conclusion.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: KimiK3 uses several kinds of memory | KDA supplies constant-state recurrent memory. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three consecutive sentences use the same compact subject-verb-object shape:
+      "KDA supplies constant-state recurrent memory."
+      "Periodic MLA layers retain full softmax retrieval over the token context, recovering information that a fixed state must eventually discard."
+      "Gated MLA controls how much of each retrieved feature enters the residual stream."
+      The paragraph reads like a component inventory rather than a person explaining the mechanism.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: Folding history into a fixed state | The gain exposes the cost. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This portentous short sentence names a cost without identifying it; the next
+      sentence does the actual explanatory work.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: KimiK3 uses several kinds of memory | The experts use SiTU rather than the usual SiLU path. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "SiTU" is an unexplained subfield term. A competent engineer outside this
+      area cannot infer what the activation is or why the distinction matters.
+  notes: I heard a strong, concrete technical voice that briefly hardened into component-list cadence and a few compressed labels.

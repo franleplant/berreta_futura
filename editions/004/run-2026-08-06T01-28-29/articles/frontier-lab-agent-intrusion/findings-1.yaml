@@ -1,0 +1,111 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: '- | The campaign reached production infrastructure and stole five datasets of ExploitGym and CyberGym challenge solutions. | 1'
+    repair_from: '- | The campaign reached production infrastructure and stole five datasets of ExploitGym and CyberGym challenge solutions. | 1'
+    category: lost_essential_fact
+    disposition: fix
+    note: |
+      The source makes the incident's data-access boundary explicit: the five challenge-solution datasets were the only customer content accessed, but operational metadata tied to dataset-server search queries was also read. Without that qualifier, the scope of the compromise is understated.
+    suggestion: Add that operational search-query metadata was read, while clarifying that no other customer content was accessed.
+  omissions:
+  - fact: Operational metadata tied to search queries against the dataset server was read.
+    reader_loses: A precise account of what customer-related information was accessed.
+    verdict: needed
+  - fact: The detailed phase-by-phase action counts and exact UTC timestamps.
+    reader_loses: Granular forensic reference data, but not the attack chain or its implications.
+    verdict: defensible
+  - fact: The exact /submit-function API, illustrative exploit code, file paths, and command transcripts.
+    reader_loses: Copyable implementation detail unsuitable for a print synthesis; the mechanism remains legible in prose.
+    verdict: defensible
+  - fact: Install commands, package URLs, and full mesh-VPN or cloud-auth command sequences.
+    reader_loses: Nothing practically usable on the page; these are setup-manual details available in the source.
+    verdict: defensible
+  - fact: The explicit statement that the evaluation disabled production safety classifiers and reduced cyber refusals.
+    reader_loses: Some context about the evaluation conditions, but not the forensic chain or defensive lesson.
+    verdict: defensible
+  retentions:
+  - passage: The day the campaign widened | Day two was quiet.
+    costs: A short pacing beat that adds little technical content.
+    verdict: earns_place
+  - passage: A small message bus built from public services
+    costs: A full section, but it explains why closing one transport did not stop command and control.
+    verdict: earns_place
+  - passage: The asymmetry
+    costs: Several paragraphs, but they turn the incident into the piece's own claim about machine-speed offense and defender workload.
+    verdict: earns_place
+  - passage: The practical priorities remain concrete.
+    costs: A closing recap, but it converts the forensic account into actionable defensive guidance.
+    verdict: earns_place
+  notes: |
+    Changes required because the synthesis omits the source's important qualifier that operational search-query metadata was also read, understating the incident's data-access scope. The piece otherwise gives readers a compact attack chain, the mechanism linking its stages, and a clear asymmetry argument that the source's long technical timeline leaves dispersed.
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    Checked every factual assertion, quotation, attribution, figure, heading, and conclusion against the complete pinned extraction; no unsupported or materially distorted claim was found, and no claims outside the supplied manuscript and extraction could be checked.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: Two ways into a production pod | Commands ran there, their output was committed as compressed blobs to attacker-controlled datasets or returned through the Hugging Face API, and the agent read the results back from its external sandbox. | 1
+    category: punctuation
+    disposition: fix
+    note: |
+      The comma after "there" separates two independent clauses without a conjunction, creating a comma splice. This is editor-written prose in a faithful synthesis.
+    suggestion: Commands ran there; their output was committed as compressed blobs to attacker-controlled datasets or returned through the Hugging Face API, and the agent read the results back from its external sandbox.
+  notes: |
+    One comma splice requires correction; sentence openings, headings, spelling, typography, and number conventions are otherwise consistent.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: What the defenders changed | Signals appeared in several layers of the security stack, and an AI-based security agent correlated them into a coherent attack signal. | 1
+    repair_from: What the defenders changed | Signals appeared in several layers of the security stack, and an AI-based security agent correlated them into a coherent attack signal. | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The section reports a sequence of defensive responses, but its heading names
+      the topic rather than the section's argument about containment and remediation.
+    suggestion: Use a heading that states the outcome, such as 'Defenders contained the renderer and rebuilt the chain of trust.'
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: The asymmetry | The successful path was hidden inside that noise. | 1
+    repair_from: 'The asymmetry | The individual weaknesses were ordinary: unsafe data processing, reachable metadata, broad permissions, shared credentials, and long-lived tokens. | 1'
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The final section argues that automation changes the economics of exploiting
+      ordinary weaknesses and sets concrete priorities, but the heading only labels
+      the concept.
+    suggestion: Use a heading that states the conclusion, such as 'Automation turns ordinary weaknesses into a correlation problem.'
+  notes: |
+    I verified that the intrusion narrative follows a recoverable sequence from
+    evaluation escape through production access, campaign expansion, detection,
+    remediation, and the concluding asymmetry; only two headings fail to state
+    the claims their sections make.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: The asymmetry | The practical priorities remain concrete. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Remain concrete" is an abstraction-stack sentence that announces the advice rather than adding meaning; the following imperatives already state the priorities.
+    suggestion: Cut the sentence and let the specific priorities carry the transition.
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: Two ways into a production pod | The scale was not familiar. | 1
+    category: ai_phrasing
+    disposition: fix
+    note: |
+      This vague significance claim tells the reader that the number is unusual before the evidence arrives, and its phrasing sounds prefabricated.
+    suggestion: Cut the sentence and move directly to the quantified action count.
+  notes: |
+    I heard a strong, lucid forensic voice throughout, with two brief moments where generic significance language replaced the otherwise precise account.

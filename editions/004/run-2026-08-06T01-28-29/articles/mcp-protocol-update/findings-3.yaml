@@ -1,0 +1,105 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: mcp-protocol-update
+    locator: The session disappears | Protocol version, client information, and capabilities now travel in `_meta` on each request. | 1
+    repair_from: The session disappears | Protocol version, client information, and capabilities now travel in `_meta` on each request. | 1
+    category: lost_essential_fact
+    disposition: fix
+    note: |
+      The source's stateless request still carries the required `MCP-Protocol-Version`
+      header; only client information and capabilities move into `_meta`. As written,
+      the sentence misstates where protocol version is transmitted and makes the
+      transport description misleading.
+    suggestion: Separate the protocol-version header from the client information and capabilities carried in `_meta`.
+  omissions:
+  - fact: 'The required `MCP-Protocol-Version: 2026-07-28` header on stateless requests'
+    reader_loses: The transport contract is misstated, so an implementer could construct an invalid request.
+    verdict: needed
+  - fact: The full initialize, session-bound, and stateless JSON/HTTP examples
+    reader_loses: Exact wire syntax, identifiers, and header placement, though the prose preserves the conceptual change.
+    verdict: defensible
+  - fact: The exact `InputRequiredResult` JSON, including the `inputRequests` schema
+    reader_loses: Copyable payload detail, while the retry mechanism and state fields remain clear.
+    verdict: defensible
+  - fact: SEP numbers, repository links, changelog instructions, and contributor Discord guidance
+    reader_loses: Reference and follow-up paths that are impractical to print and available in the source.
+    verdict: defensible
+  - fact: The source's warning that a future version may reject authorization responses omitting `iss`
+    reader_loses: A forward-looking compatibility nuance; the current validation requirement is retained.
+    verdict: defensible
+  retentions:
+  - passage: A remote MCP server once needed sticky sessions, a shared session store, and a gateway that inspected request bodies.
+    costs: A short setup contrast, but it establishes the operational stakes for the stateless change.
+    verdict: earns_place
+  - passage: Extensions leave the basement
+    costs: Space for a metaphorical transition, but it introduces the framework before describing MCP Apps and Tasks.
+    verdict: earns_place
+  - passage: A plain round-robin load balancer can now distribute MCP requests because the protocol no longer carries a session.
+    costs: A closing restatement of the opening benefit.
+    verdict: earns_place
+  notes: |
+    Changes required because the article otherwise gives an implementation-oriented synthesis of the release, but it currently misstates the wire location of the protocol-version field.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: The session disappears | Requests also carry `Mcp-Method` and `Mcp-Name` headers, so a load balancer, gateway, or rate limiter can route on the operation without inspecting JSON. | 1
+    repair_from: Routable, cacheable, traceable | The Streamable HTTP transport now requires `Mcp-Method` and `Mcp-Name` headers (SEP-2243) so load balancers, gateways, and rate-limiters can route on the operation without inspecting the body. | 1
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source scopes these required headers to the Streamable HTTP transport. The manuscript states that requests generally carry them, broadening the claim beyond the source.
+  - severity: major
+    article: mcp-protocol-update
+    locator: A controlled break | Future revisions now have a place to grow without hiding another breaking change inside the transport. | 1
+    category: unreached_conclusion
+    disposition: fix
+    note: |
+      The source says the maintainers expect future revisions to be adoptable without rewriting transport or lifecycle code and do not intend breaking changes to be the norm. It does not claim that another breaking change cannot be hidden inside the transport.
+  notes: |
+    Checked every assertion in the title, headings, furniture, and body against the complete pinned extraction; this piece contains no captions, pull quotes, glossaries, or cheat-sheet lines outside those elements.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: '- | FAITHFUL SYNTHESIS | 1'
+    category: markup
+    disposition: fix
+    note: |
+      "FAITHFUL SYNTHESIS" is labelled editorial apparatus inside the article and should not appear in the printed prose.
+    suggestion: Remove the FAITHFUL SYNTHESIS label from the article.
+  notes: |
+    The prose mechanics are clean, but the manuscript includes an editorial process label that must be removed.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Security and compatibility | Six authorization SEPs bring MCP closer to deployed OAuth 2.0 and OpenID Connect practice. | 1
+    repair_from: Security and compatibility | Six authorization SEPs bring MCP closer to deployed OAuth 2.0 and OpenID Connect practice. | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The section heading names two topics rather than the section's argument.
+      The section argues that authorization is tightening while deprecations,
+      schemas, and error handling define the compatibility work implementers
+      must absorb.
+    suggestion: Use a claim-led heading that states the security tightening and compatibility burden.
+  notes: |
+    The piece presents a coherent progression from stateless transport, through extensions and compatibility changes, to the controlled breaking release and its operational consequence.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: Extensions leave the basement | The new framework gives them reverse-DNS identifiers, capability negotiation, independent repositories and versioning, delegated maintainers, and an Extensions Track in the SEP process. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "reverse-DNS" and especially "SEP" arrive without definition, alongside several other unexplained protocol-specific terms later in the piece. A competent engineer outside the MCP subfield may understand the mechanism but not these labels.
+  notes: |
+    I heard a confident, mechanism-first maintainer explaining a breaking protocol revision in a clear voice; the main craft defect is that the explanation assumes too much specialized vocabulary.

@@ -1,0 +1,51 @@
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    The prose and furniture are mechanically clean, with consistent capitalization, grammar, punctuation, typography, and form.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    The piece presents a coherent progression from handoff risk to structural safeguards, examples, and a practical closing directive.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: what-the-system-remembers
+    locator: What the System Remembers | That is why useful work around models now looks less like choosing a larger brain and more like arranging memory, gates, and routes. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      The balanced "less like X and more like Y" construction is an abstract editorial turn that briefly replaces the piece's otherwise concrete voice.
+    suggestion: |
+      State the operational claim directly, without the balanced comparison or the throat-clearing "That is why."
+  - severity: minor
+    article: what-the-system-remembers
+    locator: What the System Remembers | MCP's new stateless transport makes the same demand in quieter form. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "MCP" arrives as an unexplained acronym, leaving a competent engineer outside this subfield to infer the subject before the sentence can do its work.
+    suggestion: |
+      Expand or briefly define MCP on first use.
+  - severity: minor
+    article: what-the-system-remembers
+    locator: 'What the System Remembers | The remedy was equally structural: isolate workloads, shorten credentials, restrict metadata, and correlate events quickly. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "The remedy was equally structural" is an abstraction-stack lead-in; the useful information begins only with the following list.
+    suggestion: |
+      Remove the abstract lead-in and introduce the four concrete actions directly.
+  - severity: minor
+    article: what-the-system-remembers
+    locator: What the System Remembers | On Monday, ask where your system stores its memory, who can change the route, and what evidence makes it stop. | 1
+    category: passive
+    disposition: fix
+    note: |
+      The ownerless imperative gives the reader an instruction without naming who in an organization is responsible for carrying it out.
+    suggestion: |
+      Name the responsible team or role before assigning these checks.
+  notes: |
+    I heard a sharp structural argument whose concrete images hold, but several editorial abstractions and one unexplained acronym briefly make the prose sound system-generated.

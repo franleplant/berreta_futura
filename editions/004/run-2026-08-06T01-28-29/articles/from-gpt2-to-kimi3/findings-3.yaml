@@ -1,0 +1,81 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's FlashAttention historical aside and full code listings for GPT-2, KV caching, linear attention, DeltaNet, and chunked updates
+    reader_loses: Implementation-level detail and historical context, but not the architectural progression or its practical trade-offs.
+    verdict: defensible
+  - fact: The exact Householder-transition derivation and vectorized forward-substitution equations for DeltaNet chunking
+    reader_loses: A reproducible derivation, while the manuscript still explains why chunking restores parallel training.
+    verdict: defensible
+  - fact: KimiK3's MLA query-LoRA and output-gating changes
+    reader_loses: Two secondary implementation details; the manuscript retains the more consequential MLA retrieval, gating, MoE, and AttnRes mechanisms.
+    verdict: defensible
+  - fact: The UMMA hardware example and detailed FLOP formulas for chunk size
+    reader_loses: Specific hardware and cost-model examples, not needed to understand the stated trade-off.
+    verdict: defensible
+  retentions:
+  - passage: At 2.8 trillion parameters, KimiK3 contains roughly as many parameters as 22,580 GPT-2 models.
+    costs: A short opening hook that establishes scale and frames the question the rest of the piece answers.
+    verdict: earns_place
+  - passage: GPT-2 is a decoder-only Transformer... Each block adds attention and an MLP output back to the residual stream.
+    costs: Several sentences of baseline architecture, but they give readers the reference point for every later memory change.
+    verdict: earns_place
+  - passage: The model still makes scores non-negative, divides by their sum, and computes a weighted average of values.
+    costs: A compact clarification of what linear attention preserves despite its approximation.
+    verdict: earns_place
+  - passage: Chunking makes the operation practical for training.
+    costs: A substantial technical paragraph, but it explains the crucial training-versus-decode distinction and the continuum from linear to quadratic attention.
+    verdict: earns_place
+  - passage: The progression from GPT-2 to KimiK3 is therefore a progression in memory management.
+    costs: A concluding synthesis that turns the preceding mechanisms into one legible argument.
+    verdict: earns_place
+  notes: 'This piece gives the reader a coherent architectural genealogy: each model changes how memory is stored, overwritten, decayed, or selectively retrieved, and KimiK3''s scale is explained as capacity assigned to those specific jobs rather than scale alone. It transmits the source''s substance while making that progression substantially easier to follow.'
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    I checked every assertion, quotation, number, attribution, and furniture
+    element against the pinned extraction; I could not check facts beyond that
+    supplied extraction.
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    The mechanics are clean: sentence openings, grammar, punctuation, typography, headings, markup, and number presentation are consistent.
+shape:
+  result: approved
+  findings: []
+  notes: |-
+    The piece presents a coherent progression from GPT-2's growing cache through
+    increasingly selective memory mechanisms to KimiK3's combined architecture,
+    with clear section turns and a concluding synthesis.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: '- | The arithmetic comparison is startling. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This announces the reader's reaction instead of letting the parameter comparison create it. Remove the sentence or replace it with the concrete consequence of the comparison.
+    suggestion: Cut the sentence and move directly to the question of what happens when the cache cannot keep growing.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: Folding history into a fixed state | There is a trade-off. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This is a portentous two-word abstraction that merely labels the concrete interference problem explained in the next sentences.
+    suggestion: Delete it and let the following explanation state the trade-off directly.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: KimiK3 uses several kinds of memory | The experts use SiTU rather than the usual SiLU path. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      SiTU is named but never defined; comparing it with SiLU does not tell a competent engineer outside this subfield what operation changed.
+    suggestion: Briefly identify what SiTU does differently, or omit the name and describe the activation's relevant behavior.
+  notes: |
+    I heard a technically confident piece whose voice mostly holds, with a few stock emphases and one unexplained term interrupting the human sequence.

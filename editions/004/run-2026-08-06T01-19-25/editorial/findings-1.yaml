@@ -1,0 +1,41 @@
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    The editorial is mechanically clean as typeset.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    The piece presents a clear progression from message self-containment to
+    practical reliability lessons, with a consistent reconnection example and
+    a landing conclusion.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: The Message Carries Its Own Passport
+    locator: The practical lesson reaches beyond MCP. | Put the facts needed to interpret an action beside the action. | 1
+    category: repeated_shape
+    disposition: fix
+    note: |
+      Three consecutive ownerless imperative sentences ("Put...", "Make...", "Treat...") turn the paragraph into a list of aphorisms rather than a person reasoning through the mechanism.
+    suggestion: Keep one imperative and recast the other two as specific observations about message context, registry observability, or reconnect behavior.
+  - severity: minor
+    article: The Message Carries Its Own Passport
+    locator: That small design choice changes where reliability lives. | This makes integrations easier to reason about and harder to fake. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Easier to reason about and harder to fake" is a balanced, abstract claim that does not name the concrete mechanism already demonstrated.
+    suggestion: 'Replace the balanced claim with the specific consequence: clients can validate tool identity and schemas from the message itself.'
+  - severity: minor
+    article: The Message Carries Its Own Passport
+    locator: The practical lesson reaches beyond MCP. | The practical lesson reaches beyond MCP. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This generic significance announcement contributes no information; the following sentences already state the transferable lesson.
+    suggestion: Delete the sentence and let the two concrete imperatives introduce the broader lesson.
+  notes: |
+    I heard a clear, technically grounded voice that briefly turns aphoristic in the practical-lesson paragraph and leans on two generic abstractions.

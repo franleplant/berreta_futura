@@ -1,0 +1,61 @@
+piece: mcp-in-a-nutshell
+rounds:
+- round: 1
+  words: 752
+  loop_findings: 7
+  all_findings: 10
+- round: 2
+  words: 842
+  loop_findings: 4
+  all_findings: 8
+- round: 3
+  words: 835
+  loop_findings: 5
+  all_findings: 8
+state: rounds_exhausted
+open_findings:
+- lens: mechanics
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: '- | MCP supplies the shared exchange: the host is the AI application, a client maintains each server connection, and the server provides tools, resources, or prompt templates. | 1'
+  category: punctuation
+  disposition: fix
+  note: |
+    The colon is followed by three independent clauses separated by commas, creating a comma splice.
+  suggestion: Use semicolons between the independent clauses.
+- lens: mechanics
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: The weather request, from introduction to answer | Older client primitives include sampling, which let a server request a language-model completion from the host, and logging, which let a server send diagnostic messages. | 1
+  category: agreement
+  disposition: fix
+  note: |
+    "Sampling" is singular, so its relative clause requires "lets," not "let."
+  suggestion: sampling, which lets a server request a language-model completion from the host
+- lens: mechanics
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: The weather request, from introduction to answer | Older client primitives include sampling, which let a server request a language-model completion from the host, and logging, which let a server send diagnostic messages. | 1
+  category: agreement
+  disposition: fix
+  note: |
+    "Logging" is singular, so its relative clause requires "lets," not "let."
+  suggestion: logging, which lets a server send diagnostic messages
+- lens: teaching
+  severity: major
+  article: mcp-in-a-nutshell
+  category: undefined_term
+  disposition: fix
+  locator: 'A shared exchange between application and service | A remote server can use Streamable HTTP: the client sends | 1'
+  repair_from: 'A shared exchange between application and service | A remote server can use Streamable HTTP: the client sends | 1'
+  note: |
+    The explainer uses "Server-Sent Events" without explaining what they are, and later uses "JSON Schema" without explaining that it defines and validates a tool's expected inputs. A first-time reader can repeat these names but cannot explain the concepts.
+  suggestion: Briefly define each term where it first appears.
+- lens: teaching
+  severity: major
+  article: mcp-in-a-nutshell
+  category: missing_term
+  disposition: fix
+  note: |
+    The source names progress tracking as a utility feature of the data layer, but the explainer never gives readers that term. A reader encountering it in MCP documentation would have no bridge from the explainer to the specification.
+  suggestion: Mention progress tracking alongside notifications as another utility feature.

@@ -1,0 +1,46 @@
+piece: mcp-in-a-nutshell
+rounds:
+- round: 1
+  words: 768
+  loop_findings: 5
+  all_findings: 7
+- round: 2
+  words: 837
+  loop_findings: 7
+  all_findings: 11
+- round: 3
+  words: 894
+  loop_findings: 3
+  all_findings: 5
+state: rounds_exhausted
+open_findings:
+- lens: craft
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: 'MCP in a Nutshell | JSON-RPC 2.0 supplies the message grammar: requests ask for work, responses carry results, notifications announce events without asking for a response, and an ID ties each response to its request. | 1'
+  category: jargon
+  disposition: fix
+  note: |
+    The explainer begins introducing specialist vocabulary—JSON-RPC, _meta, Multi Round-Trip Requests, OpenTelemetry, Tasks, and several protocol method names—without enough plain-language definition for an engineer outside MCP. The density makes the piece read like reference documentation before the reader has a working picture.
+  suggestion: Add a brief plain-language gloss at the first appearance of each MCP-specific term, and cut method names that do not serve the weather example.
+- lens: craft
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: MCP in a Nutshell | The AI application connects them to its conversation. | 1
+  category: weak_close
+  disposition: fix
+  note: |
+    The final sentence restates the article's opening division of labor instead of leaving the reader with a consequence of the exchange. After the detailed notification example, the ending collapses into a generic summary.
+  suggestion: End on a concrete implication of the weather example, such as how a refreshed tool list changes what the model can do.
+- lens: teaching
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: The server opens its doors | Servers can expose three main kinds of primitives | 1
+  repair_from: The server opens its doors | MCP has two layers. The inner data | 1
+  category: missing_term
+  disposition: fix
+  note: |
+    The source names progress tracking as a utility feature of MCP, but the explainer
+    never gives the reader that term. A reader encountering it in the specification
+    would be unable to connect it to the protocol's utility features.
+  suggestion: Mention progress tracking when introducing the data layer's utility features.

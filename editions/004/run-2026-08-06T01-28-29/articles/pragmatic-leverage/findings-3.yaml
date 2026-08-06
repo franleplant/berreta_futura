@@ -1,0 +1,82 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The article's addendum context and references to the author's earlier series
+    reader_loses: No background on where this argument sits in the broader series, but none is needed to use the argument here.
+    verdict: defensible
+  - fact: The principal engineer's ten years of experience and the closing 'good luck'
+    reader_loses: The illustrative authority cue and sign-off, neither of which changes the leverage model.
+    verdict: defensible
+  - fact: The source's explicit warning against overindexing on questions that require zooming down a level
+    reader_loses: Some nuance about when to change planning levels, though the manuscript retains the practical example and rule.
+    verdict: defensible
+  retentions:
+  - passage: AI can cut coding time from two to four hours to ten or twenty minutes.
+    costs: A brief quantitative setup that establishes why coding speed alone is insufficient.
+    verdict: earns_place
+  - passage: expected pain = P(you'll have to change it) × how painful the change is
+    costs: A compact formula that makes the article's central decision rule memorable.
+    verdict: earns_place
+  - passage: As you move from a 50k-foot view toward a 10k-foot view...
+    costs: The closing synthesis, which turns the examples into an actionable planning principle.
+    verdict: earns_place
+  notes: |
+    The piece gives the reader a compact decision framework for allocating planning effort across levels of AI-assisted delivery, making the source's leverage argument easier to apply than its original thread form.
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    I checked the title, headings, body, equation, and concluding claims against the pinned extraction; nothing in the manuscript could not be checked.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: '- | FAITHFUL SYNTHESIS | 1'
+    category: markup
+    disposition: fix
+    note: |
+      "FAITHFUL SYNTHESIS" is editorial apparatus presented with the article and should not appear in the printed prose.
+    suggestion: Remove the rendered editorial label.
+  notes: |
+    One editorial label must be removed; the prose mechanics and heading forms are otherwise clean.
+shape:
+  result: approved
+  findings: []
+  notes: |-
+    The piece moves cleanly from AI's coding-time gains to expected pain, then to
+    phased steering and a practical planning rule; its headings, example, and
+    ending support that progression.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Steer as you zoom in | Planning has levels. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This portentous two-word sentence states an abstraction without giving the reader anything to see; the following sentence does the useful work.
+    suggestion: |
+      Cut it and begin with the concrete movement between planning levels.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Pragmatic Leverage in the Software Factory | software factory | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "Software factory" is central but undefined, and an engineer outside this subfield may not know whether it means a team, workflow, or tool.
+    suggestion: |
+      Define the term on first use or replace it with the concrete process being described.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | Planning with AI can therefore produce something closer to a two- or threefold gain. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Therefore" and "something closer to" add hedging and abstraction without sharpening the estimate.
+    suggestion: |
+      State the estimated gain directly, with uncertainty expressed once.
+  notes: |
+    I heard a clear, practical argument whose cadence briefly turns generic when it names abstractions instead of showing the work.

@@ -1,0 +1,81 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The full HTTP and JSON request/response examples, including the exact InputRequiredResult payload
+    reader_loses: A copy-paste protocol reference, but the manuscript retains the operational fields and their roles.
+    verdict: defensible
+  - fact: Individual SEP numbers and repository identifiers
+    reader_loses: Direct pointers for specification research, not ideas needed to understand the revision.
+    verdict: defensible
+  - fact: Instructions to consult the draft specification, changelog, issue tracker, or contributor Discord
+    reader_loses: Follow-up support channels that are unsuitable for a print synthesis.
+    verdict: defensible
+  retentions:
+  - passage: The session disappears
+    costs: Space spent explaining the handshake, headers, explicit handles, elicitation retries, caching, and tracing; each supplies a distinct operational consequence.
+    verdict: earns_place
+  - passage: Extensions leave the basement
+    costs: Space spent distinguishing the extension framework, MCP Apps, and Tasks; these are central to how the protocol now evolves.
+    verdict: earns_place
+  - passage: Security and compatibility
+    costs: Space spent on authorization, deprecations, schema changes, and the error-code migration; these are separate implementation consequences of the release.
+    verdict: earns_place
+  - passage: A controlled break
+    costs: Space spent connecting the breaking transport change to the lifecycle policy, conformance requirements, and adoption timeline.
+    verdict: earns_place
+  notes: |
+    Approved because this piece gives readers a deployment-focused account of how the release removes protocol sessions, makes state explicit, and creates an extensible path for future MCP changes that the source presents more diffusely.
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    Checked every factual assertion, quote, number, heading, and furniture item against the pinned extraction; independent verification beyond that extraction was not performed.
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    No mechanical defects found; the prose and furniture follow a consistent convention throughout.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Security and compatibility | Security and compatibility | 1
+    repair_from: Security and compatibility | Security and compatibility | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      This heading names a topic rather than the section's argument, which
+      spans authorization hardening, deprecations, and schema compatibility.
+    suggestion: Rename the heading to state the section's combined compatibility claim.
+  - severity: major
+    article: mcp-protocol-update
+    locator: 'Controlled break | The practical change is visible in the deployment diagram: requests no longer carry a protocol session, so a plain round-robin load balancer can distribute them. | 1'
+    repair_from: 'Controlled break | The practical change is visible in the deployment diagram: requests no longer carry a protocol session, so a plain round-robin load balancer can distribute them. | 1'
+    category: orphan_referent
+    disposition: fix
+    note: |
+      The closing paragraph points to a deployment diagram that does not appear
+      in the piece, leaving the final practical illustration unavailable.
+    suggestion: Insert the deployment diagram immediately before this closing paragraph.
+  notes: |
+    I verified that the piece progresses from stateless transport through extensions and compatibility changes to a controlled-break conclusion, but its section heading is too topical and its closing relies on an absent diagram.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: A controlled break | The release candidate was locked on May 21, 2026. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three consecutive sentences use ownerless passive constructions: "The release candidate was locked on May 21, 2026," "The final specification is scheduled for July 28," and "Tier 1 SDKs are expected to support it during that window." The bureaucratic rhythm briefly replaces the otherwise direct voice; revise or cut the passage.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Security and compatibility | Six authorization SEPs bring MCP closer to deployed OAuth 2.0 and OpenID Connect practice. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "SEPs" is used before it is defined, leaving readers outside the MCP community to infer the acronym. Define it at first mention.
+  notes: I heard a confident, operationally grounded account whose voice holds until a brief bureaucratic cluster near the end and one unexplained acronym interrupts the flow.

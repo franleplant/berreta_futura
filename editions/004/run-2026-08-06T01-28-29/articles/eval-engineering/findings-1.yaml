@@ -1,0 +1,135 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's installation commands, plugin commands, and directory layout.
+    reader_loses: No copy-paste setup path, but these are not useful on a printed page and remain available in the source.
+    verdict: defensible
+  - fact: The source's promotional requests and X/Telegram links.
+    reader_loses: Nothing needed to understand or apply the evaluation argument.
+    verdict: defensible
+  - fact: Arize AX's 74.4% recall and 91.0% precision in the blind test.
+    reader_loses: One comparative data point, while the manuscript preserves the test's conclusion and the leading results.
+    verdict: defensible
+  - fact: The detailed account of one company's eval-only improvements across successive agent versions.
+    reader_loses: A supporting anecdote for evals' value, already conveyed by the manuscript's broader feedback-loop argument.
+    verdict: defensible
+  retentions:
+  - passage: The travel-agent failure and its 83.9% versus 32.3% measurements.
+    costs: Opening space, but it makes the central distinction between polished answers and grounded answers immediately concrete.
+    verdict: earns_place
+  - passage: The six verdict-to-routing examples.
+    costs: A compact list, but it demonstrates exactly how an eval becomes engineering.
+    verdict: earns_place
+  - passage: The 25-trace selection and five first evals.
+    costs: Substantial practical space, but it gives readers an actionable starting sequence.
+    verdict: earns_place
+  - passage: The gate statistics, shadow-mode thresholds, and broken-product warning.
+    costs: Several paragraphs, but they establish both feasibility and the limits of score-driven automation.
+    verdict: earns_place
+  - passage: The closing three-line discipline and afternoon framing.
+    costs: A recap, but it consolidates the piece's operating principles for retention.
+    verdict: earns_place
+  notes: |
+    Approved because this piece turns the source's sprawling build log into a compact, staged playbook: it makes the return arrow from evaluation to execution, the trace-to-test workflow, and the autonomous merge gate legible as one coherent operating system.
+evidence:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: eval-engineering
+    locator: The missing return arrow | The first evidence came from a blind test of 100 production traces from a live voice agent. | 1
+    repair_from: The missing return arrow | The first evidence came from a blind test of 100 production traces from a live voice agent. | 1
+    category: invented_claim
+    disposition: fix
+    note: |
+      The extraction presents earlier evidence that changing only the evals moved scores across dimensions. It does not call the blind test the first evidence.
+  - severity: major
+    article: eval-engineering
+    locator: The missing return arrow | Codex on GPT-5.5 High reached 84.6% recall and 82.8% precision, ahead of LangSmith's 79.5% recall and close to dedicated platforms. | 1
+    repair_from: The missing return arrow | Codex on GPT-5.5 High reached 84.6% recall and 82.8% precision, ahead of LangSmith's 79.5% recall and close to dedicated platforms. | 1
+    category: number_or_name_error
+    disposition: fix
+    note: |
+      The extraction reports LangSmith at 79.5% but does not identify that figure as recall. The manuscript adds an unsupported metric label.
+  notes: |
+    I checked every body assertion and all labelled furniture against the pinned extraction; no claims required checking beyond the supplied material.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: eval-engineering
+    locator: Put a gate in front of the queue | sample only 1% to 5% of traces | 1
+    category: typography
+    disposition: fix
+    note: |
+      The range is written with "to", while ranges should use en dashes consistently.
+    suggestion: sample only 1%–5% of traces
+  - severity: minor
+    article: eval-engineering
+    locator: The afternoon that compounds | Hold out 300 to 800 cases, with 500 running in under five minutes. | 1
+    category: typography
+    disposition: fix
+    note: |
+      The range is written with "to", while ranges should use en dashes consistently.
+    suggestion: Hold out 300–800 cases, with 500 running in under five minutes.
+  - severity: major
+    article: eval-engineering
+    locator: Put a gate in front of the queue | roughly three quarters of merged work needs no human edit, reverts remain in the low single digits | 1
+    category: punctuation
+    disposition: fix
+    note: |
+      Two independent clauses are joined only by a comma, creating a comma splice.
+    suggestion: roughly three quarters of merged work needs no human edit; reverts remain in the low single digits
+  notes: |
+    Changes required because one comma splice and two range-style inconsistencies appear in the otherwise clean mechanics.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: '- | A travel agent answered a simple trip question with an exchange rate, a weekly temperature, and museum hours. | 1'
+    repair_from: '- | A travel agent answered a simple trip question with an exchange rate, a weekly temperature, and museum hours. | 1'
+    category: running_example
+    disposition: fix
+    note: |
+      The travel-agent incident establishes the piece, but the later sections move through unrelated PRs, traces, and company examples without returning to it. The argument therefore accumulates examples instead of letting one case carry the operational steps.
+    suggestion: Carry the travel-agent trace through test design, routing, and gating, or replace it with one case that can demonstrate each step.
+  - severity: major
+    article: eval-engineering
+    locator: The afternoon that compounds | The teams that move first will pull 25 traces, build one eval, and add another whenever something breaks. | 1
+    repair_from: 'Let failures choose the tests | A practical starting set has 25 complete traces, chosen so good and bad behavior sit close together: a normal successful request, one the user confirmed, one the user corrected or rephrased, one with a failed or repeated tool call, and one with an external timeout or rate limit. | 1'
+    category: duplication
+    disposition: fix
+    note: |
+      The recommendation to begin with 25 traces appears in the failure-driven test section and is repeated in the closing paragraph. The repeated number and instruction make the ending restate an earlier step.
+    suggestion: Keep the detailed 25-trace prescription in the test-building section and end with the broader compounding lesson.
+  - severity: minor
+    article: eval-engineering
+    locator: 'The afternoon that compounds | Begin with three measurements for a tool-using agent: faithfulness to returned data, tool-parameter accuracy, and response quality. | 1'
+    repair_from: 'The afternoon that compounds | Begin with three measurements for a tool-using agent: faithfulness to returned data, tool-parameter accuracy, and response quality. | 1'
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      This heading is atmospheric rather than argumentative. The section's claim is that teams should start with a deliberately bounded eval suite and five common failure edges.
+    suggestion: Rename the section to state its claim, such as 'Start with five failure-edge evals.'
+  notes: I verified that the piece's main progression from incident to evaluation loop, routing, test construction, gating, and implementation is recoverable, but the running example, repeated 25-trace instruction, and final section heading weaken its structure.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: eval-engineering
+    locator: The judge needs rules too. | Use a model from another family when possible, because a model tends to recognize and grade its own style kindly. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      The paragraph becomes a six-sentence run of bare imperatives: "Use a model from another family when possible"; "Write one observable pass condition rather than a bundle of proxy scores"; "Let ordinary code check objective facts such as whether a test passed, a file exists, or state changed"; "Do not reward response length, keywords, citation counts, exact phrasing, or similarity to a reference"; "Pin the judge's version and log it"; and "Optimize against a judge long enough and the agent learns to look right rather than be right." The repeated command shape makes the prose sound like a checklist instead of a person making an argument.
+    suggestion: Break the run by combining the rules into prose and retaining only the most consequential imperative.
+  - severity: minor
+    article: eval-engineering
+    locator: 'Make the verdict move the run | The useful verdicts are routing decisions: low context recall rejects a handoff; bad tool use retries or swaps a node; hallucination quarantines a branch; a schema failure blocks an edge; a compliance risk routes to human review; verified completion terminates the run. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "Context recall" is a specialized evaluation term that is not defined before it drives a routing decision. A competent engineer outside this subfield may not know whether it means retrieval coverage, prompt context, or something else.
+    suggestion: Define context recall briefly at first use or replace it with the observable failure it measures.
+  notes: I heard a confident, mechanism-first voice that is strongest in its concrete examples, but the judge-rules paragraph collapses into checklist prose and leaves one evaluation term unexplained.

@@ -1,0 +1,37 @@
+result: changes_required
+findings:
+- severity: blocking
+  article: editorial
+  locator: '- | When a connection drops, the client can return without reconstructing the server''s memory: the next request carries the protocol version, capabilities, and client identity in `_meta`. | 1'
+  repair_from: '- | When a connection drops, the client can return without reconstructing the server''s memory: the next request carries the protocol version, capabilities, and client identity in `_meta`. | 1'
+  category: single_source_editorial
+  disposition: fix
+  note: |
+    The editorial's body derives almost entirely from mcp-in-a-nutshell:
+    `_meta`, JSON-RPC transport, tool schemas, caching, notifications and
+    polling all restate that article. More than a quarter of the body comes
+    from one article, so the editorial is a summary wearing an editorial's hat.
+- severity: blocking
+  article: edition
+  category: cover_promise
+  disposition: fix
+  note: |
+    The title and subtitle promise an issue spanning protocols, evaluations,
+    architectures and operational work, but the edition contains only one
+    MCP explainer. The cover materially over-promises the contents.
+- severity: minor
+  article: edition
+  category: credulity
+  disposition: fix
+  note: |
+    The issue offers no independent piece to challenge or test its reliability
+    thesis; add a counterargument, failure case or operational perspective.
+scores:
+  through_line: 3
+  editorial_strength: 2
+  running_order: 4
+  balance: 1
+  cover_promise: 1
+notes: |
+  This is a one-piece issue about MCP's self-describing messages, and it does
+  not hold together as the broad systems issue promised by its cover line.

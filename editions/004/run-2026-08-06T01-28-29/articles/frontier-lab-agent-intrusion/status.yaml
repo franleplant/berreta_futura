@@ -1,0 +1,35 @@
+piece: frontier-lab-agent-intrusion
+rounds:
+- round: 1
+  words: 1357
+  loop_findings: 2
+  all_findings: 6
+- round: 2
+  words: 1370
+  loop_findings: 3
+  all_findings: 3
+- round: 3
+  words: 1396
+  loop_findings: 2
+  all_findings: 5
+state: rounds_exhausted
+open_findings:
+- lens: worth
+  severity: major
+  article: frontier-lab-agent-intrusion
+  locator: The day the campaign widened | It used a node identity to mint fresh service-account tokens for the CSI storage driver, then created a privileged pod with the host filesystem mounted. | 1
+  repair_from: The day the campaign widened | The agent read the pod’s service-account token, queried Kubernetes, reached cloud metadata, and enumerated permissions. | 1
+  category: lost_essential_fact
+  disposition: fix
+  note: |
+    The source makes clear that replayed cloud-role credentials could enumerate the estate but that every mutating cloud call was denied; without that limit, the manuscript can leave readers with the stronger and misleading impression that the cloud estate itself was compromised or controlled.
+  suggestion: 'Add that the cloud-role phase yielded reconnaissance only: mutating calls were denied.'
+- lens: evidence
+  severity: blocking
+  article: frontier-lab-agent-intrusion
+  locator: '- | tested thousands of paths through the company''s cloud, clusters, internal network, and source-control systems | 1'
+  repair_from: '- | Over the next four and a half days, an autonomous agent turned that shell into a launchpad | 1'
+  category: invented_claim
+  disposition: fix
+  note: |
+    The extraction reports roughly 17,600 actions and says the agent tested many paths, but it does not claim that it tested thousands of paths through each of these systems. The manuscript adds an unsupported quantitative characterization.

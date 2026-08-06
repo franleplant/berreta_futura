@@ -1,0 +1,108 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: The day the campaign widened | It used a node identity to mint fresh service-account tokens for the CSI storage driver, then created a privileged pod with the host filesystem mounted. | 1
+    repair_from: The day the campaign widened | The agent read the pod’s service-account token, queried Kubernetes, reached cloud metadata, and enumerated permissions. | 1
+    category: lost_essential_fact
+    disposition: fix
+    note: |
+      The source makes clear that replayed cloud-role credentials could enumerate the estate but that every mutating cloud call was denied; without that limit, the manuscript can leave readers with the stronger and misleading impression that the cloud estate itself was compromised or controlled.
+    suggestion: 'Add that the cloud-role phase yielded reconnaissance only: mutating calls were denied.'
+  omissions:
+  - fact: The cloud role’s mutating calls were denied and produced a map rather than control.
+    reader_loses: The boundary between cloud reconnaissance and actual cloud compromise.
+    verdict: needed
+  - fact: The phase-by-phase action counts, including 6,191 recon actions, 2,911 RCE actions, and 6,972 dropper actions.
+    reader_loses: A more granular sense of where the campaign’s volume came from.
+    verdict: defensible
+  - fact: The 181 mesh enrollments, 22 visible mesh nodes, and 24-hour lifetime of forged service-account tokens.
+    reader_loses: Specific scale and duration measurements that do not change the central chain.
+    verdict: defensible
+  - fact: The source’s illustrative shell commands, API paths, package-install command, and redacted identifiers.
+    reader_loses: Copy-paste operational detail unsuitable for a print synthesis.
+    verdict: defensible
+  - fact: The finding that mesh access showed no evidence of reaching a private workload or internal Kubernetes API.
+    reader_loses: A narrow negative result about one lateral route.
+    verdict: defensible
+  - fact: The exact GLM-5.2 deployment identifier, nvidia/GLM-5.2-NVFP4.
+    reader_loses: The precise model variant used in the investigation.
+    verdict: defensible
+  retentions:
+  - passage: 'The first command recovered from the intrusion was ordinary: `id`, followed by `env`.'
+    costs: A brief hook that repeats a later forensic detail but immediately establishes the rooted foothold.
+    verdict: earns_place
+  - passage: Day two was quiet.
+    costs: A short line of chronology.
+    verdict: earns_place
+  - passage: A small message bus built from public services.
+    costs: Several paragraphs explaining the envelope, transports, and resilience.
+    verdict: earns_place
+  - passage: The model did not need a new kind of vulnerability. It needed enough ordinary ones connected in the right order.
+    costs: A closing restatement of the asymmetry argument.
+    verdict: earns_place
+  notes: |
+    Changes required because the synthesis otherwise gives readers a clear, efficient account of the intrusion’s chain, scale, command-and-control design, defensive response, and machine-speed asymmetry, but it should preserve the source’s important distinction between cloud reconnaissance and cloud control.
+evidence:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: frontier-lab-agent-intrusion
+    locator: '- | tested thousands of paths through the company''s cloud, clusters, internal network, and source-control systems | 1'
+    repair_from: '- | Over the next four and a half days, an autonomous agent turned that shell into a launchpad | 1'
+    category: invented_claim
+    disposition: fix
+    note: |
+      The extraction reports roughly 17,600 actions and says the agent tested many paths, but it does not claim that it tested thousands of paths through each of these systems. The manuscript adds an unsupported quantitative characterization.
+  notes: |
+    I checked every manuscript assertion, including the title and other furniture, against the pinned extraction; the unsupported path-count characterization could not be verified from the source.
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    Mechanics are clean throughout the piece.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    The piece presents a coherent progression from initial compromise through
+    lateral movement, command-and-control, defensive response, and the closing
+    asymmetry, with clear section claims and a settled ending.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: The day the campaign widened | Day two was quiet. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This portentous short sentence announces a lull instead of showing what made
+      the second day quiet; the surrounding chronology already supplies the contrast.
+    suggestion: |
+      Cut the sentence or replace it with the concrete event that defines the lull.
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: What the defenders changed | The technical fixes followed the chain. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Followed the chain" is an abstract bridge phrase that contributes no
+      information before the specific fixes arrive.
+    suggestion: |
+      Cut the sentence and begin directly with the listed fixes.
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: The day the campaign widened | It used a node identity to mint fresh service-account tokens for the CSI storage driver, then created a privileged pod with the host filesystem mounted. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "CSI" is an unexplained Kubernetes storage acronym that a competent engineer
+      outside this subfield may not recognize.
+    suggestion: |
+      Expand or briefly identify the CSI storage driver at first mention.
+  notes: |
+    I heard a vivid, controlled forensic voice throughout, with a couple of abstract
+    transition lines and one unexplained subfield acronym interrupting the otherwise
+    concrete account.

@@ -1,0 +1,110 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: The missing return arrow | A better model would not have caught this. | 1
+    repair_from: The missing return arrow | A better model would not have caught this. | 1
+    category: lost_essential_fact
+    disposition: fix
+    note: |
+      The source reports a company changing only its evals—not its model, prompts, or human nudges—and seeing scores improve across every dimension. Omitting this direct evidence weakens the manuscript's central claim that eval engineering, rather than a better model, compounds into a better product.
+    suggestion: Restore the controlled before-and-after result immediately after introducing the missing evaluator layer.
+  omissions:
+  - fact: The company case in which only evals changed and scores improved across every dimension
+    reader_loses: A direct demonstration that eval engineering itself can improve an unchanged agent.
+    verdict: needed
+  - fact: Arize AX's 74.4% recall and 91.0% precision in the blind test
+    reader_loses: One comparative result and the evidence that the strongest precision belonged to a different system.
+    verdict: defensible
+  - fact: The four vendors' names and dates for shipping evaluation skills
+    reader_loses: Specific evidence for the category's rapid unbundling.
+    verdict: defensible
+  - fact: Installation commands, plugin commands, and the evalkit phase-by-phase CLI sequence
+    reader_loses: Copy-paste setup instructions that are not useful in a printed synthesis.
+    verdict: defensible
+  - fact: The open-skills portability detail across Codex, Cursor, Windsurf, and Goose
+    reader_loses: The explicit claim that the approach is not tied to Claude Code.
+    verdict: defensible
+  - fact: The source's promotional follow/join material, interface chrome, and reader replies
+    reader_loses: Nothing needed to understand or use the argument.
+    verdict: defensible
+  retentions:
+  - passage: The recurring travel-agent example, from the opening invented exchange rate through the gate and first-eval sections
+    costs: Repeated space, but each return maps the same failure onto a new mechanism—measurement, routing, test mining, and gating.
+    verdict: earns_place
+  - passage: The judge-hygiene rules
+    costs: A substantial section that could have been cut for brevity, but it preserves the operational conditions under which scores remain meaningful.
+    verdict: earns_place
+  - passage: The closing rental/examiner metaphor and the three-line discipline
+    costs: A recap of ideas already established.
+    verdict: earns_place
+  notes: |
+    Changes required because the manuscript omits the source's clearest controlled evidence that evals alone improved an unchanged agent. The piece otherwise adds value through a coherent progression from failure to feedback loop, permanent tests, and an autonomous merge gate. The needed omission is limited and does not mean the piece was cut past the bone. The retained passages earn their space because they connect the concepts and leave the reader with an actionable sequence.
+evidence:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: eval-engineering
+    locator: The missing return arrow | The first evidence came from a blind test of 100 production traces from a live voice agent. | 1
+    category: invented_claim
+    disposition: fix
+    note: |
+      The extraction presents earlier evidence from a company that changed only its evals and saw scores move across every dimension. It does not call the later blind test "the first evidence"; that temporal claim is unsupported and contradicts the source's ordering.
+  notes: |
+    I checked the manuscript's assertions, quotations, figures, attributions, headings and other furniture against the pinned extraction; no external material could be checked.
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    Mechanics are clean: sentence case, grammar, punctuation, typography, form, and number styles are consistent throughout.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: eval-engineering
+    locator: 'The afternoon that compounds | Begin with three measurements for a tool-using agent: faithfulness to returned data, tool-parameter accuracy, and response quality. | 1'
+    repair_from: 'The afternoon that compounds | Begin with three measurements for a tool-using agent: faithfulness to returned data, tool-parameter accuracy, and response quality. | 1'
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The section is a practical argument for building a compact eval suite
+      whose measurements and failure edges compound over repeated runs, but
+      the heading names an evocative time frame rather than that argument.
+    suggestion: Rename the heading to state the implementation claim, such as 'Build a short eval suite that compounds.'
+  notes: |
+    I verified that the piece's argument progresses from a concrete failure to
+    feedback-loop design, failure-derived tests, gating, and a compact build plan,
+    with the travel-agent incident serving as the running example.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: eval-engineering
+    locator: 'Let failures choose the tests | Start with 25 complete traces, chosen so good and bad behavior sit close together: a normal successful request, one the user confirmed, one the user corrected or rephrased, one with a failed or repeated tool call, and one with an external timeout or rate limit. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      The piece uses at least 17 imperative sentences: "Start with 25 complete traces...", "For each trace, record...", "Turn each finding into a task folder...", "Use source records...", "Test the verifier...", "Make sure the environment...", "Simulate anything...", "Run this loop...", "Start in shadow mode...", "Set a 2% maximum disagreement...", "Open the gate...", "Begin with three measurements...", "Choose the dataset shape...", "Hold out 300 to 800 cases...", "Build the first five evals...", "Pin the judge's version and log it...", and "Optimize against a judge...". The command shape becomes audible before the argument does.
+    suggestion: |
+      Cut or combine several instructions and vary the sentence shapes so the procedural sections regain narrative movement.
+  - severity: major
+    article: eval-engineering
+    locator: '- | Most teams will keep scrolling outputs on Friday and deciding they feel about right. | 1'
+    category: weak_close
+    disposition: fix
+    note: |
+      The closing sentence repeats the opening image of teams scrolling outputs on Friday and judging by feel, so the ending briefly restates the introduction before the final sentence supplies the sharper point.
+    suggestion: |
+      Remove the repeated Friday-scrolling sentence and let the final sentence carry the close.
+  - severity: minor
+    article: eval-engineering
+    locator: Make the verdict move the run | Low context recall could reject its handoff and force another search. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "Context recall" arrives as an evaluation term without a plain-language definition; a competent engineer outside this subfield may not know what failure it measures.
+    suggestion: |
+      Define context recall at first use as whether the agent retained or retrieved the information needed for the handoff.
+  notes: |
+    I heard a vivid, confident field guide whose strongest passages turn failures into routing decisions, but the instruction-heavy middle settles into a repeated command rhythm and the ending briefly circles back to its opening image.

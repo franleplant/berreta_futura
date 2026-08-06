@@ -1,0 +1,143 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: 'The overview''s inventory of MCP projects: specification, SDKs, development tools, and reference servers.'
+    reader_loses: Little; this piece explains the protocol rather than its surrounding project ecosystem.
+    verdict: defensible
+  - fact: The source's explicit progress-tracking utility feature.
+    reader_loses: Awareness of one utility capability, but not an understanding of the tools-and-data exchange.
+    verdict: defensible
+  - fact: Pagination cursors, cache freshness fields, and progressive tool discovery.
+    reader_loses: Implementation-level guidance that belongs in the linked specification, not this nutshell.
+    verdict: defensible
+  - fact: The complete JSON-RPC request and response bodies, including version-negotiation errors and acknowledgement fields.
+    reader_loses: Copyable wire examples, but the manuscript retains the method names, metadata concept, arguments, and notification behavior that carry the explanatory value.
+    verdict: defensible
+  - fact: The source's SDK pseudocode for discovery, tool execution, and notification handling.
+    reader_loses: Language-specific implementation scaffolding, not a conceptual requirement for this print explainer.
+    verdict: defensible
+  - fact: The source's detailed list of notification benefits and its extension of the pattern beyond tools.
+    reader_loses: Some supporting rationale, while the manuscript still explains opt-in, best-effort freshness and the refresh cycle.
+    verdict: defensible
+  retentions:
+  - passage: An AI application can discover a weather service, learn what it can do, call it, and hear when its tools change...
+    costs: A short opening thesis, but it gives the reader the complete promise before terminology arrives.
+    verdict: earns_place
+  - passage: The application is the MCP host... a filesystem server... a service running on a platform such as Sentry...
+    costs: Several sentences of participant and local-versus-remote explanation, but they make the architecture concrete.
+    verdict: earns_place
+  - passage: The same pattern works for information that should be read rather than executed...
+    costs: A compact second example, but it prevents the article from reducing MCP to tool calling.
+    verdict: earns_place
+  - passage: MCP also lets a server ask the user for more information... Older client primitives include sampling and logging...
+    costs: A substantial paragraph of edge and deprecated features, but it supplies important capability boundaries and current implementation guidance.
+    verdict: earns_place
+  - passage: This per-request design keeps the protocol's assumptions visible...
+    costs: A brief restatement of statelessness, but it explains why the preceding metadata detail matters.
+    verdict: earns_place
+  notes: |
+    The piece gives readers a coherent, accessible weather-request lifecycle and the architectural reason—per-request metadata and layered transport—that makes the protocol's tools, resources, prompts, and live updates intelligible.
+evidence:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: mcp-in-a-nutshell
+    locator: '- | An AI application can discover a weather service, learn what it can do, call it, and hear when its tools change without learning the service''s private API. | 1'
+    repair_from: '- | An AI application can discover a weather service, learn what it can do, call it, and hear when its tools change without learning the service''s private API. | 1'
+    category: invented_claim
+    disposition: fix
+    note: |
+      The extraction does not claim that an application can use MCP without learning a service's private API. It describes MCP as a protocol for context exchange and communication abstraction, but does not establish this stronger claim.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | An AI application can discover a weather service, learn what it can do, call it, and hear when its tools change without learning the service''s private API. | 1'
+    repair_from: '- | An AI application can discover a weather service, learn what it can do, call it, and hear when its tools change without learning the service''s private API. | 1'
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source says change notifications are opt-in and best effort. The opening sentence presents hearing about tool changes as an unqualified capability.
+  - severity: blocking
+    article: mcp-in-a-nutshell
+    locator: The weather request, from introduction to answer | The response gives the server's identity, supported versions, capabilities, and primitives. | 1
+    repair_from: The weather request, from introduction to answer | When the weather client connects, it may send `server/discover`. | 1
+    category: invented_claim
+    disposition: fix
+    note: |
+      The extraction says the discovery response provides server identity, supported versions, and capabilities. It does not say that the response provides the primitives themselves; primitive descriptions are obtained through methods such as `tools/list`.
+  notes: |
+    Checked every factual assertion, quotation, attribution, and furniture item against the pinned extraction; I could not verify claims that the extraction does not state.
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    No mechanical errors found; capitalization, grammar, punctuation, typography, headings, labels, and samples are clean.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    The piece moves cleanly from MCP's roles and layers, through a concrete weather request, to changing tool availability and per-request design.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: A shared counter between the application and the service | A shared counter between the application and the service | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Counter" is a decorative metaphor that does not map onto the protocol's connection or notification mechanism; the later heading repeats it without developing the image.
+    suggestion: Use a literal heading naming the host, client, server, or tool-notification exchange.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: When the counter changes | This per-request design keeps the protocol's assumptions visible. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Keeps the protocol's assumptions visible" is an abstract, portentous claim that adds no concrete consequence after the preceding explanation.
+    suggestion: Replace it with the specific operational consequence for request handling, or cut the sentence.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: A shared counter between the application and the service | The server means the program providing context, wherever that program runs. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "The server means" is an awkward definitional phrase, and "wherever that program runs" repeats information already conveyed by the local and remote examples.
+    suggestion: State the server's role directly and remove the redundant location clause.
+  notes: |
+    I heard a clear, technically grounded explainer whose voice briefly turns abstract in a few definitions and headings.
+teaching:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: A shared counter between the application and the service | Every request carries enough information to stand on its own, while a separate transport carries the message. | 1
+    repair_from: A shared counter between the application and the service | Every request carries enough information to stand on its own, while a separate transport carries the message. | 1
+    category: missing_term
+    disposition: fix
+    note: |
+      The source names MCP as stateless, but the explainer describes the behavior without
+      giving readers that searchable term. A reader may understand that requests stand alone
+      yet be unable to recognize or search for "stateless MCP."
+    suggestion: Name and briefly define statelessness when explaining per-request metadata.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    category: missing_furniture
+    disposition: fix
+    note: |
+      The edition supplies no explicit deck or standfirst, key ideas box, glossary,
+      "try it in fifteen minutes" exercise, cheat sheet, or editors' diagram captions.
+      These omissions leave the explainer without the supporting furniture specified for
+      this edition.
+    suggestion: Add the missing reader-support furniture, or explicitly declare which items are intentionally absent.
+  notes: |
+    A first-time reader came away able to explain MCP's host/client/server arrangement,
+    its two protocol layers, its primitives, and the basic discovery, invocation, and
+    notification flow, but not the searchable term "stateless" and without the expected
+    supporting furniture.
+    1 central claim: correct, cites "An AI application can discover a".
+    2 mechanism: correct, cites "The connection has two layers. The data".
+    3 number or stated limit: correct, cites "MCP calls these offerings primitives: tools".
+    4 term: correct, cites "The application is the MCP host.".
+    5 operational, list a server's tools: correct, cites "Next the client sends `tools/list`. The server".
+    6 operational, subscribe to tool-list changes: correct, cites "A client that wants updates opens".

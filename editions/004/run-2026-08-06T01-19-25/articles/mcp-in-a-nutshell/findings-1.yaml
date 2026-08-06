@@ -1,0 +1,168 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's scope list of the specification, SDKs, development tools, and reference server implementations
+    reader_loses: Little practical value in a print explainer; these are pointers to the surrounding project rather than protocol concepts.
+    verdict: defensible
+  - fact: Client-side elicitation, which lets servers request additional user input or confirmation
+    reader_loses: The reader does not see this secondary interaction pattern, but the article's focus is the server primitives used to provide context and actions.
+    verdict: defensible
+  - fact: Sampling and logging are deprecated client primitives, and Tasks is an optional extension
+    reader_loses: Version-specific and advanced capabilities outside the article's shared vocabulary.
+    verdict: defensible
+  - fact: Pagination cursors, tool-list cache TTL and cache scope, progressive discovery, and the SDK pseudocode
+    reader_loses: Implementation aids that are not needed to understand the protocol's conceptual flow and are awkward on a printed page.
+    verdict: defensible
+  - fact: The source's recommendation to use OAuth and its fuller list of HTTP authentication options
+    reader_loses: Specific deployment guidance, while the manuscript still communicates that remote transport supports authentication.
+    verdict: defensible
+  retentions:
+  - passage: An AI application can discover a weather service, learn what it can do, call it, and hear when its tools change without learning the service’s private API.
+    costs: Opening space, but it gives the reader the protocol's complete promise in one concrete scenario.
+    verdict: earns_place
+  - passage: The same pattern works for information that should be read rather than executed. A database server might expose a resource containing its schema...
+    costs: A short second example that could otherwise be cut, but it distinguishes resources and prompts from executable tools.
+    verdict: earns_place
+  - passage: A notification has no response ID because JSON-RPC does not expect a reply... clients should still poll when they need reliable freshness
+    costs: Several sentences of mechanics, but they explain both the meaning and the limits of live updates.
+    verdict: earns_place
+  - passage: MCP ends at this exchange. It defines how a host, clients, and servers discover and exchange context, actions, and templates.
+    costs: A closing recap, but it supplies the important boundary that MCP does not manage the model or the application's context.
+    verdict: earns_place
+  notes: The piece gives readers a usable end-to-end weather request, a clear host/client/server vocabulary, and the boundary between MCP and an AI application's model management; that narrative makes the source's protocol material legible without sacrificing its central concepts. The omitted material is advanced or project-level context rather than load-bearing substance, and every retained section earns its space. The manuscript also takes a position by framing MCP as a transport-independent shared vocabulary and by explicitly defining where the protocol ends.
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    I checked every title, heading, body assertion, qualification, example, and conclusion against the pinned extraction; there are no claims outside the supplied manuscript and extraction to check.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | MCP in a Nutshell | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      The article title is in title case, while headings in this piece use sentence case.
+    suggestion: MCP in a nutshell
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | The application is the host, a small client keeps each server connection, and the server offers tools, data, or prompt templates. | 1'
+    category: punctuation
+    disposition: fix
+    note: |
+      The comma between "host" and "a small client" joins independent clauses without a conjunction, creating a comma splice.
+    suggestion: The application is the host; a small client keeps each server connection, and the server offers tools, data, or prompt templates.
+  notes: |
+    Changes required because the title is not in sentence case and the opening paragraph contains a comma splice.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: A shared counter between the application and the service | A shared counter between the application and the service | 1
+    repair_from: A shared counter between the application and the service | A shared counter between the application and the service | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The section explains MCP's host-client-server architecture, protocol layers,
+      and primitives, but the heading names a metaphor rather than the section's
+      argument.
+    suggestion: Rename the heading to state that MCP separates hosts, clients, servers, and transport.
+  notes: I verified that the piece's argument progresses from MCP's shared vocabulary through architecture, a weather request, change notifications, and the protocol's boundary; only the first section heading obscures its claim.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: A shared counter between the application and the service | A shared counter between the application and the service | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Shared counter" is an invented metaphor that does not map onto the protocol's mechanism; the later heading repeats it without making the image earn its place.
+    suggestion: |
+      Replace the metaphorical heading with a direct description of the connection layers.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: A shared counter between the application and the service | The transport layer moves those messages and handles connection setup, framing, and authentication. A local server can use standard input and output between processes. A remote server can use Streamable HTTP, with ordinary HTTP authentication and optional server-sent events. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "Streamable HTTP," "framing," and "server-sent events" arrive as specialist terms in an explainer that otherwise defines its vocabulary; a competent engineer outside this subfield may not know what each contributes.
+    suggestion: |
+      Add a short plain-language gloss for each transport term at its first mention.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: When the counter changes | MCP gives the weather request a common shape, so the host can change servers or transports without changing the conversation's basic vocabulary. | 1
+    category: weak_close
+    disposition: fix
+    note: |
+      The final sentence restates the opening promise about a shared conversation instead of ending on the sharper boundary established just before it.
+    suggestion: |
+      End with the concrete boundary that MCP defines exchange but leaves model use and context management to the application.
+  notes: |
+    I heard a careful, technically fluent explainer whose voice thins in its metaphorical headings and its final restatement.
+teaching:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The weather request, from introduction to answer | A local server can use standard | 1
+    repair_from: The weather request, from introduction to answer | A local server can use standard | 1
+    category: comprehension_gap
+    disposition: fix
+    note: |
+      Question 6, operational: "How do you connect to a remote MCP server and
+      authenticate it?" The piece names Streamable HTTP and ordinary HTTP
+      authentication but never gives the concrete authentication methods or
+      configuration a reader would need.
+    suggestion: Name bearer tokens, API keys, custom headers, or OAuth in the transport explanation.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The connection has two layers | The data layer defines JSON-RPC 2.0 | 1
+    repair_from: The connection has two layers | The data layer defines JSON-RPC 2.0 | 1
+    category: undefined_term
+    disposition: fix
+    note: |
+      "JSON-RPC 2.0" is introduced as a known label before the piece explains
+      that it is the request/response message protocol underlying MCP.
+    suggestion: Explain the message protocol briefly before using its name.
+  - severity: major
+    article: mcp-in-a-nutshell
+    category: missing_term
+    disposition: fix
+    note: |
+      The source uses spec terms the reader may encounter in the wild that the
+      explainer never names or explains, notably elicitation, sampling, logging,
+      and the Tasks extension. A reader searching those terms would not know how
+      they relate to MCP.
+    suggestion: Add a compact note distinguishing these client primitives and extensions, or explicitly scope them out.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    category: missing_furniture
+    disposition: fix
+    note: |
+      The edition supplies no deck or standfirst, key ideas box, glossary,
+      "try it in fifteen minutes" exercise, cheat sheet, or editor diagram
+      captions.
+    suggestion: Add the furniture that helps a first-time reader retrieve and apply the explanation.
+  notes: |
+    A first-time reader could explain MCP's host-client-server arrangement, its
+    two protocol layers, primitive types, discovery and tool calling, and
+    notification refreshes, but could not explain how to authenticate a remote
+    server or several important terms.
+
+    1 central claim: correct, cites "An AI application can discover a".
+    2 mechanism: correct, cites "This per-request design also limits what".
+    3 stated limit: correct, cites "The connection has two layers".
+    4 term: correct, cites "MCP calls these offerings primitives".
+    5 operational, list a server's tools: correct, cites "Next the client sends tools/list".
+    6 operational, connect to and authenticate a remote server: failed, no cite.
+
+    The mental model appears early in "An AI application can discover a": MCP
+    provides a shared protocol in which a host uses one client per server to
+    discover and invoke capabilities. The model is usable for the weather and
+    database examples because the piece walks through discovery, listing, and
+    calling.
