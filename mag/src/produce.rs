@@ -119,13 +119,50 @@ fn strip_frontmatter(text: &str) -> &str {
 /// channel, never in the initial prompt, which stays verbatim.
 const EDITORIAL_MAX_WORDS: usize = 220;
 
+/// The render caps an article at 7 reader pages (~260 words/page) and the
+/// opener art and figure bands eat into that; a 1459-word article has shipped
+/// with figures at the cap. Same reject-and-retry enforcement as above.
+const ARTICLE_MAX_WORDS: usize = 1450;
+
+/// A paragraph that is one short bold-only line ("**The curve**") is a
+/// heading the writer chose to set in bold. It becomes a real `##` heading so
+/// the render styles it as one and figure anchors have headings to bind to —
+/// without it, a bold-styled manuscript has no anchor points at all.
+fn is_bold_label(line: &str) -> bool {
+    let t = line.trim();
+    let Some(inner) = t.strip_prefix("**").and_then(|s| s.strip_suffix("**")) else {
+        return false;
+    };
+    !inner.is_empty()
+        && !inner.contains('*')
+        && inner.split_whitespace().count() <= 8
+        && !inner.ends_with(['.', ':', '!', '?', ','])
+}
+
+fn normalize_bold_labels(body: &str) -> String {
+    let lines: Vec<&str> = body.lines().collect();
+    let mut out: Vec<String> = Vec::with_capacity(lines.len());
+    for (i, line) in lines.iter().enumerate() {
+        let alone = (i == 0 || lines[i - 1].trim().is_empty())
+            && (i + 1 == lines.len() || lines[i + 1].trim().is_empty());
+        if alone && is_bold_label(line) {
+            let inner = line.trim().trim_start_matches("**").trim_end_matches("**").trim();
+            out.push(format!("## {inner}"));
+        } else {
+            out.push(line.to_string());
+        }
+    }
+    out.join("\n")
+}
+
 /// The reply is the manuscript body — no wrapper tags, no scratch markers.
-/// Leading heading lines are dropped: the writer opens with an H1 title
-/// (edition.yaml owns titles) and a "30 second version" heading, and the
-/// render needs every piece to open with a paragraph — the 30-second text
-/// itself becomes the intro.
+/// Bold-label paragraphs become `##` headings, then leading heading lines are
+/// dropped: the writer opens with an H1 title (edition.yaml owns titles) and
+/// a "30 second version" label, and the render needs every piece to open with
+/// a paragraph — the 30-second text itself becomes the intro.
 fn extract_body(reply: &str, label: &str, max_words: Option<usize>) -> Result<String> {
-    let mut body = reply.trim();
+    let normalized = normalize_bold_labels(reply.trim());
+    let mut body = normalized.as_str();
     while body.starts_with('#') {
         body = body.split_once('\n').map(|(_, rest)| rest).unwrap_or("").trim_start();
     }
@@ -223,7 +260,7 @@ fn produce_piece(
         Some(article) => (writer_prompt(article, sources)?, Some(article_frontmatter(article)?)),
         None => (editorial_prompt(sources)?, None),
     };
-    let max_words = if article.is_none() { Some(EDITORIAL_MAX_WORDS) } else { None };
+    let max_words = if article.is_none() { Some(EDITORIAL_MAX_WORDS) } else { Some(ARTICLE_MAX_WORDS) };
     let parse_label = label.clone();
     let body =
         caller.call_with_parse(&label, writer_model, &prompt, |r| extract_body(r, &parse_label, max_words))?;
@@ -439,6 +476,15 @@ mod tests {
         assert!(extract_body("   ", "t", None).is_err());
         assert!(extract_body("one two three", "t", Some(2)).is_err());
         assert!(extract_body("one two", "t", Some(2)).is_ok());
+    }
+
+    #[test]
+    fn extract_body_promotes_bold_labels_to_headings() {
+        let reply = "**Thirty seconds**\n\nIntro paragraph.\n\n**The curve**\n\nMore prose with **inline bold** kept.\n\n**A full sentence ends with a period.**\n\nTail.";
+        assert_eq!(
+            extract_body(reply, "t", None).unwrap(),
+            "Intro paragraph.\n\n## The curve\n\nMore prose with **inline bold** kept.\n\n**A full sentence ends with a period.**\n\nTail.\n"
+        );
     }
 
     #[test]

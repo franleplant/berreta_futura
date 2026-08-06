@@ -5,6 +5,7 @@
 // validate the input set (walking edition.yaml, translations, and source
 // record.yamls) and to report back what came out.
 
+use crate::caller::{Caller, ModelSpec};
 use anyhow::{anyhow, bail, Context, Result};
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
@@ -310,12 +311,164 @@ fn print_summary(value: &serde_json::Value, out_dir: &Path) {
     println!("  out dir: {}", out_dir.display());
 }
 
+struct AnchorOutcome {
+    changed: bool,
+    dropped: Vec<String>,
+}
+
+/// Re-anchor one article's figures against the current run's manuscript.
+/// Anchors that already name a heading (or `__opener__`) are left alone; the
+/// rest are matched to a heading by the anchor model, judging by the figure's
+/// caption, alt text, rationale, and previous anchor. A figure the model
+/// says no heading fits — or any figure when the manuscript has no headings —
+/// is removed and reported in `dropped`.
+fn resolve_article_anchors(
+    caller: &Caller,
+    anchor_model: &ModelSpec,
+    article_id: &str,
+    manuscript_path: &Path,
+    article: &mut serde_yaml::Value,
+) -> Result<AnchorOutcome> {
+    let mut outcome = AnchorOutcome { changed: false, dropped: Vec::new() };
+    let headings = manuscript_headings(manuscript_path);
+
+    // Read pass: which figures need resolution, and what the model gets to see.
+    let mut pending_idx: Vec<usize> = Vec::new();
+    let mut pending_ids: Vec<String> = Vec::new();
+    let mut pending_meta = String::new();
+    {
+        let Some(figs) = article.get("figures").and_then(|v| v.as_sequence()) else {
+            return Ok(outcome);
+        };
+        for (i, fig) in figs.iter().enumerate() {
+            let anchor = str_field(fig, "anchor").unwrap_or("");
+            if anchor.is_empty()
+                || anchor == "__opener__"
+                || headings.iter().any(|h| h == anchor)
+            {
+                continue;
+            }
+            let fig_id = str_field(fig, "id").unwrap_or("<unknown-figure>").to_string();
+            pending_meta += &format!("- id: {fig_id}\n");
+            for key in ["caption", "alt_text", "rationale", "anchor"] {
+                if let Some(v) = str_field(fig, key) {
+                    let label = if key == "anchor" { "previous_section" } else { key };
+                    pending_meta += &format!("  {label}: {v}\n");
+                }
+            }
+            pending_idx.push(i);
+            pending_ids.push(fig_id);
+        }
+    }
+    if pending_idx.is_empty() {
+        return Ok(outcome);
+    }
+
+    let resolutions: Vec<Option<String>> = if headings.is_empty() {
+        vec![None; pending_idx.len()]
+    } else {
+        let manuscript = fs::read_to_string(manuscript_path)
+            .with_context(|| format!("reading {}", manuscript_path.display()))?;
+        let prompt = format!(
+            "Below are a magazine article manuscript and the figures that must be placed in \
+             it. For each figure, choose the manuscript section heading whose section \
+             discusses what the figure shows. Reply with exactly one line per figure, in the \
+             order given, formatted `<figure id> :: <heading text exactly as written, \
+             without the leading ##>`. Use `<figure id> :: NONE` only if no section fits.\n\n\
+             ========== manuscript ==========\n\n{manuscript}\n\n\
+             ========== figures ==========\n\n{pending_meta}"
+        );
+        caller.call_with_parse(
+            &format!("{article_id} figure anchors"),
+            anchor_model,
+            &prompt,
+            |reply| parse_anchor_reply(reply, &pending_ids, &headings),
+        )?
+    };
+
+    let figs = article
+        .get_mut("figures")
+        .and_then(|v| v.as_sequence_mut())
+        .expect("figures existed in the read pass");
+    let mut drop_idx: HashSet<usize> = HashSet::new();
+    for ((&i, fig_id), resolution) in pending_idx.iter().zip(&pending_ids).zip(resolutions) {
+        let old = str_field(&figs[i], "anchor").unwrap_or("?").to_string();
+        match resolution {
+            Some(heading) => {
+                println!("  re-anchored {article_id}:{fig_id} '{old}' -> '{heading}'");
+                if let Some(map) = figs[i].as_mapping_mut() {
+                    map.insert(
+                        serde_yaml::Value::String("anchor".to_string()),
+                        serde_yaml::Value::String(heading),
+                    );
+                }
+                outcome.changed = true;
+            }
+            None => {
+                outcome.dropped.push(format!("{article_id}:{fig_id} (was '{old}')"));
+                drop_idx.insert(i);
+            }
+        }
+    }
+    if !drop_idx.is_empty() {
+        let mut i = 0;
+        figs.retain(|_| {
+            let keep = !drop_idx.contains(&i);
+            i += 1;
+            keep
+        });
+        outcome.changed = true;
+    }
+    Ok(outcome)
+}
+
+/// One `<figure id> :: <heading|NONE>` line per pending figure, matched
+/// case-insensitively to the manuscript's headings; the returned anchor is
+/// the heading exactly as the manuscript writes it, which is what the
+/// renderer's exact-match validation requires.
+fn parse_anchor_reply(
+    reply: &str,
+    ids: &[String],
+    headings: &[String],
+) -> Result<Vec<Option<String>>> {
+    let mut out = Vec::with_capacity(ids.len());
+    for id in ids {
+        let line = reply
+            .lines()
+            .find(|l| l.split("::").next().map(|s| s.trim().trim_start_matches('-').trim() == id).unwrap_or(false))
+            .ok_or_else(|| anyhow!("reply has no `{id} :: <heading>` line"))?;
+        let value = line
+            .split_once("::")
+            .map(|(_, v)| v)
+            .unwrap_or("")
+            .trim()
+            .trim_start_matches("##")
+            .trim();
+        if value.eq_ignore_ascii_case("none") {
+            out.push(None);
+            continue;
+        }
+        let matched = headings
+            .iter()
+            .find(|h| h.trim().eq_ignore_ascii_case(value))
+            .ok_or_else(|| {
+                anyhow!(
+                    "'{value}' is not a heading of this manuscript; the headings are: {}",
+                    headings.join(" | ")
+                )
+            })?;
+        out.push(Some(matched.clone()));
+    }
+    Ok(out)
+}
+
 pub fn run(
     edition: &str,
     operation: &str,
     article: Option<&str>,
     langs: Option<&str>,
     run_flag: Option<&str>,
+    anchor_model: &ModelSpec,
 ) -> Result<i32> {
     if !OPERATIONS.contains(&operation) {
         bail!("unknown operation '{operation}': expected one of {}", OPERATIONS.join(", "));
@@ -383,40 +536,36 @@ pub fn run(
     }
 
     // A. Base edition manuscript + editorial + article manuscripts.
-    // Figure anchors name a heading in the manuscript, and every run writes its
-    // own headings — so an anchor pinned to a previous run's prose stops the
-    // build. Stage a patched edition.yaml with unresolvable figures dropped
-    // rather than making a human re-anchor by hand after every run.
+    // Figure anchors name a heading in the manuscript, and every run writes
+    // its own headings — so an anchor pinned to a previous run's prose is
+    // re-resolved against this run's manuscript by the cheap anchor model
+    // (an anchor that still matches exactly never costs a call). Only a
+    // figure no heading fits is dropped, loudly.
     let mut staged_edition_path = edition_yaml_path.clone();
     if let Some(run) = &content_run {
+        fs::create_dir_all(&render_dir)?;
+        let caller = Caller::new(&render_dir);
         let mut patched = edition_yaml.clone();
+        let mut changed = false;
         let mut dropped: Vec<String> = Vec::new();
         if let Some(list) = patched.get_mut("articles").and_then(|v| v.as_sequence_mut()) {
             for article in list.iter_mut() {
                 let Some(id) = str_field(article, "id").map(str::to_string) else { continue };
-                let headings = manuscript_headings(&run.join("articles").join(&id).join("final.md"));
-                let Some(figs) = article.get_mut("figures").and_then(|v| v.as_sequence_mut()) else {
-                    continue;
-                };
-                figs.retain(|f| {
-                    match str_field(f, "anchor") {
-                        Some(a) if headings.iter().any(|h| h == a) => true,
-                        Some(a) => {
-                            dropped.push(format!("{id}: '{a}'"));
-                            false
-                        }
-                        None => true,
-                    }
-                });
+                let manuscript_path = run.join("articles").join(&id).join("final.md");
+                let outcome =
+                    resolve_article_anchors(&caller, anchor_model, &id, &manuscript_path, article)?;
+                changed |= outcome.changed;
+                dropped.extend(outcome.dropped);
             }
         }
         if !dropped.is_empty() {
-            println!("  dropped {} figure(s) with no matching heading in this run:", dropped.len());
+            println!("  dropped {} figure(s) no heading of this run fits:", dropped.len());
             for d in &dropped {
                 println!("    {d}");
             }
+        }
+        if changed {
             let patched_path = render_dir.join("edition.yaml");
-            fs::create_dir_all(&render_dir)?;
             fs::write(&patched_path, serde_yaml::to_string(&patched)?)?;
             staged_edition_path = patched_path;
         }
@@ -601,4 +750,20 @@ pub fn run(
     print_summary(&value, &out_dir);
 
     Ok(0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_anchor_reply;
+
+    #[test]
+    fn anchor_reply_matches_headings_exactly_and_case_insensitively() {
+        let ids = vec!["fig-a".to_string(), "fig-b".to_string()];
+        let headings = vec!["The Escalation".to_string(), "How it talked".to_string()];
+        let reply = "fig-a :: the escalation\nfig-b :: NONE\n";
+        let out = parse_anchor_reply(reply, &ids, &headings).unwrap();
+        assert_eq!(out, vec![Some("The Escalation".to_string()), None]);
+        assert!(parse_anchor_reply("fig-a :: Not A Heading\nfig-b :: NONE", &ids, &headings).is_err());
+        assert!(parse_anchor_reply("fig-a :: The Escalation", &ids, &headings).is_err());
+    }
 }

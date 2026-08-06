@@ -76,6 +76,9 @@ enum Cmd {
         /// Run dir whose finals to render (default: newest complete run, else committed files)
         #[arg(long)]
         run: Option<String>,
+        /// Cheap model that re-anchors figures to this run's headings
+        #[arg(long = "anchor-model", default_value = "haiku")]
+        anchor_model: String,
     },
 }
 
@@ -115,8 +118,9 @@ fn run(cli: Cli) -> Result<i32> {
             let spec = caller::ModelSpec::parse(&model)?;
             art::run(&edition, &gen_cmd, candidates, &spec)
         }
-        Cmd::Render { edition, operation, article, langs, run } => {
-            render::run(&edition, &operation, article.as_deref(), langs.as_deref(), run.as_deref())
+        Cmd::Render { edition, operation, article, langs, run, anchor_model } => {
+            let anchor = caller::ModelSpec::parse(&anchor_model)?;
+            render::run(&edition, &operation, article.as_deref(), langs.as_deref(), run.as_deref(), &anchor)
         }
     }
 }
