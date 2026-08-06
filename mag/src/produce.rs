@@ -160,7 +160,7 @@ fn normalize_bold_labels(body: &str) -> String {
 /// dropped: the writer opens with an H1 title (edition.yaml owns titles) and
 /// a "30 second version" label, and the render needs every piece to open with
 /// a paragraph — the 30-second text itself becomes the intro.
-fn extract_body(reply: &str, label: &str, max_words: Option<usize>) -> Result<String> {
+fn extract_body(reply: &str, label: &str) -> Result<String> {
     let normalized = normalize_bold_labels(reply.trim());
     let mut body = normalized.as_str();
     while body.starts_with('#') {
@@ -169,13 +169,44 @@ fn extract_body(reply: &str, label: &str, max_words: Option<usize>) -> Result<St
     if body.is_empty() {
         bail!("{label}: reply was empty");
     }
-    if let Some(max) = max_words {
-        let words = body.split_whitespace().count();
-        if words > max {
-            bail!("{label}: {words} words does not fit one printed page — reply with at most {max} words");
-        }
-    }
     Ok(format!("{}\n", body.trim_end()))
+}
+
+const TRIM_PASSES: usize = 2;
+
+/// Word budgets can need a 25% cut, which a bare "try again shorter" retry
+/// never achieves (opus resettled at 1981→1836 over six attempts). Handing
+/// the model its own draft to cut does: each pass re-sends the original
+/// verbatim prompt plus the draft and the budget.
+fn fit_to_budget(
+    caller: &Caller,
+    writer_model: &ModelSpec,
+    piece_id: &str,
+    prompt: &str,
+    mut body: String,
+    max: usize,
+) -> Result<String> {
+    for pass in 1..=TRIM_PASSES {
+        let words = body.split_whitespace().count();
+        if words <= max {
+            return Ok(body);
+        }
+        let label = format!("{piece_id} trim{pass}");
+        let trim_prompt = format!(
+            "{prompt}\n\n========== your draft ({words} words) ==========\n\n{body}\n\
+             \nThe print budget is {max} words. Write the piece again in at most {max} \
+             words: cut whole sections rather than compressing every sentence."
+        );
+        let parse_label = label.clone();
+        body = caller.call_with_parse(&label, writer_model, &trim_prompt, |r| {
+            extract_body(r, &parse_label)
+        })?;
+    }
+    let words = body.split_whitespace().count();
+    if words > max {
+        bail!("{piece_id}: still {words} words after {TRIM_PASSES} trim passes (budget {max})");
+    }
+    Ok(body)
 }
 
 /// Article frontmatter is deterministic from the plan row — no model call.
@@ -260,10 +291,11 @@ fn produce_piece(
         Some(article) => (writer_prompt(article, sources)?, Some(article_frontmatter(article)?)),
         None => (editorial_prompt(sources)?, None),
     };
-    let max_words = if article.is_none() { Some(EDITORIAL_MAX_WORDS) } else { Some(ARTICLE_MAX_WORDS) };
+    let max_words = if article.is_none() { EDITORIAL_MAX_WORDS } else { ARTICLE_MAX_WORDS };
     let parse_label = label.clone();
     let body =
-        caller.call_with_parse(&label, writer_model, &prompt, |r| extract_body(r, &parse_label, max_words))?;
+        caller.call_with_parse(&label, writer_model, &prompt, |r| extract_body(r, &parse_label))?;
+    let body = fit_to_budget(caller, writer_model, piece_id, &prompt, body, max_words)?;
     let frontmatter = match frontmatter {
         Some(fm) => fm,
         None => editorial_frontmatter(caller, meta_model, &body)?,
@@ -468,21 +500,19 @@ mod tests {
     fn extract_body_drops_leading_headings_only() {
         let reply = "# MCP in a Nutshell\n\n## The 30-Second Version\n\nAn AI application needs things.\n\n## Later\n\nMore.";
         assert_eq!(
-            extract_body(reply, "t", None).unwrap(),
+            extract_body(reply, "t").unwrap(),
             "An AI application needs things.\n\n## Later\n\nMore.\n"
         );
-        assert_eq!(extract_body("Plain paragraph first.", "t", None).unwrap(), "Plain paragraph first.\n");
-        assert!(extract_body("# Only a title", "t", None).is_err());
-        assert!(extract_body("   ", "t", None).is_err());
-        assert!(extract_body("one two three", "t", Some(2)).is_err());
-        assert!(extract_body("one two", "t", Some(2)).is_ok());
+        assert_eq!(extract_body("Plain paragraph first.", "t").unwrap(), "Plain paragraph first.\n");
+        assert!(extract_body("# Only a title", "t").is_err());
+        assert!(extract_body("   ", "t").is_err());
     }
 
     #[test]
     fn extract_body_promotes_bold_labels_to_headings() {
         let reply = "**Thirty seconds**\n\nIntro paragraph.\n\n**The curve**\n\nMore prose with **inline bold** kept.\n\n**A full sentence ends with a period.**\n\nTail.";
         assert_eq!(
-            extract_body(reply, "t", None).unwrap(),
+            extract_body(reply, "t").unwrap(),
             "Intro paragraph.\n\n## The curve\n\nMore prose with **inline bold** kept.\n\n**A full sentence ends with a period.**\n\nTail.\n"
         );
     }
