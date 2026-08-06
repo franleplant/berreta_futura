@@ -1,0 +1,90 @@
+schema_version: 2
+id: the-shape-of-things-to-come-part-1-the-continuou-ba42001b
+title: 'The Shape of Things to Come, Part 1: The Continuous Thunderdome'
+author: Steve Yegge
+author_profile:
+  note: Steve Yegge is the author of this essay, published on his personal site yegge.ai.
+  evidence:
+  - url: https://yegge.ai/essays/the-shape-of-things-to-come/
+    capture_id: 8e6af5af70201aa3dca779cacc07cab914ec702bd425632a202812d2ccb07b9c
+canonical_url: https://yegge.ai/essays/the-shape-of-things-to-come
+submitted_url: https://yegge.ai/essays/the-shape-of-things-to-come/
+captured_at: '2026-08-06T21:05:28Z'
+publication_date: '2026-08-02'
+kind: web
+status: captured
+content_hash: null
+raw_captures:
+- id: f547acaecacad31773a6a8fcc8199bd8883136c4f703d0a379b182d375d004d1
+  path: raw/f547acaecacad31773a6a8fcc8199bd8883136c4f703d0a379b182d375d004d1/manifest.json
+  method: public_crawler_rendered_text
+  purpose: article
+  source_url: https://yegge.ai/essays/the-shape-of-things-to-come
+  captured_at: '2026-08-06T21:05:28Z'
+  artifact_count: 5
+  byte_count: 4531799
+- id: 8e6af5af70201aa3dca779cacc07cab914ec702bd425632a202812d2ccb07b9c
+  path: raw/8e6af5af70201aa3dca779cacc07cab914ec702bd425632a202812d2ccb07b9c/manifest.json
+  method: author_identity_profile
+  purpose: author_identity
+  source_url: https://yegge.ai/essays/the-shape-of-things-to-come
+  captured_at: '2026-08-06T21:05:28Z'
+  artifact_count: 1
+  byte_count: 340
+provenance: []
+rights:
+  status: unknown
+  copyright_notice: All rights reserved. (yegge.ai footer)
+  intended_use: private_reference
+  attribution_required: true
+  public_reprint_allowed: false
+media_reviews:
+- capture_id: f547acaecacad31773a6a8fcc8199bd8883136c4f703d0a379b182d375d004d1
+  status: media_curated
+  assets:
+  - id: raster-002-a8ca4eea
+    artifact_path: media/002.png
+    artifact_sha256: a8ca4eeaec6bded94427ce18b20f3b9a9d44157b5e4b083b4c00b3a03652d6ab
+    mime_type: image/png
+    creator: Steve Yegge
+    credit: 'The Wheelhouse cockpit. Image by Steve Yegge; source: The Shape of Things to Come, Part 1: The Continuous Thunderdome.'
+    rights:
+      status: unknown
+      intended_use: private_reference
+      attribution_required: true
+      public_reprint_allowed: false
+  - id: raster-003-36f74fe7
+    artifact_path: media/003.png
+    artifact_sha256: 36f74fe76227596f7ef5a435118767639f187e3e3c6e3fe0aa82cbed1e8558c3
+    mime_type: image/png
+    creator: Steve Yegge
+    credit: 'The agent constellation architecture poster. Image by Steve Yegge; source: The Shape of Things to Come, Part 1: The Continuous Thunderdome.'
+    rights:
+      status: unknown
+      intended_use: private_reference
+      attribution_required: true
+      public_reprint_allowed: false
+  - id: raster-004-b4a785a0
+    artifact_path: media/004.png
+    artifact_sha256: b4a785a09f1db44be0af2571309e8ff080b6b1595c982409497097d973b93f02
+    mime_type: image/png
+    creator: Steve Yegge
+    credit: 'The Castellan war room dashboard. Image by Steve Yegge; source: The Shape of Things to Come, Part 1: The Continuous Thunderdome.'
+    rights:
+      status: unknown
+      intended_use: private_reference
+      attribution_required: true
+      public_reprint_allowed: false
+  note: 'Automatic curation selected 3 of 4 candidates under editorial-impact-v4; decisions are hash-pinned in f547acaecacad31773a6a8fcc8199bd8883136c4f703d0a379b182d375d004d1.curation.json.'
+- capture_id: 8e6af5af70201aa3dca779cacc07cab914ec702bd425632a202812d2ccb07b9c
+  status: media_rejected
+  assets: []
+  note: Author identity evidence is provenance, not article artwork.
+metadata:
+  tags:
+  - agents
+  - harnesses
+  - software-factories
+  - systems-engineering
+  synopsis: 'A field report from running an 18-agent crew and an Opus fleet on a 30-year-old MMO: loops and graphs on Beads, the Land Rush that replaces CI/CD merge queues, the end of human code review, and the Wish Factory.'
+notes: 'Static public page fetched over public HTTPS without credentials or session data; rendered text converted to Markdown deterministically and original images archived at source resolution.'

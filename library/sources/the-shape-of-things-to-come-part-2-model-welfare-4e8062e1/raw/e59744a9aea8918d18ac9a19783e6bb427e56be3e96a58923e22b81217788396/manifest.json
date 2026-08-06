@@ -1,0 +1,20 @@
+{
+  "artifact_count": 1,
+  "artifacts": [
+    {
+      "bytes": 335,
+      "path": "profile.md",
+      "sha256": "0654093bf211fb82171647ee143436757a8dd1f126cb14845ccf2ad1da9abfe4"
+    }
+  ],
+  "bundle_sha256": "e59744a9aea8918d18ac9a19783e6bb427e56be3e96a58923e22b81217788396",
+  "byte_count": 335,
+  "canonical_url": "https://yegge.ai/essays/model-welfare",
+  "captured_at": "2026-08-06T21:05:28Z",
+  "method": "author_identity_profile",
+  "purpose": "author_identity",
+  "schema_version": 2,
+  "source_id": "the-shape-of-things-to-come-part-2-model-welfare-4e8062e1",
+  "source_url": "https://yegge.ai/essays/model-welfare",
+  "submitted_url": "https://yegge.ai/essays/model-welfare/"
+}

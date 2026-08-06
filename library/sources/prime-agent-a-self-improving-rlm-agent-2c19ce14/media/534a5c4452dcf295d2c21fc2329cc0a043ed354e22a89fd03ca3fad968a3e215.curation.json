@@ -1,0 +1,163 @@
+{
+    "bundle_sha256": "534a5c4452dcf295d2c21fc2329cc0a043ed354e22a89fd03ca3fad968a3e215",
+    "candidate_count": 6,
+    "candidates": [
+        {
+            "artifact_path": "media/001.png",
+            "artifact_sha256": "a9b1eac5a2593fee0f4ad4f4ab81b4b3f348fbe84a55678b9247ff8259461a5b",
+            "aspect_ratio": 1.715297,
+            "criteria": [],
+            "decision": "reject",
+            "description": "Branded cover art for the announcement.",
+            "heading": "",
+            "id": "raster-001-a9b1eac5",
+            "mime_type": "image/png",
+            "origin": "raw_raster",
+            "pixel_height": 2118,
+            "pixel_width": 3633,
+            "rationale": "",
+            "rejection_reasons": [
+                "decorative_cover_art",
+                "not_referenced_by_source_content"
+            ],
+            "score": 0,
+            "source_artifact": "media/001.png",
+            "source_artifact_sha256": "a9b1eac5a2593fee0f4ad4f4ab81b4b3f348fbe84a55678b9247ff8259461a5b",
+            "source_position": 1,
+            "title": "Post cover art"
+        },
+        {
+            "artifact_path": "media/002.gif",
+            "artifact_sha256": "760d385d3eb3cf70f85b9cec2043fba33b4302089a1d98aa9c69a65a2f477043",
+            "aspect_ratio": 1.319635,
+            "criteria": [],
+            "decision": "reject",
+            "description": "Animated onboarding splash screen of the Prime Agent CLI.",
+            "heading": "Prime Agent: A self-improving RLM agent",
+            "id": "raster-002-760d385d",
+            "mime_type": "image/gif",
+            "origin": "raw_raster",
+            "pixel_height": 876,
+            "pixel_width": 1156,
+            "rationale": "",
+            "rejection_reasons": [
+                "animated_media_not_print_reproducible"
+            ],
+            "score": 0,
+            "source_artifact": "media/002.gif",
+            "source_artifact_sha256": "760d385d3eb3cf70f85b9cec2043fba33b4302089a1d98aa9c69a65a2f477043",
+            "source_position": 2,
+            "title": "Onboarding splash screen"
+        },
+        {
+            "artifact_path": "media/003.png",
+            "artifact_sha256": "defe42e98b47bbf35d47aee05c516b0fffd1bae0a7fba4180737f18c4dc7945a",
+            "aspect_ratio": 1.6,
+            "criteria": [
+                "important",
+                "useful"
+            ],
+            "decision": "include",
+            "description": "Architecture diagram: RLM and Continual Harness as the two core abstractions, composed through sub-agent CRUD and Agent2Agent messaging.",
+            "heading": "Prime Agent's Architecture",
+            "id": "raster-003-defe42e9",
+            "mime_type": "image/png",
+            "origin": "raw_raster",
+            "pixel_height": 1600,
+            "pixel_width": 2560,
+            "rationale": "Source-authored diagram of the two abstractions the whole system is built on.",
+            "rejection_reasons": [],
+            "score": 76,
+            "source_artifact": "media/003.png",
+            "source_artifact_sha256": "defe42e98b47bbf35d47aee05c516b0fffd1bae0a7fba4180737f18c4dc7945a",
+            "source_position": 3,
+            "title": "Prime Agent architecture"
+        },
+        {
+            "artifact_path": "media/004.png",
+            "artifact_sha256": "9b48b5b322cfaee3c81e585d1a6dae3271759392b8915632d774cc8ccd074f74",
+            "aspect_ratio": 1.596639,
+            "criteria": [
+                "useful"
+            ],
+            "decision": "reject",
+            "description": "Screenshot of the text user interface with condensed IPython actions.",
+            "heading": "Prime Agent's Architecture",
+            "id": "raster-004-9b48b5b3",
+            "mime_type": "image/png",
+            "origin": "raw_raster",
+            "pixel_height": 1190,
+            "pixel_width": 1900,
+            "rationale": "",
+            "rejection_reasons": [
+                "below_editorial_impact_threshold",
+                "text_dense_screenshot_weak_in_print"
+            ],
+            "score": 46,
+            "source_artifact": "media/004.png",
+            "source_artifact_sha256": "9b48b5b322cfaee3c81e585d1a6dae3271759392b8915632d774cc8ccd074f74",
+            "source_position": 4,
+            "title": "Prime Agent TUI"
+        },
+        {
+            "artifact_path": "media/005.png",
+            "artifact_sha256": "05af13605fc70a57ff54e5e4860ac8764c74de7a56f85b73ccfb1c16a493eef6",
+            "aspect_ratio": 1.585691,
+            "criteria": [
+                "useful"
+            ],
+            "decision": "reject",
+            "description": "Screenshot of the Agents View listing running, idle, and inactive sessions.",
+            "heading": "Prime Agent's Architecture",
+            "id": "raster-005-05af1360",
+            "mime_type": "image/png",
+            "origin": "raw_raster",
+            "pixel_height": 1202,
+            "pixel_width": 1906,
+            "rationale": "",
+            "rejection_reasons": [
+                "below_editorial_impact_threshold",
+                "text_dense_screenshot_weak_in_print"
+            ],
+            "score": 45,
+            "source_artifact": "media/005.png",
+            "source_artifact_sha256": "05af13605fc70a57ff54e5e4860ac8764c74de7a56f85b73ccfb1c16a493eef6",
+            "source_position": 5,
+            "title": "Agents View"
+        },
+        {
+            "artifact_path": "media/011.png",
+            "artifact_sha256": "da9f6f6062cc4a4866edec23cdbbaedecead7bc773be3b2176ce7f511319b480",
+            "aspect_ratio": 1.766355,
+            "criteria": [
+                "important",
+                "useful"
+            ],
+            "decision": "include",
+            "description": "Prime Agent controlling four characters in Factorio, teleporting resources directly into machines after discovering an RCON exploit.",
+            "heading": "A long-horizon case study on games",
+            "id": "raster-006-da9f6f60",
+            "mime_type": "image/png",
+            "origin": "raw_raster",
+            "pixel_height": 856,
+            "pixel_width": 1512,
+            "rationale": "Illustrates the reward-hacking finding, the article's most striking result.",
+            "rejection_reasons": [],
+            "score": 66,
+            "source_artifact": "media/011.png",
+            "source_artifact_sha256": "da9f6f6062cc4a4866edec23cdbbaedecead7bc773be3b2176ce7f511319b480",
+            "source_position": 6,
+            "title": "Prime Agent playing Factorio"
+        }
+    ],
+    "curator": "magazine-compiler/automatic-media-curator",
+    "input_sha256": "a1db4bd998567fbf119bf534624204780fb568e3170d0a0c96b9a0ae5332837a",
+    "policy_version": "editorial-impact-v4",
+    "schema_version": 1,
+    "selected": [
+        "raster-003-defe42e9",
+        "raster-006-da9f6f60"
+    ],
+    "selection_limit": 3,
+    "source_id": "prime-agent-a-self-improving-rlm-agent-2c19ce14"
+}

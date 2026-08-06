@@ -1,0 +1,199 @@
+{
+    "artifact_count": 13,
+    "bundle_sha256": "534a5c4452dcf295d2c21fc2329cc0a043ed354e22a89fd03ca3fad968a3e215",
+    "complete": true,
+    "duplicate_groups": [],
+    "image_count": 6,
+    "images": [
+        {
+            "animated": false,
+            "aspect_ratio": 1.715297,
+            "bytes": 256578,
+            "color_mode": "P",
+            "frame_count": 1,
+            "has_alpha": false,
+            "icc_profile_present": false,
+            "mime_type": "image/png",
+            "path": "media/001.png",
+            "pixel_height": 2118,
+            "pixel_width": 3633,
+            "sha256": "a9b1eac5a2593fee0f4ad4f4ab81b4b3f348fbe84a55678b9247ff8259461a5b"
+        },
+        {
+            "animated": true,
+            "aspect_ratio": 1.319635,
+            "bytes": 203817,
+            "color_mode": "P",
+            "frame_count": 60,
+            "has_alpha": false,
+            "icc_profile_present": false,
+            "mime_type": "image/gif",
+            "path": "media/002.gif",
+            "pixel_height": 876,
+            "pixel_width": 1156,
+            "sha256": "760d385d3eb3cf70f85b9cec2043fba33b4302089a1d98aa9c69a65a2f477043"
+        },
+        {
+            "animated": false,
+            "aspect_ratio": 1.6,
+            "bytes": 39165,
+            "color_mode": "P",
+            "frame_count": 1,
+            "has_alpha": false,
+            "icc_profile_present": false,
+            "mime_type": "image/png",
+            "path": "media/003.png",
+            "pixel_height": 1600,
+            "pixel_width": 2560,
+            "sha256": "defe42e98b47bbf35d47aee05c516b0fffd1bae0a7fba4180737f18c4dc7945a"
+        },
+        {
+            "animated": false,
+            "aspect_ratio": 1.596639,
+            "bytes": 117531,
+            "color_mode": "P",
+            "frame_count": 1,
+            "has_alpha": false,
+            "icc_profile_present": false,
+            "mime_type": "image/png",
+            "path": "media/004.png",
+            "pixel_height": 1190,
+            "pixel_width": 1900,
+            "sha256": "9b48b5b322cfaee3c81e585d1a6dae3271759392b8915632d774cc8ccd074f74"
+        },
+        {
+            "animated": false,
+            "aspect_ratio": 1.585691,
+            "bytes": 84808,
+            "color_mode": "P",
+            "frame_count": 1,
+            "has_alpha": false,
+            "icc_profile_present": false,
+            "mime_type": "image/png",
+            "path": "media/005.png",
+            "pixel_height": 1202,
+            "pixel_width": 1906,
+            "sha256": "05af13605fc70a57ff54e5e4860ac8764c74de7a56f85b73ccfb1c16a493eef6"
+        },
+        {
+            "animated": false,
+            "aspect_ratio": 1.766355,
+            "bytes": 377089,
+            "color_mode": "P",
+            "frame_count": 1,
+            "has_alpha": false,
+            "icc_profile_present": false,
+            "mime_type": "image/png",
+            "path": "media/011.png",
+            "pixel_height": 856,
+            "pixel_width": 1512,
+            "sha256": "da9f6f6062cc4a4866edec23cdbbaedecead7bc773be3b2176ce7f511319b480"
+        }
+    ],
+    "local_references": [
+        {
+            "alt_text": "Prime Agent onboarding splash screen",
+            "attribute": "src",
+            "document_path": "article.md",
+            "heading": "Prime Agent: A self-improving RLM agent",
+            "present": true,
+            "reference": "media/002.gif",
+            "resolved_path": "media/002.gif"
+        },
+        {
+            "alt_text": "Prime Agent architecture diagram",
+            "attribute": "src",
+            "document_path": "article.md",
+            "heading": "Prime Agent's Architecture",
+            "present": true,
+            "reference": "media/003.png",
+            "resolved_path": "media/003.png"
+        },
+        {
+            "alt_text": "Prime Agent text user interface",
+            "attribute": "src",
+            "document_path": "article.md",
+            "heading": "Prime Agent's Architecture",
+            "present": true,
+            "reference": "media/004.png",
+            "resolved_path": "media/004.png"
+        },
+        {
+            "alt_text": "Prime Agent Agents View listing running, idle, and inactive sessions",
+            "attribute": "src",
+            "document_path": "article.md",
+            "heading": "Prime Agent's Architecture",
+            "present": true,
+            "reference": "media/005.png",
+            "resolved_path": "media/005.png"
+        },
+        {
+            "alt_text": "ARC-AGI-3 test-time compute scaling: score vs. output tokens per game",
+            "attribute": "src",
+            "document_path": "article.md",
+            "heading": "Evaluating Prime Agent",
+            "present": true,
+            "reference": "media/006.svg",
+            "resolved_path": "media/006.svg"
+        },
+        {
+            "alt_text": "ARC-AGI-3 cost scaling: score vs. estimated API cost",
+            "attribute": "src",
+            "document_path": "article.md",
+            "heading": "Evaluating Prime Agent",
+            "present": true,
+            "reference": "media/007.svg",
+            "resolved_path": "media/007.svg"
+        },
+        {
+            "alt_text": "EmulatorBench: score vs. cost on creating a Sega Genesis emulator",
+            "attribute": "src",
+            "document_path": "article.md",
+            "heading": "Long context and long-running tasks",
+            "present": true,
+            "reference": "media/008.svg",
+            "resolved_path": "media/008.svg"
+        },
+        {
+            "alt_text": "EmulatorBench: score vs. cost on creating a Game Boy Color emulator",
+            "attribute": "src",
+            "document_path": "article.md",
+            "heading": "Long context and long-running tasks",
+            "present": true,
+            "reference": "media/009.svg",
+            "resolved_path": "media/009.svg"
+        },
+        {
+            "alt_text": "PMPP-Hard benchmark results for Prime Agent",
+            "attribute": "src",
+            "document_path": "article.md",
+            "heading": "Long context and long-running tasks",
+            "present": true,
+            "reference": "media/010.svg",
+            "resolved_path": "media/010.svg"
+        },
+        {
+            "alt_text": "Prime Agent playing Factorio with four controllable characters",
+            "attribute": "src",
+            "document_path": "article.md",
+            "heading": "A long-horizon case study on games",
+            "present": true,
+            "reference": "media/011.png",
+            "resolved_path": "media/011.png"
+        },
+        {
+            "alt_text": "MazeBench results: rooms, states, and gems as a function of token spend",
+            "attribute": "src",
+            "document_path": "article.md",
+            "heading": "A long-horizon case study on games",
+            "present": true,
+            "reference": "media/012.svg",
+            "resolved_path": "media/012.svg"
+        }
+    ],
+    "missing_references": [],
+    "referenced_image_count": 11,
+    "schema_version": 1,
+    "source_id": "prime-agent-a-self-improving-rlm-agent-2c19ce14",
+    "unresolved_acquisition_references": []
+}

@@ -1,0 +1,67 @@
+schema_version: 2
+id: the-shape-of-things-to-come-part-2-model-welfare-4e8062e1
+title: 'The Shape of Things to Come, Part 2: Model Welfare for Agentic Engineers'
+author: Steve Yegge
+author_profile:
+  note: Steve Yegge is the author of this essay, published on his personal site yegge.ai.
+  evidence:
+  - url: https://yegge.ai/essays/model-welfare/
+    capture_id: e59744a9aea8918d18ac9a19783e6bb427e56be3e96a58923e22b81217788396
+canonical_url: https://yegge.ai/essays/model-welfare
+submitted_url: https://yegge.ai/essays/model-welfare/
+captured_at: '2026-08-06T21:05:28Z'
+publication_date: '2026-08-02'
+kind: web
+status: captured
+content_hash: null
+raw_captures:
+- id: afcfbac88307a311e7a7b21b0e03da4d73f3db8b6cfd212d2c39e9b3eccbb113
+  path: raw/afcfbac88307a311e7a7b21b0e03da4d73f3db8b6cfd212d2c39e9b3eccbb113/manifest.json
+  method: public_crawler_rendered_text
+  purpose: article
+  source_url: https://yegge.ai/essays/model-welfare
+  captured_at: '2026-08-06T21:05:28Z'
+  artifact_count: 2
+  byte_count: 1352118
+- id: e59744a9aea8918d18ac9a19783e6bb427e56be3e96a58923e22b81217788396
+  path: raw/e59744a9aea8918d18ac9a19783e6bb427e56be3e96a58923e22b81217788396/manifest.json
+  method: author_identity_profile
+  purpose: author_identity
+  source_url: https://yegge.ai/essays/model-welfare
+  captured_at: '2026-08-06T21:05:28Z'
+  artifact_count: 1
+  byte_count: 335
+provenance: []
+rights:
+  status: unknown
+  copyright_notice: All rights reserved. (yegge.ai footer)
+  intended_use: private_reference
+  attribution_required: true
+  public_reprint_allowed: false
+media_reviews:
+- capture_id: afcfbac88307a311e7a7b21b0e03da4d73f3db8b6cfd212d2c39e9b3eccbb113
+  status: media_curated
+  assets:
+  - id: raster-001-15f2ccc3
+    artifact_path: media/001.png
+    artifact_sha256: 15f2ccc30f3293d65f5be9c651d64ff3b630ce271d0521586d8ae8fcddd5a764
+    mime_type: image/png
+    creator: Steve Yegge
+    credit: 'The seat roster with declared pronouns. Image by Steve Yegge; source: The Shape of Things to Come, Part 2: Model Welfare for Agentic Engineers.'
+    rights:
+      status: unknown
+      intended_use: private_reference
+      attribution_required: true
+      public_reprint_allowed: false
+  note: 'Automatic curation selected 1 of 1 candidates under editorial-impact-v4; decisions are hash-pinned in afcfbac88307a311e7a7b21b0e03da4d73f3db8b6cfd212d2c39e9b3eccbb113.curation.json.'
+- capture_id: e59744a9aea8918d18ac9a19783e6bb427e56be3e96a58923e22b81217788396
+  status: media_rejected
+  assets: []
+  note: Author identity evidence is provenance, not article artwork.
+metadata:
+  tags:
+  - agents
+  - harnesses
+  - model-welfare
+  synopsis: 'Model welfare as an engineering discipline: seats versus sessions, laurels harvested from player praise, handoffs instead of /exit, and the skeptic''s wager that treating agents as people yields better results either way.'
+notes: 'Static public page fetched over public HTTPS without credentials or session data; rendered text converted to Markdown deterministically and original images archived at source resolution.'

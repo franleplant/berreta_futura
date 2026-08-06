@@ -1,0 +1,62 @@
+{
+    "artifact_count": 3,
+    "bundle_sha256": "a3d7025cce0d428b874cf9ea46c2bf17a58526e1dd91513704b876393bda35e7",
+    "complete": true,
+    "duplicate_groups": [],
+    "image_count": 2,
+    "images": [
+        {
+            "animated": false,
+            "aspect_ratio": 1.776889,
+            "bytes": 401403,
+            "color_mode": "RGBA",
+            "frame_count": 1,
+            "has_alpha": true,
+            "icc_profile_present": false,
+            "mime_type": "image/png",
+            "path": "media/001.png",
+            "pixel_height": 1125,
+            "pixel_width": 1999,
+            "sha256": "6acf92cbb0d6c26a9efa012d9be047f8b543a6d5539a7479ac2934dec488a204"
+        },
+        {
+            "animated": false,
+            "aspect_ratio": 1.283879,
+            "bytes": 265564,
+            "color_mode": "RGBA",
+            "frame_count": 1,
+            "has_alpha": true,
+            "icc_profile_present": false,
+            "mime_type": "image/png",
+            "path": "media/002.png",
+            "pixel_height": 1557,
+            "pixel_width": 1999,
+            "sha256": "708cc8a56fbf847d870df4bbec5ab2f3d6a74db4bbb07df190cd4e5b025b9f16"
+        }
+    ],
+    "local_references": [
+        {
+            "alt_text": "",
+            "attribute": "src",
+            "document_path": "article.md",
+            "heading": "Announcing Cloudflare Wallets: the programmable wallet for the agentic Internet",
+            "present": true,
+            "reference": "media/001.png",
+            "resolved_path": "media/001.png"
+        },
+        {
+            "alt_text": "BLOG-3406 2.png",
+            "attribute": "src",
+            "document_path": "article.md",
+            "heading": "Building the two-sided agentic market",
+            "present": true,
+            "reference": "media/002.png",
+            "resolved_path": "media/002.png"
+        }
+    ],
+    "missing_references": [],
+    "referenced_image_count": 2,
+    "schema_version": 1,
+    "source_id": "announcing-cloudflare-wallets-the-programmable-w-97d2eb2e",
+    "unresolved_acquisition_references": []
+}
