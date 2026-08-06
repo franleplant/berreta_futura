@@ -198,7 +198,8 @@ fn fit_to_budget(
         let trim_prompt = format!(
             "{prompt}\n\n========== your draft ({words} words) ==========\n\n{body}\n\
              \nThe print budget is {ask} words. Write the piece again in at most {ask} \
-             words: cut whole paragraphs or sections rather than compressing every sentence."
+             words: cut whole paragraphs or sections rather than compressing every \
+             sentence. Reply with the piece only — no notes about what you cut."
         );
         let parse_label = label.clone();
         body = caller.call_with_parse(&label, writer_model, &trim_prompt, |r| {
