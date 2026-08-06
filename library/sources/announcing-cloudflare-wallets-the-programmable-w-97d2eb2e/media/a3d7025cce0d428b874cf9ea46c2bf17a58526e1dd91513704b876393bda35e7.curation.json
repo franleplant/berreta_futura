@@ -1,0 +1,61 @@
+{
+    "bundle_sha256": "a3d7025cce0d428b874cf9ea46c2bf17a58526e1dd91513704b876393bda35e7",
+    "candidate_count": 2,
+    "candidates": [
+        {
+            "artifact_path": "media/001.png",
+            "artifact_sha256": "6acf92cbb0d6c26a9efa012d9be047f8b543a6d5539a7479ac2934dec488a204",
+            "aspect_ratio": 1.776889,
+            "criteria": [],
+            "decision": "reject",
+            "description": "Branded cover illustration of robots around a wallet.",
+            "heading": "Announcing Cloudflare Wallets: the programmable wallet for the agentic Internet",
+            "id": "raster-001-6acf92cb",
+            "mime_type": "image/png",
+            "origin": "raw_raster",
+            "pixel_height": 1125,
+            "pixel_width": 1999,
+            "rationale": "",
+            "rejection_reasons": [
+                "decorative_cover_art"
+            ],
+            "score": 0,
+            "source_artifact": "media/001.png",
+            "source_artifact_sha256": "6acf92cbb0d6c26a9efa012d9be047f8b543a6d5539a7479ac2934dec488a204",
+            "source_position": 1,
+            "title": "Post cover illustration"
+        },
+        {
+            "artifact_path": "media/002.png",
+            "artifact_sha256": "708cc8a56fbf847d870df4bbec5ab2f3d6a74db4bbb07df190cd4e5b025b9f16",
+            "aspect_ratio": 1.283879,
+            "criteria": [
+                "useful"
+            ],
+            "decision": "include",
+            "description": "Product screenshot of the Wallets dashboard showing Account Wallets and per-agent Virtual Wallets with funding sources, sweep destinations, statuses, and balances.",
+            "heading": "Building the two-sided agentic market",
+            "id": "raster-002-708cc8a5",
+            "mime_type": "image/png",
+            "origin": "raw_raster",
+            "pixel_height": 1557,
+            "pixel_width": 1999,
+            "rationale": "The only substantive figure; makes the account-versus-virtual wallet split concrete.",
+            "rejection_reasons": [],
+            "score": 60,
+            "source_artifact": "media/002.png",
+            "source_artifact_sha256": "708cc8a56fbf847d870df4bbec5ab2f3d6a74db4bbb07df190cd4e5b025b9f16",
+            "source_position": 2,
+            "title": "Wallets dashboard: account and virtual wallets"
+        }
+    ],
+    "curator": "magazine-compiler/automatic-media-curator",
+    "input_sha256": "00ab9e92eb8fc2f76992a9dcc46b1007f6cd43b29064d8a012c7713c85762b2d",
+    "policy_version": "editorial-impact-v4",
+    "schema_version": 1,
+    "selected": [
+        "raster-002-708cc8a5"
+    ],
+    "selection_limit": 3,
+    "source_id": "announcing-cloudflare-wallets-the-programmable-w-97d2eb2e"
+}

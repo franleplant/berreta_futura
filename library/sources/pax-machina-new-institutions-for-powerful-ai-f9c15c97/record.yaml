@@ -1,0 +1,42 @@
+schema_version: 2
+id: pax-machina-new-institutions-for-powerful-ai-f9c15c97
+title: 'Pax Machina: New Institutions for Powerful AI'
+author: The Editors
+author_profile:
+  note: ''
+  evidence: []
+canonical_url: https://paxmachina.ai/welcome-to-pax-machina
+submitted_url: https://paxmachina.ai/welcome-to-pax-machina
+captured_at: '2026-08-06T21:05:28Z'
+publication_date: '2026-08-04'
+kind: web
+status: captured
+content_hash: null
+raw_captures:
+- id: b4dbd7c1f69a9962b768efe58a51152bf489c760217bbef585f1ee90bfe7dba1
+  path: raw/b4dbd7c1f69a9962b768efe58a51152bf489c760217bbef585f1ee90bfe7dba1/manifest.json
+  method: public_crawler_rendered_text
+  purpose: article
+  source_url: https://paxmachina.ai/welcome-to-pax-machina
+  captured_at: '2026-08-06T21:05:28Z'
+  artifact_count: 1
+  byte_count: 24539
+provenance: []
+rights:
+  status: unknown
+  copyright_notice: Copyright 2026 Pax Machina.
+  intended_use: private_reference
+  attribution_required: true
+  public_reprint_allowed: false
+media_reviews:
+- capture_id: b4dbd7c1f69a9962b768efe58a51152bf489c760217bbef585f1ee90bfe7dba1
+  status: no_media
+  assets: []
+  note: Automatic curation found no source images or substantive inline diagrams.
+metadata:
+  tags:
+  - agents
+  - governance
+  - institutions
+  synopsis: 'The founding essay of a publication arguing that powerful AI opens a new age of institutional invention, and inviting concrete institutional designs, critiques, and counterproposals from researchers.'
+notes: 'Static public page fetched over public HTTPS without credentials or session data; rendered text converted to Markdown deterministically and original images archived at source resolution.'

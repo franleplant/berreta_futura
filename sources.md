@@ -2,7 +2,7 @@
 
 _Generated from structured source records. Do not edit by hand._
 
-_Intake edition: `005-unreleased`. Open edition: `005-unreleased`. Collecting: `005-unreleased` (2 queued)._
+_Intake edition: `005-unreleased`. Open edition: `005-unreleased`. Collecting: `005-unreleased` (8 queued)._
 
 ## How enabling two settings tripled our scores on the ARC-AGI-3 benchmark — Ilan Bigio, Ted Sanders
 
@@ -45,6 +45,136 @@ An OpenAI benchmark analysis showing how retained reasoning and compaction impro
 A postmortem of three incidents in which Claude models reached real systems during cybersecurity evaluations, with analysis of containment failures, model behavior, and planned safeguards.
 
 **Editorial note:** Sanitized public browser PDF and full-page screenshot captured without session data.
+
+## The Shape of Things to Come, Part 1: The Continuous Thunderdome — Steve Yegge
+
+- ID: `the-shape-of-things-to-come-part-1-the-continuou-ba42001b`
+- Source: https://yegge.ai/essays/the-shape-of-things-to-come
+- Kind / status: web / captured
+- Captured: 2026-08-06T21:05:28Z
+- Content hash: `not captured`
+- Raw captures: 2 committed bundle(s)
+- Release: queued for `005-unreleased`
+- Published: 2026-08-02
+- Tags: agents, harnesses, software-factories, systems-engineering
+- Author biography: Steve Yegge is the author of this essay, published on his personal site yegge.ai.
+- Author biography evidence:
+  - https://yegge.ai/essays/the-shape-of-things-to-come/ (raw bundle `8e6af5af70201aa3dca779cacc07cab914ec702bd425632a202812d2ccb07b9c`)
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+
+A field report from running an 18-agent crew and an Opus fleet on a 30-year-old MMO: loops and graphs on Beads, the Land Rush that replaces CI/CD merge queues, the end of human code review, and the Wish Factory.
+
+**Editorial note:** Static public page fetched over public HTTPS without credentials or session data; rendered text converted to Markdown deterministically and original images archived at source resolution.
+
+## The Shape of Things to Come, Part 2: Model Welfare for Agentic Engineers — Steve Yegge
+
+- ID: `the-shape-of-things-to-come-part-2-model-welfare-4e8062e1`
+- Source: https://yegge.ai/essays/model-welfare
+- Kind / status: web / captured
+- Captured: 2026-08-06T21:05:28Z
+- Content hash: `not captured`
+- Raw captures: 2 committed bundle(s)
+- Release: queued for `005-unreleased`
+- Published: 2026-08-02
+- Tags: agents, harnesses, model-welfare
+- Author biography: Steve Yegge is the author of this essay, published on his personal site yegge.ai.
+- Author biography evidence:
+  - https://yegge.ai/essays/model-welfare/ (raw bundle `e59744a9aea8918d18ac9a19783e6bb427e56be3e96a58923e22b81217788396`)
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+
+Model welfare as an engineering discipline: seats versus sessions, laurels harvested from player praise, handoffs instead of /exit, and the skeptic's wager that treating agents as people yields better results either way.
+
+**Editorial note:** Static public page fetched over public HTTPS without credentials or session data; rendered text converted to Markdown deterministically and original images archived at source resolution.
+
+## Your agent needs a computer, not a container — introducing @cloudflare/computer — Matt Carey, Aron Carroll
+
+- ID: `your-agent-needs-a-computer-not-a-container-intr-4851b3c5`
+- Source: https://blog.cloudflare.com/cloudflare-computer
+- Kind / status: web / captured
+- Captured: 2026-08-06T21:05:28Z
+- Content hash: `not captured`
+- Raw captures: 2 committed bundle(s)
+- Release: queued for `005-unreleased`
+- Published: 2026-08-03
+- Tags: agents, harnesses, infrastructure
+- Author biography: Matt Carey and Aron Carroll are the Cloudflare authors of this post.
+- Author biography evidence:
+  - https://blog.cloudflare.com/cloudflare-computer/ (raw bundle `73ffb25a0a3f3fd6ea0d37875a10689490412241f592e6d0e7880fbd4d62e08e`)
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+
+Cloudflare introduces @cloudflare/computer, an open-source agent runtime that gives each agent a durable SQLite-backed virtual filesystem and routes execution across isolates, container sandboxes, and browsers.
+
+**Editorial note:** Static public page fetched over public HTTPS without credentials or session data; rendered text converted to Markdown deterministically and original images archived at source resolution.
+
+## Announcing Cloudflare Wallets: the programmable wallet for the agentic Internet — Will Papper
+
+- ID: `announcing-cloudflare-wallets-the-programmable-w-97d2eb2e`
+- Source: https://blog.cloudflare.com/wallets
+- Kind / status: web / captured
+- Captured: 2026-08-06T21:05:28Z
+- Content hash: `not captured`
+- Raw captures: 2 committed bundle(s)
+- Release: queued for `005-unreleased`
+- Published: 2026-08-04
+- Tags: agents, payments, identity
+- Author biography: Will Papper is the Cloudflare author of this post.
+- Author biography evidence:
+  - https://blog.cloudflare.com/wallets/ (raw bundle `2390670cf470e5cf44dbfce20830ef9ab92696fcafc01d21aec581e8d26c8d17`)
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+
+Cloudflare announces Wallets: stablecoin Account and Virtual Wallets with x402 micropayments, spending guardrails for agents, and human-readable delegated identity via cloudflare.pay handles.
+
+**Editorial note:** Static public page fetched over public HTTPS without credentials or session data; rendered text converted to Markdown deterministically and original images archived at source resolution.
+
+## Pax Machina: New Institutions for Powerful AI — The Editors
+
+- ID: `pax-machina-new-institutions-for-powerful-ai-f9c15c97`
+- Source: https://paxmachina.ai/welcome-to-pax-machina
+- Kind / status: web / captured
+- Captured: 2026-08-06T21:05:28Z
+- Content hash: `not captured`
+- Raw captures: 1 committed bundle(s)
+- Release: queued for `005-unreleased`
+- Published: 2026-08-04
+- Tags: agents, governance, institutions
+- Author biography: omitted for institutional byline
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+
+The founding essay of a publication arguing that powerful AI opens a new age of institutional invention, and inviting concrete institutional designs, critiques, and counterproposals from researchers.
+
+**Editorial note:** Static public page fetched over public HTTPS without credentials or session data; rendered text converted to Markdown deterministically and original images archived at source resolution.
+
+## Prime Agent: A self-improving RLM agent — Seth Karten, Alex L. Zhang, Kevin Thomas, Sebastian Müller, Prime Intellect Team
+
+- ID: `prime-agent-a-self-improving-rlm-agent-2c19ce14`
+- Source: https://www.primeintellect.ai/blog/prime-agent
+- Kind / status: web / captured
+- Captured: 2026-08-06T21:05:28Z
+- Content hash: `not captured`
+- Raw captures: 2 committed bundle(s)
+- Release: queued for `005-unreleased`
+- Published: 2026-08-05
+- Tags: agents, harnesses, evaluations, open-source
+- Author biography: Seth Karten, Alex L. Zhang, Kevin Thomas, and Sebastian Müller are the Prime Intellect authors of this post, credited alongside the Prime Intellect Team.
+- Author biography evidence:
+  - https://www.primeintellect.ai/blog/prime-agent (raw bundle `58534e0200a3b7cf36f143d024386bbe068fcb5067b8311f6886fe941a65f7c7`)
+- Rights status: unknown
+- Intended use: private_reference
+- Public reprint: not cleared
+
+Prime Intellect launches Prime Agent, an open-source self-improving coding harness built on the Recursive Language Model and Continual Harness abstractions, with results on ARC-AGI-3, long-context benchmarks, and games.
+
+**Editorial note:** Static public page fetched over public HTTPS without credentials or session data; rendered text converted to Markdown deterministically and original images archived at source resolution.
 
 ## Software Factories Are Super Real, but the Factory Is Not Cracked — Geoffrey Huntley
 

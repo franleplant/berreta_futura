@@ -1,0 +1,177 @@
+{
+    "artifact_count": 8,
+    "bundle_sha256": "453551a5ee03bbd9cee7ed81bdc9b4da6b7a4c1176d3cedf7164bd6039a68d06",
+    "complete": true,
+    "duplicate_groups": [],
+    "image_count": 7,
+    "images": [
+        {
+            "animated": false,
+            "aspect_ratio": 1.776889,
+            "bytes": 361453,
+            "color_mode": "RGBA",
+            "frame_count": 1,
+            "has_alpha": true,
+            "icc_profile_present": false,
+            "mime_type": "image/png",
+            "path": "media/001.png",
+            "pixel_height": 1125,
+            "pixel_width": 1999,
+            "sha256": "bca3b5b2f6d0f56e2908ef724c6497dc43346a0222551c6cc4243b3111b2ad10"
+        },
+        {
+            "animated": false,
+            "aspect_ratio": 2.449755,
+            "bytes": 141029,
+            "color_mode": "RGBA",
+            "frame_count": 1,
+            "has_alpha": true,
+            "icc_profile_present": false,
+            "mime_type": "image/png",
+            "path": "media/002.png",
+            "pixel_height": 816,
+            "pixel_width": 1999,
+            "sha256": "2342195cc5e983a7ea2550809b526a6521e5fc52edabcdfdae653ede82c279a2"
+        },
+        {
+            "animated": false,
+            "aspect_ratio": 1.047619,
+            "bytes": 85864,
+            "color_mode": "RGBA",
+            "frame_count": 1,
+            "has_alpha": true,
+            "icc_profile_present": false,
+            "mime_type": "image/png",
+            "path": "media/003.png",
+            "pixel_height": 1554,
+            "pixel_width": 1628,
+            "sha256": "427bfb5703ae9e0f06a1d7583cfd811210d4f7dbfa6ac65b4ea70cf929016e90"
+        },
+        {
+            "animated": false,
+            "aspect_ratio": 1.108865,
+            "bytes": 171620,
+            "color_mode": "RGBA",
+            "frame_count": 1,
+            "has_alpha": true,
+            "icc_profile_present": true,
+            "mime_type": "image/png",
+            "path": "media/004.png",
+            "pixel_height": 1286,
+            "pixel_width": 1426,
+            "sha256": "9bd5375e45b72009735f6257a3e5c0f19bf1cf839708cca670b1b15667a55e4b"
+        },
+        {
+            "animated": false,
+            "aspect_ratio": 2.031504,
+            "bytes": 241507,
+            "color_mode": "RGBA",
+            "frame_count": 1,
+            "has_alpha": true,
+            "icc_profile_present": false,
+            "mime_type": "image/png",
+            "path": "media/005.png",
+            "pixel_height": 984,
+            "pixel_width": 1999,
+            "sha256": "76df600ec6a550b1aea0f99fe9dac1a1e1b74e5a940821e99644b40908ae0b09"
+        },
+        {
+            "animated": false,
+            "aspect_ratio": 1.817273,
+            "bytes": 220757,
+            "color_mode": "RGBA",
+            "frame_count": 1,
+            "has_alpha": true,
+            "icc_profile_present": false,
+            "mime_type": "image/png",
+            "path": "media/006.png",
+            "pixel_height": 1100,
+            "pixel_width": 1999,
+            "sha256": "786ebde18fb10552efb7091e56fdd9e96cf800abeca6042a161436eff8e848db"
+        },
+        {
+            "animated": false,
+            "aspect_ratio": 1.569074,
+            "bytes": 256608,
+            "color_mode": "RGBA",
+            "frame_count": 1,
+            "has_alpha": true,
+            "icc_profile_present": false,
+            "mime_type": "image/png",
+            "path": "media/007.png",
+            "pixel_height": 1274,
+            "pixel_width": 1999,
+            "sha256": "ab57edc5183a270aeb2c51def19782f9f6d09dbfcfc80aaf9654d8c1bddba669"
+        }
+    ],
+    "local_references": [
+        {
+            "alt_text": "",
+            "attribute": "src",
+            "document_path": "article.md",
+            "heading": "Your agent needs a computer, not a container \u2014 introducing @cloudflare/computer",
+            "present": true,
+            "reference": "media/001.png",
+            "resolved_path": "media/001.png"
+        },
+        {
+            "alt_text": "BLOG-3464_image6.png",
+            "attribute": "src",
+            "document_path": "article.md",
+            "heading": "Changing how agents are built",
+            "present": true,
+            "reference": "media/002.png",
+            "resolved_path": "media/002.png"
+        },
+        {
+            "alt_text": "BLOG-3464_image3.png",
+            "attribute": "src",
+            "document_path": "article.md",
+            "heading": "Changing how agents are built",
+            "present": true,
+            "reference": "media/003.png",
+            "resolved_path": "media/003.png"
+        },
+        {
+            "alt_text": "BLOG-3464_image8.png",
+            "attribute": "src",
+            "document_path": "article.md",
+            "heading": "Changing how agents are built",
+            "present": true,
+            "reference": "media/005.png",
+            "resolved_path": "media/005.png"
+        },
+        {
+            "alt_text": "BLOG-3464_image2.png",
+            "attribute": "src",
+            "document_path": "article.md",
+            "heading": "A shared filesystem across isolates and containers",
+            "present": true,
+            "reference": "media/004.png",
+            "resolved_path": "media/004.png"
+        },
+        {
+            "alt_text": "BLOG-3464_image7.png",
+            "attribute": "src",
+            "document_path": "article.md",
+            "heading": "How it works",
+            "present": true,
+            "reference": "media/006.png",
+            "resolved_path": "media/006.png"
+        },
+        {
+            "alt_text": "image4.png",
+            "attribute": "src",
+            "document_path": "article.md",
+            "heading": "How it works",
+            "present": true,
+            "reference": "media/007.png",
+            "resolved_path": "media/007.png"
+        }
+    ],
+    "missing_references": [],
+    "referenced_image_count": 7,
+    "schema_version": 1,
+    "source_id": "your-agent-needs-a-computer-not-a-container-intr-4851b3c5",
+    "unresolved_acquisition_references": []
+}

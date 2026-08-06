@@ -1,0 +1,20 @@
+{
+  "artifact_count": 1,
+  "artifacts": [
+    {
+      "bytes": 340,
+      "path": "profile.md",
+      "sha256": "3440d20583160cb52d6e0c098ad03d0af8503e6a4683a492cf398daae44abab1"
+    }
+  ],
+  "bundle_sha256": "8e6af5af70201aa3dca779cacc07cab914ec702bd425632a202812d2ccb07b9c",
+  "byte_count": 340,
+  "canonical_url": "https://yegge.ai/essays/the-shape-of-things-to-come",
+  "captured_at": "2026-08-06T21:05:28Z",
+  "method": "author_identity_profile",
+  "purpose": "author_identity",
+  "schema_version": 2,
+  "source_id": "the-shape-of-things-to-come-part-1-the-continuou-ba42001b",
+  "source_url": "https://yegge.ai/essays/the-shape-of-things-to-come",
+  "submitted_url": "https://yegge.ai/essays/the-shape-of-things-to-come/"
+}

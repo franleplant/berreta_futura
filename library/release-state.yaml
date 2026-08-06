@@ -7,6 +7,12 @@ collecting_editions:
   source_ids:
   - how-enabling-two-settings-tripled-our-scores-on--265c6a01
   - investigating-three-real-world-incidents-in-our--8b96329a
+  - announcing-cloudflare-wallets-the-programmable-w-97d2eb2e
+  - pax-machina-new-institutions-for-powerful-ai-f9c15c97
+  - prime-agent-a-self-improving-rlm-agent-2c19ce14
+  - the-shape-of-things-to-come-part-1-the-continuou-ba42001b
+  - the-shape-of-things-to-come-part-2-model-welfare-4e8062e1
+  - your-agent-needs-a-computer-not-a-container-intr-4851b3c5
 released_editions:
 - id: 001-the-work-left-to-us
   issue_number: 1

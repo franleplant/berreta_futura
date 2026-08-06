@@ -1,0 +1,67 @@
+schema_version: 2
+id: announcing-cloudflare-wallets-the-programmable-w-97d2eb2e
+title: 'Announcing Cloudflare Wallets: the programmable wallet for the agentic Internet'
+author: Will Papper
+author_profile:
+  note: Will Papper is the Cloudflare author of this post.
+  evidence:
+  - url: https://blog.cloudflare.com/wallets/
+    capture_id: 2390670cf470e5cf44dbfce20830ef9ab92696fcafc01d21aec581e8d26c8d17
+canonical_url: https://blog.cloudflare.com/wallets
+submitted_url: https://blog.cloudflare.com/wallets/
+captured_at: '2026-08-06T21:05:28Z'
+publication_date: '2026-08-04'
+kind: web
+status: captured
+content_hash: null
+raw_captures:
+- id: a3d7025cce0d428b874cf9ea46c2bf17a58526e1dd91513704b876393bda35e7
+  path: raw/a3d7025cce0d428b874cf9ea46c2bf17a58526e1dd91513704b876393bda35e7/manifest.json
+  method: public_crawler_rendered_text
+  purpose: article
+  source_url: https://blog.cloudflare.com/wallets
+  captured_at: '2026-08-06T21:05:28Z'
+  artifact_count: 3
+  byte_count: 676666
+- id: 2390670cf470e5cf44dbfce20830ef9ab92696fcafc01d21aec581e8d26c8d17
+  path: raw/2390670cf470e5cf44dbfce20830ef9ab92696fcafc01d21aec581e8d26c8d17/manifest.json
+  method: author_identity_profile
+  purpose: author_identity
+  source_url: https://blog.cloudflare.com/wallets
+  captured_at: '2026-08-06T21:05:28Z'
+  artifact_count: 1
+  byte_count: 351
+provenance: []
+rights:
+  status: unknown
+  copyright_notice: 'Copyright 2026 Cloudflare, Inc.'
+  intended_use: private_reference
+  attribution_required: true
+  public_reprint_allowed: false
+media_reviews:
+- capture_id: a3d7025cce0d428b874cf9ea46c2bf17a58526e1dd91513704b876393bda35e7
+  status: media_curated
+  assets:
+  - id: raster-002-708cc8a5
+    artifact_path: media/002.png
+    artifact_sha256: 708cc8a56fbf847d870df4bbec5ab2f3d6a74db4bbb07df190cd4e5b025b9f16
+    mime_type: image/png
+    creator: Will Papper
+    credit: 'Wallets dashboard: account and virtual wallets. Image by Will Papper; source: Announcing Cloudflare Wallets: the programmable wallet for the agentic Internet.'
+    rights:
+      status: unknown
+      intended_use: private_reference
+      attribution_required: true
+      public_reprint_allowed: false
+  note: 'Automatic curation selected 1 of 2 candidates under editorial-impact-v4; decisions are hash-pinned in a3d7025cce0d428b874cf9ea46c2bf17a58526e1dd91513704b876393bda35e7.curation.json.'
+- capture_id: 2390670cf470e5cf44dbfce20830ef9ab92696fcafc01d21aec581e8d26c8d17
+  status: media_rejected
+  assets: []
+  note: Author identity evidence is provenance, not article artwork.
+metadata:
+  tags:
+  - agents
+  - payments
+  - identity
+  synopsis: 'Cloudflare announces Wallets: stablecoin Account and Virtual Wallets with x402 micropayments, spending guardrails for agents, and human-readable delegated identity via cloudflare.pay handles.'
+notes: 'Static public page fetched over public HTTPS without credentials or session data; rendered text converted to Markdown deterministically and original images archived at source resolution.'

@@ -1,0 +1,80 @@
+{
+  "artifact_count": 13,
+  "artifacts": [
+    {
+      "bytes": 24906,
+      "path": "article.md",
+      "sha256": "6cfe77519f0fb5ffce7541deb9666f14f8beb5eefd0d30b5d4ebbd543b1cc0af"
+    },
+    {
+      "bytes": 256578,
+      "path": "media/001.png",
+      "sha256": "a9b1eac5a2593fee0f4ad4f4ab81b4b3f348fbe84a55678b9247ff8259461a5b"
+    },
+    {
+      "bytes": 203817,
+      "path": "media/002.gif",
+      "sha256": "760d385d3eb3cf70f85b9cec2043fba33b4302089a1d98aa9c69a65a2f477043"
+    },
+    {
+      "bytes": 39165,
+      "path": "media/003.png",
+      "sha256": "defe42e98b47bbf35d47aee05c516b0fffd1bae0a7fba4180737f18c4dc7945a"
+    },
+    {
+      "bytes": 117531,
+      "path": "media/004.png",
+      "sha256": "9b48b5b322cfaee3c81e585d1a6dae3271759392b8915632d774cc8ccd074f74"
+    },
+    {
+      "bytes": 84808,
+      "path": "media/005.png",
+      "sha256": "05af13605fc70a57ff54e5e4860ac8764c74de7a56f85b73ccfb1c16a493eef6"
+    },
+    {
+      "bytes": 11548,
+      "path": "media/006.svg",
+      "sha256": "1cb4758f40c3fafd87e6a8c06291e07619f49db81066040dd804f734e967fd21"
+    },
+    {
+      "bytes": 11121,
+      "path": "media/007.svg",
+      "sha256": "f7cac3237205293cca384a96dfaaeefe06f92724b5403d7d040283a7a6c1bb80"
+    },
+    {
+      "bytes": 3154,
+      "path": "media/008.svg",
+      "sha256": "11aae1e69aa6ff416f7c8abdfa6a56c293a037f714d586155864e61fd742c699"
+    },
+    {
+      "bytes": 3097,
+      "path": "media/009.svg",
+      "sha256": "9e7882a9f2c7181b8c724a64a67fb45c4f876a3c490c3b5cca38bb83146c38e6"
+    },
+    {
+      "bytes": 160553,
+      "path": "media/010.svg",
+      "sha256": "4947df3a09d96edacd3cd81aff01c11502787274eb882977b84318ffbd3e9fd6"
+    },
+    {
+      "bytes": 377089,
+      "path": "media/011.png",
+      "sha256": "da9f6f6062cc4a4866edec23cdbbaedecead7bc773be3b2176ce7f511319b480"
+    },
+    {
+      "bytes": 179862,
+      "path": "media/012.svg",
+      "sha256": "252eb3744986937f3b1b2fb568dec8910e51356ff0ce72e9aea0ae34049584ed"
+    }
+  ],
+  "bundle_sha256": "534a5c4452dcf295d2c21fc2329cc0a043ed354e22a89fd03ca3fad968a3e215",
+  "byte_count": 1473229,
+  "canonical_url": "https://www.primeintellect.ai/blog/prime-agent",
+  "captured_at": "2026-08-06T21:05:28Z",
+  "method": "public_crawler_rendered_text",
+  "purpose": "article",
+  "schema_version": 2,
+  "source_id": "prime-agent-a-self-improving-rlm-agent-2c19ce14",
+  "source_url": "https://www.primeintellect.ai/blog/prime-agent",
+  "submitted_url": "https://www.primeintellect.ai/blog/prime-agent"
+}

@@ -1,0 +1,20 @@
+{
+  "artifact_count": 1,
+  "artifacts": [
+    {
+      "bytes": 378,
+      "path": "profile.md",
+      "sha256": "d938ddfe668c87bdcbea1c9c8191d0cfca3e0b9c131eff2fd909490f8f4cd182"
+    }
+  ],
+  "bundle_sha256": "73ffb25a0a3f3fd6ea0d37875a10689490412241f592e6d0e7880fbd4d62e08e",
+  "byte_count": 378,
+  "canonical_url": "https://blog.cloudflare.com/cloudflare-computer",
+  "captured_at": "2026-08-06T21:05:28Z",
+  "method": "author_identity_profile",
+  "purpose": "author_identity",
+  "schema_version": 2,
+  "source_id": "your-agent-needs-a-computer-not-a-container-intr-4851b3c5",
+  "source_url": "https://blog.cloudflare.com/cloudflare-computer",
+  "submitted_url": "https://blog.cloudflare.com/cloudflare-computer/"
+}
