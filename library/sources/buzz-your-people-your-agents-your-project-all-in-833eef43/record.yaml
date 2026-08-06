@@ -1,43 +1,12 @@
-schema_version: 1
 id: buzz-your-people-your-agents-your-project-all-in-833eef43
 title: Buzz — Your people, your agents, your project — all in one place
 author: Block, Inc.
-canonical_url: https://buzz.xyz/
-submitted_url: https://buzz.xyz/
+url: https://buzz.xyz/
 captured_at: '2026-07-23T12:32:52Z'
-publication_date: '2026-07-22'
-kind: web
-status: captured
-content_hash: null
-raw_captures:
-- id: 916a511ca1084acafb198055556f76b1caa0f98e9315ac711d58e6f8540ede3c
-  path: raw/916a511ca1084acafb198055556f76b1caa0f98e9315ac711d58e6f8540ede3c/manifest.json
-  method: public_browser_html_and_pdf
-  captured_at: '2026-07-23T12:32:52Z'
-  artifact_count: 3
-  byte_count: 3794129
-provenance:
-- relation: discovered_via
-  target: why-we-re-buzzing-1c82f338
-  url: https://x.com/jack/status/2080056638820450400
-- relation: canonical_primary
-  target: buzz-a-workspace-where-humans-and-agents-build-t-59122470
-  url: https://github.com/block/buzz
-rights:
-  status: unknown
-  intended_use: private_reference
-  attribution_required: true
-  public_reprint_allowed: false
-media_reviews:
-- capture_id: 916a511ca1084acafb198055556f76b1caa0f98e9315ac711d58e6f8540ede3c
-  status: media_rejected
-  assets: []
-  note: 'Automatic curation rejected all candidates: no_semantic_source_context (1).'
-metadata:
-  tags:
-  - agents
-  - buzz
-  - collaboration
-  synopsis: Official product site for Buzz, a workspace where people and agents collaborate in shared
-    project context.
-notes: Primary material linked directly from Jack Dorsey’s submitted X post.
+published_at: '2026-07-22'
+tags:
+- agents
+- buzz
+- collaboration
+synopsis: Official product site for Buzz, a workspace where people and agents collaborate in shared project
+  context.

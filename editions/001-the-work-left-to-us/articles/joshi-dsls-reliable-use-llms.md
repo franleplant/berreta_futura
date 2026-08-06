@@ -1,8 +1,6 @@
 ---
 source_id: src-joshi-dsls-reliable-use-llms
 content_mode: faithful_synthesis
-source_body_sha256: 1effc901980761de45a8ff4b1a359558003ab561e8f6fba92b48bfbfbc61de27
-rights_status: private_reference
 ---
 
 LLMs can generate code at extraordinary speed, but speed does not guarantee that the result expresses the intended design. I argue that abstractions and domain-specific languages provide a constrained harness: they help people discover a design with an LLM, then give the model a narrow, testable vocabulary through which to use that design reliably.

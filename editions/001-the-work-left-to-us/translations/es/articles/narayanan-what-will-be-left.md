@@ -1,8 +1,6 @@
 ---
 source_id: src-narayanan-icml-2026-keynote
 content_mode: faithful_synthesis
-source_body_sha256: a8a2490509d9f2095ca0c39f544d97142f93a95bc79efcc1cc20ae1e3891421b
-rights_status: private_reference
 source_format: annotated_slides_transcript
 ---
 

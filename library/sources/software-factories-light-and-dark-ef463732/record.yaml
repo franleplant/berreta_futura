@@ -1,90 +1,14 @@
-schema_version: 1
 id: software-factories-light-and-dark-ef463732
 title: Software Factories, Light and Dark
 author: Addy Osmani
-canonical_url: https://x.com/addyosmani/status/2079442194449232227
-submitted_url: https://x.com/addyosmani/status/2079442194449232227
+url: https://x.com/addyosmani/status/2079442194449232227
 captured_at: '2026-07-21T14:51:59Z'
-publication_date: '2026-07-21'
-kind: web
-status: captured
-content_hash: null
-raw_captures:
-- id: 60b2ecf8fcb0a39bb63fde6e1a40965d5a1d228f9348178a4cc56d5a5956753c
-  path: raw/60b2ecf8fcb0a39bb63fde6e1a40965d5a1d228f9348178a4cc56d5a5956753c/manifest.json
-  method: Authenticated Chrome X Article full-page capture and structured text; focus mode, sanitized,
-    no session data.
-  captured_at: '2026-07-21T14:51:59Z'
-  artifact_count: 2
-  byte_count: 1716412
-- id: 5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8
-  path: raw/5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8/manifest.json
-  method: Authenticated Chrome X Article capture with structured text, full-page evidence, and separately
-    archived embedded media; sanitized, no session data.
-  captured_at: '2026-07-21T18:29:14Z'
-  artifact_count: 8
-  byte_count: 2300239
-provenance:
-- relation: primary_material
-  url: https://x.com/addyosmani/article/2079442194449232227
-rights:
-  status: unknown
-  intended_use: private_reference
-  attribution_required: true
-  public_reprint_allowed: false
-media_reviews:
-- capture_id: 5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8
-  status: media_curated
-  assets:
-  - id: raster-002-d955f82f
-    artifact_path: 02-harness-engineering-talk.jpg
-    artifact_sha256: d955f82f24828ab6ccdbf122cf2fb391d5d2c905c5aebd97b3b40f76dec7ac99
-    mime_type: image/jpeg
-    creator: Addy Osmani
-    credit: 'Diagram by Addy Osmani; source: Software Factories, Light and Dark.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  - id: raster-004-99565ac9
-    artifact_path: 04-factory-closed-loop.jpg
-    artifact_sha256: 99565ac98471c409bd3fdff25cdf6e6f875199ba04c960d46f28a648453ada1a
-    mime_type: image/jpeg
-    creator: Addy Osmani
-    credit: 'Diagram by Addy Osmani; source: Software Factories, Light and Dark.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  - id: raster-003-c84acad9
-    artifact_path: 03-loop-harness-factory.jpg
-    artifact_sha256: c84acad91eb1765a599dcfe7eff573df5fecd1fa9d5e3986ab468aba8be6edb9
-    mime_type: image/jpeg
-    creator: Addy Osmani
-    credit: 'Diagram by Addy Osmani; source: Software Factories, Light and Dark.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  note: Automatic curation selected 3 of 6 candidates under editorial-impact-v4; decisions are hash-pinned
-    in 5ceffa386e33b08c174a60b17979604f53a0e6b2c259daa4ab6ae402e5bf01e8.curation.json.
-- capture_id: 60b2ecf8fcb0a39bb63fde6e1a40965d5a1d228f9348178a4cc56d5a5956753c
-  status: media_rejected
-  assets: []
-  note: 'Automatic curation rejected all candidates: extreme_aspect_ratio_or_full_page_capture (1), no_semantic_source_context
-    (1).'
-metadata:
-  tags:
-  - agent-loops
-  - comprehension-debt
-  - software-engineering
-  - software-factories
-  synopsis: A framework for software factories built from harnessed agent loops, contrasting human-supervised
-    light factories with dark factories where code ships unread, and arguing that review judgment, comprehension,
-    and carefully designed checks remain the real constraints.
-notes: Submitted as an X status URL resolving to a full X Article. The complete article was captured from
-  the user-authenticated X session in focus mode; raw exports exclude cookies, credentials, browser profiles,
-  account navigation, and session UI.
+published_at: '2026-07-21'
+tags:
+- agent-loops
+- comprehension-debt
+- software-engineering
+- software-factories
+synopsis: A framework for software factories built from harnessed agent loops, contrasting human-supervised
+  light factories with dark factories where code ships unread, and arguing that review judgment, comprehension,
+  and carefully designed checks remain the real constraints.

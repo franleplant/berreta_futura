@@ -4,16 +4,12 @@ piece_id: from-gpt2-to-kimi3
 content_mode: faithful_synthesis
 status: drafting
 produced_at: '2026-08-02T13:53:50+00:00'
-inputs_sha256: 17fc13bdb522742d0ef6eb7fbfa31533902bcfc846fb6b62d543f1dd17ffcb5a
-manuscript_sha256: 5cb8f26259cabe3274db2d658183a9a62a883fd58e2da5a5837c146254409b8f
 rounds:
 - round: 1
   result: changes_required
-  manuscript_sha256: 5cb8f26259cabe3274db2d658183a9a62a883fd58e2da5a5837c146254409b8f
   writer:
     role: writer
     prompt_path: prompts/faithful-synthesis.md
-    prompt_sha256: 1bbcd7a51079b8540ee72c83f3410be3505cbe5afff9b1799f2e174ad87edd6a
     backend: agent
     model: null
     argv:
@@ -24,10 +20,7 @@ rounds:
     - agent
     - --submit
     - from-gpt2-to-kimi3/r1-writer
-    - --work-sha256
-    - fa36405b4e049907319759c322c334cbd1117ce1baf42cb7433b5b5694da9cf1
     duration_seconds: 0.0
-    output_sha256: 1fe99dd405ebcf461e6c65e0c35d7cb912abd4c65dd042dfbadda3dc2009fda5
   gate_failures: []
   anchors_reconciled:
   - GPT-2 and the cache

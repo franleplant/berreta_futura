@@ -2,7 +2,6 @@
 source_id: loop-engineering-f0ddfd76
 content_mode: faithful_synthesis
 label: FAITHFUL SYNTHESIS
-source_body_sha256: 624d44585e591681ee548b14eab033af3804c66e68cae256d1b3e626203c86f0
 ---
 
 Loop engineering is replacing yourself as the person who prompts the agent: you design the system that does it instead, a recursive goal where the AI iterates until complete. I believe this may be the future of how we work with coding agents — but it’s early, I’m skeptical, and token costs need watching.

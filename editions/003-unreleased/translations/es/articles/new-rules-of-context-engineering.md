@@ -2,7 +2,6 @@
 source_id: the-new-rules-of-context-engineering-for-claude--aa1b1ea8
 content_mode: faithful_synthesis
 label: SÍNTESIS FIEL
-source_body_sha256: aaeea1ef2ec0a1645ec0eae72d75b920dc73b91bd30dc736cf5eecd6624902a9
 ---
 
 Cuando le envías un mensaje a Claude, el prompt es solo una pequeña parte del contexto que recibe: mucho se ensambla a partir de tu prompt de sistema, las Skills, los archivos CLAUDE.md, la memoria y otras fuentes. A diferencia de un prompt, este contexto sirve a muchas solicitudes y no puede ser tan específico; lo llamamos ingeniería de contexto, y tiene un gran impacto en tus resultados.

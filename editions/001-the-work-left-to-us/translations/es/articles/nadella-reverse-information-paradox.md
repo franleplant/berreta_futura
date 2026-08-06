@@ -1,8 +1,6 @@
 ---
 source_id: src-nadella-reverse-information-paradox-2026
 content_mode: faithful_edit
-source_body_sha256: f42c21a78541b7665b885d1efc88e2bf53197cf0d019da2cd482ca375c8d2e4c
-rights_status: private_reference
 ---
 
 En la era de la inteligencia, ¿cómo deberían proteger las empresas su propiedad intelectual esencial?

@@ -4,16 +4,12 @@ piece_id: eval-engineering
 content_mode: faithful_synthesis
 status: drafting
 produced_at: '2026-08-02T13:53:45+00:00'
-inputs_sha256: 032a67586179767c076e86ba324139af19a360d2c61c9a140616cf0d8dc081e1
-manuscript_sha256: 0c950cf0fcf2b7a793120876e2c4bcac2b7a94ac6b003f80e2e291e81d5d57b6
 rounds:
 - round: 1
   result: changes_required
-  manuscript_sha256: 0c950cf0fcf2b7a793120876e2c4bcac2b7a94ac6b003f80e2e291e81d5d57b6
   writer:
     role: writer
     prompt_path: prompts/faithful-synthesis.md
-    prompt_sha256: 1bbcd7a51079b8540ee72c83f3410be3505cbe5afff9b1799f2e174ad87edd6a
     backend: agent
     model: null
     argv:
@@ -24,10 +20,7 @@ rounds:
     - agent
     - --submit
     - eval-engineering/r1-writer
-    - --work-sha256
-    - e2f775e6a9e5bf2dc2886128491de68971015e22f7a4e1be01b712c67ce6a9a3
     duration_seconds: 0.0
-    output_sha256: 91dc5b6ef08a2f9a9b6c1730eb47d4ba896a0545fb879737711d5633129d88a0
   gate_failures: []
   anchors_reconciled:
   - Where the tests come from

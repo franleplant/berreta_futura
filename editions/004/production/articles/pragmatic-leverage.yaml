@@ -4,16 +4,12 @@ piece_id: pragmatic-leverage
 content_mode: faithful_edit
 status: drafting
 produced_at: '2026-08-02T13:53:47+00:00'
-inputs_sha256: 8f43b311041ce3178556039590af086cee49b74c8df8853dca2bea5b5fdefdef
-manuscript_sha256: 9a6972de2b89af2dec6fc135bdd3f888b5172968899dab9e59c9823fe5d66eec
 rounds:
 - round: 1
   result: changes_required
-  manuscript_sha256: 9a6972de2b89af2dec6fc135bdd3f888b5172968899dab9e59c9823fe5d66eec
   writer:
     role: writer
     prompt_path: prompts/faithful-edit.md
-    prompt_sha256: ef2944ca05f9956a401175571fb899ce2f72c9ec9cdd6aa9b4b0115d69312344
     backend: agent
     model: null
     argv:
@@ -24,10 +20,7 @@ rounds:
     - agent
     - --submit
     - pragmatic-leverage/r1-writer
-    - --work-sha256
-    - 392370ca7abc05ca535b7a3b9d42ed62f8ec6fb83d9b869e69b4fe9d45a13c4b
     duration_seconds: 0.0
-    output_sha256: fe3c3bfeffbf94ce73e1155292c52ba66be7f950ff27d135ae23cf57203a0636
   gate_failures: []
   anchors_reconciled:
   - Seeking leverage

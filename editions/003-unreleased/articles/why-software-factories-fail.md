@@ -5,10 +5,6 @@ source_ids:
 - why-software-factories-fail-benchmarking-the-new-f1d9c04a
 content_mode: faithful_synthesis
 label: FAITHFUL SYNTHESIS
-source_body_sha256:
-  why-software-factories-fail-f53679d7: d33fdc4b32b52fc15f7182bdcd5745446577528e319f95736b29305f233b1299
-  why-software-factories-fail-turning-the-lights-b-1312d1ad: e2b15724ecd99d724de29cd01cb5920ff35ead723a0da2e53629304307524939
-  why-software-factories-fail-benchmarking-the-new-f1d9c04a: 7c991f53c7a43737e5549b24b4cca4b36b899d43721955e3ebc59285fa4e4aba
 ---
 
 We're all racing to put AI coding into production, and the prevailing wisdom is that we should write more loops. The lights-off promise is succinct: you are the bottleneck, the models are good enough, code is free, and nobody ever has to read it. Spend more tokens, add automated reviewers, and move 10 to 100 times faster.

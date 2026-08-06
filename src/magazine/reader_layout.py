@@ -86,7 +86,6 @@ class FigurePlacement:
     effective_ppi: float
     caption: str
     credit: str
-    rights_status: str
 
 
 @dataclass(frozen=True)

@@ -3,7 +3,6 @@ language: es
 source_language: en
 locale: es-AR
 fallback_locale: es-ES
-base_copy_sha256: 521efcfbd2d7b29f3feee7a51ed4748c6c0bea5c4df5bd29f333ddddf10cbc52
 policy:
   register: educated_castellano
   regional_preference: restrained_argentinian
@@ -28,7 +27,6 @@ closing_plate_titles:
 - Las señales regresan
 editorial:
   path: manuscript/editorial.md
-  source_sha256: de7f4ab25f008829615542ba1d90aba00d8c01de9e6e3f1df6d19d4eb1351f76
 articles:
 - id: software-factories-light-and-dark
   title: Fábricas de software, con luz y a oscuras
@@ -36,7 +34,6 @@ articles:
   display_emphasis: Fábricas
   author_note: Addy Osmani pasó 14 años liderando equipos de ingeniería de Chrome, Gemini y Google Cloud AI.
   manuscript: articles/software-factories-light-and-dark.md
-  source_sha256: 7e4ad5250715a0fc38f75ce81f8f65e1f751979bdf0d03380eea3f231b484960
   figures:
   - id: loop-harness-factory
     caption: Un ciclo se convierte en arnés cuando incorpora entorno aislado, herramientas, memoria y puertas; varios
@@ -45,8 +42,6 @@ articles:
     alt_text: Tres paneles muestran cómo un ciclo de un agente se convierte en arnés y luego en una fábrica con
       varios arneses, revisión, integración y producción.
     anchor: Ciclo, arnés, fábrica
-    source_caption_sha256: c322059cee05b2df553fa67213559bcba81c5d49f4ea29435a0726b747fc2b3b
-    source_credit_sha256: a19d5a93584f7573c0d5b593d75b9846fc0f1f45887c6dc17cbb43312f40bfd1
   - id: factory-closed-loop
     caption: La fábrica cierra el circuito desde la intención hasta la cola, el arnés, los controles automáticos,
       la revisión y el despliegue; después devuelve las señales de producción a la cola de trabajo.
@@ -54,8 +49,6 @@ articles:
     alt_text: Un circuito cerrado conecta intención, cola, arnés, controles automáticos, revisión humana, despliegue,
       observabilidad y señales operativas.
     anchor: El cuello estrecho
-    source_caption_sha256: ebecdad450fcdc439e9a8019c611b183b59857b82b2b4f2f518dc3737b518de8
-    source_credit_sha256: 236714e0005cc6077bb2fb52b707b3b73050ce83840eeabb6dbdf1656df21334
   - id: lights-on-factory
     caption: Una fábrica con luz mantiene a las personas en la frontera de revisión mientras los agentes construyen
       y los controles automáticos, el despliegue, la observabilidad, los incidentes y la respuesta de usuarios completan
@@ -64,15 +57,12 @@ articles:
     alt_text: Un flujo de fábrica de software va desde la dirección y las señales de usuarios hasta un agente, controles
       automáticos, revisión humana, producción y observabilidad.
     anchor: Encender la luz donde vive el criterio
-    source_caption_sha256: 752c3eeded1e104be9ad1a54914293b26bbee5fcecfe9acff52a4196423db6cf
-    source_credit_sha256: b3f11454d12506af158f94d0d1af6f9d63e6e73d7ea660611f5a041be2799f39
 - id: the-building-block-economy
   title: La economía de los bloques de construcción
   short_title: Bloques de construcción
   display_emphasis: Bloques
   author_note: Mitchell Hashimoto es creador de Ghostty y cofundador de HashiCorp.
   manuscript: articles/the-building-block-economy.md
-  source_sha256: 856bf484b6335ecaa7e78391226cdbeb2a1520d751b272a216163629e723b726
 - id: agent-swarms-and-model-economics
   title: Enjambres de agentes y la nueva economía de los modelos
   short_title: Enjambres de agentes
@@ -80,7 +70,6 @@ articles:
   author_note: Wilson Lin es investigador en Cursor, donde trabaja en sistemas de programación autónoma
     de larga duración.
   manuscript: articles/agent-swarms-and-model-economics.md
-  source_sha256: 8a7a5413ad96b2299522a9f49bf953cfb80652bf9be6cdd9c38792cca9637f02
   figures:
   - id: swarm-task-tree
     caption: Los agentes planificadores descomponen la meta de forma recursiva; los trabajadores dedican su contexto
@@ -88,8 +77,6 @@ articles:
     credit: 'Diagrama de Wilson Lin; fuente: Agent Swarms and the New Model Economics.'
     alt_text: Una meta se ramifica mediante agentes planificadores en tareas acotadas para agentes trabajadores.
     anchor: Árboles y memoria
-    source_caption_sha256: 8f434e5be17efb53c9c8442b7db352b8951a727267ffd08a0189baafaab721d2
-    source_credit_sha256: 08ecb5dec019d7ac8e914048c4dfaa016ef92db476bd497fe81483f184e33483
   - id: swarm-model-cost
     caption: Resultados comparables de SQLite tuvieron costes radicalmente distintos según qué modelos planificaron
       y cuáles absorbieron la carga de ejecución.
@@ -97,15 +84,12 @@ articles:
     alt_text: Comparación de costes entre cuatro configuraciones de modelos planificadores y trabajadores con los
       arneses antiguo y nuevo.
     anchor: Economía de modelos
-    source_caption_sha256: 2a2f36505aa4afb620a90cf3b6752250224e31e8bd5e25c7962599c0a323baca
-    source_credit_sha256: 2872533f1b8938807254feda6f7d14f9e1ee19f30ee39b5affa44c40fb250560
 - id: loop-engineering-roadmap
   title: 'Ingeniería de ciclos: una hoja de ruta más allá del prompt'
   short_title: Ingeniería de ciclos
   display_emphasis: Ciclos
   author_note: Codez es el nombre con el que publica Lev Deviatkin.
   manuscript: articles/loop-engineering-roadmap.md
-  source_sha256: f3267e632f4217d6769daf07f731c24df7ce163e77a174cc778a7f7c08cb06da
 - id: agentic-pods
   title: 'Pods de agentes: llevar la IA más allá de ingeniería'
   short_title: Pods de agentes
@@ -113,7 +97,6 @@ articles:
   author_note: Praveen Neppalli Naga es director de tecnología de Uber y antes ocupó puestos de liderazgo
     en ingeniería en LinkedIn.
   manuscript: articles/agentic-pods.md
-  source_sha256: b6e32f00e7c2991e6316130cb2f135a597419fe6f704abda4ffdb6030c8c4dc6
 - id: how-we-built-our-knowledge-base
   title: Cómo construimos nuestra base de conocimiento
   short_title: base de conocimiento
@@ -121,7 +104,6 @@ articles:
   author_note: Isaac Tai, Daniel Kim y Mike Gao trabajan en Cerebras Systems, la empresa de chips de IA
     creadora del Wafer-Scale Engine.
   manuscript: articles/how-we-built-our-knowledge-base.md
-  source_sha256: 03e2ec79ed92616fed51eec3b1e03c7e5cc2024ff9e637bccddaa75d070b7b20
   figures:
   - id: knowledge-pipeline
     caption: Cerebras Knowledge conduce el material de las fuentes a través de destilación, embeddings, recuperación,
@@ -130,8 +112,6 @@ articles:
     alt_text: Un diagrama vertical de arquitectura recorre el material desde la destilación y los embeddings hasta
       varias rutas de recuperación, la fusión, el reordenamiento y una respuesta citada.
     anchor: __opener__
-    source_caption_sha256: 8ebab94391f43347ade52ef959648493ad53a436df17675f4b563f5006d61a47
-    source_credit_sha256: b05207dca95791664779cc9f2ac7036e8925b515aa89c26872789fe6205f4c88
   - id: planner-tool-fanout
     caption: Una etapa de planificación abre cada pregunta en abanico hacia herramientas de búsqueda especializadas
       antes de normalizar la evidencia y sintetizar la respuesta.
@@ -139,8 +119,6 @@ articles:
     alt_text: Un diagrama horizontal muestra una consulta que entra en un planificador, se ramifica hacia varias
       herramientas y converge en evidencia normalizada y síntesis.
     anchor: Planificación y abanico de herramientas
-    source_caption_sha256: 06ad1eda3471000897910d49dd2a7ad9e62f6562469e2e5f7be09908cf9a8182
-    source_credit_sha256: bed12758a5b1ba6d0a7506b8cdfb49631826616087d84a4f60d1f97298f76878
   - id: mcp-web-ui-comparison
     caption: MCP expone primitivas de recuperación en bruto a clientes externos; la interfaz web se ocupa del ciclo
       completo de planificación, ejecución y síntesis.
@@ -148,6 +126,4 @@ articles:
     alt_text: Una comparación arquitectónica contrapone las herramientas directas de recuperación MCP con el canal
       integrado de planificación, ejecución y síntesis de la interfaz web.
     anchor: Interfaz web
-    source_caption_sha256: 6b99e2ef9a885ed24598b4aa6d8f263b055a43315a95afcff921aa6c9c872218
-    source_credit_sha256: ed5bd54c35c437b7e72a61bdc01afa6b44eacd5efac00af19e26d6fcd85855d9
 sections: []

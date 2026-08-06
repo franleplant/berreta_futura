@@ -1,89 +1,13 @@
-schema_version: 2
 id: your-agent-needs-a-computer-not-a-container-intr-4851b3c5
-title: 'Your agent needs a computer, not a container — introducing @cloudflare/computer'
-author: 'Matt Carey, Aron Carroll'
-author_profile:
-  note: Matt Carey and Aron Carroll are the Cloudflare authors of this post.
-  evidence:
-  - url: https://blog.cloudflare.com/cloudflare-computer/
-    capture_id: 73ffb25a0a3f3fd6ea0d37875a10689490412241f592e6d0e7880fbd4d62e08e
-canonical_url: https://blog.cloudflare.com/cloudflare-computer
-submitted_url: https://blog.cloudflare.com/cloudflare-computer/
+title: Your agent needs a computer, not a container — introducing @cloudflare/computer
+author: Matt Carey, Aron Carroll
+url: https://blog.cloudflare.com/cloudflare-computer
 captured_at: '2026-08-06T21:05:28Z'
-publication_date: '2026-08-03'
-kind: web
-status: captured
-content_hash: null
-raw_captures:
-- id: 453551a5ee03bbd9cee7ed81bdc9b4da6b7a4c1176d3cedf7164bd6039a68d06
-  path: raw/453551a5ee03bbd9cee7ed81bdc9b4da6b7a4c1176d3cedf7164bd6039a68d06/manifest.json
-  method: public_crawler_rendered_text
-  purpose: article
-  source_url: https://blog.cloudflare.com/cloudflare-computer
-  captured_at: '2026-08-06T21:05:28Z'
-  artifact_count: 8
-  byte_count: 1491397
-- id: 73ffb25a0a3f3fd6ea0d37875a10689490412241f592e6d0e7880fbd4d62e08e
-  path: raw/73ffb25a0a3f3fd6ea0d37875a10689490412241f592e6d0e7880fbd4d62e08e/manifest.json
-  method: author_identity_profile
-  purpose: author_identity
-  source_url: https://blog.cloudflare.com/cloudflare-computer
-  captured_at: '2026-08-06T21:05:28Z'
-  artifact_count: 1
-  byte_count: 378
-provenance: []
-rights:
-  status: unknown
-  copyright_notice: 'Copyright 2026 Cloudflare, Inc.'
-  intended_use: private_reference
-  attribution_required: true
-  public_reprint_allowed: false
-media_reviews:
-- capture_id: 453551a5ee03bbd9cee7ed81bdc9b4da6b7a4c1176d3cedf7164bd6039a68d06
-  status: media_curated
-  assets:
-  - id: raster-002-2342195c
-    artifact_path: media/002.png
-    artifact_sha256: 2342195cc5e983a7ea2550809b526a6521e5fc52edabcdfdae653ede82c279a2
-    mime_type: image/png
-    creator: 'Matt Carey, Aron Carroll'
-    credit: 'Harness in an isolate calling remote tools. Image by Matt Carey, Aron Carroll; source: Your agent needs a computer, not a container — introducing @cloudflare/computer.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  - id: raster-003-427bfb57
-    artifact_path: media/003.png
-    artifact_sha256: 427bfb5703ae9e0f06a1d7583cfd811210d4f7dbfa6ac65b4ea70cf929016e90
-    mime_type: image/png
-    creator: 'Matt Carey, Aron Carroll'
-    credit: 'Before, today, next: harness placement. Image by Matt Carey, Aron Carroll; source: Your agent needs a computer, not a container — introducing @cloudflare/computer.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  - id: raster-006-786ebde1
-    artifact_path: media/006.png
-    artifact_sha256: 786ebde18fb10552efb7091e56fdd9e96cf800abeca6042a161436eff8e848db
-    mime_type: image/png
-    creator: 'Matt Carey, Aron Carroll'
-    credit: 'Workspace inside a Durable Object. Image by Matt Carey, Aron Carroll; source: Your agent needs a computer, not a container — introducing @cloudflare/computer.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  note: 'Automatic curation selected 3 of 7 candidates under editorial-impact-v4; decisions are hash-pinned in 453551a5ee03bbd9cee7ed81bdc9b4da6b7a4c1176d3cedf7164bd6039a68d06.curation.json.'
-- capture_id: 73ffb25a0a3f3fd6ea0d37875a10689490412241f592e6d0e7880fbd4d62e08e
-  status: media_rejected
-  assets: []
-  note: Author identity evidence is provenance, not article artwork.
-metadata:
-  tags:
-  - agents
-  - harnesses
-  - infrastructure
-  synopsis: 'Cloudflare introduces @cloudflare/computer, an open-source agent runtime that gives each agent a durable SQLite-backed virtual filesystem and routes execution across isolates, container sandboxes, and browsers.'
-notes: 'Static public page fetched over public HTTPS without credentials or session data; rendered text converted to Markdown deterministically and original images archived at source resolution.'
+published_at: '2026-08-03'
+tags:
+- agents
+- harnesses
+- infrastructure
+synopsis: Cloudflare introduces @cloudflare/computer, an open-source agent runtime that gives each agent
+  a durable SQLite-backed virtual filesystem and routes execution across isolates, container sandboxes,
+  and browsers.

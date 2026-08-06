@@ -50,9 +50,9 @@ fn prompts_path(file: &str) -> PathBuf {
 }
 
 fn source_text(source_id: &str) -> Result<String> {
-    let path = PathBuf::from("library/sources").join(source_id).join("extracted.md");
+    let path = PathBuf::from("library/sources").join(source_id).join("article.md");
     if !path.exists() {
-        bail!("no extraction for source '{source_id}' at {}", path.display());
+        bail!("no captured article for source '{source_id}' at {}", path.display());
     }
     read(&path)
 }

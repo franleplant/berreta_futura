@@ -39,21 +39,15 @@ articles:
   - src-arvind-tweet-2076994014692229601
   - src-narayanan-icml-2026-keynote
   manuscript: editions/001-the-work-left-to-us/articles/narayanan-what-will-be-left.md
-  source_body_sha256:
-    src-narayanan-icml-2026-keynote: a8a2490509d9f2095ca0c39f544d97142f93a95bc79efcc1cc20ae1e3891421b
   figures:
   - id: capability-reliability-gap
-    decision: include
     source_id: src-narayanan-icml-2026-keynote
-    asset_id: capability-reliability-gap
+    path: media/slide14-15.png
+    credit: 'Arvind Narayanan, ICML 2026.'
     caption: Across model releases, accuracy rises sharply while reliability improves only gradually - the gap between capability and dependable deployment.
     alt_text: Two scatter plots compare AI model accuracy and reliability over release dates; the accuracy trend rises much more steeply.
     anchor: __opener__
     layout: column_plate
-    criteria:
-    - important
-    - useful
-    rationale: This chart makes the article's capability-versus-deployment distinction instantly legible.
 - id: joshi-dsls-reliable-use-llms
   title: DSLs Enable Reliable Use of LLMs
   short_title: Reliable Use of LLMs
@@ -65,7 +59,6 @@ articles:
   source_ids:
   - src-joshi-dsls-reliable-use-llms
   manuscript: editions/001-the-work-left-to-us/articles/joshi-dsls-reliable-use-llms.md
-  source_body_sha256: 1effc901980761de45a8ff4b1a359558003ab561e8f6fba92b48bfbfbc61de27
 - id: nadella-reverse-information-paradox
   title: The Reverse Information Paradox
   short_title: Reverse Information Paradox
@@ -77,7 +70,6 @@ articles:
   source_ids:
   - src-nadella-reverse-information-paradox-2026
   manuscript: editions/001-the-work-left-to-us/articles/nadella-reverse-information-paradox.md
-  source_body_sha256: f42c21a78541b7665b885d1efc88e2bf53197cf0d019da2cd482ca375c8d2e4c
 - id: hassabis-frontier-ai
   title: A Framework for Frontier AI and the Dawning of a New Age
   short_title: Framework for Frontier AI
@@ -89,7 +81,3 @@ articles:
   source_ids:
   - src-hassabis-frontier-ai-2026
   manuscript: editions/001-the-work-left-to-us/articles/hassabis-frontier-ai.md
-  source_body_sha256: b585b330faa6c961eb4e6eada869b782fb01396cbebe877842e7f1973da3c486
-rights:
-  faithful_source_reprint: private_only_while_rights_unknown
-  public_release: blocked_pending_permission_or_applicable_exception

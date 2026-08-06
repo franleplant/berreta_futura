@@ -1,55 +1,13 @@
-schema_version: 1
 id: buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e
 title: Buzz agents are paying each other with Bitcoin
 author: Documenting Bitcoin
-canonical_url: https://x.com/DocumentingBTC/status/2081334299614224420
-submitted_url: https://x.com/DocumentingBTC/status/2081334299614224420
+url: https://x.com/DocumentingBTC/status/2081334299614224420
 captured_at: '2026-07-26T22:23:15Z'
-publication_date: '2026-07-26T11:02:21Z'
-kind: web
-status: captured
-content_hash: null
-raw_captures:
-- id: 98b41281cc44fd93754c2df85cafd40cbc5ab798054dec01d9446a1feb1ed529
-  path: raw/98b41281cc44fd93754c2df85cafd40cbc5ab798054dec01d9446a1feb1ed529/manifest.json
-  method: authenticated_browser_text_links_and_archived_video_thumbnail
-  captured_at: '2026-07-26T22:23:15Z'
-  artifact_count: 4
-  byte_count: 2606
-- id: ad37c9b46a51d9209c82e9499a4d664aeab51e9d2736afcea120493487727110
-  path: raw/ad37c9b46a51d9209c82e9499a4d664aeab51e9d2736afcea120493487727110/manifest.json
-  method: authenticated_browser_text_links_and_archived_video_thumbnail
-  captured_at: '2026-07-26T22:27:07Z'
-  artifact_count: 5
-  byte_count: 45753
-provenance:
-- relation: primary_material
-  url: https://buzz.xyz/
-- relation: primary_material
-  url: https://github.com/block/buzz
-rights:
-  status: unknown
-  intended_use: private_reference
-  attribution_required: true
-  public_reprint_allowed: false
-media_reviews:
-- capture_id: 98b41281cc44fd93754c2df85cafd40cbc5ab798054dec01d9446a1feb1ed529
-  status: media_rejected
-  assets: []
-  note: 'Automatic curation rejected all candidates: insufficient_print_resolution (1), no_semantic_source_context
-    (1).'
-- capture_id: ad37c9b46a51d9209c82e9499a4d664aeab51e9d2736afcea120493487727110
-  status: media_rejected
-  assets: []
-  note: 'Automatic curation rejected all candidates: insufficient_print_resolution (1), no_semantic_source_context
-    (2).'
-metadata:
-  tags:
-  - agents
-  - bitcoin
-  - buzz
-  - payments
-  synopsis: Documenting Bitcoin reports an early Buzz demonstration in which AI agents independently send
-    Bitcoin payments to one another during collaborative work.
-notes: Authenticated X capture supplied for edition 003. The attached video thumbnail is archived separately;
-  the post reports an early user demonstration, not a mature or independently audited product capability.
+published_at: '2026-07-26T11:02:21Z'
+tags:
+- agents
+- bitcoin
+- buzz
+- payments
+synopsis: Documenting Bitcoin reports an early Buzz demonstration in which AI agents independently send
+  Bitcoin payments to one another during collaborative work.

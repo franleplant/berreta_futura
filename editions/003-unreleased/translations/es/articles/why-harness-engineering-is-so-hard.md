@@ -2,7 +2,6 @@
 source_id: why-harness-engineering-is-so-hard-fe732038
 content_mode: faithful_synthesis
 label: SÍNTESIS FIEL
-source_body_sha256: 5a0878b6c7b53a39fff08674e8d2f4542ef72d3a9bee3eb347c11dbe5fc9c248
 ---
 
 Cinco meses, 104 commits y una lección que se repite: la ingeniería de arneses es difícil.

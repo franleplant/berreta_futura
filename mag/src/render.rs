@@ -8,7 +8,7 @@
 use crate::caller::{Caller, ModelSpec};
 use anyhow::{anyhow, bail, Context, Result};
 use serde::Serialize;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -220,65 +220,23 @@ fn publication_name(repo_root: &Path) -> String {
     "Magazine".to_string()
 }
 
-/// Stage every figure (`decision: include`) belonging to one article, via
-/// its source's already-parsed record.yaml: media_reviews[].assets[] whose
-/// id matches the figure's asset_id gives capture_id + artifact_path.
+/// Stage every figure belonging to one article: each figure names its source
+/// and the image file inside that source's directory.
 fn stage_article_figures(
     staging: &mut Staging,
     article: &serde_yaml::Value,
-    records: &HashMap<String, serde_yaml::Value>,
 ) -> Result<()> {
     let article_id = str_field(article, "id").unwrap_or("<unknown article>");
     let Some(figures) = article.get("figures").and_then(|v| v.as_sequence()) else {
         return Ok(());
     };
     for figure in figures {
-        if str_field(figure, "decision") != Some("include") {
-            continue;
-        }
         let figure_id = str_field(figure, "id").unwrap_or("<unknown figure>");
         let sid = str_field(figure, "source_id")
             .ok_or_else(|| anyhow!("article '{article_id}' figure '{figure_id}' missing source_id"))?;
-        let asset_id = str_field(figure, "asset_id")
-            .ok_or_else(|| anyhow!("article '{article_id}' figure '{figure_id}' missing asset_id"))?;
-        let Some(record) = records.get(sid) else {
-            // That source's record.yaml is already reported missing; skip
-            // deriving figure media from content we don't have.
-            continue;
-        };
-        let reviews = record.get("media_reviews").and_then(|v| v.as_sequence()).ok_or_else(|| {
-            anyhow!("source '{sid}' record.yaml has no media_reviews (needed for figure '{figure_id}')")
-        })?;
-        let mut found = None;
-        for review in reviews {
-            let Some(assets) = review.get("assets").and_then(|v| v.as_sequence()) else {
-                continue;
-            };
-            for asset in assets {
-                if str_field(asset, "id") == Some(asset_id) {
-                    let capture_id = str_field(review, "capture_id").ok_or_else(|| {
-                        anyhow!("source '{sid}' media_reviews entry for asset '{asset_id}' missing capture_id")
-                    })?;
-                    let artifact_path = str_field(asset, "artifact_path").ok_or_else(|| {
-                        anyhow!("source '{sid}' asset '{asset_id}' missing artifact_path")
-                    })?;
-                    found = Some((capture_id.to_string(), artifact_path.to_string()));
-                    break;
-                }
-            }
-            if found.is_some() {
-                break;
-            }
-        }
-        let (capture_id, artifact_path) = found.ok_or_else(|| {
-            anyhow!(
-                "source '{sid}' record.yaml has no media_reviews asset '{asset_id}' \
-                 (referenced by article '{article_id}' figure '{figure_id}')"
-            )
-        })?;
-        let base = PathBuf::from("library/sources").join(sid).join("raw").join(&capture_id);
-        staging.add(&base.join("manifest.json"));
-        staging.add(&base.join("artifacts").join(&artifact_path));
+        let path = str_field(figure, "path")
+            .ok_or_else(|| anyhow!("article '{article_id}' figure '{figure_id}' missing path"))?;
+        staging.add(&PathBuf::from("library/sources").join(sid).join(path));
     }
     Ok(())
 }
@@ -643,7 +601,7 @@ pub fn run(
     }
 
     // E. Source record.yamls for every top-level source id and every
-    // article's source_ids, parsing each so F can resolve figure media.
+    // article's source_ids.
     let mut sids: Vec<String> = Vec::new();
     let mut sid_seen: HashSet<String> = HashSet::new();
     if let Some(top_sources) = edition_yaml.get("sources").and_then(|v| v.as_sequence()) {
@@ -667,7 +625,6 @@ pub fn run(
         }
     }
 
-    let mut records: HashMap<String, serde_yaml::Value> = HashMap::new();
     for sid in &sids {
         let record_path = PathBuf::from("library/sources").join(sid).join("record.yaml");
         if !repo_root.join(&record_path).exists() {
@@ -675,13 +632,11 @@ pub fn run(
             continue;
         }
         staging.add(&record_path);
-        let record = read_yaml(&repo_root.join(&record_path))?;
-        records.insert(sid.clone(), record);
     }
 
-    // F. Figure media, resolved through each article's source records.
+    // F. Figure media, each named directly by the article's figure rows.
     for article in &articles {
-        stage_article_figures(&mut staging, article, &records)?;
+        stage_article_figures(&mut staging, article)?;
     }
 
     if !staging.missing.is_empty() {

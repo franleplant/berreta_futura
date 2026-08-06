@@ -2,7 +2,6 @@
 source_id: the-new-rules-of-context-engineering-for-claude--aa1b1ea8
 content_mode: faithful_synthesis
 label: FAITHFUL SYNTHESIS
-source_body_sha256: aaeea1ef2ec0a1645ec0eae72d75b920dc73b91bd30dc736cf5eecd6624902a9
 ---
 
 When you send a message to Claude, the prompt is only a small part of the context it gets: much is assembled from your system prompt, Skills, CLAUDE.md files, memory, and other sources. Unlike a prompt, this context serves many requests and cannot be as specific—we call it context engineering, and it makes a big impact on your results.

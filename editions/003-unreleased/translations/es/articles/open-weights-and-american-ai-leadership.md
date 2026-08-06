@@ -2,9 +2,6 @@
 source_id: open-weights-and-american-ai-leadership-7aa6038f
 content_mode: faithful_edit
 label: EDICIÓN FIEL
-source_body_sha256:
-  open-weights-and-american-ai-leadership-7aa6038f: ffdf007cce5434f26b3e23c8698a0c64665bd4afb5e04027715243b827981aaf
-  open-weight-models-are-essential-to-a-healthy-ai-e7845a41: 902ebece437a6156bb3e620db9dc7cd84c102a146c1f272f552add00a9591ec8
 ---
 
 > Los modelos de pesos abiertos son esenciales para un ecosistema de IA saludable. Junto a otros actores de nuestra industria, trazamos un camino para que los modelos de pesos abiertos fortalezcan la competitividad estadounidense y amplíen la oportunidad económica, al tiempo que protegen la seguridad nacional.

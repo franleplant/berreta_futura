@@ -4,16 +4,12 @@ piece_id: factory-systems-problem
 content_mode: faithful_edit
 status: drafting
 produced_at: '2026-08-02T13:52:59+00:00'
-inputs_sha256: 75304b6f8676a192d102f228660f3b81b134e22ba43deec0f6b691ccfc7625ea
-manuscript_sha256: 74d8a63f53bfabe52af94eeec50c6ac4738f0a1303d61b3f5a52c2d16ab0180f
 rounds:
 - round: 1
   result: changes_required
-  manuscript_sha256: 74d8a63f53bfabe52af94eeec50c6ac4738f0a1303d61b3f5a52c2d16ab0180f
   writer:
     role: writer
     prompt_path: prompts/faithful-edit.md
-    prompt_sha256: ef2944ca05f9956a401175571fb899ce2f72c9ec9cdd6aa9b4b0115d69312344
     backend: agent
     model: null
     argv:
@@ -24,10 +20,7 @@ rounds:
     - agent
     - --submit
     - factory-systems-problem/r1-writer
-    - --work-sha256
-    - ac356360b4df5a112f2098d030558f34f8c600acb8ca2c78d41e76cade50e235
     duration_seconds: 0.0
-    output_sha256: f24622d419e399fc8b38460c0b469ad978427785278d22e5568ac55d359bf077
   gate_failures: []
   anchors_reconciled: []
   judges: {}

@@ -1,47 +1,13 @@
-schema_version: 1
 id: buzz-a-workspace-where-humans-and-agents-build-t-59122470
 title: 'Buzz: A workspace where humans and agents build together'
 author: Block, Inc.
-canonical_url: https://github.com/block/buzz
-submitted_url: https://github.com/block/buzz
+url: https://github.com/block/buzz
 captured_at: '2026-07-23T12:32:52Z'
-publication_date: '2026-07-22'
-kind: web
-status: captured
-content_hash: null
-raw_captures:
-- id: 1897cc7ea085e81c39fbccc5439f0d01dadcb505cc3b6867db8eb579d5df9a54
-  path: raw/1897cc7ea085e81c39fbccc5439f0d01dadcb505cc3b6867db8eb579d5df9a54/manifest.json
-  method: public_repository_browser_and_raw_files
-  captured_at: '2026-07-23T12:32:52Z'
-  artifact_count: 7
-  byte_count: 10970474
-provenance:
-- relation: discovered_via
-  target: why-we-re-buzzing-1c82f338
-  url: https://x.com/jack/status/2080056638820450400
-- relation: official_site
-  target: buzz-your-people-your-agents-your-project-all-in-833eef43
-  url: https://buzz.xyz/
-rights:
-  status: licensed
-  license: Apache-2.0
-  intended_use: private_reference
-  attribution_required: true
-  public_reprint_allowed: true
-media_reviews:
-- capture_id: 1897cc7ea085e81c39fbccc5439f0d01dadcb505cc3b6867db8eb579d5df9a54
-  status: media_rejected
-  assets: []
-  note: 'Automatic curation rejected all candidates: extreme_aspect_ratio_or_full_page_capture (1), no_semantic_source_context
-    (1).'
-metadata:
-  tags:
-  - agents
-  - buzz
-  - nostr
-  - open-source
-  synopsis: Canonical Apache-2.0 repository documenting Buzz’s vision, architecture, identity model, agent
-    affordances, and current implementation.
-notes: Canonical primary technical source linked from the submitted X post and official Buzz site; capture
-  pins main commit acfbb1bb6af54cb29cb152496ff43b8285dcb8cf.
+published_at: '2026-07-22'
+tags:
+- agents
+- buzz
+- nostr
+- open-source
+synopsis: Canonical Apache-2.0 repository documenting Buzz’s vision, architecture, identity model, agent
+  affordances, and current implementation.

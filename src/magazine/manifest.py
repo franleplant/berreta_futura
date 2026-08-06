@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import hashlib
 import json
 from pathlib import Path
 import re
@@ -11,7 +10,6 @@ import yaml
 
 from .document_structure import block_signature
 from .errors import ValidationError
-from .extraction import SourcePin, normalize_source_pins
 from .io import load_structured, safe_project_path
 from .media_schema import Figure, localize_figures, resolve_figures
 from .publication_document import DocumentParseError, Paragraph, parse_publication_document
@@ -32,7 +30,7 @@ CONTENT_MODES: frozenset[str] = frozenset(
 """Every relationship an article may declare to the sources it was built from.
 
 ``in_a_nutshell`` is the teaching explainer: the magazine's own Teacher voice
-grounded in a pinned extraction.  It is deliberately *not* a synthesis mode --
+grounded in the captured source.  It is deliberately *not* a synthesis mode --
 a faithful synthesis of a specification is nearly obliged to walk the
 specification, which is exactly the failure the section exists to prevent --
 and it is deliberately not ``original_synthesis`` either, because the piece is
@@ -107,15 +105,6 @@ class Article:
     author: str
     author_note: str
     source_ids: tuple[str, ...]
-    source_pins: tuple[SourcePin, ...]
-    """One ``source_body_sha256`` pin per entry of ``source_ids``, in order.
-
-    The pin lives in the article row because it is a fact about *this article's
-    relationship to its sources*: which committed extraction bodies the
-    manuscript was written from.  Keeping it beside ``source_ids`` is what
-    makes "the source text moved after we republished it" a detectable event.
-    A pin may be ``None`` -- see :class:`magazine.extraction.SourcePin`.
-    """
     manuscript: Path
     content_mode: str
     figures: tuple[Figure, ...] = ()
@@ -307,11 +296,6 @@ def load_edition(
         if unknown:
             errors.append(f"{label} references unknown sources: {', '.join(unknown)}")
         try:
-            source_pins = normalize_source_pins(label, source_ids, row.get("source_body_sha256"))
-        except ValidationError as exc:
-            errors.extend(exc.errors)
-            source_pins = ()
-        try:
             manuscript = _edition_path(root, manifest_path.parent, row["manuscript"])
             tail_art = (
                 _edition_path(
@@ -403,30 +387,6 @@ def load_edition(
         content_mode = str(row.get("content_mode", "faithful_edit"))
         if content_mode not in CONTENT_MODES:
             errors.append(f"{label} has invalid content_mode: {content_mode}")
-        if (
-            source_records is not None
-            and source_ids
-            and content_mode not in EDITOR_VOICE_CONTENT_MODES
-        ):
-            primary_record = source_records.get(source_ids[0])
-            if primary_record is not None and primary_record.schema_version >= 2:
-                captured_author = str(primary_record.author or "").strip()
-                captured_profile = primary_record.author_profile
-                if not captured_author or captured_profile is None:
-                    errors.append(
-                        f"{label} primary source {primary_record.id} has no captured "
-                        "author identity; recapture it with author profile evidence"
-                    )
-                else:
-                    if str(row["author"]).strip() != captured_author:
-                        errors.append(
-                            f"{label} byline must match captured source author "
-                            f"{captured_author!r}"
-                        )
-                    if author_note != captured_profile.note:
-                        errors.append(
-                            f"{label} author_note must match the captured author biography"
-                        )
         try:
             minimum_reader_pages = int(row.get("minimum_reader_pages", 1))
         except (TypeError, ValueError):
@@ -453,7 +413,6 @@ def load_edition(
                 article_source_ids=source_ids,
                 manuscript=manuscript,
                 rows=row.get("figures"),
-                records=source_records,
                 allow_unanchored=allow_unanchored_figures,
             )
         except ValidationError as exc:
@@ -469,7 +428,6 @@ def load_edition(
                 row["author"],
                 author_note,
                 source_ids,
-                source_pins,
                 manuscript,
                 content_mode,
                 figures,
@@ -606,18 +564,6 @@ def load_translation(
         errors.append(
             f"Translation source_language must be {base.language!r}"
         )
-    expected_copy_hash = _edition_copy_sha256(base)
-    pinned_copy_hash = data.get("base_copy_sha256")
-    if pinned_copy_hash != expected_copy_hash:
-        # Withholding the expected digest here used to force authors to
-        # reconstruct it by hand; the error now states both sides so the fix is
-        # a review followed by a re-pin, not an archaeology dig.
-        errors.append(
-            f"Translation {language!r} is stale: base_copy_sha256 is "
-            f"{pinned_copy_hash!r}, but the base edition copy hashes to "
-            f"{expected_copy_hash}; the overlay no longer matches the base edition"
-        )
-
     translated_cover = data.get("cover")
     if not isinstance(translated_cover, dict):
         errors.append(f"Translation {language!r} requires translated cover copy")
@@ -637,7 +583,6 @@ def load_translation(
                 _validate_translation_file(
                     base.editorial.path,
                     translated_path,
-                    editorial_row.get("source_sha256"),
                     f"Translation {language!r} editorial",
                     errors,
                 )
@@ -755,7 +700,6 @@ def load_translation(
             _validate_translation_file(
                 article.manuscript,
                 manuscript,
-                row.get("source_sha256"),
                 f"Translation {language!r} article {article.id}",
                 errors,
             )
@@ -783,7 +727,6 @@ def load_translation(
                 author,
                 author_note,
                 article.source_ids,
-                article.source_pins,
                 manuscript,
                 article.content_mode,
                 figures,
@@ -842,7 +785,6 @@ def load_translation(
             _validate_translation_file(
                 section.path,
                 path,
-                row.get("source_sha256"),
                 f"Translation {language!r} section {index + 1}",
                 errors,
             )
@@ -884,7 +826,6 @@ def load_translation(
                     "author_note": article.author_note,
                     "content_mode": article.content_mode,
                     "source_ids": list(article.source_ids),
-                    "source_body_sha256": _source_body_sha256_row(article),
                     "manuscript": article.manuscript.relative_to(root).as_posix(),
                     "tail_art_path": (
                         article.tail_art.relative_to(root).as_posix()
@@ -909,14 +850,12 @@ def load_translation(
                         {
                             "id": figure.id,
                             "source_id": figure.source_id,
-                            "asset_id": figure.asset_id,
+                            "path": figure.path.as_posix(),
                             "caption": figure.caption,
                             "credit": figure.credit,
                             "alt_text": figure.alt_text,
                             "anchor": figure.anchor,
                             "layout": figure.layout,
-                            "source_caption_sha256": figure.source_caption_sha256,
-                            "source_credit_sha256": figure.source_credit_sha256,
                         }
                         for figure in article.figures
                     ],
@@ -951,68 +890,6 @@ def load_translation(
     )
 
 
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def _edition_copy_sha256(edition: Edition) -> str:
-    copy = {
-        "title": edition.title,
-        "subtitle": edition.raw.get("subtitle", ""),
-        "cover": {
-            key: edition.cover.get(key, "")
-            for key in ("headline", "deck", "edition_label", "back_text")
-        },
-        "closing_plates": [
-            {
-                "title": plate.title,
-                "art_sha256": _sha256(plate.art_path),
-            }
-            for plate in edition.closing_plates
-        ],
-        "articles": [
-            {
-                "id": article.id,
-                "title": article.title,
-                "short_title": article.short_title,
-                "display_emphasis": article.display_emphasis,
-                "opener_variant": article.opener_variant,
-                "author": article.author,
-                "author_note": article.author_note,
-                "tail_art_sha256": _sha256(article.tail_art) if article.tail_art else None,
-                # Conditional, like ``opener_art``: an article that carries no
-                # key ideas hashes exactly as it did before the field existed,
-                # so no released edition's translation goes stale for a feature
-                # it does not use.
-                **({"key_ideas": list(article.key_ideas)} if article.key_ideas else {}),
-                **(
-                    {
-                        "opener_art": {
-                            "art_sha256": _sha256(article.opener_art.path),
-                            "alt_text": article.opener_art.alt_text,
-                            "credit": article.opener_art.credit,
-                        }
-                    }
-                    if article.opener_art
-                    else {}
-                ),
-                "figures": [
-                    {
-                        "id": figure.id,
-                        "caption": figure.caption,
-                        "credit": figure.credit,
-                        "alt_text": figure.alt_text,
-                        "anchor": figure.anchor,
-                        "layout": figure.layout,
-                    }
-                    for figure in article.figures
-                ],
-            }
-            for article in edition.articles
-        ],
-    }
-    encoded = json.dumps(copy, ensure_ascii=False, sort_keys=True).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()
 
 
 def _markdown_signature(path: Path) -> list[str]:
@@ -1032,17 +909,9 @@ def _markdown_signature(path: Path) -> list[str]:
 def _validate_translation_file(
     source: Path,
     translation: Path,
-    pinned_source_sha256: Any,
     label: str,
     errors: list[str],
 ) -> None:
-    expected_source_sha256 = _sha256(source)
-    if pinned_source_sha256 != expected_source_sha256:
-        errors.append(
-            f"{label} is stale: source_sha256 is {pinned_source_sha256!r}, but "
-            f"{source.name} hashes to {expected_source_sha256}; the translation "
-            "no longer matches its English source"
-        )
     source_signature: list[str] | None = None
     translation_signature: list[str] | None = None
     try:
@@ -1083,21 +952,6 @@ def _markdown_invariants(path: Path) -> tuple[list[str], list[str], list[str]]:
     inline = re.findall(r"(?<!`)`([^`\n]+)`(?!`)", without_fences)
     return links, inline, fenced
 
-
-def _source_body_sha256_row(article: Article) -> str | dict[str, str] | None:
-    """An article's pins back in the shape ``edition.yaml`` authors them in.
-
-    A translation overlay renders the same article from the same sources, so
-    its emitted manifest carries the base article's pins unchanged -- the
-    provenance is the article's, not the language's.
-    """
-
-    pinned = {pin.source_id: pin.body_sha256 for pin in article.source_pins if pin.body_sha256}
-    if not pinned:
-        return None
-    if len(article.source_pins) == 1:
-        return next(iter(pinned.values()))
-    return pinned
 
 
 def _primary_source_url(

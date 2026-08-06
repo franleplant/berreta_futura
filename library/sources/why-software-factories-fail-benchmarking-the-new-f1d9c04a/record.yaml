@@ -1,85 +1,13 @@
-schema_version: 1
 id: why-software-factories-fail-benchmarking-the-new-f1d9c04a
 title: 'Why Software Factories Fail: Benchmarking the New Frontier'
 author: Dex Horthy
-canonical_url: https://x.com/dexhorthy/status/2081797628552270027
-submitted_url: https://x.com/dexhorthy/status/2081797628552270027
+url: https://x.com/dexhorthy/status/2081797628552270027
 captured_at: '2026-07-27T21:49:48Z'
-publication_date: '2026-07-27'
-kind: web
-status: captured
-content_hash: null
-raw_captures:
-- id: 9dd8f8028416a980a0a6e3d38ba4f20acb889d9d62c2c11dbd4cb059bd2756ef
-  path: raw/9dd8f8028416a980a0a6e3d38ba4f20acb889d9d62c2c11dbd4cb059bd2756ef/manifest.json
-  method: public_browser_pdf_full_page_raster_and_rendered_text
-  captured_at: '2026-07-27T21:49:48Z'
-  artifact_count: 3
-  byte_count: 5464114
-- id: ad174081d24d94f7a7e20962fc352c2989e87760dd2d788f6a5f55b66771dbd4
-  path: raw/ad174081d24d94f7a7e20962fc352c2989e87760dd2d788f6a5f55b66771dbd4/manifest.json
-  method: public_browser_article_dom_pdf_raster_and_rendered_text
-  captured_at: '2026-07-27T21:50:50Z'
-  artifact_count: 3
-  byte_count: 6018722
-- id: cdfa48fa02780b5af421b6c07a22d462025ad79063995a5768fe5813aa0bef61
-  path: raw/cdfa48fa02780b5af421b6c07a22d462025ad79063995a5768fe5813aa0bef61/manifest.json
-  method: public_browser_source_ordered_media
-  captured_at: '2026-07-27T21:53:30Z'
-  artifact_count: 3
-  byte_count: 174112
-provenance:
-- relation: primary_material
-  url: https://arxiv.org/abs/2603.24755
-rights:
-  status: unknown
-  intended_use: private_reference
-  attribution_required: true
-  public_reprint_allowed: false
-media_reviews:
-- capture_id: 9dd8f8028416a980a0a6e3d38ba4f20acb889d9d62c2c11dbd4cb059bd2756ef
-  status: media_rejected
-  assets: []
-  note: 'Automatic curation rejected all candidates: extreme_aspect_ratio_or_full_page_capture (1), no_semantic_source_context
-    (1).'
-- capture_id: ad174081d24d94f7a7e20962fc352c2989e87760dd2d788f6a5f55b66771dbd4
-  status: media_rejected
-  assets: []
-  note: 'Automatic curation rejected all candidates: extreme_aspect_ratio_or_full_page_capture (1), no_semantic_source_context
-    (1).'
-- capture_id: cdfa48fa02780b5af421b6c07a22d462025ad79063995a5768fe5813aa0bef61
-  status: media_curated
-  assets:
-  - id: raster-001-cce088ad
-    artifact_path: media/handoff-experiment.png
-    artifact_sha256: cce088adc0cc4d497ef2d88d727908993682e9b8764419c8273bd4ec75e062d7
-    mime_type: image/png
-    creator: Dex Horthy
-    credit: 'Diagram by Dex Horthy; source: Why Software Factories Fail: Benchmarking the New Frontier.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  - id: raster-002-c6471a04
-    artifact_path: media/strict-pass-rate.jpg
-    artifact_sha256: c6471a04dd3568ff0659821ae98f68417054c802fd74224b90e8fc19612b42e1
-    mime_type: image/jpeg
-    creator: Dex Horthy
-    credit: 'Diagram by Dex Horthy; source: Why Software Factories Fail: Benchmarking the New Frontier.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  note: Automatic curation selected 2 of 2 candidates under editorial-impact-v4; decisions are hash-pinned
-    in cdfa48fa02780b5af421b6c07a22d462025ad79063995a5768fe5813aa0bef61.curation.json.
-metadata:
-  tags:
-  - ai-coding
-  - benchmarks
-  - software-factories
-  synopsis: Part 3 tests frontier Claude models on a 17-checkpoint SlopCodeBench subset and argues that
-    incrementally revealed specifications provide a better signal for long-term maintainability than one-shot
-    coding benchmarks.
-notes: Public X article capture; no cookies, authorization headers, browser profile, or session data archived.
+published_at: '2026-07-27'
+tags:
+- ai-coding
+- benchmarks
+- software-factories
+synopsis: Part 3 tests frontier Claude models on a 17-checkpoint SlopCodeBench subset and argues that
+  incrementally revealed specifications provide a better signal for long-term maintainability than one-shot
+  coding benchmarks.

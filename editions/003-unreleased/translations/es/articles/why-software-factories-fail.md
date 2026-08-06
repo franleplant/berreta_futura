@@ -5,10 +5,6 @@ source_ids:
 - why-software-factories-fail-benchmarking-the-new-f1d9c04a
 content_mode: faithful_synthesis
 label: SÍNTESIS FIEL
-source_body_sha256:
-  why-software-factories-fail-f53679d7: d33fdc4b32b52fc15f7182bdcd5745446577528e319f95736b29305f233b1299
-  why-software-factories-fail-turning-the-lights-b-1312d1ad: e2b15724ecd99d724de29cd01cb5920ff35ead723a0da2e53629304307524939
-  why-software-factories-fail-benchmarking-the-new-f1d9c04a: 7c991f53c7a43737e5549b24b4cca4b36b899d43721955e3ebc59285fa4e4aba
 ---
 
 Todos corremos a poner la programación con IA en producción, y la sabiduría dominante dice que deberíamos escribir más ciclos. La promesa de la fábrica a oscuras es sucinta: tú eres el cuello de botella, los modelos ya son lo bastante buenos, el código es gratis y nadie tiene que leerlo. Gasta más tokens, añade revisores automáticos y avanza de 10 a 100 veces más rápido.

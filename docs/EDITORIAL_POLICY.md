@@ -47,7 +47,7 @@ An over-budget `faithful_edit` is converted to `faithful_synthesis`. The synthes
 Synthesis prose stays in the source's grammatical person and point of view. If the source author speaks in the first person, the synthesis does too; if the source is impersonal or already uses third person, preserve that choice. Do not wrap adapted prose in magazine-narrator scaffolding such as “Narayanan argues” or “Joshi explains.” Exact source wording may remain unchanged. Prefer retained passages and light edits, and summarize only where length requires it.
 
 A synthesis is verified by reading, not by bookkeeping: read the manuscript
-against its committed extraction claim by claim for invented claims, dropped
+against its captured source claim by claim for invented claims, dropped
 qualifications, reversed claim strength, and missing counterarguments.
 Deciding what a shorter piece must lose is the writer's job and is governed
 by this cut order: repeated examples first, a claim's supporting evidence
@@ -72,63 +72,39 @@ length remedy, not the default editorial voice.
 - adding transitions in the source author's apparent voice;
 - changing the source's tone, uncertainty, or claim strength.
 
-Editor additions must be visibly labeled, and the magazine does not print editorial apparatus inside an article. Editor text belongs in the furniture around a piece: the opening editorial, a standfirst, a figure caption, a section of its own. It does not belong in labeled notes interrupting the prose. A note is how a piece keeps a defect while appearing to answer one, and it puts the editor's voice where the reader came for the author's. Where a reprint lacks context the original page supplied, restore the referent inside the author's own sentence if the extraction supports it, or leave it alone.
+Editor additions must be visibly labeled, and the magazine does not print editorial apparatus inside an article. Editor text belongs in the furniture around a piece: the opening editorial, a standfirst, a figure caption, a section of its own. It does not belong in labeled notes interrupting the prose. A note is how a piece keeps a defect while appearing to answer one, and it puts the editor's voice where the reader came for the author's. Where a piece lacks context the original page supplied, restore the referent inside the author's own sentence if the captured source supports it, or leave it alone.
 
-## Source extractions and the evidence review
+## Captured sources and the evidence review
 
-Each source revision is represented by immutable artifacts for its submitted
-lead, durable raw evidence bundle, faithful extraction, media, metadata, and
-human source decision. An extraction reproduces the source's substantive text
-in source order with no summarization, editorial voice, or invented headings.
-Interface chrome and navigation may be omitted. A repository extraction covers
-each declared source file in stable order with visible file boundaries.
+A captured source is ``library/sources/<id>/``: ``article.md`` with the
+source's substantive text in source order, its images under ``media/``, and a
+small ``record.yaml`` naming title, author, URL, and dates. The capture keeps
+the author's wording, headings, and structure; interface chrome and navigation
+may be omitted. No summarization, editorial voice, or invented headings.
 
-The artifact graph, not a mutable manifest pin, binds an article to the exact
-source revisions it uses. Every source-backed article receives all of its
-assigned extraction artifact IDs. The source-aware evidence reviewer receives
-those same artifacts and the exact manuscript revision. Its finding or approval
-is an immutable judgment artifact whose parents name every input it audited.
-
-Changing a source, extraction, assignment, manuscript, prompt, content mode, or
-attribution creates a new artifact and successor work. The earlier judgment
-remains in history but cannot approve the new input graph. Edition review,
-translation, render, and release consume only current approving decisions.
+The source-aware evidence reviewer reads the manuscript against the captured
+``article.md`` of every assigned source. Rewriting an article means re-reading
+it against its sources; an earlier review does not carry over.
 
 ## Exact source code
 
 Whether prose represents its sources is a source-aware editorial judgment.
 Source code has a narrower rule: every fenced code block in a manuscript must
-be a contiguous exact run from one of that article's assigned extraction
-artifacts. Preserve indentation, line breaks, and characters. If the block
-cannot be reproduced exactly, drop it whole. A contract failure names the
-manuscript, block, and source revision and cannot be converted into approval by
-the worker that produced the manuscript.
+be a contiguous exact run from one of that article's captured sources.
+Preserve indentation, line breaks, and characters. If the block cannot be
+reproduced exactly, drop it whole.
 
 ## Translation editions
 
 English is the source edition. A Spanish edition is a faithful translation of
 the already edited English magazine, not a second opportunity to summarize,
 expand, strengthen, or soften the source. It preserves paragraph order,
-headings, examples, qualifications, links, code, and attribution. Every
-translation offer names the exact current English artifact ID; a changed
-English revision makes the prior translation historical rather than current.
+headings, examples, qualifications, links, code, and attribution. A changed
+English article means its translation is redone, not patched.
 
 Spanish uses educated castellano with restrained Argentine preferences and no
 slang. Spain Spanish is the default fallback. Generic Latin American, Mexican,
 Caribbean, and other unrelated regional variants are excluded from the house
 style. Both languages obey the same editorial and seven-page article budgets;
 the editorial's one page must hold in Spanish too, which makes compression part
-of translation rather than an afterthought. The engine creates translation,
-measurement, render, and preflight artifacts for every configured language
-before assembly.
-
-## Rights and distribution
-
-The workspace defaults to `private`. Complete third-party captures are retained
-as immutable raw-evidence artifacts so link loss cannot erase the editorial
-evidence. A checksum may protect a captured bundle at that integrity boundary,
-but it never identifies workflow state. The repository must remain private while
-those captures lack a public redistribution basis; credentials and browser-session
-data are never part of a bundle.
-
-Rights status is explicit: `unknown`, `private_reference`, `licensed`, `permission`, `public_domain`, or `author_owned`. Public packaging of a faithful reprint is blocked unless its status permits republication. The workflow records and surfaces rights decisions; it does not invent them.
+of translation rather than an afterthought.

@@ -1,79 +1,14 @@
-schema_version: 2
 id: prime-agent-a-self-improving-rlm-agent-2c19ce14
 title: 'Prime Agent: A self-improving RLM agent'
-author: 'Seth Karten, Alex L. Zhang, Kevin Thomas, Sebastian Müller, Prime Intellect Team'
-author_profile:
-  note: 'Seth Karten, Alex L. Zhang, Kevin Thomas, and Sebastian Müller are the Prime Intellect authors of this post, credited alongside the Prime Intellect Team.'
-  evidence:
-  - url: https://www.primeintellect.ai/blog/prime-agent
-    capture_id: 58534e0200a3b7cf36f143d024386bbe068fcb5067b8311f6886fe941a65f7c7
-canonical_url: https://www.primeintellect.ai/blog/prime-agent
-submitted_url: https://www.primeintellect.ai/blog/prime-agent
+author: Seth Karten, Alex L. Zhang, Kevin Thomas, Sebastian Müller, Prime Intellect Team
+url: https://www.primeintellect.ai/blog/prime-agent
 captured_at: '2026-08-06T21:05:28Z'
-publication_date: '2026-08-05'
-kind: web
-status: captured
-content_hash: null
-raw_captures:
-- id: 534a5c4452dcf295d2c21fc2329cc0a043ed354e22a89fd03ca3fad968a3e215
-  path: raw/534a5c4452dcf295d2c21fc2329cc0a043ed354e22a89fd03ca3fad968a3e215/manifest.json
-  method: public_crawler_rendered_text
-  purpose: article
-  source_url: https://www.primeintellect.ai/blog/prime-agent
-  captured_at: '2026-08-06T21:05:28Z'
-  artifact_count: 13
-  byte_count: 1473229
-- id: 58534e0200a3b7cf36f143d024386bbe068fcb5067b8311f6886fe941a65f7c7
-  path: raw/58534e0200a3b7cf36f143d024386bbe068fcb5067b8311f6886fe941a65f7c7/manifest.json
-  method: author_identity_profile
-  purpose: author_identity
-  source_url: https://www.primeintellect.ai/blog/prime-agent
-  captured_at: '2026-08-06T21:05:28Z'
-  artifact_count: 1
-  byte_count: 393
-provenance: []
-rights:
-  status: unknown
-  copyright_notice: Copyright Prime Intellect.
-  intended_use: private_reference
-  attribution_required: true
-  public_reprint_allowed: false
-media_reviews:
-- capture_id: 534a5c4452dcf295d2c21fc2329cc0a043ed354e22a89fd03ca3fad968a3e215
-  status: media_curated
-  assets:
-  - id: raster-003-defe42e9
-    artifact_path: media/003.png
-    artifact_sha256: defe42e98b47bbf35d47aee05c516b0fffd1bae0a7fba4180737f18c4dc7945a
-    mime_type: image/png
-    creator: 'Seth Karten, Alex L. Zhang, Kevin Thomas, Sebastian Müller, Prime Intellect Team'
-    credit: 'Prime Agent architecture. Image by Seth Karten, Alex L. Zhang, Kevin Thomas, Sebastian Müller, Prime Intellect Team; source: Prime Agent: A self-improving RLM agent.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  - id: raster-006-da9f6f60
-    artifact_path: media/011.png
-    artifact_sha256: da9f6f6062cc4a4866edec23cdbbaedecead7bc773be3b2176ce7f511319b480
-    mime_type: image/png
-    creator: 'Seth Karten, Alex L. Zhang, Kevin Thomas, Sebastian Müller, Prime Intellect Team'
-    credit: 'Prime Agent playing Factorio. Image by Seth Karten, Alex L. Zhang, Kevin Thomas, Sebastian Müller, Prime Intellect Team; source: Prime Agent: A self-improving RLM agent.'
-    rights:
-      status: unknown
-      intended_use: private_reference
-      attribution_required: true
-      public_reprint_allowed: false
-  note: 'Automatic curation selected 2 of 6 candidates under editorial-impact-v4; decisions are hash-pinned in 534a5c4452dcf295d2c21fc2329cc0a043ed354e22a89fd03ca3fad968a3e215.curation.json.'
-- capture_id: 58534e0200a3b7cf36f143d024386bbe068fcb5067b8311f6886fe941a65f7c7
-  status: media_rejected
-  assets: []
-  note: Author identity evidence is provenance, not article artwork.
-metadata:
-  tags:
-  - agents
-  - harnesses
-  - evaluations
-  - open-source
-  synopsis: 'Prime Intellect launches Prime Agent, an open-source self-improving coding harness built on the Recursive Language Model and Continual Harness abstractions, with results on ARC-AGI-3, long-context benchmarks, and games.'
-notes: 'Static public page fetched over public HTTPS without credentials or session data; rendered text converted to Markdown deterministically and original images archived at source resolution.'
+published_at: '2026-08-05'
+tags:
+- agents
+- harnesses
+- evaluations
+- open-source
+synopsis: Prime Intellect launches Prime Agent, an open-source self-improving coding harness built on
+  the Recursive Language Model and Continual Harness abstractions, with results on ARC-AGI-3, long-context
+  benchmarks, and games.

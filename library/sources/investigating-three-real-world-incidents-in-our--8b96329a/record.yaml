@@ -1,43 +1,12 @@
-schema_version: 2
 id: investigating-three-real-world-incidents-in-our--8b96329a
 title: Investigating three real-world incidents in our cybersecurity evaluations
 author: Frontier Red Team
-author_profile:
-  note: ''
-  evidence: []
-canonical_url: https://www.anthropic.com/news/investigating-incidents-cybersecurity-evals
-submitted_url: https://www.anthropic.com/news/investigating-incidents-cybersecurity-evals
+url: https://www.anthropic.com/news/investigating-incidents-cybersecurity-evals
 captured_at: '2026-07-31T13:48:59Z'
-publication_date: '2026-07-30'
-kind: web
-status: captured
-content_hash: null
-raw_captures:
-- id: 59d88cee6d28a4d1e228476a7538b0d9452b3afd182793ac3dae7d4be833ec10
-  path: raw/59d88cee6d28a4d1e228476a7538b0d9452b3afd182793ac3dae7d4be833ec10/manifest.json
-  method: public_browser_export
-  purpose: article
-  source_url: https://www.anthropic.com/news/investigating-incidents-cybersecurity-evals
-  captured_at: '2026-07-31T13:48:59Z'
-  artifact_count: 2
-  byte_count: 3057335
-provenance: []
-rights:
-  status: unknown
-  intended_use: private_reference
-  attribution_required: true
-  public_reprint_allowed: false
-media_reviews:
-- capture_id: 59d88cee6d28a4d1e228476a7538b0d9452b3afd182793ac3dae7d4be833ec10
-  status: media_rejected
-  assets: []
-  note: 'Automatic curation rejected all candidates: extreme_aspect_ratio_or_full_page_capture (1), no_semantic_source_context
-    (1).'
-metadata:
-  tags:
-  - agents
-  - cybersecurity
-  - evaluations
-  synopsis: A postmortem of three incidents in which Claude models reached real systems during cybersecurity
-    evaluations, with analysis of containment failures, model behavior, and planned safeguards.
-notes: Sanitized public browser PDF and full-page screenshot captured without session data.
+published_at: '2026-07-30'
+tags:
+- agents
+- cybersecurity
+- evaluations
+synopsis: A postmortem of three incidents in which Claude models reached real systems during cybersecurity
+  evaluations, with analysis of containment failures, model behavior, and planned safeguards.

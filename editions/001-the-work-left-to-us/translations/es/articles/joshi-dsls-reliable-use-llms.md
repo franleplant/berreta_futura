@@ -1,8 +1,6 @@
 ---
 source_id: src-joshi-dsls-reliable-use-llms
 content_mode: faithful_synthesis
-source_body_sha256: 1effc901980761de45a8ff4b1a359558003ab561e8f6fba92b48bfbfbc61de27
-rights_status: private_reference
 ---
 
 Los modelos de lenguaje (LLM) pueden generar código a una velocidad extraordinaria, pero la velocidad no garantiza que el resultado exprese el diseño buscado. Sostengo que las abstracciones y los lenguajes específicos de dominio (DSL) proporcionan una estructura con límites claros: ayudan a las personas a descubrir un diseño junto con un LLM y luego ofrecen al modelo un vocabulario acotado y verificable con el cual aplicar ese diseño de manera confiable.

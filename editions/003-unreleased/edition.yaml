@@ -50,16 +50,12 @@ articles:
   - why-software-factories-fail-turning-the-lights-b-1312d1ad
   - why-software-factories-fail-benchmarking-the-new-f1d9c04a
   manuscript: editions/003-unreleased/articles/why-software-factories-fail.md
-  source_body_sha256:
-    why-software-factories-fail-f53679d7: d33fdc4b32b52fc15f7182bdcd5745446577528e319f95736b29305f233b1299
-    why-software-factories-fail-turning-the-lights-b-1312d1ad: e2b15724ecd99d724de29cd01cb5920ff35ead723a0da2e53629304307524939
-    why-software-factories-fail-benchmarking-the-new-f1d9c04a: 7c991f53c7a43737e5549b24b4cca4b36b899d43721955e3ebc59285fa4e4aba
   tail_art_path: editions/003-unreleased/art/article-tails/software-factories-manga-v1.png
   figures:
   - id: lights-on-factory
-    decision: include
     source_id: why-software-factories-fail-turning-the-lights-b-1312d1ad
-    asset_id: raster-002-da05c493
+    path: 02-lights-on-factory.jpg
+    credit: 'Diagram by Dex Horthy; source: Why Software Factories Fail: Turning the lights back on.'
     caption: The lights-on factory restores human judgment before and during implementation — product
       intent, architecture, program design, vertical slices, and code review remain part of the loop.
     alt_text: A flow diagram titled Optimizing the Lights-On Factory shows requests entering a queue,
@@ -67,26 +63,16 @@ articles:
       deployment to production, and user feedback returning to the queue.
     anchor: Turning the lights back on
     layout: compact_band
-    criteria:
-    - important
-    - useful
-    rationale: This is the combined article's visual hinge, replacing the incomplete loop-hype collage
-      with Dex Horthy's complete operating model for restoring human judgment.
   - id: slopcodebench-strict-pass
-    decision: include
     source_id: why-software-factories-fail-benchmarking-the-new-f1d9c04a
-    asset_id: raster-002-c6471a04
+    path: media/strict-pass-rate.jpg
+    credit: 'Diagram by Dex Horthy; source: Why Software Factories Fail: Benchmarking the New Frontier.'
     caption: On Dex Horthy's exploratory 17-checkpoint subset, Opus 5 passes four checkpoints; Opus 4.8
       and Sonnet 5 pass one each. The paper's full-benchmark results appear below for context.
     alt_text: Horizontal bars compare strict checkpoint pass rates. Opus 5 passes four of seventeen checkpoints,
       while Opus 4.8 and Sonnet 5 each pass one.
     anchor: The oracle arrives in checkpoints
     layout: compact_band
-    criteria:
-    - important
-    - useful
-    rationale: This is direct, source-authored evidence for the article's maintainability thesis and replaces
-      the weaker correlational Faros chart.
 - id: why-harness-engineering-is-so-hard
   title: Why Harness Engineering Is So Hard
   short_title: Harness Engineering
@@ -98,39 +84,28 @@ articles:
   source_ids:
   - why-harness-engineering-is-so-hard-fe732038
   manuscript: editions/003-unreleased/articles/why-harness-engineering-is-so-hard.md
-  source_body_sha256: 5a0878b6c7b53a39fff08674e8d2f4542ef72d3a9bee3eb347c11dbe5fc9c248
   tail_art_path: editions/003-unreleased/art/article-tails/harness-engineering-manga-v1.png
   figures:
   - id: nondeterminism-testing
-    decision: include
     source_id: why-harness-engineering-is-so-hard-fe732038
-    asset_id: raster-001-e34191d8
+    path: media/002.jpg
+    credit: 'Diagram by Winter; source: Why Harness Engineering Is So Hard.'
     caption: The same input fans out to correct, close-but-wrong, and wrong outputs; the crossed-out equality
       assertion is the test you cannot write.
     alt_text: A diagram titled non-determinism breaks testing shows one input producing correct, close-but-wrong,
       and wrong outputs, with an equality assertion crossed out below.
     anchor: You can't write the test you want to write
     layout: compact_band
-    criteria:
-    - important
-    - useful
-    rationale: The source sketch compresses the section's argument — determinism-based testing loses its
-      floor — into one legible figure.
   - id: silent-failure-modes
-    decision: include
     source_id: why-harness-engineering-is-so-hard-fe732038
-    asset_id: raster-002-84bc510b
+    path: media/003.jpg
+    credit: 'Diagram by Winter; source: Why Harness Engineering Is So Hard.'
     caption: Traditional code crashes at the point of failure; model output returns a document that looks
       finished with the broken lines woven through it.
     alt_text: Two panels contrast traditional code ending in a crash with model output producing a full
       document marked as broken.
     anchor: You're debugging prose, not code
     layout: compact_band
-    criteria:
-    - important
-    - useful
-    rationale: The side-by-side makes the silent, graded failure mode visible exactly where the article
-      observes that nothing crashes and everything ships.
 - id: loop-engineering-above-the-harness
   title: 'Loop Engineering: The Floor Above the Harness'
   short_title: Loop Engineering
@@ -143,7 +118,6 @@ articles:
   source_ids:
   - loop-engineering-f0ddfd76
   manuscript: editions/003-unreleased/articles/loop-engineering-above-the-harness.md
-  source_body_sha256: 624d44585e591681ee548b14eab033af3804c66e68cae256d1b3e626203c86f0
   tail_art_path: editions/003-unreleased/art/article-tails/loop-engineering-manga-v1.png
 - id: new-rules-of-context-engineering
   title: The New Rules of Context Engineering
@@ -156,24 +130,18 @@ articles:
   source_ids:
   - the-new-rules-of-context-engineering-for-claude--aa1b1ea8
   manuscript: editions/003-unreleased/articles/new-rules-of-context-engineering.md
-  source_body_sha256: aaeea1ef2ec0a1645ec0eae72d75b920dc73b91bd30dc736cf5eecd6624902a9
   tail_art_path: editions/003-unreleased/art/article-tails/context-engineering-manga-v1.png
   figures:
   - id: assembled-context-conflicts
-    decision: include
     source_id: the-new-rules-of-context-engineering-for-claude--aa1b1ea8
-    asset_id: raster-001-7b66ba87
+    path: media/002.jpg
+    credit: 'Diagram by Thariq; source: The New Rules of Context Engineering for Claude 5 Models.'
     caption: One assembled context, three masters — the system prompt allows documentation, a skill forbids
       comments, the request wants it working like the old one — and Claude reconciles them all.
     alt_text: A diagram of assembled context highlights conflicting instructions in the system prompt,
       skills, and user request sections.
     anchor: Unhobbling Claude
     layout: compact_band
-    criteria:
-    - important
-    - useful
-    rationale: The diagram shows the exact instruction conflict the section quotes, laid out as the model
-      receives it.
 - id: open-weights-and-american-ai-leadership
   title: Open Weights and American AI Leadership
   short_title: Open Weights
@@ -185,9 +153,6 @@ articles:
   - open-weights-and-american-ai-leadership-7aa6038f
   - open-weight-models-are-essential-to-a-healthy-ai-e7845a41
   manuscript: editions/003-unreleased/articles/open-weights-and-american-ai-leadership.md
-  source_body_sha256:
-    open-weights-and-american-ai-leadership-7aa6038f: ffdf007cce5434f26b3e23c8698a0c64665bd4afb5e04027715243b827981aaf
-    open-weight-models-are-essential-to-a-healthy-ai-e7845a41: 902ebece437a6156bb3e620db9dc7cd84c102a146c1f272f552add00a9591ec8
   tail_art_path: editions/003-unreleased/art/article-tails/open-weights-manga-v1.png
 - id: buzz-multiplayer-agent-layer
   title: Beyond the Slack Killer
@@ -204,17 +169,7 @@ articles:
   - buzz-is-the-first-proper-multiplayer-agent-harne-49c061ac
   - buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e
   manuscript: editions/003-unreleased/articles/buzz-multiplayer-agent-layer.md
-  source_body_sha256:
-    why-we-re-buzzing-1c82f338: 26a04a251c2d135a029bcade698e8fb7d784e10351360f0e988d24fad10b5450
-    buzz-your-people-your-agents-your-project-all-in-833eef43: 0fdcd9f5c79945eebf28a0f1446757423c7181166b484354ecf74bb3b0aa4131
-    buzz-a-workspace-where-humans-and-agents-build-t-59122470: 6b1bb345a5f9a8b0524e46d04b5b9e9ea86ede2a16c8bd1320e94f86f5c9b00c
-    the-most-interesting-thing-about-buzz-is-shared--f0fc7406: a11b6a921c893e7c2a54128c90b3c146c941ed4466fb1557636116b92c079b78
-    buzz-is-the-first-proper-multiplayer-agent-harne-49c061ac: d46d7f0fed3d08a860e819d6bb8d9f10edf6993e30c9a9e3c50d048ddd4e20ad
-    buzz-agents-are-paying-each-other-with-bitcoin-5be1be1e: 969620843a5427f9dd485273a5cdd63f5b553ffa639a3753266c0dce0713e4b8
   tail_art_path: editions/003-unreleased/art/article-tails/buzz-multiplayer-manga-v1.png
-rights:
-  faithful_source_reprint: private_only_while_rights_unknown
-  public_release: blocked_pending_permission_or_applicable_exception
 closing_plates:
 - title: The Room, Kept
   art_path: editions/003-unreleased/art/coda-manga-01.png

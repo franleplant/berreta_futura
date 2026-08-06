@@ -4,16 +4,12 @@ piece_id: mcp-in-a-nutshell
 content_mode: in_a_nutshell
 status: drafting
 produced_at: '2026-08-02T13:53:52+00:00'
-inputs_sha256: 9893377d2d233930aef96b704697f586544d86b531e3b936fb64fb9f86ef916c
-manuscript_sha256: 9412568eefc563580d3aa53c8b9f2952b2491937815a1f6d9103b12c7ee383fc
 rounds:
 - round: 1
   result: changes_required
-  manuscript_sha256: 9412568eefc563580d3aa53c8b9f2952b2491937815a1f6d9103b12c7ee383fc
   writer:
     role: writer
     prompt_path: prompts/in-a-nutshell.md
-    prompt_sha256: 2f4a18ecea635bff24a90802aea770add2e868ec3083e60bb5d76a41948719b5
     backend: agent
     model: null
     argv:
@@ -24,10 +20,7 @@ rounds:
     - agent
     - --submit
     - mcp-in-a-nutshell/r1-writer
-    - --work-sha256
-    - f9995d9d862102350e424a0c7e0101c841ccae016cab7328670c996b64691ab3
     duration_seconds: 0.0
-    output_sha256: 2c19b81e741f06debae5ec126937863cd4fae2dfaa296bc31e5a8581cf4bd97a
   gate_failures:
   - 'code_blocks: /Users/franguijarro/code/magazine/editions/004/articles/mcp-in-a-nutshell.md:
     code block 1 does not appear in any pinned source extraction (architecture-overview-ce5cb1d1); its

@@ -1,8 +1,6 @@
 ---
 source_id: src-hassabis-frontier-ai-2026
 content_mode: faithful_edit
-source_body_sha256: b585b330faa6c961eb4e6eada869b782fb01396cbebe877842e7f1973da3c486
-rights_status: private_reference
 ---
 
 Este es un momento crucial en la historia de la humanidad. La inteligencia artificial general (IAG), un sistema que exhibe todas las capacidades cognitivas del cerebro, probablemente esté a solo unos pocos años de distancia. Cuando recordemos esta época en las próximas décadas, creo que comprenderemos que nos encontrábamos en las estribaciones de la singularidad: nada menos que el amanecer de una nueva era para la humanidad.

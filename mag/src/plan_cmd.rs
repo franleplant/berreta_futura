@@ -79,7 +79,7 @@ pub fn propose_plan(edition: &str, model: &ModelSpec) -> Result<i32> {
 
     let mut excerpts = String::new();
     for src_dir in &src_dirs {
-        let extract = src_dir.join("extracted.md");
+        let extract = src_dir.join("article.md");
         if extract.exists() {
             let body = read(&extract)?;
             let words: Vec<&str> = body.split_whitespace().take(600).collect();

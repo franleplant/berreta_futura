@@ -16,9 +16,7 @@ current `RunEngine` decision. It must not discover editions from directories,
 rebuild output, or treat a deployment manifest as workflow authority.
 
 Sources and manuscripts are private by default. An exposed surface must have
-authentication and authorization before it serves a private artifact. Public
-distribution also requires explicit rights clearance for every source included
-in the released edition.
+authentication and authorization before it serves a private artifact.
 
 The old Python workflow, CLI, tests, source bridge, and Cloudflare assembly
 scaffold are deleted. Do not recreate or run them. The TypeScript/XState engine

@@ -1,8 +1,0 @@
-Rendered X post export
-
-Canonical URL: https://x.com/GeoffreyHuntley/status/2082576563439312982
-Author: geoff (@GeoffreyHuntley)
-Published: 2026-07-29 18:18 America/Argentina/Buenos_Aires
-Acquisition: Authenticated browser DOM, inspected 2026-07-29
-
-second hot take, as it seems the first hot take landed. n8n was a silly idea, which i’ve always suspected was developed by young folks in silicon valley who are all in on the LLM craze who have never worked in corporate in their life thus didn’t have the knowledge that service busses are a solved problem and there’s deep prior art in the spooky land of enterprise. look up anything in the @dotnet space such as mass transit, nservicebus, [1] wcf if you wanna steal ideas for prompting. if you want a modern plug and play choice, @temporalio exists. use it and have a job invoke an agent as a process. don’t make the entire service bus non-deterministic. [1] lots of bad memories here, not great tech impl but the theory / education is generally on point.
