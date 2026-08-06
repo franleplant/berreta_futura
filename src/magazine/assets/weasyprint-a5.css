@@ -1338,6 +1338,12 @@ article[data-article-opener="illustrated_paper_spots_v1"] > header.article-opene
   margin-right: -11.5pt;
   width: 348pt;
 }
+/* A standfirst the adapter measured as overflowing continues on the next
+ * page; the body follows it there rather than opening yet another page. */
+article[data-article-opener="illustrated_paper_spots_v1"]
+  > header.article-opener[data-opener-overflow="true"] {
+  break-after: auto;
+}
 article[data-article-opener="illustrated_paper_spots_v1"] .article-opener-art {
   background: transparent;
   box-sizing: border-box;
