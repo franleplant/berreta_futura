@@ -4,6 +4,7 @@ STYLE (literary)
 50% Hemingway
 40% orwell
 10% borges
+never mention those authors
 
 do not reference the articles I provided you, do not enumerate them, don't repeat or rephrase material, do not use numbered titles.
 

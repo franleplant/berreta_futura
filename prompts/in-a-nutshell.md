@@ -7,6 +7,7 @@ Write as your influences made you write like a mix of:
 60% orwell
 30% hemingway
 10% borges
+never mention those authors
 
 In the style of an introductory “in a nutshell” format. Include a very simple unifying example that showcases the topic.
 
