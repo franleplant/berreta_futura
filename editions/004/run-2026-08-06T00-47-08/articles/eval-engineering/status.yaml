@@ -1,0 +1,37 @@
+piece: eval-engineering
+rounds:
+- round: 1
+  words: 1383
+  loop_findings: 12
+  all_findings: 15
+- round: 2
+  words: 1509
+  loop_findings: 4
+  all_findings: 8
+- round: 3
+  words: 1490
+  loop_findings: 2
+  all_findings: 5
+state: rounds_exhausted
+open_findings:
+- lens: mechanics
+  severity: major
+  article: eval-engineering
+  locator: Let the record set the gate | Across top agents, about three quarters of merged work goes in without a human edit, reverts remain in the low single digits, and Guardrails alone rejects one pull request in five before review. | 1
+  category: punctuation
+  disposition: fix
+  note: |
+    The sentence joins independent clauses with a comma after "human edit",
+    creating a comma splice. The prose is editorial in faithful_synthesis, so
+    the editors must repair it.
+  suggestion: Use a semicolon after 'edit' or add a conjunction before 'reverts'.
+- lens: craft
+  severity: major
+  article: eval-engineering
+  locator: The examiner closes the loop | The category is unbundling into the terminal already open. | 1
+  category: dead_words
+  disposition: fix
+  note: |
+    "Unbundling" is corporate abstraction, and the terminal metaphor adds decoration without making the mechanism clearer.
+  suggestion: |
+    State plainly that vendors are packaging their evaluation expertise as skills for agents developers already use.

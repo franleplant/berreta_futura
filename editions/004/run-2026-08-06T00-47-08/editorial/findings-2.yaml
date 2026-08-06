@@ -1,0 +1,60 @@
+mechanics:
+  result: approved
+  findings: []
+  scores:
+    grammar: 5
+    typography: 5
+    consistency: 5
+  notes: |
+    No mechanical defects found; sentence case, punctuation, typography, and number styling are consistent throughout.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 4
+    coherence: 4
+    opening: 5
+    ending: 5
+  notes: |
+    I verified that the editorial moves coherently from failure evidence to evaluation practice and lands on a clear closing principle.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: editorial
+    locator: '- | That is the useful shift. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This sentence restates the preceding contrast instead of advancing it.
+    suggestion: Replace the recap with the specific shift the next sentence describes.
+  - severity: minor
+    article: editorial
+    locator: '- | An eval sends the run down another edge. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "Eval" is unexplained subfield shorthand, and the sentence assumes the reader knows what an evaluation run is.
+    suggestion: Expand "eval" to "evaluation" on first use or replace it with "test."
+  - severity: minor
+    article: editorial
+    locator: '- | Mine real traces, define correctness outside the model, and turn each failure into a test. | 1'
+    category: passive
+    disposition: fix
+    note: |
+      The ownerless imperative addresses an unnamed actor; the later "Begin with the broken cases" repeats the same construction.
+    suggestion: Name the actor responsible, such as "Your team should mine real traces..."
+  - severity: minor
+    article: editorial
+    locator: '- | There is a trap. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      This announces a warning before stating the failure mode.
+    suggestion: State the trap directly in the sentence that follows.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    I heard a sharp, controlled editorial voice, with a few recap, shorthand, and announcement sentences that momentarily sound like system prose.

@@ -1,0 +1,27 @@
+{"attempt":0,"label":"eval-engineering r1 write","model":"codex:gpt-5.6-luna","seconds":52.5,"usd":0.0}
+{"attempt":0,"label":"eval-engineering r1 judge:shape","model":"codex:gpt-5.6-luna","seconds":37.3,"usd":0.0}
+{"attempt":0,"label":"eval-engineering r1 judge:mechanics","model":"codex:gpt-5.6-luna","seconds":46.1,"usd":0.0}
+{"attempt":0,"label":"eval-engineering r1 judge:evidence","model":"codex:gpt-5.6-luna","seconds":53.8,"usd":0.0}
+{"attempt":0,"label":"eval-engineering r1 judge:worth","model":"codex:gpt-5.6-luna","seconds":59.3,"usd":0.0}
+{"attempt":0,"label":"eval-engineering r1 judge:craft","model":"codex:gpt-5.6-luna","seconds":70.2,"usd":0.0}
+{"attempt":0,"label":"eval-engineering r2 rewrite","model":"codex:gpt-5.6-luna","seconds":45.9,"usd":0.0}
+{"attempt":0,"label":"eval-engineering r2 judge:shape","model":"codex:gpt-5.6-luna","seconds":33.3,"usd":0.0}
+{"attempt":0,"label":"eval-engineering r2 judge:mechanics","model":"codex:gpt-5.6-luna","seconds":39.4,"usd":0.0}
+{"attempt":0,"label":"eval-engineering r2 judge:evidence","model":"codex:gpt-5.6-luna","seconds":41.6,"usd":0.0}
+{"attempt":0,"label":"eval-engineering r2 judge:craft","model":"codex:gpt-5.6-luna","seconds":58.8,"usd":0.0}
+{"attempt":0,"label":"eval-engineering r2 judge:worth","model":"codex:gpt-5.6-luna","seconds":65.0,"usd":0.0}
+{"attempt":0,"label":"eval-engineering r3 rewrite","model":"codex:gpt-5.6-luna","seconds":49.2,"usd":0.0}
+{"attempt":0,"label":"eval-engineering r3 judge:shape","model":"codex:gpt-5.6-luna","seconds":20.6,"usd":0.0}
+{"attempt":0,"label":"eval-engineering r3 judge:craft","model":"codex:gpt-5.6-luna","seconds":40.2,"usd":0.0}
+{"attempt":0,"label":"eval-engineering r3 judge:mechanics","model":"codex:gpt-5.6-luna","seconds":41.8,"usd":0.0}
+{"attempt":0,"label":"eval-engineering r3 judge:worth","model":"codex:gpt-5.6-luna","seconds":42.5,"usd":0.0}
+{"attempt":0,"label":"eval-engineering r3 judge:evidence","model":"codex:gpt-5.6-luna","seconds":46.7,"usd":0.0}
+{"attempt":0,"label":"editorial r1 write","model":"codex:gpt-5.6-luna","seconds":25.0,"usd":0.0}
+{"attempt":0,"label":"editorial r1 judge:shape","model":"codex:gpt-5.6-luna","seconds":12.6,"usd":0.0}
+{"attempt":0,"label":"editorial r1 judge:mechanics","model":"codex:gpt-5.6-luna","seconds":20.1,"usd":0.0}
+{"attempt":0,"label":"editorial r1 judge:craft","model":"codex:gpt-5.6-luna","seconds":46.7,"usd":0.0}
+{"attempt":0,"label":"editorial r2 rewrite","model":"codex:gpt-5.6-luna","seconds":17.3,"usd":0.0}
+{"attempt":0,"label":"editorial r2 judge:mechanics","model":"codex:gpt-5.6-luna","seconds":13.0,"usd":0.0}
+{"attempt":0,"label":"editorial r2 judge:shape","model":"codex:gpt-5.6-luna","seconds":13.4,"usd":0.0}
+{"attempt":0,"label":"editorial r2 judge:craft","model":"codex:gpt-5.6-luna","seconds":44.4,"usd":0.0}
+{"attempt":0,"label":"edition-review","model":"codex:gpt-5.6-luna","seconds":35.2,"usd":0.0}

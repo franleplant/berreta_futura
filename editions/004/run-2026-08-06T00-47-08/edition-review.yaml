@@ -1,0 +1,46 @@
+result: changes_required
+findings:
+- severity: blocking
+  article: editorial
+  locator: '- | A codebase can pass 38 green tests and still be completely broken. | 1'
+  repair_from: '- | A codebase can pass 38 green tests and still be completely broken. | 1'
+  category: single_source_editorial
+  disposition: fix
+  note: |
+    The editorial's body is overwhelmingly derived from eval-engineering:
+    the broken-product example, the invented search result, the 83.9% versus
+    32.3% contrast, trace mining, hidden answer keys, simulated side effects,
+    verdict-driven routing, and the final failure-memory claim. With only one
+    article contributing, well over a quarter of the body is that article's
+    summary wearing an editorial's hat.
+- severity: major
+  article: editorial
+  locator: '- | Mine real traces, define correctness outside the model, and turn each failure into a test. | 1'
+  repair_from: '- | Mine real traces, define correctness outside the model, and turn each failure into a test. | 1'
+  category: redundancy
+  disposition: fix
+  note: |
+    The editorial and eval-engineering make the same central point: failures
+    become durable tests that alter the agent's future behavior. The editorial
+    says, "Mine real traces, define correctness outside the model, and turn
+    each failure into a test." The article says, "Run this loop repeatedly and
+    each failure stops being an incident and becomes a permanent test."
+- severity: blocking
+  article: edition
+  category: cover_promise
+  disposition: fix
+  note: |
+    The cover promises protocols, evaluations, architectures, and operational
+    work around models, but the assembled issue contains one article focused
+    almost entirely on eval engineering. The headline and subtitle therefore
+    promise a broader systems issue than the contents deliver.
+scores:
+  through_line: 4
+  editorial_strength: 2
+  running_order: 4
+  balance: 1
+  cover_promise: 1
+notes: |
+  This is a one-article argument for turning model failures into operational
+  evaluation gates, and it holds together thematically but not as the broader
+  systems issue promised by its cover.
