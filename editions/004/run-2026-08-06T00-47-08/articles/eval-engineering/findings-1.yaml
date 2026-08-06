@@ -1,0 +1,227 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: The missing wire | A better model would not have caught this. | 1
+    repair_from: The missing wire | A better model would not have caught this. | 1
+    category: lost_essential_fact
+    disposition: fix
+    note: |
+      The source's blind test is absent: 100 production traces, 39 labeled failures, and the comparative results for Braintrust Loop, Codex on GPT-5.5 High, LangSmith, and Arize AX. That evidence makes the claim that a coding agent can rival dedicated evaluation platforms—and that the category is unbundling—concrete. Without it, the reader gets the method but loses the source's strongest evidence that this approach is practical now.
+    suggestion: Restore a compact paragraph with the test design, the four headline scores, and the conclusion that the tooling is moving into agents people already use.
+  - severity: major
+    article: eval-engineering
+    locator: Mine the failures you already paid for | The trace tells you what happened, not what should have happened. | 1
+    repair_from: Mine the failures you already paid for | The trace tells you what happened, not what should have happened. | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source explicitly says that anything costing money or writing to production must be simulated rather than called. The manuscript tells readers to build and run evaluations but omits this safety boundary, so a reader following it could exercise real side effects while mining or running tests.
+    suggestion: Add the simulation rule alongside the instructions for building the first Harbor task and running the suite.
+  - severity: major
+    article: eval-engineering
+    locator: The missing wire | A thermometer tells you the room is cold. A thermostat turns the heat on. | 1
+    repair_from: The missing wire | The progression is simple. | 1
+    category: lost_essential_fact
+    disposition: fix
+    note: |
+      The source reports a company that changed no model, prompts, or human nudges and saw scores move across every dimension, concluding that evals belonged in the system on day one rather than month nine. That result is the clearest evidence that the proposed examiner improves a product rather than merely measuring it.
+    suggestion: Carry the eval-only longitudinal result in one sentence before the thermostat metaphor.
+  omissions:
+  - fact: The blind test of 100 live voice-agent traces, hand-labeled into 39 failures
+    reader_loses: Cannot see how the evaluation systems were compared or how representative the benchmark was.
+    verdict: needed
+  - fact: Braintrust Loop recovered 87.2% of human-flagged failures; Codex on GPT-5.5 High had 84.6% recall and 82.8% precision; LangSmith had 79.5%; Arize AX had 74.4% recall and 91.0% precision
+    reader_loses: Loses the concrete evidence behind the claim that an already-paid coding agent can rival dedicated platforms.
+    verdict: needed
+  - fact: LangChain, Galileo, AWS, and Arize shipped their evaluation expertise as skills within four weeks
+    reader_loses: Loses the reported evidence for the category-unbundling trend.
+    verdict: defensible
+  - fact: The shell commands and Claude Code plugin commands for installing the skills
+    reader_loses: Nothing essential in a print piece; these are setup sequences the source can provide.
+    verdict: defensible
+  - fact: The distinction between langchain-skills building evals and langsmith-skills pulling production runs, plus portability under the open skills specification
+    reader_loses: Loses useful ecosystem context, but not the core evaluation method.
+    verdict: defensible
+  - fact: evalkit's six phase commands and its report command returning prioritized code-location recommendations
+    reader_loses: Cannot reproduce that exact workflow without returning to the source.
+    verdict: defensible
+  - fact: The anecdote about the 21-year-old Tokyo founder whose wiring post had two likes
+    reader_loses: Nothing substantive; it is color around the routing rule.
+    verdict: defensible
+  - fact: The explicit five-step mine-traces loop and the Harbor task-folder layout
+    reader_loses: Loses a compact visual of how findings become runnable tasks, but the manuscript retains the underlying process.
+    verdict: defensible
+  - fact: The instruction that anything costing money or writing to production must be simulated
+    reader_loses: Could run evaluations with real side effects or bills, making the operational guidance unsafe.
+    verdict: needed
+  - fact: The claim that the eval-only company concluded evals should have been present on day one rather than month nine
+    reader_loses: Loses the strongest evidence that evaluation changes system performance, not just observability.
+    verdict: needed
+  - fact: The anecdote of approving and merging around 1,500 pull requests in 90 days without looking at code
+    reader_loses: Loses a vivid supporting example of constraint-based trust, but not the mechanism.
+    verdict: defensible
+  - fact: The source's exact framing that 19 of 20 autonomous pull requests merged, roughly three quarters of top-agent work had no human edit, and Guardrails rejected one in five
+    reader_loses: The manuscript keeps the figures but drops the explicit attribution and comparative framing.
+    verdict: defensible
+  - fact: 'The source''s closing three rules: measure the path, make verdicts change the next edge, and turn every failure into a permanent test'
+    reader_loses: Nothing essential; the manuscript states all three ideas throughout.
+    verdict: defensible
+  - fact: The X and Telegram links, timestamp, view count, and replies
+    reader_loses: Nothing substantive; these are platform and promotion material.
+    verdict: defensible
+  retentions:
+  - passage: Everyone is renting the same brain now.
+    costs: A short framing passage, but it establishes the article's central contrast between interchangeable models and differentiated evaluation systems.
+    verdict: earns_place
+  - passage: A thermometer tells you the room is cold.
+    costs: The metaphor occupies several sentences, but it makes the distinction between measurement and control immediately legible.
+    verdict: earns_place
+  - passage: The constraint is the product.
+    costs: A repeated slogan, yet it connects the merge gate, historical record, and specification warning into one governing idea.
+    verdict: earns_place
+  - passage: Most people will keep scrolling outputs on Friday
+    costs: A closing contrast that restates the opening and uses a few lines of space.
+    verdict: earns_place
+  notes: 'Changes required because the synthesis preserves the core method but drops the source''s strongest benchmark evidence and the safety rule to simulate side-effecting evaluations. The manuscript has a clear position: the durable product is the examiner and its feedback loop, not the rented model. Its sections reorder and rename the source''s material rather than reproducing the source''s exact sequence. The retained passages all support that position, so none is recommended for cutting first.'
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    repair_from: The missing wire | A better model would not have caught this. What was missing was the layer that decides whether an answer was right, then does something with the verdict. | 1
+    category: unreached_conclusion
+    disposition: fix
+    note: |
+      The source's explicit conclusion is that evals should have been in the system on day one, not month nine. The manuscript never carries that conclusion.
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every assertion, heading, and number against the pinned extraction; I could not verify the source's explicit day-one conclusion because the manuscript never states it. The remaining claims are supported, with no quote, attribution, or number errors found.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: '- | Specific, clean, useful-sounding. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      This standalone sentence has no verb. Although the clipped phrasing is rhetorically deliberate, the surrounding prose does not establish sentence fragments as a grammatical convention.
+    suggestion: The answer was specific, clean, and useful-sounding.
+  - severity: major
+    article: eval-engineering
+    locator: '- | All of it invented. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      This standalone sentence is a verbless fragment. The intended meaning requires an explicit verb.
+    suggestion: All of it was invented.
+  - severity: major
+    article: eval-engineering
+    locator: The missing wire | Loops, then graphs, then evals. | 1
+    category: grammar
+    disposition: fix
+    note: |
+      This standalone sentence has no verb. The sequence can remain concise while being made grammatical.
+    suggestion: The progression was loops, then graphs, then evals.
+  scores:
+    grammar: 2
+    typography: 5
+    consistency: 5
+  notes: |
+    Changes required because three standalone verbless fragments occur in otherwise standard grammatical prose; typography, heading form, and internal consistency are clean.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: The first suite | The travel agent's 32.3% faithfulness score is why the first measure matters. | 1
+    repair_from: '- | The team measured 100 real sessions and found two numbers that should never sit that far apart: response quality was 83.9%, while faithfulness to what the tools actually returned was 32.3%. | 1'
+    category: duplication
+    disposition: editor_decision
+    note: |
+      The travel-agent faithfulness result is stated in the opening and repeated in
+      the final suite section, making the same example and number do the same work twice.
+    suggestion: Remove the repeated 32.3% callback from the first-suite section.
+  - severity: major
+    article: eval-engineering
+    locator: Let the record decide who merges | Every pull request an agent opens can land in the same human queue. | 1
+    repair_from: Mine the failures you already paid for | Run this loop repeatedly and each failure stops being an incident and becomes a permanent test. | 1
+    category: missing_transition
+    disposition: fix
+    note: |
+      The piece jumps from mining failures and turning them into tests to autonomous
+      pull-request merging without explaining how the resulting evaluation record
+      becomes a merge gate.
+    suggestion: Add a bridge explaining that the mined tests and verdict history now govern merge decisions.
+  scores:
+    order: 4
+    coherence: 4
+    opening: 5
+    ending: 5
+  notes: |
+    The piece verifies a clear progression from shared model capability to evaluation
+    wiring, failure mining, merge gates, and a starter suite, but it repeats the
+    travel-agent score and needs a bridge into the merge-automation section.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: eval-engineering
+    locator: The judge needs rules of its own | Use a model from another family when possible, because a model recognizes its own writing and grades it more kindly. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Eighteen ownerless imperative sentences make the piece sound procedural rather than written: "Use a model from another family when possible"; "Write one observable success condition for each primary verdict"; "Let the judge handle semantic calls"; "Do not reward response length"; "Pin the judge and log its version"; "Start with 25 complete traces"; "Write each finding in four lines"; "Take the answer key from tests, source records, policy, known state, or a person"; "Test the verifier with one clearly correct result and one plausible but wrong result"; "Keep the expected outcome and judge credentials hidden from the agent being tested"; "Run this loop repeatedly"; "Run the gate in shadow first"; "Keep it closed when automated and human verdicts differ by more than 2%"; "Sample only 1% to 5% of traces"; "Start with three measurements for any agent that calls tools"; "Choose the dataset type on purpose"; "Keep the suite alive"; "Then build five tests first." The reader hears the checklist pattern before the argument.
+    suggestion: Cut or recast several imperatives so the instructions arrive through varied sentence shapes and named actors.
+  - severity: major
+    article: eval-engineering
+    locator: The judge needs rules of its own | Use a model from another family when possible, because a model recognizes its own writing and grades it more kindly. | 1
+    category: passive
+    disposition: fix
+    note: |
+      The paragraph gives five consecutive instructions to an unnamed "you"; the ownerless imperative hides who is responsible for choosing, writing, checking, and pinning the evaluation rules.
+    suggestion: Name the responsible team or system in at least some of these instructions.
+  - severity: major
+    article: eval-engineering
+    locator: Let the record decide who merges | Trust in an agent is an actuarial calculation. | 1
+    category: dead_words
+    disposition: editor_decision
+    note: |
+      Three compact "X is Y" equations—"Trust in an agent is an actuarial calculation," "The constraint is the product," and "The model is a rental"—stack aphoristic certainty without adding mechanism; the last also echoes the opening metaphor.
+    suggestion: Keep the one aphorism that earns its claim and cut or recast the other two.
+  - severity: minor
+    article: eval-engineering
+    locator: The first suite | A retrieval set grades RAG quality. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "RAG" is not defined, so a competent engineer outside retrieval work has to infer the acronym.
+    suggestion: Spell out retrieval-augmented generation on first use.
+  - severity: minor
+    article: eval-engineering
+    locator: The first suite | Low context recall can reject a handoff. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "Context recall" is presented as an established metric without explaining what it measures.
+    suggestion: Add a short plain-language gloss for context recall.
+  - severity: minor
+    article: eval-engineering
+    locator: Let the record decide who merges | A 429 is somebody else’s limit unless your agent was supposed to recover from it. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      The HTTP status code "429" is unexplained and interrupts the otherwise plain account of external failures.
+    suggestion: Write 'rate-limit error (HTTP 429)' on first mention.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 4
+  notes: |
+    I heard a vivid, confident piece whose concrete examples carry real authority, but the long runs of checklist imperatives and a few aphoristic equations make the middle sound like an operating manual.

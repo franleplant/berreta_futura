@@ -1,0 +1,186 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: Mine the failures you already paid for | The verifier should be tested with one clearly correct result and one plausible but wrong result before the real run. | 1
+    repair_from: Mine the failures you already paid for | The trace tells you what happened, not what should have happened. | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source adds a separate warning that the environment must not reveal the
+      answer before the agent reaches the tool; otherwise the task passes forever
+      and measures nothing. Without that rule, a reader can build a misleading
+      eval suite.
+    suggestion: Add the environment-leakage check alongside the hidden-answer and verifier tests.
+  - severity: major
+    article: eval-engineering
+    locator: The missing wire | The progression was loops, then graphs, then evals. | 1
+    repair_from: The missing wire | A better model would not have caught this. | 1
+    category: source_shaped
+    disposition: fix
+    note: |
+      The manuscript follows the source's sequence almost exactly: definition,
+      benchmark, score routing, trace mining, autonomous merging, and starter
+      suite. That preserves the source's shape rather than giving the synthesis
+      a distinct ordering.
+    suggestion: Reorder around the central claim that evals close the control loop, using the benchmark and five steps as evidence for that argument.
+  omissions:
+  - fact: The claim that eval engineering is the cheapest line in the stack and the only one nobody can sell because it encodes the builder's definition of correct.
+    reader_loses: The economic and ownership argument for building an examiner rather than buying a model.
+    verdict: defensible
+  - fact: The source's explicit warning that the setup starts with a single command and ends with pull requests merging without anyone reading them.
+    reader_loses: A framing transition from installation to autonomous operation.
+    verdict: defensible
+  - fact: 'The four vendor names and details: LangChain on 22 July, Galileo, AWS under Apache 2.0, and Arize''s trace-extraction skill.'
+    reader_loses: The concrete evidence and chronology behind the claim that evaluation expertise was moving into coding agents.
+    verdict: defensible
+  - fact: 'The two-repository distinction: langchain-skills builds evals while langsmith-skills pulls production runs.'
+    reader_loses: Which component supplies the tests and which supplies the real material.
+    verdict: needed
+  - fact: The statement that the skills follow the open skills specification and therefore load into Codex, Cursor, Windsurf, and Goose.
+    reader_loses: That the workflow is portable across agents rather than a Claude Code feature.
+    verdict: needed
+  - fact: The evalkit phases and the /evalkit.report output of prioritized recommendations pointing to specific code locations.
+    reader_loses: The concrete shape of the workflow and what the final report gives back.
+    verdict: defensible
+  - fact: The installation commands, plugin commands, folder layout, and Harbor task files.
+    reader_loses: Copy-paste setup details that are cumbersome to use from a print page.
+    verdict: defensible
+  - fact: The example of Sonnet judging Haiku output.
+    reader_loses: A concrete illustration of cross-family judging.
+    verdict: defensible
+  - fact: The exact rubric form, 'Pass iff [the independently observable successful outcome].'
+    reader_loses: A reusable one-line template for writing a primary verdict.
+    verdict: defensible
+  - fact: The five-step trace-mining loop shown as 'mine traces -> identify a failure -> build an eval -> improve ...'.
+    reader_loses: The explicit cyclic workflow diagram.
+    verdict: defensible
+  - fact: The warning never to treat the recorded answer as truth.
+    reader_loses: An explicit reminder that observed agent output is not an answer key.
+    verdict: defensible
+  - fact: The warning that the environment can give away the answer before the intended tool call, causing the task to pass forever.
+    reader_loses: A critical validity check for preventing a test from measuring setup leakage instead of agent behavior.
+    verdict: needed
+  - fact: 'The exact Harbor directory structure: evals/<task-id>/ with task.toml, instruction.md, environment/, and tests/.'
+    reader_loses: The concrete boundary between what the tested agent sees and what remains hidden.
+    verdict: defensible
+  - fact: The anecdote that one operator approved and merged around 1,500 pull requests in 90 days without looking at code.
+    reader_loses: A vivid scale example for the constraint-based trust argument.
+    verdict: defensible
+  - fact: 'The source''s three closing rules: measure the path, make verdicts change the next edge, and turn every failure into a permanent test.'
+    reader_loses: A compact restatement of the operating doctrine.
+    verdict: defensible
+  retentions:
+  - passage: A thermometer tells you the room is cold. A thermostat turns the heat on.
+    costs: A short metaphorical paragraph, but it makes the distinction between measurement and control immediately legible.
+    verdict: earns_place
+  - passage: The examiner is yours, and every failure you feed it stays there.
+    costs: One aphoristic sentence that reinforces the compounding value of accumulated evals.
+    verdict: earns_place
+  - passage: The constraint is the product.
+    costs: A one-line emphasis that clarifies why autonomous merging is based on controls, not faith in the model.
+    verdict: earns_place
+  - passage: Most people will keep scrolling outputs on Friday and deciding they feel about right.
+    costs: A rhetorical closing reprise of the opening contrast; the space could carry the omitted environment-leakage warning.
+    verdict: cut
+  notes: |
+    Changes required because the synthesis omits two practical validity and portability details and largely preserves the source's section order, though it otherwise carries the source's central argument, evidence, and operating guidance.
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every factual assertion and furniture item against the pinned extraction; there were no assertions I could not check in this piece.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: eval-engineering
+    locator: '- | A travel agent answered a question about an exchange rate, the week''s temperature, and a museum''s opening hours. | 1'
+    category: typography
+    disposition: fix
+    note: |
+      The apostrophe in "week's" is curly, while the piece otherwise uses straight apostrophes. Standardize the apostrophe style throughout.
+    suggestion: 'Use a straight apostrophe: the week''s temperature'
+  scores:
+    grammar: 5
+    typography: 3
+    consistency: 5
+  notes: |
+    One apostrophe-style inconsistency requires correction; grammar, heading form, punctuation, and markup are otherwise clean.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: The missing wire | The practical case is already visible. | 1
+    repair_from: '- | A travel agent answered a question about an exchange rate, the week''s temperature, and a museum''s opening hours. | 1'
+    category: running_example
+    disposition: fix
+    note: |
+      The piece opens with a travel-agent failure, then shifts to a voice-agent benchmark, autonomous pull requests, and a self-improving codebase. These examples do not accumulate into one carrying case, so the argument's concrete thread keeps restarting.
+    suggestion: Use the travel-agent trace as the spine and recast the later voice-agent, pull-request, and codebase cases as brief contrasts.
+  - severity: minor
+    article: eval-engineering
+    locator: The first suite | The first suite | 1
+    repair_from: The first suite | The first suite | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      "The first suite" names the section's topic but not what it argues: that a small, durable suite should test the agent's full path and survive model replacement.
+    suggestion: Rename the heading to state the claim, such as 'Start with a suite that can see the whole run.'
+  scores:
+    order: 4
+    coherence: 4
+    opening: 5
+    ending: 5
+  notes: |
+    This piece moves from commoditized models and hallucination risk through eval feedback, failure mining, merge gates, and a starter suite, ending with a clear payoff; its main structural weakness is the succession of unrelated examples.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: eval-engineering
+    locator: Make the score act | Low context recall can reject a handoff. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Six consecutive "[condition] can [verb]" constructions make the paragraph
+      sound generated: "Low context recall can reject a handoff", "Bad tool use
+      can retry or swap a node", "A hallucination can quarantine a branch", "A
+      schema failure can block an edge", "A compliance risk can route to human
+      review", and "Verified completion can terminate the run." Cut or recast
+      several of them.
+  - severity: minor
+    article: eval-engineering
+    locator: The first suite | A retrieval set grades RAG quality. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "RAG" is not expanded for an engineer outside this subfield.
+    suggestion: |
+      Write "retrieval-augmented generation (RAG)" on first use.
+  - severity: minor
+    article: eval-engineering
+    locator: Let the record decide who merges | The constraint is the product. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This is a portentous short sentence that announces an insight without
+      naming the concrete constraint or product.
+    suggestion: |
+      Replace it with the specific constraint and product consequence being
+      asserted.
+  scores:
+    voice: 4
+    sentence_variety: 2
+    economy: 4
+  notes: |
+    I heard a vivid, technically grounded voice until the routing list settled
+    into a repeated modal pattern that makes the prose sound mechanically
+    enumerated.

@@ -1,0 +1,160 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's explicit claim that the eval layer is the cheapest line in the stack and the only part encoding the builder's own definition of correct
+    reader_loses: A sharper explanation of why evaluation is the distinctive, defensible investment rather than merely another tool.
+    verdict: defensible
+  - fact: The source's progression from loops to graphs to evals
+    reader_loses: The historical sequence explaining how evals complete the earlier execution architecture.
+    verdict: defensible
+  - fact: The example that twenty concurrent agents create twenty times as many places for a wrong answer to look finished
+    reader_loses: A vivid scale-based warning about why parallelism increases the need for evaluation.
+    verdict: defensible
+  - fact: The benchmark's full taxonomy of 39 labeled failures
+    reader_loses: The exact scope of the human failure-labeling exercise.
+    verdict: defensible
+  - fact: The four vendors' names and launch dates when they shipped their expertise as skills
+    reader_loses: The precise chronology supporting the claim that the category was unbundling.
+    verdict: defensible
+  - fact: The npx, uv, plugin, and evalkit installation commands
+    reader_loses: Copy-paste setup instructions, which are impractical to reproduce in a magazine and remain available in the source.
+    verdict: defensible
+  - fact: The six evalkit phase commands and the claim that /evalkit.report returns prioritized code-location recommendations
+    reader_loses: The exact CLI workflow and its final reporting behavior.
+    verdict: defensible
+  - fact: The source's description of the founder in Tokyo with 258 followers and two likes
+    reader_loses: Color around the origin of the routing rule, but not the rule itself.
+    verdict: defensible
+  - fact: The five-step arrow diagram written as 'mine traces -> identify a failure -> build an eval -> improve the ...'
+    reader_loses: The source's compact visual summary of the iteration loop.
+    verdict: defensible
+  - fact: The Harbor task-folder layout with task.toml, instruction.md, environment, and tests
+    reader_loses: A concrete implementation directory structure.
+    verdict: defensible
+  - fact: The source's exact instruction to use the eval-engineering skill, map the repository, recommend one eval, and wait for approval before implementation
+    reader_loses: A copyable prompt for initiating the workflow.
+    verdict: defensible
+  - fact: The anecdote of approving and merging around 1,500 pull requests in 90 days without reading code
+    reader_loses: A striking personal scale example for constraint-based trust.
+    verdict: defensible
+  - fact: The source's explicit statement that the model will be replaced twice before the end of the year
+    reader_loses: A concrete replacement horizon illustrating model impermanence.
+    verdict: defensible
+  - fact: 'The source''s three closing maxims: measure the path, make verdicts change the next edge, and turn every failure into a permanent test'
+    reader_loses: A concise mnemonic summary, though each principle is already developed in the manuscript.
+    verdict: defensible
+  - fact: The publication date, view count, engagement counts, and promotional X/Telegram links
+    reader_loses: Source metadata and calls to follow the author, not substantive guidance.
+    verdict: defensible
+  retentions:
+  - passage: Everyone is renting the same brain now.
+    costs: Opening space that establishes the economic premise and makes the later examiner-versus-model distinction immediately legible.
+    verdict: earns_place
+  - passage: A travel agent answered a question about an exchange rate
+    costs: A concrete hallucination example that gives the abstract faithfulness metric a consequence readers can understand.
+    verdict: earns_place
+  - passage: A thermometer tells you the room is cold.
+    costs: A short analogy that explains the difference between measuring performance and changing behavior.
+    verdict: earns_place
+  - passage: The evidence that this is practical is already here.
+    costs: A dense benchmark paragraph, but it supplies comparative recall and precision figures that substantiate the practical claim.
+    verdict: earns_place
+  - passage: The trace tells you what happened, not what should have happened.
+    costs: The conceptual hinge for constructing answer keys and avoiding circular evaluation.
+    verdict: earns_place
+  - passage: Optimize against a judge long enough
+    costs: A brief warning against reward hacking that qualifies the judge-design advice.
+    verdict: earns_place
+  - passage: The constraint is the product.
+    costs: A compact thesis that unifies the confidence gate, human fallback, and actuarial trust discussion.
+    verdict: earns_place
+  - passage: Most people will keep scrolling outputs on Friday
+    costs: A closing contrast that restates the practical payoff and gives the piece a memorable endpoint.
+    verdict: earns_place
+  notes: 'Approval: this piece gives the reader a reordered, substantially shorter operating model for eval engineering, preserving the source''s evidence, routing rules, trace-mining method, judge hygiene, gating safeguards, and starter suite while making the argument legible as a complete feedback loop.'
+evidence:
+  result: approved
+  findings: []
+  scores:
+    claim_support: 5
+    qualification_survival: 5
+    quote_accuracy: 5
+    attribution: 5
+  notes: |
+    I checked every assertion and piece of furniture against the pinned extraction; I could not check truth beyond that extraction, as required.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: Let the record set the gate | Across top agents, about three quarters of merged work goes in without a human edit, reverts remain in the low single digits, and Guardrails alone rejects one pull request in five before review. | 1
+    category: punctuation
+    disposition: fix
+    note: |
+      The sentence joins independent clauses with a comma after "human edit",
+      creating a comma splice. The prose is editorial in faithful_synthesis, so
+      the editors must repair it.
+    suggestion: Use a semicolon after 'edit' or add a conjunction before 'reverts'.
+  scores:
+    grammar: 4
+    typography: 5
+    consistency: 5
+  notes: |
+    One comma splice requires correction; sentence openings, headings, typography,
+    and number styles are otherwise consistent.
+shape:
+  result: approved
+  findings: []
+  scores:
+    order: 5
+    coherence: 5
+    opening: 5
+    ending: 5
+  notes: |
+    The piece's argument progresses coherently from the shared model baseline and concrete failure, through eval design and verdict routing, to autonomous merge gates and a durable test suite.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: eval-engineering
+    locator: The examiner closes the loop | The evidence that this is practical is already here. | 1
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      This sentence clears its throat before presenting the evidence; the paragraph would enter more directly through the production-trace study that follows.
+    suggestion: |
+      Cut the sentence and begin with the researchers' 100 production traces.
+  - severity: major
+    article: eval-engineering
+    locator: The examiner closes the loop | The category is unbundling into the terminal already open. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Unbundling" is corporate abstraction, and the terminal metaphor adds decoration without making the mechanism clearer.
+    suggestion: |
+      State plainly that vendors are packaging their evaluation expertise as skills for agents developers already use.
+  - severity: minor
+    article: eval-engineering
+    locator: Keep the suite alive | A retrieval set grades RAG quality. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "RAG" is unexplained subfield jargon for readers who may understand evaluation engineering without knowing the acronym.
+    suggestion: |
+      Expand the acronym on first use or describe retrieval-augmented generation in ordinary language.
+  - severity: minor
+    article: eval-engineering
+    locator: Let the record set the gate | The constraint is the product. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This portentous short sentence presents a slogan rather than advancing the argument; the surrounding paragraphs already explain the constraint.
+    suggestion: |
+      Replace the slogan with the specific consequence of making the gate part of the product.
+  scores:
+    voice: 4
+    sentence_variety: 4
+    economy: 4
+  notes: |
+    I heard a confident, concrete writer throughout, with a few slogan-like abstractions and one unexplained acronym interrupting an otherwise human voice.
