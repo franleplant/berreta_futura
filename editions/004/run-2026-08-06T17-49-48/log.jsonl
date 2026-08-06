@@ -14,3 +14,6 @@
 {"attempt":0,"label":"editorial write","model":"opus","seconds":59.6,"usd":0.2499}
 {"attempt":0,"label":"editorial trim1","model":"opus","seconds":36.3,"usd":0.2324}
 {"attempt":0,"label":"editorial title","model":"haiku","seconds":10.9,"usd":0.0198}
+{"attempt":0,"label":"editorial write","model":"opus","seconds":32.8,"usd":0.2052}
+{"attempt":0,"label":"editorial trim1","model":"opus","seconds":25.5,"usd":0.228}
+{"attempt":0,"label":"editorial title","model":"haiku","seconds":10.5,"usd":0.0201}

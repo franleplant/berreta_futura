@@ -1,6 +1,6 @@
 # Run summary — edition 004
 
-- 3 model calls, $0.50, 1.8 minutes
+- 3 model calls, $0.45, 1.1 minutes
 - writer `opus`, frontmatter `haiku`
 
 | piece | words |
@@ -12,4 +12,4 @@
 | factory-systems-problem | 285 |
 | mcp-in-a-nutshell | 554 |
 | mcp-protocol-update | 704 |
-| editorial | 219 |
+| editorial | 205 |

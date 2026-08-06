@@ -2297,15 +2297,14 @@ def _pin_opener_fields(tree: Element, edition: Edition) -> None:
                     density=_ILLUSTRATED_OPENER_COMPACT,
                 )
                 # A paragraph too long even for compact density is not an
-                # error: it breaks onto the next page and the opener keeps
-                # its composition. Mark the overflow so the stylesheet lets
-                # the body follow the runover lines on that page instead of
-                # opening yet another one.
+                # error: the words that cannot fit the opener page move into
+                # a plain paragraph right after the header, and set as
+                # ordinary body prose at the top of the next page.
                 if (
                     compact_height + _ILLUSTRATED_OPENER_PANGO_RESERVE_POINTS
                     > _ILLUSTRATED_OPENER_PAGE_HEIGHT_POINTS
                 ):
-                    header.set("data-opener-overflow", "true")
+                    _split_standfirst_overflow(article, header, declared)
                 header.set("data-opener-density", "compact")
             _set_illustrated_opener_title(header, size)
             # This composition flows naturally and closes the page after its
@@ -4559,6 +4558,86 @@ def _collect_field_overflows(box: Any, page_number: int, failures: list[str]) ->
             f"reaching {title_bottom:.4f}pt, overflowing the field by "
             f"{title_bottom - field_bottom:.4f}pt"
         )
+
+
+def _split_standfirst_overflow(article: Element, header: Element, declared: Any) -> None:
+    """Move the standfirst words that cannot fit the opener page into a plain
+    paragraph after the header.
+
+    The cut is the budget's own arithmetic (:func:`illustrated_opener_intro_budget`),
+    so the standfirst that stays exactly fills its page, and the runover sets
+    as ordinary body prose rather than as a fragment of oversized standfirst.
+    A cut never lands inside inline markup: a ``code`` or ``em`` span that
+    straddles the boundary moves whole.
+    """
+    standfirst = next(
+        (el for el in header.iter("p") if "standfirst" in (el.get("class") or "").split()),
+        None,
+    )
+    if standfirst is None:
+        return
+    intro = " ".join("".join(standfirst.itertext()).split())
+    budget = illustrated_opener_intro_budget(
+        title=str(declared.title),
+        byline=str(declared.author),
+        author_note=str(declared.author_note or ""),
+        sample=intro,
+    )
+    if budget is None or budget.lines < 1 or budget.fits(intro):
+        return
+    keep_words = sum(len(line.split()) for line in budget.wrapped(intro)[: budget.lines])
+    if keep_words < 1:
+        return
+
+    remainder = Element("p")
+    remaining = keep_words
+
+    def cut_text(text: str | None) -> tuple[str | None, str | None]:
+        """(kept, moved) once `remaining` words are spent; moved None if all kept."""
+        nonlocal remaining
+        if text is None:
+            return None, None
+        parts = re.split(r"(\s+)", text)
+        kept: list[str] = []
+        for index, part in enumerate(parts):
+            if part and not part.isspace():
+                if remaining == 0:
+                    return "".join(kept).rstrip(), "".join(parts[index:]).lstrip()
+                remaining -= 1
+            kept.append(part)
+        return "".join(kept), None
+
+    kept, moved = cut_text(standfirst.text)
+    standfirst.text = kept
+    move_from: int | None = None
+    children = list(standfirst)
+    if moved is not None:
+        remainder.text = moved
+        move_from = 0
+    else:
+        for index, child in enumerate(children):
+            if remaining == 0:
+                move_from = index
+                break
+            child_words = len("".join(child.itertext()).split())
+            if child_words > remaining:
+                remaining = 0
+                move_from = index
+                break
+            remaining -= child_words
+            kept, moved = cut_text(child.tail)
+            child.tail = kept
+            if moved is not None:
+                remainder.text = moved
+                move_from = index + 1
+                break
+    if move_from is not None:
+        for child in children[move_from:]:
+            standfirst.remove(child)
+            remainder.append(child)
+    if remainder.text is None and len(remainder) == 0:
+        return
+    article.insert(list(article).index(header) + 1, remainder)
 
 
 def _validate_illustrated_opener_integrity(document: Any) -> None:
