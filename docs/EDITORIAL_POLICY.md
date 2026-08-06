@@ -46,15 +46,14 @@ An over-budget `faithful_edit` is converted to `faithful_synthesis`. The synthes
 
 Synthesis prose stays in the source's grammatical person and point of view. If the source author speaks in the first person, the synthesis does too; if the source is impersonal or already uses third person, preserve that choice. Do not wrap adapted prose in magazine-narrator scaffolding such as “Narayanan argues” or “Joshi explains.” Exact source wording may remain unchanged. Prefer retained passages and light edits, and summarize only where length requires it.
 
-A synthesis is verified by reading, not by bookkeeping: the source-aware evidence
-review reads the manuscript against its committed extraction claim by claim and
-reports invented claims, dropped qualifications, reversed claim strength, and
-missing counterarguments. Deciding what a shorter piece must lose is the
-writer's job and is governed by the cut order in `prompts/faithful-synthesis.md`:
-repeated examples first, a claim's supporting evidence before the claim, and
-qualifications and the source's own conclusions last and almost never. Short
-articles remain `faithful_edit`; synthesis is a length remedy, not the default
-editorial voice.
+A synthesis is verified by reading, not by bookkeeping: read the manuscript
+against its committed extraction claim by claim for invented claims, dropped
+qualifications, reversed claim strength, and missing counterarguments.
+Deciding what a shorter piece must lose is the writer's job and is governed
+by this cut order: repeated examples first, a claim's supporting evidence
+before the claim, and qualifications and the source's own conclusions last
+and almost never. Short articles remain `faithful_edit`; synthesis is a
+length remedy, not the default editorial voice.
 
 ## Automatically permitted faithful edits
 

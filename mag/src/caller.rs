@@ -1,4 +1,4 @@
-// The model caller: parametric over backends, faithful to produce.py's Caller.
+// The model caller: parametric over backends.
 //
 // A model spec string is `<backend>:<model>`, backend defaulting to `claude`
 // when there is no colon at all (so `opus` == `claude:opus`). When a colon is
@@ -90,7 +90,7 @@ impl ModelSpec {
     }
 }
 
-/// UTC timestamp in produce.py's `%Y-%m-%dT%H-%M-%S` shape, computed from
+/// UTC timestamp in `%Y-%m-%dT%H-%M-%S` shape, computed from
 /// SystemTime with no chrono dependency.
 pub fn now_stamp() -> String {
     let secs = SystemTime::now()
@@ -237,8 +237,7 @@ impl Caller {
     }
 
     /// Run one headless call with retry; `parse` failures count as retryable
-    /// failures, with the parse error fed back into the retry prompt, exactly
-    /// like produce.py's Caller.llm.
+    /// failures, with the parse error fed back into the retry prompt.
     pub fn call_with_parse<T>(
         &self,
         label: &str,
@@ -265,10 +264,9 @@ impl Caller {
                 }
             };
 
-            // produce.py tracks cost/calls as soon as the subprocess call
-            // itself succeeds, before the parse step — so a parse failure on
-            // a later retry still leaves the earlier successful call's cost
-            // counted. Ported faithfully.
+            // Cost/calls are tracked as soon as the subprocess call itself
+            // succeeds, before the parse step — so a parse failure on a later
+            // retry still leaves the earlier successful call's cost counted.
             *self.total_cost.lock().unwrap() += cost;
             self.calls.fetch_add(1, Ordering::SeqCst);
 
