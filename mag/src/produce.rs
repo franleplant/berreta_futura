@@ -172,7 +172,7 @@ fn extract_body(reply: &str, label: &str) -> Result<String> {
     Ok(format!("{}\n", body.trim_end()))
 }
 
-const TRIM_PASSES: usize = 2;
+const TRIM_PASSES: usize = 3;
 
 /// Word budgets can need a 25% cut, which a bare "try again shorter" retry
 /// never achieves (opus resettled at 1981→1836 over six attempts). Handing
@@ -192,10 +192,13 @@ fn fit_to_budget(
             return Ok(body);
         }
         let label = format!("{piece_id} trim{pass}");
+        // Models overshoot word targets (asked for 220, opus lands ~260), so
+        // the ask sits below the budget the reply is actually checked against.
+        let ask = max - max / 8;
         let trim_prompt = format!(
             "{prompt}\n\n========== your draft ({words} words) ==========\n\n{body}\n\
-             \nThe print budget is {max} words. Write the piece again in at most {max} \
-             words: cut whole sections rather than compressing every sentence."
+             \nThe print budget is {ask} words. Write the piece again in at most {ask} \
+             words: cut whole paragraphs or sections rather than compressing every sentence."
         );
         let parse_label = label.clone();
         body = caller.call_with_parse(&label, writer_model, &trim_prompt, |r| {
