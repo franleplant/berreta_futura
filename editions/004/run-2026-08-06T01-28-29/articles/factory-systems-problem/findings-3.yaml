@@ -1,0 +1,86 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The framing that the service-bus criticism was a second hot take responding to the first
+    reader_loses: Little substantive content; the sequence of the original posts is not needed to understand the argument.
+    verdict: defensible
+  - fact: The source's informal aside that the post should be written
+    reader_loses: No argument or actionable guidance.
+    verdict: defensible
+  - fact: The explicit phrase 'non-agent topics' before the infrastructure list
+    reader_loses: The list itself makes clear that these are surrounding systems concerns.
+    verdict: defensible
+  retentions:
+  - passage: The warning that factories are not yet cracked and that sellers outside the small expert cohort are selling bullshit
+    costs: Space spent establishing the article's skeptical premise.
+    verdict: earns_place
+  - passage: The sandboxing, monorepo, reproducible-builds, CI/CD, identity, secrets, and DevEx list
+    costs: A substantial paragraph, but it gives the systems thesis concrete boundaries.
+    verdict: earns_place
+  - passage: The recommendation to use MassTransit, NServiceBus, WCF, or Temporal and invoke an agent as a process
+    costs: Space spent on implementation precedent and a concrete design rule.
+    verdict: earns_place
+  notes: |
+    The piece fuses three terse hot takes into a single, direct thesis about systems engineering, corporate culture, and deterministic orchestration, while retaining the practical stack and service-bus guidance.
+evidence:
+  result: approved
+  findings: []
+  notes: Checked every claim, title, and attribution against all three pinned extractions; nothing in the piece could not be checked.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | they aren''t in the super small cohort (i.e., they are likely startups created in the last six months!) or circa <10 people in the who''s-who who have been trying | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      The alternatives are not parallel: "aren't in the super small cohort or circa <10 people" leaves "circa <10 people" without a grammatical relation to "aren't in." The sentence is not present in a pinned source extraction, so this is treated as editorial prose.
+    suggestion: they aren't in the super-small cohort ... or among the circa <10 people in the who's-who who have been trying
+  notes: |
+    One malformed alternative construction requires correction; sentence-initial capitalisation, punctuation, typography, and heading form are otherwise consistent.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | n8n was a silly idea, which I''ve always suspected was developed by young folks in Silicon Valley who are all in on the LLM craze who have never worked in corporate in their lives, thus didn''t have the knowledge that service buses are a solved problem and there''s deep prior art in the spooky land of enterprise. | 1'
+    repair_from: '- | I must stress that factories are not a token or LLM problem. | 1'
+    category: missing_transition
+    disposition: fix
+    note: |
+      The piece moves from its general systems-and-culture thesis into a
+      specific critique of n8n and service buses without identifying that
+      critique as an example of the architectural problem. The reader has to
+      infer the connection.
+    suggestion: Add a bridge that frames the service-bus discussion as a concrete example of the systems problem.
+  notes: |-
+    I verified that the piece's broad-to-specific argument is recoverable, but
+    its transition into the n8n example is structurally abrupt.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Software factories are super real, but we need to be realistic. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The opening announces its subject and repeats "real" without giving the reader a concrete problem or scene.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Look up anything in the @dotnet space, such as MassTransit, NServiceBus, WCF, if you wanna steal ideas for prompting. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three consecutive imperatives in this paragraph—"Look up...", "Use it...", and "Don't make..."—make the passage sound like a command list. The remedy is editorial: cut or redistribute one of the instructions.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | ...to smash corporate friction in the realm of DevEx for agents. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "DevEx" is introduced without definition, and the surrounding abstraction ("corporate friction in the realm of") obscures the concrete practice being recommended.
+  notes: |
+    I heard a candid, idiosyncratic engineering voice, but the opening and advice passage briefly turn that voice into announcement and command-list prose.

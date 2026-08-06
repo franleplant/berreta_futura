@@ -1,0 +1,103 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's explicit framing that teams renting the same model can still have radically different outcomes
+    reader_loses: Some context for why evaluation, rather than model choice, creates the competitive gap.
+    verdict: defensible
+  - fact: The names and detailed benchmark result for Arize AX
+    reader_loses: One additional comparison point in the evaluation-platform test.
+    verdict: defensible
+  - fact: The vendor names and dates for the four skills launches
+    reader_loses: Specific evidence for the category's rapid movement into coding-agent terminals.
+    verdict: defensible
+  - fact: Installation commands, plugin commands, and the evalkit phase-by-phase CLI sequence
+    reader_loses: Copy-paste setup instructions that are not practical in a printed synthesis.
+    verdict: defensible
+  - fact: The source's anecdotal details about the founder's age, follower count, and post engagement
+    reader_loses: Color around the origin of the routing principle, but not the principle itself.
+    verdict: defensible
+  - fact: The source's explicit warning that twenty parallel agents create twenty places for a wrong answer to look finished
+    reader_loses: A vivid statement of parallelism's risk, already conveyed by the manuscript's discussion of polished failures.
+    verdict: defensible
+  retentions:
+  - passage: The travel-agent incident and its recurring empty-search failure
+    costs: Substantial space, but it gives the abstract evaluation loop a concrete failure and a thread that connects the sections.
+    verdict: earns_place
+  - passage: The blind-test benchmark comparison
+    costs: A full paragraph of figures, but it substantiates the claim that an existing coding agent can perform serious evaluation work.
+    verdict: earns_place
+  - passage: The judge-discipline rules
+    costs: Several paragraphs, but they prevent misleading scores and make the proposed system operationally credible.
+    verdict: earns_place
+  - passage: The 25-trace sampling and four-line attribution template
+    costs: A detailed section, but it turns 'use your logs' into an actionable method for generating tests.
+    verdict: earns_place
+  - passage: The autonomous pull-request gate and its shadow-mode safeguards
+    costs: Several paragraphs, but they connect evaluation to a consequential production workflow and contain the article's main practical payoff.
+    verdict: earns_place
+  - passage: The final three measurements, dataset choices, and first five evals
+    costs: A substantial checklist, but it gives readers a concrete afternoon-sized starting point.
+    verdict: earns_place
+  notes: |
+    The piece gives a reader the source's sprawling build guide as a coherent argument: measure the agent's path, route on verdicts, turn failures into permanent tests, and use the resulting record to constrain autonomous work.
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    Checked every assertion, quotation, number, heading, and conclusion against the pinned extraction; nothing outside that extraction could be checked.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: Put a gate in front of the queue | A 2% maximum disagreement between automated and human verdicts keeps the gate closed when the measures diverge. | 1
+    category: grammar
+    disposition: fix
+    note: |
+      The sentence is missing the definite article before "gate"; this is the specific gate already introduced in the preceding sentence.
+    suggestion: A 2% maximum disagreement between automated and human verdicts keeps the gate closed when the measures diverge.
+  notes: |
+    One missing definite article requires correction; capitalization, spelling, punctuation, typography, and heading form are otherwise clean.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: eval-engineering
+    locator: 'The afternoon that compounds | A tool-using agent can begin with three measurements: faithfulness to returned data, tool-parameter accuracy, and response quality. | 1'
+    repair_from: 'The afternoon that compounds | A tool-using agent can begin with three measurements: faithfulness to returned data, tool-parameter accuracy, and response quality. | 1'
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The section develops a concrete method for choosing measurements, shaping
+      datasets, and selecting an initial eval suite, but its heading names a
+      poetic time-of-day metaphor rather than that argument.
+    suggestion: Rename the section to state its claim about building a compact eval suite that compounds over time.
+  notes: |-
+    I verified that the piece opens with a concrete failure, develops a recoverable
+    feedback-loop argument, carries the travel-agent example through the sections,
+    and lands with a clear conclusion; only the final section heading obscures its
+    specific claim.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: The afternoon that compounds | A failure becomes a test, the test changes the next edge, and the next run leaves a better record. | 1
+    category: weak_close
+    disposition: fix
+    note: |
+      The closing sentence restates the essay's central loop after the mechanism and its consequences have already been established. It closes by summarizing rather than leaving a sharper question or final implication.
+    suggestion: |
+      Replace the summary with a final consequence of making the verdict alter the run.
+  - severity: minor
+    article: eval-engineering
+    locator: Make the verdict move the run | Low context recall could reject its handoff and force another search. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "Context recall" arrives as specialist evaluation terminology without a definition, so a competent engineer outside this subfield may not know what the verdict measures.
+    suggestion: |
+      Define context recall in plain language at its first occurrence.
+  notes: |
+    I heard a confident, concrete systems essay whose examples keep the mechanism visible, but whose final line folds back into its central slogan.

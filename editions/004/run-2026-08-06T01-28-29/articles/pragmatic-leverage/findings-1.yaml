@@ -1,0 +1,154 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    category: no_added_value
+    disposition: fix
+    note: |
+      The manuscript reproduces the source's argument, examples, figures, formula, and progression almost verbatim. A reader gets copy editing and standalone packaging, but no condensation, synthesis, or ordering that the source does not already provide.
+    suggestion: Recast this as a shorter editorial treatment that synthesizes the leverage thesis, expected-pain model, and pragmatic zooming rule in the magazine's own framing.
+  omissions:
+  - fact: The source's author handle, @dexhorthy
+    reader_loses: The original attribution identifier.
+    verdict: defensible
+  retentions:
+  - passage: This one is a bit of an addendum / side-quest to the recent series...
+    costs: Opening space spent on publication context rather than the leverage argument.
+    verdict: cut
+  - passage: good luck.
+    costs: A closing sign-off that adds no idea or consequence.
+    verdict: cut
+  notes: |
+    Changes required because the piece is effectively a lightly copy-edited reproduction rather than a valuable condensation or editorial treatment.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    category: furniture_unsupported
+    disposition: fix
+    note: |
+      The author note claims that Dex Horthy is the founder of HumanLayer and that the company is YC-backed, but the pinned extraction provides no biographical support for either claim.
+  notes: |
+    I checked the title, headings, body assertions, numbers, quotations, conclusions, and byline furniture against the complete extraction; the author-note credentials could not be checked because they are absent from the source.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking Leverage | Seeking Leverage | 1
+    category: heading_form
+    disposition: fix
+    note: |
+      This heading is in title case; headings in this piece should use sentence case.
+    suggestion: Seeking leverage
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | 25-50% | 1
+    category: typography
+    disposition: fix
+    note: |
+      This range uses a hyphen; ranges should use en dashes.
+    suggestion: 25–50%
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | 2-4 hours | 1
+    category: typography
+    disposition: fix
+    note: |
+      This range uses a hyphen; ranges should use en dashes.
+    suggestion: 2–4 hours
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking Leverage | 10-20 minutes | 1
+    category: typography
+    disposition: fix
+    note: |
+      This range uses a hyphen; ranges should use en dashes.
+    suggestion: 10–20 minutes
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Let's assume if you yolo a two-sentence prompt into your factory | 1
+    category: grammar
+    disposition: fix
+    note: |
+      "Let's assume if" is grammatically incomplete; the construction needs "that" before the conditional clause.
+    suggestion: Let's assume that if you yolo a two-sentence prompt into your factory
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | 2-3x faster | 1
+    category: typography
+    disposition: fix
+    note: |
+      This range uses a hyphen; ranges should use en dashes.
+    suggestion: 2–3x faster
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | note For this example I'm gonna blur | 1
+    category: label_missing
+    disposition: fix
+    note: |
+      A labelled note is editorial apparatus embedded in the article prose and should not appear as an in-text label.
+    suggestion: Remove the 'note' label or integrate the material into the prose.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | good luck. | 1
+    category: capitalisation
+    disposition: fix
+    note: |
+      Sentence openings are capitalised throughout the body; this lowercase opening is an isolated error.
+    suggestion: Good luck.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | 'Product' | 1
+    category: typography
+    disposition: fix
+    note: |
+      This quotation uses single quotation marks while the piece otherwise uses double quotation marks for quotations.
+    suggestion: '"Product"'
+  notes: |
+    Changes required because one heading, one grammatical construction, one embedded note label, one sentence opening and several typographic inconsistencies need correction.
+shape:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    repair_from: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: opening
+    disposition: editor_decision
+    note: |
+      The piece opens with publication context instead of its argument about where AI-assisted delivery gains leverage. The second paragraph supplies the actual point of interest, so the opening does not earn the piece.
+    suggestion: Open with the distinction between coding speed and the rest of the delivery work.
+  - severity: major
+    article: pragmatic-leverage
+    locator: '- | It is referenced briefly in Why Software Factories Fail part 2: Turning the lights back on. | 1'
+    repair_from: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: orphan_referent
+    disposition: editor_decision
+    note: |
+      The opening points to an external series and a specific prior post that the reader does not have in this piece. That reference interrupts the standalone argument and leaves the referent unresolved.
+    suggestion: Remove the series and prior-post references from the opening.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | The 80/20 rule in AI coding leverage | 1
+    repair_from: The 80/20 rule in AI coding leverage | Let's assume if you yolo a two-sentence prompt into your factory, your chance of getting a fully-mergeable result is ~50%, the chance you have to rework it is 50%. | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      This section develops a claim about the tradeoff between upfront planning effort and expected rework pain, but its heading names a general topic rather than that claim.
+    suggestion: Rename the heading to state the planning-effort versus expected-pain tradeoff.
+  notes: I verified that the main leverage argument progresses coherently after the publication-context opening, but the opening and one heading weaken the standalone structure.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The piece opens by explaining its publishing history instead of giving the reader the leverage claim. "A bit of an addendum / side-quest" is throat-clearing; the argument begins only under "Seeking Leverage."
+  notes: |
+    I heard a conversational, technically grounded argument, but its first sentence sounds like editorial housekeeping before the voice and subject arrive.

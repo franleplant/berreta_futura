@@ -1,0 +1,45 @@
+result: changes_required
+findings:
+- severity: major
+  article: edition
+  category: thin_derivation
+  disposition: fix
+  repair_from: '- | That is why useful work around models now looks less like choosing a larger brain and more like arranging memory, gates, and routes. | 1'
+  note: |
+    pragmatic-leverage and mcp-in-a-nutshell contribute nothing to the editorial's argument. The thesis is assembled from five pieces, leaving two of seven outside the issue's derivation.
+- severity: major
+  article: pragmatic-leverage
+  locator: '- | AI can cut coding time from two to four hours to ten or twenty minutes. | 1'
+  category: weak_piece
+  disposition: fix
+  note: |
+    This is the weakest commission: a short, generic argument about planning leverage that neither develops the issue's systems thesis nor feeds the editorial. It should not have been commissioned for this edition.
+- severity: major
+  article: edition
+  locator: The session disappears | Protocol version, client information, and capabilities now travel in `_meta` on each request. | 1
+  category: redundancy
+  disposition: fix
+  note: |
+    mcp-in-a-nutshell makes the same point as mcp-protocol-update: per-request metadata removes dependence on remembered connection state. The nutshell says, "Each request identifies the protocol version and capabilities, so the server can handle it without depending on remembered connection state." Consolidate or sharply differentiate these pieces.
+- severity: minor
+  article: edition
+  locator: '- | A remote MCP server once needed sticky sessions, a shared session store, and a gateway that inspected request bodies. | 1'
+  category: running_order
+  disposition: fix
+  note: |
+    The strongest piece opens and most adjacencies have a rationale, but the two densest MCP pieces sit back to back. Insert a shorter piece between them or otherwise give the reader a recovery beat.
+- severity: minor
+  article: factory-systems-problem
+  locator: '- | If someone is selling you a factory right now and they aren’t in the super small cohort (i.e., they are likely startups created in the last six months!) or circa <10 people in the who’s-who who have been trying (and realistically failing) over the last two years, they are selling bullshit. | 1'
+  category: outlier
+  disposition: fix
+  note: |
+    factory-systems-problem is a polemical faithful edit with profanity and a markedly different register from the explanatory syntheses. Its faithful_edit mode and difficulty also sit outside the dominant family; recast it or move it to a more argumentative edition.
+scores:
+  through_line: 4
+  editorial_strength: 4
+  running_order: 3
+  balance: 2
+  cover_promise: 4
+notes: |
+  This issue argues that dependable AI systems require explicit memory, evaluation gates, and routable state, and it mostly holds together. Changes are required because two pieces do not feed the editorial, one commission is weak, the MCP pair is redundant, and one piece is a strong voice and mode outlier.

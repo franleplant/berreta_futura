@@ -1,0 +1,63 @@
+piece: mcp-protocol-update
+rounds:
+- round: 1
+  words: 996
+  loop_findings: 2
+  all_findings: 4
+- round: 2
+  words: 986
+  loop_findings: 1
+  all_findings: 4
+- round: 3
+  words: 989
+  loop_findings: 5
+  all_findings: 6
+state: rounds_exhausted
+open_findings:
+- lens: worth
+  severity: blocking
+  article: mcp-protocol-update
+  locator: The session disappears | Protocol version, client information, and capabilities now travel in `_meta` on each request. | 1
+  repair_from: The session disappears | Protocol version, client information, and capabilities now travel in `_meta` on each request. | 1
+  category: lost_essential_fact
+  disposition: fix
+  note: |
+    The source's stateless request still carries the required `MCP-Protocol-Version`
+    header; only client information and capabilities move into `_meta`. As written,
+    the sentence misstates where protocol version is transmitted and makes the
+    transport description misleading.
+  suggestion: Separate the protocol-version header from the client information and capabilities carried in `_meta`.
+- lens: evidence
+  severity: major
+  article: mcp-protocol-update
+  locator: The session disappears | Requests also carry `Mcp-Method` and `Mcp-Name` headers, so a load balancer, gateway, or rate limiter can route on the operation without inspecting JSON. | 1
+  repair_from: Routable, cacheable, traceable | The Streamable HTTP transport now requires `Mcp-Method` and `Mcp-Name` headers (SEP-2243) so load balancers, gateways, and rate-limiters can route on the operation without inspecting the body. | 1
+  category: qualification_loss
+  disposition: fix
+  note: |
+    The source scopes these required headers to the Streamable HTTP transport. The manuscript states that requests generally carry them, broadening the claim beyond the source.
+- lens: evidence
+  severity: major
+  article: mcp-protocol-update
+  locator: A controlled break | Future revisions now have a place to grow without hiding another breaking change inside the transport. | 1
+  category: unreached_conclusion
+  disposition: fix
+  note: |
+    The source says the maintainers expect future revisions to be adoptable without rewriting transport or lifecycle code and do not intend breaking changes to be the norm. It does not claim that another breaking change cannot be hidden inside the transport.
+- lens: mechanics
+  severity: major
+  article: mcp-protocol-update
+  locator: '- | FAITHFUL SYNTHESIS | 1'
+  category: markup
+  disposition: fix
+  note: |
+    "FAITHFUL SYNTHESIS" is labelled editorial apparatus inside the article and should not appear in the printed prose.
+  suggestion: Remove the FAITHFUL SYNTHESIS label from the article.
+- lens: craft
+  severity: major
+  article: mcp-protocol-update
+  locator: Extensions leave the basement | The new framework gives them reverse-DNS identifiers, capability negotiation, independent repositories and versioning, delegated maintainers, and an Extensions Track in the SEP process. | 1
+  category: jargon
+  disposition: fix
+  note: |
+    "reverse-DNS" and especially "SEP" arrive without definition, alongside several other unexplained protocol-specific terms later in the piece. A competent engineer outside the MCP subfield may understand the mechanism but not these labels.

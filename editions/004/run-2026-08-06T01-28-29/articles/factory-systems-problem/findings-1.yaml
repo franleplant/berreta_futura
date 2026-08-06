@@ -1,0 +1,132 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Software factories are super real, but we need to be realistic. | 1'
+    repair_from: '- | Software factories are super real, but we need to be realistic. | 1'
+    category: no_position
+    disposition: fix
+    note: |
+      The manuscript joins three posts into a readable through-line, but its claims and ordering remain the sources' own; it offers no editorial judgment, cut it defends, or distinct claim for this magazine.
+    suggestion: Add a brief framing sentence that states the piece's own judgment about why the systems thesis and deterministic orchestration recommendation belong together.
+  omissions:
+  - fact: The source posts' platform-native formatting, including lowercase presentation and emphasis markers.
+    reader_loses: No substantive idea, caveat, identifier, or operational detail; these marks do not carry meaning for a print reader.
+    verdict: defensible
+  retentions:
+  - passage: The opening paragraph's inventory of sandboxing, monorepos, reproducible builds, CI/CD, identity and secret management, and agent-focused DevEx.
+    costs: A substantial paragraph, but it supplies the concrete systems scope behind the thesis.
+    verdict: earns_place
+  - passage: The paragraph stressing that factories are not a token or LLM problem.
+    costs: A short restatement that makes the central thesis unmistakable.
+    verdict: earns_place
+  - passage: The n8n/service-bus paragraph naming MassTransit, NServiceBus, WCF, and Temporal.
+    costs: A full paragraph, but it turns the abstract systems argument into an actionable architectural recommendation.
+    verdict: earns_place
+  notes: Changes required because the piece synthesizes the sources effectively but does not yet make an editorial position of its own.
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    I checked the title and every sentence against all three pinned extractions; no additional furniture or unsupported material was present to check.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Almost lights out. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      "Almost lights out." is a sentence fragment with no verb.
+    suggestion: We are almost at lights-out.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Second hot take, as it seems the first hot take landed. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      "Second hot take" is a sentence fragment; the subordinate clause does not supply a predicate for the main clause.
+    suggestion: 'Here is a second hot take: the first hot take seems to have landed.'
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Lots of bad memories here, not great tech impl, but the theory/education is generally on point. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      "Lots of bad memories here" is a sentence fragment with no verb.
+    suggestion: I have lots of bad memories here; the tech implementation was not great, but the theory/education is generally on point.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Blog post time. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      "Blog post time." is a sentence fragment with no verb.
+    suggestion: It is time for a blog post.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | who have never worked in corporate in their life | 1'
+    category: agreement
+    disposition: fix
+    note: |
+      The plural antecedent "young folks" requires the plural possessive noun "lives," not "life."
+    suggestion: who have never worked in corporate in their lives
+  notes: |
+    Changes required because four sentence fragments and one plural agreement error remain in the typeset prose.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Second hot take, as it seems the first hot take landed. | 1'
+    repair_from: '- | I must stress that factories are not a token or LLM problem. | 1'
+    category: missing_transition
+    disposition: fix
+    note: |
+      The piece moves from the factory thesis to a separate attack on n8n and service buses without explaining how that example advances the systems-engineering argument. The jump makes the final section read as a new post rather than the next step.
+    suggestion: Introduce the n8n discussion explicitly as an architecture example of the systems problem.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Lots of bad memories here, not great tech impl, but the theory/education is generally on point. | 1'
+    repair_from: '- | Second hot take, as it seems the first hot take landed. | 1'
+    category: ending
+    disposition: fix
+    note: |
+      The piece stops on a personal aside about service-bus theory and never returns to its central claim that factory reliability is a systems and culture problem. The reader is left without a concluding synthesis.
+    suggestion: End by tying the service-bus example back to the factory thesis and stating the practical takeaway.
+  notes: |
+    The piece establishes a systems-engineering thesis, develops it through infrastructure and culture, then shifts abruptly to service-bus architecture and ends without synthesizing those threads.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Software factories are super real, but we need to be realistic. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The opener announces a stance with "super real" and "realistic" but gives the reader no concrete mechanism or claim to hold onto.
+    suggestion: |
+      Open on the systems failure or constraint the piece will explain.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | The innovators are toying around with discovering practices and pieces. The best practices right now are to build abstractions/pieces needed, which entails solving non-agent topics. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      These sentences stack vague abstractions—"innovators," "practices," "pieces," "abstractions," and "non-agent topics"—without naming the work being done; the reader hears placeholders instead of a person describing a mechanism.
+    suggestion: |
+      Name the specific practices, components, and adjacent engineering problems directly.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | service buses are a solved problem | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "Service bus" is central to the second argument but is never defined for an engineer outside this subfield; the product names that follow do not explain what role the bus plays.
+    suggestion: |
+      Define the term by its function at first use, then use the examples as evidence.
+  notes: |
+    The piece has a distinct, forceful personal voice, but its opening and first paragraph briefly replace concrete description with abstraction, and the service-bus argument assumes an undefined term.

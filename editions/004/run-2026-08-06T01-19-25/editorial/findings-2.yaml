@@ -1,0 +1,46 @@
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | After reconnecting, polling is not housekeeping; it is how a client tests whether its picture is current. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      "After reconnecting" grammatically modifies "polling," which cannot reconnect. This is a dangling modifier in the editors' own prose.
+    suggestion: After reconnecting, a client can poll to test whether its picture is current; this is not mere housekeeping.
+  notes: |
+    One dangling modifier requires correction; capitalization, punctuation, typography and form are otherwise clean.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    The piece moves coherently from reconnect behavior to message-centered reliability, practical implications, and a concluding failure scenario.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | A connection drops. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Five sentences across the opening two paragraphs use the same noun-phrase-plus-finite-verb declarative shape: "A connection drops."; "The next request carries the protocol version, capabilities, and client identity in `_meta`."; "That small design choice changes where reliability lives."; "MCP still has hosts, clients, servers, transports, and a discovery exchange."; and "But the durable unit is the message." The repeated beat becomes audible before the argument develops.
+    suggestion: Vary or cut at least two of these declarative sentences.
+  - severity: major
+    article: editorial
+    locator: '- | After reconnecting, polling is not housekeeping; it is how a client tests whether its picture is current. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Polling is not housekeeping; it is how..." is a balanced, definite-article equation that sounds like a prepared maxim rather than a person explaining the mechanism. "Housekeeping" is also an unnecessary abstraction.
+    suggestion: State directly what polling verifies after reconnecting.
+  - severity: minor
+    article: editorial
+    locator: '- | `_meta` | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      The piece uses MCP and `_meta` as if their meanings were already shared, while neither is defined for an engineer outside this subfield.
+    suggestion: Expand MCP and briefly explain `_meta` at first use.
+  notes: I heard a clear, controlled technical voice that loses some human texture when its declarative rhythm and maxim-like abstractions take over.

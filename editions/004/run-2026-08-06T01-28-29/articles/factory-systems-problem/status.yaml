@@ -1,0 +1,46 @@
+piece: factory-systems-problem
+rounds:
+- round: 1
+  words: 374
+  loop_findings: 9
+  all_findings: 11
+- round: 2
+  words: 430
+  loop_findings: 8
+  all_findings: 10
+- round: 3
+  words: 377
+  loop_findings: 3
+  all_findings: 5
+state: rounds_exhausted
+open_findings:
+- lens: mechanics
+  severity: major
+  article: factory-systems-problem
+  locator: '- | they aren''t in the super small cohort (i.e., they are likely startups created in the last six months!) or circa <10 people in the who''s-who who have been trying | 1'
+  category: grammar
+  disposition: fix
+  note: |
+    The alternatives are not parallel: "aren't in the super small cohort or circa <10 people" leaves "circa <10 people" without a grammatical relation to "aren't in." The sentence is not present in a pinned source extraction, so this is treated as editorial prose.
+  suggestion: they aren't in the super-small cohort ... or among the circa <10 people in the who's-who who have been trying
+- lens: shape
+  severity: major
+  article: factory-systems-problem
+  locator: '- | n8n was a silly idea, which I''ve always suspected was developed by young folks in Silicon Valley who are all in on the LLM craze who have never worked in corporate in their lives, thus didn''t have the knowledge that service buses are a solved problem and there''s deep prior art in the spooky land of enterprise. | 1'
+  repair_from: '- | I must stress that factories are not a token or LLM problem. | 1'
+  category: missing_transition
+  disposition: fix
+  note: |
+    The piece moves from its general systems-and-culture thesis into a
+    specific critique of n8n and service buses without identifying that
+    critique as an example of the architectural problem. The reader has to
+    infer the connection.
+  suggestion: Add a bridge that frames the service-bus discussion as a concrete example of the systems problem.
+- lens: craft
+  severity: major
+  article: factory-systems-problem
+  locator: '- | Look up anything in the @dotnet space, such as MassTransit, NServiceBus, WCF, if you wanna steal ideas for prompting. | 1'
+  category: repeated_shape
+  disposition: editor_decision
+  note: |
+    Three consecutive imperatives in this paragraph—"Look up...", "Use it...", and "Don't make..."—make the passage sound like a command list. The remedy is editorial: cut or redistribute one of the instructions.

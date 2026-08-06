@@ -1,0 +1,121 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: 'The overview''s scope list: specification, SDKs, development tools, and reference server implementations.'
+    reader_loses: Awareness of MCP's surrounding project ecosystem.
+    verdict: defensible
+  - fact: The explicit statement that MCP does not dictate how applications use LLMs or manage context.
+    reader_loses: A concise boundary around the protocol's scope.
+    verdict: defensible
+  - fact: The tools/list pagination cursor and its caching fields, including ttlMs and cacheScope.
+    reader_loses: Implementation details for large or cacheable tool registries.
+    verdict: defensible
+  - fact: The exact notifications/subscriptions/acknowledged method and the fact that its acknowledgment is the first message carrying the subscription ID.
+    reader_loses: Some detail about how a subscription is correlated operationally.
+    verdict: defensible
+  - fact: The source's pseudo-code examples and its database-schema worked example.
+    reader_loses: Illustrative implementation patterns, but no essential concept.
+    verdict: defensible
+  - fact: Installation, SDK links, directory/layout material, and other setup guidance.
+    reader_loses: Nothing practically usable from a print explainer; those instructions remain available in the source.
+    verdict: defensible
+  retentions:
+  - passage: The opening weather-server walkthrough through JSON-RPC, transport, and per-request metadata.
+    costs: Space spent establishing the complete mental model; it supplies the thread that makes the later sections legible.
+    verdict: earns_place
+  - passage: One host, one client for each server.
+    costs: A compact architecture explanation with a concrete Visual Studio Code example.
+    verdict: earns_place
+  - passage: The server opens its doors.
+    costs: The largest explanatory section, but it defines discovery, listings, primitives, and deprecated client features—the shared vocabulary the piece promises.
+    verdict: earns_place
+  - passage: The call carries its own context.
+    costs: A short operational bridge from discovery to model-facing tool results.
+    verdict: earns_place
+  - passage: Changes arrive only when requested.
+    costs: A focused explanation of opt-in notifications, best effort, and polling.
+    verdict: earns_place
+  notes: |
+    This piece gives readers a compact, end-to-end weather example that turns the source's distributed architecture, transport, discovery, primitives, tool calls, and notification rules into one usable mental model.
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    Checked every manuscript assertion, heading, and labelled element against the complete pinned extraction; nothing in the piece was outside what the extraction could check.
+mechanics:
+  result: approved
+  findings: []
+  notes: 'Mechanics are clean: sentence openings, headings, grammar, punctuation, typography, and number formatting are consistent.'
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: The server opens its doors | Suppose the weather server supports a tool named `weather_current`. | 1
+    repair_from: The server opens its doors | Suppose the weather server supports a tool named `weather_current`. | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The section is structurally coherent, but its heading names a metaphor rather than the argument it develops: discovery exposes server capabilities and the primitives clients can use.
+    suggestion: Rename the heading to state that discovery reveals the server's capabilities and primitives.
+  notes: |
+    I verified that the piece proceeds from the host-client-server arrangement through discovery, tool invocation, and opt-in change notifications, with the weather example carrying the argument throughout.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: 'MCP in a Nutshell | JSON-RPC 2.0 supplies the message grammar: requests ask for work, responses carry results, notifications announce events without asking for a response, and an ID ties each response to its request. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      The explainer begins introducing specialist vocabulary—JSON-RPC, _meta, Multi Round-Trip Requests, OpenTelemetry, Tasks, and several protocol method names—without enough plain-language definition for an engineer outside MCP. The density makes the piece read like reference documentation before the reader has a working picture.
+    suggestion: Add a brief plain-language gloss at the first appearance of each MCP-specific term, and cut method names that do not serve the weather example.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: MCP in a Nutshell | The AI application connects them to its conversation. | 1
+    category: weak_close
+    disposition: fix
+    note: |
+      The final sentence restates the article's opening division of labor instead of leaving the reader with a consequence of the exchange. After the detailed notification example, the ending collapses into a generic summary.
+    suggestion: End on a concrete implication of the weather example, such as how a refreshed tool list changes what the model can do.
+  notes: This is a clear, technically confident explainer whose concrete weather scenario carries the reader, but specialist terminology accumulates faster than the prose defines it and the final line retreats into summary.
+teaching:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The server opens its doors | Servers can expose three main kinds of primitives | 1
+    repair_from: The server opens its doors | MCP has two layers. The inner data | 1
+    category: missing_term
+    disposition: fix
+    note: |
+      The source names progress tracking as a utility feature of MCP, but the explainer
+      never gives the reader that term. A reader encountering it in the specification
+      would be unable to connect it to the protocol's utility features.
+    suggestion: Mention progress tracking when introducing the data layer's utility features.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    category: missing_furniture
+    disposition: fix
+    note: |
+      The edition has no deck or standfirst, key ideas box, glossary, "try it in fifteen
+      minutes" exercise, cheat sheet, or editor's diagram captions. Add the furniture
+      required by the edition, or explicitly declare it absent.
+  notes: |
+    A first-time reader can explain MCP's host-client-server arrangement, its two protocol
+    layers, discovery, tool calling, stateless metadata, and opt-in notifications, and can
+    reproduce the weather tool-list and tool-call operations.
+
+    1 central claim: correct, cites "An AI application needs a weather".
+    2 mechanism: correct, cites "Picture Visual Studio Code as the".
+    3 number or stated limit: correct, cites "A local server commonly serves one".
+    4 term: correct, cites "The server is the program that".
+    5 operational, list a server's tools: correct, cites "The client then sends tools/list. The".
+    6 operational, call the weather tool: correct, cites "It sends tools/call with name:".
+
+    The mental model appears in the opening paragraph and the early "One host, one client
+    for each server" section: MCP is a shared protocol conversation in which a host uses
+    one client connection per server to discover and invoke context-providing functions.
+    It arrives before the first 150 words and is usable for the weather-server sequence.

@@ -1,0 +1,150 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: 'The broader MCP project scope: specification, SDKs, development tools, and reference server implementations.'
+    reader_loses: Little for this conceptual explainer; implementation resources remain outside the article's purpose.
+    verdict: defensible
+  - fact: Concrete examples involving Claude Code, Claude Desktop, Sentry, and filesystem servers.
+    reader_loses: Named ecosystem examples, but not the host/client/server distinction.
+    verdict: defensible
+  - fact: HTTP authentication options such as bearer tokens, API keys, custom headers, and the OAuth recommendation.
+    reader_loses: Specific security implementation guidance.
+    verdict: defensible
+  - fact: 'Client primitives: elicitation, deprecated sampling and logging, and the Tasks extension.'
+    reader_loses: Advanced server-to-client interaction and extension vocabulary beyond the article's tool/data focus.
+    verdict: defensible
+  - fact: Pagination cursors, result caching fields, TTL, and cache scope for tools/list.
+    reader_loses: Implementation details for large or cacheable tool registries.
+    verdict: defensible
+  - fact: The exact discovery error name and the complete JSON request and response fields.
+    reader_loses: Copy-ready protocol examples and precise error vocabulary.
+    verdict: defensible
+  - fact: The subscription acknowledgment method and the server's filtering of unsupported notification types.
+    reader_loses: Detailed subscription-handshake behavior.
+    verdict: defensible
+  - fact: Notification benefits such as efficiency, consistency, dynamic environments, and extension to other primitives.
+    reader_loses: Some explicit justification for the update mechanism, though its purpose and limitations remain clear.
+    verdict: defensible
+  retentions:
+  - passage: An AI application needs a weather answer.
+    costs: A short illustrative setup that makes the protocol flow concrete and supplies the article's recurring example.
+    verdict: earns_place
+  - passage: Picture Visual Studio Code as the host.
+    costs: A concrete anchor for the otherwise abstract participant model.
+    verdict: earns_place
+  - passage: The important boundary is deliberate.
+    costs: A concise statement of MCP's scope that prevents readers from attributing model orchestration behavior to the protocol.
+    verdict: earns_place
+  - passage: The result is a small, inspectable contract.
+    costs: A brief closing synthesis that turns the preceding mechanics into a memorable takeaway.
+    verdict: earns_place
+  notes: |
+    This piece gives the reader a single weather-server narrative that makes host/client/server boundaries, stateless per-request metadata, primitive discovery, and opt-in updates legible in one compact explanation.
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    Checked every assertion, heading, and conclusion against the complete pinned extraction; nothing in the piece required checking beyond that supplied source.
+mechanics:
+  result: approved
+  findings: []
+  notes: 'The mechanics are clean: sentence openings, grammar, punctuation, typography, headings, markup, and number styles are consistent throughout.'
+shape:
+  result: approved
+  findings: []
+  notes: |
+    I verified that the piece moves coherently from the weather problem through
+    architecture, discovery, invocation, change notifications, and its concluding
+    contract.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: '- | The messages use JSON-RPC. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "JSON-RPC" is introduced without a plain-language gloss, even though this is presented as an accessible explainer for engineers outside the MCP subfield.
+    suggestion: Add a brief gloss such as "a standard format for request-and-response messages" at first mention.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: 'Changes arrive only when requested | The result is a small, inspectable contract: one client per server, JSON-RPC messages that describe themselves, and primitives that separate actions from data and interaction templates. | 1'
+    category: weak_close
+    disposition: fix
+    note: |
+      The closing sentence restates the article's central arrangement and abstractions instead of leaving the reader with the concrete consequence of opt-in updates and missed events.
+    suggestion: End on the reconnect-and-polling limitation or a concrete weather-call consequence rather than summarizing the contract.
+  notes: |
+    I heard a clear, patient technical explainer whose voice holds throughout, but the unexplained protocol name and summary-style closing still need editorial repair.
+teaching:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: mcp-in-a-nutshell
+    locator: IN A NUTSHELL | The messages use JSON-RPC | 1
+    repair_from: IN A NUTSHELL | The messages use JSON-RPC | 1
+    category: comprehension_gap
+    disposition: fix
+    note: |
+      Question 4, term: "What does JSON-RPC 2.0 specify in MCP?" The piece names
+      JSON-RPC but never explains what it contributes, so a first-time reader
+      cannot explain the term.
+    suggestion: Briefly explain that JSON-RPC defines the request, response, notification, and ID message structure.
+  - severity: blocking
+    article: mcp-in-a-nutshell
+    locator: One host, one client for each server | MCP has two layers | 1
+    repair_from: One host, one client for each server | MCP has two layers | 1
+    category: comprehension_gap
+    disposition: fix
+    note: |
+      Question 6, operational: "How would a client authenticate to a remote
+      Streamable HTTP server?" The piece says the transport handles
+      authorization but gives no authentication method or configuration a
+      reader could use.
+    suggestion: Name the supported HTTP authentication approaches and the OAuth recommendation.
+  - severity: major
+    article: mcp-in-a-nutshell
+    repair_from: The server opens its doors | Servers can expose three main kinds | 1
+    category: missing_term
+    disposition: fix
+    note: |
+      The source uses wild-search terms that the explainer omits, including
+      elicitation, OAuth, bearer tokens, API keys, Tasks, sampling, and logging.
+      A reader encountering these terms in MCP documentation would not have the
+      vocabulary to connect them to this overview.
+    suggestion: Add a compact vocabulary note covering the omitted source terms or explicitly scope them as out of scope.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: IN A NUTSHELL | The messages use JSON-RPC | 1
+    repair_from: IN A NUTSHELL | The messages use JSON-RPC | 1
+    category: undefined_term
+    disposition: fix
+    note: |
+      JSON-RPC appears before the explainer gives the reader any idea what it
+      means. The later references to requests, responses, notifications, and
+      IDs assume the undefined term.
+    suggestion: Define JSON-RPC at its first mention before relying on its message terminology.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    repair_from: IN A NUTSHELL | An AI application needs a weather answer | 1
+    category: missing_furniture
+    disposition: fix
+    note: |
+      No deck or standfirst, key ideas box, glossary, try-it-in-fifteen-minutes
+      exercise, cheat sheet, or editors' diagram captions is supplied.
+    suggestion: Add the missing furniture appropriate to this edition.
+  notes: |
+    A first-time reader can explain MCP's host-client-server arrangement, its
+    three server primitives, discovery and tool calling, stateless per-request
+    metadata, and opt-in change notifications, but cannot explain JSON-RPC or
+    authenticate a remote server.
+
+    1 central claim: correct, cites "The important boundary is deliberate. MCP".
+    2 mechanism: correct, cites "The response describes each tool with".
+    3 number or stated limit: correct, cites "Servers can expose three main kinds".
+    4 term: failed, no cite.
+    5 operational, list a server's tools and inspect its schema: correct, cites
+      "The client then sends tools/list. The".
+    6 operational, authenticate to a remote server: failed, no cite.

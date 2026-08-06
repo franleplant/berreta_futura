@@ -1,0 +1,124 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: 'The overview''s list of MCP projects: specification, SDKs, development tools, and reference server implementations.'
+    reader_loses: Little essential understanding; this is scope-setting rather than part of the protocol's core exchange.
+    verdict: defensible
+  - fact: Local servers typically serve one client while remote servers typically serve many.
+    reader_loses: A deployment distinction, but not one needed to understand the host-client-server model.
+    verdict: defensible
+  - fact: Discovery's version-negotiation failure path, including UnsupportedProtocolVersionError and retry.
+    reader_loses: A detailed compatibility procedure that the nutshell need not print.
+    verdict: defensible
+  - fact: Pagination cursors, cache TTL and cache-scope fields in tools/list responses.
+    reader_loses: Implementation details beyond the article's explanation of discovery and caching.
+    verdict: defensible
+  - fact: The source's pseudocode for discovery, tool execution, and notification handling.
+    reader_loses: Copyable SDK patterns, which are setup/reference material rather than shared vocabulary.
+    verdict: defensible
+  retentions:
+  - passage: The weather request, from introduction to answer
+    costs: Several paragraphs of the article's space, but they turn abstract primitives and message flow into one legible end-to-end example.
+    verdict: earns_place
+  - passage: When the tool list changes
+    costs: A substantial closing section, but it explains opt-in notifications, subscription IDs, best-effort delivery, and the refresh cycle that distinguishes dynamic MCP use.
+    verdict: earns_place
+  - passage: The local-versus-remote transport examples involving a filesystem server and Sentry
+    costs: A short explanatory detour, but it makes the otherwise abstract meaning of 'server' and the two transports concrete.
+    verdict: earns_place
+  notes: |
+    This piece gives readers a compact, ordered vocabulary and end-to-end mental model for how hosts, clients, servers, primitives, transports, discovery, calls, and notifications fit together, rather than leaving them with the source's longer reference walkthrough.
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    I checked every claim, quotation, number, and furniture item against the pinned architecture extraction; I could not verify anything outside that extraction, and no unsupported claim was found.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: '- | MCP supplies the shared exchange: the host is the AI application, a client maintains each server connection, and the server provides tools, resources, or prompt templates. | 1'
+    category: punctuation
+    disposition: fix
+    note: |
+      The colon is followed by three independent clauses separated by commas, creating a comma splice.
+    suggestion: Use semicolons between the independent clauses.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The weather request, from introduction to answer | Older client primitives include sampling, which let a server request a language-model completion from the host, and logging, which let a server send diagnostic messages. | 1
+    category: agreement
+    disposition: fix
+    note: |
+      "Sampling" is singular, so its relative clause requires "lets," not "let."
+    suggestion: sampling, which lets a server request a language-model completion from the host
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The weather request, from introduction to answer | Older client primitives include sampling, which let a server request a language-model completion from the host, and logging, which let a server send diagnostic messages. | 1
+    category: agreement
+    disposition: fix
+    note: |
+      "Logging" is singular, so its relative clause requires "lets," not "let."
+    suggestion: logging, which lets a server send diagnostic messages
+  notes: |
+    One comma splice and two singular subject-verb agreement errors require correction.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    The piece moves cleanly from MCP's roles and layers, through a weather-tool exchange, to change notifications and statelessness, with the weather example carrying the explanation to a clear ending.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: 'The weather request, from introduction to answer | The client sends `tools/call` with the exact name, arguments such as `"location": "San Francisco"` and `"units": "imperial"`, and the usual `_meta` fields. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Usual" is vague throat-clearing here: the reader is told these fields are familiar without being told which fields matter.
+    suggestion: Name the relevant metadata fields or remove "usual."
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: The weather request, from introduction to answer | Both are deprecated as of protocol version 2026-07-28; new implementations should call model providers directly and write logs to stderr or OpenTelemetry. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "OpenTelemetry" appears without definition, although it is specialized terminology outside this protocol's immediate vocabulary.
+    suggestion: Define OpenTelemetry briefly as an observability framework or omit it.
+  notes: The piece sounds like a careful, concrete technical walkthrough, with the weather example giving the protocol a human-scale sequence; two small unexplained or vague terms interrupt that clarity.
+teaching:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    category: undefined_term
+    disposition: fix
+    locator: 'A shared exchange between application and service | A remote server can use Streamable HTTP: the client sends | 1'
+    repair_from: 'A shared exchange between application and service | A remote server can use Streamable HTTP: the client sends | 1'
+    note: |
+      The explainer uses "Server-Sent Events" without explaining what they are, and later uses "JSON Schema" without explaining that it defines and validates a tool's expected inputs. A first-time reader can repeat these names but cannot explain the concepts.
+    suggestion: Briefly define each term where it first appears.
+  - severity: major
+    article: mcp-in-a-nutshell
+    category: missing_term
+    disposition: fix
+    note: |
+      The source names progress tracking as a utility feature of the data layer, but the explainer never gives readers that term. A reader encountering it in MCP documentation would have no bridge from the explainer to the specification.
+    suggestion: Mention progress tracking alongside notifications as another utility feature.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    category: missing_furniture
+    disposition: fix
+    note: |
+      The edition supplies a deck but no key ideas box, glossary, “try it in fifteen minutes” exercise, cheat sheet, or editors' diagram captions. These missing teaching aids make the piece less reusable for review and practice.
+    suggestion: Add the missing furniture, or explicitly declare which items this edition intentionally omits.
+  notes: |
+    A first-time reader can explain MCP's host/client/server exchange, its two layers, and how a client discovers and calls a tool, but the piece leaves some specification vocabulary unexplained and provides no reinforcement furniture.
+    1 central claim: correct, cites "An AI application can ask a".
+    2 mechanism: correct, cites "The exchange has two layers. The".
+    3 number or stated limit: correct, cites "A local server can use standard".
+    4 term: correct, cites "MCP calls these offerings primitives: tools".
+    5 operational, list a server's tools: correct, cites "Next the client sends `tools/list`. The".
+    6 operational, invoke the weather tool: correct, cites "The model then chooses that weather".

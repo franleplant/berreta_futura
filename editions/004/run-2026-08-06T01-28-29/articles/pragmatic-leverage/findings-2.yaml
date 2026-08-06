@@ -1,0 +1,66 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's addendum/side-quest framing and reference to the earlier 'Why Software Factories Fail' series
+    reader_loses: Context about where this argument sits in the author's broader series.
+    verdict: defensible
+  - fact: The principal engineer's ten years of experience and the description of a perfectly detailed specification written by hand
+    reader_loses: Some color about the assumptions behind the 10% rework estimate.
+    verdict: defensible
+  - fact: The source's informal 'yolo' phrasing and note explaining that the percentage is a deliberately blurred combination
+    reader_loses: Tone and minor framing, while the substantive expected-pain caveat remains.
+    verdict: defensible
+  retentions:
+  - passage: The opening coding-time comparison and the 25–50% breakdown
+    costs: About a paragraph, but it establishes why coding speed alone is insufficient.
+    verdict: earns_place
+  - passage: The wrong-button-style example
+    costs: A few sentences that make expected pain concrete.
+    verdict: earns_place
+  - passage: The Product-level example and the 50k-foot-to-10k-foot steering rule
+    costs: The closing conceptual section, but it converts the source's advice into an actionable planning heuristic.
+    verdict: earns_place
+  - passage: Good luck.
+    costs: A closing sign-off that conveys no idea.
+    verdict: cut
+  notes: This piece gives the reader a compact decision rule for allocating planning effort by expected pain and steering level, making the source's examples immediately usable. Nearly all substantive space earns its place; only the closing sign-off is expendable.
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    Checked every factual claim, number, attribution, quotation, heading, formula, and conclusion against the pinned extraction; nothing in the piece could not be checked.
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    No mechanics defects found; sentence openings, headings, grammar, punctuation, typography, and number formatting are consistent.
+shape:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: Steer as you zoom in | Good luck. | 1
+    repair_from: Steer as you zoom in | The practical rule is to steer a little at each phase. | 1
+    category: ending
+    disposition: fix
+    note: |
+      The piece stops with a sign-off instead of landing its central claim about
+      planning as the source of AI's leverage.
+    suggestion: Replace the sign-off with a concluding sentence that ties phase-by-phase steering back to the opening delivery-gain claim.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Steer as you zoom in | Planning has levels. | 1
+    repair_from: Steer as you zoom in | Planning has levels. | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      This heading names an activity but does not state what the section argues.
+    suggestion: Rename it to a claim such as 'Planning should steer as detail increases.'
+  notes: |
+    I verified that the argument progresses from coding-speed limits to expected pain and then to phase-by-phase steering, but the ending does not complete that argument.
+craft:
+  result: approved
+  findings: []
+  notes: |
+    I heard a compact, practical voice sustained from the opening calculation through the closing sign-off.

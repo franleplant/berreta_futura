@@ -1,0 +1,128 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's framing that the needed abstractions are largely non-agent topics.
+    reader_loses: A slightly sharper distinction between factory infrastructure and model capability.
+    verdict: defensible
+  - fact: The source's aside that the first hot take had landed.
+    reader_loses: Only conversational context, not an argument or actionable idea.
+    verdict: defensible
+  - fact: The source's 'blog post time' aside.
+    reader_loses: No substantive content; the manuscript supplies a stronger synthesis instead.
+    verdict: defensible
+  retentions:
+  - passage: The opening account of factories being unsolved, the small cohort, and the current best practices.
+    costs: Most of the piece's space, but it establishes the problem, credibility boundary, and concrete systems scope.
+    verdict: earns_place
+  - passage: The discussion of n8n, enterprise service-bus prior art, MassTransit, NServiceBus, WCF, and Temporal.
+    costs: A substantial paragraph, but it turns the systems thesis into a concrete architectural recommendation.
+    verdict: earns_place
+  - passage: The concluding synthesis and practical takeaway.
+    costs: A short addition that makes the cross-source argument explicit and actionable.
+    verdict: earns_place
+  notes: |
+    Approved because the manuscript gives readers a concise systems-level thesis and an actionable architecture rule that the separate source posts do not state together.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Taken together, these posts make one case: factory reliability depends on deterministic systems around the model, so orchestration belongs in the architecture discussion. | 1'
+    category: unreached_conclusion
+    disposition: fix
+    note: |
+      The extractions say factories are a systems-engineering and corporate-culture problem, and that the service bus should remain deterministic while agents run as processes. They do not claim that factory reliability depends on deterministic systems around the model or that orchestration belongs in an architecture discussion.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | The practical takeaway is to keep the factory’s infrastructure deterministic and let agents run inside it as processes. | 1'
+    category: invented_claim
+    disposition: fix
+    note: |
+      The source specifically says not to make the entire service bus non-deterministic and recommends having a job invoke an agent as a process. It does not extend the determinism claim to all factory infrastructure.
+  notes: |
+    I checked the title and every body assertion against all three pinned extractions; there are no decks, captions, key-idea boxes, glossaries, or cheat sheets in this piece.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | The Factory Is a Systems Problem | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      The article title is in title case; headings in this edition use sentence case.
+    suggestion: The factory is a systems problem
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | The best practices right now are to build the abstractions and pieces needed for sandboxing, monorepos, reproducible builds, CI/CD, identity and secret management, and smashing corporate friction in the realm of DevEx for agents. | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      The coordinated list breaks parallelism: "to build" is followed by the gerund "smashing." The sentence is retained verbatim from the source, so an editor chooses the remedy.
+    suggestion: and to smash corporate friction
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Highest ROI you can have right now is learning the entire damn stack, automating it, and showing it at your next interview or doing a recorded talk at a meetup. | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      The superlative noun phrase needs a definite article: "The highest ROI." The sentence is retained verbatim from the source, so an editor chooses the remedy.
+    suggestion: The highest ROI you can have right now is learning the entire damn stack, automating it, and showing it at your next interview or doing a recorded talk at a meetup.
+  notes: 'Three mechanics defects remain: the title''s case and two grammatical issues in source-retained sentences.'
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Here is a second hot take: the first hot take seems to have landed. | 1'
+    repair_from: '- | Here is a second hot take: the first hot take seems to have landed. | 1'
+    category: orphan_referent
+    disposition: fix
+    note: |
+      "Second hot take" refers to a first hot take that the piece never identifies,
+      forcing the reader to search backward for a missing label or argument.
+    suggestion: Replace 'second hot take' with 'another hot take' so the paragraph stands on its own.
+  notes: |
+    I verified that the piece's main progression from factory immaturity to deterministic infrastructure is followable, but the opening of the service-bus paragraph contains an unresolved ordinal reference.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Software factories are super real, but we need to be realistic. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The opening repeats "real" and "realistic" while announcing the subject instead of beginning with the argument.
+    suggestion: |
+      Open with the concrete claim that factory reliability has not yet been solved.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Taken together, these posts make one case: factory reliability depends on deterministic systems around the model, so orchestration belongs in the architecture discussion. | 1'
+    category: no_voice
+    disposition: fix
+    note: |
+      This added synthesis switches from the author's blunt, specific voice to polished abstraction: "make one case," "depends on deterministic systems," and "belongs in the architecture discussion" could have been written by any system.
+    suggestion: |
+      Replace this summary with a concrete statement tied to the factory and service-bus examples.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | The practical takeaway is to keep the factory’s infrastructure deterministic and let agents run inside it as processes. | 1'
+    category: weak_close
+    disposition: fix
+    note: |
+      The final sentence restates the preceding editorial synthesis rather than leaving a sharper implication or question.
+    suggestion: |
+      End on the operational warning about keeping the service bus deterministic.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | The best practices right now are to build the abstractions and pieces needed for sandboxing, monorepos, reproducible builds, CI/CD, identity and secret management, and smashing corporate friction in the realm of DevEx for agents. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "DevEx" appears without definition, and the surrounding abstraction makes the sentence harder to parse for an engineer outside this subfield.
+    suggestion: |
+      Spell out "developer experience" on first use and tie it to one observable factory practice.
+  notes: |
+    I heard a forceful, idiosyncratic voice in the sourced passages, interrupted by two polished editorial summaries that flatten the ending.

@@ -1,0 +1,187 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: 'The overview''s scope list: specification, SDKs, development tools, and reference server implementations'
+    reader_loses: The ecosystem boundary and pointers to implementation resources.
+    verdict: defensible
+  - fact: The explicit statement that MCP governs context exchange but does not dictate LLM use or context management
+    reader_loses: A formal scope caveat, though the manuscript conveys the host's decision-making role.
+    verdict: defensible
+  - fact: Concrete local/remote examples (Claude Desktop/filesystem and Sentry), plus stdio's lack of network overhead
+    reader_loses: Illustrative deployment details and a performance distinction.
+    verdict: defensible
+  - fact: Full JSON-RPC request and response payloads, including exact metadata keys, IDs, and response fields
+    reader_loses: Copyable wire examples, but not needed for this print explainer.
+    verdict: defensible
+  - fact: Optional pagination for tools/list and caching fields such as ttlMs and cacheScope
+    reader_loses: Implementation-level registry management details.
+    verdict: defensible
+  - fact: The worked example's exact values, including San Francisco, imperial units, and the default metric behavior
+    reader_loses: Concrete parameter semantics for one illustrative weather tool.
+    verdict: defensible
+  - fact: The subscription acknowledgment's filtered capability set and the rule that its subscription ID first appears in that acknowledgment
+    reader_loses: Protocol-level acknowledgment sequencing.
+    verdict: defensible
+  - fact: SDK pseudo-code and the source's extended discussion of federated or progressive tool discovery
+    reader_loses: Implementation patterns, not core concepts.
+    verdict: defensible
+  retentions:
+  - passage: The opening weather-server scenario and the compact JSON-RPC message summary
+    costs: The opening space, while establishing the complete request-to-context loop and message vocabulary.
+    verdict: earns_place
+  - passage: One host, one client for each server
+    costs: A full section of explanatory space, while making the architecture and local/remote distinction memorable.
+    verdict: earns_place
+  - passage: The server's primitives and discovery sequence
+    costs: The largest portion of the piece, while supplying the shared vocabulary the issue assumes.
+    verdict: earns_place
+  - passage: The sampling/logging deprecation note and Tasks extension
+    costs: A short tangent, while preventing readers from treating deprecated features as current guidance.
+    verdict: earns_place
+  - passage: The notification example and its opt-in, best-effort caveats
+    costs: The closing section, while explaining both the mechanism and its reliability limits.
+    verdict: earns_place
+  notes: The piece gives readers a compact end-to-end mental model—from host, client, and transport through discovery, primitives, tool calls, and change notifications—that the sprawling source does not present as one continuous explanation. No needed omission cuts past the bone, and every retained section earns its space. The piece has a clear explanatory position rather than merely paraphrasing the source.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The call carries its own context | The request also carries the protocol version, client identity, and capabilities in `_meta`, plus a JSON-RPC request ID so the response can be matched to the call. | 1
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source says every request carries protocol version and capabilities, but clients
+      should include identity unless configured not to. The manuscript states that identity
+      is carried on every request without that qualification.
+  - severity: blocking
+    article: mcp-in-a-nutshell
+    locator: The call carries its own context | MCP defines this exchange. The host still chooses when to call a tool and how to present the result to the model. | 1
+    category: invented_claim
+    disposition: fix
+    note: |
+      The extraction does not claim that the host chooses when to call tools or how to
+      present results. Its example instead says the language model decides to use a tool
+      and the AI application routes the call and result.
+  - severity: blocking
+    article: mcp-in-a-nutshell
+    locator: Changes arrive only when requested | If the conversation needs a fresh weather capability list, the client must poll and rediscover it; the stream is a shortcut, not a guarantee. | 1
+    category: invented_claim
+    disposition: fix
+    note: |
+      The source says clients should also rely on polling because notifications are best
+      effort, and that a notification typically triggers tools/list. It does not require
+      rediscovery, and discovery itself is optional.
+  notes: |-
+    I checked every assertion in the title, furniture, body, protocol description, examples,
+    and notification guidance against the pinned extraction; nothing outside that extraction
+    was available to check.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The server opens its doors | Sampling, which let a server request model completions from the host, and logging are deprecated as of protocol version 2026-07-28. | 1
+    category: agreement
+    disposition: fix
+    note: |
+      "Sampling" is singular, so the relative verb must be "lets." This is editor-written prose in an in_a_nutshell article, so the editors should fix it.
+    suggestion: Sampling, which lets a server request model completions from the host, and logging are deprecated as of protocol version 2026-07-28.
+  notes: |
+    One subject-verb agreement error survives in the editor-written prose.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    Verified that the piece presents a coherent progression from MCP's purpose and architecture through discovery, tool calls, and capability updates, with a consistent weather example and clear sectioning.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The server opens its doors | A tool performs an action, such as an API call or database query. | 1
+    repair_from: The server opens its doors | A tool performs an action, such as an API call or database query. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three consecutive definition sentences use the same subject–verb–object shape:
+      "A tool performs an action, such as an API call or database query."
+      "A resource supplies context, such as a file or database record."
+      "A prompt supplies a reusable interaction template." The list becomes schematic.
+    suggestion: |
+      Vary or consolidate the three primitive definitions so the list does not repeat one sentence pattern.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: The server opens its doors | The server opens its doors | 1
+    category: cliche
+    disposition: fix
+    note: |
+      The heading uses a stock door-opening metaphor rather than naming the discovery and capability exchange it introduces.
+    suggestion: |
+      Rename the heading to describe discovery and available primitives directly.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: One host, one client for each server | The server is the program that provides context. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "The server is the program that provides context" is a definite-article equation with an abstract, system-generated cadence.
+    suggestion: |
+      Replace the equation with a direct statement of what a server provides.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: The server opens its doors | New implementations should call language-model provider APIs directly and send logs to stderr or OpenTelemetry. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "OpenTelemetry" appears without definition, leaving a specialized observability term unexplained for readers outside this subfield.
+    suggestion: |
+      Define OpenTelemetry briefly or omit it from this nutshell.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Changes arrive only when requested | the stream is a shortcut, not a guarantee. | 1
+    category: banned_tic
+    disposition: fix
+    note: |
+      The closing sentence uses the stock antithesis form "a shortcut, not a guarantee," making the ending sound like an editorial formula.
+    suggestion: |
+      State the concrete reconnect consequence directly instead of closing on the shortcut/guarantee contrast.
+  notes: |
+    I heard a lucid technical explainer whose voice briefly turns schematic in the primitive list and leans on stock editorial turns at two headings and the close.
+teaching:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The server opens its doors | With elicitation, a server can ask the user for more information or confirmation through `elicitation/create`. | 1
+    repair_from: The server opens its doors | With elicitation, a server can ask the user for more information or confirmation through `elicitation/create`. | 1
+    category: missing_term
+    disposition: fix
+    note: |
+      The source names the Multi Round-Trip Requests pattern as the mechanism
+      used for elicitation, but the explainer never gives readers that term.
+      A reader encountering the pattern in the wild would not know what to
+      search for or connect it to elicitation.
+    suggestion: Name and briefly identify the Multi Round-Trip Requests pattern when introducing elicitation.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    category: missing_furniture
+    disposition: fix
+    note: |
+      The edition supplies no deck or standfirst, key ideas box, glossary,
+      “try it in fifteen minutes” exercise, cheat sheet, or diagram captions.
+      These are all absent from the piece.
+    suggestion: Add the furniture the edition expects, or explicitly declare these items absent.
+  notes: |
+    A first-time reader could explain MCP's host-client-server arrangement,
+    how messages travel and tools are discovered and called, and how opt-in
+    notifications refresh changing capabilities, but the edition lacks the
+    supporting furniture and omits one source term used in the wild.
+
+    1 central claim: correct, cites "An AI application needs a weather".
+    2 mechanism: correct, cites "MCP has two layers. The inner".
+    3 number or stated limit: correct, cites "Servers can expose three main kinds".
+    4 term: correct, cites "Picture Visual Studio Code as the host. It".
+    5 operational, list a server's tools: correct, cites "The client then sends `tools/list`. The response".
+    6 operational, subscribe to tool-list changes: correct, cites "A client that wants live updates".

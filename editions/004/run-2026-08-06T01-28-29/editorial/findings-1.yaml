@@ -1,0 +1,47 @@
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    The mechanics are clean: sentence openings, grammar, punctuation, typography, and form are consistent throughout.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    Verified that the piece moves coherently from the danger of handoffs, through structural remedies and examples, to a clear closing directive.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: What the System Remembers
+    locator: What the System Remembers | A fixed memory must decide what to overwrite. | 1
+    category: repeated_shape
+    disposition: fix
+    note: |
+      Four consecutive sentences use the same "A/An [system] must [verb]" construction: "A fixed memory must decide what to overwrite," "An evaluation must decide whether the next step continues," "A protocol that drops its session must make state visible in the request," and "A factory must give an agent a safe place to run and a human a reason to stop it." The pattern becomes audible before the argument advances.
+    suggestion: Recast at least two of these sentences with different subjects and sentence shapes.
+  - severity: minor
+    article: What the System Remembers
+    locator: What the System Remembers | That is why the useful work around models now looks less like choosing a larger brain and more like arranging memory, gates, and routes. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "That is why" throat-clears, while "useful work around models" and the "less like ... and more like" balance keep the claim abstract before the concrete systems arrive.
+    suggestion: Open directly with the concrete claim about arranging memory, gates, and routes.
+  - severity: minor
+    article: What the System Remembers
+    locator: What the System Remembers | MCP's new stateless transport makes the same demand in quieter form. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "MCP" and "stateless transport" arrive without definition; a competent engineer outside this subfield may not know either term.
+    suggestion: Define MCP and stateless transport at first use.
+  - severity: minor
+    article: What the System Remembers
+    locator: What the System Remembers | On Monday, ask where your system stores its memory, who can change the route, and what evidence makes it stop. | 1
+    category: passive
+    disposition: fix
+    note: |
+      The ownerless imperative addresses an unspecified operator, leaving the actor responsible for these checks unnamed.
+    suggestion: Name the responsible role instead of issuing the instruction without an actor.
+  notes: |
+    I heard a crisp, controlled editorial voice that loses some human texture in the middle paragraph's repeated construction and abstract framing.
