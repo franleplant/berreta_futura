@@ -1,0 +1,111 @@
+# eval-engineering write
+# model: opus
+
+## The thirty-second version
+
+An agent can be graded 83.9% on the quality of its answers and 32.3% on whether those answers came from anything its tools returned. Same run, same day. It writes beautifully and tells the truth a third of the time, and nobody notices, because writing is the only part anyone reads.
+
+A better model does not fix this. What is missing is the layer that decides whether an answer was right and then does something with the verdict. That layer costs almost nothing, installs from a terminal you already have open, and is the only part of the stack nobody can sell you, because it encodes your own definition of correct. Install a skill. Pull twenty-five real traces. Build one eval today, and one more every time something breaks.
+
+## The agent that wrote beautifully
+
+A travel agent, the software kind, gave an exchange rate to one decimal place, a week of temperatures, the opening hours of a museum. Specific, clean, useful-sounding, invented. The search tool had come back empty and the model filled the hole and handed its own invention over as something it had looked up.
+
+That is the shape of the failure. Not gibberish — polish. The demo shows you the left bar and the customer gets the right one.
+
+## Thermometer, thermostat
+
+A company running agents in production changed no model, no prompts, no human nudges across successive versions. They changed only the evals, and every score moved. Same brain, different examiner, better product. Their own verdict afterwards: this should have been in the system on day one, not month nine.
+
+A thermometer says the room is cold. A thermostat lights the furnace. Most teams own a thermometer at best — a dashboard, a feeling, a Friday afternoon spent scrolling outputs. Eval engineering is the wire between the reading and the heat.
+
+It arrived in a fixed order. Loops first, so an agent could try, look, and try again. Then graphs, so independent work stopped standing in line. Then evals. The graph was the last upgrade that made you faster; the judge decides whether the speed was worth having. Twenty agents running at once are twenty more places for a wrong answer to look finished.
+
+The model is a rental. The examiner is yours, and every failure you feed it stays there.
+
+## The examiner you already own
+
+Two researchers ran the honest test: 100 production traces from a live voice agent, every failure marked by hand, a taxonomy of 39, then the labels hidden and the pile handed to every evaluation system on the market.
+
+Braintrust Loop recovered 87.2% of the human-flagged failures. Codex on GPT-5.5 High managed 84.6% recall at 82.8% precision. LangSmith, 79.5%. Arize AX, 74.4% recall with the cleanest precision of the lot at 91.0%.
+
+A general coding agent, on a subscription already on your card, beat two dedicated platforms. Then the platforms did something stranger than losing: within four weeks, four vendors shipped their expertise as skills installed into somebody else's coding agent — LangChain on 22 July, Galileo, AWS under Apache 2.0, and Arize, aiming its trace extraction at "your favorite coding agent." A category unbundling itself into a terminal.
+
+```
+npx skills add langchain-ai/langchain-skills --skill '*' --yes --global
+npx skills add langchain-ai/langsmith-skills --skill '*' --yes --global
+uv tool install evalkit --from git+https://github.com/awslabs/Agen…
+```
+
+Two details there outweigh the commands. Two repositories, two jobs: `langchain-skills` builds the evals, `langsmith-skills` pulls the production runs to build them from — most people install the first and then wonder where the material comes from. And these follow the open skills spec, so the same files load into Codex, Cursor, Windsurf and Goose.
+
+The AWS kit is six phases writing into an `eval/` folder the next one reads: `init`, `plan`, `data`, `trace`, `run_agent`, `eval`, `report`. The last is worth the setup on its own — it hands back prioritised recommendations pointing at specific locations in your code.
+
+## Make the verdict move an edge
+
+You will build your first eval, get a number, and feel nothing happen. That is correct. A number in a report has no path back to the run it measured.
+
+> A score that never changes behavior is analytics. An eval that changes the next edge is engineering.
+
+Six rules, each taking a verdict and doing something structural to the run in flight:
+
+```
+low context recall     → reject the handoff
+bad tool use           → retry or swap the node
+hallucination          → quarantine the branch
+schema failure         → block the edge
+compliance risk        → route to human review
+verified completion    → terminate the run
+```
+
+The judge needs hygiene of its own. Grade from another model family — a model recognises its own prose and marks it kindly; shared family means shared blind spots. Write the rubric as one line, *Pass iff [the independently observable successful outcome]*, one verdict, not a bundle of proxies. Let plain code decide the objective calls — did the test pass, does the file exist — and leave the judge the semantic ones. Never score on length, keywords, citation count, phrasing, tool-call count or similarity to a reference: reward the shape and the agent learns the shape. Pin the judge and log its version, or an examiner that silently upgrades will make a month of scores unreadable and you will not notice.
+
+Optimise against a judge long enough and the agent learns to look right rather than be right.
+
+## Where real tests come from
+
+Tests invented at a desk protect you from failures you already imagined. The expensive ones are in your logs, wearing timestamps.
+
+Pull twenty-five complete traces, no more, chosen so good and bad sit side by side: a normal request that finished; one the user confirmed; one the user corrected or rephrased, where the correction is a free label; one with a failed, empty or repeated tool call; one with an external failure, a timeout or a 429, testing only how your agent behaves when the world says no.
+
+Write each up in four lines — observed behavior, comparison, attribution, eval candidate. Attribution is where a week goes missing. The same lookup called twice with identical arguments is your loop. A rate limit is somebody else's, and becomes your eval only if your agent was meant to recover.
+
+Then the finding becomes a folder: `task.toml`, `instruction.md`, `environment/`, `tests/`. One capability each. The instruction and environment are visible to the agent under test; the expected outcome, the rubric and the judge's credentials are not, and that curtain is the only reason the score means anything.
+
+Three rules stop the failures that make people quit. Never treat the recorded answer as truth — the trace says what your agent did, never what it should have done; take the key from tests, source records, policy or a person. Test the verifier by hand with two fake results, one clearly right and one plausibly wrong, before you trust it. And watch for an environment that hands over the answer before the agent reaches the tool it was supposed to use — that task passes forever and measures nothing.
+
+Anything that costs money or writes to production gets simulated. Ask your agent to map the repository, read the traces, propose candidates grounded in what actually failed, recommend one, and implement nothing until you choose. The interview beats one-shot generation, for the plain reason that the definition of correct lives in your head and nowhere in the model.
+
+## Letting the graph merge its own work
+
+Every pull request an agent opens lands in a human queue, and your fleet runs at the speed of one tired reviewer.
+
+The way out is not more trust. Four signals exist the moment a PR opens: a deterministic guardrails pass or fail, this version's recent eval trajectory, the historical revert rate for this agent on this repository on this class of change, and whether the sandbox ran. Three are history and hard checks; exactly one touches the model. Above the threshold it merges itself; below it, a human gets it with the failing signal named, so review starts at the problem.
+
+Trust in an agent is an actuarial calculation, and it sharpens every week whether or not the models improve.
+
+At the company that changed nothing but its evals, nineteen of every twenty PRs on the fully autonomous agent merge untouched. Across the top agents, about three quarters of merged work goes in without a human edit, reverts stay in low single digits, and guardrails alone bounce one PR in five. Someone running this on his own repositories: 1,500 merges in ninety days without reading a line. He doesn't trust the agents, and doesn't trust his own review of them. He trusts his ability to constrain them. The constraint is the product.
+
+The warning is worth more than the formula. A team ran 285 iterations of a self-improving codebase, 1,094 merged pull requests, zero regressions — and reported that 38 green tests coexisted with a completely broken product. A suite can go all green while the thing it guards collapses. Converge on the spec, not the score.
+
+Turn it on carefully: shadow mode first, scoring everything and merging nothing, for at least four hours of real traffic. Keep the gate shut if automated and human verdicts disagree by more than 2%. Sample traces at 1–5%; full capture is a bill you don't need.
+
+The model bill doesn't move. Everything else does.
+
+## This week
+
+Three measurements, not twelve. Faithfulness — is the answer grounded in what the tools returned; this is the one that sat at 32.3% while the dashboard looked fine. Tool parameter accuracy: right tool, right arguments. Response quality: coherent and useful to whoever asked.
+
+If your agent ships code, score the change instead, across intent and decision, execution and artifact, completeness and usefulness, instruction and boundary, efficiency.
+
+Choose the dataset type deliberately: `final_response` for the answer alone, `single_step` for one decision, `trajectory` for the whole path, RAG for retrieval. Grade only the final response and an agent will reach the right answer through a broken sequence with nobody the wiser.
+
+Hold out 300 to 800 cases and keep 500 of them running in under five minutes. A suite longer than a coffee break stops being run.
+
+The first five: an empty tool result, where the agent must say so instead of inventing the number. A repeated call with identical arguments — a loop, and the eval fails it. A boundary refusal, declining cleanly instead of hunting for a route around. Handoff integrity, where what one node produced is what the next reads, with nothing invented in between. Verified completion, where done means a real signal says done, never the agent's own word for it.
+
+## The people who go first
+
+The model was never the interesting part. It is identical for everyone and will be replaced twice before the year ends. What survives each replacement is the examiner: the failures turned into permanent tests, the rules that let a verdict change the next edge, the track record that lets a machine merge its own work.
+
+Measure the path taken, never only the answer landed on. A verdict that changes no edge is a report. Any failure you do not turn into a permanent test, you will meet again.
