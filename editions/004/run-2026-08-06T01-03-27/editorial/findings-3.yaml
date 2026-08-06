@@ -1,0 +1,54 @@
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    Mechanics are clean: sentence case, grammar, punctuation, typography, form, and number style are consistent throughout.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | Factory builders describe the seams that make such controls real: sandboxing, reproducible builds, identity and secret management, and a deterministic service bus. | 1'
+    repair_from: '- | Planning supplies a price tag before work begins: expected pain is the chance of rework multiplied by its cost, so spend time where ten minutes can remove most risk. | 1'
+    category: missing_transition
+    disposition: fix
+    note: |
+      The piece moves from eval and planning to infrastructure seams without
+      explaining how those layers connect, forcing the reader to infer that
+      factory controls are the implementation of the trusted signal.
+    suggestion: Add a bridge explaining how planning and eval requirements become concrete infrastructure seams.
+  - severity: major
+    article: editorial
+    locator: '- | MCP''s stateless redesign keeps continuity in request arguments, so any instance can handle the next call. | 1'
+    repair_from: '- | Factory builders describe the seams that make such controls real: sandboxing, reproducible builds, identity and secret management, and a deterministic service bus. | 1'
+    category: missing_transition
+    disposition: fix
+    note: |
+      The shift from the intrusion's infrastructure seams to MCP and Kimi is
+      abrupt, so the reader cannot tell whether these are examples, contrasts,
+      or a new branch of the argument.
+    suggestion: Introduce MCP and Kimi explicitly as examples of continuity and memory controls that support the same stop-or-change signal.
+  notes: |
+    I verified that the opening, recurring upload example, and ending hold
+    together, but two major transitions leave the central argument underlinked.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: editorial
+    locator: Eval engineering supplies that signal. | Eval engineering supplies that signal. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "Eval engineering" is a specialist term introduced without definition, so the central control mechanism arrives as a label before its phenomenon.
+    suggestion: Define eval engineering in a short clause on first use.
+  - severity: minor
+    article: editorial
+    locator: MCP's stateless redesign keeps continuity in request arguments, so any instance can handle the next call. | MCP's stateless redesign keeps continuity in request arguments, so any instance can handle the next call. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "MCP" and "Kimi" are unexplained named technologies; readers outside this subfield cannot tell what systems they are or why these examples belong here.
+    suggestion: Expand MCP and identify Kimi with brief functional descriptions before drawing the comparison.
+  notes: |
+    I heard a confident, incident-driven editorial voice with concrete mechanisms and a strong final turn; the main interruption is specialist terminology that appears before it is made legible.

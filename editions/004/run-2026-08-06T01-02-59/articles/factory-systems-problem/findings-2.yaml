@@ -1,0 +1,154 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's word 'abstractions' in its recommendation to build abstractions/pieces.
+    reader_loses: A slight emphasis on the architectural layer of the work, though the manuscript preserves the underlying recommendation to build the needed pieces.
+    verdict: defensible
+  retentions:
+  - passage: 'First hot take:'
+    costs: A brief framing label that separates the opening argument from the later service-bus argument.
+    verdict: earns_place
+  - passage: Blog post time.
+    costs: A short rhetorical aside that adds no idea.
+    verdict: cut
+  - passage: The n8n critique and the examples of MassTransit, NServiceBus, WCF, and Temporal.
+    costs: Several paragraphs, but they make the deterministic-service-bus recommendation concrete.
+    verdict: earns_place
+  notes: |
+    The piece gives readers a single systems-level argument connecting the factory puzzle, its non-agent infrastructure work, and deterministic service-bus architecture. It is a faithful, useful condensation, with only a minor rhetorical aside that could be removed.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Keeping the service bus deterministic and invoking the agent as a process is the systems-engineering work factories still have to solve. | 1'
+    category: unreached_conclusion
+    disposition: fix
+    note: |
+      The sources support keeping the service bus deterministic and invoking an agent as a process, but they do not state that this is work factories still have to solve. The manuscript adds that conclusion.
+  notes: |
+    I checked every factual assertion, attribution, quotation, and conclusion against the three pinned extractions; there were no decks, captions, glossaries, or cheat sheets beyond the title and body, and nothing outside those extractions was checkable.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | The Factory Is a Systems Problem | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      The article heading is in title case. Headings are sentence case.
+    suggestion: The factory is a systems problem
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | The factory aspects haven’t been cracked yet, the innovators are toying around with discovering practices and pieces. | 1'
+    category: punctuation
+    disposition: fix
+    note: |
+      Two independent clauses are joined by a comma, creating a comma splice.
+    suggestion: The factory aspects haven’t been cracked yet; the innovators are toying around with discovering practices and pieces.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | If someone is selling you a factory rn and they aren’t in the super small cohort (i.e. they are likely startups created in the last six months!) or circa <10 people in the who’s-who, who have been trying (and realistically failing) over the last two years. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      The sentence begins with an if-clause but has no main clause before the period.
+    suggestion: If someone is selling you a factory rn and they aren’t in the super small cohort (...) or circa <10 people in the who’s-who, who have been trying (and realistically failing) over the last two years, they are selling bullshit.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Highest ROI you can have right now is learning the entire damn stack, automating it and showing it at your next interview/doing a recorded talk at a meetup. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      The singular count noun phrase needs a determiner.
+    suggestion: The highest ROI you can have right now is learning the entire damn stack, automating it and showing it at your next interview/doing a recorded talk at a meetup.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | who have never worked in corporate in their life | 1'
+    category: agreement
+    disposition: fix
+    note: |
+      The plural antecedent "young folks" requires the plural possessive noun "lives."
+    suggestion: who have never worked in corporate in their lives
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | silicon valley | 1'
+    category: capitalisation
+    disposition: fix
+    note: |
+      The proper name is capitalised incorrectly.
+    suggestion: Silicon Valley
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | who’s-who | 1'
+    category: spelling
+    disposition: fix
+    note: |
+      The standard expression is written as two words, "who's who," without a hyphen.
+    suggestion: who's who
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | The @dotnet space offers mass transit, nservicebus, and wcf if you wanna steal ideas for prompting. | 1'
+    category: capitalisation
+    disposition: fix
+    note: |
+      The named technologies use incorrect capitalisation.
+    suggestion: The @dotnet space offers MassTransit, NServiceBus, and WCF if you wanna steal ideas for prompting.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Lots of bad memories here, not great tech impl but the theory / education is generally on point. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      The opening is a sentence fragment, and the following clauses are not joined with grammatical punctuation.
+    suggestion: Lots of bad memories here; the tech implementation is not great, but the theory/education is generally on point.
+  notes: Changes required because the heading and several body sentences contain capitalization, grammar, spelling, agreement, and punctuation defects.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Here is the second hot take, since the first hot take seems to have landed. | 1'
+    repair_from: '- | Here is the second hot take, since the first hot take seems to have landed. | 1'
+    category: orphan_referent
+    disposition: fix
+    note: |
+      The sentence refers to the first hot take having landed with an audience,
+      but the piece contains no audience response or evidence of reception.
+      That external reference briefly pulls the reader outside the argument.
+    suggestion: Introduce the n8n point directly without referring to how the first hot take was received.
+  notes: |
+    I verified that the piece moves coherently from the factory thesis to its systems-engineering implications and lands on deterministic service buses; one audience-reception reference is structurally unsupported.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | First hot take: software factories are super real but we need to be realistic. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The opener announces a "hot take" and spends its first sentence on the vague pair "super real" and "realistic" before giving the reader a concrete claim.
+    suggestion: |
+      Open with the systems-engineering claim about what factories have not yet solved.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | The @dotnet space offers mass transit, nservicebus, and wcf if you wanna steal ideas for prompting. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      The argument depends on service-bus architecture, but the sentence introduces MassTransit, NServiceBus, and WCF without explaining what role they play for readers outside this subfield.
+    suggestion: |
+      Define the service-bus pattern before naming implementation examples.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | We are almost at lights-out. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This portentous short sentence announces imminent completion without showing what remains or why the reader should believe the work is nearly done.
+    suggestion: |
+      Replace it with the specific remaining systems work or cut it.
+  notes: I heard a vivid, combative voice whose strongest passages make the factory thesis concrete, but the opening announcement, unexplained service-bus vocabulary, and one portentous sentence briefly loosen that grip.

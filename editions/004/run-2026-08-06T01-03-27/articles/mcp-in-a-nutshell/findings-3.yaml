@@ -1,0 +1,104 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: 'The source''s inventory of MCP projects: specification, SDKs, development tools, and reference servers.'
+    reader_loses: Little; this scope-setting material is not needed for the protocol mental model.
+    verdict: defensible
+  - fact: The full JSON-RPC request and response payloads for discovery, tool listing, tool calls, and subscriptions.
+    reader_loses: Copyable implementation examples, but the prose preserves the message names, flow, and semantics.
+    verdict: defensible
+  - fact: The SDK-specific pseudo-code for registering servers, aggregating tools, executing calls, and handling notifications.
+    reader_loses: Concrete implementation scaffolding; the article is an explainer rather than an SDK guide.
+    verdict: defensible
+  - fact: Detailed cache fields such as ttlMs and cacheScope, pagination cursors, and the full capability-error negotiation example.
+    reader_loses: Some implementation nuance, but not the core concepts needed to understand MCP.
+    verdict: defensible
+  retentions:
+  - passage: The opening Visual Studio Code, Sentry, and filesystem-server example.
+    costs: A short introduction, while establishing host, client, server, and dedicated connections in concrete terms.
+    verdict: earns_place
+  - passage: The 'Three participants, two places' section.
+    costs: Several paragraphs, but it gives readers the essential vocabulary and clarifies local versus remote servers.
+    verdict: earns_place
+  - passage: The 'inner and outer layers' explanation.
+    costs: A substantial section, but it makes the data/transport distinction and stateless request model legible.
+    verdict: earns_place
+  - passage: The database primitives example and 'From discovery to action' weather walkthrough.
+    costs: Multiple examples, but together they connect abstract primitives to an end-to-end model interaction.
+    verdict: earns_place
+  - passage: The 'Staying current' notification loop.
+    costs: A full closing section, but it explains why MCP connections remain dynamic and completes the operational cycle.
+    verdict: earns_place
+  notes: |
+    The piece gives readers a compact mental model and repeatable discovery-to-action loop that the source's specification-oriented presentation does not provide as directly.
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    Checked every assertion, quotation, protocol detail, and furniture item against the pinned architecture extraction; nothing in the piece required checking beyond that supplied source.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: What a server can offer | The listings can change over time, so discovery is a live part of the connection rather than a fixed catalogue. | 1
+    category: spelling
+    disposition: fix
+    note: |
+      "catalogue" uses British spelling while "behavior" later uses American spelling. Both forms are correct, but the piece mixes conventions.
+    suggestion: Change "catalogue" to "catalog".
+  notes: |
+    One British/American spelling inconsistency requires correction; the remaining mechanics are clean.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: From discovery to action | Suppose a server advertises a weather_current tool. | 1
+    repair_from: What a server can offer | A database server makes the primitives easier to see. | 1
+    category: running_example
+    disposition: fix
+    note: |
+      The piece introduces a Visual Studio Code/Sentry/filesystem example, then
+      switches to a database server and finally to a weather tool. The examples
+      do not form one running case, so the reader must reset the context while
+      following the progression from architecture to action.
+    suggestion: Carry one example through the offerings and action sections, using a second example only for an explicit contrast.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: Staying current | The protocol supports real-time notifications so clients can learn about changes without polling constantly. | 1
+    repair_from: Staying current | The protocol supports real-time notifications so clients can learn about changes without polling constantly. | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The heading names a topic rather than the section's argument that
+      notifications keep a client's tool registry fresh.
+    suggestion: Rename the heading to state the claim, such as 'Notifications keep the registry fresh.'
+  notes: |
+    The piece's overall progression from participants to layers, primitives,
+    action, and freshness is recoverable in one read, but its examples and one
+    heading weaken that structure.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: The inner and outer layers | The transport layer abstracts communication details from the protocol layer, enabling the same JSON-RPC 2.0 message format across all transport mechanisms. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This is an abstraction-stack sentence whose balanced clause sounds like system prose; the preceding and following sentences already explain the relationship.
+    suggestion: |
+      Cut this sentence.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: The inner and outer layers | Every request carries its protocol version and relevant capabilities in `_meta`, and clients normally identify themselves there as well. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      `_meta` is an MCP-specific term introduced without saying that it is a metadata field, leaving readers outside the subfield to infer its role.
+    suggestion: |
+      Call `_meta` the request's metadata field at first use.
+  notes: |
+    I heard a clear, steadily concrete explainer, with a small patch of abstract system prose and one undefined protocol term interrupting the otherwise human-scale account.

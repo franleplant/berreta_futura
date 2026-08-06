@@ -1,0 +1,26 @@
+piece: mcp-in-a-nutshell
+rounds:
+- round: 1
+  words: 1024
+  loop_findings: 6
+  all_findings: 7
+- round: 2
+  words: 1024
+  loop_findings: 3
+  all_findings: 6
+- round: 3
+  words: 1045
+  loop_findings: 1
+  all_findings: 2
+state: rounds_exhausted
+open_findings:
+- lens: craft
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: Staying current | The protocol carries enough identity, capability, and version information for that registry to be rebuilt when conditions change. | 1
+  category: weak_close
+  disposition: fix
+  note: |
+    The final sentence restates the preceding paragraph's point about rebuilding the tool registry, using an abstract noun stack and an ownerless passive. It closes by summarizing rather than leaving the reader with a sharper operational consequence.
+  suggestion: |
+    End on the concrete consequence for the application or model when a server's capabilities change.

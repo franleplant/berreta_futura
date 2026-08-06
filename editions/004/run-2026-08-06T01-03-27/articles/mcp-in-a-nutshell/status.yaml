@@ -1,0 +1,29 @@
+piece: mcp-in-a-nutshell
+rounds:
+- round: 1
+  words: 971
+  loop_findings: 4
+  all_findings: 7
+- round: 2
+  words: 931
+  loop_findings: 5
+  all_findings: 7
+- round: 3
+  words: 931
+  loop_findings: 1
+  all_findings: 5
+state: rounds_exhausted
+open_findings:
+- lens: shape
+  severity: major
+  article: mcp-in-a-nutshell
+  locator: From discovery to action | Suppose a server advertises a weather_current tool. | 1
+  repair_from: What a server can offer | A database server makes the primitives easier to see. | 1
+  category: running_example
+  disposition: fix
+  note: |
+    The piece introduces a Visual Studio Code/Sentry/filesystem example, then
+    switches to a database server and finally to a weather tool. The examples
+    do not form one running case, so the reader must reset the context while
+    following the progression from architecture to action.
+  suggestion: Carry one example through the offerings and action sections, using a second example only for an explicit contrast.

@@ -1,0 +1,32 @@
+piece: eval-engineering
+rounds:
+- round: 1
+  words: 1458
+  loop_findings: 3
+  all_findings: 6
+- round: 2
+  words: 1491
+  loop_findings: 4
+  all_findings: 7
+- round: 3
+  words: 1490
+  loop_findings: 2
+  all_findings: 4
+state: rounds_exhausted
+open_findings:
+- lens: evidence
+  severity: blocking
+  article: eval-engineering
+  locator: '- | That layer separates an impressive demo from a product someone can trust. | 1'
+  category: invented_claim
+  disposition: fix
+  note: |
+    The source says the layer separates an AI that impresses people from an AI that gets paid. It does not claim that the layer produces a product someone can trust.
+- lens: craft
+  severity: blocking
+  article: eval-engineering
+  locator: Turn failures into tests | Do not treat the recorded answer as truth. | 1
+  category: repeated_shape
+  disposition: editor_decision
+  note: |
+    Twelve bare imperative sentences spread through the piece create a repeated instructional shape: "Do not treat the recorded answer as truth"; "Test the verifier with one clearly correct and one plausible but wrong result before trusting it"; "Check that the environment does not reveal the answer before the agent reaches the tool"; "Simulate anything that costs money or writes to production"; "Run the loop repeatedly and an incident becomes a permanent check"; "Start in shadow mode for at least four hours of real traffic"; "Set a 2% deviation threshold between automated and human verdicts"; "Sample 1% to 5% of traces instead of capturing everything"; "Keep the gate closed on risky work and open on the boring 80%"; "Choose the dataset deliberately"; "Hold out 300 to 800 cases"; and "Install one skill, pull 25 traces, build one eval, and add another whenever something breaks." The pattern becomes audible as a checklist rather than a person reasoning sentence by sentence. Because this is faithful synthesis, the remedy is editorial: cut or consolidate several commands.

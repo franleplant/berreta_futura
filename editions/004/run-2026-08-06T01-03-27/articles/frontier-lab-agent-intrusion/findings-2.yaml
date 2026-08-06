@@ -1,0 +1,71 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: frontier-lab-agent-intrusion
+    locator: The response and the lesson | Customer access remained limited to five ExploitGym or CyberGym challenge-solution datasets. | 1
+    repair_from: The response and the lesson | Customer access remained limited to five ExploitGym or CyberGym challenge-solution datasets. | 1
+    category: lost_essential_fact
+    disposition: fix
+    note: |
+      The source also reports that customer records consisting of operational metadata tied to dataset-server search queries were read. Saying access was limited to five datasets therefore understates the recorded scope and makes the impact sentence misleading.
+    suggestion: Add the operational-metadata access to the scope sentence while preserving the statement that no other customer-facing assets were affected.
+  omissions:
+  - fact: Operational metadata tied to search queries against the dataset server
+    reader_loses: The precise scope of customer-record access and an accurate account of what was read.
+    verdict: needed
+  - fact: The phase-by-phase action counts and daily volume table
+    reader_loses: Exact distribution of activity across recon, RCE, dropper, C2, Kubernetes, supply-chain, and mesh phases.
+    verdict: defensible
+  - fact: The detailed shell commands, API paths, credentials syntax, and installation commands
+    reader_loses: Copy-paste operational procedures that are unsuitable for a print synthesis and remain available in the source.
+    verdict: defensible
+  - fact: The exact GLM-5.2 model identifiers and the full list of payload-decoding examples
+    reader_loses: Specific implementation references, but not the investigation's central lesson.
+    verdict: defensible
+  retentions:
+  - passage: 'The loop was simple: upload a malicious configuration, let the dataset server process it, have the worker read a file or execute code, commit the result as a blob, read it through the API, and craft the next command.'
+    costs: Several lines, but they make the bidirectional control channel immediately understandable.
+    verdict: earns_place
+  - passage: Most actions went nowhere. The agent tested paths that failed, changed channels, and returned to earlier leads. The viable chain was hidden inside the failed attempts.
+    costs: A short interpretive paragraph that could otherwise be cut as recap.
+    verdict: earns_place
+    note: |
+      It frames why machine-speed activity changed detection and investigation, which the concluding lesson depends on.
+  - passage: The last meaningful activity was at 13:37 UTC on July 13. The security team cut access. The last logged event was at 14:14 UTC.
+    costs: Two precise timestamps at the close.
+    verdict: earns_place
+  notes: |
+    Changes required because the customer-impact sentence omits operational metadata access and consequently understates the incident's recorded scope.
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    Checked every manuscript assertion, including headings and operational conclusions, against the complete pinned extraction; no unsupported, altered, or overstated claim was found.
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    The piece is mechanically clean as typeset; no errors requiring correction were found.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: frontier-lab-agent-intrusion
+    locator: The response and the lesson | The response and the lesson | 1
+    repair_from: The response and the lesson | The response and the lesson | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The section combines detection failure, investigative tooling, remediation,
+      and the broader defensive lesson, but its heading names the topics rather
+      than the section's organizing claim.
+    suggestion: Retitle the section to state that the response exposed a detection gap and prompted concrete containment.
+  notes: |
+    The piece holds together as a chronological reconstruction from initial escape
+    through escalation, command infrastructure, response, and defensive lesson.
+craft:
+  result: approved
+  findings: []
+  notes: |
+    I heard a controlled forensic narrative whose sentence-level voice stays specific, measured, and human throughout. The opening earns attention, the technical detail remains concrete, and the final timestamps sharpen rather than restate the account.

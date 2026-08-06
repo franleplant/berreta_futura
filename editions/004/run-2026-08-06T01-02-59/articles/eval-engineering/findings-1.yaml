@@ -1,0 +1,93 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The production company's observation that changing only the evals, with no model, prompt, or human changes, moved scores across every dimension—and that evals should have been present on day one rather than month nine.
+    reader_loses: A concrete demonstration that evaluation engineering itself can improve an agent, not merely measure it.
+    verdict: defensible
+  - fact: The named vendor dates, installation commands, plugin syntax, evalkit phase commands, and eval folder layout.
+    reader_loses: Setup instructions and implementation scaffolding, but none is practical or necessary to use from the printed piece.
+    verdict: defensible
+  - fact: The author's X and Telegram promotion and the post's engagement metadata.
+    reader_loses: No substantive idea or operational guidance.
+    verdict: defensible
+  retentions:
+  - passage: The travel agent's invented exchange rate, temperature, and museum hours, followed by the 83.9% quality and 32.3% faithfulness scores.
+    costs: The opening space, but it gives the central failure and makes the need for evals immediately legible.
+    verdict: earns_place
+  - passage: The thermometer and thermostat analogy and the return-arrow explanation.
+    costs: Several paragraphs of exposition, but they define the article's core distinction between measurement and feedback.
+    verdict: earns_place
+  - passage: The six verdict-to-routing rules.
+    costs: A compact list, but it converts the thesis into concrete system behavior.
+    verdict: earns_place
+  - passage: The five starter evals and the 300-to-800-case sizing guidance.
+    costs: A substantial closing section, but it leaves the reader with an actionable first suite.
+    verdict: earns_place
+  - passage: The final three-line discipline and 'Install one skill. Pull 25 traces. Build one eval' close.
+    costs: A recap at the end, but it compresses the operating method into a memorable prescription.
+    verdict: earns_place
+  notes: 'Approved because the piece turns the source''s sprawling build into a coherent operating recipe: make eval verdicts change the next graph edge, mine 25 real traces into hidden tests, and use evidence to decide which agent work reaches a human.'
+evidence:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: eval-engineering
+    locator: The missing return arrow | That wiring changes the economics. The model is rented. The examiner is yours. Every failure you feed it can remain in the system as a test, while the examiner costs almost nothing to run. | 1
+    repair_from: The missing return arrow | That wiring changes the economics. The model is rented. The examiner is yours. Every failure you feed it can remain in the system as a test, while the examiner costs almost nothing to run. | 1
+    category: invented_claim
+    disposition: fix
+    note: |
+      The source says that "the examiner costs almost nothing to install." It does not claim that running the examiner costs almost nothing.
+  notes: |
+    I checked every factual assertion, quotation, number, attribution, conclusion, and piece of furniture against the pinned extraction; I could not verify anything beyond that extraction.
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    The mechanics are clean: sentence case, grammar, punctuation, typography, and numeric styles are consistent throughout.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: The small suite that stays alive | The travel agent's 32.3% faithfulness score is why the first measurement belongs there. | 1
+    repair_from: '- | Across 100 real sessions, its answers scored 83.9% for quality and 32.3% for faithfulness to the tools. | 1'
+    category: duplication
+    disposition: fix
+    note: |
+      The 32.3% faithfulness figure appears in both the opening and the final
+      section. The later repetition does not add a new structural function.
+    suggestion: Keep the 32.3% figure in the opening and remove the later restatement.
+  - severity: major
+    article: eval-engineering
+    locator: Build the examiner you already have | A blind test of 100 production traces from a voice agent showed a different path. | 1
+    repair_from: '- | A software travel agent gave a clean answer: an exchange rate to one decimal place, the week''s temperature, and a museum''s opening hours. | 1'
+    category: running_example
+    disposition: editor_decision
+    note: |
+      The travel-agent failure establishes the piece, but subsequent sections
+      introduce separate voice-agent, coding-agent, autonomous-fleet, and
+      broken-product cases. The argument remains intelligible, but no concrete
+      case carries the reader through the full sequence.
+    suggestion: Choose the travel-agent trace as the throughline and recast later benchmarks as explicit contrasts.
+  notes: |
+    I verified that the piece progresses from a motivating failure through eval construction, judge discipline, test creation, review gating, and suite maintenance, but repeats one metric and disperses its examples.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: eval-engineering
+    locator: Keep the judge honest | Use a judge from another model family when possible. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      The piece repeatedly switches into imperative instructions, enough that the reader starts hearing a manual rather than a person thinking through the argument. Instances include: "Use a judge from another model family when possible."; "Write the rubric as one observable condition: \"Pass iff [the successful outcome].\""; "Give it one primary verdict rather than a bundle of proxy scores."; "Let ordinary code handle objective checks"; "Let the judge handle semantic calls."; "Do not reward the shape of an answer through length, keywords, citation counts, exact phrasing, tool-call counts, or similarity to a reference."; "Reward the outcome the agent was meant to produce."; "Pin the judge and log its version."; "Optimize against a judge long enough and the agent learns to look right rather than be right."; "Start with 25 complete traces"; "For each trace, record what the user asked and what the agent did, what worked, who caused the failure, and what capability an eval should preserve or improve."; "Test the verifier with one clearly correct result and one plausible but wrong result before trusting it."; "Also check that the environment does not reveal the answer before the agent reaches the tool."; "Ask the agent to map the repository, read the traces, propose candidates, and recommend one before implementation."; "Run this loop repeatedly and each incident becomes a test instead of a recurring surprise."; "Run the gate in shadow mode for at least four hours of real traffic."; "Set a 2% disagreement threshold between automated and human verdicts."; "Sample 1% to 5% of traces instead of capturing everything."; "Keep the gate closed on risky work and open on the boring 80%."; "Start with three measurements for a tool-using agent"; "Choose the dataset type deliberately."; "Keep 300 to 800 cases on holdout, with 500 running in under five minutes."; "Install one skill, pull 25 traces, build one eval, and add another whenever something breaks."
+  - severity: minor
+    article: eval-engineering
+    locator: The small suite that stays alive | `RAG` tests retrieval. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "RAG" is not expanded or defined, so a competent engineer outside this subfield may not know what dataset type it names.
+  notes: I heard a vivid, confident technical essay that gradually turns into a long sequence of commands, with one unexplained acronym interrupting an otherwise legible argument.

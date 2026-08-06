@@ -1,0 +1,160 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    repair_from: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: no_added_value
+    disposition: fix
+    note: |
+      The manuscript reproduces the source's argument, examples, numbers, equation, and conclusion with only copy edits; it gives the reader no meaningful condensation, synthesis, or editorial judgment that the source alone does not.
+    suggestion: Rework the piece into a genuine condensation with explicit editorial synthesis, or select a mode that contributes a distinct organizing judgment.
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking Leverage | Even before AI, only 25-50% of the time to ship a feature was writing the code itself. | 1
+    repair_from: Seeking Leverage | Even before AI, only 25-50% of the time to ship a feature was writing the code itself. | 1
+    category: no_position
+    disposition: fix
+    note: |
+      The piece follows the source's structure and reproduces its claims without adding an ordering judgment, defended cut, or claim of its own, so it reads as a lightly copy-edited paraphrase rather than a magazine faithful edit.
+    suggestion: Add a clear editorial frame or organizing claim that explains why these examples and this leverage model matter to the magazine's reader.
+  omissions:
+  - fact: The source's byline and @dexhorthy identifier
+    reader_loses: The author's attribution and source identity, though these are metadata rather than argument-bearing content.
+    verdict: defensible
+  - fact: The source title as rendered above the article body
+    reader_loses: Nothing substantive; the edition row supplies the title.
+    verdict: defensible
+  retentions:
+  - passage: 'This one is a bit of an addendum / side-quest to the recent series. It didn''t fit cleanly into the main post so I''m publishing it standalone. It is referenced briefly in Why Software Factories Fail part 2: Turning the lights back on.'
+    costs: A short contextual preamble, but it establishes the piece's relationship to the series and explains its standalone publication.
+    verdict: earns_place
+  - passage: good luck.
+    costs: A closing sign-off that adds no idea or practical consequence.
+    verdict: cut
+  - passage: The expected-pain equation and the Product-level to technical-level zooming example
+    costs: Several paragraphs, but they make the leverage model operational and prevent the 80/20 claim from becoming a slogan.
+    verdict: earns_place
+  notes: |
+    Changes required because the manuscript supplies no meaningful value beyond reproducing the source and does not establish a distinct editorial position.
+evidence:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    category: invented_claim
+    disposition: fix
+    note: |
+      The edition's author note says Dex Horthy is the founder of HumanLayer and that it is a YC-backed developer-tools company. The pinned extraction identifies only “dex @dexhorthy” and contains no support for those biographical claims.
+  notes: I checked every manuscript assertion, heading, quotation, number, and conclusion against the complete pinned extraction; the article text itself is supported, but the supplied author note is not.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking Leverage | Seeking Leverage | 1
+    category: heading_form
+    disposition: fix
+    note: |
+      The heading is in title case; headings in this piece should use sentence case.
+    suggestion: Seeking leverage
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking Leverage | 25-50% | 1
+    category: typography
+    disposition: fix
+    note: |
+      This numeric range uses a hyphen instead of the required en dash.
+    suggestion: 25–50%
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking Leverage | 2-4 hours | 1
+    category: typography
+    disposition: fix
+    note: |
+      This numeric range uses a hyphen instead of the required en dash.
+    suggestion: 2–4 hours
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking Leverage | 10-20 minutes | 1
+    category: typography
+    disposition: fix
+    note: |
+      This numeric range uses a hyphen instead of the required en dash.
+    suggestion: 10–20 minutes
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | 2-3x faster | 1
+    category: typography
+    disposition: fix
+    note: |
+      This numeric range uses a hyphen instead of the required en dash.
+    suggestion: 2–3x faster
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Let's assume if you yolo a two-sentence prompt into your factory | 1
+    category: grammar
+    disposition: fix
+    note: |
+      "Let's assume if" is grammatically incomplete; the conditional needs "that" or should be recast.
+    suggestion: Let's assume that if you yolo a two-sentence prompt into your factory...
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | Note. | 1
+    category: label_missing
+    disposition: fix
+    note: |
+      A labelled Note is editorial apparatus inside the article prose; the magazine should not print it as part of the body.
+    suggestion: Remove the Note label and integrate the explanation into the surrounding prose.
+  - severity: major
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | good luck. | 1
+    category: capitalisation
+    disposition: fix
+    note: |
+      The body otherwise opens sentences with capitals, so this lowercase opening reads as a typo.
+    suggestion: Good luck.
+  notes: Changes required because the piece contains a title-case heading, four hyphenated numeric ranges, a grammatical conditional, an in-body Note label, and one lowercase sentence opening.
+shape:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    repair_from: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: opening
+    disposition: editor_decision
+    note: |
+      The opening spends its first paragraph on publication context and a prior
+      series before introducing the piece's actual argument about leverage. It
+      does not earn the second paragraph, so the reader must wait for the point
+      of interest.
+    suggestion: Open with the time-to-ship breakdown and move the addendum context out of the lead.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: The 80/20 rule in AI coding leverage | The 80/20 rule in AI coding leverage | 1
+    repair_from: The 80/20 rule in AI coding leverage | The 80/20 rule in AI coding leverage | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      This heading names a rule but does not state what the section argues. The
+      section's claim is about calibrating planning effort to expected rework
+      pain.
+    suggestion: Rename the heading to state the claim about matching planning effort to expected pain.
+  notes: |-
+    I verified the piece's opening, section progression, headings, transitions,
+    running example, duplication, referents, furniture, and ending; the main
+    structural defect is the context-first lead, with one heading that obscures
+    the section's claim.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | This one is a bit of an addendum / side-quest to the recent series. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The opening announces the article's publication context instead of beginning the argument. The next two sentences continue that logistical framing before the piece reaches its subject.
+  notes: |
+    The piece sounds like a candid, technically grounded aside, but it opens with publication logistics before the argument begins.

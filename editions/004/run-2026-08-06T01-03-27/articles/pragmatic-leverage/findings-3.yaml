@@ -1,0 +1,131 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The post's framing as an addendum to a prior series, including its reference to Why Software Factories Fail part 2.
+    reader_loses: Context about where this argument sits in the author's broader work.
+    verdict: defensible
+  - fact: The explicit statement that upfront effort and expected pain have an inverse relationship.
+    reader_loses: A concise label for the relationship illustrated by the surrounding examples.
+    verdict: defensible
+  - fact: The source's explicit contrast that coding-only AI use leaves alignment, review, rework, and verification unaccelerated.
+    reader_loses: Some sharpness in the contrast between code-generation speed and end-to-end delivery speed.
+    verdict: defensible
+  retentions:
+  - passage: Good luck.
+    costs: A closing line that adds no guidance or consequence.
+    verdict: cut
+  - passage: The zooming from the 50kft view to the 10kft view, with steering at each phase.
+    costs: Space that could be removed, but it makes the planning advice operational.
+    verdict: earns_place
+  - passage: There is no perfect process.
+    costs: A short caveat that could be cut, but it prevents the planning guidance from sounding rigid.
+    verdict: earns_place
+  notes: |
+    This piece gives the reader a compact operational rule: spend just enough planning effort to reduce expected rework pain, and zoom into technical detail when feasibility requires it.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: '- | Good luck. | 1'
+    repair_from: When planning happens in multiple phases, zooming in from the 50kft view to the 10kft view, do a little steering at each phase. | 1
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The manuscript omits the source's concluding claim that this process is what the source means by leverage and that leverage requires being pragmatic. The preceding discussion describes steering and expected-pain reduction but does not carry that explicit conclusion.
+  notes: I checked every assertion and furniture element against the pinned extraction; I could not check claims against any source outside that extraction.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking leverage | When planning happens in multiple phases, zooming in from the 50kft view to the 10kft view, do a little steering at each phase. | 1
+    category: grammar
+    disposition: fix
+    note: |
+      "zooming in" is a dangling modifier: the sentence's imperative subject is "you," but the modifier has no clear grammatical subject.
+    suggestion: When planning happens in multiple phases, zoom in from the 50kft view to the 10kft view and do a little steering at each phase.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking leverage | your chance of getting a fully mergeable result is about 50 percent | 1
+    category: typography
+    disposition: fix
+    note: |
+      The piece establishes percentage notation with "%" in "25–50%" but switches to the spelled-out "percent" here.
+    suggestion: your chance of getting a fully mergeable result is about 50%
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking leverage | your chance of having to rework it is 50 percent | 1
+    category: typography
+    disposition: fix
+    note: |
+      The piece establishes percentage notation with "%" in "25–50%" but switches to the spelled-out "percent" here.
+    suggestion: your chance of having to rework it is 50%
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking leverage | there is still perhaps a 10 percent chance that they will have to redo something significant | 1
+    category: typography
+    disposition: fix
+    note: |
+      The piece establishes percentage notation with "%" in "25–50%" but switches to the spelled-out "percent" here.
+    suggestion: there is still perhaps a 10% chance that they will have to redo something significant
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking leverage | If the model is 50 percent likely to get a button style wrong | 1
+    category: typography
+    disposition: fix
+    note: |
+      The piece establishes percentage notation with "%" in "25–50%" but switches to the spelled-out "percent" here.
+    suggestion: If the model is 50% likely to get a button style wrong
+  notes: |
+    Changes required because one dangling modifier and four percentage-format inconsistencies remain.
+shape:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: pragmatic-leverage
+    locator: Seeking leverage | Good luck. | 1
+    repair_from: Seeking leverage | The payoff from planning is largest at the start. | 1
+    category: ending
+    disposition: fix
+    note: |
+      The argument establishes a useful principle about reducing expected pain,
+      then ends with a sign-off instead of synthesizing how the planning phases
+      apply that principle. The piece stops rather than landing.
+    suggestion: End by explicitly tying phased planning and zooming to reducing expected pain.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking leverage | If you use AI to help plan and align, you can get closer to 2–3x faster. | 1
+    repair_from: Seeking leverage | If you use AI to help plan and align, you can get closer to 2–3x faster. | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The heading names the topic of leverage but not the section's argument:
+      planning effort should be calibrated to the expected pain of rework.
+    suggestion: Rename the heading to state that planning effort should track expected pain.
+  notes: |
+    I verified that the piece's progression from delivery-time context through planning leverage, expected pain, and phased steering is coherent, but its closing and section heading need structural adjustment.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking leverage | There is no perfect process. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This sentence is a generic reassurance after the concrete planning advice. It adds no mechanism or judgment and sounds like a stock disclaimer.
+    suggestion: |
+      Remove the sentence so the paragraph ends on the more useful point about zooming into technical details.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking leverage | When planning happens in multiple phases, zooming in from the 50kft view to the 10kft view, do a little steering at each phase. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "50kft view" and "10kft view" are unexplained shorthand. A competent engineer outside this subfield may not know that they mean higher-level product planning and lower-level technical planning.
+    suggestion: |
+      Name the two planning levels directly, or define the shorthand at first use.
+  notes: |
+    I heard a confident, conversational practitioner explaining where AI leverage actually comes from, with concrete probabilities and a useful expected-pain model. Two small patches of generic reassurance and unexplained shorthand interrupt that otherwise human voice.

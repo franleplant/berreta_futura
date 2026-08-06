@@ -1,0 +1,66 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's inventory of MCP SDKs, development tools, and reference server implementations
+    reader_loses: Little; these projects establish scope but are not needed for the architecture the manuscript explains.
+    verdict: defensible
+  - fact: Full JSON-RPC request and response examples, including pseudocode
+    reader_loses: Copyable implementation detail, while the prose retains the protocol methods and interaction loop.
+    verdict: defensible
+  - fact: Detailed tool-list metadata such as title, description, pagination cursor, and cache fields
+    reader_loses: API-reference precision, not the shared vocabulary or conceptual mechanism.
+    verdict: defensible
+  - fact: The notification acknowledgement's exact filter-negotiation behavior and the source's progress-tracking utility
+    reader_loses: Edge-case protocol detail that is unnecessary for this overview.
+    verdict: defensible
+  retentions:
+  - passage: The Visual Studio Code, Sentry, and local filesystem opening example
+    costs: A short introductory passage, but it makes one-client-per-server and local-versus-remote concrete immediately.
+    verdict: earns_place
+  - passage: The database example mapping a tool, resource, and prompt to three kinds of help
+    costs: A paragraph, but it turns abstract primitives into a memorable working model.
+    verdict: earns_place
+  - passage: The detailed 'Staying current' section on subscriptions, notifications, and polling
+    costs: A substantial section, but it explains how the advertised dynamic registry remains fresh.
+    verdict: earns_place
+  notes: |
+    This piece gives readers a coherent mental model of MCP's participants, layers, primitives, request loop, and freshness mechanics in a concise sequence that the source presents as separate reference sections.
+evidence:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: From discovery to action | That choice matters when a federation of servers offers more functions than a model can usefully inspect in one pass. | 1
+    category: invented_claim
+    disposition: fix
+    note: |
+      The source supports progressive discovery for clients federating many servers, but does not claim that a model cannot usefully inspect all offered functions in one pass. This adds an unsupported rationale.
+  notes: |
+    I checked every assertion and furniture element against the pinned architecture extraction; I could not verify claims from any source outside that extraction.
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    The prose and furniture are mechanically clean, with consistent sentence case, punctuation, typography, and form.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    I verified that the piece follows a coherent progression from MCP's
+    participants and transport layers through discovery, primitives, action,
+    and ongoing updates, with a concrete opening example and a conclusive ending.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Staying current | The protocol carries enough identity, capability, and version information for that registry to be rebuilt when conditions change. | 1
+    category: weak_close
+    disposition: fix
+    note: |
+      The final sentence restates the preceding paragraph's point about rebuilding the tool registry, using an abstract noun stack and an ownerless passive. It closes by summarizing rather than leaving the reader with a sharper operational consequence.
+    suggestion: |
+      End on the concrete consequence for the application or model when a server's capabilities change.
+  notes: |
+    The piece sounds like a careful human technical explainer until the closing abstraction turns its concrete mechanism into a summary.

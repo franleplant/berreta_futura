@@ -1,0 +1,106 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The posts' framing as a second hot take and reference to the first hot take landing
+    reader_loses: No substantive argument; only publication context.
+    verdict: defensible
+  - fact: The source's bracketed emphasis markers and fragmentary phrasing
+    reader_loses: Nothing necessary to understand the thesis or recommendations.
+    verdict: defensible
+  - fact: The closing 'blog post time' aside
+    reader_loses: A meta remark unrelated to the argument.
+    verdict: defensible
+  retentions:
+  - passage: Software factories are super real, but the factory aspects haven’t been cracked yet...
+    costs: Opening space, but establishes the piece's central warning about premature factory claims.
+    verdict: earns_place
+  - passage: The work now is to build the pieces needed by solving non-agent topics...
+    costs: A substantial middle section, but it turns the thesis into a concrete systems agenda.
+    verdict: earns_place
+  - passage: n8n was a silly idea... Don’t make the entire service bus non-deterministic.
+    costs: A full paragraph, but supplies the architectural example and actionable recommendation.
+    verdict: earns_place
+  notes: 'Approval: the manuscript gives readers a coherent systems-and-architecture thesis, a concrete stack of problems to solve, and a practical service-bus recommendation that the three fragmented posts do not present together.'
+evidence:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | service buses, systems for routing work between services, are a solved problem | 1'
+    repair_from: '- | n8n was a silly idea, which I’ve always suspected was developed by young folks in Silicon Valley who are all in on the LLM craze who have never worked in corporate in their lives thus didn’t have the knowledge that service buses, systems for routing work between services, are a solved problem | 1'
+    category: invented_claim
+    disposition: fix
+    note: |
+      The sources call service buses a solved problem and point to enterprise prior art, but do not define them as systems for routing work between services. This explanatory claim is unsupported by the pinned extractions.
+  notes: |
+    I checked the title and every assertion in the manuscript against all three pinned extractions; I could not check external context beyond those extractions.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | sandboxing, a monorepo, reproducible builds, CI/CD, identity and secret management, and smashing corporate friction | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      The list begins with noun phrases but ends with the gerund "smashing," breaking its grammatical parallelism. The prose is an editorial synthesis here, so the editors should repair the construction.
+    suggestion: sandboxing, a monorepo, reproducible builds, CI/CD, identity and secret management, and the smashing of corporate friction
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Lots of bad memories here; the tech implementation is not great | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      "Lots of bad memories here" is a sentence fragment with no verb. The semicolon does not make the fragment grammatical.
+    suggestion: There are lots of bad memories here; the tech implementation is not great
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | (but it is a piece of the puzzle) ugh. | 1'
+    category: punctuation
+    disposition: fix
+    note: |
+      The interjection "ugh" follows a closed parenthesis without punctuation, creating a missing separator in the sentence.
+    suggestion: (but it is a piece of the puzzle), ugh.
+  notes: |
+    Changes required because the piece contains a broken parallel list, a verbless sentence fragment, and a missing punctuation separator.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | n8n was a silly idea, which I''ve always suspected was developed by young folks in Silicon Valley | 1'
+    repair_from: '- | I must stress that factories are not a token or LLM problem. | 1'
+    category: missing_transition
+    disposition: fix
+    note: |
+      The piece moves from the general systems-and-culture thesis into a specific attack on n8n without establishing why service-bus design is the relevant example. The argument can be followed, but the jump makes the final paragraph feel imported rather than earned.
+    suggestion: Add a transition that frames service-bus determinism as a concrete systems-engineering example of the thesis.
+  notes: |
+    I verified that the piece establishes its systems thesis before presenting the n8n example, but the connection between those sections needs an explicit bridge.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: factory-systems-problem
+    locator: The Factory Is a Systems Problem | I must stress that factories are not a token or LLM problem. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "I must stress that" is throat-clearing before a claim the piece has already made twice.
+  - severity: minor
+    article: factory-systems-problem
+    locator: 'The Factory Is a Systems Problem | The work now is to build the pieces needed by solving non-agent topics: sandboxing, a monorepo, reproducible builds, CI/CD, identity and secret management, and smashing corporate friction in the realm of DevEx for agents. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "DevEx" arrives unexplained; a competent engineer outside this subfield may not know whether it means developer experience, tooling, or a narrower practice.
+  - severity: minor
+    article: factory-systems-problem
+    locator: The Factory Is a Systems Problem | n8n was a silly idea, which I’ve always suspected was developed by young folks in Silicon Valley who are all in on the LLM craze who have never worked in corporate in their lives thus didn’t have the knowledge that service buses, systems for routing work between services, are a solved problem and there’s deep prior art in the spooky land of enterprise. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "n8n" is treated as known without identifying what it is or establishing its relevance to the service-bus argument.
+  notes: |
+    I heard a vivid, combative authorial voice carrying a strong systems argument, with a few avoidable throat-clearing phrases and unexplained technical labels.

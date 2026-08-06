@@ -1,0 +1,105 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's full Python implementations for GPT-2, KV caching, linear attention, DeltaNet, chunking, and AttnRes
+    reader_loses: The reader cannot reproduce the implementations directly from the article.
+    verdict: defensible
+  - fact: The source's historical aside about FlashAttention and older autoregressive implementations
+    reader_loses: Some background on why the cache problem was initially framed differently.
+    verdict: defensible
+  - fact: The explicit DeltaNet recurrence equations and vectorized forward-substitution procedure
+    reader_loses: The exact algebra behind chunk-parallel DeltaNet.
+    verdict: defensible
+  - fact: The detailed SiTU pseudocode and AttnRes block-attention pseudocode
+    reader_loses: Implementation-level details of two KimiK3 components.
+    verdict: defensible
+  retentions:
+  - passage: The opening comparison that 22,580 GPT-2 models fit inside KimiK3
+    costs: A brief framing device, but it establishes the scale question that organizes the article.
+    verdict: earns_place
+  - passage: The explanation of the attention contract and the feature-map trade-off
+    costs: Several sentences that distinguish efficiency gains from approximation loss.
+    verdict: earns_place
+  - passage: The chunk-size interpolation from C = 1 to C = N
+    costs: A technical paragraph, but it makes the training and inference trade-off concrete.
+    verdict: earns_place
+  - passage: The final progression from additive memory to replacement, forgetting, selective control, and retrieval
+    costs: A closing synthesis that repeats earlier mechanisms.
+    verdict: earns_place
+  notes: |
+    This piece gives the reader a compact architectural lineage and a causal explanation of why each memory, gating, retrieval, and routing mechanism was added, which the source's code-heavy worklog leaves distributed across its sections.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: What scale is buying | Each architecture in this progression adds capacity to address a concrete limitation in the preceding system. | 1
+    repair_from: What scale is buying | The central constraint is storage. | 1
+    category: unreached_conclusion
+    disposition: fix
+    note: |
+      The source's concluding claim that attention is the most effective selective-read mechanism is omitted. The manuscript discusses attention as one decision mechanism alongside gating and routing, but does not carry the source's comparative conclusion.
+  notes: |
+    Checked the title, all furniture, every body assertion, qualifications, numbers, attributions and conclusions against the pinned extraction; no external material was available or used.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: '- | Twenty-two thousand five hundred and eighty. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      This standalone sentence has no verb and is a sentence fragment. The prose is a faithful synthesis, so the editors own the repair.
+    suggestion: 'Rewrite as a complete sentence, such as: The count is twenty-two thousand five hundred and eighty.'
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: '- | That’s how many GPT-2 (2019) models fit inside KimiK3 (2026). | 1'
+    category: typography
+    disposition: fix
+    note: |
+      The piece uses straight apostrophes elsewhere, including in "KimiK3's"; this curly apostrophe is inconsistent with the established typography.
+    suggestion: 'Use the straight apostrophe: That''s how many GPT-2 (2019) models fit inside KimiK3 (2026).'
+  notes: Changes required because one sentence fragment and one apostrophe-style inconsistency remain.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: Writing over old information | Writing over old information | 1
+    repair_from: Writing over old information | Writing over old information | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      This heading names an activity rather than the section's argument about
+      DeltaNet's selective replacement and the parallelization that follows.
+    suggestion: Rename the heading to state that DeltaNet enables selective replacement but requires chunked updates.
+  notes: |
+    I verified a coherent progression from GPT-2's cache constraint through successive memory mechanisms to KimiK3's combined architecture.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: '- | That number describes the distance traveled. | 1'
+    category: cliche
+    disposition: fix
+    note: |
+      The travel metaphor is familiar and does not map onto the architectural mechanism; the following sentence repeats the same abstraction without adding technical meaning.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: The cache becomes the problem | There is a trade-off. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This isolated sentence announces a conclusion the preceding paragraph has already demonstrated, then the next paragraph supplies the actual trade-off.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: KimiK3 uses several kinds of memory | SiTU replaces the usual SiLU path with bounded transformations involving tanh and sigmoid. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      SiTU is introduced as a named activation without defining what the acronym means or what problem its bounded transformations solve for a reader outside this subfield.
+  notes: |
+    I heard a technically lucid progression whose voice briefly slips into stock signposting and one unexplained architectural label.

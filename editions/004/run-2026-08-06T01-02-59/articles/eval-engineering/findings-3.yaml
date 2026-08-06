@@ -1,0 +1,148 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The installation commands, plugin commands, evalkit phase commands, and eval folder layout
+    reader_loses: Cannot reproduce the setup from the page alone, but these are copy-paste instructions better left to the linked source.
+    verdict: defensible
+  - fact: The names and dates of the four vendors that shipped their expertise as skills
+    reader_loses: Loses the specific chronology behind the unbundling claim, while retaining the claim and its practical implication.
+    verdict: defensible
+  - fact: The source's promotional follow requests, social links, interface chrome, and engagement metadata
+    reader_loses: Nothing needed to understand eval engineering.
+    verdict: defensible
+  retentions:
+  - passage: The travel-agent opening with the 83.9% quality and 32.3% faithfulness contrast
+    costs: Space spent on a concrete failure, but it makes the central distinction memorable and motivates the rest of the piece.
+    verdict: earns_place
+  - passage: The thermostat metaphor and the loops-then-graphs-then-evals sequence
+    costs: Several paragraphs of framing, but they give the article its explanatory model and ordering judgment.
+    verdict: earns_place
+  - passage: The detailed rollout thresholds, suite-size guidance, and first five evals
+    costs: A substantial practical section, but it converts the argument into an actionable starting plan.
+    verdict: earns_place
+  notes: The piece gives readers a usable progression from measuring agent failures to routing on eval verdicts, turning incidents into permanent tests, and eventually constraining autonomous merges; the source supplies those ideas, but this synthesis makes their dependency and practical sequence legible.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: The missing return arrow | Across successive versions of its agent, only the evals changed, and the scores improved across every dimension. | 1
+    repair_from: The missing return arrow | One production team demonstrated the point without changing its model, prompts, or human nudges. | 1
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source says that the scores "moved across every dimension," not that they improved. The manuscript hardens a neutral change into an improvement claim.
+  - severity: minor
+    article: eval-engineering
+    locator: Build the examiner you already have | Human experts marked 39 kinds of failure, then the same hidden set went to several evaluation systems. | 1
+    repair_from: Build the examiner you already have | A blind test of 100 production traces from a voice agent showed a different path. | 1
+    category: number_or_name_error
+    disposition: fix
+    note: |
+      The source says that a human expert marked every failure, then built a taxonomy of 39 labeled failures. The manuscript changes the singular expert to plural experts.
+  - severity: minor
+    article: eval-engineering
+    locator: Build the examiner you already have | Braintrust recovered 87.2% of the human-flagged failures. | 1
+    repair_from: Build the examiner you already have | Braintrust recovered 87.2% of the human-flagged failures. | 1
+    category: number_or_name_error
+    disposition: fix
+    note: |
+      The source names the system "Braintrust Loop." The manuscript drops "Loop" from the product name.
+  - severity: minor
+    article: eval-engineering
+    locator: Build the examiner you already have | Arize had 74.4% recall and the cleanest precision at 91.0%. | 1
+    repair_from: Build the examiner you already have | Arize had 74.4% recall and the cleanest precision at 91.0%. | 1
+    category: number_or_name_error
+    disposition: fix
+    note: |
+      The source names the system "Arize AX." The manuscript shortens the product name to "Arize."
+  notes: I checked every assertion, including furniture and quantitative claims, against the complete pinned extraction; no other source or external material was available to check.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: '- | The missing return arrow | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      This standalone line is intended as a section heading but lacks the required `##` heading marker, so it will typeset as body text.
+    suggestion: '## The missing return arrow'
+  - severity: major
+    article: eval-engineering
+    locator: '- | Build the examiner you already have | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      This standalone line is intended as a section heading but lacks the required `##` heading marker, so it will typeset as body text.
+    suggestion: '## Build the examiner you already have'
+  - severity: major
+    article: eval-engineering
+    locator: '- | Keep the judge honest | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      This standalone line is intended as a section heading but lacks the required `##` heading marker, so it will typeset as body text.
+    suggestion: '## Keep the judge honest'
+  - severity: major
+    article: eval-engineering
+    locator: '- | Turn failures into permanent tests | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      This standalone line is intended as a section heading but lacks the required `##` heading marker, so it will typeset as body text.
+    suggestion: '## Turn failures into permanent tests'
+  - severity: major
+    article: eval-engineering
+    locator: '- | Let evidence decide who reviews | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      This standalone line is intended as a section heading but lacks the required `##` heading marker, so it will typeset as body text.
+    suggestion: '## Let evidence decide who reviews'
+  - severity: major
+    article: eval-engineering
+    locator: '- | The small suite that stays alive | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      This standalone line is intended as a section heading but lacks the required `##` heading marker, so it will typeset as body text.
+    suggestion: '## The small suite that stays alive'
+  notes: |
+    Six section headings are correctly sentence-cased but lack the required `##` markers, so they would render as body text.
+shape:
+  result: approved
+  findings: []
+  notes: |-
+    The piece opens with a concrete failure, develops evaluation engineering through
+    examiner construction, judging discipline, test formation, review routing, and
+    suite design, and lands with a practical starting point. The travel-agent
+    example recurs usefully, headings state section arguments, and the furniture is
+    placed coherently.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: The small suite that stays alive | A `final_response` case scores only the answer. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Four consecutive taxonomy sentences use the same "A [dataset] case [verb]..." construction: "A `final_response` case scores only the answer"; "A `single_step` case isolates one decision"; "A `trajectory` case follows the whole path through tools and handoffs"; and "A retrieval-focused, or `RAG`, case tests whether the agent found the right material before it answered." The catalogue makes the prose sound generated rather than sequenced by a person.
+  - severity: minor
+    article: eval-engineering
+    locator: 'Build the examiner you already have | One conclusion followed plainly: similar results were available from the coding agent itself. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "One conclusion followed plainly" is throat-clearing abstraction plus an empty intensifier; the concrete claim after the colon does the work.
+  - severity: minor
+    article: eval-engineering
+    locator: Build the examiner you already have | A score that never changes behavior is analytics. An eval that changes the next edge is engineering. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      The balanced "X is Y / X is Y" equation turns a useful mechanism into a slogan, a register the house rules identify as robotic.
+  notes: |
+    I heard a confident, concrete systems essay whose voice thins when it shifts into taxonomy and compressed slogans.

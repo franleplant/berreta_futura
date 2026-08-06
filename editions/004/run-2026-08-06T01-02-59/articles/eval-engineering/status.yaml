@@ -1,0 +1,87 @@
+piece: eval-engineering
+rounds:
+- round: 1
+  words: 1542
+  loop_findings: 4
+  all_findings: 5
+- round: 2
+  words: 1569
+  loop_findings: 7
+  all_findings: 8
+- round: 3
+  words: 1645
+  loop_findings: 8
+  all_findings: 13
+state: rounds_exhausted
+open_findings:
+- lens: evidence
+  severity: major
+  article: eval-engineering
+  locator: The missing return arrow | Across successive versions of its agent, only the evals changed, and the scores improved across every dimension. | 1
+  repair_from: The missing return arrow | One production team demonstrated the point without changing its model, prompts, or human nudges. | 1
+  category: qualification_loss
+  disposition: fix
+  note: |
+    The source says that the scores "moved across every dimension," not that they improved. The manuscript hardens a neutral change into an improvement claim.
+- lens: mechanics
+  severity: major
+  article: eval-engineering
+  locator: '- | The missing return arrow | 1'
+  category: heading_form
+  disposition: fix
+  note: |
+    This standalone line is intended as a section heading but lacks the required `##` heading marker, so it will typeset as body text.
+  suggestion: '## The missing return arrow'
+- lens: mechanics
+  severity: major
+  article: eval-engineering
+  locator: '- | Build the examiner you already have | 1'
+  category: heading_form
+  disposition: fix
+  note: |
+    This standalone line is intended as a section heading but lacks the required `##` heading marker, so it will typeset as body text.
+  suggestion: '## Build the examiner you already have'
+- lens: mechanics
+  severity: major
+  article: eval-engineering
+  locator: '- | Keep the judge honest | 1'
+  category: heading_form
+  disposition: fix
+  note: |
+    This standalone line is intended as a section heading but lacks the required `##` heading marker, so it will typeset as body text.
+  suggestion: '## Keep the judge honest'
+- lens: mechanics
+  severity: major
+  article: eval-engineering
+  locator: '- | Turn failures into permanent tests | 1'
+  category: heading_form
+  disposition: fix
+  note: |
+    This standalone line is intended as a section heading but lacks the required `##` heading marker, so it will typeset as body text.
+  suggestion: '## Turn failures into permanent tests'
+- lens: mechanics
+  severity: major
+  article: eval-engineering
+  locator: '- | Let evidence decide who reviews | 1'
+  category: heading_form
+  disposition: fix
+  note: |
+    This standalone line is intended as a section heading but lacks the required `##` heading marker, so it will typeset as body text.
+  suggestion: '## Let evidence decide who reviews'
+- lens: mechanics
+  severity: major
+  article: eval-engineering
+  locator: '- | The small suite that stays alive | 1'
+  category: heading_form
+  disposition: fix
+  note: |
+    This standalone line is intended as a section heading but lacks the required `##` heading marker, so it will typeset as body text.
+  suggestion: '## The small suite that stays alive'
+- lens: craft
+  severity: major
+  article: eval-engineering
+  locator: The small suite that stays alive | A `final_response` case scores only the answer. | 1
+  category: repeated_shape
+  disposition: editor_decision
+  note: |
+    Four consecutive taxonomy sentences use the same "A [dataset] case [verb]..." construction: "A `final_response` case scores only the answer"; "A `single_step` case isolates one decision"; "A `trajectory` case follows the whole path through tools and handoffs"; and "A retrieval-focused, or `RAG`, case tests whether the agent found the right material before it answered." The catalogue makes the prose sound generated rather than sequenced by a person.

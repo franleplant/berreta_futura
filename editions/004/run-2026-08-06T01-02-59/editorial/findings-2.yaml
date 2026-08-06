@@ -1,0 +1,32 @@
+mechanics:
+  result: approved
+  findings: []
+  notes: 'The piece is mechanically clean: sentence openings, grammar, punctuation, typography, headings, and number style are consistent.'
+shape:
+  result: approved
+  findings: []
+  notes: |
+    The piece moves coherently from an incident to its thesis, practical method,
+    and concluding principle; its transitions, examples, and ending hold together.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: That is the shape of speed without memory | An agent can try more paths than a person, yet the useful path vanishes unless each step leaves evidence and the next step can read it. | 1
+    repair_from: That is the shape of speed without memory | That is the shape of speed without memory. | 1
+    category: repeated_shape
+    disposition: fix
+    note: |
+      The middle relies on five closely related "subject can + verb" constructions: "An agent can try more paths than a person"; "an engineering team can start with one failed trace"; "The team can record what the user asked, what the agent did, what outcome was expected, and which boundary should have stopped it"; "the team can build a check that changes the next decision"; and "It can name state so another process can carry it, and keep the service bus predictable enough to inspect." The repeated modal shape makes the paragraph sound prescribed rather than discovered.
+    suggestion: Keep the strongest modal sentence and recast the others around specific actions or consequences.
+  - severity: minor
+    article: editorial
+    locator: That is the shape of speed without memory | That is the shape of speed without memory. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "That is the shape of speed without memory" is a portentous abstraction-stack opener built as a definite-article equation; it names the thesis before the concrete mechanism has earned it.
+    suggestion: Cut this sentence and let the preceding incident lead directly into the mechanism.
+  notes: |
+    I heard a sharp, concrete opening and a strong closing, but the middle shifts into repeated modal abstractions that make the editorial sound more systematized than spoken.

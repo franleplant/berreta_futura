@@ -1,0 +1,122 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: KimiK3 uses several kinds of memory | This is possibly the most important part of the block_attn_res function. | 1
+    repair_from: KimiK3 uses several kinds of memory | This is possibly the most important part of the block_attn_res function. | 1
+    category: section_does_not_pay
+    disposition: fix
+    note: |
+      This sentence is an isolated comment about the source's implementation
+      function, not an explanation of KimiK3's architecture. It spends space
+      without advancing the argument and breaks the conclusion of the
+      AttnRes section.
+    suggestion: Delete the sentence.
+  omissions:
+  - fact: The source's clarification that the usual O(N^2) framing describes materializing full attention, while FlashAttention and KV caching change the practical cost picture.
+    reader_loses: A useful caveat about what linear attention is and is not solving.
+    verdict: defensible
+  - fact: The generalized Householder-transition description and the detailed chunkwise recurrence equations for parallel DeltaNet training.
+    reader_loses: The formal mechanism behind the re-parameterization.
+    verdict: defensible
+  - fact: The source's code listings, installation/setup context, exact tensor shapes, and implementation snippets.
+    reader_loses: Copy-paste implementation detail that is not usable or necessary on a printed page.
+    verdict: defensible
+  - fact: The UMMA example and the explicit FLOP decomposition for chunk size C.
+    reader_loses: A hardware-specific illustration of why intermediate chunks can outperform C=1.
+    verdict: defensible
+  retentions:
+  - passage: Twenty-two thousand five hundred and eighty. That's how many GPT-2 (2019) models fit inside KimiK3 (2026).
+    costs: A brief numerical hook that frames the scale comparison.
+    verdict: earns_place
+  - passage: The pattern is now visible. Each generation adds capacity where the preceding memory system loses something...
+    costs: A short synthesis that makes the architectural progression explicit.
+    verdict: earns_place
+  - passage: The final model is large, but size alone is not the architectural story.
+    costs: The closing thesis and the piece's own interpretive position.
+    verdict: earns_place
+  notes: |
+    Changes required because one stray implementation comment spends space without
+    contributing to the otherwise effective progression from cache limits to
+    selective memory and retrieval. The piece gives readers a compact causal
+    account of why each architectural addition from GPT-2 through KimiK3 exists,
+    rather than merely listing the models' features.
+evidence:
+  result: approved
+  findings: []
+  notes: Checked every claim, quotation, number, attribution, and furniture item against the pinned extraction; nothing was uncheckable.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: KimiK3 uses several kinds of memory | KimiK3's backbone resembles Kimi Linear, arranged as 23 four-layer macrocycles. | 1
+    category: typography
+    disposition: fix
+    repair_from: That’s
+    note: |
+      The piece mixes curly and straight apostrophes: the earlier "That’s" establishes curly apostrophes, but "KimiK3's" uses a straight apostrophe.
+    suggestion: KimiK3’s backbone resembles Kimi Linear, arranged as 23 four-layer macrocycles.
+  notes: |
+    One apostrophe-style inconsistency requires correction; grammar, capitalization, punctuation, headings, markup, and samples otherwise read cleanly.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: KimiK3 uses several kinds of memory | This is possibly the most important part of the block_attn_res function. | 1
+    repair_from: KimiK3 uses several kinds of memory | KimiK3's backbone resembles Kimi Linear, arranged as 23 four-layer macrocycles. | 1
+    category: orphan_referent
+    disposition: fix
+    note: |
+      The reference to "the block_attn_res function" introduces an identifier the piece has not defined or otherwise contained. It briefly shifts the reader into an absent code context.
+    suggestion: Remove the sentence or define the function and explain its relevance within the architecture.
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: What scale is buying | In essence, a fixed-capacity associative memory (fixed dimensions) needs an eviction policy, since a purely additive linear operation eventually adds interference once at capacity. | 1
+    repair_from: What scale is buying | The central constraint is storage. | 1
+    category: duplication
+    disposition: fix
+    note: |
+      The closing paragraph restates the preceding paragraph's explanation that fixed-capacity additive memory causes interference and therefore requires learned selection, decay, gating, routing, and attention.
+    suggestion: Keep one version of this conclusion and cut or substantially condense the other.
+  notes: |
+    I verified that the piece develops a coherent progression from scaling constraints through successive memory mechanisms to KimiK3's combined architecture, but it contains one undefined code reference and a repeated closing explanation.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: Forgetting becomes a learned operation | The pattern is now visible. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "The pattern is now visible." and "There is a trade-off." are generic signposts that announce transitions without adding substance.
+    suggestion: Delete both signposts and let the following explanation carry the transition.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: KimiK3 uses several kinds of memory | This is possibly the most important part of the block_attn_res function. | 1
+    category: ai_phrasing
+    disposition: fix
+    note: |
+      The sentence announces importance instead of demonstrating it, and introduces an unexplained code-style identifier.
+    suggestion: Cut the sentence or replace it with a specific claim about what the function contributes.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: KimiK3 uses several kinds of memory | KimiK3 also adds query LoRA, output gating, and Attention Residuals, or AttnRes, at block boundaries. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "Query LoRA" is a specialized term that appears without definition for readers outside this subfield.
+    suggestion: Define query LoRA briefly at first use or remove it from the inventory.
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: What scale is buying | In essence, a fixed-capacity associative memory (fixed dimensions) needs an eviction policy, since a purely additive linear operation eventually adds interference once at capacity. | 1
+    category: weak_close
+    disposition: fix
+    note: |
+      The final sentence restates the storage constraint, interference, and selective-control argument already made in the preceding paragraph, so the close collapses into summary.
+    suggestion: End on a sharper implication of the architecture rather than repeating the central constraint.
+  notes: |
+    I heard a confident technical walkthrough that mostly sustains a human voice, but it briefly slips into generic signposting, an unearned importance claim, and a repetitive concluding summary.

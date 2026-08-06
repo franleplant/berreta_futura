@@ -1,0 +1,136 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's inline [1], [2], and [3] annotation markers
+    reader_loses: Nothing substantive; these markers are extraction artifacts rather than reader-facing ideas.
+    verdict: defensible
+  retentions:
+  - passage: The warning that factories are not yet cracked, paired with the claim that the puzzle is being solved daily
+    costs: A few sentences, but they preserve both skepticism toward sellers and optimism about ongoing progress.
+    verdict: earns_place
+  - passage: 'The concrete stack list: sandboxing, monorepo, reproducible builds, CI/CD, identity and secret management, and agent-focused DevEx'
+    costs: A compact list, but it makes the systems-engineering thesis actionable.
+    verdict: earns_place
+  - passage: The n8n critique and recommendation to use established service-bus patterns or Temporal with agents as invoked processes
+    costs: The article's longest passage, but it supplies the second concrete architectural consequence of the thesis.
+    verdict: earns_place
+  notes: |
+    This piece gives the reader a concise, ordered synthesis of three posts into one systems-engineering thesis, with concrete infrastructure priorities and a deterministic service-bus recommendation. It takes a clear position rather than merely paraphrasing.
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    Checked every assertion, attribution, name, and conclusion against all three pinned extractions; no claim in the piece could not be checked against the supplied sources.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | The factory aspects haven''t been cracked yet, the innovators are toying around with discovering practices and pieces. | 1'
+    category: punctuation
+    disposition: editor_decision
+    note: |
+      This is a comma splice joining two independent clauses. The sentence is retained verbatim from the source, so an editor chooses the remedy.
+    suggestion: The factory aspects haven't been cracked yet; the innovators are toying around with discovering practices and pieces.
+  - severity: blocking
+    article: factory-systems-problem
+    locator: '- | If someone is selling you a factory rn and they aren''t in the super small cohort (i.e. they are likely startups created in last six months!) or circa <10 people in the who''s-who, who have been trying (and realistically failing) over the last two years. | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      The sentence begins with an if-clause but has no main clause before the period, so it cannot be read as written. The sentence is retained verbatim from the source, so an editor chooses the remedy.
+    suggestion: Join this clause to 'They are selling bullshit.' or otherwise supply a main clause.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | created in last six months | 1'
+    category: grammar
+    disposition: editor_decision
+    note: |
+      The countable time phrase requires the article 'the': 'created in the last six months.' The sentence is retained verbatim from the source, so an editor chooses the remedy.
+    suggestion: created in the last six months
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | factories is not a token or LLM problem | 1'
+    category: agreement
+    disposition: editor_decision
+    note: |
+      The plural subject 'factories' requires the plural verb 'are'. The sentence is retained verbatim from the source, so an editor chooses the remedy.
+    suggestion: factories are not a token or LLM problem
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | which i''ve always suspected was developed by young folks in Silicon Valley | 1'
+    category: capitalisation
+    disposition: editor_decision
+    note: |
+      The pronoun 'I' must be capitalised. The surrounding sentences open with capitals, so this is not an established lowercase convention. The sentence is retained verbatim from the source, so an editor chooses the remedy.
+    suggestion: which I've always suspected was developed by young folks in Silicon Valley
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | service busses are a solved problem | 1'
+    category: spelling
+    disposition: editor_decision
+    note: |
+      In this technical context, the plural of 'bus' is 'buses', not 'busses'. The sentence is retained verbatim from the source, so an editor chooses the remedy.
+    suggestion: service buses are a solved problem
+  notes: Changes required because the piece contains a comma splice, a sentence fragment, agreement and article errors, a lowercase 'I', and a misspelling.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Second hot take, as it seems the first hot take landed. | 1'
+    repair_from: '- | Software factories are super real but we need to be realistic. | 1'
+    category: orphan_referent
+    disposition: fix
+    note: |
+      "Second hot take" refers to a first hot take that the piece never names,
+      forcing the reader to infer which earlier argument it means.
+    suggestion: Name the first hot take explicitly before introducing the second.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Second hot take, as it seems the first hot take landed. | 1'
+    repair_from: '- | I must stress that factories is not a token or LLM problem. | 1'
+    category: missing_transition
+    disposition: fix
+    note: |
+      The piece jumps from the general systems-engineering thesis to a specific
+      critique of n8n and service buses without explaining that this is its
+      concrete application.
+    suggestion: Signal that the n8n discussion is an example of the systems thesis.
+  notes: |
+    I verified that the piece moves from factory skepticism to systems practices,
+    then to an n8n/service-bus example, but contains an unexplained hot-take
+    reference and an abrupt shift into that example.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Look up anything in the @dotnet space such as MassTransit, NServiceBus, WCF if you wanna steal ideas for prompting. | 1'
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three consecutive owner-directed imperatives create a repeated shape: "Look up anything in the @dotnet space such as MassTransit, NServiceBus, WCF if you wanna steal ideas for prompting," "Use it and have a job invoke an agent as a process," and "Don't make the entire service bus non-deterministic." The remedy is editorial: cut or recast one of the commands.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Second hot take, as it seems the first hot take landed. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Second hot take, as it seems the first hot take landed" is throat-clearing, and "I must stress" earlier performs the same work. These announcements delay the argument and make the transitions sound staged.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | n8n was a silly idea, which i''ve always suspected was developed by young folks in Silicon Valley who are all in on the LLM craze who have never worked in corporate in their life thus didn''t have the knowledge that service busses are a solved problem and there''s deep prior art in the spooky land of enterprise. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      The paragraph relies on undefined subfield terms and named systems—"service busses," "MassTransit," "NServiceBus," "WCF," and "Temporal"—without explaining the mechanism relevant to the claim. A competent engineer outside this niche has to infer what a service bus is and why determinism matters here.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Software factories are super real but we need to be realistic. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The opening announces a stance with the tautological pair "super real" and "realistic" rather than giving the reader the concrete systems problem the piece is about.
+  notes: I heard a vivid, impatient voice, but it repeatedly pauses to announce its hot takes and then compresses the technical case into commands and unexplained names. The repeated imperative run and the jargon make changes necessary.

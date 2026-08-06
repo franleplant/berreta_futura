@@ -1,0 +1,92 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The post's addendum context and reference to the author's earlier series
+    reader_loses: Background about where this piece sits in the broader series, which is not needed to understand its argument.
+    verdict: defensible
+  - fact: The explicit section label 'The 80/20 rule in AI coding leverage'
+    reader_loses: A named framing for the examples, though the 80/20 idea is conveyed through the discussion of eliminating 80 percent of expected pain.
+    verdict: defensible
+  - fact: The closing sentence explicitly defining leverage as pragmatic steering through multiple planning phases
+    reader_loses: A brief restatement of the principle already conveyed by the preceding paragraphs.
+    verdict: defensible
+  retentions:
+  - passage: The three-stage comparison from a two-sentence prompt to a detailed specification to writing every line
+    costs: Several paragraphs, but they make the inverse relationship between upfront effort and expected pain concrete.
+    verdict: earns_place
+  - passage: The button-style example separating probability from repair cost
+    costs: A short explanatory detour, but it prevents the expected-pain formula from being misunderstood as a single probability.
+    verdict: earns_place
+  - passage: Good luck.
+    costs: A closing line that adds no information and could make room for nothing essential.
+    verdict: cut
+  notes: |
+    The piece gives readers a compact decision rule for calibrating planning effort to expected rework pain, illustrated with concrete probabilities, costs, and multi-phase steering.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: '- | Only 25–50% of the time to ship a feature was writing the code itself. | 1'
+    repair_from: '- | Only 25–50% of the time to ship a feature was writing the code itself. | 1'
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source qualifies this claim with "Even before AI". Removing that temporal qualifier makes the statement broader and potentially reads as an unqualified claim about the current software-factory process.
+  notes: I checked every assertion and furniture item against the pinned extraction; no other claims could not be checked against the supplied source.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: '- | Only 25–50% of the time to ship a feature was writing the code itself. | 1'
+    category: typography
+    disposition: fix
+    note: |
+      The piece uses both the percent sign ("25–50%") and the word "percent" ("50 percent", "10 percent"). Both are correct, but the percentage style is inconsistent within the piece.
+    suggestion: Use one percentage style throughout, such as '25–50 percent'.
+  notes: |
+    One percentage-format inconsistency requires correction; the remaining mechanics are clean.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking leverage | If you use AI to help plan and align, you can get closer to 2–3x faster. | 1
+    repair_from: Seeking leverage | If you use AI to help plan and align, you can get closer to 2–3x faster. | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The section develops a specific claim about planning and steering as the
+      source of AI leverage, but the heading names only the broad topic.
+    suggestion: Rename the heading to state that planning is where AI leverage compounds.
+  notes: |-
+    I verified that the argument progresses from delivery-time breakdown, through
+    expected pain and planning tradeoffs, to phased steering; the main structural
+    weakness is the section heading's lack of an argumentative claim.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: pragmatic-leverage
+    locator: Seeking leverage | There is an inverse relationship between effort invested up front and expected pain. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      The prose turns abstract and system-like here: “inverse relationship,” “practical question,” and “uncertainty warrants” describe the point without the concrete operational texture used earlier.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking leverage | You also need to avoid overindexing on questions you cannot answer without going down a level. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      “Overindexing” is unexplained management jargon; a competent engineer outside this subfield may not know what action it describes.
+  - severity: minor
+    article: pragmatic-leverage
+    locator: Seeking leverage | When planning happens in multiple phases, zooming in from the 50kft view to the 10kft view, do a little steering at each phase. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      “50kft view” and “10kft view” are insider shorthand introduced without definition, making the sentence sound like process vocabulary rather than someone explaining the mechanism.
+  notes: I heard a concrete, useful voice at the start, then a drift into abstract process language near the middle and end.

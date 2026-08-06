@@ -1,0 +1,113 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's full GPT-2, linear-attention, DeltaNet, and AttnRes code listings
+    reader_loses: Copy-paste implementations and tensor-shape details, which are setup material rather than usable print-page content.
+    verdict: defensible
+  - fact: The source's FlashAttention historical correction and discussion of older uncached implementations
+    reader_loses: Historical implementation context, while the manuscript still explains the actual cache bottleneck without making the correction false.
+    verdict: defensible
+  - fact: The source's generalized Householder terminology, recurrence equations, and chunk-complexity formulas
+    reader_loses: Formal mathematical derivations and exact cost accounting, but the manuscript preserves the mechanism and the chunk-size tradeoff.
+    verdict: defensible
+  - fact: The source's visual diagrams and detailed SiTU projection pseudocode
+    reader_loses: Visual and implementation-level elaboration; the manuscript retains SiTU's role, slowdown, and latent-space compensation.
+    verdict: defensible
+  - fact: The source's social-media interface, quotations from commenters, and engagement counts
+    reader_loses: No architectural idea or actionable detail.
+    verdict: defensible
+  retentions:
+  - passage: Twenty-two thousand five hundred and eighty. That's how many GPT-2 models fit inside KimiK3.
+    costs: A short framing comparison that establishes scale and motivates the architectural question.
+    verdict: earns_place
+  - passage: GPT-2 is a decoder-only Transformer... until moving the cache between memory and the processor becomes the bottleneck.
+    costs: The baseline needed to make every later memory change intelligible.
+    verdict: earns_place
+  - passage: Softmax attention compares every query with every key... the state reaches capacity.
+    costs: The causal bridge from growing cache to fixed-state interference.
+    verdict: earns_place
+  - passage: DeltaNet changes the update... The computation remains linear in sequence length while the hardware sees larger, more useful matrix operations.
+    costs: The explanation of both the algorithmic fix and why chunking matters in practice.
+    verdict: earns_place
+  - passage: The delta rule can replace a specific association... the model can therefore edit one fact and also make room for a new context.
+    costs: The distinction between targeted replacement and general forgetting.
+    verdict: earns_place
+  - passage: Kimi Linear adds finer control... Each step in this progression answers a concrete limitation in the preceding system.
+    costs: The synthesis connecting gating, MLA, MoE, and capacity to the lineage argument.
+    verdict: earns_place
+  - passage: KimiK3 keeps the basic Kimi Linear pattern and expands it... each has a job.
+    costs: The model's concrete macrocycle, routing, activation, and retrieval design.
+    verdict: earns_place
+  - passage: There is another finite-memory problem inside the network... AttnRes lets later depth blocks reach back to useful earlier representations.
+    costs: A second memory axis and the final unifying explanation of the architecture.
+    verdict: earns_place
+  - passage: The central change from GPT-2 to KimiK3 is the management of information under limits.
+    costs: A concise conclusion that states the piece's own organizing claim.
+    verdict: earns_place
+  notes: |
+    This piece gives the reader a coherent lineage in which each architectural change answers a specific memory, retrieval, or hardware limitation, rather than leaving the source's code-heavy worklog as disconnected mechanisms.
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    Checked every manuscript assertion, including furniture and conclusions, against the complete pinned extraction; nothing in the piece fell outside the available source evidence.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: '- | Twenty-two thousand five hundred and eighty. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      This standalone sentence has no verb and cannot function as a complete sentence as written.
+    suggestion: Twenty-two thousand five hundred and eighty GPT-2 (2019) models fit inside KimiK3 (2026).
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: Write with a delta | Written as a state transition, each step applies a rank-one transformation to the old state and adds the new value. | 1
+    category: grammar
+    disposition: fix
+    note: |
+      "Written as a state transition" dangles because it modifies "each step," which is not what is written.
+    suggestion: When written as a state transition, the update at each step applies a rank-one transformation to the old state and adds the new value.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: '- | That''s how many GPT-2 (2019) models fit inside KimiK3 (2026). | 1'
+    category: typography
+    disposition: fix
+    note: |
+      The contraction uses a curly apostrophe here, while possessive apostrophes elsewhere in the piece are straight. Normalize apostrophes to one style throughout.
+    suggestion: That's how many GPT-2 (2019) models fit inside KimiK3 (2026).
+  notes: |
+    Changes required because the opening contains a sentence fragment, one participial phrase dangles, and apostrophe typography is inconsistent.
+shape:
+  result: approved
+  findings: []
+  notes: |-
+    I verified that the piece progresses coherently from GPT-2's growing cache through
+    successive memory mechanisms to KimiK3's layered architecture, with clear headings,
+    transitions, a strong opening, and a conclusive ending.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: Start with a cache that grows | That last detail creates an obvious waste. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Obvious" adds an unearned judgment, and the later sentence "The comparison is memorable" similarly announces a reader reaction without doing explanatory work.
+    suggestion: |
+      Remove the evaluative modifiers and state the computational cost directly.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: Let different memories do different jobs | KimiK3 uses a new SiTU activation as well. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "SiTU activation" is introduced as a named component but never defined; "Query LoRA" later has the same problem. A competent engineer outside this subfield cannot infer either mechanism from the surrounding prose.
+    suggestion: |
+      Give each term a brief functional definition or omit the implementation detail.
+  notes: |
+    I hear a technically fluent, deliberate voice whose explanatory metaphors and progression hold together, with a few evaluative words and unexplained component names interrupting the otherwise human sequence.

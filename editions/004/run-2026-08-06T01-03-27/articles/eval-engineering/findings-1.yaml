@@ -1,0 +1,114 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: The return arrow | Within four weeks, LangChain, Galileo, AWS, and Arize had shipped their evaluation expertise as skills for coding agents. | 1
+    repair_from: The return arrow | Within four weeks, LangChain, Galileo, AWS, and Arize had shipped their evaluation expertise as skills for coding agents. | 1
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The source's most useful setup insight is that the skills have distinct jobs:
+      one repository builds evaluations while another pulls real production runs to
+      supply the material. The manuscript says only that vendors shipped skills, so a
+      reader trying to reproduce the workflow misses where the traces come from.
+    suggestion: Add the distinction between the evaluation-building skill and the production-trace skill.
+  omissions:
+  - fact: The separate roles of the LangChain and LangSmith skill repositories
+    reader_loses: Cannot tell which skill supplies production traces and which builds the evals.
+    verdict: needed
+  - fact: The skills follow the open skills specification and load in Codex, Cursor, Windsurf, and Goose
+    reader_loses: Loses the portability argument, though the workflow remains understandable.
+    verdict: defensible
+  - fact: The concrete install commands, evalkit phase commands, and evals/<task-id> folder layout
+    reader_loses: No copy-paste setup manual, which is not usable or necessary on a printed page.
+    verdict: defensible
+  - fact: The source's promotional links and follow/Telegram appeals
+    reader_loses: Nothing needed to understand or apply the argument.
+    verdict: defensible
+  - fact: The exact vendor launch dates and AWS's Apache 2.0 licensing detail
+    reader_loses: Loses chronology and licensing context, not the category-unbundling point.
+    verdict: defensible
+  - fact: The source's final three-line recap
+    reader_loses: Nothing essential; the manuscript states those principles throughout and ends with an equivalent instruction.
+    verdict: defensible
+  retentions:
+  - passage: Everyone is renting the same brain now... It wrote beautifully and told the truth about a third of the time.
+    costs: A short anecdotal opening, but it supplies the motivating contrast between response quality and faithfulness.
+    verdict: earns_place
+  - passage: A thermometer tells you the room is cold. A thermostat turns the heat on.
+    costs: Several lines of analogy, but it makes the return-arrow distinction immediately legible.
+    verdict: earns_place
+  - passage: The examiner is also cheap to start... while the model remains a rental.
+    costs: A brief restatement of the ownership argument, and it frames why evals compound in value.
+    verdict: earns_place
+  - passage: The confidence still needs a warning... 38 green tests coexisted with a completely broken product.
+    costs: A full cautionary example, but it prevents the merge-gate advice from becoming naive score worship.
+    verdict: earns_place
+  - passage: The model will be replaced. The examiner remains...
+    costs: A closing recap, but it ties the five-step workflow back to the article's central ownership claim.
+    verdict: earns_place
+  notes: |
+    Changes required because the manuscript omits the source's key operational distinction between the skill that builds evals and the skill that supplies production traces.
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    Checked every assertion in the manuscript, including its furniture, against the complete pinned extraction; nothing outside that extraction was available to verify.
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    The piece is mechanically clean: sentence openings, grammar, punctuation, typography, headings, form, and number styling are consistent.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: eval-engineering
+    locator: 'The first afternoon | For a tool-using agent, begin with three measurements: faithfulness to tool results, tool-parameter accuracy, and response quality. | 1'
+    repair_from: 'The first afternoon | For a tool-using agent, begin with three measurements: faithfulness to tool results, tool-parameter accuracy, and response quality. | 1'
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The section argues for a concrete starter evaluation plan, but its heading
+      names a time period rather than the plan itself.
+    suggestion: Rename the heading to state the starter evaluation plan.
+  notes: |
+    I verified that the piece moves coherently from the need for evaluation,
+    through steering and testing, to merge gates and an actionable starting plan.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: Make the score steer the run | Use a model from another family when possible, because a model grading its own family may share its blind spots. | 1
+    category: repeated_shape
+    disposition: fix
+    note: |
+      Five consecutive ownerless imperatives create the same sentence shape: "Use a model...", "Write one observable pass condition...", "Let the judge handle...", "Do not reward...", and "Pin the judge's version...". The advice becomes a checklist before the paragraph has finished.
+    suggestion: Break the run with a concrete example or combine the instructions into fewer, more varied sentences.
+  - severity: major
+    article: eval-engineering
+    locator: Make the score steer the run | Use a model from another family when possible, because a model grading its own family may share its blind spots. | 1
+    category: passive
+    disposition: fix
+    note: |
+      The paragraph repeatedly addresses an unnamed operator through imperatives, leaving the actor implicit: "Use...", "Write...", "Let...", "Do not reward...", and "Pin...". The guidance would be clearer if it named who performs these actions.
+    suggestion: Name the responsible team or role once, then vary the sentence subjects.
+  - severity: minor
+    article: eval-engineering
+    locator: The return arrow | Within four weeks, LangChain, Galileo, AWS, and Arize had shipped their evaluation expertise as skills for coding agents. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "The category was unbundling into the terminal many teams already had open" uses corporate abstraction ("category", "unbundling") instead of describing the concrete shift already established by the named companies.
+    suggestion: Replace the abstraction with a direct description of evaluation features moving into the coding tools teams already use.
+  - severity: minor
+    article: eval-engineering
+    locator: Make the score steer the run | Low context recall can reject a handoff. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "Context recall" is a specialized evaluation term that is never defined, so a competent engineer outside this subfield may not know what failure it measures.
+    suggestion: Define context recall briefly at first use, in terms of whether the agent retrieved the information needed for the handoff.
+  notes: I hear a confident, tactile voice that occasionally turns into a checklist of abstractions and specialist terms.

@@ -1,0 +1,125 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: What a server can offer | Each kind has methods for listing and retrieving what is available, and tools can also be called. | 1
+    repair_from: What a server can offer | Each kind has methods for listing and retrieving what is available, and tools can also be called. | 1
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The source gives the method vocabulary that makes the mechanism concrete:
+      tools/list, resources/list, resources/read, prompts/list, prompts/get, and
+      tools/call. The manuscript explains the flow but names none of these
+      operations, leaving readers without the shared terms they would need to
+      connect this mental model to the protocol.
+    suggestion: Name the principal list, retrieval, and call methods inline while explaining discovery and execution.
+  omissions:
+  - fact: The method names tools/list, resources/list, resources/read, prompts/list, prompts/get, and tools/call
+    reader_loses: The conceptual flow is clear, but readers lack the protocol vocabulary needed to recognize or discuss the operations.
+    verdict: needed
+  - fact: 'The four project families in MCP''s scope: specification, SDKs, development tools, and reference server implementations'
+    reader_loses: Little for this architecture explainer; these are useful orientation but not load-bearing.
+    verdict: defensible
+  - fact: The full JSON-RPC request and response examples, including pseudo-code
+    reader_loses: Copyable implementation detail that is impractical to use in a print explainer.
+    verdict: defensible
+  - fact: The notification acknowledgment payload, subscription identifier details, and notification-handling pseudo-code
+    reader_loses: Exact wire-format mechanics, while the manuscript retains the opt-in, best-effort refresh loop.
+    verdict: defensible
+  - fact: Progress tracking as a separately named utility feature
+    reader_loses: A secondary utility concept; the manuscript retains the more consequential long-running Tasks extension.
+    verdict: defensible
+  - fact: The source's SDK-specific implementation guidance
+    reader_loses: Nothing necessary on the page; readers needing implementation details should consult the SDK documentation.
+    verdict: defensible
+  retentions:
+  - passage: Visual Studio Code connects to a Sentry server, then to a local filesystem server.
+    costs: A short opening example, but it establishes the host/client/server relationship immediately.
+    verdict: earns_place
+  - passage: MCP has a data layer and a transport layer.
+    costs: Space spent separating message semantics from connection mechanics, which prevents the protocol from becoming an undifferentiated list of features.
+    verdict: earns_place
+  - passage: Suppose a server advertises a `weather_current` tool.
+    costs: A full working example, but it demonstrates discovery, exact naming, schemas, arguments, and returned content in one pass.
+    verdict: earns_place
+  - passage: The protocol supports real-time notifications to enable dynamic updates between servers and clients.
+    costs: A substantial section, but it explains the freshness loop and the best-effort caveat rather than merely repeating discovery.
+    verdict: earns_place
+  - passage: MCP's shape is therefore small enough to share and explicit enough to inspect.
+    costs: A brief closing synthesis that states the article's organizing judgment.
+    verdict: earns_place
+  notes: |
+    Changes required because the manuscript gives a strong compact mental model of
+    MCP's architecture and request flow, but omits the core operation names that
+    let readers carry that model into the protocol itself.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Staying current | MCP's shape is therefore small enough to share and explicit enough to inspect. | 1
+    category: unreached_conclusion
+    disposition: fix
+    note: |
+      The extraction explains MCP's scope, layers, primitives, transports, and message
+      semantics, but it does not conclude that the protocol is "small enough to share"
+      or "explicit enough to inspect." This adds a conclusion the source does not reach.
+  notes: |
+    I checked every factual assertion, example, qualification, attribution, and concluding claim against the pinned architecture extraction; no external sources or additional editorial furniture were provided to check.
+mechanics:
+  result: approved
+  findings: []
+  notes: The prose, headings, punctuation, typography, and number treatment are mechanically clean; the synthesis contains no actionable errors.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: The inner and outer layers | MCP has a data layer and a transport layer. | 1
+    repair_from: The inner and outer layers | MCP has a data layer and a transport layer. | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The section explains that MCP separates message meaning from connection mechanics, but its metaphorical heading does not state that argument clearly for a skimming reader.
+    suggestion: Rename the heading to state that MCP separates message meaning from transport mechanics.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: Staying current | The protocol supports real-time notifications to enable dynamic updates between servers and clients. | 1
+    repair_from: Staying current | The protocol supports real-time notifications to enable dynamic updates between servers and clients. | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The section argues that notifications and polling keep a client's view of server capabilities fresh, but the heading names only a general topic.
+    suggestion: Rename the heading to state that notifications keep server capabilities current.
+  notes: |
+    I verified that the piece's argument progresses coherently from participants and transport, through server offerings and tool use, to capability updates; the needed changes are limited to two vague section headings.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: What a server can offer | The main building blocks are tools, resources, and prompts. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Four consecutive definition sentences use the same copular shape: "The main building blocks are tools, resources, and prompts"; "Tools are executable functions, such as file operations, API calls, or database queries"; "Resources provide contextual data, such as file contents, database records, or API responses"; and "Prompts are reusable templates for structuring interactions with a language model." The run sounds textbook-like before the explanation resumes.
+    suggestion: Break the definition run with a concrete interaction or combine the list with the example that follows.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: What a server can offer | New implementations should call language-model providers directly for sampling and use standard error output or OpenTelemetry for logging. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "OpenTelemetry" is an unexplained specialized term for readers outside observability work.
+    suggestion: Define OpenTelemetry briefly on first use or replace it with a plain description of telemetry tooling.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Staying current | MCP's shape is therefore small enough to share and explicit enough to inspect. The host chooses how to use a model, the client holds a server-specific connection, and the server supplies tools, data, or interaction templates through messages that carry their own context. | 1
+    category: weak_close
+    disposition: fix
+    note: |
+      The ending restates the host/client/server architecture already established, then wraps it in an abstract summary. It closes by repeating the piece's setup rather than leaving a sharper implication or question.
+    suggestion: Replace the recap with a concrete consequence of the protocol's boundaries or end on the practical loop the reader can apply.
+  notes: |
+    I heard a clear, patient technical explainer, but the prose turns textbook-like in the four-item definition run and closes by summarizing its own architecture.

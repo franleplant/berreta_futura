@@ -1,0 +1,128 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Staying current | The protocol supports real-time notifications to enable dynamic updates between servers and clients. | 1
+    repair_from: Staying current | The protocol supports real-time notifications to enable dynamic updates between servers and clients. | 1
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The source gives the identifiers subscriptions/listen,
+      notifications/subscriptions/acknowledged, and
+      notifications/tools/list_changed. The manuscript explains the behavior but
+      removes the names a reader needs to recognize or implement the subscription
+      and refresh cycle.
+    suggestion: Carry the three notification method names into the explanation of the subscription sequence.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: 'What a server can offer | A client can expose a primitive of its own: elicitation. | 1'
+    repair_from: 'What a server can offer | A client can expose a primitive of its own: elicitation. | 1'
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The source identifies elicitation/create as the method by which a server
+      requests user input or confirmation. The manuscript keeps the concept but
+      drops the operational identifier, weakening the shared vocabulary this
+      explainer is meant to establish.
+    suggestion: Name elicitation/create when introducing elicitation.
+  omissions:
+  - fact: The subscriptions/listen, notifications/subscriptions/acknowledged, and notifications/tools/list_changed method names
+    reader_loses: Cannot recognize or implement the notification subscription and refresh sequence without returning to the source.
+    verdict: needed
+  - fact: The elicitation/create method name
+    reader_loses: Understands the primitive conceptually but lacks the protocol identifier needed to use or locate it.
+    verdict: needed
+  - fact: Progress tracking as a utility feature
+    reader_loses: Little for this introductory treatment; long-running work is still represented by the Tasks extension.
+    verdict: defensible
+  - fact: The specification, SDK, development-tool, and reference-server project list
+    reader_loses: No core protocol concept; setup and ecosystem orientation can remain in the linked source.
+    verdict: defensible
+  - fact: The detailed discovery JSON, version-negotiation error, pagination cursor, and ttlMs/cacheScope fields
+    reader_loses: The print explainer preserves discovery, caching, and version behavior without copy-paste protocol payloads.
+    verdict: defensible
+  - fact: The source's pseudo-code walkthroughs and full JSON-RPC request/response examples
+    reader_loses: Nothing essential on a printed page; these are implementation references better left to the source.
+    verdict: defensible
+  - fact: The deprecated sampling/createMessage and logging details
+    reader_loses: The manuscript retains their deprecation and replacement guidance, which is the consequential point.
+    verdict: defensible
+  retentions:
+  - passage: Visual Studio Code connects to a Sentry server, then to a local filesystem server.
+    costs: A short opening example that establishes host, client, server, and dedicated connections at once.
+    verdict: earns_place
+  - passage: MCP focuses solely on the protocol for context exchange.
+    costs: A scope clarification that prevents readers from attributing model or conversation management to MCP.
+    verdict: earns_place
+  - passage: 'For a client, the protocol is a repeatable sequence: discover a server’s capabilities, list the primitives it offers, call the operation the model selects, and refresh the list when the server reports a change.'
+    costs: A closing recap, but it turns the preceding concepts into a usable mental model.
+    verdict: earns_place
+  notes: |
+    Changes required because the synthesis explains MCP well but strips several protocol method names that carry practical shared vocabulary.
+evidence:
+  result: approved
+  findings: []
+  notes: I checked every claim, heading, and labelled element against the complete pinned architecture extraction; nothing outside that extraction was checked.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: The inner and outer layers | a client may call the mandatory `server/discover` method | 1
+    category: grammar
+    disposition: fix
+    note: |
+      The method needs a definite article: "the mandatory `server/discover` method."
+      This is the editors' synthesis, so the editors fix it.
+    suggestion: a client may call the mandatory `server/discover` method
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: What a server can offer | a fixed catalogue | 1
+    category: spelling
+    disposition: fix
+    note: |
+      "Catalogue" is British spelling, while "behavior" later in the piece is American.
+      The piece should use one spelling convention throughout.
+    suggestion: Change "catalogue" to "catalog" (or change "behavior" to "behaviour").
+  notes: |
+    Two mechanics issues require changes: one missing article and one British-American spelling inconsistency.
+shape:
+  result: approved
+  findings: []
+  notes: |-
+    Verified that the piece moves coherently from MCP's participants and layers,
+    through server offerings and tool use, to notifications and a concise
+    operational summary.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: mcp-in-a-nutshell
+    locator: Three participants, two places | The host is the AI application, such as Claude Code, Claude Desktop, or Visual Studio Code. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Six consecutive subject-plus-declarative-verb sentences make the explanation sound mechanically enumerated:
+      "The host is the AI application, such as Claude Code, Claude Desktop, or Visual Studio Code."
+      "It coordinates one or more clients."
+      "Each client maintains a connection to one server and obtains context for the host to use."
+      "A local server commonly uses standard input and output to communicate with one client on the same machine."
+      "A remote server uses Streamable HTTP and may serve many clients."
+      ""Local" and "remote" describe where the program runs, not a different kind of server."
+      The remedy is editorial: cut or reshape the run.
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: The inner and outer layers | The transport layer abstracts communication details from the protocol layer, enabling the same JSON-RPC 2.0 message format across all transport mechanisms. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This is an abstraction-stack sentence: "layer" abstracts "details" from another "layer" and ends in a generalized enabling clause. It explains little beyond the preceding sentences and reads like system prose.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Staying current | The application decides what the model does with the result; MCP defines how that result gets there. | 1
+    category: weak_close
+    disposition: fix
+    note: |
+      The closing sentence restates the piece's central division of responsibility instead of leaving a sharper final implication. The same point has already been made in the opening and in the preceding section.
+  notes: I heard a clear technical explainer whose voice turns schematic in the participant overview and whose final line repeats its governing distinction.

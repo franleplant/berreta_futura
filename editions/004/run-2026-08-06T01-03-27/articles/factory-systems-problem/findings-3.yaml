@@ -1,0 +1,130 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's framing that this was a 'second hot take' prompted by the first one landing, plus the opening emphasis 'I must stress.'
+    reader_loses: Some conversational context, but no substantive argument or actionable guidance.
+    verdict: defensible
+  - fact: The source's exact lowercase, abbreviated phrasing and transcription markers.
+    reader_loses: Nothing of meaning; the manuscript improves readability without altering substance.
+    verdict: defensible
+  retentions:
+  - passage: The warning that anyone selling a factory outside the tiny, experienced cohort is 'selling bullshit.'
+    costs: A sharp rhetorical sentence, but it establishes the source's skepticism about premature factory claims.
+    verdict: earns_place
+  - passage: The homelab advice to learn, automate, and demonstrate the entire stack.
+    costs: Several sentences of space, but they turn the thesis into concrete career guidance.
+    verdict: earns_place
+  - passage: The n8n critique and recommendation to use Temporal with an agent invoked as a process.
+    costs: The longest section, but it supplies the article's concrete architectural example and recommendation.
+    verdict: earns_place
+  - passage: '''Ugh. Blog post time.'''
+    costs: A brief closing aside that adds tone but no idea.
+    verdict: cut
+  notes: |
+    Approved because the manuscript unifies three posts into a concise systems-and-culture thesis and makes that thesis practical through the service-bus and Temporal recommendation.
+evidence:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: factory-systems-problem
+    locator: '- | The n8n discussion is a concrete case of that systems engineering and corporate culture problem. | 1'
+    repair_from: '- | The n8n discussion is a concrete case of that systems engineering and corporate culture problem. | 1'
+    category: invented_claim
+    disposition: fix
+    note: |
+      The extractions discuss n8n as a silly, non-deterministic service-bus idea and separately describe factories as a systems-engineering and corporate-culture problem, but do not state that the n8n discussion is a concrete case of that problem.
+  notes: |
+    I checked every assertion in the title and manuscript body against all three pinned extractions; no external material was available or used. Changes required because one connecting claim is not made by the sources.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Almost lights out. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      "Almost lights out." is a sentence fragment with no verb.
+    suggestion: Rewrite as a complete sentence or attach it to the surrounding sentence.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Sandboxing, monorepo, reproducible builds, CI/CD, identity/secret management, smashing corporate friction in the realm of DevEx for agents. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      This standalone sentence is a verbless list fragment.
+    suggestion: Attach the list to a sentence with a finite verb.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Blog post time. | 1'
+    category: grammar
+    disposition: fix
+    note: |
+      "Blog post time." is a verbless sentence fragment.
+    suggestion: Rewrite as a complete sentence.
+  notes: |
+    Three verbless sentence fragments require correction.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | It isn''t cracked but it''s a puzzle that''s being solved daily. | 1'
+    repair_from: '- | The factory aspects haven''t been cracked yet; the innovators are toying around with discovering practices and pieces. | 1'
+    category: duplication
+    disposition: fix
+    note: |
+      The opening repeats the same claim that factories are not yet solved in
+      consecutive sentences, slowing the setup before the piece advances.
+    suggestion: State the unresolved-but-progressing status once, then move directly to the practical systems work.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | Factories are not a token or LLM problem. | 1'
+    repair_from: '- | The best practices right now are to build abstractions/pieces needed which entails solving non-agent topics. | 1'
+    category: missing_transition
+    disposition: fix
+    note: |
+      The piece jumps from a list of infrastructure practices and interview
+      advice to its central systems-and-culture thesis without connecting those
+      practices to the thesis.
+    suggestion: Add a bridge explaining that the listed abstractions expose why factory reliability is a systems problem.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | I have lots of bad memories here; the tech implementation is not great, but the theory and education are generally on point. | 1'
+    repair_from: '- | The n8n discussion is a concrete case of that systems engineering and corporate culture problem. | 1'
+    category: ending
+    disposition: fix
+    note: |
+      The final paragraph ends on a judgment about n8n's implementation and
+      education, without returning to the factory thesis or giving the reader a
+      concluding implication.
+    suggestion: Close by tying the deterministic service-bus lesson back to the systems architecture required for reliable factories.
+  notes: |
+    I verified that the piece progresses from skepticism about factory claims through infrastructure practices to an n8n example, but its opening repeats itself, its central transition is abrupt, and its ending does not synthesize the argument.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Software factories are super real, but we need to be realistic. | 1'
+    category: weak_opening_sentence
+    disposition: fix
+    note: |
+      The opening announces a stance, then immediately qualifies it with a generic instruction to be realistic. It delays the specific claim about what remains unsolved.
+  - severity: major
+    article: factory-systems-problem
+    locator: '- | The best practices right now are to build abstractions/pieces needed which entails solving non-agent topics. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This sentence stacks abstractions ("best practices," "abstractions/pieces," "non-agent topics") without naming the work that follows. The next fragment supplies the useful specifics, making this sentence mostly throat-clearing.
+  - severity: minor
+    article: factory-systems-problem
+    locator: '- | Sandboxing, monorepo, reproducible builds, CI/CD, identity/secret management, smashing corporate friction in the realm of DevEx for agents. | 1'
+    category: jargon
+    disposition: fix
+    note: |
+      "DevEx" is introduced without definition, and the compressed list gives no indication of what it means in this argument. A competent engineer outside this subfield may not know the term.
+  notes: |
+    I heard a forceful, highly personal argument whose voice holds, but the opening and one abstract setup sentence postpone the concrete systems claim, while an undefined acronym interrupts the otherwise accessible list.

@@ -1,0 +1,130 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: The missing return arrow | A better model would not have caught the travel agent's failure. | 1
+    repair_from: The missing return arrow | A better model would not have caught the travel agent's failure. | 1
+    category: lost_essential_fact
+    disposition: fix
+    note: |
+      The source includes a production example in which the team changed only its evals—not the model, prompts, or human intervention—and scores improved across every dimension. Without that result, the manuscript explains what eval engineering is but leaves its central promise largely asserted.
+    suggestion: Restore the experiment and its conclusion that the evals should have been in the system on day one, not month nine.
+  omissions:
+  - fact: The production team's scores improved across every dimension after changing only its evals, with no model, prompt, or human-nudge changes.
+    reader_loses: The clearest evidence that eval engineering itself can improve a product.
+    verdict: needed
+  - fact: The source's explicit conclusion that evals should have been installed on day one rather than month nine.
+    reader_loses: The urgency and practical lesson attached to the evidence.
+    verdict: needed
+  - fact: The three-line installation commands, Claude Code plugin commands, evalkit phase list, and eval folder layout.
+    reader_loses: Copy-paste setup instructions, but these are impractical on a printed page and the source remains available.
+    verdict: defensible
+  - fact: The names and dates of the four vendors that shipped their expertise as skills.
+    reader_loses: Specific chronology and attribution for the unbundling trend; the manuscript preserves the trend and key benchmark names.
+    verdict: defensible
+  - fact: The 21-year-old founder's age, follower count, and post engagement.
+    reader_loses: Color about the source of the routing rule, not the rule itself.
+    verdict: defensible
+  - fact: The operator's report of approving and merging around 1,500 pull requests without reading code.
+    reader_loses: A vivid scale example, while the manuscript retains the stronger 19-of-20 result and the constraint principle.
+    verdict: defensible
+  - fact: The source's social-media calls to action, URLs, interface chrome, post timestamp, and replies.
+    reader_loses: Nothing needed to understand or use the argument.
+    verdict: defensible
+  retentions:
+  - passage: 'A software travel agent gave a clean answer: an exchange rate to one decimal place, the week''s temperature, and a museum''s opening hours.'
+    costs: Opening space, but it supplies the concrete failure that makes the faithfulness gap intelligible.
+    verdict: earns_place
+  - passage: A thermometer tells you the room is cold. A thermostat turns the heat on.
+    costs: A short metaphorical passage, but it makes the return-arrow distinction memorable.
+    verdict: earns_place
+  - passage: Braintrust recovered 87.2% ... Codex on GPT-5.5 High reached 84.6% recall and 82.8% precision...
+    costs: Several lines of benchmark detail, but they establish that a general coding agent can rival dedicated platforms.
+    verdict: earns_place
+  - passage: low context recall → reject the handoff ... verified completion → terminate the run
+    costs: A list occupying real space, but it demonstrates exactly how a verdict becomes an engineering action.
+    verdict: earns_place
+  - passage: A useful first sample contains 25 complete traces...
+    costs: Method detail, but it turns the thesis into a repeatable starting procedure.
+    verdict: earns_place
+  - passage: Above a threshold, the change merges. Below it, a human receives the failing signal...
+    costs: Space in the autonomy section, but it explains the operational payoff of the evaluation loop.
+    verdict: earns_place
+  - passage: The model will be replaced. The examiner remains...
+    costs: A closing restatement of the thesis, but it gives the piece a clear durable takeaway and action.
+    verdict: earns_place
+  notes: |
+    Changes required because the manuscript's strongest missing idea is the source's direct evidence that changing evals alone improved an agent across every measured dimension; the other substantial cuts are defensible for this format.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: eval-engineering
+    locator: Build the examiner you already have | LangSmith's 79.5% recall | 1
+    category: number_or_name_error
+    disposition: fix
+    note: |
+      The extraction reports LangSmith at 79.5% but does not identify that figure as recall. The manuscript adds an unsupported metric label and uses it for the comparison.
+  - severity: minor
+    article: eval-engineering
+    locator: Build the examiner you already have | Human experts marked 39 kinds of failure | 1
+    category: number_or_name_error
+    disposition: fix
+    note: |
+      The extraction says a human expert marked the failures. The manuscript changes this to plural experts.
+  - severity: major
+    article: eval-engineering
+    locator: The missing return arrow | Twenty agents reporting to one frozen judge create twenty places for a wrong answer to look finished. | 1
+    category: number_or_name_error
+    disposition: fix
+    note: |
+      The source says twenty agents create twenty times as many places for a wrong answer to look finished. The manuscript changes a relative multiplier into an absolute count.
+  - severity: major
+    article: eval-engineering
+    locator: Make the score change the next edge | In the travel-agent case, an empty search result should have caused a refusal or a retry rather than a fabricated lookup. | 1
+    category: invented_claim
+    disposition: fix
+    note: |
+      The extraction reports that the empty search result led to an invented answer, but it does not state that the correct response should have been refusal or retry.
+  notes: |
+    I checked every assertion, including headings and other furniture, against the pinned extraction; claims not stated there could not be verified. Changes are required for one unsupported benchmark label, one altered methodology detail, one changed quantitative relationship, and one invented prescription.
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    Mechanics are clean throughout the faithful synthesis, with consistent capitalization, grammar, punctuation, typography, headings, and number formatting.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    The piece holds together in one read: it moves from a concrete evaluation failure
+    through examiner design, judge discipline, permanent tests, evidence-based review,
+    and a practical suite that remains useful.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: eval-engineering
+    locator: Build the examiner you already have | More generally, low context recall can reject a handoff; bad tool use can retry or swap a node; hallucination can quarantine a branch; schema failure can block an edge; compliance risk can route to a human; verified completion can terminate the run. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Six parallel "[condition] can [action]" clauses arrive in one sentence. The catalogue becomes a visible construction rather than a person explaining the mechanism; cut or restructure the list.
+  - severity: major
+    article: eval-engineering
+    locator: The small suite that stays alive | Dataset type matters. | 1
+    category: no_voice
+    disposition: fix
+    note: |
+      This paragraph shifts into glossary prose: five clipped classification sentences define labels in sequence, and the piece briefly stops sounding like an essay written by a person.
+  - severity: major
+    article: eval-engineering
+    locator: The small suite that stays alive | `RAG` tests retrieval. | 1
+    repair_from: The small suite that stays alive | Dataset type matters. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      `final_response`, `single_step`, `trajectory`, and especially `RAG` arrive as unexplained taxonomy. A competent engineer outside this subfield may not know the labels, and the paragraph never defines them.
+  notes: |
+    I heard a mostly vivid, confident synthesis that briefly turns into a mechanical taxonomy and a highly patterned catalogue.

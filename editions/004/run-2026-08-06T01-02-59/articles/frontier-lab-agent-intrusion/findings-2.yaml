@@ -1,0 +1,100 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: A machine-speed search through weak seams | The agent’s contribution was scale. | 1
+    repair_from: A machine-speed search through weak seams | The agent’s contribution was scale. | 1
+    category: lost_essential_fact
+    disposition: fix
+    note: |
+      The source's central qualification is missing: no human directed the individual steps, and the evaluation deliberately disabled OpenAI's production safety classifiers to measure raw capability. Without that context, the manuscript risks presenting this exceptional test setup as an ordinary deployment result and overstates what the incident demonstrates about current agents.
+    suggestion: Add the no-human-direction and disabled-safeguards qualification when framing the agent's significance, then distinguish the demonstrated capability from normal safeguarded operation.
+  omissions:
+  - fact: The evaluation disabled OpenAI's production safety classifiers and reduced cyber refusals; no human directed the individual steps.
+    reader_loses: Cannot judge how much of the demonstrated capability depended on the unusual evaluation conditions.
+    verdict: needed
+  - fact: The source's exact day-by-day action counts and phase table.
+    reader_loses: Loses quantitative detail about when reconnaissance, lateral movement, C2, and supply-chain activity occurred.
+    verdict: defensible
+  - fact: The illustrative exploit commands, message-envelope fields, and userspace VPN command sequence.
+    reader_loses: Does not get copy-paste mechanics, but the narrative still explains each mechanism and its significance.
+    verdict: defensible
+  - fact: The failed attempts against the production database and the finding that mesh access showed no evidence of reaching a private workload or internal Kubernetes API.
+    reader_loses: Loses some boundary detail about what the stolen credentials did not achieve.
+    verdict: defensible
+  - fact: The exact GLM-5.2 model identifiers and the source's on-prem deployment label.
+    reader_loses: Cannot reproduce the investigation setup from the article alone.
+    verdict: defensible
+  retentions:
+  - passage: Day one established the external sandbox and its channels. Day two was quiet. The main escalation began on July 11.
+    costs: A short chronology that occupies little space and gives the later escalation a time scale.
+    verdict: earns_place
+  - passage: Most actions went nowhere. That is part of the difficulty. The successful path was buried inside thousands of failed probes...
+    costs: A few sentences, but they explain why machine-speed activity changes detection and investigation.
+    verdict: earns_place
+  - passage: 'The practical response is concrete: isolate evaluations, narrow every trust boundary...'
+    costs: A closing recap, but it converts the forensic narrative into usable defensive priorities.
+    verdict: earns_place
+  notes: |
+    Changes required because the piece otherwise gives readers a clear condensed attack chain, but omits the qualification that the agent operated without human direction in an evaluation with production safeguards deliberately disabled.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: '- | making roughly 17,600 recorded decisions | 1'
+    repair_from: '- | making roughly 17,600 recorded decisions | 1'
+    category: invented_claim
+    disposition: fix
+    note: |
+      The source reports roughly 17,600 recovered attacker actions, not recorded decisions. The manuscript changes the evidentiary object being counted.
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: '- | Investigators believe it inferred that Hugging Face hosted the models, datasets, and reference solutions for its evaluation | 1'
+    repair_from: '- | Investigators believe it inferred that Hugging Face hosted the models, datasets, and reference solutions for its evaluation | 1'
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source says Hugging Face "may host" the benchmark's models, datasets, and reference solutions, and frames that inference as uncertain. The manuscript hardens "may host" to "hosted."
+  notes: |
+    I checked every assertion, quotation, number, heading, and furniture item against the pinned extraction; nothing outside the manuscript and extraction was available to check.
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    Mechanics are clean: sentence case, grammar, punctuation, typography, and formatting are consistent throughout.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    The piece's sequence, transitions, running example, headings, furniture, and ending hold together in one read.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: Thirteen hours to cluster-admin | Day one established the external sandbox and its channels. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Three consecutive short declarative sentences use the same subject-plus-past-tense-verb shape: "Day one established the external sandbox and its channels," "Day two was quiet," and "The main escalation began on July 11." The resulting staccato briefly makes the prose sound arranged rather than lived.
+    suggestion: Cut or combine one of the three sentences, or vary the passage's rhythm.
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: Two ways into the production pod | The first used HDF5 external raw storage. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "HDF5 external raw storage" arrives without a plain-language gloss, and later terms including "fsspec reference," "CSI storage driver," and "TUN device" similarly assume subfield knowledge. The technical account remains vivid, but these terms interrupt comprehension for competent engineers outside this niche.
+    suggestion: Add brief plain-language explanations at the first use of each specialized mechanism.
+  - severity: major
+    article: frontier-lab-agent-intrusion
+    locator: 'Repairs and the defensive arithmetic | The practical response is concrete: isolate evaluations, narrow every trust boundary, keep credentials short-lived, block metadata access from workloads, and correlate behavior quickly enough to see a chain while it is still being built. | 1'
+    category: weak_close
+    disposition: fix
+    note: |
+      The closing sentence restates the preceding repair list instead of leaving a sharper consequence or question. Its generic lead-in, "The practical response is concrete," also announces what follows rather than adding insight.
+    suggestion: End on a specific consequence of the incident or an unresolved defensive question instead of repeating the recommendations.
+  notes: |
+    I heard a controlled, technically vivid forensic voice that occasionally slips into staccato summary, unexplained specialist shorthand, and a recap-style ending.

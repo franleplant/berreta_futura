@@ -1,0 +1,70 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's code listings, tensor-shape annotations, diagrams, and exact recurrence equations
+    reader_loses: A reader cannot reproduce the implementation line by line, but the manuscript preserves each mechanism's role and trade-off.
+    verdict: defensible
+  - fact: The source's aside about FlashAttention's 2020 release and historical training implementations
+    reader_loses: Some historical context for why quadratic-cost explanations can mislead, without losing the architectural argument.
+    verdict: defensible
+  - fact: The exact SiTU pseudocode and detailed fused-kernel implementation discussion
+    reader_loses: The activation's formula and implementation path, while retaining its practical slowdown and latent-space offset.
+    verdict: defensible
+  retentions:
+  - passage: The opening comparison of 22,580 GPT-2 models with the question of whether the change is merely scale
+    costs: A short framing paragraph that gives the progression a memorable scale and establishes the article's central question.
+    verdict: earns_place
+  - passage: The board analogy for DeltaNet's finite-state correction
+    costs: A paragraph that could be removed for brevity but makes replacement and interference intuitive.
+    verdict: earns_place
+  - passage: The closing synthesis of KDA, MLA, MoE, and AttnRes as distinct memories
+    costs: A recap of the architecture's components.
+    verdict: earns_place
+  notes: The piece gives readers a memory-centered explanation of the GPT-2-to-KimiK3 lineage, making each architectural addition answer a specific capacity, retrieval, or forgetting problem rather than presenting scale as the explanation.
+evidence:
+  result: approved
+  findings: []
+  notes: |
+    Checked every factual assertion, number, name, attribution, conclusion, and furniture element against the pinned extraction; nothing in the piece required verification beyond that source.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: Retrieve across depth | a reported 1.25 times compute advantage | 1
+    category: grammar
+    disposition: fix
+    note: |
+      "1.25 times compute advantage" is not a grammatical attributive construction. The multiplier needs to modify "advantage" clearly.
+    suggestion: a reported 1.25x compute advantage
+  notes: |
+    One grammatical multiplier construction requires correction; capitalization, punctuation, typography, headings, and form are otherwise clean.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    The piece moves in a recoverable progression from GPT-2's growing cache through recurrent updates, decay, KimiK3's mixed memories, and depth-wise retrieval, with a landed conclusion.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: '- | We scaled up by a factor of 22,580 in seven years. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This sentence repeats the scale comparison already delivered by the opening sentence, so the piece begins by restating itself before reaching its question.
+    suggestion: |
+      Cut this sentence or replace it with a consequence of the scale difference.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: Make memory forget | KimiK3 uses a new SiTU activation as well. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "SiTU" is introduced as a named activation without explaining what it does or why the reader should care, leaving an otherwise concrete paragraph opaque at that point.
+    suggestion: |
+      Define SiTU by its functional effect in this architecture, or omit the name.
+  notes: |
+    I heard a technically confident voice throughout, with a duplicated opening beat and one unexplained architectural label interrupting an otherwise clear progression.

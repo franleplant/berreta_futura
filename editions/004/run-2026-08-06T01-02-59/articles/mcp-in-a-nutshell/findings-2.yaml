@@ -1,0 +1,96 @@
+worth:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Three participants, two layers | Streamable HTTP sends them through HTTP POST, with optional Server-Sent Events for streaming and ordinary HTTP authentication methods such as bearer tokens, API keys, and custom headers. | 1
+    repair_from: Three participants, two layers | Streamable HTTP sends them through HTTP POST, with optional Server-Sent Events for streaming and ordinary HTTP authentication methods such as bearer tokens, API keys, and custom headers. | 1
+    category: lost_operational_detail
+    disposition: fix
+    note: |
+      The source recommends OAuth for obtaining authentication tokens, but the manuscript leaves the reader with a flat list of authentication options. That loses an important part of the protocol's remote-transport guidance.
+    suggestion: Add the source's OAuth recommendation after naming the supported HTTP authentication methods.
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: Staying current | If the server agrees, it acknowledges the subscription and sends notifications such as `notifications/tools/list_changed` without expecting a response. | 1
+    repair_from: Staying current | A client opts in by opening a long-lived `subscriptions/listen` subscription and naming the event types it wants, such as changes to the tool list. | 1
+    category: stripped_utility
+    disposition: fix
+    note: |
+      The source explains that the acknowledgement establishes a subscription ID and that each later notification carries that ID. Omitting that correlation mechanism makes the subscription model incomplete for clients managing multiple streams.
+    suggestion: Mention the subscription ID in the acknowledgement and say that notifications carry it.
+  omissions:
+  - fact: The recommendation to use OAuth to obtain authentication tokens for Streamable HTTP.
+    reader_loses: A meaningful security and implementation recommendation when choosing remote-server authentication.
+    verdict: needed
+  - fact: The subscription ID carried in the acknowledgement and every subsequent notification.
+    reader_loses: The mechanism for correlating notifications with the subscription that requested them.
+    verdict: needed
+  - fact: The overview's catalogue of MCP SDKs, development tools, and reference server implementations.
+    reader_loses: Nothing essential to this protocol explainer; those projects are scope and setup context.
+    verdict: defensible
+  - fact: The full JSON-RPC request and response examples, including pagination and caching fields in `tools/list`.
+    reader_loses: Copy-level implementation detail that is not necessary for a printed conceptual overview.
+    verdict: defensible
+  retentions:
+  - passage: Visual Studio Code connects to a Sentry server, then to a local filesystem server.
+    costs: A short opening example, but it makes the one-client-per-server architecture immediately concrete.
+    verdict: earns_place
+  - passage: 'The useful consequence is visible at the boundary: one application can connect many servers...'
+    costs: A closing synthesis that repeats earlier mechanics, but it states the practical payoff of the architecture.
+    verdict: earns_place
+  notes: |
+    Changes required because the manuscript's otherwise effective mental model omits OAuth guidance and the identifier that makes notification subscriptions operational. The needed omissions do not cut past the bone, and the retained passages earn their space. The piece has a position: it frames MCP as a bridge that lets one application combine changing tools and context from many servers without special-casing each server.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-in-a-nutshell
+    locator: A request can stand alone | A client may begin with the mandatory `server/discover` request. | 1
+    repair_from: A request can stand alone | A client may begin with the mandatory `server/discover` request. | 1
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source says servers must implement server/discover, but clients may send it optionally. Calling it a mandatory request reverses that qualification, even though the manuscript later says discovery is optional.
+  notes: |
+    Checked every manuscript assertion and furniture item against the pinned architecture extraction; nothing outside that extraction was checked.
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    No mechanical errors found; capitalization, grammar, punctuation, typography, headings, markup, and number styles are consistent.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: Staying current | The protocol supports real-time notifications to enable dynamic updates between servers and clients. | 1
+    repair_from: Staying current | The protocol supports real-time notifications to enable dynamic updates between servers and clients. | 1
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The section is organized clearly, but its heading names a broad topic rather than the argument that subscriptions and polling keep the client's capability registry fresh.
+    suggestion: Rename the heading to 'How clients keep tool registries fresh'.
+  notes: |
+    I verified that the piece progresses coherently from architecture to discovery, primitives, action, and freshness, with one vague heading as the only structural defect.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: 'Staying current | The useful consequence is visible at the boundary: one application can connect many servers, and each request still carries the version, capabilities, and identity needed to interpret it. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "The useful consequence is visible at the boundary" is an abstraction stack that delays the concrete point and sounds system-generated.
+    suggestion: 'Open directly with the concrete consequence: ''One application can connect many servers...'''
+  - severity: minor
+    article: mcp-in-a-nutshell
+    locator: From discovery to action | That choice matters when a federation of servers offers more functions than a model can usefully inspect in one pass. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "Federation" is specialized terminology that the piece does not define; the surrounding explanation only requires the simpler idea of multiple connected servers.
+    suggestion: Replace 'a federation of servers' with 'a group of servers' or define 'federation' at first use.
+  notes: |
+    I heard a clear, technically grounded explainer whose voice briefly fades into abstraction and unexplained protocol vocabulary.

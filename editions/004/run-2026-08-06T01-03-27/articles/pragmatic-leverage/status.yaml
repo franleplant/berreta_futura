@@ -1,0 +1,46 @@
+piece: pragmatic-leverage
+rounds:
+- round: 1
+  words: 496
+  loop_findings: 12
+  all_findings: 14
+- round: 2
+  words: 436
+  loop_findings: 2
+  all_findings: 6
+- round: 3
+  words: 417
+  loop_findings: 3
+  all_findings: 10
+state: rounds_exhausted
+open_findings:
+- lens: evidence
+  severity: major
+  article: pragmatic-leverage
+  locator: '- | Good luck. | 1'
+  repair_from: When planning happens in multiple phases, zooming in from the 50kft view to the 10kft view, do a little steering at each phase. | 1
+  category: qualification_loss
+  disposition: fix
+  note: |
+    The manuscript omits the source's concluding claim that this process is what the source means by leverage and that leverage requires being pragmatic. The preceding discussion describes steering and expected-pain reduction but does not carry that explicit conclusion.
+- lens: mechanics
+  severity: major
+  article: pragmatic-leverage
+  locator: Seeking leverage | When planning happens in multiple phases, zooming in from the 50kft view to the 10kft view, do a little steering at each phase. | 1
+  category: grammar
+  disposition: fix
+  note: |
+    "zooming in" is a dangling modifier: the sentence's imperative subject is "you," but the modifier has no clear grammatical subject.
+  suggestion: When planning happens in multiple phases, zoom in from the 50kft view to the 10kft view and do a little steering at each phase.
+- lens: shape
+  severity: blocking
+  article: pragmatic-leverage
+  locator: Seeking leverage | Good luck. | 1
+  repair_from: Seeking leverage | The payoff from planning is largest at the start. | 1
+  category: ending
+  disposition: fix
+  note: |
+    The argument establishes a useful principle about reducing expected pain,
+    then ends with a sign-off instead of synthesizing how the planning phases
+    apply that principle. The piece stops rather than landing.
+  suggestion: End by explicitly tying phased planning and zooming to reducing expected pain.

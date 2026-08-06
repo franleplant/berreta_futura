@@ -1,0 +1,76 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's exact HTTP request examples, SEP numbers, and links to the draft specification, changelog, issue tracker, and contributor Discord
+    reader_loses: Reference and setup-oriented material, but nothing needed to understand the protocol changes in a print piece.
+    verdict: defensible
+  - fact: The source's statement that future clients may reject authorization responses omitting iss
+    reader_loses: A forward-looking implementation caveat, while the manuscript still conveys the current validation requirement.
+    verdict: defensible
+  retentions:
+  - passage: The opening deployment scenario and the later 'Traffic becomes easier to operate' section
+    costs: Some repeated explanation of the operational benefits, but the first frames the change and the second supplies its routing, caching, and tracing consequences.
+    verdict: earns_place
+  - passage: The final paragraphs on deprecation windows, validation, and what the next version asks of implementers
+    costs: A modest closing space that could be cut only by losing the article's argument about how MCP will evolve.
+    verdict: earns_place
+  notes: |
+    The piece gives readers a concise operational narrative of the release: why statelessness changes deployment, how stateful workflows and server prompts still work, and how extensions and lifecycle rules make future protocol change safer.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: '- | Clients can cache results for exactly as long as the server permits. | 1'
+    repair_from: '- | Clients can cache results for exactly as long as the server permits. | 1'
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source limits ttlMs and cacheScope to list and resource-read results. The manuscript broadens this to results generally.
+  - severity: major
+    article: mcp-protocol-update
+    locator: Deprecation becomes a schedule | The expectation is that future revisions, using extensions and deprecation windows, will let implementers adopt new behavior without rewriting their transport or lifecycle code. | 1
+    repair_from: Deprecation becomes a schedule | The expectation is that future revisions, using extensions and deprecation windows, will let implementers adopt new behavior without rewriting their transport or lifecycle code. | 1
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source specifically says implementers targeting 2026-07-28 are expected to adopt future revisions without rewriting transport or lifecycle code. The manuscript drops that scope and makes the expectation general.
+  notes: |
+    I checked every manuscript assertion and furniture item against the pinned extraction; I could not check claims against any source outside that extraction.
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    No mechanical defects found; capitalization, grammar, punctuation, typography, headings, and formatting are clean.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    The piece presents a coherent progression from the stateless redesign through operational changes, extensions, authorization and schemas, deprecation, and adoption guidance.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Deprecation becomes a schedule | Standards Track SEP cannot reach Final status until a matching scenario appears in the conformance suite | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "SEP" is never expanded or explained, so a competent engineer outside the MCP community may not know what process or artifact it names.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Deprecation becomes a schedule | The release candidate is locked. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      This portentous short sentence announces finality without naming an actor or adding information beyond the surrounding schedule.
+  - severity: major
+    article: mcp-protocol-update
+    locator: Deprecation becomes a schedule | The next version of MCP asks less of the network, makes more state visible to the model, and gives the protocol a slower way to change. | 1
+    category: weak_close
+    disposition: fix
+    note: |
+      The closing sentence compresses the article into a polished three-part summary, repeating conclusions the preceding sections already established instead of leaving a sharper consequence or question.
+  notes: |
+    I heard a clear, technically grounded explainer that turns protocol changes into operational consequences, but its ending slips into status-report and summary cadence.

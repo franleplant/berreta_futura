@@ -1,0 +1,83 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's correction that FlashAttention changed the usual O(N²) framing, plus its historical note about uncached autoregressive implementations.
+    reader_loses: Some historical and complexity nuance about why KV caching matters.
+    verdict: defensible
+  - fact: The source's implementation code, installation/setup material, tensor shapes, and exact equations.
+    reader_loses: Copy-paste implementation details that are not usable in a print synthesis.
+    verdict: defensible
+  - fact: The generalized Householder-transition terminology used to describe DeltaNet's chunk-parallel reparameterization.
+    reader_loses: A more specific name for the mathematical mechanism behind parallel correction solving.
+    verdict: defensible
+  - fact: The exact GPT-2 vocabulary size of 50,304, including padding from 50,257.
+    reader_loses: A minor configuration identifier; the rounded scale comparison remains intact.
+    verdict: defensible
+  retentions:
+  - passage: Twenty-two thousand five hundred and eighty GPT-2 models fit inside KimiK3.
+    costs: A short opening hook, while giving the reader the scale question that organizes the piece.
+    verdict: earns_place
+  - passage: The board analogy for DeltaNet's correction update.
+    costs: A paragraph that could be cut, but makes replacement rather than accumulation intuitively legible.
+    verdict: earns_place
+  - passage: The closing synthesis beginning 'The final architecture is therefore a collection of memories...'
+    costs: A brief recap after several technical sections.
+    verdict: earns_place
+  - passage: The final paragraph on fixed-capacity memory and eviction policy.
+    costs: A second concluding statement of the thesis.
+    verdict: earns_place
+  notes: |
+    This piece gives readers a causal architectural lineage from GPT-2 to KimiK3, showing each memory, update, retrieval, and routing mechanism as an answer to a concrete limitation in the preceding design.
+evidence:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: from-gpt2-to-kimi3
+    locator: Make memory forget | Its architecture interleaves Gated DeltaNet with Multi-head Latent Attention, replaces the ordinary feed-forward block with a Mixture-of-Experts layer, and gives the recurrent memory more precise decay. | 1
+    category: invented_claim
+    disposition: fix
+    note: |
+      The extraction says Kimi Linear interleaves Multi-head Latent Attention layers and adds fine-grained decay to DeltaNet, but it does not identify the interleaved architecture as Gated DeltaNet. The manuscript introduces an unsupported architectural attribution.
+  notes: I checked every title, heading, furniture element, factual assertion, number, name, attribution, and conclusion against the pinned extraction; I could not check claims beyond that extraction.
+mechanics:
+  result: approved
+  findings: []
+  notes: No mechanical errors were found; the prose, headings, punctuation, typography, and number usage are consistent.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    The piece presents a coherent progression from GPT-2's growing cache through
+    recurrent memory, selective retrieval, and KimiK3's layered memory system.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: '- | The useful answer appears when you follow what each model stores, how it updates that memory, and how it retrieves information that the memory cannot keep. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      This announces that a useful answer is coming instead of making the mechanism do the work. It is abstract throat-clearing before the concrete explanation.
+    suggestion: |
+      Cut the sentence and move directly from the question into the first architectural detail.
+  - severity: major
+    article: from-gpt2-to-kimi3
+    locator: Let different memories do different jobs | KimiK3 uses a new SiTU activation as well. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "SiTU" is an unexplained subfield term. A competent engineer outside this specialty cannot know what it does, and the sentence gives no reason to retain the name.
+    suggestion: |
+      Define SiTU by its function on first mention, or omit the name.
+  - severity: minor
+    article: from-gpt2-to-kimi3
+    locator: 'Let different memories do different jobs | These additions are small beside the parameter count, but each has a job: control retrieval, distribute computation, or regulate memory. | 1'
+    category: dead_words
+    disposition: fix
+    note: |
+      "Each has a job" is empty framing, and the balanced three-part list turns specific architectural additions into a generic slogan.
+    suggestion: |
+      Replace this sentence with the concrete effect of the most important addition, or cut it.
+  notes: I heard a strong, concrete technical voice that occasionally slips into abstract announcements, unexplained labels, and summary language.

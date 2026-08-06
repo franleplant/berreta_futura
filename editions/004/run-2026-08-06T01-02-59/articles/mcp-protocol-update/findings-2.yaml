@@ -1,0 +1,68 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The concrete before-and-after HTTP request bodies and the full InputRequiredResult JSON example
+    reader_loses: Cannot copy the wire-format examples directly, but the surrounding prose still conveys the protocol changes and field names.
+    verdict: defensible
+  - fact: The source's instructions to open specification-repository issues or use the contributor Discord Working Group channel
+    reader_loses: Loses the source's support paths for implementation questions.
+    verdict: defensible
+  - fact: The warning that future clients are expected to reject authorization responses that omit iss, and that authorization servers should begin supplying it now
+    reader_loses: Loses a forward-looking migration cue, while the current validation requirement remains clear.
+    verdict: defensible
+  retentions:
+  - passage: A remote MCP server that once needed sticky sessions... can now sit behind a plain round-robin load balancer.
+    costs: A short framing paragraph, but it gives the reader the concrete deployment consequence that motivates the rest of the piece.
+    verdict: earns_place
+  - passage: In practice, we've found this pattern... to be more than just a workable substitute for session state.
+    costs: Several sentences of maintainer interpretation, but they explain why explicit handles are more than a mechanical migration.
+    verdict: earns_place
+  - passage: If you maintain an SDK or client, the immediate work is to run the candidate against real workloads before July 28...
+    costs: A brief closing call to action that repeats the timeline, but converts it into a clear instruction for implementers.
+    verdict: earns_place
+  notes: |
+    This piece gives readers an implementation-focused map of the release: it translates the specification into deployment consequences, migration points, governance guarantees, and an immediate testing deadline.
+evidence:
+  result: approved
+  findings: []
+  notes: Checked every assertion in the manuscript, including furniture and conclusions, against the pinned extraction; no unsupported or distorted claims were found.
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: Extensions get a place to grow | Tasks leave the experimental core and become an extension. | 1
+    category: agreement
+    disposition: fix
+    note: |
+      "Tasks" is plural, but it is paired with the singular complement "an extension." This is an agreement error in the editors' synthesis.
+    suggestion: The Tasks feature leaves the experimental core and becomes an extension.
+  notes: One subject-complement agreement error requires correction; capitalization, punctuation, typography, headings, and formatting are otherwise clean.
+shape:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: A protocol that can change without breaking every deployment | If you maintain an SDK or client, the immediate work is to run the candidate against real workloads before July 28 and ship support during that window. | 1
+    repair_from: A protocol that can change without breaking every deployment | The ten-week window before the July 28 final release is for SDK maintainers and client implementers to test real workloads; Tier 1 SDKs are expected to support the changes during it. | 1
+    category: duplication
+    disposition: fix
+    note: |
+      The closing section repeats the same testing and Tier 1 support instruction twice. The earlier occurrence says maintainers should test real workloads during the ten-week window and that Tier 1 SDKs are expected to support the changes; the final paragraph repeats running the candidate against real workloads, shipping support, and the Tier 1 expectation.
+    suggestion: Keep the timing and Tier 1 expectation in one paragraph, then use the ending for a single concise action.
+  notes: |
+    The piece moves coherently from stateless transport through extensions, authorization and schemas, governance, and an implementation call to action; the closing guidance is duplicated.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: A protocol that can change without breaking every deployment | Tier 1 SDKs are expected to do so. | 1
+    category: weak_close
+    disposition: fix
+    note: |
+      The final sentence repeats the Tier 1 SDK expectation stated immediately before it, so the ending adds no clarity or sharper question.
+    suggestion: Delete the final sentence.
+  notes: |
+    I heard a technically fluent, unusually concrete synthesis whose final beat repeats its preceding instruction.

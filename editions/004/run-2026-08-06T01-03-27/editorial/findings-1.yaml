@@ -1,0 +1,65 @@
+mechanics:
+  result: changes_required
+  findings:
+  - severity: major
+    article: editorial
+    locator: '- | Make the Next Move Legible | 1'
+    category: heading_form
+    disposition: fix
+    note: |
+      The title is in title case. Headings must use sentence case.
+    suggestion: Make the next move legible
+  notes: |
+    Changes required because the title uses title case instead of the required sentence case.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    The piece holds together in a clear progression from shared failure pattern to
+    examples of corrective machinery and a concise operational imperative.
+craft:
+  result: changes_required
+  findings:
+  - severity: major
+    article: make-the-next-move-legible
+    locator: '- | A dataset upload became a command channel. | 1'
+    category: repeated_shape
+    disposition: fix
+    note: |
+      Three consecutive sentences use the same subject-plus-past-verb construction:
+      "A dataset upload became a command channel," "A green test suite sat beside a broken product,"
+      and "A service bus was asked to make every decision nondeterministic." The pattern is audible
+      before the argument arrives.
+    suggestion: |
+      Recast at least one of the three examples with a different sentence shape.
+  - severity: minor
+    article: make-the-next-move-legible
+    locator: The same idea appears in quieter machinery. | MCP makes continuity something an application names and carries. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "MCP" is an unexplained term that a competent engineer outside this subfield may not know.
+    suggestion: |
+      Define MCP at first use in a short appositive phrase.
+  - severity: major
+    article: make-the-next-move-legible
+    locator: The same idea appears in quieter machinery. | Each system earns leverage by making uncertainty visible and the next move constrainable. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "Earns leverage" and "next move constrainable" stack abstractions and corporate language without
+      showing the mechanism; the sentence sounds like a summary generated after the thinking.
+    suggestion: |
+      Replace the abstraction with one concrete description of how those systems limit or redirect the next action.
+  - severity: minor
+    article: make-the-next-move-legible
+    locator: Build the door before you teach the machine to open it. | Build the door before you teach the machine to open it. | 1
+    category: passive
+    disposition: fix
+    note: |
+      The closing is an ownerless imperative: it tells the reader to build without naming who is responsible.
+    suggestion: |
+      Name the actor responsible for building the safeguards before deployment.
+  notes: |
+    I heard a sharp, systems-minded voice that briefly slips into repeated openings, unexplained shorthand,
+    and abstraction before recovering its concrete close.

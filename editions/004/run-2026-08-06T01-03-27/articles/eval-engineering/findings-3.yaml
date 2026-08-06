@@ -1,0 +1,91 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The source's opening comparison between a $200 monthly model and a company with 1,000 engineers renting the same brain
+    reader_loses: Some of the economic setup for why the harness, rather than the model, creates the advantage.
+    verdict: defensible
+  - fact: The exact installation commands, plugin commands, evalkit phase list, and evals/ directory layout
+    reader_loses: Copy-paste setup instructions, which are not useful in a print piece and remain available in the source.
+    verdict: defensible
+  - fact: The source's vendor launch dates, AWS Apache 2.0 detail, and social-follow prompts
+    reader_loses: Timing and promotional context, not part of the operating argument.
+    verdict: defensible
+  - fact: The source's final three-line recap and its repeated contrast between Friday output-scrolling and wiring the thermostat
+    reader_loses: A redundant closing summary; the manuscript already states the same principles and call to action.
+    verdict: defensible
+  retentions:
+  - passage: The travel-agent anecdote and the 83.9% quality versus 32.3% faithfulness figures
+    costs: Opening space, but it makes the central failure concrete and motivates the rest of the piece.
+    verdict: earns_place
+  - passage: The thermometer-and-thermostat analogy and the return-arrow explanation
+    costs: Several paragraphs of framing, but they define the distinction between analytics and engineering that organizes the article.
+    verdict: earns_place
+  - passage: The blind-test results and the four-week vendor unbundling
+    costs: A substantial evidence section, but it establishes that the proposed workflow is practical and newly accessible.
+    verdict: earns_place
+  - passage: The 25-trace sampling template and verifier/environment safeguards
+    costs: Detailed instructional space, but it turns the thesis into a repeatable method.
+    verdict: earns_place
+  - passage: The autonomous-merge examples and the warning about 38 green tests beside a broken product
+    costs: A long section, but it supplies both the payoff and the essential specification-versus-score caveat.
+    verdict: earns_place
+  - passage: The first-afternoon checklist of three measurements, dataset choices, suite size, and five starter evals
+    costs: The closing third of the piece, but it gives the reader an immediately usable starting plan.
+    verdict: earns_place
+  notes: |
+    Approval: the manuscript gives the reader a coherent return-arrow argument and an actionable progression from production traces to steering evals, permanent tests, and constrained autonomous merges that the source's thread presents less efficiently.
+evidence:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: eval-engineering
+    locator: '- | That layer separates an impressive demo from a product someone can trust. | 1'
+    category: invented_claim
+    disposition: fix
+    note: |
+      The source says the layer separates an AI that impresses people from an AI that gets paid. It does not claim that the layer produces a product someone can trust.
+  notes: |
+    I checked every assertion, quotation, number, heading, and conclusion against the pinned extraction; external claims and sources were not available for checking.
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    No mechanical errors found; the prose and headings follow consistent capitalization, grammar, punctuation, typography, and number conventions.
+shape:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: eval-engineering
+    locator: 'The first afternoon | For a tool-using agent, begin with three measurements: faithfulness to tool results, tool-parameter accuracy, and response quality. | 1'
+    repair_from: 'The first afternoon | For a tool-using agent, begin with three measurements: faithfulness to tool results, tool-parameter accuracy, and response quality. | 1'
+    category: heading_not_a_claim
+    disposition: fix
+    note: |
+      The section gives a concrete starting plan for building an evaluation
+      suite, but its heading names a time period rather than the section's
+      argument.
+    suggestion: Rename the heading to state the section's claim, such as 'Start with five evals in one afternoon.'
+  notes: |
+    I verified that the piece's argument progresses coherently from the need for
+    evaluation, through steering and testing, to merge gates and practical setup,
+    with a clear ending; only the final heading fails to name its section's claim.
+craft:
+  result: changes_required
+  findings:
+  - severity: blocking
+    article: eval-engineering
+    locator: Turn failures into tests | Do not treat the recorded answer as truth. | 1
+    category: repeated_shape
+    disposition: editor_decision
+    note: |
+      Twelve bare imperative sentences spread through the piece create a repeated instructional shape: "Do not treat the recorded answer as truth"; "Test the verifier with one clearly correct and one plausible but wrong result before trusting it"; "Check that the environment does not reveal the answer before the agent reaches the tool"; "Simulate anything that costs money or writes to production"; "Run the loop repeatedly and an incident becomes a permanent check"; "Start in shadow mode for at least four hours of real traffic"; "Set a 2% deviation threshold between automated and human verdicts"; "Sample 1% to 5% of traces instead of capturing everything"; "Keep the gate closed on risky work and open on the boring 80%"; "Choose the dataset deliberately"; "Hold out 300 to 800 cases"; and "Install one skill, pull 25 traces, build one eval, and add another whenever something breaks." The pattern becomes audible as a checklist rather than a person reasoning sentence by sentence. Because this is faithful synthesis, the remedy is editorial: cut or consolidate several commands.
+  - severity: minor
+    article: eval-engineering
+    locator: Make the score steer the run | Low context recall rejects a handoff; bad tool use triggers a retry or swaps a node; a hallucination quarantines a branch; a schema failure blocks an edge; a compliance risk routes to human review; verified completion terminates the run. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "Context recall" is a specialized evaluation term that is not defined for a competent engineer outside this subfield, so the routing example asks the reader to supply its meaning.
+  notes: |
+    The piece has a strong, specific voice and a useful rental/examiner metaphor, but its many bare imperatives eventually turn the argument into a checklist, and one evaluation metric arrives without definition.

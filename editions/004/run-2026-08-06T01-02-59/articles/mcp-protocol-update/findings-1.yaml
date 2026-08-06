@@ -1,0 +1,78 @@
+worth:
+  result: approved
+  findings: []
+  omissions:
+  - fact: The concrete HTTP and JSON request/response examples for initialization, tools/call, and multi-round-trip input
+    reader_loses: Cannot copy the wire format directly from the article, but the examples are implementation-reference material available in the source.
+    verdict: defensible
+  - fact: Individual SEP numbers, repository naming details, and the source's issue-reporting and Discord instructions
+    reader_loses: Less traceability and less procedural follow-up, without losing the release's key ideas.
+    verdict: defensible
+  - fact: The source's acknowledgments and navigation/footer material
+    reader_loses: Nothing needed to understand or act on the revision.
+    verdict: defensible
+  retentions:
+  - passage: The opening paragraph's summary of statelessness, caching, extensions, authorization, schemas, and deprecation
+    costs: A short overview, but it gives readers the release's stakes before the detailed sections.
+    verdict: earns_place
+  - passage: The explicit-handle example using basket_id or browser_id
+    costs: Several sentences, but it makes the replacement for protocol-managed state concrete.
+    verdict: earns_place
+  - passage: The closing paragraph about ordinary HTTP infrastructure, independent capability schedules, and advance warning before removals
+    costs: A brief recap, but it states the practical payoff of the revision.
+    verdict: earns_place
+  notes: Approved because this piece gives readers an operationally ordered account of how the revision changes deployment, state management, extensions, authorization, schemas, and future compatibility, rather than merely reproducing the source's changelog.
+evidence:
+  result: changes_required
+  findings:
+  - severity: major
+    article: mcp-protocol-update
+    locator: Authorization and schemas move closer to practice | For structured observability, stdio transports should use OpenTelemetry rather than logging. | 1
+    category: qualification_loss
+    disposition: fix
+    note: |
+      The source distinguishes two replacements: stderr for stdio transports and OpenTelemetry for structured observability. The manuscript drops that distinction and broadly presents OpenTelemetry as the replacement for stdio logging, changing the scope of the guidance.
+  notes: |
+    Checked every manuscript assertion and furniture item against the pinned extraction; claims outside that extraction could not be checked.
+mechanics:
+  result: approved
+  findings: []
+  notes: |
+    The manuscript is mechanically clean, with no errors that would misread or break the typeset page.
+shape:
+  result: approved
+  findings: []
+  notes: |
+    The piece presents a coherent progression from stateless transport through extensions, implementation changes, and governance, ending with a clear practical consequence.
+craft:
+  result: changes_required
+  findings:
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Any instance can handle the request | In practice, we've found this pattern (the model threading an identifier from one tool call to the next) to be more than just a workable substitute for session state. | 1
+    category: dead_words
+    disposition: fix
+    note: |
+      "More than just a workable substitute" is throat-clearing comparison language; the paragraph already demonstrates why explicit handles are more powerful.
+    suggestion: |
+      State the advantage directly and remove the comparison phrase.
+  - severity: minor
+    article: mcp-protocol-update
+    locator: Extensions get a place to grow | SEP-2133 gives them reverse-DNS identifiers, capability negotiation, independent versions, delegated maintainers, and an Extensions Track that can move an experiment toward official status. | 1
+    category: jargon
+    disposition: fix
+    note: |
+      "SEP-2133" arrives as an unexplained identifier, asking readers outside the MCP community to recognize an internal proposal number without defining it.
+    suggestion: |
+      Briefly identify SEP-2133 as the extension-governance proposal before using its number.
+  - severity: major
+    article: mcp-protocol-update
+    locator: 'A protocol that can change without breaking every deployment | The intended result is practical: MCP should run on ordinary HTTP infrastructure, let new capabilities ship on their own schedules, and give implementers warning before features disappear. | 1'
+    repair_from: 'A protocol that can change without breaking every deployment | The intended result is practical: MCP should run on ordinary HTTP infrastructure, let new capabilities ship on their own schedules, and give implementers warning before features disappear. | 1'
+    category: weak_close
+    disposition: fix
+    note: |
+      The final paragraph restates the opening's infrastructure, capability, and deprecation promises, then ends with a generic assertion about rewriting. The piece has already established those points and the close adds no sharper consequence or question.
+    suggestion: |
+      End on a concrete implementation consequence from the release-candidate window instead of summarizing the article's opening claims.
+  notes: I heard a technically confident maintainer voice throughout, with occasional comparison language, one unexplained internal identifier, and a closing paragraph that summarizes rather than lands on a consequence.

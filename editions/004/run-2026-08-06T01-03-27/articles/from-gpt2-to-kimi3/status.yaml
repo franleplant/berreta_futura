@@ -1,0 +1,26 @@
+piece: from-gpt2-to-kimi3
+rounds:
+- round: 1
+  words: 1302
+  loop_findings: 3
+  all_findings: 8
+- round: 2
+  words: 1263
+  loop_findings: 2
+  all_findings: 7
+- round: 3
+  words: 1258
+  loop_findings: 1
+  all_findings: 5
+state: rounds_exhausted
+open_findings:
+- lens: craft
+  severity: major
+  article: from-gpt2-to-kimi3
+  locator: The cache becomes the problem | A feature map such as ELU+1 can be applied to queries and keys separately, making the products re-associable. | 1
+  category: jargon
+  disposition: fix
+  note: |
+    ELU+1 and re-associable arrive without definition, and later terms including D × D, MLA, SiTU, LoRA, AttnRes, and FLOPs accumulate faster than the reader is given working meanings.
+  suggestion: |
+    Define each nonstandard acronym or operation at its first appearance, or remove terms that do not carry the explanation.
