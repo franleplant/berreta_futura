@@ -1,4 +1,4 @@
-// Art candidate rounds — port of produce.py's image-round shape: one model
+// Art candidate rounds: one model
 // call proposes a slate of art briefs for the edition, then a user-supplied
 // shell command renders `candidates` variants of each brief. Purely
 // additive: every round lives in its own timestamped directory under

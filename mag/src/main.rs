@@ -1,4 +1,4 @@
-// mag — sources in, edition content out. Port of tools/produce.py's shape:
+// mag — sources in, edition content out:
 // no database, no run state, fail loud, plain output files.
 
 mod art;
@@ -37,13 +37,11 @@ enum Cmd {
         /// Comma-separated article ids
         #[arg(long)]
         only: Option<String>,
-        #[arg(long = "writer-model", default_value = "codex:gpt-5.6-luna")]
+        #[arg(long = "writer-model", default_value = "opus")]
         writer_model: String,
-        #[arg(long = "judge-model", default_value = "codex:gpt-5.6-luna")]
-        judge_model: String,
-        /// Extra style doc appended to the writing pack (e.g. docs/styles/x.md)
-        #[arg(long)]
-        style: Option<PathBuf>,
+        /// Cheap model that derives frontmatter (editorial title) from finished manuscripts
+        #[arg(long = "frontmatter-model", default_value = "haiku")]
+        frontmatter_model: String,
     },
     /// Translate a run's accepted pieces to Spanish
     Translate {
@@ -102,12 +100,12 @@ fn run(cli: Cli) -> Result<i32> {
             let spec = caller::ModelSpec::parse(&model)?;
             plan_cmd::propose_plan(&edition, &spec)
         }
-        Cmd::Produce { plan, resume, only, writer_model, judge_model, style } => {
+        Cmd::Produce { plan, resume, only, writer_model, frontmatter_model } => {
             let writer = caller::ModelSpec::parse(&writer_model)?;
-            let judge = caller::ModelSpec::parse(&judge_model)?;
+            let frontmatter = caller::ModelSpec::parse(&frontmatter_model)?;
             let only_set: Option<HashSet<String>> =
                 only.map(|s| s.split(',').map(|x| x.trim().to_string()).collect());
-            produce::run_edition(&plan, resume, only_set, &writer, &judge, style)
+            produce::run_edition(&plan, resume, only_set, &writer, &frontmatter)
         }
         Cmd::Translate { run_dir, model } => {
             let spec = caller::ModelSpec::parse(&model)?;

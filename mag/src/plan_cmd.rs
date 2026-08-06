@@ -1,4 +1,4 @@
-// Port of tools/produce.py's `plan` subcommand: one model call proposes
+// The `plan` subcommand: one model call proposes
 // plan.yaml for an edition; a human edits it before `mag produce` runs it.
 
 use crate::caller::{Caller, ModelSpec};

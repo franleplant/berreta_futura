@@ -109,7 +109,7 @@ the paragraph it sits in. A definition of a term the audience already has. A
 closing paragraph that recaps.
 
 Over-length is a different failure and has its own remedy: the cut order in
-`prompts/faithful-synthesis.md`. Under-length is not a failure at all.
+`docs/EDITORIAL_POLICY.md`. Under-length is not a failure at all.
 
 ## The register that produces robot prose
 
