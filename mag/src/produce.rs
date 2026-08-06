@@ -114,18 +114,29 @@ fn strip_frontmatter(text: &str) -> &str {
     }
 }
 
+/// The render caps the editorial at one printed page; every editorial that
+/// ever fit ran 161–214 words. Enforced through the caller's reject-and-retry
+/// channel, never in the initial prompt, which stays verbatim.
+const EDITORIAL_MAX_WORDS: usize = 220;
+
 /// The reply is the manuscript body — no wrapper tags, no scratch markers.
 /// Leading heading lines are dropped: the writer opens with an H1 title
 /// (edition.yaml owns titles) and a "30 second version" heading, and the
 /// render needs every piece to open with a paragraph — the 30-second text
 /// itself becomes the intro.
-fn extract_body(reply: &str, label: &str) -> Result<String> {
+fn extract_body(reply: &str, label: &str, max_words: Option<usize>) -> Result<String> {
     let mut body = reply.trim();
     while body.starts_with('#') {
         body = body.split_once('\n').map(|(_, rest)| rest).unwrap_or("").trim_start();
     }
     if body.is_empty() {
         bail!("{label}: reply was empty");
+    }
+    if let Some(max) = max_words {
+        let words = body.split_whitespace().count();
+        if words > max {
+            bail!("{label}: {words} words does not fit one printed page — reply with at most {max} words");
+        }
     }
     Ok(format!("{}\n", body.trim_end()))
 }
@@ -212,8 +223,10 @@ fn produce_piece(
         Some(article) => (writer_prompt(article, sources)?, Some(article_frontmatter(article)?)),
         None => (editorial_prompt(sources)?, None),
     };
+    let max_words = if article.is_none() { Some(EDITORIAL_MAX_WORDS) } else { None };
     let parse_label = label.clone();
-    let body = caller.call_with_parse(&label, writer_model, &prompt, |r| extract_body(r, &parse_label))?;
+    let body =
+        caller.call_with_parse(&label, writer_model, &prompt, |r| extract_body(r, &parse_label, max_words))?;
     let frontmatter = match frontmatter {
         Some(fm) => fm,
         None => editorial_frontmatter(caller, meta_model, &body)?,
@@ -418,12 +431,14 @@ mod tests {
     fn extract_body_drops_leading_headings_only() {
         let reply = "# MCP in a Nutshell\n\n## The 30-Second Version\n\nAn AI application needs things.\n\n## Later\n\nMore.";
         assert_eq!(
-            extract_body(reply, "t").unwrap(),
+            extract_body(reply, "t", None).unwrap(),
             "An AI application needs things.\n\n## Later\n\nMore.\n"
         );
-        assert_eq!(extract_body("Plain paragraph first.", "t").unwrap(), "Plain paragraph first.\n");
-        assert!(extract_body("# Only a title", "t").is_err());
-        assert!(extract_body("   ", "t").is_err());
+        assert_eq!(extract_body("Plain paragraph first.", "t", None).unwrap(), "Plain paragraph first.\n");
+        assert!(extract_body("# Only a title", "t", None).is_err());
+        assert!(extract_body("   ", "t", None).is_err());
+        assert!(extract_body("one two three", "t", Some(2)).is_err());
+        assert!(extract_body("one two", "t", Some(2)).is_ok());
     }
 
     #[test]
