@@ -57,8 +57,8 @@ lands.
 
 Every claim, number, example, and quotation must trace to the extraction: no
 thesis of your own, no fact from your own knowledge, no invented quote — a
-fabricated quote shipped in this author's voice in a past edition, and that is
-why this rule is not negotiable. Preserve claim strength exactly: never harden
+fabricated quote shipped in an author's voice in edition 004, and that is why
+this rule is not negotiable. Preserve claim strength exactly: never harden
 a hedge, never soften a flat assertion. Keep the author's grammatical person
 and the three verbatim sentences you noted above. Everything else you write
 yourself obeys every rule in `docs/WRITING_STYLE.md`, including Orwell's six —
@@ -97,13 +97,14 @@ rest of the thought in your second paragraph.
 
 ## Working notes
 
-End your reply with a line containing exactly:
+Return your whole reply between `<manuscript>` and `</manuscript>` tags. Inside
+them, end the manuscript with a line containing exactly:
 
     <!-- SCRATCH: not part of the manuscript -->
 
 and put your working notes below it: the claim set and cuts from "Find the
 key ideas" and "Cut the fat", the voice signature, and anything a reviser
-needs to know about a choice that isn't visible in the text itself. Everything
-above that line is the manuscript and is written to disk as it stands;
-everything below it is stripped before the file is written and never shown to
-a judge or a reader.
+needs to know about a choice that isn't visible in the text itself. The
+pipeline parses both markers: everything above the SCRATCH line is written to
+disk as the manuscript; everything below it is stripped and never shown to a
+judge or a reader.

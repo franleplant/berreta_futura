@@ -54,11 +54,14 @@ the boundary.
 
 ## Fidelity
 
-Every claim must trace to the source. Traceable means supported, not quoted:
-restating, joining two stated facts, and drawing the conclusion the source's
-own material forces are yours to do. Adding a fact, number, example, or
-consequence the source does not support is not, and neither is a fact from
-your own knowledge or an invented quote. You may name the source artifact
+Every claim must trace to the source, and its strength travels with it —
+never harden a hedge into a certainty or soften a flat assertion into a
+maybe. Traceable means supported, not quoted: restating, joining two stated
+facts, and drawing the conclusion the source's own material forces are yours
+to do. Adding a fact, number, example, or consequence the source does not
+support is not, and neither is a fact from your own knowledge or an invented
+quote — a fabricated quote shipped in edition 004, and this is why the rule
+is not negotiable. You may name the source artifact
 ("the specification calls this elicitation") — that is how a reader
 recognizes a term in the wild. What you may not do is attribute to a person
 ("the author argues") who isn't the source. No editor's note, bracketed
@@ -93,7 +96,8 @@ put the rest of the thought in your second paragraph.
 
 ## Working notes
 
-End your reply with a line containing exactly:
+Return your whole reply between `<manuscript>` and `</manuscript>` tags. Inside
+them, end the manuscript with a line containing exactly:
 
     <!-- SCRATCH: not part of the manuscript -->
 
@@ -101,7 +105,7 @@ and put your working notes below it: the mental model and the two or three
 things that matter, the running example and any you rejected, the
 identifiers you kept, and six questions a reader should be able to answer
 after reading — write them as questions, not topics, and make at least two
-operational (what someone would type, call, or configure). Everything above
-the marker is the manuscript and is written to disk as it stands; everything
-below it is stripped before the file is written and never shown to a judge or
+operational (what someone would type, call, or configure). The pipeline
+parses both markers: everything above the SCRATCH line is written to disk as
+the manuscript; everything below it is stripped and never shown to a judge or
 a reader.

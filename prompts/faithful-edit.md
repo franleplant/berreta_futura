@@ -44,10 +44,14 @@ match its claim to the source, no more and no less.
 ## Fidelity
 
 Keep the source's wording, sentence order, section order, qualifications,
-tone, and grammatical person. Do not paraphrase for smoothness, and never
-manufacture a quotation, a link, a number, or a claim. Keep the author's
-voice intact — profanity, jokes, asides, insults, sign-offs — because that
-voice, verbatim, is the reason this mode exists over synthesis. Orwell's six
+tone, and grammatical person. Do not paraphrase for smoothness: a paraphrase
+can harden a hedge or soften an assertion without anyone noticing, which is
+the whole risk this mode exists to remove. Never manufacture a quotation, a
+link, a number, or a claim, and add nothing from your own knowledge — a
+fabricated quote shipped in edition 004 and this is why that rule is not
+negotiable. Keep the author's voice intact — profanity, jokes, asides,
+insults, sign-offs — because that voice, verbatim, is the reason this mode
+exists over synthesis. Orwell's six
 rules and everything else in `docs/WRITING_STYLE.md` bind only the sentences
 you write yourself; a sentence retained from the source keeps the author's
 own clichés, jokes, and broken rules.
@@ -88,12 +92,13 @@ the break falls is the editors' call.
 
 ## Working notes
 
-End your reply with a line containing exactly:
+Return your whole reply between `<manuscript>` and `</manuscript>` tags. Inside
+them, end the manuscript with a line containing exactly:
 
     <!-- SCRATCH: not part of the manuscript -->
 
 and put your working notes below it: why this is a reprint, what chrome you
 removed, every referent you restored and every one you left standing, and
-every word you wrote yourself. Everything above that line is the manuscript
-and is written to disk as it stands; everything below it is stripped before
-the file is written and never shown to a judge or a reader.
+every word you wrote yourself. The pipeline parses both markers: everything
+above the SCRATCH line is written to disk as the manuscript; everything below
+it is stripped and never shown to a judge or a reader.

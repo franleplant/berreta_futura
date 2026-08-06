@@ -69,7 +69,7 @@ source. Both are true, so the rule is now stated as an assignment constraint:
 Applied, that moves four checks off their old homes:
 
 - "headings mirror the source's table of contents" moved from `line` (blind) to
-  `worth` (reads both), where it is the `source_shaped` check: if our section
+  `worth` (reads both)
   order is their section order, our ordering added nothing.
 - "the piece stripped the identifiers a reader must type" is new, and is a
   manuscript-against-source comparison, so it is `worth`'s `stripped_utility`.
