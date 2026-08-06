@@ -172,6 +172,11 @@ fn extract_body(reply: &str, label: &str) -> Result<String> {
     Ok(format!("{}\n", body.trim_end()))
 }
 
+fn strip_heading_lines(body: &str) -> String {
+    let kept: Vec<&str> = body.lines().filter(|l| !l.starts_with("## ")).collect();
+    kept.join("\n").replace("\n\n\n\n", "\n\n").replace("\n\n\n", "\n\n").trim().to_string() + "\n"
+}
+
 const TRIM_PASSES: usize = 3;
 
 /// Word budgets can need a 25% cut, which a bare "try again shorter" retry
@@ -300,6 +305,10 @@ fn produce_piece(
     let body =
         caller.call_with_parse(&label, writer_model, &prompt, |r| extract_body(r, &parse_label))?;
     let body = fit_to_budget(caller, writer_model, piece_id, &prompt, body, max_words)?;
+    // Every editorial that ever shipped is continuous prose on its one page —
+    // headings spend lines the page does not have, and no figure anchors to
+    // them. Articles keep theirs.
+    let body = if article.is_none() { strip_heading_lines(&body) } else { body };
     let frontmatter = match frontmatter {
         Some(fm) => fm,
         None => editorial_frontmatter(caller, meta_model, &body)?,
