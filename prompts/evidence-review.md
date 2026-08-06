@@ -8,6 +8,12 @@ Not yours: whether the piece is worth reading (`worth`), how it is ordered
 (`shape`), how it reads (`craft`), whether the grammar is correct (`mechanics`).
 Never soften a truth finding because another lens might object to the fix.
 
+A finding costs a rewrite round, but that never softens this lens: an invented
+claim, a hardened hedge, or a fabricated quote is exactly the defect a finding
+exists to force out, and letting one pass to save a round is not a legitimate
+saving. File every one you find. Where the piece is otherwise clean, say so —
+`findings: []` is real and common.
+
 ## Inputs
 
 The piece as it stands, with its `content_mode` and byline, and the complete
@@ -72,8 +78,7 @@ the wording is loose but the meaning survives.
 
 ## Output
 
-Return one YAML document and nothing else. The operator records it with
-the exact active RunEngine human-review offer.
+Return one YAML document and nothing else.
 
 ```yaml
 result: changes_required        # approved | changes_required
@@ -87,11 +92,6 @@ findings:
     note: |
       The source says "roughly a third in our two pilot teams". The manuscript
       raises the figure and drops the pilot scope.
-scores:
-  claim_support: 3
-  qualification_survival: 4
-  quote_accuracy: 5
-  attribution: 5
 notes: |
   Changes required because one headline figure is higher than the source's and
   loses its scope.
@@ -108,4 +108,3 @@ notes: |
   and any `blocking` forces it.
 - `notes` opens with one sentence naming what you checked and what you could not
   check in this piece, not which categories you ran.
-- Scores are integers 1-5 and advisory. Never soften a finding to protect one.
