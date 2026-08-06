@@ -7,6 +7,6 @@ STYLE (literary)
 
 do not reference the articles I provided you, do not enumerate them, don't repeat or rephrase material, do not use numbered titles.
 
-Use proper capitalization and text structuring.
+Use correct capitalization, punctuation, and spacing.
 
 use less words.
