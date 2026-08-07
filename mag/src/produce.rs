@@ -29,7 +29,7 @@ pub(crate) fn section(title: &str, body: &str) -> String {
 
 fn writer_prompt_file(mode: &str) -> Result<&'static str> {
     match mode {
-        "faithful_synthesis" | "faithful_edit" => Ok("article.md"),
+        "article" => Ok("article.md"),
         "in_a_nutshell" => Ok("in-a-nutshell.md"),
         other => bail!("unknown content_mode '{other}'"),
     }
@@ -485,7 +485,7 @@ mod tests {
     fn writer_prompt_opens_with_sources_block() {
         let sources = vec![("a-1".to_string(), "SOURCE TEXT".to_string())];
         let row: serde_yaml::Value =
-            serde_yaml::from_str("content_mode: faithful_synthesis\ntitle: T\n").unwrap();
+            serde_yaml::from_str("content_mode: article\ntitle: T\n").unwrap();
         let p = writer_prompt(&row, &sources).unwrap();
         assert!(p.starts_with("<sources>\n\nSOURCE TEXT\n\n</sources>\n\n"));
         assert!(p.contains("90% orwell"));
