@@ -231,11 +231,6 @@ impl Caller {
         self.calls.load(Ordering::SeqCst)
     }
 
-    /// Plain call: no parsing, returns the raw reply text.
-    pub fn llm(&self, label: &str, spec: &ModelSpec, prompt: &str) -> Result<String> {
-        self.call_with_parse(label, spec, prompt, |s: &str| Ok(s.to_string()))
-    }
-
     /// Run one headless call with retry; `parse` failures count as retryable
     /// failures, with the parse error fed back into the retry prompt.
     pub fn call_with_parse<T>(

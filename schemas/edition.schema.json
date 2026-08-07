@@ -3,38 +3,82 @@
   "$id": "edition.schema.json",
   "title": "Magazine edition",
   "type": "object",
-  "required": ["id", "issue_number", "title", "publication_date", "cover"],
+  "required": [
+    "id",
+    "issue_number",
+    "title",
+    "publication_date",
+    "cover"
+  ],
   "anyOf": [
     {
       "description": "The ordinary edition: an opening editorial and at least one article, with back matter optional.",
-      "required": ["editorial", "articles"]
+      "required": [
+        "editorial",
+        "articles"
+      ]
     },
     {
       "description": "A sections-only edition, which carries no editorial and no articles at all.",
-      "required": ["sections"],
-      "properties": {"sections": {"minItems": 1}}
+      "required": [
+        "sections"
+      ],
+      "properties": {
+        "sections": {
+          "minItems": 1
+        }
+      }
     }
   ],
   "properties": {
-    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
-    "issue_number": {"type": ["string", "integer"]},
-    "title": {"type": "string", "minLength": 1},
-    "publication_date": {"type": "string", "format": "date"},
-    "editorial": {"type": "string"},
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "issue_number": {
+      "type": [
+        "string",
+        "integer"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "publication_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "editorial": {
+      "type": "string"
+    },
     "format": {
       "type": "object",
       "properties": {
-        "article_opener": {"enum": ["illustrated_paper_spots_v1"]}
+        "article_opener": {
+          "enum": [
+            "illustrated_paper_spots_v1"
+          ]
+        }
       },
       "additionalProperties": true
     },
-    "art_direction_path": {"type": "string", "minLength": 1},
+    "art_direction_path": {
+      "type": "string",
+      "minLength": 1
+    },
     "cover": {
       "type": "object",
-      "required": ["headline"],
+      "required": [
+        "headline"
+      ],
       "properties": {
-        "headline": {"type": "string"},
-        "back_text": {"type": "string"}
+        "headline": {
+          "type": "string"
+        },
+        "back_text": {
+          "type": "string"
+        }
       }
     },
     "sections": {
@@ -42,7 +86,10 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["kind", "path"],
+        "required": [
+          "kind",
+          "path"
+        ],
         "properties": {
           "kind": {
             "enum": [
@@ -56,8 +103,14 @@
               "cheat_sheet"
             ]
           },
-          "title": {"type": "string", "minLength": 1},
-          "path": {"type": "string", "minLength": 1}
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          }
         },
         "additionalProperties": false
       }
@@ -67,37 +120,80 @@
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["id", "title", "short_title", "opener_variant", "author", "source_ids", "manuscript"],
+        "required": [
+          "id",
+          "title",
+          "short_title",
+          "opener_variant",
+          "author",
+          "source_ids",
+          "manuscript"
+        ],
         "not": {
           "description": "An article closes with one object, never two: key ideas and tail art are mutually exclusive.",
-          "required": ["key_ideas", "tail_art_path"]
+          "required": [
+            "key_ideas",
+            "tail_art_path"
+          ]
         },
         "allOf": [
           {
             "if": {
               "description": "An editor-voice piece is signed by the magazine, and the self-explanatory house byline takes no biography; every other mode republishes a captured author and must carry theirs.",
-              "required": ["content_mode"],
-              "properties": {"content_mode": {"enum": ["original_synthesis", "in_a_nutshell"]}}
+              "required": [
+                "content_mode"
+              ],
+              "properties": {
+                "content_mode": {
+                  "enum": [
+                    "in_a_nutshell"
+                  ]
+                }
+              }
             },
             "then": true,
-            "else": {"required": ["author_note"]}
+            "else": {
+              "required": [
+                "author_note"
+              ]
+            }
           }
         ],
         "properties": {
-          "id": {"type": "string"},
-          "title": {"type": "string"},
-          "short_title": {"type": "string", "minLength": 1, "maxLength": 40},
-          "display_emphasis": {"type": "string"},
-          "opener_variant": {"type": "string", "enum": ["edge_medallion", "split_axis", "stepped_title"]},
-          "author": {"type": "string"},
-          "author_note": {"type": "string", "minLength": 1, "maxLength": 160},
-          "content_mode": {
-            "description": "The article's relationship to its sources. 'in_a_nutshell' is the teaching explainer, written in the magazine's own voice over a pinned extraction, and is the marker that identifies the explainer of an 'In a Nutshell' bundle -- no separate field names it. Absent means 'faithful_edit'.",
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "short_title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "display_emphasis": {
+            "type": "string"
+          },
+          "opener_variant": {
+            "type": "string",
             "enum": [
-              "faithful_edit",
-              "faithful_synthesis",
-              "selected_extracts",
-              "original_synthesis",
+              "edge_medallion",
+              "split_axis",
+              "stepped_title"
+            ]
+          },
+          "author": {
+            "type": "string"
+          },
+          "author_note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "content_mode": {
+            "description": "Which writer produced the article: 'article' is the standard retell (prompts/article.md), 'in_a_nutshell' the teaching explainer in the magazine's own voice. Absent means 'article'.",
+            "enum": [
+              "article",
               "in_a_nutshell"
             ]
           },
@@ -105,19 +201,51 @@
             "description": "The claims a reader must retain to use the thing, in editor voice: short single lines totalling at most 90 words. Rendered as the article's closing box, so an article carrying it must not also declare tail_art_path.",
             "type": "array",
             "minItems": 1,
-            "items": {"type": "string", "minLength": 1, "pattern": "^[^\\n]+$"}
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[^\\n]+$"
+            }
           },
-          "tail_art_path": {"type": "string", "minLength": 1},
-          "minimum_reader_pages": {"type": "integer", "minimum": 1, "maximum": 7},
-          "source_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}},
-          "manuscript": {"type": "string"},
+          "tail_art_path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minimum_reader_pages": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 7
+          },
+          "source_ids": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "manuscript": {
+            "type": "string"
+          },
           "opener_art": {
             "type": "object",
-            "required": ["path", "alt_text", "credit"],
+            "required": [
+              "path",
+              "alt_text",
+              "credit"
+            ],
             "properties": {
-              "path": {"type": "string", "minLength": 1},
-              "alt_text": {"type": "string", "minLength": 1},
-              "credit": {"type": "string", "minLength": 1}
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "alt_text": {
+                "type": "string",
+                "minLength": 1
+              },
+              "credit": {
+                "type": "string",
+                "minLength": 1
+              }
             },
             "additionalProperties": false
           },
@@ -126,16 +254,54 @@
             "maxItems": 3,
             "items": {
               "type": "object",
-              "required": ["id", "source_id", "path", "caption", "alt_text", "anchor", "layout"],
+              "required": [
+                "id",
+                "source_id",
+                "path",
+                "caption",
+                "alt_text",
+                "anchor",
+                "layout"
+              ],
               "properties": {
-                "id": {"type": "string", "minLength": 1},
-                "source_id": {"type": "string", "minLength": 1},
-                "path": {"type": "string", "minLength": 1},
-                "caption": {"type": "string", "minLength": 1},
-                "credit": {"type": "string"},
-                "alt_text": {"type": "string", "minLength": 1},
-                "anchor": {"type": "string", "minLength": 1},
-                "layout": {"enum": ["evidence_band", "evidence_band_prose", "adaptive_band", "compact_band", "column_plate", "landscape_plate", "landscape_plate_after"]}
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "caption": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "credit": {
+                  "type": "string"
+                },
+                "alt_text": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "anchor": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "layout": {
+                  "enum": [
+                    "evidence_band",
+                    "evidence_band_prose",
+                    "adaptive_band",
+                    "compact_band",
+                    "column_plate",
+                    "landscape_plate",
+                    "landscape_plate_after"
+                  ]
+                }
               }
             }
           }
@@ -150,19 +316,29 @@
           "format": {
             "type": "object",
             "properties": {
-              "article_opener": {"const": "illustrated_paper_spots_v1"}
+              "article_opener": {
+                "const": "illustrated_paper_spots_v1"
+              }
             },
-            "required": ["article_opener"]
+            "required": [
+              "article_opener"
+            ]
           }
         },
-        "required": ["format"]
+        "required": [
+          "format"
+        ]
       },
       "then": {
-        "required": ["art_direction_path"],
+        "required": [
+          "art_direction_path"
+        ],
         "properties": {
           "articles": {
             "items": {
-              "required": ["opener_art"]
+              "required": [
+                "opener_art"
+              ]
             }
           }
         }
