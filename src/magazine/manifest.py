@@ -20,25 +20,22 @@ if TYPE_CHECKING:
 
 CONTENT_MODES: frozenset[str] = frozenset(
     {
-        "faithful_edit",
-        "faithful_synthesis",
-        "selected_extracts",
-        "original_synthesis",
+        "article",
         "in_a_nutshell",
     }
 )
-"""Every relationship an article may declare to the sources it was built from.
+"""The magazine's two article writers (2026-08-06 simplification).
 
-``in_a_nutshell`` is the teaching explainer: the magazine's own Teacher voice
-grounded in the captured source.  It is deliberately *not* a synthesis mode --
-a faithful synthesis of a specification is nearly obliged to walk the
-specification, which is exactly the failure the section exists to prevent --
-and it is deliberately not ``original_synthesis`` either, because the piece is
-still pinned to a source and still carries the bundle's semantics.
+``article`` is the standard retell through prompts/article.md; the historical
+``faithful_edit`` / ``faithful_synthesis`` / ``selected_extracts`` /
+``original_synthesis`` taxonomy is gone.  ``in_a_nutshell`` is the teaching
+explainer: the magazine's own Teacher voice grounded in the captured source.
+The edition-level editorial is its own third writer and never appears as an
+article content_mode.
 """
 
 EDITOR_VOICE_CONTENT_MODES: frozenset[str] = frozenset(
-    {"original_synthesis", "in_a_nutshell"}
+    {"in_a_nutshell"}
 )
 """Modes whose byline is an editor's, not the captured source author's.
 
@@ -969,7 +966,7 @@ def _primary_source_url(
     if not source_ids or not records:
         return None
     record = records.get(source_ids[0])
-    url = str(getattr(record, "canonical_url", "") or "").strip()
+    url = str(getattr(record, "url", "") or "").strip()
     return url or None
 
 
