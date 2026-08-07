@@ -379,26 +379,6 @@ _FIGURE_RULE_INK = "rgb(5.5%,7.5%,8.5%)"
 # grown by this much on every side to keep the whole stroke inside the clip.
 _FIGURE_RULE_BLEED_POINTS = 1.0
 
-# ``_closing_plate`` (render.py:2183-2196): the title box is ``grid_box(0, 5)``
-# and its first baseline is one size below y 168, which from the page's own
-# content box is ``385.2802 + size``.  Magazine Serif Display on a solid leading
-# carries its baseline ``(1 - 1.371) / 2 + 1.036`` = 0.8505 of the size below
-# its box, so the box's head is ``385.2802 + 0.1495 * size``.
-#
-# ``grid_box(0, 5)`` on the reader's own live width of
-# ``419.5275590551 - 44 - 15mm`` = 333.0078740157 is
-# ``5 * (live - 5 * 9.45) / 6 + 4 * 9.45`` = 275.93156167979, so the fourth
-# decimal is a 6.
-_PLATE_TITLE_WIDTH_POINTS = 275.9316
-_PLATE_TITLE_CONTENT_TOP_POINTS = 385.2802
-_DISPLAY_SOLID_BASELINE_HEAD = 1.0 - ((1.0 - 1.371) / 2 + 1.036)
-# ``_closing_plate``'s own fit: 32pt down to 22, at most two lines of
-# ``grid_box(0, 5)``, standing no taller than 92pt.
-_PLATE_TITLE_BOX_HEIGHT = 92.0
-_PLATE_TITLE_MAX = 32.0
-_PLATE_TITLE_MIN = 22.0
-_PLATE_TITLE_MAX_LINES = 2
-
 # ``_fitted_title_box`` (render.py:1762-1791) on an opener: the reader steps
 # SERIF_DISPLAY down half a point at a time, sets the first baseline one ``size``
 # below a pinned top and leads the rest at ``0.96 * size``.
@@ -1168,10 +1148,11 @@ class TailBand(NamedTuple):
     """One printed tail ornament: its band height, and its foot's lift.
 
     ``lift`` is how far the band's foot stands above the constant
-    ``_TAIL_ORNAMENT_FOOT_INSET``: zero for a band that fills its room, and
-    half the surplus for one the 214pt cap stopped short, so the capped band
-    is centred between the end mark's clearance and the foot inset instead of
-    stranding all its surplus above its own head.
+    ``_TAIL_ORNAMENT_FOOT_INSET``.  Since the editor's ruling of 2026-08-07
+    it is always zero: the ornament stands at the page's foot and whatever
+    surplus the room had is honest white space above it, never a strand of
+    paper below.  The field stays because the plan's shape is a contract
+    (measure.py reads it) and a future design may want a lifted band again.
     """
 
     height: float
@@ -1411,7 +1392,6 @@ def _lay_out(
     _apply_band_offsets(tree, plan.band_offset_points)
     _install_flow_clearances(tree)
     _limit_closing_plates(tree, plan.closing_plates)
-    _fit_closing_plate_titles(tree, edition)
     # After ``_rewrite_landscape_plates``, which reads the tail figure this may
     # remove: a deferred plate is released by the article's coda, and the coda
     # has to still be there when that decision is taken.  Before the contrast
@@ -3097,52 +3077,6 @@ def _path_from_uri(source: str) -> str:
     return unquote(parsed.path) if parsed.scheme == "file" else source
 
 
-def _fit_closing_plate_titles(tree: Element, edition: Edition) -> None:
-    """Set each surviving plate's title at the size ``_fitted_title_box`` chose.
-
-    Auto-fitting is a measurement, not a rule a stylesheet can hold: the reader
-    steps 32pt down to 22 until the title takes at most two lines of
-    ``grid_box(0, 5)`` and stands no taller than 92pt.  The chosen size is
-    stated on the element, together with the head its own first baseline needs;
-    the stylesheet owns everything that does not depend on it.
-    """
-    titles = [str(plate.title) for plate in edition.closing_plates]
-    for plate in tree.iter("figure"):
-        if "closing-plate" not in _element_classes(plate):
-            continue
-        index = int(str(plate.get("data-closing-plate", "0"))) - 1
-        if not 0 <= index < len(titles):
-            raise ValidationError(
-                f"Closing plate {plate.get('data-closing-plate')!r} matches no configured plate"
-            )
-        size, _lines = _fitted_plate_title(titles[index])
-        top = _PLATE_TITLE_CONTENT_TOP_POINTS + _DISPLAY_SOLID_BASELINE_HEAD * size
-        for caption in plate.iter("figcaption"):
-            caption.set(
-                "style",
-                f"font-size: {size:.4f}pt; line-height: {size:.4f}pt; top: {top:.4f}pt",
-            )
-
-
-def _fitted_plate_title(title: str) -> tuple[float, list[str]]:
-    """The size and lines ``_closing_plate`` fits a plate title to.
-
-    Stated once because two passes need the same answer: ``_fit_closing_plate_titles``
-    sets it, and ``_validate_fitted_display`` checks the laid-out caption against
-    it.  A guard that carried its own copy of the fit range would stop being a
-    guard the first time the range moved.
-    """
-    return _fitted_display(
-        title,
-        _PLATE_TITLE_WIDTH_POINTS,
-        _PLATE_TITLE_BOX_HEIGHT,
-        maximum=_PLATE_TITLE_MAX,
-        minimum=_PLATE_TITLE_MIN,
-        maximum_lines=_PLATE_TITLE_MAX_LINES,
-        leading_ratio=1.0,
-    )
-
-
 def _apply_source_codes(tree: Element, codes: Mapping[str, SourceCode]) -> None:
     """Stand each article's source code in its opener's own credit block.
 
@@ -3705,7 +3639,7 @@ def _measured_tail_art(article: Any, flow_bottom: float) -> TailBand | None:
             f"Article tail art {article.tail_art} resolves to {effective_ppi:.1f} ppi; "
             f"the minimum is {_MIN_FIGURE_PPI:.0f} ppi"
         )
-    return TailBand(height, (available - height) / 2)
+    return TailBand(height, 0.0)
 
 
 # The private key ``render_a5_weasyprint`` parks the tail-art ledger under in
@@ -4542,7 +4476,6 @@ def _validate_fitted_display(document: Any, edition: Edition) -> None:
     failures: list[str] = []
     for page_number, page in enumerate(document.pages, start=1):
         _collect_field_overflows(page._page_box, page_number, failures)
-        _collect_plate_title_overruns(page._page_box, page_number, edition, failures)
     if failures:
         raise ValidationError(
             "WeasyPrint set display type past the room the adapter fitted it into. "
@@ -4911,24 +4844,6 @@ def _walk_opener_code_furniture(
         yield from _walk_opener_code_furniture(child, article_id)
 
 
-def _collect_plate_title_overruns(
-    box: Any, page_number: int, edition: Edition, failures: list[str]
-) -> None:
-    titles = [str(plate.title) for plate in edition.closing_plates]
-    for index, caption in _closing_plate_captions(box):
-        if not 0 <= index < len(titles):  # `_fit_closing_plate_titles` already refused this.
-            continue
-        size, fitted = _fitted_plate_title(titles[index])
-        set_lines = _line_box_count(caption)
-        if set_lines == len(fitted):
-            continue
-        failures.append(
-            f"closing plate {index + 1} title {titles[index]!r} was fitted at "
-            f"{size:.4g}pt over {len(fitted)} line(s), but Pango set it on "
-            f"{set_lines} on page {page_number}"
-        )
-
-
 def _opener_title_boxes(box: Any, piece: str | None = None) -> Iterable[tuple[str, Any, Any]]:
     """Every laid-out opener header, paired with the ``h1`` it reserves room for.
 
@@ -4949,25 +4864,6 @@ def _opener_title_boxes(box: Any, piece: str | None = None) -> Iterable[tuple[st
         return
     for child in getattr(box, "children", ()) or ():
         yield from _opener_title_boxes(child, piece)
-
-
-def _closing_plate_captions(box: Any) -> Iterable[tuple[int, Any]]:
-    """Every laid-out closing-plate caption, with its zero-based plate index."""
-    element = getattr(box, "element", None)
-    attributes = getattr(element, "attrib", {}) if element is not None else {}
-    plate = attributes.get("data-closing-plate")
-    if plate is not None and getattr(box, "element_tag", None) == "figure":
-        try:
-            index = int(str(plate)) - 1
-        except ValueError:  # `_fit_closing_plate_titles` already refused this.
-            return
-        for inner in _walk_boxes(box):
-            if getattr(inner, "element_tag", None) == "figcaption" and hasattr(inner, "children"):
-                yield index, inner
-                return
-        return
-    for child in getattr(box, "children", ()) or ():
-        yield from _closing_plate_captions(child)
 
 
 def _line_box_count(box: Any) -> int:
