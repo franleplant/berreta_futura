@@ -603,11 +603,13 @@ def inspect_render(
                     )
                 continue
             band = row["tail_band"]
-            if band is not None and band["centered"] and _abuts_tail_band(void, band):
-                # The void is a centered tail ornament's own margin -- the
-                # calibration at TAIL_BAND_SYMMETRY_TOLERANCE_POINTS argues
-                # why agreement between the two margins is the design's
-                # signature and disagreement is a stranded band.
+            if band is not None and _abuts_tail_band(void, band):
+                # The void abuts the tail ornament's own band.  Since the
+                # foot-anchor ruling (2026-08-07) the band stands at the
+                # page's foot and the room's whole surplus sits above it by
+                # construction -- honest white space, not dead paper -- so
+                # abutment alone is the excuse and the recorded ``centered``
+                # flag stays as data rather than a judgment.
                 continue
             issue(
                 "whitespace-void",

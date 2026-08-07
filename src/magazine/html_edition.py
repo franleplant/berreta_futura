@@ -215,6 +215,18 @@ def _render_contents(edition: Edition) -> tuple[str, ...]:
         (destination, entry_label, title, clamp_roster(author))
         for destination, entry_label, title, author in entries
     ]
+    # The author line sits 2.7pt under a ONE-line title (editor's ruling,
+    # 2026-08-07: intra-entry space belongs between entries).  A title long
+    # enough to wrap would print into it, so it is the editor's to shorten
+    # -- loudly, not silently.  ~62 characters of 9.8pt Magazine Serif
+    # Display is the 286pt measure's practical ceiling.
+    for _destination, _label, title, _author in entries:
+        if len(title) > 62:
+            raise ValidationError(
+                f"Contents title {title!r} ({len(title)} characters) would wrap "
+                "onto the entry's author line; shorten the article title to "
+                "62 characters or fewer."
+            )
     # The row template's fixed offsets (entry-author at 40.5pt) are drawn for
     # the ~49pt row that eight entries leave.  Nine or more rows shrink below
     # that, so the nav declares itself dense and the stylesheet moves the
@@ -590,10 +602,12 @@ def _render_closing_plates(edition: Edition, assets: list[HtmlAsset]) -> tuple[s
             alt_text=plate.title,
         )
         assets.append(asset)
+        # Image only, no printed title (editor's ruling, 2026-08-07): the
+        # plate's configured title survives as alt text and record keeping.
         plates.append(
             '<figure class="closing-plate" data-asset-role="closing_plate" '
             f'data-closing-plate="{index}"><img src="{_attr(asset.src)}" '
-            f'alt="{_attr(plate.title)}"><figcaption>{_text(plate.title)}</figcaption></figure>'
+            f'alt="{_attr(plate.title)}"></figure>'
         )
     return tuple(plates)
 

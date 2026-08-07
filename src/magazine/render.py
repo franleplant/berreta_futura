@@ -2024,10 +2024,11 @@ class _Typesetter:
         pixel_width, pixel_height = image.getSize()
         # Cut to the cloth, as the WeasyPrint plan does (_measured_tail_art):
         # a raster short of the box at 300 ppi prints as the tallest band it
-        # can fill at the floor, centred in the room it was given.
+        # can fill at the floor.  The foot stays where the box put it -- the
+        # ornament stands at the page's foot and the surplus is white space
+        # above it (editor's ruling, 2026-08-07).
         affordable = (pixel_height / MIN_FIGURE_PPI) * 72.0
         if affordable < height:
-            bottom += (height - affordable) / 2
             height = affordable
         effective_ppi = min(
             pixel_width / (width / 72),
@@ -2168,38 +2169,25 @@ class _Typesetter:
         self.new_page(blank_header=True)
         self.pdf.setFillColorRGB(*WHITE)
         self.pdf.rect(0, 0, self.width, self.height, fill=1, stroke=0)
+        # Image only, contained and centred on the page (editor's rulings,
+        # 2026-08-07): the plate is a picture the reader is given whole --
+        # never cropped, never captioned, letterboxed when its aspect
+        # differs from the window's.  The configured title stays record
+        # keeping and alt text.
         art_x, art_width = self.grid_box(0, 6)
-        art_y = 205.0
-        art_height = self.height - art_y
-        # Contained, never cropped (editor's rule, 2026-08-07): the plate is
-        # a picture the reader is given whole, letterboxed when its aspect
-        # differs from the window's.
         from reportlab.lib.utils import ImageReader
 
         plate_image = ImageReader(str(plate.art_path))
         plate_width, plate_height = plate_image.getSize()
-        plate_scale = min(art_width / plate_width, art_height / plate_height)
+        plate_scale = min(art_width / plate_width, self.height / plate_height)
         drawn_width = plate_width * plate_scale
         drawn_height = plate_height * plate_scale
         self.pdf.drawImage(
             plate_image,
             art_x + (art_width - drawn_width) / 2,
-            art_y + (art_height - drawn_height) / 2,
+            (self.height - drawn_height) / 2,
             drawn_width,
             drawn_height,
-        )
-        title_x, title_width = self.grid_box(0, 5)
-        self._fitted_title_box(
-            plate.title,
-            title_x,
-            168,
-            title_width,
-            92,
-            maximum=32,
-            minimum=22,
-            maximum_lines=2,
-            color=VIOLET,
-            leading_ratio=1.0,
         )
 
     def back_cover(self):

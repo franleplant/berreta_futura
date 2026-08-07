@@ -368,18 +368,20 @@ main { margin: 0; }
  * adapter's measure-overflow error instead of a silent overlap.  No
  * overflow clipping here: the line box is 0pt tall by design, and a clip
  * box that height erases the ink. */
+/* The author follows the title as one cluster (editor's ruling, 2026-08-07:
+ * space belongs BETWEEN entries, not inside them) -- 2.7pt under the title's
+ * single line, leaving the rest of the row as air before the next rule.
+ * Titles are one line by contract; _render_contents refuses one that would
+ * wrap into the author's fixed offset. */
 [data-edition-navigation="contents"] .entry-author {
   color: rgb(31% 35% 37%); font: 500 6.8pt/0 "Magazine Sans", sans-serif; left: 47pt;
-  text-transform: uppercase; top: 40.52625pt; white-space: nowrap;
+  text-transform: uppercase; top: 29.2pt; white-space: nowrap;
 }
-/* Nine or more rows: the same anatomy compressed.  Rows shrink to 393/9 =
- * 43.7pt, so every fixed offset steps up just enough that a two-line title
- * (ends 33.3pt) still clears the author line (35.5pt) and the author line
- * (~42.3pt with its descenders) still clears the next row's rule. */
+/* Nine or more rows: the same anatomy compressed into 393/9 = 43.7pt rows. */
 [data-contents-density="tight"] .entry-label { top: 3.9pt; }
 [data-contents-density="tight"] .entry-folio { top: 13.1pt; }
 [data-contents-density="tight"] .entry-title { top: 12.9pt; }
-[data-contents-density="tight"] .entry-author { top: 37.2pt; }
+[data-contents-density="tight"] .entry-author { top: 27.6pt; }
 
 .editorial, article, main > section { break-before: page; }
 .editorial header, article header, main > section > header { break-after: avoid; margin-bottom: 6mm; }
@@ -1563,25 +1565,14 @@ article[data-article-opener="illustrated_paper_spots_v1"] > header > .standfirst
 }
 /* contain, never cover: plate art is a picture the reader is given whole
  * (editor's rule, 2026-08-07 -- a cover fit cut the tops off portrait
- * plates).  Art far from the window's aspect letterboxes; the aspect guard
- * in html_edition._render_closing_plates refuses art that would print as a
+ * plates), and the picture is all there is: no printed title (same ruling),
+ * so the image box spans the full A5 page height (595.2756pt from the
+ * content box's -42.0004pt page top) and contain centres the art on the
+ * page.  Art far from the window's aspect letterboxes; the aspect guard in
+ * html_edition._render_closing_plates refuses art that would print as a
  * sliver. */
 .closing-plate img {
-  height: 390.2756pt; left: 0; margin: 0; max-height: none; max-width: none;
+  height: 595.2756pt; left: 0; margin: 0; max-height: none; max-width: none;
   object-fit: contain; object-position: center; position: absolute;
   top: -42.0004pt; width: 333.0079pt;
-}
-/*
- * `_fitted_title_box(plate.title, grid_box(0, 5), top=168, height=92, 32 -> 22,
- * <= 2 lines, VIOLET, leading_ratio 1.0)`.  The size and the wrap are the
- * adapter's, because auto-fitting is a measurement; the box is here.  A first
- * baseline `size` below `top = 168` sits `385.2802 + size` below the page's
- * content box, and a `size`-leaded line of Magazine Serif Display carries its
- * baseline `0.8505 * size` below its own box, so the box's head is
- * `385.2802 + 0.1495 * size` -- which the adapter states with the size itself.
- */
-.closing-plate figcaption {
-  border: 0; color: rgb(25% 10% 43%); font-family: "Magazine Serif Display", serif;
-  font-weight: 600; left: 0; margin: 0; padding: 0; position: absolute;
-  text-align: left; top: 385.2802pt; width: 275.9317pt;
 }
