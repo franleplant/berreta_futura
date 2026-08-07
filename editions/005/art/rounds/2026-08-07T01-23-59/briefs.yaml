@@ -1,0 +1,167 @@
+briefs:
+- id: cover-synthetic-r4
+  purpose: cover
+  prompt: |
+    Square abstract cover artwork for a print magazine issue whose single
+    editorial reading is: the smallest permission outweighs the largest
+    apparatus — one tiny thing, finally allowed to sit where it belongs,
+    has lifted an entire accumulated machinery clean off the ground and
+    is holding it there.
+
+    Composition: one compact abstract proposition built from six large,
+    confident geometric components on a field of warm off-white negative
+    space. A single long, heavy charcoal beam crosses the frame on a
+    pronounced diagonal, resting on one slender softened-cobalt wedge set
+    just right of centre. The beam's long left arm rides high in the air,
+    carrying three massive stacked slabs — muted green, dusty lavender and
+    warm ochre — tilted with the beam and visibly weighty, their stack
+    slightly out of true. The beam's short right arm is pressed all the way
+    down to the ground plane by one small, crisp brick-coral cube, no
+    larger than a slab's thickness, its corner biting into the plane. The
+    beam bows very slightly under the load. Nothing is falling and nothing
+    is broken: the whole picture is a held, impossible equilibrium.
+
+    Treatment: matte printed solids with clean hard edges, controlled
+    dimensional shading and synthetic material depth, honest cast shadows
+    on a plain ground plane, quiet print grain and slight pigment
+    variation. Push contrast and saturation for newsstand impact — deep
+    charcoal beam against hot brick coral and clean cobalt — while keeping
+    the tonal range printable with no muddy or crushed darks. Negative
+    space concentrates in the lower left and upper right and reads as the
+    air the raised mass is hanging in, not as a decorative margin.
+
+    Palette (publication ink set only): charcoal ink, softened cyan and
+    cobalt, brick coral, muted green, dusty lavender, small warm-ochre
+    accents, warm off-white.
+
+    Requirements: square PNG, at least 1000 x 1000 pixels; at thumbnail
+    size it must read instantly as one long dark bar tipped hard, a
+    mountain of mass held aloft at one end and one small bright block
+    pinning the other; memorable dynamic silhouette; keep the fulcrum, the
+    coral cube and all important detail well inside the frame, away from
+    the extreme edges; physically coherent balance geometry, contact
+    points, load-bearing shadows and material weight.
+
+    Avoid: any typography, masthead, title, issue number, caption, logo,
+    pseudo-writing, glyph, numeral, tick mark, scale gradation or
+    watermark; literal diagrams, icon systems, arrows or wayfinding
+    symbols; classical balance-scale pans, chains, hooks or apothecary
+    scales; doors, doorways, hinges, apertures or things passing through
+    openings; slabs cantilevered inward to form an enclosure; wedges
+    striking, shattering or exploding masses; airborne fragments, sparks,
+    smoke, speed lines or particle dust; ornamental complexity; generic-AI
+    futurism, glow, lens flare, neon, chrome or gradient mesh;
+    photorealism; human figures; any recognizable brand or franchise
+    imagery.
+- id: cover-art-directed-r4
+  purpose: cover
+  prompt: |
+    Square cover artwork: a large hand-made leaded stained-glass panel,
+    photographed straight on and backlit at dusk, for a print magazine
+    issue whose single editorial reading is that the new worker has
+    already outgrown every building we have given it, and is still
+    quietly working inside one anyway.
+
+    The image, told entirely in glass and lead: a narrow three-storey
+    brick townhouse seen flat on from the empty street, alone in a deep
+    cobalt night. All three tall windows blaze warm ochre. One single
+    enormous person is folded up inside the whole house and fills it
+    completely — a bowed head and one shoulder press against the top-floor
+    glass, a forearm and a hand holding a small pen over a blank sheet
+    occupy the middle window, folded knees and the edge of one boot fill
+    the ground-floor window. The figure is calm, absorbed, entirely
+    undisturbed; the building is not. The brick facade bulges outward
+    between the windows, one stepped crack climbs the brickwork from the
+    ground floor to the eaves, the ridge tiles are lifted and out of line,
+    and the gutter has sprung from its bracket on one side.
+
+    Treatment: authentic leaded stained glass — bold charcoal-black lead
+    came drawing every contour at varying weight, flat areas of saturated
+    antique glass, streaky rolled glass in the sky, seedy bubbles and
+    honest ripples in the surface, hand-painted grisaille shading on the
+    face and hands with a matt-and-scrub technique, a few small stopgap
+    leads where a piece was repaired, and one slightly bowed panel section
+    catching the light. Backlight comes through the glass so colour is
+    luminous and the lead reads solid black. Poster-weight contrast and
+    saturation, clean in print, no crushed blacks.
+
+    Palette: charcoal-black lead, warm ochre and amber window light, deep
+    softened cobalt night sky, brick coral masonry, muted green and dusty
+    lavender in the shadowed brick and street, warm off-white highlights.
+
+    Requirements: square PNG, at least 1000 x 1000 pixels; at thumbnail
+    size it must read instantly as three glowing windows in a dark
+    facade with one continuous folded body crossing all three; memorable
+    silhouette; correct human anatomy in the folded pose, correct
+    perspective on the building, correct glass and lead mechanics; keep
+    the building and all important detail well inside the frame, away
+    from the extreme edges.
+
+    Avoid: any typography, masthead, title, issue number, caption, logo,
+    pseudo-writing, house numbers, street signs, shop signage, numerals,
+    dial markings, glyph or watermark; religious or church iconography,
+    saints, halos, rose windows, tracery or Gothic arches; ceramic slabs,
+    glazed sculpture or hinged panels; dressmaker's stands, toiles, pins,
+    basting thread, string, knots, paper scraps or torn-edge collage; a
+    figure clinging to or reaching for a huge machine; a second human
+    figure, crowds, passers-by or vehicles; robots, androids or humanoid
+    machines; horror staging — no distress, no grasping palms flattened on
+    the glass, no blood or damage to the figure; steampunk clutter, gear
+    trains or exposed cabling; modern glossy anime rendering, painterly
+    concept art, photorealism, neon cyberpunk or generic-AI futurism; any
+    recognizable brand or franchise imagery.
+- id: cover-wildcard-r4
+  purpose: cover
+  prompt: |
+    Square cover artwork: a completely convincing documentary photograph of
+    an impossible thing, played absolutely straight by the camera, for a
+    print magazine issue about the accounts, records and permissions we are
+    hurriedly building for a new kind of worker.
+
+    The photograph: an enormous steel filing-cabinet drawer — the size of a
+    railway carriage — has burst out of a green hillside and hangs
+    cantilevered over the valley below. The drawer is real industrial
+    hardware at absurd scale: brushed steel sides, a brick-coral painted
+    drawer front, welded seams, chunky roller runners still gripping the
+    slope, honest dents, rust bloom at the edges and weathered paint. It is
+    packed upright with hundreds of plain warm-ochre folders, blank and
+    unmarked, fanned slightly open by the movement. The moment is caught a
+    second after the drawer shot out: slabs of turf and clods of dark soil
+    are still airborne around it, grass roots trailing, the hillside torn
+    open in a clean rectangular wound. One distant person stands on the
+    drawer's front edge, seen from behind, small enough that no facial
+    detail resolves, giving the scale.
+
+    Photography: bright overcast daylight, medium-format camera, roughly
+    50 mm equivalent lens, f/8, shot from the opposite slope at a slight
+    low angle. Real optics and real physics throughout — natural depth of
+    field, correct contact shadows where the runners meet the earth, correct
+    soil weight and trajectory, correct perspective, consistent film grain
+    across the whole frame, no HDR, no compositing seams, no illustration
+    or painterly rendering of any kind.
+
+    Palette: light, airy and clean for print — pale warm off-white overcast
+    sky, muted green hillside, dark charcoal soil, brushed steel, brick
+    coral drawer front and warm-ochre folders, with a softened cobalt
+    accent in the far valley. Keep the values well separated and the image
+    bright: no crushed blacks, no muddy or murky passages, no low-contrast
+    haze.
+
+    Requirements: square PNG, at least 1000 x 1000 pixels; at thumbnail
+    size it must read instantly as one huge steel rectangle jutting out of
+    a green hill with debris in the air; unmistakable memorable silhouette;
+    keep the drawer, the standing figure and all important detail well
+    inside the frame, away from the extreme edges.
+
+    Avoid: any typography, masthead, title, issue number, caption, logo,
+    pseudo-writing, filing labels, index tabs with writing, glyph, numeral
+    or watermark; doors, doorways, portals, glowing rims, energy swirls or
+    particle sparkles; rooms, furniture, carpets or paper sheets flying
+    through the air; unrolling ribbons off rooftops; bent towers or lit
+    office boxes on structures; darkness, night, storm gloom, muddy or
+    crushed tones; disaster-movie spectacle, fire, explosions or dust
+    plumes; visual clutter, crowds, vehicles, aircraft or machinery beyond
+    the drawer itself; arbitrary symbols; robots, androids or floating
+    interfaces; neon cyberpunk or generic AI-futurist imagery; any
+    painting, illustration, matte-painting or 3D-render look; recognizable
+    faces; any recognizable brand, logo or franchise imagery.

@@ -1,0 +1,181 @@
+briefs:
+- id: cover-synthetic-r5
+  purpose: cover
+  prompt: |
+    Square abstract cover artwork for a print magazine issue whose single
+    editorial reading is: something has arrived at a scale the existing
+    arrangement was never built for, and the small, tidy set of things we
+    already had is about to be underneath it.
+
+    Composition: one compact abstract proposition built from six large,
+    confident geometric components on a substantial field of warm off-white
+    negative space. A colossal brick-coral mass fills the upper left and
+    centre: a stepped, faceted swell built from stacked rectangular courses
+    that corbel forward course by course until the top courses overhang and
+    curl over into a heavy, blunt geometric crest — enormous, matte, patient,
+    not yet falling. Beneath and to the right, on a plain ground plane, sit
+    three small, crisp, precisely made charcoal and softened-cobalt solids —
+    a low slab, a short column and a flat disc — arranged with obvious care,
+    neatly spaced, absurdly small against the mass above them. One dusty
+    lavender solid at the swell's toe is already half-swallowed by the
+    advancing courses. A single long muted-green plane runs low across the
+    frame as the horizon the mass has come over. Nothing is broken, nothing is
+    in flight: the picture is the held second before contact.
+
+    Treatment: matte printed solids with clean hard edges, controlled
+    dimensional shading and synthetic material depth, honest cast shadows on
+    the ground plane, slight pigment variation, quiet print grain. Push
+    contrast and saturation for newsstand impact — the coral mass hot and
+    dominant, the small solids dark and exact — while keeping the tonal range
+    printable with no muddy or crushed darks. The negative space concentrates
+    in the lower right and reads as the ground the small solids are standing
+    on with nowhere to go, not as decorative margin.
+
+    Palette (publication ink set only): charcoal ink, softened cyan and
+    cobalt, brick coral, muted green, dusty lavender, small warm-ochre
+    accents, warm off-white.
+
+    Requirements: square PNG, at least 1000 x 1000 pixels; at thumbnail size
+    it must read instantly as one huge coral mass leaning and curling over
+    three tiny dark blocks; memorable dynamic silhouette dominated by the
+    overhanging crest; keep the crest, the three small solids and all
+    important detail well inside the frame, away from the extreme edges;
+    physically coherent corbelling, overhang, weight, contact shadows and
+    material relationships.
+
+    Avoid: any typography, masthead, title, issue number, caption, logo,
+    pseudo-writing, glyph, numeral, tick mark or watermark; literal diagrams,
+    icon systems, arrows or wayfinding symbols; doors, doorways, hinges,
+    apertures or things passing through openings; slabs cantilevered inward to
+    form an enclosure; a wedge striking or shattering a mass; airborne
+    fragments, debris, sparks, smoke, speed lines or particle dust; a beam
+    balanced on a fulcrum, scale pans or counterweights; literal ocean waves,
+    foam, spray, water texture or seascape rendering; ornamental complexity;
+    generic-AI futurism, glow, lens flare, neon, chrome or gradient mesh;
+    photorealism; human figures; any recognizable brand or franchise imagery.
+- id: cover-art-directed-r5
+  purpose: cover
+  prompt: |
+    Square cover artwork: a large hand-made processional banner in appliqué
+    and hand embroidery, photographed flat and evenly lit, for a print
+    magazine issue whose single editorial reading is that an entire new
+    population has turned up to be registered, paid, housed and governed, and
+    the institution receiving them is one counter wide.
+
+    The image, told entirely in stitched cloth: the interior of an enormous
+    civic hall at night, seen from a high vantage near the ceiling. The hall
+    is deep softened-cobalt darkness — a vast coffered ceiling above, a broad
+    dark floor below, the far walls lost in shadow. Right of centre, a single
+    small service counter glows warm ochre and amber, the only real light in
+    the building, its glow pooling out across the floor in a widening
+    lozenge. Behind the counter sits one lone clerk, tiny, shoulders round,
+    head down at the work. Coiling out from that counter and filling the whole
+    floor is a colossal serpentine queue of small, simply worked figures —
+    thousands of them, shoulder to shoulder, patient, coiling in three great
+    loops that widen as they come toward the viewer and run off the bottom and
+    left edges of the frame into the dark. The figures nearest the light are
+    warm-lit on one side; those further out are flat charcoal silhouettes. One
+    brass pendant lamp hangs low over the counter on a long chain. The queue is
+    calm, orderly and endless; the counter is very small.
+
+    Treatment: authentic trade-banner craft — a heavy dusty-lavender and
+    charcoal ground cloth, shapes cut from felt and silk and appliquéd down
+    with visible whip stitch, bold chain-stitch and stem-stitch contours of
+    varying weight, satin-stitch fills, couched warm-ochre metallic thread for
+    the lamplight and its pool, French knots massed to make the far reaches of
+    the crowd, honest needle holes, slight pucker where a large shape is
+    seamed, one small visible repair patch, fabric nap and quiet weave
+    texture. Poster-weight contrast and saturation with clean print
+    reproduction, no crushed blacks. The banner's border is plain and
+    undecorated.
+
+    Palette: charcoal ink, deep softened cobalt, warm ochre and amber
+    lamplight, brick coral accents in the clerk's counter and a few figures,
+    muted green in the shadowed floor, dusty lavender ground cloth, warm
+    off-white highlights.
+
+    Requirements: square PNG, at least 1000 x 1000 pixels; at thumbnail size
+    it must read instantly as one small blazing point of light with a vast
+    dark coil winding around and away from it; unmistakable memorable
+    silhouette; correct perspective on the hall, correct diminishing scale
+    through the queue, correct light falloff from a single source, correct
+    anatomy in the simplified figures; keep the counter, the clerk and all
+    important detail well inside the frame, away from the extreme edges.
+
+    Avoid: any typography, masthead, title, issue number, caption, logo,
+    pseudo-writing, lettered scrolls, ribbon cartouches, banner mottoes,
+    signage, numerals, dial markings, glyph or watermark; heraldic devices,
+    crests, wreaths, laurels, clasped-hands emblems or allegorical figures;
+    religious iconography, saints, halos or stained-glass motifs; ceramic
+    slabs, glazed sculpture or hinged panels; dressmaker's stands, toiles,
+    pins, basting thread, string, knots, paper scraps or torn-edge collage; a
+    figure clinging to or reaching for a huge machine; a giant person folded
+    inside a building; doors, doorways, portals or things passing through
+    openings; robots, androids or humanoid machines; screens, terminals,
+    cables or floating interfaces; distress, panic, riot, restraint, barriers
+    or crowd violence; steampunk clutter or gear trains; modern glossy anime
+    rendering, painterly concept art, photorealism, neon cyberpunk or
+    generic-AI futurism; any recognizable brand or franchise imagery.
+- id: cover-wildcard-r5
+  purpose: cover
+  prompt: |
+    Square cover artwork: a completely convincing documentary night
+    photograph of an impossible thing, played absolutely straight by the
+    camera, for a print magazine issue about servicing something that is
+    orders of magnitude larger than the ordinary infrastructure we have for
+    it.
+
+    The photograph: a full-size, plain unmarked passenger widebody airliner is
+    parked on a small two-pump suburban petrol-station forecourt in steady
+    rain, being refuelled from the pump. The aircraft is far too big for the
+    site and everything about the framing insists on it: the nose overhangs the
+    empty road at the lower left, one enormous wing reaches clean over the
+    kiosk and the canopy, and the tail fin rises past the rooflines of the
+    terraced houses behind. The scene is entirely mundane — nothing is
+    crashed, nothing is burning, nobody is alarmed. A single ordinary fuel hose
+    runs from the pump, up a wheeled service ladder, to an open panel on the
+    wing underside; the hose is taut and slightly swinging. One attendant in a
+    hi-vis vest stands at the pump seen from behind, small enough that no
+    facial detail resolves, giving the scale. A small hatchback waits at the
+    second pump, dwarfed. The forecourt canopy's strip lights blaze warm and
+    cool white; rain falls in visible streaks through them and the wet tarmac
+    throws long broken reflections of every light across the foreground.
+
+    Photography: night, steady rain, medium-format camera, roughly 35 mm
+    equivalent lens, f/5.6, tripod, a long enough exposure to streak the rain
+    and hold the wet reflections. Real optics and real physics throughout —
+    natural depth of field, correct contact shadows and standing water where
+    the landing gear meets the tarmac, correct undercarriage compression under
+    the aircraft's weight, correct perspective and lens geometry at this
+    distance, consistent film grain across the whole frame, mixed colour
+    temperature handled honestly, no HDR, no compositing seams, no
+    illustration, painting or 3D-render look of any kind.
+
+    Palette: keep it bright and clean for print despite the night — deep
+    softened cobalt sky rather than black, warm ochre and amber kiosk and
+    canopy light, brick coral trim on the canopy fascia and pump housings,
+    muted green in the wet verge, charcoal aircraft shadow and roofline, warm
+    off-white fuselage catching the forecourt light. Values well separated:
+    no crushed blacks, no muddy or murky passages, no low-contrast haze.
+
+    Requirements: square PNG, at least 1000 x 1000 pixels; at thumbnail size
+    it must read instantly as one colossal aircraft standing over one tiny
+    blazing forecourt in the rain; unmistakable memorable silhouette built
+    from the wing and the tail fin against the sky; keep the kiosk, the
+    attendant, the hose and all important detail well inside the frame, away
+    from the extreme edges.
+
+    Avoid: any typography, masthead, title, issue number, caption, logo,
+    pseudo-writing, airline livery, tail markings, registration numbers,
+    fuel-brand signage, price boards, shop-window lettering, road markings
+    that read as characters, glyph, numeral or watermark; doors, doorways,
+    portals, glowing rims, energy swirls or particle sparkles; rooms,
+    furniture, carpets or paper sheets flying through the air; unrolling
+    ribbons off rooftops; bent towers or lit office boxes on structures; giant
+    filing drawers or objects bursting out of hillsides; fire, smoke,
+    explosions, crash damage, wreckage, emergency vehicles, flashing blue
+    lights, crowds of onlookers or press; storm gloom, fog, darkness or
+    crushed tones; lightning, aircraft in flight or landing approaches; visual
+    clutter; arbitrary symbols; robots, androids or floating interfaces; neon
+    cyberpunk or generic AI-futurist imagery; recognizable faces; any
+    recognizable brand, logo, aircraft livery or franchise imagery.

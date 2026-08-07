@@ -1,0 +1,173 @@
+briefs:
+- id: cover-synthetic-r6
+  purpose: cover
+  prompt: |
+    Square abstract cover artwork for a print magazine. The single editorial
+    reading: the place has already been made, and it stands open, immaculate
+    and unhurried, waiting for whoever is coming.
+
+    Composition: one compact abstract proposition built from five large,
+    confident geometric components on a broad field of warm off-white
+    negative space, lit by a single warm low light. A very large, thick arc
+    of fully saturated cobalt-violet rests on a plain ground plane just below
+    centre, bent into a wide shallow open cradle that opens upward toward the
+    viewer, its inner face a half-tone deeper than its outer face. A slender
+    warm-ochre bar leans against the arc's near rim and touches the ground,
+    an unmistakable way in. On the open ground outside the arc, at a
+    comfortable distance, sits one small crisp brick-coral cube — the only
+    other object in the picture, plainly not yet inside. The arc casts one
+    long, soft, physically exact shadow across the ground. Nothing moves,
+    nothing is falling, nothing is broken: the image is calm, staged and
+    inviting, and it should pull the viewer closer rather than shout.
+
+    Treatment: matte printed solids with clean hard edges, controlled
+    dimensional shading and synthetic material depth, honest contact
+    shadows, slight pigment variation, quiet print grain. Colour is fully
+    saturated — a hot, confident hero violet-cobalt against a warm neutral
+    ground with one small saturated coral accent. No muted pastels, no
+    washed-out tints, no moody darkness, no crushed blacks, no vintage or
+    distressed poster look. Attached reference covers govern colour
+    character, saturation level and print finish; follow them for feel, not
+    for composition or motif.
+
+    Palette: warm off-white ground, saturated cobalt-violet, brick coral,
+    warm ochre, charcoal for shadow and edge, small muted-green accent if
+    needed.
+
+    Requirements: square PNG, at least 1000 x 1000 pixels; at thumbnail size
+    it must read instantly as one bold violet crescent on cream with a small
+    orange cube beside it; memorable, calm silhouette; keep the arc, the
+    ramp, the cube and all important detail well inside the frame, away from
+    the extreme edges; physically coherent geometry, contact points and
+    shadows.
+
+    Avoid: any typography, masthead, title, issue number, caption, logo,
+    pseudo-writing, glyph, numeral, tick mark or watermark; literal diagrams,
+    icon systems, arrows or wayfinding symbols; doors, doorways, hinges,
+    apertures or things passing through openings; slabs cantilevered inward
+    to form an enclosure; a wedge striking or shattering a mass; a beam
+    balanced on a fulcrum, scale pans or counterweights; a huge mass leaning
+    or curling over small blocks; airborne fragments, debris, sparks, smoke,
+    speed lines or particle dust; water, waves or liquid; ornamental
+    complexity; generic-AI futurism, glow, lens flare, neon, chrome or
+    gradient mesh; photorealism; human figures; any recognizable brand or
+    franchise imagery.
+- id: cover-art-directed-r6
+  purpose: cover
+  prompt: |
+    Square cover artwork: a calm, immaculately staged photograph of one
+    hand-made object, for a print magazine. The single editorial reading: the
+    welcome has been prepared at a scale far beyond the house offering it.
+
+    The subject: a single enormous hand-woven mat lies on a warm pale stone
+    terrace in low golden light. It is a real craft object at absurd scale —
+    hand-woven coir and jute dyed a fully saturated brick coral, a coarse
+    honest weave with visible warp and weft, a hand-whipped edge in slightly
+    darker cord, one slightly irregular corner where the weaver's tension
+    changed, a soft nap that catches the raking sun. It is completely plain:
+    no pattern, no border device, no writing of any kind. At the top of the
+    frame stands one modest whitewashed single-storey building with a single
+    ordinary window and one low stone step — small, tidy, entirely normal,
+    and dwarfed by the mat, which runs many times the building's width and
+    off both side edges of the picture. On the stone step, placed neatly side
+    by side, sits one small pair of saturated cobalt-blue work boots, empty.
+    The scene is still, warm and hospitable; nobody is present, nothing is
+    happening, and the picture works by scale surprise and quiet invitation
+    rather than by action.
+
+    Treatment: straight-on slightly elevated three-quarter view, low warm sun
+    from the left, long exact contact shadows under the mat's edge, the boots
+    and the step; convincing fibre, weight and drape where the mat meets
+    uneven stone; immaculate craft and print-clean reproduction. Colour is
+    fully saturated: one hero coral against a warm neutral ground with a
+    single small cobalt accent. No muted pastels, no sepia or vintage
+    treatment, no moody darkness, no crushed blacks. Attached reference
+    covers govern colour character, saturation level and finish; follow them
+    for feel, not for composition or motif.
+
+    Palette: warm off-white and pale stone, saturated brick coral, saturated
+    cobalt, warm ochre sunlight, charcoal shadow, one muted-green accent.
+
+    Requirements: square PNG, at least 1000 x 1000 pixels; at thumbnail size
+    it must read instantly as one huge coral rectangle before one tiny white
+    building; memorable calm silhouette; correct perspective, correct fibre
+    and stone materials, correct shadow direction throughout; keep the
+    building, the boots and all important detail well inside the frame, away
+    from the extreme edges.
+
+    Avoid: any typography, masthead, title, issue number, caption, logo,
+    pseudo-writing, house numbers, signage, woven letters or numerals,
+    monograms, glyph or watermark; woven patterns, motifs, borders or
+    geometric devices of any kind; doors, doorways, hinges or portals;
+    ceramic slabs, glazed sculpture or hinged panels; stained glass, leaded
+    panels or church iconography; embroidered banners, appliqué, French
+    knots, crowds or queues of figures; dressmaker's stands, toiles, pins,
+    basting thread, string, knots, paper scraps or torn-edge collage; a
+    figure clinging to a machine; a giant person folded inside a building;
+    human figures, faces or hands; robots, androids or humanoid machines;
+    screens, cables or floating interfaces; steampunk clutter, gear trains or
+    machinery; scattered props, furniture, vehicles or garden clutter;
+    linocut, silkscreen, vintage travel-poster or pulp-poster styling; modern
+    glossy anime rendering, painterly concept art, neon cyberpunk or
+    generic-AI futurism; any recognizable brand or franchise imagery.
+- id: cover-wildcard-r6
+  purpose: cover
+  prompt: |
+    Square cover artwork: a completely convincing documentary photograph of
+    an impossible thing, played absolutely straight by the camera, for a
+    print magazine. The single editorial reading: something enormous has come
+    down over ordinary life, and it has arrived gently.
+
+    The photograph: an immense cargo parachute in fully saturated marigold
+    ripstop nylon has settled over a small stone farmhouse standing alone in
+    a warm, empty, sunlit field. The canopy is still domed, tented cleanly
+    over the roof and eaves like an enormous held breath, its radial seams
+    curving over the ridge, its skirt just touching the grass all round; one
+    corner is lifted a hand's width by the evening air and holds a single
+    soft ripple. The shroud lines run taut from the skirt to four ordinary
+    timber fence posts at the field's edge, where they are simply tied off.
+    Everything is calm and intact: no damage, nobody present, no alarm — the
+    farmhouse's small saturated cobalt window frame and one cobalt water butt
+    show at the near gable, untouched. Late golden light rakes across the
+    field from the left; the nylon glows warm where the low sun passes
+    through it, and the whole canopy casts one long, exact shadow over the
+    grass.
+
+    Photography: golden hour, medium-format camera, roughly 50 mm equivalent
+    lens, f/8, tripod, shot from a slight low angle across the field. Real
+    optics and real physics throughout — correct fabric weight, drape, seam
+    geometry and translucency, correct line tension and knots, correct
+    contact where the skirt meets grass, natural depth of field, consistent
+    fine film grain across the whole frame, no HDR, no compositing seams, no
+    painting, illustration, matte-painting or 3D-render look of any kind.
+
+    Palette: bright, warm and fully saturated for print — saturated marigold
+    canopy as the hero, warm off-white sky near the horizon rising to
+    saturated cobalt above, warm ochre and muted green field, pale stone
+    farmhouse, charcoal shadow, one small saturated cobalt accent at the
+    window and water butt. Values well separated: no crushed blacks, no muddy
+    or murky passages, no low-contrast haze, no night, no storm. Attached
+    reference covers govern colour character, saturation level and finish;
+    follow them for feel, not for composition or motif.
+
+    Requirements: square PNG, at least 1000 x 1000 pixels; at thumbnail size
+    it must read instantly as one glowing orange dome sitting over one small
+    house in a green field; unmistakable memorable silhouette; keep the
+    house, the canopy crest, the tied-off lines and all important detail well
+    inside the frame, away from the extreme edges.
+
+    Avoid: any typography, masthead, title, issue number, caption, logo,
+    pseudo-writing, canopy markings, stencilled codes, registration numbers,
+    glyph, numeral or watermark; military, rescue or disaster staging — no
+    fire, smoke, explosions, wreckage, crash damage, emergency vehicles,
+    flashing lights, crowds or press; aircraft, helicopters, drones or
+    anything in flight; doors, doorways, portals, glowing rims, energy swirls
+    or particle sparkles; rooms, furniture, carpets or paper sheets flying
+    through the air; unrolling ribbons off rooftops; bent towers or lit office
+    boxes on structures; giant filing drawers or objects bursting out of
+    hillsides; vehicles parked in impossible places; darkness, night, fog,
+    storm gloom or crushed tones; visual clutter, extra buildings, power
+    lines or livestock; arbitrary symbols; robots, androids or floating
+    interfaces; neon cyberpunk or generic AI-futurist imagery; human figures
+    or recognizable faces; any recognizable brand, logo, livery or franchise
+    imagery.

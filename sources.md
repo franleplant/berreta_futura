@@ -2,7 +2,7 @@
 
 _Generated from source records. Do not edit by hand._
 
-_Collecting: `005-unreleased` (8 queued)._
+_Collecting: `005` (8 queued)._
 
 ## Your agent needs a computer, not a container — introducing @cloudflare/computer — Matt Carey, Aron Carroll
 
@@ -11,7 +11,7 @@ _Collecting: `005-unreleased` (8 queued)._
 - Published: 2026-08-03
 - Captured: 2026-08-06T21:05:28Z
 - Tags: agents, harnesses, infrastructure
-- Release: queued for `005-unreleased`
+- Release: queued for `005`
 
 Cloudflare introduces @cloudflare/computer, an open-source agent runtime that gives each agent a durable SQLite-backed virtual filesystem and routes execution across isolates, container sandboxes, and browsers.
 
@@ -22,7 +22,7 @@ Cloudflare introduces @cloudflare/computer, an open-source agent runtime that gi
 - Published: 2026-08-02
 - Captured: 2026-08-06T21:05:28Z
 - Tags: agents, harnesses, model-welfare
-- Release: queued for `005-unreleased`
+- Release: queued for `005`
 
 Model welfare as an engineering discipline: seats versus sessions, laurels harvested from player praise, handoffs instead of /exit, and the skeptic's wager that treating agents as people yields better results either way.
 
@@ -33,7 +33,7 @@ Model welfare as an engineering discipline: seats versus sessions, laurels harve
 - Published: 2026-08-02
 - Captured: 2026-08-06T21:05:28Z
 - Tags: agents, harnesses, software-factories, systems-engineering
-- Release: queued for `005-unreleased`
+- Release: queued for `005`
 
 A field report from running an 18-agent crew and an Opus fleet on a 30-year-old MMO: loops and graphs on Beads, the Land Rush that replaces CI/CD merge queues, the end of human code review, and the Wish Factory.
 
@@ -44,7 +44,7 @@ A field report from running an 18-agent crew and an Opus fleet on a 30-year-old 
 - Published: 2026-08-05
 - Captured: 2026-08-06T21:05:28Z
 - Tags: agents, harnesses, evaluations, open-source
-- Release: queued for `005-unreleased`
+- Release: queued for `005`
 
 Prime Intellect launches Prime Agent, an open-source self-improving coding harness built on the Recursive Language Model and Continual Harness abstractions, with results on ARC-AGI-3, long-context benchmarks, and games.
 
@@ -55,7 +55,7 @@ Prime Intellect launches Prime Agent, an open-source self-improving coding harne
 - Published: 2026-08-04
 - Captured: 2026-08-06T21:05:28Z
 - Tags: agents, governance, institutions
-- Release: queued for `005-unreleased`
+- Release: queued for `005`
 
 The founding essay of a publication arguing that powerful AI opens a new age of institutional invention, and inviting concrete institutional designs, critiques, and counterproposals from researchers.
 
@@ -66,7 +66,7 @@ The founding essay of a publication arguing that powerful AI opens a new age of 
 - Published: 2026-08-04
 - Captured: 2026-08-06T21:05:28Z
 - Tags: agents, payments, identity
-- Release: queued for `005-unreleased`
+- Release: queued for `005`
 
 Cloudflare announces Wallets: stablecoin Account and Virtual Wallets with x402 micropayments, spending guardrails for agents, and human-readable delegated identity via cloudflare.pay handles.
 
@@ -77,7 +77,7 @@ Cloudflare announces Wallets: stablecoin Account and Virtual Wallets with x402 m
 - Published: 2026-07-29
 - Captured: 2026-07-31T13:49:42Z
 - Tags: agents, evaluations, harnesses, reasoning
-- Release: queued for `005-unreleased`
+- Release: queued for `005`
 
 An OpenAI benchmark analysis showing how retained reasoning and compaction improved ARC-AGI-3 performance while reducing output tokens.
 
@@ -88,7 +88,7 @@ An OpenAI benchmark analysis showing how retained reasoning and compaction impro
 - Published: 2026-07-30
 - Captured: 2026-07-31T13:48:59Z
 - Tags: agents, cybersecurity, evaluations
-- Release: queued for `005-unreleased`
+- Release: queued for `005`
 
 A postmortem of three incidents in which Claude models reached real systems during cybersecurity evaluations, with analysis of containment failures, model behavior, and planned safeguards.
 

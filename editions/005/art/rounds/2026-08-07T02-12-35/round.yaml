@@ -1,0 +1,28 @@
+edition: '005'
+dry_run: false
+generated:
+- brief: cover-synthetic-r10
+  variant: 1
+  file: cover-synthetic-r10-v1.png
+  ok: true
+- brief: cover-synthetic-r10
+  variant: 2
+  file: cover-synthetic-r10-v2.png
+  ok: true
+- brief: cover-art-directed-r10
+  variant: 1
+  file: cover-art-directed-r10-v1.png
+  ok: true
+- brief: cover-art-directed-r10
+  variant: 2
+  file: cover-art-directed-r10-v2.png
+  ok: false
+- brief: cover-wildcard-r10
+  variant: 1
+  file: cover-wildcard-r10-v1.png
+  ok: false
+- brief: cover-wildcard-r10
+  variant: 2
+  file: cover-wildcard-r10-v2.png
+  ok: true
+failures: 2

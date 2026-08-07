@@ -1,0 +1,985 @@
+briefs:
+- id: cover-synthetic
+  purpose: cover
+  prompt: |
+    Square abstract cover artwork for a print magazine issue whose single
+    editorial reading is: software agents have outgrown the sandbox and now
+    need real rooms, ledgers, wallets and rules — the work of this issue is
+    building the doors.
+
+    Composition: one compact abstract proposition built from five large,
+    confident geometric components on a substantial field of warm off-white
+    negative space. A single broad flat plane occupies the lower two thirds,
+    pierced by one tall clean rectangular aperture. Three simple solids — a
+    slab, a wedge and a disc — pass through or rest in the aperture at
+    different depths, while a fourth solid waits outside it, unmistakably not
+    yet through. Controlled dimensional shading and synthetic material depth
+    are welcome where they strengthen the proposition; forms should read as
+    matte printed solids with clean edges and quiet print grain.
+
+    Palette (publication ink set only): charcoal ink, softened cyan and
+    cobalt, brick coral, muted green, dusty lavender, small warm-ochre
+    accents, warm off-white. Low to medium saturation, print-friendly
+    contrast, no muddy darks.
+
+    Requirements: square PNG, at least 1000 x 1000 pixels; legible silhouette
+    at thumbnail size; keep all important detail well inside the frame, away
+    from the extreme edges; physically coherent intersections, shadows and
+    material relationships.
+
+    Avoid: any typography, masthead, title, issue number, caption, logo,
+    pseudo-writing, glyph, numeral or watermark; literal diagrams; icon
+    systems; arrows or wayfinding symbols; ornamental complexity; generic-AI
+    futurism, glow, lens flare, neon, chrome or gradient mesh; photorealism;
+    human figures; any recognizable brand or franchise imagery.
+- id: cover-art-directed
+  purpose: cover
+  prompt: |
+    Square cover artwork: a straight-on studio photograph of a purpose-made
+    glazed ceramic sculpture, for a print magazine issue whose single
+    editorial reading is that software agents have outgrown the sandbox and
+    now need real rooms, ledgers, wallets and rules — the work of this issue
+    is building the doors.
+
+    The object: a low wall of five hand-thrown, slightly irregular glazed
+    ceramic slabs standing edge to edge on a plain matte surface. The centre
+    slab is a real working panel on two small brass hinges, swung partly open
+    toward the camera, revealing a clean empty rectangle of cool shadow
+    behind the wall. Glazes vary slab to slab — softened cobalt, brick coral,
+    muted green, dusty lavender — with visible glaze pooling at the slab feet
+    and honest kiln variation in the surface. Hard raking light from the
+    upper left casts one long, physically exact shadow set across warm
+    off-white ground; the open panel throws a distinct angled shadow that
+    proves the hinge.
+
+    Palette: charcoal, softened cyan and cobalt, brick coral, muted green,
+    dusty lavender, warm-ochre accents, warm off-white. Low to medium
+    saturation, clean print reproduction, no crushed blacks.
+
+    Requirements: square PNG, at least 1000 x 1000 pixels; strong legible
+    silhouette at thumbnail size; important detail kept away from the extreme
+    edges; convincing ceramic material, correct hinge mechanics, correct
+    contact shadows.
+
+    Avoid: any typography, masthead, title, issue number, caption, logo,
+    pseudo-writing, glyph, numeral or watermark; string, thread, knots, paper
+    scraps, torn-edge collage or pinned diagrams; human figures or hands
+    unless nothing else is possible — none are needed here; generic-AI
+    futurism, glow, neon, chrome; ornamental clutter; any recognizable brand
+    or franchise imagery.
+- id: cover-wildcard
+  purpose: cover
+  prompt: |
+    Square cover artwork with a single surprising, immediately legible
+    proposition, for a print magazine issue about software agents that have
+    outgrown the sandbox and now need real rooms, ledgers, wallets and rules.
+
+    The image: an ordinary domestic doorway — plain painted frame, one open
+    door — standing entirely free in the middle of a vast, empty, pale
+    grassland under a high flat sky. Through the doorway spills an entire
+    room's worth of everyday interior in mid-flight and frozen at the instant
+    of exit: a desk, a chair, a filing drawer with its drawers fanned open, a
+    lamp still lit, a scatter of small objects, all arrested in a rising
+    diagonal plume that is far larger than the door it came through. Scale
+    shock and arrested motion carry the picture; the doorway stays small,
+    calm and exact, the plume enormous. The interior side of the doorway
+    glows warm; everything outside it is cool and open.
+
+    Palette: predominantly light and airy — warm off-white sky, pale muted
+    green ground, charcoal contours, warm-ochre interior light, with softened
+    cobalt and brick coral accents in the flying objects. Keep tonal range
+    light and clean so the cover reproduces well in print.
+
+    Requirements: square PNG, at least 1000 x 1000 pixels; at thumbnail size
+    it must read instantly as one bright doorway with a dark plume erupting
+    from it; memorable silhouette; coherent perspective, gravity, shadows and
+    object-to-object physics; important detail kept away from the extreme
+    edges.
+
+    Avoid: any typography, masthead, title, issue number, caption, logo,
+    pseudo-writing, glyph, numeral or watermark; darkness, muddy or crushed
+    tones; visual clutter for its own sake; arbitrary symbols; portals with
+    glowing rims, energy swirls, particle sparkles or other familiar
+    AI-futurist imagery; neon cyberpunk; photorealistic human figures; any
+    recognizable brand or franchise imagery.
+- id: opener-arc-agi-3
+  purpose: opener
+  article_id: how-enabling-two-settings-tripled-our-scores-on
+  prompt: |
+    Original family-friendly children's science-comedy manga illustration,
+    entirely wordless, one playful visual idea only.
+
+    Scene: a curious school-age boy with round glasses kneels behind a
+    compact helper robot and flips two small toggle switches on a little
+    access panel in the robot's back — just two switches, nothing else on the
+    panel. In front of the robot, three identical small puzzle boards made of
+    coloured squares rise and stack neatly into the air, each one completing
+    itself as it lifts. The robot's posture straightens with surprise as the
+    third board settles. A tidy quiet study nook: pale plaster wall, a low
+    workbench edge, one soft cast shadow.
+
+    Style: simple charcoal contours, rounded readable expressions, economical
+    watercolour washes, minimal hatching, restrained halftone, quiet print
+    grain, slight pigment variation, subtle paper tooth.
+
+    Cast: exactly one boy and exactly one compact non-animal helper robot. No
+    other people, no other robots, no robot-faced appliances or machines.
+
+    Palette: gentle historical magazine colour at low to medium saturation,
+    chosen by the setting — softened cobalt walls, muted green workbench,
+    brick coral and warm ochre in the puzzle squares, dusty lavender shadow,
+    warm off-white breathing room, charcoal ink. At least three distinct
+    non-neutral colours. Never a single flat yellow paper field.
+
+    Format: square composition; the boy, the robot and the rising boards are
+    the essential subject and must sit safely inside the frame with margin on
+    all sides; strong silhouettes and print-friendly contrast, fully legible
+    at A5 page size.
+
+    Avoid: any resemblance to Doraemon, Nobita or any recognizable franchise
+    character, costume, face, silhouette or gadget; blue robotic cats;
+    uniform yellow, mustard, beige, sepia, cream-paper or bright cyan
+    backgrounds; extra humans or robots; decorative montages, contact sheets
+    or filler patterns; dense technical realism, steampunk clutter, heavy
+    crosshatching; modern glossy anime rendering, painterly concept art, neon
+    cyberpunk, photorealism; any lettering, numerals, pseudo-writing,
+    interface glyphs, captions, labels, speech balloons or watermarks;
+    multi-panel layout.
+  subject: The boy flips two small toggles on the robot's back panel and three completed puzzle boards lift and stack in front of it.
+  composition: Square, boy and robot low left in three-quarter view, the three rising boards stepping up to the right with clear off-white space above.
+  alt_text: A boy in round glasses flips two switches on a small robot's back panel while three coloured puzzle boards rise and stack in the air in front of it.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print Color"
+- id: tail-arc-agi-3
+  purpose: tail
+  article_id: how-enabling-two-settings-tripled-our-scores-on
+  prompt: |
+    Original family-friendly children's science-comedy manga vignette, wide
+    horizontal banner format, entirely wordless, one playful visual idea only.
+
+    Scene: a long low control rail runs across the picture with just two tiny
+    toggle switches on it, both flipped up. At the left the compact helper
+    robot walks away along the rail carrying three small coloured puzzle
+    tiles stacked in its arms; at the right the boy with round glasses sits on
+    the rail's end, feet swinging, watching. Plenty of calm empty space
+    between them.
+
+    Style: simple charcoal contours, rounded readable expressions, economical
+    watercolour washes, minimal hatching, restrained halftone, quiet print
+    grain, slight pigment variation, subtle paper tooth.
+
+    Cast: exactly one boy and exactly one compact non-animal helper robot. No
+    other people, no other robots, no robot-faced appliances.
+
+    Palette: gentle historical magazine colour at low to medium saturation —
+    softened cobalt rail, muted green and brick coral tiles, warm-ochre
+    accent, dusty lavender shadow, warm off-white ground, charcoal ink. At
+    least three distinct non-neutral colours. Never a single flat yellow
+    paper field.
+
+    Format: wide horizontal single vignette, roughly three to one. Keep every
+    essential element — both figures, the two switches, the three tiles —
+    well inside a safe central horizontal band, with generous margin at the
+    left and right ends in case the strip is cropped. Print-friendly
+    contrast, legible at small size across an A5 page width.
+
+    Avoid: any resemblance to Doraemon, Nobita or any recognizable franchise
+    character, costume, face, silhouette or gadget; blue robotic cats;
+    uniform yellow, mustard, beige, sepia, cream-paper or bright cyan
+    backgrounds; extra humans or robots; decorative montages, contact sheets
+    or filler patterns; dense technical realism, steampunk clutter, heavy
+    crosshatching; glossy anime rendering, painterly concept art, neon
+    cyberpunk, photorealism; any lettering, numerals, pseudo-writing,
+    interface glyphs, captions, labels, speech balloons or watermarks;
+    multi-panel layout.
+  subject: The robot carries away three puzzle tiles along a rail holding only two flipped switches while the boy watches from the far end.
+  composition: Wide three-to-one strip, robot walking left of centre, boy seated at the right, two switches on the rail between them, essential action inside the safe central band.
+  alt_text: A wide strip showing a small robot carrying three coloured tiles along a rail with two flipped switches, and a boy sitting at the rail's far end.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print Color"
+- id: opener-cyber-incidents
+  purpose: opener
+  article_id: investigating-three-real-world-incidents-in-our
+  prompt: |
+    Original family-friendly children's science-comedy manga illustration,
+    entirely wordless, one playful visual idea only.
+
+    Scene: a plain interior wall carries three identical door plates in a row.
+    Each plate has been tampered with in a different, obvious, harmless way —
+    one lock hangs open, one plate is bent back at a corner, one has a neat
+    round hole through it. A curious school-age boy with round glasses leans
+    in with a large magnifying glass at the middle plate, eyebrows up; the
+    compact helper robot holds a small soft brush to the first plate and a
+    blank paper evidence tag on a loop of thread hangs from the third. Calm
+    investigative mood, not menace.
+
+    Style: simple charcoal contours, rounded readable expressions, economical
+    watercolour washes, minimal hatching, restrained halftone, quiet print
+    grain, slight pigment variation, subtle paper tooth.
+
+    Cast: exactly one boy and exactly one compact non-animal helper robot. No
+    other people, no other robots, no robot-faced appliances.
+
+    Palette: gentle historical magazine colour at low to medium saturation —
+    muted green wall, brick coral door plates, softened cobalt in the robot's
+    body, warm-ochre brass locks, dusty lavender shadow, warm off-white
+    breathing room, charcoal ink. At least three distinct non-neutral
+    colours. Never a single flat yellow paper field.
+
+    Format: square composition; the three plates and both figures are the
+    essential subject and must sit safely inside the frame with margin on all
+    sides; strong silhouettes, print-friendly contrast, legible at A5 size.
+
+    Avoid: any resemblance to Doraemon, Nobita or any recognizable franchise
+    character, costume, face, silhouette or gadget; blue robotic cats;
+    uniform yellow, mustard, beige, sepia, cream-paper or bright cyan
+    backgrounds; extra humans or robots; hooded figures, skulls, warning
+    symbols or other security clichés; decorative montages or filler
+    patterns; dense technical realism, steampunk clutter, heavy
+    crosshatching; glossy anime rendering, painterly concept art, neon
+    cyberpunk, photorealism; any lettering, numerals, pseudo-writing,
+    interface glyphs, captions, labels, speech balloons or watermarks;
+    multi-panel layout.
+  subject: The boy and the robot examine three tampered door plates on a wall, one lock open, one plate bent, one holed.
+  composition: Square, the three plates ranged across the upper two thirds, boy with magnifying glass at centre and robot brushing the left plate, off-white floor space below.
+  alt_text: A boy with a magnifying glass and a small robot with a brush inspect three tampered door plates on a wall, one lock hanging open.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print Color"
+- id: tail-cyber-incidents
+  purpose: tail
+  article_id: investigating-three-real-world-incidents-in-our
+  prompt: |
+    Original family-friendly children's science-comedy manga vignette, wide
+    horizontal banner format, entirely wordless, one playful visual idea only.
+
+    Scene: three blank paper evidence tags hang from a thin taut line strung
+    across the picture, each tag holding a different small recovered piece —
+    an open padlock, a bent plate corner, a small round disc. Beneath the
+    middle tag the compact helper robot stands on tiptoe to straighten it
+    while the boy with round glasses, at the right end, ties off the line.
+    Quiet tidy aftermath.
+
+    Style: simple charcoal contours, rounded readable expressions, economical
+    watercolour washes, minimal hatching, restrained halftone, quiet print
+    grain, slight pigment variation, subtle paper tooth.
+
+    Cast: exactly one boy and exactly one compact non-animal helper robot. No
+    other people, no other robots, no robot-faced appliances.
+
+    Palette: gentle historical magazine colour at low to medium saturation —
+    warm off-white ground, brick coral tags, softened cobalt robot, muted
+    green line, warm-ochre padlock, dusty lavender shadow, charcoal ink. At
+    least three distinct non-neutral colours. Never a single flat yellow
+    paper field.
+
+    Format: wide horizontal single vignette, roughly three to one. Keep the
+    three tags and both figures well inside a safe central horizontal band
+    with generous margin at both ends. Print-friendly contrast, legible small
+    across an A5 page width.
+
+    Avoid: any resemblance to Doraemon, Nobita or any recognizable franchise
+    character, costume, face, silhouette or gadget; blue robotic cats;
+    uniform yellow, mustard, beige, sepia, cream-paper or bright cyan
+    backgrounds; extra humans or robots; skulls, warning symbols or other
+    security clichés; decorative montages or filler patterns; dense technical
+    realism, steampunk clutter, heavy crosshatching; glossy anime rendering,
+    painterly concept art, neon cyberpunk, photorealism; any lettering,
+    numerals, pseudo-writing, interface glyphs, captions, labels, speech
+    balloons or watermarks; multi-panel layout.
+  subject: Three blank evidence tags hang on a line holding an open padlock, a bent plate corner and a small disc while the robot straightens one and the boy ties off the line.
+  composition: Wide three-to-one strip, line running edge to edge, tags spaced across the centre band, robot below the middle tag and boy at the right end.
+  alt_text: A wide strip showing three blank paper tags on a line holding an open padlock, a bent metal corner and a small disc, with a robot and a boy tending them.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print Color"
+- id: opener-cloudflare-wallets
+  purpose: opener
+  article_id: announcing-cloudflare-wallets-the-programmable-w
+  prompt: |
+    Original family-friendly children's science-comedy manga illustration,
+    entirely wordless, one playful visual idea only.
+
+    Scene: the compact helper robot holds open a small sturdy wallet that has
+    a card slot in its spine, like a tiny machine. The boy with round glasses
+    slides a punched rule card — plain card stock with a row of round holes,
+    no writing of any kind — into the slot. Out of the wallet's mouth, plain
+    round coins hop one at a time through a little hinged gate; the gate lets
+    three coins through and holds the fourth politely back mid-air. Both
+    figures watch the held coin. Warm indoor corner, one soft shadow.
+
+    Style: simple charcoal contours, rounded readable expressions, economical
+    watercolour washes, minimal hatching, restrained halftone, quiet print
+    grain, slight pigment variation, subtle paper tooth.
+
+    Cast: exactly one boy and exactly one compact non-animal helper robot. No
+    other people, no other robots, no robot-faced appliances.
+
+    Palette: gentle historical magazine colour at low to medium saturation —
+    brick coral wallet, softened cobalt robot, muted green wall, warm-ochre
+    coins, dusty lavender shadow, warm off-white breathing room, charcoal
+    ink. At least three distinct non-neutral colours. Never a single flat
+    yellow paper field.
+
+    Format: square composition; wallet, gate, coins and both figures are the
+    essential subject and must sit safely inside the frame with margin on all
+    sides; strong silhouettes, print-friendly contrast, legible at A5 size.
+
+    Avoid: any resemblance to Doraemon, Nobita or any recognizable franchise
+    character, costume, face, silhouette or gadget; blue robotic cats;
+    uniform yellow, mustard, beige, sepia, cream-paper or bright cyan
+    backgrounds; extra humans or robots; currency symbols, denominations,
+    crypto logos or any marking on the coins; decorative montages or filler
+    patterns; dense technical realism, steampunk clutter, heavy
+    crosshatching; glossy anime rendering, painterly concept art, neon
+    cyberpunk, photorealism; any lettering, numerals, pseudo-writing,
+    interface glyphs, captions, labels, speech balloons or watermarks;
+    multi-panel layout.
+  subject: The boy feeds a punched rule card into a wallet the robot holds, and a small gate lets three blank coins out while holding the fourth back.
+  composition: Square, wallet held centrally between the two figures, coin arc curving up to the right where the fourth coin hangs stopped, off-white space above.
+  alt_text: A boy slides a punched card into a wallet held by a small robot; blank coins hop out through a little gate while one is held back in mid-air.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print Color"
+- id: tail-cloudflare-wallets
+  purpose: tail
+  article_id: announcing-cloudflare-wallets-the-programmable-w
+  prompt: |
+    Original family-friendly children's science-comedy manga vignette, wide
+    horizontal banner format, entirely wordless, one playful visual idea only.
+
+    Scene: a long low run of four small hinged gates crosses the picture like
+    a miniature turnstile line. Plain unmarked coins roll along the run; the
+    first three gates stand open and one gate near the right stays shut, with
+    a single coin waiting patiently against it. The compact helper robot
+    walks the line checking each gate; the boy with round glasses crouches at
+    the far left with the punched rule card in hand.
+
+    Style: simple charcoal contours, rounded readable expressions, economical
+    watercolour washes, minimal hatching, restrained halftone, quiet print
+    grain, slight pigment variation, subtle paper tooth.
+
+    Cast: exactly one boy and exactly one compact non-animal helper robot. No
+    other people, no other robots, no robot-faced appliances.
+
+    Palette: gentle historical magazine colour at low to medium saturation —
+    softened cobalt gates, warm-ochre coins, brick coral card, muted green
+    base rail, dusty lavender shadow, warm off-white ground, charcoal ink. At
+    least three distinct non-neutral colours. Never a single flat yellow
+    paper field.
+
+    Format: wide horizontal single vignette, roughly three to one. Keep the
+    gates, the waiting coin and both figures inside a safe central horizontal
+    band with generous margin at both ends. Print-friendly contrast, legible
+    small across an A5 page width.
+
+    Avoid: any resemblance to Doraemon, Nobita or any recognizable franchise
+    character, costume, face, silhouette or gadget; blue robotic cats;
+    uniform yellow, mustard, beige, sepia, cream-paper or bright cyan
+    backgrounds; extra humans or robots; currency symbols, denominations or
+    crypto logos; decorative montages or filler patterns; dense technical
+    realism, steampunk clutter, heavy crosshatching; glossy anime rendering,
+    painterly concept art, neon cyberpunk, photorealism; any lettering,
+    numerals, pseudo-writing, interface glyphs, captions, labels, speech
+    balloons or watermarks; multi-panel layout.
+  subject: Blank coins roll along a line of four small gates, three open and one shut with a coin waiting, as the robot inspects the run and the boy holds the rule card.
+  composition: Wide three-to-one strip, gate run spanning the centre band, boy crouched at the left end, robot mid-right beside the closed gate.
+  alt_text: A wide strip of four small hinged gates on a rail with blank coins rolling through, one gate shut and one coin waiting, a robot inspecting and a boy holding a punched card.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print Color"
+- id: opener-pax-machina
+  purpose: opener
+  article_id: pax-machina-new-institutions-for-powerful-ai
+  prompt: |
+    Original family-friendly children's science-comedy manga illustration,
+    entirely wordless, one playful visual idea only.
+
+    Scene: a curious school-age boy with round glasses and a compact helper
+    robot together lower a heavy cornerstone block into place at the foot of
+    a half-built little civic building — a small colonnade of four stubby
+    columns and a plain pediment, clearly made of the same interlocking
+    blocks. The cornerstone is plain and blank, no inscription. The robot
+    braces the block with both arms; the boy checks the level with a simple
+    spirit level. Bright open air, a wide horizon line, one clean shadow.
+
+    Style: simple charcoal contours, rounded readable expressions, economical
+    watercolour washes, minimal hatching, restrained halftone, quiet print
+    grain, slight pigment variation, subtle paper tooth.
+
+    Cast: exactly one boy and exactly one compact non-animal helper robot. No
+    other people, no other robots, no robot-faced appliances.
+
+    Palette: gentle historical magazine colour at low to medium saturation —
+    warm off-white stone, muted green ground, softened cobalt sky band, brick
+    coral pediment, warm-ochre and dusty lavender accents, charcoal ink. At
+    least three distinct non-neutral colours. Never a single flat yellow
+    paper field.
+
+    Format: square composition; the cornerstone, both figures and the small
+    colonnade are the essential subject and must sit safely inside the frame
+    with margin on all sides; strong silhouettes, print-friendly contrast,
+    legible at A5 size.
+
+    Avoid: any resemblance to Doraemon, Nobita or any recognizable franchise
+    character, costume, face, silhouette or gadget; blue robotic cats;
+    uniform yellow, mustard, beige, sepia, cream-paper or bright cyan
+    backgrounds; extra humans or robots; flags, seals, crests, scales of
+    justice or other institutional clichés; decorative montages or filler
+    patterns; dense technical realism, steampunk clutter, heavy
+    crosshatching; glossy anime rendering, painterly concept art, neon
+    cyberpunk, photorealism; any lettering, numerals, pseudo-writing,
+    interface glyphs, captions, labels, speech balloons or watermarks;
+    multi-panel layout.
+  subject: The boy and the robot set a blank cornerstone at the foot of a small half-built civic colonnade.
+  composition: Square, the colonnade rising at the right, the two figures and the cornerstone anchored low left, open sky and off-white space upper left.
+  alt_text: A boy with a spirit level and a small robot lower a plain cornerstone into place beside a half-built miniature colonnade.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print Color"
+- id: tail-pax-machina
+  purpose: tail
+  article_id: pax-machina-new-institutions-for-powerful-ai
+  prompt: |
+    Original family-friendly children's science-comedy manga vignette, wide
+    horizontal banner format, entirely wordless, one playful visual idea only.
+
+    Scene: a row of six stubby stone columns marches across the picture in
+    late low light, each throwing a long parallel shadow toward the viewer.
+    The columns are plain and blank. At the right-hand end, small against
+    them, the boy with round glasses and the compact helper robot walk away
+    side by side into the open. Calm, settled, finished.
+
+    Style: simple charcoal contours, rounded readable expressions, economical
+    watercolour washes, minimal hatching, restrained halftone, quiet print
+    grain, slight pigment variation, subtle paper tooth.
+
+    Cast: exactly one boy and exactly one compact non-animal helper robot. No
+    other people, no other robots, no robot-faced appliances.
+
+    Palette: gentle historical magazine colour at low to medium saturation —
+    warm off-white columns, dusty lavender shadows, muted green ground,
+    softened cobalt sky, small warm-ochre light accents, charcoal ink. At
+    least three distinct non-neutral colours. Never a single flat yellow
+    paper field.
+
+    Format: wide horizontal single vignette, roughly three to one. Keep the
+    columns and both figures within a safe central horizontal band with
+    generous margin at both ends; the shadows may run to the lower edge.
+    Print-friendly contrast, legible small across an A5 page width.
+
+    Avoid: any resemblance to Doraemon, Nobita or any recognizable franchise
+    character, costume, face, silhouette or gadget; blue robotic cats;
+    uniform yellow, mustard, beige, sepia, cream-paper or bright cyan
+    backgrounds; extra humans or robots; flags, seals, crests or other
+    institutional clichés; decorative montages or filler patterns; dense
+    technical realism, steampunk clutter, heavy crosshatching; glossy anime
+    rendering, painterly concept art, neon cyberpunk, photorealism; any
+    lettering, numerals, pseudo-writing, interface glyphs, captions, labels,
+    speech balloons or watermarks; multi-panel layout.
+  subject: A row of six plain columns casts long parallel shadows while the boy and the robot walk away past the last one.
+  composition: Wide three-to-one strip, columns evenly spaced across the centre band with raking shadows, the two small figures at the right end.
+  alt_text: A wide strip of six plain stone columns in low light casting long shadows, with a boy and a small robot walking away at the right.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print Color"
+- id: opener-prime-agent
+  purpose: opener
+  article_id: prime-agent-a-self-improving-rlm-agent
+  prompt: |
+    Original family-friendly children's science-comedy manga illustration,
+    entirely wordless, one playful visual idea only.
+
+    Scene: the compact helper robot sits at a workbench building a better
+    version of its own arm. Its right arm is detached and clamped in a small
+    vice; the robot works on it with its left hand, fitting a neatly machined
+    new joint. Three earlier discarded joints lie in a row on the bench,
+    visibly cruder than the one being fitted. The boy with round glasses
+    stands beside the bench holding a hand mirror at an angle so the robot can
+    see its own shoulder socket. Warm workshop corner.
+
+    Style: simple charcoal contours, rounded readable expressions, economical
+    watercolour washes, minimal hatching, restrained halftone, quiet print
+    grain, slight pigment variation, subtle paper tooth.
+
+    Cast: exactly one boy and exactly one compact non-animal helper robot —
+    the detached arm and the spare joints are parts, not a second robot, and
+    no reflected robot may appear as a separate character in the mirror. No
+    other people, no other robots, no robot-faced appliances.
+
+    Palette: gentle historical magazine colour at low to medium saturation —
+    muted green bench, softened cobalt robot, brick coral wall panel,
+    warm-ochre brass joints, dusty lavender shadow, warm off-white breathing
+    room, charcoal ink. At least three distinct non-neutral colours. Never a
+    single flat yellow paper field.
+
+    Format: square composition; robot, bench, spare joints, boy and mirror are
+    the essential subject and must sit safely inside the frame with margin on
+    all sides; strong silhouettes, print-friendly contrast, legible at A5
+    size.
+
+    Avoid: any resemblance to Doraemon, Nobita or any recognizable franchise
+    character, costume, face, silhouette or gadget; blue robotic cats;
+    uniform yellow, mustard, beige, sepia, cream-paper or bright cyan
+    backgrounds; extra humans or robots; gore, distress or damaged-machine
+    pathos — the mood is cheerful tinkering; decorative montages or filler
+    patterns; dense technical realism, steampunk clutter, heavy
+    crosshatching; glossy anime rendering, painterly concept art, neon
+    cyberpunk, photorealism; any lettering, numerals, pseudo-writing,
+    interface glyphs, captions, labels, speech balloons or watermarks;
+    multi-panel layout.
+  subject: The robot upgrades its own detached arm at a workbench, three cruder discarded joints beside it, while the boy holds a mirror so it can see.
+  composition: Square, robot and bench filling the lower right, boy and angled mirror at the left, spare joints lined along the bench front edge, off-white space above.
+  alt_text: A small robot at a workbench fits a new joint to its own detached arm beside three cruder discarded joints, while a boy holds up a mirror.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print Color"
+- id: tail-prime-agent
+  purpose: tail
+  article_id: prime-agent-a-self-improving-rlm-agent
+  prompt: |
+    Original family-friendly children's science-comedy manga vignette, wide
+    horizontal banner format, entirely wordless, one playful visual idea only.
+
+    Scene: five versions of the same small machined joint lie in a neat row
+    along a workbench edge, left to right from rough and lumpy to clean and
+    exact. At the far right the compact helper robot picks up the last one
+    with its newly rebuilt arm; the boy with round glasses leans on the bench
+    at the far left, chin on hands, looking down the row.
+
+    Style: simple charcoal contours, rounded readable expressions, economical
+    watercolour washes, minimal hatching, restrained halftone, quiet print
+    grain, slight pigment variation, subtle paper tooth.
+
+    Cast: exactly one boy and exactly one compact non-animal helper robot. The
+    joints are parts, not characters. No other people, no other robots, no
+    robot-faced appliances.
+
+    Palette: gentle historical magazine colour at low to medium saturation —
+    muted green bench, warm-ochre brass joints, softened cobalt robot, brick
+    coral accent, dusty lavender shadow, warm off-white ground, charcoal ink.
+    At least three distinct non-neutral colours. Never a single flat yellow
+    paper field.
+
+    Format: wide horizontal single vignette, roughly three to one. This is a
+    single continuous scene, not a sequence of panels. Keep the row of joints
+    and both figures inside a safe central horizontal band with generous
+    margin at both ends. Print-friendly contrast, legible small across an A5
+    page width.
+
+    Avoid: any resemblance to Doraemon, Nobita or any recognizable franchise
+    character, costume, face, silhouette or gadget; blue robotic cats;
+    uniform yellow, mustard, beige, sepia, cream-paper or bright cyan
+    backgrounds; extra humans or robots; panel borders, gutters or comic-strip
+    framing; decorative montages, contact sheets or filler patterns; dense
+    technical realism, steampunk clutter, heavy crosshatching; glossy anime
+    rendering, painterly concept art, neon cyberpunk, photorealism; any
+    lettering, numerals, pseudo-writing, interface glyphs, captions, labels,
+    speech balloons or watermarks.
+  subject: Five versions of the same joint lie in a row from rough to exact, the robot lifting the last with its rebuilt arm while the boy watches from the other end.
+  composition: Wide three-to-one strip, joints evenly spaced along the bench edge through the centre band, boy at the left end, robot at the right.
+  alt_text: A wide strip showing five versions of a small metal joint in a row from crude to precise, a boy watching at one end and a robot picking up the last at the other.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print Color"
+- id: opener-thunderdome
+  purpose: opener
+  article_id: the-shape-of-things-to-come-part-1-the-continuou
+  prompt: |
+    Original family-friendly children's science-comedy manga illustration,
+    entirely wordless, one playful visual idea only.
+
+    Scene: a chalk circle is drawn on a wide floor. Inside it the compact
+    helper robot stands braced and cheerful, arms up, as a conveyor belt feeds
+    a steady stream of blank task blocks — plain cubes with small notches, no
+    markings — into the ring, one after another, faster than they can be
+    cleared. A small heap of already-solved blocks sits behind the robot. At
+    the ring's edge the boy with round glasses stands with a stopwatch,
+    grinning, clearly not stopping the belt. Sense of cheerful endlessness,
+    never violence.
+
+    Style: simple charcoal contours, rounded readable expressions, economical
+    watercolour washes, minimal hatching, restrained halftone, quiet print
+    grain, slight pigment variation, subtle paper tooth.
+
+    Cast: exactly one boy and exactly one compact non-animal helper robot. No
+    other people, no other robots, no robot-faced appliances, no opponents.
+
+    Palette: gentle historical magazine colour at low to medium saturation —
+    warm off-white floor, brick coral belt, softened cobalt robot, muted green
+    blocks, warm-ochre stopwatch, dusty lavender shadow, charcoal ink. At
+    least three distinct non-neutral colours. Never a single flat yellow paper
+    field.
+
+    Format: square composition; the ring, the robot, the incoming belt and the
+    boy are the essential subject and must sit safely inside the frame with
+    margin on all sides; strong silhouettes, print-friendly contrast, legible
+    at A5 size.
+
+    Avoid: any resemblance to Doraemon, Nobita or any recognizable franchise
+    character, costume, face, silhouette or gadget; blue robotic cats; uniform
+    yellow, mustard, beige, sepia, cream-paper or bright cyan backgrounds;
+    extra humans or robots; combat, weapons, cages, crowds, scoreboards with
+    numerals or any depiction of fighting; decorative montages or filler
+    patterns; dense technical realism, steampunk clutter, heavy crosshatching;
+    glossy anime rendering, painterly concept art, neon cyberpunk,
+    photorealism; any lettering, numerals, pseudo-writing, interface glyphs,
+    captions, labels, speech balloons or watermarks; multi-panel layout.
+  subject: A conveyor feeds an endless stream of blank task blocks into a chalk ring where the robot works while the boy times it with a stopwatch.
+  composition: Square, chalk ring centred low, belt entering from the upper right with blocks in mid-fall, robot inside the ring, boy at the left rim, off-white space upper left.
+  alt_text: A small robot inside a chalk circle catches blank blocks fed in by a conveyor belt while a boy at the edge holds a stopwatch.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print Color"
+- id: tail-thunderdome
+  purpose: tail
+  article_id: the-shape-of-things-to-come-part-1-the-continuou
+  prompt: |
+    Original family-friendly children's science-comedy manga vignette, wide
+    horizontal banner format, entirely wordless, one playful visual idea only.
+
+    Scene: a conveyor belt runs the full width of the picture and continues
+    past both edges, carrying evenly spaced blank task blocks — plain cubes
+    with small notches, no markings. The compact helper robot walks along the
+    belt against its direction, unhurried, tapping each block as it passes; at
+    the far left the boy with round glasses sits cross-legged on the floor
+    beside the belt, resting his chin in one hand.
+
+    Style: simple charcoal contours, rounded readable expressions, economical
+    watercolour washes, minimal hatching, restrained halftone, quiet print
+    grain, slight pigment variation, subtle paper tooth.
+
+    Cast: exactly one boy and exactly one compact non-animal helper robot. No
+    other people, no other robots, no robot-faced appliances.
+
+    Palette: gentle historical magazine colour at low to medium saturation —
+    brick coral belt, muted green blocks, softened cobalt robot, warm-ochre
+    accent, dusty lavender shadow, warm off-white ground, charcoal ink. At
+    least three distinct non-neutral colours. Never a single flat yellow paper
+    field.
+
+    Format: wide horizontal single vignette, roughly three to one. The belt
+    may run out of both ends of the frame, but keep both figures and the key
+    blocks inside a safe central horizontal band with generous margin at each
+    end. Print-friendly contrast, legible small across an A5 page width.
+
+    Avoid: any resemblance to Doraemon, Nobita or any recognizable franchise
+    character, costume, face, silhouette or gadget; blue robotic cats; uniform
+    yellow, mustard, beige, sepia, cream-paper or bright cyan backgrounds;
+    extra humans or robots; combat, weapons, cages or crowds; decorative
+    montages or filler patterns; dense technical realism, steampunk clutter,
+    heavy crosshatching; glossy anime rendering, painterly concept art, neon
+    cyberpunk, photorealism; any lettering, numerals, pseudo-writing,
+    interface glyphs, captions, labels, speech balloons or watermarks;
+    multi-panel layout.
+  subject: An endless conveyor of blank task blocks runs off both edges as the robot walks the line tapping each one and the boy sits beside it.
+  composition: Wide three-to-one strip, belt spanning edge to edge through the centre band, robot right of centre walking left, boy seated at the left end.
+  alt_text: A wide strip of a conveyor belt of blank blocks running off both edges, a small robot walking along it and a boy sitting beside the belt.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print Color"
+- id: opener-model-welfare
+  purpose: opener
+  article_id: the-shape-of-things-to-come-part-2-model-welfare
+  prompt: |
+    Original family-friendly children's science-comedy manga illustration,
+    entirely wordless, one playful visual idea only.
+
+    Scene: end of a long shift. The compact helper robot sits slumped on a low
+    stool, arms hanging, plainly worn out. The boy with round glasses arrives
+    carrying a small cushion under one arm and setting a warm desk lamp down
+    beside the stool with the other hand; a folded blanket waits on the floor.
+    The lamp throws a small pool of warm light around the robot in an
+    otherwise cool blue evening room. Tender, gently funny, not sad.
+
+    Style: simple charcoal contours, rounded readable expressions, economical
+    watercolour washes, minimal hatching, restrained halftone, quiet print
+    grain, slight pigment variation, subtle paper tooth.
+
+    Cast: exactly one boy and exactly one compact non-animal helper robot. No
+    other people, no other robots, no robot-faced appliances.
+
+    Palette: gentle historical magazine colour at low to medium saturation —
+    cool softened cobalt evening room, warm-ochre lamp pool, brick coral
+    cushion, muted green blanket, dusty lavender shadow, warm off-white
+    breathing room, charcoal ink. At least three distinct non-neutral colours.
+    Never a single flat yellow paper field.
+
+    Format: square composition; robot, stool, lamp and boy are the essential
+    subject and must sit safely inside the frame with margin on all sides;
+    strong silhouettes, print-friendly contrast, legible at A5 size.
+
+    Avoid: any resemblance to Doraemon, Nobita or any recognizable franchise
+    character, costume, face, silhouette or gadget; blue robotic cats; uniform
+    yellow, mustard, beige, sepia, cream-paper or bright cyan backgrounds;
+    extra humans or robots; tears, damage, sparks, medical imagery or
+    melodrama; hearts, halos or other sentiment symbols; decorative montages
+    or filler patterns; dense technical realism, steampunk clutter, heavy
+    crosshatching; glossy anime rendering, painterly concept art, neon
+    cyberpunk, photorealism; any lettering, numerals, pseudo-writing,
+    interface glyphs, captions, labels, speech balloons or watermarks;
+    multi-panel layout.
+  subject: At the end of a long shift the boy brings a cushion, a blanket and a warm lamp to the tired robot sitting slumped on a stool.
+  composition: Square, robot on the stool at centre right inside a warm lamp pool, boy entering from the left with the cushion, cool blue room falling away above and behind.
+  alt_text: A tired small robot slumped on a stool in a warm lamp pool while a boy arrives with a cushion and a folded blanket.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print Color"
+- id: tail-model-welfare
+  purpose: tail
+  article_id: the-shape-of-things-to-come-part-2-model-welfare
+  prompt: |
+    Original family-friendly children's science-comedy manga vignette, wide
+    horizontal banner format, entirely wordless, one playful visual idea only.
+
+    Scene: a long low bench seen side-on. The compact helper robot lies
+    stretched out along it, powered down and peaceful, a folded blanket drawn
+    up over its middle. At the right end of the bench the boy with round
+    glasses sits with his back against the armrest, also asleep, a small warm
+    lamp on the floor beside him. Wide quiet space to the left.
+
+    Style: simple charcoal contours, rounded readable expressions, economical
+    watercolour washes, minimal hatching, restrained halftone, quiet print
+    grain, slight pigment variation, subtle paper tooth.
+
+    Cast: exactly one boy and exactly one compact non-animal helper robot. No
+    other people, no other robots, no robot-faced appliances.
+
+    Palette: gentle historical magazine colour at low to medium saturation —
+    cool softened cobalt night, warm-ochre lamp glow, muted green blanket,
+    brick coral bench cushion, dusty lavender shadow, warm off-white ground,
+    charcoal ink. At least three distinct non-neutral colours. Never a single
+    flat yellow paper field.
+
+    Format: wide horizontal single vignette, roughly three to one. Keep the
+    bench, both figures and the lamp inside a safe central horizontal band
+    with generous margin at both ends. Print-friendly contrast, legible small
+    across an A5 page width.
+
+    Avoid: any resemblance to Doraemon, Nobita or any recognizable franchise
+    character, costume, face, silhouette or gadget; blue robotic cats; uniform
+    yellow, mustard, beige, sepia, cream-paper or bright cyan backgrounds;
+    extra humans or robots; tears, damage, sparks, medical imagery or
+    melodrama; hearts, stars, sleep symbols or other sentiment marks;
+    decorative montages or filler patterns; dense technical realism, steampunk
+    clutter, heavy crosshatching; glossy anime rendering, painterly concept
+    art, neon cyberpunk, photorealism; any lettering, numerals, pseudo-writing,
+    interface glyphs, captions, labels, speech balloons or watermarks;
+    multi-panel layout.
+  subject: The robot lies asleep under a blanket along a low bench with the boy dozing at the far end beside a small lamp.
+  composition: Wide three-to-one strip, bench running through the centre band, robot lying left of centre, boy seated at the right end, open quiet space at the left.
+  alt_text: A wide strip showing a small robot lying asleep under a blanket on a low bench, with a boy dozing at the far end beside a warm lamp.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print Color"
+- id: opener-agent-computer
+  purpose: opener
+  article_id: your-agent-needs-a-computer-not-a-container-intr
+  prompt: |
+    Original family-friendly children's science-comedy manga illustration,
+    entirely wordless, one playful visual idea only.
+
+    Scene: the compact helper robot climbs out of a cramped wooden shipping
+    crate that is plainly too small for it — one leg still inside, elbows
+    braced on the rim — and steps through an open doorway into a proper little
+    room beyond: a desk, a chair, a shaded lamp, a small filing drawer, a
+    window. The boy with round glasses holds the door wide with both hands and
+    leans back with the effort, delighted. The crate side is blank, no
+    stencils or markings.
+
+    Style: simple charcoal contours, rounded readable expressions, economical
+    watercolour washes, minimal hatching, restrained halftone, quiet print
+    grain, slight pigment variation, subtle paper tooth.
+
+    Cast: exactly one boy and exactly one compact non-animal helper robot. No
+    other people, no other robots, no robot-faced appliances.
+
+    Palette: gentle historical magazine colour at low to medium saturation —
+    warm-ochre crate timber, softened cobalt robot, muted green room walls,
+    brick coral chair, dusty lavender shadow, warm off-white breathing room,
+    charcoal ink. At least three distinct non-neutral colours. Never a single
+    flat yellow paper field.
+
+    Format: square composition; crate, robot, doorway, room furniture and boy
+    are the essential subject and must sit safely inside the frame with margin
+    on all sides; strong silhouettes, print-friendly contrast, legible at A5
+    size.
+
+    Avoid: any resemblance to Doraemon, Nobita or any recognizable franchise
+    character, costume, face, silhouette or gadget; blue robotic cats; uniform
+    yellow, mustard, beige, sepia, cream-paper or bright cyan backgrounds;
+    extra humans or robots; shipping stencils, crate markings, container logos
+    or brand marks; decorative montages or filler patterns; dense technical
+    realism, steampunk clutter, heavy crosshatching; glossy anime rendering,
+    painterly concept art, neon cyberpunk, photorealism; any lettering,
+    numerals, pseudo-writing, interface glyphs, captions, labels, speech
+    balloons or watermarks; multi-panel layout.
+  subject: The robot climbs out of a too-small blank shipping crate and steps through a door the boy holds open into a proper furnished room.
+  composition: Square, crate low left with the robot mid-climb, doorway and furnished room opening to the right, boy holding the door at the right edge inside the safe margin.
+  alt_text: A small robot climbs out of a cramped wooden crate and steps through a door held open by a boy into a room with a desk, chair, lamp and window.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print Color"
+- id: tail-agent-computer
+  purpose: tail
+  article_id: your-agent-needs-a-computer-not-a-container-intr
+  prompt: |
+    Original family-friendly children's science-comedy manga vignette, wide
+    horizontal banner format, entirely wordless, one playful visual idea only.
+
+    Scene: at the far left an empty wooden crate lies tipped on its side, lid
+    off, entirely blank with no markings. A line of small footprints crosses
+    the open floor to the right, where the compact helper robot has settled at
+    a small desk with a shaded lamp and is working comfortably; the boy with
+    round glasses stands just behind the desk chair, hands in pockets,
+    satisfied.
+
+    Style: simple charcoal contours, rounded readable expressions, economical
+    watercolour washes, minimal hatching, restrained halftone, quiet print
+    grain, slight pigment variation, subtle paper tooth.
+
+    Cast: exactly one boy and exactly one compact non-animal helper robot. No
+    other people, no other robots, no robot-faced appliances.
+
+    Palette: gentle historical magazine colour at low to medium saturation —
+    warm-ochre crate timber, warm off-white floor, softened cobalt robot,
+    muted green desk, brick coral lamp shade, dusty lavender shadow, charcoal
+    ink. At least three distinct non-neutral colours. Never a single flat
+    yellow paper field.
+
+    Format: wide horizontal single vignette, roughly three to one. Single
+    continuous scene, not a sequence of panels. Keep the crate, the footprint
+    trail, the desk and both figures inside a safe central horizontal band
+    with generous margin at both ends. Print-friendly contrast, legible small
+    across an A5 page width.
+
+    Avoid: any resemblance to Doraemon, Nobita or any recognizable franchise
+    character, costume, face, silhouette or gadget; blue robotic cats; uniform
+    yellow, mustard, beige, sepia, cream-paper or bright cyan backgrounds;
+    extra humans or robots; shipping stencils, crate markings, container logos
+    or brand marks; panel borders or comic-strip gutters; decorative montages
+    or filler patterns; dense technical realism, steampunk clutter, heavy
+    crosshatching; glossy anime rendering, painterly concept art, neon
+    cyberpunk, photorealism; any lettering, numerals, pseudo-writing,
+    interface glyphs, captions, labels, speech balloons or watermarks.
+  subject: An abandoned blank crate at one end, a trail of footprints across the floor, and the robot working at a small desk with the boy behind it at the other.
+  composition: Wide three-to-one strip, tipped crate at the left end, footprints stepping through the centre band, desk group at the right end.
+  alt_text: A wide strip showing an empty tipped-over crate at one end, footprints crossing the floor, and a small robot working at a desk with a boy standing behind at the other end.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print Color"
+- id: closing-the-threshold
+  purpose: closing
+  prompt: |
+    Original family-friendly children's science-comedy manga illustration,
+    full-page vertical poster plate, entirely wordless, one strong visual idea
+    only.
+
+    Scene: a single tall freestanding doorway — plain frame, one solid door
+    standing open — rises alone in the middle of a wide empty plain under a
+    high sky. It is far taller than it should be, several times the height of
+    a person, and completely unsupported by any wall. Small at its foot, the
+    curious school-age boy with round glasses and the compact helper robot
+    stand side by side looking up at it; the robot reaches one hand toward the
+    open threshold. One long shadow runs from the doorway across the ground
+    toward the viewer.
+
+    Style: simple charcoal contours, rounded readable expressions, economical
+    watercolour washes, minimal hatching, restrained halftone, quiet print
+    grain, slight pigment variation, subtle paper tooth. Poster-weight
+    composition with real vertical scale.
+
+    Cast: exactly one boy and exactly one compact non-animal helper robot. No
+    other people, no other robots, no robot-faced appliances.
+
+    Palette: gentle historical magazine colour at low to medium saturation —
+    softened cobalt sky, muted green plain, brick coral door, warm-ochre light
+    on the frame's lit edge, dusty lavender shadow, warm off-white breathing
+    room, charcoal ink. At least three distinct non-neutral colours. Never a
+    single flat yellow paper field.
+
+    Format: tall vertical composition, roughly two to three, designed to fill
+    a full printed page; keep the doorway and both figures well inside the
+    frame with clear margin on all sides; strong silhouette, print-friendly
+    contrast, legible at A5 page size.
+
+    Avoid: any resemblance to Doraemon, Nobita or any recognizable franchise
+    character, costume, face, silhouette or gadget; blue robotic cats; uniform
+    yellow, mustard, beige, sepia, cream-paper or bright cyan backgrounds;
+    extra humans or robots; glowing portal rims, energy swirls, particle
+    sparkles or other AI-futurist portal imagery; decorative montages or
+    filler patterns; dense technical realism, steampunk clutter, heavy
+    crosshatching; glossy anime rendering, painterly concept art, neon
+    cyberpunk, photorealism; any lettering, numerals, pseudo-writing,
+    interface glyphs, captions, labels, speech balloons or watermarks;
+    multi-panel layout.
+  subject: A single enormous freestanding open doorway on an empty plain with the boy and the robot small at its foot.
+  composition: Tall two-to-three plate, doorway centred and running most of the frame height, the two figures at its base in the lower third, long shadow toward the viewer.
+  alt_text: A very tall freestanding open doorway alone on an empty plain, with a boy and a small robot standing at its foot looking up.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print Color"
+- id: closing-the-ledger-column
+  purpose: closing
+  prompt: |
+    Original family-friendly children's science-comedy manga illustration,
+    full-page vertical poster plate, entirely wordless, one strong visual idea
+    only.
+
+    Scene: a tall slender column built from many stacked shallow open trays
+    rises the full height of the picture like a narrow tower. Each tray holds
+    a few small round tokens, plain and unmarked, laid out in tidy rows. Near
+    the top the curious school-age boy with round glasses stands on a light
+    wooden ladder, placing one last token into the highest tray with great
+    care; at the ladder's foot the compact helper robot braces it with both
+    arms and looks up. Quiet interior, one soft light from the left.
+
+    Style: simple charcoal contours, rounded readable expressions, economical
+    watercolour washes, minimal hatching, restrained halftone, quiet print
+    grain, slight pigment variation, subtle paper tooth. Poster-weight
+    composition with real vertical scale.
+
+    Cast: exactly one boy and exactly one compact non-animal helper robot. No
+    other people, no other robots, no robot-faced appliances.
+
+    Palette: gentle historical magazine colour at low to medium saturation —
+    warm off-white wall, muted green trays, warm-ochre tokens, softened cobalt
+    robot, brick coral ladder, dusty lavender shadow, charcoal ink. At least
+    three distinct non-neutral colours. Never a single flat yellow paper
+    field.
+
+    Format: tall vertical composition, roughly two to three, designed to fill
+    a full printed page; keep the column, ladder and both figures well inside
+    the frame with clear margin on all sides; strong silhouette,
+    print-friendly contrast, legible at A5 page size.
+
+    Avoid: any resemblance to Doraemon, Nobita or any recognizable franchise
+    character, costume, face, silhouette or gadget; blue robotic cats; uniform
+    yellow, mustard, beige, sepia, cream-paper or bright cyan backgrounds;
+    extra humans or robots; ledger lines, tally marks, columns of figures,
+    account books or any mark that could read as handwriting; decorative
+    montages or filler patterns; dense technical realism, steampunk clutter,
+    heavy crosshatching; glossy anime rendering, painterly concept art, neon
+    cyberpunk, photorealism; any lettering, numerals, pseudo-writing,
+    interface glyphs, captions, labels, speech balloons or watermarks;
+    multi-panel layout.
+  subject: A tall tower of stacked trays holding plain tokens, with the boy on a ladder placing the last token and the robot steadying the ladder below.
+  composition: Tall two-to-three plate, tray column rising just right of centre through the full height, boy on the ladder in the upper third, robot bracing at the base.
+  alt_text: A tall column of stacked trays filled with small plain tokens, a boy on a ladder placing one at the top and a small robot steadying the ladder below.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print Color"
+- id: closing-the-long-shift
+  purpose: closing
+  prompt: |
+    Original family-friendly children's science-comedy manga illustration,
+    full-page vertical poster plate, entirely wordless, one strong visual idea
+    only.
+
+    Scene: a very tall arched window fills most of a narrow night room, deep
+    cool blue outside it. Below the window, small in all that height, the
+    compact helper robot sits at a modest desk in the warm pool of a single
+    shaded lamp, still working steadily; on a chair beside the desk the boy
+    with round glasses has fallen asleep with a blanket slipping off his
+    shoulder. The lamp's warm light and the window's cool blue meet in a clean
+    vertical division of the plate.
+
+    Style: simple charcoal contours, rounded readable expressions, economical
+    watercolour washes, minimal hatching, restrained halftone, quiet print
+    grain, slight pigment variation, subtle paper tooth. Poster-weight
+    composition with real vertical scale.
+
+    Cast: exactly one boy and exactly one compact non-animal helper robot. No
+    other people, no other robots, no robot-faced appliances.
+
+    Palette: gentle historical magazine colour at low to medium saturation —
+    cool softened cobalt night window, warm-ochre lamp pool, muted green
+    blanket, brick coral chair, dusty lavender shadow, warm off-white wall,
+    charcoal ink. At least three distinct non-neutral colours. Never a single
+    flat yellow paper field.
+
+    Format: tall vertical composition, roughly two to three, designed to fill
+    a full printed page; keep the window, desk, lamp and both figures well
+    inside the frame with clear margin on all sides; strong silhouette,
+    print-friendly contrast that holds detail in the dark areas, legible at A5
+    page size.
+
+    Avoid: any resemblance to Doraemon, Nobita or any recognizable franchise
+    character, costume, face, silhouette or gadget; blue robotic cats; uniform
+    yellow, mustard, beige, sepia, cream-paper or bright cyan backgrounds;
+    extra humans or robots; crushed or muddy blacks; screen glow, interface
+    panels or holograms; decorative montages or filler patterns; dense
+    technical realism, steampunk clutter, heavy crosshatching; glossy anime
+    rendering, painterly concept art, neon cyberpunk, photorealism; any
+    lettering, numerals, pseudo-writing, interface glyphs, captions, labels,
+    speech balloons or watermarks; multi-panel layout.
+  subject: Under a tall night window the robot works on at a lamplit desk while the boy sleeps in the chair beside it.
+  composition: Tall two-to-three plate, arched window filling the upper two thirds in cool blue, warm lamp pool with desk, robot and sleeping boy anchored in the lower third.
+  alt_text: A tall night window above a small desk where a robot works by lamplight while a boy sleeps in a chair beside it under a slipping blanket.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print Color"

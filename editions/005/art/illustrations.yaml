@@ -1,0 +1,260 @@
+schema_version: 1
+direction:
+  name: Story-Led Boy and Robot, Gentle Print Color
+  visual_language: Original family-friendly children's science-comedy manga with simple charcoal contours,
+    rounded readable expressions, economical watercolor washes, minimal hatching, restrained halftone,
+    quiet print grain, and one playful visual idea per illustration. The recurring cast is exactly
+    one curious school-age boy with round glasses and one compact non-animal helper robot. Use broad
+    period and production cues only. Never reproduce a franchise character, costume, face, silhouette,
+    composition, or gadget.
+  palette: 'Scene-led gentle historical magazine color at low to medium saturation: softened cyan
+    and cobalt, brick coral, muted green, dusty lavender, small warm-ochre accents, warm off-white
+    breathing room, and charcoal ink. The setting chooses the background. Never impose one yellow
+    paper field.'
+  constraints:
+  - Entirely wordless editorial storytelling
+  - Exactly one recurring boy and one recurring non-animal robot
+  - Background color and setting arise from the article subject
+  - At least three distinct non-neutral colors
+  - Strong silhouettes and expressions that remain legible at A5 size
+  - Print-friendly contrast with minimal hatching and restrained halftone
+  - Slight pigment variation, subtle paper tooth, and quiet print grain
+  - Article tails keep every essential action inside the safe horizontal crop
+  - Multi-panel structure is reserved for an asset brief that explicitly requires a functional sequence
+  avoid:
+  - Direct copies of Doraemon, Nobita, or any recognizable franchise character
+  - Blue robotic cats, signature franchise gadgets, copied costumes, or copied faces
+  - Uniform yellow, mustard, beige, sepia, cream-paper, or bright cyan backgrounds
+  - Extra humans, extra robots, or robot-faced background appliances
+  - Decorative montages, contact sheets, or filler patterns
+  - Dense technical realism, steampunk clutter, or excessive crosshatching
+  - Modern glossy anime rendering, painterly concept art, neon cyberpunk, or photorealism
+  - Decorative pseudo-writing, interface glyphs, captions, labels, or speech balloons
+assets:
+- id: opener-arc-agi-3
+  role: article_opener
+  article_id: how-enabling-two-settings-tripled-our-scores-on
+  art_path: editions/005/art/rounds/2026-08-06T23-38-34/opener-arc-agi-3-v2.png
+  subject: The boy flips two small toggles on the robot's back panel and three completed puzzle boards
+    lift and stack in front of it.
+  composition: Square, boy and robot low left in three-quarter view, the three rising boards stepping
+    up to the right with clear off-white space above.
+  alt_text: A boy in round glasses flips two switches on a small robot's back panel while three coloured
+    puzzle boards rise and stack in the air in front of it.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+    Color"
+- id: tail-arc-agi-3
+  role: article_tail
+  article_id: how-enabling-two-settings-tripled-our-scores-on
+  art_path: editions/005/art/rounds/2026-08-06T23-38-34/tail-arc-agi-3-v2.png
+  subject: The robot carries away three puzzle tiles along a rail holding only two flipped switches
+    while the boy watches from the far end.
+  composition: Wide three-to-one strip, robot walking left of centre, boy seated at the right, two
+    switches on the rail between them, essential action inside the safe central band.
+  alt_text: A wide strip showing a small robot carrying three coloured tiles along a rail with two
+    flipped switches, and a boy sitting at the rail's far end.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+    Color"
+- id: opener-cyber-incidents
+  role: article_opener
+  article_id: investigating-three-real-world-incidents-in-our
+  art_path: editions/005/art/rounds/2026-08-06T23-38-34/opener-cyber-incidents-v2.png
+  subject: The boy and the robot examine three tampered door plates on a wall, one lock open, one
+    plate bent, one holed.
+  composition: Square, the three plates ranged across the upper two thirds, boy with magnifying glass
+    at centre and robot brushing the left plate, off-white floor space below.
+  alt_text: A boy with a magnifying glass and a small robot with a brush inspect three tampered door
+    plates on a wall, one lock hanging open.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+    Color"
+- id: tail-cyber-incidents
+  role: article_tail
+  article_id: investigating-three-real-world-incidents-in-our
+  art_path: editions/005/art/rounds/2026-08-06T23-38-34/tail-cyber-incidents-v2.png
+  subject: Three blank evidence tags hang on a line holding an open padlock, a bent plate corner and
+    a small disc while the robot straightens one and the boy ties off the line.
+  composition: Wide three-to-one strip, line running edge to edge, tags spaced across the centre band,
+    robot below the middle tag and boy at the right end.
+  alt_text: A wide strip showing three blank paper tags on a line holding an open padlock, a bent
+    metal corner and a small disc, with a robot and a boy tending them.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+    Color"
+- id: opener-cloudflare-wallets
+  role: article_opener
+  article_id: announcing-cloudflare-wallets-the-programmable-w
+  art_path: editions/005/art/rounds/2026-08-06T23-38-34/opener-cloudflare-wallets-v2.png
+  subject: The boy feeds a punched rule card into a wallet the robot holds, and a small gate lets
+    three blank coins out while holding the fourth back.
+  composition: Square, wallet held centrally between the two figures, coin arc curving up to the right
+    where the fourth coin hangs stopped, off-white space above.
+  alt_text: A boy slides a punched card into a wallet held by a small robot; blank coins hop out through
+    a little gate while one is held back in mid-air.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+    Color"
+- id: tail-cloudflare-wallets
+  role: article_tail
+  article_id: announcing-cloudflare-wallets-the-programmable-w
+  art_path: editions/005/art/rounds/2026-08-06T23-38-34/tail-cloudflare-wallets-v2.png
+  subject: Blank coins roll along a line of four small gates, three open and one shut with a coin
+    waiting, as the robot inspects the run and the boy holds the rule card.
+  composition: Wide three-to-one strip, gate run spanning the centre band, boy crouched at the left
+    end, robot mid-right beside the closed gate.
+  alt_text: A wide strip of four small hinged gates on a rail with blank coins rolling through, one
+    gate shut and one coin waiting, a robot inspecting and a boy holding a punched card.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+    Color"
+- id: opener-pax-machina
+  role: article_opener
+  article_id: pax-machina-new-institutions-for-powerful-ai
+  art_path: editions/005/art/rounds/2026-08-06T23-38-34/opener-pax-machina-v2.png
+  subject: The boy and the robot set a blank cornerstone at the foot of a small half-built civic colonnade.
+  composition: Square, the colonnade rising at the right, the two figures and the cornerstone anchored
+    low left, open sky and off-white space upper left.
+  alt_text: A boy with a spirit level and a small robot lower a plain cornerstone into place beside
+    a half-built miniature colonnade.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+    Color"
+- id: tail-pax-machina
+  role: article_tail
+  article_id: pax-machina-new-institutions-for-powerful-ai
+  art_path: editions/005/art/rounds/2026-08-06T23-38-34/tail-pax-machina-v2.png
+  subject: A row of six plain columns casts long parallel shadows while the boy and the robot walk
+    away past the last one.
+  composition: Wide three-to-one strip, columns evenly spaced across the centre band with raking shadows,
+    the two small figures at the right end.
+  alt_text: A wide strip of six plain stone columns in low light casting long shadows, with a boy
+    and a small robot walking away at the right.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+    Color"
+- id: opener-prime-agent
+  role: article_opener
+  article_id: prime-agent-a-self-improving-rlm-agent
+  art_path: editions/005/art/rounds/2026-08-06T23-38-34/opener-prime-agent-v2.png
+  subject: The robot upgrades its own detached arm at a workbench, three cruder discarded joints beside
+    it, while the boy holds a mirror so it can see.
+  composition: Square, robot and bench filling the lower right, boy and angled mirror at the left,
+    spare joints lined along the bench front edge, off-white space above.
+  alt_text: A small robot at a workbench fits a new joint to its own detached arm beside three cruder
+    discarded joints, while a boy holds up a mirror.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+    Color"
+- id: tail-prime-agent
+  role: article_tail
+  article_id: prime-agent-a-self-improving-rlm-agent
+  art_path: editions/005/art/rounds/2026-08-06T23-38-34/tail-prime-agent-v2.png
+  subject: Five versions of the same joint lie in a row from rough to exact, the robot lifting the
+    last with its rebuilt arm while the boy watches from the other end.
+  composition: Wide three-to-one strip, joints evenly spaced along the bench edge through the centre
+    band, boy at the left end, robot at the right.
+  alt_text: A wide strip showing five versions of a small metal joint in a row from crude to precise,
+    a boy watching at one end and a robot picking up the last at the other.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+    Color"
+- id: opener-thunderdome
+  role: article_opener
+  article_id: the-shape-of-things-to-come-part-1-the-continuou
+  art_path: editions/005/art/rounds/2026-08-06T23-38-34/opener-thunderdome-v2.png
+  subject: A conveyor feeds an endless stream of blank task blocks into a chalk ring where the robot
+    works while the boy times it with a stopwatch.
+  composition: Square, chalk ring centred low, belt entering from the upper right with blocks in mid-fall,
+    robot inside the ring, boy at the left rim, off-white space upper left.
+  alt_text: A small robot inside a chalk circle catches blank blocks fed in by a conveyor belt while
+    a boy at the edge holds a stopwatch.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+    Color"
+- id: tail-thunderdome
+  role: article_tail
+  article_id: the-shape-of-things-to-come-part-1-the-continuou
+  art_path: editions/005/art/rounds/2026-08-06T23-38-34/tail-thunderdome-v2.png
+  subject: An endless conveyor of blank task blocks runs off both edges as the robot walks the line
+    tapping each one and the boy sits beside it.
+  composition: Wide three-to-one strip, belt spanning edge to edge through the centre band, robot
+    right of centre walking left, boy seated at the left end.
+  alt_text: A wide strip of a conveyor belt of blank blocks running off both edges, a small robot
+    walking along it and a boy sitting beside the belt.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+    Color"
+- id: opener-model-welfare
+  role: article_opener
+  article_id: the-shape-of-things-to-come-part-2-model-welfare
+  art_path: editions/005/art/rounds/2026-08-06T23-38-34/opener-model-welfare-v2.png
+  subject: At the end of a long shift the boy brings a cushion, a blanket and a warm lamp to the tired
+    robot sitting slumped on a stool.
+  composition: Square, robot on the stool at centre right inside a warm lamp pool, boy entering from
+    the left with the cushion, cool blue room falling away above and behind.
+  alt_text: A tired small robot slumped on a stool in a warm lamp pool while a boy arrives with a
+    cushion and a folded blanket.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+    Color"
+- id: tail-model-welfare
+  role: article_tail
+  article_id: the-shape-of-things-to-come-part-2-model-welfare
+  art_path: editions/005/art/rounds/2026-08-06T23-38-34/tail-model-welfare-v2.png
+  subject: The robot lies asleep under a blanket along a low bench with the boy dozing at the far
+    end beside a small lamp.
+  composition: Wide three-to-one strip, bench running through the centre band, robot lying left of
+    centre, boy seated at the right end, open quiet space at the left.
+  alt_text: A wide strip showing a small robot lying asleep under a blanket on a low bench, with a
+    boy dozing at the far end beside a warm lamp.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+    Color"
+- id: opener-agent-computer
+  role: article_opener
+  article_id: your-agent-needs-a-computer-not-a-container-intr
+  art_path: editions/005/art/rounds/2026-08-06T23-38-34/opener-agent-computer-v2.png
+  subject: The robot climbs out of a too-small blank shipping crate and steps through a door the boy
+    holds open into a proper furnished room.
+  composition: Square, crate low left with the robot mid-climb, doorway and furnished room opening
+    to the right, boy holding the door at the right edge inside the safe margin.
+  alt_text: A small robot climbs out of a cramped wooden crate and steps through a door held open
+    by a boy into a room with a desk, chair, lamp and window.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+    Color"
+- id: tail-agent-computer
+  role: article_tail
+  article_id: your-agent-needs-a-computer-not-a-container-intr
+  art_path: editions/005/art/rounds/2026-08-06T23-38-34/tail-agent-computer-v2.png
+  subject: An abandoned blank crate at one end, a trail of footprints across the floor, and the robot
+    working at a small desk with the boy behind it at the other.
+  composition: Wide three-to-one strip, tipped crate at the left end, footprints stepping through
+    the centre band, desk group at the right end.
+  alt_text: A wide strip showing an empty tipped-over crate at one end, footprints crossing the floor,
+    and a small robot working at a desk with a boy standing behind at the other end.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+    Color"
+- id: closing-the-ledger-column
+  role: closing_plate
+  plate_index: 1
+  art_path: editions/005/art/rounds/2026-08-06T23-38-34/closing-the-ledger-column-v2.png
+  subject: A tall tower of stacked trays holding plain tokens, with the boy on a ladder placing the
+    last token and the robot steadying the ladder below.
+  composition: Tall two-to-three plate, tray column rising just right of centre through the full height,
+    boy on the ladder in the upper third, robot bracing at the base.
+  alt_text: A tall column of stacked trays filled with small plain tokens, a boy on a ladder placing
+    one at the top and a small robot steadying the ladder below.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+    Color"
+- id: closing-the-long-shift
+  role: closing_plate
+  plate_index: 2
+  art_path: editions/005/art/rounds/2026-08-06T23-38-34/closing-the-long-shift-v2.png
+  subject: Under a tall night window the robot works on at a lamplit desk while the boy sleeps in
+    the chair beside it.
+  composition: Tall two-to-three plate, arched window filling the upper two thirds in cool blue, warm
+    lamp pool with desk, robot and sleeping boy anchored in the lower third.
+  alt_text: A tall night window above a small desk where a robot works by lamplight while a boy sleeps
+    in a chair beside it under a slipping blanket.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+    Color"
+- id: closing-the-threshold
+  role: closing_plate
+  plate_index: 3
+  art_path: editions/005/art/rounds/2026-08-06T23-38-34/closing-the-threshold-v2.png
+  subject: A single enormous freestanding open doorway on an empty plain with the boy and the robot
+    small at its foot.
+  composition: Tall two-to-three plate, doorway centred and running most of the frame height, the
+    two figures at its base in the lower third, long shadow toward the viewer.
+  alt_text: A very tall freestanding open doorway alone on an empty plain, with a boy and a small
+    robot standing at its foot looking up.
+  credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+    Color"
