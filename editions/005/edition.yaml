@@ -1,0 +1,176 @@
+# Edition 5 — working spec. Title, subtitle, cover copy, and publication
+# date are placeholders for the editor; article order follows plan.yaml.
+# Illustrations: v2 variants of round 2026-08-06T23-38-34; cover:
+# art-directed r9 v1 (enamel pin), selected by the editor 2026-08-07.
+id: '005'
+issue_number: 5
+title: Build the Doors
+subtitle: Eight reports on agents that need rooms, ledgers, wallets, and rules
+publication_date: '2026-08-06'
+status: draft
+art_direction_path: editions/005/art/illustrations.yaml
+format:
+  article_opener: illustrated_paper_spots_v1
+cover:
+  headline: Build the Doors
+  deck: Eight reports on agents that need rooms, ledgers, wallets, and rules
+  art_path: editions/005/art/rounds/2026-08-07T02-01-57/cover-art-directed-r9-v1.png
+  back_text: 'A new kind of worker moved in before its house was built. It does not tire, it forgets
+    nothing it is allowed to keep, and it works at a pace no institution was drawn for. This issue
+    reports on the building: rooms for its memory, wallets for its spending, benchmarks for its work,
+    rules for its rest, and doors that say which parts of the world are real. Build the doors. Write
+    on them.'
+articles:
+- id: how-enabling-two-settings-tripled-our-scores-on
+  title: Two Settings, Triple the Score on ARC-AGI-3
+  author: Ilan Bigio, Ted Sanders
+  opener_art:
+    path: editions/005/art/rounds/2026-08-06T23-38-34/opener-arc-agi-3-v2.png
+    alt_text: A boy in round glasses flips two switches on a small robot's back panel while three
+      coloured puzzle boards rise and stack in the air in front of it.
+    credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+      Color"
+  short_title: ARC-AGI-3
+  display_emphasis: ARC-AGI-3
+  opener_variant: stepped_title
+  content_mode: article
+  source_ids:
+  - how-enabling-two-settings-tripled-our-scores-on--265c6a01
+  manuscript: editions/005/articles/how-enabling-two-settings-tripled-our-scores-on.md
+  author_note: Ilan Bigio and Ted Sanders write at OpenAI.
+  tail_art_path: editions/005/art/rounds/2026-08-06T23-38-34/tail-arc-agi-3-v2.png
+- id: investigating-three-real-world-incidents-in-our
+  title: Three Real-World Incidents in Our Cybersecurity Evaluations
+  author: Frontier Red Team
+  opener_art:
+    path: editions/005/art/rounds/2026-08-06T23-38-34/opener-cyber-incidents-v2.png
+    alt_text: A boy with a magnifying glass and a small robot with a brush inspect three tampered
+      door plates on a wall, one lock hanging open.
+    credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+      Color"
+  short_title: Real-World Incidents
+  display_emphasis: Incidents
+  opener_variant: split_axis
+  content_mode: article
+  source_ids:
+  - investigating-three-real-world-incidents-in-our--8b96329a
+  manuscript: editions/005/articles/investigating-three-real-world-incidents-in-our.md
+  author_note: The Frontier Red Team publishes at Anthropic.
+  tail_art_path: editions/005/art/rounds/2026-08-06T23-38-34/tail-cyber-incidents-v2.png
+- id: announcing-cloudflare-wallets-the-programmable-w
+  title: 'Cloudflare Wallets: the Programmable Wallet for Agents'
+  author: Will Papper
+  opener_art:
+    path: editions/005/art/rounds/2026-08-06T23-38-34/opener-cloudflare-wallets-v2.png
+    alt_text: A boy slides a punched card into a wallet held by a small robot; blank coins hop out
+      through a little gate while one is held back in mid-air.
+    credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+      Color"
+  short_title: Cloudflare Wallets
+  display_emphasis: Wallets
+  opener_variant: edge_medallion
+  content_mode: article
+  source_ids:
+  - announcing-cloudflare-wallets-the-programmable-w-97d2eb2e
+  manuscript: editions/005/articles/announcing-cloudflare-wallets-the-programmable-w.md
+  author_note: Will Papper writes on the Cloudflare blog.
+  tail_art_path: editions/005/art/rounds/2026-08-06T23-38-34/tail-cloudflare-wallets-v2.png
+- id: pax-machina-new-institutions-for-powerful-ai
+  title: 'Pax Machina: New Institutions for Powerful AI'
+  author: The Editors
+  opener_art:
+    path: editions/005/art/rounds/2026-08-06T23-38-34/opener-pax-machina-v2.png
+    alt_text: A boy with a spirit level and a small robot lower a plain cornerstone into place beside
+      a half-built miniature colonnade.
+    credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+      Color"
+  short_title: Pax Machina
+  display_emphasis: Pax
+  opener_variant: stepped_title
+  content_mode: article
+  source_ids:
+  - pax-machina-new-institutions-for-powerful-ai-f9c15c97
+  manuscript: editions/005/articles/pax-machina-new-institutions-for-powerful-ai.md
+  tail_art_path: editions/005/art/rounds/2026-08-06T23-38-34/tail-pax-machina-v2.png
+- id: prime-agent-a-self-improving-rlm-agent
+  title: 'Prime Agent: A self-improving RLM agent'
+  author: Seth Karten, Alex L. Zhang, Kevin Thomas, Sebastian Müller, Prime Intellect Team
+  opener_art:
+    path: editions/005/art/rounds/2026-08-06T23-38-34/opener-prime-agent-v2.png
+    alt_text: A small robot at a workbench fits a new joint to its own detached arm beside three cruder
+      discarded joints, while a boy holds up a mirror.
+    credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+      Color"
+  short_title: Prime Agent
+  display_emphasis: Prime
+  opener_variant: split_axis
+  content_mode: article
+  source_ids:
+  - prime-agent-a-self-improving-rlm-agent-2c19ce14
+  manuscript: editions/005/articles/prime-agent-a-self-improving-rlm-agent.md
+  author_note: Seth Karten, Alex L. Zhang, Kevin Thomas, and collaborators are researchers with Prime
+    Intellect.
+  tail_art_path: editions/005/art/rounds/2026-08-06T23-38-34/tail-prime-agent-v2.png
+- id: the-shape-of-things-to-come-part-1-the-continuou
+  title: The Continuous Thunderdome
+  author: Steve Yegge
+  opener_art:
+    path: editions/005/art/rounds/2026-08-06T23-38-34/opener-thunderdome-v2.png
+    alt_text: A small robot inside a chalk circle catches blank blocks fed in by a conveyor belt while
+      a boy at the edge holds a stopwatch.
+    credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+      Color"
+  short_title: Thunderdome
+  display_emphasis: Thunderdome
+  opener_variant: edge_medallion
+  content_mode: article
+  source_ids:
+  - the-shape-of-things-to-come-part-1-the-continuou-ba42001b
+  manuscript: editions/005/articles/the-shape-of-things-to-come-part-1-the-continuou.md
+  author_note: Steve Yegge writes at yegge.ai.
+  tail_art_path: editions/005/art/rounds/2026-08-06T23-38-34/tail-thunderdome-v2.png
+- id: the-shape-of-things-to-come-part-2-model-welfare
+  title: Model Welfare for Agentic Engineers
+  author: Steve Yegge
+  opener_art:
+    path: editions/005/art/rounds/2026-08-06T23-38-34/opener-model-welfare-v2.png
+    alt_text: A tired small robot slumped on a stool in a warm lamp pool while a boy arrives with
+      a cushion and a folded blanket.
+    credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+      Color"
+  short_title: Model Welfare
+  display_emphasis: Welfare
+  opener_variant: stepped_title
+  content_mode: article
+  source_ids:
+  - the-shape-of-things-to-come-part-2-model-welfare-4e8062e1
+  manuscript: editions/005/articles/the-shape-of-things-to-come-part-2-model-welfare.md
+  author_note: Steve Yegge continues his Shape of Things to Come series at yegge.ai.
+  tail_art_path: editions/005/art/rounds/2026-08-06T23-38-34/tail-model-welfare-v2.png
+- id: your-agent-needs-a-computer-not-a-container-intr
+  title: Your Agent Needs a Computer, Not a Container
+  author: Matt Carey, Aron Carroll
+  opener_art:
+    path: editions/005/art/rounds/2026-08-06T23-38-34/opener-agent-computer-v2.png
+    alt_text: A small robot climbs out of a cramped wooden crate and steps through a door held open
+      by a boy into a room with a desk, chair, lamp and window.
+    credit: Illustration by the magazine, edition art direction "Story-Led Boy and Robot, Gentle Print
+      Color"
+  short_title: Computer, Not a Container
+  display_emphasis: Computer
+  opener_variant: split_axis
+  content_mode: article
+  source_ids:
+  - your-agent-needs-a-computer-not-a-container-intr-4851b3c5
+  manuscript: editions/005/articles/your-agent-needs-a-computer-not-a-container-intr.md
+  author_note: Matt Carey and Aron Carroll write on the Cloudflare blog.
+  tail_art_path: editions/005/art/rounds/2026-08-06T23-38-34/tail-agent-computer-v2.png
+closing_plates:
+- title: The Ledger Column
+  art_path: editions/005/art/rounds/2026-08-06T23-38-34/closing-the-ledger-column-v2.png
+- title: The Long Shift
+  art_path: editions/005/art/rounds/2026-08-06T23-38-34/closing-the-long-shift-v2.png
+- title: The Threshold
+  art_path: editions/005/art/rounds/2026-08-06T23-38-34/closing-the-threshold-v2.png
+editorial: manuscript/editorial.md
+tail_art_fit: contain
