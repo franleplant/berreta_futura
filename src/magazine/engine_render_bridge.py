@@ -286,9 +286,9 @@ def _archive_tree(root: Path, destination: Path) -> Path:
 
 def _web_source_urls(stage_root: Path) -> dict[str, str]:
     return {
-        record.id: record.canonical_url
+        record.id: record.url
         for record in load_records(stage_root / "library" / "sources")
-        if record.canonical_url
+        if record.url
     }
 
 

@@ -541,7 +541,11 @@ def _parse_document(html: str) -> _Document:
             position = closing + 1
         elif line.startswith("    <nav ") and 'data-edition-navigation="contents"' in line:
             closing = _closing_line(lines, position, stop, "</nav>")
-            contents = tuple(lines[position : closing + 1])
+            # A long edition splits its printed contents into balanced sheets
+            # (html_edition._render_contents); the web page has no sheet, so
+            # consecutive navs concatenate into the one contents block.
+            sheet = tuple(lines[position : closing + 1])
+            contents = sheet if contents is None else contents + sheet
             position = closing + 1
         elif (opened := _PIECE_OPENING.match(line)) is not None:
             closing = _closing_line(lines, position, stop, f"</{opened.group(1)}>")

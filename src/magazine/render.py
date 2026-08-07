@@ -274,8 +274,7 @@ def _section_label(edition: Edition, kind: str) -> str:
 def _content_mode_label(edition: Edition, mode: str) -> str:
     if mode not in CONTENT_MODES:
         raise ValidationError(f"Unsupported article content mode: {mode}")
-    key = "content_original_synthesis" if mode == "original_synthesis" else mode
-    return _ui(edition, key)
+    return _ui(edition, mode)
 
 
 def _opening_sentence(text: str) -> tuple[str, str]:
@@ -2023,6 +2022,13 @@ class _Typesetter:
 
         image = ImageReader(str(tail_art))
         pixel_width, pixel_height = image.getSize()
+        # Cut to the cloth, as the WeasyPrint plan does (_measured_tail_art):
+        # a raster short of the box at 300 ppi prints as the tallest band it
+        # can fill at the floor, centred in the room it was given.
+        affordable = (pixel_height / MIN_FIGURE_PPI) * 72.0
+        if affordable < height:
+            bottom += (height - affordable) / 2
+            height = affordable
         effective_ppi = min(
             pixel_width / (width / 72),
             pixel_height / (height / 72),
@@ -2044,10 +2050,7 @@ class _Typesetter:
                 self.new_page(_ui(self.edition, "editorial"), opener=True)
                 start_page = self.page
                 self.toc["editorial"] = self.page
-                self._label(
-                    self.edition.editorial.label,
-                    right=_ui(self.edition, "original_argument"),
-                )
+                self._label(self.edition.editorial.label)
                 title_bottom = self._fitted_title_box(
                     self.edition.editorial.title,
                     self.left,
@@ -2155,19 +2158,36 @@ class _Typesetter:
         self.markdown(section.path, lead=True)
 
     def _closing_plate(self, index: int, total: int) -> None:
-        if index >= len(self.edition.closing_plates):
+        if not self.edition.closing_plates:
             raise ValidationError(
-                f"Edition requires {total} unique closing plates for signature padding, but only "
-                f"{len(self.edition.closing_plates)} are configured"
+                f"Edition requires {total} closing plates for signature padding, but none are configured"
             )
-        plate = self.edition.closing_plates[index]
+        # More pages than plates cycles the approved pool: repeating a plate
+        # is the editor's stated preference over shipping blank paper.
+        plate = self.edition.closing_plates[index % len(self.edition.closing_plates)]
         self.new_page(blank_header=True)
         self.pdf.setFillColorRGB(*WHITE)
         self.pdf.rect(0, 0, self.width, self.height, fill=1, stroke=0)
         art_x, art_width = self.grid_box(0, 6)
         art_y = 205.0
         art_height = self.height - art_y
-        self._draw_image_fill(plate.art_path, art_x, art_y, art_width, art_height)
+        # Contained, never cropped (editor's rule, 2026-08-07): the plate is
+        # a picture the reader is given whole, letterboxed when its aspect
+        # differs from the window's.
+        from reportlab.lib.utils import ImageReader
+
+        plate_image = ImageReader(str(plate.art_path))
+        plate_width, plate_height = plate_image.getSize()
+        plate_scale = min(art_width / plate_width, art_height / plate_height)
+        drawn_width = plate_width * plate_scale
+        drawn_height = plate_height * plate_scale
+        self.pdf.drawImage(
+            plate_image,
+            art_x + (art_width - drawn_width) / 2,
+            art_y + (art_height - drawn_height) / 2,
+            drawn_width,
+            drawn_height,
+        )
         title_x, title_width = self.grid_box(0, 5)
         self._fitted_title_box(
             plate.title,
@@ -2192,6 +2212,11 @@ class _Typesetter:
         target = max(target, minimum_total)
         target = ((target + 3) // 4) * 4
         closing_pages = target - 2 - self.page
+        if closing_pages < 2:
+            # Editor's rule (2026-08-07): an exact signature still closes with
+            # plate art -- grow by a full fold, never ship zero or one plate.
+            target += 4
+            closing_pages = target - 2 - self.page
         for index in range(closing_pages):
             self._closing_plate(index, closing_pages)
         # Page -2 is the blank inside back cover. The final page is a blank

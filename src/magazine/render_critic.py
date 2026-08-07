@@ -79,6 +79,17 @@ VOID_REPORT_LIMIT = 3
 # plausible folio size, while every mid-page void observed clears it by
 # hundreds of points.
 VOID_TRAILING_TOLERANCE_POINTS = 16.0
+# The trailing excuse has a limit.  An article's final page ending a little
+# short is the natural shortfall; an article's final page that is mostly
+# paper is the room an approved tail ornament exists to fill (rewrites move
+# the breaks, so a manuscript that ended flush yesterday ends on a
+# two-thirds-blank page today).  The largest honest shortfall measured on
+# edition 003 stops near 100 pt -- under a fifth of the ~530 pt live area --
+# while the endings the editor called out on edition 004 left well over
+# half the page white.  A third of the live height separates the two with
+# margin on each side; a page whose printed tail band already stands in the
+# room is excused regardless, since the ornament is the fill.
+TAIL_GAP_MIN_LIVE_FRACTION = 0.35
 # A printed tail ornament stands centered in whatever room the article's end
 # mark left it: by design, half the surplus above and half below (ornaments
 # cap at 214 pt, so edition 003's rooms leave 60-100 pt of margin a side).
@@ -468,8 +479,13 @@ def inspect_render(
     # near-white ink fails it; an unintended blank body page is one with no
     # ink a reader could see, so near-white ink fails that too.
     inside_cover_pages = {2, page_count - 1}
-    expected_contents_pages = max(1, math.ceil(len(toc) / 8))
-    first_body_page = min(toc.values(), default=3 + expected_contents_pages)
+    # The cap comes from the ReportLab engine's hard 8-entries-per-sheet
+    # chunking (render.py `contents`); the WeasyPrint engine flows entries
+    # and routinely fits more on one page.  A denser contents than the cap
+    # predicts is sound typesetting either way, so the check below rejects
+    # only a contents run *longer* than the cap -- overflow or dead pages.
+    maximum_contents_pages = max(1, math.ceil(len(toc) / 8))
+    first_body_page = min(toc.values(), default=3 + maximum_contents_pages)
     actual_contents_pages = first_body_page - 3
     # The pages whose whitespace is anyone's business: covers and inside
     # covers are sparse or blank by contract, and the contents page carries
@@ -544,6 +560,47 @@ def inspect_render(
                 # A trailing void on an article's final page is the article
                 # simply ending; anywhere else -- mid-article, or under a
                 # closing plate that should fill its page -- it is dead paper.
+                # The ending excuse stops at TAIL_GAP_MIN_LIVE_FRACTION: a
+                # mostly-blank ending with no printed tail band is the gap an
+                # approved tail asset should be filling, so it goes to the
+                # reviewer as its own advisory rather than passing silently.
+                if (
+                    live_area_points is not None
+                    and row["tail_band"] is None
+                    and void["height_points"]
+                    >= TAIL_GAP_MIN_LIVE_FRACTION
+                    * (live_area_points[3] - live_area_points[1])
+                ):
+                    live_height = live_area_points[3] - live_area_points[1]
+                    slug = next(
+                        (
+                            name
+                            for name, last in article_last_pages.items()
+                            if last == page
+                        ),
+                        "unknown article",
+                    )
+                    issue(
+                        "article-tail-gap",
+                        "review",
+                        f"'{slug}' ends leaving a {void['height_points']:.0f} pt "
+                        f"trailing blank ({void['height_points'] / live_height:.0%} "
+                        "of the live area) with no tail art printed; consider "
+                        "approving tail art for this article.",
+                        page=page,
+                    )
+                    flag_crops.append(
+                        {
+                            "page": page,
+                            "kind": "void",
+                            "span": (
+                                void["y_points"] - CROP_MARGIN_POINTS,
+                                void["y_points"]
+                                + void["height_points"]
+                                + CROP_MARGIN_POINTS,
+                            ),
+                        }
+                    )
                 continue
             band = row["tail_band"]
             if band is not None and band["centered"] and _abuts_tail_band(void, band):
@@ -714,11 +771,12 @@ def inspect_render(
             page=1,
         )
 
-    if actual_contents_pages != expected_contents_pages:
+    if not 1 <= actual_contents_pages <= maximum_contents_pages:
         issue(
             "contents-pagination",
             "error",
-            f"Contents uses {actual_contents_pages} pages; {expected_contents_pages} are expected for {len(toc)} entries.",
+            f"Contents uses {actual_contents_pages} pages; between 1 and "
+            f"{maximum_contents_pages} are expected for {len(toc)} entries.",
         )
     if any(page < 4 or page > page_count for page in toc.values()):
         issue("contents-folio-range", "error", "A contents folio points outside the body page range.")
@@ -746,7 +804,7 @@ def inspect_render(
             "raster_page_count_matches": len(rendered_pages) == page_count,
             "page_count_multiple_of_four": page_count % 4 == 0,
             "contents_pages": actual_contents_pages,
-            "expected_contents_pages": expected_contents_pages,
+            "maximum_contents_pages": maximum_contents_pages,
             "inside_cover_pages": sorted(inside_cover_pages),
             "article_page_cap": 7,
             "editorial_page_cap": editorial_page_cap,

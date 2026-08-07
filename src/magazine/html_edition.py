@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from html import escape
 from pathlib import Path
 
+from .errors import ValidationError
 from .manifest import Article, Edition, Section
 from .media_schema import Figure
 from .publication_document import (
@@ -88,7 +89,7 @@ def render_html_edition(edition: Edition) -> HtmlEdition:
     """
 
     assets: list[HtmlAsset] = []
-    body: list[str] = [_edition_header(edition), _render_contents(edition)]
+    body: list[str] = [_edition_header(edition), *_render_contents(edition)]
 
     if edition.editorial is not None:
         document = _read_document(edition.editorial.path)
@@ -163,8 +164,8 @@ def _edition_header(edition: Edition) -> str:
     return "\n".join(lines)
 
 
-def _render_contents(edition: Edition) -> str:
-    """The contents list, with each entry's own label, title and author.
+def _render_contents(edition: Edition) -> tuple[str, ...]:
+    """The contents sheets, with each entry's own label, title and author.
 
     An entry is a row of four editorial facts -- what kind of piece it is, where
     it starts, what it is called and who wrote it -- so each is its own element.
@@ -198,6 +199,27 @@ def _render_contents(edition: Edition) -> str:
         (_section_destination_id(index), _ui(edition, section.kind), section.title, "")
         for index, section in enumerate(edition.sections)
     )
+    # A contents row's author line is one line by contract (the row offsets
+    # are fixed), and the measure carries about 54 characters of 6.8pt
+    # Magazine Sans.  A roster longer than that is cut at an author boundary
+    # and closed with "et al." -- the full roster still prints on the
+    # article's own opener.
+    def clamp_roster(author: str) -> str:
+        if len(author) <= 54:
+            return author
+        head = author[:47]
+        cut = head.rfind(", ")
+        return (head[:cut] if cut > 0 else head) + " et al."
+
+    entries = [
+        (destination, entry_label, title, clamp_roster(author))
+        for destination, entry_label, title, author in entries
+    ]
+    # The row template's fixed offsets (entry-author at 40.5pt) are drawn for
+    # the ~49pt row that eight entries leave.  Nine or more rows shrink below
+    # that, so the nav declares itself dense and the stylesheet moves the
+    # offsets up a few points -- same page, same anatomy, tighter rows.
+    density = ' data-contents-density="tight"' if len(entries) > 8 else ""
     rows: list[str] = []
     for destination, entry_label, title, author in entries:
         rows.append(
@@ -207,16 +229,18 @@ def _render_contents(edition: Edition) -> str:
             + (f'<span class="entry-author">{_text(author)}</span>' if author else "")
             + "</li>"
         )
-    return "\n".join(
-        [
-            f'<nav aria-label="{_attr(label)}" data-edition-navigation="contents">',
-            f'  <p class="contents-kicker">{_text(kicker)}</p>',
-            f"  <h2>{_text(label)}</h2>",
-            "  <ol>",
-            *rows,
-            "  </ol>",
-            "</nav>",
-        ]
+    return (
+        "\n".join(
+            [
+                f'<nav aria-label="{_attr(label)}" data-edition-navigation="contents"{density}>',
+                f'  <p class="contents-kicker">{_text(kicker)}</p>',
+                f"  <h2>{_text(label)}</h2>",
+                "  <ol>",
+                *rows,
+                "  </ol>",
+                "</nav>",
+            ]
+        ),
     )
 
 
@@ -229,8 +253,7 @@ def _render_editorial(
             f' data-short-title="{_attr(_ui(edition, "editorial"))}">',
             "  <header>",
             f'    <p class="content-label" data-content-mode="original_editorial">'
-            f'<span class="label-primary">{_text(label)}</span>'
-            f'<span class="label-secondary">{_text(_ui(edition, "original_argument"))}</span></p>',
+            f'<span class="label-primary">{_text(label)}</span></p>',
             f"    <h1>{_text(title)}</h1>",
             f'    <p class="byline" data-byline="true">'
             f'<span class="byline-prefix">{_text(_ui(edition, "by"))}</span> {_text(byline)}</p>',
@@ -537,9 +560,31 @@ def _render_section(edition: Edition, index: int, section: Section, document: Pu
     )
 
 
+# The plate window's aspect (weasyprint-a5.css .closing-plate img,
+# 333.0079 x 390.2756pt).  Plates draw contained -- never cropped -- so art
+# far from this aspect letterboxes; past a factor of two it prints as a
+# sliver in white space, which is a build error, not a taste question.
+_PLATE_WINDOW_ASPECT = 333.0079 / 390.2756
+
+
 def _render_closing_plates(edition: Edition, assets: list[HtmlAsset]) -> tuple[str, ...]:
     plates: list[str] = []
     for index, plate in enumerate(edition.closing_plates, start=1):
+        try:
+            from PIL import Image
+
+            with Image.open(plate.art_path) as image:
+                aspect = image.width / image.height
+        except (OSError, ValueError, ZeroDivisionError) as exc:
+            raise ValidationError(
+                f"Closing plate {index} needs a readable raster source: {plate.art_path}"
+            ) from exc
+        if not _PLATE_WINDOW_ASPECT / 2 <= aspect <= _PLATE_WINDOW_ASPECT * 2:
+            raise ValidationError(
+                f"Closing plate {index} art {plate.art_path} has aspect {aspect:.2f}; "
+                f"contained in the {_PLATE_WINDOW_ASPECT:.2f} plate window it would "
+                "print as a sliver. Use art nearer the window's shape."
+            )
         asset = _asset(
             id=f"closing-plate-{index}", role="closing_plate", path=plate.art_path,
             alt_text=plate.title,
@@ -769,10 +814,7 @@ def _ui(edition: Edition, key: str) -> str:
         "end": "End",
         "by": "By",
         "original_argument": "An original argument",
-        "faithful_edit": "FAITHFUL EDIT",
-        "faithful_synthesis": "FAITHFUL SYNTHESIS",
-        "selected_extracts": "SELECTED EXTRACTS",
-        "original_synthesis": "ORIGINAL SYNTHESIS",
+        "article": "ARTICLE",
         "in_a_nutshell": "IN A NUTSHELL",
         "original_editorial": "ORIGINAL EDITORIAL",
         "source_introduction": "THE SOURCE",
@@ -793,10 +835,7 @@ def _ui(edition: Edition, key: str) -> str:
         "end": "Fin",
         "by": "Por",
         "original_argument": "Un argumento original",
-        "faithful_edit": "EDICIÓN FIEL",
-        "faithful_synthesis": "SÍNTESIS FIEL",
-        "selected_extracts": "EXTRACTOS SELECCIONADOS",
-        "original_synthesis": "SÍNTESIS ORIGINAL",
+        "article": "ARTÍCULO",
         "in_a_nutshell": "EN POCAS PALABRAS",
         "original_editorial": "EDITORIAL ORIGINAL",
         "source_introduction": "LA FUENTE",

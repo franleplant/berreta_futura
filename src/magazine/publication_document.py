@@ -119,6 +119,18 @@ class PublicationDocument:
     blocks: tuple[Block, ...]
 
 
+# Characters the bundled body faces have no glyph for, each mapped to the
+# equivalent the faces do carry.  Writers emit U+2011 NON-BREAKING HYPHEN in
+# names like GPT-5.6; the reader fonts render it as the missing-glyph "?", so
+# it becomes the ordinary hyphen it prints as.  Applied at parse so every
+# consumer -- reader, web, booklet -- sees the same text.
+_GLYPH_FALLBACKS = str.maketrans({
+    "‑": "-",  # non-breaking hyphen
+    "−": "-",  # minus sign
+    "­": "",   # soft hyphen: an invisible hint, never ink
+})
+
+
 def parse_publication_document(markdown: str) -> PublicationDocument:
     """Parse one Markdown manuscript into immutable, presentation-neutral values.
 
@@ -127,7 +139,7 @@ def parse_publication_document(markdown: str) -> PublicationDocument:
     Markdown content rather than silently deleting reader-visible text.
     """
     metadata, body = split_frontmatter(markdown)
-    tokens = _MARKDOWN.parse(body)
+    tokens = _MARKDOWN.parse(body.translate(_GLYPH_FALLBACKS))
     blocks, next_index = _parse_blocks(tokens)
     if next_index != len(tokens):  # Defensive: _parse_blocks must consume all input.
         raise DocumentParseError("Markdown parser left unconsumed block tokens")

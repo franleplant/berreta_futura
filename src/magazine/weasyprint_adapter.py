@@ -3015,9 +3015,12 @@ def _figure_pages(document: Any) -> dict[str, int]:
 def _limit_closing_plates(tree: Element, count: int) -> None:
     """Keep exactly ``count`` closing plates, as ``back_cover`` renders exactly that many.
 
-    A shortfall is the error ``_closing_plate`` (render.py:2170-2175) raises: the
-    signature cannot be closed by plates that the edition does not have, and it
-    must not be closed by anything else.
+    The signature must be closed by plates and nothing else.  When it asks for
+    more pages than the edition has plates, the approved pool cycles -- a
+    repeated plate is the editor's stated preference over blank paper -- by
+    deep-copying plates in configuration order, so each copy keeps its own
+    ``data-closing-plate`` index and title fit.  No plates at all is still an
+    error: there is nothing to cycle.
     """
     parents = {child: parent for parent in tree.iter() for child in parent}
     plates = [
@@ -3026,10 +3029,18 @@ def _limit_closing_plates(tree: Element, count: int) -> None:
         if "closing-plate" in _element_classes(element)
     ]
     if count > len(plates):
-        raise ValidationError(
-            f"Edition requires {count} unique closing plates for signature padding, but only "
-            f"{len(plates)} are configured"
-        )
+        if not plates:
+            raise ValidationError(
+                f"Edition requires {count} closing plates for signature padding, "
+                "but none are configured"
+            )
+        parent = parents[plates[-1]]
+        anchor = list(parent).index(plates[-1])
+        for extra in range(count - len(plates)):
+            copy = deepcopy(plates[extra % len(plates)])
+            anchor += 1
+            parent.insert(anchor, copy)
+        return
     for plate in plates[count:]:
         parents[plate].remove(plate)
 
@@ -3676,6 +3687,15 @@ def _measured_tail_art(article: Any, flow_bottom: float) -> TailBand | None:
         raise ValidationError(
             f"Article tail art needs a readable raster source: {article.tail_art}"
         ) from exc
+    # The band is cut to the cloth: a raster short of the 214pt cap at 300 ppi
+    # prints as the tallest band it *can* fill at the floor, centred in the
+    # ornament's room like any max-capped band, instead of being refused.  A
+    # raster too short to reach even the minimum band height at the floor is
+    # dropped -- the ledger's business, the same as insufficient room.
+    affordable = (pixels[1] / _MIN_FIGURE_PPI) * 72.0
+    height = min(height, affordable)
+    if height < _TAIL_ORNAMENT_MIN_HEIGHT:
+        return None
     effective_ppi = min(
         pixels[0] / (_CODE_MEASURE_POINTS / 72),
         pixels[1] / (height / 72),
@@ -3873,7 +3893,15 @@ def _signature_closing_plates(edition: Edition, content_pages: int) -> int:
     target = int(configured) if configured else ((minimum_total + 3) // 4) * 4
     target = max(target, minimum_total)
     target = ((target + 3) // 4) * 4
-    return target - 2 - content_pages
+    count = target - 2 - content_pages
+    if count < 2:
+        # The plates are wanted, not tolerated (editor's rule, 2026-08-07): a
+        # signature that lands exactly still closes with plate art, and a
+        # printed sheet carries two pages a side, so the signature grows by a
+        # full fold rather than shipping zero or one plate.
+        target += 4
+        count = target - 2 - content_pages
+    return count
 
 
 def _article_flow_bottom(document: Any, article_id: str) -> float:

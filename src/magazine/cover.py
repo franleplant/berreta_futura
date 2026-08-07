@@ -1233,8 +1233,18 @@ def _cover_date(value: str) -> str:
 
 
 def _cover_contributors(edition: Edition) -> str:
-    """Derive front-cover contributor copy from the rendered article records."""
-    authors = [article.author.strip() for article in edition.articles if article.author.strip()]
+    """Derive front-cover contributor copy from the rendered article records.
+
+    An author with two pieces in the issue is still one contributor, so the
+    roster dedups case-insensitively while keeping first-appearance order.
+    """
+    authors: list[str] = []
+    seen: set[str] = set()
+    for article in edition.articles:
+        author = article.author.strip()
+        if author and author.casefold() not in seen:
+            seen.add(author.casefold())
+            authors.append(author)
     if authors:
         return " / ".join(authors).upper()
     return str(edition.cover.get("deck", "")).strip()
