@@ -3828,11 +3828,11 @@ def _signature_closing_plates(edition: Edition, content_pages: int) -> int:
     target = max(target, minimum_total)
     target = ((target + 3) // 4) * 4
     count = target - 2 - content_pages
-    if count < 2:
-        # The plates are wanted, not tolerated (editor's rule, 2026-08-07): a
-        # signature that lands exactly still closes with plate art, and a
-        # printed sheet carries two pages a side, so the signature grows by a
-        # full fold rather than shipping zero or one plate.
+    if count < 4:
+        # The plates are wanted, not tolerated (editor's rule, 2026-08-07,
+        # raised to four pages the same day): the edition always closes with
+        # at least a full fold of plate art, so a signature that lands with
+        # fewer grows by one fold rather than shipping a thin gallery.
         target += 4
         count = target - 2 - content_pages
     return count

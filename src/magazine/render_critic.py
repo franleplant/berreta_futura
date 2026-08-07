@@ -12,7 +12,12 @@ from typing import Any
 from PIL import Image, ImageChops, ImageDraw, ImageOps
 from pypdf import PdfReader
 
-from .booklet import A4_LANDSCAPE_POINTS, imposed_reader_page_plan, section_reader_pages
+from .booklet import (
+    A4_LANDSCAPE_POINTS,
+    cover_wrap_plan,
+    imposed_reader_page_plan,
+    section_reader_pages,
+)
 from .concurrency import ordered_map, worker_count
 from .errors import DependencyError
 
@@ -400,14 +405,14 @@ def inspect_render(
             "One or more interior booklet sides do not contain the expected left/right reader page pair.",
         )
     cover_pages = section_reader_pages(page_count, "cover") if page_count >= 4 else ()
-    cover_plan = imposed_reader_page_plan(cover_pages)
+    cover_plan = cover_wrap_plan(page_count) if page_count >= 4 else ()
     cover_spread_checks = _booklet_spread_checks(reader_texts, cover_booklet_texts, cover_plan)
     if len(cover_booklet.pages) != len(cover_plan):
         issue(
             "cover-booklet-side-count",
             "error",
             f"Cover booklet has {len(cover_booklet.pages)} sides; "
-            f"{len(cover_plan)} are expected for a single wrap sheet.",
+            f"{len(cover_plan)} are expected for the single-sided wrap.",
         )
     if not _all_a4_landscape(cover_booklet):
         issue(
@@ -419,8 +424,8 @@ def inspect_render(
         issue(
             "cover-booklet-page-order",
             "error",
-            "The cover booklet must impose the back cover beside the front cover, "
-            "then the two inside covers.",
+            "The cover booklet must impose the back cover beside the front cover "
+            "on its single outside side.",
         )
     if len(rendered_cover_booklet) != len(cover_booklet.pages):
         issue(
@@ -859,11 +864,12 @@ def inspect_render(
             "path": cover_booklet_pdf.relative_to(destination).as_posix(),
             "reader_pages": list(cover_pages),
             "sheet_sides": len(cover_booklet.pages),
-            "sheets": len(cover_booklet.pages) // 2,
+            # Single-sided wrap: one page is one sheet (booklet.cover_wrap_plan).
+            "sheets": len(cover_booklet.pages),
             "expected_sheet_sides": len(cover_plan),
             "all_sides_a4_landscape": _all_a4_landscape(cover_booklet),
             "binding": "saddle_stitch_wrap",
-            "duplex_flip": "short_edge",
+            "duplex_flip": "none (single-sided)",
             "rasterized": True,
             "raster_page_count_matches": len(rendered_cover_booklet) == len(cover_booklet.pages),
             "inside_cover_sides": sorted(cover_booklet_inside_sides),

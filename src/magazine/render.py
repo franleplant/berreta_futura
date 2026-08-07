@@ -2200,9 +2200,9 @@ class _Typesetter:
         target = max(target, minimum_total)
         target = ((target + 3) // 4) * 4
         closing_pages = target - 2 - self.page
-        if closing_pages < 2:
-            # Editor's rule (2026-08-07): an exact signature still closes with
-            # plate art -- grow by a full fold, never ship zero or one plate.
+        if closing_pages < 4:
+            # Editor's rule (2026-08-07, raised to four the same day): the
+            # edition always closes with at least a full fold of plate art.
             target += 4
             closing_pages = target - 2 - self.page
         for index in range(closing_pages):
