@@ -52,19 +52,24 @@ def _effective_image_ppi(
 def _booklet_section_facts(
     document: PdfReader, reader: PdfReader, section: str, *, stock: str
 ) -> dict[str, Any]:
-    """Describe one split A4 signature: which reader pages, how many sheets, how it feeds."""
+    """Describe one split A4 signature: which reader pages, how many sheets, how it feeds.
+
+    The cover wrap prints single-sided (booklet.cover_wrap_plan): one page is
+    one sheet, and there is no duplex flip to state.
+    """
     sizes = [_page_size(page) for page in document.pages]
     page_count = len(reader.pages)
     expected = section_reader_pages(page_count, section) if page_count >= 4 else ()
+    single_sided = section == "cover"
     return {
         "reader_pages": list(expected),
         "sheet_sides": len(document.pages),
-        "sheets": len(document.pages) // 2,
-        "expected_sheets": (len(expected) + (-len(expected) % 4)) // 4,
+        "sheets": len(document.pages) if single_sided else len(document.pages) // 2,
+        "expected_sheets": 1 if single_sided else (len(expected) + (-len(expected) % 4)) // 4,
         "all_pages_a4_landscape": all(_near(size, A4_LANDSCAPE_POINTS) for size in sizes),
         "encrypted": document.is_encrypted,
         "print_scale": "100%",
-        "duplex_flip": "short edge",
+        "duplex_flip": "none (single-sided)" if single_sided else "short edge",
         "stock": stock,
     }
 

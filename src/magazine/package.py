@@ -124,7 +124,8 @@ def package_release(
             reader_page_count=len(PdfReader(str(reader)).pages),
             all_in_one_sheets=len(PdfReader(str(booklet)).pages) // 2,
             interior_sheets=len(PdfReader(str(interior_booklet)).pages) // 2,
-            cover_sheets=len(PdfReader(str(cover_booklet)).pages) // 2,
+            # The cover wrap prints single-sided: one page is one sheet.
+            cover_sheets=len(PdfReader(str(cover_booklet)).pages),
         ),
         encoding="utf-8",
     )
@@ -200,10 +201,9 @@ def _printing_instructions(
             "cubierta y sin las páginas en blanco de su cara interior. Son "
             f"{interior_sheets} hojas A4 en papel corriente de 80 a 100 g/m².\n\n"
             "## booklet-a4-cover.pdf — cubierta en papel más grueso\n\n"
-            f"{cover_sheets} hoja A4. La cara exterior lleva la contracubierta junto a la cubierta; "
-            "la cara interior está en blanco por diseño, así que en una impresora de una sola cara "
-            "basta con imprimir la primera página del PDF. Usar papel más grueso —de 160 a 250 g/m², "
-            "que dobla bien— y dejar secar la tinta antes de doblar.\n\n"
+            f"{cover_sheets} hoja A4, a una sola cara: la contracubierta junto a la cubierta. "
+            "El PDF es esa única página — no hay cara interior que imprimir. Usar papel más "
+            "grueso —de 160 a 250 g/m², que dobla bien— y dejar secar la tinta antes de doblar.\n\n"
             "## Montaje de la impresión en dos papeles\n\n"
             "Doblar por separado el bloque interior y la hoja de cubierta, encajar el interior "
             "dentro de la cubierta doblada y grapar a caballete atravesando ambos por el lomo.\n"
@@ -223,8 +223,8 @@ def _printing_instructions(
         f"without the blank inside covers. {interior_sheets} A4 sheets on ordinary 80-100 gsm "
         "text stock.\n\n"
         "## booklet-a4-cover.pdf — cover wrap on heavier stock\n\n"
-        f"{cover_sheets} A4 sheet. Its outer side carries the back cover beside the front cover; "
-        "its inner side is blank by design, so a simplex printer needs only the PDF's first page. "
+        f"{cover_sheets} A4 sheet, printed single-sided: the back cover beside the front cover. "
+        "The PDF is that one page — there is no inside face to print. "
         "Use heavier stock — 160-250 gsm folds well — and let the ink dry before folding.\n\n"
         "## Assembling the two-stock print\n\n"
         "Fold the interior stack and the cover sheet separately, nest the interior inside the "

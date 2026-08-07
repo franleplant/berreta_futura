@@ -72,6 +72,17 @@ def imposed_reader_page_plan(
     )
 
 
+def cover_wrap_plan(page_count: int) -> tuple[tuple[int | None, int | None], ...]:
+    """The cover wrap's print plan: one side, back cover beside front cover.
+
+    booklet-a4-cover.pdf prints single-sided (editor's rule, 2026-08-07): the
+    wrap's inside faces are blank by contract, so the document carries only
+    the outside spread and heavier stock goes through the printer once.  The
+    all-in-one and interior booklets keep their duplex plans untouched.
+    """
+    return imposed_reader_page_plan(section_reader_pages(page_count, "cover"))[:1]
+
+
 def impose_a5_on_a4(reader_pdf: Path, output: Path, *, section: str = "all") -> Path:
     try:
         from pypdf import PdfReader, PdfWriter, Transformation
@@ -80,7 +91,11 @@ def impose_a5_on_a4(reader_pdf: Path, output: Path, *, section: str = "all") -> 
         raise DependencyError("Booklet imposition requires pypdf; run `uv sync --locked`.") from exc
     reader = PdfReader(str(reader_pdf))
     pages = list(reader.pages)
-    plan = imposed_reader_page_plan(section_reader_pages(len(pages), section))
+    plan = (
+        cover_wrap_plan(len(pages))
+        if section == "cover"
+        else imposed_reader_page_plan(section_reader_pages(len(pages), section))
+    )
     a4_landscape = A4_LANDSCAPE_POINTS
     half = a4_landscape[0] / 2
     writer = PdfWriter()
