@@ -350,17 +350,21 @@ main { margin: 0; }
 [data-edition-navigation="contents"] .entry-folio,
 [data-edition-navigation="contents"] .entry-title,
 [data-edition-navigation="contents"] .entry-author { display: block; position: absolute; }
+/* The cluster floats in its row: the air above the label mirrors the air
+ * below the author line, so neither crowds a rule (editor's note,
+ * 2026-08-07 -- the label used to sit right under the previous row's
+ * hairline). */
 [data-edition-navigation="contents"] .entry-label {
-  font: 500 6.8pt/0 "Magazine Sans", sans-serif; left: 47pt; text-transform: uppercase; top: 5.52625pt;
+  font: 500 6.8pt/0 "Magazine Sans", sans-serif; left: 47pt; text-transform: uppercase; top: 8.6pt;
 }
 [data-edition-navigation="contents"] .entry-folio {
-  color: rgb(25% 10% 43%); font: 600 23pt/0 "Magazine Sans", sans-serif; left: 0; top: 14.63354pt;
+  color: rgb(25% 10% 43%); font: 600 23pt/0 "Magazine Sans", sans-serif; left: 0; top: 17.7pt;
 }
 [data-edition-navigation="contents"] .entry-folio::after {
   content: target-counter(attr(href), page, decimal-leading-zero);
 }
 [data-edition-navigation="contents"] .entry-title {
-  font: 600 9.8pt/10.2pt "Magazine Serif Display", serif; left: 47pt; top: 14.465pt; width: 286.0079pt;
+  font: 600 9.8pt/10.2pt "Magazine Serif Display", serif; left: 47pt; top: 17.5pt; width: 286.0079pt;
 }
 /* One line only: a roster long enough to wrap would print its second line
  * into the next row's fixed offsets.  The build clamps rosters to the
@@ -375,13 +379,13 @@ main { margin: 0; }
  * wrap into the author's fixed offset. */
 [data-edition-navigation="contents"] .entry-author {
   color: rgb(31% 35% 37%); font: 500 6.8pt/0 "Magazine Sans", sans-serif; left: 47pt;
-  text-transform: uppercase; top: 29.2pt; white-space: nowrap;
+  text-transform: uppercase; top: 32.2pt; white-space: nowrap;
 }
 /* Nine or more rows: the same anatomy compressed into 393/9 = 43.7pt rows. */
-[data-contents-density="tight"] .entry-label { top: 3.9pt; }
-[data-contents-density="tight"] .entry-folio { top: 13.1pt; }
-[data-contents-density="tight"] .entry-title { top: 12.9pt; }
-[data-contents-density="tight"] .entry-author { top: 27.6pt; }
+[data-contents-density="tight"] .entry-label { top: 6.8pt; }
+[data-contents-density="tight"] .entry-folio { top: 15.9pt; }
+[data-contents-density="tight"] .entry-title { top: 15.8pt; }
+[data-contents-density="tight"] .entry-author { top: 30.5pt; }
 
 .editorial, article, main > section { break-before: page; }
 .editorial header, article header, main > section > header { break-after: avoid; margin-bottom: 6mm; }
