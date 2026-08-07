@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "illustrations.schema.json",
+  "title": "Edition art direction and illustration records",
+  "description": "The file named by edition.yaml's art_direction_path: the edition's evolved art direction plus one record per generated interior asset. Reusable library directions in art-directions/<name>.yaml carry only the direction block. Process rules live in prompts/illustrations.md.",
+  "type": "object",
+  "required": ["schema_version", "direction"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "direction": {
+      "type": "object",
+      "required": ["name", "visual_language", "palette", "constraints", "avoid"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "visual_language": {"type": "string", "minLength": 1},
+        "palette": {"type": "string", "minLength": 1},
+        "reference_images": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "constraints": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "avoid": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        }
+      },
+      "additionalProperties": false
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "role", "art_path", "subject", "composition", "alt_text", "credit"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "role": {
+            "enum": ["article_opener", "article_tail", "closing_plate"]
+          },
+          "article_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Required for article_opener and article_tail roles: the edition.yaml id of the article the asset illustrates."
+          },
+          "plate_index": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "For closing_plate assets: the plate's position in edition.yaml's closing_plates list."
+          },
+          "art_path": {"type": "string", "minLength": 1},
+          "subject": {"type": "string", "minLength": 1},
+          "composition": {"type": "string", "minLength": 1},
+          "alt_text": {"type": "string", "minLength": 1},
+          "credit": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {"required": ["assets"]},
+      "then": {
+        "properties": {
+          "assets": {
+            "items": {
+              "if": {
+                "properties": {"role": {"enum": ["article_opener", "article_tail"]}}
+              },
+              "then": {"required": ["article_id"]}
+            }
+          }
+        }
+      }
+    }
+  ]
+}

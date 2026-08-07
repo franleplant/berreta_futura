@@ -12,7 +12,10 @@ The magazine is produced by two programs and a pile of files.
 - `mag produce` runs the writer prompts over the planned sources and writes
   the manuscripts and frontmatter into a timestamped run directory under the
   edition.
-- `mag art` generates and tracks cover and opener art candidates.
+- `mag art` proposes the edition's full art-brief slate (cover, one opener
+  and one tail per article, closing plates — see `prompts/illustrations.md`)
+  and renders candidate rounds; `--dry-run` writes the briefs and an
+  executable `generate.sh` without spending image credits.
 - `mag translate` produces the Spanish edition from the finished English one.
 - `mag render` stages everything an edition references (manuscripts, art,
   figure images, source records) and invokes the Python renderer with a

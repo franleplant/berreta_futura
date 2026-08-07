@@ -22,11 +22,9 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Cmd {
-    /// Propose a plan.yaml for an edition (one model call; human edits it)
+    /// Write plan.yaml from the edition's queued library sources (no model call; human edits it)
     Plan {
         edition: String,
-        #[arg(long, default_value = "codex:gpt-5.6-luna")]
-        model: String,
     },
     /// Produce an edition from a plan.yaml
     Produce {
@@ -53,13 +51,26 @@ enum Cmd {
     Art {
         edition: String,
         /// Shell command template for one image; {prompt} and {out} are substituted
-        #[arg(long = "gen-cmd")]
-        gen_cmd: String,
+        #[arg(long = "gen-cmd", required_unless_present_any = ["dry_run", "showcase"])]
+        gen_cmd: Option<String>,
         /// How many candidates per art brief
         #[arg(long, default_value_t = 4)]
         candidates: u32,
         #[arg(long, default_value = "opus")]
         model: String,
+        /// Propose briefs and write generate.sh, but spend no image credits
+        #[arg(long = "dry-run")]
+        dry_run: bool,
+        /// Only rebuild art/showcase.html from the rounds on disk (no model call, no generation)
+        #[arg(long)]
+        showcase: bool,
+        /// Scope this round to some purposes (comma-separated: cover,opener,tail,closing);
+        /// earlier briefs for them are treated as rejected and fed back as what not to repeat
+        #[arg(long)]
+        only: Option<String>,
+        /// Editor's note appended to the brief prompt (why the last round was rejected, direction for this one)
+        #[arg(long)]
+        note: Option<String>,
     },
     /// Render an edition via the Python renderer seam (mag-render-adapter)
     Render {
@@ -99,10 +110,7 @@ fn run(cli: Cli) -> Result<i32> {
     }
 
     match cli.cmd {
-        Cmd::Plan { edition, model } => {
-            let spec = caller::ModelSpec::parse(&model)?;
-            plan_cmd::propose_plan(&edition, &spec)
-        }
+        Cmd::Plan { edition } => plan_cmd::propose_plan(&edition),
         Cmd::Produce { plan, resume, only, writer_model, frontmatter_model } => {
             let writer = caller::ModelSpec::parse(&writer_model)?;
             let frontmatter = caller::ModelSpec::parse(&frontmatter_model)?;
@@ -114,9 +122,18 @@ fn run(cli: Cli) -> Result<i32> {
             let spec = caller::ModelSpec::parse(&model)?;
             translate::run(&run_dir, &spec)
         }
-        Cmd::Art { edition, gen_cmd, candidates, model } => {
+        Cmd::Art { edition, gen_cmd, candidates, model, dry_run, showcase, only, note } => {
             let spec = caller::ModelSpec::parse(&model)?;
-            art::run(&edition, &gen_cmd, candidates, &spec)
+            art::run(
+                &edition,
+                gen_cmd.as_deref(),
+                candidates,
+                &spec,
+                dry_run,
+                showcase,
+                only.as_deref(),
+                note.as_deref(),
+            )
         }
         Cmd::Render { edition, operation, article, langs, run, anchor_model } => {
             let anchor = caller::ModelSpec::parse(&anchor_model)?;

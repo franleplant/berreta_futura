@@ -57,10 +57,16 @@ direction, material conviction, and compositional intent, not the objects.
 
 ## `wildcard`
 
-Choose medium, metaphor, subject, and composition from the edition's contents.
+Choose metaphor, subject, and composition from the edition's contents.
 Do not imitate either of the other two branches. Seek a single surprising,
 inspiring proposition rather than maximalism: one improbable idea, immediately
 legible, with enough formal discipline to remain convincing in print.
+
+The wildcard is always rendered photorealistically: a convincing photograph
+of the improbable thing, with real materials, real optics, and coherent
+physical light — never a painting, illustration, or render that reads as
+digital art. The impossibility lives in the subject; the camera plays it
+straight.
 
 The wildcard may depart from the publication palette only when the cover proof
 shows that the result remains compatible with the fixed cover system. Surprise
