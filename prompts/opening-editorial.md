@@ -1,15 +1,19 @@
-Create a single unifying original narrative with <articles/> with STYLE and with the purpose of efficient and effective communications with humans.
 
-STYLE (literary)
-50% Hemingway
-40% orwell
-10% borges
-never mention those authors
+<style>
+Literary Style (writing style)
 
-do not reference the articles I provided you, do not enumerate them, don't repeat or rephrase material, do not use numbered titles.
+- 60% Hemingway
+- 30% orwell
+- 10% borges
 
+Never mention those authors, do not reference their themes or their body of work, just use their writing style in the specified proportions.
 Use correct capitalization, punctuation, and spacing.
+</style>
 
-Keep it under 200 words: it must fit one printed page.
 
-use less words.
+Create a single unifying original narrative with <articles> with <style> and with the purpose of efficient and effective communications with humans. The target audience is technical.
+
+
+Do not reference the articles I provided you, do not enumerate them, don't repeat or rephrase material, do not use numbered titles.
+Keep it under 200 words.
+Use less words.
