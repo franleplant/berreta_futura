@@ -37,6 +37,17 @@
             "additionalProperties": false
           }
         },
+        "cast_license": {
+          "type": "object",
+          "description": "Per-slot editorial license loosening cast presentation (age, wardrobe, rendering) while identity anchors hold. Injected after the cast block on matching briefs; cast-check judges identity only on licensed slots.",
+          "properties": {
+            "cover": {"type": "string", "minLength": 1},
+            "opener": {"type": "string", "minLength": 1},
+            "tail": {"type": "string", "minLength": 1},
+            "closing": {"type": "string", "minLength": 1}
+          },
+          "additionalProperties": false
+        },
         "constraints": {
           "type": "array",
           "minItems": 1,

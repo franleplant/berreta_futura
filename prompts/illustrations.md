@@ -85,12 +85,23 @@ installed reference badged CANON (`--showcase` rebuilds it from disk
 without generating). Approval is the editor copying the chosen variant
 over the cast's `reference:` path.
 
+A direction may also carry `direction.cast_license` — per-slot editorial
+license text (keyed `cover` / `opener` / `tail` / `closing`) that loosens
+cast *presentation* while identity holds. On a licensed slot the injected
+cast block says identities are canon and appends the license, explicitly
+overriding fixed outfits; unlicensed slots keep the strict "draw exactly
+as specified" regime. Openers stay strict by convention — they are the
+cast's canonical appearances; tails and closing plates are where the world
+breathes (older Pedro, painterly light, seasonal clothes).
+
 `mag cast-check <edition>` is the advisory on-model judge: a vision model
 scores each generated candidate against the cast prompts (design only —
 pose, action, props, and setting are free), writes `cast-check.yaml` into
-the round, and the showcase badges off-model images with the reason. Like
-every critic in this pipeline it flags and never selects; verdicts inform
-the editor's eye, they do not replace it.
+the round, and the showcase badges off-model images with the reason. On
+licensed slots the judge scores identity anchors only, so a licensed
+variation never reads as drift. Like every critic in this pipeline it
+flags and never selects; verdicts inform the editor's eye, they do not
+replace it.
 
 The current cast (`art-directions/story-led-boy-and-robot.yaml`): **Pedro**,
 the boy with round glasses, and **Maro**, his helper robot.
