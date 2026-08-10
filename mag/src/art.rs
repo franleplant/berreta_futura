@@ -127,13 +127,32 @@ fn cast_members(art_direction_text: &str) -> Result<Vec<CastMember>> {
     }
 }
 
+/// `direction.cast_license`: per-purpose editorial license loosening cast
+/// presentation (age, wardrobe, rendering) while identity anchors hold.
+fn cast_license(art_direction_text: &str) -> Result<HashMap<String, String>> {
+    let doc: serde_yaml::Value = serde_yaml::from_str(art_direction_text)
+        .context("parsing art direction file for direction.cast_license")?;
+    let map: HashMap<String, String> =
+        match doc.get("direction").and_then(|d| d.get("cast_license")) {
+            Some(v) => serde_yaml::from_value(v.clone())
+                .context("direction.cast_license must map purposes to license text")?,
+            None => HashMap::new(),
+        };
+    for k in map.keys() {
+        if !matches!(k.as_str(), "cover" | "opener" | "tail" | "closing") {
+            bail!("direction.cast_license has unknown purpose '{k}'");
+        }
+    }
+    Ok(map)
+}
+
 /// Append the canonical descriptions of the cast members a brief names to
 /// its prompt, along with their reference sheets. Not every member appears
 /// in every illustration, so naming is the signal — the brief writer is
 /// instructed to name whoever appears, and validate_cast_named() rejects
 /// interior briefs that name nobody. This is the one continuity mechanism:
 /// the text the generator sees is canon, never a paraphrase.
-fn inject_cast(briefs: &mut [Brief], cast: &[CastMember]) {
+fn inject_cast(briefs: &mut [Brief], cast: &[CastMember], license: &HashMap<String, String>) {
     for brief in briefs.iter_mut() {
         let named: Vec<&CastMember> = cast
             .iter()
@@ -142,12 +161,21 @@ fn inject_cast(briefs: &mut [Brief], cast: &[CastMember]) {
         if named.is_empty() {
             continue;
         }
-        let block: String = std::iter::once(
-            "Recurring cast — draw exactly as specified, never redesign:".to_string(),
-        )
-        .chain(named.iter().map(|m| m.prompt.trim().to_string()))
-        .collect::<Vec<_>>()
-        .join(" ");
+        let preamble = match license.get(&brief.purpose) {
+            Some(_) => "Recurring cast — identities below are canon:",
+            None => "Recurring cast — draw exactly as specified, never redesign:",
+        };
+        let mut block: String = std::iter::once(preamble.to_string())
+            .chain(named.iter().map(|m| m.prompt.trim().to_string()))
+            .collect::<Vec<_>>()
+            .join(" ");
+        if let Some(l) = license.get(&brief.purpose) {
+            block += &format!(
+                "\n\nThis slot is licensed to vary presentation, overriding the \
+                 fixed outfits above where they conflict: {}",
+                l.trim()
+            );
+        }
         brief.prompt = format!("{}\n\n{block}", brief.prompt.trim_end());
         let mut refs: Vec<String> =
             named.iter().filter_map(|m| m.reference.clone()).collect();
@@ -1144,13 +1172,21 @@ struct CastCheckDoc {
     results: Vec<CastCheckResult>,
 }
 
-fn cast_check_prompt(cast: &[CastMember], image_abs: &Path) -> String {
+fn cast_check_prompt(cast: &[CastMember], image_abs: &Path, license: Option<&str>) -> String {
     let mut p = String::from(
         "You are the on-model continuity check for a print magazine's \
          recurring illustrated cast. The canonical cast definitions:\n\n",
     );
     for m in cast {
         p += &format!("- {}\n", m.prompt.trim());
+    }
+    if let Some(l) = license {
+        p += &format!(
+            "\nThis image comes from a licensed slot. License: {} \
+             Judge identity anchors only — wardrobe, apparent age, rendering \
+             style, and mood are licensed and never count as deviations.\n",
+            l.trim()
+        );
     }
     p += &format!(
         "\nExamine the illustration image; if it is not already attached to \
@@ -1208,6 +1244,7 @@ fn extract_verdicts(reply: &str, label: &str, cast: &[CastMember]) -> Result<Vec
 struct CheckTarget {
     round_dir: PathBuf,
     file: String,
+    purpose: String,
 }
 
 /// The ok candidates in a round the cast applies to: interior briefs always,
@@ -1220,13 +1257,13 @@ fn check_targets(round_dir: &Path, cast: &[CastMember]) -> Result<Vec<CheckTarge
     }
     let briefs: BriefsDoc = serde_yaml::from_str(&read(&briefs_path)?)
         .with_context(|| format!("parsing {}", briefs_path.display()))?;
-    let applies: HashMap<&str, bool> = briefs
+    let applies: HashMap<&str, (bool, &str)> = briefs
         .briefs
         .iter()
         .map(|b| {
             let a = b.purpose != "cover"
                 || cast.iter().any(|m| b.prompt.to_lowercase().contains(&m.name.to_lowercase()));
-            (b.id.as_str(), a)
+            (b.id.as_str(), (a, b.purpose.as_str()))
         })
         .collect();
     let round: serde_yaml::Value = serde_yaml::from_str(&read(&round_path)?)
@@ -1236,12 +1273,13 @@ fn check_targets(round_dir: &Path, cast: &[CastMember]) -> Result<Vec<CheckTarge
         let ok = item.get("ok").and_then(|v| v.as_bool()).unwrap_or(false);
         let file = item.get("file").and_then(|v| v.as_str()).unwrap_or("");
         let brief = item.get("brief").and_then(|v| v.as_str()).unwrap_or("");
-        if ok
-            && !file.is_empty()
-            && round_dir.join(file).exists()
-            && applies.get(brief).copied().unwrap_or(false)
-        {
-            out.push(CheckTarget { round_dir: round_dir.to_path_buf(), file: file.to_string() });
+        let (applicable, purpose) = applies.get(brief).copied().unwrap_or((false, ""));
+        if ok && !file.is_empty() && round_dir.join(file).exists() && applicable {
+            out.push(CheckTarget {
+                round_dir: round_dir.to_path_buf(),
+                file: file.to_string(),
+                purpose: purpose.to_string(),
+            });
         }
     }
     Ok(out)
@@ -1272,6 +1310,7 @@ pub fn cast_check_run(
     if cast.is_empty() {
         bail!("the art direction defines no cast to check against; pass --direction at a file that does");
     }
+    let license = cast_license(&direction_text)?;
 
     let rounds_root = edition_dir.join("art").join("rounds");
     let mut round_dirs: Vec<PathBuf> = fs::read_dir(&rounds_root)
@@ -1308,6 +1347,7 @@ pub fn cast_check_run(
             for t in &targets {
                 let caller = &caller;
                 let cast = &cast;
+                let license = &license;
                 let results = &results;
                 let errors = &errors;
                 s.spawn(move || {
@@ -1319,7 +1359,8 @@ pub fn cast_check_run(
                         }
                     };
                     let label = format!("cast-check {}", t.file);
-                    let prompt = cast_check_prompt(cast, &abs);
+                    let prompt =
+                        cast_check_prompt(cast, &abs, license.get(&t.purpose).map(String::as_str));
                     match caller.call_with_parse_images(&label, model, &prompt, &[abs], |r| {
                         extract_verdicts(r, &label, cast)
                     }) {
@@ -1471,9 +1512,9 @@ pub fn run(
         &rejected,
         note,
     )?;
-    let cast = match art_direction_section(&edition_yaml_text)? {
-        Some((_, text)) => cast_members(&text)?,
-        None => Vec::new(),
+    let (cast, license) = match art_direction_section(&edition_yaml_text)? {
+        Some((_, text)) => (cast_members(&text)?, cast_license(&text)?),
+        None => (Vec::new(), HashMap::new()),
     };
     let label = "art-briefs";
     let briefs = caller.call_with_parse(label, model, &prompt, |r| {
@@ -1495,7 +1536,7 @@ pub fn run(
     })?;
 
     let mut briefs = briefs;
-    inject_cast(&mut briefs, &cast);
+    inject_cast(&mut briefs, &cast, &license);
     if let Some(cmd) = gen_cmd {
         ensure_ref_placeholder(cmd, &briefs)?;
     }
@@ -1681,7 +1722,7 @@ mod tests {
             brief("cover-synthetic", "cover", "an abstract door"),
             brief("tail-b", "tail", "Flora ties a knot"),
         ];
-        inject_cast(&mut briefs, &cast);
+        inject_cast(&mut briefs, &cast, &HashMap::new());
         let pair = "Recurring cast — draw exactly as specified, never \
                     redesign: Pedro: a boy. Maro: a robot.";
         let solo = "Recurring cast — draw exactly as specified, never \
@@ -1693,6 +1734,43 @@ mod tests {
         assert_eq!(briefs[0].cast_references.as_deref(), Some(&["refs/cast.png".to_string()][..]));
         assert!(briefs[1].cast_references.is_none());
         assert!(briefs[2].cast_references.is_none());
+    }
+
+    #[test]
+    fn inject_cast_swaps_preamble_and_appends_license_on_licensed_slots() {
+        let cast =
+            vec![CastMember { name: "Pedro".into(), prompt: "Pedro: a boy.".into(), reference: None }];
+        let license: HashMap<String, String> =
+            [("tail".to_string(), "may age up".to_string())].into();
+        let mut briefs = vec![
+            brief("opener-a", "opener", "Pedro reads"),
+            brief("tail-a", "tail", "Pedro sleeps"),
+        ];
+        inject_cast(&mut briefs, &cast, &license);
+        assert!(briefs[0].prompt.contains("never redesign"), "{}", briefs[0].prompt);
+        assert!(!briefs[0].prompt.contains("licensed"), "{}", briefs[0].prompt);
+        assert!(briefs[1].prompt.contains("identities below are canon"), "{}", briefs[1].prompt);
+        assert!(briefs[1].prompt.ends_with("overriding the fixed outfits above where they conflict: may age up"), "{}", briefs[1].prompt);
+    }
+
+    #[test]
+    fn cast_license_parses_and_rejects_unknown_purposes() {
+        let ok = cast_license("direction:\n  cast_license:\n    tail: quiet\n").unwrap();
+        assert_eq!(ok.get("tail").map(String::as_str), Some("quiet"));
+        assert!(cast_license("direction:\n  name: x\n").unwrap().is_empty());
+        let err = cast_license("direction:\n  cast_license:\n    poster: p\n").unwrap_err();
+        assert!(err.to_string().contains("poster"), "{err}");
+    }
+
+    #[test]
+    fn cast_check_prompt_carries_the_license() {
+        let cast =
+            vec![CastMember { name: "Pedro".into(), prompt: "Pedro: a boy.".into(), reference: None }];
+        let strict = cast_check_prompt(&cast, Path::new("/img.png"), None);
+        assert!(!strict.contains("licensed slot"), "{strict}");
+        let licensed = cast_check_prompt(&cast, Path::new("/img.png"), Some("may age up"));
+        assert!(licensed.contains("licensed slot. License: may age up"), "{licensed}");
+        assert!(licensed.contains("identity anchors only"), "{licensed}");
     }
 
     #[test]
