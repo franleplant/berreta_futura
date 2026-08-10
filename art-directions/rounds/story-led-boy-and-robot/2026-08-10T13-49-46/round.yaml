@@ -1,0 +1,20 @@
+edition: story-led-boy-and-robot
+dry_run: false
+generated:
+- brief: story-led-boy-and-robot-cast-sheet
+  variant: 1
+  file: story-led-boy-and-robot-cast-sheet-v1.png
+  ok: true
+- brief: story-led-boy-and-robot-cast-sheet
+  variant: 2
+  file: story-led-boy-and-robot-cast-sheet-v2.png
+  ok: true
+- brief: story-led-boy-and-robot-cast-sheet
+  variant: 3
+  file: story-led-boy-and-robot-cast-sheet-v3.png
+  ok: true
+- brief: story-led-boy-and-robot-cast-sheet
+  variant: 4
+  file: story-led-boy-and-robot-cast-sheet-v4.png
+  ok: true
+failures: 0

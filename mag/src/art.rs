@@ -127,35 +127,62 @@ fn cast_members(art_direction_text: &str) -> Result<Vec<CastMember>> {
     }
 }
 
-/// Append the canonical cast descriptions to each brief's prompt: always for
-/// interior briefs (opener, tail, closing), and for cover briefs only when
-/// the brief itself names a cast member. This is the one continuity
-/// mechanism: the text the generator sees is canon, never a paraphrase.
+/// Append the canonical descriptions of the cast members a brief names to
+/// its prompt, along with their reference sheets. Not every member appears
+/// in every illustration, so naming is the signal — the brief writer is
+/// instructed to name whoever appears, and validate_cast_named() rejects
+/// interior briefs that name nobody. This is the one continuity mechanism:
+/// the text the generator sees is canon, never a paraphrase.
 fn inject_cast(briefs: &mut [Brief], cast: &[CastMember]) {
-    if cast.is_empty() {
-        return;
-    }
-    let block: String = std::iter::once(
-        "Recurring cast — draw exactly as specified, never redesign:".to_string(),
-    )
-    .chain(cast.iter().map(|m| m.prompt.trim().to_string()))
-    .collect::<Vec<_>>()
-    .join(" ");
-    let mut refs: Vec<String> =
-        cast.iter().filter_map(|m| m.reference.clone()).collect();
-    refs.dedup();
     for brief in briefs.iter_mut() {
-        let applies = brief.purpose != "cover"
-            || cast.iter().any(|m| {
-                brief.prompt.to_lowercase().contains(&m.name.to_lowercase())
-            });
-        if applies {
-            brief.prompt = format!("{}\n\n{block}", brief.prompt.trim_end());
-            if !refs.is_empty() {
-                brief.cast_references = Some(refs.clone());
-            }
+        let named: Vec<&CastMember> = cast
+            .iter()
+            .filter(|m| brief.prompt.to_lowercase().contains(&m.name.to_lowercase()))
+            .collect();
+        if named.is_empty() {
+            continue;
+        }
+        let block: String = std::iter::once(
+            "Recurring cast — draw exactly as specified, never redesign:".to_string(),
+        )
+        .chain(named.iter().map(|m| m.prompt.trim().to_string()))
+        .collect::<Vec<_>>()
+        .join(" ");
+        brief.prompt = format!("{}\n\n{block}", brief.prompt.trim_end());
+        let mut refs: Vec<String> =
+            named.iter().filter_map(|m| m.reference.clone()).collect();
+        refs.dedup();
+        if !refs.is_empty() {
+            brief.cast_references = Some(refs);
         }
     }
+}
+
+/// An interior brief that names no cast member either violates the art
+/// direction or hides a character behind a description injection can't see
+/// ("the boy"). Rejected so the retry names names.
+fn validate_cast_named(briefs: &[Brief], cast: &[CastMember], label: &str) -> Result<()> {
+    if cast.is_empty() {
+        return Ok(());
+    }
+    for b in briefs {
+        if b.purpose == "cover" {
+            continue;
+        }
+        let names_one = cast
+            .iter()
+            .any(|m| b.prompt.to_lowercase().contains(&m.name.to_lowercase()));
+        if !names_one {
+            let names: Vec<&str> = cast.iter().map(|m| m.name.as_str()).collect();
+            bail!(
+                "{label}: interior brief '{}' names no cast member ({}) — every \
+                 interior prompt must name each cast member who appears, by name",
+                b.id,
+                names.join(", ")
+            );
+        }
+    }
+    Ok(())
 }
 
 /// Cast reference images are attached through the gen-cmd's {ref}
@@ -223,11 +250,12 @@ fn build_brief_prompt(
         out += &format!(
             "\nThe art direction defines a canonical recurring cast: {}. Never \
              describe their appearance in a prompt — the pipeline appends each \
-             cast prompt verbatim to every opener, tail, and closing prompt, \
-             and to cover prompts that name a cast member. Refer to them by \
-             name and give only pose, action, expression, props, and setting. \
-             Prompts still restate the direction's style, palette, \
-             constraints, and avoid-list.\n",
+             member's canonical description verbatim to every prompt that \
+             names the member. Name each cast member who appears in a scene \
+             (the direction's constraints say who must appear), and give only \
+             pose, action, expression, props, and setting; an interior brief \
+             naming no cast member is rejected. Prompts still restate the \
+             direction's style, palette, constraints, and avoid-list.\n",
             names.join(", ")
         );
     }
@@ -1443,6 +1471,10 @@ pub fn run(
         &rejected,
         note,
     )?;
+    let cast = match art_direction_section(&edition_yaml_text)? {
+        Some((_, text)) => cast_members(&text)?,
+        None => Vec::new(),
+    };
     let label = "art-briefs";
     let briefs = caller.call_with_parse(label, model, &prompt, |r| {
         let briefs = extract_briefs(r, label)?;
@@ -1458,14 +1490,11 @@ pub fn run(
                 }
             }
         }
+        validate_cast_named(&briefs, &cast, label)?;
         Ok(briefs)
     })?;
 
     let mut briefs = briefs;
-    let cast = match art_direction_section(&edition_yaml_text)? {
-        Some((_, text)) => cast_members(&text)?,
-        None => Vec::new(),
-    };
     inject_cast(&mut briefs, &cast);
     if let Some(cmd) = gen_cmd {
         ensure_ref_placeholder(cmd, &briefs)?;
@@ -1633,7 +1662,7 @@ mod tests {
     }
 
     #[test]
-    fn inject_cast_appends_to_interior_briefs_and_named_covers() {
+    fn inject_cast_appends_only_the_named_members() {
         let cast = vec![
             CastMember {
                 name: "Pedro".into(),
@@ -1645,22 +1674,40 @@ mod tests {
                 prompt: "Maro: a robot.".into(),
                 reference: Some("refs/cast.png".into()),
             },
+            CastMember { name: "Flora".into(), prompt: "Flora: a girl.".into(), reference: None },
         ];
         let mut briefs = vec![
-            brief("opener-a", "opener", "maro waves"),
+            brief("opener-a", "opener", "maro waves while Pedro reads"),
             brief("cover-synthetic", "cover", "an abstract door"),
-            brief("cover-art-directed", "cover", "Pedro opens a door"),
+            brief("tail-b", "tail", "Flora ties a knot"),
         ];
         inject_cast(&mut briefs, &cast);
-        let block = "Recurring cast — draw exactly as specified, never \
-                     redesign: Pedro: a boy. Maro: a robot.";
-        assert_eq!(briefs[0].prompt, format!("maro waves\n\n{block}"));
+        let pair = "Recurring cast — draw exactly as specified, never \
+                    redesign: Pedro: a boy. Maro: a robot.";
+        let solo = "Recurring cast — draw exactly as specified, never \
+                    redesign: Flora: a girl.";
+        assert_eq!(briefs[0].prompt, format!("maro waves while Pedro reads\n\n{pair}"));
         assert_eq!(briefs[1].prompt, "an abstract door");
-        assert_eq!(briefs[2].prompt, format!("Pedro opens a door\n\n{block}"));
-        // The shared sheet is attached once, and only where the cast went.
+        assert_eq!(briefs[2].prompt, format!("Flora ties a knot\n\n{solo}"));
+        // The shared sheet is attached once, and only for members that have one.
         assert_eq!(briefs[0].cast_references.as_deref(), Some(&["refs/cast.png".to_string()][..]));
         assert!(briefs[1].cast_references.is_none());
-        assert!(briefs[2].cast_references.is_some());
+        assert!(briefs[2].cast_references.is_none());
+    }
+
+    #[test]
+    fn validate_cast_named_rejects_anonymous_interior_briefs() {
+        let cast =
+            vec![CastMember { name: "Pedro".into(), prompt: "p".into(), reference: None }];
+        let ok = vec![
+            brief("opener-a", "opener", "pedro reads"),
+            brief("cover-x", "cover", "an abstract door"),
+        ];
+        assert!(validate_cast_named(&ok, &cast, "t").is_ok());
+        let bad = vec![brief("tail-b", "tail", "the boy reads")];
+        let err = validate_cast_named(&bad, &cast, "t").unwrap_err().to_string();
+        assert!(err.contains("tail-b") && err.contains("Pedro"), "{err}");
+        assert!(validate_cast_named(&bad, &[], "t").is_ok());
     }
 
     #[test]

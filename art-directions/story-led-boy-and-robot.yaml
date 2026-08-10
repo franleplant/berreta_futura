@@ -2,15 +2,15 @@
 # Color"), where the recurring cast proved durable. The cast prompts below
 # are canon: mag art appends them verbatim to every generation prompt, so
 # they are written for the image generator, not for a human reader.
-# Canonical sheet: editor approved cast-sheet v2 (round 2026-08-10T13-27-28)
-# on 2026-08-10; it lives at the reference path below.
+# Canonical sheet: editor approved cast-sheet v1 (round 2026-08-10T13-49-46,
+# Pedro + Maro + Flora) on 2026-08-10; it lives at the reference path below.
 schema_version: 1
 direction:
   name: Story-Led Boy and Robot, Gentle Print Color
   visual_language: Original family-friendly children's science-comedy manga with simple charcoal contours,
     rounded readable expressions, economical watercolor washes, minimal hatching, restrained halftone,
-    quiet print grain, and one playful visual idea per illustration. The recurring cast is exactly
-    Pedro and Maro as defined under cast, and nobody else. Use broad period and production cues only.
+    quiet print grain, and one playful visual idea per illustration. The recurring cast is defined
+    under cast, and nobody outside it ever appears. Use broad period and production cues only.
     Never reproduce a franchise character, costume, face, silhouette, composition, or gadget.
   palette: 'Scene-led gentle historical magazine color at low to medium saturation: softened cyan
     and cobalt, brick coral, muted green, dusty lavender, small warm-ochre accents, warm off-white
@@ -30,9 +30,16 @@ direction:
       mitten hands, and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch
       at the waist. Never a single eye, a visor face, tank treads, wheels, tin-toy styling,
       humanoid proportions, or extra limbs.'
+  - name: Flora
+    reference: art-directions/references/story-led-boy-and-robot-cast.png
+    prompt: 'Flora, a school-age girl, Pedro''s height: chestnut-brown hair in one low side
+      ponytail with straight bangs; soft rose-pink pinafore dress with side pockets over a white
+      short-sleeve top; white socks, muted-green flat shoes. Calm and observant. Always this
+      outfit. Never twin pigtails, never a hat, never glasses.'
   constraints:
   - Entirely wordless editorial storytelling
-  - Exactly Pedro and Maro in every authored illustration, drawn to their cast prompts
+  - Pedro and Maro appear in every authored illustration, Flora when the story calls for her;
+    all drawn to their cast prompts, nobody outside the cast
   - Background color and setting arise from the article subject
   - At least three distinct non-neutral colors
   - Strong silhouettes and expressions that remain legible at A5 size
