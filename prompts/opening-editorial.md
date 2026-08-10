@@ -1,6 +1,6 @@
 
 <style>
-Literary Style (writing style)
+Literary Style (Writing style)
 
 - 60% Hemingway
 - 30% orwell
