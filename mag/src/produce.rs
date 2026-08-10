@@ -39,7 +39,7 @@ fn read(path: &Path) -> Result<String> {
     fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))
 }
 
-fn prompts_path(file: &str) -> PathBuf {
+pub(crate) fn prompts_path(file: &str) -> PathBuf {
     // Relative to the repo root cwd that main.rs enforces; the fallback next
     // to the crate exists so `cargo test` finds the real prompts from mag/.
     let local = PathBuf::from("prompts").join(file);
