@@ -4,6 +4,72 @@ _Generated from source records. Do not edit by hand._
 
 _Collecting: `005` (8 queued)._
 
+_Collecting: `006` (6 queued)._
+
+## The Future is for Everyone — Mark Zuckerberg
+
+- ID: `the-future-is-for-everyone-389f6799`
+- Source: https://www.meta.com/thefutureisforeveryone/
+- Published: 2026-08-10
+- Captured: 2026-08-10T13:36:59Z
+- Release: queued for `006`
+
+The article argues that Meta will pursue "personal superintelligence" distributed broadly to individuals rather than concentrated in a few institutions, framing individual empowerment, invention, and balance of power as the philosophy for a positive AI future.
+
+## Durable Objects: Easy, Fast, Correct — Choose three — Kenton Varda
+
+- ID: `durable-objects-easy-fast-correct-choose-three-e5ada0af`
+- Source: https://blog.cloudflare.com/durable-objects-easy-fast-correct-choose-three/
+- Published: 2021-08-03
+- Captured: 2026-08-08T15:23:53Z
+- Tags: durable-objects, consistency, distributed-systems
+- Release: queued for `006`
+
+Kenton Varda explains how Durable Objects gained input gates, output gates, and automatic in-memory caching so that intuitive single-threaded storage code is race-free and fast by default, with explicit bypass flags for tuning.
+
+## Workers Durable Objects Beta: A New Approach to Stateful Serverless — Kenton Varda
+
+- ID: `workers-durable-objects-beta-a-new-approach-to-s-1a040568`
+- Source: https://blog.cloudflare.com/introducing-workers-durable-objects/
+- Published: 2020-09-28
+- Captured: 2026-08-08T15:23:53Z
+- Tags: durable-objects, serverless, state
+- Release: queued for `006`
+
+Cloudflare opens a closed beta of Durable Objects, single-instance JavaScript classes with private transactional storage and WebSocket coordination that bring strongly consistent state to serverless Workers at the edge.
+
+## The actor model in 10 minutes — Brian Storti
+
+- ID: `the-actor-model-in-10-minutes-47394faa`
+- Source: https://www.brianstorti.com/the-actor-model/
+- Published: 2015-07-09
+- Captured: 2026-08-08T15:23:52Z
+- Tags: actor-model, concurrency, erlang
+- Release: queued for `006`
+
+Explains the actor model of concurrent computation, where isolated actors with private state communicate via asynchronous messages through mailboxes, enabling Erlang-style supervision-based fault tolerance and location-transparent distribution.
+
+## How the Actor Model Meets the Needs of Modern, Distributed Systems — Akka
+
+- ID: `how-the-actor-model-meets-the-needs-of-modern-di-ebf5a52d`
+- Source: https://doc.akka.io/libraries/akka-core/current/typed/guide/actors-intro.html
+- Captured: 2026-08-08T15:23:52Z
+- Tags: actor-model, concurrency, distributed-systems
+- Release: queued for `006`
+
+Akka's getting-started guide explains how the actor model replaces method calls with asynchronous message passing to preserve encapsulation without locks, and how parent-child supervision hierarchies handle actor failures.
+
+## Introduction to the Actor Model, Using “Real” Actors — John Palgut
+
+- ID: `introduction-to-the-actor-model-using-real-actor-2d2aad66`
+- Source: https://blog.grio.com/2021/03/introduction-to-the-actor-model-using-real-actors.html
+- Published: 2021-03-04
+- Captured: 2026-08-08T15:23:51Z
+- Tags: actor-model, concurrency
+- Release: queued for `006`
+
+Grio's John Palgut explains the Actor Model through Hollywood-actor analogies, covering actor primitives, mailboxes, local state, the three actor capabilities, per-language libraries, and Elixir's Erlang-based language-level support for concurrency.
+
 ## Your agent needs a computer, not a container — introducing @cloudflare/computer — Matt Carey, Aron Carroll
 
 - ID: `your-agent-needs-a-computer-not-a-container-intr-4851b3c5`
