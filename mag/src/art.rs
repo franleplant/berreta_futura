@@ -1715,21 +1715,21 @@ mod tests {
                 prompt: "Maro: a robot.".into(),
                 reference: Some("refs/cast.png".into()),
             },
-            CastMember { name: "Flora".into(), prompt: "Flora: a girl.".into(), reference: None },
+            CastMember { name: "Flopaz".into(), prompt: "Flopaz: a girl.".into(), reference: None },
         ];
         let mut briefs = vec![
             brief("opener-a", "opener", "maro waves while Pedro reads"),
             brief("cover-synthetic", "cover", "an abstract door"),
-            brief("tail-b", "tail", "Flora ties a knot"),
+            brief("tail-b", "tail", "Flopaz ties a knot"),
         ];
         inject_cast(&mut briefs, &cast, &HashMap::new());
         let pair = "Recurring cast — draw exactly as specified, never \
                     redesign: Pedro: a boy. Maro: a robot.";
         let solo = "Recurring cast — draw exactly as specified, never \
-                    redesign: Flora: a girl.";
+                    redesign: Flopaz: a girl.";
         assert_eq!(briefs[0].prompt, format!("maro waves while Pedro reads\n\n{pair}"));
         assert_eq!(briefs[1].prompt, "an abstract door");
-        assert_eq!(briefs[2].prompt, format!("Flora ties a knot\n\n{solo}"));
+        assert_eq!(briefs[2].prompt, format!("Flopaz ties a knot\n\n{solo}"));
         // The shared sheet is attached once, and only for members that have one.
         assert_eq!(briefs[0].cast_references.as_deref(), Some(&["refs/cast.png".to_string()][..]));
         assert!(briefs[1].cast_references.is_none());

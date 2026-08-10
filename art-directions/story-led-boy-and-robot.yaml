@@ -3,7 +3,7 @@
 # are canon: mag art appends them verbatim to every generation prompt, so
 # they are written for the image generator, not for a human reader.
 # Canonical sheet: editor approved cast-sheet v1 (round 2026-08-10T13-49-46,
-# Pedro + Maro + Flora) on 2026-08-10; it lives at the reference path below.
+# Pedro + Maro + Flopaz) on 2026-08-10; it lives at the reference path below.
 schema_version: 1
 direction:
   name: Story-Led Boy and Robot, Gentle Print Color
@@ -30,25 +30,25 @@ direction:
       mitten hands, and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch
       at the waist. Never a single eye, a visor face, tank treads, wheels, tin-toy styling,
       humanoid proportions, or extra limbs.'
-  - name: Flora
+  - name: Flopaz
     reference: art-directions/references/story-led-boy-and-robot-cast.png
-    prompt: 'Flora, a school-age girl, Pedro''s height: chestnut-brown hair in one low side
+    prompt: 'Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side
       ponytail with straight bangs; soft rose-pink pinafore dress with side pockets over a white
       short-sleeve top; white socks, muted-green flat shoes. Calm and observant. Always this
       outfit. Never twin pigtails, never a hat, never glasses.'
   cast_license:
     tail: >-
       Tails may drift toward the edition's quieter register: more painterly rendering, softer
-      light, Pedro and Flora reading a few years older, wardrobe following the hour and season
+      light, Pedro and Flopaz reading a few years older, wardrobe following the hour and season
       instead of the canon outfits. Identity anchors hold: Pedro's black tousled hair, round
       glasses and face; Maro's black screen face with two curved white eyes, rounded silhouette
-      and antenna; Flora's chestnut side ponytail and bangs.
+      and antenna; Flopaz's chestnut side ponytail and bangs.
     closing: >-
       Closing plates carry the same license as tails at full-page poster weight: mood leads,
       identity anchors hold.
   constraints:
   - Entirely wordless editorial storytelling
-  - Pedro and Maro appear in every authored illustration, Flora when the story calls for her;
+  - Pedro and Maro appear in every authored illustration, Flopaz when the story calls for her;
     all drawn to their cast prompts, nobody outside the cast
   - Background color and setting arise from the article subject
   - At least three distinct non-neutral colors

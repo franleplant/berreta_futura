@@ -9,7 +9,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: The robot has a single round camera-like eye instead of a black face screen with two curved white eyes, and lacks the off-white body with coral tool pouch.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: closing-the-ledger-column-v2.png
@@ -20,7 +20,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: Has a single large oval eye on a blue dome head instead of the black face screen with two friendly curved white eyes on an off-white body.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: closing-the-long-shift-v1.png
@@ -31,7 +31,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: The robot has a single large round eye rather than a black face screen with two curved white eyes.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: closing-the-long-shift-v2.png
@@ -42,7 +42,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: The face is a pale off-white surface with two separate dark round eyes and an extra lens-like disc on the side, not the canonical black screen with two curved white eyes.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: closing-the-threshold-v1.png
@@ -53,7 +53,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: The robot has a single large circular eye rather than a black face screen with two friendly curved white eyes.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: closing-the-threshold-v2.png
@@ -64,7 +64,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: Single black visor-shaped face and jointed silver limbs with an open five-finger hand replace the two curved white eyes and mitten hands, with no cobalt panels, antenna, or coral pouch.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: opener-agent-computer-v1.png
@@ -75,7 +75,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: Body is solid blue/cobalt rather than off-white with cobalt side panels, and no coral tool pouch at the waist is visible.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: opener-agent-computer-v2.png
@@ -86,7 +86,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: Body is an entirely cobalt-blue rounded form with silver joints, not the off-white rounded rectangular body with cobalt accent panels and a coral tool pouch.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: opener-arc-agi-3-v1.png
@@ -97,7 +97,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: Robot has two wheels at its base instead of rounded feet, and a claw-like hand instead of a mitten hand.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: opener-arc-agi-3-v2.png
@@ -108,7 +108,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: Has a single large black eye, a claw/pincer hand, tank treads instead of rounded feet, and a red (not cobalt) antenna ball tip.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: opener-cloudflare-wallets-v1.png
@@ -119,7 +119,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: Body is blue and spherical-headed with a wheeled base and grey pincer arm, not the off-white rounded rectangular body with mitten hands and rounded feet, and the face is a white oval-eyed mask rather than a black screen with curved white eyes.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: opener-cloudflare-wallets-v2.png
@@ -130,7 +130,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: Has a single round eye rather than a black face screen with two friendly curved white eyes, and rolls on wheels instead of having rounded feet.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: opener-cyber-incidents-v1.png
@@ -141,7 +141,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: Body is an off-white rounded rectangle in canon but here is an all-blue spherical/cylindrical form with a single large eye instead of a black screen with two curved eyes, and no coral tool pouch is visible.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: opener-cyber-incidents-v2.png
@@ -152,7 +152,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: Robot has a single round eye/lens rather than a black face screen with two curved white eyes, and lacks the off-white body, coral tool pouch, and antenna with cobalt ball tip.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: opener-model-welfare-v1.png
@@ -163,7 +163,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: Has cyan curved eyes on the face screen (not white), no cobalt side panels, no antenna, no coral tool pouch, and jointed humanoid limbs with finger-like hands instead of mitten hands.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: opener-model-welfare-v2.png
@@ -174,7 +174,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: The robot has segmented jointed limbs with clawed hands and no visible antenna or coral tool pouch, instead of mitten hands, rounded feet, and the cobalt-tipped antenna.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: opener-pax-machina-v1.png
@@ -185,7 +185,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: Side panels, shoulder joints, and antenna tip are lavender/purple instead of the specified cobalt.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: opener-pax-machina-v2.png
@@ -196,7 +196,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: Has tank treads and yellow oval eyes instead of the mitten-hand rounded feet and friendly curved white eyes, with no visible antenna or coral tool pouch.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: opener-prime-agent-v1.png
@@ -207,7 +207,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: Entire body is molded in blue instead of an off-white body with cobalt side panels/joints.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: opener-prime-agent-v2.png
@@ -218,7 +218,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: Body is entirely blue/cobalt rather than an off-white rounded rectangular body with cobalt accent panels, and shows no coral tool pouch.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: opener-thunderdome-v1.png
@@ -229,7 +229,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: Body is solid cobalt-blue rather than off-white, and the face screen is white/cream with black eyes instead of black with white eyes; hands are claw-like grippers, not mitten hands, and no coral tool pouch is visible.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: opener-thunderdome-v2.png
@@ -240,7 +240,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: Body is rendered in an overall blue/white color scheme rather than an off-white body with cobalt side panels, and no coral tool pouch is visible.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: tail-agent-computer-v1.png
@@ -251,7 +251,7 @@ results:
   - name: Maro
     verdict: on_model
     reason: Black screen face with two curved white eyes, rounded silhouette, and cobalt-tipped antenna are all present as required by the identity anchors.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: tail-agent-computer-v2.png
@@ -262,7 +262,7 @@ results:
   - name: Maro
     verdict: on_model
     reason: Black screen face with two curved white eyes, rounded body, and single antenna match the licensed identity anchors despite the all-blue color treatment.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: tail-arc-agi-3-v1.png
@@ -273,7 +273,7 @@ results:
   - name: Maro
     verdict: on_model
     reason: Black screen face with two curved white eyes, rounded body, and antenna match the identity anchors.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in this image, only Pedro and Maro.
 - file: tail-arc-agi-3-v2.png
@@ -284,7 +284,7 @@ results:
   - name: Maro
     verdict: on_model
     reason: Off-white rounded body, black screen face with two white eyes, and antenna with cobalt ball tip are all present and intact.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image, only Pedro and Maro.
 - file: tail-cloudflare-wallets-v1.png
@@ -295,7 +295,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: Face screen is pale mint-green with black eyes, inverted from the canonical black screen with two curved white eyes.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: tail-cloudflare-wallets-v2.png
@@ -306,7 +306,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: Face screen eyes are solid teal ovals rather than the canon curved white eyes, which is a protected identity anchor.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character with chestnut side ponytail and bangs appears in the image.
 - file: tail-cyber-incidents-v1.png
@@ -317,7 +317,7 @@ results:
   - name: Maro
     verdict: on_model
     reason: Black screen face with two curved white eyes, rounded silhouette, and single antenna all match the identity anchors, with body color and rendering style licensed to drift for this tail.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: tail-cyber-incidents-v2.png
@@ -328,7 +328,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: Face shows a single large white-and-black eye rather than the canonical black screen with two curved white eyes.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: tail-model-welfare-v1.png
@@ -339,7 +339,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: The face screen shows two vertical bar/pill shapes rather than the canonical two curved white eyes, and no antenna is visible.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears anywhere in the image.
 - file: tail-model-welfare-v2.png
@@ -350,7 +350,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: The head shows a black screen plus a separate circular lens with a glowing blue center resembling a single eye/camera, and no rounded rectangular body, cobalt panels, or antenna are visible.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: tail-pax-machina-v1.png
@@ -361,7 +361,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: The head shows a single round blue-gray lens rather than the black screen face with two curved white eyes required by the identity anchor.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears anywhere in the image.
 - file: tail-pax-machina-v2.png
@@ -372,7 +372,7 @@ results:
   - name: Maro
     verdict: on_model
     reason: Off-white rounded body with visible antenna and rounded silhouette, waist-high to Pedro, matching the canonical form seen from behind.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No second child character appears in the image; only Pedro and Maro are present among the columns.
 - file: tail-prime-agent-v1.png
@@ -383,7 +383,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: Robot has a tank-tread/wheeled base and an articulated mechanical claw arm instead of the rounded silhouette with mitten hands and rounded feet, breaking the licensed identity anchor.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: tail-prime-agent-v2.png
@@ -394,7 +394,7 @@ results:
   - name: Maro
     verdict: on_model
     reason: The robot shows the black screen face with two curved white eyes, a rounded silhouette, and an antenna as required by the identity anchors.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: tail-thunderdome-v1.png
@@ -405,7 +405,7 @@ results:
   - name: Maro
     verdict: off_model
     reason: Face is an inverted white screen with black eyes instead of the canon's black screen with two curved white eyes, and the body is solid blue with articulated gray hands rather than off-white with cobalt panels and mitten hands.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
 - file: tail-thunderdome-v2.png
@@ -416,6 +416,6 @@ results:
   - name: Maro
     verdict: off_model
     reason: The screen face shows two vertical white oval eyes rather than the canonical two friendly curved eyes.
-  - name: Flora
+  - name: Flopaz
     verdict: absent
     reason: No girl character appears in the image.
