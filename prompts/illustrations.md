@@ -123,6 +123,31 @@ palette, constraints, and avoid-list must be restated inside it. Every
 interior brief also records `subject`, `composition`, `alt_text`, and
 `credit` so approval is a copy into `edition.yaml`, not a writing task.
 
+## Dialog vignettes
+
+Multi-panel cast stories with speech balloons (an experiment that earned
+its keep — worked example in
+`art-directions/experiments/vignette-wilted-sprout/`). The recipe:
+
+1. Write one `generate.sh` of `tools/imagegen` calls, one per panel: a
+   scene sentence naming the speaking cast members, the same setting
+   description in every panel, the direction's style text, and the cast
+   block. Attach the canon sheet with `--ref`.
+2. Two lettering routes, both kept:
+   - **Baked** (the editor's preferred look): the panel prompt requests
+     "small round speech balloons hand-lettered in CAPITAL letters
+     containing EXACTLY: …". Short lines (2–4 words) render reliably.
+     A language change is a regeneration.
+   - **Typeset**: generate the panels wordless ("compose with quiet open
+     space in the upper third") and set the dialog after with
+     `python3 tools/letter.py <balloons.json>` — balloon centre, tail
+     target, and text per panel; one spec per language, so a Spanish
+     edition retypes the balloons without touching the art.
+3. Panels are independent generations: continuity props (a plant's wilt,
+   a prop's position) drift between panels. Keep continuity-critical
+   objects simple, or attach the previous panel as a second `--ref`.
+4. Assemble strips or 2×2 grids with Pillow; keep dialog in caps.
+
 ## Candidate rounds and the lifecycle
 
 Assets move `candidate → approved`, and only the editor moves them.

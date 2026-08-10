@@ -1,0 +1,76 @@
+[
+  {
+    "image": "panel-1.png",
+    "out": "panel-1-lettered.png",
+    "balloons": [
+      {
+        "cx": 380,
+        "cy": 200,
+        "text": "IT'S DYING!",
+        "tail": [
+          480,
+          640
+        ],
+        "size": 48
+      }
+    ]
+  },
+  {
+    "image": "panel-2.png",
+    "out": "panel-2-lettered.png",
+    "balloons": [
+      {
+        "cx": 860,
+        "cy": 300,
+        "text": "I CAN FIX IT!",
+        "tail": [
+          920,
+          700
+        ],
+        "size": 48
+      }
+    ]
+  },
+  {
+    "image": "panel-3.png",
+    "out": "panel-3-lettered.png",
+    "balloons": [
+      {
+        "cx": 560,
+        "cy": 250,
+        "text": "WATCH THIS.",
+        "tail": [
+          680,
+          560
+        ],
+        "size": 48
+      }
+    ]
+  },
+  {
+    "image": "panel-4.png",
+    "out": "panel-4-lettered.png",
+    "balloons": [
+      {
+        "cx": 700,
+        "cy": 230,
+        "text": "YOU FIXED IT!",
+        "tail": [
+          790,
+          640
+        ],
+        "size": 48
+      },
+      {
+        "cx": 1060,
+        "cy": 400,
+        "text": "JUST WATER.",
+        "tail": [
+          1030,
+          600
+        ],
+        "size": 40
+      }
+    ]
+  }
+]

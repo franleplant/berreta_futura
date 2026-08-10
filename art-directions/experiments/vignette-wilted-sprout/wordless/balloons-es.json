@@ -1,0 +1,15 @@
+[
+  {"image": "panel-1.png", "out": "panel-1-lettered-es.png", "balloons": [
+    {"cx": 380, "cy": 200, "text": "¡SE MUERE!", "tail": [480, 640], "size": 48}
+  ]},
+  {"image": "panel-2.png", "out": "panel-2-lettered-es.png", "balloons": [
+    {"cx": 840, "cy": 300, "text": "¡YO LO ARREGLO!", "tail": [920, 700], "size": 48}
+  ]},
+  {"image": "panel-3.png", "out": "panel-3-lettered-es.png", "balloons": [
+    {"cx": 560, "cy": 250, "text": "MIRAD ESTO.", "tail": [680, 560], "size": 48}
+  ]},
+  {"image": "panel-4.png", "out": "panel-4-lettered-es.png", "balloons": [
+    {"cx": 660, "cy": 230, "text": "¡LO ARREGLASTE!", "tail": [790, 640], "size": 48},
+    {"cx": 1070, "cy": 420, "text": "SOLO AGUA.", "tail": [1030, 600], "size": 40}
+  ]}
+]
