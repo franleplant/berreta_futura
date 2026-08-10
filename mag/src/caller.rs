@@ -240,6 +240,24 @@ impl Caller {
         prompt: &str,
         parse: impl Fn(&str) -> Result<T>,
     ) -> Result<T> {
+        self.call_with_parse_images(label, spec, prompt, &[], parse)
+    }
+
+    /// Like call_with_parse, with image files attached to the call. Codex
+    /// gets them as `--image=path` (never `-i path`: -i is variadic and eats
+    /// the prompt); claude is allowed the Read tool and the prompt must name
+    /// the paths; ollama is not wired for images and refuses loudly.
+    pub fn call_with_parse_images<T>(
+        &self,
+        label: &str,
+        spec: &ModelSpec,
+        prompt: &str,
+        images: &[PathBuf],
+        parse: impl Fn(&str) -> Result<T>,
+    ) -> Result<T> {
+        if !images.is_empty() && spec.backend == Backend::Ollama {
+            bail!("{label}: the ollama backend is not wired for image input");
+        }
         let mut last_error: Option<String> = None;
         let mut last_reply: Option<String> = None;
         for attempt in 0..=CALL_RETRIES {
@@ -251,7 +269,7 @@ impl Caller {
                 ),
             };
 
-            let (result_text, cost, seconds) = match self.run_once(spec, &sent) {
+            let (result_text, cost, seconds) = match self.run_once(spec, &sent, images) {
                 Ok(v) => v,
                 Err(e) => {
                     last_error = Some(e);
@@ -338,7 +356,12 @@ impl Caller {
 
     /// One subprocess attempt. Returns (reply text, cost usd, elapsed secs) on
     /// success, or a retryable error message.
-    fn run_once(&self, spec: &ModelSpec, prompt: &str) -> Result<(String, f64, f64), String> {
+    fn run_once(
+        &self,
+        spec: &ModelSpec,
+        prompt: &str,
+        images: &[PathBuf],
+    ) -> Result<(String, f64, f64), String> {
         let _permit = SemaphoreGuard::acquire(&self.sem);
         let started = Instant::now();
         let scratch = match spec.backend {
@@ -356,9 +379,14 @@ impl Caller {
                     "--output-format",
                     "json",
                     "--no-session-persistence",
-                    "--disallowedTools",
-                    "*",
                 ]);
+                if images.is_empty() {
+                    c.args(["--disallowedTools", "*"]);
+                } else {
+                    // Vision goes through the Read tool; the prompt names the
+                    // image paths. Nothing else is allowed.
+                    c.args(["--allowedTools", "Read"]);
+                }
                 c
             }
             Backend::Codex => {
@@ -381,6 +409,9 @@ impl Caller {
                 ]);
                 if let Some(effort) = &spec.effort {
                     c.arg("-c").arg(format!("model_reasoning_effort=\"{effort}\""));
+                }
+                for img in images {
+                    c.arg(format!("--image={}", img.display()));
                 }
                 c.arg("-o");
                 c.arg(&scratch.as_ref().expect("codex scratch").out);

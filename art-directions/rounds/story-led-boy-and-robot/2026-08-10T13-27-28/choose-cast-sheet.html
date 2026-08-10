@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Pick the Pedro &amp; Maro canon</title>
+<style>
+  body { font-family: -apple-system, sans-serif; margin: 2rem; background: #f6f2ea; color: #222; }
+  h1 { font-size: 1.3rem; }
+  p.hint { color: #666; max-width: 60rem; }
+  .card { background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 1rem 1.25rem; margin: 1.5rem 0; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .card h2 { font-size: 1.05rem; margin: 0 0 0.25rem; }
+  .card p { margin: 0.25rem 0 0.75rem; color: #444; }
+  .card img { width: 100%; height: auto; display: block; border-radius: 6px; border: 1px solid #eee; cursor: zoom-in; }
+  .tag { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 0.1rem 0.5rem; border-radius: 999px; background: #e8f4f2; color: #1a6e62; margin-left: 0.5rem; }
+  .approve { font-size: 0.85rem; color: #666; background: #f2ede2; border-radius: 6px; padding: 0.5rem 0.75rem; margin-top: 2rem; }
+  code { background: #eee; padding: 0.05rem 0.3rem; border-radius: 4px; }
+</style>
+</head>
+<body>
+<h1>Pick the Pedro &amp; Maro canon</h1>
+<p class="hint">The winner becomes the reference sheet attached to every future
+illustration call. Judge the <em>designs</em> — proportions, faces, colors,
+pouch — not the poses. Click an image to open it full size in a new tab.</p>
+
+<div class="card">
+  <h2>v1 <span class="tag">cleanest turnaround</span></h2>
+  <p>Neutral and precise. Maro slightly squarer head, pouch worn at the hip in
+  the front view. Calm expression busts.</p>
+  <a href="story-led-boy-and-robot-cast-sheet-v1.png" target="_blank"><img src="story-led-boy-and-robot-cast-sheet-v1.png"></a>
+</div>
+
+<div class="card">
+  <h2>v2 <span class="tag">most personality</span></h2>
+  <p>Same designs with dynamic poses: Pedro cheering, thinking, laughing; Maro
+  waving and celebrating. Gives the generator the widest usable range. (v3 was
+  a byte-identical duplicate of this one and is not shown.)</p>
+  <a href="story-led-boy-and-robot-cast-sheet-v2.png" target="_blank"><img src="story-led-boy-and-robot-cast-sheet-v2.png"></a>
+</div>
+
+<div class="card">
+  <h2>v4 <span class="tag">chunkiest Maro</span></h2>
+  <p>Toy-like Maro with the pouch centered on the belly; includes a winking
+  face. Pedro nearly identical to v1.</p>
+  <a href="story-led-boy-and-robot-cast-sheet-v4.png" target="_blank"><img src="story-led-boy-and-robot-cast-sheet-v4.png"></a>
+</div>
+
+<p class="approve">To approve: tell Claude the variant (or edit
+<code>art-directions/story-led-boy-and-robot.yaml</code> yourself — point both
+<code>reference:</code> keys at the chosen PNG, conventionally copied to
+<code>art-directions/references/story-led-boy-and-robot-cast.png</code>).
+To reject all: ask for a re-round with a note on what to change.</p>
+</body>
+</html>

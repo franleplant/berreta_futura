@@ -14,6 +14,10 @@ figure.selected { border-color: #4a4; box-shadow: 0 0 0 2px #4a4; }
 figure img { width: 100%; height: auto; display: block; border-radius: 4px; background: #000; }
 .badge { position: absolute; top: 1rem; right: 1rem; background: #4a4; color: #041; font-weight: bold;
 font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 999px; }
+.offbadge { position: absolute; top: 1rem; left: 1rem; background: #c73; color: #310; font-weight: bold;
+font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 999px; }
+figure.offmodel { border-color: #c73; }
+.verdicts { margin-top: 0.4rem; font-size: 0.8rem; color: #c95; }
 figcaption { margin-top: 0.5rem; font-size: 0.85rem; color: #aaa; }
 details { margin-top: 0.4rem; }
 details pre { white-space: pre-wrap; font-size: 0.8rem; color: #ccc; }
@@ -2806,9 +2810,11 @@ product or franchise imagery.
 <h2>Article openers</h2>
 <h3>opener-agent-computer — your-agent-needs-a-computer-not-a-container-intr</h3>
 <div class="grid">
-<figure class="">
+<figure class="offmodel">
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/opener-agent-computer-v1.png" loading="lazy">
 <figcaption>opener-agent-computer v1 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — He wears a white long-sleeve shirt with suspenders and brown trousers and brown shoes instead of the teal crew-neck top, khaki shorts, and red sneakers. · Maro: off_model — The body is solid cobalt blue overall instead of off-white with cobalt accent panels, and there is no coral tool pouch at the waist.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga illustration,
 entirely wordless, one playful visual idea only.
 
@@ -2849,10 +2855,12 @@ numerals, pseudo-writing, interface glyphs, captions, labels, speech
 balloons or watermarks; multi-panel layout.
 </pre></details>
 </figure>
-<figure class="selected">
+<figure class="selected offmodel">
 <span class="badge">SELECTED</span>
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/opener-agent-computer-v2.png" loading="lazy">
 <figcaption>opener-agent-computer v2 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — wearing a striped orange-and-cream top instead of the teal crew-neck top. · Maro: off_model — fully blue/steel body with a round green chest light instead of the off-white body with cobalt panels and coral tool pouch, and lacks mitten hands, using articulated metal claw-like fingers instead.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga illustration,
 entirely wordless, one playful visual idea only.
 
@@ -2896,9 +2904,11 @@ balloons or watermarks; multi-panel layout.
 </div>
 <h3>opener-arc-agi-3 — how-enabling-two-settings-tripled-our-scores-on</h3>
 <div class="grid">
-<figure class="">
+<figure class="offmodel">
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/opener-arc-agi-3-v1.png" loading="lazy">
 <figcaption>opener-arc-agi-3 v1 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — Wears a blue/white long-sleeve top and long khaki cargo pants with white sneakers instead of the teal crew-neck, khaki shorts, and red sneakers. · Maro: off_model — Has wheels instead of rounded feet, a single crescent eye instead of two curved white eyes, and no visible coral tool pouch.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga illustration,
 entirely wordless, one playful visual idea only.
 
@@ -2940,10 +2950,12 @@ interface glyphs, captions, labels, speech balloons or watermarks;
 multi-panel layout.
 </pre></details>
 </figure>
-<figure class="selected">
+<figure class="selected offmodel">
 <span class="badge">SELECTED</span>
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/opener-arc-agi-3-v2.png" loading="lazy">
 <figcaption>opener-arc-agi-3 v2 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — He wears a blue hoodie and khaki long cargo pants instead of the teal crew-neck top and khaki shorts, with no red sneakers visible. · Maro: off_model — He has a single large round eye instead of two curved white eyes, tank treads instead of rounded feet, and claw-like pincer hands instead of mitten hands.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga illustration,
 entirely wordless, one playful visual idea only.
 
@@ -2988,9 +3000,11 @@ multi-panel layout.
 </div>
 <h3>opener-cloudflare-wallets — announcing-cloudflare-wallets-the-programmable-w</h3>
 <div class="grid">
-<figure class="">
+<figure class="offmodel">
+<span class="offbadge">OFF-MODEL: Maro</span>
 <img src="rounds/2026-08-06T23-38-34/opener-cloudflare-wallets-v1.png" loading="lazy">
 <figcaption>opener-cloudflare-wallets v1 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: on_model — Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers are all present and correct. · Maro: off_model — Robot has a full helmet-like head with two round camera-lens eyes and no visible screen face, plus wheels/rollers instead of rounded feet, and no coral tool pouch.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga illustration,
 entirely wordless, one playful visual idea only.
 
@@ -3031,10 +3045,12 @@ interface glyphs, captions, labels, speech balloons or watermarks;
 multi-panel layout.
 </pre></details>
 </figure>
-<figure class="selected">
+<figure class="selected offmodel">
 <span class="badge">SELECTED</span>
+<span class="offbadge">OFF-MODEL: Maro</span>
 <img src="rounds/2026-08-06T23-38-34/opener-cloudflare-wallets-v2.png" loading="lazy">
 <figcaption>opener-cloudflare-wallets v2 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: on_model — Black tousled hair, big round glasses, teal crew-neck top all match; shorts/sneakers not visible but no contradicting elements present. · Maro: off_model — Robot has a single round eye instead of the black face screen with two friendly curved white eyes, and rolls on wheels/tank-tread-like casters instead of rounded feet.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga illustration,
 entirely wordless, one playful visual idea only.
 
@@ -3078,9 +3094,11 @@ multi-panel layout.
 </div>
 <h3>opener-cyber-incidents — investigating-three-real-world-incidents-in-our</h3>
 <div class="grid">
-<figure class="">
+<figure class="offmodel">
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/opener-cyber-incidents-v1.png" loading="lazy">
 <figcaption>opener-cyber-incidents v1 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — Wears a blue v-neck vest over a white long-sleeved shirt and dark shorts instead of the teal crew-neck top, khaki shorts, and red sneakers. · Maro: off_model — Has a single round eye instead of a black face screen with two friendly curved white eyes, and lacks visible mitten hands, cobalt shoulder joints, and coral tool pouch.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga illustration,
 entirely wordless, one playful visual idea only.
 
@@ -3122,10 +3140,12 @@ interface glyphs, captions, labels, speech balloons or watermarks;
 multi-panel layout.
 </pre></details>
 </figure>
-<figure class="selected">
+<figure class="selected offmodel">
 <span class="badge">SELECTED</span>
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/opener-cyber-incidents-v2.png" loading="lazy">
 <figcaption>opener-cyber-incidents v2 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — Wears a navy vest with white dress shirt and tie instead of the teal crew-neck top, and shorts are dark grey rather than khaki. · Maro: off_model — Robot has a round single camera-lens eye and exposed spring/coil limb joints instead of the black screen face with two curved white eyes and rounded mitten-hand limbs.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga illustration,
 entirely wordless, one playful visual idea only.
 
@@ -3170,9 +3190,11 @@ multi-panel layout.
 </div>
 <h3>opener-model-welfare — the-shape-of-things-to-come-part-2-model-welfare</h3>
 <div class="grid">
-<figure class="">
+<figure class="offmodel">
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/opener-model-welfare-v1.png" loading="lazy">
 <figcaption>opener-model-welfare v1 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — wearing a blue zip hoodie instead of a teal crew-neck top, and white socks with no visible red sneakers. · Maro: off_model — has a visor-style face screen with glowing eyes but lacks the cobalt side panels, antenna, and coral tool pouch, and shows a visible ear/disc extension on its head not in the definition.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga illustration,
 entirely wordless, one playful visual idea only.
 
@@ -3212,10 +3234,12 @@ interface glyphs, captions, labels, speech balloons or watermarks;
 multi-panel layout.
 </pre></details>
 </figure>
-<figure class="selected">
+<figure class="selected offmodel">
 <span class="badge">SELECTED</span>
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/opener-model-welfare-v2.png" loading="lazy">
 <figcaption>opener-model-welfare v2 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — He wears a blue hoodie and dark jeans with white-and-blue socks instead of the teal crew-neck top, khaki shorts, and red sneakers. · Maro: off_model — He has articulated tin-toy-style jointed limbs with clawed fingers and segmented feet, a large round blue lens on the side of the head, and no visible antenna, instead of smooth mitten hands, rounded feet, and an antenna with a cobalt ball tip.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga illustration,
 entirely wordless, one playful visual idea only.
 
@@ -3258,9 +3282,11 @@ multi-panel layout.
 </div>
 <h3>opener-pax-machina — pax-machina-new-institutions-for-powerful-ai</h3>
 <div class="grid">
-<figure class="">
+<figure class="offmodel">
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/opener-pax-machina-v1.png" loading="lazy">
 <figcaption>opener-pax-machina v1 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — Wears a purple vest, red neck scarf, and long khaki pants with brown boots instead of the teal crew-neck top, khaki shorts, and red sneakers. · Maro: off_model — Side panels, shoulder joints, and antenna tip are lavender/purple instead of cobalt, and no coral tool pouch is visible at the waist.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga illustration,
 entirely wordless, one playful visual idea only.
 
@@ -3302,10 +3328,12 @@ interface glyphs, captions, labels, speech balloons or watermarks;
 multi-panel layout.
 </pre></details>
 </figure>
-<figure class="selected">
+<figure class="selected offmodel">
 <span class="badge">SELECTED</span>
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/opener-pax-machina-v2.png" loading="lazy">
 <figcaption>opener-pax-machina v2 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — wears a white long-sleeve shirt with red neckerchief and no visible teal crew-neck top instead of the canonical teal crew-neck top. · Maro: off_model — has tank treads/wheels at the base instead of rounded feet, and lacks the antenna with cobalt ball tip and coral tool pouch.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga illustration,
 entirely wordless, one playful visual idea only.
 
@@ -3350,9 +3378,11 @@ multi-panel layout.
 </div>
 <h3>opener-prime-agent — prime-agent-a-self-improving-rlm-agent</h3>
 <div class="grid">
-<figure class="">
+<figure class="offmodel">
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/opener-prime-agent-v1.png" loading="lazy">
 <figcaption>opener-prime-agent v1 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — he is wearing a red long-sleeve raglan-style top over a white shirt instead of the canonical teal crew-neck top, and shorts/sneakers are not visible (obscured by the desk). · Maro: off_model — the body is blue overall instead of off-white with cobalt side panels/joints, and no coral tool pouch is visible.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga illustration,
 entirely wordless, one playful visual idea only.
 
@@ -3396,10 +3426,12 @@ interface glyphs, captions, labels, speech balloons or watermarks;
 multi-panel layout.
 </pre></details>
 </figure>
-<figure class="selected">
+<figure class="selected offmodel">
 <span class="badge">SELECTED</span>
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/opener-prime-agent-v2.png" loading="lazy">
 <figcaption>opener-prime-agent v2 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — Wears a white-and-orange raglan shirt instead of the teal crew-neck top. · Maro: off_model — Body is rendered entirely cobalt blue instead of off-white with cobalt accent panels, and the coral tool pouch is missing.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga illustration,
 entirely wordless, one playful visual idea only.
 
@@ -3446,9 +3478,11 @@ multi-panel layout.
 </div>
 <h3>opener-thunderdome — the-shape-of-things-to-come-part-1-the-continuou</h3>
 <div class="grid">
-<figure class="">
+<figure class="offmodel">
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/opener-thunderdome-v1.png" loading="lazy">
 <figcaption>opener-thunderdome v1 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — Wears a white polo shirt with teal collar trim and blue sneakers instead of the canonical teal crew-neck top and red sneakers. · Maro: off_model — Body is entirely blue rather than off-white with cobalt accents, and hands are claw/wrench-shaped rather than rounded mitten hands, with no coral tool pouch visible.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga illustration,
 entirely wordless, one playful visual idea only.
 
@@ -3490,10 +3524,12 @@ photorealism; any lettering, numerals, pseudo-writing, interface glyphs,
 captions, labels, speech balloons or watermarks; multi-panel layout.
 </pre></details>
 </figure>
-<figure class="selected">
+<figure class="selected offmodel">
 <span class="badge">SELECTED</span>
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/opener-thunderdome-v2.png" loading="lazy">
 <figcaption>opener-thunderdome v2 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — Wears a yellow hoodie with navy shorts and blue sneakers instead of the teal crew-neck top, khaki shorts, and red sneakers. · Maro: off_model — Body is rendered in an overall blue/silver color scheme rather than off-white with cobalt accents, hands are articulated fingers rather than mitten hands, and the coral tool pouch is absent.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga illustration,
 entirely wordless, one playful visual idea only.
 
@@ -3539,9 +3575,11 @@ captions, labels, speech balloons or watermarks; multi-panel layout.
 <h2>Article tails</h2>
 <h3>tail-agent-computer — your-agent-needs-a-computer-not-a-container-intr</h3>
 <div class="grid">
-<figure class="">
+<figure class="offmodel">
+<span class="offbadge">OFF-MODEL: Maro</span>
 <img src="rounds/2026-08-06T23-38-34/tail-agent-computer-v1.png" loading="lazy">
 <figcaption>tail-agent-computer v1 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: on_model — Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers are all present. · Maro: off_model — Body proportions, head shape, and antenna position are humanoid/rounded-head styling rather than the canonical off-white rounded-rectangular body with cobalt side panels and mitten hands.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga vignette, wide
 horizontal banner format, entirely wordless, one playful visual idea only.
 
@@ -3582,10 +3620,12 @@ cyberpunk, photorealism; any lettering, numerals, pseudo-writing,
 interface glyphs, captions, labels, speech balloons or watermarks.
 </pre></details>
 </figure>
-<figure class="selected">
+<figure class="selected offmodel">
 <span class="badge">SELECTED</span>
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/tail-agent-computer-v2.png" loading="lazy">
 <figcaption>tail-agent-computer v2 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — He wears a white long-sleeve shirt with suspenders and long olive cuffed trousers instead of the teal crew-neck top and khaki shorts. · Maro: off_model — The body is rendered as solid blue/cobalt rather than an off-white body with cobalt side panels, and the antenna tip is orange instead of cobalt.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga vignette, wide
 horizontal banner format, entirely wordless, one playful visual idea only.
 
@@ -3629,9 +3669,11 @@ interface glyphs, captions, labels, speech balloons or watermarks.
 </div>
 <h3>tail-arc-agi-3 — how-enabling-two-settings-tripled-our-scores-on</h3>
 <div class="grid">
-<figure class="">
+<figure class="offmodel">
+<span class="offbadge">OFF-MODEL: Pedro</span>
 <img src="rounds/2026-08-06T23-38-34/tail-arc-agi-3-v1.png" loading="lazy">
 <figcaption>tail-arc-agi-3 v1 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — Wears a mustard-yellow crew-neck top and dark gray shorts instead of the teal crew-neck top and khaki shorts. · Maro: on_model — Matches spec — off-white rounded body, black face screen with two curved white eyes, cobalt panels/joints/feet, single antenna with cobalt ball tip, mitten hands, no visible coral pouch but no disqualifying deviations present.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga vignette, wide
 horizontal banner format, entirely wordless, one playful visual idea only.
 
@@ -3672,10 +3714,12 @@ interface glyphs, captions, labels, speech balloons or watermarks;
 multi-panel layout.
 </pre></details>
 </figure>
-<figure class="selected">
+<figure class="selected offmodel">
 <span class="badge">SELECTED</span>
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/tail-arc-agi-3-v2.png" loading="lazy">
 <figcaption>tail-arc-agi-3 v2 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — Wears a cream long-sleeve henley with a mustard scarf and olive long pants with tan sneakers, not the teal crew-neck, khaki shorts, and red sneakers. · Maro: off_model — Antenna tip and joint accents are gold/brass instead of cobalt, and no coral tool pouch is visible at the waist.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga vignette, wide
 horizontal banner format, entirely wordless, one playful visual idea only.
 
@@ -3719,9 +3763,11 @@ multi-panel layout.
 </div>
 <h3>tail-cloudflare-wallets — announcing-cloudflare-wallets-the-programmable-w</h3>
 <div class="grid">
-<figure class="">
+<figure class="offmodel">
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/tail-cloudflare-wallets-v1.png" loading="lazy">
 <figcaption>tail-cloudflare-wallets v1 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — Wears a green hoodie and long khaki trousers instead of the teal crew-neck top and khaki shorts. · Maro: off_model — Face screen is mint-green with dot eyes and the antenna tip is orange, instead of the black screen with curved white eyes and cobalt-tipped antenna.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga vignette, wide
 horizontal banner format, entirely wordless, one playful visual idea only.
 
@@ -3761,10 +3807,12 @@ numerals, pseudo-writing, interface glyphs, captions, labels, speech
 balloons or watermarks; multi-panel layout.
 </pre></details>
 </figure>
-<figure class="selected">
+<figure class="selected offmodel">
 <span class="badge">SELECTED</span>
+<span class="offbadge">OFF-MODEL: Pedro</span>
 <img src="rounds/2026-08-06T23-38-34/tail-cloudflare-wallets-v2.png" loading="lazy">
 <figcaption>tail-cloudflare-wallets v2 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — Wears a blue hooded jacket instead of the teal crew-neck top, and no top is visible under it. · Maro: on_model — Off-white rounded body, black face screen with two curved white eyes, cobalt panels/joints/hands/feet, single antenna with cobalt ball tip, all match the definition.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga vignette, wide
 horizontal banner format, entirely wordless, one playful visual idea only.
 
@@ -3807,9 +3855,11 @@ balloons or watermarks; multi-panel layout.
 </div>
 <h3>tail-cyber-incidents — investigating-three-real-world-incidents-in-our</h3>
 <div class="grid">
-<figure class="">
+<figure class="offmodel">
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/tail-cyber-incidents-v1.png" loading="lazy">
 <figcaption>tail-cyber-incidents v1 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — Wears a white long-sleeve top instead of the teal crew-neck, and long rolled khaki pants instead of khaki shorts. · Maro: off_model — Body is rendered entirely in blue/cobalt rather than an off-white body with cobalt accent panels, and no coral tool pouch is visible.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga vignette, wide
 horizontal banner format, entirely wordless, one playful visual idea only.
 
@@ -3849,10 +3899,12 @@ numerals, pseudo-writing, interface glyphs, captions, labels, speech
 balloons or watermarks; multi-panel layout.
 </pre></details>
 </figure>
-<figure class="selected">
+<figure class="selected offmodel">
 <span class="badge">SELECTED</span>
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/tail-cyber-incidents-v2.png" loading="lazy">
 <figcaption>tail-cyber-incidents v2 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — Wears a green hooded top and long khaki pants instead of the teal crew-neck top and khaki shorts. · Maro: off_model — Has a single round eye on a blue dome head instead of a black face screen with two curved white eyes, and lacks the off-white rounded-rectangular body and coral tool pouch.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga vignette, wide
 horizontal banner format, entirely wordless, one playful visual idea only.
 
@@ -3895,9 +3947,11 @@ balloons or watermarks; multi-panel layout.
 </div>
 <h3>tail-model-welfare — the-shape-of-things-to-come-part-2-model-welfare</h3>
 <div class="grid">
-<figure class="">
+<figure class="offmodel">
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/tail-model-welfare-v1.png" loading="lazy">
 <figcaption>tail-model-welfare v1 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — Wears a mustard-yellow collared button shirt and navy shorts with only white socks (no red sneakers) instead of the teal crew-neck, khaki shorts, and red sneakers. · Maro: off_model — Visible body shows articulated tin-toy-style segmented joints with screws/bolts rather than the smooth off-white rounded rectangular body with cobalt panels.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga vignette, wide
 horizontal banner format, entirely wordless, one playful visual idea only.
 
@@ -3937,10 +3991,12 @@ interface glyphs, captions, labels, speech balloons or watermarks;
 multi-panel layout.
 </pre></details>
 </figure>
-<figure class="selected">
+<figure class="selected offmodel">
 <span class="badge">SELECTED</span>
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/tail-model-welfare-v2.png" loading="lazy">
 <figcaption>tail-model-welfare v2 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — Wears a hooded blue/slate sweatshirt with long dark trousers and socks instead of the teal crew-neck, khaki shorts, and red sneakers. · Maro: off_model — Face screen shows a single horizontal cyan line plus a separate round camera-lens eye instead of two friendly curved white eyes, and the body is a cylindrical segmented tank-toy form rather than the off-white rounded rectangular body with cobalt panels.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga vignette, wide
 horizontal banner format, entirely wordless, one playful visual idea only.
 
@@ -3983,9 +4039,11 @@ multi-panel layout.
 </div>
 <h3>tail-pax-machina — pax-machina-new-institutions-for-powerful-ai</h3>
 <div class="grid">
-<figure class="">
+<figure class="offmodel">
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/tail-pax-machina-v1.png" loading="lazy">
 <figcaption>tail-pax-machina v1 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — He wears a white t-shirt, navy-blue shorts, and brown shoes instead of the teal crew-neck top, khaki shorts, and red sneakers. · Maro: off_model — The head shows a single round blue lens-like eye with side ear-bumps atop a spherical head/cylindrical body, rather than a black face screen with two curved white eyes on an off-white rounded-rectangular body.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga vignette, wide
 horizontal banner format, entirely wordless, one playful visual idea only.
 
@@ -4024,10 +4082,12 @@ lettering, numerals, pseudo-writing, interface glyphs, captions, labels,
 speech balloons or watermarks; multi-panel layout.
 </pre></details>
 </figure>
-<figure class="selected">
+<figure class="selected offmodel">
 <span class="badge">SELECTED</span>
+<span class="offbadge">OFF-MODEL: Pedro</span>
 <img src="rounds/2026-08-06T23-38-34/tail-pax-machina-v2.png" loading="lazy">
 <figcaption>tail-pax-machina v2 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — Seen from behind wearing a blue long-sleeve top and khaki pants rather than the teal crew-neck top and khaki shorts, and no glasses are visible. · Maro: on_model — Small waist-high robot with off-white rounded body, antenna with ball tip, and rounded feet, consistent with the canonical design.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga vignette, wide
 horizontal banner format, entirely wordless, one playful visual idea only.
 
@@ -4069,9 +4129,11 @@ speech balloons or watermarks; multi-panel layout.
 </div>
 <h3>tail-prime-agent — prime-agent-a-self-improving-rlm-agent</h3>
 <div class="grid">
-<figure class="">
+<figure class="offmodel">
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/tail-prime-agent-v1.png" loading="lazy">
 <figcaption>tail-prime-agent v1 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — He wears a blue button-up shirt with overall straps instead of the teal crew-neck top. · Maro: off_model — He has tank-tread wheels at the base and a claw-like gripper hand instead of rounded feet and mitten hands.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga vignette, wide
 horizontal banner format, entirely wordless, one playful visual idea only.
 
@@ -4112,10 +4174,12 @@ lettering, numerals, pseudo-writing, interface glyphs, captions, labels,
 speech balloons or watermarks.
 </pre></details>
 </figure>
-<figure class="selected">
+<figure class="selected offmodel">
 <span class="badge">SELECTED</span>
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/tail-prime-agent-v2.png" loading="lazy">
 <figcaption>tail-prime-agent v2 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — wearing a red hoodie instead of the teal crew-neck top, and khaki shorts/red sneakers are not visible/present. · Maro: off_model — head is an oversized rounded helmet with a large visor-like black face screen and no visible waist-level coral tool pouch, deviating from the canonical proportions.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga vignette, wide
 horizontal banner format, entirely wordless, one playful visual idea only.
 
@@ -4159,9 +4223,11 @@ speech balloons or watermarks.
 </div>
 <h3>tail-thunderdome — the-shape-of-things-to-come-part-1-the-continuou</h3>
 <div class="grid">
-<figure class="">
+<figure class="offmodel">
+<span class="offbadge">OFF-MODEL: Maro</span>
 <img src="rounds/2026-08-06T23-38-34/tail-thunderdome-v1.png" loading="lazy">
 <figcaption>tail-thunderdome v1 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: on_model — Black tousled hair, big round glasses, teal/mustard crew-neck top, dark pants, white socks visible while seated cross-legged, matches design (outfit variance in shorts/sneakers not checkable due to seated pose but no contradicting elements present). · Maro: off_model — Robot has a light blue/cobalt body overall rather than an off-white body with cobalt accents, and lacks the coral tool pouch at the waist.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga vignette, wide
 horizontal banner format, entirely wordless, one playful visual idea only.
 
@@ -4201,10 +4267,12 @@ interface glyphs, captions, labels, speech balloons or watermarks;
 multi-panel layout.
 </pre></details>
 </figure>
-<figure class="selected">
+<figure class="selected offmodel">
 <span class="badge">SELECTED</span>
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/tail-thunderdome-v2.png" loading="lazy">
 <figcaption>tail-thunderdome v2 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — Wears a mustard-yellow top and dark long pants with white/grey sneakers instead of the teal crew-neck, khaki shorts, and red sneakers. · Maro: off_model — Body is rendered in light blue/lavender rather than off-white with cobalt panels, has an added round ear-disc not in the design, and shows no coral tool pouch at the waist.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga vignette, wide
 horizontal banner format, entirely wordless, one playful visual idea only.
 
@@ -4248,9 +4316,11 @@ multi-panel layout.
 <h2>Closing plates</h2>
 <h3>closing-the-ledger-column</h3>
 <div class="grid">
-<figure class="">
+<figure class="offmodel">
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/closing-the-ledger-column-v1.png" loading="lazy">
 <figcaption>closing-the-ledger-column v1 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — Wears a white button shirt with suspenders and bow tie, dark navy long pants, and brown shoes instead of the teal crew-neck top, khaki shorts, and red sneakers. · Maro: off_model — Body is uniformly cobalt/grey metal rather than off-white with cobalt accents, and the face shows a single round eye instead of a black screen with two curved white eyes.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga illustration,
 full-page vertical poster plate, entirely wordless, one strong visual idea
 only.
@@ -4294,10 +4364,12 @@ interface glyphs, captions, labels, speech balloons or watermarks;
 multi-panel layout.
 </pre></details>
 </figure>
-<figure class="selected">
+<figure class="selected offmodel">
 <span class="badge">SELECTED</span>
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/closing-the-ledger-column-v2.png" loading="lazy">
 <figcaption>closing-the-ledger-column v2 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — Wears a white long-sleeve top, navy shorts, and black sneakers instead of the teal crew-neck, khaki shorts, and red sneakers. · Maro: off_model — Body is solid cobalt-blue with a single large oval eye on an egg-shaped head, rather than an off-white body with a black face screen showing two curved white eyes.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga illustration,
 full-page vertical poster plate, entirely wordless, one strong visual idea
 only.
@@ -4344,9 +4416,11 @@ multi-panel layout.
 </div>
 <h3>closing-the-long-shift</h3>
 <div class="grid">
-<figure class="">
+<figure class="offmodel">
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/closing-the-long-shift-v1.png" loading="lazy">
 <figcaption>closing-the-long-shift v1 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — Wearing a white/cream tank top and plaid blanket instead of the teal crew-neck top and khaki shorts, and no red sneakers visible (feet in socks). · Maro: off_model — Has a single round camera-like eye instead of the black face screen with two curved white eyes, and no visible coral tool pouch or antenna with cobalt ball tip.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga illustration,
 full-page vertical poster plate, entirely wordless, one strong visual idea
 only.
@@ -4390,10 +4464,12 @@ lettering, numerals, pseudo-writing, interface glyphs, captions, labels,
 speech balloons or watermarks; multi-panel layout.
 </pre></details>
 </figure>
-<figure class="selected">
+<figure class="selected offmodel">
 <span class="badge">SELECTED</span>
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/closing-the-long-shift-v2.png" loading="lazy">
 <figcaption>closing-the-long-shift v2 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — Wears a cream button-up collared shirt instead of the teal crew-neck top, with no khaki shorts or red sneakers visible. · Maro: off_model — Face is an off-white oval-eyed face matching the body color instead of a black screen with two curved white eyes, and shows no cobalt panels/joints or coral tool pouch anywhere on the body.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga illustration,
 full-page vertical poster plate, entirely wordless, one strong visual idea
 only.
@@ -4440,9 +4516,11 @@ speech balloons or watermarks; multi-panel layout.
 </div>
 <h3>closing-the-threshold</h3>
 <div class="grid">
-<figure class="">
+<figure class="offmodel">
+<span class="offbadge">OFF-MODEL: Maro</span>
 <img src="rounds/2026-08-06T23-38-34/closing-the-threshold-v1.png" loading="lazy">
 <figcaption>closing-the-threshold v1 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: on_model — Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match. · Maro: off_model — Face is a plain round dark lens/visor with no screen or two curved friendly eyes, and no cobalt antenna, side panels, or coral tool pouch are visible.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga illustration,
 full-page vertical poster plate, entirely wordless, one strong visual idea
 only.
@@ -4487,10 +4565,12 @@ interface glyphs, captions, labels, speech balloons or watermarks;
 multi-panel layout.
 </pre></details>
 </figure>
-<figure class="selected">
+<figure class="selected offmodel">
 <span class="badge">SELECTED</span>
+<span class="offbadge">OFF-MODEL: Pedro, Maro</span>
 <img src="rounds/2026-08-06T23-38-34/closing-the-threshold-v2.png" loading="lazy">
 <figcaption>closing-the-threshold v2 (2026-08-06T23-38-34)</figcaption>
+<div class="verdicts">Pedro: off_model — He wears a white long-sleeve collared shirt and navy shorts with brown shoes instead of the teal crew-neck, khaki shorts, and red sneakers. · Maro: off_model — His face is a single asymmetric dark visor-eye rather than a black screen with two curved white eyes, and his body is cream/tan and silver with a blue chest panel instead of off-white with cobalt panels, joints, hands, feet, antenna tip, and a coral pouch.</div>
 <details><summary>prompt</summary><pre>Original family-friendly children's science-comedy manga illustration,
 full-page vertical poster plate, entirely wordless, one strong visual idea
 only.
