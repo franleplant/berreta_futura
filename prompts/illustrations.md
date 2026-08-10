@@ -56,6 +56,45 @@ Interior illustrations (openers, tails, plates) all share the edition's one
 art direction. The cover follows its own three-branch grammar and only
 borrows the direction when the `art_directed` branch chooses to.
 
+## Recurring cast
+
+A direction may define recurring characters in a `direction.cast` list
+(each entry: `name`, `prompt`). The cast prompts are canon — written for
+the image generator, pinning every attribute that must not vary, including
+what the character is *not*. `mag art` appends them verbatim to every
+interior generation prompt, and to cover prompts that name a cast member.
+Briefs therefore never restate a cast member's appearance: they name the
+character and describe only pose, action, expression, props, and setting.
+Continuity lives in the one canonical text, never in a paraphrase.
+
+A cast entry may also carry a `reference` image path — the character's
+canonical sheet. `mag art` expands the gen-cmd's `{ref}` placeholder to the
+references of the briefs that carry the cast (and to nothing elsewhere), and
+`tools/imagegen` attaches them to `codex exec` with `--image=`. A cast with
+references and a gen-cmd without `{ref}` is a loud refusal, not a silent
+text-only round.
+
+The sheet itself has the same candidate → approved lifecycle as every other
+asset. `mag cast-sheet <direction.yaml>` renders sheet candidates into
+`art-directions/rounds/<name>/<stamp>/` from a prompt composed verbatim
+from the direction file (no brief-writer call), evolving from the current
+`reference` when one exists. Every invocation rewrites the direction's
+review page, `art-directions/rounds/<name>/showcase.html` — current canon
+on top, every round's candidates below, the variant whose bytes match the
+installed reference badged CANON (`--showcase` rebuilds it from disk
+without generating). Approval is the editor copying the chosen variant
+over the cast's `reference:` path.
+
+`mag cast-check <edition>` is the advisory on-model judge: a vision model
+scores each generated candidate against the cast prompts (design only —
+pose, action, props, and setting are free), writes `cast-check.yaml` into
+the round, and the showcase badges off-model images with the reason. Like
+every critic in this pipeline it flags and never selects; verdicts inform
+the editor's eye, they do not replace it.
+
+The current cast (`art-directions/story-led-boy-and-robot.yaml`): **Pedro**,
+the boy with round glasses, and **Maro**, his helper robot.
+
 ## Briefs
 
 `mag art` proposes the edition's brief slate in one model call, seeded with

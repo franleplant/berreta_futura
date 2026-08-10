@@ -3,6 +3,7 @@
 
 mod art;
 mod caller;
+mod capture;
 mod plan_cmd;
 mod produce;
 mod render;
@@ -25,6 +26,34 @@ enum Cmd {
     /// Write plan.yaml from the edition's queued library sources (no model call; human edits it)
     Plan {
         edition: String,
+    },
+    /// Capture a source: fetch the page, transcribe it verbatim through one
+    /// fidelity-gated model call, download media, queue it, update sources.md
+    Capture {
+        url: String,
+        /// Collecting edition to queue into (default: the intake edition;
+        /// created, and made the intake edition, if it does not exist)
+        #[arg(long)]
+        edition: Option<String>,
+        /// Comma-separated tags for record.yaml
+        #[arg(long)]
+        tags: Option<String>,
+        /// Override the extracted title
+        #[arg(long)]
+        title: Option<String>,
+        /// Override the extracted author
+        #[arg(long)]
+        author: Option<String>,
+        /// Override the extracted publish date (YYYY-MM-DD)
+        #[arg(long)]
+        published: Option<String>,
+        /// Saved HTML to capture from instead of fetching the URL (for pages
+        /// curl cannot reach: login walls, JS-rendered apps). The URL is
+        /// still recorded and still derives the source id.
+        #[arg(long)]
+        html: Option<PathBuf>,
+        #[arg(long, default_value = "sonnet")]
+        model: String,
     },
     /// Produce an edition from a plan.yaml
     Produce {
@@ -72,6 +101,41 @@ enum Cmd {
         #[arg(long)]
         note: Option<String>,
     },
+    /// Generate cast model-sheet candidates for an art direction (no brief-writer call;
+    /// human approves by pointing the cast's `reference:` at the chosen variant)
+    CastSheet {
+        /// The art direction file whose direction.cast to sheet
+        direction: PathBuf,
+        /// Shell command template for one image; {prompt}, {out}, and {ref} are substituted
+        #[arg(long = "gen-cmd", required_unless_present_any = ["dry_run", "showcase"])]
+        gen_cmd: Option<String>,
+        /// How many sheet candidates to render
+        #[arg(long, default_value_t = 4)]
+        candidates: u32,
+        /// Write the prompt and generate.sh, but spend no image credits
+        #[arg(long = "dry-run")]
+        dry_run: bool,
+        /// Only rebuild the direction's cast showcase.html from the rounds on disk
+        #[arg(long)]
+        showcase: bool,
+        /// Editor's note appended to the sheet prompt
+        #[arg(long)]
+        note: Option<String>,
+    },
+    /// Judge an edition's generated candidates against the cast canon (advisory:
+    /// writes cast-check.yaml into the round, badges off-model images in the showcase)
+    CastCheck {
+        edition: String,
+        /// Round stamp to check, or 'all' (default: the newest round)
+        #[arg(long)]
+        round: Option<String>,
+        /// Art direction file to take the cast from (default: the edition's art_direction_path)
+        #[arg(long)]
+        direction: Option<PathBuf>,
+        /// Vision-capable judge model
+        #[arg(long, default_value = "sonnet")]
+        model: String,
+    },
     /// Render an edition via the Python renderer seam (mag-render-adapter)
     Render {
         edition: String,
@@ -111,6 +175,19 @@ fn run(cli: Cli) -> Result<i32> {
 
     match cli.cmd {
         Cmd::Plan { edition } => plan_cmd::propose_plan(&edition),
+        Cmd::Capture { url, edition, tags, title, author, published, html, model } => {
+            let spec = caller::ModelSpec::parse(&model)?;
+            capture::run(
+                &url,
+                edition.as_deref(),
+                tags.as_deref(),
+                title.as_deref(),
+                author.as_deref(),
+                published.as_deref(),
+                html.as_deref(),
+                &spec,
+            )
+        }
         Cmd::Produce { plan, resume, only, writer_model, frontmatter_model } => {
             let writer = caller::ModelSpec::parse(&writer_model)?;
             let frontmatter = caller::ModelSpec::parse(&frontmatter_model)?;
@@ -134,6 +211,13 @@ fn run(cli: Cli) -> Result<i32> {
                 only.as_deref(),
                 note.as_deref(),
             )
+        }
+        Cmd::CastSheet { direction, gen_cmd, candidates, dry_run, showcase, note } => {
+            art::cast_sheet_run(&direction, gen_cmd.as_deref(), candidates, dry_run, showcase, note.as_deref())
+        }
+        Cmd::CastCheck { edition, round, direction, model } => {
+            let spec = caller::ModelSpec::parse(&model)?;
+            art::cast_check_run(&edition, round.as_deref(), direction.as_deref(), &spec)
         }
         Cmd::Render { edition, operation, article, langs, run, anchor_model } => {
             let anchor = caller::ModelSpec::parse(&anchor_model)?;

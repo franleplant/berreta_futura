@@ -1,0 +1,51 @@
+# Promoted from editions 004/005 ("Story-Led Boy and Robot, Gentle Print
+# Color"), where the recurring cast proved durable. The cast prompts below
+# are canon: mag art appends them verbatim to every generation prompt, so
+# they are written for the image generator, not for a human reader.
+# Canonical sheet: editor approved cast-sheet v2 (round 2026-08-10T13-27-28)
+# on 2026-08-10; it lives at the reference path below.
+schema_version: 1
+direction:
+  name: Story-Led Boy and Robot, Gentle Print Color
+  visual_language: Original family-friendly children's science-comedy manga with simple charcoal contours,
+    rounded readable expressions, economical watercolor washes, minimal hatching, restrained halftone,
+    quiet print grain, and one playful visual idea per illustration. The recurring cast is exactly
+    Pedro and Maro as defined under cast, and nobody else. Use broad period and production cues only.
+    Never reproduce a franchise character, costume, face, silhouette, composition, or gadget.
+  palette: 'Scene-led gentle historical magazine color at low to medium saturation: softened cyan
+    and cobalt, brick coral, muted green, dusty lavender, small warm-ochre accents, warm off-white
+    breathing room, and charcoal ink. The setting chooses the background. Never impose one yellow
+    paper field.'
+  reference_images:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+  cast:
+  - name: Pedro
+    reference: art-directions/references/story-led-boy-and-robot-cast.png
+    prompt: 'Pedro, a school-age boy: black tousled hair, big round glasses, teal crew-neck top,
+      khaki shorts, red sneakers. Always this outfit. Never a hat, never another hairstyle.'
+  - name: Maro
+    reference: art-directions/references/story-led-boy-and-robot-cast.png
+    prompt: 'Maro, a small helper robot, waist-high to Pedro: off-white rounded rectangular body;
+      black face screen with two friendly curved white eyes; cobalt side panels, shoulder joints,
+      mitten hands, and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch
+      at the waist. Never a single eye, a visor face, tank treads, wheels, tin-toy styling,
+      humanoid proportions, or extra limbs.'
+  constraints:
+  - Entirely wordless editorial storytelling
+  - Exactly Pedro and Maro in every authored illustration, drawn to their cast prompts
+  - Background color and setting arise from the article subject
+  - At least three distinct non-neutral colors
+  - Strong silhouettes and expressions that remain legible at A5 size
+  - Print-friendly contrast with minimal hatching and restrained halftone
+  - Slight pigment variation, subtle paper tooth, and quiet print grain
+  - Article tails keep every essential action inside the safe horizontal crop
+  - Multi-panel structure is reserved for an asset brief that explicitly requires a functional sequence
+  avoid:
+  - Direct copies of Doraemon, Nobita, or any recognizable franchise character
+  - Blue robotic cats, signature franchise gadgets, copied costumes, or copied faces
+  - Uniform yellow, mustard, beige, sepia, cream-paper, or bright cyan backgrounds
+  - Extra humans, extra robots, or robot-faced background appliances
+  - Decorative montages, contact sheets, or filler patterns
+  - Dense technical realism, steampunk clutter, or excessive crosshatching
+  - Modern glossy anime rendering, painterly concept art, neon cyberpunk, or photorealism
+  - Decorative pseudo-writing, interface glyphs, captions, labels, or speech balloons

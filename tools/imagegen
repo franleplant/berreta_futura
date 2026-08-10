@@ -1,0 +1,45 @@
+#!/bin/sh
+# Image generation via `codex exec` (magazine.toml: image_backend = "codex";
+# images are NOT a choice). One invocation renders one image.
+#
+#   imagegen '<prompt>' --out <file.png> [--ref '<img> [<img>...]']
+#
+# --ref takes whitespace-separated image paths (the {ref} placeholder in
+# `mag art --gen-cmd` expands to exactly that, and to '' when a brief has no
+# cast references — an empty --ref is ignored). Each path is attached to the
+# codex call with --image=path (never `-i path`: -i is variadic and eats the
+# prompt); the attached sheets are canon for recurring-character appearance.
+# Exits non-zero if codex fails or the output file is missing.
+set -eu
+
+prompt=${1:?usage: imagegen '<prompt>' --out <file.png> [--ref '<imgs>']}
+shift
+out=
+refs=
+while [ $# -gt 0 ]; do
+    case $1 in
+        --out) out=${2:?--out needs a path}; shift 2 ;;
+        --ref) refs=${2-}; shift 2 ;;
+        *) echo "imagegen: unknown argument: $1" >&2; exit 2 ;;
+    esac
+done
+[ -n "$out" ] || { echo "imagegen: --out is required" >&2; exit 2; }
+
+set -- exec --sandbox workspace-write
+for ref in $refs; do
+    [ -f "$ref" ] || { echo "imagegen: reference image not found: $ref" >&2; exit 2; }
+    set -- "$@" --image="$ref"
+done
+
+instructions="Generate one illustration image with your image generation \
+tool and save it as a PNG to exactly this path: $out — create parent \
+directories if needed, write nothing else. If reference images are attached, \
+they are the canonical designs of the recurring characters named in the \
+prompt: match those designs exactly while drawing the new scene described \
+below.
+
+$prompt"
+
+codex "$@" "$instructions"
+
+[ -s "$out" ] || { echo "imagegen: codex exited ok but $out is missing or empty" >&2; exit 1; }
