@@ -1,0 +1,34 @@
+# Partial plan: source gathering for 006 is still open. `mag plan` will not
+# overwrite this file; add a row here by hand for each newly captured source.
+edition:
+  id: '006'
+articles:
+- id: the-actor-model-in-a-nutshell
+  title: The Actor Model in a Nutshell
+  short_title: The Actor Model in a Nutshell
+  author: Brian Storti, Akka, John Palgut
+  content_mode: in_a_nutshell
+  source_ids:
+  - the-actor-model-in-10-minutes-47394faa
+  - how-the-actor-model-meets-the-needs-of-modern-di-ebf5a52d
+  - introduction-to-the-actor-model-using-real-actor-2d2aad66
+  rationale: One explainer distilled from three introductions to the actor model, giving readers the
+    concurrency vocabulary the Durable Objects articles build on.
+- id: workers-durable-objects-beta-a-new-approach-to-s
+  title: 'Workers Durable Objects Beta: A New Approach to Stateful Serverless'
+  author: Kenton Varda
+  content_mode: article
+  source_ids:
+  - workers-durable-objects-beta-a-new-approach-to-s-1a040568
+- id: durable-objects-easy-fast-correct-choose-three
+  title: 'Durable Objects: Easy, Fast, Correct — Choose three'
+  author: Kenton Varda
+  content_mode: article
+  source_ids:
+  - durable-objects-easy-fast-correct-choose-three-e5ada0af
+- id: the-future-is-for-everyone
+  title: The Future is for Everyone
+  author: Mark Zuckerberg
+  content_mode: article
+  source_ids:
+  - the-future-is-for-everyone-389f6799
