@@ -1,0 +1,13 @@
+id: the-actor-model-in-10-minutes-47394faa
+title: The actor model in 10 minutes
+author: Brian Storti
+url: https://www.brianstorti.com/the-actor-model/
+captured_at: '2026-08-08T15:23:52Z'
+published_at: '2015-07-09'
+tags:
+- actor-model
+- concurrency
+- erlang
+synopsis: Explains the actor model of concurrent computation, where isolated actors
+  with private state communicate via asynchronous messages through mailboxes, enabling
+  Erlang-style supervision-based fault tolerance and location-transparent distribution.

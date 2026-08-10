@@ -1,5 +1,5 @@
 schema_version: 2
-intake_edition_id: '005'
+intake_edition_id: '006'
 collecting_editions:
 - id: '005'
   issue_number: 5
@@ -13,6 +13,16 @@ collecting_editions:
   - the-shape-of-things-to-come-part-1-the-continuou-ba42001b
   - the-shape-of-things-to-come-part-2-model-welfare-4e8062e1
   - your-agent-needs-a-computer-not-a-container-intr-4851b3c5
+- id: '006'
+  issue_number: 6
+  status: collecting
+  source_ids:
+  - introduction-to-the-actor-model-using-real-actor-2d2aad66
+  - how-the-actor-model-meets-the-needs-of-modern-di-ebf5a52d
+  - the-actor-model-in-10-minutes-47394faa
+  - workers-durable-objects-beta-a-new-approach-to-s-1a040568
+  - durable-objects-easy-fast-correct-choose-three-e5ada0af
+  - the-future-is-for-everyone-389f6799
 released_editions:
 - id: 001-the-work-left-to-us
   issue_number: 1
