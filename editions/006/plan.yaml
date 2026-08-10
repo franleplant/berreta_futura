@@ -32,3 +32,9 @@ articles:
   content_mode: article
   source_ids:
   - the-future-is-for-everyone-389f6799
+- id: run-ci-cd-for-millions-of-repos-on-your-platform
+  title: Run CI/CD for millions of repos — on your platform, on Cloudflare
+  author: André Venceslau, Mia Malden, Tomáš Hobza
+  content_mode: article
+  source_ids:
+  - run-ci-cd-for-millions-of-repos-on-your-platform-66c52583
