@@ -4,7 +4,29 @@ _Generated from source records. Do not edit by hand._
 
 _Collecting: `005` (8 queued)._
 
-_Collecting: `006` (7 queued)._
+_Collecting: `006` (9 queued)._
+
+## Launching the x402 Foundation with Coinbase, and support for x402 transactions — Will Allen, Cam Whiteside, Rohin Lohe, Steve James
+
+- ID: `launching-the-x402-foundation-with-coinbase-and-25f85626`
+- Source: https://blog.cloudflare.com/x402/
+- Published: 2025-09-23
+- Captured: 2026-08-10T23:24:34Z
+- Tags: x402, payments, agents
+- Release: queued for `006`
+
+Cloudflare and Coinbase are launching the x402 Foundation to promote the x402 protocol for machine-to-machine payments, and Cloudflare is shipping x402 support in its Agents SDK and MCP integrations along with a proposed deferred payment scheme.
+
+## Announcing the Monetization Gateway: charge for any resource behind Cloudflare via x402 — Rohin Lohe, Justin Ridgely, Will Papper
+
+- ID: `announcing-the-monetization-gateway-charge-for-a-cb51fdc1`
+- Source: https://blog.cloudflare.com/monetization-gateway/
+- Published: 2026-07-01
+- Captured: 2026-08-10T23:22:00Z
+- Tags: x402, payments, monetization
+- Release: queued for `006`
+
+Cloudflare announces the Monetization Gateway, a control plane that lets customers charge any caller for web pages, datasets, APIs, or MCP tools using the x402 protocol and stablecoin settlement at the edge.
 
 ## Run CI/CD for millions of repos — on your platform, on Cloudflare — André Venceslau, Mia Malden, Tomáš Hobza
 
