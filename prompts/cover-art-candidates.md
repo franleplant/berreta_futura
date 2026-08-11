@@ -6,89 +6,82 @@ author-time creative step, never part of deterministic packaging. The
 production compiler continues to consume only `cover.art_path` from
 `edition.yaml`.
 
-Before generating images, write a one-sentence reading of the edition as a
-whole. Derive each candidate from that reading and the complete article
-roster, not from one convenient article or from generic AI imagery.
+The cover is the synthetic branch: one bold abstract-graphic proposition in
+poster inks. A round is three DIFFERENT synthetic propositions (not three
+styles), each derived from its own one-sentence reading of the edition.
+Write those readings first, from the complete article roster; a reading
+that produces only a still life is too abstract, so go back to the articles
+for the moment where something moves, breaks, opens, or pays.
 
-## The impact test (every branch)
+(The `cast_poster`, `art_directed`, and `wildcard` branches from earlier
+rounds are retired after editor review; their candidates stay on disk. The
+recurring cast lives inside the magazine, not on the cover.)
 
-A cover is a poster, not a statement of theme. Before a brief is accepted it
-must pass, at thumbnail size, the test previous rounds reserved for the
-wildcard alone:
+## The cover ink discipline
 
-- an unmistakable visual event: something is HAPPENING, not arranged;
-- a memorable silhouette readable at postage-stamp scale;
-- at least one strong source of tension: scale shock, precarious balance,
-  spatial invasion, arrested motion, a held breath.
+The cover NEVER uses the interior art direction's palette. Interior
+directions are tuned for gentle print reading; on a cover they read as
+dull. Ignore any palette, style, or constraint text from the edition's
+art direction file when writing cover briefs: covers have their own rules.
 
-A tidy grid of theme-objects, a neat array of rooms, boxes, shelves, or
-tools, or any composition whose verb is "sits" fails the test. If the
-one-sentence reading of the edition produces only still lifes, the reading
-is too abstract: re-read the articles for the moment where something moves,
-breaks, opens, or is caught mid-air, and start from there.
+- Choose a cover ink set per edition: TWO or THREE saturated, committed
+  inks plus one ground, plus ONE luminous accent. Deep and bright beat
+  pale and dusty: oxblood, cobalt, violet-navy, emerald, vermilion,
+  chrome yellow, a near-black. Name the exact inks in the brief.
+- The ground is one color and generous: either a pale field (cream,
+  bone) or a deep dark (navy-black, oxblood-black). No mid-tone grounds,
+  no textured wallpaper grounds.
+- Exactly one luminous focal accent: one glowing, hot, or white element
+  that owns the frame and is the image's event. If the thumbnail does not
+  lead the eye there in one beat, the brief fails.
+- Print-flat color: hard edges, confident fills, controlled shading in
+  service of depth on the few big forms. No gradients that muddy, no
+  pigment-wash softness, no all-over grain doing the work color should do.
 
-## `cast_poster`
+## The proposition
 
-The cover face of the magazine's own world. Pedro, Maro, and Flopaz (the
-edition art direction's recurring cast) in one dramatic, story-charged
-moment at full poster weight, the key art of an adventure the reader has
-not seen yet, derived from the edition reading. The closing-plate license
-applies: mood leads, identity anchors hold, and the moment may be grand
-(vast machinery, deep space of small lit rooms, weather, night) while the
-cast stays exactly themselves. Composed for the cover crop with the event in
-the safe area; wordless as always.
-
-This branch exists because the cast is the magazine's most loved asset and
-the interior's story-led language deserves a poster. It is not a scaled-up
-opener: openers illustrate one article's proposition; the cast poster stages
-the edition's stakes.
-
-## `art_directed`
-
-An edition-specific artistic interpretation using the publication palette.
-Choose the medium that best serves the editorial proposition: photography,
-painting, printmaking, sculpture, staged work, collage, drawing, textile, or
-another deliberate form. No required subject or motif; nothing repeated from
-earlier editions merely because it was approved once. Reuse the level of art
-direction, material conviction, and compositional intent, not the objects.
-The impact test applies in full: material beauty does not excuse stillness.
-
-## `wildcard`
-
-Choose metaphor, subject, and composition from the edition's contents. Do
-not imitate the other branches. One improbable idea, immediately legible,
-with enough formal discipline to remain convincing in print.
-
-The wildcard is always rendered photorealistically: a convincing photograph
-of the improbable thing, with real materials, real optics, and coherent
-physical light — never a painting, illustration, or render that reads as
-digital art. The impossibility lives in the subject; the camera plays it
-straight. It may depart from the publication palette only when the cover
-proof shows the result remains compatible with the fixed cover system.
+- ONE compact editorial metaphor, stated in the brief in one sentence
+  before the visual description. The image argues it; it does not
+  illustrate a list.
+- THREE TO SEVEN large forms. Count them in the brief. Anything the
+  proposition does not need is deleted, and a form smaller than a
+  fingernail at print size is noise, not a form.
+- Banned as primary subject matter: swarms, confetti, particle clouds,
+  grids or arrays of repeated small elements, scattered debris. A
+  multitude may be IMPLIED (three envelopes and a shadow suggest a
+  million) but never drawn.
+- The impact test, at thumbnail size: an unmistakable visual event,
+  a memorable silhouette, one strong source of tension (scale shock,
+  precarious balance, spatial invasion, arrested motion). A composition
+  whose verb is "sits" fails.
+- Figuration is allowed at emblem level (a hand, a door, a coin, one
+  tiny human for scale) but no scenes, no characters, no narrative
+  staging.
 
 ## Shared constraints
 
-- Generate `cast_poster`, `art_directed`, and `wildcard` exactly once each
-  per round. Rounds are append-only versioned siblings; never overwrite or
-  silently discard candidates.
 - Square PNG artwork at least 1000 × 1000 pixels.
 - All typography lives in layout code: no masthead, title, issue number,
-  caption, logo, pseudo-writing, or watermark in the artwork.
+  caption, logo, pseudo-writing, numerals, or watermark in the artwork.
 - Design for the fixed cover crop, thumbnail recognition, and clean print
   reproduction; no important detail at the extreme edges.
 - Judge anatomy, materials, lighting, intersections, and physical
-  relationships as strictly as composition. Reject generic-AI incoherence.
+  relationships as strictly as composition. Reject generic-AI incoherence:
+  no circuit motifs, network graphs, neon cyberpunk, or AI-futurist
+  clichés.
+- Rounds are append-only versioned siblings; never overwrite or silently
+  discard candidates.
 
 ## Review and selection
 
-Review the three candidates together at full size, as thumbnails, and inside
-the unchanged cover frame. Check conceptual relevance, generation artifacts,
-crop safety, tonal reproduction, and that the branches are meaningfully
-distinct. The editor selects by updating only `cover.art_path`; unselected
-candidates remain preserved in their round.
+Review the three propositions together at full size, as thumbnails, and
+inside the unchanged cover frame. Check conceptual relevance, ink
+discipline, generation artifacts, crop safety, tonal reproduction, and
+that the three propositions are meaningfully distinct. The editor selects
+by updating only `cover.art_path`; unselected candidates remain preserved
+in their round.
 
-If the editor selects none, generate a complete new round of all three
-branches with a changed editorial proposition, subject, metaphor, and prompt
-input per branch, keeping the branch definitions and shared constraints. Continue
-until the editor explicitly selects; never infer selection from approval of
-the process.
+If the editor selects none, generate a complete new round of three fresh
+propositions: change the reading, metaphor, subject, and composition;
+keep the ink discipline and shared constraints. Continue until the editor
+explicitly selects; never infer selection from approval of the process.
