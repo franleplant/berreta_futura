@@ -1,0 +1,52 @@
+edition: '006'
+dry_run: false
+generated:
+- brief: cover-toll-monolith-coin
+  variant: 1
+  file: cover-toll-monolith-coin-v1.png
+  ok: true
+- brief: cover-toll-monolith-coin
+  variant: 2
+  file: cover-toll-monolith-coin-v2.png
+  ok: true
+- brief: cover-toll-monolith-coin
+  variant: 3
+  file: cover-toll-monolith-coin-v3.png
+  ok: true
+- brief: cover-toll-monolith-coin
+  variant: 4
+  file: cover-toll-monolith-coin-v4.png
+  ok: true
+- brief: cover-two-vaults-one-letter
+  variant: 1
+  file: cover-two-vaults-one-letter-v1.png
+  ok: true
+- brief: cover-two-vaults-one-letter
+  variant: 2
+  file: cover-two-vaults-one-letter-v2.png
+  ok: true
+- brief: cover-two-vaults-one-letter
+  variant: 3
+  file: cover-two-vaults-one-letter-v3.png
+  ok: true
+- brief: cover-two-vaults-one-letter
+  variant: 4
+  file: cover-two-vaults-one-letter-v4.png
+  ok: true
+- brief: cover-mended-chain-link
+  variant: 1
+  file: cover-mended-chain-link-v1.png
+  ok: true
+- brief: cover-mended-chain-link
+  variant: 2
+  file: cover-mended-chain-link-v2.png
+  ok: true
+- brief: cover-mended-chain-link
+  variant: 3
+  file: cover-mended-chain-link-v3.png
+  ok: true
+- brief: cover-mended-chain-link
+  variant: 4
+  file: cover-mended-chain-link-v4.png
+  ok: true
+failures: 0

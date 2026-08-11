@@ -1,0 +1,52 @@
+edition: '006'
+dry_run: false
+generated:
+- brief: cover-cast-poster-note-catch
+  variant: 1
+  file: cover-cast-poster-note-catch-v1.png
+  ok: true
+- brief: cover-cast-poster-note-catch
+  variant: 2
+  file: cover-cast-poster-note-catch-v2.png
+  ok: true
+- brief: cover-cast-poster-note-catch
+  variant: 3
+  file: cover-cast-poster-note-catch-v3.png
+  ok: true
+- brief: cover-cast-poster-note-catch
+  variant: 4
+  file: cover-cast-poster-note-catch-v4.png
+  ok: true
+- brief: cover-art-directed-toppling-kiln-stack
+  variant: 1
+  file: cover-art-directed-toppling-kiln-stack-v1.png
+  ok: true
+- brief: cover-art-directed-toppling-kiln-stack
+  variant: 2
+  file: cover-art-directed-toppling-kiln-stack-v2.png
+  ok: true
+- brief: cover-art-directed-toppling-kiln-stack
+  variant: 3
+  file: cover-art-directed-toppling-kiln-stack-v3.png
+  ok: true
+- brief: cover-art-directed-toppling-kiln-stack
+  variant: 4
+  file: cover-art-directed-toppling-kiln-stack-v4.png
+  ok: true
+- brief: cover-wildcard-door-of-keys
+  variant: 1
+  file: cover-wildcard-door-of-keys-v1.png
+  ok: true
+- brief: cover-wildcard-door-of-keys
+  variant: 2
+  file: cover-wildcard-door-of-keys-v2.png
+  ok: true
+- brief: cover-wildcard-door-of-keys
+  variant: 3
+  file: cover-wildcard-door-of-keys-v3.png
+  ok: true
+- brief: cover-wildcard-door-of-keys
+  variant: 4
+  file: cover-wildcard-door-of-keys-v4.png
+  ok: true
+failures: 0

@@ -1,6 +1,6 @@
 # Run summary — edition 006
 
-- 9 model calls, $1.61, 2.3 minutes
+- 2 model calls, $0.22, 0.7 minutes
 - writer `opus`, frontmatter `haiku`
 
 | piece | words |
@@ -11,4 +11,4 @@
 | the-future-is-for-everyone | 1364 |
 | run-ci-cd-for-millions-of-repos-on-your-platform | 483 |
 | x402-in-a-nutshell | 578 |
-| editorial | 169 |
+| editorial | 185 |
