@@ -6,7 +6,7 @@ content_mode: in_a_nutshell
 label: IN A NUTSHELL
 ---
 
-**The thirty second version.** HTTP has always had a status code nobody used: 402, Payment Required. Sites on Cloudflare emit over a billion of them a day and none are heard, because nobody agreed what they should say. x402 is the agreement. A client asks for a resource. The server answers 402 with a price and an address. The client pays, asks again, and attaches the proof. The server hands over the resource. No account, no API key, no checkout page. The payment is the credential.
+HTTP has always had a status code nobody used: 402, Payment Required. Sites on Cloudflare emit over a billion of them a day and none are heard, because nobody agreed what they should say. x402 is the agreement. A client asks for a resource. The server answers 402 with a price and an address. The client pays, asks again, and attaches the proof. The server hands over the resource. No account, no API key, no checkout page. The payment is the credential.
 
 ## One example, held throughout
 
