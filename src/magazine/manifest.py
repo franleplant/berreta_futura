@@ -516,8 +516,8 @@ def load_edition(
         closing_titles.add(title.casefold())
         closing_paths.add(art_path)
         closing_plates.append(ClosingPlate(title, art_path))
-    if closing_rows and len(closing_rows) != 3:
-        errors.append("Edition closing_plates must define exactly three unique padding plates")
+    if closing_rows and len(closing_rows) < 3:
+        errors.append("Edition closing_plates must define at least three unique padding plates")
     if errors:
         raise ValidationError(errors)
     return Edition(

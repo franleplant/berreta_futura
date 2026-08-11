@@ -17,6 +17,28 @@ for the moment where something moves, breaks, opens, or pays.
 rounds are retired after editor review; their candidates stay on disk. The
 recurring cast lives inside the magazine, not on the cover.)
 
+## The frame it lives in
+
+The artwork is not the cover; it is a square plate placed on the cover.
+The fixed frame around it: a warm off-white page, the black masthead with
+its red-orange accent above, the headline in heavy black capitals, a
+red-orange spine band at the right edge, credits in small capitals below.
+Every brief must say in one sentence how the plate sits in that frame.
+
+Consequences, non-negotiable:
+
+- The plate must hold a hard-edged, high-contrast silhouette against a
+  WHITE page. A mid-tone ground (photographic gray sky, dusk haze, muddy
+  field) dissolves into the page and reads as a dull rectangle.
+- The ink set should shake hands with the masthead: pick up its
+  red-orange, its black, or the page's bone white somewhere prominent.
+  A plate whose colors ignore the frame looks pasted in from another
+  magazine.
+- Grounds are either confident-dark (near-black, deep navy, oxblood) for
+  a lantern-slide effect inside the white page, or pale (bone, cream)
+  for a constructivist effect where the page and plate breathe together.
+  Nothing in between.
+
 ## The cover ink discipline
 
 The cover NEVER uses the interior art direction's palette. Interior
