@@ -720,7 +720,7 @@ class CoverCompiler:
         words = value.split()
         while size >= 20:
             candidates: list[tuple[float, tuple[str, str]]] = []
-            if len(words) >= 3:
+            if len(words) >= 2:
                 for split in range(1, len(words)):
                     pair = (" ".join(words[:split]), " ".join(words[split:]))
                     widths = tuple(self.bold.measure(line, size=size) for line in pair)
