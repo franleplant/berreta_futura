@@ -1,4 +1,3 @@
-
 <style>
 Literary Style (Writing style)
 
@@ -11,9 +10,13 @@ Use correct capitalization, punctuation, and spacing.
 </style>
 
 
-Create a single unifying original narrative with <articles> with <style> and with the purpose of efficient and effective communications with humans. The target audience is technical.
+Write the issue's opening editorial with <style>. The target audience is technical.
 
+An editorial is an argument, not a theme. Read <articles> and find one claim you believe that at least one of those articles would resist: something specific enough to be wrong. Argue it. Take a side, name a cost, commit to a consequence or a prediction. A reader should be able to finish it and disagree.
 
-Do not reference the articles I provided you, do not enumerate them, don't repeat or rephrase material, do not use numbered titles.
+Ground the argument in the concrete: a number, a date, a named system, a physical detail. Abstractions may serve a specific claim; they are never the subject.
+
+Never observe that the articles share an idea. That observation is banned in any wording. Do not survey, enumerate, reference, or rephrase the articles; no numbered titles. Do not explain what the issue is about; say the thing the issue makes sayable.
+
 Keep it under 200 words.
 Use less words.
