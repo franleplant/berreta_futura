@@ -37,6 +37,12 @@ direction:
       short-sleeve top; white socks, muted-green flat shoes. Calm and observant. Always this
       outfit. Never twin pigtails, never a hat, never glasses.'
   cast_license:
+    cover: >-
+      The cast_poster cover branch carries the closing-plate license at its grandest: mood and
+      stakes lead, wardrobe and rendering may follow the scene, identity anchors hold exactly
+      (Pedro's black tousled hair, round glasses and face; Maro's black screen face with two
+      curved white eyes, rounded silhouette and antenna; Flopaz's chestnut side ponytail and
+      bangs).
     tail: >-
       Tails may drift toward the edition's quieter register: more painterly rendering, softer
       light, Pedro and Flopaz reading a few years older, wardrobe following the hour and season
@@ -48,8 +54,12 @@ direction:
       identity anchors hold.
   constraints:
   - Entirely wordless editorial storytelling
-  - Pedro and Maro appear in every authored illustration, Flopaz when the story calls for her;
+  - Pedro, Maro, and Flopaz appear together in every authored illustration, each given a real
+    part in the scene's one idea; leaving Flopaz out is the exception and needs a stated reason
+    in the brief (a solo moment, a two-hander the composition demands), never the default;
     all drawn to their cast prompts, nobody outside the cast
+  - Article tails are wide short strips, composed for a 3:1 landscape frame with the action
+    in the middle band, never a square or 2:1 frame
   - Background color and setting arise from the article subject
   - At least three distinct non-neutral colors
   - Strong silhouettes and expressions that remain legible at A5 size
