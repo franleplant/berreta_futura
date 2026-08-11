@@ -1,0 +1,47 @@
+edition:
+  id: '006'
+articles:
+- id: the-actor-model-in-a-nutshell
+  title: The Actor Model in a Nutshell
+  short_title: The Actor Model in a Nutshell
+  author: Brian Storti, Akka, John Palgut
+  content_mode: in_a_nutshell
+  source_ids:
+  - the-actor-model-in-10-minutes-47394faa
+  - how-the-actor-model-meets-the-needs-of-modern-di-ebf5a52d
+  - introduction-to-the-actor-model-using-real-actor-2d2aad66
+  rationale: One explainer distilled from three introductions to the actor model, giving readers the concurrency vocabulary the Durable Objects articles build on.
+- id: workers-durable-objects-beta-a-new-approach-to-s
+  title: 'Workers Durable Objects Beta: A New Approach to Stateful Serverless'
+  author: Kenton Varda
+  content_mode: article
+  source_ids:
+  - workers-durable-objects-beta-a-new-approach-to-s-1a040568
+- id: durable-objects-easy-fast-correct-choose-three
+  title: 'Durable Objects: Easy, Fast, Correct — Choose three'
+  author: Kenton Varda
+  content_mode: article
+  source_ids:
+  - durable-objects-easy-fast-correct-choose-three-e5ada0af
+- id: the-future-is-for-everyone
+  title: The Future is for Everyone
+  author: Mark Zuckerberg
+  content_mode: article
+  source_ids:
+  - the-future-is-for-everyone-389f6799
+- id: run-ci-cd-for-millions-of-repos-on-your-platform
+  title: Run CI/CD for millions of repos — on your platform, on Cloudflare
+  author: André Venceslau, Mia Malden, Tomáš Hobza
+  content_mode: article
+  source_ids:
+  - run-ci-cd-for-millions-of-repos-on-your-platform-66c52583
+- id: x402-in-a-nutshell
+  title: x402 in a Nutshell
+  short_title: x402 in a Nutshell
+  author: Cloudflare
+  author_note: From posts by Will Allen, Cam Whiteside, Rohin Lohe, Steve James, Justin Ridgely, and Will Papper.
+  content_mode: in_a_nutshell
+  source_ids:
+  - launching-the-x402-foundation-with-coinbase-and-25f85626
+  - announcing-the-monetization-gateway-charge-for-a-cb51fdc1
+  rationale: One piece covering the x402 protocol for machine-to-machine payments, from the foundation launch with Coinbase to the Monetization Gateway that charges for any resource at the edge.
