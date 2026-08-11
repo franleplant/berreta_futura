@@ -17,7 +17,7 @@ format:
 art_direction_path: art-directions/story-led-boy-and-robot.yaml
 cover:
   headline: Payment Required
-  art_path: editions/006/art/rounds/2026-08-11T11-58-51/cover-toll-monolith-coin-v3.png
+  art_path: editions/006/art/rounds/2026-08-11T11-58-51/cover-mended-chain-link-v2.png
   deck: Actors, Durable Objects, self-healing pipelines, x402, and superintelligence for every pocket
   back_text: 'HTTP has carried a status code for money since the nineties. Nobody agreed what
     it should say, so a billion times a day a server answers Payment Required and nothing
@@ -72,7 +72,7 @@ articles:
   - durable-objects-easy-fast-correct-choose-three-e5ada0af
   manuscript: editions/006/articles/durable-objects-easy-fast-correct-choose-three.md
   author_note: Kenton Varda continues his Durable Objects story on the Cloudflare blog.
-  tail_art_path: editions/006/art/rounds/2026-08-11T11-16-00/tail-choose-three-v1.png
+  tail_art_path: editions/006/art/rounds/2026-08-11T11-16-00/tail-choose-three-v3.png
 - id: run-ci-cd-for-millions-of-repos-on-your-platform
   title: A CI Pipeline Is Just a Workflow
   author: André Venceslau, Mia Malden, Tomáš Hobza
@@ -106,7 +106,7 @@ articles:
   manuscript: editions/006/articles/x402-in-a-nutshell.md
   author_note: From posts by Will Allen, Cam Whiteside, Rohin Lohe, Steve James, Justin Ridgely,
     and Will Papper.
-  tail_art_path: editions/006/art/rounds/2026-08-11T11-16-00/tail-x402-v5.png
+  tail_art_path: editions/006/art/rounds/2026-08-11T11-16-00/tail-x402-v6.png
 - id: the-future-is-for-everyone
   title: The Future is for Everyone
   author: Mark Zuckerberg
@@ -125,10 +125,12 @@ articles:
   tail_art_path: editions/006/art/rounds/2026-08-11T11-16-00/tail-future-everyone-v2.png
 closing_plates:
 - title: The Lamplighters' Wall
-  art_path: editions/006/art/rounds/2026-08-11T11-16-00/closing-lamplighters-wall-v3.png
+  art_path: editions/006/art/rounds/2026-08-11T11-16-00/closing-lamplighters-wall-v2.png
 - title: The Night Sorting Tower
-  art_path: editions/006/art/rounds/2026-08-11T00-39-07/closing-night-sorting-tower-v1.png
+  art_path: editions/006/art/rounds/2026-08-11T00-39-07/closing-night-sorting-tower-v3.png
 - title: The Toll Bridge at Dawn
-  art_path: editions/006/art/rounds/2026-08-11T00-39-07/closing-toll-bridge-dawn-v1.png
+  art_path: editions/006/art/rounds/2026-08-11T00-39-07/closing-toll-bridge-dawn-v2.png
+- title: The Greenhouse of Domes
+  art_path: editions/006/art/rounds/2026-08-11T00-39-07/closing-greenhouse-of-domes-v1.png
 editorial: manuscript/editorial.md
 tail_art_fit: contain
