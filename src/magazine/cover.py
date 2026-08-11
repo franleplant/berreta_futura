@@ -226,6 +226,11 @@ class CoverCompiler:
         fonts = Path(__file__).with_name("assets") / "fonts" / "inter"
         self.regular = _FontOutliner(fonts / "Inter-Regular.ttf")
         self.bold = _FontOutliner(fonts / "Inter-Bold.ttf")
+        # The headline sets a true condensed display face; the wordmark and
+        # small print stay on Inter. Anton needs no artificial squeeze.
+        self.display = _FontOutliner(
+            Path(__file__).with_name("assets") / "fonts" / "anton" / "Anton-Regular.ttf"
+        )
         serif = Path(__file__).with_name("assets") / "fonts" / "source-serif-4"
         self.serif = _FontOutliner(serif / "SourceSerif4SmText-Regular.ttf")
 
@@ -723,13 +728,13 @@ class CoverCompiler:
             if len(words) >= 2:
                 for split in range(1, len(words)):
                     pair = (" ".join(words[:split]), " ".join(words[split:]))
-                    widths = tuple(self.bold.measure(line, size=size) for line in pair)
-                    if max(widths) <= width / .795:
+                    widths = tuple(self.display.measure(line, size=size) for line in pair)
+                    if max(widths) <= width:
                         candidates.append((abs(widths[0] - widths[1]), pair))
             if candidates:
                 lines = list(min(candidates, key=lambda item: item[0])[1])
             else:
-                lines = self._wrap(value, self.bold, size, width / .795)
+                lines = self._wrap(value, self.display, size, width)
             if len(lines) <= 3:
                 break
             size -= .5
@@ -744,22 +749,21 @@ class CoverCompiler:
         headline = self.design["headline"]
         lines, size = self._headline_layout(value, described_as=text)
         baseline = float(headline["top"]) + size
-        leading = size * .78
+        # Anton's caps run taller per point than the Inter this leading was
+        # first tuned for; .78 collides the stacked lines.
+        leading = size * .97
         colors = (str(self.colors["ink"]), str(self.colors["violet"]), str(self.colors["ink"]))
         paths = []
         for index, line in enumerate(lines):
-            line_size = 28.0 if index % 2 else size
+            line_size = size * .965 if index % 2 else size
             paths.append(
-                self.bold.outline(
+                self.display.outline(
                     line,
                     x=float(headline["x"]) + (23 if index % 2 else -.65),
                     baseline=baseline + (1 if index % 2 else 0),
                     size=line_size,
                     fill=colors[index],
-                    horizontal_scale=80.9 if index % 2 else 79.83,
-                    tracking=-1.35,
-                    stroke=colors[index] if index % 2 == 0 else None,
-                    stroke_width=.09 if index % 2 == 0 else 0,
+                    tracking=.2,
                 ).markup
             )
             baseline += leading

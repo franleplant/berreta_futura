@@ -24,6 +24,13 @@
  * system font lookups: the fallback stacks below are a courtesy for the
  * seconds before the faces arrive, not an alternative repertoire. */
 @font-face {
+  font-family: "Anton";
+  src: url(fonts/anton/Anton-Regular.ttf) format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
   font-family: "Inter";
   src: url(fonts/inter/Inter-Regular.ttf) format("truetype");
   font-weight: 400;
@@ -252,11 +259,11 @@ code {
   margin: 0 0 clamp(1.75rem, 5vw, 3rem);
 }
 .cover-headline {
-  font-family: "Inter", system-ui, sans-serif;
-  font-weight: 700;
+  font-family: "Anton", "Inter", system-ui, sans-serif;
+  font-weight: 400;
   font-size: clamp(2rem, 6.5vw, 3.4rem);
   line-height: 0.98;
-  letter-spacing: -0.03em;
+  letter-spacing: 0.01em;
   text-transform: uppercase;
   margin: 0 0 clamp(2rem, 6vw, 3rem);
   hyphens: manual;
