@@ -7,7 +7,7 @@ content_mode: in_a_nutshell
 label: IN A NUTSHELL
 ---
 
-**The thirty second version.** Threads are hard because they share memory, and shared memory is where the bugs breed. The actor model deletes the sharing. An actor is a small piece of code with a private state and an address. It never reaches into another actor. It sends a message instead. Messages wait in a mailbox and are handled one at a time, so no lock is needed and nothing blocks. On receiving a message an actor may do three things: create actors, send messages, and decide what its state will be for the next message. That is the whole vocabulary. When an actor breaks, its parent decides what happens next, usually a restart. And since the only contract is a message and an address, an actor on another machine is no different from one in this process.
+Threads are hard because they share memory, and shared memory is where the bugs breed. The actor model deletes the sharing. An actor is a small piece of code with a private state and an address. It never reaches into another actor. It sends a message instead. Messages wait in a mailbox and are handled one at a time, so no lock is needed and nothing blocks. On receiving a message an actor may do three things: create actors, send messages, and decide what its state will be for the next message. That is the whole vocabulary. When an actor breaks, its parent decides what happens next, usually a restart. And since the only contract is a message and an address, an actor on another machine is no different from one in this process.
 
 ## One clerk
 

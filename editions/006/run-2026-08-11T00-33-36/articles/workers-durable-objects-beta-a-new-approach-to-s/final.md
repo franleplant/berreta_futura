@@ -5,7 +5,7 @@ content_mode: article
 label: ARTICLE
 ---
 
-**Thirty seconds:** We launched Workers in 2017 on the bet that code at the edge could be cheaper and simpler than code in a datacenter. Isolates killed the cold start. Workers KV gave us storage, but eventually consistent storage, which is the wrong tool when a value changes often and the change must be seen everywhere at once. What remained impossible on the edge was strong consistency and live coordination between clients. Durable Objects supply both. Each object is an instance of a class you write, with a globally unique ID, a private slab of disk beside it, and exactly one location in the world at any moment. Messages addressed to that ID all land in the same place. That is the whole idea.
+We launched Workers in 2017 on the bet that code at the edge could be cheaper and simpler than code in a datacenter. Isolates killed the cold start. Workers KV gave us storage, but eventually consistent storage, which is the wrong tool when a value changes often and the change must be seen everywhere at once. What remained impossible on the edge was strong consistency and live coordination between clients. Durable Objects supply both. Each object is an instance of a class you write, with a globally unique ID, a private slab of disk beside it, and exactly one location in the world at any moment. Messages addressed to that ID all land in the same place. That is the whole idea.
 
 ## What the three words mean
 
