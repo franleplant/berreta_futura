@@ -78,12 +78,12 @@ def package_release(
     # Three impositions of one block: the single-stock all-in-one that has always
     # shipped, plus the bindery split -- interior text pages and the cover wrap as
     # separate signatures, so the wrap can go on heavier stock.
-    booklet = impose_a5_on_a4(reader, destination / "home" / "booklet-a4.pdf")
+    booklet = impose_a5_on_a4(reader, destination / "booklet-a4.pdf")
     interior_booklet = impose_a5_on_a4(
-        reader, destination / "home" / "booklet-a4-interior.pdf", section="interior"
+        reader, destination / "booklet-a4-interior.pdf", section="interior"
     )
     cover_booklet = impose_a5_on_a4(
-        reader, destination / "home" / "booklet-a4-cover.pdf", section="cover"
+        reader, destination / "booklet-a4-cover.pdf", section="cover"
     )
     # The manifest is written as soon as the PDFs it describes exist, *before*
     # the render critic runs: the critic reads the edition's declared layout
@@ -117,7 +117,7 @@ def package_release(
             row["code"] for row in render_report["issues"] if row["severity"] == "error"
         )
         raise ValidationError(f"Render critic rejected {language} reader: {codes}")
-    instructions = destination / "home" / "printing-instructions.md"
+    instructions = destination / "booklet-a4-printing-instructions.md"
     instructions.write_text(
         _printing_instructions(
             language,

@@ -663,8 +663,10 @@ pub fn run(
         inputs: staging.rows,
     };
 
+    // The languages sit directly under the render dir (render-<stamp>/en/...),
+    // beside request.json; the old out/ nesting carried nothing.
     let run_dir = render_dir;
-    let out_dir = run_dir.join("out");
+    let out_dir = run_dir.clone();
     fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
     let request_path = run_dir.join("request.json");
     fs::write(&request_path, serde_json::to_string_pretty(&request)?)
