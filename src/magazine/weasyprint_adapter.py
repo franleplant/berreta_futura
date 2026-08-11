@@ -116,27 +116,32 @@ def _reader_y_points(css_top_points: float, height_points: float) -> float:
 # reader's reproduced -- two of its rules are deliberately departed from, both
 # measured on edition 003, and the departures are the point:
 #
-# ``_TAIL_ORNAMENT_FOOT_INSET`` WAS 24 AND IS 0: the editor's call on edition
-# 006 (2026-08-11), where the inset plus the 96pt floor refused tails on last
-# pages with real room (66.8pt on the actor piece's p7).  The band's foot now
-# sits on the live-area frame line itself -- the same bottom datum plate art
+# THE TAIL IS ONE SIZE, the editor's ruling on edition 006 (2026-08-11): every
+# printed tail is the art at its natural size across the full 325pt measure
+# (``_tail_strip_height``: measure x raster aspect, so the direction's 3:1
+# strips all print identically at ~108pt), it prints where that fixed strip
+# fits below the end mark, and it is dropped whole where it does not.  The
+# band never scales to its room: the old fill-the-room rule printed the same
+# motif at 90pt on one page and 196pt on another and centred the contained art
+# in the surplus, which read as arbitrary padding.  Whatever room exceeds the
+# strip is honest white space above it, never below.
+#
+# ``_TAIL_ORNAMENT_FOOT_INSET`` WAS 24 AND IS 0, the same ruling: the band's
+# foot sits on the live-area frame line itself -- the bottom datum plate art
 # and figures are measured to -- so a printed tail's bottom border aligns with
 # the filler art's instead of floating a margin above it.  The folio's chrome
 # lives below the frame line and is not crowded.
-# ``_TAIL_ORNAMENT_ENDMARK_CLEARANCE`` is the reader's own and is unchanged:
-# the band never crowds the end mark's baseline above it.  Together they bound
-# the *room* -- ``_end_mark_baseline - 31`` down to ``frame_bottom`` -- and the
-# room is what every decision below is made on.
 #
-# ``_TAIL_ORNAMENT_MIN_HEIGHT`` WAS 96 AND IS 72, the same editor's call. The
-# 96 floor was the render critic's void bar (``VOID_MIN_HEIGHT_POINTS``): the
-# argument ran that a room smaller than a flaggable void needs no ornament.
-# The editor rejected the argument's conclusion -- a declared tail that fits
-# should print, whether or not its absence would read as a defect -- so the
-# floor is now only what keeps a 3:1 strip from printing as a sliver.
-# Wherever the open room under an article could read as dead paper, the
-# declared motif claims it, and a tighter ending than that is an article
-# honestly ending, not a slot.
+# ``_TAIL_ORNAMENT_ENDMARK_CLEARANCE`` WAS 31 AND IS 12, the same ruling: with
+# the strip's height fixed, the old clearance was refusing pages whose white
+# visibly holds the strip (the actor piece's p7 offers 121.8pt from end-mark
+# baseline to frame line; 31 + 108.3 misses it, 12 + 108.3 fits it with air to
+# spare).  Twelve points keeps the art off the end mark's baseline and nothing
+# more.
+#
+# ``_TAIL_ORNAMENT_MAX_HEIGHT`` still caps a freak tall raster at 214 so a
+# mis-declared square can never print as a poster; the direction's 3:1 strips
+# never reach it.
 # Measured on edition 003 -- after the proportional opener field below moved
 # the flow, so these are the rooms the shipped ledger actually records -- the
 # six articles' rooms come out -42.6 / -27.9 / -22.2 / 154.2 / 335.1 / 410.9pt
@@ -160,10 +165,9 @@ def _reader_y_points(css_top_points: float, height_points: float) -> float:
 # into two balanced margins that read as the band's own setting, the way a
 # plate's art centres its overflow.  An uncapped band fills its room exactly and
 # the question does not arise.
-_TAIL_ORNAMENT_MIN_HEIGHT = 72.0
 _TAIL_ORNAMENT_MAX_HEIGHT = 214.0
 _TAIL_ORNAMENT_FOOT_INSET = 0.0
-_TAIL_ORNAMENT_ENDMARK_CLEARANCE = 31.0
+_TAIL_ORNAMENT_ENDMARK_CLEARANCE = 12.0
 
 _PLATE_ANCHOR_TAGS = frozenset({"h1", "h2", "h3"})
 _LANDSCAPE_PLATE_LAYOUTS = frozenset({"landscape_plate", "landscape_plate_after"})
@@ -1193,8 +1197,8 @@ def _render_to_signature(
 
     Two of the reader's placement rules read the finished page rather than the
     content: the closing-plate count comes from where the body stopped, and an
-    article's tail ornament prints only when its last page really has
-    ``_TAIL_ORNAMENT_MIN_HEIGHT`` of open space below the end mark.  Neither
+    article's tail ornament prints only when its last page really holds the
+    strip's one ``_tail_strip_height`` below the end mark.  Neither
     question can be asked in CSS, so this renders a probe pass carrying
     neither, measures it, and renders the answer.  A third pass then has nothing
     left to change: closing plates land after the body and the ornament is out
@@ -3599,14 +3603,39 @@ def _tail_art_room(flow_bottom: float) -> float:
     return top - bottom
 
 
+def _tail_strip_pixels(tail_art: Any) -> tuple[int, int]:
+    """The declared raster's pixel dimensions, or a loud refusal."""
+    try:
+        from PIL import Image
+
+        with Image.open(tail_art) as image:
+            return (int(image.width), int(image.height))
+    except (OSError, ValueError) as exc:
+        raise ValidationError(
+            f"Article tail art needs a readable raster source: {tail_art}"
+        ) from exc
+
+
+def _tail_strip_height(pixels: tuple[int, int]) -> float:
+    """The one height a tail strip prints at: its art across the full measure.
+
+    The editor's one-size ruling (argued at the ornament constants): the strip
+    is the raster's aspect over the ``_CODE_MEASURE_POINTS`` band, so every
+    tail cut to the direction's 3:1 prints identically, capped only against a
+    freak tall raster.
+    """
+    return min(
+        _CODE_MEASURE_POINTS * pixels[1] / pixels[0],
+        _TAIL_ORNAMENT_MAX_HEIGHT,
+    )
+
+
 def _measured_tail_art(article: Any, flow_bottom: float) -> TailBand | None:
     """The band this article's tail ornament prints as, or nothing.
 
-    The rules and their numbers are argued at the constants themselves (see
-    ``_TAIL_ORNAMENT_MIN_HEIGHT``): the band prints only where its room clears
-    the floor a full-measure void starts reading as dead sheet at, fills that
-    room exactly when the 214pt cap does not bite, and stands centred in it --
-    half the surplus below, half above -- when it does.
+    One size, fit or drop (argued at the ornament constants): the strip's
+    height is ``_tail_strip_height``, it prints exactly there when the room
+    holds it, and it is dropped whole when the room does not.
 
     The 300 ppi floor is the reader's own (render.py:1985-1997): the committed
     raster must resolve at the crop-filled 325pt-wide band it prints across,
@@ -3614,27 +3643,9 @@ def _measured_tail_art(article: Any, flow_bottom: float) -> TailBand | None:
     """
     if getattr(article, "tail_art", None) is None:
         return None
-    available = _tail_art_room(flow_bottom)
-    if available < _TAIL_ORNAMENT_MIN_HEIGHT:
-        return None
-    height = min(available, _TAIL_ORNAMENT_MAX_HEIGHT)
-    try:
-        from PIL import Image
-
-        with Image.open(article.tail_art) as image:
-            pixels = (int(image.width), int(image.height))
-    except (OSError, ValueError) as exc:
-        raise ValidationError(
-            f"Article tail art needs a readable raster source: {article.tail_art}"
-        ) from exc
-    # The band is cut to the cloth: a raster short of the 214pt cap at 300 ppi
-    # prints as the tallest band it *can* fill at the floor, centred in the
-    # ornament's room like any max-capped band, instead of being refused.  A
-    # raster too short to reach even the minimum band height at the floor is
-    # dropped -- the ledger's business, the same as insufficient room.
-    affordable = (pixels[1] / _MIN_FIGURE_PPI) * 72.0
-    height = min(height, affordable)
-    if height < _TAIL_ORNAMENT_MIN_HEIGHT:
+    pixels = _tail_strip_pixels(article.tail_art)
+    height = _tail_strip_height(pixels)
+    if _tail_art_room(flow_bottom) < height:
         return None
     effective_ppi = min(
         pixels[0] / (_CODE_MEASURE_POINTS / 72),
@@ -3698,11 +3709,12 @@ def _tail_art_ledger(
             row["height_points"] = round(band.height, 4)
         elif declared:
             room = _tail_art_room(_article_flow_bottom(document, article.id))
+            strip = _tail_strip_height(_tail_strip_pixels(article.tail_art))
             row["drop_reason"] = (
                 f"the article's last page leaves {room:.1f}pt of open tail room "
-                f"between the end mark's {_TAIL_ORNAMENT_ENDMARK_CLEARANCE:.0f}pt "
-                f"clearance and the {_TAIL_ORNAMENT_FOOT_INSET:.0f}pt foot inset; "
-                f"the ornament prints in {_TAIL_ORNAMENT_MIN_HEIGHT:.0f}pt or more"
+                f"below the end mark's {_TAIL_ORNAMENT_ENDMARK_CLEARANCE:.0f}pt "
+                f"clearance; the strip prints at its one {strip:.1f}pt size or "
+                f"not at all"
             )
         rows.append(row)
     return rows
