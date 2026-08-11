@@ -1,0 +1,707 @@
+model: sonnet
+checked: 2026-08-11T01-49-44
+results:
+- file: closing-greenhouse-of-domes-v1.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal top, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt joints/hands/feet, and single cobalt-tipped antenna all match.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut-brown low side ponytail with straight bangs and pink pinafore dress match, cardigan is a licensed wardrobe addition.
+- file: closing-greenhouse-of-domes-v2.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present and correct.
+  - name: Maro
+    verdict: off_model
+    reason: A rainbow-striped decal crosses the chest and shoulder where a plain cobalt panel should be, replacing the specified cobalt side-panel coloring.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair in a low side ponytail with bangs, rose-pink pinafore over white top, white socks, and muted-green shoes all match.
+- file: closing-greenhouse-of-domes-v3.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black face screen with two curved white eyes, cobalt panels/joints/mitten hands/feet, single antenna with cobalt ball tip, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair in one low side ponytail with straight bangs, rose-pink pinafore over white top, white socks, and muted-green flat shoes all match.
+- file: closing-greenhouse-of-domes-v4.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body with black screen face, curved white eyes, cobalt joints and mitten hands, single antenna with cobalt ball tip, and coral tool pouch all present.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair in a low side ponytail with bangs, rose-pink pinafore over a white top, white socks, and muted-green shoes all present.
+- file: closing-lamplighters-wall-v1.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair and big round glasses are both present and correct.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt antenna ball, joints, and coral pouch all match.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: closing-lamplighters-wall-v2.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers are all present as specified.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/joints/mitten hands/feet, short cobalt-tipped antenna, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image, only Pedro on the ladder and Maro at its base.
+- file: closing-lamplighters-wall-v3.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match on the ladder.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/hands/feet, single antenna with cobalt ball tip, and coral tool pouch all present.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears anywhere in the image.
+- file: closing-lamplighters-wall-v4.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal top, khaki shorts, and red sneakers all match the definition.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt limbs and antenna tip, and coral waist pouch all match the definition.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: closing-night-sorting-tower-v1.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, red sneakers all present.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/joints/feet, single cobalt-tipped antenna, coral tool pouch, mitten hands, waist-high proportions all match.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair in one low side ponytail with bangs, rose-pink pinafore over white top, white socks, muted-green flats, no glasses or twin pigtails.
+- file: closing-night-sorting-tower-v2.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present as specified.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt joints and hands, single antenna with cobalt ball tip, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut-brown hair in a low side ponytail with bangs, rose-pink pinafore over white top, white socks, and green flat shoes all match the definition.
+- file: closing-night-sorting-tower-v3.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/joints/mitten hands, single antenna with cobalt ball tip, and coral tool pouch all present.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair in a low side ponytail with bangs, rose-pink pinafore over white top, white socks, and green flat shoes all present.
+- file: closing-night-sorting-tower-v4.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/joints/mitten hands/feet, single cobalt-tipped antenna, and coral tool pouch all present.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair in a low side ponytail with bangs, rose-pink pinafore over white top, white socks, and green flats all present.
+- file: closing-toll-bridge-dawn-v1.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair and big round glasses match the definition; added scarf is licensed wardrobe and not judged.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black face screen with two curved white eyes, cobalt panels/antenna ball tip, coral tool pouch, and mitten hands all match.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut-brown hair in a single low side ponytail with straight bangs and no glasses match the definition.
+- file: closing-toll-bridge-dawn-v2.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal top, khaki shorts, and red sneakers all present; the added scarf is a licensed wardrobe accent, not an identity deviation.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels and joints, mitten hand on the rail, rounded feet, short antenna with cobalt ball tip, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair in one low side ponytail with straight bangs, rose-pink pinafore with pocket over a white top, white socks, and green flat shoes all match, with no pigtails, hat, or glasses.
+- file: closing-toll-bridge-dawn-v3.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Both instances show black tousled hair, round glasses, teal crew-neck, khaki shorts, and red sneakers as specified.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/joints, single cobalt-tipped antenna, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut-brown hair in a single low side ponytail with straight bangs matches the definition.
+- file: closing-toll-bridge-dawn-v4.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers are all present.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body with cobalt side panels, mitten hands, blue-tipped antenna, coral tool pouch, and curved white eyes on a black screen face all match.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair in a single low side ponytail with bangs, rose-pink pinafore over a white top, white socks, and muted-green shoes all match.
+- file: opener-actor-model-v1.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body with cobalt panels, mitten hands, rounded feet, single antenna with cobalt ball tip, coral tool pouch, and curved white eyes on a black screen face all match.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: opener-actor-model-v2.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, big round glasses, teal top, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt joints/hands/feet, single antenna with cobalt ball tip, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: opener-actor-model-v3.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: off_model
+    reason: The robot has cobalt mitten hands and antenna but lacks a coral tool pouch, showing an orange/red pouch instead and a visibly rounder head-to-body ratio with exposed round shoulder ball-joints rather than the defined shoulder joints.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: opener-actor-model-v4.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/joints/mitten hands/feet, one antenna with cobalt ball tip, and coral waist pouch all match.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: opener-choose-three-v1.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match the definition.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/limbs, mitten hands, single antenna with cobalt ball tip, and coral tool pouch all present.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: opener-choose-three-v2.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black face screen with two curved white eyes, cobalt panels/joints/mitten hands/feet, single cobalt-tipped antenna, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: opener-choose-three-v3.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all match the definition.
+  - name: Maro
+    verdict: off_model
+    reason: Antenna is straight with no cobalt ball tip, and hands are rounded mitts holding the scale rather than clearly separate mitten shapes but otherwise close; the antenna deviation is the clear off-model attribute.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character matching Flopaz's description appears in the image.
+- file: opener-choose-three-v4.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match the definition.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt joints/hands/feet, single antenna with cobalt ball tip, and coral tool pouch all match the definition.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: opener-ci-workflow-v1.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/joints/feet, single antenna with cobalt ball tip, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: opener-ci-workflow-v2.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black face screen with curved white eyes, cobalt panels/joints/mitten hands/feet, ball-tipped antenna, and coral tool pouch all present.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: opener-ci-workflow-v3.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt joints/hands/feet, single antenna with cobalt ball tip, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: opener-ci-workflow-v4.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all match the definition.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/joints/mitten hands/feet, short antenna with cobalt ball tip, and coral tool pouch are all present.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: opener-durable-objects-v1.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, red sneakers all present.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black face screen with two curved white eyes, cobalt panels/joints/mitten hands/feet, one antenna with cobalt ball tip, and coral tool pouch all present.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image, only Pedro and Maro.
+- file: opener-durable-objects-v2.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all match the definition.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black face screen with curved white eyes, cobalt panels/joints/hands/feet, single antenna with cobalt ball tip, and coral tool pouch all match the definition.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: opener-durable-objects-v3.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black face screen with two curved white eyes, cobalt panels/joints/mitten hands/feet, single cobalt-tipped antenna, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: opener-durable-objects-v4.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: off_model
+    reason: The face screen shows a single curved n-shaped mark instead of two friendly curved white eyes.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: opener-future-everyone-v1.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match the definition.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/joints/mitten hands/feet, single antenna with cobalt ball tip, and coral tool pouch are all present.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair in a low side ponytail with straight bangs, rose-pink pinafore over a white top, white socks, and muted-green shoes all match the definition.
+- file: opener-future-everyone-v2.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/joints/hands/feet, single ball-tip antenna, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair in a single low side ponytail with straight bangs, rose-pink pinafore over a white top, white socks, and muted-green shoes all match.
+- file: opener-future-everyone-v3.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt joints/feet, antenna with cobalt ball tip, and coral tool pouch all present.
+  - name: Flopaz
+    verdict: on_model
+    reason: Brown hair in a low side ponytail with bangs, rose-pink pinafore over white top, white socks, and muted-green flats all match, no glasses or pigtails.
+- file: opener-future-everyone-v4.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt joints/mitten hands/feet, single antenna with cobalt ball tip, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair in a low side ponytail with straight bangs, rose-pink pinafore with side pocket over white top, white socks, and muted-green flats all match.
+- file: opener-x402-v1.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: off_model
+    reason: Body sits on two rounded wheel-like feet instead of the defined mitten hands and rounded feet, giving a wheeled rather than standing look.
+  - name: Flopaz
+    verdict: absent
+    reason: No character matching Flopaz's description appears in the image.
+- file: opener-x402-v2.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/joints/hands/feet, single antenna with cobalt ball tip, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: absent
+    reason: No character matching Flopaz's design appears; the girl is not present in the image.
+- file: opener-x402-v3.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers are all present as specified.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/joints/mitten hands, single antenna with cobalt ball tip, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: absent
+    reason: No character matching Flopaz's description appears in the image.
+- file: opener-x402-v4.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match the canonical design.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body with cobalt panels and antenna ball, black screen face with curved white eyes, mitten hands, and coral tool pouch all match the canonical design.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: tail-actor-model-v1.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, and face match the identity anchors, with wardrobe drift toward a satchel and cross-body bag permitted under the tail license.
+  - name: Maro
+    verdict: on_model
+    reason: Black screen face with two curved white eyes, rounded off-white body, cobalt panels/joints/feet, single antenna with cobalt ball tip, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: tail-actor-model-v2.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, and face match canon; wardrobe (hoodie, cargo pants) is licensed tail drift and red sneakers remain.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/joints/feet, antenna with cobalt tip, and coral tool pouch all match canon.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: tail-actor-model-v3.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair and round glasses match the identity anchor, with wardrobe/mood variation licensed for this tail.
+  - name: Maro
+    verdict: on_model
+    reason: Rounded off-white body, black screen face with two curved white eyes, cobalt limbs, antenna, and tool pouch all match the identity anchor.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: tail-actor-model-v4.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body with black screen face, two curved white eyes, cobalt panels/limbs, cobalt-tipped antenna, and coral tool pouch all present.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: tail-choose-three-v1.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match canon.
+  - name: Maro
+    verdict: on_model
+    reason: Black screen face with two curved white eyes, rounded off-white body, cobalt panels/joints/hands/feet, single antenna with cobalt ball tip, and coral tool pouch all present.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair in a low side ponytail with straight bangs, rose-pink pinafore over a white top, white socks, and green flats all match canon, with no glasses.
+- file: tail-choose-three-v2.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt limbs, antenna with cobalt ball tip, and coral tool pouch all present.
+  - name: Flopaz
+    verdict: off_model
+    reason: Hair reads as a loose shoulder-length bob with bangs rather than the defined chestnut low side ponytail.
+- file: tail-choose-three-v3.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/joints/mitten hands/feet, single antenna with cobalt ball tip, and coral tool pouch all present.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair in a single low side ponytail with straight bangs, rose-pink pinafore over white top, white socks, and muted-green flats all present.
+- file: tail-choose-three-v4.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt joints/hands/feet, antenna with cobalt tip, and coral tool pouch all present.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair in a low side ponytail with straight bangs is intact, consistent with the identity anchors under the tail license.
+- file: tail-ci-workflow-v1.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair and round glasses match the identity anchor; hoodie wardrobe is licensed drift for a tail.
+  - name: Maro
+    verdict: on_model
+    reason: Rounded off-white body, black screen face with two curved white eyes, cobalt panels/limbs, ball-tipped antenna, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: tail-ci-workflow-v2.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, and face match; hoodie and long pants over shorts are licensed wardrobe drift for the quieter tail register.
+  - name: Maro
+    verdict: on_model
+    reason: Rounded off-white body, black screen face with two curved white eyes, cobalt side panels and antenna ball tip, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: tail-ci-workflow-v3.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, and face match the identity anchor; wardrobe (hoodie) and drink prop are licensed tail-register drift.
+  - name: Maro
+    verdict: on_model
+    reason: Rounded off-white body, black screen face with two curved white eyes, cobalt panels/antenna, mitten hands, and coral tool pouch all present.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character with chestnut side ponytail and bangs appears anywhere in the image.
+- file: tail-ci-workflow-v4.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, and teal top match; long khaki trousers replace canon shorts, which the tail license permits.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/joints/feet, single antenna with cobalt ball tip, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: tail-durable-objects-v1.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match the canon design.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body with black screen face, two curved white eyes, cobalt panels/hands/feet, single antenna with cobalt ball tip, and coral tool pouch all match the canon design.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: tail-durable-objects-v2.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers are all present.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body with black screen face, two curved white eyes, cobalt panels/joints/mitten hands/feet, single cobalt-tipped antenna, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: tail-durable-objects-v3.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck, khaki shorts, red sneakers all present.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/joints/mitten hands/feet, one antenna with cobalt ball tip, and coral tool pouch all present.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image.
+- file: tail-durable-objects-v4.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal top, khaki shorts (rolled), and red sneakers all present, consistent with the tail license's slightly older, painterly rendering.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/hands/feet, single cobalt-tipped antenna, and coral tool pouch are all present.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character with a chestnut side ponytail and bangs appears in the image.
+- file: tail-future-everyone-v1.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, and face all match canon, with wardrobe unchanged.
+  - name: Maro
+    verdict: on_model
+    reason: Black screen face with two curved white eyes, rounded cobalt-trimmed silhouette, and cobalt-tipped antenna are all present.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair worn in a low side ponytail with straight bangs matches canon.
+- file: tail-future-everyone-v2.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body with black screen face, two curved white eyes, cobalt joints/panels, mitten hands, antenna with cobalt ball tip, and coral tool pouch all present.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair in a low side ponytail with straight bangs, rose-pink pinafore over white top, white socks, and muted-green shoes all present.
+- file: tail-future-everyone-v3.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair and round glasses are present and match the identity anchor.
+  - name: Maro
+    verdict: on_model
+    reason: Black screen face with two curved white eyes, rounded silhouette, and cobalt-tipped antenna all match the identity anchor.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair worn in a low side ponytail with straight bangs matches the identity anchor.
+- file: tail-future-everyone-v4.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match canon.
+  - name: Maro
+    verdict: off_model
+    reason: The raised hand shows an articulated pointing finger rather than the canon rounded mitten hand shape.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut low side ponytail with straight bangs, rose-pink pinafore with side pocket over a white top, white socks, and muted-green shoes all match canon.
+- file: tail-x402-v1.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, and face are intact; sweater and long pants reflect the licensed seasonal wardrobe drift, not a deviation.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt limbs, antenna with cobalt ball tip, and coral tool pouch all present.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image, only Pedro, Maro, and background origami figures.
+- file: tail-x402-v2.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match canon.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt limbs and antenna tip, and coral tool pouch all match canon.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character appears in the image, only Pedro, Maro, and origami creatures.
+- file: tail-x402-v3.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers are all present as specified.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/joints/feet, one antenna with cobalt ball tip, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: absent
+    reason: No character matching Flopaz's design appears in the image.
+- file: tail-x402-v4.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top under jacket, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/limbs/antenna ball, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: absent
+    reason: No girl character with chestnut side ponytail appears in the image.

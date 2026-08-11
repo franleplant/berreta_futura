@@ -1,0 +1,133 @@
+# Edition 6 — working spec. Title, subtitle, cover copy, and publication
+# date are placeholders for the editor; article order is the editorial
+# reading order (vocabulary first, the essay as closer).
+# ART SELECTIONS ARE PROVISIONAL: picked overnight by Claude (favoring
+# cast-check-clean variants) only so the check PDF could render complete.
+# The editor's real selection happens in editions/006/art/showcase.html;
+# re-point any path here to change a pick. Round: art/rounds/2026-08-11T00-39-07.
+id: '006'
+issue_number: 6
+title: Small Rooms, Named
+subtitle: Six reports on actors, objects with disks, paid requests, and who holds the keys
+publication_date: '2026-08-11'
+status: draft
+format:
+  article_opener: illustrated_paper_spots_v1
+art_direction_path: art-directions/story-led-boy-and-robot.yaml
+cover:
+  headline: Small Rooms, Named
+  art_path: editions/006/art/rounds/2026-08-11T00-39-07/cover-art-directed-paper-rooms-v1.png
+  deck: Six reports on actors, objects with disks, paid requests, and who holds the keys
+  back_text: 'Every system in this issue makes the same move. Take the thing you want to hold
+    still. Make it small. Give it a name: an actor with a mailbox, an object with its own disk,
+    a request that pays at the door. The issue closes with the same move proposed for
+    intelligence itself: many small rooms, no single seat.'
+articles:
+- id: the-actor-model-in-a-nutshell
+  title: The Actor Model in a Nutshell
+  author: The Editors
+  opener_art:
+    path: editions/006/art/rounds/2026-08-11T00-39-07/opener-actor-model-v1.png
+    alt_text: Pedro posts a folded note through the letter slot of one of five separate huts while Maro carries more notes between them.
+    credit: Original illustration for this edition, art direction Story-Led Boy and Robot, Gentle Print Color.
+  short_title: The Actor Model
+  display_emphasis: Actor Model
+  opener_variant: stepped_title
+  content_mode: in_a_nutshell
+  source_ids:
+  - the-actor-model-in-10-minutes-47394faa
+  - how-the-actor-model-meets-the-needs-of-modern-di-ebf5a52d
+  - introduction-to-the-actor-model-using-real-actor-2d2aad66
+  manuscript: editions/006/articles/the-actor-model-in-a-nutshell.md
+  tail_art_path: editions/006/art/rounds/2026-08-11T00-39-07/tail-actor-model-v4.png
+- id: workers-durable-objects-beta-a-new-approach-to-s
+  title: 'Durable Objects: A New Approach to Stateful Serverless'
+  author: Kenton Varda
+  opener_art:
+    path: editions/006/art/rounds/2026-08-11T00-39-07/opener-durable-objects-v1.png
+    alt_text: Maro lifts one small lit room, desk and spinning disk inside, out of a glass globe full of such rooms while Pedro leans in to look.
+    credit: Original illustration for this edition, art direction Story-Led Boy and Robot, Gentle Print Color.
+  short_title: Durable Objects
+  display_emphasis: Durable
+  opener_variant: split_axis
+  content_mode: article
+  source_ids:
+  - workers-durable-objects-beta-a-new-approach-to-s-1a040568
+  manuscript: editions/006/articles/workers-durable-objects-beta-a-new-approach-to-s.md
+  author_note: Kenton Varda writes on the Cloudflare blog.
+  tail_art_path: editions/006/art/rounds/2026-08-11T00-39-07/tail-durable-objects-v1.png
+- id: durable-objects-easy-fast-correct-choose-three
+  title: 'Easy, Fast, Correct: Choose Three'
+  author: Kenton Varda
+  opener_art:
+    path: editions/006/art/rounds/2026-08-11T00-39-07/opener-choose-three-v1.png
+    alt_text: Pedro lifts his hands away from a three-armed balance that is somehow perfectly level, with Maro steadying the third pan.
+    credit: Original illustration for this edition, art direction Story-Led Boy and Robot, Gentle Print Color.
+  short_title: Choose Three
+  display_emphasis: Correct
+  opener_variant: edge_medallion
+  content_mode: article
+  source_ids:
+  - durable-objects-easy-fast-correct-choose-three-e5ada0af
+  manuscript: editions/006/articles/durable-objects-easy-fast-correct-choose-three.md
+  author_note: Kenton Varda continues his Durable Objects story on the Cloudflare blog.
+  tail_art_path: editions/006/art/rounds/2026-08-11T00-39-07/tail-choose-three-v1.png
+- id: run-ci-cd-for-millions-of-repos-on-your-platform
+  title: A CI Pipeline Is Just a Workflow
+  author: André Venceslau, Mia Malden, Tomáš Hobza
+  opener_art:
+    path: editions/006/art/rounds/2026-08-11T00-39-07/opener-ci-workflow-v1.png
+    alt_text: A hook lifts a single derailed cart back onto a workshop rail while the rest of the line rolls on, watched by Pedro at the crank and Maro holding the spilled bolts.
+    credit: Original illustration for this edition, art direction Story-Led Boy and Robot, Gentle Print Color.
+  short_title: CI Pipeline
+  display_emphasis: CI
+  opener_variant: stepped_title
+  content_mode: article
+  source_ids:
+  - run-ci-cd-for-millions-of-repos-on-your-platform-66c52583
+  manuscript: editions/006/articles/run-ci-cd-for-millions-of-repos-on-your-platform.md
+  author_note: André Venceslau, Mia Malden, and Tomáš Hobza write on the Cloudflare blog.
+  tail_art_path: editions/006/art/rounds/2026-08-11T00-39-07/tail-ci-workflow-v1.png
+- id: x402-in-a-nutshell
+  title: x402 in a Nutshell
+  author: Cloudflare
+  opener_art:
+    path: editions/006/art/rounds/2026-08-11T00-39-07/opener-x402-v2.png
+    alt_text: A folded paper messenger drops a plain coin into a turnstile slot and the gate opens, while Pedro offers coins from a bowl and Maro watches from the wall.
+    credit: Original illustration for this edition, art direction Story-Led Boy and Robot, Gentle Print Color.
+  short_title: x402
+  display_emphasis: x402
+  opener_variant: split_axis
+  content_mode: in_a_nutshell
+  source_ids:
+  - launching-the-x402-foundation-with-coinbase-and-25f85626
+  - announcing-the-monetization-gateway-charge-for-a-cb51fdc1
+  manuscript: editions/006/articles/x402-in-a-nutshell.md
+  author_note: From posts by Will Allen, Cam Whiteside, Rohin Lohe, Steve James, Justin Ridgely,
+    and Will Papper.
+  tail_art_path: editions/006/art/rounds/2026-08-11T00-39-07/tail-x402-v2.png
+- id: the-future-is-for-everyone
+  title: The Future is for Everyone
+  author: Mark Zuckerberg
+  opener_art:
+    path: editions/006/art/rounds/2026-08-11T00-39-07/opener-future-everyone-v2.png
+    alt_text: On a dusk hillside Pedro and Flopaz hold their own small lanterns while Maro passes up a third, with many lanterns already rising overhead.
+    credit: Original illustration for this edition, art direction Story-Led Boy and Robot, Gentle Print Color.
+  short_title: For Everyone
+  display_emphasis: Everyone
+  opener_variant: edge_medallion
+  content_mode: article
+  source_ids:
+  - the-future-is-for-everyone-389f6799
+  manuscript: editions/006/articles/the-future-is-for-everyone.md
+  author_note: Mark Zuckerberg is the founder and chief executive of Meta.
+  tail_art_path: editions/006/art/rounds/2026-08-11T00-39-07/tail-future-everyone-v2.png
+closing_plates:
+- title: The Lamplighters' Wall
+  art_path: editions/006/art/rounds/2026-08-11T00-39-07/closing-lamplighters-wall-v1.png
+- title: The Night Sorting Tower
+  art_path: editions/006/art/rounds/2026-08-11T00-39-07/closing-night-sorting-tower-v1.png
+- title: The Toll Bridge at Dawn
+  art_path: editions/006/art/rounds/2026-08-11T00-39-07/closing-toll-bridge-dawn-v1.png
+editorial: manuscript/editorial.md
+tail_art_fit: contain
