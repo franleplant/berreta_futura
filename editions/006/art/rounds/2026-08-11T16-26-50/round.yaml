@@ -1,0 +1,52 @@
+edition: '006'
+dry_run: false
+generated:
+- brief: cover-seal-press-oxblood
+  variant: 1
+  file: cover-seal-press-oxblood-v1.png
+  ok: true
+- brief: cover-seal-press-oxblood
+  variant: 2
+  file: cover-seal-press-oxblood-v2.png
+  ok: true
+- brief: cover-seal-press-oxblood
+  variant: 3
+  file: cover-seal-press-oxblood-v3.png
+  ok: true
+- brief: cover-seal-press-oxblood
+  variant: 4
+  file: cover-seal-press-oxblood-v4.png
+  ok: true
+- brief: cover-one-at-a-time-throat
+  variant: 1
+  file: cover-one-at-a-time-throat-v1.png
+  ok: true
+- brief: cover-one-at-a-time-throat
+  variant: 2
+  file: cover-one-at-a-time-throat-v2.png
+  ok: true
+- brief: cover-one-at-a-time-throat
+  variant: 3
+  file: cover-one-at-a-time-throat-v3.png
+  ok: true
+- brief: cover-one-at-a-time-throat
+  variant: 4
+  file: cover-one-at-a-time-throat-v4.png
+  ok: true
+- brief: cover-star-into-the-pocket
+  variant: 1
+  file: cover-star-into-the-pocket-v1.png
+  ok: true
+- brief: cover-star-into-the-pocket
+  variant: 2
+  file: cover-star-into-the-pocket-v2.png
+  ok: true
+- brief: cover-star-into-the-pocket
+  variant: 3
+  file: cover-star-into-the-pocket-v3.png
+  ok: true
+- brief: cover-star-into-the-pocket
+  variant: 4
+  file: cover-star-into-the-pocket-v4.png
+  ok: true
+failures: 0
