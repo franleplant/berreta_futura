@@ -407,8 +407,19 @@ def render_manifest(request_path: Path, destination: Path) -> dict[str, Any]:
     if not request_path.is_file() or request_path.is_symlink():
         raise ValidationError(f"Render request is not a regular file: {request_path}")
     destination = _absolute_directory(destination, "destination")
-    if destination.exists() and any(destination.iterdir()):
-        raise ValidationError(f"Render destination must be empty: {destination}")
+    # The destination is the render dir itself, where the caller has already
+    # parked request.json beside the languages this writes; anything else
+    # present means a reused directory, still refused.
+    leftovers = [
+        p.name
+        for p in (destination.iterdir() if destination.exists() else ())
+        if p.name != "request.json"
+    ]
+    if leftovers:
+        raise ValidationError(
+            f"Render destination must be empty apart from request.json: "
+            f"{destination} holds {', '.join(sorted(leftovers))}"
+        )
     destination.mkdir(parents=True, exist_ok=True)
     request = _load_request(request_path)
     with tempfile.TemporaryDirectory(prefix="mag-engine-render-stage-") as temporary:

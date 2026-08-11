@@ -69,7 +69,7 @@ def main() -> None:
                 capture_output=True,
                 text=True,
             )
-            page = newest_render_dir(edition_dir) / "out" / "en" / "render-review" / "reader-pages" / "page-001.png"
+            page = newest_render_dir(edition_dir) / "en" / "render-review" / "reader-pages" / "page-001.png"
             dest = out_dir / f"{cand.stem}.png"
             dest.write_bytes(page.read_bytes())
             rows.append((cand, dest.name))
