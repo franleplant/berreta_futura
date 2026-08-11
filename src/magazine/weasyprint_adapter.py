@@ -116,21 +116,27 @@ def _reader_y_points(css_top_points: float, height_points: float) -> float:
 # reader's reproduced -- two of its rules are deliberately departed from, both
 # measured on edition 003, and the departures are the point:
 #
-# ``_TAIL_ORNAMENT_FOOT_INSET`` and ``_TAIL_ORNAMENT_ENDMARK_CLEARANCE`` are the
-# reader's own and are unchanged: the band never crowds the folio's chrome below
-# it and never crowds the end mark's baseline above it.  Together they bound the
-# *room* -- ``_end_mark_baseline - 31`` down to ``frame_bottom + 24`` -- and the
+# ``_TAIL_ORNAMENT_FOOT_INSET`` WAS 24 AND IS 0: the editor's call on edition
+# 006 (2026-08-11), where the inset plus the 96pt floor refused tails on last
+# pages with real room (66.8pt on the actor piece's p7).  The band's foot now
+# sits on the live-area frame line itself -- the same bottom datum plate art
+# and figures are measured to -- so a printed tail's bottom border aligns with
+# the filler art's instead of floating a margin above it.  The folio's chrome
+# lives below the frame line and is not crowded.
+# ``_TAIL_ORNAMENT_ENDMARK_CLEARANCE`` is the reader's own and is unchanged:
+# the band never crowds the end mark's baseline above it.  Together they bound
+# the *room* -- ``_end_mark_baseline - 31`` down to ``frame_bottom`` -- and the
 # room is what every decision below is made on.
 #
-# ``_TAIL_ORNAMENT_MIN_HEIGHT`` WAS 118 AND IS 96, and the number is not a
-# taste, it is the render critic's own: ``render_critic.VOID_MIN_HEIGHT_POINTS``
-# is the height at which a full-measure block of untouched paper stops reading
-# as typography and starts reading as dead sheet (96pt, calibrated there against
-# every honest and guilty void in edition 003).  An ornament floor above that
-# bar is self-defeating -- it refuses the motif in exactly the rooms big enough
-# to be mistaken for a defect -- so the floor *is* the bar: wherever the open
-# room under an article could read as dead paper, the declared motif claims it,
-# and a tighter ending than that is an article honestly ending, not a slot.
+# ``_TAIL_ORNAMENT_MIN_HEIGHT`` WAS 96 AND IS 72, the same editor's call. The
+# 96 floor was the render critic's void bar (``VOID_MIN_HEIGHT_POINTS``): the
+# argument ran that a room smaller than a flaggable void needs no ornament.
+# The editor rejected the argument's conclusion -- a declared tail that fits
+# should print, whether or not its absence would read as a defect -- so the
+# floor is now only what keeps a 3:1 strip from printing as a sliver.
+# Wherever the open room under an article could read as dead paper, the
+# declared motif claims it, and a tighter ending than that is an article
+# honestly ending, not a slot.
 # Measured on edition 003 -- after the proportional opener field below moved
 # the flow, so these are the rooms the shipped ledger actually records -- the
 # six articles' rooms come out -42.6 / -27.9 / -22.2 / 154.2 / 335.1 / 410.9pt
@@ -154,9 +160,9 @@ def _reader_y_points(css_top_points: float, height_points: float) -> float:
 # into two balanced margins that read as the band's own setting, the way a
 # plate's art centres its overflow.  An uncapped band fills its room exactly and
 # the question does not arise.
-_TAIL_ORNAMENT_MIN_HEIGHT = 96.0
+_TAIL_ORNAMENT_MIN_HEIGHT = 72.0
 _TAIL_ORNAMENT_MAX_HEIGHT = 214.0
-_TAIL_ORNAMENT_FOOT_INSET = 24.0
+_TAIL_ORNAMENT_FOOT_INSET = 0.0
 _TAIL_ORNAMENT_ENDMARK_CLEARANCE = 31.0
 
 _PLATE_ANCHOR_TAGS = frozenset({"h1", "h2", "h3"})
