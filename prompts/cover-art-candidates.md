@@ -97,7 +97,10 @@ art direction file when writing cover briefs: covers have their own rules.
 ## Review and selection
 
 Review the three propositions together at full size, as thumbnails, and
-inside the unchanged cover frame. Check conceptual relevance, ink
+inside the unchanged cover frame: `python3 tools/coverproof.py <edition>
+<art.png> [...]` renders the real cover once per candidate and writes a
+side-by-side proof sheet, restoring edition.yaml afterward. Candidates
+are judged as rendered covers, never as naked squares. Check conceptual relevance, ink
 discipline, generation artifacts, crop safety, tonal reproduction, and
 that the three propositions are meaningfully distinct. The editor selects
 by updating only `cover.art_path`; unselected candidates remain preserved
