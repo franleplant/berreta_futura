@@ -38,15 +38,15 @@ articles:
   content_mode: article
   source_ids:
   - run-ci-cd-for-millions-of-repos-on-your-platform-66c52583
-- id: launching-the-x402-foundation-with-coinbase
-  title: Launching the x402 Foundation with Coinbase, and support for x402 transactions
-  author: Will Allen, Cam Whiteside, Rohin Lohe, Steve James
-  content_mode: article
+- id: x402-in-a-nutshell
+  title: x402 in a Nutshell
+  short_title: x402 in a Nutshell
+  author: Cloudflare
+  author_note: From posts by Will Allen, Cam Whiteside, Rohin Lohe, Steve James, Justin Ridgely,
+    and Will Papper.
+  content_mode: in_a_nutshell
   source_ids:
   - launching-the-x402-foundation-with-coinbase-and-25f85626
-- id: announcing-the-monetization-gateway
-  title: 'Announcing the Monetization Gateway: charge for any resource behind Cloudflare via x402'
-  author: Rohin Lohe, Justin Ridgely, Will Papper
-  content_mode: article
-  source_ids:
   - announcing-the-monetization-gateway-charge-for-a-cb51fdc1
+  rationale: One piece covering the x402 protocol for machine-to-machine payments, from the foundation
+    launch with Coinbase to the Monetization Gateway that charges for any resource at the edge.
