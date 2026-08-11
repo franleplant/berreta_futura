@@ -27,3 +27,6 @@ editions/*/production/agent/
 # mag run/render outputs inside edition dirs; promote finals into the edition proper.
 # runs are tracked: they are the content of record. renders stay local.
 editions/*/render-*/
+
+# Cover proof sheets are reproducible render output (tools/coverproof.py).
+editions/*/art/cover-proofs/
