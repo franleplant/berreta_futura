@@ -1,17 +1,17 @@
 ---
 label: 'EDITORIAL: ORIGINAL EDITOR TEXT'
-title: Small Rooms, Named
+title: The Last Meter
 byline: The Editors
 ---
 
-One idea keeps arriving in different clothes. Take the thing you want to hold still. Make it small. Give it a name.
+Give everyone a superintelligent hacker, the argument goes, and every system gets hardened. Weapon and shield, same instrument, so the distribution decides. The instrument is symmetric. The work is not.
 
-A clerk with one slip of paper in his pocket. A room that holds one document and nothing else. A step that fails and retries alone. A request that pays for itself and asks nothing further.
+An attacker needs one hole. A defender needs all of them, plus permission to touch the machine, plus a vendor still shipping firmware.
 
-Nobody reaches into anyone else's pocket. Messages wait in line and are handled one at a time. The invariant holds by the shape of the arrangement, not by anyone's discipline.
+Heartbleed was published in April 2014 and patched inside Google in hours. Two years later, tens of thousands of hosts still answered the same malformed heartbeat. The fix existed the whole time. It sat there, free, in a repository, and nobody carried it the last meter.
 
-Let the runtime carry the difficulty. Hold the door while the disk writes. Let the parent decide what happens after the crash.
+The router in a rented flat has no maintainer. Neither does the water pump, the badge reader, the camera above the loading dock.
 
-The politics are the same as the engineering. Power kept in one room stays in that room. Locks, regions, monoliths, a single seat of intelligence: one mistake in different coats.
+So, a prediction. The first mass compromise driven by a machine smarter than its operator will exploit nothing new. It will use a fix that shipped years earlier and reached no one.
 
-What you get is a library of small rooms, each with a name the system promises to honor, and no floor plan anywhere. The whole is only the names.
+Capability spreads by copying. Maintenance spreads by someone showing up. Believing otherwise lets us skip the dull part, inventory and update channels and ownership, and call the skipping balance.
