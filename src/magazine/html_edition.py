@@ -309,13 +309,13 @@ def _render_article(
         "  <header>",
         f'    <p class="content-label" data-content-mode="{_attr(article.content_mode)}">'
         f'<span class="label-primary">{_text(_ui(edition, "feature"))} {article_index:02d}</span>'
-        f'<span class="label-secondary">{_text(_content_label(edition, document, article.content_mode))}</span></p>',
+        f'<span class="label-secondary">{_text(_content_label(edition, document, article.content_mode))}</span>'
+        + (f'<span class="label-separator" aria-hidden="true"> / </span><span class="label-date">{_text(article.dateline)}</span>' if article.dateline else "")
+        + "</p>",
         f"    <h1>{_text(article.title)}</h1>",
         f'    <p class="byline" data-byline="true">'
         f'<span class="byline-prefix">{_text(_ui(edition, "by"))}</span> {_text(article.author)}</p>',
     ]
-    if article.dateline:
-        lines.append(f'    <p class="dateline">{_text(article.dateline)}</p>')
     if article.author_note:
         lines.append(f'    <p class="author-note">{_text(article.author_note)}</p>')
     lines.extend(
@@ -425,7 +425,9 @@ def _render_illustrated_article(
         f'    <p class="content-label" data-content-mode="{_attr(article.content_mode)}">'
         f'<span class="label-primary">{_text(_ui(edition, "feature"))} {article_index:02d}</span>'
         '<span class="label-separator" aria-hidden="true"> / </span>'
-        f'<span class="label-secondary">{_text(_content_label(edition, document, article.content_mode))}</span></p>',
+        f'<span class="label-secondary">{_text(_content_label(edition, document, article.content_mode))}</span>'
+        + (f'<span class="label-separator" aria-hidden="true"> / </span><span class="label-date">{_text(article.dateline)}</span>' if article.dateline else "")
+        + "</p>",
         f"    <h1>{_text(article.title)}</h1>",
         '    <span class="opener-tick" aria-hidden="true"></span>',
         '    <div class="opener-meta">',
@@ -433,8 +435,6 @@ def _render_illustrated_article(
         f'        <p class="byline" data-byline="true">'
         f'<span class="byline-prefix">{_text(_ui(edition, "by"))}</span> {_text(article.author)}</p>',
     ]
-    if article.dateline:
-        lines.append(f'        <p class="dateline">{_text(article.dateline)}</p>')
     if article.author_note:
         lines.append(f'        <p class="author-note">{_text(article.author_note)}</p>')
     lines.extend(
