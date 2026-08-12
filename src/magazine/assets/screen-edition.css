@@ -566,12 +566,9 @@ main > section h1,
   font-size: 0.82rem;
   margin-top: 0.25rem;
 }
-.dateline {
+.label-date {
   color: var(--slate);
-  font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.18em;
-  margin-top: 0.2rem;
 }
 .provenance {
   color: var(--slate);
