@@ -135,6 +135,13 @@ class Article:
     An article closes with one object, never two, so an article carrying key
     ideas may not also declare ``tail_art_path``; validation refuses the pair.
     """
+    dateline: str | None = None
+    """One date standing for the article, "YYYY MM", or nothing.
+
+    Resolved at load time from the newest source ``published_at`` (see
+    ``_representative_dateline``), the same record-derived editorial fact
+    pattern as ``source_url``: absence is an ordinary state, never an error.
+    """
 
 
 @dataclass(frozen=True)
@@ -433,6 +440,7 @@ def load_edition(
                 _primary_source_url(source_ids, source_records),
                 opener_art,
                 key_ideas,
+                dateline=_representative_dateline(source_ids, source_records),
             )
         )
     edition_dir = manifest_path.parent
@@ -949,6 +957,33 @@ def _markdown_invariants(path: Path) -> tuple[list[str], list[str], list[str]]:
     inline = re.findall(r"(?<!`)`([^`\n]+)`(?!`)", without_fences)
     return links, inline, fenced
 
+
+
+def _representative_dateline(
+    source_ids: tuple[str, ...], records: Mapping[str, "SourceRecord"] | None
+) -> str | None:
+    """One date standing for the article: its newest source, as "YYYY MM".
+
+    A single-source article dates itself; a synthesis is as current as its
+    freshest source, so the newest ``published_at`` wins.  Rendered in the
+    cover footer's spaced-digit style, which is also language-neutral.  As
+    with the source URL, everything unanswerable is "no dateline": absent
+    records, records without ``published_at``, an editorial with no sources.
+    """
+    if not source_ids or not records:
+        return None
+    dates = [
+        str(getattr(records.get(source_id), "published_at", "") or "").strip()
+        for source_id in source_ids
+    ]
+    dates = [d for d in dates if d]
+    if not dates:
+        return None
+    newest = max(dates)  # ISO dates order lexically
+    parts = newest.split("-")
+    if len(parts) < 2:
+        return parts[0]
+    return f"{parts[0]} {parts[1]}"
 
 
 def _primary_source_url(
