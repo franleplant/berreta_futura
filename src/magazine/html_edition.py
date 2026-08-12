@@ -314,6 +314,8 @@ def _render_article(
         f'    <p class="byline" data-byline="true">'
         f'<span class="byline-prefix">{_text(_ui(edition, "by"))}</span> {_text(article.author)}</p>',
     ]
+    if article.dateline:
+        lines.append(f'    <p class="dateline">{_text(article.dateline)}</p>')
     if article.author_note:
         lines.append(f'    <p class="author-note">{_text(article.author_note)}</p>')
     lines.extend(
@@ -431,6 +433,8 @@ def _render_illustrated_article(
         f'        <p class="byline" data-byline="true">'
         f'<span class="byline-prefix">{_text(_ui(edition, "by"))}</span> {_text(article.author)}</p>',
     ]
+    if article.dateline:
+        lines.append(f'        <p class="dateline">{_text(article.dateline)}</p>')
     if article.author_note:
         lines.append(f'        <p class="author-note">{_text(article.author_note)}</p>')
     lines.extend(

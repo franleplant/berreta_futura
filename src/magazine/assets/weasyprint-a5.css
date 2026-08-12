@@ -302,7 +302,7 @@ main { margin: 0; }
   background: rgb(240 87 56); display: block; height: 1.15pt; left: 0;
   position: absolute; top: -.3pt; width: 14pt;
 }
-.publication-name, .issue-number, .content-label, .byline, .author-note, .provenance,
+.publication-name, .issue-number, .content-label, .byline, .author-note, .dateline, .provenance,
 .end-mark, figcaption, [data-edition-navigation="contents"] { font-family: "Magazine Sans", sans-serif; }
 .publication-name { color: rgb(25% 10% 43%); font-size: 7.5pt; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .edition-header h1 { font-size: 24pt; line-height: 1.04; margin: 2mm 0; }
@@ -761,6 +761,10 @@ article > header { margin-left: 0; margin-right: 0; }
  * 7.19863pt below its top, so the gap between the two boxes is
  * 2.69189 + 12 - 7.19863. */
 .author-note { color: rgb(31% 35% 37%); font-size: 6.8pt; font-weight: 400; line-height: 9.45pt; margin: 7.49326pt 0 0; }
+/* The article's one representative date (its newest source), set as spaced
+ * digits in the cover footer's register: small tracked caps-height figures,
+ * quieter than the byline it stands under. */
+.dateline { color: rgb(31% 35% 37%); font-size: 6.4pt; font-weight: 600; letter-spacing: .18em; line-height: 9pt; margin: 2.4pt 0 0; }
 /*
  * `render.py:1997-2000` passes `author_note=""` when the opener carries its own
  * figure, and the reader never prints source ids at all: provenance travels in
@@ -1477,6 +1481,15 @@ article[data-article-opener="illustrated_paper_spots_v1"] .author-note {
   font-size: 6.8pt;
   line-height: 9.4pt;
   margin: 3.2pt 0 0;
+}
+article[data-article-opener="illustrated_paper_spots_v1"] .dateline {
+  color: rgb(93 96 96);
+  display: block;
+  font-size: 6.4pt;
+  font-weight: 600;
+  letter-spacing: .18em;
+  line-height: 9pt;
+  margin: 2.2pt 0 0;
 }
 article[data-article-opener="illustrated_paper_spots_v1"] .opener-meta .source-link {
   color: transparent;
