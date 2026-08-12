@@ -265,7 +265,11 @@ fn editorial_frontmatter(caller: &Caller, meta_model: &ModelSpec, manuscript: &s
         Ok(t.to_string())
     })?;
     let mut map = serde_yaml::Mapping::new();
-    map.insert("label".into(), "EDITORIAL: ORIGINAL EDITOR TEXT".into());
+    // The printed label is just EDITORIAL (editor's rule, 2026-08-12): the
+    // ": ORIGINAL EDITOR TEXT" suffix was policy bookkeeping leaking onto
+    // the page. The mode still marks the piece as original editor text
+    // everywhere it matters; the reader page does not restate it.
+    map.insert("label".into(), "EDITORIAL".into());
     map.insert("title".into(), title.into());
     map.insert("byline".into(), "The Editors".into());
     Ok(format!("---\n{}---\n\n", serde_yaml::to_string(&serde_yaml::Value::Mapping(map))?))

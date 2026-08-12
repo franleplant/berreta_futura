@@ -1,5 +1,5 @@
 ---
-label: 'EDITORIAL: ORIGINAL EDITOR TEXT'
+label: 'EDITORIAL'
 title: The Last Meter
 byline: The Editors
 ---
