@@ -1,0 +1,10 @@
+id: telemetry-258b249b
+title: 'Telemetry'
+author: ''
+url: https://celld.dev/docs/telemetry
+captured_at: '2026-08-13T13:47:57Z'
+tags:
+- durable-objects
+- distributed-systems
+- celld
+synopsis: 'celld can optionally record traces and logs to a Parquet-based fleet bucket sink or an OpenTelemetry collector sink, queryable with DuckDB, with configurable flush and retention behavior and a recommended hourly compaction job.'

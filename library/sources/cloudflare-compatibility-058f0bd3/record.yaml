@@ -1,0 +1,10 @@
+id: cloudflare-compatibility-058f0bd3
+title: 'Cloudflare compatibility'
+author: ''
+url: https://celld.dev/docs/cloudflare-compat
+captured_at: '2026-08-13T14:03:59Z'
+tags:
+- durable-objects
+- distributed-systems
+- celld
+synopsis: 'celld implements the Cloudflare Workers runtime surface built on Durable Objects (Workers, Durable Objects, static assets, RPC, and a partial set of runtime APIs and node: imports) while explicitly not implementing platform services built on other primitives like KV, R2, Cache API, and managed AI/media services.'

@@ -6,6 +6,98 @@ _Collecting: `005` (8 queued)._
 
 _Collecting: `006` (9 queued)._
 
+_Collecting: `007` (9 queued)._
+
+## Limitations
+
+- ID: `limitations-cd53f9e3`
+- Source: https://celld.dev/docs/limitations
+- Captured: 2026-08-13T14:04:12Z
+- Tags: durable-objects, distributed-systems, celld
+- Release: queued for `007`
+
+The celld documentation page on Limitations lists the boundaries of the current alpha, including single-tenant deployment, required S3/GCS bucket storage, non-TLS peer protocol, credential scope requirements, Cloudflare Workers compatibility scope, WebSocket reconnection coverage, outbound socket residency behavior, platform availability, lack of a placement controller, and manual update process.
+
+## Cloudflare compatibility
+
+- ID: `cloudflare-compatibility-058f0bd3`
+- Source: https://celld.dev/docs/cloudflare-compat
+- Captured: 2026-08-13T14:03:59Z
+- Tags: durable-objects, distributed-systems, celld
+- Release: queued for `007`
+
+celld implements the Cloudflare Workers runtime surface built on Durable Objects (Workers, Durable Objects, static assets, RPC, and a partial set of runtime APIs and node: imports) while explicitly not implementing platform services built on other primitives like KV, R2, Cache API, and managed AI/media services.
+
+## Ownership and fencing
+
+- ID: `ownership-and-fencing-dd43dd4a`
+- Source: https://celld.dev/docs/fencing
+- Captured: 2026-08-13T13:53:02Z
+- Tags: durable-objects, distributed-systems, celld
+- Release: queued for `007`
+
+celld documents how it enforces single-node ownership of cells and durable (RPO=0) acknowledgements through conditional writes, epoch-prefixed replication, an acknowledgement rule, an epoch seal, self-fencing, and specific object-store guarantees.
+
+## WebAssembly
+
+- ID: `webassembly-a0dede27`
+- Source: https://celld.dev/docs/wasm
+- Captured: 2026-08-13T13:48:41Z
+- Tags: durable-objects, distributed-systems, celld
+- Release: queued for `007`
+
+The celld documentation page on WebAssembly explains how Worker bundles import compiled wasm modules, how celld deploy handles wasm files including compatibility checks with Rust workers-rs and the Worker Loader, and the size and compile-error limits that apply.
+
+## Testing
+
+- ID: `testing-8010abfb`
+- Source: https://celld.dev/docs/testing
+- Captured: 2026-08-13T13:48:26Z
+- Tags: durable-objects, distributed-systems, celld
+- Release: queued for `007`
+
+celld verifies its durability, single-writer, and Cloudflare-compatibility promises through differential testing against workerd, deterministic simulation of the coordination protocol, and fault injection on live fleets.
+
+## Telemetry
+
+- ID: `telemetry-258b249b`
+- Source: https://celld.dev/docs/telemetry
+- Captured: 2026-08-13T13:47:57Z
+- Tags: durable-objects, distributed-systems, celld
+- Release: queued for `007`
+
+celld can optionally record traces and logs to a Parquet-based fleet bucket sink or an OpenTelemetry collector sink, queryable with DuckDB, with configurable flush and retention behavior and a recommended hourly compaction job.
+
+## Security
+
+- ID: `security-218dbf57`
+- Source: https://celld.dev/docs/security
+- Captured: 2026-08-13T13:47:32Z
+- Tags: durable-objects, distributed-systems, celld
+- Release: queued for `007`
+
+celld's security model requires operators to separate and protect the public and internal listeners, protect the fleet bucket credentials, and put authentication and TLS in front of the public application, since celld itself does not provide these protections.
+
+## celld documentation
+
+- ID: `celld-documentation-eae4dcbc`
+- Source: https://celld.dev/docs
+- Captured: 2026-08-13T13:40:49Z
+- Tags: durable-objects, distributed-systems, celld
+- Release: queued for `007`
+
+celld is a stateful distributed system that runs server-side JavaScript with the same API as Cloudflare Workers and Durable Objects, keeping shared data in an S3-compatible or Google Cloud Storage bucket you own.
+
+## celld — Durable Objects, self-hosted
+
+- ID: `celld-durable-objects-self-hosted-0b5b2fb8`
+- Source: https://celld.dev/
+- Captured: 2026-08-13T13:39:44Z
+- Tags: durable-objects, distributed-systems, celld
+- Release: queued for `007`
+
+celld is a self-hosted, distributed reimplementation of Cloudflare's Durable Objects that runs unchanged Workers/DO code and stores state as SQLite/LTX segments in a bucket you own.
+
 ## Launching the x402 Foundation with Coinbase, and support for x402 transactions — Will Allen, Cam Whiteside, Rohin Lohe, Steve James
 
 - ID: `launching-the-x402-foundation-with-coinbase-and-25f85626`

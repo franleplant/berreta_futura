@@ -1,0 +1,10 @@
+id: testing-8010abfb
+title: 'Testing'
+author: ''
+url: https://celld.dev/docs/testing
+captured_at: '2026-08-13T13:48:26Z'
+tags:
+- durable-objects
+- distributed-systems
+- celld
+synopsis: 'celld verifies its durability, single-writer, and Cloudflare-compatibility promises through differential testing against workerd, deterministic simulation of the coordination protocol, and fault injection on live fleets.'

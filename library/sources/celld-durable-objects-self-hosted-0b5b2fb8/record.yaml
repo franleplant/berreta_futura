@@ -1,0 +1,10 @@
+id: celld-durable-objects-self-hosted-0b5b2fb8
+title: 'celld — Durable Objects, self-hosted'
+author: ''
+url: https://celld.dev/
+captured_at: '2026-08-13T13:39:44Z'
+tags:
+- durable-objects
+- distributed-systems
+- celld
+synopsis: 'celld is a self-hosted, distributed reimplementation of Cloudflare''s Durable Objects that runs unchanged Workers/DO code and stores state as SQLite/LTX segments in a bucket you own.'
