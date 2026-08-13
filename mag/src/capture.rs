@@ -267,9 +267,29 @@ fn fidelity_gate(article: &str, haystack: &str, pres: &[String]) -> Result<()> {
         if code.is_empty() {
             continue;
         }
-        if !pres.iter().any(|p| p.contains(&code))
-            && !comparison_form(haystack).contains(&comparison_form(&code))
-        {
+        let ok = |c: &str| {
+            pres.iter().any(|p| p.contains(c))
+                || comparison_form(haystack).contains(&comparison_form(c))
+        };
+        // A page callout arrives as a blockquote, prefixing the fenced code
+        // inside it with "> "; the dequoted form is what must match the page.
+        let dequoted = block[1]
+            .lines()
+            .filter(|l| !l.trim().is_empty())
+            .all(|l| l.starts_with('>'))
+            .then(|| {
+                normalize_code(
+                    &block[1]
+                        .lines()
+                        .map(|l| {
+                            l.strip_prefix('>')
+                                .map_or(l, |r| r.strip_prefix(' ').unwrap_or(r))
+                        })
+                        .collect::<Vec<_>>()
+                        .join("\n"),
+                )
+            });
+        if !ok(&code) && !dequoted.as_deref().is_some_and(ok) {
             let first = code.lines().next().unwrap_or("");
             bail!("code block starting '{first}' is not an exact contiguous run from the page");
         }
@@ -286,9 +306,11 @@ fn fidelity_gate(article: &str, haystack: &str, pres: &[String]) -> Result<()> {
     let body = fence.replace_all(article, " ");
     let body = image.replace_all(&body, " ");
     let body = link.replace_all(&body, "$1");
-    // The reply's `*` and backticks are stripped below as Markdown markers,
-    // so fold them out of the page too: pages carry them literally (AWS_*).
-    let folded_haystack = comparison_form(haystack).replace(['*', '`'], "");
+    // Folded out of both sides: Markdown markers the reply uses that pages
+    // also carry literally (AWS_*), footnote brackets the page renders as
+    // superscript ([1] vs 1), and the decorative external-link arrow.
+    const PROSE_FOLD: [char; 5] = ['*', '`', '[', ']', '\u{2197}'];
+    let folded_haystack = comparison_form(haystack).replace(PROSE_FOLD, "");
     let mut misses = Vec::new();
     let mut total = 0usize;
     for (i, line) in body.lines().enumerate() {
@@ -299,7 +321,7 @@ fn fidelity_gate(article: &str, haystack: &str, pres: &[String]) -> Result<()> {
         }
         let t = t.trim_start_matches(['-', '*', '>']).trim_start();
         let t = Regex::new(r"^\d+\.\s").unwrap().replace(t, "");
-        let t = t.replace(['*', '`'], "");
+        let t = t.replace(PROSE_FOLD, "");
         let words: Vec<&str> = t.split_whitespace().collect();
         if words.len() < 5 {
             continue;
@@ -710,6 +732,30 @@ mod tests {
         let reply = "# T\nByline\n\nThe bucket credentials come from the `AWS_*` environment \
                      or from explicit managed credentials, which includes instance metadata \
                      and web identity tokens.";
+        assert!(fidelity_gate(reply, &page_text(html), &[]).is_ok());
+    }
+
+    #[test]
+    fn gate_accepts_blockquoted_code_from_callouts() {
+        let html = "<html><body><p>A note about timeouts follows here below:</p>\
+                    <pre>try {\n\tconst event = await step.waitForEvent();\n} catch (e) {\n\tconsole.log(\"none\");\n}</pre></body></html>";
+        let pres = pre_runs(html);
+        let reply = "# T\nByline\n\n> A note about timeouts follows here below:\n>\n> ```js\n\
+                     > try {\n> \tconst event = await step.waitForEvent();\n> } catch (e) {\n\
+                     > \tconsole.log(\"none\");\n> }\n> ```";
+        assert!(fidelity_gate(reply, &page_text(html), &pres).is_ok());
+        let edited = reply.replace("console.log(\"none\")", "console.log(\"changed\")");
+        assert!(fidelity_gate(&edited, &page_text(html), &pres).is_err());
+    }
+
+    #[test]
+    fn gate_folds_footnote_brackets_and_link_arrows() {
+        let html = "<html><body><p>Uses a TypeScript <a>type parameter \u{2197}</a> to type \
+                    the return value, which must be set (up to 100 characters <sup>1</sup>) \
+                    on the corresponding instance.</p></body></html>";
+        let reply = "# T\nByline\n\nUses a TypeScript [type parameter](https://example.com) \
+                     to type the return value, which must be set (up to 100 characters [1]) \
+                     on the corresponding instance.";
         assert!(fidelity_gate(reply, &page_text(html), &[]).is_ok());
     }
 
