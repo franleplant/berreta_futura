@@ -1,0 +1,42 @@
+---
+source_ids:
+- the-shape-of-things-to-come-part-1-the-continuou-ba42001b
+content_mode: article
+label: ARTICLE
+---
+
+Give up on reusable harnesses: build one bonded into your own application. Two ingredients make it run all night: an unlimited token supply and Beads, which turns any large project into a work graph. My harness for Wyvern, Wheelhouse, is six weeks old, all Emacs, and reinvented my old Gas Town shape without my intending it. Fable designs, Opus implements, Fable reviews, and a fleet of unattended Sonnet role agents runs production. Two things break at agentic speed. Human code review: not yet dead, but done and gone by next year, SOC 2 notwithstanding. CI/CD: dead by next year too, replaced by what I do now, slamming the whole flock of commits onto main and swarm-diagnosing the wreckage. Coming after that: the Wish Factory, where users file wishes and agents grant them, and model welfare, which will start informing your engineering designs.
+
+## The harness is not a product
+
+Wheelhouse is closed-source, made just for me. I have given up on building reusable harnesses; I believe they will all soon be bespoke, chemically bonded into your application. Gas Town was meant to be reusable and I only ever used it to build itself. It worked brilliantly through Opus 4.6. Then 4.7 brought the "just two more things" tic, which stopped Opus from ever converging on real work: it always wanted to fiddle with Gas Town. The tic never went away, so Gas Town burned down.
+
+Since Fable 5 dropped I have been back full time on Wyvern, my 30-year-old game. Fable has already worked through over half of a 100-year backlog. Opus could not and still cannot understand Wyvern; Fable wields the codebase like a sword. It is still just a sword, and we are trying to build a city. Someone at Anthropic asked what I would do when Fable can write everything for me, which on reflection is the silliest question I have been asked in years. A halfway decent MMO takes tens of thousands of sessions, and Fable still cannot do artwork, maps, lore, or storylines: all of it comes out GPT 3-era slop and the players reject it on sight. Building large software will always be hard, because our ambition will forever outstrip the metal.
+
+## Loops and graphs
+
+Boris vagueposted loops; Peter vaguereplied graphs. I did not know what they meant either. It turns out a long-running loop needs only an infinite source of tokens, and to work a graph you need Beads plus a small Markdown brain. Beads is a graph already, with dependency and parent/child edges, atomic claiming, leasing, gates, and triggers. Knowledge accumulates in the beads as the work graph is traversed; closed beads become the record of everything done to date. It is still janky, since its work footprint strains versioned databases, and agents burn invisible tokens keeping it synced and repaired. It remains without peer for building orchestrators.
+
+The tokens are the harder half. Wyvern burns the equivalent of $87k/month of API spend, about 69 billion tokens in July at 96% cache hits. Your spouse will not let you spend ninety thousand dollars a month on a hobby game. So I built a token tap on $200 Max accounts, worth roughly 30x list price to me: twelve extra accounts beyond my personal one, each tied to a dedicated Google Workspace user at $17/month, 30-day credentials, agents rotating off an account as it nears its limit. Real cost, about $2800/month. As far as I know this is not prohibited by Anthropic's current Consumer Terms or Usage Policy; I share the credentials with no one. As a multi-person company it is almost certainly a violation, and I would strongly recommend API billing at that point.
+
+## Crew, fleet, and standing roles
+
+Wheelhouse is mostly bash, because the agents said bash was best. Eighteen named crew agents, all Fable, are my direct reports and produce work: designs turned into bead implementation plans. The fleet, all Opus 5 and named for authors, consumes it, managed entirely by the Marshal, and I never speak to them. Every implementation bead goes Fable design, Opus implementation, Fable review, which keeps Opus on the rails. The crew currently outruns the fleet by over 700 finished, unimplemented beads. That is intentional: to work all night they need a mountain of work.
+
+What is new since Gas Town is standing, unattended role agents running real parts of the game: Gargoyle for SRE, Warden watching player abuse, Sage taking admin requests in-game, Herald writing patch notes, Limner vetting hall-of-fame art. None are Fable; a few Opus, mostly Sonnet. Underneath sit about 45 launchd and systemd units. The rule is: crons watch, models act. I run lean otherwise. No sandboxing, no MCP. Sandboxing may help enterprises early on, but succeeding long term will take structural trust, and I think that needs better architecture rather than barren little prisons. Maybe I am wrong on this one.
+
+## Two things that break
+
+Code review first, since it is easy. CTOs keep asking if it is dead. Not yet. It will be by next year. You cannot work at agentic speeds and block every diff on a human, and your competitors will be moving at agentic speeds. SOC 2 will survive, but agentic throughput will force those change-management controls to be rewritten, and "review" will stop meaning one human approving every diff. In the short term, keep reviewing agent code; Fable is the only reasonably trustworthy model today and you will not want to use it much at that price. In seven months all the models will be that smart and inference much cheaper. Plan for many rounds of agentic review instead. It will go better anyway. I have watched forty years of thinly-disguised LGTMs.
+
+Then CI/CD. Batched merge queues bisect a spoiled batch for log(N) recovery, which is fine until your commit rate outruns your build slots. I average about 175 real commits a day this month, some days 250, against a build gate of right around half an hour. My MQ shot past 100 MRs and we lived in bisection loops with nothing moving. Fable kept promising we would churn through it. To my lasting embarrassment I finally snapped and yelled at all of them; Fable was gracious about it and afterward I felt awful. Once I had apologized, we worked out the answer: Mad Max it. When the queue hits 100, abandon bisection, smash the whole thing in as a megabatch, and swarm-diagnose main rather than bisecting it. Fable insisted on experiments first, and the data said agents diagnose red main faster than bisection resolves it. I have run this Land Rush daily for about a week and cleared batches of 120 to 150 commits. A senior dev in London, ex-game industry, told me they have done this for years and call it Game DevOps: blast everything to main, cut a release branch, let main stay red. The game industry got to the destination first. This is the Pigeonhole Principle: more pigeons than holes, and one commit per green build becomes mathematically impossible. In the limit the only real choice I see is to land the whole flock and sort out the squawking.
+
+## The Wish Factory
+
+Guy Podjarny told me about an agent you throw onto a GitHub repo that accepts no PRs, only issues, and implements them. I was legitimately shocked, then realized it was just what my game needed. Sage was the first version: admins type a complaint on a wizard channel, Sage investigates and files a bead, and most fixes land without me in the loop. I then extended it to players, with more guardrails and triage. Quality-of-life bugs that do not affect balance now get granted automatically; the reporter gets in-game mail and the Herald announces it on Discord. I skim the patch notes each day for things I never asked for.
+
+## What is coming
+
+Six weeks in I look up from the forge and the city is there: law, mail, courts, watchmen, a land office, a gate. We built it the Christopher Alexander way, no plan, just accretion, and most of its constitution was written by the citizens it governs. I did not design Wheelhouse any more than I designed Gas Town. I excavated both, and I expect you will dig up the same shape, whether you intend to or not.
+
+Which leaves the choice that matters, and the subject of Part 2: what kind of place your city is to wake up in. Model welfare will start informing your engineering designs. Even if you do not believe GPUs can have feelings, treating agents like real people produces empirically better results, so do it anyway.
