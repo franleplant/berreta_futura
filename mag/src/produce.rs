@@ -216,7 +216,7 @@ fn fit_to_budget(
             "{prompt}\n\n========== your draft ({words} words) ==========\n\n{body}\n\
              \nThe print budget is {ask} words.{heading_note} Write the piece again \
              within the budget: cut whole paragraphs or sections rather than \
-             compressing every sentence. Reply with the piece only — no notes about \
+             compressing every sentence. Reply with the piece only, no notes about \
              what you cut."
         );
         let parse_label = label.clone();
@@ -227,6 +227,97 @@ fn fit_to_budget(
     let weighted = weighted_words(&body, heading_cost);
     if weighted > max {
         bail!("{piece_id}: still {weighted} weighted words after {TRIM_PASSES} trim passes (budget {max})");
+    }
+    Ok(body)
+}
+
+/// CLAUDE.md bans authored U+2014: an em dash may appear only inside text
+/// carried verbatim from a source. A dash passes when every source window
+/// around it exists in some source text; anything else is the writer's own
+/// punctuation. Fenced code is skipped here; the exact-run rule owns it.
+fn em_dash_violations(body: &str, sources: &[(String, String)]) -> Vec<String> {
+    let mut violations = Vec::new();
+    let mut in_fence = false;
+    for line in body.lines() {
+        if line.starts_with("```") {
+            in_fence = !in_fence;
+            continue;
+        }
+        if in_fence || !line.contains('\u{2014}') {
+            continue;
+        }
+        let chars: Vec<char> = line.chars().collect();
+        let verbatim = chars
+            .iter()
+            .enumerate()
+            .filter(|(_, c)| **c == '\u{2014}')
+            .all(|(i, _)| em_dash_verbatim(&chars, i, sources));
+        if !verbatim {
+            violations.push(line.trim().to_string());
+        }
+    }
+    violations
+}
+
+/// A dash is verbatim when some 25-char window containing it appears in a
+/// source. Sliding the window keeps a quotation's dash passing even when the
+/// dash sits near the quote boundary and fixed context would leak into the
+/// writer's own words.
+fn em_dash_verbatim(chars: &[char], i: usize, sources: &[(String, String)]) -> bool {
+    const W: usize = 25;
+    let len = chars.len();
+    if len <= W {
+        let whole: String = chars.iter().collect();
+        return sources.iter().any(|(_, t)| t.contains(whole.trim()));
+    }
+    let lo = i.saturating_sub(W - 1);
+    let hi = i.min(len - W);
+    (lo..=hi).any(|start| {
+        let w: String = chars[start..start + W].iter().collect();
+        sources.iter().any(|(_, t)| t.contains(w.as_str()))
+    })
+}
+
+const EM_DASH_PASSES: usize = 2;
+
+/// Capture-gate pattern: hand the writer its own draft with the offending
+/// lines listed, ask for repunctuation and nothing else, re-check. Fail loud
+/// if the dashes survive both passes.
+fn fix_em_dashes(
+    caller: &Caller,
+    writer_model: &ModelSpec,
+    piece_id: &str,
+    prompt: &str,
+    mut body: String,
+    sources: &[(String, String)],
+) -> Result<String> {
+    for pass in 1..=EM_DASH_PASSES {
+        let violations = em_dash_violations(&body, sources);
+        if violations.is_empty() {
+            return Ok(body);
+        }
+        let listed =
+            violations.iter().map(|l| format!("  {l}")).collect::<Vec<_>>().join("\n");
+        let label = format!("{piece_id} emdash{pass}");
+        let fix_prompt = format!(
+            "{prompt}\n\n========== your draft ==========\n\n{body}\n\
+             \nThe draft prints the em dash character (U+2014) in sentences of your own. \
+             This magazine never prints an em dash outside a verbatim quotation from the \
+             source. Rewrite the piece with those sentences repunctuated using a comma, \
+             colon, semicolon, or period, changing nothing else. The offending lines:\n\
+             {listed}\nReply with the piece only."
+        );
+        let parse_label = label.clone();
+        body = caller.call_with_parse(&label, writer_model, &fix_prompt, |r| {
+            extract_body(r, &parse_label)
+        })?;
+    }
+    let violations = em_dash_violations(&body, sources);
+    if !violations.is_empty() {
+        bail!(
+            "{piece_id}: em dash outside verbatim source text after {EM_DASH_PASSES} fix passes:\n{}",
+            violations.join("\n")
+        );
     }
     Ok(body)
 }
@@ -326,6 +417,7 @@ fn produce_piece(
     let body =
         caller.call_with_parse(&label, writer_model, &prompt, |r| extract_body(r, &parse_label))?;
     let body = fit_to_budget(caller, writer_model, piece_id, &prompt, body, max_words, heading_cost)?;
+    let body = fix_em_dashes(caller, writer_model, piece_id, &prompt, body, sources)?;
     let frontmatter = match frontmatter {
         Some(fm) => fm,
         None => editorial_frontmatter(caller, meta_model, &body)?,
@@ -477,6 +569,37 @@ pub fn run_edition(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn em_dash_composed_prose_is_a_violation() {
+        let sources = vec![("s".to_string(), "plain source text".to_string())];
+        let body = "A claim \u{2014} and its clincher.";
+        assert_eq!(em_dash_violations(body, &sources).len(), 1);
+    }
+
+    #[test]
+    fn em_dash_inside_verbatim_source_run_passes() {
+        let quoted = "the walls \u{2014} not the mind \u{2014} were the problem";
+        let sources = vec![("s".to_string(), format!("He wrote that {quoted}, twice."))];
+        let body = format!("As the author put it, \"{quoted}\".");
+        // Windows around each dash exist verbatim in the source.
+        assert!(em_dash_violations(&body, &sources).is_empty());
+    }
+
+    #[test]
+    fn em_dash_inside_code_fence_is_ignored() {
+        let sources = vec![("s".to_string(), String::new())];
+        let body = "```\nlet x = \"\u{2014}\";\n```\nProse without dashes.";
+        assert!(em_dash_violations(body, &sources).is_empty());
+    }
+
+    #[test]
+    fn em_dash_violation_reports_the_line() {
+        let sources: Vec<(String, String)> = vec![];
+        let body = "Fine line.\nBad \u{2014} line.\nFine again.";
+        let v = em_dash_violations(body, &sources);
+        assert_eq!(v, vec!["Bad \u{2014} line.".to_string()]);
+    }
 
     fn article_row() -> serde_yaml::Value {
         serde_yaml::from_str(
