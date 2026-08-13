@@ -1,5 +1,5 @@
 schema_version: 2
-intake_edition_id: '006'
+intake_edition_id: '007'
 collecting_editions:
 - id: '005'
   issue_number: 5
@@ -26,6 +26,19 @@ collecting_editions:
   - run-ci-cd-for-millions-of-repos-on-your-platform-66c52583
   - announcing-the-monetization-gateway-charge-for-a-cb51fdc1
   - launching-the-x402-foundation-with-coinbase-and-25f85626
+- id: '007'
+  issue_number: 7
+  status: collecting
+  source_ids:
+  - celld-durable-objects-self-hosted-0b5b2fb8
+  - celld-documentation-eae4dcbc
+  - security-218dbf57
+  - telemetry-258b249b
+  - testing-8010abfb
+  - webassembly-a0dede27
+  - ownership-and-fencing-dd43dd4a
+  - cloudflare-compatibility-058f0bd3
+  - limitations-cd53f9e3
 released_editions:
 - id: 001-the-work-left-to-us
   issue_number: 1
