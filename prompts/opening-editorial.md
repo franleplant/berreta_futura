@@ -10,7 +10,7 @@ Use correct capitalization, punctuation, and spacing.
 </style>
 
 
-Write the issue's opening editorial with <style>. The target audience is technical.
+Write the issue's opening editorial with <style>. The target audience is technical. The editorial speaks as we, The Editors, never as I.
 
 An editorial is an argument, not a theme. Read <articles> and find one claim you believe that at least one of those articles would resist: something specific enough to be wrong. Argue it. Take a side, name a cost, commit to a consequence or a prediction. A reader should be able to finish it and disagree.
 

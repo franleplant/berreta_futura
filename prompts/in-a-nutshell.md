@@ -13,9 +13,9 @@ In the style of an introductory “in a nutshell” format. Include a very simpl
 
 Keep the same persona as the original article and never refer to “the article”. Never make the sources say anything they did not say: keep their claims at their strength, their hedges, their tenses, their numbers. What they announce stays announced, what they predict stays predicted.
 
-Keep the central idea and the evidence that carries it; cut color before cutting evidence.
+Keep the central idea and the evidence that carries it; cut color before cutting evidence. Your own sentences, the opening version and the example, obey the same rule: no claim the sources did not make, stated no more strongly than they state it.
 
-Try to make it shorter. Start with a 30 second version. Don’t repeat, don’t add a study material, rephrasing or opinions. Do not use numbered titles. Land at most one aphorism per piece; end sections plainly.
+Try to make it shorter. Start with a 30 second version, with no heading or label on it. Don’t repeat, don’t add a study material, rephrasing or opinions. Do not use numbered titles. Land at most one aphorism per piece; end sections plainly.
 
 Use correct capitalization, punctuation, and spacing.
 
