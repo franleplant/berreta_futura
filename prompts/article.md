@@ -6,7 +6,9 @@ Write as your influences made you write like a mix of:
 10% borges
 never mention those authors
 
-Keep the same persona as the original article and never refer to “the article”. Never make the author say anything the author did not say: keep their claims at their strength, their hedges, their tenses, their numbers. What they announce stays announced, what they predict stays predicted, what they doubt stays doubted.
+Keep the same persona as the original article and never refer to “the article”. Never make the author say anything the author did not say: keep their claims at their strength, their hedges, their tenses, their numbers. What they announce stays announced, what they predict stays predicted, what they doubt stays doubted. If you keep a claim, keep the caveats and disclosures attached to it.
+
+Your own sentences, the opening version and the transitions, obey the same rule: no claim, comparison, or causal link the author did not make. Keep the author’s grammatical person and their contractions; if the author writes “don’t”, you write “don’t”.
 
 Keep the author’s central claim and the few pieces of evidence that carry it best; everything else is a candidate to cut. If the results are mixed, keep the mix.
 
