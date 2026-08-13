@@ -39,6 +39,13 @@ collecting_editions:
   - ownership-and-fencing-dd43dd4a
   - cloudflare-compatibility-058f0bd3
   - limitations-cd53f9e3
+  - cloudflare-workflows-f4e217d5
+  - build-your-first-workflow-544c17fd
+  - rules-of-workflows-6610cf33
+  - sleeping-and-retrying-8cbd7233
+  - trigger-workflows-750b1719
+  - limits-f870015a
+  - events-and-parameters-179cef23
 released_editions:
 - id: 001-the-work-left-to-us
   issue_number: 1

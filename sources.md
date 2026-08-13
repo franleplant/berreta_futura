@@ -6,7 +6,84 @@ _Collecting: `005` (8 queued)._
 
 _Collecting: `006` (9 queued)._
 
-_Collecting: `007` (9 queued)._
+_Collecting: `007` (16 queued)._
+
+## Events and parameters
+
+- ID: `events-and-parameters-179cef23`
+- Source: https://developers.cloudflare.com/workflows/build/events-and-parameters/
+- Published: 2026-06-02
+- Captured: 2026-08-13T17:03:52Z
+- Tags: workflows, durable-execution, cloudflare
+- Release: queued for `007`
+
+Cloudflare Workflows can receive event data via the create method's params, the wrangler --params flag, or step.waitForEvent, which lets a running instance wait for and later receive typed events sent through instance.sendEvent or the REST API.
+
+## Limits
+
+- ID: `limits-f870015a`
+- Source: https://developers.cloudflare.com/workflows/reference/limits/
+- Published: 2026-06-15
+- Captured: 2026-08-13T16:56:59Z
+- Tags: workflows, durable-execution, cloudflare
+- Release: queued for `007`
+
+This page documents the platform limits for authoring, deploying, and running Cloudflare Workflows, including step, concurrency, retention, and subrequest limits, plus wall time limits by invocation type.
+
+## Trigger Workflows
+
+- ID: `trigger-workflows-750b1719`
+- Source: https://developers.cloudflare.com/workflows/build/trigger-workflows/
+- Published: 2026-07-13
+- Captured: 2026-08-13T16:56:22Z
+- Tags: workflows, durable-execution, cloudflare
+- Release: queued for `007`
+
+The page documents how to trigger Cloudflare Workflows via Workers bindings (fetch, queue, scheduled handlers, schedules), the REST API, and the wrangler CLI, and how to inspect, pause, resume, stop, restart, and chain Workflow instances.
+
+## Sleeping and retrying
+
+- ID: `sleeping-and-retrying-8cbd7233`
+- Source: https://developers.cloudflare.com/workflows/build/sleeping-and-retrying/
+- Published: 2026-07-09
+- Captured: 2026-08-13T16:51:20Z
+- Tags: workflows, durable-execution, cloudflare
+- Release: queued for `007`
+
+This guide explains how to configure a Workflow to sleep for a relative period or until a fixed date, how to configure step retries (limit, delay, backoff, timeout), how to force a Workflow instance to fail immediately with NonRetryableError, how to register rollback handlers for saga-style compensation, and how to catch Workflow errors with try...catch.
+
+## Rules of Workflows
+
+- ID: `rules-of-workflows-6610cf33`
+- Source: https://developers.cloudflare.com/workflows/build/rules-of-workflows/
+- Published: 2026-04-29
+- Captured: 2026-08-13T16:50:51Z
+- Tags: workflows, durable-execution, cloudflare
+- Release: queued for `007`
+
+This page documents best practices ("Rules of Workflows") for writing resilient and correct Cloudflare Workflows, covering idempotency, step granularity, state handling, side effects, event immutability, deterministic step naming, Promise.race/any usage, unique instance IDs, awaiting steps, conditional logic, batching invocations, timeout limits, and step return value size limits.
+
+## Build your first Workflow
+
+- ID: `build-your-first-workflow-544c17fd`
+- Source: https://developers.cloudflare.com/workflows/get-started/guide/
+- Published: 2026-06-09
+- Captured: 2026-08-13T16:49:41Z
+- Tags: workflows, durable-execution, cloudflare
+- Release: queued for `007`
+
+The article walks through creating, configuring, running locally, and deploying a Cloudflare Workflow that fetches data, sleeps, and processes results using the Workflows API.
+
+## Cloudflare Workflows
+
+- ID: `cloudflare-workflows-f4e217d5`
+- Source: https://developers.cloudflare.com/workflows/
+- Published: 2026-06-02
+- Captured: 2026-08-13T16:45:16Z
+- Tags: workflows, durable-execution, cloudflare
+- Release: queued for `007`
+
+Cloudflare Workflows lets developers build durable multi-step applications on Cloudflare Workers, with automatic retries, sleeping, waiting for external events, and lifecycle management.
 
 ## Limitations
 
