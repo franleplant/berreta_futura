@@ -237,14 +237,13 @@ fn parse_reply(reply: &str, haystack: &str, pres: &[String]) -> Result<Extractio
     let (article, meta) = reply
         .rsplit_once("===META===")
         .ok_or_else(|| anyhow!("reply has no ===META=== separator"))?;
-    let meta: serde_yaml::Value = serde_yaml::from_str(meta.trim())
-        .map_err(|e| anyhow!("META block is not valid YAML: {e}"))?;
+    // Line-based on purpose: the values are prose the model writes, and a
+    // stray colon in an unquoted YAML scalar would fail a good transcription.
     let field = |k: &str| {
-        meta.get(k)
-            .and_then(|v| v.as_str())
-            .map(str::trim)
-            .unwrap_or("")
-            .to_string()
+        meta.lines()
+            .find_map(|l| l.trim().strip_prefix(&format!("{k}:")))
+            .map(|v| v.trim().trim_matches(['"', '\'']).to_string())
+            .unwrap_or_default()
     };
     let synopsis = field("synopsis");
     if synopsis.is_empty() {
@@ -280,10 +279,16 @@ fn fidelity_gate(article: &str, haystack: &str, pres: &[String]) -> Result<()> {
     // exist in the page text. Windows never span lines: the page may have a
     // heading, figure, or caption between two paragraphs that the reply
     // rightly renders as separate lines.
+    // Links and images unwrap over the whole body, not per line: the reply
+    // hard-wraps prose, so a link's [text](url) can straddle a line break.
     let link = Regex::new(r"\[([^\]]*)\]\([^)]*\)").unwrap();
     let image = Regex::new(r"!\[[^\]]*\]\([^)]*\)").unwrap();
     let body = fence.replace_all(article, " ");
-    let folded_haystack = comparison_form(haystack);
+    let body = image.replace_all(&body, " ");
+    let body = link.replace_all(&body, "$1");
+    // The reply's `*` and backticks are stripped below as Markdown markers,
+    // so fold them out of the page too: pages carry them literally (AWS_*).
+    let folded_haystack = comparison_form(haystack).replace(['*', '`'], "");
     let mut misses = Vec::new();
     let mut total = 0usize;
     for (i, line) in body.lines().enumerate() {
@@ -294,8 +299,6 @@ fn fidelity_gate(article: &str, haystack: &str, pres: &[String]) -> Result<()> {
         }
         let t = t.trim_start_matches(['-', '*', '>']).trim_start();
         let t = Regex::new(r"^\d+\.\s").unwrap().replace(t, "");
-        let t = image.replace_all(&t, " ");
-        let t = link.replace_all(&t, "$1");
         let t = t.replace(['*', '`'], "");
         let words: Vec<&str> = t.split_whitespace().collect();
         if words.len() < 5 {
@@ -683,6 +686,40 @@ mod tests {
                           lays out rules describing the ways components of a system interact \
                           and communicate with one another over time.";
         assert!(fidelity_gate(paraphrase, &haystack, &[]).is_err());
+    }
+
+    #[test]
+    fn meta_field_tolerates_colons_in_values() {
+        let html = "<html><body><p>It covers dynamic Worker loading, node: imports, \
+                    compatibility flags, and Wrangler configuration in celld.</p></body></html>";
+        let reply = "# T\nByline\n\nIt covers dynamic Worker loading, node: imports, \
+                     compatibility flags, and Wrangler configuration in celld.\n\n===META===\n\
+                     synopsis: Covers dynamic Worker loading, node: imports, and flags.\n\
+                     author:\npublished: 2026-08-01\n";
+        let e = parse_reply(reply, &page_text(html), &[]).unwrap();
+        assert_eq!(e.synopsis, "Covers dynamic Worker loading, node: imports, and flags.");
+        assert_eq!(e.author, "");
+        assert_eq!(e.published, "2026-08-01");
+    }
+
+    #[test]
+    fn gate_accepts_literal_asterisks_in_page_prose() {
+        let html = "<html><body><p>The bucket credentials come from the <code>AWS_*</code> \
+                    environment or from explicit managed credentials, which includes instance \
+                    metadata and web identity tokens.</p></body></html>";
+        let reply = "# T\nByline\n\nThe bucket credentials come from the `AWS_*` environment \
+                     or from explicit managed credentials, which includes instance metadata \
+                     and web identity tokens.";
+        assert!(fidelity_gate(reply, &page_text(html), &[]).is_ok());
+    }
+
+    #[test]
+    fn gate_accepts_links_wrapped_across_lines() {
+        let html = "<html><body><p>celld implements the Workers JS RPC system: named \
+                    entrypoints on service bindings, and method calls on Durable Object \
+                    stubs.</p></body></html>";
+        let reply = "# T\nByline\n\ncelld implements the Workers [JS RPC\nsystem](https://example.com/rpc): named entrypoints on service bindings,\nand method calls on Durable Object stubs.";
+        assert!(fidelity_gate(reply, &page_text(html), &[]).is_ok());
     }
 
     #[test]
