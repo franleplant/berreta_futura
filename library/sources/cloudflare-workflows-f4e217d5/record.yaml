@@ -1,0 +1,11 @@
+id: cloudflare-workflows-f4e217d5
+title: 'Cloudflare Workflows'
+author: ''
+url: https://developers.cloudflare.com/workflows/
+captured_at: '2026-08-13T16:45:16Z'
+published_at: '2026-06-02'
+tags:
+- workflows
+- durable-execution
+- cloudflare
+synopsis: 'Cloudflare Workflows lets developers build durable multi-step applications on Cloudflare Workers, with automatic retries, sleeping, waiting for external events, and lifecycle management.'

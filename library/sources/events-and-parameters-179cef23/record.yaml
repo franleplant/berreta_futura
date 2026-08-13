@@ -1,0 +1,11 @@
+id: events-and-parameters-179cef23
+title: 'Events and parameters'
+author: ''
+url: https://developers.cloudflare.com/workflows/build/events-and-parameters/
+captured_at: '2026-08-13T17:03:52Z'
+published_at: '2026-06-02'
+tags:
+- workflows
+- durable-execution
+- cloudflare
+synopsis: 'Cloudflare Workflows can receive event data via the create method''s params, the wrangler --params flag, or step.waitForEvent, which lets a running instance wait for and later receive typed events sent through instance.sendEvent or the REST API.'

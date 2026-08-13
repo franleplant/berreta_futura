@@ -1,0 +1,11 @@
+id: rules-of-workflows-6610cf33
+title: 'Rules of Workflows'
+author: ''
+url: https://developers.cloudflare.com/workflows/build/rules-of-workflows/
+captured_at: '2026-08-13T16:50:51Z'
+published_at: '2026-04-29'
+tags:
+- workflows
+- durable-execution
+- cloudflare
+synopsis: 'This page documents best practices ("Rules of Workflows") for writing resilient and correct Cloudflare Workflows, covering idempotency, step granularity, state handling, side effects, event immutability, deterministic step naming, Promise.race/any usage, unique instance IDs, awaiting steps, conditional logic, batching invocations, timeout limits, and step return value size limits.'

@@ -1,0 +1,11 @@
+id: trigger-workflows-750b1719
+title: 'Trigger Workflows'
+author: ''
+url: https://developers.cloudflare.com/workflows/build/trigger-workflows/
+captured_at: '2026-08-13T16:56:22Z'
+published_at: '2026-07-13'
+tags:
+- workflows
+- durable-execution
+- cloudflare
+synopsis: 'The page documents how to trigger Cloudflare Workflows via Workers bindings (fetch, queue, scheduled handlers, schedules), the REST API, and the wrangler CLI, and how to inspect, pause, resume, stop, restart, and chain Workflow instances.'
