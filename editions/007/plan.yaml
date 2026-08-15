@@ -1,0 +1,45 @@
+# Source gathering for 007 is still open: re-running `mag plan 007` appends a
+# row for each newly captured source and leaves these rows untouched.
+edition:
+  id: '007'
+articles:
+- id: celld-durable-objects-self-hosted
+  title: 'celld: Durable Objects, Self-Hosted'
+  short_title: 'celld: Durable Objects, Self-Hosted'
+  author: celld
+  content_mode: article
+  source_ids:
+  - celld-durable-objects-self-hosted-0b5b2fb8
+  - celld-documentation-eae4dcbc
+  - cloudflare-compatibility-058f0bd3
+  - webassembly-a0dede27
+  rationale: What celld is and how you run it, from the homepage and docs index plus the Cloudflare
+    compatibility and WebAssembly pages.
+- id: how-celld-keeps-its-promises
+  title: How celld Keeps Its Promises
+  short_title: How celld Keeps Its Promises
+  author: celld
+  content_mode: article
+  source_ids:
+  - ownership-and-fencing-dd43dd4a
+  - limitations-cd53f9e3
+  - security-218dbf57
+  - testing-8010abfb
+  - telemetry-258b249b
+  rationale: How celld guarantees single-writer ownership and what it costs, from the ownership-and-fencing,
+    limitations, security, testing, and telemetry pages.
+- id: cloudflare-workflows-in-a-nutshell
+  title: Cloudflare Workflows in a Nutshell
+  short_title: Cloudflare Workflows in a Nutshell
+  author: Cloudflare
+  content_mode: in_a_nutshell
+  source_ids:
+  - cloudflare-workflows-f4e217d5
+  - build-your-first-workflow-544c17fd
+  - rules-of-workflows-6610cf33
+  - sleeping-and-retrying-8cbd7233
+  - trigger-workflows-750b1719
+  - limits-f870015a
+  - events-and-parameters-179cef23
+  rationale: One explainer distilled from the seven Workflows docs pages, background for the durable-execution
+    ideas the celld articles lean on.
