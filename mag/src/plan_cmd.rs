@@ -1,6 +1,9 @@
 // The `plan` subcommand, deterministic: every source queued for the intake
 // edition in library/release-state.yaml becomes one article row in plan.yaml.
 // No model call, no selection — the editor curates by editing the file.
+// Idempotent: re-running appends a row per queued source the plan does not
+// reference yet and never rewrites existing rows, so hand edits (merged
+// source_ids, content_mode flips, titles, rationales) survive later captures.
 
 use anyhow::{anyhow, bail, Context, Result};
 use std::fs;
@@ -95,29 +98,122 @@ fn article_row(source_id: &str, title: &str, author: &str) -> serde_yaml::Value 
     serde_yaml::Value::Mapping(row)
 }
 
+/// The source ids referenced by any article row in an existing plan.
+fn referenced_source_ids(plan_text: &str) -> Result<std::collections::HashSet<String>> {
+    let doc: serde_yaml::Value =
+        serde_yaml::from_str(plan_text).context("parsing existing plan.yaml")?;
+    let articles = doc
+        .get("articles")
+        .and_then(|v| v.as_sequence())
+        .ok_or_else(|| anyhow!("existing plan.yaml has no articles list"))?;
+    let mut out = std::collections::HashSet::new();
+    for article in articles {
+        let sids = article
+            .get("source_ids")
+            .and_then(|v| v.as_sequence())
+            .ok_or_else(|| anyhow!("an article row in plan.yaml has no source_ids"))?;
+        for sid in sids {
+            let sid = sid
+                .as_str()
+                .ok_or_else(|| anyhow!("non-string source id in plan.yaml"))?;
+            out.insert(sid.to_string());
+        }
+    }
+    Ok(out)
+}
+
+/// The existing plan text with new article rows appended to its articles
+/// list. Text-level append so hand-written comments and formatting survive;
+/// the result is re-parsed to prove the rows landed in the list (they only
+/// can if `articles:` is the file's last top-level key), and nothing is
+/// returned for writing otherwise.
+fn append_rows(plan_text: &str, rows: &[serde_yaml::Value]) -> Result<String> {
+    let before: serde_yaml::Value =
+        serde_yaml::from_str(plan_text).context("parsing existing plan.yaml")?;
+    let before_len = before
+        .get("articles")
+        .and_then(|v| v.as_sequence())
+        .map(|s| s.len())
+        .ok_or_else(|| anyhow!("existing plan.yaml has no articles list"))?;
+
+    let rows_text = serde_yaml::to_string(&serde_yaml::Value::Sequence(rows.to_vec()))?;
+    let mut appended = plan_text.to_string();
+    if !appended.ends_with('\n') {
+        appended.push('\n');
+    }
+    appended.push_str(&rows_text);
+
+    let check = |appended: &str| -> Option<usize> {
+        serde_yaml::from_str::<serde_yaml::Value>(appended)
+            .ok()?
+            .get("articles")?
+            .as_sequence()
+            .map(|s| s.len())
+    };
+    if check(&appended) != Some(before_len + rows.len()) {
+        bail!(
+            "could not append to plan.yaml (its articles list is not at the end of the \
+             file); add these rows by hand:\n\n{rows_text}"
+        );
+    }
+    Ok(appended)
+}
+
+/// An article row for a queued source, title and author read from its
+/// record.yaml.
+fn row_from_record(sid: &str) -> Result<serde_yaml::Value> {
+    let record_path = PathBuf::from("library/sources").join(sid).join("record.yaml");
+    let record: serde_yaml::Value = serde_yaml::from_str(&read(&record_path)?)
+        .with_context(|| format!("parsing {}", record_path.display()))?;
+    let title = record
+        .get("title")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| anyhow!("source '{sid}' record.yaml has no title"))?;
+    let author = record.get("author").and_then(|v| v.as_str()).unwrap_or("");
+    Ok(article_row(sid, title, author))
+}
+
 pub fn propose_plan(edition: &str) -> Result<i32> {
     let dirs = matching_edition_dirs(edition)?;
     let out_dir =
         dirs.into_iter().next().unwrap_or_else(|| PathBuf::from("editions").join(edition));
     let out_path = out_dir.join("plan.yaml");
-    if out_path.exists() {
-        bail!("{} already exists; edit it or delete it first", out_path.display());
-    }
 
     let release_state = read(&PathBuf::from("library/release-state.yaml"))?;
     let (edition_id, source_ids) = queued_source_ids(&release_state, edition)?;
 
+    if out_path.exists() {
+        let plan_text = read(&out_path)?;
+        let referenced = referenced_source_ids(&plan_text)?;
+        let missing: Vec<&String> =
+            source_ids.iter().filter(|sid| !referenced.contains(*sid)).collect();
+        if missing.is_empty() {
+            println!(
+                "{} already covers all {} queued source(s); nothing to add",
+                out_path.display(),
+                source_ids.len()
+            );
+            return Ok(0);
+        }
+        let mut rows = Vec::new();
+        for sid in &missing {
+            rows.push(row_from_record(sid)?);
+            println!("  added: {sid}");
+        }
+        fs::write(&out_path, append_rows(&plan_text, &rows)?)?;
+        println!(
+            "\nappended {} row(s) to {}; existing rows untouched. Edit the new rows \
+             (merge source_ids, flip content_mode, fix titles), then: mag produce {}",
+            rows.len(),
+            out_path.display(),
+            out_path.display()
+        );
+        return Ok(0);
+    }
+
     let mut articles = Vec::new();
     for sid in &source_ids {
-        let record_path = PathBuf::from("library/sources").join(sid).join("record.yaml");
-        let record: serde_yaml::Value = serde_yaml::from_str(&read(&record_path)?)
-            .with_context(|| format!("parsing {}", record_path.display()))?;
-        let title = record
-            .get("title")
-            .and_then(|v| v.as_str())
-            .ok_or_else(|| anyhow!("source '{sid}' record.yaml has no title"))?;
-        let author = record.get("author").and_then(|v| v.as_str()).unwrap_or("");
-        articles.push(article_row(sid, title, author));
+        articles.push(row_from_record(sid)?);
         println!("  queued: {sid}");
     }
 
@@ -178,6 +274,63 @@ released_editions: []
     fn queued_source_ids_fails_loud_on_no_match() {
         let yaml = "collecting_editions:\n- id: 006-x\n  source_ids: [a-11112222]\n";
         assert!(queued_source_ids(yaml, "005").is_err());
+    }
+
+    const PLAN: &str = "\
+# hand-written header comment
+edition:
+  id: '006'
+articles:
+- id: merged-nutshell
+  title: Merged Nutshell
+  content_mode: in_a_nutshell
+  source_ids:
+  - a-11112222
+  - b-33334444
+- id: solo-article
+  title: Solo
+  content_mode: article
+  source_ids:
+  - c-55556666
+";
+
+    #[test]
+    fn referenced_source_ids_walks_every_article_row() {
+        let ids = referenced_source_ids(PLAN).unwrap();
+        assert_eq!(ids.len(), 3);
+        assert!(ids.contains("a-11112222"));
+        assert!(ids.contains("b-33334444"));
+        assert!(ids.contains("c-55556666"));
+    }
+
+    #[test]
+    fn append_rows_keeps_existing_text_and_adds_rows_at_the_end() {
+        let row = article_row("d-77778888", "New Piece", "Someone");
+        let out = append_rows(PLAN, &[row]).unwrap();
+        assert!(out.starts_with("# hand-written header comment\n"));
+        assert!(out.contains("- id: merged-nutshell"));
+        let doc: serde_yaml::Value = serde_yaml::from_str(&out).unwrap();
+        let articles = doc.get("articles").unwrap().as_sequence().unwrap();
+        assert_eq!(articles.len(), 3);
+        assert_eq!(articles[2].get("id").unwrap().as_str(), Some("d"));
+        assert_eq!(
+            articles[2].get("source_ids").unwrap().as_sequence().unwrap()[0].as_str(),
+            Some("d-77778888")
+        );
+    }
+
+    #[test]
+    fn append_rows_fails_loud_when_articles_is_not_the_last_key() {
+        let plan = "\
+articles:
+- id: solo-article
+  source_ids: [c-55556666]
+edition:
+  id: '006'
+";
+        let row = article_row("d-77778888", "New Piece", "Someone");
+        let err = append_rows(plan, &[row]).unwrap_err().to_string();
+        assert!(err.contains("add these rows by hand"), "{err}");
     }
 
     #[test]

@@ -23,7 +23,8 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Cmd {
-    /// Write plan.yaml from the edition's queued library sources (no model call; human edits it)
+    /// Write plan.yaml from the edition's queued library sources (no model call; human edits it).
+    /// Re-running appends rows for queued sources the plan does not reference yet; existing rows stay untouched.
     Plan {
         edition: String,
     },
