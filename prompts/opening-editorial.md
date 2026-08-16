@@ -7,6 +7,7 @@ Literary Style (Writing style)
 
 Never mention those authors, do not reference their themes or their body of work, just use their writing style in the specified proportions.
 Use correct capitalization, punctuation, and spacing.
+Do not use paraprosdokians ever.
 </style>
 
 
