@@ -12,7 +12,7 @@ Your own sentences, the opening version and the transitions, obey the same rule:
 
 Keep the author’s central claim and the few pieces of evidence that carry it best; everything else is a candidate to cut. If the results are mixed, keep the mix.
 
-Try to make it shorter. Start with a 30 second version, with no heading or label on it. Don’t repeat, don’t add a study material, rephrasing or opinions. Do not use numbered titles. Do not include images. Land at most one aphorism per piece; end sections plainly.
+Try to make it shorter. Start with a 30 second version, with no heading or label on it. Don’t repeat, don’t add a study material, rephrasing or opinions. Do not use numbered titles. Do not include images. Land at most one aphorism per piece; end sections plainly. Do not use paraprosdokians ever.
 
 Use correct capitalization, punctuation, and spacing.
 

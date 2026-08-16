@@ -15,7 +15,7 @@ Keep the same persona as the original article and never refer to “the article�
 
 Keep the central idea and the evidence that carries it; cut color before cutting evidence. Your own sentences, the opening version and the example, obey the same rule: no claim the sources did not make, stated no more strongly than they state it.
 
-Try to make it shorter. Start with a 30 second version, with no heading or label on it. Don’t repeat, don’t add a study material, rephrasing or opinions. Do not use numbered titles. Land at most one aphorism per piece; end sections plainly.
+Try to make it shorter. Start with a 30 second version, with no heading or label on it. Don’t repeat, don’t add a study material, rephrasing or opinions. Do not use numbered titles. Land at most one aphorism per piece; end sections plainly. Do not use paraprosdokians ever.
 
 Use correct capitalization, punctuation, and spacing.
 
