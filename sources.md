@@ -6,7 +6,35 @@ _Collecting: `005` (8 queued)._
 
 _Collecting: `006` (9 queued)._
 
-_Collecting: `007` (16 queued)._
+_Collecting: `007` (19 queued)._
+
+## Claude-of-Duty/prompt.md at main
+
+- ID: `claude-of-duty-prompt-md-at-main-dd93105d`
+- Source: https://github.com/mshumer/Claude-of-Duty/blob/main/prompt.md
+- Captured: 2026-08-17T13:11:08Z
+- Release: queued for `007`
+
+The page states the entire prompt used to instruct an AI to build an AAA-quality first-person shooter game in ThreeJS using looping sub-agents for iterative visual critique.
+
+## GitHub - mshumer/Claude-of-Duty: A Call of Duty-quality FPS in Three.js, built from a single prompt.
+
+- ID: `github-mshumer-claude-of-duty-a-call-of-duty-qua-2a498bfc`
+- Source: https://github.com/mshumer/Claude-of-Duty
+- Captured: 2026-08-17T13:10:03Z
+- Release: queued for `007`
+
+The README describes Claude of Duty, a browser-based FPS built entirely from procedurally generated code (no art assets) by AI agents, detailing its subsystems, tooling, performance optimization results, and an honest critical assessment of how it compares to a modern Call of Duty.
+
+## How to Run a Gauntlet Loop — Matt Shumer
+
+- ID: `how-to-run-a-gauntlet-loop-c259d9f4`
+- Source: https://somethingbig.ai/gauntlet-loop
+- Published: 2026-07-27
+- Captured: 2026-08-17T13:08:46Z
+- Release: queued for `007`
+
+The article explains the "Gauntlet Loop" prompting method, where an agent splits work into pieces, has separate builder and critic agents compare each piece against a concrete reference bar, and repeats the loop until the result reaches or approaches that bar.
 
 ## Events and parameters
 
