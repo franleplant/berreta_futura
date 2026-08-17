@@ -43,3 +43,15 @@ articles:
   - events-and-parameters-179cef23
   rationale: One explainer distilled from the seven Workflows docs pages, background for the durable-execution
     ideas the celld articles lean on.
+- id: how-to-run-a-gauntlet-loop
+  title: How to Run a Gauntlet Loop
+  short_title: How to Run a Gauntlet Loop
+  author: Matt Shumer
+  content_mode: article
+  source_ids:
+  - how-to-run-a-gauntlet-loop-c259d9f4
+  - claude-of-duty-prompt-md-at-main-dd93105d
+  - github-mshumer-claude-of-duty-a-call-of-duty-qua-2a498bfc
+  rationale: Shumer's gauntlet-loop method, with the Claude-of-Duty prompt.md so the original prompt
+    is quotable verbatim (Fran wants it in the article if space allows) and the repo README for what
+    the run actually built.

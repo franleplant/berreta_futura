@@ -46,6 +46,9 @@ collecting_editions:
   - trigger-workflows-750b1719
   - limits-f870015a
   - events-and-parameters-179cef23
+  - how-to-run-a-gauntlet-loop-c259d9f4
+  - github-mshumer-claude-of-duty-a-call-of-duty-qua-2a498bfc
+  - claude-of-duty-prompt-md-at-main-dd93105d
 released_editions:
 - id: 001-the-work-left-to-us
   issue_number: 1
