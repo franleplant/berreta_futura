@@ -6,7 +6,17 @@ _Collecting: `005` (8 queued)._
 
 _Collecting: `006` (9 queued)._
 
-_Collecting: `007` (19 queued)._
+_Collecting: `007` (20 queued)._
+
+## Origin Code Hosting
+
+- ID: `origin-code-hosting-807cadab`
+- Source: https://cursor.com/changelog/origin-code-hosting
+- Published: 2026-08-17
+- Captured: 2026-08-17T18:27:50Z
+- Release: queued for `007`
+
+Cursor's changelog announces Origin, a code hosting feature rolling out in early beta on all paid plans with repos, pull requests, GitHub sync, and agent integration.
 
 ## Claude-of-Duty/prompt.md at main
 

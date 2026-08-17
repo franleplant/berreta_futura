@@ -49,6 +49,7 @@ collecting_editions:
   - how-to-run-a-gauntlet-loop-c259d9f4
   - github-mshumer-claude-of-duty-a-call-of-duty-qua-2a498bfc
   - claude-of-duty-prompt-md-at-main-dd93105d
+  - origin-code-hosting-807cadab
 released_editions:
 - id: 001-the-work-left-to-us
   issue_number: 1
