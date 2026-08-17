@@ -40,6 +40,14 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 - `editions/<edition>/edition.yaml` names articles, manuscripts, art, and
   figures. A figure row names its `source_id` and a `path` relative to that
   source's directory, plus caption, alt_text, anchor, and layout.
+- An `extracts` row is the figure pattern for text the edition MUST print
+  verbatim: it names a `source_id`, `begin`/`end` markers that each pin one
+  position in that source's article.md, a `style` (`code` or `quote`),
+  caption, and anchor. The renderer pulls the run from the captured source at
+  load time, never from the writer, and refuses to load if the markers are
+  ambiguous or the manuscript already carries the run verbatim.
+  Captions and anchors localize; the run itself never does. Declare the row
+  in plan.yaml and carry it into edition.yaml at assembly.
 - Content modes: `faithful_edit`, `faithful_synthesis`, `selected_extracts`,
   `original_synthesis`, `in_a_nutshell`, plus the `original_editorial` opener.
   See `docs/EDITORIAL_POLICY.md`.

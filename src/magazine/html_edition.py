@@ -14,7 +14,7 @@ from pathlib import Path
 
 from .errors import ValidationError
 from .manifest import Article, Edition, Section
-from .media_schema import Figure
+from .media_schema import Extract, Figure
 from .publication_document import (
     Block,
     BlockQuote,
@@ -286,6 +286,7 @@ def _render_article(
             opener_figures.append(figure)
         else:
             figures_by_anchor.setdefault(_anchor_key(figure.anchor), []).append(figure)
+    extracts_by_anchor, opener_extracts = _extracts_by_anchor(article)
 
     if (
         _article_opener_format(edition) == "illustrated_paper_spots_v1"
@@ -335,6 +336,8 @@ def _render_article(
         figure_html, asset = _render_figure(edition, article.id, figure)
         lines.extend(_indent((figure_html,), 2))
         assets.append(asset)
+    for extract in opener_extracts:
+        lines.extend(_indent((_render_extract(edition, article.id, extract),), 2))
 
     references = False
     for index, block in enumerate(document.blocks):
@@ -348,6 +351,8 @@ def _render_article(
                 figure_html, asset = _render_figure(edition, article.id, figure)
                 lines.extend(_indent((figure_html,), 2))
                 assets.append(asset)
+            for extract in extracts_by_anchor.get(_anchor_key(_inline_text(block.children)), ()):
+                lines.extend(_indent((_render_extract(edition, article.id, extract),), 2))
 
     lines.extend(_indent(_render_key_ideas(edition, article), 2))
     lines.extend(
@@ -393,6 +398,7 @@ def _render_illustrated_article(
 ) -> tuple[str, tuple[HtmlAsset, ...]]:
     """Render the shared semantic structure for the illustrated opener."""
 
+    extracts_by_anchor, opener_extracts = _extracts_by_anchor(article)
     if not document.blocks or not isinstance(document.blocks[0], Paragraph):
         raise ValueError(
             "illustrated_paper_spots_v1 requires a paragraph as the first manuscript block"
@@ -451,6 +457,8 @@ def _render_illustrated_article(
         figure_html, asset = _render_figure(edition, article.id, figure)
         lines.extend(_indent((figure_html,), 2))
         assets.append(asset)
+    for extract in opener_extracts:
+        lines.extend(_indent((_render_extract(edition, article.id, extract),), 2))
 
     references = False
     for block in document.blocks[1:]:
@@ -464,6 +472,10 @@ def _render_illustrated_article(
                 figure_html, asset = _render_figure(edition, article.id, figure)
                 lines.extend(_indent((figure_html,), 2))
                 assets.append(asset)
+            for extract in extracts_by_anchor.get(
+                _anchor_key(_inline_text(block.children)), ()
+            ):
+                lines.extend(_indent((_render_extract(edition, article.id, extract),), 2))
 
     lines.extend(_indent(_render_key_ideas(edition, article), 2))
     lines.extend(
@@ -646,6 +658,49 @@ def _render_figure(edition: Edition, article_id: str, figure: Figure) -> tuple[s
             word=_attr(_ui(edition, "figure")),
         ),
         asset,
+    )
+
+
+def _extracts_by_anchor(
+    article: Article,
+) -> tuple[dict[str, list[Extract]], list[Extract]]:
+    by_anchor: dict[str, list[Extract]] = {}
+    opener: list[Extract] = []
+    for extract in article.extracts:
+        if extract.anchor == "__opener__":
+            opener.append(extract)
+        else:
+            by_anchor.setdefault(_anchor_key(extract.anchor), []).append(extract)
+    return by_anchor, opener
+
+
+def _render_extract(edition: Edition, article_id: str, extract: Extract) -> str:
+    """One verbatim extract panel.
+
+    An ``aside``, like the key-ideas box, because the run is editorial
+    furniture beside the article rather than a further part of it -- and so it
+    stays out of the figure counter and the heading sequence.  The text goes
+    through ``_verbatim`` in both styles: the run is byte-exact source
+    material, so no quote education and no character folding.
+    """
+
+    body: str
+    if extract.style == "code":
+        body = f"<pre><code>{_verbatim(extract.text)}</code></pre>"
+    else:
+        paragraphs = "".join(
+            f"<p>{_verbatim(paragraph.strip())}</p>"
+            for paragraph in extract.text.split("\n\n")
+            if paragraph.strip()
+        )
+        body = f"<blockquote>{paragraphs}</blockquote>"
+    return (
+        f'<aside class="extract" data-extract-id="{_attr(extract.id)}" '
+        f'data-article-id="{_attr(article_id)}" data-source-id="{_attr(extract.source_id)}" '
+        f'data-anchor="{_attr(extract.anchor)}" data-style="{_attr(extract.style)}" '
+        f'data-extract-label="{_attr(_ui(edition, "verbatim"))}">'
+        f"{body}"
+        f'<p class="extract-caption">{_text(extract.caption)}</p></aside>'
     )
 
 
@@ -842,6 +897,7 @@ def _ui(edition: Edition, key: str) -> str:
         "try_it": "TRY IT",
         "cheat_sheet": "CHEAT SHEET",
         "key_ideas": "KEY IDEAS",
+        "verbatim": "VERBATIM",
     }
     spanish = {
         "issue": "Número",
@@ -863,6 +919,7 @@ def _ui(edition: Edition, key: str) -> str:
         "try_it": "PRUÉBALO",
         "cheat_sheet": "HOJA DE REFERENCIA",
         "key_ideas": "IDEAS CLAVE",
+        "verbatim": "TEXTUAL",
     }
     values = spanish if edition.language == "es" else english
     return values.get(key, key.replace("_", " ").replace("-", " ").upper())

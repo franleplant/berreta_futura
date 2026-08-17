@@ -52,6 +52,14 @@ articles:
   - how-to-run-a-gauntlet-loop-c259d9f4
   - claude-of-duty-prompt-md-at-main-dd93105d
   - github-mshumer-claude-of-duty-a-call-of-duty-qua-2a498bfc
+  extracts:
+  - id: the-prompt
+    source_id: claude-of-duty-prompt-md-at-main-dd93105d
+    begin: I want you to build a first-person shooter
+    end: Fan out sub-agents and ultracode.
+    style: code
+    caption: The entire prompt that produced Claude of Duty, verbatim.
+    anchor: __opener__
   rationale: Shumer's gauntlet-loop method, with the Claude-of-Duty prompt.md so the original prompt
-    is quotable verbatim (Fran wants it in the article if space allows) and the repo README for what
-    the run actually built.
+    is quotable verbatim and the repo README for what the run actually built. The extracts row makes
+    the prompt a MUST; re-anchor it to a heading at assembly if the opener crowds.

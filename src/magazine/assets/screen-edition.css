@@ -806,6 +806,34 @@ p[data-name-roster] {
   color: var(--slate);
 }
 
+/* ---- Extracts ------------------------------------------------------------ */
+/* A verbatim extract panel: curated source text placed by the edition. The
+ * pre/blockquote inside keep their manuscript styles; the label and caption
+ * mark the panel as furniture, mirroring the figure caption vocabulary. */
+aside.extract {
+  margin: 1.8rem 0;
+}
+aside.extract::before {
+  content: attr(data-extract-label);
+  display: block;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--slate);
+  margin-bottom: 0.3rem;
+}
+aside.extract pre,
+aside.extract blockquote {
+  margin: 0;
+}
+aside.extract .extract-caption {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  margin: 0.5rem 0 0;
+}
+
 /* ---- Figures ------------------------------------------------------------- */
 figure[data-figure-id] {
   margin: 1.8rem 0;

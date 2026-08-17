@@ -195,6 +195,191 @@ def localize_figures(
     return tuple(localized)
 
 
+EXTRACT_STYLES = {"code", "quote"}
+
+
+@dataclass(frozen=True)
+class Extract:
+    """A verbatim run of source text the edition MUST print, as a panel.
+
+    The figure pattern applied to text: the editor names the run in
+    ``edition.yaml`` and the renderer places it beside the manuscript, pulled
+    from the captured source at load time.  The writer is never asked for it,
+    so the run cannot be misquoted -- ``text`` is byte-identical to the source
+    by construction, located by ``begin``/``end`` markers that must each pin a
+    single position.  ``text`` is never localized; a verbatim run has one
+    language, its source's, exactly as a code block does.
+    """
+
+    id: str
+    source_id: str
+    text: str
+    style: str
+    caption: str
+    anchor: str
+
+
+def resolve_extracts(
+    root: Path,
+    *,
+    article_id: str,
+    article_source_ids: tuple[str, ...],
+    manuscript: Path,
+    rows: Any,
+    allow_unanchored: bool = False,
+) -> tuple[Extract, ...]:
+    """Resolve an article's extract rows to verbatim runs of captured sources.
+
+    Every check is a string check.  ``begin`` must occur exactly once in the
+    source's ``article.md``; ``end`` must occur exactly once at or after it;
+    the run is the contiguous span from ``begin`` through the end of ``end``.
+    A run the manuscript already contains verbatim is an error, not a warning:
+    the piece would print it twice, and the editor must drop one copy.
+    """
+
+    if rows in (None, []):
+        return ()
+    if not isinstance(rows, list):
+        raise ValidationError(f"Article {article_id} extracts must be a list")
+    if len(rows) > 2:
+        raise ValidationError(f"Article {article_id} selects {len(rows)} extracts; maximum is 2")
+    errors: list[str] = []
+    extracts: list[Extract] = []
+    seen: set[str] = set()
+    manuscript_text = manuscript.read_text(encoding="utf-8")
+    headings = semantic_headings(manuscript)
+    for index, row in enumerate(rows):
+        label = f"Article {article_id} extract {index + 1}"
+        if not isinstance(row, dict):
+            errors.append(f"{label} must be a mapping")
+            continue
+        extract_id = str(row.get("id") or "").strip()
+        source_id = str(row.get("source_id") or "").strip()
+        begin = str(row.get("begin") or "")
+        end = str(row.get("end") or "")
+        style = str(row.get("style") or "").strip()
+        caption = str(row.get("caption") or "").strip()
+        anchor = str(row.get("anchor") or "").strip()
+        missing = [
+            name
+            for name, value in (
+                ("id", extract_id),
+                ("source_id", source_id),
+                ("begin", begin),
+                ("end", end),
+                ("style", style),
+                ("caption", caption),
+                ("anchor", anchor),
+            )
+            if not value
+        ]
+        if missing:
+            errors.append(f"{label} missing: {', '.join(missing)}")
+            continue
+        if extract_id in seen:
+            errors.append(f"Article {article_id} has duplicate extract id: {extract_id}")
+        seen.add(extract_id)
+        if source_id not in article_source_ids:
+            errors.append(f"{label} source_id must be one of the article source_ids")
+            continue
+        if style not in EXTRACT_STYLES:
+            errors.append(f"{label} has invalid style: {style!r}; known: {sorted(EXTRACT_STYLES)}")
+        if anchor != "__opener__" and anchor not in headings and not allow_unanchored:
+            errors.append(f"{label} anchor does not match an article heading: {anchor!r}")
+        source_path = root / "library" / "sources" / source_id / "article.md"
+        if not source_path.is_file():
+            errors.append(f"{label} source article is missing: {source_path}")
+            continue
+        source_text = source_path.read_text(encoding="utf-8")
+        if source_text.count(begin) != 1:
+            errors.append(
+                f"{label} begin marker must occur exactly once in the source "
+                f"(found {source_text.count(begin)}): {begin!r}"
+            )
+            continue
+        start = source_text.index(begin)
+        if source_text.count(end, start) != 1:
+            errors.append(
+                f"{label} end marker must occur exactly once at or after begin "
+                f"(found {source_text.count(end, start)}): {end!r}"
+            )
+            continue
+        text = source_text[start : source_text.index(end, start) + len(end)]
+        if text in manuscript_text:
+            errors.append(
+                f"{label} run already appears verbatim in the manuscript; "
+                "drop the extract row or the manuscript's own copy"
+            )
+        extracts.append(Extract(extract_id, source_id, text, style, caption, anchor))
+    if errors:
+        raise ValidationError(errors)
+    return tuple(extracts)
+
+
+def localize_extracts(
+    base: tuple[Extract, ...],
+    rows: Any,
+    *,
+    article_id: str,
+    manuscript: Path,
+    language: str,
+) -> tuple[Extract, ...]:
+    """Overlay translated caption and anchor on base extracts.
+
+    ``text``, ``style``, and ``source_id`` never change: the run is verbatim
+    source material, preserved exactly, in its source's language.
+    """
+
+    if not base:
+        if rows not in (None, []):
+            raise ValidationError(
+                f"Translation {language!r} article {article_id} has extracts absent from English"
+            )
+        return ()
+    if not isinstance(rows, list):
+        raise ValidationError(
+            f"Translation {language!r} article {article_id} extracts must be a list"
+        )
+    errors: list[str] = []
+    by_id = {
+        str(row.get("id")): row
+        for row in rows
+        if isinstance(row, dict) and row.get("id")
+    }
+    expected_ids = {extract.id for extract in base}
+    if set(by_id) != expected_ids:
+        missing = sorted(expected_ids - set(by_id))
+        extra = sorted(set(by_id) - expected_ids)
+        if missing:
+            errors.append(
+                f"Translation {language!r} article {article_id} is missing extracts: {', '.join(missing)}"
+            )
+        if extra:
+            errors.append(
+                f"Translation {language!r} article {article_id} has unknown extracts: {', '.join(extra)}"
+            )
+    headings = semantic_headings(manuscript)
+    localized: list[Extract] = []
+    for extract in base:
+        row = by_id.get(extract.id)
+        if not row:
+            continue
+        caption = str(row.get("caption") or "").strip()
+        anchor = str(row.get("anchor") or "").strip()
+        if not caption or not anchor:
+            errors.append(
+                f"Translation {language!r} extract {extract.id} requires caption and anchor"
+            )
+        if anchor != "__opener__" and anchor not in headings:
+            errors.append(
+                f"Translation {language!r} extract {extract.id} anchor does not match a translated heading"
+            )
+        localized.append(replace(extract, caption=caption, anchor=anchor))
+    if errors:
+        raise ValidationError(errors)
+    return tuple(localized)
+
+
 def semantic_headings(path: Path) -> set[str]:
     """Every ``##`` heading a figure anchor may name.
 
