@@ -11,7 +11,14 @@ import yaml
 from .document_structure import block_signature
 from .errors import ValidationError
 from .io import load_structured, safe_project_path
-from .media_schema import Figure, localize_figures, resolve_figures
+from .media_schema import (
+    Extract,
+    Figure,
+    localize_extracts,
+    localize_figures,
+    resolve_extracts,
+    resolve_figures,
+)
 from .publication_document import DocumentParseError, Paragraph, parse_publication_document
 
 if TYPE_CHECKING:
@@ -141,6 +148,13 @@ class Article:
     Resolved at load time from the newest source ``published_at`` (see
     ``_representative_dateline``), the same record-derived editorial fact
     pattern as ``source_url``: absence is an ordinary state, never an error.
+    """
+    extracts: tuple[Extract, ...] = ()
+    """Verbatim source runs the edition MUST print, placed like figures.
+
+    Resolved from the captured sources at load time, never from the writer,
+    so the text is byte-exact by construction.  Captions and anchors localize;
+    the runs themselves never do.
     """
 
 
@@ -422,6 +436,18 @@ def load_edition(
         except ValidationError as exc:
             errors.extend(exc.errors)
             figures = ()
+        try:
+            extracts = resolve_extracts(
+                root,
+                article_id=article_id,
+                article_source_ids=source_ids,
+                manuscript=manuscript,
+                rows=row.get("extracts"),
+                allow_unanchored=allow_unanchored_figures,
+            )
+        except ValidationError as exc:
+            errors.extend(exc.errors)
+            extracts = ()
         articles.append(
             Article(
                 article_id,
@@ -441,6 +467,7 @@ def load_edition(
                 opener_art,
                 key_ideas,
                 dateline=_representative_dateline(source_ids, source_records),
+                extracts=extracts,
             )
         )
     edition_dir = manifest_path.parent
@@ -722,6 +749,17 @@ def load_translation(
         except ValidationError as exc:
             errors.extend(exc.errors)
             figures = ()
+        try:
+            extracts = localize_extracts(
+                article.extracts,
+                row.get("extracts"),
+                article_id=article.id,
+                manuscript=manuscript,
+                language=language,
+            )
+        except ValidationError as exc:
+            errors.extend(exc.errors)
+            extracts = ()
         translated_articles.append(
             Article(
                 article.id,
@@ -743,6 +781,7 @@ def load_translation(
                 article.source_url,
                 article.opener_art,
                 key_ideas,
+                extracts=extracts,
             )
         )
 
@@ -864,6 +903,22 @@ def load_translation(
                         }
                         for figure in article.figures
                     ],
+                    **(
+                        {
+                            "extracts": [
+                                {
+                                    "id": extract.id,
+                                    "source_id": extract.source_id,
+                                    "style": extract.style,
+                                    "caption": extract.caption,
+                                    "anchor": extract.anchor,
+                                }
+                                for extract in article.extracts
+                            ]
+                        }
+                        if article.extracts
+                        else {}
+                    ),
                 }
                 for article in translated_articles
             ],
