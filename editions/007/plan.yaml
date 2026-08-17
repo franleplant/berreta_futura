@@ -63,3 +63,10 @@ articles:
   rationale: Shumer's gauntlet-loop method, with the Claude-of-Duty prompt.md so the original prompt
     is quotable verbatim and the repo README for what the run actually built. The extracts row makes
     the prompt a MUST; re-anchor it to a heading at assembly if the opener crowds.
+- id: origin-code-hosting
+  title: Origin Code Hosting
+  short_title: Origin Code Hosting
+  author: Cursor
+  content_mode: article
+  source_ids:
+  - origin-code-hosting-807cadab
