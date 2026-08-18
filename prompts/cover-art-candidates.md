@@ -7,11 +7,12 @@ production compiler continues to consume only `cover.art_path` from
 `edition.yaml`.
 
 The cover is the synthetic branch: one bold abstract-graphic proposition in
-poster inks. A round is three DIFFERENT synthetic propositions (not three
-styles), each derived from its own one-sentence reading of the edition.
-Write those readings first, from the complete article roster; a reading
-that produces only a still life is too abstract, so go back to the articles
-for the moment where something moves, breaks, opens, or pays.
+poster inks. A round is three DIFFERENT synthetic propositions in three
+DIFFERENT graphic registers, each derived from its own one-sentence reading
+of the edition. Write those readings first, from the complete article
+roster; a reading that produces only a still life is too abstract, so go
+back to the articles for the moment where something moves, breaks, opens,
+or pays.
 
 (The `cast_poster`, `art_directed`, and `wildcard` branches from earlier
 rounds are retired after editor review; their candidates stay on disk. The
@@ -65,20 +66,62 @@ art direction file when writing cover briefs: covers have their own rules.
 - ONE compact editorial metaphor, stated in the brief in one sentence
   before the visual description. The image argues it; it does not
   illustrate a list.
+- Name the image's VERB in the brief, and make it kinetic: strikes,
+  splits, floods, ignites, swallows, tips past the point of no return.
+  "Sits", "stands", "shows", and "represents" fail the brief on the spot.
+  Draw the verb at its most violent instant, not the moment after.
 - THREE TO SEVEN large forms. Count them in the brief. Anything the
   proposition does not need is deleted, and a form smaller than a
-  fingernail at print size is noise, not a form.
+  fingernail at print size is noise, not a form. ONE proposition per
+  round may instead commit to a single colossal form and nothing else.
 - Banned as primary subject matter: swarms, confetti, particle clouds,
   grids or arrays of repeated small elements, scattered debris. A
   multitude may be IMPLIED (three envelopes and a shadow suggest a
   million) but never drawn.
-- The impact test, at thumbnail size: an unmistakable visual event,
-  a memorable silhouette, one strong source of tension (scale shock,
-  precarious balance, spatial invasion, arrested motion). A composition
-  whose verb is "sits" fails.
 - Figuration is allowed at emblem level (a hand, a door, a coin, one
   tiny human for scale) but no scenes, no characters, no narrative
   staging.
+
+## The register menu
+
+Each proposition commits to ONE named graphic register, no two alike in
+a round, drawn from traditions like: constructivist poster diagonal;
+Sachplakat single-object poster; hard-edged cutout collage in the Saul
+Bass tradition; linocut or woodcut with brutal blacks; two-plate
+risograph with deliberate misregistration; photogram-style luminous
+silhouette; brush-ink gesture over flat ink fields. Broad tradition and
+production cues only, never a living artist's name or a franchise. The
+register is stated in the brief and drives every rendering word in it;
+"bold abstract-graphic editorial poster" is not a register and may not
+appear in any brief.
+
+## Compositional aggression
+
+Dull covers are centered covers. Every brief picks at least ONE weapon
+and names it:
+
+- Scale shock: the main form vastly oversized for its world, stated as a
+  size relationship in the brief (the key is the size of a girder).
+- Frame invasion: the main form bleeds off two or three edges of the
+  plate; the plate crops it, confidently.
+- Thrust: the whole composition drives along one diagonal; nothing
+  horizontal or vertical carries the energy.
+- Radical viewpoint: worm's-eye, aerial, or dead-on macro; never eye
+  level at middle distance.
+- Figure-ground reversal: the negative space is the subject on second
+  read.
+
+A centered object on an empty field with a drop shadow is rejected as
+written, whatever else the brief promises. The impact test at thumbnail
+size stays: an unmistakable visual event, a memorable silhouette, one
+strong source of tension, readable in one beat.
+
+## Brief prose discipline
+
+No two briefs in a round share a sentence skeleton. Each reads as if a
+different art director wrote it, in the vocabulary of its register. A
+brief that could be swapped into another proposition by changing three
+nouns is a template, and templates are what made past covers dull.
 
 ## Shared constraints
 
