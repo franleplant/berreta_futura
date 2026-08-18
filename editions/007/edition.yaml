@@ -1,0 +1,120 @@
+# Edition 7 — working spec. Title, subtitle, cover copy, and publication date
+# are placeholders for the editor; article order is the editorial reading
+# order (vocabulary first, the personal essay as closer).
+# ART SELECTIONS PENDING: art paths are filled in after the first art round;
+# the editor's real selection happens in editions/007/art/showcase.html.
+# The gauntlet-loop article carries the first extracts row: the Claude-of-Duty
+# prompt, printed verbatim as a code panel at the opener.
+id: '007'
+issue_number: 7
+title: Durable Execution
+subtitle: celld and Durable Objects, Cloudflare Workflows, gauntlet loops, Origin, and one AI adoption journey
+publication_date: '2026-08-18'
+status: draft
+format:
+  article_opener: illustrated_paper_spots_v1
+art_direction_path: art-directions/story-led-boy-and-robot.yaml
+cover:
+  headline: Durable Execution
+  deck: celld and Durable Objects, Cloudflare Workflows, gauntlet loops, Origin, and one AI adoption journey
+  back_text: 'A durable object promises there is exactly one of it. Keeping that promise
+    through crashes, restarts, and split brains is the whole trick: fencing tokens,
+    write-ahead logs, a loop that refuses to call the work done early. This issue is
+    about systems that finish what they start, and what it costs them.'
+articles:
+- id: cloudflare-workflows-in-a-nutshell
+  title: Cloudflare Workflows in a Nutshell
+  short_title: Cloudflare Workflows
+  display_emphasis: Workflows
+  opener_variant: stepped_title
+  author: Cloudflare
+  content_mode: in_a_nutshell
+  source_ids:
+  - cloudflare-workflows-f4e217d5
+  - build-your-first-workflow-544c17fd
+  - rules-of-workflows-6610cf33
+  - sleeping-and-retrying-8cbd7233
+  - trigger-workflows-750b1719
+  - limits-f870015a
+  - events-and-parameters-179cef23
+  manuscript: editions/007/articles/cloudflare-workflows-in-a-nutshell.md
+- id: celld-durable-objects-self-hosted
+  title: 'celld: Durable Objects, Self-Hosted'
+  short_title: 'celld: Durable Objects, Self-Hosted'
+  display_emphasis: celld
+  opener_variant: split_axis
+  author: celld
+  content_mode: article
+  source_ids:
+  - celld-durable-objects-self-hosted-0b5b2fb8
+  - celld-documentation-eae4dcbc
+  - cloudflare-compatibility-058f0bd3
+  - webassembly-a0dede27
+  manuscript: editions/007/articles/celld-durable-objects-self-hosted.md
+- id: how-celld-keeps-its-promises
+  title: How celld Keeps Its Promises
+  short_title: How celld Keeps Its Promises
+  display_emphasis: Promises
+  opener_variant: edge_medallion
+  author: celld
+  content_mode: article
+  source_ids:
+  - ownership-and-fencing-dd43dd4a
+  - limitations-cd53f9e3
+  - security-218dbf57
+  - testing-8010abfb
+  - telemetry-258b249b
+  manuscript: editions/007/articles/how-celld-keeps-its-promises.md
+- id: origin-code-hosting
+  title: Origin Code Hosting
+  short_title: Origin Code Hosting
+  display_emphasis: Origin
+  opener_variant: stepped_title
+  author: Cursor
+  content_mode: article
+  source_ids:
+  - origin-code-hosting-807cadab
+  manuscript: editions/007/articles/origin-code-hosting.md
+- id: how-to-run-a-gauntlet-loop
+  title: How to Run a Gauntlet Loop
+  short_title: How to Run a Gauntlet Loop
+  display_emphasis: Gauntlet
+  opener_variant: split_axis
+  author: Matt Shumer
+  content_mode: article
+  source_ids:
+  - how-to-run-a-gauntlet-loop-c259d9f4
+  - claude-of-duty-prompt-md-at-main-dd93105d
+  - github-mshumer-claude-of-duty-a-call-of-duty-qua-2a498bfc
+  manuscript: editions/007/articles/how-to-run-a-gauntlet-loop.md
+  extracts:
+  - id: the-prompt
+    source_id: claude-of-duty-prompt-md-at-main-dd93105d
+    begin: I want you to build a first-person shooter
+    end: Fan out sub-agents and ultracode.
+    style: code
+    caption: The entire prompt that produced Claude of Duty, verbatim.
+    anchor: __opener__
+- id: opus-outshines-even-fable
+  title: Opus Outshines Even Fable, Inside the Hugging Face Hack, AI Companies Spend Big for Compute
+  short_title: Opus Outshines Even Fable
+  display_emphasis: Opus
+  opener_variant: edge_medallion
+  author: Andrew Ng
+  author_note: From The Batch, deeplearning.ai's weekly newsletter.
+  content_mode: article
+  source_ids:
+  - opus-outshines-even-fable-inside-the-hugging-fac-c220467a
+  manuscript: editions/007/articles/opus-outshines-even-fable.md
+- id: my-ai-adoption-journey
+  title: My AI Adoption Journey
+  short_title: My AI Adoption Journey
+  display_emphasis: Journey
+  opener_variant: stepped_title
+  author: Mitchell Hashimoto
+  content_mode: article
+  source_ids:
+  - my-ai-adoption-journey-0036f2d9
+  manuscript: editions/007/articles/my-ai-adoption-journey.md
+editorial: manuscript/editorial.md
+tail_art_fit: contain

@@ -1,0 +1,79 @@
+edition:
+  id: '007'
+articles:
+- id: celld-durable-objects-self-hosted
+  title: 'celld: Durable Objects, Self-Hosted'
+  short_title: 'celld: Durable Objects, Self-Hosted'
+  author: celld
+  content_mode: article
+  source_ids:
+  - celld-durable-objects-self-hosted-0b5b2fb8
+  - celld-documentation-eae4dcbc
+  - cloudflare-compatibility-058f0bd3
+  - webassembly-a0dede27
+  rationale: What celld is and how you run it, from the homepage and docs index plus the Cloudflare compatibility and WebAssembly pages.
+- id: how-celld-keeps-its-promises
+  title: How celld Keeps Its Promises
+  short_title: How celld Keeps Its Promises
+  author: celld
+  content_mode: article
+  source_ids:
+  - ownership-and-fencing-dd43dd4a
+  - limitations-cd53f9e3
+  - security-218dbf57
+  - testing-8010abfb
+  - telemetry-258b249b
+  rationale: How celld guarantees single-writer ownership and what it costs, from the ownership-and-fencing, limitations, security, testing, and telemetry pages.
+- id: cloudflare-workflows-in-a-nutshell
+  title: Cloudflare Workflows in a Nutshell
+  short_title: Cloudflare Workflows in a Nutshell
+  author: Cloudflare
+  content_mode: in_a_nutshell
+  source_ids:
+  - cloudflare-workflows-f4e217d5
+  - build-your-first-workflow-544c17fd
+  - rules-of-workflows-6610cf33
+  - sleeping-and-retrying-8cbd7233
+  - trigger-workflows-750b1719
+  - limits-f870015a
+  - events-and-parameters-179cef23
+  rationale: One explainer distilled from the seven Workflows docs pages, background for the durable-execution ideas the celld articles lean on.
+- id: how-to-run-a-gauntlet-loop
+  title: How to Run a Gauntlet Loop
+  short_title: How to Run a Gauntlet Loop
+  author: Matt Shumer
+  content_mode: article
+  source_ids:
+  - how-to-run-a-gauntlet-loop-c259d9f4
+  - claude-of-duty-prompt-md-at-main-dd93105d
+  - github-mshumer-claude-of-duty-a-call-of-duty-qua-2a498bfc
+  extracts:
+  - id: the-prompt
+    source_id: claude-of-duty-prompt-md-at-main-dd93105d
+    begin: I want you to build a first-person shooter
+    end: Fan out sub-agents and ultracode.
+    style: code
+    caption: The entire prompt that produced Claude of Duty, verbatim.
+    anchor: __opener__
+  rationale: Shumer's gauntlet-loop method, with the Claude-of-Duty prompt.md so the original prompt is quotable verbatim and the repo README for what the run actually built. The extracts row makes the prompt a MUST; re-anchor it to a heading at assembly if the opener crowds.
+- id: origin-code-hosting
+  title: Origin Code Hosting
+  short_title: Origin Code Hosting
+  author: Cursor
+  content_mode: article
+  source_ids:
+  - origin-code-hosting-807cadab
+- id: my-ai-adoption-journey
+  title: My AI Adoption Journey
+  short_title: My AI Adoption Journey
+  author: Mitchell Hashimoto
+  content_mode: article
+  source_ids:
+  - my-ai-adoption-journey-0036f2d9
+- id: opus-outshines-even-fable
+  title: Opus Outshines Even Fable, Inside the Hugging Face Hack, AI Companies Spend Big for Compute
+  short_title: Opus Outshines Even Fable
+  author: Andrew Ng
+  content_mode: article
+  source_ids:
+  - opus-outshines-even-fable-inside-the-hugging-fac-c220467a
