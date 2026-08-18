@@ -769,11 +769,40 @@ fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
         details { margin-top: 0.4rem; }\n\
         details pre { white-space: pre-wrap; font-size: 0.8rem; color: #ccc; }\n\
         .empty { color: #777; font-style: italic; }\n\
+        .rounds { font-size: 0.85rem; color: #9ab; }\n\
+        figure.picked { border-color: #4ad; box-shadow: 0 0 0 2px #4ad; }\n\
+        figure img { cursor: pointer; }\n\
+        .btnrow { margin-top: 0.5rem; display: flex; gap: 0.4rem; flex-wrap: wrap; }\n\
+        .btnrow a, .btnrow button, #basket button {\n\
+            background: #2a2a2a; color: #ddd; border: 1px solid #444; border-radius: 4px;\n\
+            font-size: 0.72rem; padding: 0.2rem 0.55rem; cursor: pointer; text-decoration: none; }\n\
+        .btnrow a:hover, .btnrow button:hover, #basket button:hover { border-color: #4ad; color: #fff; }\n\
+        #basket { position: fixed; left: 0; right: 0; bottom: 0; background: #181d20ee;\n\
+            border-top: 1px solid #345; padding: 0.6rem 2rem; display: flex; gap: 0.5rem;\n\
+            align-items: center; flex-wrap: wrap; backdrop-filter: blur(4px); }\n\
+        #basket .count { font-size: 0.85rem; color: #9cd; margin-right: 0.5rem; }\n\
+        #flash { font-size: 0.8rem; color: #4a4; margin-left: 0.5rem; }\n\
+        body { padding-bottom: 4.5rem; }\n\
         </style>\n</head>\n<body>\n";
+    let mut rounds: Vec<&str> = items.iter().map(|i| i.round.as_str()).collect();
+    rounds.sort();
+    rounds.dedup();
+    let rounds_line = rounds
+        .iter()
+        .map(|r| {
+            let n = items.iter().filter(|i| i.round == *r).count();
+            format!("{} ({n})", html_escape(r))
+        })
+        .collect::<Vec<_>>()
+        .join(" · ");
     html += &format!(
         "<h1>Art showcase — {} ({} image(s))</h1>\n\
+         <p class=\"rounds\">Rounds: {rounds_line}</p>\n\
          <p>Every generated candidate across every round. A green badge marks \
-         what edition.yaml currently selects. Give feedback per image as \
+         what edition.yaml currently selects. Click an image to pick it for its \
+         slot (cover, per-article opener/tail: one pick; closing plates: toggle). \
+         The bar below copies commands to run from the repo root, and \
+         edition.yaml lines for the picks. Give feedback per image as \
          <code>brief-id vN (round)</code>.</p>\n",
         html_escape(edition_label),
         items.len()
@@ -826,7 +855,23 @@ fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
             if !off.is_empty() {
                 classes.push("offmodel");
             }
-            html += &format!("<figure class=\"{}\">\n", classes.join(" "));
+            let repo_path = format!(
+                "{}/art/rounds/{}/{}",
+                edition_dir.display(),
+                item.round,
+                item.file
+            );
+            let slot = match item.purpose.as_str() {
+                "cover" => "cover".to_string(),
+                "closing" => format!("closing:{}", item.brief_id),
+                p => format!("{p}:{}", item.article_id.as_deref().unwrap_or(&item.brief_id)),
+            };
+            html += &format!(
+                "<figure class=\"{}\" data-path=\"{}\" data-slot=\"{}\">\n",
+                classes.join(" "),
+                html_escape(&repo_path),
+                html_escape(&slot)
+            );
             if item.selected {
                 html += "<span class=\"badge\">SELECTED</span>\n";
             }
@@ -847,6 +892,14 @@ fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
                 html_escape(&item.brief_id),
                 item.variant,
                 html_escape(&item.round)
+            );
+            html += &format!(
+                "<div class=\"btnrow\"><a href=\"rounds/{}/{}\" target=\"_blank\">view</a>\
+                 <button data-copy=\"path\">copy path</button>\
+                 <button data-copy=\"preview\">preview cmd</button>\
+                 <button data-copy=\"finder\">finder cmd</button></div>\n",
+                html_escape(&item.round),
+                html_escape(&item.file)
             );
             if !item.verdicts.is_empty() {
                 let lines: Vec<String> = item
@@ -871,6 +924,7 @@ fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
             html += "</div>\n";
         }
     }
+    html += SHOWCASE_BASKET;
     html += "</body>\n</html>\n";
 
     let path = edition_dir.join("art").join("showcase.html");
@@ -878,6 +932,110 @@ fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
     fs::write(&path, html)?;
     Ok(path)
 }
+
+/// The showcase's selection layer: a pick basket over the static page. Picks
+/// live only in the page; applying them is copy-paste (commands run from the
+/// repo root, edition.yaml lines pasted by the editor), so the file stays a
+/// plain static page with no server behind it.
+const SHOWCASE_BASKET: &str = r#"<div id="basket">
+<span class="count">0 picked</span>
+<button data-bar="preview">open picked in Preview</button>
+<button data-bar="finder">reveal picked in Finder</button>
+<button data-bar="paths">copy picked paths</button>
+<button data-bar="yaml">copy edition.yaml lines</button>
+<button data-bar="clear">clear picks</button>
+<span id="flash"></span>
+</div>
+<script>
+(function () {
+  var picks = {}; // slot -> array of paths (closing slots toggle, others hold one)
+  var q = function (s) { return "'" + s.replace(/'/g, "'\\''") + "'"; };
+
+  function figs() { return Array.prototype.slice.call(document.querySelectorAll('figure[data-path]')); }
+  function repaint() {
+    var chosen = {};
+    Object.keys(picks).forEach(function (slot) {
+      picks[slot].forEach(function (p) { chosen[p] = true; });
+    });
+    figs().forEach(function (f) {
+      f.classList.toggle('picked', !!chosen[f.dataset.path]);
+    });
+    var n = Object.keys(chosen).length;
+    document.querySelector('#basket .count').textContent = n + ' picked';
+  }
+  function pickedPaths() {
+    var out = [];
+    Object.keys(picks).sort().forEach(function (slot) {
+      picks[slot].forEach(function (p) { out.push({ slot: slot, path: p }); });
+    });
+    return out;
+  }
+  function copy(text, label) {
+    var done = function () {
+      var flash = document.getElementById('flash');
+      flash.textContent = 'copied ' + label;
+      setTimeout(function () { flash.textContent = ''; }, 2500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { fallback(text); done(); });
+    } else { fallback(text); done(); }
+  }
+  function fallback(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+  }
+  function yamlLines() {
+    return pickedPaths().map(function (e) {
+      var s = e.slot, p = e.path;
+      if (s === 'cover') return 'cover:\n  art_path: ' + p;
+      if (s.indexOf('closing:') === 0) return '# ' + s.slice(8) + '\n- art_path: ' + p;
+      var kind = s.split(':')[0], article = s.split(':').slice(1).join(':');
+      if (kind === 'tail') return '# article ' + article + '\n  tail_art_path: ' + p;
+      return '# article ' + article + '\n  opener_art:\n    path: ' + p;
+    }).join('\n');
+  }
+
+  figs().forEach(function (f) {
+    if (f.classList.contains('selected')) {
+      var slot = f.dataset.slot;
+      picks[slot] = (picks[slot] || []).concat([f.dataset.path]);
+    }
+    f.querySelector('img').addEventListener('click', function () {
+      var slot = f.dataset.slot, p = f.dataset.path;
+      var cur = picks[slot] || [];
+      if (slot.indexOf('closing:') === 0) {
+        picks[slot] = cur.indexOf(p) >= 0 ? cur.filter(function (x) { return x !== p; }) : cur.concat([p]);
+      } else {
+        picks[slot] = cur.length === 1 && cur[0] === p ? [] : [p];
+      }
+      repaint();
+    });
+    f.querySelectorAll('button[data-copy]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var p = f.dataset.path;
+        if (b.dataset.copy === 'path') copy(p, 'path');
+        if (b.dataset.copy === 'preview') copy('open -a Preview ' + q(p), 'Preview command');
+        if (b.dataset.copy === 'finder') copy('open -R ' + q(p), 'Finder command');
+      });
+    });
+  });
+  document.querySelectorAll('#basket button[data-bar]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var entries = pickedPaths();
+      if (b.dataset.bar === 'clear') { picks = {}; repaint(); return; }
+      if (!entries.length) { copy('', 'nothing (no picks)'); return; }
+      var paths = entries.map(function (e) { return e.path; });
+      if (b.dataset.bar === 'paths') copy(paths.join('\n'), 'paths');
+      if (b.dataset.bar === 'preview') copy('open -a Preview ' + paths.map(q).join(' '), 'Preview command');
+      if (b.dataset.bar === 'finder') copy(paths.map(function (p) { return 'open -R ' + q(p); }).join('\n'), 'Finder commands');
+      if (b.dataset.bar === 'yaml') copy(yamlLines(), 'edition.yaml lines');
+    });
+  });
+  repaint();
+})();
+</script>
+"#;
 
 /// The model-sheet prompt is composed verbatim from the direction file —
 /// no brief-writer call, nothing paraphrased. The sheet these candidates
