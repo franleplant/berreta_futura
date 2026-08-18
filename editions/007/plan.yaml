@@ -70,3 +70,17 @@ articles:
   content_mode: article
   source_ids:
   - origin-code-hosting-807cadab
+- id: my-ai-adoption-journey
+  title: My AI Adoption Journey
+  short_title: My AI Adoption Journey
+  author: Mitchell Hashimoto
+  content_mode: article
+  source_ids:
+  - my-ai-adoption-journey-0036f2d9
+- id: opus-outshines-even-fable
+  title: Opus Outshines Even Fable, Inside the Hugging Face Hack, AI Companies Spend Big for Compute
+  short_title: Opus Outshines Even Fable
+  author: Andrew Ng
+  content_mode: article
+  source_ids:
+  - opus-outshines-even-fable-inside-the-hugging-fac-c220467a

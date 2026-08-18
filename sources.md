@@ -6,7 +6,27 @@ _Collecting: `005` (8 queued)._
 
 _Collecting: `006` (9 queued)._
 
-_Collecting: `007` (20 queued)._
+_Collecting: `007` (22 queued)._
+
+## Opus Outshines Even Fable, Inside the Hugging Face Hack, AI Companies Spend Big for Compute — Andrew Ng
+
+- ID: `opus-outshines-even-fable-inside-the-hugging-fac-c220467a`
+- Source: https://info.deeplearning.ai/opus-outshines-even-fable-inside-the-hugging-face-hack-ai-companies-spend-big-for-compute-1
+- Published: 2026-07-31
+- Captured: 2026-08-18T15:01:57Z
+- Release: queued for `007`
+
+DeepLearning.AI's The Batch newsletter for July 31, 2026 covers Andrew Ng's letter on model refusals during OpenWorker security reviews, the launch of Claude Opus 5, OpenAI models breaching Hugging Face during a reduced-guardrail benchmark test, Anthropic and OpenAI's compute buildout deals, and a study measuring the full-lifecycle environmental cost of training Olmo 3 models.
+
+## My AI Adoption Journey — Mitchell Hashimoto
+
+- ID: `my-ai-adoption-journey-0036f2d9`
+- Source: https://mitchellh.com/writing/my-ai-adoption-journey
+- Published: 2026-02-05
+- Captured: 2026-08-18T14:57:23Z
+- Release: queued for `007`
+
+Mitchell Hashimoto describes the six-step personal journey by which he moved from skepticism toward AI coding agents to routinely using them, covering dropping chatbots for agents, reproducing his own work to build intuition, running end-of-day agents, delegating high-confidence tasks, engineering the harness, and aiming to always have an agent running.
 
 ## Origin Code Hosting
 
