@@ -23,7 +23,7 @@ cover:
     restarts, and split brains is the whole trick: fencing tokens, write-ahead logs, a loop that refuses
     to call the work done early. This issue is about systems that finish what they start, and what it
     costs them.'
-  art_path: editions/007/art/rounds/2026-08-18T15-17-35/cover-missing-tread-v2.png
+  art_path: editions/007/art/rounds/2026-08-18T18-20-06/cover-tortoise-lamp-violet-v4.png
 articles:
 - id: cloudflare-workflows-in-a-nutshell
   title: Cloudflare Workflows in a Nutshell
