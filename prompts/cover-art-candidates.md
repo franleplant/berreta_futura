@@ -6,17 +6,36 @@ author-time creative step, never part of deterministic packaging. The
 production compiler continues to consume only `cover.art_path` from
 `edition.yaml`.
 
-The cover is the synthetic branch: one bold abstract-graphic proposition in
-poster inks. A round is three DIFFERENT synthetic propositions in three
-DIFFERENT graphic registers, each derived from its own one-sentence reading
-of the edition. Write those readings first, from the complete article
-roster; a reading that produces only a still life is too abstract, so go
-back to the articles for the moment where something moves, breaks, opens,
-or pays.
+A round is three branches, one brief each: `synthetic`, `art_directed`,
+and `wildcard`. Each brief derives from its own one-sentence reading of
+the edition and states its branch. Write the readings first, from the
+complete article roster; a reading that produces only a still life is too
+abstract, so go back to the articles for the moment where something moves,
+breaks, opens, or pays.
 
-(The `cast_poster`, `art_directed`, and `wildcard` branches from earlier
-rounds are retired after editor review; their candidates stay on disk. The
-recurring cast lives inside the magazine, not on the cover.)
+## The three branches
+
+- `synthetic`: one bold abstract-graphic proposition in poster inks,
+  built in a named graphic register from the menu below and governed by
+  the cover ink discipline. The continuity branch.
+- `art_directed`: an edition-specific interpretation in whatever MEDIUM
+  serves the proposition best: photography, painting, printmaking,
+  sculpture, staged work, collage, textile, another deliberate form. It
+  keeps the publication palette's handshake with the frame but its craft
+  lives in material conviction: real light on real surfaces, believable
+  weight, deliberate facture. Never a default subject; humans and hands
+  only when the concept needs them; never reuse a previous edition's
+  objects, only its level of intent.
+- `wildcard`: medium, metaphor, subject, and composition free. One
+  improbable idea, immediately legible, formally disciplined enough to
+  survive print. It may depart the palette only if the cover proof shows
+  the result still sits in the fixed cover system. Surprise excuses
+  nothing: no darkness-as-mood, no clutter, no arbitrary symbols.
+
+Every branch obeys the verb rule, the compositional weapons, the frame
+handshake, and the brief prose discipline below. The `cast_poster` branch
+stays retired: the recurring cast lives inside the magazine, not on the
+cover.
 
 ## The frame it lives in
 
@@ -35,12 +54,17 @@ Consequences, non-negotiable:
   red-orange, its black, or the page's bone white somewhere prominent.
   A plate whose colors ignore the frame looks pasted in from another
   magazine.
-- Grounds are either confident-dark (near-black, deep navy, oxblood) for
-  a lantern-slide effect inside the white page, or pale (bone, cream)
-  for a constructivist effect where the page and plate breathe together.
-  Nothing in between.
+- Grounds are either pale (bone, cream) for a constructivist effect
+  where the page and plate breathe together, or a SATURATED COLOR that
+  stays unmistakably a color in print: cobalt, emerald, vermilion,
+  violet, chrome yellow. Black, near-black, and any ground that could
+  pass for black on uncoated stock are banned: print drinks dark fields
+  into mud, and a dark plate under the black masthead reads as a hole in
+  the page. Dark belongs to FORMS (a black silhouette on a color ground
+  prints beautifully), never to the ground behind them. No mid-tone
+  grounds, no textured wallpaper grounds.
 
-## The cover ink discipline
+## The cover ink discipline (synthetic; a default the other branches bend deliberately)
 
 The cover NEVER uses the interior art direction's palette. Interior
 directions are tuned for gentle print reading; on a cover they read as
@@ -50,10 +74,13 @@ art direction file when writing cover briefs: covers have their own rules.
 - Choose a cover ink set per edition: TWO or THREE saturated, committed
   inks plus one ground, plus ONE luminous accent. Deep and bright beat
   pale and dusty: oxblood, cobalt, violet-navy, emerald, vermilion,
-  chrome yellow, a near-black. Name the exact inks in the brief.
-- The ground is one color and generous: either a pale field (cream,
-  bone) or a deep dark (navy-black, oxblood-black). No mid-tone grounds,
-  no textured wallpaper grounds.
+  chrome yellow; a near-black is allowed as a FORM ink only, never as
+  the ground. Name the exact inks in the brief.
+- The ground is one color and generous: a pale field (cream, bone) or a
+  saturated color that stays unmistakably a color in print (cobalt,
+  emerald, vermilion, violet, chrome yellow). Black and near-black
+  grounds are banned; uncoated stock drinks them into mud. No mid-tone
+  grounds, no textured wallpaper grounds.
 - Exactly one luminous focal accent: one glowing, hot, or white element
   that owns the frame and is the image's event. If the thumbnail does not
   lead the eye there in one beat, the brief fails.
@@ -82,10 +109,10 @@ art direction file when writing cover briefs: covers have their own rules.
   tiny human for scale) but no scenes, no characters, no narrative
   staging.
 
-## The register menu
+## The register menu (synthetic)
 
-Each proposition commits to ONE named graphic register, no two alike in
-a round, drawn from traditions like: constructivist poster diagonal;
+The synthetic brief commits to ONE named graphic register, fresh across
+consecutive rounds, drawn from traditions like: constructivist poster diagonal;
 Sachplakat single-object poster; hard-edged cutout collage in the Saul
 Bass tradition; linocut or woodcut with brutal blacks; two-plate
 risograph with deliberate misregistration; photogram-style luminous
