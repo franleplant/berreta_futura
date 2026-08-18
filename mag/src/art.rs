@@ -745,9 +745,24 @@ fn collect_showcase_items(edition_dir: &Path, selected: &[String]) -> Result<Vec
 /// badged. Rewritten from disk on every `mag art` invocation.
 fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
     let edition_yaml_path = edition_dir.join("edition.yaml");
+    let mut cover_frame = CoverFrame {
+        publication: crate::render::publication_name(Path::new(".")),
+        headline: edition_label.to_string(),
+        issue: edition_label.to_string(),
+        date: String::new(),
+    };
     let selected = if edition_yaml_path.exists() {
         let doc: serde_yaml::Value = serde_yaml::from_str(&read(&edition_yaml_path)?)
             .with_context(|| format!("parsing {}", edition_yaml_path.display()))?;
+        if let Some(h) = doc.get("cover").and_then(|c| c.get("headline")).and_then(|v| v.as_str()) {
+            cover_frame.headline = h.to_string();
+        }
+        if let Some(n) = doc.get("issue_number").and_then(|v| v.as_u64()) {
+            cover_frame.issue = format!("{n:03}");
+        }
+        if let Some(d) = doc.get("publication_date").and_then(|v| v.as_str()) {
+            cover_frame.date = d.replace('-', " ");
+        }
         selected_art_paths(&doc)
     } else {
         Vec::new()
@@ -790,6 +805,31 @@ fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
         #basket .count { font-size: 0.85rem; color: #9cd; margin-right: 0.5rem; }\n\
         #flash { font-size: 0.8rem; color: #4a4; margin-left: 0.5rem; }\n\
         body { padding-bottom: 4.5rem; }\n\
+        .coverframe { aspect-ratio: 1 / 1.414; background: #f7f2e9; color: #14120f;\n\
+            position: relative; padding: 6% 16% 5% 8%; box-sizing: border-box; overflow: hidden;\n\
+            font-family: 'Archivo Black', 'Arial Black', -apple-system, sans-serif; cursor: pointer; }\n\
+        .cf-spine { position: absolute; top: 0; right: 0; bottom: 0; width: 9%; background: #f05737;\n\
+            display: flex; flex-direction: column; justify-content: space-between; align-items: center;\n\
+            padding: 6% 0; box-sizing: border-box; }\n\
+        .cf-issue, .cf-imprint { writing-mode: vertical-rl; font-size: 0.5rem; letter-spacing: 0.25em;\n\
+            font-weight: 700; }\n\
+        .cf-issue { color: #14120f; }\n\
+        .cf-imprint { color: #f7f2e9; }\n\
+        .cf-masthead { line-height: 0.95; margin-bottom: 7%; }\n\
+        .cf-m1 { display: block; font-size: 1.5rem; letter-spacing: 0.01em; }\n\
+        .cf-m2 { display: inline-block; font-size: 1.5rem; background: #14120f; color: #f7f2e9;\n\
+            padding: 0 0.25rem; transform: skewX(-8deg); box-shadow: 0.22rem 0.22rem 0 #f05737;\n\
+            margin-left: 12%; }\n\
+        .cf-headline { line-height: 1.0; margin-bottom: 6%; }\n\
+        .cf-headline span, .cf-headline em { display: block; font-style: normal;\n\
+            font-size: 1.05rem; text-transform: uppercase; letter-spacing: 0.01em; }\n\
+        .cf-headline em { color: #5b2fd8; margin-left: 9%; }\n\
+        .cf-plate { width: 78%; margin: 0 auto; }\n\
+        .coverframe img { width: 100%; height: auto; display: block; border-radius: 0; }\n\
+        .cf-credits { font-size: 0.42rem; letter-spacing: 0.14em; color: #3a362f; margin-top: 5%;\n\
+            font-family: -apple-system, sans-serif; font-weight: 600; }\n\
+        .cf-date { position: absolute; bottom: 4%; left: 8%; font-size: 0.5rem;\n\
+            letter-spacing: 0.2em; font-weight: 700; }\n\
         </style>\n</head>\n<body>\n";
     let mut rounds: Vec<&str> = items.iter().map(|i| i.round.as_str()).collect();
     rounds.sort();
@@ -889,11 +929,51 @@ fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
                     html_escape(&names.join(", "))
                 );
             }
-            html += &format!(
-                "<img src=\"rounds/{}/{}\" loading=\"lazy\">\n",
+            let img_tag = format!(
+                "<img src=\"rounds/{}/{}\" loading=\"lazy\">",
                 html_escape(&item.round),
                 html_escape(&item.file)
             );
+            if item.purpose == "cover" {
+                // The brief doc's own rule: candidates are judged as rendered
+                // covers, never as naked squares. This is a CSS approximation
+                // of the fixed frame (masthead, headline, spine band, credits);
+                // coverproof.py stays the true proof for finalists.
+                let mut words = cover_frame.headline.split_whitespace();
+                let first = words.next().unwrap_or("");
+                let rest = words.collect::<Vec<_>>().join(" ");
+                html += &format!(
+                    "<div class=\"coverframe\">\
+                     <span class=\"cf-spine\"><span class=\"cf-issue\">ISSUE {issue}</span>\
+                     <span class=\"cf-imprint\">{publication}</span></span>\
+                     <div class=\"cf-masthead\">{masthead}</div>\
+                     <div class=\"cf-headline\"><span>{first}</span><em>{rest}</em></div>\
+                     <div class=\"cf-plate\">{img_tag}</div>\
+                     <div class=\"cf-credits\">COVER CANDIDATE / {brief} v{variant}</div>\
+                     <div class=\"cf-date\">{date}</div>\
+                     </div>\n",
+                    issue = html_escape(&cover_frame.issue),
+                    publication = html_escape(&cover_frame.publication.to_uppercase()),
+                    masthead = cover_frame
+                        .publication
+                        .split_whitespace()
+                        .enumerate()
+                        .map(|(i, w)| if i == 0 {
+                            format!("<span class=\"cf-m1\">{}</span>", html_escape(w))
+                        } else {
+                            format!("<span class=\"cf-m2\">{}</span>", html_escape(w))
+                        })
+                        .collect::<String>(),
+                    first = html_escape(first),
+                    rest = html_escape(&rest),
+                    brief = html_escape(&item.brief_id),
+                    variant = item.variant,
+                    date = html_escape(&cover_frame.date),
+                );
+            } else {
+                html += &img_tag;
+                html += "\n";
+            }
             html += &format!(
                 "<figcaption>{} v{} ({})</figcaption>\n",
                 html_escape(&item.brief_id),
@@ -938,6 +1018,15 @@ fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
     fs::create_dir_all(path.parent().unwrap())?;
     fs::write(&path, html)?;
     Ok(path)
+}
+
+/// The fixed cover frame's editorial facts, read once from edition.yaml so
+/// every cover candidate on the showcase can be shown inside it.
+struct CoverFrame {
+    publication: String,
+    headline: String,
+    issue: String,
+    date: String,
 }
 
 /// The showcase's selection layer: a pick basket over the static page. Picks
@@ -1008,7 +1097,7 @@ const SHOWCASE_BASKET: &str = r#"<div id="basket">
       var slot = f.dataset.slot;
       picks[slot] = (picks[slot] || []).concat([f.dataset.path]);
     }
-    f.querySelector('img').addEventListener('click', function () {
+    (f.querySelector('.coverframe') || f.querySelector('img')).addEventListener('click', function () {
       var slot = f.dataset.slot, p = f.dataset.path;
       var cur = picks[slot] || [];
       if (slot.indexOf('closing:') === 0) {

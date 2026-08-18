@@ -193,7 +193,7 @@ fn resolve_edition_dir(edition: &str) -> Result<PathBuf> {
 
 /// `[publication]\nname = "..."` scan, no toml dependency. Falls back to
 /// "Magazine" if the file, section, or field is absent.
-fn publication_name(repo_root: &Path) -> String {
+pub(crate) fn publication_name(repo_root: &Path) -> String {
     let path = repo_root.join("magazine.toml");
     let Ok(text) = fs::read_to_string(&path) else {
         return "Magazine".to_string();
