@@ -63,7 +63,7 @@ articles:
   - webassembly-a0dede27
   manuscript: editions/007/articles/celld-durable-objects-self-hosted.md
   opener_art:
-    path: editions/007/art/rounds/2026-08-18T15-17-35/opener-celld-self-hosted-v1.png
+    path: editions/007/art/rounds/2026-08-18T15-17-35/opener-celld-self-hosted-v3.png
     alt_text: Pedro and Flopaz carry a glowing jar toward a small wooden shed while Maro holds the door
       open beside an empty shelf, a tall tower in the distance behind them.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
@@ -84,7 +84,7 @@ articles:
   - telemetry-258b249b
   manuscript: editions/007/articles/how-celld-keeps-its-promises.md
   opener_art:
-    path: editions/007/art/rounds/2026-08-18T15-17-35/opener-promises-fencing-v1.png
+    path: editions/007/art/rounds/2026-08-18T15-17-35/opener-promises-fencing-v2.png
     alt_text: Maro turns a new key in a heavy storeroom door as Pedro watches closely, while Flopaz holds
       a bent, useless older key away to one side.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
@@ -101,7 +101,7 @@ articles:
   - origin-code-hosting-807cadab
   manuscript: editions/007/articles/origin-code-hosting.md
   opener_art:
-    path: editions/007/art/rounds/2026-08-18T15-17-35/opener-origin-v1.png
+    path: editions/007/art/rounds/2026-08-18T15-17-35/opener-origin-v2.png
     alt_text: Maro lifts a small wooden sluice gate where a spring's channel forks, merging two branches,
       while Pedro crouches at the water and Flopaz watches from the spring mouth.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
@@ -163,7 +163,7 @@ articles:
   - my-ai-adoption-journey-0036f2d9
   manuscript: editions/007/articles/my-ai-adoption-journey.md
   opener_art:
-    path: editions/007/art/rounds/2026-08-18T15-17-35/opener-adoption-journey-v2.png
+    path: editions/007/art/rounds/2026-08-18T15-17-35/opener-adoption-journey-v1.png
     alt_text: On a hillside road, Pedro releases the grip of a heavy tool bag into Maro's hands while
       Flopaz waits a few paces ahead, looking up the road.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
@@ -172,9 +172,9 @@ editorial: manuscript/editorial.md
 tail_art_fit: contain
 closing_plates:
 - title: The Lantern Room
-  art_path: editions/007/art/rounds/2026-08-18T15-17-35/closing-lantern-room-v1.png
+  art_path: editions/007/art/rounds/2026-08-18T15-17-35/closing-lantern-room-v2.png
 - title: The Long Staircase
-  art_path: editions/007/art/rounds/2026-08-18T15-17-35/closing-long-staircase-v1.png
+  art_path: editions/007/art/rounds/2026-08-18T15-17-35/closing-long-staircase-v3.png
 - title: The Deep Well
   art_path: editions/007/art/rounds/2026-08-18T15-17-35/closing-deep-well-v1.png
 - title: The Night Shed
