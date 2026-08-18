@@ -686,7 +686,13 @@ def _render_extract(edition: Edition, article_id: str, extract: Extract) -> str:
 
     body: str
     if extract.style == "code":
-        body = f"<pre><code>{_verbatim(extract.text)}</code></pre>"
+        # Newlines become explicit breaks and the panel wraps with normal
+        # whitespace processing: a preserved trailing space on a soft-wrapped
+        # pre-wrap line hangs past the measure and fails the print critic.
+        # resolve_extracts refuses code extracts whose whitespace is
+        # layout-significant, so collapsing is display-safe here.
+        lines = "<br>".join(_verbatim(line) for line in extract.text.split("\n"))
+        body = f"<pre><code>{lines}</code></pre>"
     else:
         paragraphs = "".join(
             f"<p>{_verbatim(paragraph.strip())}</p>"
