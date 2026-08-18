@@ -241,6 +241,25 @@ fn stage_article_figures(
     Ok(())
 }
 
+/// Stage the source article.md behind each of an article's extracts.
+fn stage_article_extracts(
+    staging: &mut Staging,
+    article: &serde_yaml::Value,
+) -> Result<()> {
+    let article_id = str_field(article, "id").unwrap_or("<unknown article>");
+    let Some(extracts) = article.get("extracts").and_then(|v| v.as_sequence()) else {
+        return Ok(());
+    };
+    for extract in extracts {
+        let extract_id = str_field(extract, "id").unwrap_or("<unknown extract>");
+        let sid = str_field(extract, "source_id").ok_or_else(|| {
+            anyhow!("article '{article_id}' extract '{extract_id}' missing source_id")
+        })?;
+        staging.add(&PathBuf::from("library/sources").join(sid).join("article.md"));
+    }
+    Ok(())
+}
+
 fn print_summary(value: &serde_json::Value, out_dir: &Path) {
     if let Some(layouts) = value.get("layouts").and_then(|v| v.as_object()) {
         for (lang, info) in layouts {
@@ -637,6 +656,12 @@ pub fn run(
     // F. Figure media, each named directly by the article's figure rows.
     for article in &articles {
         stage_article_figures(&mut staging, article)?;
+    }
+
+    // G. Source article.md behind each extracts row: the bridge pulls the
+    // verbatim run from it at load time.
+    for article in &articles {
+        stage_article_extracts(&mut staging, article)?;
     }
 
     if !staging.missing.is_empty() {
