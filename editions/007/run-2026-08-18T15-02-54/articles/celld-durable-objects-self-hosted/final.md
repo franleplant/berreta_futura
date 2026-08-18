@@ -55,7 +55,3 @@ On SIGTERM or SIGINT the node reports itself unhealthy, answers new requests wit
 ## The tone
 
 We love Cloudflare; this very page is served by a Cloudflare Worker. The Durable Objects model, a single-threaded object with its own storage, addressed by name, is one of the best primitives distributed systems has been handed in years, and that design is Kenton Varda's and the Cloudflare Workers team's. A primitive this good deserves to run anywhere.
-
----
-
-One note from me, outside the piece: the density and cost figures conflict between the summary tables (2,500 cells per 8 GB node, ~$0.02 each) and the reference prose (1,000 cells, ~$0.05 each). I printed both as they stand rather than pick one.
