@@ -827,6 +827,10 @@ aside.extract pre,
 aside.extract blockquote {
   margin: 0;
 }
+aside.extract pre {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 aside.extract .extract-caption {
   font-family: "Inter", system-ui, sans-serif;
   font-size: 0.78rem;

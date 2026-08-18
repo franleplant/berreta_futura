@@ -305,6 +305,12 @@ def resolve_extracts(
             )
             continue
         text = source_text[start : source_text.index(end, start) + len(end)]
+        if style == "code" and ("\t" in text or "  " in text):
+            errors.append(
+                f"{label} run carries layout-significant whitespace (tabs or "
+                "space runs), which a wrapping code panel cannot preserve; "
+                "use begin/end markers that avoid it or style: quote"
+            )
         if text in manuscript_text:
             errors.append(
                 f"{label} run already appears verbatim in the manuscript; "

@@ -894,6 +894,10 @@ blockquote { border-left: 1.5pt solid rgb(25% 10% 43%); margin: 4mm 0; padding-l
   letter-spacing: .45pt; margin: 0 0 2pt; text-transform: uppercase;
 }
 .extract pre, .extract blockquote { margin: 0; }
+/* The panel's lines are prose-length and soft-wrap; normal whitespace
+ * processing (breaks are explicit <br>) so no preserved trailing space can
+ * hang past the measure and fail the line-width critic. */
+.extract pre { white-space: normal; overflow-wrap: anywhere; }
 .extract-caption {
   color: rgb(25% 10% 43%); font-family: "Magazine Sans", sans-serif;
   font-size: 6.8pt; line-height: 1.35; margin: 2pt 0 0;

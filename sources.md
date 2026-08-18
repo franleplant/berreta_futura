@@ -11,7 +11,7 @@ _Collecting: `007` (22 queued)._
 ## Opus Outshines Even Fable, Inside the Hugging Face Hack, AI Companies Spend Big for Compute — Andrew Ng
 
 - ID: `opus-outshines-even-fable-inside-the-hugging-fac-c220467a`
-- Source: https://info.deeplearning.ai/opus-outshines-even-fable-inside-the-hugging-face-hack-ai-companies-spend-big-for-compute-1
+- Source: https://www.deeplearning.ai/the-batch/issue-364/
 - Published: 2026-07-31
 - Captured: 2026-08-18T15:01:57Z
 - Release: queued for `007`
