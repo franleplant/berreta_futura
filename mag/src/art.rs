@@ -540,6 +540,13 @@ fn generate_all(
             let (filename, cmd_str) = candidate_command(gen_cmd, brief, variant, round_dir.as_path());
             handles.push(thread::spawn(move || -> GeneratedItem {
                 let out_path = round_dir.join(&filename);
+                // A non-empty candidate already on disk is kept, never
+                // regenerated: this is what makes an interrupted round
+                // resumable (and costs nothing on a fresh, timestamped one).
+                if fs::metadata(&out_path).map(|m| m.len() > 0).unwrap_or(false) {
+                    println!("    {brief_id} v{variant}: kept (already on disk)");
+                    return GeneratedItem { brief: brief_id, variant, file: filename, ok: true };
+                }
                 let result = {
                     let _permit = SemaphoreGuard::acquire(&sem);
                     run_gen_command(&cmd_str, &out_path)
@@ -1617,6 +1624,7 @@ pub fn run(
     showcase_only: bool,
     only: Option<&str>,
     note: Option<&str>,
+    resume_round: Option<&str>,
 ) -> Result<i32> {
     let edition_dir = resolve_edition_dir(edition)?;
     let edition_label = edition_dir
@@ -1628,6 +1636,34 @@ pub fn run(
         let path = write_showcase(&edition_dir, &edition_label)?;
         println!("showcase rebuilt: {}", path.display());
         return Ok(0);
+    }
+
+    // Resume an interrupted round: reuse its briefs verbatim, keep every
+    // candidate already on disk, generate only the missing ones, then finish
+    // the round (proof sheet, round.yaml, showcase) as if it never stopped.
+    if let Some(resume) = resume_round {
+        if dry_run || only.is_some() || note.is_some() {
+            bail!("--resume-round completes an existing round; drop --dry-run/--only/--note");
+        }
+        let gen_cmd =
+            gen_cmd.ok_or_else(|| anyhow!("--resume-round requires --gen-cmd"))?;
+        let round_dir = PathBuf::from(resume);
+        let briefs_path = round_dir.join("briefs.yaml");
+        let doc: BriefsDoc = serde_yaml::from_str(&read(&briefs_path)?)
+            .with_context(|| format!("parsing {}", briefs_path.display()))?;
+        if doc.briefs.is_empty() {
+            bail!("{} has no briefs to resume", briefs_path.display());
+        }
+        ensure_ref_placeholder(gen_cmd, &doc.briefs)?;
+        println!("resuming round: {}", round_dir.display());
+        return generate_and_finish(
+            &doc.briefs,
+            candidates,
+            gen_cmd,
+            &round_dir,
+            &edition_dir,
+            &edition_label,
+        );
     }
 
     let edition_yaml_text = read(&edition_dir.join("edition.yaml"))?;
@@ -1732,11 +1768,24 @@ pub fn run(
     }
     let gen_cmd = gen_cmd.expect("clap requires --gen-cmd when not a dry run");
 
-    let generated = generate_all(&briefs, candidates, gen_cmd, &round_dir);
+    generate_and_finish(&briefs, candidates, gen_cmd, &round_dir, &edition_dir, &edition_label)
+}
 
-    write_proof_sheet(&round_dir, &edition_label, &briefs, &generated)?;
-    let failures = write_round_yaml(&round_dir, &edition_label, false, &generated)?;
-    let showcase = write_showcase(&edition_dir, &edition_label)?;
+/// Generation and everything after it: proof sheet, round.yaml, showcase,
+/// and the per-brief summary. Shared by a fresh round and --resume-round.
+fn generate_and_finish(
+    briefs: &[Brief],
+    candidates: u32,
+    gen_cmd: &str,
+    round_dir: &Path,
+    edition_dir: &Path,
+    edition_label: &str,
+) -> Result<i32> {
+    let generated = generate_all(briefs, candidates, gen_cmd, round_dir);
+
+    write_proof_sheet(round_dir, edition_label, briefs, &generated)?;
+    let failures = write_round_yaml(round_dir, edition_label, false, &generated)?;
+    let showcase = write_showcase(edition_dir, edition_label)?;
     println!("showcase: {}", showcase.display());
 
     let mut per_brief: HashMap<&str, (usize, usize)> = HashMap::new();
@@ -1750,7 +1799,7 @@ pub fn run(
     }
     println!();
     println!("round dir: {}", round_dir.display());
-    for brief in &briefs {
+    for brief in briefs {
         let (ok, fail) = per_brief.get(brief.id.as_str()).copied().unwrap_or((0, 0));
         println!("  {} [{}]: {ok} ok, {fail} failed", brief.id, brief.purpose);
     }

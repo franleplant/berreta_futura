@@ -101,6 +101,10 @@ enum Cmd {
         /// Editor's note appended to the brief prompt (why the last round was rejected, direction for this one)
         #[arg(long)]
         note: Option<String>,
+        /// Complete an interrupted round dir: reuse its briefs.yaml, keep candidates
+        /// already on disk, generate only the missing ones, then finish the round
+        #[arg(long = "resume-round")]
+        resume_round: Option<String>,
     },
     /// Generate cast model-sheet candidates for an art direction (no brief-writer call;
     /// human approves by pointing the cast's `reference:` at the chosen variant)
@@ -200,7 +204,7 @@ fn run(cli: Cli) -> Result<i32> {
             let spec = caller::ModelSpec::parse(&model)?;
             translate::run(&run_dir, &spec)
         }
-        Cmd::Art { edition, gen_cmd, candidates, model, dry_run, showcase, only, note } => {
+        Cmd::Art { edition, gen_cmd, candidates, model, dry_run, showcase, only, note, resume_round } => {
             let spec = caller::ModelSpec::parse(&model)?;
             art::run(
                 &edition,
@@ -211,6 +215,7 @@ fn run(cli: Cli) -> Result<i32> {
                 showcase,
                 only.as_deref(),
                 note.as_deref(),
+                resume_round.as_deref(),
             )
         }
         Cmd::CastSheet { direction, gen_cmd, candidates, dry_run, showcase, note } => {
