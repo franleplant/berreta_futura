@@ -1,0 +1,52 @@
+edition: '007'
+dry_run: false
+generated:
+- brief: cover-wave-over-the-ledger
+  variant: 1
+  file: cover-wave-over-the-ledger-v1.png
+  ok: true
+- brief: cover-wave-over-the-ledger
+  variant: 2
+  file: cover-wave-over-the-ledger-v2.png
+  ok: true
+- brief: cover-wave-over-the-ledger
+  variant: 3
+  file: cover-wave-over-the-ledger-v3.png
+  ok: true
+- brief: cover-wave-over-the-ledger
+  variant: 4
+  file: cover-wave-over-the-ledger-v4.png
+  ok: true
+- brief: cover-spillway-hurl
+  variant: 1
+  file: cover-spillway-hurl-v1.png
+  ok: true
+- brief: cover-spillway-hurl
+  variant: 2
+  file: cover-spillway-hurl-v2.png
+  ok: true
+- brief: cover-spillway-hurl
+  variant: 3
+  file: cover-spillway-hurl-v3.png
+  ok: true
+- brief: cover-spillway-hurl
+  variant: 4
+  file: cover-spillway-hurl-v4.png
+  ok: true
+- brief: cover-stroke-taken-up
+  variant: 1
+  file: cover-stroke-taken-up-v1.png
+  ok: true
+- brief: cover-stroke-taken-up
+  variant: 2
+  file: cover-stroke-taken-up-v2.png
+  ok: true
+- brief: cover-stroke-taken-up
+  variant: 3
+  file: cover-stroke-taken-up-v3.png
+  ok: true
+- brief: cover-stroke-taken-up
+  variant: 4
+  file: cover-stroke-taken-up-v4.png
+  ok: true
+failures: 0

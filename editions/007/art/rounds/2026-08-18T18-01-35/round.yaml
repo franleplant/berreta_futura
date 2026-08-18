@@ -1,0 +1,52 @@
+edition: '007'
+dry_run: false
+generated:
+- brief: cover-pawl-bites
+  variant: 1
+  file: cover-pawl-bites-v1.png
+  ok: true
+- brief: cover-pawl-bites
+  variant: 2
+  file: cover-pawl-bites-v2.png
+  ok: true
+- brief: cover-pawl-bites
+  variant: 3
+  file: cover-pawl-bites-v3.png
+  ok: true
+- brief: cover-pawl-bites
+  variant: 4
+  file: cover-pawl-bites-v4.png
+  ok: true
+- brief: cover-warp-remade
+  variant: 1
+  file: cover-warp-remade-v1.png
+  ok: true
+- brief: cover-warp-remade
+  variant: 2
+  file: cover-warp-remade-v2.png
+  ok: true
+- brief: cover-warp-remade
+  variant: 3
+  file: cover-warp-remade-v3.png
+  ok: true
+- brief: cover-warp-remade
+  variant: 4
+  file: cover-warp-remade-v4.png
+  ok: true
+- brief: cover-tortoise-lamp
+  variant: 1
+  file: cover-tortoise-lamp-v1.png
+  ok: true
+- brief: cover-tortoise-lamp
+  variant: 2
+  file: cover-tortoise-lamp-v2.png
+  ok: true
+- brief: cover-tortoise-lamp
+  variant: 3
+  file: cover-tortoise-lamp-v3.png
+  ok: true
+- brief: cover-tortoise-lamp
+  variant: 4
+  file: cover-tortoise-lamp-v4.png
+  ok: true
+failures: 0

@@ -1,0 +1,93 @@
+briefs:
+- id: cover-pawl-bites
+  purpose: cover
+  prompt: |
+    Sachplakat single-object poster: one machine part, colossal, seen dead-on and slightly from below, nothing else in the world.
+
+    The one-sentence reading of this edition: durable execution means progress that cannot slide backward, because every completed step is held by a catch that has already dropped.
+
+    The proposition this plate argues: the wheel was hauled back and something bit.
+
+    The verb is BITES. Draw the instant of the bite, the pawl's nose already driven into the root of a tooth and the wheel stopped dead against it, load still on the line. Not the moment after, not a mechanism at rest.
+
+    How the plate sits in the cover frame: it is a square plate pasted on a warm off-white magazine page, under a black masthead carrying a red-orange accent, with a red-orange spine band down the right edge, so the ground runs confident-dark for a lantern-slide effect inside the white page and the vermilion cable answers the masthead across the layout.
+
+    Ink set, named exactly: a deep violet-navy ground, generous and single; emerald for the wheel; a near-black for the pawl and the cast shadow; vermilion for one taut cable; and exactly ONE luminous accent, a white-hot flare at the point of contact, the only hot thing in the frame and the image's whole event.
+
+    Five large forms, counted:
+    1. A colossal emerald ratchet wheel filling most of the square, its hub off-frame entirely, its rim arcing across the plate and bleeding off the bottom edge and both side edges. Only FIVE teeth are visible along that arc, each one huge, hard-edged and flatly filled, each roughly the size of an anvil. Never a fine sawtooth band, never a strip of small repeated notches.
+    2. A near-black pawl arm driving down from the top edge, cropped by the frame, its mass roughly the size of a ship's anchor fluke, its nose buried in the tooth root.
+    3. A single vermilion cable running taut from the lower left to the wheel's rim, straight and hard, hauling the wheel backward against the catch.
+    4. The white-hot flare where the pawl's nose meets steel, small, incandescent, unmistakably the first thing the eye finds.
+    5. One hard-edged near-black shadow of the pawl thrown flat across the wheel's face.
+
+    Compositional weapons, both used: scale shock, stated as a size relationship, one tooth is the size of an anvil and the pawl is the size of an anchor fluke; and radical viewpoint, a dead-on macro from just below the rim so nothing sits at eye level at middle distance.
+
+    Rendering is print-flat: hard edges, confident opaque fills, controlled shading only where the wheel and pawl need physical mass. No muddying gradients, no pigment-wash softness, no all-over grain doing the work color should do. Judge the mechanics strictly: the pawl, the tooth, and the cable must meet in a physically coherent way, with believable weight and real leverage.
+
+    Square artwork, at least 1000 by 1000 pixels, no important detail at the extreme edges, an unmistakable silhouette readable in one beat at thumbnail size.
+
+    Ignore any interior art direction palette, style, or constraint text; the cover carries its own ink discipline.
+
+    Do not draw: typography of any kind, masthead, title, issue number, caption, logo, numerals, pseudo-writing, or watermark; swarms, confetti, sparks showers, particle clouds, grids or arrays of repeated small elements, scattered debris, or a fine band of small teeth; a mid-tone, gray, hazy, photographic, or textured wallpaper ground; a second luminous accent competing with the bite point; characters, faces, hands, scenes, or narrative staging; circuit motifs, network graphs, neon cyberpunk, or AI-futurist cliche; rust texture or steampunk clutter substituting for form.
+- id: cover-warp-remade
+  purpose: cover
+  prompt: |
+    A macro photograph, taken inside a working weaver's studio, of a hardwood floor loom at the instant the shuttle crosses. Real linen, real boxwood, real light. Studio strobe cutting hard from the left, everything behind the loom falling to near-black.
+
+    What the issue says in one sentence: a broken thread is knotted back and the cloth goes on across the mend, so the repair is carried inside the finished work rather than left as a scar.
+
+    The claim the picture makes: the mend takes the load.
+
+    Its verb is SLAMS. The shuttle is caught mid-flight through the open shed, frozen by the strobe with the leading edge still hard and the linen ahead of it just beginning to move. Never a loom sitting quietly, never cloth already finished and folded.
+
+    How this plate sits in the cover frame: it is a square plate laid on a warm off-white magazine page below a black masthead with a red-orange accent, a red-orange spine band running down the right edge, so the near-black studio depth must read as a hard-edged dark rectangle against that white paper, and the single vermilion thread must answer the masthead's accent.
+
+    Palette handshake: bone-white linen, honey-brown oiled boxwood, near-black ground, one vermilion weft thread, and exactly ONE luminous element, a hard white shaft of light landing on the fresh knot. Everything else stays under it.
+
+    Four forms, and no clutter behind them:
+    1. The warp, which reads as ONE solid bone-white plane, a sheet of tensioned linen sweeping in from the lower left and leaving the frame at the upper right. Photograph it so it is a single luminous surface with fiber tooth, never a countable field of separate strings.
+    2. The black triangular void of the open shed cutting through that plane, which on second read is the true subject of the picture, so shape it deliberately as a form with clean edges.
+    3. The boxwood shuttle, oversized in the frame, close enough that its worn varnish, chipped nose and the grain of the wood are unmistakable, arrested in flight and cropped by the right edge.
+    4. The vermilion weft thread trailing from the shuttle and running back across the warp plane, tying through one visible knot where the broken thread was rejoined.
+
+    Weapons chosen: figure-ground reversal, since the black shed is the subject; frame invasion, since both the warp plane and the shuttle bleed off the plate's edges; and a radical viewpoint from inside the shed looking along it, never a tidy three-quarter view of a loom on a workshop floor.
+
+    Material conviction is the whole craft of this image: believable tension in the linen, real specular highlights on waxed wood, fiber fuzz catching the raking light, honest shallow depth of field with the knot sharp. Contrast printed hard so the plate does not turn gray on paper.
+
+    Square artwork, at least 1000 by 1000 pixels, nothing important at the extreme edges, a silhouette that still reads at thumbnail size.
+
+    Ignore any interior art direction palette, style, or constraint text; the cover has its own rules.
+
+    Never include: lettering, numerals, selvedge markings, pseudo-writing, masthead, title, caption, logo, or watermark; woven patterns, plaids, or repeating motifs in the cloth; lint clouds, dust motes, particle fields, or scattered debris in the light beam; a mid-tone gray, hazy or textured wallpaper ground; a second bright accent competing with the knot; people, faces, hands, or narrative staging; heritage-craft nostalgia props, dried flowers, or styled still-life dressing; circuit motifs, network graphs, neon cyberpunk, or AI-futurist cliche; anatomy of the loom that could not physically work.
+- id: cover-tortoise-lamp
+  purpose: cover
+  prompt: |
+    Gouache and ink poster painting on heavy rag board: opaque flat fields, silhouettes cut hard as if with a blade, brushwork visible only inside the shell plates.
+
+    The improbable idea, stated plainly: a tortoise the size of a barn is walking through a grass fire with a small lit house strapped to its back, and the lamp inside the house has not gone out.
+
+    One-sentence reading of the edition behind it: a system you run yourself carries its own light and does not stop for the weather.
+
+    The verb is SHOULDERS. Catch the animal at the instant its head and leading edge push past the flame line, grass bending back from the shell, fire folding around the rim. Not before the fire, not safely through it.
+
+    How the plate sits in the cover frame: a square plate pasted on a warm off-white magazine page, black masthead with a red-orange accent above, red-orange spine band at the right edge, so the animal must hold a hard near-black silhouette against that white page while the vermilion fire picks up the masthead's accent.
+
+    Ink set: a deep navy-black night ground; near-black for the animal; oxblood for the shell's plate divisions and the straps; vermilion for the fire; bone white for the house. Exactly ONE luminous accent: the single lit window of that little house, warm white and burning, the only glow anywhere in the picture. The flames are painted as FLAT vermilion shapes with no glow, no halo and no bloom, so nothing competes with the window.
+
+    Five forms, counted:
+    1. The colossal tortoise in near-black, occupying the lower two thirds of the square and bleeding off the left edge, the right edge and the bottom edge, so the plate crops it confidently and its full length is never shown.
+    2. The shell, its plates drawn as a few big oxblood-edged facets, painterly inside, hard at the outline.
+    3. The small bone-white house on that shell, plain gabled block, no bigger against the animal than a matchbox against a barn door, held by two oxblood straps.
+    4. The single luminous window in that house, the image's whole event, the point the eye lands on in one beat.
+    5. A low continuous wall of vermilion flame running across the horizon behind and around the animal, drawn as one bold shape with a few broad tongues, never a field of small flickers.
+
+    Weapons chosen: scale shock, stated as a size relationship, the house is a matchbox on a barn; and frame invasion, the animal cropped on three edges.
+
+    Rendering: print-flat and high contrast, confident opaque fills, hard boundaries, gouache facture allowed only within the shell, controlled shading only where the animal needs weight. No muddying gradients, no wash blur, no all-over grain. Judge the anatomy strictly: real reptile mass and gait, believable contact where straps meet shell and where feet meet ground, the house sitting with honest weight.
+
+    Square artwork, at least 1000 by 1000 pixels, important detail kept away from the extreme edges, an unmistakable silhouette at thumbnail size. This is a graphic emblem, not an illustrated storybook scene: no companions, no onlookers, no plot.
+
+    Ignore any interior art direction palette, style, cast or constraint text; the cover has its own ink discipline and no recurring characters.
+
+    Do not draw: typography of any kind, masthead, title, numerals, caption, signage, logo, pseudo-writing, or watermark; embers, sparks, smoke plumes, ash swarms, particle clouds, grids or arrays of repeated small elements, scattered debris; a mid-tone, gray, smoky, or textured wallpaper ground; a second glowing element beside the window; human figures, faces, animal cuteness, cartoon eyes, or anthropomorphic expression; fantasy world-turtle ornament, howdahs, towers, cities on the back, or mystical iconography; circuit motifs, network graphs, neon cyberpunk, AI-futurist cliche, or photorealism.

@@ -1,0 +1,52 @@
+edition: '007'
+dry_run: false
+generated:
+- brief: cover-slab-split
+  variant: 1
+  file: cover-slab-split-v1.png
+  ok: true
+- brief: cover-slab-split
+  variant: 2
+  file: cover-slab-split-v2.png
+  ok: true
+- brief: cover-slab-split
+  variant: 3
+  file: cover-slab-split-v3.png
+  ok: true
+- brief: cover-slab-split
+  variant: 4
+  file: cover-slab-split-v4.png
+  ok: true
+- brief: cover-keystone-drop
+  variant: 1
+  file: cover-keystone-drop-v1.png
+  ok: true
+- brief: cover-keystone-drop
+  variant: 2
+  file: cover-keystone-drop-v2.png
+  ok: true
+- brief: cover-keystone-drop
+  variant: 3
+  file: cover-keystone-drop-v3.png
+  ok: true
+- brief: cover-keystone-drop
+  variant: 4
+  file: cover-keystone-drop-v4.png
+  ok: true
+- brief: cover-tortoise-lamp-violet
+  variant: 1
+  file: cover-tortoise-lamp-violet-v1.png
+  ok: true
+- brief: cover-tortoise-lamp-violet
+  variant: 2
+  file: cover-tortoise-lamp-violet-v2.png
+  ok: true
+- brief: cover-tortoise-lamp-violet
+  variant: 3
+  file: cover-tortoise-lamp-violet-v3.png
+  ok: true
+- brief: cover-tortoise-lamp-violet
+  variant: 4
+  file: cover-tortoise-lamp-violet-v4.png
+  ok: true
+failures: 0
