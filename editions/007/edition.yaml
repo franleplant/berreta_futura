@@ -1,14 +1,16 @@
 # Edition 7 — working spec. Title, subtitle, cover copy, and publication date
 # are placeholders for the editor; article order is the editorial reading
 # order (vocabulary first, the personal essay as closer).
-# ART SELECTIONS PENDING: art paths are filled in after the first art round;
-# the editor's real selection happens in editions/007/art/showcase.html.
+# ART SELECTIONS ARE PROVISIONAL: picked by Claude, favoring cast-check-clean
+# variants; the editor's real selection happens in editions/007/art/showcase.html.
+# Round: 2026-08-18T15-17-35 (84/84 candidates, 7 flagged off-model, none selected).
 # The gauntlet-loop article carries the first extracts row: the Claude-of-Duty
 # prompt, printed verbatim as a code panel at the opener.
 id: '007'
 issue_number: 7
 title: Durable Execution
-subtitle: celld and Durable Objects, Cloudflare Workflows, gauntlet loops, Origin, and one AI adoption journey
+subtitle: celld and Durable Objects, Cloudflare Workflows, gauntlet loops, Origin, and one AI adoption
+  journey
 publication_date: '2026-08-18'
 status: draft
 format:
@@ -17,10 +19,11 @@ art_direction_path: art-directions/story-led-boy-and-robot.yaml
 cover:
   headline: Durable Execution
   deck: celld and Durable Objects, Cloudflare Workflows, gauntlet loops, Origin, and one AI adoption journey
-  back_text: 'A durable object promises there is exactly one of it. Keeping that promise
-    through crashes, restarts, and split brains is the whole trick: fencing tokens,
-    write-ahead logs, a loop that refuses to call the work done early. This issue is
-    about systems that finish what they start, and what it costs them.'
+  back_text: 'A durable object promises there is exactly one of it. Keeping that promise through crashes,
+    restarts, and split brains is the whole trick: fencing tokens, write-ahead logs, a loop that refuses
+    to call the work done early. This issue is about systems that finish what they start, and what it
+    costs them.'
+  art_path: editions/007/art/rounds/2026-08-18T15-17-35/cover-missing-tread-v2.png
 articles:
 - id: cloudflare-workflows-in-a-nutshell
   title: Cloudflare Workflows in a Nutshell
@@ -28,6 +31,7 @@ articles:
   display_emphasis: Workflows
   opener_variant: stepped_title
   author: Cloudflare
+  author_note: Distilled from seven pages of Cloudflare's Workflows documentation.
   content_mode: in_a_nutshell
   source_ids:
   - cloudflare-workflows-f4e217d5
@@ -38,12 +42,19 @@ articles:
   - limits-f870015a
   - events-and-parameters-179cef23
   manuscript: editions/007/articles/cloudflare-workflows-in-a-nutshell.md
+  opener_art:
+    path: editions/007/art/rounds/2026-08-18T15-17-35/opener-workflows-v2.png
+    alt_text: Pedro carries a watering can up stepping stones across a stream; Maro braces a tipping stone
+      while Flopaz holds up an hourglass beside him.
+    credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
+  tail_art_path: editions/007/art/rounds/2026-08-18T15-17-35/tail-workflows-v1.png
 - id: celld-durable-objects-self-hosted
   title: 'celld: Durable Objects, Self-Hosted'
   short_title: 'celld: Durable Objects, Self-Hosted'
   display_emphasis: celld
   opener_variant: split_axis
   author: celld
+  author_note: From the celld site and documentation.
   content_mode: article
   source_ids:
   - celld-durable-objects-self-hosted-0b5b2fb8
@@ -51,12 +62,19 @@ articles:
   - cloudflare-compatibility-058f0bd3
   - webassembly-a0dede27
   manuscript: editions/007/articles/celld-durable-objects-self-hosted.md
+  opener_art:
+    path: editions/007/art/rounds/2026-08-18T15-17-35/opener-celld-self-hosted-v1.png
+    alt_text: Pedro and Flopaz carry a glowing jar toward a small wooden shed while Maro holds the door
+      open beside an empty shelf, a tall tower in the distance behind them.
+    credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
+  tail_art_path: editions/007/art/rounds/2026-08-18T15-17-35/tail-celld-self-hosted-v1.png
 - id: how-celld-keeps-its-promises
   title: How celld Keeps Its Promises
   short_title: How celld Keeps Its Promises
   display_emphasis: Promises
   opener_variant: edge_medallion
   author: celld
+  author_note: From celld's ownership, security, testing, and telemetry documentation.
   content_mode: article
   source_ids:
   - ownership-and-fencing-dd43dd4a
@@ -65,22 +83,36 @@ articles:
   - testing-8010abfb
   - telemetry-258b249b
   manuscript: editions/007/articles/how-celld-keeps-its-promises.md
+  opener_art:
+    path: editions/007/art/rounds/2026-08-18T15-17-35/opener-promises-fencing-v1.png
+    alt_text: Maro turns a new key in a heavy storeroom door as Pedro watches closely, while Flopaz holds
+      a bent, useless older key away to one side.
+    credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
+  tail_art_path: editions/007/art/rounds/2026-08-18T15-17-35/tail-promises-fencing-v1.png
 - id: origin-code-hosting
   title: Origin Code Hosting
   short_title: Origin Code Hosting
   display_emphasis: Origin
   opener_variant: stepped_title
   author: Cursor
+  author_note: From the Cursor changelog.
   content_mode: article
   source_ids:
   - origin-code-hosting-807cadab
   manuscript: editions/007/articles/origin-code-hosting.md
+  opener_art:
+    path: editions/007/art/rounds/2026-08-18T15-17-35/opener-origin-v1.png
+    alt_text: Maro lifts a small wooden sluice gate where a spring's channel forks, merging two branches,
+      while Pedro crouches at the water and Flopaz watches from the spring mouth.
+    credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
+  tail_art_path: editions/007/art/rounds/2026-08-18T15-17-35/tail-origin-v1.png
 - id: how-to-run-a-gauntlet-loop
   title: How to Run a Gauntlet Loop
   short_title: How to Run a Gauntlet Loop
   display_emphasis: Gauntlet
   opener_variant: split_axis
   author: Matt Shumer
+  author_note: Matt Shumer writes at somethingbig.ai; the prompt and code are open-sourced.
   content_mode: article
   source_ids:
   - how-to-run-a-gauntlet-loop-c259d9f4
@@ -95,6 +127,13 @@ articles:
     style: code
     caption: The entire prompt that produced Claude of Duty, verbatim.
     anchor: __opener__
+  opener_art:
+    path: editions/007/art/rounds/2026-08-18T15-17-35/opener-gauntlet-loop-v2.png
+    alt_text: A small clay figure tumbles on a circular obstacle track while Maro waits to set it back
+      at the start, Pedro watches at table level with a pocket watch, and Flopaz holds three broken earlier
+      figures.
+    credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
+  tail_art_path: editions/007/art/rounds/2026-08-18T15-17-35/tail-gauntlet-loop-v3.png
 - id: opus-outshines-even-fable
   title: Opus Outshines Even Fable, Inside the Hugging Face Hack, AI Companies Spend Big for Compute
   short_title: Opus Outshines Even Fable
@@ -106,15 +145,37 @@ articles:
   source_ids:
   - opus-outshines-even-fable-inside-the-hugging-fac-c220467a
   manuscript: editions/007/articles/opus-outshines-even-fable.md
+  opener_art:
+    path: editions/007/art/rounds/2026-08-18T15-17-35/opener-opus-outshines-v2.png
+    alt_text: On a rooftop at night, Pedro points up at a star burning brighter than the one beside it
+      while Flopaz looks on from the parapet and Maro turns a telescope toward it.
+    credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
+  tail_art_path: editions/007/art/rounds/2026-08-18T15-17-35/tail-opus-outshines-v1.png
 - id: my-ai-adoption-journey
   title: My AI Adoption Journey
   short_title: My AI Adoption Journey
   display_emphasis: Journey
   opener_variant: stepped_title
   author: Mitchell Hashimoto
+  author_note: Mitchell Hashimoto is the creator of Vagrant, Terraform, and Ghostty.
   content_mode: article
   source_ids:
   - my-ai-adoption-journey-0036f2d9
   manuscript: editions/007/articles/my-ai-adoption-journey.md
+  opener_art:
+    path: editions/007/art/rounds/2026-08-18T15-17-35/opener-adoption-journey-v2.png
+    alt_text: On a hillside road, Pedro releases the grip of a heavy tool bag into Maro's hands while
+      Flopaz waits a few paces ahead, looking up the road.
+    credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
+  tail_art_path: editions/007/art/rounds/2026-08-18T15-17-35/tail-adoption-journey-v1.png
 editorial: manuscript/editorial.md
 tail_art_fit: contain
+closing_plates:
+- title: The Lantern Room
+  art_path: editions/007/art/rounds/2026-08-18T15-17-35/closing-lantern-room-v1.png
+- title: The Long Staircase
+  art_path: editions/007/art/rounds/2026-08-18T15-17-35/closing-long-staircase-v1.png
+- title: The Deep Well
+  art_path: editions/007/art/rounds/2026-08-18T15-17-35/closing-deep-well-v1.png
+- title: The Night Shed
+  art_path: editions/007/art/rounds/2026-08-18T15-17-35/closing-night-shed-v1.png
