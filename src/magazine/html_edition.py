@@ -737,7 +737,7 @@ def _render_block(block: Block, *, standfirst: bool = False, references: bool = 
     if isinstance(block, FencedCode):
         language = block.info.split(maxsplit=1)[0] if block.info else ""
         class_attr = f' class="language-{_attr(language)}"' if language else ""
-        return f"<pre><code{class_attr}>{_verbatim(block.code)}</code></pre>"
+        return f"<pre><code{class_attr}>{_highlight_code(block.code, language)}</code></pre>"
     if isinstance(block, BlockQuote):
         return "<blockquote>" + "".join(_render_block(child) for child in block.children) + "</blockquote>"
     if isinstance(block, ListBlock):
@@ -748,6 +748,37 @@ def _render_block(block: Block, *, standfirst: bool = False, references: bool = 
     if isinstance(block, HorizontalRule):
         return "<hr>"
     raise TypeError(f"Unsupported publication block: {type(block).__name__}")
+
+
+def _highlight_code(code: str, language: str) -> str:
+    """A fenced block's code as token spans, or plainly escaped.
+
+    Pygments emits class-annotated spans and nothing else (``nowrap``); the
+    stylesheets color the classes and never touch weight or slant, because a
+    bold monospace glyph is wider than a regular one and would move the very
+    line widths the print critic measures.  The token text is the folded code
+    verbatim, so a block with no usable lexer renders exactly as before.
+    """
+
+    folded = fold_reader_characters(code)
+    if language:
+        try:
+            from pygments import highlight
+            from pygments.formatters import HtmlFormatter
+            from pygments.lexers import get_lexer_by_name
+            from pygments.util import ClassNotFound
+
+            try:
+                lexer = get_lexer_by_name(language, stripnl=False, ensurenl=False)
+            except ClassNotFound:
+                lexer = None
+            if lexer is not None:
+                return highlight(
+                    folded, lexer, HtmlFormatter(nowrap=True)
+                ).rstrip("\n")
+        except ImportError:
+            pass
+    return escape(folded, quote=False)
 
 
 def _render_list_item(item: ListItem) -> str:

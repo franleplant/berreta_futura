@@ -1,15 +1,15 @@
 ---
 label: EDITORIAL
-title: One Writer Per State
+title: The Record Is All You Have
 byline: The Editors
 ---
 
-Six agents, one per directory, three rounds. The score moved 0.46. Frame-ruining defects went 60, then 47, then 66, worse than the start. One pass, one owner per coupled concern, moved a full point and cut defects to 26.
+A result that exists only in a process's memory is not a result.
 
-The fleet is being sold as the product. On coupled work it is a tax. Tonemapping, sky and indirect light are one system. Six owners mean six theories of the same pixel and no way to retire any of them.
+Take a workflow engine that can pause a job for as long as a year. It stops, drops everything held in memory, and resumes months later from what each finished step wrote down. An array filled across two steps comes back empty. Engineers call that a limitation. It is the design. The engine forgets on purpose, so the written record is the only thing anyone has to trust.
 
-Distributed systems settled this. A Durable Object gets one thread and one writer. celld fences the loser with an epoch in the object key, so a stale node keeps writing into a path no restore will ever select. Not because writers are scarce. Because two writers on one state leave a history nobody can reconstruct.
+The same rule governs the agents writing our code, and we keep exempting them. An agent that has worked for hours remembers every decision and every reason, and that memory is the least reliable thing it produced. In one long run, fresh critics got the artifact and none of the builder's history and judged it blind against a real reference. The reference won every round. The scores still climbed, 3.59 to 5.05 out of ten. The builder's account showed neither.
 
-So: through 2027 the subagent count will headline every harness release, and the work worth keeping will still come from one owner, one pass, and a critic who never saw the code.
+Whoever ships the summary pays later, on call at two in the morning with a transcript instead of a log.
 
-The Editors
+Take the last agent run you called done and delete the transcript. If nothing is left to rerun, diff, or grep, it was not done.

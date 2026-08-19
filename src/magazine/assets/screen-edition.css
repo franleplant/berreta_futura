@@ -777,6 +777,12 @@ pre {
 code {
   font-family: "Courier New", Courier, monospace;
 }
+/* Syntax highlighting: color only, mirroring the print inks. */
+pre code .k, pre code .kc, pre code .kd, pre code .kn, pre code .kp, pre code .kr, pre code .kt, pre code .ow { color: #55308f; }
+pre code .s, pre code .s1, pre code .s2, pre code .sb, pre code .sd, pre code .se, pre code .si, pre code .sr, pre code .ss, pre code .sa { color: #1d6b41; }
+pre code .c, pre code .c1, pre code .cm, pre code .cs, pre code .cp, pre code .cpf { color: #767380; }
+pre code .m, pre code .mi, pre code .mf, pre code .mh, pre code .mo, pre code .mb, pre code .il { color: #8f2b33; }
+pre code .nf, pre code .fm, pre code .nc, pre code .nn, pre code .nd, pre code .nb, pre code .bp, pre code .nt { color: #274b9f; }
 p code,
 li code {
   font-size: 0.92em;
