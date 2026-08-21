@@ -1,15 +1,15 @@
 ---
 label: EDITORIAL
-title: The Record Is All You Have
+title: How Systems Learn to Say No
 byline: The Editors
 ---
 
-A result that exists only in a process's memory is not a result.
+The safety of a distributed system rests on how the losing writer is stopped.
 
-Take a workflow engine that can pause a job for as long as a year. It stops, drops everything held in memory, and resumes months later from what each finished step wrote down. An array filled across two steps comes back empty. Engineers call that a limitation. It is the design. The engine forgets on purpose, so the written record is the only thing anyone has to trust.
+The field learned this long ago and keeps relearning it. In the 2006 Bigtable paper each tablet server held an exclusive lock on a file in Chubby, Google's Paxos-backed lock service, and a server that lost its lock stopped serving, whatever it still believed about itself. The interesting part was never the algorithm. It was the refusal.
 
-The same rule governs the agents writing our code, and we keep exempting them. An agent that has worked for hours remembers every decision and every reason, and that memory is the least reliable thing it produced. In one long run, fresh critics got the artifact and none of the builder's history and judged it blind against a real reference. The reference won every round. The scores still climbed, 3.59 to 5.05 out of ten. The builder's account showed neither.
+Where the refusal is missing, the bill arrives. In October 2018 GitHub lost 43 seconds of connectivity between two data centers. Databases on both coasts took writes. Untangling them cost more than twenty four hours of degraded service, for under a minute of bad network.
 
-Whoever ships the summary pays later, on call at two in the morning with a transcript instead of a log.
+What is new is where the refusal lives. Amazon S3 became strongly consistent for reads after writes in December 2020, and now accepts conditional writes, so a bucket can say no.
 
-Take the last agent run you called done and delete the transcript. If nothing is left to rerun, diff, or grep, it was not done.
+We would ask one question of any fleet built this way: does your object store truly fail a conditional write, or does it only accept the header? A store that lies gives you two owners of one record, and your users find out before your vendor does.
