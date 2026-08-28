@@ -1,5 +1,5 @@
 schema_version: 2
-intake_edition_id: '007'
+intake_edition_id: '008'
 collecting_editions:
 - id: '005'
   issue_number: 5
@@ -52,6 +52,13 @@ collecting_editions:
   - origin-code-hosting-807cadab
   - my-ai-adoption-journey-0036f2d9
   - opus-outshines-even-fable-inside-the-hugging-fac-c220467a
+- id: '008'
+  issue_number: 8
+  status: collecting
+  source_ids:
+  - how-warp-builds-self-improving-agents-on-claude-9e96ce55
+  - previewing-the-model-hardware-standard-35305757
+  - inference-will-eat-the-world-053ed26b
 released_editions:
 - id: 001-the-work-left-to-us
   issue_number: 1

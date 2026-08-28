@@ -82,7 +82,7 @@ fn article_slug(source_id: &str) -> String {
     trimmed.trim_end_matches('-').to_string()
 }
 
-fn article_row(source_id: &str, title: &str, author: &str) -> serde_yaml::Value {
+fn article_row(source_id: &str, title: &str, author: &str, mode: &str) -> serde_yaml::Value {
     let mut row = serde_yaml::Mapping::new();
     let mut set = |k: &str, v: serde_yaml::Value| {
         row.insert(serde_yaml::Value::String(k.to_string()), v);
@@ -90,7 +90,7 @@ fn article_row(source_id: &str, title: &str, author: &str) -> serde_yaml::Value 
     set("id", serde_yaml::Value::String(article_slug(source_id)));
     set("title", serde_yaml::Value::String(title.to_string()));
     set("author", serde_yaml::Value::String(author.to_string()));
-    set("content_mode", serde_yaml::Value::String("article".to_string()));
+    set("content_mode", serde_yaml::Value::String(mode.to_string()));
     set(
         "source_ids",
         serde_yaml::Value::Sequence(vec![serde_yaml::Value::String(source_id.to_string())]),
@@ -161,7 +161,7 @@ fn append_rows(plan_text: &str, rows: &[serde_yaml::Value]) -> Result<String> {
 
 /// An article row for a queued source, title and author read from its
 /// record.yaml.
-fn row_from_record(sid: &str) -> Result<serde_yaml::Value> {
+fn row_from_record(sid: &str, mode: &str) -> Result<serde_yaml::Value> {
     let record_path = PathBuf::from("library/sources").join(sid).join("record.yaml");
     let record: serde_yaml::Value = serde_yaml::from_str(&read(&record_path)?)
         .with_context(|| format!("parsing {}", record_path.display()))?;
@@ -170,14 +170,153 @@ fn row_from_record(sid: &str) -> Result<serde_yaml::Value> {
         .and_then(|v| v.as_str())
         .ok_or_else(|| anyhow!("source '{sid}' record.yaml has no title"))?;
     let author = record.get("author").and_then(|v| v.as_str()).unwrap_or("");
-    Ok(article_row(sid, title, author))
+    Ok(article_row(sid, title, author, mode))
 }
 
-pub fn propose_plan(edition: &str) -> Result<i32> {
+pub const CONTENT_MODES: &[&str] = &["article", "in_a_nutshell"];
+
+/// The existing plan text with `sid` appended to the source_ids of the
+/// article row whose id is `article`. Text-level edit so comments and hand
+/// formatting survive; the result is re-parsed to prove the id landed in
+/// that row's list.
+fn join_article(plan_text: &str, article: &str, sid: &str) -> Result<String> {
+    let lines: Vec<&str> = plan_text.lines().collect();
+    let row_start = lines
+        .iter()
+        .position(|l| l.trim_end() == format!("- id: {article}") || l.trim_end() == format!("- id: '{article}'"))
+        .ok_or_else(|| {
+            let ids: Vec<String> = lines
+                .iter()
+                .filter_map(|l| l.strip_prefix("- id: "))
+                .map(|s| s.trim().trim_matches('\'').to_string())
+                .collect();
+            anyhow!("plan.yaml has no article '{article}'; existing articles: {}", ids.join(", "))
+        })?;
+    let row_end = lines[row_start + 1..]
+        .iter()
+        .position(|l| l.starts_with("- ") || (!l.is_empty() && !l.starts_with(' ') && !l.starts_with('#')))
+        .map(|i| row_start + 1 + i)
+        .unwrap_or(lines.len());
+    let sids_line = lines[row_start..row_end]
+        .iter()
+        .position(|l| l.trim_end() == "  source_ids:")
+        .map(|i| row_start + i)
+        .ok_or_else(|| anyhow!("article '{article}' in plan.yaml has no block-style source_ids list"))?;
+    let mut insert_at = sids_line + 1;
+    while insert_at < row_end && lines[insert_at].starts_with("  - ") {
+        insert_at += 1;
+    }
+    let mut out: Vec<String> = lines.iter().map(|l| l.to_string()).collect();
+    out.insert(insert_at, format!("  - {sid}"));
+    let mut joined = out.join("\n");
+    joined.push('\n');
+
+    let doc: serde_yaml::Value =
+        serde_yaml::from_str(&joined).context("re-parsing plan.yaml after join")?;
+    let landed = doc
+        .get("articles")
+        .and_then(|v| v.as_sequence())
+        .map(|arts| {
+            arts.iter().any(|a| {
+                a.get("id").and_then(|v| v.as_str()) == Some(article)
+                    && a
+                        .get("source_ids")
+                        .and_then(|v| v.as_sequence())
+                        .map(|s| s.iter().any(|x| x.as_str() == Some(sid)))
+                        .unwrap_or(false)
+            })
+        })
+        .unwrap_or(false);
+    if !landed {
+        bail!("could not add {sid} to article '{article}' in plan.yaml; add it by hand");
+    }
+    Ok(joined)
+}
+
+fn plan_path_for(edition: &str) -> Result<PathBuf> {
     let dirs = matching_edition_dirs(edition)?;
     let out_dir =
         dirs.into_iter().next().unwrap_or_else(|| PathBuf::from("editions").join(edition));
-    let out_path = out_dir.join("plan.yaml");
+    Ok(out_dir.join("plan.yaml"))
+}
+
+fn write_new_plan(out_path: &std::path::Path, edition_id: &str, articles: Vec<serde_yaml::Value>) -> Result<()> {
+    let mut edition_map = serde_yaml::Mapping::new();
+    edition_map.insert(
+        serde_yaml::Value::String("id".to_string()),
+        serde_yaml::Value::String(edition_id.to_string()),
+    );
+    let mut plan = serde_yaml::Mapping::new();
+    plan.insert(
+        serde_yaml::Value::String("edition".to_string()),
+        serde_yaml::Value::Mapping(edition_map),
+    );
+    plan.insert(
+        serde_yaml::Value::String("articles".to_string()),
+        serde_yaml::Value::Sequence(articles),
+    );
+    if let Some(dir) = out_path.parent() {
+        fs::create_dir_all(dir)?;
+    }
+    fs::write(out_path, serde_yaml::to_string(&serde_yaml::Value::Mapping(plan))?)?;
+    Ok(())
+}
+
+/// Record a freshly captured source in the edition's plan.yaml right away, so
+/// the source-to-article mapping lives on disk from intake, never only in
+/// whoever's head ran the capture. With `article`, the source joins that
+/// existing row's source_ids; otherwise it gets its own row in `mode`. A
+/// missing plan.yaml is created first from every queued source, so earlier
+/// captures are covered too.
+pub fn add_source(edition: &str, sid: &str, article: Option<&str>, mode: &str) -> Result<()> {
+    if !CONTENT_MODES.contains(&mode) {
+        bail!("unknown content mode '{mode}'; one of: {}", CONTENT_MODES.join(", "));
+    }
+    let out_path = plan_path_for(edition)?;
+    let release_state = read(&PathBuf::from("library/release-state.yaml"))?;
+    let (edition_id, queued) = queued_source_ids(&release_state, edition)?;
+
+    if !out_path.exists() {
+        let mut articles = Vec::new();
+        for q in &queued {
+            if q == sid {
+                if article.is_none() {
+                    articles.push(row_from_record(q, mode)?);
+                }
+            } else {
+                articles.push(row_from_record(q, "article")?);
+            }
+        }
+        write_new_plan(&out_path, &edition_id, articles)?;
+        println!("  plan: wrote {} ({} row(s))", out_path.display(), queued.len());
+        if article.is_none() {
+            return Ok(());
+        }
+    }
+
+    let plan_text = read(&out_path)?;
+    if referenced_source_ids(&plan_text)?.contains(sid) {
+        println!("  plan: {} already references {sid}", out_path.display());
+        return Ok(());
+    }
+    let new_text = match article {
+        Some(a) => {
+            let t = join_article(&plan_text, a, sid)?;
+            println!("  plan: {sid} joined article '{a}'");
+            t
+        }
+        None => {
+            let t = append_rows(&plan_text, &[row_from_record(sid, mode)?])?;
+            println!("  plan: {sid} added as its own {mode} row");
+            t
+        }
+    };
+    fs::write(&out_path, new_text)?;
+    Ok(())
+}
+
+pub fn propose_plan(edition: &str) -> Result<i32> {
+    let out_path = plan_path_for(edition)?;
 
     let release_state = read(&PathBuf::from("library/release-state.yaml"))?;
     let (edition_id, source_ids) = queued_source_ids(&release_state, edition)?;
@@ -197,7 +336,7 @@ pub fn propose_plan(edition: &str) -> Result<i32> {
         }
         let mut rows = Vec::new();
         for sid in &missing {
-            rows.push(row_from_record(sid)?);
+            rows.push(row_from_record(sid, "article")?);
             println!("  added: {sid}");
         }
         fs::write(&out_path, append_rows(&plan_text, &rows)?)?;
@@ -213,27 +352,11 @@ pub fn propose_plan(edition: &str) -> Result<i32> {
 
     let mut articles = Vec::new();
     for sid in &source_ids {
-        articles.push(row_from_record(sid)?);
+        articles.push(row_from_record(sid, "article")?);
         println!("  queued: {sid}");
     }
 
-    let mut edition_map = serde_yaml::Mapping::new();
-    edition_map.insert(
-        serde_yaml::Value::String("id".to_string()),
-        serde_yaml::Value::String(edition_id.clone()),
-    );
-    let mut plan = serde_yaml::Mapping::new();
-    plan.insert(
-        serde_yaml::Value::String("edition".to_string()),
-        serde_yaml::Value::Mapping(edition_map),
-    );
-    plan.insert(
-        serde_yaml::Value::String("articles".to_string()),
-        serde_yaml::Value::Sequence(articles),
-    );
-
-    fs::create_dir_all(&out_dir)?;
-    fs::write(&out_path, serde_yaml::to_string(&serde_yaml::Value::Mapping(plan))?)?;
+    write_new_plan(&out_path, &edition_id, articles)?;
     println!(
         "\nwrote {} — {} article(s) from '{edition_id}'. Edit it (drop rows, flip \
          content_mode to in_a_nutshell, fix titles), then: mag produce {}",
@@ -305,7 +428,7 @@ articles:
 
     #[test]
     fn append_rows_keeps_existing_text_and_adds_rows_at_the_end() {
-        let row = article_row("d-77778888", "New Piece", "Someone");
+        let row = article_row("d-77778888", "New Piece", "Someone", "article");
         let out = append_rows(PLAN, &[row]).unwrap();
         assert!(out.starts_with("# hand-written header comment\n"));
         assert!(out.contains("- id: merged-nutshell"));
@@ -328,14 +451,37 @@ articles:
 edition:
   id: '006'
 ";
-        let row = article_row("d-77778888", "New Piece", "Someone");
+        let row = article_row("d-77778888", "New Piece", "Someone", "article");
         let err = append_rows(plan, &[row]).unwrap_err().to_string();
         assert!(err.contains("add these rows by hand"), "{err}");
     }
 
     #[test]
+    fn join_article_appends_to_that_rows_source_ids_only() {
+        let out = join_article(PLAN, "merged-nutshell", "d-77778888").unwrap();
+        assert!(out.starts_with("# hand-written header comment\n"));
+        let doc: serde_yaml::Value = serde_yaml::from_str(&out).unwrap();
+        let arts = doc.get("articles").unwrap().as_sequence().unwrap();
+        let merged = arts[0].get("source_ids").unwrap().as_sequence().unwrap();
+        assert_eq!(merged.len(), 3);
+        assert_eq!(merged[2].as_str(), Some("d-77778888"));
+        assert_eq!(arts[1].get("source_ids").unwrap().as_sequence().unwrap().len(), 1);
+        // Works for the last row too (no following row to bound the block).
+        let out = join_article(PLAN, "solo-article", "d-77778888").unwrap();
+        let doc: serde_yaml::Value = serde_yaml::from_str(&out).unwrap();
+        let solo = doc.get("articles").unwrap().as_sequence().unwrap()[1].get("source_ids").unwrap();
+        assert_eq!(solo.as_sequence().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn join_article_fails_loud_on_unknown_article() {
+        let err = join_article(PLAN, "nope", "d-77778888").unwrap_err().to_string();
+        assert!(err.contains("merged-nutshell, solo-article"), "{err}");
+    }
+
+    #[test]
     fn article_row_defaults_to_the_article_writer() {
-        let row = article_row("prime-agent-2c19ce14", "Prime Agent", "Prime Intellect Team");
+        let row = article_row("prime-agent-2c19ce14", "Prime Agent", "Prime Intellect Team", "article");
         assert_eq!(row.get("content_mode").unwrap().as_str(), Some("article"));
         assert_eq!(row.get("id").unwrap().as_str(), Some("prime-agent"));
         assert_eq!(

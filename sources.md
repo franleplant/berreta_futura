@@ -8,6 +8,38 @@ _Collecting: `006` (9 queued)._
 
 _Collecting: `007` (22 queued)._
 
+_Collecting: `008` (3 queued)._
+
+## Inference will eat the world. — David Ondrej
+
+- ID: `inference-will-eat-the-world-053ed26b`
+- Source: https://x.com/davidondrej1/status/2093074599995187682
+- Published: 2026-08-27
+- Captured: 2026-08-28T19:30:45Z
+- Release: queued for `008`
+
+The author argues that as AI models and agentic harnesses keep improving, spending on inference will keep growing exponentially and inference will eventually become the biggest market in all of computer-work.
+
+## Previewing the Model Hardware Standard
+
+- ID: `previewing-the-model-hardware-standard-35305757`
+- Source: https://www.anthropic.com/news/model-hardware-standard-research-preview
+- Published: 2026-08-27
+- Captured: 2026-08-28T15:52:40Z
+- Release: queued for `008`
+
+Anthropic is opening a research preview of the Model Hardware Standard (MHS), a shared specification that lets AI agents like Claude safely discover, communicate with, and operate lab and manufacturing hardware such as microscopes, liquid handlers, and robotic arms, developed with HHMI Janelia and tested with partners including Genentech, University of Washington, Carnegie Mellon, QuEra, and Tetsuwan Scientific.
+
+## How Warp builds self-improving agents on Claude — Michael Segner
+
+- ID: `how-warp-builds-self-improving-agents-on-claude-9e96ce55`
+- Source: https://claude.com/blog/how-warp-builds-self-improving-agents-on-claude
+- Published: 2026-08-26
+- Captured: 2026-08-28T15:43:29Z
+- Release: queued for `008`
+
+The article describes how Warp built a self-improving agent architecture on the Claude Platform using paired inner/improver skills that turn human feedback into compounding, reviewable updates to agent behavior.
+
 ## Opus Outshines Even Fable, Inside the Hugging Face Hack, AI Companies Spend Big for Compute — Andrew Ng
 
 - ID: `opus-outshines-even-fable-inside-the-hugging-fac-c220467a`

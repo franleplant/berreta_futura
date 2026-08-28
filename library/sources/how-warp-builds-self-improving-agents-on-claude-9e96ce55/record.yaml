@@ -1,0 +1,8 @@
+id: how-warp-builds-self-improving-agents-on-claude-9e96ce55
+title: 'How Warp builds self-improving agents on Claude'
+author: 'Michael Segner'
+url: https://claude.com/blog/how-warp-builds-self-improving-agents-on-claude
+captured_at: '2026-08-28T15:43:29Z'
+published_at: '2026-08-26'
+tags: []
+synopsis: 'The article describes how Warp built a self-improving agent architecture on the Claude Platform using paired inner/improver skills that turn human feedback into compounding, reviewable updates to agent behavior.'
