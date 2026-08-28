@@ -578,11 +578,16 @@ pub fn run(
     author_override: Option<&str>,
     published_override: Option<&str>,
     html_file: Option<&Path>,
+    join_article: Option<&str>,
+    mode: &str,
     spec: &ModelSpec,
 ) -> Result<i32> {
     // Pages behind login walls or client-side rendering can't be fetched
     // here; whoever drives the capture fetches the DOM (browser session,
     // plugin) and passes it in. Everything downstream is identical.
+    if !crate::plan_cmd::CONTENT_MODES.contains(&mode) {
+        bail!("unknown --mode '{mode}'; one of: {}", crate::plan_cmd::CONTENT_MODES.join(", "));
+    }
     let html = match html_file {
         Some(p) => fs::read_to_string(p).with_context(|| format!("reading {}", p.display()))?,
         None => curl_text(url)?,
@@ -666,6 +671,8 @@ pub fn run(
     );
     let sources_text = fs::read_to_string(&sources_path).context("reading sources.md")?;
     fs::write(&sources_path, prepend_sources_md(&sources_text, &entry, &edition, queued))?;
+
+    crate::plan_cmd::add_source(&edition, &sid, join_article, mode)?;
 
     let words = article.split_whitespace().count();
     println!(

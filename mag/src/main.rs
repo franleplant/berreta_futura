@@ -29,7 +29,8 @@ enum Cmd {
         edition: String,
     },
     /// Capture a source: fetch the page, transcribe it verbatim through one
-    /// fidelity-gated model call, download media, queue it, update sources.md
+    /// fidelity-gated model call, download media, queue it, update sources.md,
+    /// and record it in the edition's plan.yaml (own row, or --article to join one)
     Capture {
         url: String,
         /// Collecting edition to queue into (default: the intake edition;
@@ -53,6 +54,13 @@ enum Cmd {
         /// still recorded and still derives the source id.
         #[arg(long)]
         html: Option<PathBuf>,
+        /// Join this existing article row in the edition's plan.yaml instead
+        /// of getting a row of its own
+        #[arg(long)]
+        article: Option<String>,
+        /// Content mode for the new plan row: article or in_a_nutshell
+        #[arg(long, default_value = "article")]
+        mode: String,
         #[arg(long, default_value = "sonnet")]
         model: String,
     },
@@ -180,7 +188,7 @@ fn run(cli: Cli) -> Result<i32> {
 
     match cli.cmd {
         Cmd::Plan { edition } => plan_cmd::propose_plan(&edition),
-        Cmd::Capture { url, edition, tags, title, author, published, html, model } => {
+        Cmd::Capture { url, edition, tags, title, author, published, html, article, mode, model } => {
             let spec = caller::ModelSpec::parse(&model)?;
             capture::run(
                 &url,
@@ -190,6 +198,8 @@ fn run(cli: Cli) -> Result<i32> {
                 author.as_deref(),
                 published.as_deref(),
                 html.as_deref(),
+                article.as_deref(),
+                &mode,
                 &spec,
             )
         }
