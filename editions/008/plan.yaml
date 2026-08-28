@@ -19,3 +19,9 @@ articles:
   content_mode: article
   source_ids:
   - inference-will-eat-the-world-053ed26b
+- id: automated-researchers-can-reliably-mitigate-alig
+  title: Automated researchers can reliably mitigate alignment failures
+  author: ''
+  content_mode: article
+  source_ids:
+  - automated-researchers-can-reliably-mitigate-alig-a9acbff7

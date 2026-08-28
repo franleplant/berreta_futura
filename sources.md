@@ -8,7 +8,17 @@ _Collecting: `006` (9 queued)._
 
 _Collecting: `007` (22 queued)._
 
-_Collecting: `008` (3 queued)._
+_Collecting: `008` (4 queued)._
+
+## Automated researchers can reliably mitigate alignment failures
+
+- ID: `automated-researchers-can-reliably-mitigate-alig-a9acbff7`
+- Source: https://www.anthropic.com/research/automated-researchers-mitigate-alignment-failures
+- Published: 2026-08-28
+- Captured: 2026-08-28T19:40:35Z
+- Release: queued for `008`
+
+Anthropic reports that Claude, working autonomously, can propose and train effective mitigations for 10 categories of alignment failure, outperforming human researchers on some benchmarks and successfully improving an early Claude Opus 4.8 checkpoint's alignment.
 
 ## Inference will eat the world. — David Ondrej
 
