@@ -59,6 +59,7 @@ collecting_editions:
   - how-warp-builds-self-improving-agents-on-claude-9e96ce55
   - previewing-the-model-hardware-standard-35305757
   - inference-will-eat-the-world-053ed26b
+  - automated-researchers-can-reliably-mitigate-alig-a9acbff7
 released_editions:
 - id: 001-the-work-left-to-us
   issue_number: 1
