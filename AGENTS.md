@@ -28,8 +28,13 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   fetches the page, transcribes it to verbatim Markdown through one
   fidelity-gated model call (prose must match the page word-for-word, code
   blocks byte-exact, retried with the misses fed back), downloads media,
-  writes record.yaml, queues the source, and prepends the `sources.md`
-  entry. Raw HTML lands in `.magazine/capture/` (untracked). For pages curl
+  writes record.yaml, queues the source, prepends the `sources.md` entry,
+  and records the source in `editions/<edition>/plan.yaml` (creating the
+  plan from every queued source if it does not exist). By default the source
+  gets its own `article` row; `--article <id>` joins an existing row instead
+  and `--mode in_a_nutshell` sets the mode. Decide the source-to-article
+  mapping at capture time, on the command line, so it lives in plan.yaml and
+  never only in a conversation. Raw HTML lands in `.magazine/capture/` (untracked). For pages curl
   cannot reach (login walls, JS-rendered apps like X), fetch the DOM with a
   browser first and pass it as `--html <file>`; the rest is identical.
 - Never replace a source's text with an unlabeled summary. Keep the author's
