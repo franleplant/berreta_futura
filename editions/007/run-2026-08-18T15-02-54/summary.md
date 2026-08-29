@@ -1,6 +1,6 @@
 # Run summary — edition 007
 
-- 11 model calls, $2.94, 5.0 minutes
+- 3 model calls, $0.73, 2.6 minutes
 - writer `opus`, frontmatter `haiku`
 
 | piece | words |
@@ -12,4 +12,4 @@
 | origin-code-hosting | 363 |
 | my-ai-adoption-journey | 801 |
 | opus-outshines-even-fable | 1330 |
-| editorial | 168 |
+| editorial | 194 |

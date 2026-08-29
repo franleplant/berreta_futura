@@ -9,7 +9,7 @@ articles:
   - how-warp-builds-self-improving-agents-on-claude-9e96ce55
 - id: previewing-the-model-hardware-standard
   title: Previewing the Model Hardware Standard
-  author: ''
+  author: Anthropic
   content_mode: article
   source_ids:
   - previewing-the-model-hardware-standard-35305757
@@ -19,9 +19,9 @@ articles:
   content_mode: article
   source_ids:
   - inference-will-eat-the-world-053ed26b
-- id: automated-researchers-can-reliably-mitigate-alig
+- id: automated-researchers-can-reliably-mitigate-alignment-failures
   title: Automated researchers can reliably mitigate alignment failures
-  author: ''
+  author: Anthropic
   content_mode: article
   source_ids:
   - automated-researchers-can-reliably-mitigate-alig-a9acbff7
