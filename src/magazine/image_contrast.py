@@ -51,9 +51,7 @@ class PreparedPrintImage:
 
 
 _SRGB_LINEAR = tuple(
-    (value / 255) / 12.92
-    if (value / 255) <= 0.04045
-    else (((value / 255) + 0.055) / 1.055) ** 2.4
+    (value / 255) / 12.92 if (value / 255) <= 0.04045 else (((value / 255) + 0.055) / 1.055) ** 2.4
     for value in range(256)
 )
 
@@ -125,19 +123,10 @@ def analyze_print_contrast(source: Path | BinaryIO | Image.Image) -> PrintContra
     mark_contrasts.sort()
     mark_ratio = len(mark_contrasts) / total
 
-
-    contrast = (
-        mark_contrasts[len(mark_contrasts) // 2]
-        if mark_contrasts
-        else 21.0
-    )
+    contrast = mark_contrasts[len(mark_contrasts) // 2] if mark_contrasts else 21.0
     paper_ratio = paper_pixels / total
 
-
-    needs_treatment = (
-        mark_ratio >= MIN_MARK_PIXEL_RATIO
-        and contrast < MIN_PRINT_CONTRAST_RATIO
-    )
+    needs_treatment = mark_ratio >= MIN_MARK_PIXEL_RATIO and contrast < MIN_PRINT_CONTRAST_RATIO
     return PrintContrastAnalysis(
         round(paper_ratio, 6),
         round(mark_ratio, 6),
@@ -147,18 +136,18 @@ def analyze_print_contrast(source: Path | BinaryIO | Image.Image) -> PrintContra
 
 
 @lru_cache(maxsize=64)
-def _prepared_bytes(path_value: str) -> tuple[bytes | None, PrintContrastAnalysis, PrintContrastAnalysis]:
+def _prepared_bytes(
+    path_value: str,
+) -> tuple[bytes | None, PrintContrastAnalysis, PrintContrastAnalysis]:
     path = Path(path_value)
     image = _open_rgb(path)
     before = analyze_print_contrast(image)
     if not before.needs_treatment:
         return None, before, before
 
-
     tint_ratio = 1.0 - before.paper_pixel_ratio - before.mark_pixel_ratio
     if tint_ratio >= _MAX_ENHANCEABLE_TINT_RATIO:
         return None, before, before
-
 
     best_candidate: Image.Image | None = None
     best_after = before
@@ -169,16 +158,14 @@ def _prepared_bytes(path_value: str) -> tuple[bytes | None, PrintContrastAnalysi
             continue
         if (
             best_candidate is None
-            or candidate_after.minimum_mark_contrast_ratio
-            > best_after.minimum_mark_contrast_ratio
+            or candidate_after.minimum_mark_contrast_ratio > best_after.minimum_mark_contrast_ratio
         ):
             best_candidate, best_after = candidate, candidate_after
         if best_after.minimum_mark_contrast_ratio >= MIN_PRINT_CONTRAST_RATIO:
             break
     if (
         best_candidate is None
-        or best_after.minimum_mark_contrast_ratio
-        <= before.minimum_mark_contrast_ratio
+        or best_after.minimum_mark_contrast_ratio <= before.minimum_mark_contrast_ratio
     ):
         return None, before, before
     output = io.BytesIO()

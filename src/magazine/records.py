@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import hashlib
@@ -27,7 +26,10 @@ def canonicalize_url(url: str) -> str:
         if key.lower() not in _TRACKING and not key.lower().startswith("utm_")
     ]
     host = parts.hostname.lower() if parts.hostname else ""
-    if parts.port and not ((parts.scheme == "http" and parts.port == 80) or (parts.scheme == "https" and parts.port == 443)):
+    if parts.port and not (
+        (parts.scheme == "http" and parts.port == 80)
+        or (parts.scheme == "https" and parts.port == 443)
+    ):
         host = f"{host}:{parts.port}"
     path = re.sub(r"/{2,}", "/", parts.path) or "/"
     if path != "/":
@@ -58,19 +60,33 @@ class SourceRecord:
     notes: str = ""
 
     @classmethod
-    def create(cls, url: str, *, title: str | None = None, author: str | None = None,
-               published_at: str | None = None, captured_at: str | None = None,
-               tags: list[str] | None = None, synopsis: str = "", notes: str = "") -> "SourceRecord":
+    def create(
+        cls,
+        url: str,
+        *,
+        title: str | None = None,
+        author: str | None = None,
+        published_at: str | None = None,
+        captured_at: str | None = None,
+        tags: list[str] | None = None,
+        synopsis: str = "",
+        notes: str = "",
+    ) -> "SourceRecord":
         canonical = canonicalize_url(url)
         resolved_title = (title or canonical).strip()
-        captured = captured_at or datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+        captured = captured_at or datetime.now(timezone.utc).replace(
+            microsecond=0
+        ).isoformat().replace("+00:00", "Z")
         return cls(
-            id=source_id(resolved_title, canonical), url=canonical,
-            title=resolved_title, captured_at=captured,
+            id=source_id(resolved_title, canonical),
+            url=canonical,
+            title=resolved_title,
+            captured_at=captured,
             author=author.strip() if author else None,
             published_at=published_at,
             tags=sorted({tag.strip().lower() for tag in tags or [] if tag.strip()}),
-            synopsis=synopsis.strip(), notes=notes.strip(),
+            synopsis=synopsis.strip(),
+            notes=notes.strip(),
         )
 
     @classmethod
@@ -118,7 +134,9 @@ class SourceRecord:
 def load_records(sources_dir: Path) -> list[SourceRecord]:
     if not sources_dir.exists():
         return []
-    records = [SourceRecord.from_dict(load_structured(path)) for path in sources_dir.glob("*/record.y*ml")]
+    records = [
+        SourceRecord.from_dict(load_structured(path)) for path in sources_dir.glob("*/record.y*ml")
+    ]
     seen: dict[str, str] = {}
     for record in records:
         if record.url in seen:

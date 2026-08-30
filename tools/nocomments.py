@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-import ast, io, pathlib, re, sys, tokenize
+import ast
+import io
+import pathlib
+import re
+import sys
+import tokenize
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 TARGETS = ["mag/src", "src/magazine", "tools"]
@@ -9,27 +14,45 @@ PRAGMA = re.compile(r"#\s*(pragma|noqa|type:|fmt:)")
 def python_offenses(path):
     src = path.read_text()
     for t in tokenize.generate_tokens(io.StringIO(src).readline):
-        if t.type == tokenize.COMMENT and not PRAGMA.search(t.string) and not (t.start[0] == 1 and t.string.startswith("#!")):
+        if (
+            t.type == tokenize.COMMENT
+            and not PRAGMA.search(t.string)
+            and not (t.start[0] == 1 and t.string.startswith("#!"))
+        ):
             yield t.start[0], "comment"
-    for node in ast.walk(ast.parse(src)):
-        for st in (node.body if isinstance(getattr(node, "body", None), list) else []):
-            if isinstance(st, ast.Expr) and isinstance(st.value, ast.Constant) and isinstance(st.value.value, str):
+    tree = ast.parse(src)
+    for node in ast.walk(tree):
+        for st in node.body if isinstance(getattr(node, "body", None), list) else []:
+            if (
+                isinstance(st, ast.Expr)
+                and isinstance(st.value, ast.Constant)
+                and isinstance(st.value.value, str)
+            ):
+                if node is tree and st is tree.body[0] and "__doc__" in src:
+                    continue
                 yield st.lineno, "docstring"
 
 
 def rust_offenses(path):
     src = path.read_text()
+    help_text = "#[derive(Parser" in src or "#[derive(Subcommand" in src
     i, n, line = 0, len(src), 1
     while i < n:
         c = src[i]
         if c == "\n":
             line += 1
         elif src.startswith("//", i) or src.startswith("/*", i):
-            yield line, "comment"
+            if not (help_text and src.startswith("///", i)):
+                yield line, "comment"
             end = src.find("\n" if c == "/" and src[i + 1] == "/" else "*/", i)
             i = n if end < 0 else end
             continue
-        elif c == "r" and i + 1 < n and src[i + 1] in '"#' and not (i and (src[i - 1].isalnum() or src[i - 1] == "_")):
+        elif (
+            c == "r"
+            and i + 1 < n
+            and src[i + 1] in '"#'
+            and not (i and (src[i - 1].isalnum() or src[i - 1] == "_"))
+        ):
             j = i + 1
             while j < n and src[j] == "#":
                 j += 1

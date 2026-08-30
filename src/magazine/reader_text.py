@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from functools import lru_cache
@@ -41,8 +40,6 @@ def educate_reader_quotes(text: str) -> str:
         elif opens and following.isalpha():
             characters[index] = _OPEN_SINGLE
         else:
-
-
             characters[index] = _APOSTROPHE
     return "".join(characters)
 
@@ -74,8 +71,6 @@ def fold_reader_characters(text: str) -> str:
     for character, replacement in _FOLDED_CHARACTERS.items():
         text = text.replace(character, replacement)
     if text.isascii():
-
-
         return text
     settable = _settable_codepoints()
     return "".join(

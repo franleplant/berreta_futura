@@ -61,7 +61,6 @@ class _OutlinedText:
 
 
 class _FontOutliner:
-
     def __init__(self, path: Path):
         try:
             from fontTools.pens.svgPathPen import SVGPathPen
@@ -126,8 +125,7 @@ class _FontOutliner:
             if index < len(text) - 1:
                 cursor += tracking * horizontal_scale / 100.0
         transform = (
-            f"translate({x:.5f} {baseline:.5f}) {extra_transform} "
-            f"scale({scale_x:.8f} {-scale:.8f})"
+            f"translate({x:.5f} {baseline:.5f}) {extra_transform} scale({scale_x:.8f} {-scale:.8f})"
         ).strip()
         return _OutlinedText(
             f'<g transform="{transform}">{"".join(paths)}</g>',
@@ -181,36 +179,56 @@ class _FontOutliner:
 
 
 class CoverCompiler:
-
     def __init__(self, root: Path):
         self.root = root.resolve()
         self.design_path = self.root / "design" / "covers" / "canto-vivo" / "design.toml"
         if self.design_path.is_file():
             self.design = tomllib.loads(self.design_path.read_text(encoding="utf-8"))
         else:
-
-
             self.design = {
                 "id": "canto-vivo/1",
                 "color": {"paper": WHITE, "ink": INK, "violet": VIOLET, "orange": ORANGE},
                 "tab": {
-                    "width": 21.0, "overdraw": 1.5, "issue_top": 26.5,
-                    "identity_top": 433.5, "edge_reveal": 1.4,
+                    "width": 21.0,
+                    "overdraw": 1.5,
+                    "issue_top": 26.5,
+                    "identity_top": 433.5,
+                    "edge_reveal": 1.4,
                 },
                 "wordmark": {"x": 38.0, "top": 53.0, "right_reserve": 78.0},
                 "headline": {"x": 44.0, "top": 122.0, "width": 302.0},
                 "art": {"x": 85.25, "top": 221.85, "width": 249.35, "height": 248.65},
-                "deck": {"top": 493.0, "size": 5.5, "wrap_size": 6.7, "leading": 8.4, "horizontal_scale": 108.0, "tracking": .35},
+                "deck": {
+                    "top": 493.0,
+                    "size": 5.5,
+                    "wrap_size": 6.7,
+                    "leading": 8.4,
+                    "horizontal_scale": 108.0,
+                    "tracking": 0.35,
+                },
                 "footer": {"x": 44.0, "bottom": 20.0, "size": 7.0, "tracking": 1.85},
                 "back": {
-                    "overdraw": 1.5, "rail_width": 42.0, "rail_top": 32.0,
-                    "rail_size": 8.0, "rail_tracking": 1.6, "mass_x": 6.0,
-                    "mass_top": 38.0, "mass_size": 116.0, "mass_leading": 84.68,
-                    "mass_tracking": -12.18, "panel_x": 38.0, "panel_top": 242.0,
-                    "panel_right": 62.0, "panel_bottom": 52.0, "panel_padding": 30.0,
+                    "overdraw": 1.5,
+                    "rail_width": 42.0,
+                    "rail_top": 32.0,
+                    "rail_size": 8.0,
+                    "rail_tracking": 1.6,
+                    "mass_x": 6.0,
+                    "mass_top": 38.0,
+                    "mass_size": 116.0,
+                    "mass_leading": 84.68,
+                    "mass_tracking": -12.18,
+                    "panel_x": 38.0,
+                    "panel_top": 242.0,
+                    "panel_right": 62.0,
+                    "panel_bottom": 52.0,
+                    "panel_padding": 30.0,
                     "statement_max_size": 24.0,
-                    "statement_min_size": 18.0, "statement_leading_ratio": 1.05,
-                    "slug_x": 38.0, "slug_bottom": 26.0, "slug_size": 7.0,
+                    "statement_min_size": 18.0,
+                    "statement_leading_ratio": 1.05,
+                    "slug_x": 38.0,
+                    "slug_bottom": 26.0,
+                    "slug_size": 7.0,
                     "slug_tracking": 1.6,
                 },
             }
@@ -222,7 +240,6 @@ class CoverCompiler:
         fonts = Path(__file__).with_name("assets") / "fonts" / "inter"
         self.regular = _FontOutliner(fonts / "Inter-Regular.ttf")
         self.bold = _FontOutliner(fonts / "Inter-Bold.ttf")
-
 
         self.display = _FontOutliner(
             Path(__file__).with_name("assets") / "fonts" / "archivo" / "ArchivoCondensed-Bold.ttf"
@@ -284,7 +301,12 @@ class CoverCompiler:
             else self._materialize_back_svg(edition)
         )
         digest = self._input_digest(edition, svg, face=face)
-        if svg_path.is_file() and pdf_path.is_file() and png_path.is_file() and proof_path.is_file():
+        if (
+            svg_path.is_file()
+            and pdf_path.is_file()
+            and png_path.is_file()
+            and proof_path.is_file()
+        ):
             try:
                 previous = json.loads(proof_path.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError):
@@ -377,8 +399,6 @@ class CoverCompiler:
         parts: list[str] = [
             f'<rect data-slot="paper" x="0" y="0" width="{PAGE_WIDTH}" '
             f'height="{PAGE_HEIGHT}" fill="{paper}"/>',
-
-
             f'<rect data-slot="edge-tab" x="{band_x:.5f}" '
             f'y="{-float(tab["overdraw"]):.5f}" '
             f'width="{band_width:.5f}" '
@@ -401,8 +421,6 @@ class CoverCompiler:
                 f'href="data:image/png;base64,{art_data}"/>'
             )
         else:
-
-
             parts.append(
                 f'<g data-slot="art"><rect x="{art_x}" y="{art_y}" width="{art_w}" '
                 f'height="{art_h}" fill="{self.colors["violet"]}"/><circle cx="{art_x + art_w / 2}" '
@@ -424,7 +442,7 @@ class CoverCompiler:
                 fill=str(self.colors["ink"]),
                 tracking=float(footer["tracking"]),
             ).markup
-            + '</g>'
+            + "</g>"
         )
         parts.extend(self._tab_labels(edition))
         body = "\n    ".join(parts)
@@ -433,9 +451,9 @@ class CoverCompiler:
             f'<svg xmlns="http://www.w3.org/2000/svg" width="{PAGE_WIDTH}pt" '
             f'height="{PAGE_HEIGHT}pt" viewBox="0 0 {PAGE_WIDTH} {PAGE_HEIGHT}" '
             'overflow="hidden">\n'
-            '  <title>Berreta Futura cover</title>\n'
+            "  <title>Berreta Futura cover</title>\n"
             f'  <g id="cover" data-design="{escape(str(self.design["id"]))}">\n    {body}\n  </g>\n'
-            '</svg>\n'
+            "</svg>\n"
         )
 
     def _materialize_back_svg(self, edition: Edition) -> str:
@@ -455,7 +473,7 @@ class CoverCompiler:
             self.bold.measure(word, size=mass_size, tracking=mass_tracking) > mass_max_width
             for word in mass_words
         ):
-            mass_size -= .5
+            mass_size -= 0.5
         if mass_size < 72.0:
             raise CoverOverflowError(
                 f"Back-cover display words cannot fit: {' / '.join(mass_words)}"
@@ -479,18 +497,15 @@ class CoverCompiler:
         panel_top = float(back["panel_top"])
         panel_width = PAGE_WIDTH - panel_x - float(back["panel_right"])
 
-
         panel_max_height = PAGE_HEIGHT - panel_top - float(back["panel_bottom"])
         panel_padding = float(back["panel_padding"])
         statement = str(
             edition.cover.get("back_text", _back_cover_copy(edition, "back_text_default"))
         ).strip()
-        statement_size, statement_lines, statement_rise, statement_block = (
-            self._fit_back_statement(
-                statement,
-                panel_width - panel_padding * 2,
-                panel_max_height - panel_padding * 2,
-            )
+        statement_size, statement_lines, statement_rise, statement_block = self._fit_back_statement(
+            statement,
+            panel_width - panel_padding * 2,
+            panel_max_height - panel_padding * 2,
         )
         panel_height = statement_block + panel_padding * 2
         statement_leading = statement_size * float(back["statement_leading_ratio"])
@@ -501,12 +516,12 @@ class CoverCompiler:
                 baseline=panel_top + panel_padding + statement_rise + index * statement_leading,
                 size=statement_size,
                 fill=ink,
-                tracking=-.12,
+                tracking=-0.12,
             ).markup
             for index, line in enumerate(statement_lines)
         ]
 
-        slug = f'{_back_cover_copy(edition, "end")} / {_cover_date(edition.publication_date)}'
+        slug = f"{_back_cover_copy(edition, 'end')} / {_cover_date(edition.publication_date)}"
         slug_path = self.bold.outline(
             slug,
             x=float(back["slug_x"]),
@@ -532,7 +547,8 @@ class CoverCompiler:
                 size=rail_size,
                 tracking=rail_tracking,
                 horizontal_scale=rail_scale,
-            ) > rail_max_length
+            )
+            > rail_max_length
         ):
             rail_scale -= 1.0
         if rail_scale < 70.0:
@@ -546,14 +562,10 @@ class CoverCompiler:
             tracking=rail_tracking,
             horizontal_scale=rail_scale,
         )
-        rail_x = (
-            PAGE_WIDTH
-            - rail_width / 2
-            - (rail.ascent - rail.descent) / 2
-        )
+        rail_x = PAGE_WIDTH - rail_width / 2 - (rail.ascent - rail.descent) / 2
         rail_path = (
             f'<g transform="translate({rail_x:.5f} {float(back["rail_top"]):.5f}) rotate(90)">'
-            f'{rail.markup}</g>'
+            f"{rail.markup}</g>"
         )
 
         parts = [
@@ -562,7 +574,7 @@ class CoverCompiler:
             f'fill="{orange}"/>',
             f'<defs><clipPath id="mass-safe" clipPathUnits="userSpaceOnUse">'
             f'<rect x="0" y="0" width="{PAGE_WIDTH - rail_width}" height="{PAGE_HEIGHT}"/>'
-            f'</clipPath></defs>',
+            f"</clipPath></defs>",
             f'<g data-slot="mass" clip-path="url(#mass-safe)">{"".join(mass_paths)}</g>',
             f'<rect data-slot="statement-panel" x="{panel_x}" y="{panel_top}" '
             f'width="{panel_width}" height="{panel_height}" fill="{paper}"/>',
@@ -576,10 +588,10 @@ class CoverCompiler:
             f'<svg xmlns="http://www.w3.org/2000/svg" width="{PAGE_WIDTH}pt" '
             f'height="{PAGE_HEIGHT}pt" viewBox="0 0 {PAGE_WIDTH} {PAGE_HEIGHT}" '
             'overflow="hidden">\n'
-            '  <title>Berreta Futura back cover</title>\n'
+            "  <title>Berreta Futura back cover</title>\n"
             f'  <g id="back-cover" data-design="{escape(str(self.design["id"]))}">\n'
-            f'    {body}\n  </g>\n'
-            '</svg>\n'
+            f"    {body}\n  </g>\n"
+            "</svg>\n"
         )
 
     def _fit_back_statement(
@@ -600,7 +612,7 @@ class CoverCompiler:
                 block = rise + (len(lines) - 1) * size * leading_ratio + drop
                 if block <= height:
                     return size, lines, rise, block
-            size -= .5
+            size -= 0.5
         raise CoverOverflowError(f"Back-cover issue statement cannot fit: {text}")
 
     def _wordmark(self, publication_name: str) -> list[str]:
@@ -615,38 +627,42 @@ class CoverCompiler:
         size = 42.0
         tracking = -3.6
         head_scale = 89.9
-        max_width = PAGE_WIDTH - float(self.design["tab"]["width"]) - float(wordmark["right_reserve"])
+        max_width = (
+            PAGE_WIDTH - float(self.design["tab"]["width"]) - float(wordmark["right_reserve"])
+        )
         while size >= 25:
             head_width = self.bold.measure(
                 head, size=size, tracking=tracking, horizontal_scale=head_scale
             )
-            tail_width = self.bold.measure(
-                tail, size=size, tracking=tracking, horizontal_scale=105.1
-            ) if tail else 0
+            tail_width = (
+                self.bold.measure(tail, size=size, tracking=tracking, horizontal_scale=105.1)
+                if tail
+                else 0
+            )
             tail_offset = size * (97 / 42)
             box_width = tail_width + (13 if tail else 0)
             if max(head_width, tail_offset + box_width) <= max_width:
                 break
-            size -= .5
+            size -= 0.5
         if size < 25:
             raise CoverOverflowError(f"Publication wordmark cannot fit: {publication_name}")
         head_path = self.bold.outline(
             head,
-            x=x + .36,
+            x=x + 0.36,
             baseline=baseline,
             size=size,
             fill=str(self.colors["ink"]),
             tracking=tracking,
             horizontal_scale=head_scale,
             stroke=str(self.colors["ink"]),
-            stroke_width=.30,
+            stroke_width=0.30,
         ).markup
         if not tail:
             return [f'<g data-slot="wordmark">{head_path}</g>']
 
         tail_x = x + tail_offset
 
-        tail_origin_y = PAGE_HEIGHT - (pdf_baseline - size * .91)
+        tail_origin_y = PAGE_HEIGHT - (pdf_baseline - size * 0.91)
         box_x, box_y = -7.0, -7.0
         box_height = size * 1.04 - 1
         box_width = tail_width + 13
@@ -655,13 +671,13 @@ class CoverCompiler:
         center_y = box_y + box_height / 2
         skew = math.tan(math.radians(-10))
         group = (
-            f'translate({tail_x:.5f} {tail_origin_y:.5f}) '
-            f'translate({center_x:.5f} {-center_y:.5f}) matrix(1 0 {skew:.8f} 1 0 0) '
-            f'translate({-center_x:.5f} {center_y:.5f})'
+            f"translate({tail_x:.5f} {tail_origin_y:.5f}) "
+            f"translate({center_x:.5f} {-center_y:.5f}) matrix(1 0 {skew:.8f} 1 0 0) "
+            f"translate({-center_x:.5f} {center_y:.5f})"
         )
         slug = (
             f'<path d="M {box_x} {-slug_y} H {box_x + box_width} '
-            f'V {-slug_y - (box_height + .65)} H {box_x} Z" fill="{self.colors["ink"]}"/>'
+            f'V {-slug_y - (box_height + 0.65)} H {box_x} Z" fill="{self.colors["ink"]}"/>'
         )
         orange = self.bold.outline(
             tail,
@@ -672,7 +688,7 @@ class CoverCompiler:
             tracking=tracking,
             horizontal_scale=106.6,
             stroke=str(self.colors["orange"]),
-            stroke_width=.15,
+            stroke_width=0.15,
         ).markup
         white = self.bold.outline(
             tail,
@@ -683,13 +699,15 @@ class CoverCompiler:
             tracking=tracking,
             horizontal_scale=105.1,
             stroke=str(self.colors["paper"]),
-            stroke_width=.30,
+            stroke_width=0.30,
         ).markup
         return [
             f'<g data-slot="wordmark">{head_path}<g transform="{group}">{slug}{orange}{white}</g></g>'
         ]
 
-    def _headline_layout(self, value: str, *, described_as: str | None = None) -> tuple[list[str], float]:
+    def _headline_layout(
+        self, value: str, *, described_as: str | None = None
+    ) -> tuple[list[str], float]:
 
         size = 29.0
         headline = self.design["headline"]
@@ -709,7 +727,7 @@ class CoverCompiler:
                 lines = self._wrap(value, self.display, size, width)
             if len(lines) <= 3:
                 break
-            size -= .5
+            size -= 0.5
         if size < 20:
             raise CoverOverflowError(
                 f"Cover headline cannot fit: {described_as if described_as is not None else value}"
@@ -721,7 +739,7 @@ class CoverCompiler:
         headline = self.design["headline"]
         lines, size = self._headline_layout(value, described_as=text)
         baseline = float(headline["top"]) + size
-        leading = size * .78
+        leading = size * 0.78
         colors = (str(self.colors["ink"]), str(self.colors["violet"]), str(self.colors["ink"]))
         paths = []
         for index, line in enumerate(lines):
@@ -729,13 +747,13 @@ class CoverCompiler:
             paths.append(
                 self.display.outline(
                     line,
-                    x=float(headline["x"]) + (23 if index % 2 else -.65),
+                    x=float(headline["x"]) + (23 if index % 2 else -0.65),
                     baseline=baseline + (1 if index % 2 else 0),
                     size=line_size,
                     fill=colors[index],
                     tracking=-1.35,
                     stroke=colors[index] if index % 2 == 0 else None,
-                    stroke_width=.09 if index % 2 == 0 else 0,
+                    stroke_width=0.09 if index % 2 == 0 else 0,
                 ).markup
             )
             baseline += leading
@@ -752,7 +770,7 @@ class CoverCompiler:
         paths = [
             self.regular.outline(
                 line,
-                x=x - (.65 if index == 0 else 0),
+                x=x - (0.65 if index == 0 else 0),
                 baseline=baseline + index * float(deck["leading"]),
                 size=float(deck["size"]),
                 fill=str(self.colors["ink"]),
@@ -780,11 +798,9 @@ class CoverCompiler:
                 horizontal_scale=scale,
             )
 
-
             cross = band_x + band_width / 2 - (outlined.ascent - outlined.descent) / 2
             return (
-                f'<g transform="translate({cross:.5f} {top:.5f}) rotate(90)">'
-                f'{outlined.markup}</g>'
+                f'<g transform="translate({cross:.5f} {top:.5f}) rotate(90)">{outlined.markup}</g>'
             )
 
         return [
@@ -818,9 +834,13 @@ class CoverCompiler:
         graded = []
         for red, green, blue in image.get_flattened_data():
             if blue > 120 and blue > red * 1.7 and blue > green * 1.7:
-                graded.append((round(red * .96), min(255, round(green * 1.12)), round(blue * .953)))
+                graded.append(
+                    (round(red * 0.96), min(255, round(green * 1.12)), round(blue * 0.953))
+                )
             elif red > 170 and red > green * 1.8 and green > blue * 1.5:
-                graded.append((round(red * .916), min(255, round(green * 1.146)), min(255, blue + 45)))
+                graded.append(
+                    (round(red * 0.916), min(255, round(green * 1.146)), min(255, blue + 45))
+                )
             else:
                 graded.append((red, green, blue))
         image.putdata(graded)
@@ -856,7 +876,6 @@ class CoverCompiler:
                 count=1,
             )
 
-
             raster_svg = re.sub(
                 rb'(<rect data-slot="paper"[^>]*?) fill="[^"]+"',
                 rb'\1 fill="none"',
@@ -878,7 +897,6 @@ class CoverCompiler:
             options = resvg.usvg.Options.default()
             tree = resvg.usvg.Tree.from_str(raster_svg.decode("utf-8"), options)
 
-
             png = resvg.render(tree, (1, 0, 0, 0, 1, 0))
             pdf = canvas.Canvas(
                 str(output),
@@ -891,7 +909,6 @@ class CoverCompiler:
             if face == "front":
                 pdf.setFillColorRGB(1, 1, 1)
                 pdf.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
-
 
                 tab_overdraw = float(self.design["tab"]["overdraw"])
                 band_x, band_width = self._tab_band()
@@ -968,7 +985,6 @@ class CoverCompiler:
             text.textLine(value)
             pdf.drawText(text)
 
-
         invisible_line(edition.publication_name.upper(), 38.0, PAGE_HEIGHT - 55.0, 22.0)
         invisible_line(
             str(edition.cover.get("headline", edition.title)).upper(),
@@ -1041,14 +1057,14 @@ class CoverCompiler:
         for index, line in enumerate(self._wrap(statement, self.regular, 10.0, 260.0)):
             invisible_line(line, 68.0, PAGE_HEIGHT - 300.0 - index * 12.0, 10.0)
         invisible_line(
-            f'{_back_cover_copy(edition, "end")} / {_cover_date(edition.publication_date)}',
+            f"{_back_cover_copy(edition, 'end')} / {_cover_date(edition.publication_date)}",
             38.0,
             26.0,
             7.0,
         )
         invisible_line(
-            f'{edition.publication_name.upper()} / {_back_cover_copy(edition, "issue")} '
-            f'{str(edition.issue_number).zfill(3)} / BUENOS AIRES',
+            f"{edition.publication_name.upper()} / {_back_cover_copy(edition, 'issue')} "
+            f"{str(edition.issue_number).zfill(3)} / BUENOS AIRES",
             38.0,
             10.0,
             5.5,
@@ -1060,13 +1076,15 @@ class CoverCompiler:
         try:
             from pypdf import PdfReader
         except ImportError as exc:
-            raise DependencyError("Cover validation requires pypdf; run `uv sync --locked`.") from exc
+            raise DependencyError(
+                "Cover validation requires pypdf; run `uv sync --locked`."
+            ) from exc
         reader = PdfReader(path)
         if len(reader.pages) != 1:
             raise CoverPdfError(f"Cover PDF must contain exactly one page: {path}")
         box = reader.pages[0].mediabox
         width, height = float(box.width), float(box.height)
-        if abs(width - PAGE_WIDTH) > .02 or abs(height - PAGE_HEIGHT) > .02:
+        if abs(width - PAGE_WIDTH) > 0.02 or abs(height - PAGE_HEIGHT) > 0.02:
             raise CoverPdfError(
                 f"Cover PDF is {width:.3f} x {height:.3f}pt; expected A5 "
                 f"{PAGE_WIDTH:.3f} x {PAGE_HEIGHT:.3f}pt"
@@ -1079,7 +1097,17 @@ class CoverCompiler:
         with tempfile.TemporaryDirectory(prefix="mag-cover-") as directory:
             prefix = Path(directory) / "cover"
             completed = subprocess.run(
-                [executable, "-f", "1", "-singlefile", "-png", "-r", str(self.proof_dpi), str(pdf), str(prefix)],
+                [
+                    executable,
+                    "-f",
+                    "1",
+                    "-singlefile",
+                    "-png",
+                    "-r",
+                    str(self.proof_dpi),
+                    str(pdf),
+                    str(prefix),
+                ],
                 capture_output=True,
                 text=True,
                 check=False,
@@ -1107,8 +1135,10 @@ class CoverCompiler:
         bbox = diff.getbbox()
         histogram = diff.convert("L").histogram()
         changed = sum(histogram[1:])
-        mean = sum(index * count for index, count in enumerate(histogram)) / max(1, actual.width * actual.height)
-        overlay = Image.blend(expected, actual, .5)
+        mean = sum(index * count for index, count in enumerate(histogram)) / max(
+            1, actual.width * actual.height
+        )
+        overlay = Image.blend(expected, actual, 0.5)
         overlay.save(destination / "overlay.png")
         ImageEnhance.Contrast(diff).enhance(4).save(destination / "diff.png")
         return {
@@ -1157,7 +1187,7 @@ def replace_outer_pages(
         )
     for name, cover in (("front", front), ("back", back)):
         box = cover.pages[0].mediabox
-        if abs(float(box.width) - PAGE_WIDTH) > .02 or abs(float(box.height) - PAGE_HEIGHT) > .02:
+        if abs(float(box.width) - PAGE_WIDTH) > 0.02 or abs(float(box.height) - PAGE_HEIGHT) > 0.02:
             raise CoverPdfError(f"{name.title()} cover PDF must be A5")
     writer = PdfWriter()
     writer.add_page(front.pages[0])
@@ -1265,7 +1295,6 @@ def _wordmark_frames(
     wordmark = compiler.design["wordmark"]
     x, top = float(wordmark["x"]), float(wordmark["top"])
 
-
     baseline = top + 1.65
     max_width = (
         PAGE_WIDTH - float(compiler.design["tab"]["width"]) - float(wordmark["right_reserve"])
@@ -1275,14 +1304,16 @@ def _wordmark_frames(
         head_width = compiler.bold.measure(
             head, size=size, tracking=tracking, horizontal_scale=head_scale
         )
-        tail_width = compiler.bold.measure(
-            tail, size=size, tracking=tracking, horizontal_scale=105.1
-        ) if tail else 0.0
+        tail_width = (
+            compiler.bold.measure(tail, size=size, tracking=tracking, horizontal_scale=105.1)
+            if tail
+            else 0.0
+        )
         tail_offset = size * (97 / 42)
         box_width = tail_width + (13 if tail else 0)
         if max(head_width, tail_offset + box_width) <= max_width:
             break
-        size -= .5
+        size -= 0.5
     if size < 25:
         raise CoverOverflowError(f"Publication wordmark cannot fit: {value}")
 
@@ -1293,18 +1324,16 @@ def _wordmark_frames(
     cap = cap_units / compiler.bold.units * size
     left = x - 1.0
     top_edge = baseline - cap - 1.0
-    right = x + .36 + head_width + 1.0
+    right = x + 0.36 + head_width + 1.0
     bottom = baseline + 2.0
     slug_frame: tuple[float, float, float, float] | None = None
     if tail:
-
-
         box_height = size * 1.04 - 1
-        tail_origin_y = top + size * .91
-        reach = math.tan(math.radians(10)) * (box_height + .65) / 2 + 1.0
+        tail_origin_y = top + size * 0.91
+        reach = math.tan(math.radians(10)) * (box_height + 0.65) / 2 + 1.0
         slug_frame = (
             x + tail_offset - 13 - reach - 1.0,
-            tail_origin_y + 8 - box_height - .65 - 1.0,
+            tail_origin_y + 8 - box_height - 0.65 - 1.0,
             x + tail_offset - 7 + box_width + reach + 1.0,
             tail_origin_y + 8 + 1.0,
         )

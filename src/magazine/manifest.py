@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import json
 from pathlib import Path
 import re
 from typing import TYPE_CHECKING, Any, Mapping
@@ -32,9 +31,7 @@ CONTENT_MODES: frozenset[str] = frozenset(
     }
 )
 
-EDITOR_VOICE_CONTENT_MODES: frozenset[str] = frozenset(
-    {"in_a_nutshell"}
-)
+EDITOR_VOICE_CONTENT_MODES: frozenset[str] = frozenset({"in_a_nutshell"})
 
 HOUSE_BYLINES: frozenset[str] = frozenset(
     {"editors", "the editors", "editorial team", "the editorial team"}
@@ -165,18 +162,11 @@ def load_edition(
         edition_format = dict(raw_format)
     article_opener_format = str(edition_format.get("article_opener") or "").strip()
     if article_opener_format and article_opener_format != "illustrated_paper_spots_v1":
+        errors.append(f"Edition has invalid format.article_opener: {article_opener_format}")
+    illustrated_article_openers = article_opener_format == "illustrated_paper_spots_v1"
+    if illustrated_article_openers and not str(data.get("art_direction_path") or "").strip():
         errors.append(
-            f"Edition has invalid format.article_opener: {article_opener_format}"
-        )
-    illustrated_article_openers = (
-        article_opener_format == "illustrated_paper_spots_v1"
-    )
-    if illustrated_article_openers and not str(
-        data.get("art_direction_path") or ""
-    ).strip():
-        errors.append(
-            "Edition format.article_opener illustrated_paper_spots_v1 requires "
-            "art_direction_path"
+            "Edition format.article_opener illustrated_paper_spots_v1 requires art_direction_path"
         )
     article_rows = data.get("articles", [])
     if not isinstance(article_rows, list):
@@ -222,9 +212,7 @@ def load_edition(
             continue
         author_note = str(row.get("author_note") or "").strip()
         if "\n" in author_note or len(author_note) > 160:
-            errors.append(
-                f"{label} author_note must be a single line of at most 160 characters"
-            )
+            errors.append(f"{label} author_note must be a single line of at most 160 characters")
         house_byline = str(row["author"]).strip().casefold() in HOUSE_BYLINES
         if author_note and house_byline:
             errors.append(
@@ -255,8 +243,6 @@ def load_edition(
             continue
         opener_art = None
         if illustrated_article_openers:
-
-
             if not author_note and not house_byline:
                 errors.append(
                     f"{label} requires author_note for "
@@ -277,8 +263,7 @@ def load_edition(
                 ]
                 if missing_opener_art:
                     errors.append(
-                        f"{label} opener_art requires non-empty "
-                        + ", ".join(missing_opener_art)
+                        f"{label} opener_art requires non-empty " + ", ".join(missing_opener_art)
                     )
                 else:
                     try:
@@ -297,17 +282,14 @@ def load_edition(
                             credit=raw_opener_art["credit"].strip(),
                         )
             try:
-                opener_document = parse_publication_document(
-                    manuscript.read_text(encoding="utf-8")
-                )
+                opener_document = parse_publication_document(manuscript.read_text(encoding="utf-8"))
             except DocumentParseError as exc:
                 errors.append(
                     f"{label} manuscript cannot be parsed as a publication document: {exc}"
                 )
             else:
-                if (
-                    not opener_document.blocks
-                    or not isinstance(opener_document.blocks[0], Paragraph)
+                if not opener_document.blocks or not isinstance(
+                    opener_document.blocks[0], Paragraph
                 ):
                     errors.append(
                         f"{label} first manuscript block must be a paragraph for "
@@ -334,9 +316,7 @@ def load_edition(
             errors.append(f"{label} minimum_reader_pages must be an integer from 1 to 7")
         display_emphasis = str(row.get("display_emphasis") or "").strip()
         if display_emphasis and display_emphasis.casefold() not in str(row["title"]).casefold():
-            errors.append(
-                f"{label} display_emphasis must occur in its localized title"
-            )
+            errors.append(f"{label} display_emphasis must occur in its localized title")
         short_title = str(row.get("short_title") or "").strip()
         if "\n" in short_title or len(short_title) > 40:
             errors.append(f"{label} short_title must be a single line of at most 40 characters")
@@ -393,7 +373,9 @@ def load_edition(
         )
     edition_dir = manifest_path.parent
     try:
-        editorial_path = _edition_path(root, edition_dir, data["editorial"]) if data.get("editorial") else None
+        editorial_path = (
+            _edition_path(root, edition_dir, data["editorial"]) if data.get("editorial") else None
+        )
         editorial = _load_editorial(editorial_path) if editorial_path else None
     except ValidationError as exc:
         errors.extend(exc.errors)
@@ -423,7 +405,9 @@ def load_edition(
         except ValidationError as exc:
             errors.extend(exc.errors)
             continue
-        sections.append(Section(str(row["kind"]), str(row.get("title") or _section_title(row["kind"])), path))
+        sections.append(
+            Section(str(row["kind"]), str(row.get("title") or _section_title(row["kind"])), path)
+        )
     raw_cover = data.get("cover")
     if raw_cover is None:
         cover: dict[str, Any] = {}
@@ -513,9 +497,7 @@ def load_translation(
             f"Translation language {data.get('language')!r} does not match directory {language!r}"
         )
     if str(data.get("source_language") or "") != base.language:
-        errors.append(
-            f"Translation source_language must be {base.language!r}"
-        )
+        errors.append(f"Translation source_language must be {base.language!r}")
     translated_cover = data.get("cover")
     if not isinstance(translated_cover, dict):
         errors.append(f"Translation {language!r} requires translated cover copy")
@@ -547,31 +529,21 @@ def load_translation(
         errors.append(f"Translation {language!r} articles must be a list")
         article_rows = []
     translated_by_id = {
-        str(row.get("id")): row
-        for row in article_rows
-        if isinstance(row, dict) and row.get("id")
+        str(row.get("id")): row for row in article_rows if isinstance(row, dict) and row.get("id")
     }
     base_ids = {article.id for article in base.articles}
     missing_ids = sorted(base_ids - set(translated_by_id))
     extra_ids = sorted(set(translated_by_id) - base_ids)
     if missing_ids:
-        errors.append(
-            f"Translation {language!r} is missing articles: {', '.join(missing_ids)}"
-        )
+        errors.append(f"Translation {language!r} is missing articles: {', '.join(missing_ids)}")
     if extra_ids:
-        errors.append(
-            f"Translation {language!r} has unknown articles: {', '.join(extra_ids)}"
-        )
+        errors.append(f"Translation {language!r} has unknown articles: {', '.join(extra_ids)}")
     translated_articles: list[Article] = []
     for article in base.articles:
         row = translated_by_id.get(article.id)
         if not row:
             continue
-        if (
-            not row.get("title")
-            or not row.get("short_title")
-            or not row.get("manuscript")
-        ):
+        if not row.get("title") or not row.get("short_title") or not row.get("manuscript"):
             errors.append(
                 f"Translation {language!r} article {article.id} requires title, short_title, "
                 "and manuscript"
@@ -593,7 +565,6 @@ def load_translation(
                 f"Translation {language!r} article {article.id} author_note must be a "
                 "single line of at most 160 characters"
             )
-
 
         author = article.author
         if "author" in row:
@@ -619,7 +590,6 @@ def load_translation(
                 f"Translation {language!r} article {article.id} short_title must occur "
                 "in its localized title"
             )
-
 
         key_ideas: tuple[str, ...] = ()
         if article.key_ideas or row.get("key_ideas") is not None:
@@ -693,8 +663,6 @@ def load_translation(
                 figures,
                 article.minimum_reader_pages,
                 article.tail_art,
-
-
                 article.source_url,
                 article.opener_art,
                 key_ideas,
@@ -789,17 +757,13 @@ def load_translation(
                     "source_ids": list(article.source_ids),
                     "manuscript": article.manuscript.relative_to(root).as_posix(),
                     "tail_art_path": (
-                        article.tail_art.relative_to(root).as_posix()
-                        if article.tail_art
-                        else None
+                        article.tail_art.relative_to(root).as_posix() if article.tail_art else None
                     ),
                     **({"key_ideas": list(article.key_ideas)} if article.key_ideas else {}),
                     **(
                         {
                             "opener_art": {
-                                "path": article.opener_art.path.relative_to(
-                                    root
-                                ).as_posix(),
+                                "path": article.opener_art.path.relative_to(root).as_posix(),
                                 "alt_text": article.opener_art.alt_text,
                                 "credit": article.opener_art.credit,
                             }
@@ -868,9 +832,7 @@ def load_translation(
 
 
 def _markdown_signature(path: Path) -> list[str]:
-    return block_signature(
-        parse_publication_document(path.read_text(encoding="utf-8")).blocks
-    )
+    return block_signature(parse_publication_document(path.read_text(encoding="utf-8")).blocks)
 
 
 def _validate_translation_file(
@@ -957,9 +919,7 @@ def _edition_path(
     must_exist: bool = True,
 ) -> Path:
     if not isinstance(value, str) or not value.strip():
-        raise ValidationError(
-            f"Referenced path must be a non-empty string, got {value!r}"
-        )
+        raise ValidationError(f"Referenced path must be a non-empty string, got {value!r}")
     path = Path(value)
     if path.parts and path.parts[0] == "editions":
         return safe_project_path(root, value, must_exist=must_exist)
@@ -981,14 +941,9 @@ def _key_ideas(label: str, value: object) -> tuple[str, ...]:
     if (
         not isinstance(value, list)
         or not value
-        or any(
-            not isinstance(item, str) or not item.strip() or "\n" in item
-            for item in value
-        )
+        or any(not isinstance(item, str) or not item.strip() or "\n" in item for item in value)
     ):
-        raise ValidationError(
-            f"{label} key_ideas must be a non-empty list of single-line strings"
-        )
+        raise ValidationError(f"{label} key_ideas must be a non-empty list of single-line strings")
     ideas = tuple(item.strip() for item in value)
     words = sum(len(idea.split()) for idea in ideas)
     if words > KEY_IDEAS_WORD_BUDGET:
@@ -1036,7 +991,7 @@ def source_code_payload(url: str) -> str:
     payload = url.strip()
     for scheme in ("https://", "http://"):
         if payload.startswith(scheme):
-            payload = payload[len(scheme):]
+            payload = payload[len(scheme) :]
             break
     if payload.startswith("www."):
         payload = payload[4:]

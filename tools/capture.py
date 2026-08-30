@@ -1,4 +1,22 @@
 #!/usr/bin/env python3
+"""capture.py — scaffold, then validate, a source capture.
+
+    uv run python tools/capture.py <url> [--edition 006] [--tags a,b] \
+        [--title ...] [--author ...] [--published YYYY-MM-DD]
+    uv run python tools/capture.py --finish <source-id>
+
+The first form does the deterministic part of intake: fetches the page,
+derives the source id (48-char title slug + first 8 hex of sha256(url)),
+writes library/sources/<id>/ with a record.yaml scaffold, an article.md
+stub, and an empty media/, saves the raw HTML under .magazine/capture/,
+queues the id in library/release-state.yaml, prepends an entry to
+sources.md, and prints the checklist for finishing the capture.
+
+It never writes article body text: filling article.md and media/ verbatim
+is the caller's job, following the printed checklist. When that is done,
+`--finish <id>` validates the capture and copies the record's synopsis
+into the sources.md entry. A capture is not complete until --finish passes.
+"""
 
 from __future__ import annotations
 
@@ -19,9 +37,7 @@ RELEASE_STATE = ROOT / "library" / "release-state.yaml"
 SOURCES_MD = ROOT / "sources.md"
 RAW_DIR = ROOT / ".magazine" / "capture"
 
-USER_AGENT = (
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
-)
+USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
 
 CHECKLIST = """\
 Scaffolded {sid}
@@ -58,13 +74,17 @@ def fetch(url: str) -> str:
 
 def meta_content(html: str, *patterns: str) -> str | None:
     for pat in patterns:
-        m = re.search(
-            rf'<meta[^>]+(?:property|name)=["\']{pat}["\'][^>]+content=["\']([^"\']+)',
-            html,
-        ) or re.search(
-            rf'<meta[^>]+content=["\']([^"\']+)["\'][^>]+(?:property|name)=["\']{pat}["\']',
-            html,
-        ) or re.search(rf'"{pat}"\s*:\s*"([^"]+)"', html)
+        m = (
+            re.search(
+                rf'<meta[^>]+(?:property|name)=["\']{pat}["\'][^>]+content=["\']([^"\']+)',
+                html,
+            )
+            or re.search(
+                rf'<meta[^>]+content=["\']([^"\']+)["\'][^>]+(?:property|name)=["\']{pat}["\']',
+                html,
+            )
+            or re.search(rf'"{pat}"\s*:\s*"([^"]+)"', html)
+        )
         if m:
             return html_lib.unescape(m.group(1)).strip()
     return None
@@ -76,7 +96,6 @@ def page_title(html: str) -> str | None:
         m = re.search(r"<title[^>]*>(.*?)</title>", html, re.S)
         title = html_lib.unescape(m.group(1)).strip() if m else None
     if title:
-
         title = re.split(r"\s+[|•·]\s+", title)[0].strip()
         title = re.sub(r"\s+", " ", title)
     return title or None
@@ -141,13 +160,9 @@ def prepend_sources_md(record: dict, edition: str, queued: int) -> None:
             lines[i] = collecting_line
             break
     else:
-        last_meta = max(
-            i for i, line in enumerate(lines[:20]) if line.startswith("_")
-        )
+        last_meta = max(i for i, line in enumerate(lines[:20]) if line.startswith("_"))
         lines[last_meta + 1 : last_meta + 1] = ["", collecting_line]
-    first_entry = next(
-        (i for i, line in enumerate(lines) if line.startswith("## ")), len(lines)
-    )
+    first_entry = next((i for i, line in enumerate(lines) if line.startswith("## ")), len(lines))
     lines[first_entry:first_entry] = sources_md_entry(record, edition) + [""]
     SOURCES_MD.write_text("\n".join(lines).rstrip("\n") + "\n", encoding="utf-8")
 
@@ -196,11 +211,7 @@ def capture(args: argparse.Namespace) -> int:
     queue_source(state, edition, sid)
     RELEASE_STATE.write_text(dump_yaml(state), encoding="utf-8")
 
-    queued = next(
-        len(e["source_ids"])
-        for e in state["collecting_editions"]
-        if e["id"] == edition
-    )
+    queued = next(len(e["source_ids"]) for e in state["collecting_editions"] if e["id"] == edition)
     prepend_sources_md(record, edition, queued)
 
     print(CHECKLIST.format(sid=sid))
@@ -240,7 +251,6 @@ def finish(sid: str) -> int:
             print(f"  - {p}", file=sys.stderr)
         return 1
 
-
     lines = SOURCES_MD.read_text(encoding="utf-8").splitlines()
     try:
         id_line = lines.index(f"- ID: `{sid}`")
@@ -260,14 +270,20 @@ def finish(sid: str) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("url", nargs="?", help="page to capture")
-    parser.add_argument("--edition", help="collecting edition to queue into (default: intake edition)")
+    parser.add_argument(
+        "--edition", help="collecting edition to queue into (default: intake edition)"
+    )
     parser.add_argument("--tags", help="comma-separated tags")
     parser.add_argument("--title", help="override the extracted title")
     parser.add_argument("--author", help="override the extracted author")
     parser.add_argument("--published", help="override the publish date (YYYY-MM-DD)")
-    parser.add_argument("--finish", metavar="SOURCE_ID", help="validate a filled capture and complete its sources.md entry")
+    parser.add_argument(
+        "--finish",
+        metavar="SOURCE_ID",
+        help="validate a filled capture and complete its sources.md entry",
+    )
     args = parser.parse_args()
 
     if args.finish:

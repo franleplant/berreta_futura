@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+"""compare.py — read several produce runs side by side in a browser.
+
+    uv run python tools/compare.py editions/004/run-A editions/004/run-B [...]
+    uv run python tools/compare.py --out /tmp/x.html editions/004/run-*
+
+Emits one self-contained HTML file: every piece from every run, its manuscript,
+the judge findings that survived, and what `worth` says the reader lost. No
+scores, no aggregate metrics — the point is to read the prose and read the
+feedback, and to see what changed between variants.
+"""
 
 from __future__ import annotations
 
@@ -139,7 +149,9 @@ def omissions_rows(reports) -> list[dict]:
 
 
 def last_round_reports(piece_dir: Path):
-    files = sorted(piece_dir.glob("findings-*.yaml"), key=lambda p: int(re.findall(r"\d+", p.name)[0]))
+    files = sorted(
+        piece_dir.glob("findings-*.yaml"), key=lambda p: int(re.findall(r"\d+", p.name)[0])
+    )
     return load_yaml(files[-1]) if files else None
 
 
@@ -232,10 +244,13 @@ def render(runs: list[tuple[str | None, Path]], plan_path: Path) -> str:
 
     parts = [f"<title>Writing variants — {len(runs)} runs</title>", f"<style>{CSS}</style>"]
     parts.append("<header><h1>Writing variants</h1><div class='sub'>")
-    parts.append(" &nbsp;·&nbsp; ".join(f"<b>{html.escape(n)}</b> {html.escape(s)}" for (n, s), _, _ in data))
+    parts.append(
+        " &nbsp;·&nbsp; ".join(f"<b>{html.escape(n)}</b> {html.escape(s)}" for (n, s), _, _ in data)
+    )
     parts.append("</div></header>")
-    parts.append("<nav>" + "".join(f"<a href='#{i}'>{html.escape(i)}</a>" for i in ids) + "</nav><main>")
-
+    parts.append(
+        "<nav>" + "".join(f"<a href='#{i}'>{html.escape(i)}</a>" for i in ids) + "</nav><main>"
+    )
 
     parts.append("<table class='sum'><tr><th>piece</th><th>source words</th>")
     for (n, _), _, _ in data:
@@ -260,7 +275,9 @@ def render(runs: list[tuple[str | None, Path]], plan_path: Path) -> str:
     parts.append("</table>")
 
     for pid in ids:
-        parts.append(f"<section class='piece' id='{html.escape(pid)}'><h2>{html.escape(pid)}</h2><div class='grid'>")
+        parts.append(
+            f"<section class='piece' id='{html.escape(pid)}'><h2>{html.escape(pid)}</h2><div class='grid'>"
+        )
         for (name, _), pieces, _ in data:
             hit = next((p for p in pieces if p["id"] == pid), None)
             if not hit:
@@ -306,7 +323,7 @@ def render(runs: list[tuple[str | None, Path]], plan_path: Path) -> str:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("runs", nargs="+", help="run dir, or label=run-dir for a readable column name")
     ap.add_argument("--plan", type=Path, default=ROOT / "editions/004/plan.yaml")
     ap.add_argument("--out", type=Path, default=None)

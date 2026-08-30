@@ -36,3 +36,13 @@ module-name = "magazine"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/magazine"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "C901", "ERA"]
+ignore = ["E501"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 12

@@ -1,9 +1,25 @@
 #!/usr/bin/env python3
+"""Typeset dialog balloons onto wordless panels.
+
+Usage: python3 tools/letter.py <spec.json>
+
+The spec lists panels; image/out paths are relative to the spec file:
+  [{"image": "panel-1.png", "out": "panel-1-lettered.png",
+    "balloons": [{"cx": 512, "cy": 180, "text": "IT'S DYING!",
+                  "tail": [430, 420], "size": 44}]}]
+
+cx,cy = balloon centre; tail = point the tail aims at (the speaker's
+mouth; the drawn tail is capped, tail_len overrides); size = font px.
+The balloon sizes itself around the text. One spec per language —
+regenerating dialog never regenerates art.
+"""
+
 import json
 import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
+
 INK = (52, 48, 46, 255)
 PAPER = (253, 250, 244, 255)
 
@@ -27,7 +43,7 @@ def draw_balloon(img: Image.Image, spec: dict) -> None:
     draw = ImageDraw.Draw(img)
     font = font_at(spec.get("size", 44))
     lines = spec["text"].split("\n")
-    line_sizes = [draw.textbbox((0, 0), l, font=font) for l in lines]
+    line_sizes = [draw.textbbox((0, 0), line, font=font) for line in lines]
     text_w = max(b[2] - b[0] for b in line_sizes)
     line_h = max(b[3] - b[1] for b in line_sizes) + 8
     text_h = line_h * len(lines)
@@ -38,7 +54,6 @@ def draw_balloon(img: Image.Image, spec: dict) -> None:
     if "tail" in spec:
         tx, ty = spec["tail"]
         import math
-
 
         ang = math.atan2(ty - cy, tx - cx)
         rim_x = cx + rx * math.cos(ang)
@@ -56,7 +71,6 @@ def draw_balloon(img: Image.Image, spec: dict) -> None:
         draw.polygon([base[0], (tx, ty), base[1]], fill=PAPER, outline=INK, width=4)
     draw.ellipse([cx - rx, cy - ry, cx + rx, cy + ry], fill=PAPER, outline=INK, width=5)
     if "tail" in spec:
-
         draw.polygon([base[0], (tx, ty), base[1]], fill=PAPER)
         draw.line([base[0], (tx, ty)], fill=INK, width=4)
         draw.line([base[1], (tx, ty)], fill=INK, width=4)
@@ -69,7 +83,7 @@ def draw_balloon(img: Image.Image, spec: dict) -> None:
 
 def main() -> None:
     if len(sys.argv) != 2:
-        sys.exit("usage: python3 tools/letter.py <spec.json>")
+        sys.exit(__doc__)
     spec_path = Path(sys.argv[1])
     base = spec_path.parent
     specs = json.loads(spec_path.read_text())

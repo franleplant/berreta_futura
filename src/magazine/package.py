@@ -56,18 +56,17 @@ def package_release(
     reader = destination / "reader.pdf"
     shutil.copyfile(reader_pdf, reader)
 
-
     booklet = impose_a5_on_a4(reader, destination / "booklet-a4.pdf")
     interior_booklet = impose_a5_on_a4(
         reader, destination / "booklet-a4-interior.pdf", section="interior"
     )
-    cover_booklet = impose_a5_on_a4(
-        reader, destination / "booklet-a4-cover.pdf", section="cover"
-    )
-
+    cover_booklet = impose_a5_on_a4(reader, destination / "booklet-a4-cover.pdf", section="cover")
 
     edition_manifest = destination / "edition-manifest.json"
-    edition_manifest.write_text(json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8")
+    edition_manifest.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True, default=str) + "\n",
+        encoding="utf-8",
+    )
     render_report, contact_sheets = inspect_render(
         reader,
         booklet,
@@ -98,7 +97,6 @@ def package_release(
             reader_page_count=len(PdfReader(str(reader)).pages),
             all_in_one_sheets=len(PdfReader(str(booklet)).pages) // 2,
             interior_sheets=len(PdfReader(str(interior_booklet)).pages) // 2,
-
             cover_sheets=len(PdfReader(str(cover_booklet)).pages),
         ),
         encoding="utf-8",
@@ -122,10 +120,10 @@ def package_release(
             ensure_ascii=False,
             indent=2,
             sort_keys=True,
-        ) + "\n",
+        )
+        + "\n",
         encoding="utf-8",
     )
-
 
     files = sorted(
         [
@@ -143,7 +141,10 @@ def package_release(
         key=lambda path: path.relative_to(destination).as_posix(),
     )
     checksums = destination / "SHA256SUMS"
-    checksums.write_text("".join(f"{sha256(path)}  {path.relative_to(destination).as_posix()}\n" for path in files), encoding="utf-8")
+    checksums.write_text(
+        "".join(f"{sha256(path)}  {path.relative_to(destination).as_posix()}\n" for path in files),
+        encoding="utf-8",
+    )
     return files + [checksums]
 
 

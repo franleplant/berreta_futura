@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import json
@@ -86,9 +85,7 @@ def _load_request(path: Path) -> dict[str, Any]:
     if request.get("schemaVersion") != 1:
         raise ValidationError("render request schemaVersion must be 1")
     if request.get("rendererContractVersion") != CONTRACT_VERSION:
-        raise ValidationError(
-            f"rendererContractVersion must be {CONTRACT_VERSION!r}"
-        )
+        raise ValidationError(f"rendererContractVersion must be {CONTRACT_VERSION!r}")
     if request.get("operation") not in {
         "measure_article",
         "measure_edition",
@@ -111,9 +108,10 @@ def _load_request(path: Path) -> dict[str, Any]:
         raise ValidationError("render request languages must be unique")
     if request["primaryLanguage"] not in languages:
         raise ValidationError("languages must include primaryLanguage")
-    if request["operation"] == "measure_article" and not str(
-        request.get("articleId") or ""
-    ).strip():
+    if (
+        request["operation"] == "measure_article"
+        and not str(request.get("articleId") or "").strip()
+    ):
         raise ValidationError("measure_article requires articleId")
     if request["renderer"] not in {"reportlab", "weasyprint"}:
         raise ValidationError("renderer must be reportlab or weasyprint")
@@ -141,9 +139,7 @@ def _stage_inputs(request: dict[str, Any], stage_root: Path) -> list[str]:
             raise ValidationError(f"inputs[{index}].sourcePath must not be a symlink")
         source = source.resolve()
         if not _inside(source, artifact_root) or not source.is_file():
-            raise ValidationError(
-                f"inputs[{index}].sourcePath must be a file beneath artifactRoot"
-            )
+            raise ValidationError(f"inputs[{index}].sourcePath must be a file beneath artifactRoot")
         target = _safe_target(row.get("targetPath"))
         if target in targets:
             raise ValidationError(f"duplicate input targetPath: {target.as_posix()}")
@@ -167,9 +163,7 @@ def _load_languages(stage_root: Path, request: dict[str, Any]) -> dict[str, Edit
         source_records=source_records,
     )
     if edition.language != request["primaryLanguage"]:
-        raise ValidationError(
-            "staged edition language does not match primaryLanguage"
-        )
+        raise ValidationError("staged edition language does not match primaryLanguage")
     editions = {request["primaryLanguage"]: edition}
     for language in request["languages"]:
         if language != request["primaryLanguage"]:
@@ -317,9 +311,7 @@ def _render(
             replace_outer_pages(interior_pdf, cover.pdf, back.pdf, reader_pdf)
             tail_art_facts[language] = variant.raw.get("_rendered_tail_arts", [])
             package_destination = destination / language
-            manifest = _render_manifest(
-                request, variant, layout, input_artifact_ids, stage_root
-            )
+            manifest = _render_manifest(request, variant, layout, input_artifact_ids, stage_root)
             written = package_release(
                 reader_pdf,
                 package_destination,
@@ -334,7 +326,6 @@ def _render(
                 edition_id=variant.id,
                 recorded_review=None,
             )
-
 
             write_web_edition(
                 variant,
@@ -398,7 +389,6 @@ def render_manifest(request_path: Path, destination: Path) -> dict[str, Any]:
         raise ValidationError(f"Render request is not a regular file: {request_path}")
     destination = _absolute_directory(destination, "destination")
 
-
     leftovers = [
         p.name
         for p in (destination.iterdir() if destination.exists() else ())
@@ -412,8 +402,6 @@ def render_manifest(request_path: Path, destination: Path) -> dict[str, Any]:
     destination.mkdir(parents=True, exist_ok=True)
     request = _load_request(request_path)
     with tempfile.TemporaryDirectory(prefix="mag-engine-render-stage-") as temporary:
-
-
         stage_root = Path(temporary).resolve()
         artifact_ids = _stage_inputs(request, stage_root)
         return _render(request, stage_root, destination, artifact_ids)

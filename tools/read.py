@@ -1,4 +1,16 @@
 #!/usr/bin/env python3
+"""read.py — read a produce run's articles in a browser before rendering the PDF.
+
+    uv run python tools/read.py editions/004/run-<ts> [--out path.html]
+
+Lays each piece out in a column sized to roughly A5 page proportions, with
+faint page-break guide lines every ~page height, so density and length are
+visible at a glance. This is a quick reading tool, not a renderer — the
+guides are approximate, and the markdown-to-HTML conversion is deliberately
+tiny. It flags the same density problems a reader would trip over: paragraphs
+over 120 words, inline code/tokens over 60 chars, and pieces with no section
+headings past 600 words.
+"""
 
 from __future__ import annotations
 
@@ -99,7 +111,11 @@ def render_body(md: str) -> tuple[str, dict]:
             continue
         if in_code:
             esc = html.escape(line)
-            cls = ' class="toolong"' if len(line.strip()) > LONG_TOKEN_CHARS or has_long_token(line) else ""
+            cls = (
+                ' class="toolong"'
+                if len(line.strip()) > LONG_TOKEN_CHARS or has_long_token(line)
+                else ""
+            )
             out.append(f"<span{cls}>{esc}</span>" if cls else esc)
             continue
         if not line.strip():
@@ -256,7 +272,9 @@ def render(run_dir: Path) -> str:
         f"(~{WORDS_PER_PAGE} words/page)</div></header>",
     ]
     parts.append(
-        "<nav>" + "".join(f"<a href='#{html.escape(p['id'])}'>{html.escape(p['id'])}</a>" for p in pieces) + "</nav>"
+        "<nav>"
+        + "".join(f"<a href='#{html.escape(p['id'])}'>{html.escape(p['id'])}</a>" for p in pieces)
+        + "</nav>"
     )
     parts.append("<main>")
 
@@ -292,7 +310,7 @@ def render(run_dir: Path) -> str:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("run_dir", type=Path, help="produce run directory, e.g. editions/004/run-<ts>")
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()

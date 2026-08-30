@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -18,7 +17,6 @@ DEFAULT_ENGINE = "weasyprint"
 
 @dataclass(frozen=True)
 class ReaderRenderer:
-
     engine: str
     design: str
     design_direction: str
@@ -30,7 +28,6 @@ class ReaderRenderer:
 
 
 def _weasyprint(design: str | None) -> ReaderRenderer:
-
 
     from .weasyprint_adapter import (
         SHAPING_SCAFFOLDS,
@@ -49,7 +46,6 @@ def _weasyprint(design: str | None) -> ReaderRenderer:
 
 def _reportlab(design: str | None) -> ReaderRenderer:
     from .render import DESIGN_LABEL, DESIGN_MONUMENT, render_a5
-
 
     return ReaderRenderer(
         engine="reportlab",

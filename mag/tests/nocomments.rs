@@ -8,5 +8,9 @@ fn no_comments_in_codebase() {
         .current_dir(root)
         .output()
         .expect("python3 tools/nocomments.py");
-    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stdout));
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stdout)
+    );
 }

@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -32,7 +31,6 @@ from .reader_text import educate_reader_quotes, fold_reader_characters
 
 @dataclass(frozen=True, slots=True)
 class HtmlAsset:
-
     id: str
     role: str
     path: Path
@@ -49,7 +47,6 @@ class HtmlAsset:
 
 @dataclass(frozen=True, slots=True)
 class HtmlEdition:
-
     html: str
     assets: tuple[HtmlAsset, ...]
 
@@ -119,7 +116,7 @@ def _edition_header(edition: Edition) -> str:
         '<header class="edition-header" data-edition-header="true">',
         f'  <p class="publication-name">{_text(edition.publication_name)}</p>',
         f'  <p class="issue-number" data-issue-number="{_attr(edition.issue_number)}">{_text(_ui(edition, "issue"))} {_text(edition.issue_number)}</p>',
-        f'  <h1>{_text(edition.title)}</h1>',
+        f"  <h1>{_text(edition.title)}</h1>",
     ]
     if subtitle:
         lines.append(f'  <p class="subtitle">{_text(subtitle)}</p>')
@@ -160,7 +157,6 @@ def _render_contents(edition: Edition) -> tuple[str, ...]:
         for index, section in enumerate(edition.sections)
     )
 
-
     def clamp_roster(author: str) -> str:
         if len(author) <= 54:
             return author
@@ -173,7 +169,6 @@ def _render_contents(edition: Edition) -> tuple[str, ...]:
         for destination, entry_label, title, author in entries
     ]
 
-
     for _destination, _label, title, _author in entries:
         if len(title) > 62:
             raise ValidationError(
@@ -181,7 +176,6 @@ def _render_contents(edition: Edition) -> tuple[str, ...]:
                 "onto the entry's author line; shorten the article title to "
                 "62 characters or fewer."
             )
-
 
     density = ' data-contents-density="tight"' if len(entries) > 8 else ""
     rows: list[str] = []
@@ -263,7 +257,11 @@ def _render_article(
         f'    <p class="content-label" data-content-mode="{_attr(article.content_mode)}">'
         f'<span class="label-primary">{_text(_ui(edition, "feature"))} {article_index:02d}</span>'
         f'<span class="label-secondary">{_text(_content_label(edition, document, article.content_mode))}</span>'
-        + (f'<span class="label-separator" aria-hidden="true"> / </span><span class="label-date">{_text(article.dateline)}</span>' if article.dateline else "")
+        + (
+            f'<span class="label-separator" aria-hidden="true"> / </span><span class="label-date">{_text(article.dateline)}</span>'
+            if article.dateline
+            else ""
+        )
         + "</p>",
         f"    <h1>{_text(article.title)}</h1>",
         f'    <p class="byline" data-byline="true">'
@@ -317,12 +315,13 @@ def _render_article(
         )
     )
     if article.tail_art is not None:
-        tail_art_fit = str(
-            (getattr(edition, "raw", {}) or {}).get("tail_art_fit") or "cover"
-        )
+        tail_art_fit = str((getattr(edition, "raw", {}) or {}).get("tail_art_fit") or "cover")
         asset = _asset(
-            id=f"article-tail-{article.id}", role="article_tail", path=article.tail_art,
-            alt_text=f"Tail art for {article.title}", article_id=article.id,
+            id=f"article-tail-{article.id}",
+            role="article_tail",
+            path=article.tail_art,
+            alt_text=f"Tail art for {article.title}",
+            article_id=article.id,
         )
         assets.append(asset)
         lines.extend(
@@ -383,7 +382,11 @@ def _render_illustrated_article(
         f'<span class="label-primary">{_text(_ui(edition, "feature"))} {article_index:02d}</span>'
         '<span class="label-separator" aria-hidden="true"> / </span>'
         f'<span class="label-secondary">{_text(_content_label(edition, document, article.content_mode))}</span>'
-        + (f'<span class="label-separator" aria-hidden="true"> / </span><span class="label-date">{_text(article.dateline)}</span>' if article.dateline else "")
+        + (
+            f'<span class="label-separator" aria-hidden="true"> / </span><span class="label-date">{_text(article.dateline)}</span>'
+            if article.dateline
+            else ""
+        )
         + "</p>",
         f"    <h1>{_text(article.title)}</h1>",
         '    <span class="opener-tick" aria-hidden="true"></span>',
@@ -417,15 +420,11 @@ def _render_illustrated_article(
             references = _is_reference_heading(_inline_text(block.children))
         lines.extend(_indent((_render_block(block, references=references),), 2))
         if isinstance(block, Heading):
-            for figure in figures_by_anchor.get(
-                _anchor_key(_inline_text(block.children)), ()
-            ):
+            for figure in figures_by_anchor.get(_anchor_key(_inline_text(block.children)), ()):
                 figure_html, asset = _render_figure(edition, article.id, figure)
                 lines.extend(_indent((figure_html,), 2))
                 assets.append(asset)
-            for extract in extracts_by_anchor.get(
-                _anchor_key(_inline_text(block.children)), ()
-            ):
+            for extract in extracts_by_anchor.get(_anchor_key(_inline_text(block.children)), ()):
                 lines.extend(_indent((_render_extract(edition, article.id, extract),), 2))
 
     lines.extend(_indent(_render_key_ideas(edition, article), 2))
@@ -439,9 +438,7 @@ def _render_illustrated_article(
         )
     )
     if article.tail_art is not None:
-        tail_art_fit = str(
-            (getattr(edition, "raw", {}) or {}).get("tail_art_fit") or "cover"
-        )
+        tail_art_fit = str((getattr(edition, "raw", {}) or {}).get("tail_art_fit") or "cover")
         asset = _asset(
             id=f"article-tail-{article.id}",
             role="article_tail",
@@ -486,7 +483,9 @@ def _render_source_link(article: Article) -> tuple[str, ...]:
     )
 
 
-def _render_section(edition: Edition, index: int, section: Section, document: PublicationDocument) -> str:
+def _render_section(
+    edition: Edition, index: int, section: Section, document: PublicationDocument
+) -> str:
     return "\n".join(
         [
             f'<section id="{_attr(_section_destination_id(index))}" data-section-kind="{_attr(section.kind)}"'
@@ -524,11 +523,12 @@ def _render_closing_plates(edition: Edition, assets: list[HtmlAsset]) -> tuple[s
                 "print as a sliver. Use art nearer the window's shape."
             )
         asset = _asset(
-            id=f"closing-plate-{index}", role="closing_plate", path=plate.art_path,
+            id=f"closing-plate-{index}",
+            role="closing_plate",
+            path=plate.art_path,
             alt_text=plate.title,
         )
         assets.append(asset)
-
 
         plates.append(
             '<figure class="closing-plate" data-asset-role="closing_plate" '
@@ -542,7 +542,9 @@ def _add_cover_asset(edition: Edition, assets: list[HtmlAsset]) -> None:
     if edition.cover_art is not None:
         assets.append(
             _asset(
-                id="cover-art", role="cover_art", path=edition.cover_art,
+                id="cover-art",
+                role="cover_art",
+                path=edition.cover_art,
                 alt_text=str(edition.cover.get("headline") or edition.title),
             )
         )
@@ -550,10 +552,17 @@ def _add_cover_asset(edition: Edition, assets: list[HtmlAsset]) -> None:
 
 def _render_figure(edition: Edition, article_id: str, figure: Figure) -> tuple[str, HtmlAsset]:
     asset = _asset(
-        id=f"figure-{article_id}-{figure.id}", role="figure", path=figure.path,
-        alt_text=figure.alt_text, article_id=article_id, figure_id=figure.id,
-        source_id=figure.source_id, caption=figure.caption, credit=figure.credit,
-        anchor=figure.anchor, layout=figure.layout,
+        id=f"figure-{article_id}-{figure.id}",
+        role="figure",
+        path=figure.path,
+        alt_text=figure.alt_text,
+        article_id=article_id,
+        figure_id=figure.id,
+        source_id=figure.source_id,
+        caption=figure.caption,
+        credit=figure.credit,
+        anchor=figure.anchor,
+        layout=figure.layout,
     )
     return (
         '<figure data-figure-id="{id}" data-article-id="{article}" data-source-id="{source}" '
@@ -561,10 +570,15 @@ def _render_figure(edition: Edition, article_id: str, figure: Figure) -> tuple[s
         'data-figure-label="{word}">'
         '<img src="{src}" alt="{alt}"><figcaption><span class="caption">{caption}</span>'
         '<span class="credit">{credit}</span></figcaption></figure>'.format(
-            id=_attr(figure.id), article=_attr(article_id), source=_attr(figure.source_id),
-            anchor=_attr(figure.anchor), layout=_attr(figure.layout),
-            src=_attr(asset.src), alt=_attr(figure.alt_text),
-            caption=_text(figure.caption), credit=_text(figure.credit),
+            id=_attr(figure.id),
+            article=_attr(article_id),
+            source=_attr(figure.source_id),
+            anchor=_attr(figure.anchor),
+            layout=_attr(figure.layout),
+            src=_attr(asset.src),
+            alt=_attr(figure.alt_text),
+            caption=_text(figure.caption),
+            credit=_text(figure.credit),
             word=_attr(_ui(edition, "figure")),
         ),
         asset,
@@ -588,8 +602,6 @@ def _render_extract(edition: Edition, article_id: str, extract: Extract) -> str:
 
     body: str
     if extract.style == "code":
-
-
         lines = "<br>".join(_verbatim(line) for line in extract.text.split("\n"))
         body = f"<pre><code>{lines}</code></pre>"
     else:
@@ -630,12 +642,20 @@ def _render_block(block: Block, *, standfirst: bool = False, references: bool = 
         class_attr = f' class="language-{_attr(language)}"' if language else ""
         return f"<pre><code{class_attr}>{_highlight_code(block.code, language)}</code></pre>"
     if isinstance(block, BlockQuote):
-        return "<blockquote>" + "".join(_render_block(child) for child in block.children) + "</blockquote>"
+        return (
+            "<blockquote>"
+            + "".join(_render_block(child) for child in block.children)
+            + "</blockquote>"
+        )
     if isinstance(block, ListBlock):
         tag = "ol" if block.ordered else "ul"
         start = f' start="{block.start}"' if block.ordered and block.start != 1 else ""
         role = ' data-reference-list="true"' if references else ""
-        return f"<{tag}{start}{role}>" + "".join(_render_list_item(item) for item in block.items) + f"</{tag}>"
+        return (
+            f"<{tag}{start}{role}>"
+            + "".join(_render_list_item(item) for item in block.items)
+            + f"</{tag}>"
+        )
     if isinstance(block, HorizontalRule):
         return "<hr>"
     raise TypeError(f"Unsupported publication block: {type(block).__name__}")
@@ -656,9 +676,7 @@ def _highlight_code(code: str, language: str) -> str:
             except ClassNotFound:
                 lexer = None
             if lexer is not None:
-                return highlight(
-                    folded, lexer, HtmlFormatter(nowrap=True)
-                ).rstrip("\n")
+                return highlight(folded, lexer, HtmlFormatter(nowrap=True)).rstrip("\n")
         except ImportError:
             pass
     return escape(folded, quote=False)
@@ -701,7 +719,11 @@ def _asset(*, id: str, role: str, path: Path, alt_text: str, **kwargs: object) -
 
 def _content_label(edition: Edition, document: PublicationDocument, content_mode: str) -> str:
     value = document.metadata.get("label")
-    return str(value).strip() if value is not None and str(value).strip() else _ui(edition, content_mode)
+    return (
+        str(value).strip()
+        if value is not None and str(value).strip()
+        else _ui(edition, content_mode)
+    )
 
 
 def _inline_text(inlines: tuple[Inline, ...]) -> str:
@@ -818,7 +840,6 @@ def _ui(edition: Edition, key: str) -> str:
 
 def _text(value: object) -> str:
 
-
     return escape(fold_reader_characters(educate_reader_quotes(str(value))), quote=False)
 
 
@@ -828,12 +849,10 @@ def _verbatim(value: object) -> str:
 
 def _attr(value: object) -> str:
 
-
     return escape(fold_reader_characters(str(value)), quote=True)
 
 
 def _indent(lines: tuple[str, ...] | list[str], spaces: int) -> tuple[str, ...]:
     prefix = " " * spaces
-
 
     return tuple(prefix + line for line in lines)

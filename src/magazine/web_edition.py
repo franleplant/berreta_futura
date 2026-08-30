@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import re
@@ -59,14 +58,12 @@ _FILLER_ROLES = frozenset({"article_tail", "closing_plate"})
 
 @dataclass(frozen=True, slots=True)
 class WebAsset:
-
     asset: HtmlAsset
     href: str
 
 
 @dataclass(frozen=True, slots=True)
 class WebEdition:
-
     root: Path
     index: Path
     pages: tuple[Path, ...]
@@ -76,7 +73,6 @@ class WebEdition:
 
 @dataclass(frozen=True, slots=True)
 class _Piece:
-
     lines: tuple[str, ...]
     element_id: str
     short_title: str
@@ -86,7 +82,6 @@ class _Piece:
 
 @dataclass(frozen=True, slots=True)
 class _Document:
-
     html_open: str
     main_open: str
     title: str
@@ -164,7 +159,6 @@ def write_web_edition(
 
 @dataclass(frozen=True, slots=True)
 class _Chrome:
-
     wordmark: str | None
     favicon: str | None
 
@@ -232,9 +226,7 @@ def _materialize_source_codes(
             continue
         name = f"source-code-{_sanitize(source_id)}.svg"
         if name.casefold() in claimed:
-            raise ValidationError(
-                f"web source-code filename collision at assets/{name}"
-            )
+            raise ValidationError(f"web source-code filename collision at assets/{name}")
         claimed.add(name.casefold())
         payload = BytesIO()
         try:
@@ -260,9 +252,7 @@ def _materialize_source_codes(
     return result
 
 
-def _install_illustrated_source_codes(
-    html: str, source_codes: Mapping[str, str]
-) -> str:
+def _install_illustrated_source_codes(html: str, source_codes: Mapping[str, str]) -> str:
 
     lines: list[str] = []
     in_illustrated_opener = False
@@ -290,9 +280,7 @@ def _install_illustrated_source_codes(
 
 
 def _drop_print_only_lines(html: str) -> str:
-    return "\n".join(
-        line for line in html.split("\n") if not _PRINT_ONLY_LINE.match(line)
-    )
+    return "\n".join(line for line in html.split("\n") if not _PRINT_ONLY_LINE.match(line))
 
 
 def _number_provenance(html: str, source_urls: Mapping[str, str]) -> str:
@@ -334,9 +322,7 @@ def _rewrite_sources(html: str, web_assets: tuple[WebAsset, ...]) -> str:
 
     replacements: dict[str, str] = {}
     for web in web_assets:
-        replacements.setdefault(
-            f'src="{_attr(web.asset.src)}"', f'src="{_attr(web.href)}"'
-        )
+        replacements.setdefault(f'src="{_attr(web.asset.src)}"', f'src="{_attr(web.href)}"')
     for needle, replacement in replacements.items():
         html = html.replace(needle, replacement)
     return html
@@ -360,16 +346,14 @@ def _parse_document(html: str) -> _Document:
     openings = [index for index, line in enumerate(lines) if _MAIN_OPENING.match(line)]
     if len(openings) != 1:
         raise ValidationError(
-            "web edition expected exactly one '<main>' opening; the semantic "
-            "body has changed shape"
+            "web edition expected exactly one '<main>' opening; the semantic body has changed shape"
         )
     start = openings[0]
     try:
         stop = lines.index(_MAIN_CLOSING, start)
     except ValueError:
         raise ValidationError(
-            "web edition expected a '  </main>' closing line; the semantic "
-            "body has changed shape"
+            "web edition expected a '  </main>' closing line; the semantic body has changed shape"
         ) from None
 
     header: tuple[str, ...] | None = None
@@ -386,15 +370,12 @@ def _parse_document(html: str) -> _Document:
         elif line.startswith("    <nav ") and 'data-edition-navigation="contents"' in line:
             closing = _closing_line(lines, position, stop, "</nav>")
 
-
             sheet = tuple(lines[position : closing + 1])
             contents = sheet if contents is None else contents + sheet
             position = closing + 1
         elif (opened := _PIECE_OPENING.match(line)) is not None:
             closing = _closing_line(lines, position, stop, f"</{opened.group(1)}>")
-            pieces.append(
-                _piece(tuple(lines[position : closing + 1]), opened.group(2), claimed)
-            )
+            pieces.append(_piece(tuple(lines[position : closing + 1]), opened.group(2), claimed))
             position = closing + 1
         else:
             raise ValidationError(
@@ -449,9 +430,7 @@ def _piece(lines: tuple[str, ...], element_id: str, claimed: dict[str, str]) -> 
             f"opened at {lines[0].strip()[:80]!r}; the page turns have nothing "
             "to say without it"
         )
-    heading = next(
-        (match.group(1) for line in lines if (match := _HEADING_LINE.match(line))), None
-    )
+    heading = next((match.group(1) for line in lines if (match := _HEADING_LINE.match(line))), None)
     if heading is None:
         raise ValidationError(
             "web edition expected an <h1> inside the piece opened at "
@@ -495,7 +474,6 @@ def _header_text(header: tuple[str, ...], class_name: str) -> str:
 
 @dataclass(frozen=True, slots=True)
 class _Cover:
-
     index_lines: tuple[str, ...]
     standalone: tuple[str, ...]
 
@@ -509,10 +487,14 @@ def _cover_lines(
 ) -> _Cover:
 
     art = next((web for web in web_assets if web.asset.role == "cover_art"), None)
-    art_lines = () if art is None else (
-        '    <figure class="cover-art" data-asset-role="cover_art">'
-        f'<img src="{_attr(art.href)}" alt="{_attr(art.asset.alt_text)}">'
-        "</figure>",
+    art_lines = (
+        ()
+        if art is None
+        else (
+            '    <figure class="cover-art" data-asset-role="cover_art">'
+            f'<img src="{_attr(art.href)}" alt="{_attr(art.asset.alt_text)}">'
+            "</figure>",
+        )
     )
     if wordmark_href is None:
         return _Cover(index_lines=art_lines + document.header, standalone=art_lines)
@@ -520,12 +502,9 @@ def _cover_lines(
     headline_text = str(edition.cover.get("headline") or edition.title)
     if headline_lines and " ".join(headline_lines).split() == headline_text.split():
         headline = "".join(
-            f'<span class="cover-headline-line">{_text(line)}</span>'
-            for line in headline_lines
+            f'<span class="cover-headline-line">{_text(line)}</span>' for line in headline_lines
         )
     else:
-
-
         headline = _text(headline_text)
     roster = _text(_cover_contributors(edition))
     date = str(edition.publication_date)
@@ -543,10 +522,9 @@ def _cover_lines(
     )
     cue = f'      <a class="cover-cue" href="#contents">{document.contents_label}</a>'
 
-
-    after_headline = next(
-        index for index, line in enumerate(block) if 'class="cover-headline"' in line
-    ) + 1
+    after_headline = (
+        next(index for index, line in enumerate(block) if 'class="cover-headline"' in line) + 1
+    )
     return _Cover(
         index_lines=block[:after_headline] + (cue,) + block[after_headline:],
         standalone=block,
@@ -556,9 +534,7 @@ def _cover_lines(
 def _masthead_line(edition: Edition, document: _Document, wordmark_href: str | None) -> str:
 
     if wordmark_href is None:
-        identity = (
-            f'<span class="publication-name">{document.publication}</span>'
-        )
+        identity = f'<span class="publication-name">{document.publication}</span>'
     else:
         identity = (
             f'<img class="masthead-wordmark" src="{_attr(wordmark_href)}" '
@@ -672,9 +648,7 @@ def _piece_page(
             f'<a class="page-turn-previous" rel="prev" '
             f'href="{_attr(previous.filename)}">{previous.short_title}</a>'
         )
-    turns.append(
-        f'<a class="page-turn-contents" href="index.html">{document.contents_label}</a>'
-    )
+    turns.append(f'<a class="page-turn-contents" href="index.html">{document.contents_label}</a>')
     if following is not None:
         turns.append(
             f'<a class="page-turn-next" rel="next" '
@@ -710,8 +684,6 @@ def _inject_head(html: str, favicon_href: str | None = None) -> str:
 
     lines = html.split("\n")
     if lines.count(_CHARSET_LINE) != 1:
-
-
         raise ValidationError(
             "web edition expected exactly one '  <meta charset=\"utf-8\">' line "
             "to anchor the viewport and stylesheet injection; the semantic head "
@@ -774,11 +746,9 @@ def _copy_tree(source, target: Path) -> None:
 
 def _attr(value: object) -> str:
 
-
     return escape(fold_reader_characters(str(value)), quote=True)
 
 
 def _text(value: object) -> str:
-
 
     return escape(fold_reader_characters(str(value)), quote=False)

@@ -58,11 +58,11 @@ HEADING_SPACE_BEFORE = {
 }
 
 
-INK = (.055, .075, .085)
-VIOLET = (.25, .10, .43)
-SLATE = (.31, .35, .37)
-COOL_GRAY = (.88, .89, .90)
-PALE_VIOLET = (.955, .945, .975)
+INK = (0.055, 0.075, 0.085)
+VIOLET = (0.25, 0.10, 0.43)
+SLATE = (0.31, 0.35, 0.37)
+COOL_GRAY = (0.88, 0.89, 0.90)
+PALE_VIOLET = (0.955, 0.945, 0.975)
 WHITE = (1, 1, 1)
 
 
@@ -82,13 +82,9 @@ def _cover_graded_art(path_value: str) -> bytes:
     graded = []
     for red, green, blue in image.get_flattened_data():
         if blue > 120 and blue > red * 1.7 and blue > green * 1.7:
-            graded.append(
-                (round(red * .96), min(255, round(green * 1.12)), round(blue * .953))
-            )
+            graded.append((round(red * 0.96), min(255, round(green * 1.12)), round(blue * 0.953)))
         elif red > 170 and red > green * 1.8 and green > blue * 1.5:
-            graded.append(
-                (round(red * .916), min(255, round(green * 1.146)), min(255, blue + 45))
-            )
+            graded.append((round(red * 0.916), min(255, round(green * 1.146)), min(255, blue + 45)))
         else:
             graded.append((red, green, blue))
     image.putdata(graded)
@@ -283,6 +279,7 @@ def _markdown_blocks(text: str) -> Iterable[tuple[str, str]]:
     if text.startswith("---\n"):
         _, _, text = text.partition("\n---\n")
     buffer: list[str] = []
+
     def flush():
         if buffer:
             value = " ".join(line.strip() for line in buffer).strip()
@@ -290,6 +287,7 @@ def _markdown_blocks(text: str) -> Iterable[tuple[str, str]]:
             if value:
                 return ("body", value)
         return None
+
     code: list[str] | None = None
     for line in text.splitlines():
         if code is not None:
@@ -354,15 +352,22 @@ class _Typesetter:
         design: str,
         enforce_page_caps: bool = True,
     ):
-        self.pdf, self.edition, self.width, self.height, self.metrics = pdf, edition, *pagesize, metrics
+        self.pdf, self.edition, self.width, self.height, self.metrics = (
+            pdf,
+            edition,
+            *pagesize,
+            metrics,
+        )
         self.design = design
         self.enforce_page_caps = enforce_page_caps
 
-
-        self.editorial_page_cap = declared_editorial_page_cap(
-            edition.raw, MAX_EDITORIAL_PAGES
+        self.editorial_page_cap = declared_editorial_page_cap(edition.raw, MAX_EDITORIAL_PAGES)
+        self.inner, self.outer, self.top, self.bottom = (
+            INNER_MARGIN,
+            OUTER_MARGIN,
+            TEXT_TOP_INSET,
+            45.0,
         )
-        self.inner, self.outer, self.top, self.bottom = INNER_MARGIN, OUTER_MARGIN, TEXT_TOP_INSET, 45.0
         self.left, self.right = self.inner, self.outer
         self.page = 0
         self.section = ""
@@ -452,7 +457,9 @@ class _Typesetter:
         self.y = self.frame_top
         self.frame_recorded = False
 
-    def _set_custom_frame(self, x: float, width: float, *, top: float, bottom: float | None = None) -> None:
+    def _set_custom_frame(
+        self, x: float, width: float, *, top: float, bottom: float | None = None
+    ) -> None:
         self.frame_count = 1
         self.frame_index = 0
         self.frame_left = x
@@ -530,9 +537,7 @@ class _Typesetter:
         self.pdf.setFillColorRGB(*INK)
         self.pdf.setFont(SANS_MEDIUM, CAPTION_SIZE)
         label = f"{self.page:02d}"
-        running = _plain(
-            self.edition.publication_name.upper()
-        )
+        running = _plain(self.edition.publication_name.upper())
         self.pdf.drawString(
             OUTER_MARGIN,
             FOLIO_BASELINE,
@@ -544,7 +549,7 @@ class _Typesetter:
         y = self.height - RUNNING_HEADER_BASELINE_INSET
         publication = _plain(self.edition.publication_name.upper())
         section = _plain(self.section.upper())
-        right_width = self.live_width * .49
+        right_width = self.live_width * 0.49
         if self.metrics.stringWidth(section, SANS_MEDIUM, CAPTION_SIZE) > right_width:
             raise ValidationError(
                 f"Curated running title does not fit the Quiet Standard header: {self.section}"
@@ -554,7 +559,7 @@ class _Typesetter:
         self.pdf.drawString(
             self.left,
             y,
-            self.fit_text(publication, SANS_MEDIUM, CAPTION_SIZE, self.live_width * .46),
+            self.fit_text(publication, SANS_MEDIUM, CAPTION_SIZE, self.live_width * 0.46),
         )
         self.pdf.drawRightString(
             self.width - self.right,
@@ -562,9 +567,8 @@ class _Typesetter:
             section,
         )
         self.pdf.setStrokeColorRGB(*COOL_GRAY)
-        self.pdf.setLineWidth(.55)
+        self.pdf.setLineWidth(0.55)
         self.pdf.line(self.left, y - 8, self.width - self.right, y - 8)
-
 
         self.pdf.setStrokeColorRGB(*SIGNAL_ORANGE)
         self.pdf.setLineWidth(1.15)
@@ -589,7 +593,6 @@ class _Typesetter:
         self.page += 1
         self._set_page_margins()
         self.section = section or self.section
-
 
         selected_columns = 1
         if opener:
@@ -715,7 +718,7 @@ class _Typesetter:
             mask="auto",
         )
         self.pdf.setStrokeColorRGB(*INK)
-        self.pdf.setLineWidth(.55)
+        self.pdf.setLineWidth(0.55)
         self.pdf.rect(draw_x, draw_y, image_width, image_height, fill=0, stroke=1)
         return draw_x, draw_y
 
@@ -732,11 +735,11 @@ class _Typesetter:
     ) -> float:
         path = Path(self._figure_value(figure, "path"))
         pixel_dimensions = self._figure_dimensions(figure)
-        image_width, image_height, caption_lines, credit_lines, total_height = self._figure_geometry(
-            figure, width, max_image_height
+        image_width, image_height, caption_lines, credit_lines, total_height = (
+            self._figure_geometry(figure, width, max_image_height)
         )
         label = f"{_ui(self.edition, 'figure').upper()} {figure_index:02d}"
-        self._tracked_label(label, x, top - CAPTION_SIZE, width, color=VIOLET, tracking=.25)
+        self._tracked_label(label, x, top - CAPTION_SIZE, width, color=VIOLET, tracking=0.25)
         image_top = top - CAPTION_SIZE - BASE * 2
         image_x, image_y = self._draw_contained_image(
             path, x, image_top, width, image_width, image_height
@@ -846,18 +849,11 @@ class _Typesetter:
         figure_height = figure_geometry[-1]
         bridge_top = min(self.y, self.height - self.top)
         can_bridge_current_page = (
-            self.frame_count == 1
-            and bridge_top - heading_height - figure_height >= self.bottom
+            self.frame_count == 1 and bridge_top - heading_height - figure_height >= self.bottom
         )
-        if (
-            not can_bridge_current_page
-            and layout == "adaptive_band"
-            and self.frame_count == 1
-        ):
+        if not can_bridge_current_page and layout == "adaptive_band" and self.frame_count == 1:
             fixed_height = figure_height - figure_geometry[1]
-            available_image_height = (
-                bridge_top - heading_height - self.bottom - fixed_height
-            )
+            available_image_height = bridge_top - heading_height - self.bottom - fixed_height
             if available_image_height >= ADAPTIVE_FIGURE_MIN_IMAGE_HEIGHT:
                 draw_max_image_height = min(
                     FIGURE_BAND_MAX_IMAGE_HEIGHT,
@@ -868,9 +864,7 @@ class _Typesetter:
                     band_width,
                     draw_max_image_height,
                 )[-1]
-                can_bridge_current_page = (
-                    bridge_top - heading_height - figure_height >= self.bottom
-                )
+                can_bridge_current_page = bridge_top - heading_height - figure_height >= self.bottom
         if can_bridge_current_page:
             self._record_active_frame()
         else:
@@ -907,11 +901,14 @@ class _Typesetter:
         article_id: str,
         figure_index: int,
     ) -> None:
-        required = self._figure_geometry(
-            figure,
-            self.live_width,
-            OPENER_FIGURE_MAX_IMAGE_HEIGHT,
-        )[-1] - FIGURE_GAP
+        required = (
+            self._figure_geometry(
+                figure,
+                self.live_width,
+                OPENER_FIGURE_MAX_IMAGE_HEIGHT,
+            )[-1]
+            - FIGURE_GAP
+        )
         bridge_top = self.y
         if bridge_top - required < self.bottom:
             self.new_page(columns=1)
@@ -923,15 +920,18 @@ class _Typesetter:
             bottom=self.bottom,
         )
         self.frame_role = "continuation"
-        band_bottom = self._draw_figure(
-            figure,
-            article_id=article_id,
-            figure_index=figure_index,
-            x=self.left,
-            top=self.y,
-            width=self.live_width,
-            max_image_height=OPENER_FIGURE_MAX_IMAGE_HEIGHT,
-        ) + FIGURE_GAP
+        band_bottom = (
+            self._draw_figure(
+                figure,
+                article_id=article_id,
+                figure_index=figure_index,
+                x=self.left,
+                top=self.y,
+                width=self.live_width,
+                max_image_height=OPENER_FIGURE_MAX_IMAGE_HEIGHT,
+            )
+            + FIGURE_GAP
+        )
         if band_bottom - 4 * self.reading_leading < self.bottom:
             self.new_page(columns=1)
         else:
@@ -1005,7 +1005,7 @@ class _Typesetter:
                 label_y,
                 local_width,
                 color=VIOLET,
-                tracking=.25,
+                tracking=0.25,
             )
             self.pdf.drawImage(
                 ImageReader(prepared.image),
@@ -1017,7 +1017,7 @@ class _Typesetter:
                 mask="auto",
             )
             self.pdf.setStrokeColorRGB(*INK)
-            self.pdf.setLineWidth(.55)
+            self.pdf.setLineWidth(0.55)
             self.pdf.rect(image_x, image_y, image_width, image_height, fill=0, stroke=1)
             baseline = image_y - BASE * 2 - CAPTION_SIZE
             self.pdf.setFillColorRGB(*INK)
@@ -1170,7 +1170,6 @@ class _Typesetter:
                     result.append(remaining)
                     break
 
-
                 minimum = max(1, end // 2)
                 candidates = [
                     index + 1
@@ -1200,9 +1199,9 @@ class _Typesetter:
             self.pdf.setFillColorRGB(*PALE_VIOLET)
             self.pdf.rect(self.frame_left, bottom, column_width, height, fill=1, stroke=0)
             self.pdf.setStrokeColorRGB(*VIOLET)
-            self.pdf.setLineWidth(.8)
+            self.pdf.setLineWidth(0.8)
             self.pdf.line(self.frame_left, bottom, self.frame_left, self.y)
-            self.pdf.setFillColorRGB(.10, .10, .10)
+            self.pdf.setFillColorRGB(0.10, 0.10, 0.10)
             self.pdf.setFont(font, size)
             baseline = self.y - padding_y - size
             for line in chunk:
@@ -1236,7 +1235,9 @@ class _Typesetter:
             raise ValidationError(f"Article {article_id} has duplicate curated figure ids")
         anchors = [str(self._figure_value(row, "anchor")).strip() for row in rows]
         if len(set(anchor.casefold() for anchor in anchors)) != len(anchors):
-            raise ValidationError(f"Article {article_id} has multiple figures at one semantic anchor")
+            raise ValidationError(
+                f"Article {article_id} has multiple figures at one semantic anchor"
+            )
         headings: dict[str, int] = {}
         for kind, value in blocks:
             if kind in {"h2", "h3"}:
@@ -1375,9 +1376,7 @@ class _Typesetter:
                     figure_index=figure_number,
                 )
         if deferred_landscape is not None:
-            deferred_kind, deferred_heading, deferred_figure, deferred_number = (
-                deferred_landscape
-            )
+            deferred_kind, deferred_heading, deferred_figure, deferred_number = deferred_landscape
             self._landscape_plate(
                 deferred_kind,
                 deferred_heading,
@@ -1394,7 +1393,7 @@ class _Typesetter:
         width: float,
         *,
         color=INK,
-        tracking: float = .45,
+        tracking: float = 0.45,
         align: str = "left",
     ) -> None:
         value = _plain(text.upper())
@@ -1477,30 +1476,30 @@ class _Typesetter:
             box_width = tail_width + (13 if tail else 0)
             if max(head_width, tail_offset + box_width) <= width:
                 break
-            size -= .5
+            size -= 0.5
         else:
             raise ValidationError(f"Publication name cannot fit the cover wordmark: {name}")
 
         self._scaled_word(
             head,
-            x + .36,
+            x + 0.36,
             y - 1.65,
             size=size,
             color=COVER_INK,
             horizontal_scale=head_scale,
             tracking=tracking,
-            stroke_width=.30,
+            stroke_width=0.30,
         )
         if not tail:
             return
 
         tail_x = x + tail_offset
-        tail_y = y - size * .91
+        tail_y = y - size * 0.91
         box_x = -7.0
         box_y = -7.0
         slug_y = box_y - 1
         box_height = size * 1.04 - 1
-        slug_height = box_height + .65
+        slug_height = box_height + 0.65
         slant = 0.0
         center_x = box_x + box_width / 2
         center_y = box_y + box_height / 2
@@ -1520,7 +1519,6 @@ class _Typesetter:
             self.pdf.setFillColorRGB(*COVER_INK)
             self.pdf.drawPath(slug, fill=1, stroke=0)
 
-
             self._scaled_word(
                 tail,
                 -13,
@@ -1529,7 +1527,7 @@ class _Typesetter:
                 color=COVER_ORANGE,
                 horizontal_scale=106.6,
                 tracking=tracking,
-                stroke_width=.15,
+                stroke_width=0.15,
             )
             self._scaled_word(
                 tail,
@@ -1539,7 +1537,7 @@ class _Typesetter:
                 color=COVER_PAPER,
                 horizontal_scale=tail_scale,
                 tracking=tracking,
-                stroke_width=.30,
+                stroke_width=0.30,
             )
         finally:
             self.pdf.restoreState()
@@ -1560,32 +1558,36 @@ class _Typesetter:
                     )
                     if max(pair_widths) <= maximum_unscaled_width:
                         candidates.append((abs(pair_widths[0] - pair_widths[1]), pair))
-            lines = list(min(candidates, key=lambda item: item[0])[1]) if candidates else self.lines(
-                value,
-                SANS_BOLD,
-                size,
-                maximum_unscaled_width,
+            lines = (
+                list(min(candidates, key=lambda item: item[0])[1])
+                if candidates
+                else self.lines(
+                    value,
+                    SANS_BOLD,
+                    size,
+                    maximum_unscaled_width,
+                )
             )
             if len(lines) <= 3:
                 break
-            size -= .5
+            size -= 0.5
         else:
             raise ValidationError(f"Cover title cannot fit the Canto vivo title zone: {text}")
 
         baseline = top - size
-        leading = size * .78
+        leading = size * 0.78
         colors = (COVER_INK, COVER_VIOLET, COVER_INK)
         for index, line in enumerate(lines):
             line_size = 28.0 if index % 2 else size
             self._scaled_word(
                 line,
-                x + (23 if index % 2 else -.65),
+                x + (23 if index % 2 else -0.65),
                 baseline - (1 if index % 2 else 0),
                 size=line_size,
                 color=colors[index],
                 horizontal_scale=80.9 if index % 2 else 79.83,
                 tracking=-1.35,
-                stroke_width=.09 if index % 2 == 0 else 0,
+                stroke_width=0.09 if index % 2 == 0 else 0,
             )
             baseline -= leading
 
@@ -1593,7 +1595,6 @@ class _Typesetter:
         layout = CANTO_VIVO_COVER
         tab_x = self.width - layout.tab_width
         self.pdf.setFillColorRGB(*COVER_ORANGE)
-
 
         self.pdf.rect(
             tab_x,
@@ -1664,7 +1665,7 @@ class _Typesetter:
                 _plain(_ui(self.edition, "by").upper()) + " " + _plain(author.upper()),
                 SANS_SEMIBOLD,
                 7.4,
-                self.column_width * .76,
+                self.column_width * 0.76,
             ),
         )
         if note:
@@ -1673,7 +1674,9 @@ class _Typesetter:
             self.pdf.drawRightString(
                 self.frame_left + self.column_width,
                 self.y,
-                self.fit_text(_plain(note.upper()), SANS_MEDIUM, CAPTION_SIZE, self.column_width * .2),
+                self.fit_text(
+                    _plain(note.upper()), SANS_MEDIUM, CAPTION_SIZE, self.column_width * 0.2
+                ),
             )
         self.y -= 12
         if author_note:
@@ -1727,7 +1730,7 @@ class _Typesetter:
             leading = size * leading_ratio
             if len(lines) <= maximum_lines and size + (len(lines) - 1) * leading <= height:
                 break
-            size -= .5
+            size -= 0.5
         else:
             raise ValidationError(f"Title cannot fit the Quiet Standard display box: {text}")
         self.pdf.setFillColorRGB(*color)
@@ -1812,7 +1815,7 @@ class _Typesetter:
             self.pdf.setLineWidth(1)
             self.pdf.circle(art_x + art_width / 2, art_y + art_height / 2, 56, fill=0, stroke=1)
         self.pdf.setStrokeColorRGB(*COVER_INK)
-        self.pdf.setLineWidth(.7)
+        self.pdf.setLineWidth(0.7)
         self.pdf.rect(art_x, art_y, art_width, art_height, fill=0, stroke=1)
 
         deck = str(self.edition.cover.get("deck", "")).strip()
@@ -1822,7 +1825,6 @@ class _Typesetter:
             deck_size = 6.4
             deck_scale = 121.5
 
-
             deck_lines = self.lines(deck, SANS, 7.8, deck_width)
             if len(deck_lines) > 5:
                 raise ValidationError("Cover deck is too long for the Canto vivo cover")
@@ -1830,7 +1832,7 @@ class _Typesetter:
             baseline = self.height - 493 - deck_size
             for index, line in enumerate(deck_lines):
                 line_text = self.pdf.beginText()
-                line_text.setTextOrigin(deck_x - (.65 if index == 0 else 0), baseline)
+                line_text.setTextOrigin(deck_x - (0.65 if index == 0 else 0), baseline)
                 line_text.setFont(SANS, deck_size)
                 line_text.setHorizScale(deck_scale)
                 line_text.textLine(line)
@@ -1844,7 +1846,7 @@ class _Typesetter:
             footer = self.pdf.beginText()
             footer.setTextOrigin(layout.footer_x, layout.footer_y)
             footer.setFont(SANS_BOLD, CAPTION_SIZE)
-            footer.setCharSpace(.8)
+            footer.setCharSpace(0.8)
             footer.textLine(_cover_date(self.edition.publication_date))
             self.pdf.drawText(footer)
         finally:
@@ -1855,18 +1857,47 @@ class _Typesetter:
         entries: list[tuple[str, str, str, int]] = []
         if self.edition.articles:
             if self.edition.editorial:
-                entries.append((_ui(self.edition, "editorial"), self.edition.editorial.title, self.edition.editorial.byline, toc_pages.get("editorial", 0)))
-            entries.extend((f"{_ui(self.edition, 'feature')} {index:02d}", article.title, article.author, toc_pages.get(article.id, 0)) for index, article in enumerate(self.edition.articles, 1))
-            entries.extend((_section_label(self.edition, section.kind), section.title, "", toc_pages.get(f"section-{index}", 0)) for index, section in enumerate(self.edition.sections))
+                entries.append(
+                    (
+                        _ui(self.edition, "editorial"),
+                        self.edition.editorial.title,
+                        self.edition.editorial.byline,
+                        toc_pages.get("editorial", 0),
+                    )
+                )
+            entries.extend(
+                (
+                    f"{_ui(self.edition, 'feature')} {index:02d}",
+                    article.title,
+                    article.author,
+                    toc_pages.get(article.id, 0),
+                )
+                for index, article in enumerate(self.edition.articles, 1)
+            )
+            entries.extend(
+                (
+                    _section_label(self.edition, section.kind),
+                    section.title,
+                    "",
+                    toc_pages.get(f"section-{index}", 0),
+                )
+                for index, section in enumerate(self.edition.sections)
+            )
         elif self.edition.sections:
-            entries.extend((_section_label(self.edition, section.kind), section.title, "", toc_pages.get(f"section-{index}", 0)) for index, section in enumerate(self.edition.sections))
+            entries.extend(
+                (
+                    _section_label(self.edition, section.kind),
+                    section.title,
+                    "",
+                    toc_pages.get(f"section-{index}", 0),
+                )
+                for index, section in enumerate(self.edition.sections)
+            )
         chunks = [entries[index : index + 8] for index in range(0, len(entries), 8)] or [[]]
         for sheet_index, chunk in enumerate(chunks):
             self.new_page(contents_label, blank_header=True)
             self._folio()
-            kicker = (
-                f"{_ui(self.edition, 'issue')} {self.edition.issue_number} / {contents_label}"
-            )
+            kicker = f"{_ui(self.edition, 'issue')} {self.edition.issue_number} / {contents_label}"
             if sheet_index:
                 kicker += f" / {sheet_index + 1:02d}"
             self._tracked_label(kicker, self.left, self.height - 31, self.live_width)
@@ -1898,9 +1929,7 @@ class _Typesetter:
                 self.pdf.drawString(text_x, top - 8, _plain(label.upper()))
                 title_lines = self.lines(title, SERIF_DISPLAY, 9.8, text_width)
                 if len(title_lines) > 2:
-                    raise ValidationError(
-                        f"Contents title is too long for Quiet Standard: {title}"
-                    )
+                    raise ValidationError(f"Contents title is too long for Quiet Standard: {title}")
                 self.pdf.setFont(SERIF_DISPLAY, 9.8)
                 baseline = top - 23
                 for line in title_lines:
@@ -1912,11 +1941,13 @@ class _Typesetter:
                     self.pdf.drawString(
                         text_x,
                         top - 43,
-                        self.fit_text(_plain(author.upper()), SANS_MEDIUM, CAPTION_SIZE, text_width),
+                        self.fit_text(
+                            _plain(author.upper()), SANS_MEDIUM, CAPTION_SIZE, text_width
+                        ),
                     )
                 if row_index < len(chunk) - 1:
                     self.pdf.setStrokeColorRGB(*COOL_GRAY)
-                    self.pdf.setLineWidth(.7)
+                    self.pdf.setLineWidth(0.7)
                     self.pdf.line(x, top - row_height, self.width - self.right, top - row_height)
 
     def _render_article_opener(self, article, article_index: int, article_total: int) -> None:
@@ -1938,7 +1969,7 @@ class _Typesetter:
             maximum=30 if opener_has_figure else 35,
             minimum=24,
             maximum_lines=4,
-            leading_ratio=.96,
+            leading_ratio=0.96,
         )
         self._set_custom_frame(self.left, self.live_width, top=title_bottom - 10)
         self._credit(
@@ -1947,7 +1978,6 @@ class _Typesetter:
         )
         if opener_has_figure:
             self.y += 13
-
 
         self._set_reading_frame(top=self.y if opener_has_figure else 238)
 
@@ -1961,9 +1991,7 @@ class _Typesetter:
         self.y -= KEY_IDEAS_SPACE_BEFORE
         self.pdf.setStrokeColorRGB(*SIGNAL_ORANGE)
         self.pdf.setLineWidth(1.1)
-        self.pdf.line(
-            self.frame_left, self.y + 6, self.frame_left + self.column_width, self.y + 6
-        )
+        self.pdf.line(self.frame_left, self.y + 6, self.frame_left + self.column_width, self.y + 6)
         self._tracked_label(label, self.frame_left, self.y - 4, self.column_width, color=VIOLET)
         self.y -= KEY_IDEAS_LABEL_SPACE
         for idea in key_ideas:
@@ -1980,7 +2008,7 @@ class _Typesetter:
             baseline,
             max(1, self.frame_width - 24),
             color=VIOLET,
-            tracking=.25,
+            tracking=0.25,
         )
         self._article_tail_ornament(baseline, tail_art)
 
@@ -2004,7 +2032,6 @@ class _Typesetter:
 
         image = ImageReader(str(tail_art))
         pixel_width, pixel_height = image.getSize()
-
 
         affordable = (pixel_height / MIN_FIGURE_PPI) * 72.0
         if affordable < height:
@@ -2040,15 +2067,13 @@ class _Typesetter:
                     maximum=35,
                     minimum=25,
                     maximum_lines=4,
-                    leading_ratio=.96,
+                    leading_ratio=0.96,
                 )
                 self._set_custom_frame(self.left, self.live_width, top=title_bottom - 10)
                 self._credit(self.edition.editorial.byline)
 
                 blocks = list(
-                    _markdown_blocks(
-                        self.edition.editorial.path.read_text(encoding="utf-8")
-                    )
+                    _markdown_blocks(self.edition.editorial.path.read_text(encoding="utf-8"))
                 )
                 if not any(kind == "body" for kind, _ in blocks):
                     raise ValidationError(
@@ -2069,23 +2094,16 @@ class _Typesetter:
                 self.continuation_columns = 1
                 self.reading_size = BODY_SIZE
                 has_landscape_plate = any(
-                    str(self._figure_value(figure, "layout")).startswith(
-                        "landscape_plate"
-                    )
+                    str(self._figure_value(figure, "layout")).startswith("landscape_plate")
                     for figure in getattr(article, "figures", ())
                 )
                 self.reading_leading = 12.2 if has_landscape_plate else BODY_LEADING
-                self.paragraph_after = (
-                    4.0
-                    if has_landscape_plate
-                    else 5.4
-                )
+                self.paragraph_after = 4.0 if has_landscape_plate else 5.4
                 self._begin_article(article.id)
                 self.new_page(article.short_title, opener=True)
                 start_page = self.page
                 self.toc[article.id] = self.page
                 self._render_article_opener(article, article_index, article_total)
-
 
                 self.article_opener_fits[article.id] = self.page == start_page
                 self.markdown(
@@ -2132,7 +2150,7 @@ class _Typesetter:
             maximum=35,
             minimum=25,
             maximum_lines=4,
-            leading_ratio=.96,
+            leading_ratio=0.96,
         )
         self._set_reading_frame(top=title_bottom - 25)
         self.markdown(section.path, lead=True)
@@ -2143,12 +2161,10 @@ class _Typesetter:
                 f"Edition requires {total} closing plates for signature padding, but none are configured"
             )
 
-
         plate = self.edition.closing_plates[index % len(self.edition.closing_plates)]
         self.new_page(blank_header=True)
         self.pdf.setFillColorRGB(*WHITE)
         self.pdf.rect(0, 0, self.width, self.height, fill=1, stroke=0)
-
 
         art_x, art_width = self.grid_box(0, 6)
         from reportlab.lib.utils import ImageReader
@@ -2170,24 +2186,19 @@ class _Typesetter:
         self.continuation_columns = 1
         configured = self.edition.raw.get("format", {}).get("target_pages")
 
-
         minimum_total = self.page + 2
         target = int(configured) if configured else ((minimum_total + 3) // 4) * 4
         target = max(target, minimum_total)
         target = ((target + 3) // 4) * 4
         closing_pages = target - 2 - self.page
         if closing_pages < 4:
-
-
             target += 4
             closing_pages = target - 2 - self.page
         for index in range(closing_pages):
             self._closing_plate(index, closing_pages)
 
-
         self.new_page(blank_header=True)
         self.new_page(blank_header=True)
-
 
         self.pdf.setFillColorRGB(*WHITE)
         self.pdf.rect(0, 0, self.width, self.height, fill=1, stroke=0)
@@ -2223,7 +2234,6 @@ def _render_pass(
         enforce_page_caps=enforce_page_caps,
     )
 
-
     typesetter.new_page(blank_header=True)
 
     typesetter.new_page(blank_header=True)
@@ -2238,8 +2248,6 @@ def _render_pass(
         DESIGN_LABEL,
         typesetter.cover_art_size_points,
         dict(typesetter.article_frame_usage),
-
-
         {},
         tuple(typesetter.figure_placements),
         dict(typesetter.article_opener_fits),
@@ -2253,9 +2261,7 @@ def render_a5(
     design: str = DESIGN_MONUMENT,
 ) -> RenderLayout:
     if design != DESIGN_MONUMENT:
-        raise ValidationError(
-            f"Unsupported render design {design!r}; expected {DESIGN_MONUMENT!r}"
-        )
+        raise ValidationError(f"Unsupported render design {design!r}; expected {DESIGN_MONUMENT!r}")
     configured_cap = edition.raw.get("format", {}).get("max_article_pages", MAX_ARTICLE_PAGES)
     try:
         configured_cap = int(configured_cap)
@@ -2266,11 +2272,9 @@ def render_a5(
             f"format.max_article_pages is a hard publication rule and must remain {MAX_ARTICLE_PAGES}"
         )
 
-
     declared_editorial_page_cap(edition.raw, MAX_EDITORIAL_PAGES)
     output.parent.mkdir(parents=True, exist_ok=True)
     probe = _render_pass(io.BytesIO(), edition, design=design)
-
 
     draft = _render_pass(
         io.BytesIO(),
@@ -2285,9 +2289,6 @@ def render_a5(
         draft.toc,
         design=design,
     )
-    if (
-        draft.article_pages != final.article_pages
-        or draft.editorial_pages != final.editorial_pages
-    ):
+    if draft.article_pages != final.article_pages or draft.editorial_pages != final.editorial_pages:
         raise ValidationError("Content pagination changed between deterministic render passes")
     return final
