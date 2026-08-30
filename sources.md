@@ -8,7 +8,27 @@ _Collecting: `006` (9 queued)._
 
 _Collecting: `007` (22 queued)._
 
-_Collecting: `008` (4 queued)._
+_Collecting: `008` (6 queued)._
+
+## The Instinct Thesis: Why Memory Is Becoming the Moat — Ashwin Gopinath
+
+- ID: `the-instinct-thesis-why-memory-is-becoming-the-m-14970672`
+- Source: https://x.com/ashwingop/status/2093026452929405356
+- Published: 2026-08-27
+- Captured: 2026-08-30T00:32:53Z
+- Release: queued for `008`
+
+The author argues that Instinct's apparent breakthrough comes not from its agentic execution loop but from a utility-driven memory architecture that admits, compiles, and forgets information selectively, enabling genuine agentic proactivity.
+
+## Running a Software Factory Efficiently at Uber Scale — Uday Kiran Medisetty
+
+- ID: `running-a-software-factory-efficiently-at-uber-s-36ff06c6`
+- Source: https://www.uber.com/us/en/blog/efficient-software-factory/
+- Published: 2026-08-27
+- Captured: 2026-08-30T00:30:33Z
+- Release: queued for `008`
+
+The article explains how Uber's Distinguished Engineer Uday Kiran Medisetty describes the company's software factory model, cost equation, and the specific engineering levers (model selection, prompt caching, MCP tool optimization, context graphs, and spend visibility tooling) it used to scale AI agent usage 7x while cutting cost per 1,000 requests 34% and cost per session 52% from peak.
 
 ## Automated researchers can reliably mitigate alignment failures
 

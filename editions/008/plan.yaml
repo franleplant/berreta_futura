@@ -25,3 +25,15 @@ articles:
   content_mode: article
   source_ids:
   - automated-researchers-can-reliably-mitigate-alig-a9acbff7
+- id: running-a-software-factory-efficiently-at-uber-scale
+  title: Running a Software Factory Efficiently at Uber Scale
+  author: Uday Kiran Medisetty
+  content_mode: article
+  source_ids:
+  - running-a-software-factory-efficiently-at-uber-s-36ff06c6
+- id: the-instinct-thesis-why-memory-is-becoming-the-moat
+  title: 'The Instinct Thesis: Why Memory Is Becoming the Moat'
+  author: Ashwin Gopinath
+  content_mode: article
+  source_ids:
+  - the-instinct-thesis-why-memory-is-becoming-the-m-14970672
