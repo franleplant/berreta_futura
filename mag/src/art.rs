@@ -14,11 +14,12 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::sync::{Arc, Condvar, Mutex};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Mutex;
 use std::thread;
 
 /// Cap on concurrent `gen_cmd` subprocesses in flight at once.
-const GEN_CONCURRENCY: usize = 4;
+const GEN_CONCURRENCY: usize = 8;
 
 fn read(path: &Path) -> Result<String> {
     fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))
@@ -399,50 +400,6 @@ fn extract_briefs(reply: &str, label: &str) -> Result<Vec<Brief>> {
     Ok(doc.briefs)
 }
 
-/// A simple counting semaphore capping in-flight `gen_cmd` subprocesses,
-/// same pattern as caller.rs's Semaphore (acquired only around the
-/// subprocess run, never around the whole per-candidate task).
-struct Semaphore {
-    count: Mutex<usize>,
-    cond: Condvar,
-    max: usize,
-}
-
-impl Semaphore {
-    fn new(max: usize) -> Self {
-        Self { count: Mutex::new(0), cond: Condvar::new(), max }
-    }
-
-    fn acquire(&self) {
-        let mut count = self.count.lock().unwrap();
-        while *count >= self.max {
-            count = self.cond.wait(count).unwrap();
-        }
-        *count += 1;
-    }
-
-    fn release(&self) {
-        let mut count = self.count.lock().unwrap();
-        *count -= 1;
-        self.cond.notify_one();
-    }
-}
-
-struct SemaphoreGuard<'a>(&'a Semaphore);
-
-impl<'a> SemaphoreGuard<'a> {
-    fn acquire(sem: &'a Semaphore) -> Self {
-        sem.acquire();
-        Self(sem)
-    }
-}
-
-impl Drop for SemaphoreGuard<'_> {
-    fn drop(&mut self) {
-        self.0.release();
-    }
-}
-
 #[derive(Debug, Clone, Serialize)]
 struct GeneratedItem {
     brief: String,
@@ -539,55 +496,53 @@ fn run_gen_command(cmd_str: &str, out_path: &Path) -> Result<(), String> {
     }
 }
 
-/// Run every brief x variant candidate, capped at GEN_CONCURRENCY in flight.
+/// Run every brief x variant candidate, GEN_CONCURRENCY at a time, in brief order.
 fn generate_all(
     briefs: &[Brief],
     candidates: u32,
     gen_cmd: &str,
     round_dir: &Path,
 ) -> Vec<GeneratedItem> {
-    let sem = Arc::new(Semaphore::new(GEN_CONCURRENCY));
-    let mut handles = Vec::new();
-    for brief in briefs {
-        for variant in 1..=candidates {
-            let sem = Arc::clone(&sem);
-            let round_dir = round_dir.to_path_buf();
-            let brief_id = brief.id.clone();
-            let (filename, cmd_str) = candidate_command(gen_cmd, brief, variant, round_dir.as_path());
-            handles.push(thread::spawn(move || -> GeneratedItem {
-                let out_path = round_dir.join(&filename);
-                // A non-empty candidate already on disk is kept, never
-                // regenerated: this is what makes an interrupted round
-                // resumable (and costs nothing on a fresh, timestamped one).
-                if fs::metadata(&out_path).map(|m| m.len() > 0).unwrap_or(false) {
-                    println!("    {brief_id} v{variant}: kept (already on disk)");
-                    return GeneratedItem { brief: brief_id, variant, file: filename, ok: true };
-                }
-                let result = {
-                    let _permit = SemaphoreGuard::acquire(&sem);
-                    run_gen_command(&cmd_str, &out_path)
+    let jobs: Vec<(String, u32, String, String)> = briefs
+        .iter()
+        .flat_map(|b| {
+            (1..=candidates).map(move |v| {
+                let (file, cmd) = candidate_command(gen_cmd, b, v, round_dir);
+                (b.id.clone(), v, file, cmd)
+            })
+        })
+        .collect();
+    let next = AtomicUsize::new(0);
+    let results = Mutex::new(Vec::with_capacity(jobs.len()));
+    thread::scope(|s| {
+        for _ in 0..GEN_CONCURRENCY.min(jobs.len()) {
+            s.spawn(|| loop {
+                let i = next.fetch_add(1, Ordering::Relaxed);
+                let Some((brief, variant, file, cmd)) = jobs.get(i) else { break };
+                let out_path = round_dir.join(file);
+                let ok = if fs::metadata(&out_path).map(|m| m.len() > 0).unwrap_or(false) {
+                    println!("    {brief} v{variant}: kept (already on disk)");
+                    true
+                } else {
+                    match run_gen_command(cmd, &out_path) {
+                        Ok(()) => {
+                            println!("    {brief} v{variant}: ok");
+                            true
+                        }
+                        Err(e) => {
+                            eprintln!("    {brief} v{variant}: FAILED — {e}");
+                            false
+                        }
+                    }
                 };
-                match result {
-                    Ok(()) => {
-                        println!("    {brief_id} v{variant}: ok");
-                        GeneratedItem { brief: brief_id, variant, file: filename, ok: true }
-                    }
-                    Err(e) => {
-                        eprintln!("    {brief_id} v{variant}: FAILED — {e}");
-                        GeneratedItem { brief: brief_id, variant, file: filename, ok: false }
-                    }
-                }
-            }));
+                let item = GeneratedItem { brief: brief.clone(), variant: *variant, file: file.clone(), ok };
+                results.lock().unwrap().push((i, item));
+            });
         }
-    }
-    let mut results = Vec::with_capacity(handles.len());
-    for h in handles {
-        match h.join() {
-            Ok(item) => results.push(item),
-            Err(_) => eprintln!("    a gen-cmd worker thread panicked"),
-        }
-    }
-    results
+    });
+    let mut results = results.into_inner().unwrap();
+    results.sort_by_key(|(i, _)| *i);
+    results.into_iter().map(|(_, item)| item).collect()
 }
 
 fn html_escape(s: &str) -> String {
