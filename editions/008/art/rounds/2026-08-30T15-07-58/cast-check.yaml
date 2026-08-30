@@ -1,0 +1,91 @@
+model: sonnet
+checked: 2026-08-30T15-16-56
+results:
+- file: civilizations-opener-the-third-city-v1.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: off_model
+    reason: The robot has cobalt mitten hands and antenna ball and a tool pouch, but the pouch is orange/red rather than coral and the antenna tip color reads closer to teal than cobalt.
+  - name: Flopaz
+    verdict: off_model
+    reason: Hair is worn as a single low back ponytail with center-parted bangs rather than a low side ponytail with straight bangs.
+- file: civilizations-opener-the-third-city-v2.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/antenna tip, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: on_model
+    reason: Low side ponytail with straight bangs, rose-pink pinafore over white top, white socks, and green flat shoes all match.
+- file: civilizations-opener-the-third-city-v3.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black face screen with curved white eyes, cobalt panels/joints/mitten hands/feet, single antenna with cobalt tip, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: off_model
+    reason: Hair is worn as a single low back ponytail with bangs rather than a low side ponytail, and the dress reads as pink pinafore-style overalls over a white top rather than the defined pinafore with side pockets.
+- file: civilizations-opener-the-third-city-v4.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut-brown hair in a low side ponytail with straight bangs and a rose-pink pinafore dress over a white top match the definition, with no contradicting shoe/sock details visible.
+  - name: Maro
+    verdict: off_model
+    reason: The antenna ball tip is rendered pale white instead of the defined cobalt color.
+- file: civilizations-tail-carrying-the-blocks-home-v1.png
+  verdicts:
+  - name: Pedro
+    verdict: off_model
+    reason: black tousled hair and round glasses match, but he wears a cream/tan jacket over the top rather than the canon teal crew-neck top.
+  - name: Flopaz
+    verdict: off_model
+    reason: chestnut hair and bangs are present but it is worn loose/short rather than in the canon single low side ponytail, and she wears a cream jacket over the pink top rather than the pinafore dress.
+  - name: Maro
+    verdict: on_model
+    reason: off-white rounded body, black screen face with two curved white eyes, cobalt panels/joints/feet, single antenna with cobalt ball tip, and coral tool pouch all match.
+- file: civilizations-tail-carrying-the-blocks-home-v2.png
+  verdicts:
+  - name: Pedro
+    verdict: off_model
+    reason: He wears a blue crew-neck top instead of the canon teal, with khaki-brown pants rather than khaki shorts.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/joints/hands/feet, single antenna with cobalt ball tip, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: off_model
+    reason: Hair is worn loose with bangs rather than gathered into the canon single low side ponytail, and she wears a lavender cardigan over a pleated skirt instead of the rose-pink pinafore dress.
+- file: civilizations-tail-carrying-the-blocks-home-v3.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, and red sneakers match canon; wardrobe drift (jacket, long pants) is licensed for this tail.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair with straight bangs and a ponytail matches the identity anchor; wardrobe drift (cardigan, plaid skirt) is licensed for this tail.
+  - name: Maro
+    verdict: on_model
+    reason: Black screen face with two curved white eyes, rounded off-white body, cobalt panels/limbs, antenna with cobalt ball tip, and coral tool pouch all match canon.
+- file: civilizations-tail-carrying-the-blocks-home-v4.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/joints/feet, single antenna with cobalt tip, and coral tool pouch all present.
+  - name: Flopaz
+    verdict: off_model
+    reason: Hair is worn loose/down rather than in a single low side ponytail with straight bangs, and the dress reads as rose-pink with a collared white top but lacks the visible side pockets over a white short-sleeve top described in canon.

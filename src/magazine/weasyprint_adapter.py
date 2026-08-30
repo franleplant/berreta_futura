@@ -26,7 +26,7 @@ from xml.etree.ElementTree import Element, SubElement
 
 from .errors import DependencyError, ValidationError
 from .html_edition import HtmlAsset, render_html_edition
-from .manifest import Edition
+from .manifest import Edition, source_code_payload
 from .reader_layout import FigurePlacement, RenderLayout, declared_editorial_page_cap
 from .reader_text import educate_reader_quotes, fold_reader_characters
 
@@ -3272,15 +3272,16 @@ def _fitted_source_code(article_id: str, url: str, room: float) -> SourceCode | 
     """
     import segno
 
+    payload = source_code_payload(url)
     best: SourceCode | None = None
     for level in _CODE_ERROR_LEVELS:
-        symbol = segno.make(url, error=level, micro=False)
+        symbol = segno.make(payload, error=level, micro=False)
         modules = int(symbol.symbol_size(border=_CODE_QUIET_MODULES)[0])
         module = room / modules
         if module < _CODE_MIN_MODULE_POINTS:
             continue
         if best is None or module > best.module + _MODULE_EPSILON:
-            best = SourceCode(article_id, "opener", level, modules, module, url)
+            best = SourceCode(article_id, "opener", level, modules, module, payload)
     return best
 
 

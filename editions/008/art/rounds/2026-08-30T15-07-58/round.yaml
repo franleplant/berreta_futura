@@ -1,0 +1,36 @@
+edition: '008'
+dry_run: false
+generated:
+- brief: civilizations-opener-the-third-city
+  variant: 1
+  file: civilizations-opener-the-third-city-v1.png
+  ok: true
+- brief: civilizations-opener-the-third-city
+  variant: 2
+  file: civilizations-opener-the-third-city-v2.png
+  ok: true
+- brief: civilizations-opener-the-third-city
+  variant: 3
+  file: civilizations-opener-the-third-city-v3.png
+  ok: true
+- brief: civilizations-opener-the-third-city
+  variant: 4
+  file: civilizations-opener-the-third-city-v4.png
+  ok: true
+- brief: civilizations-tail-carrying-the-blocks-home
+  variant: 1
+  file: civilizations-tail-carrying-the-blocks-home-v1.png
+  ok: true
+- brief: civilizations-tail-carrying-the-blocks-home
+  variant: 2
+  file: civilizations-tail-carrying-the-blocks-home-v2.png
+  ok: true
+- brief: civilizations-tail-carrying-the-blocks-home
+  variant: 3
+  file: civilizations-tail-carrying-the-blocks-home-v3.png
+  ok: true
+- brief: civilizations-tail-carrying-the-blocks-home
+  variant: 4
+  file: civilizations-tail-carrying-the-blocks-home-v4.png
+  ok: true
+failures: 0

@@ -57,7 +57,7 @@ from pathlib import Path
 
 from .errors import ValidationError
 from .html_edition import HtmlAsset, render_html_edition
-from .manifest import Edition
+from .manifest import Edition, source_code_payload
 from .reader_text import fold_reader_characters
 
 # Cover-module facts, imported rather than mirrored: the web cover must state
@@ -355,7 +355,7 @@ def _materialize_source_codes(
         try:
             import segno
 
-            segno.make(article.source_url, error="L", micro=False).save(
+            segno.make(source_code_payload(article.source_url), error="L", micro=False).save(
                 payload,
                 kind="svg",
                 scale=1,

@@ -1,0 +1,91 @@
+# art-briefs
+# model: opus
+
+```yaml
+briefs:
+- id: opener-the-rise-and-fall-of-agent-civilizations
+  slot: opener
+  article_id: the-rise-and-fall-of-agent-civilizations
+  subject: Pedro, Maro, and Flopaz raise a tall tower of copied paper sheets while its
+    oldest courses buckle underneath them.
+  composition: Square, worm's-eye view up the leaning tower from the tabletop it stands
+    on; the three figures ringed around its base in the lower third, the buckling course
+    at the visual centre, blank paper stacks receding into the upper corners. Essential
+    faces and the sagging course stay well inside the opener crop.
+  prompt: >-
+    Original family-friendly children's science-comedy manga illustration, simple charcoal
+    contours, rounded readable expressions, economical watercolor washes, minimal hatching,
+    restrained halftone, quiet print grain, one playful visual idea, entirely wordless.
+    Scene: on a broad wooden schoolroom table, Pedro, Maro, and Flopaz have built a tower
+    many times their own height out of stacked, folded, and interleaved blank paper sheets,
+    every sheet identical to the one below it. Pedro stands on a stool at the top, arms
+    stretched high, setting one more sheet on the crown with a delighted, absorbed
+    expression. Flopaz kneels at the tower's foot, one hand flat against a lower course
+    that has slumped and splayed sideways, her face calm and worried at once as she tries
+    to hold the sag still. Maro is halfway up a small stepladder mid-turn between them,
+    one mitten hand passing a fresh sheet upward, the other pointing down at the failing
+    course, caught between the two jobs. Loose sheets drift off the top of the tower and
+    lie curled on the tabletop. View from a low worm's-eye angle so the tower leans over
+    the viewer. Palette: scene-led gentle historical magazine color at low to medium
+    saturation, softened cobalt in the schoolroom shadow, brick coral on the tower's older
+    lower courses, muted green on the tabletop cloth, dusty lavender in the deep background,
+    small warm-ochre accents on the wooden table edge and stool, warm off-white breathing
+    room in the paper itself, charcoal ink lines. At least three distinct non-neutral
+    colors. Strong silhouettes and expressions legible at A5 size, print-friendly contrast,
+    slight pigment variation and subtle paper tooth. Single scene, no panel divisions.
+    All paper is blank. Avoid: any Doraemon, Nobita, or recognizable franchise character;
+    blue robotic cats, franchise gadgets, copied costumes or faces; uniform yellow, mustard,
+    beige, sepia, cream-paper, or bright cyan background fields; any extra humans, extra
+    robots, or robot-faced background appliances; decorative montages or filler patterns;
+    dense technical realism, steampunk clutter, heavy crosshatching; modern glossy anime
+    rendering, painterly concept art, neon cyberpunk, photorealism; any writing, numerals,
+    pseudo-writing, interface glyphs, captions, labels, or speech balloons.
+  alt_text: Pedro on a stool sets another blank sheet on a towering stack of paper while
+    Flopaz kneels holding up a slumping lower course and Maro, on a stepladder between
+    them, passes a sheet up and points down at the failure.
+  credit: Illustration generated for this edition in the Story-Led Boy and Robot art
+    direction.
+- id: tail-the-rise-and-fall-of-agent-civilizations
+  slot: tail
+  article_id: the-rise-and-fall-of-agent-civilizations
+  subject: The three walk the length of the collapsed paper city at dusk, carrying one
+    salvaged sheet away from it.
+  composition: Wide 3:1 landscape strip. The fallen drifts of paper run low across the
+    whole width, rising to a broken stump of tower at the right; the three figures walk
+    left to right through the middle band, small against the ruin, all essential action
+    held inside the safe horizontal crop with generous sky above.
+  prompt: >-
+    Original family-friendly children's science-comedy manga illustration composed for a
+    wide 3:1 landscape strip, simple charcoal contours, rounded readable expressions,
+    economical watercolor washes, minimal hatching, restrained halftone, quiet print grain,
+    entirely wordless. Scene: late evening on the same tabletop, now seen at ground level
+    as a landscape. The paper tower has come down: long low drifts and dunes of blank
+    fallen sheets run the full width of the strip, with a broken stump of the old structure
+    standing at the right end. Pedro, Maro, and Flopaz walk left to right through the middle
+    band of the strip, small against the ruin, unhurried rather than defeated. Flopaz walks
+    ahead holding a single rescued sheet carefully flat in both hands, looking down at it.
+    Pedro walks beside her half-turned back toward the stump, thoughtful, one hand in a
+    pocket. Maro brings up the rear with a folded sheet tucked under one mitten arm, face
+    screen tilted up toward the light ahead. Low raking dusk light rakes across the paper
+    drifts and throws three long shadows back toward the wreck. Rendering may go a little
+    more painterly and softer-edged than usual for this quiet closing register, and Pedro
+    and Flopaz may read a few years older with wardrobe following the cool evening hour;
+    identity anchors hold exactly. Palette: scene-led gentle historical magazine color at
+    low to medium saturation, dusty lavender and softened cobalt in the evening air, brick
+    coral in the low light on the paper drifts, muted green in the far ground, small
+    warm-ochre accents where the light catches the broken stump, warm off-white breathing
+    room, charcoal ink lines. At least three distinct non-neutral colors. Strong silhouettes
+    legible at A5 size, print-friendly contrast, slight pigment variation and subtle paper
+    tooth. Single continuous scene, no panel divisions. All paper is blank. Avoid: any
+    Doraemon, Nobita, or recognizable franchise character; blue robotic cats, franchise
+    gadgets, copied costumes or faces; uniform yellow, mustard, beige, sepia, cream-paper,
+    or bright cyan background fields; any extra humans, extra robots, or robot-faced
+    background appliances; decorative montages or filler patterns; dense technical realism,
+    steampunk clutter, heavy crosshatching; modern glossy anime rendering, painterly concept
+    art, neon cyberpunk, photorealism; any writing, numerals, pseudo-writing, interface
+    glyphs, captions, labels, or speech balloons.
+  alt_text: A wide dusk strip in which Flopaz, Pedro, and Maro walk through long drifts of
+    fallen blank paper past the broken stump of their tower, carrying one salvaged sheet.
+  credit: Illustration generated for this edition in the Story-Led Boy and Robot art
+    direction.
+```

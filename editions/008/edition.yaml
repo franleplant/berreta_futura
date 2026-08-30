@@ -46,6 +46,7 @@ articles:
     alt_text: A three-step loop diagram, agent executes a task, human reviews and gives feedback, agent reviews
       feedback and improves itself, with an arrow back to the start.
     anchor: The loop
+    layout: evidence_band_prose
   opener_art:
     path: editions/008/art/rounds/2026-08-30T14-06-08/warp-opener-the-card-that-edits-the-card-v4.png
     alt_text: In a workshop, Pedro clips a note to an instruction card while Maro builds from it and Flopaz slides in the corrected card, with a wire of cards looping overhead.
@@ -53,7 +54,7 @@ articles:
   tail_art_path: editions/008/art/rounds/2026-08-30T14-06-08/warp-tail-last-card-of-the-morning-v2.png
 - id: automated-researchers-can-reliably-mitigate-alignment-failures
   title: Automated Researchers Can Reliably Mitigate Alignment Failures
-  short_title: Automated Alignment Researchers
+  short_title: Mitigate Alignment Failures
   display_emphasis: Researchers
   opener_variant: edge_medallion
   author: Anthropic
@@ -71,6 +72,7 @@ articles:
       between 26% and 96% of the safety gap.
     alt_text: A bar chart of ten alignment failure categories with the percentage of safety gap closed for each.
     anchor: The setup
+    layout: compact_band
   - id: production-model
     source_id: automated-researchers-can-reliably-mitigate-alig-a9acbff7
     path: media/003.png
@@ -79,13 +81,14 @@ articles:
       against 72% for the released model.
     alt_text: A chart comparing safety gap closed over 60 hours of automated research with the released model's score.
     anchor: On a production-grade model
+    layout: compact_band
   opener_art:
     path: editions/008/art/rounds/2026-08-30T14-06-08/researchers-opener-closing-the-gaps-v3.png
     alt_text: Maro fits a plank into the gap of one of ten model bridges on a bench while Pedro measures the next gap and Flopaz marks ticks on a slate.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
   tail_art_path: editions/008/art/rounds/2026-08-30T14-06-08/researchers-tail-the-beetle-crosses-v3.png
 - id: running-a-software-factory-efficiently-at-uber-scale
-  title: Running a Software Factory Efficiently at Uber Scale
+  title: A Software Factory at Uber Scale
   short_title: A Software Factory at Uber Scale
   display_emphasis: Uber Scale
   opener_variant: stepped_title
@@ -105,6 +108,7 @@ articles:
     alt_text: A formula, total spend equals users times sessions per user times turns per session times requests
       per turn times tokens per request times price per token.
     anchor: The equation
+    layout: evidence_band_prose
   - id: pareto-frontier
     source_id: running-a-software-factory-efficiently-at-uber-s-36ff06c6
     path: media/006.jpg
@@ -114,6 +118,7 @@ articles:
     alt_text: A scatter plot of ten model configurations by cost per review and F1 score with a dashed Pareto
       frontier.
     anchor: Price per token
+    layout: compact_band
   - id: graph-grounding
     source_id: running-a-software-factory-efficiently-at-uber-s-36ff06c6
     path: media/011.jpg
@@ -123,6 +128,7 @@ articles:
     alt_text: Two execution paths side by side, the graph-grounded one short and correct, the other long with
       errors and a wrong conclusion.
     anchor: Requests per turn
+    layout: evidence_band_prose
   opener_art:
     path: editions/008/art/rounds/2026-08-30T14-06-08/uber-opener-six-valves-one-chute-v3.png
     alt_text: Pedro leans into the largest of six valves on a factory pipe as the coins pouring from the chute thin to a trickle, watched by Flopaz and caught in a bucket by Maro.
@@ -172,10 +178,11 @@ articles:
   - the-rise-and-fall-of-agent-civilizations-b74188c7
   manuscript: editions/008/articles/the-rise-and-fall-of-agent-civilizations.md
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/008/art/rounds/2026-08-30T15-07-58/civilizations-opener-the-third-city-v2.png
+    alt_text: On a classroom sand table, Pedro sets a block on a small rising city while Maro braces its
+      base and Flopaz lifts a salvaged block from the ruins of two collapsed cities.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: TODO
+  tail_art_path: editions/008/art/rounds/2026-08-30T15-07-58/civilizations-tail-carrying-the-blocks-home-v3.png
 - id: previewing-the-model-hardware-standard
   title: Previewing the Model Hardware Standard
   short_title: The Model Hardware Standard
@@ -198,6 +205,7 @@ articles:
     alt_text: Three lab diagrams side by side, traditional instruments without a hub, an automated lab with
       bespoke integrations, and an MHS lab with a shared interface.
     anchor: How it works
+    layout: evidence_band_prose
   - id: overnight-loop
     source_id: previewing-the-model-hardware-standard-35305757
     path: media/014.png
@@ -205,6 +213,7 @@ articles:
     caption: The loop the agent ran overnight to relock the laser.
     alt_text: A flow diagram of the agent's overnight loop, adjust, measure, evaluate, repeat.
     anchor: What our partners found
+    layout: column_plate
   opener_art:
     path: editions/008/art/rounds/2026-08-30T14-06-08/mhs-opener-one-plug-fits-all-v3.png
     alt_text: On a night laboratory bench, Maro plugs one round connector into the third of three different instruments while Pedro adjusts a mirror knob and Flopaz reads a dial by torchlight.
