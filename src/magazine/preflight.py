@@ -70,6 +70,138 @@ def _booklet_section_facts(
     }
 
 
+def _cover_facts(cover_art, cover_art_size_points):
+    cover_dimensions = _raster_dimensions(cover_art)
+    cover_info: dict[str, Any] = {
+        "path": str(cover_art) if cover_art else None,
+        "pixel_dimensions": cover_dimensions,
+    }
+    if cover_dimensions:
+        effective_at_a5 = _effective_image_ppi(cover_dimensions, A5_POINTS)
+        placement = cover_art_size_points or A5_POINTS
+        effective_at_placement = _effective_image_ppi(cover_dimensions, placement)
+        cover_info["effective_ppi_at_a5"] = round(effective_at_a5, 1)
+        cover_info["placement_points"] = [round(value, 3) for value in placement]
+        cover_info["effective_ppi_at_placement"] = round(effective_at_placement, 1)
+        cover_info["studio_300ppi_target_met"] = effective_at_placement >= 300
+    return cover_info
+
+
+def _placement_value(placement, name: str, default=None):
+    if isinstance(placement, dict):
+        return placement.get(name, default)
+    return getattr(placement, name, default)
+
+
+def _figure_row(placement) -> tuple[dict[str, Any], Any]:
+    def value(name: str, default=None):
+        return _placement_value(placement, name, default)
+
+    path = Path(value("path"))
+    dimensions = value("pixel_dimensions") or _raster_dimensions(path)
+    box = tuple(value("box_points") or ())
+    placement_size = tuple(box[-2:]) if len(box) == 4 else tuple(box)
+    ppi = value("effective_ppi")
+    if ppi is None and dimensions and len(placement_size) == 2:
+        ppi = _effective_image_ppi(tuple(dimensions), tuple(placement_size))
+    contrast = None
+    prepared = None
+    if dimensions:
+        prepared = prepare_print_image(path)
+        contrast = {
+            **prepared.before.to_dict(),
+            "treatment": "contrast_strengthened" if prepared.adjusted else "none",
+            "post_treatment_minimum_mark_contrast_ratio": (
+                prepared.after.minimum_mark_contrast_ratio
+            ),
+        }
+    row = {
+        "figure_id": str(value("figure_id", "")),
+        "article_id": str(value("article_id", "")),
+        "page": int(value("page", 0)),
+        "path": str(path),
+        "pixel_dimensions": list(dimensions) if dimensions else None,
+        "box_points": [round(float(item), 3) for item in box],
+        "effective_ppi": round(float(ppi), 1) if ppi is not None else None,
+        "caption": str(value("caption", "")),
+        "credit": str(value("credit", "")),
+        "print_contrast": contrast,
+    }
+    return row, prepared
+
+
+def _figure_facts(figure_placements):
+    figure_rows: list[dict[str, Any]] = []
+    low_resolution: list[dict[str, Any]] = []
+    contrast_adjusted: list[dict[str, Any]] = []
+    unresolved: list[dict[str, Any]] = []
+    for placement in figure_placements or ():
+        row, prepared = _figure_row(placement)
+        contrast = row["print_contrast"]
+        figure_rows.append(row)
+        if row["effective_ppi"] is None or row["effective_ppi"] < 300:
+            low_resolution.append(
+                {"figure_id": row["figure_id"], "effective_ppi": row["effective_ppi"]}
+            )
+        if contrast and contrast["treatment"] == "contrast_strengthened":
+            contrast_adjusted.append(
+                {
+                    "figure_id": row["figure_id"],
+                    "minimum_mark_contrast_ratio": contrast["minimum_mark_contrast_ratio"],
+                    "post_treatment_minimum_mark_contrast_ratio": (
+                        contrast["post_treatment_minimum_mark_contrast_ratio"]
+                    ),
+                }
+            )
+        if contrast and prepared.after.needs_treatment:
+            unresolved.append(
+                {
+                    "figure_id": row["figure_id"],
+                    "post_treatment_minimum_mark_contrast_ratio": (
+                        contrast["post_treatment_minimum_mark_contrast_ratio"]
+                    ),
+                }
+            )
+    return figure_rows, low_resolution, contrast_adjusted, unresolved
+
+
+def _box_invalid(row, page_count: int) -> bool:
+    x, y, width, height = row["box_points"]
+    return (
+        row["page"] < 1
+        or row["page"] > page_count
+        or width <= 0
+        or height <= 0
+        or x < 0
+        or y < 0
+        or x + width > A5_POINTS[0] + 0.75
+        or y + height > A5_POINTS[1] + 0.75
+    )
+
+
+def _figure_geometry(figure_rows, page_count: int):
+    invalid: list[dict[str, Any]] = []
+    collisions: list[dict[str, Any]] = []
+    by_page: dict[int, list[dict[str, Any]]] = {}
+    for row in figure_rows:
+        box = row["box_points"]
+        if len(box) != 4 or _box_invalid(row, page_count):
+            invalid.append({"figure_id": row["figure_id"], "box_points": box})
+            continue
+        x, y, width, height = box
+        for previous in by_page.setdefault(row["page"], []):
+            left = max(x, previous["box_points"][0])
+            bottom = max(y, previous["box_points"][1])
+            right = min(x + width, previous["box_points"][0] + previous["box_points"][2])
+            top = min(y + height, previous["box_points"][1] + previous["box_points"][3])
+            if right > left and top > bottom:
+                collisions.append(
+                    {"figure_ids": [previous["figure_id"], row["figure_id"]], "page": row["page"]}
+                )
+        by_page[row["page"]].append(row)
+    return invalid, collisions
+
+
 def inspect_package(
     reader_pdf: Path,
     booklet_pdf: Path,
@@ -87,116 +219,14 @@ def inspect_package(
     cover_booklet = PdfReader(str(cover_booklet_pdf))
     reader_sizes = [_page_size(page) for page in reader.pages]
     booklet_sizes = [_page_size(page) for page in booklet.pages]
-    cover_dimensions = _raster_dimensions(cover_art)
-    cover_info: dict[str, Any] = {
-        "path": str(cover_art) if cover_art else None,
-        "pixel_dimensions": cover_dimensions,
-    }
-    if cover_dimensions:
-        effective_at_a5 = _effective_image_ppi(cover_dimensions, A5_POINTS)
-        placement = cover_art_size_points or A5_POINTS
-        effective_at_placement = _effective_image_ppi(cover_dimensions, placement)
-        cover_info["effective_ppi_at_a5"] = round(effective_at_a5, 1)
-        cover_info["placement_points"] = [round(value, 3) for value in placement]
-        cover_info["effective_ppi_at_placement"] = round(effective_at_placement, 1)
-        cover_info["studio_300ppi_target_met"] = effective_at_placement >= 300
-
-    figure_rows: list[dict[str, Any]] = []
-    low_resolution_figures: list[dict[str, Any]] = []
-    contrast_adjusted_figures: list[dict[str, Any]] = []
-    unresolved_low_contrast_figures: list[dict[str, Any]] = []
-    for placement in figure_placements or ():
-
-        def value(name: str, default=None):
-            if isinstance(placement, dict):
-                return placement.get(name, default)
-            return getattr(placement, name, default)
-
-        path = Path(value("path"))
-        dimensions = value("pixel_dimensions") or _raster_dimensions(path)
-        box = tuple(value("box_points") or ())
-        placement_size = tuple(box[-2:]) if len(box) == 4 else tuple(box)
-        ppi = value("effective_ppi")
-        if ppi is None and dimensions and len(placement_size) == 2:
-            ppi = _effective_image_ppi(tuple(dimensions), tuple(placement_size))
-        contrast = None
-        if dimensions:
-            prepared = prepare_print_image(path)
-            contrast = {
-                **prepared.before.to_dict(),
-                "treatment": "contrast_strengthened" if prepared.adjusted else "none",
-                "post_treatment_minimum_mark_contrast_ratio": (
-                    prepared.after.minimum_mark_contrast_ratio
-                ),
-            }
-        row = {
-            "figure_id": str(value("figure_id", "")),
-            "article_id": str(value("article_id", "")),
-            "page": int(value("page", 0)),
-            "path": str(path),
-            "pixel_dimensions": list(dimensions) if dimensions else None,
-            "box_points": [round(float(item), 3) for item in box],
-            "effective_ppi": round(float(ppi), 1) if ppi is not None else None,
-            "caption": str(value("caption", "")),
-            "credit": str(value("credit", "")),
-            "print_contrast": contrast,
-        }
-        figure_rows.append(row)
-        if row["effective_ppi"] is None or row["effective_ppi"] < 300:
-            low_resolution_figures.append(
-                {"figure_id": row["figure_id"], "effective_ppi": row["effective_ppi"]}
-            )
-        if contrast and contrast["treatment"] == "contrast_strengthened":
-            contrast_adjusted_figures.append(
-                {
-                    "figure_id": row["figure_id"],
-                    "minimum_mark_contrast_ratio": contrast["minimum_mark_contrast_ratio"],
-                    "post_treatment_minimum_mark_contrast_ratio": (
-                        contrast["post_treatment_minimum_mark_contrast_ratio"]
-                    ),
-                }
-            )
-
-        if contrast and prepared.after.needs_treatment:
-            unresolved_low_contrast_figures.append(
-                {
-                    "figure_id": row["figure_id"],
-                    "post_treatment_minimum_mark_contrast_ratio": (
-                        contrast["post_treatment_minimum_mark_contrast_ratio"]
-                    ),
-                }
-            )
-    invalid_figure_boxes: list[dict[str, Any]] = []
-    figure_collisions: list[dict[str, Any]] = []
-    by_page: dict[int, list[dict[str, Any]]] = {}
-    for row in figure_rows:
-        box = row["box_points"]
-        if len(box) != 4:
-            invalid_figure_boxes.append({"figure_id": row["figure_id"], "box_points": box})
-            continue
-        x, y, width, height = box
-        if (
-            row["page"] < 1
-            or row["page"] > len(reader.pages)
-            or width <= 0
-            or height <= 0
-            or x < 0
-            or y < 0
-            or x + width > A5_POINTS[0] + 0.75
-            or y + height > A5_POINTS[1] + 0.75
-        ):
-            invalid_figure_boxes.append({"figure_id": row["figure_id"], "box_points": box})
-            continue
-        for previous in by_page.setdefault(row["page"], []):
-            left = max(x, previous["box_points"][0])
-            bottom = max(y, previous["box_points"][1])
-            right = min(x + width, previous["box_points"][0] + previous["box_points"][2])
-            top = min(y + height, previous["box_points"][1] + previous["box_points"][3])
-            if right > left and top > bottom:
-                figure_collisions.append(
-                    {"figure_ids": [previous["figure_id"], row["figure_id"]], "page": row["page"]}
-                )
-        by_page[row["page"]].append(row)
+    cover_info = _cover_facts(cover_art, cover_art_size_points)
+    (
+        figure_rows,
+        low_resolution_figures,
+        contrast_adjusted_figures,
+        unresolved_low_contrast_figures,
+    ) = _figure_facts(figure_placements)
+    invalid_figure_boxes, figure_collisions = _figure_geometry(figure_rows, len(reader.pages))
     messages = _MESSAGES.get(language.split("-", 1)[0], _MESSAGES["en"])
     studio_blockers = [messages["pdfx"], messages["bleed"]]
     if cover_info.get("studio_300ppi_target_met") is False:

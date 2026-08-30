@@ -543,18 +543,7 @@ fn write_proof_sheet(
         "<title>Art proof sheet — {}</title>\n",
         html_escape(edition_label)
     );
-    html += "<style>\n\
-        body { font-family: -apple-system, sans-serif; margin: 2rem; background: #111; color: #eee; }\n\
-        h1 { font-size: 1.2rem; }\n\
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.5rem; }\n\
-        figure { margin: 0; background: #1b1b1b; border: 1px solid #333; border-radius: 6px; padding: 0.75rem; }\n\
-        figure img { width: 100%; height: auto; display: block; border-radius: 4px; background: #000; }\n\
-        .failed { width: 100%; height: 200px; display: flex; align-items: center; justify-content: center;\n\
-            background: #300; color: #f88; border-radius: 4px; font-weight: bold; }\n\
-        figcaption { margin-top: 0.5rem; font-size: 0.85rem; color: #aaa; }\n\
-        details { margin-top: 0.4rem; }\n\
-        details pre { white-space: pre-wrap; font-size: 0.8rem; color: #ccc; }\n\
-        </style>\n</head>\n<body>\n";
+    html += PROOF_SHEET_CSS;
     html += &format!(
         "<h1>Art proof sheet — {}</h1>\n",
         html_escape(edition_label)
@@ -699,7 +688,20 @@ fn collect_showcase_items(edition_dir: &Path, selected: &[String]) -> Result<Vec
     Ok(items)
 }
 
-fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
+const PROOF_SHEET_CSS: &str = "<style>\n\
+        body { font-family: -apple-system, sans-serif; margin: 2rem; background: #111; color: #eee; }\n\
+        h1 { font-size: 1.2rem; }\n\
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.5rem; }\n\
+        figure { margin: 0; background: #1b1b1b; border: 1px solid #333; border-radius: 6px; padding: 0.75rem; }\n\
+        figure img { width: 100%; height: auto; display: block; border-radius: 4px; background: #000; }\n\
+        .failed { width: 100%; height: 200px; display: flex; align-items: center; justify-content: center;\n\
+            background: #300; color: #f88; border-radius: 4px; font-weight: bold; }\n\
+        figcaption { margin-top: 0.5rem; font-size: 0.85rem; color: #aaa; }\n\
+        details { margin-top: 0.4rem; }\n\
+        details pre { white-space: pre-wrap; font-size: 0.8rem; color: #ccc; }\n\
+        </style>\n</head>\n<body>\n";
+
+fn showcase_frame(edition_dir: &Path, edition_label: &str) -> Result<(CoverFrame, Vec<String>)> {
     let edition_yaml_path = edition_dir.join("edition.yaml");
     let mut cover_frame = CoverFrame {
         publication: crate::render::publication_name(Path::new(".")),
@@ -707,35 +709,152 @@ fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
         issue: edition_label.to_string(),
         date: String::new(),
     };
-    let selected = if edition_yaml_path.exists() {
-        let doc: serde_yaml::Value = serde_yaml::from_str(&read(&edition_yaml_path)?)
-            .with_context(|| format!("parsing {}", edition_yaml_path.display()))?;
-        if let Some(h) = doc
-            .get("cover")
-            .and_then(|c| c.get("headline"))
-            .and_then(|v| v.as_str())
-        {
-            cover_frame.headline = h.to_string();
-        }
-        if let Some(n) = doc.get("issue_number").and_then(|v| v.as_u64()) {
-            cover_frame.issue = format!("{n:03}");
-        }
-        if let Some(d) = doc.get("publication_date").and_then(|v| v.as_str()) {
-            cover_frame.date = d.replace('-', " ");
-        }
-        selected_art_paths(&doc)
-    } else {
-        Vec::new()
-    };
-    let items = collect_showcase_items(edition_dir, &selected)?;
+    if !edition_yaml_path.exists() {
+        return Ok((cover_frame, Vec::new()));
+    }
+    let doc: serde_yaml::Value = serde_yaml::from_str(&read(&edition_yaml_path)?)
+        .with_context(|| format!("parsing {}", edition_yaml_path.display()))?;
+    if let Some(h) = doc
+        .get("cover")
+        .and_then(|c| c.get("headline"))
+        .and_then(|v| v.as_str())
+    {
+        cover_frame.headline = h.to_string();
+    }
+    if let Some(n) = doc.get("issue_number").and_then(|v| v.as_u64()) {
+        cover_frame.issue = format!("{n:03}");
+    }
+    if let Some(d) = doc.get("publication_date").and_then(|v| v.as_str()) {
+        cover_frame.date = d.replace('-', " ");
+    }
+    Ok((cover_frame, selected_art_paths(&doc)))
+}
 
+fn cover_frame_html(cover_frame: &CoverFrame, item: &ShowcaseItem, img_tag: &str) -> String {
+    let mut words = cover_frame.headline.split_whitespace();
+    let first = words.next().unwrap_or("");
+    let rest = words.collect::<Vec<_>>().join(" ");
+    format!(
+        "<div class=\"coverframe\">\
+         <span class=\"cf-spine\"><span class=\"cf-issue\">ISSUE {issue}</span>\
+         <span class=\"cf-imprint\">{publication}</span></span>\
+         <div class=\"cf-masthead\">{masthead}</div>\
+         <div class=\"cf-headline\"><span>{first}</span><em>{rest}</em></div>\
+         <div class=\"cf-plate\">{img_tag}</div>\
+         <div class=\"cf-credits\">COVER CANDIDATE / {brief} v{variant}</div>\
+         <div class=\"cf-date\">{date}</div>\
+         </div>\n",
+        issue = html_escape(&cover_frame.issue),
+        publication = html_escape(&cover_frame.publication.to_uppercase()),
+        masthead = cover_frame
+            .publication
+            .split_whitespace()
+            .enumerate()
+            .map(|(i, w)| if i == 0 {
+                format!("<span class=\"cf-m1\">{}</span>", html_escape(w))
+            } else {
+                format!("<span class=\"cf-m2\">{}</span>", html_escape(w))
+            })
+            .collect::<String>(),
+        first = html_escape(first),
+        rest = html_escape(&rest),
+        brief = html_escape(&item.brief_id),
+        variant = item.variant,
+        date = html_escape(&cover_frame.date),
+    )
+}
+
+fn showcase_figure(item: &ShowcaseItem, edition_dir: &Path, cover_frame: &CoverFrame) -> String {
     let mut html = String::new();
-    html += "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n";
-    html += &format!(
-        "<title>Art showcase — {}</title>\n",
-        html_escape(edition_label)
+    let off: Vec<&MemberVerdict> = item
+        .verdicts
+        .iter()
+        .filter(|v| v.verdict == "off_model")
+        .collect();
+    let mut classes = Vec::new();
+    if item.selected {
+        classes.push("selected");
+    }
+    if !off.is_empty() {
+        classes.push("offmodel");
+    }
+    let repo_path = format!(
+        "{}/art/rounds/{}/{}",
+        edition_dir.display(),
+        item.round,
+        item.file
     );
-    html += "<style>\n\
+    let slot = match item.purpose.as_str() {
+        "cover" => "cover".to_string(),
+        "closing" => format!("closing:{}", item.brief_id),
+        p => format!(
+            "{p}:{}",
+            item.article_id.as_deref().unwrap_or(&item.brief_id)
+        ),
+    };
+    html += &format!(
+        "<figure class=\"{}\" data-path=\"{}\" data-slot=\"{}\">\n",
+        classes.join(" "),
+        html_escape(&repo_path),
+        html_escape(&slot)
+    );
+    if item.selected {
+        html += "<span class=\"badge\">SELECTED</span>\n";
+    }
+    if !off.is_empty() {
+        let names: Vec<&str> = off.iter().map(|v| v.name.as_str()).collect();
+        html += &format!(
+            "<span class=\"offbadge\">OFF-MODEL: {}</span>\n",
+            html_escape(&names.join(", "))
+        );
+    }
+    let img_tag = format!(
+        "<img src=\"rounds/{}/{}\" loading=\"lazy\">",
+        html_escape(&item.round),
+        html_escape(&item.file)
+    );
+    if item.purpose == "cover" {
+        html += &cover_frame_html(cover_frame, item, &img_tag);
+    } else {
+        html += &img_tag;
+        html += "\n";
+    }
+    html += &format!(
+        "<figcaption>{} v{} ({})</figcaption>\n",
+        html_escape(&item.brief_id),
+        item.variant,
+        html_escape(&item.round)
+    );
+    html += &format!(
+        "<div class=\"btnrow\"><a href=\"rounds/{}/{}\" target=\"_blank\">view</a>\
+         <button data-copy=\"path\">copy path</button>\
+         <button data-copy=\"preview\">preview cmd</button>\
+         <button data-copy=\"finder\">finder cmd</button></div>\n",
+        html_escape(&item.round),
+        html_escape(&item.file)
+    );
+    if !item.verdicts.is_empty() {
+        let lines: Vec<String> = item
+            .verdicts
+            .iter()
+            .map(|v| format!("{}: {} — {}", v.name, v.verdict, v.reason))
+            .collect();
+        html += &format!(
+            "<div class=\"verdicts\">{}</div>\n",
+            html_escape(&lines.join(" · "))
+        );
+    }
+    if !item.prompt.is_empty() {
+        html += &format!(
+            "<details><summary>prompt</summary><pre>{}</pre></details>\n",
+            html_escape(&item.prompt)
+        );
+    }
+    html += "</figure>\n";
+    html
+}
+
+const SHOWCASE_CSS: &str = "<style>\n\
         body { font-family: -apple-system, sans-serif; margin: 2rem; background: #111; color: #eee; }\n\
         h1 { font-size: 1.3rem; }\n\
         h2 { font-size: 1.1rem; margin-top: 2.5rem; border-bottom: 1px solid #333; padding-bottom: 0.3rem; }\n\
@@ -794,30 +913,13 @@ fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
         .cf-date { position: absolute; bottom: 4%; left: 8%; font-size: 0.5rem;\n\
             letter-spacing: 0.2em; font-weight: 700; }\n\
         </style>\n</head>\n<body>\n";
-    let mut rounds: Vec<&str> = items.iter().map(|i| i.round.as_str()).collect();
-    rounds.sort();
-    rounds.dedup();
-    let rounds_line = rounds
-        .iter()
-        .map(|r| {
-            let n = items.iter().filter(|i| i.round == *r).count();
-            format!("{} ({n})", html_escape(r))
-        })
-        .collect::<Vec<_>>()
-        .join(" · ");
-    html += &format!(
-        "<h1>Art showcase — {} ({} image(s))</h1>\n\
-         <p class=\"rounds\">Rounds: {rounds_line}</p>\n\
-         <p>Every generated candidate across every round. A green badge marks \
-         what edition.yaml currently selects. Click an image to pick it for its \
-         slot (cover, per-article opener/tail: one pick; closing plates: toggle). \
-         The bar below copies commands to run from the repo root, and \
-         edition.yaml lines for the picks. Give feedback per image as \
-         <code>brief-id vN (round)</code>.</p>\n",
-        html_escape(edition_label),
-        items.len()
-    );
 
+fn showcase_sections(
+    items: &[ShowcaseItem],
+    edition_dir: &Path,
+    cover_frame: &CoverFrame,
+) -> String {
+    let mut html = String::new();
     for (purpose, heading) in [
         ("cover", "Cover"),
         ("opener", "Article openers"),
@@ -856,126 +958,51 @@ fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
                 );
                 open = true;
             }
-            let off: Vec<&MemberVerdict> = item
-                .verdicts
-                .iter()
-                .filter(|v| v.verdict == "off_model")
-                .collect();
-            let mut classes = Vec::new();
-            if item.selected {
-                classes.push("selected");
-            }
-            if !off.is_empty() {
-                classes.push("offmodel");
-            }
-            let repo_path = format!(
-                "{}/art/rounds/{}/{}",
-                edition_dir.display(),
-                item.round,
-                item.file
-            );
-            let slot = match item.purpose.as_str() {
-                "cover" => "cover".to_string(),
-                "closing" => format!("closing:{}", item.brief_id),
-                p => format!(
-                    "{p}:{}",
-                    item.article_id.as_deref().unwrap_or(&item.brief_id)
-                ),
-            };
-            html += &format!(
-                "<figure class=\"{}\" data-path=\"{}\" data-slot=\"{}\">\n",
-                classes.join(" "),
-                html_escape(&repo_path),
-                html_escape(&slot)
-            );
-            if item.selected {
-                html += "<span class=\"badge\">SELECTED</span>\n";
-            }
-            if !off.is_empty() {
-                let names: Vec<&str> = off.iter().map(|v| v.name.as_str()).collect();
-                html += &format!(
-                    "<span class=\"offbadge\">OFF-MODEL: {}</span>\n",
-                    html_escape(&names.join(", "))
-                );
-            }
-            let img_tag = format!(
-                "<img src=\"rounds/{}/{}\" loading=\"lazy\">",
-                html_escape(&item.round),
-                html_escape(&item.file)
-            );
-            if item.purpose == "cover" {
-                let mut words = cover_frame.headline.split_whitespace();
-                let first = words.next().unwrap_or("");
-                let rest = words.collect::<Vec<_>>().join(" ");
-                html += &format!(
-                    "<div class=\"coverframe\">\
-                     <span class=\"cf-spine\"><span class=\"cf-issue\">ISSUE {issue}</span>\
-                     <span class=\"cf-imprint\">{publication}</span></span>\
-                     <div class=\"cf-masthead\">{masthead}</div>\
-                     <div class=\"cf-headline\"><span>{first}</span><em>{rest}</em></div>\
-                     <div class=\"cf-plate\">{img_tag}</div>\
-                     <div class=\"cf-credits\">COVER CANDIDATE / {brief} v{variant}</div>\
-                     <div class=\"cf-date\">{date}</div>\
-                     </div>\n",
-                    issue = html_escape(&cover_frame.issue),
-                    publication = html_escape(&cover_frame.publication.to_uppercase()),
-                    masthead = cover_frame
-                        .publication
-                        .split_whitespace()
-                        .enumerate()
-                        .map(|(i, w)| if i == 0 {
-                            format!("<span class=\"cf-m1\">{}</span>", html_escape(w))
-                        } else {
-                            format!("<span class=\"cf-m2\">{}</span>", html_escape(w))
-                        })
-                        .collect::<String>(),
-                    first = html_escape(first),
-                    rest = html_escape(&rest),
-                    brief = html_escape(&item.brief_id),
-                    variant = item.variant,
-                    date = html_escape(&cover_frame.date),
-                );
-            } else {
-                html += &img_tag;
-                html += "\n";
-            }
-            html += &format!(
-                "<figcaption>{} v{} ({})</figcaption>\n",
-                html_escape(&item.brief_id),
-                item.variant,
-                html_escape(&item.round)
-            );
-            html += &format!(
-                "<div class=\"btnrow\"><a href=\"rounds/{}/{}\" target=\"_blank\">view</a>\
-                 <button data-copy=\"path\">copy path</button>\
-                 <button data-copy=\"preview\">preview cmd</button>\
-                 <button data-copy=\"finder\">finder cmd</button></div>\n",
-                html_escape(&item.round),
-                html_escape(&item.file)
-            );
-            if !item.verdicts.is_empty() {
-                let lines: Vec<String> = item
-                    .verdicts
-                    .iter()
-                    .map(|v| format!("{}: {} — {}", v.name, v.verdict, v.reason))
-                    .collect();
-                html += &format!(
-                    "<div class=\"verdicts\">{}</div>\n",
-                    html_escape(&lines.join(" · "))
-                );
-            }
-            if !item.prompt.is_empty() {
-                html += &format!(
-                    "<details><summary>prompt</summary><pre>{}</pre></details>\n",
-                    html_escape(&item.prompt)
-                );
-            }
-            html += "</figure>\n";
+            html += &showcase_figure(item, edition_dir, cover_frame);
         }
         if open {
             html += "</div>\n";
         }
     }
+    html
+}
+
+fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
+    let (cover_frame, selected) = showcase_frame(edition_dir, edition_label)?;
+    let items = collect_showcase_items(edition_dir, &selected)?;
+
+    let mut html = String::new();
+    html += "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n";
+    html += &format!(
+        "<title>Art showcase — {}</title>\n",
+        html_escape(edition_label)
+    );
+    html += SHOWCASE_CSS;
+    let mut rounds: Vec<&str> = items.iter().map(|i| i.round.as_str()).collect();
+    rounds.sort();
+    rounds.dedup();
+    let rounds_line = rounds
+        .iter()
+        .map(|r| {
+            let n = items.iter().filter(|i| i.round == *r).count();
+            format!("{} ({n})", html_escape(r))
+        })
+        .collect::<Vec<_>>()
+        .join(" · ");
+    html += &format!(
+        "<h1>Art showcase — {} ({} image(s))</h1>\n\
+         <p class=\"rounds\">Rounds: {rounds_line}</p>\n\
+         <p>Every generated candidate across every round. A green badge marks \
+         what edition.yaml currently selects. Click an image to pick it for its \
+         slot (cover, per-article opener/tail: one pick; closing plates: toggle). \
+         The bar below copies commands to run from the repo root, and \
+         edition.yaml lines for the picks. Give feedback per image as \
+         <code>brief-id vN (round)</code>.</p>\n",
+        html_escape(edition_label),
+        items.len()
+    );
+
+    html += &showcase_sections(&items, edition_dir, &cover_frame);
     html += SHOWCASE_BASKET;
     html += "</body>\n</html>\n";
 
@@ -1151,6 +1178,69 @@ fn cast_ref_href(repo_relative: &str) -> String {
     }
 }
 
+const CAST_SHOWCASE_CSS: &str = "<style>\n\
+        body { font-family: -apple-system, sans-serif; margin: 2rem; background: #f6f2ea; color: #222; }\n\
+        h1 { font-size: 1.3rem; }\n\
+        h2 { font-size: 1.05rem; margin-top: 2.5rem; border-bottom: 1px solid #ddd; padding-bottom: 0.3rem; }\n\
+        p.hint { color: #666; max-width: 60rem; }\n\
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 1.25rem; }\n\
+        figure { margin: 0; background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 0.75rem; position: relative;\n\
+            box-shadow: 0 1px 4px rgba(0,0,0,.06); }\n\
+        figure.canon { border-color: #1a6e62; box-shadow: 0 0 0 2px #1a6e62; }\n\
+        figure img { width: 100%; height: auto; display: block; border-radius: 6px; cursor: zoom-in; }\n\
+        .badge { position: absolute; top: 1.1rem; right: 1.1rem; background: #1a6e62; color: #eaf6f3; font-weight: bold;\n\
+            font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 999px; }\n\
+        figcaption { margin-top: 0.5rem; font-size: 0.85rem; color: #666; }\n\
+        .empty { color: #888; font-style: italic; }\n\
+        code { background: #eee; padding: 0.05rem 0.3rem; border-radius: 4px; }\n\
+        </style>\n</head>\n<body>\n";
+
+fn cast_round_cells(round_dir: &Path, canon: &[(String, Vec<u8>)]) -> Result<String> {
+    let round_name = round_dir.file_name().unwrap().to_string_lossy().to_string();
+    let round_path = round_dir.join("round.yaml");
+    if !round_path.exists() {
+        return Ok(String::new());
+    }
+    let round: serde_yaml::Value = serde_yaml::from_str(&read(&round_path)?)
+        .with_context(|| format!("parsing {}", round_path.display()))?;
+    let mut cells = String::new();
+    for item in round
+        .get("generated")
+        .and_then(|v| v.as_sequence())
+        .into_iter()
+        .flatten()
+    {
+        let ok = item.get("ok").and_then(|v| v.as_bool()).unwrap_or(false);
+        let file = item.get("file").and_then(|v| v.as_str()).unwrap_or("");
+        let variant = item.get("variant").and_then(|v| v.as_u64()).unwrap_or(0);
+        let path = round_dir.join(file);
+        if !ok || file.is_empty() || !path.exists() {
+            continue;
+        }
+        let is_canon = !canon.is_empty()
+            && fs::read(&path)
+                .map(|b| canon.iter().any(|(_, c)| c == &b))
+                .unwrap_or(false);
+        cells += &format!(
+            "<figure class=\"{}\">\n",
+            if is_canon { "canon" } else { "" }
+        );
+        if is_canon {
+            cells += "<span class=\"badge\">CANON</span>\n";
+        }
+        cells += &format!(
+            "<a href=\"{0}/{1}\" target=\"_blank\"><img src=\"{0}/{1}\" loading=\"lazy\"></a>\n",
+            html_escape(&round_name),
+            html_escape(file)
+        );
+        cells += &format!(
+            "<figcaption>v{variant} ({})</figcaption>\n</figure>\n",
+            html_escape(&round_name)
+        );
+    }
+    Ok(cells)
+}
+
 pub fn write_cast_showcase(direction_path: &Path) -> Result<PathBuf> {
     let text = read(direction_path)?;
     let cast = cast_members(&text)?;
@@ -1181,22 +1271,7 @@ pub fn write_cast_showcase(direction_path: &Path) -> Result<PathBuf> {
     let mut html = String::new();
     html += "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n";
     html += &format!("<title>Cast — {}</title>\n", html_escape(&stem));
-    html += "<style>\n\
-        body { font-family: -apple-system, sans-serif; margin: 2rem; background: #f6f2ea; color: #222; }\n\
-        h1 { font-size: 1.3rem; }\n\
-        h2 { font-size: 1.05rem; margin-top: 2.5rem; border-bottom: 1px solid #ddd; padding-bottom: 0.3rem; }\n\
-        p.hint { color: #666; max-width: 60rem; }\n\
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 1.25rem; }\n\
-        figure { margin: 0; background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 0.75rem; position: relative;\n\
-            box-shadow: 0 1px 4px rgba(0,0,0,.06); }\n\
-        figure.canon { border-color: #1a6e62; box-shadow: 0 0 0 2px #1a6e62; }\n\
-        figure img { width: 100%; height: auto; display: block; border-radius: 6px; cursor: zoom-in; }\n\
-        .badge { position: absolute; top: 1.1rem; right: 1.1rem; background: #1a6e62; color: #eaf6f3; font-weight: bold;\n\
-            font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 999px; }\n\
-        figcaption { margin-top: 0.5rem; font-size: 0.85rem; color: #666; }\n\
-        .empty { color: #888; font-style: italic; }\n\
-        code { background: #eee; padding: 0.05rem 0.3rem; border-radius: 4px; }\n\
-        </style>\n</head>\n<body>\n";
+    html += CAST_SHOWCASE_CSS;
     html += &format!("<h1>Cast — {}</h1>\n", html_escape(&stem));
     html += &format!(
         "<p class=\"hint\">Judge the designs, not the poses. Approve a new sheet by \
@@ -1225,47 +1300,7 @@ pub fn write_cast_showcase(direction_path: &Path) -> Result<PathBuf> {
     let mut any_round = false;
     for round_dir in &round_dirs {
         let round_name = round_dir.file_name().unwrap().to_string_lossy().to_string();
-        let round_path = round_dir.join("round.yaml");
-        if !round_path.exists() {
-            continue;
-        }
-        let round: serde_yaml::Value = serde_yaml::from_str(&read(&round_path)?)
-            .with_context(|| format!("parsing {}", round_path.display()))?;
-        let mut cells = String::new();
-        for item in round
-            .get("generated")
-            .and_then(|v| v.as_sequence())
-            .into_iter()
-            .flatten()
-        {
-            let ok = item.get("ok").and_then(|v| v.as_bool()).unwrap_or(false);
-            let file = item.get("file").and_then(|v| v.as_str()).unwrap_or("");
-            let variant = item.get("variant").and_then(|v| v.as_u64()).unwrap_or(0);
-            let path = round_dir.join(file);
-            if !ok || file.is_empty() || !path.exists() {
-                continue;
-            }
-            let is_canon = !canon.is_empty()
-                && fs::read(&path)
-                    .map(|b| canon.iter().any(|(_, c)| c == &b))
-                    .unwrap_or(false);
-            cells += &format!(
-                "<figure class=\"{}\">\n",
-                if is_canon { "canon" } else { "" }
-            );
-            if is_canon {
-                cells += "<span class=\"badge\">CANON</span>\n";
-            }
-            cells += &format!(
-                "<a href=\"{0}/{1}\" target=\"_blank\"><img src=\"{0}/{1}\" loading=\"lazy\"></a>\n",
-                html_escape(&round_name),
-                html_escape(file)
-            );
-            cells += &format!(
-                "<figcaption>v{variant} ({})</figcaption>\n</figure>\n",
-                html_escape(&round_name)
-            );
-        }
+        let cells = cast_round_cells(round_dir, &canon)?;
         if !cells.is_empty() {
             any_round = true;
             html += &format!(
@@ -1564,13 +1599,25 @@ pub fn cast_check_run(
     let license = cast_license(&direction_text)?;
 
     let rounds_root = edition_dir.join("art").join("rounds");
-    let mut round_dirs: Vec<PathBuf> = fs::read_dir(&rounds_root)
+    let mut exit = 0;
+    for round_dir in &select_rounds(&rounds_root, round_filter)? {
+        if !check_round(round_dir, &cast, &license, model)? {
+            exit = 1;
+        }
+    }
+    let showcase = write_showcase(&edition_dir, &edition_label)?;
+    println!("showcase: {}", showcase.display());
+    Ok(exit)
+}
+
+fn select_rounds(rounds_root: &Path, round_filter: Option<&str>) -> Result<Vec<PathBuf>> {
+    let mut round_dirs: Vec<PathBuf> = fs::read_dir(rounds_root)
         .with_context(|| format!("reading {}", rounds_root.display()))?
         .filter_map(|e| e.ok().map(|e| e.path()))
         .filter(|p| p.is_dir())
         .collect();
     round_dirs.sort();
-    let round_dirs: Vec<PathBuf> = match round_filter {
+    Ok(match round_filter {
         Some("all") => round_dirs,
         Some(stamp) => {
             let wanted = rounds_root.join(stamp);
@@ -1580,106 +1627,105 @@ pub fn cast_check_run(
             vec![wanted]
         }
         None => round_dirs.into_iter().last().into_iter().collect(),
-    };
+    })
+}
 
-    let mut exit = 0;
-    for round_dir in &round_dirs {
-        let targets = check_targets(round_dir, &cast)?;
-        let round_name = round_dir.file_name().unwrap().to_string_lossy().to_string();
-        if targets.is_empty() {
-            println!("{round_name}: no applicable candidates");
-            continue;
-        }
-        println!("{round_name}: checking {} image(s)", targets.len());
-        let caller = Caller::new(round_dir);
-        let results = Mutex::new(Vec::new());
-        let errors = Mutex::new(Vec::new());
-        thread::scope(|s| {
-            for t in &targets {
-                let caller = &caller;
-                let cast = &cast;
-                let license = &license;
-                let results = &results;
-                let errors = &errors;
-                s.spawn(move || {
-                    let abs = match t.round_dir.join(&t.file).canonicalize() {
-                        Ok(p) => p,
-                        Err(e) => {
-                            errors.lock().unwrap().push(format!("{}: {e}", t.file));
-                            return;
-                        }
-                    };
-                    let label = format!("cast-check {}", t.file);
-                    let prompt =
-                        cast_check_prompt(cast, &abs, license.get(&t.purpose).map(String::as_str));
-                    match caller.call_with_parse_images(&label, model, &prompt, &[abs], |r| {
-                        extract_verdicts(r, &label, cast)
-                    }) {
-                        Ok(verdicts) => results.lock().unwrap().push(CastCheckResult {
-                            file: t.file.clone(),
-                            verdicts,
-                        }),
-                        Err(e) => errors.lock().unwrap().push(format!("{}: {e:#}", t.file)),
+fn check_round(
+    round_dir: &Path,
+    cast: &[CastMember],
+    license: &HashMap<String, String>,
+    model: &ModelSpec,
+) -> Result<bool> {
+    let targets = check_targets(round_dir, cast)?;
+    let round_name = round_dir.file_name().unwrap().to_string_lossy().to_string();
+    if targets.is_empty() {
+        println!("{round_name}: no applicable candidates");
+        return Ok(true);
+    }
+    println!("{round_name}: checking {} image(s)", targets.len());
+    let caller = Caller::new(round_dir);
+    let results = Mutex::new(Vec::new());
+    let errors = Mutex::new(Vec::new());
+    thread::scope(|s| {
+        for t in &targets {
+            let caller = &caller;
+            let results = &results;
+            let errors = &errors;
+            s.spawn(move || {
+                let abs = match t.round_dir.join(&t.file).canonicalize() {
+                    Ok(p) => p,
+                    Err(e) => {
+                        errors.lock().unwrap().push(format!("{}: {e}", t.file));
+                        return;
                     }
-                });
-            }
-        });
-        let fresh = results.into_inner().unwrap();
-        let errors = errors.into_inner().unwrap();
+                };
+                let label = format!("cast-check {}", t.file);
+                let prompt =
+                    cast_check_prompt(cast, &abs, license.get(&t.purpose).map(String::as_str));
+                match caller.call_with_parse_images(&label, model, &prompt, &[abs], |r| {
+                    extract_verdicts(r, &label, cast)
+                }) {
+                    Ok(verdicts) => results.lock().unwrap().push(CastCheckResult {
+                        file: t.file.clone(),
+                        verdicts,
+                    }),
+                    Err(e) => errors.lock().unwrap().push(format!("{}: {e:#}", t.file)),
+                }
+            });
+        }
+    });
+    let fresh = results.into_inner().unwrap();
+    let errors = errors.into_inner().unwrap();
 
-        let check_path = round_dir.join("cast-check.yaml");
-        let mut by_file: HashMap<String, CastCheckResult> = if check_path.exists() {
-            let old: CastCheckDoc = serde_yaml::from_str(&read(&check_path)?)
-                .with_context(|| format!("parsing {}", check_path.display()))?;
-            old.results
-                .into_iter()
-                .map(|r| (r.file.clone(), r))
-                .collect()
-        } else {
-            HashMap::new()
-        };
-        for r in fresh {
-            by_file.insert(r.file.clone(), r);
-        }
-        let mut merged: Vec<CastCheckResult> = by_file.into_values().collect();
-        merged.sort_by(|a, b| a.file.cmp(&b.file));
-        let off_model: Vec<String> = merged
-            .iter()
-            .flat_map(|r| {
-                r.verdicts
-                    .iter()
-                    .filter(|v| v.verdict == "off_model")
-                    .map(|v| format!("  {} — {}: {}", r.file, v.name, v.reason))
-            })
-            .collect();
-        fs::write(
-            &check_path,
-            serde_yaml::to_string(&CastCheckDoc {
-                model: model.full.clone(),
-                checked: crate::caller::now_stamp(),
-                results: merged,
-            })?,
-        )?;
-        println!("  wrote {}", check_path.display());
-        if off_model.is_empty() {
-            println!("  everything on model");
-        } else {
-            println!("  off-model ({}):", off_model.len());
-            for line in &off_model {
-                println!("{line}");
-            }
-        }
-        if !errors.is_empty() {
-            exit = 1;
-            eprintln!("  {} check call(s) FAILED:", errors.len());
-            for e in &errors {
-                eprintln!("    {e}");
-            }
+    let check_path = round_dir.join("cast-check.yaml");
+    let mut by_file: HashMap<String, CastCheckResult> = if check_path.exists() {
+        let old: CastCheckDoc = serde_yaml::from_str(&read(&check_path)?)
+            .with_context(|| format!("parsing {}", check_path.display()))?;
+        old.results
+            .into_iter()
+            .map(|r| (r.file.clone(), r))
+            .collect()
+    } else {
+        HashMap::new()
+    };
+    for r in fresh {
+        by_file.insert(r.file.clone(), r);
+    }
+    let mut merged: Vec<CastCheckResult> = by_file.into_values().collect();
+    merged.sort_by(|a, b| a.file.cmp(&b.file));
+    let off_model: Vec<String> = merged
+        .iter()
+        .flat_map(|r| {
+            r.verdicts
+                .iter()
+                .filter(|v| v.verdict == "off_model")
+                .map(|v| format!("  {} — {}: {}", r.file, v.name, v.reason))
+        })
+        .collect();
+    fs::write(
+        &check_path,
+        serde_yaml::to_string(&CastCheckDoc {
+            model: model.full.clone(),
+            checked: crate::caller::now_stamp(),
+            results: merged,
+        })?,
+    )?;
+    println!("  wrote {}", check_path.display());
+    if off_model.is_empty() {
+        println!("  everything on model");
+    } else {
+        println!("  off-model ({}):", off_model.len());
+        for line in &off_model {
+            println!("{line}");
         }
     }
-    let showcase = write_showcase(&edition_dir, &edition_label)?;
-    println!("showcase: {}", showcase.display());
-    Ok(exit)
+    if !errors.is_empty() {
+        eprintln!("  {} check call(s) FAILED:", errors.len());
+        for e in &errors {
+            eprintln!("    {e}");
+        }
+    }
+    Ok(errors.is_empty())
 }
 
 #[derive(Serialize)]
@@ -1709,18 +1755,193 @@ fn write_round_yaml(
 
 pub const DEFAULT_GEN_CMD: &str = "tools/imagegen '{prompt}' --out {out} --ref '{ref}'";
 
-pub fn run(
-    edition: &str,
-    gen_cmd: Option<&str>,
-    candidates: u32,
-    model: &ModelSpec,
-    dry_run: bool,
-    showcase_only: bool,
-    only: Option<&str>,
-    note: Option<&str>,
+pub struct ArtRun<'a> {
+    pub edition: &'a str,
+    pub gen_cmd: Option<&'a str>,
+    pub candidates: u32,
+    pub model: &'a ModelSpec,
+    pub dry_run: bool,
+    pub showcase_only: bool,
+    pub only: Option<&'a str>,
+    pub note: Option<&'a str>,
+    pub articles: Option<&'a str>,
+    pub resume_round: Option<&'a str>,
+}
+
+fn parse_only_purposes(only: Option<&str>) -> Result<Option<Vec<String>>> {
+    let Some(raw) = only else {
+        return Ok(None);
+    };
+    let purposes: Vec<String> = raw
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    for p in &purposes {
+        if !matches!(p.as_str(), "cover" | "opener" | "tail" | "closing") {
+            bail!("--only accepts cover, opener, tail, closing; got '{p}'");
+        }
+    }
+    if purposes.is_empty() {
+        bail!("--only was given but named no purposes");
+    }
+    Ok(Some(purposes))
+}
+
+fn parse_only_articles(
     articles: Option<&str>,
-    resume_round: Option<&str>,
+    has_only: bool,
+    edition_yaml_text: &str,
+) -> Result<Option<Vec<String>>> {
+    let Some(raw) = articles else {
+        return Ok(None);
+    };
+    if has_only {
+        bail!("--articles and --only are separate scopes; pass one");
+    }
+    let ids: Vec<String> = raw
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    if ids.is_empty() {
+        bail!("--articles was given but named no article ids");
+    }
+    let doc: serde_yaml::Value =
+        serde_yaml::from_str(edition_yaml_text).context("parsing edition.yaml for article ids")?;
+    let known: Vec<String> = doc
+        .get("articles")
+        .and_then(|v| v.as_sequence())
+        .map(|s| {
+            s.iter()
+                .filter_map(|a| a.get("id").and_then(|v| v.as_str()).map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default();
+    for id in &ids {
+        if !known.contains(id) {
+            bail!(
+                "--articles: '{id}' is not an article in edition.yaml; known: {}",
+                known.join(", ")
+            );
+        }
+    }
+    Ok(Some(ids))
+}
+
+fn check_scope(
+    briefs: &[Brief],
+    only_purposes: Option<&[String]>,
+    only_articles: Option<&[String]>,
+    label: &str,
+) -> Result<()> {
+    if let Some(purposes) = only_purposes {
+        for b in briefs {
+            if !purposes.contains(&b.purpose) {
+                bail!(
+                    "{label}: this round is scoped to {}; brief '{}' has purpose '{}'",
+                    purposes.join(", "),
+                    b.id,
+                    b.purpose
+                );
+            }
+        }
+    }
+    if let Some(ids) = only_articles {
+        for b in briefs {
+            let aid = b.article_id.as_deref().unwrap_or("");
+            if !matches!(b.purpose.as_str(), "opener" | "tail") || !ids.iter().any(|i| i == aid) {
+                bail!(
+                    "{label}: this round is scoped to opener/tail briefs for {}; brief '{}' is a {} for '{aid}'",
+                    ids.join(", "),
+                    b.id,
+                    b.purpose
+                );
+            }
+        }
+    }
+    Ok(())
+}
+
+fn resume_round(
+    opts: &ArtRun,
+    resume: &str,
+    edition_dir: &Path,
+    edition_label: &str,
 ) -> Result<i32> {
+    if opts.dry_run || opts.only.is_some() || opts.note.is_some() || opts.articles.is_some() {
+        bail!(
+            "--resume-round completes an existing round; drop --dry-run/--only/--note/--articles"
+        );
+    }
+    let gen_cmd = opts
+        .gen_cmd
+        .ok_or_else(|| anyhow!("--resume-round requires --gen-cmd"))?;
+    let round_dir = PathBuf::from(resume);
+    let briefs_path = round_dir.join("briefs.yaml");
+    let doc: BriefsDoc = serde_yaml::from_str(&read(&briefs_path)?)
+        .with_context(|| format!("parsing {}", briefs_path.display()))?;
+    if doc.briefs.is_empty() {
+        bail!("{} has no briefs to resume", briefs_path.display());
+    }
+    ensure_ref_placeholder(gen_cmd, &doc.briefs)?;
+    println!("resuming round: {}", round_dir.display());
+    generate_and_finish(
+        &doc.briefs,
+        opts.candidates,
+        gen_cmd,
+        &round_dir,
+        edition_dir,
+        edition_label,
+    )
+}
+
+fn dry_run_report(
+    opts: &ArtRun,
+    briefs: &[Brief],
+    round_dir: &Path,
+    edition_dir: &Path,
+    edition_label: &str,
+) -> Result<i32> {
+    write_round_yaml(round_dir, edition_label, true, &[])?;
+    write_showcase(edition_dir, edition_label)?;
+    println!();
+    println!("dry run: no image credits spent.");
+    match opts.gen_cmd {
+        Some(cmd) => {
+            let script =
+                write_generate_script(round_dir, edition_label, briefs, opts.candidates, cmd)?;
+            println!(
+                "run {} from the repo root when credits are available, \
+                 then review the images in {} and select by hand-editing \
+                 edition.yaml.",
+                script.display(),
+                round_dir.display()
+            );
+        }
+        None => println!(
+            "no --gen-cmd recorded; the prompts are in {}/briefs.yaml — \
+             generate them by hand, or rerun with --dry-run --gen-cmd to \
+             get an executable generate.sh.",
+            round_dir.display()
+        ),
+    }
+    Ok(0)
+}
+
+pub fn run(opts: &ArtRun) -> Result<i32> {
+    let ArtRun {
+        edition,
+        gen_cmd,
+        candidates,
+        model,
+        dry_run,
+        showcase_only,
+        only,
+        note,
+        articles,
+        resume_round: resume,
+    } = *opts;
     let edition_dir = resolve_edition_dir(edition)?;
     let edition_label = edition_dir
         .file_name()
@@ -1732,29 +1953,8 @@ pub fn run(
         println!("showcase rebuilt: {}", path.display());
         return Ok(0);
     }
-
-    if let Some(resume) = resume_round {
-        if dry_run || only.is_some() || note.is_some() || articles.is_some() {
-            bail!("--resume-round completes an existing round; drop --dry-run/--only/--note/--articles");
-        }
-        let gen_cmd = gen_cmd.ok_or_else(|| anyhow!("--resume-round requires --gen-cmd"))?;
-        let round_dir = PathBuf::from(resume);
-        let briefs_path = round_dir.join("briefs.yaml");
-        let doc: BriefsDoc = serde_yaml::from_str(&read(&briefs_path)?)
-            .with_context(|| format!("parsing {}", briefs_path.display()))?;
-        if doc.briefs.is_empty() {
-            bail!("{} has no briefs to resume", briefs_path.display());
-        }
-        ensure_ref_placeholder(gen_cmd, &doc.briefs)?;
-        println!("resuming round: {}", round_dir.display());
-        return generate_and_finish(
-            &doc.briefs,
-            candidates,
-            gen_cmd,
-            &round_dir,
-            &edition_dir,
-            &edition_label,
-        );
+    if let Some(resume) = resume {
+        return resume_round(opts, resume, &edition_dir, &edition_label);
     }
 
     let edition_yaml_text = read(&edition_dir.join("edition.yaml"))?;
@@ -1774,65 +1974,12 @@ pub fn run(
 
     println!("round dir: {}", round_dir.display());
 
-    let only_purposes: Option<Vec<String>> = match only {
-        Some(raw) => {
-            let purposes: Vec<String> = raw
-                .split(',')
-                .map(|s| s.trim().to_string())
-                .filter(|s| !s.is_empty())
-                .collect();
-            for p in &purposes {
-                if !matches!(p.as_str(), "cover" | "opener" | "tail" | "closing") {
-                    bail!("--only accepts cover, opener, tail, closing; got '{p}'");
-                }
-            }
-            if purposes.is_empty() {
-                bail!("--only was given but named no purposes");
-            }
-            Some(purposes)
-        }
-        None => None,
-    };
+    let only_purposes = parse_only_purposes(only)?;
     let rejected = match &only_purposes {
         Some(purposes) => previous_briefs(&edition_dir, purposes)?,
         None => Vec::new(),
     };
-    let only_articles: Option<Vec<String>> = match articles {
-        Some(raw) => {
-            if only_purposes.is_some() {
-                bail!("--articles and --only are separate scopes; pass one");
-            }
-            let ids: Vec<String> = raw
-                .split(',')
-                .map(|s| s.trim().to_string())
-                .filter(|s| !s.is_empty())
-                .collect();
-            if ids.is_empty() {
-                bail!("--articles was given but named no article ids");
-            }
-            let doc: serde_yaml::Value = serde_yaml::from_str(&edition_yaml_text)
-                .context("parsing edition.yaml for article ids")?;
-            let known: Vec<String> = doc
-                .get("articles")
-                .and_then(|v| v.as_sequence())
-                .map(|s| {
-                    s.iter()
-                        .filter_map(|a| a.get("id").and_then(|v| v.as_str()).map(str::to_string))
-                        .collect()
-                })
-                .unwrap_or_default();
-            for id in &ids {
-                if !known.contains(id) {
-                    bail!(
-                        "--articles: '{id}' is not an article in edition.yaml; known: {}",
-                        known.join(", ")
-                    );
-                }
-            }
-            Some(ids)
-        }
-        None => None,
-    };
+    let only_articles = parse_only_articles(articles, only_purposes.is_some(), &edition_yaml_text)?;
 
     let caller = Caller::new(&round_dir);
     let prompt = build_brief_prompt(
@@ -1850,31 +1997,12 @@ pub fn run(
     let label = "art-briefs";
     let briefs = caller.call_with_parse(label, model, &prompt, |r| {
         let briefs = extract_briefs(r, label)?;
-        if let Some(purposes) = &only_purposes {
-            for b in &briefs {
-                if !purposes.contains(&b.purpose) {
-                    bail!(
-                        "{label}: this round is scoped to {}; brief '{}' has purpose '{}'",
-                        purposes.join(", "),
-                        b.id,
-                        b.purpose
-                    );
-                }
-            }
-        }
-        if let Some(ids) = &only_articles {
-            for b in &briefs {
-                let aid = b.article_id.as_deref().unwrap_or("");
-                if !matches!(b.purpose.as_str(), "opener" | "tail") || !ids.iter().any(|i| i == aid) {
-                    bail!(
-                        "{label}: this round is scoped to opener/tail briefs for {}; brief '{}' is a {} for '{aid}'",
-                        ids.join(", "),
-                        b.id,
-                        b.purpose
-                    );
-                }
-            }
-        }
+        check_scope(
+            &briefs,
+            only_purposes.as_deref(),
+            only_articles.as_deref(),
+            label,
+        )?;
         validate_cast_named(&briefs, &cast, label)?;
         Ok(briefs)
     })?;
@@ -1895,30 +2023,7 @@ pub fn run(
     println!("  {} brief(s) proposed", briefs.len());
 
     if dry_run {
-        write_round_yaml(&round_dir, &edition_label, true, &[])?;
-        write_showcase(&edition_dir, &edition_label)?;
-        println!();
-        println!("dry run: no image credits spent.");
-        match gen_cmd {
-            Some(cmd) => {
-                let script =
-                    write_generate_script(&round_dir, &edition_label, &briefs, candidates, cmd)?;
-                println!(
-                    "run {} from the repo root when credits are available, \
-                     then review the images in {} and select by hand-editing \
-                     edition.yaml.",
-                    script.display(),
-                    round_dir.display()
-                );
-            }
-            None => println!(
-                "no --gen-cmd recorded; the prompts are in {}/briefs.yaml — \
-                 generate them by hand, or rerun with --dry-run --gen-cmd to \
-                 get an executable generate.sh.",
-                round_dir.display()
-            ),
-        }
-        return Ok(0);
+        return dry_run_report(opts, &briefs, &round_dir, &edition_dir, &edition_label);
     }
     let gen_cmd = gen_cmd.expect("clap requires --gen-cmd when not a dry run");
 

@@ -57,44 +57,40 @@ def strip_front_matter(md: str) -> str:
     return md
 
 
+def _md_line(line: str, out: list[str], in_list: bool) -> bool:
+    esc = html.escape(line)
+    esc = re.sub(r"`([^`]+)`", r"<code>\1</code>", esc)
+    esc = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", esc)
+    if line.startswith(("- ", "* ")):
+        if not in_list:
+            out.append("<ul>")
+        out.append(f"<li>{esc[2:]}</li>")
+        return True
+    if in_list:
+        out.append("</ul>")
+    if line.startswith("#"):
+        level = min(len(line) - len(line.lstrip("#")) + 2, 6)
+        out.append(f"<h{level}>{esc.lstrip('# ')}</h{level}>")
+    else:
+        out.append(f"<p>{esc}</p>")
+    return False
+
+
 def md_to_html(md: str) -> str:
     out, in_code, in_list = [], False, False
     for raw in strip_front_matter(md).split("\n"):
         line = raw.rstrip()
         if line.startswith("```"):
-            if in_code:
-                out.append("</code></pre>")
-            else:
-                out.append("<pre><code>")
+            out.append("</code></pre>" if in_code else "<pre><code>")
             in_code = not in_code
-            continue
-        if in_code:
+        elif in_code:
             out.append(html.escape(line))
-            continue
-        if not line:
+        elif not line:
             if in_list:
                 out.append("</ul>")
-                in_list = False
-            continue
-        esc = html.escape(line)
-        esc = re.sub(r"`([^`]+)`", r"<code>\1</code>", esc)
-        esc = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", esc)
-        if line.startswith("#"):
-            if in_list:
-                out.append("</ul>")
-                in_list = False
-            level = len(line) - len(line.lstrip("#"))
-            out.append(f"<h{min(level + 2, 6)}>{esc.lstrip('# ')}</h{min(level + 2, 6)}>")
-        elif line.startswith(("- ", "* ")):
-            if not in_list:
-                out.append("<ul>")
-                in_list = True
-            out.append(f"<li>{esc[2:]}</li>")
+            in_list = False
         else:
-            if in_list:
-                out.append("</ul>")
-                in_list = False
-            out.append(f"<p>{esc}</p>")
+            in_list = _md_line(line, out, in_list)
     if in_list:
         out.append("</ul>")
     if in_code:
@@ -234,6 +230,65 @@ table.sum th { background:rgba(127,127,127,.1) }
 """
 
 
+def _summary_cell(hit: dict | None, sw: int | None) -> str:
+    if not hit:
+        return "<td>—</td>"
+    pct = f" ({round(100 * hit['words'] / sw)}% of source)" if sw else ""
+    need = sum(1 for o in hit["omissions"] if o["verdict"] == "needed")
+    blocking = sum(1 for f in hit["findings"] if f["severity"] in ("blocking", "major"))
+    return (
+        f"<td>{hit['words']} words{pct}<br><span style='color:var(--muted)'>"
+        f"{hit['rounds']} rounds · {blocking} open · {need} needed omissions</span></td>"
+    )
+
+
+def _omissions_html(omissions: list[dict]) -> list[str]:
+    if not omissions:
+        return ["<p class='none'>no omissions reported</p>"]
+    return [
+        f"<div class='om {html.escape(o['verdict'])}'><div class='fact'>"
+        f"{html.escape(o['fact'])} <span class='tag'>{html.escape(o['verdict'])}</span></div>"
+        f"<div class='loses'>{html.escape(o['loses'])}</div></div>"
+        for o in omissions
+    ]
+
+
+def _findings_html(findings: list[dict]) -> list[str]:
+    if not findings:
+        return ["<p class='none'>clean</p>"]
+    parts = []
+    for f in findings:
+        loc = f" · {html.escape(f['locator'])}" if f["locator"] else ""
+        sug = (
+            f"<div class='loses'>suggestion: {html.escape(f['suggestion'])}</div>"
+            if f["suggestion"]
+            else ""
+        )
+        parts.append(
+            f"<div class='f {html.escape(f['severity'])}'><div class='tag'>"
+            f"{html.escape(f['severity'])} · {html.escape(f['lens'])} · "
+            f"{html.escape(f['category'])}{loc}</div>"
+            f"<p class='note'>{html.escape(f['note'])}</p>{sug}</div>"
+        )
+    return parts
+
+
+def _card_html(name: str, hit: dict) -> list[str]:
+    parts = ["<div class='card'>"]
+    parts.append(
+        f"<h3><span>{html.escape(name)}</span><span class='meta'>{hit['words']} words · "
+        f"{html.escape(str(hit['state']))} · {hit['rounds']} rounds</span></h3>"
+    )
+    parts.append(f"<div class='ms'>{md_to_html(hit['body'])}</div>")
+    parts.append("<div class='fb'>")
+    parts.append("<h4>What the reader lost (worth)</h4>")
+    parts.extend(_omissions_html(hit["omissions"]))
+    parts.append("<h4>Open findings, final round</h4>")
+    parts.extend(_findings_html(hit["findings"]))
+    parts.append("</div></div>")
+    return parts
+
+
 def render(runs: list[tuple[str | None, Path]], plan_path: Path) -> str:
     data = [(run_label(r, label), collect(r), r) for label, r in runs]
     ids: list[str] = []
@@ -260,17 +315,7 @@ def render(runs: list[tuple[str | None, Path]], plan_path: Path) -> str:
         sw = source_words(plan_path, pid)
         parts.append(f"<tr><td>{html.escape(pid)}</td><td>{sw or '—'}</td>")
         for _, pieces, _ in data:
-            hit = next((p for p in pieces if p["id"] == pid), None)
-            if not hit:
-                parts.append("<td>—</td>")
-                continue
-            pct = f" ({round(100 * hit['words'] / sw)}% of source)" if sw else ""
-            need = sum(1 for o in hit["omissions"] if o["verdict"] == "needed")
-            blocking = sum(1 for f in hit["findings"] if f["severity"] in ("blocking", "major"))
-            parts.append(
-                f"<td>{hit['words']} words{pct}<br><span style='color:var(--muted)'>"
-                f"{hit['rounds']} rounds · {blocking} open · {need} needed omissions</span></td>"
-            )
+            parts.append(_summary_cell(next((p for p in pieces if p["id"] == pid), None), sw))
         parts.append("</tr>")
     parts.append("</table>")
 
@@ -280,43 +325,8 @@ def render(runs: list[tuple[str | None, Path]], plan_path: Path) -> str:
         )
         for (name, _), pieces, _ in data:
             hit = next((p for p in pieces if p["id"] == pid), None)
-            if not hit:
-                continue
-            parts.append("<div class='card'>")
-            parts.append(
-                f"<h3><span>{html.escape(name)}</span><span class='meta'>{hit['words']} words · "
-                f"{html.escape(str(hit['state']))} · {hit['rounds']} rounds</span></h3>"
-            )
-            parts.append(f"<div class='ms'>{md_to_html(hit['body'])}</div>")
-            parts.append("<div class='fb'>")
-            parts.append("<h4>What the reader lost (worth)</h4>")
-            if hit["omissions"]:
-                for o in hit["omissions"]:
-                    parts.append(
-                        f"<div class='om {html.escape(o['verdict'])}'><div class='fact'>"
-                        f"{html.escape(o['fact'])} <span class='tag'>{html.escape(o['verdict'])}</span></div>"
-                        f"<div class='loses'>{html.escape(o['loses'])}</div></div>"
-                    )
-            else:
-                parts.append("<p class='none'>no omissions reported</p>")
-            parts.append("<h4>Open findings, final round</h4>")
-            if hit["findings"]:
-                for f in hit["findings"]:
-                    loc = f" · {html.escape(f['locator'])}" if f["locator"] else ""
-                    sug = (
-                        f"<div class='loses'>suggestion: {html.escape(f['suggestion'])}</div>"
-                        if f["suggestion"]
-                        else ""
-                    )
-                    parts.append(
-                        f"<div class='f {html.escape(f['severity'])}'><div class='tag'>"
-                        f"{html.escape(f['severity'])} · {html.escape(f['lens'])} · "
-                        f"{html.escape(f['category'])}{loc}</div>"
-                        f"<p class='note'>{html.escape(f['note'])}</p>{sug}</div>"
-                    )
-            else:
-                parts.append("<p class='none'>clean</p>")
-            parts.append("</div></div>")
+            if hit:
+                parts.extend(_card_html(name, hit))
         parts.append("</div></section>")
     parts.append("</main>")
     return "\n".join(parts)

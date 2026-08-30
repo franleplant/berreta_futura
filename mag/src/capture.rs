@@ -367,38 +367,42 @@ fn yaml_quote(s: &str) -> String {
     format!("'{}'", s.replace('\'', "''"))
 }
 
-fn record_yaml(
-    sid: &str,
-    title: &str,
-    author: &str,
-    url: &str,
-    captured_at: &str,
-    published: &str,
-    tags: &[String],
-    synopsis: &str,
-) -> String {
+struct SourceMeta<'a> {
+    sid: &'a str,
+    title: &'a str,
+    author: &'a str,
+    url: &'a str,
+    captured_at: &'a str,
+    published: &'a str,
+    tags: &'a [String],
+    synopsis: &'a str,
+}
+
+fn record_yaml(m: &SourceMeta) -> String {
     let mut out = format!(
-        "id: {sid}\ntitle: {}\nauthor: {}\nurl: {url}\ncaptured_at: {}\n",
-        yaml_quote(title),
-        if author.is_empty() {
+        "id: {}\ntitle: {}\nauthor: {}\nurl: {}\ncaptured_at: {}\n",
+        m.sid,
+        yaml_quote(m.title),
+        if m.author.is_empty() {
             "''".to_string()
         } else {
-            yaml_quote(author)
+            yaml_quote(m.author)
         },
-        yaml_quote(captured_at),
+        m.url,
+        yaml_quote(m.captured_at),
     );
-    if !published.is_empty() {
-        out += &format!("published_at: {}\n", yaml_quote(published));
+    if !m.published.is_empty() {
+        out += &format!("published_at: {}\n", yaml_quote(m.published));
     }
-    if tags.is_empty() {
+    if m.tags.is_empty() {
         out += "tags: []\n";
     } else {
         out += "tags:\n";
-        for t in tags {
+        for t in m.tags {
             out += &format!("- {t}\n");
         }
     }
-    out += &format!("synopsis: {}\n", yaml_quote(synopsis));
+    out += &format!("synopsis: {}\n", yaml_quote(m.synopsis));
     out
 }
 
@@ -496,39 +500,54 @@ pub fn prepend_sources_md(text: &str, entry: &[String], edition: &str, queued: u
     lines.join("\n").trim_end().to_string() + "\n"
 }
 
-fn sources_md_entry(
-    sid: &str,
-    title: &str,
-    author: &str,
-    url: &str,
-    captured_at: &str,
-    published: &str,
-    tags: &[String],
-    edition: &str,
-    synopsis: &str,
-) -> Vec<String> {
+fn sources_md_entry(m: &SourceMeta, edition: &str) -> Vec<String> {
     let dash = '\u{2014}';
     let mut lines = vec![
-        if author.is_empty() {
-            format!("## {title}")
+        if m.author.is_empty() {
+            format!("## {}", m.title)
         } else {
-            format!("## {title} {dash} {author}")
+            format!("## {} {dash} {}", m.title, m.author)
         },
         String::new(),
-        format!("- ID: `{sid}`"),
-        format!("- Source: {url}"),
+        format!("- ID: `{}`", m.sid),
+        format!("- Source: {}", m.url),
     ];
-    if !published.is_empty() {
-        lines.push(format!("- Published: {published}"));
+    if !m.published.is_empty() {
+        lines.push(format!("- Published: {}", m.published));
     }
-    lines.push(format!("- Captured: {captured_at}"));
-    if !tags.is_empty() {
-        lines.push(format!("- Tags: {}", tags.join(", ")));
+    lines.push(format!("- Captured: {}", m.captured_at));
+    if !m.tags.is_empty() {
+        lines.push(format!("- Tags: {}", m.tags.join(", ")));
     }
     lines.push(format!("- Release: queued for `{edition}`"));
     lines.push(String::new());
-    lines.push(synopsis.to_string());
+    lines.push(m.synopsis.to_string());
     lines
+}
+
+fn capture_prompt(html: &str, url: &str) -> Result<String> {
+    Ok(format!(
+        "<page>\n{}\n</page>\n\n{}\n",
+        page_for_model(html),
+        fs::read_to_string(crate::produce::prompts_path("capture.md"))
+            .context("reading prompts/capture.md")?
+            .replace("{url}", url)
+            .trim()
+    ))
+}
+
+fn publish_source(m: &SourceMeta, src_dir: &Path, edition: &str, release_text: &str) -> Result<()> {
+    fs::write(src_dir.join("record.yaml"), record_yaml(m))?;
+    let (new_release, queued) = queue_in_release_state(release_text, edition, m.sid)?;
+    fs::write("library/release-state.yaml", new_release)?;
+    let sources_path = PathBuf::from("sources.md");
+    let entry = sources_md_entry(m, edition);
+    let sources_text = fs::read_to_string(&sources_path).context("reading sources.md")?;
+    fs::write(
+        &sources_path,
+        prepend_sources_md(&sources_text, &entry, edition, queued),
+    )?;
+    Ok(())
 }
 
 fn iso_now() -> String {
@@ -570,19 +589,31 @@ fn localize_images(article: &str, media_dir: &Path) -> Result<(String, usize)> {
     Ok((out, mapping.len()))
 }
 
-#[allow(clippy::too_many_arguments)]
-pub fn run(
-    url: &str,
-    edition: Option<&str>,
-    tags: Option<&str>,
-    title_override: Option<&str>,
-    author_override: Option<&str>,
-    published_override: Option<&str>,
-    html_file: Option<&Path>,
-    join_article: Option<&str>,
-    mode: &str,
-    spec: &ModelSpec,
-) -> Result<i32> {
+pub struct CaptureArgs {
+    pub url: String,
+    pub edition: Option<String>,
+    pub tags: Option<String>,
+    pub title: Option<String>,
+    pub author: Option<String>,
+    pub published: Option<String>,
+    pub html: Option<PathBuf>,
+    pub article: Option<String>,
+    pub mode: String,
+}
+
+pub fn run(args: &CaptureArgs, spec: &ModelSpec) -> Result<i32> {
+    let (url, edition, tags, mode) = (
+        args.url.as_str(),
+        args.edition.as_deref(),
+        args.tags.as_deref(),
+        args.mode.as_str(),
+    );
+    let (title_override, author_override, published_override) = (
+        args.title.as_deref(),
+        args.author.as_deref(),
+        args.published.as_deref(),
+    );
+    let (html_file, join_article) = (args.html.as_deref(), args.article.as_deref());
     if !crate::plan_cmd::CONTENT_MODES.contains(&mode) {
         bail!(
             "unknown --mode '{mode}'; one of: {}",
@@ -618,14 +649,7 @@ pub fn run(
 
     let haystack = page_text(&html);
     let pres = pre_runs(&html);
-    let prompt = format!(
-        "<page>\n{}\n</page>\n\n{}\n",
-        page_for_model(&html),
-        fs::read_to_string(crate::produce::prompts_path("capture.md"))
-            .context("reading prompts/capture.md")?
-            .replace("{url}", url)
-            .trim()
-    );
+    let prompt = capture_prompt(&html, url)?;
 
     let caller = Caller::new(Path::new(RAW_DIR));
     let extraction = caller.call_with_parse(&format!("capture {sid}"), spec, &prompt, |reply| {
@@ -661,40 +685,17 @@ pub fn run(
         .map(|t| t.trim().to_string())
         .filter(|t| !t.is_empty())
         .collect();
-    fs::write(
-        src_dir.join("record.yaml"),
-        record_yaml(
-            &sid,
-            &title,
-            &author,
-            url,
-            &captured_at,
-            &published,
-            &tags,
-            &extraction.synopsis,
-        ),
-    )?;
-
-    let (new_release, queued) = queue_in_release_state(&release_text, &edition, &sid)?;
-    fs::write(&release_path, new_release)?;
-
-    let sources_path = PathBuf::from("sources.md");
-    let entry = sources_md_entry(
-        &sid,
-        &title,
-        &author,
+    let meta = SourceMeta {
+        sid: &sid,
+        title: &title,
+        author: &author,
         url,
-        &captured_at,
-        &published,
-        &tags,
-        &edition,
-        &extraction.synopsis,
-    );
-    let sources_text = fs::read_to_string(&sources_path).context("reading sources.md")?;
-    fs::write(
-        &sources_path,
-        prepend_sources_md(&sources_text, &entry, &edition, queued),
-    )?;
+        captured_at: &captured_at,
+        published: &published,
+        tags: &tags,
+        synopsis: &extraction.synopsis,
+    };
+    publish_source(&meta, &src_dir, &edition, &release_text)?;
 
     crate::plan_cmd::add_source(&edition, &sid, join_article, mode)?;
 

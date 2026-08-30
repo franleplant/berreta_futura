@@ -1,7 +1,7 @@
 use anyhow::{bail, Context, Result};
 use std::io::{Read, Write};
 use std::path::PathBuf;
-use std::process::{Command, Stdio};
+use std::process::{Command, ExitStatus, Stdio};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Condvar, Mutex};
 use std::thread;
@@ -339,7 +339,45 @@ impl Caller {
             Backend::Codex => Some(CodexScratch::new()?),
             _ => None,
         };
+        let mut cmd = self.backend_command(spec, images, scratch.as_ref());
+        let mut child = cmd
+            .spawn()
+            .map_err(|e| format!("failed to spawn {:?}: {e}", spec.backend))?;
 
+        let stdin_payload = stdin_payload(spec, prompt);
+        let mut stdin = child.stdin.take().expect("piped stdin");
+        let writer = thread::spawn(move || {
+            let _ = stdin.write_all(stdin_payload.as_bytes());
+        });
+        let stdout_reader = drain(child.stdout.take().expect("piped stdout"));
+        let stderr_reader = drain(child.stderr.take().expect("piped stderr"));
+
+        let timeout = Duration::from_secs(call_timeout_secs_for(Some(spec)));
+        let status = wait_with_timeout(&mut child, started, timeout)?;
+        let _ = writer.join();
+        let out = stdout_reader.join().unwrap_or_default();
+        let err = stderr_reader.join().unwrap_or_default();
+        let seconds = started.elapsed().as_secs_f64();
+        let status = status
+            .ok_or_else(|| format!("timeout after {}s", call_timeout_secs_for(Some(spec))))?;
+
+        let (result, cost) = match spec.backend {
+            Backend::Claude => parse_claude(&out, &err, status)?,
+            Backend::Codex => {
+                let out_path = &scratch.as_ref().expect("codex scratch").out;
+                parse_codex(out_path, &err, status)?
+            }
+            Backend::Ollama => parse_ollama(&out, &err, status)?,
+        };
+        Ok((result, cost, seconds))
+    }
+
+    fn backend_command(
+        &self,
+        spec: &ModelSpec,
+        images: &[PathBuf],
+        scratch: Option<&CodexScratch>,
+    ) -> Command {
         let mut cmd = match spec.backend {
             Backend::Claude => {
                 let mut c = Command::new("claude");
@@ -378,7 +416,7 @@ impl Caller {
                     c.arg(format!("--image={}", img.display()));
                 }
                 c.arg("-o");
-                c.arg(&scratch.as_ref().expect("codex scratch").out);
+                c.arg(&scratch.expect("codex scratch").out);
                 c.arg("-");
                 c
             }
@@ -397,148 +435,125 @@ impl Caller {
                 c
             }
         };
-        cmd.current_dir(match &scratch {
+        cmd.current_dir(match scratch {
             Some(s) => s.dir.as_path(),
             None => self.root.as_path(),
         })
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
+        cmd
+    }
+}
 
-        let mut child = cmd
-            .spawn()
-            .map_err(|e| format!("failed to spawn {:?}: {e}", spec.backend))?;
+fn stdin_payload(spec: &ModelSpec, prompt: &str) -> String {
+    match spec.backend {
+        Backend::Claude | Backend::Codex => prompt.to_string(),
+        Backend::Ollama => serde_json::json!({
+            "model": spec.model,
+            "prompt": prompt,
+            "stream": false,
+            "keep_alive": "2h",
+            "options": {"num_ctx": ollama_num_ctx()},
+        })
+        .to_string(),
+    }
+}
 
-        let stdin_payload = match spec.backend {
-            Backend::Claude | Backend::Codex => prompt.to_string(),
-            Backend::Ollama => serde_json::json!({
-                "model": spec.model,
-                "prompt": prompt,
-                "stream": false,
-                "keep_alive": "2h",
-                "options": {"num_ctx": ollama_num_ctx()},
-            })
-            .to_string(),
-        };
-        let mut stdin = child.stdin.take().expect("piped stdin");
-        let writer = thread::spawn(move || {
-            let _ = stdin.write_all(stdin_payload.as_bytes());
-        });
+fn drain<R: Read + Send + 'static>(mut pipe: R) -> thread::JoinHandle<Vec<u8>> {
+    thread::spawn(move || {
+        let mut buf = Vec::new();
+        let _ = pipe.read_to_end(&mut buf);
+        buf
+    })
+}
 
-        let mut stdout = child.stdout.take().expect("piped stdout");
-        let stdout_reader = thread::spawn(move || {
-            let mut buf = Vec::new();
-            let _ = stdout.read_to_end(&mut buf);
-            buf
-        });
-
-        let mut stderr = child.stderr.take().expect("piped stderr");
-        let stderr_reader = thread::spawn(move || {
-            let mut buf = Vec::new();
-            let _ = stderr.read_to_end(&mut buf);
-            buf
-        });
-
-        let timeout = Duration::from_secs(call_timeout_secs_for(Some(spec)));
-        let status = loop {
-            match child.try_wait() {
-                Ok(Some(status)) => break Some(status),
-                Ok(None) => {
-                    if started.elapsed() > timeout {
-                        let _ = child.kill();
-                        let _ = child.wait();
-                        break None;
-                    }
-                    thread::sleep(Duration::from_millis(50));
-                }
-                Err(e) => return Err(format!("wait failed: {e}")),
+fn wait_with_timeout(
+    child: &mut std::process::Child,
+    started: Instant,
+    timeout: Duration,
+) -> Result<Option<ExitStatus>, String> {
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) => return Ok(Some(status)),
+            Ok(None) if started.elapsed() > timeout => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Ok(None);
             }
-        };
-
-        let _ = writer.join();
-        let out = stdout_reader.join().unwrap_or_default();
-        let err = stderr_reader.join().unwrap_or_default();
-        let seconds = started.elapsed().as_secs_f64();
-
-        let status = match status {
-            Some(s) => s,
-            None => {
-                return Err(format!(
-                    "timeout after {}s",
-                    call_timeout_secs_for(Some(spec))
-                ))
-            }
-        };
-
-        match spec.backend {
-            Backend::Claude => {
-                let data: serde_json::Value = serde_json::from_slice(&out).map_err(|_| {
-                    let err_text = String::from_utf8_lossy(&err);
-                    let truncated: String = err_text.chars().take(300).collect();
-                    format!(
-                        "non-JSON output (exit {}): {truncated}",
-                        status.code().unwrap_or(-1)
-                    )
-                })?;
-                let is_error = data
-                    .get("is_error")
-                    .and_then(|v| v.as_bool())
-                    .unwrap_or(false);
-                let subtype = data.get("subtype").and_then(|v| v.as_str()).unwrap_or("");
-                if is_error || subtype != "success" {
-                    let dumped = data.to_string();
-                    let truncated: String = dumped.chars().take(300).collect();
-                    return Err(format!("call failed: {truncated}"));
-                }
-                let cost = data
-                    .get("total_cost_usd")
-                    .and_then(|v| v.as_f64())
-                    .unwrap_or(0.0);
-                let result = data
-                    .get("result")
-                    .and_then(|v| v.as_str())
-                    .ok_or_else(|| "call succeeded but had no 'result' field".to_string())?
-                    .to_string();
-                Ok((result, cost, seconds))
-            }
-            Backend::Codex => {
-                let out_path = &scratch.as_ref().expect("codex scratch").out;
-                if !status.success() {
-                    let err_text = String::from_utf8_lossy(&err);
-                    let truncated: String = err_text.chars().take(300).collect();
-                    return Err(format!("codex exited with {status}: {truncated}"));
-                }
-                let reply = std::fs::read_to_string(out_path)
-                    .map_err(|e| format!("codex wrote no final message ({e})"))?;
-                if reply.trim().is_empty() {
-                    return Err("codex final message was empty".to_string());
-                }
-
-                Ok((reply, 0.0, seconds))
-            }
-            Backend::Ollama => {
-                if !status.success() {
-                    let err_text = String::from_utf8_lossy(&err);
-                    let truncated: String = err_text.chars().take(300).collect();
-                    return Err(format!("ollama call exited with {status}: {truncated}"));
-                }
-                let data: serde_json::Value = serde_json::from_slice(&out).map_err(|_| {
-                    let text = String::from_utf8_lossy(&out);
-                    let truncated: String = text.chars().take(300).collect();
-                    format!("non-JSON ollama response: {truncated}")
-                })?;
-                if let Some(e) = data.get("error").and_then(|v| v.as_str()) {
-                    return Err(format!("ollama error: {e}"));
-                }
-                let result = data
-                    .get("response")
-                    .and_then(|v| v.as_str())
-                    .ok_or_else(|| "ollama reply had no 'response' field".to_string())?
-                    .to_string();
-                Ok((result, 0.0, seconds))
-            }
+            Ok(None) => thread::sleep(Duration::from_millis(50)),
+            Err(e) => return Err(format!("wait failed: {e}")),
         }
     }
+}
+
+fn truncated(bytes: &[u8]) -> String {
+    String::from_utf8_lossy(bytes).chars().take(300).collect()
+}
+
+fn parse_claude(out: &[u8], err: &[u8], status: ExitStatus) -> Result<(String, f64), String> {
+    let data: serde_json::Value = serde_json::from_slice(out).map_err(|_| {
+        format!(
+            "non-JSON output (exit {}): {}",
+            status.code().unwrap_or(-1),
+            truncated(err)
+        )
+    })?;
+    let is_error = data
+        .get("is_error")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let subtype = data.get("subtype").and_then(|v| v.as_str()).unwrap_or("");
+    if is_error || subtype != "success" {
+        let dumped: String = data.to_string().chars().take(300).collect();
+        return Err(format!("call failed: {dumped}"));
+    }
+    let cost = data
+        .get("total_cost_usd")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.0);
+    let result = data
+        .get("result")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| "call succeeded but had no 'result' field".to_string())?
+        .to_string();
+    Ok((result, cost))
+}
+
+fn parse_codex(
+    out_path: &PathBuf,
+    err: &[u8],
+    status: ExitStatus,
+) -> Result<(String, f64), String> {
+    if !status.success() {
+        return Err(format!("codex exited with {status}: {}", truncated(err)));
+    }
+    let reply = std::fs::read_to_string(out_path)
+        .map_err(|e| format!("codex wrote no final message ({e})"))?;
+    if reply.trim().is_empty() {
+        return Err("codex final message was empty".to_string());
+    }
+    Ok((reply, 0.0))
+}
+
+fn parse_ollama(out: &[u8], err: &[u8], status: ExitStatus) -> Result<(String, f64), String> {
+    if !status.success() {
+        return Err(format!(
+            "ollama call exited with {status}: {}",
+            truncated(err)
+        ));
+    }
+    let data: serde_json::Value = serde_json::from_slice(out)
+        .map_err(|_| format!("non-JSON ollama response: {}", truncated(out)))?;
+    if let Some(e) = data.get("error").and_then(|v| v.as_str()) {
+        return Err(format!("ollama error: {e}"));
+    }
+    let result = data
+        .get("response")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| "ollama reply had no 'response' field".to_string())?
+        .to_string();
+    Ok((result, 0.0))
 }
 
 #[cfg(test)]

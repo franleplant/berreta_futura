@@ -222,9 +222,7 @@ def _render_editorial(
     )
 
 
-def _render_article(
-    edition: Edition, article: Article, document: PublicationDocument, article_index: int = 1
-) -> tuple[str, tuple[HtmlAsset, ...]]:
+def _split_figures(article: Article) -> tuple[list[Figure], dict[str, list[Figure]]]:
     figures_by_anchor: dict[str, list[Figure]] = {}
     opener_figures: list[Figure] = []
     for figure in article.figures:
@@ -232,22 +230,12 @@ def _render_article(
             opener_figures.append(figure)
         else:
             figures_by_anchor.setdefault(_anchor_key(figure.anchor), []).append(figure)
-    extracts_by_anchor, opener_extracts = _extracts_by_anchor(article)
+    return opener_figures, figures_by_anchor
 
-    if (
-        _article_opener_format(edition) == "illustrated_paper_spots_v1"
-        and article.opener_art is not None
-    ):
-        return _render_illustrated_article(
-            edition,
-            article,
-            document,
-            article_index,
-            opener_figures,
-            figures_by_anchor,
-        )
 
-    assets: list[HtmlAsset] = []
+def _article_header_lines(
+    edition: Edition, article: Article, document: PublicationDocument, article_index: int
+) -> list[str]:
     lines = [
         f'<article id="{_attr(_article_destination_id(article))}" data-article-id="{_attr(article.id)}" '
         f'data-content-mode="{_attr(article.content_mode)}" data-source-ids="{_attr(" ".join(article.source_ids))}" '
@@ -282,6 +270,54 @@ def _render_article(
             "  </header>",
         ]
     )
+    return lines
+
+
+def _article_tail_lines(edition: Edition, article: Article, assets: list[HtmlAsset]) -> list[str]:
+    if article.tail_art is None:
+        return []
+    tail_art_fit = str((getattr(edition, "raw", {}) or {}).get("tail_art_fit") or "cover")
+    asset = _asset(
+        id=f"article-tail-{article.id}",
+        role="article_tail",
+        path=article.tail_art,
+        alt_text=f"Tail art for {article.title}",
+        article_id=article.id,
+    )
+    assets.append(asset)
+    return list(
+        _indent(
+            (
+                f'<figure class="article-tail" data-asset-role="article_tail" '
+                f'data-fit="{_attr(tail_art_fit)}">'
+                f'<img src="{_attr(asset.src)}" alt="{_attr(asset.alt_text)}"></figure>',
+            ),
+            2,
+        )
+    )
+
+
+def _render_article(
+    edition: Edition, article: Article, document: PublicationDocument, article_index: int = 1
+) -> tuple[str, tuple[HtmlAsset, ...]]:
+    opener_figures, figures_by_anchor = _split_figures(article)
+    extracts_by_anchor, opener_extracts = _extracts_by_anchor(article)
+
+    if (
+        _article_opener_format(edition) == "illustrated_paper_spots_v1"
+        and article.opener_art is not None
+    ):
+        return _render_illustrated_article(
+            edition,
+            article,
+            document,
+            article_index,
+            opener_figures,
+            figures_by_anchor,
+        )
+
+    assets: list[HtmlAsset] = []
+    lines = _article_header_lines(edition, article, document, article_index)
     for figure in opener_figures:
         figure_html, asset = _render_figure(edition, article.id, figure)
         lines.extend(_indent((figure_html,), 2))
@@ -314,26 +350,7 @@ def _render_article(
             2,
         )
     )
-    if article.tail_art is not None:
-        tail_art_fit = str((getattr(edition, "raw", {}) or {}).get("tail_art_fit") or "cover")
-        asset = _asset(
-            id=f"article-tail-{article.id}",
-            role="article_tail",
-            path=article.tail_art,
-            alt_text=f"Tail art for {article.title}",
-            article_id=article.id,
-        )
-        assets.append(asset)
-        lines.extend(
-            _indent(
-                (
-                    f'<figure class="article-tail" data-asset-role="article_tail" '
-                    f'data-fit="{_attr(tail_art_fit)}">'
-                    f'<img src="{_attr(asset.src)}" alt="{_attr(asset.alt_text)}"></figure>',
-                ),
-                2,
-            )
-        )
+    lines.extend(_article_tail_lines(edition, article, assets))
     lines.extend(_indent(_render_source_link(article), 2))
     lines.append("</article>")
     return "\n".join(lines), tuple(assets)

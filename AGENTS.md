@@ -96,8 +96,12 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 - Never author Unicode U+2014 in prose, comments, prompts, or copy. Preserve it
   only inside captured source text or an exact quotation.
 - Keep `.magazine/`, `output/`, run scratch, and credentials out of Git.
-- Verification: `cargo fmt --check`, `cargo clippy`, `cargo test` in `mag/`;
-  `uvx ruff format --check` and `uvx ruff check` on `src/magazine` and
-  `tools`; load the editions through `magazine.manifest.load_edition` when
-  the Python side changes.
+- Setup, once per clone: `git config core.hooksPath .githooks`. The
+  pre-commit hook then runs `cargo fmt --check`, `cargo clippy -D warnings`,
+  `ruff format --check`, `ruff check`, and `tools/nocomments.py`; a commit
+  that fails any of them does not land, and `cargo test` fails until the
+  hook is installed. Zero warnings is the standing state, not a goal.
+- Verification: `cargo test` in `mag/` (also runs the comment check and the
+  hook-install check); load the editions through
+  `magazine.manifest.load_edition` when the Python side changes.
 - Work on the branch the user asks for and commit coherent checkpoints.

@@ -168,7 +168,6 @@ fn weighted_words(body: &str, heading_cost: usize) -> usize {
     body.split_whitespace().count() + headings * heading_cost
 }
 
-#[allow(clippy::too_many_arguments)]
 fn fit_to_budget(
     caller: &Caller,
     writer_model: &ModelSpec,
@@ -596,11 +595,59 @@ pub fn run_edition(
         })
         .collect();
 
+    let models = (writer_model, meta_model);
+    let (mut statuses, mut failures) = write_articles(&caller, &run_dir, &articles, models);
+    let finals = collect_finals(&run_dir, &articles)?;
+    if !finals.is_empty() && failures.is_empty() {
+        match produce_piece(
+            &caller,
+            &run_dir,
+            "editorial",
+            None,
+            &finals,
+            writer_model,
+            meta_model,
+        ) {
+            Ok(st) => statuses.push(st),
+            Err(e) => {
+                eprintln!("  FAILED editorial: {e}");
+                failures.push(("editorial".to_string(), e.to_string()));
+            }
+        }
+    }
+
+    let minutes = started.elapsed().as_secs_f64() / 60.0;
+    let lines = summary_lines(&edition_id, &caller, minutes, models, &statuses, &failures);
+    fs::write(run_dir.join("summary.md"), lines.join("\n") + "\n")?;
+    println!("\n{}", run_dir.join("summary.md").display());
+    println!("{}", lines.join("\n"));
+
+    if failures.is_empty() {
+        print_next_steps(&edition_dir, &edition_id, &scaffold_plan, &run_dir)?;
+    } else {
+        println!(
+            "\nnext: fix the failures above, then: mag produce {} --resume {}",
+            plan_path.display(),
+            run_dir.display()
+        );
+    }
+
+    Ok(if failures.is_empty() { 0 } else { 1 })
+}
+
+type Failures = Vec<(String, String)>;
+
+fn write_articles(
+    caller: &Arc<Caller>,
+    run_dir: &Path,
+    articles: &[serde_yaml::Value],
+    (writer_model, meta_model): (&ModelSpec, &ModelSpec),
+) -> (Vec<PieceStatus>, Failures) {
     let mut handles = Vec::new();
-    for article in &articles {
+    for article in articles {
         let article_owned = article.clone();
-        let caller = Arc::clone(&caller);
-        let run_dir = run_dir.clone();
+        let caller = Arc::clone(caller);
+        let run_dir = run_dir.to_path_buf();
         let writer_model = writer_model.clone();
         let meta_model = meta_model.clone();
         handles.push(thread::spawn(move || -> Result<PieceStatus> {
@@ -635,7 +682,7 @@ pub fn run_edition(
     }
 
     let mut statuses = Vec::new();
-    let mut failures: Vec<(String, String)> = Vec::new();
+    let mut failures = Vec::new();
     for (article, handle) in articles.iter().zip(handles) {
         let id = article
             .get("id")
@@ -654,9 +701,12 @@ pub fn run_edition(
             }
         }
     }
+    (statuses, failures)
+}
 
-    let mut finals: Vec<(String, String)> = Vec::new();
-    for article in &articles {
+fn collect_finals(run_dir: &Path, articles: &[serde_yaml::Value]) -> Result<Vec<(String, String)>> {
+    let mut finals = Vec::new();
+    for article in articles {
         if let Some(id) = article.get("id").and_then(|v| v.as_str()) {
             let fp = run_dir.join("articles").join(id).join("final.md");
             if fp.exists() {
@@ -664,26 +714,17 @@ pub fn run_edition(
             }
         }
     }
+    Ok(finals)
+}
 
-    if !finals.is_empty() && failures.is_empty() {
-        match produce_piece(
-            &caller,
-            &run_dir,
-            "editorial",
-            None,
-            &finals,
-            writer_model,
-            meta_model,
-        ) {
-            Ok(st) => statuses.push(st),
-            Err(e) => {
-                eprintln!("  FAILED editorial: {e}");
-                failures.push(("editorial".to_string(), e.to_string()));
-            }
-        }
-    }
-
-    let minutes = started.elapsed().as_secs_f64() / 60.0;
+fn summary_lines(
+    edition_id: &str,
+    caller: &Caller,
+    minutes: f64,
+    (writer_model, meta_model): (&ModelSpec, &ModelSpec),
+    statuses: &[PieceStatus],
+    failures: &Failures,
+) -> Vec<String> {
     let mut lines = vec![
         format!("# Run summary — edition {edition_id}"),
         String::new(),
@@ -701,41 +742,36 @@ pub fn run_edition(
         "| piece | words |".to_string(),
         "|---|---|".to_string(),
     ];
-    for st in &statuses {
+    for st in statuses {
         lines.push(format!("| {} | {} |", st.piece, st.words));
     }
-    for (pid, err) in &failures {
+    for (pid, err) in failures {
         let short: String = err.chars().take(80).collect();
         lines.push(format!("| {pid} | **FAILED** — {short} |"));
     }
-    let summary_text = lines.join("\n") + "\n";
-    fs::write(run_dir.join("summary.md"), &summary_text)?;
-    println!("\n{}", run_dir.join("summary.md").display());
-    println!("{}", lines.join("\n"));
+    lines
+}
 
-    if failures.is_empty() {
-        let edition_yaml = edition_dir.join("edition.yaml");
-        match scaffold_edition_yaml(&edition_dir, &edition_id, &scaffold_plan)? {
-            Some(p) => println!("\nscaffolded {}", p.display()),
-            None => println!("\n{} already exists; left as is", edition_yaml.display()),
-        }
-        println!(
-            "\nnext:\n  1. read the finals under {}/articles/*/final.md and editorial/final.md\n  \
-             2. edit {}: TODO fields (title, cover copy), article order, figures\n  \
-             3. mag art {edition_id}            (image candidates; pick in art/showcase.html)\n  \
-             4. mag render {edition_id}",
-            run_dir.display(),
-            edition_yaml.display()
-        );
-    } else {
-        println!(
-            "\nnext: fix the failures above, then: mag produce {} --resume {}",
-            plan_path.display(),
-            run_dir.display()
-        );
+fn print_next_steps(
+    edition_dir: &Path,
+    edition_id: &str,
+    plan: &Plan,
+    run_dir: &Path,
+) -> Result<()> {
+    let edition_yaml = edition_dir.join("edition.yaml");
+    match scaffold_edition_yaml(edition_dir, edition_id, plan)? {
+        Some(p) => println!("\nscaffolded {}", p.display()),
+        None => println!("\n{} already exists; left as is", edition_yaml.display()),
     }
-
-    Ok(if failures.is_empty() { 0 } else { 1 })
+    println!(
+        "\nnext:\n  1. read the finals under {}/articles/*/final.md and editorial/final.md\n  \
+         2. edit {}: TODO fields (title, cover copy), article order, figures\n  \
+         3. mag art {edition_id}            (image candidates; pick in art/showcase.html)\n  \
+         4. mag render {edition_id}",
+        run_dir.display(),
+        edition_yaml.display()
+    );
+    Ok(())
 }
 
 #[cfg(test)]
